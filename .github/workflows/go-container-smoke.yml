@@ -11,6 +11,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
       - name: Build image
         run: docker build -t chronicles-api:smoke .
       - name: Run as non-root, healthcheck, and reject absent gameplay API
@@ -49,3 +51,22 @@ jobs:
             echo "ERROR: invalid production read API config did not fail closed (exit $status)" >&2
             exit 1
           fi
+      - name: Smoke OCI A1 ARM64 container before approving PR
+        run: |
+          set -euo pipefail
+          docker buildx build --pull --platform linux/arm64 --load \
+            -t chronicles-api:arm64-smoke .
+          test "$(docker image inspect chronicles-api:arm64-smoke --format '{{.Architecture}}')" = arm64
+          docker run -d --name chronicles-arm64-smoke \
+            --platform linux/arm64 --read-only --cap-drop ALL \
+            --security-opt no-new-privileges \
+            -p 127.0.0.1:18082:8080 chronicles-api:arm64-smoke
+          trap 'docker rm -f chronicles-arm64-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:18082/healthz >/dev/null; then break; fi
+            sleep 1
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/healthz)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/readyz)" = 503
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/api/chronicles/runs)" = 404
+          test "$(docker inspect chronicles-arm64-smoke --format '{{.Config.User}}')" = "65532:65532"

@@ -33,3 +33,26 @@ The workflow publishes an image artifact, **not a staging deployment**.
 GHCR permissions or package settings may still need attention if publishing
 fails; never treat a push or an attestation as successful without its actual
 workflow result.
+
+
+## OCI A1 platform gate
+
+OCI Ampere A1 is `linux/arm64`. A GitHub `ubuntu-latest` runner
+normally builds `linux/amd64` if the platform is not selected explicitly.
+The standalone image now uses `TARGETOS`/`TARGETARCH` to cross-compile
+the Go binary and publishes one GHCR **multi-platform manifest digest**
+containing both `linux/amd64` and `linux/arm64`.
+
+Before merging, the required container-smoke job uses Buildx/QEMU to build
+and actually run the ARM64 container, asserting `/healthz` 200,
+`/readyz` 503 without a MongoDB connection, disabled run routes and
+UID/GID `65532:65532`. The trusted publisher repeats the ARM64 runtime
+smoke before publishing. After the multi-platform push it verifies **both
+architectures are present** in the OCI manifest, attests the **manifest
+list digest**, and reports that digest for downstream ShadowOps admission.
+
+Do not deploy a single-platform x86 image to OCI A1 or derive deployment
+identity from the mutable `staging-<SHA>` tag; use only the attested
+multiarch `sha256` digest after the checks have passed. The previously
+published pre-multiarch image remains historical test evidence, not the
+desired OCI A1 deployment artifact.
