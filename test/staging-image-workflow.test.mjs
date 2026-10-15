@@ -24,6 +24,8 @@ test('publish job has a complete independent quality gate', () => {
     'CGO_ENABLED=0 go build',
     'docker build --pull',
     '/api/chronicles/runs',
+    "docker inspect chronicles-stage-preflight --format '{{.Config.User}}'",
+    'org.opencontainers.image.revision',
     'docker push "$IMAGE:$TAG"',
   ]) {
     assert.ok(workflow.includes(expected), `Missing pre-publish check: ${expected}`);
@@ -42,4 +44,5 @@ test('staging publication is digest pinned, attested, and cannot deploy producti
   assert.ok(workflow.includes('subject-digest: ${{ steps.push.outputs.digest }}'));
   assert.match(workflow, /sha256:\[a-f0-9\]\{64\}/);
   assert.doesNotMatch(workflow, /docker compose up|kubectl apply|oci .*deploy|render\.com/);
+  assert.doesNotMatch(workflow, /docker exec[^\n]+id -u/);
 });
