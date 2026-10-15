@@ -6,6 +6,7 @@ import (
  "errors"
  "io"
  "math"
+ "math/big"
  "strconv"
  "strings"
  "fmt"
@@ -52,7 +53,7 @@ func Decode(raw []byte)(Payload,error){
   if key==""||utf8.RuneCountInString(key)>96{return p,errors.New("invalid flag key")}
   switch v:=value.(type) {
   case nil,bool:
-  case json.Number:if _,err:=strconv.ParseInt(string(v),10,64);err!=nil{return p,fmt.Errorf("flag %q must be integer",key)}
+  case json.Number:if _,ok:=new(big.Int).SetString(string(v),10);!ok{return p,fmt.Errorf("flag %q must be integer",key)}
   case string:if utf8.RuneCountInString(v)>256{return p,errors.New("flag too long")}
   default:return p,fmt.Errorf("unsupported flag %q",key)
   }
