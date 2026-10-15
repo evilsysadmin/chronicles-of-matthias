@@ -86,7 +86,8 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/healthz)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/readyz)" = 503
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/runs)" = 404
-          test "$(docker exec chronicles-stage-preflight id -u)" != 0
+          test "$(docker inspect chronicles-stage-preflight --format '{{.Config.User}}')" = "65532:65532"
+          test "$(docker image inspect "$IMAGE:$TAG" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$GITHUB_SHA"
       - name: Authenticate to GitHub Container Registry
         uses: docker/login-action@v3
         with:
