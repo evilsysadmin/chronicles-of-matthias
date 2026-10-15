@@ -41,5 +41,23 @@ func Decode(raw []byte)(Payload,error){
   default:return p,fmt.Errorf("unsupported flag %q",key)
   }
  }
+ for itemID,raw:=range p.Inventory {
+  if itemID==""||utf8.RuneCountInString(itemID)>96{return p,errors.New("invalid inventory ID")}
+  item,ok:=raw.(map[string]any);if !ok{return p,errors.New("invalid inventory entry")}
+  quantity,ok:=item["quantity"].(float64);if !ok||quantity<1||quantity>9999||quantity!=float64(int64(quantity)){return p,errors.New("invalid inventory quantity")}
+  if name,exists:=item["name"];exists {s,ok:=name.(string);if !ok||s==""||utf8.RuneCountInString(s)>160{return p,errors.New("invalid item name")}}
+  if desc,exists:=item["description"];exists {s,ok:=desc.(string);if !ok||utf8.RuneCountInString(s)>1024{return p,errors.New("invalid item description")}}
+ }
+ for questID,raw:=range p.Quests {
+  if questID==""||utf8.RuneCountInString(questID)>96{return p,errors.New("invalid quest ID")}
+  quest,ok:=raw.(map[string]any);if !ok{return p,errors.New("invalid quest entry")}
+  status,ok:=quest["status"].(string);if !ok||(status!="active"&&status!="completed"){return p,errors.New("invalid quest status")}
+  for key,max:=range map[string]int{"title":200,"description":2048,"objective":1024} {
+   if value,exists:=quest[key];exists {
+    s,ok:=value.(string);if !ok||utf8.RuneCountInString(s)>max||(key=="title"&&s==""){return p,fmt.Errorf("invalid quest %s",key)}
+   }
+  }
+  if order,exists:=quest["order"];exists {v,ok:=order.(float64);if !ok||v < -1000000||v > 1000000{return p,errors.New("invalid quest order")}}
+ }
  return p,nil
 }
