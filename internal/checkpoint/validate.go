@@ -48,7 +48,8 @@ func Decode(raw []byte)(Payload,error){
  for key,value:=range p.WorldFlags {
   if key==""||utf8.RuneCountInString(key)>96{return p,errors.New("invalid flag key")}
   switch v:=value.(type) {
-  case nil,bool,float64:
+  case nil,bool:
+  case float64:if v!=float64(int64(v)){return p,fmt.Errorf("flag %q must be integer",key)}
   case string:if utf8.RuneCountInString(v)>256{return p,errors.New("flag too long")}
   default:return p,fmt.Errorf("unsupported flag %q",key)
   }
