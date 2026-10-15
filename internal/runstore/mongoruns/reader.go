@@ -37,6 +37,7 @@ type document struct {
 	RunID string `bson:"_id"`
 	OwnerID string `bson:"owner"`
 	WorldVersion int64 `bson:"worldVersion"`
+	CurrentMapID string `bson:"currentMapId"`
 	Status string `bson:"status"`
 	UpdatedAt bson.DateTime `bson:"updatedAt"`
 }
@@ -101,6 +102,18 @@ func (d document) run() runstore.Run {
 	}
 }
 
+// summary mirrors Chess Studio's native Go Summary and the Python list
+// contract. Missing status is treated as active; absent dates remain zero.
+func (d document) summary() runstore.Summary {
+ status := d.Status
+ if status == "" { status = "active" }
+ return runstore.Summary{
+  RunID: d.RunID, CurrentMapID: d.CurrentMapID,
+  Status: status, WorldVersion: d.WorldVersion,
+  UpdatedAtMs: int64(d.UpdatedAt),
+ }
+}
+
 // Get is always filtered by both authenticated owner and run ID.
 func (r *Reader) Get(ctx context.Context, ownerID, runID string) (runstore.Run, error) {
 	if err := validateScope(ownerID, runID); err != nil { return runstore.Run{}, err }
@@ -113,7 +126,26 @@ func (r *Reader) Get(ctx context.Context, ownerID, runID string) (runstore.Run, 
 }
 
 // List is scoped to one authenticated owner and never performs a full scan.
+// ListSummaries implements the legacy list response without exposing
+// persistence documents or unverified checkpoint data.
+func (r *Reader) ListSummaries(ctx context.Context, ownerID string) ([]runstore.Summary, error) {
+ records, err := r.listDocuments(ctx, ownerID)
+ if err != nil { return nil, err }
+ summaries := make([]runstore.Summary, 0, len(records))
+ for _, d := range records { summaries = append(summaries, d.summary()) }
+ return summaries, nil
+}
+
+// List retains the existing storage interface until route migration.
 func (r *Reader) List(ctx context.Context, ownerID string) ([]runstore.Run, error) {
+ records, err := r.listDocuments(ctx, ownerID)
+ if err != nil { return nil, err }
+ runs := make([]runstore.Run, 0, len(records))
+ for _, d := range records { runs = append(runs, d.run()) }
+ return runs, nil
+}
+
+func (r *Reader) listDocuments(ctx context.Context, ownerID string) ([]document, error) {
 	if err := validateScope(ownerID, ""); err != nil { return nil, err }
 	cursor, err := r.runs.Find(ctx, bson.M{
 		"owner": ownerID,
@@ -126,6 +158,7 @@ func (r *Reader) List(ctx context.Context, ownerID string) ([]runstore.Run, erro
 		SetProjection(bson.D{
 			{Key: "_id", Value: 1},
 			{Key: "owner", Value: 1},
+			{Key: "currentMapId", Value: 1},
 			{Key: "worldVersion", Value: 1},
 			{Key: "updatedAt", Value: 1},
 			{Key: "status", Value: 1},
@@ -134,7 +167,5 @@ func (r *Reader) List(ctx context.Context, ownerID string) ([]runstore.Run, erro
 	defer cursor.Close(ctx)
 	var records []document
 	if err := cursor.All(ctx, &records); err != nil { return nil, runstore.ErrUnavailable }
-	runs := make([]runstore.Run, 0, len(records))
-	for _, d := range records { runs = append(runs, d.run()) }
-	return runs, nil
+	return records, nil
 }
