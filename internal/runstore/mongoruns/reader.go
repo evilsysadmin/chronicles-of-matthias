@@ -30,8 +30,14 @@ var (
 // conversion is deliberately deferred until the parity corpus is imported.
 type Reader struct {
 	client *mongo.Client
+	database *mongo.Database
 	runs *mongo.Collection
 }
+
+// AccountDatabase is the explicitly selected Chronicles database for the
+// read-only authentication adapter. No implicit Chess Studio DB is opened.
+func (r *Reader) AccountDatabase() *mongo.Database { return r.database }
+
 
 type document struct {
 	RunID string `bson:"_id"`
@@ -74,7 +80,8 @@ func Open(ctx context.Context, uri, database string) (*Reader, error) {
 		cleanup()
 		return nil, fmt.Errorf("%w: connection ping", runstore.ErrUnavailable)
 	}
-	r := &Reader{client: client, runs: client.Database(database).Collection(collectionName)}
+	db := client.Database(database)
+	r := &Reader{client: client, database: db, runs: db.Collection(collectionName)}
 	if _, err := r.runs.Indexes().CreateOne(checkCtx, mongo.IndexModel{
 		Keys: bson.D{{Key: "owner", Value: 1}, {Key: "status", Value: 1}, {Key: "updatedAt", Value: -1}},
 	}); err != nil {
