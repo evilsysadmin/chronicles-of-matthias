@@ -63,7 +63,9 @@ func main(){
  defer cancel()
  mongoURI,err:=mongoURIFromEnvironment()
  if err!=nil {log.Fatal("invalid MongoDB credential source")}
- app,closeStore,err:=configuredHandler(initCtx,mongoURI,os.Getenv("CHRONICLES_MONGODB_DATABASE"))
+ opts,err:=stagingReadOptionsFromEnv()
+ if err!=nil {log.Fatal("invalid staging read API configuration")}
+ app,closeStore,err:=configuredHandlerWithReads(initCtx,mongoURI,os.Getenv("CHRONICLES_MONGODB_DATABASE"),opts)
  if err!=nil {log.Fatalf("MongoDB startup configuration or connection failed: %v",err)}
  if closeStore!=nil {defer func(){_ =closeStore(context.Background())}()}
  server:=&http.Server{Addr:":8080",Handler:app,ReadHeaderTimeout:5*time.Second}
