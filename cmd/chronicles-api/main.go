@@ -2,27 +2,30 @@ package main
 
 import (
  "context"
- "errors"
  "fmt"
  "log"
- "net"
  "net/http"
  "os"
  "time"
 )
 
-func healthcheck() error {
+func healthcheck() error { return probeAt("127.0.0.1:8080", "/healthz") }
+func readinesscheck() error { return probeAt("127.0.0.1:8080", "/readyz") }
+
+// probeAt reads a complete HTTP response; a single TCP Read is not
+// guaranteed to contain the complete status line.
+func probeAt(address, path string) error {
  ctx,cancel:=context.WithTimeout(context.Background(),2*time.Second)
  defer cancel()
- dialer:=net.Dialer{}
- conn,err:=dialer.DialContext(ctx,"tcp","127.0.0.1:8080")
+ req,err:=http.NewRequestWithContext(ctx,http.MethodGet,"http://"+address+path,nil)
  if err!=nil{return err}
- defer conn.Close()
- if _,err=fmt.Fprintf(conn,"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");err!=nil{return err}
- buf:=make([]byte,128)
- n,err:=conn.Read(buf)
+ client:=&http.Client{Timeout:2*time.Second,Transport:&http.Transport{
+  Proxy:nil, DisableKeepAlives:true,
+ }}
+ response,err:=client.Do(req)
  if err!=nil{return err}
- if n<12 || string(buf[:12])!="HTTP/1.1 200" {return errors.New("unhealthy HTTP response")}
+ defer response.Body.Close()
+ if response.StatusCode!=http.StatusOK{return fmt.Errorf("%s returned HTTP %d",path,response.StatusCode)}
  return nil
 }
 func handler() http.Handler {
@@ -45,8 +48,17 @@ func handlerWithReadiness(check func(context.Context) error) http.Handler {
  return mux
 }
 func main(){
- if len(os.Args)==2 && os.Args[1]=="healthcheck" {if err:=healthcheck();err!=nil{log.Fatal(err)};return}
- if len(os.Args)!=1 {log.Fatal("usage: chronicles-api [healthcheck]")}
+ if len(os.Args)==2 {
+  var err error
+  switch os.Args[1] {
+  case "healthcheck":err=healthcheck()
+  case "readycheck":err=readinesscheck()
+  default:log.Fatal("usage: chronicles-api [healthcheck|readycheck]")
+  }
+  if err!=nil {log.Fatal(err)}
+  return
+ }
+ if len(os.Args)!=1 {log.Fatal("usage: chronicles-api [healthcheck|readycheck]")}
  initCtx,cancel:=context.WithTimeout(context.Background(),8*time.Second)
  defer cancel()
  app,closeStore,err:=configuredHandler(initCtx,os.Getenv("CHRONICLES_MONGODB_URI"),os.Getenv("CHRONICLES_MONGODB_DATABASE"))
