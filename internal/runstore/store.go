@@ -33,3 +33,13 @@ type Store interface {
  Checkpoint(ctx context.Context, ownerID, runID string, expectedVersion int64, idempotencyKey string, state []byte) (Run, error)
  Delete(ctx context.Context, ownerID, runID string) error
 }
+
+// Summary matches the canonical /api/chronicles/runs list item.
+// Deliberately excludes the checkpoint state and owner identity.
+type Summary struct {
+ RunID string `json:"runId"`
+ CurrentMapID string `json:"currentMapId"`
+ Status string `json:"status"`
+ WorldVersion int64 `json:"worldVersion"`
+ UpdatedAtMs int64 `json:"updatedAtMs"`
+}
