@@ -33,3 +33,14 @@ func TestLivenessIndependentOfReadiness(t *testing.T) {
  handler().ServeHTTP(rec,httptest.NewRequest("GET","/healthz",nil))
  if rec.Code!=http.StatusOK {t.Fatalf("liveness changed: %d",rec.Code)}
 }
+
+func TestReadinessPropagatesRequestCancellation(t *testing.T) {
+ ctx,cancel:=context.WithCancel(context.Background())
+ cancel()
+ rec:=httptest.NewRecorder()
+ handlerWithReadiness(func(ctx context.Context) error {
+  if ctx.Err()==nil {t.Error("dependency check did not receive cancellation")}
+  return ctx.Err()
+ }).ServeHTTP(rec,httptest.NewRequest("GET","/readyz",nil).WithContext(ctx))
+ if rec.Code!=http.StatusServiceUnavailable {t.Fatalf("got %d, want 503",rec.Code)}
+}
