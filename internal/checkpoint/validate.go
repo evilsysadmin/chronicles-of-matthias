@@ -5,6 +5,8 @@ import (
  "encoding/json"
  "errors"
  "io"
+ "math"
+ "strconv"
  "strings"
  "fmt"
  "unicode/utf8"
@@ -31,6 +33,7 @@ func Decode(raw []byte)(Payload,error){
  for _,key:=range []string{"consumedContentIds","claimedRewards"} {if value,exists:=fields[key];exists&&string(value)!="null"&&len(value)>0&&value[0]!=91{return p,fmt.Errorf("%s must be array",key)}}
  dec:=json.NewDecoder(bytes.NewReader(raw))
  dec.DisallowUnknownFields()
+ dec.UseNumber()
  if err:=dec.Decode(&p);err!=nil{return p,err}
  if err:=dec.Decode(new(any));err!=io.EOF {if err==nil{return p,errors.New("multiple JSON values")};return p,err}
  if p.ExpectedWorldVersion<0{return p,errors.New("negative world version")}
@@ -49,7 +52,7 @@ func Decode(raw []byte)(Payload,error){
   if key==""||utf8.RuneCountInString(key)>96{return p,errors.New("invalid flag key")}
   switch v:=value.(type) {
   case nil,bool:
-  case float64:if v!=float64(int64(v)){return p,fmt.Errorf("flag %q must be integer",key)}
+  case json.Number:if _,err:=strconv.ParseInt(string(v),10,64);err!=nil{return p,fmt.Errorf("flag %q must be integer",key)}
   case string:if utf8.RuneCountInString(v)>256{return p,errors.New("flag too long")}
   default:return p,fmt.Errorf("unsupported flag %q",key)
   }
@@ -57,7 +60,7 @@ func Decode(raw []byte)(Payload,error){
  for itemID,raw:=range p.Inventory {
   if itemID==""||utf8.RuneCountInString(itemID)>96{return p,errors.New("invalid inventory ID")}
   item,ok:=raw.(map[string]any);if !ok{return p,errors.New("invalid inventory entry")}
-  quantity,ok:=item["quantity"].(float64);if !ok||quantity<1||quantity>9999||quantity!=float64(int64(quantity)){return p,errors.New("invalid inventory quantity")}
+  quantity,ok:=item["quantity"].(json.Number);if !ok||!isJSONIntegerInRange(quantity,1,9999){return p,errors.New("invalid inventory quantity")}
   if name,exists:=item["name"];exists {s,ok:=name.(string);if !ok||s==""||utf8.RuneCountInString(s)>160{return p,errors.New("invalid item name")}}
   if desc,exists:=item["description"];exists {s,ok:=desc.(string);if !ok||utf8.RuneCountInString(s)>1024{return p,errors.New("invalid item description")}}
  }
@@ -70,7 +73,16 @@ func Decode(raw []byte)(Payload,error){
     s,ok:=value.(string);if !ok||utf8.RuneCountInString(s)>max||(key=="title"&&s==""){return p,fmt.Errorf("invalid quest %s",key)}
    }
   }
-  if order,exists:=quest["order"];exists {v,ok:=order.(float64);if !ok||v < -1000000||v > 1000000{return p,errors.New("invalid quest order")}}
+  if order,exists:=quest["order"];exists {v,ok:=order.(json.Number);if !ok||!isJSONFiniteNumberInRange(v,-1000000,1000000){return p,errors.New("invalid quest order")}}
  }
  return p,nil
+}
+
+func isJSONIntegerInRange(v json.Number,min,max int64)bool{
+ n,err:=strconv.ParseInt(string(v),10,64)
+ return err==nil&&n>=min&&n<=max
+}
+func isJSONFiniteNumberInRange(v json.Number,min,max float64)bool{
+ n,err:=strconv.ParseFloat(string(v),64)
+ return err==nil&&!math.IsNaN(n)&&!math.IsInf(n,0)&&n>=min&&n<=max
 }
