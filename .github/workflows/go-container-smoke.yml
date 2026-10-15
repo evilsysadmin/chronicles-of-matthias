@@ -33,7 +33,7 @@ jobs:
             echo "ERROR: unconfigured container passed dependency readiness" >&2
             exit 1
           fi
-          test "$(docker exec chronicles-smoke id -u)" != 0
+          test "$(docker inspect chronicles-smoke --format '{{.Config.User}}')" = "65532:65532"
       - name: Refuse production read API opt-in before serving traffic
         run: |
           set -euo pipefail
