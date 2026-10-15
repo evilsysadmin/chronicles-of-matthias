@@ -67,6 +67,7 @@ func Decode(raw []byte)(Payload,error){
   if _,exists:=item["name"];!exists{item["name"]=itemID}
   if _,exists:=item["description"];!exists{item["description"]=""}
   item["id"]=itemID
+  for key:=range item {if key!="id"&&key!="name"&&key!="description"&&key!="quantity"{delete(item,key)}}
  }
  for questID,raw:=range p.Quests {
   if questID==""||utf8.RuneCountInString(questID)>96{return p,errors.New("invalid quest ID")}
@@ -82,6 +83,7 @@ func Decode(raw []byte)(Payload,error){
   for _,field:=range []string{"description","objective"}{if _,exists:=quest[field];!exists{quest[field]=""}}
   if _,exists:=quest["order"];!exists{quest["order"]=json.Number("0")}
   quest["id"]=questID
+  for key:=range quest {if key!="id"&&key!="title"&&key!="description"&&key!="objective"&&key!="order"&&key!="status"{delete(quest,key)}}
  }
  return p,nil
 }
