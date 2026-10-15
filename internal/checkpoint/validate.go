@@ -22,6 +22,11 @@ type Payload struct {
 }
 func Decode(raw []byte)(Payload,error){
  var p Payload
+ var fields map[string]json.RawMessage
+ if err:=json.Unmarshal(raw,&fields);err!=nil{return p,err}
+ if fields==nil{return p,errors.New("checkpoint must be an object")}
+ for _,key:=range []string{"expectedWorldVersion","currentMapId"}{value,exists:=fields[key];if !exists||string(value)=="null"{return p,fmt.Errorf("missing required %s",key)}}
+ if string(fields["expectedWorldVersion"])=="true"||string(fields["expectedWorldVersion"])=="false"{return p,errors.New("world version must be integer")}
  dec:=json.NewDecoder(bytes.NewReader(raw))
  dec.DisallowUnknownFields()
  if err:=dec.Decode(&p);err!=nil{return p,err}
