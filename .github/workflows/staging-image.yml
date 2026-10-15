@@ -1,0 +1,121 @@
+name: Publish SHA-pinned Chronicles staging API image
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chronicles-stage-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-image-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify staging-only publication policy
+        run: node --test test/staging-image-workflow.test.mjs
+
+  publish-staging-image:
+    needs: staging-image-policy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/evilsysadmin/chronicles-api
+      TAG: staging-${{ github.sha }}
+      CHRONICLES_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Verify repository and Go integration tests before publication
+        run: |
+          set -euo pipefail
+          npm test
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+          go test ./...
+          CGO_ENABLED=0 go build -o /tmp/chronicles-api ./cmd/chronicles-api
+      - name: Build exact-SHA staging image
+        run: |
+          set -euo pipefail
+          docker build --pull \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --label org.opencontainers.image.source="https://github.com/evilsysadmin/chronicles-of-matthias" \
+            -t "$IMAGE:$TAG" .
+      - name: Smoke before publishing (default routes remain unavailable)
+        run: |
+          set -euo pipefail
+          docker run -d --name chronicles-stage-preflight \
+            --read-only --cap-drop ALL --security-opt no-new-privileges \
+            -p 127.0.0.1:18080:8080 "$IMAGE:$TAG"
+          trap 'docker rm -f chronicles-stage-preflight >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/healthz >/dev/null; then break; fi
+            sleep 1
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/healthz)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/readyz)" = 503
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/runs)" = 404
+          test "$(docker exec chronicles-stage-preflight id -u)" != 0
+      - name: Authenticate to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish staging-only SHA tag
+        id: push
+        run: |
+          set -euo pipefail
+          docker push "$IMAGE:$TAG"
+          ref="$(docker image inspect "$IMAGE:$TAG" --format '{{index .RepoDigests 0}}')"
+          digest="${ref#*@}"
+          if ! [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "ERROR: GHCR did not provide a valid content digest" >&2
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Attest published image provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/evilsysadmin/chronicles-api
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Report exact staging digest (not a deployment)
+        run: |
+          {
+            echo "### Chronicles staging API image"
+            echo "Source SHA: \`$GITHUB_SHA\`"
+            echo "Immutable deployment reference: \`$IMAGE@${{ steps.push.outputs.digest }}\`"
+            echo "Published for staging verification only. No OCI/Render deployment or production promotion occurred."
+          } >> "$GITHUB_STEP_SUMMARY"
