@@ -78,6 +78,10 @@ func Decode(raw []byte)(Payload,error){
    }
   }
   if order,exists:=quest["order"];exists {v,ok:=order.(json.Number);if !ok||!isJSONFiniteNumberInRange(v,-1000000,1000000){return p,errors.New("invalid quest order")}}
+  if _,exists:=quest["title"];!exists{quest["title"]=questID}
+  for _,field:=range []string{"description","objective"}{if _,exists:=quest[field];!exists{quest[field]=""}}
+  if _,exists:=quest["order"];!exists{quest["order"]=json.Number("0")}
+  quest["id"]=questID
  }
  return p,nil
 }
