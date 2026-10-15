@@ -13,6 +13,15 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Resolve Mongo module graph (temporary for lockfile generation)
+        run: |
+          go mod tidy
+          echo '===BEGIN GENERATED GO.MOD===' 
+          cat go.mod
+          echo '===END GENERATED GO.MOD===' 
+          echo '===BEGIN GENERATED GO.SUM===' 
+          cat go.sum
+          echo '===END GENERATED GO.SUM===' 
       - run: go test ./...
       - run: CGO_ENABLED=0 go build -o /tmp/chronicles-api ./cmd/chronicles-api
       - run: docker build -t chronicles-api:ci .
