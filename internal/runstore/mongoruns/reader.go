@@ -25,18 +25,20 @@ var (
 	databaseName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 )
 
-// Reader handles Mongo-owned run documents, not the older Python save schema.
-// The Python-to-Go parity adapter must be implemented before an API cutover.
+// Reader inspects the established Chronicles collection shared by the Python
+// API and Chess Studio's native Go implementation. Full checkpoint JSON
+// conversion is deliberately deferred until the parity corpus is imported.
 type Reader struct {
 	client *mongo.Client
 	runs *mongo.Collection
 }
 
 type document struct {
-	RunID string `bson:"runId"`
-	OwnerID string `bson:"ownerId"`
+	RunID string `bson:"_id"`
+	OwnerID string `bson:"owner"`
 	WorldVersion int64 `bson:"worldVersion"`
-	State []byte `bson:"state"`
+	Status string `bson:"status"`
+	UpdatedAt bson.DateTime `bson:"updatedAt"`
 }
 
 func validateConfiguration(uri, database string) error {
@@ -53,8 +55,9 @@ func validateScope(ownerID, runID string) error {
 	return nil
 }
 
-// Open only establishes a dedicated database connection and a unique compound
-// index. It does NOT enable any HTTP routes or migrate existing Python runs.
+// Open establishes the connection and a non-unique index for owner-scoped
+// active-run summaries. The existing _id unique index governs run identity.
+// It does NOT enable HTTP routes or migrate existing Python/Go saves.
 func Open(ctx context.Context, uri, database string) (*Reader, error) {
 	if err := validateConfiguration(uri, database); err != nil {
 		return nil, err
@@ -72,8 +75,7 @@ func Open(ctx context.Context, uri, database string) (*Reader, error) {
 	}
 	r := &Reader{client: client, runs: client.Database(database).Collection(collectionName)}
 	if _, err := r.runs.Indexes().CreateOne(checkCtx, mongo.IndexModel{
-		Keys: bson.D{{Key: "ownerId", Value: 1}, {Key: "runId", Value: 1}},
-		Options: options.Index().SetUnique(true),
+		Keys: bson.D{{Key: "owner", Value: 1}, {Key: "status", Value: 1}, {Key: "updatedAt", Value: -1}},
 	}); err != nil {
 		cleanup()
 		return nil, fmt.Errorf("%w: index creation", runstore.ErrUnavailable)
@@ -95,7 +97,7 @@ func (r *Reader) Ping(ctx context.Context) error {
 func (d document) run() runstore.Run {
 	return runstore.Run{
 		ID: d.RunID, OwnerID: d.OwnerID, WorldVersion: d.WorldVersion,
-		State: append([]byte(nil), d.State...),
+		// State is nil until the full persisted checkpoint contract is ported.
 	}
 }
 
@@ -104,7 +106,7 @@ func (r *Reader) Get(ctx context.Context, ownerID, runID string) (runstore.Run, 
 	if err := validateScope(ownerID, runID); err != nil { return runstore.Run{}, err }
 	if runID == "" { return runstore.Run{}, ErrInvalidScope }
 	var d document
-	err := r.runs.FindOne(ctx, bson.M{"ownerId": ownerID, "runId": runID}).Decode(&d)
+	err := r.runs.FindOne(ctx, bson.M{"owner": ownerID, "_id": runID}).Decode(&d)
 	if errors.Is(err, mongo.ErrNoDocuments) { return runstore.Run{}, runstore.ErrNotFound }
 	if err != nil { return runstore.Run{}, runstore.ErrUnavailable }
 	return d.run(), nil
@@ -113,7 +115,21 @@ func (r *Reader) Get(ctx context.Context, ownerID, runID string) (runstore.Run, 
 // List is scoped to one authenticated owner and never performs a full scan.
 func (r *Reader) List(ctx context.Context, ownerID string) ([]runstore.Run, error) {
 	if err := validateScope(ownerID, ""); err != nil { return nil, err }
-	cursor, err := r.runs.Find(ctx, bson.M{"ownerId": ownerID})
+	cursor, err := r.runs.Find(ctx, bson.M{
+		"owner": ownerID,
+		"$or": bson.A{
+			bson.M{"status": "active"},
+			bson.M{"status": bson.M{"$exists": false}},
+		},
+	}, options.Find().SetSort(bson.D{{Key: "updatedAt", Value: -1}}).
+		SetLimit(30).
+		SetProjection(bson.D{
+			{Key: "_id", Value: 1},
+			{Key: "owner", Value: 1},
+			{Key: "worldVersion", Value: 1},
+			{Key: "updatedAt", Value: 1},
+			{Key: "status", Value: 1},
+		}))
 	if err != nil { return nil, runstore.ErrUnavailable }
 	defer cursor.Close(ctx)
 	var records []document
