@@ -24,6 +24,28 @@ jobs:
           done
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/healthz)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/readyz)" = 503
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/run)" = 404
+          # The real plural routes must remain absent without staging opt-in.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/runs)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/runs/fixture-run)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/runs/fixture-run/bootstrap)" = 404
           test "$(docker exec chronicles-smoke /app/chronicles-api healthcheck; echo $?)" = 0
+          if docker exec chronicles-smoke /app/chronicles-api readycheck >/dev/null 2>&1; then
+            echo "ERROR: unconfigured container passed dependency readiness" >&2
+            exit 1
+          fi
           test "$(docker exec chronicles-smoke id -u)" != 0
+      - name: Refuse production read API opt-in before serving traffic
+        run: |
+          set -euo pipefail
+          set +e
+          timeout 8s docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges \
+            -e CHRONICLES_ENABLE_READ_API=true \
+            -e CHRONICLES_ENVIRONMENT=production \
+            chronicles-api:smoke > /tmp/chronicles-invalid-start.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 1 ]; then
+            echo "ERROR: invalid production read API config did not fail closed (exit $status)" >&2
+            exit 1
+          fi
