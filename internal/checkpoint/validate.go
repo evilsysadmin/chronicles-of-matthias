@@ -26,7 +26,9 @@ func Decode(raw []byte)(Payload,error){
  if err:=json.Unmarshal(raw,&fields);err!=nil{return p,err}
  if fields==nil{return p,errors.New("checkpoint must be an object")}
  for _,key:=range []string{"expectedWorldVersion","currentMapId"}{value,exists:=fields[key];if !exists||string(value)=="null"{return p,fmt.Errorf("missing required %s",key)}}
- if string(fields["expectedWorldVersion"])=="true"||string(fields["expectedWorldVersion"])=="false"{return p,errors.New("world version must be integer")}
+ if len(fields["expectedWorldVersion"])==0||fields["expectedWorldVersion"][0]<48||fields["expectedWorldVersion"][0]>57{return p,errors.New("world version must be integer")}
+ for _,key:=range []string{"worldFlags","inventory","quests"} {if value,exists:=fields[key];exists&&string(value)!="null"&&len(value)>0&&value[0]!=123{return p,fmt.Errorf("%s must be object",key)}}
+ for _,key:=range []string{"consumedContentIds","claimedRewards"} {if value,exists:=fields[key];exists&&string(value)!="null"&&len(value)>0&&value[0]!=91{return p,fmt.Errorf("%s must be array",key)}}
  dec:=json.NewDecoder(bytes.NewReader(raw))
  dec.DisallowUnknownFields()
  if err:=dec.Decode(&p);err!=nil{return p,err}
