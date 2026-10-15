@@ -1,0 +1,28 @@
+name: Standalone Go container smoke
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t chronicles-api:smoke .
+      - name: Run as non-root, healthcheck, and reject absent gameplay API
+        run: |
+          set -euo pipefail
+          docker run -d --name chronicles-smoke --read-only --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:18080:8080 chronicles-api:smoke
+          trap 'docker rm -f chronicles-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/healthz >/dev/null; then break; fi
+            sleep 1
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/healthz)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/api/chronicles/run)" = 404
+          test "$(docker exec chronicles-smoke /app/chronicles-api healthcheck; echo $?)" = 0
+          test "$(docker exec chronicles-smoke id -u)" != 0
