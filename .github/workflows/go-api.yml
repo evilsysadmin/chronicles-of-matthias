@@ -8,20 +8,27 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      CHRONICLES_TEST_MONGODB_URI: mongodb://127.0.0.1:27017
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Resolve Mongo module graph (temporary for lockfile generation)
+      - name: Verify Go module lock is reproducible
         run: |
           go mod tidy
-          echo '===BEGIN GENERATED GO.MOD===' 
-          cat go.mod
-          echo '===END GENERATED GO.MOD===' 
-          echo '===BEGIN GENERATED GO.SUM===' 
-          cat go.sum
-          echo '===END GENERATED GO.SUM===' 
+          git diff --exit-code -- go.mod go.sum
       - run: go test ./...
       - run: CGO_ENABLED=0 go build -o /tmp/chronicles-api ./cmd/chronicles-api
       - run: docker build -t chronicles-api:ci .
