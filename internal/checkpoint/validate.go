@@ -5,6 +5,7 @@ import (
  "encoding/json"
  "errors"
  "io"
+ "strings"
  "fmt"
  "unicode/utf8"
 )
@@ -29,9 +30,13 @@ func Decode(raw []byte)(Payload,error){
  if p.CurrentMapID==""||utf8.RuneCountInString(p.CurrentMapID)>64{return p,errors.New("invalid map id")}
  if p.TerminalStatus!=nil&&*p.TerminalStatus!="completed"&&*p.TerminalStatus!="defeated"{return p,errors.New("invalid terminal status")}
  if len(p.WorldFlags)>512||len(p.Inventory)>64||len(p.Quests)>64{return p,errors.New("checkpoint collection too large")}
- for _,group:=range [][]string{p.ConsumedContentIDs,p.ClaimedRewards}{
+ for _,section:=range []struct{v any;max int}{{p.WorldFlags,65536},{p.Inventory,16384},{p.Quests,32768}} {encoded,err:=json.Marshal(section.v);if err!=nil||len(encoded)>section.max{return p,errors.New("checkpoint section too large")}}
+ for index,group:=range [][]string{p.ConsumedContentIDs,p.ClaimedRewards}{
   if len(group)>512{return p,errors.New("too many IDs")}
-  for _,id:=range group {if id==""||utf8.RuneCountInString(id)>128{return p,errors.New("invalid ID")}}
+  seen:=map[string]bool{}
+  normalizedIDs:=make([]string,0,len(group))
+  for _,id:=range group {normalized:=strings.TrimSpace(id);if normalized==""||utf8.RuneCountInString(normalized)>128{return p,errors.New("invalid ID")};if !seen[normalized]{seen[normalized]=true;normalizedIDs=append(normalizedIDs,normalized)}}
+  if index==0{p.ConsumedContentIDs=normalizedIDs}else{p.ClaimedRewards=normalizedIDs}
  }
  for key,value:=range p.WorldFlags {
   if key==""||utf8.RuneCountInString(key)>96{return p,errors.New("invalid flag key")}
