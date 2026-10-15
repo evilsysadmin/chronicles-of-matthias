@@ -1,0 +1,10 @@
+{
+  "name": "chronicles-of-matthias",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "npm test"
+  }
+}
