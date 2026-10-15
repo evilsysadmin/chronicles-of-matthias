@@ -64,6 +64,9 @@ func Decode(raw []byte)(Payload,error){
   quantity,ok:=item["quantity"].(json.Number);if !ok||!isJSONIntegerInRange(quantity,1,9999){return p,errors.New("invalid inventory quantity")}
   if name,exists:=item["name"];exists {s,ok:=name.(string);if !ok||s==""||utf8.RuneCountInString(s)>160{return p,errors.New("invalid item name")}}
   if desc,exists:=item["description"];exists {s,ok:=desc.(string);if !ok||utf8.RuneCountInString(s)>1024{return p,errors.New("invalid item description")}}
+  if _,exists:=item["name"];!exists{item["name"]=itemID}
+  if _,exists:=item["description"];!exists{item["description"]=""}
+  item["id"]=itemID
  }
  for questID,raw:=range p.Quests {
   if questID==""||utf8.RuneCountInString(questID)>96{return p,errors.New("invalid quest ID")}
