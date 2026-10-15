@@ -47,6 +47,11 @@ func handlerWithReadiness(check func(context.Context) error) http.Handler {
 func main(){
  if len(os.Args)==2 && os.Args[1]=="healthcheck" {if err:=healthcheck();err!=nil{log.Fatal(err)};return}
  if len(os.Args)!=1 {log.Fatal("usage: chronicles-api [healthcheck]")}
- server:=&http.Server{Addr:":8080",Handler:handler(),ReadHeaderTimeout:5*time.Second}
+ initCtx,cancel:=context.WithTimeout(context.Background(),8*time.Second)
+ defer cancel()
+ app,closeStore,err:=configuredHandler(initCtx,os.Getenv("CHRONICLES_MONGODB_URI"),os.Getenv("CHRONICLES_MONGODB_DATABASE"))
+ if err!=nil {log.Fatalf("MongoDB startup configuration or connection failed: %v",err)}
+ if closeStore!=nil {defer func(){_ =closeStore(context.Background())}()}
+ server:=&http.Server{Addr:":8080",Handler:app,ReadHeaderTimeout:5*time.Second}
  log.Fatal(server.ListenAndServe())
 }
