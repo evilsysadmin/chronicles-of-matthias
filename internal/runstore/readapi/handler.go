@@ -62,6 +62,10 @@ func authenticatedOwner(w http.ResponseWriter,r *http.Request,v Verifier)(string
   return "",false
  }
  owner,err:=v.VerifyOwner(r.Context(),parts[1])
+ if errors.Is(err,runstore.ErrUnavailable) {
+  writeFailure(w,err)
+  return "",false
+ }
  if err!=nil || strings.TrimSpace(owner)=="" {unauthorized(w);return "",false}
  return owner,true
 }

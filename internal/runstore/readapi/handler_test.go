@@ -18,6 +18,7 @@ func (fakeVerifier) VerifyOwner(_ context.Context,token string)(string,error){
  switch token {
  case "verified-alice":return "alice",nil
  case "verified-bob":return "bob",nil
+ case "store-offline":return "",runstore.ErrUnavailable
  default:return "",errors.New("signature invalid")
  }
 }
@@ -125,4 +126,16 @@ func TestReadAPIFailsClosedOnBackendErrors(t *testing.T){
  }
  if _,err:=New(nil,data);!errors.Is(err,ErrUnconfigured){t.Fatalf("nil auth accepted: %v",err)}
  if _,err:=New(fakeVerifier{},nil);!errors.Is(err,ErrUnconfigured){t.Fatalf("nil reader accepted: %v",err)}
+}
+
+func TestReadAPIAccountOutageReturnsUnavailable(t *testing.T){
+ h,err:=New(fakeVerifier{},&fakeReader{})
+ if err!=nil{t.Fatal(err)}
+ rec:=request(h,"GET","/api/chronicles/runs","Bearer store-offline","")
+ if rec.Code!=http.StatusServiceUnavailable {
+  t.Fatalf("account storage outage must fail closed with 503, got %d",rec.Code)
+ }
+ if rec.Header().Get("WWW-Authenticate")!=""{
+  t.Fatal("storage outage must not masquerade as invalid credentials")
+ }
 }
