@@ -41,7 +41,7 @@ func Decode(raw []byte)(Payload,error){
  if p.CurrentMapID==""||utf8.RuneCountInString(p.CurrentMapID)>64{return p,errors.New("invalid map id")}
  if p.TerminalStatus!=nil&&*p.TerminalStatus!="completed"&&*p.TerminalStatus!="defeated"{return p,errors.New("invalid terminal status")}
  if len(p.WorldFlags)>512||len(p.Inventory)>64||len(p.Quests)>64{return p,errors.New("checkpoint collection too large")}
- for _,section:=range []struct{v any;max int}{{p.WorldFlags,65536},{p.Inventory,16384},{p.Quests,32768}} {encoded,err:=json.Marshal(section.v);if err!=nil||len(encoded)>section.max{return p,errors.New("checkpoint section too large")}}
+ for _,section:=range []struct{v any;max int}{{p.WorldFlags,65536},{p.Inventory,16384},{p.Quests,32768}} {encoded,err:=canonicalJSON(section.v);if err!=nil||len(encoded)>section.max{return p,errors.New("checkpoint section too large")}}
  for index,group:=range [][]string{p.ConsumedContentIDs,p.ClaimedRewards}{
   if len(group)>512{return p,errors.New("too many IDs")}
   seen:=map[string]bool{}
@@ -95,4 +95,12 @@ func isJSONIntegerInRange(v json.Number,min,max int64)bool{
 func isJSONFiniteNumberInRange(v json.Number,min,max float64)bool{
  n,err:=strconv.ParseFloat(string(v),64)
  return err==nil&&!math.IsNaN(n)&&!math.IsInf(n,0)&&n>=min&&n<=max
+}
+
+func canonicalJSON(v any)([]byte,error){
+ var buf bytes.Buffer
+ encoder:=json.NewEncoder(&buf)
+ encoder.SetEscapeHTML(false)
+ if err:=encoder.Encode(v);err!=nil{return nil,err}
+ return bytes.TrimSuffix(buf.Bytes(),[]byte("\n")),nil
 }
