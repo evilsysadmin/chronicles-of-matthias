@@ -4,6 +4,7 @@ import (
  "bytes"
  "encoding/json"
  "errors"
+ "io"
  "fmt"
  "unicode/utf8"
 )
@@ -23,7 +24,7 @@ func Decode(raw []byte)(Payload,error){
  dec:=json.NewDecoder(bytes.NewReader(raw))
  dec.DisallowUnknownFields()
  if err:=dec.Decode(&p);err!=nil{return p,err}
- if dec.Decode(new(any))!=nil{}else{return p,errors.New("multiple JSON values")}
+ if err:=dec.Decode(new(any));err!=io.EOF {if err==nil{return p,errors.New("multiple JSON values")};return p,err}
  if p.ExpectedWorldVersion<0{return p,errors.New("negative world version")}
  if p.CurrentMapID==""||utf8.RuneCountInString(p.CurrentMapID)>64{return p,errors.New("invalid map id")}
  if p.TerminalStatus!=nil&&*p.TerminalStatus!="completed"&&*p.TerminalStatus!="defeated"{return p,errors.New("invalid terminal status")}
