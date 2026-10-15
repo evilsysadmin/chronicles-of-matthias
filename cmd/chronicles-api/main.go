@@ -61,7 +61,9 @@ func main(){
  if len(os.Args)!=1 {log.Fatal("usage: chronicles-api [healthcheck|readycheck]")}
  initCtx,cancel:=context.WithTimeout(context.Background(),8*time.Second)
  defer cancel()
- app,closeStore,err:=configuredHandler(initCtx,os.Getenv("CHRONICLES_MONGODB_URI"),os.Getenv("CHRONICLES_MONGODB_DATABASE"))
+ mongoURI,err:=mongoURIFromEnvironment()
+ if err!=nil {log.Fatal("invalid MongoDB credential source")}
+ app,closeStore,err:=configuredHandler(initCtx,mongoURI,os.Getenv("CHRONICLES_MONGODB_DATABASE"))
  if err!=nil {log.Fatalf("MongoDB startup configuration or connection failed: %v",err)}
  if closeStore!=nil {defer func(){_ =closeStore(context.Background())}()}
  server:=&http.Server{Addr:":8080",Handler:app,ReadHeaderTimeout:5*time.Second}
