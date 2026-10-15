@@ -26,5 +26,5 @@ func TestHealthzResponseContract(t *testing.T) {
 func TestUnknownRouteNotHealthy(t *testing.T) {
  rec:=httptest.NewRecorder()
  handler().ServeHTTP(rec,httptest.NewRequest("GET","/readyz",nil))
- if rec.Code!=http.StatusNotFound {t.Fatalf("readiness must not be claimed before implementation: %d",rec.Code)}
+ if rec.Code!=http.StatusServiceUnavailable {t.Fatalf("readiness must fail closed until storage is wired: %d",rec.Code)}
 }

@@ -26,8 +26,22 @@ func healthcheck() error {
  return nil
 }
 func handler() http.Handler {
+ return handlerWithReadiness(nil)
+}
+
+// handlerWithReadiness keeps liveness separate from dependency readiness.
+// Until a storage check is wired, readiness fails closed.
+func handlerWithReadiness(check func(context.Context) error) http.Handler {
  mux:=http.NewServeMux()
  mux.HandleFunc("GET /healthz",func(w http.ResponseWriter,r *http.Request){w.Header().Set("Content-Type","application/json");w.Write([]byte("{\"status\":\"ok\"}"))})
+ mux.HandleFunc("GET /readyz",func(w http.ResponseWriter,r *http.Request){
+  w.Header().Set("Content-Type","application/json")
+  if check==nil {w.WriteHeader(http.StatusServiceUnavailable);w.Write([]byte(`{"status":"not_ready"}`));return}
+  ctx,cancel:=context.WithTimeout(r.Context(),2*time.Second)
+  defer cancel()
+  if err:=check(ctx);err!=nil {w.WriteHeader(http.StatusServiceUnavailable);w.Write([]byte(`{"status":"not_ready"}`));return}
+  w.Write([]byte(`{"status":"ready"}`))
+ })
  return mux
 }
 func main(){
