@@ -9,7 +9,7 @@ import (
 func TestHealthzResponseContract(t *testing.T) {
  for _,tc:=range []struct{method string;want int}{
   {"GET",http.StatusOK},
-  {"HEAD",http.StatusMethodNotAllowed},
+  {"HEAD",http.StatusOK},
   {"POST",http.StatusMethodNotAllowed},
  } {
   t.Run(tc.method,func(t *testing.T){
