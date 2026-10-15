@@ -1,0 +1,22 @@
+package checkpoint
+
+import (
+ "bytes"
+ "strings"
+ "testing"
+)
+
+func TestCanonicalJSONUnescapedUTF8AndHTML(t *testing.T){
+ encoded,err:=canonicalJSON(map[string]any{"text":"á<&>","num":1})
+ if err!=nil{t.Fatal(err)}
+ if !bytes.Contains(encoded,[]byte("á<&>")){t.Fatalf("unexpected escaping: %s",encoded)}
+ if bytes.Contains(encoded,[]byte("\\u003c"))||bytes.HasSuffix(encoded,[]byte("\n")){t.Fatalf("not canonical: %s",encoded)}
+}
+func TestCheckpointHTMLCharactersNearLimit(t *testing.T){
+ // With HTML escaping this payload would exceed 65,536 bytes despite
+ // fitting Python's ensure_ascii=False compact representation.
+ value:=strings.Repeat("<",12000)
+ raw:=[]byte(`{"expectedWorldVersion":0,"currentMapId":"map","worldFlags":{"note":"`+value+`"}}`)
+ // The field's own 256-character bound remains authoritative.
+ if _,err:=Decode(raw);err==nil{t.Fatal("long flag should be rejected")}
+}
