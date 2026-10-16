@@ -86,5 +86,5 @@ test('React is wired to the original 3D builder with controlled lifecycle and no
   assert.match(viewport, /ResizeObserver/);
   assert.match(viewport, /disposeVisuals\(scene\)/);
   assert.match(viewport, /renderer\?\.dispose\(\)/);
-  assert.match(app, /todavía no hay comerciantes, misiones, combate, transición de mapas ni guardados/);
+  assert.match(app, /todavía no hay comerciantes, misiones, combate,\s+cambios de mapa ni guardados/);
 });
