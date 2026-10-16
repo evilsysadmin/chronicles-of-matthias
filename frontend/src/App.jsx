@@ -3,6 +3,7 @@ import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx'
 import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
 import SwordhavenViewport from './components/SwordhavenViewport.jsx';
 import SwordhavenMiniMap from './components/SwordhavenMiniMap.jsx';
+import { useLandscapeGameplay } from './chronicles/useLandscapeGameplay.js';
 import { chroniclesPartyPortraitUrl } from './chronicles/chroniclesPartyPortraitAssets.js';
 import { createSwordhavenWalkState, swordhavenWalkStep, SWORDHAVEN_DIRECTIONS } from './chronicles/swordhavenWalk.js';
 import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
@@ -72,6 +73,7 @@ export default function App() {
   const [townMapOpen, setTownMapOpen] = useState(false);
   const [townJournalOpen, setTownJournalOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const landscape = useLandscapeGameplay(page === 'town' || page === 'explore');
   const validity = validateChroniclesCharacterBuild(build);
 
   useEffect(() => {
@@ -140,6 +142,7 @@ export default function App() {
             setBuild(chosen);
             setState(createExplorationState());
             setJournalOpen(false);
+            landscape.start();
             setPage('explore');
           }} />
       </div>
@@ -235,6 +238,16 @@ export default function App() {
           </section>
         </div>
 
+        {landscape.needsRotation && (
+          <div className="chronicles-landscape-prompt" role="dialog" aria-modal="false"
+            aria-label="Chronicles se juega en apaisado">
+            <div className="chronicles-landscape-symbol" aria-hidden="true">▣ ↻</div>
+            <strong>Chronicles se juega en apaisado</strong>
+            <p>Gira el teléfono para jugar con el escenario y los controles completos.
+              Si Brave lo permite, podemos activar pantalla completa horizontal.</p>
+            <button type="button" onClick={landscape.retry}>Activar apaisado</button>
+          </div>
+        )}
         <ChroniclesJournalModal open={townJournalOpen}
           state={{ quests: {} }} entries={journalEntries}
           onClose={() => setTownJournalOpen(false)}/>
@@ -255,7 +268,7 @@ export default function App() {
             <p>Este es el frontend React autónomo en construcción. El creador de personajes y sus retratos son los originales de Chess Studio, no una simulación.</p>
             <button className="react-primary" type="button" onClick={() => setPage('forge')}>Formar compañía</button>
             <button className="react-primary react-town-entry" type="button"
-              onClick={() => { setTown(createSwordhavenWalkState()); setPage('town'); }}>
+              onClick={() => { landscape.start(); setTown(createSwordhavenWalkState()); setPage('town'); }}>
               Recorrer Swordhaven original en 3D
             </button>
             <p className="react-note">La exploración posterior es todavía parcial. No hay autenticación, combate ni guardados de partida.</p>
@@ -263,6 +276,15 @@ export default function App() {
         </section>
       ) : (
         <section className="react-expedition" aria-label="Exploración">
+          {landscape.needsRotation && (
+            <div className="chronicles-landscape-prompt" role="dialog" aria-modal="false"
+              aria-label="Chronicles se juega en apaisado">
+              <div className="chronicles-landscape-symbol" aria-hidden="true">▣ ↻</div>
+              <strong>Chronicles se juega en apaisado</strong>
+              <p>Gira el teléfono o activa el modo horizontal si tu navegador lo permite.</p>
+              <button type="button" onClick={landscape.retry}>Activar apaisado</button>
+            </div>
+          )}
           <div className="react-topline">
             <div><span>CRIPTA DE LAS OCHO CASILLAS · PREVIEW</span>
               <h2>Primera expedición</h2></div>
