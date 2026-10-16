@@ -59,3 +59,25 @@ operations must wait until the standalone API proves parity.
    explorer only after real parity, keeping a rollback point.
 
 Do not label the Vite frontend as the full game before these gates pass.
+
+## Original Chronicle journal — first in-game modal migrated
+
+Source pinned to `evilsysadmin/chess-studio@80a8700a6eb8e80620d7383832f1f483a2451500`:
+`ChroniclesJournalModal.jsx`, `ChroniclesJournalModal.css`,
+`ChroniclesQuestLog.jsx` and the canonical `campaign/intro.json`.
+The modal renders the **actual journal entries** produced by the extracted
+exploration state. The J shortcut, close button, Escape key, scrollable pages,
+focus-return and tab containment remain connected. Quests are empty when the
+preview has not started any real quest; none are fabricated to populate UI.
+
+The QuestLog imports the pure, semantically unchanged `chroniclesQuestEntries`
+selector extracted from the source content runtime instead of pulling in the
+entire Chess Studio map catalog. `useEscapeToClose` is an explicit standalone
+keyboard lifecycle adapter rather than copying the Chess Studio global history
+stack. These are the only integration modifications; the original journal
+component and CSS are unchanged.
+
+The full character sheet still requires the original combat, equipment,
+progression and spell APIs; it is **not** being faked with preview-only values.
+The public Cloudflare Pages staging site is still the existing static shell
+until ShadowOps explicitly validates and promotes the Vite/React bundle.

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
+import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
 import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
 import {
   createCanonicalChroniclesCharacterBuild,
@@ -53,6 +54,7 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [build, setBuild] = useState(() => createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY));
   const [state, setState] = useState(createExplorationState);
+  const [journalOpen, setJournalOpen] = useState(false);
   const validity = validateChroniclesCharacterBuild(build);
 
   useEffect(() => {
@@ -73,6 +75,21 @@ export default function App() {
     return () => window.removeEventListener('keydown', listener);
   }, [page]);
 
+  useEffect(() => {
+    if (page !== 'explore') return undefined;
+    const onKeyDown = event => {
+      if (event.key.toLowerCase() !== 'j' || event.repeat
+          || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      event.preventDefault();
+      // The original journal traps keydown within its portal. This handler
+      // handles J only when focus is outside the journal modal.
+      setJournalOpen(open => !open);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [page]);
+
   if (page === 'forge') {
     return (
       <div className="chronicles-react">
@@ -81,6 +98,7 @@ export default function App() {
             if (!validateChroniclesCharacterBuild(chosen).valid) return;
             setBuild(chosen);
             setState(createExplorationState());
+            setJournalOpen(false);
             setPage('explore');
           }} />
       </div>
@@ -108,8 +126,8 @@ export default function App() {
             <div><span>CRIPTA DE LAS OCHO CASILLAS · PREVIEW</span>
               <h2>Primera expedición</h2></div>
             <div className="react-top-actions">
-              <button type="button" onClick={() => setPage('forge')}>Editar compañía</button>
-              <button type="button" onClick={() => setPage('home')}>Salir</button>
+              <button type="button" onClick={() => { setJournalOpen(false); setPage('forge'); }}>Editar compañía</button>
+              <button type="button" onClick={() => { setJournalOpen(false); setPage('home'); }}>Salir</button>
             </div>
           </div>
           <p className="react-note">Mapa y lógica básica extraídos de Chronicles. El motor 3D, el combate por iniciativa y la persistencia se integrarán en las siguientes etapas; esta preview no concede experiencia ni modifica guardados.</p>
@@ -144,9 +162,15 @@ export default function App() {
               </div>
             ))}
           </section>
-          <details className="react-journal"><summary>Crónica de expedición ({state.journal.length})</summary>
-            <ol>{state.journal.map(entry => <li key={entry.id}><b>{entry.title}</b><p>{entry.body}</p></li>)}</ol>
-          </details>
+          <button className="react-journal-trigger" type="button" onClick={() => setJournalOpen(true)}>
+            Abrir crónica (J) · {state.journal.length} folios
+          </button>
+          <ChroniclesJournalModal
+            open={journalOpen}
+            state={state}
+            entries={state.journal}
+            onClose={() => setJournalOpen(false)}
+          />
         </section>
       )}
       <footer className="react-footer">Interfaz React independiente · Sin escrituras de partidas · El juego completo sigue en migración</footer>
