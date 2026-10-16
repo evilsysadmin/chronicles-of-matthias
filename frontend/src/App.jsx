@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
 import ChroniclesSaveMenu from './components/ChroniclesSaveMenu.jsx';
 import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
@@ -7,7 +7,8 @@ import SwordhavenMiniMap from './components/SwordhavenMiniMap.jsx';
 import { useLandscapeGameplay } from './chronicles/useLandscapeGameplay.js';
 import { chroniclesPartyPortraitUrl } from './chronicles/chroniclesPartyPortraitAssets.js';
 import { createSwordhavenWalkState, swordhavenWalkStep, SWORDHAVEN_DIRECTIONS } from './chronicles/swordhavenWalk.js';
-import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
+import { CHRONICLES_PARTY, createChroniclesState } from './chroniclesOfMatthias.js';
+import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chronicles/chroniclesMagic.js';
 import {
   createCanonicalChroniclesCharacterBuild,
   validateChroniclesCharacterBuild,
@@ -76,6 +77,11 @@ export default function App() {
   const [journalOpen, setJournalOpen] = useState(false);
   const landscape = useLandscapeGameplay(page === 'town' || page === 'explore');
   const validity = validateChroniclesCharacterBuild(build);
+  // Exact original MM3 party bootstrap. The interim town walk still owns
+  // camera movement until the complete game encounter runtime is wired.
+  const initialTownRun = useMemo(
+    () => createChroniclesState('swordhaven-square', build, { rules: 'mm3' }), [build]
+  );
 
   useEffect(() => {
     if (page !== 'explore') return undefined;
@@ -181,10 +187,16 @@ export default function App() {
               </div>
 
               <section className="react-town-party" aria-label="Compañía">
-                {build.characters.map(character => (
-                  <div key={character.slotId} className="react-town-party-member">
-                    <img src={chroniclesPartyPortraitUrl(character.slotId)} alt="" aria-hidden="true"/>
-                    <span>{character.name}</span>
+                {initialTownRun.party.map(member => (
+                  <div key={member.id} className="react-town-party-member">
+                    <img src={chroniclesPartyPortraitUrl(member.id)} alt="" aria-hidden="true"/>
+                    <span>{member.name}</span>
+                    <small className="react-town-party-vitals" aria-label={`Puntos de vida iniciales de ${member.name}: ${member.hp} de ${member.maxHp}`}>
+                      {member.hp}/{member.maxHp} PV
+                      {chroniclesMemberMaxSp(initialTownRun, member) > 0 && (
+                        <i> · {chroniclesMemberSp(initialTownRun, member)}/{chroniclesMemberMaxSp(initialTownRun, member)} PH</i>
+                      )}
+                    </small>
                   </div>
                 ))}
               </section>
@@ -230,7 +242,7 @@ export default function App() {
                     <p>
                       Escenario y colisiones originales de Chess Studio. Teclado: WASD/flechas y Q/E.
                       Esta vista es una migración visual: todavía no hay comerciantes, misiones, combate,
-                      cambios de mapa ni guardados. Los retratos no muestran estadísticas de partida.
+                      cambios de mapa ni guardados. Los retratos muestran los PV/PH iniciales reales del grupo MM3, pero el paseo visual no actualiza combate ni guardados.
                     </p>
                   </details>
                 </div>
