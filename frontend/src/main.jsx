@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles.css';
+import './chronicles/MM3VgaHud.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing Chronicles React root');
