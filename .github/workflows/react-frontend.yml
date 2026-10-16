@@ -24,11 +24,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test extracted React component and isolation contract
-        run: node --test frontend/test/*.test.mjs
-      - name: Install pinned React and Vite dependencies
+      - name: Install pinned React, Three.js and Vite dependencies
         working-directory: frontend
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Test original React source and authored Three.js movement
+        run: node --test frontend/test/*.test.mjs
       - name: Compile actual standalone React app at isolated /react/ staging path
         working-directory: frontend
         env:
