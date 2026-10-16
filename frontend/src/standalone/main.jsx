@@ -5,7 +5,6 @@ import ReactDOM from 'react-dom/client';
 import '../styles.css';
 import '../styles/29-motion-coherence.css';
 import '../styles/30-modal-layering.css';
-import './standalone.css';
 import { getReducedMotionPreference, reducedMotionStatus } from '../userPreferences.js';
 import App from './App.jsx';
 
