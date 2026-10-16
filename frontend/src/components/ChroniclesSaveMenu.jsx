@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './ChroniclesSaveMenu.css';
-import { chroniclesSavedExpeditionArea } from '../chronicles/standaloneSavedExpeditionArea.js';
+import { chroniclesSavedExpeditionArea } from '../chronicles/chroniclesSavedExpeditionArea.js';
 
 
 function ExpeditionMenuIcon({ kind }) {

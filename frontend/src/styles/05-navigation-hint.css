@@ -1,0 +1,19 @@
+
+
+/* Navegación secundaria: hace visible el atajo global ya soportado. */
+.navigation-back-hint {
+  margin-top: .45rem;
+  text-align: center;
+  font-size: .76rem;
+  letter-spacing: .04em;
+  color: var(--muted);
+  opacity: .78;
+}
+
+/* ESC y clic derecho no existen en una pantalla táctil: en móvil el aviso sólo
+   empuja el contenido (en entrenamiento, el tablero) por debajo del pliegue. */
+@media (pointer: coarse) {
+  .navigation-back-hint {
+    display: none;
+  }
+}

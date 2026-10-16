@@ -1,70 +1,61 @@
-name: Standalone Chronicles React frontend
+name: Chronicles frontend (verbatim Chess Studio game)
 on:
   pull_request:
     paths:
       - 'frontend/**'
-      - 'web/game/**'
+      - 'scripts/vendor_chess_studio.py'
       - '.github/workflows/react-frontend.yml'
   push:
     branches: [main]
     paths:
       - 'frontend/**'
-      - 'web/game/**'
+      - 'scripts/vendor_chess_studio.py'
       - '.github/workflows/react-frontend.yml'
 permissions:
   contents: read
 jobs:
-  build-react:
+  build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Read pinned Chess Studio commit
+        id: lock
+        run: echo "commit=$(python3 -c 'import json;print(json.load(open("frontend/VENDOR.lock.json"))["commit"])')" >> "$GITHUB_OUTPUT"
+      - name: Checkout pinned Chess Studio source
+        uses: actions/checkout@v4
+        with:
+          repository: evilsysadmin/chess-studio
+          ref: ${{ steps.lock.outputs.commit }}
+          path: .chess-studio
+          persist-credentials: false
+      - name: Prove vendored game is byte-identical to Chess Studio
+        run: python3 scripts/vendor_chess_studio.py check .chess-studio
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install pinned React, Three.js and Vite dependencies
+      - name: Install pinned dependencies
         working-directory: frontend
-        run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Test original React source and authored Three.js movement
-        run: node --test frontend/test/*.test.mjs
-      - name: Compile actual standalone React app at isolated /react/ staging path
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build against Chess Studio staging API
         working-directory: frontend
         env:
-          CHRONICLES_DEPLOY_BASE: /react/
+          VITE_API_URL: https://api-staging.chess-studio.shadowops.dpdns.org/api
+          VITE_BUILD_SHA: ${{ github.sha }}
         run: npm run build
-      - name: Verify generated entry HTML and bundles
+      - name: Verify the real game is in the bundle
         run: |
           set -euo pipefail
           test -s frontend/dist/index.html
-          grep -q 'Chronicles of Matthias' frontend/dist/index.html
-          grep -q '/react/assets/' frontend/dist/index.html
-          find frontend/dist/assets -maxdepth 1 -name '*.js' -size +0c | grep -q .
-          find frontend/dist/assets -maxdepth 1 -name '*.css' -size +0c | grep -q .
-          test "$(find frontend/dist/assets -maxdepth 1 -name '*.webp' | wc -l)" -ge 4
-      - name: Install headless Chromium for real mobile WebGL smoke
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
-      - name: Verify 360, 390, 430 px and landscape layout in Chromium
-        working-directory: frontend
-        env:
-          CI: 'true'
-        run: npx playwright test --config=playwright.config.mjs
-      - name: Attach mobile screenshot evidence (even on visual failure)
-        if: always()
-        uses: actions/upload-artifact@v4
+          ls frontend/dist/assets/ChroniclesOfMatthias-*.js
+          ls frontend/dist/assets/ChroniclesOfMatthiasTactics-*.js
+          ls frontend/dist/assets/chroniclesOfMatthiasThree-*.js
+          grep -lF '/chronicles/runs' frontend/dist/assets/*.js
+          grep -lF 'api-staging.chess-studio.shadowops.dpdns.org' frontend/dist/assets/*.js
+      - uses: actions/upload-artifact@v4
         with:
-          name: chronicles-swordhaven-mobile-screenshots
-          path: |
-            frontend/test-results/
-            frontend/playwright-report/
-          if-no-files-found: warn
-          retention-days: 5
-      - name: Keep source PR read-only; attach built artifact for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: chronicles-react-pr-build
-          path: frontend/dist/
-          if-no-files-found: error
-          retention-days: 3
+          name: chronicles-frontend-dist
+          path: frontend/dist
+          retention-days: 7

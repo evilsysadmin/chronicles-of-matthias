@@ -1,0 +1,149 @@
+/* Secondary tools belong at the edge; the brand owns the centre. */
+.global-music-dock {
+  position: fixed;
+  top: max(.75rem, env(safe-area-inset-top));
+  left: max(.75rem, env(safe-area-inset-left));
+  z-index: 70;
+  width: min(460px, calc(100vw - 1.5rem));
+  margin: 0;
+}
+
+.global-music-dock:has(.music-deck-collapsed) { width: min(290px, calc(100vw - 1.5rem)); }
+.global-music-dock .music-deck { box-shadow: 0 10px 30px rgba(0,0,0,.24); }
+.global-music-dock .live-service-status { margin: .34rem 0 0; }
+/* The pill is nowrap, but 04-operations-career capped it at the (collapsed, narrow)
+   dock width, so its border ended before "· Backend UP · NNN ms". Size it to its
+   content instead, limited only by the viewport. Narrow-phone rules below still win. */
+.global-music-dock .live-service-status {
+  width: max-content;
+  max-width: calc(100vw - 1.5rem);
+}
+.live-service-online-compact,
+.live-service-backend-compact { display: none; }
+
+.masthead-account-button,
+.masthead-logout-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: .4rem;
+  padding: .48rem .68rem;
+  border: 1px solid var(--ink-3);
+  border-radius: 999px;
+  background: rgba(0,0,0,.12);
+  color: var(--parchment-dim);
+  font: 700 .68rem var(--font-body);
+  white-space: nowrap;
+}
+.masthead-account-button:hover,
+.masthead-account-button:focus-visible { border-color: var(--brass-dim); color: var(--parchment); }
+.masthead-logout-button { border-color: color-mix(in srgb, var(--danger) 44%, var(--ink-3)); }
+.masthead-logout-button:hover:not(:disabled),
+.masthead-logout-button:focus-visible { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--parchment); }
+.masthead-logout-button:disabled { cursor: wait; opacity: .65; }
+.masthead-session-error { align-self: flex-end; max-width: 390px; margin: .4rem 0 0; font-size: .72rem; }
+
+@media (max-width: 860px) {
+  .global-music-dock:has(.music-deck-collapsed) { width: 76px; }
+  .global-music-dock .music-deck-collapsed { grid-template-columns: 42px 32px; }
+  .global-music-dock .music-deck-collapsed-track,
+  .global-music-dock .music-deck-collapsed-hint { display: none; }
+  .global-music-dock .music-deck-expand { grid-template-columns: auto auto; justify-content: center; padding-inline: .35rem; }
+  .global-music-dock .music-deck-status-light { display: none; }
+}
+
+@media (max-width: 700px) {
+  .masthead-actions { position: absolute; right: 0; }
+  .masthead-account-button,
+  .masthead-logout-button { width: 38px; min-height: 38px; justify-content: center; padding: 0; }
+  .masthead-account-button > span:last-child,
+  .masthead-logout-button > span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+
+@media (max-width: 520px) {
+  .global-music-dock {
+    top: max(.5rem, env(safe-area-inset-top));
+    left: max(.5rem, env(safe-area-inset-left));
+    width: calc(100vw - 1rem);
+  }
+  .global-music-dock:has(.music-deck-collapsed) { width: 76px; }
+  .global-music-dock .live-service-status {
+    max-width: calc(100vw - 1rem);
+  }
+
+  /* Las pantallas secundarias ya tienen un título contextual propio. En móvil
+     estrecho el wordmark global sólo compite con RetroPlayer y cuenta; Home y
+     las partidas conservan sus composiciones específicas. */
+  .app-shell:not(.app-shell-home):not(.app-shell-board-game)
+    > .masthead:not(.masthead-game-compact) .masthead-text {
+    display: none;
+  }
+  .app-shell:not(.app-shell-home):not(.app-shell-board-game)
+    > .masthead:not(.masthead-game-compact) .masthead-top-row {
+    min-height: 44px;
+  }
+
+  /* En móvil el estado de servicio de admin vive en su propia fila debajo del
+     RetroPlayer minimizado. Antes compartía la misma franja y podía montarse
+     encima del player al cambiar de ancho o al aparecer la latencia. */
+  .global-music-dock:has(.music-deck-collapsed) .live-service-status {
+    position: absolute;
+    top: 52px;
+    left: 0;
+    width: max-content;
+    max-width: min(190px, calc(100vw - 1rem));
+    margin: 0;
+    gap: .26rem;
+    padding: .28rem .38rem;
+    border-radius: 999px;
+    font-size: .58rem;
+    box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  }
+  .global-music-dock:has(.music-deck-collapsed) .live-service-online-full,
+  .global-music-dock:has(.music-deck-collapsed) .live-service-backend-full { display: none; }
+  .global-music-dock:has(.music-deck-collapsed) .live-service-online-compact,
+  .global-music-dock:has(.music-deck-collapsed) .live-service-backend-compact { display: inline; }
+  .global-music-dock:has(.music-deck-collapsed) .live-service-online-link {
+    min-width: 1.2rem;
+    text-align: center;
+    text-decoration: none;
+  }
+}
+
+/* Home empieza debajo de sus herramientas globales. El dock comparte aquí la
+   misma columna visual que el resto de la página y, sobre todo, ocupa altura
+   real: el contador de usuarios/backend ya no puede tapar Chess Studio, Hoy o
+   las primeras tarjetas. En otras vistas conserva el comportamiento flotante. */
+body:has(.home-friendly) .global-music-dock {
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 30;
+  width: min(460px, calc(100vw - 1.5rem));
+  margin: max(.7rem, env(safe-area-inset-top)) 0 .65rem max(.75rem, env(safe-area-inset-left));
+}
+
+body:has(.home-friendly) .global-music-dock:has(.music-deck-collapsed) {
+  width: min(290px, calc(100vw - 1.5rem));
+}
+
+body:has(.home-friendly) .global-music-dock .live-service-status,
+body:has(.home-friendly) .global-music-dock:has(.music-deck-collapsed) .live-service-status {
+  position: static;
+  top: auto;
+  left: auto;
+  width: max-content;
+  max-width: 100%;
+  margin: .34rem 0 0;
+}
+
+@media (max-width: 520px) {
+  body:has(.home-friendly) .global-music-dock {
+    width: calc(100vw - 1rem);
+    margin: max(.5rem, env(safe-area-inset-top)) 0 .55rem max(.5rem, env(safe-area-inset-left));
+  }
+
+  body:has(.home-friendly) .global-music-dock:has(.music-deck-collapsed) {
+    width: min(190px, calc(100vw - 1rem));
+  }
+}
