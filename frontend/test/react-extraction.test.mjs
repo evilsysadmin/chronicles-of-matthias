@@ -45,5 +45,7 @@ test('initial React integration is honest about gameplay and never requests live
   // Explicit optional navigation to the old castle is not a dependency on its
   // auth, save APIs, frontend runtime or game engine.
   assert.match(app, /window\.location\.assign\('https:\/\/staging\.chess-studio\.shadowops\.dpdns\.org\/'\)/);
-  assert.match(read('src/chroniclesOfMatthias.js'), /Temporary compatibility boundary/);
+  assert.match(read('src/chroniclesOfMatthias.js'), /export function createChroniclesState/);
+  assert.match(read('src/chroniclesOfMatthias.js'), /export function chroniclesReduce/);
+  assert.doesNotMatch(read('src/chroniclesOfMatthias.js'), /Temporary compatibility boundary/);
 });

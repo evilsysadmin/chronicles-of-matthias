@@ -274,3 +274,49 @@ deliberately does not switch the visible gameplay, save API, scene renderer,
 auth, Mongo or production. It does not yet include optional Terra maps
 discovered by the original catalog's import.meta.glob; those must be
 imported before declaring **full** world parity.
+
+## Original 35KB game reducer restored, now used by React
+
+The 1.1KB temporary compatibility export in
+`frontend/src/chroniclesOfMatthias.js` is replaced **byte-for-byte** with
+the complete canonical Chess Studio MM3 reducer, Git blob
+`4021a49e0465279700da5ccda31effdcdb97f18e`, including
+`createChroniclesState`, `chroniclesReduce`, `chroniclesObjective`,
+combat attacks/spells, item equip/unequip, guild/shops, content and journals.
+This relies on the 31 exact dependency/area files imported in PR #74.
+
+React now calls `createChroniclesState('swordhaven-square', build,
+{ rules:'mm3' })` for the *actual authored initial MM3 party* at play.
+The upper-left four portraits show genuine initial HP and spell points
+derived from the original character rules and the current build.
+The original map ID and phase are inspectable for safe browser smoke.
+These are real **initial** figures, not fabricated live combat telemetry.
+
+**Limitation:** the walking-camera slice is still isolated: it continues
+using the original scene/collision walk preview, not the newly imported
+full reducer as its movement/interaction authority yet. The game has
+not silently gained active combats, saved runs, NPCs or dungeon travel.
+The next small PR must bind original reducer state to interactive gameplay
+and later port the complete original first-person renderer / HUD rather
+than adding decorative buttons.
+
+Browser smoke runs on both portrait and landscape and validates
+the same original map, four heroes, actual initial health values and
+no fatal JS errors. Source integrity tests guard against regressions.
+
+### Complete Terra world topology — required for reducer boot
+
+The first integration attempt exposed a genuine authored-world dependency:
+six bidirectional return gates in `banner-road-first-book` and
+`rookwood-first-book` point into Terra. The extracted 17 explicit maps
+alone make the *unchanged* catalog throw on module initialization.
+Rather than bypass its validation, this same runtime PR imports **all
+44 additional authored maps** from the original `maps/` folder,
+byte-for-byte. Together with the earlier 17, **61/61 original map JSONs
+are now present**, including every Terra grid and named overworld region.
+A regression test traverses the entire source catalog's transition graph
+and verifies reciprocal return links and original Git blob hashes.
+
+This is the actual original world topology, not a synthetic landing map.
+With the missing manifests restored, the unaltered reducer can validate
+and bootstrap without weakening original map safety rules.

@@ -21,8 +21,8 @@ test('mobile Swordhaven is an immersive app shell rather than the old article', 
 });
 
 test('portrait keeps the four canonical portraits and meaningful touch controls', () => {
-  assert.match(app, /build.characters.map\(character =>/);
-  assert.match(app, /chroniclesPartyPortraitUrl\(character.slotId\)/);
+  assert.match(app, /initialTownRun.party.map\(member =>/);
+  assert.match(app, /chroniclesPartyPortraitUrl\(member.id\)/);
   assert.match(app, /TOWN_CONTROL_ACCESSIBLE\[action\]/);
   for (const [action, spoken] of [
     ['turn-left', 'Girar a la izquierda'],
@@ -58,7 +58,7 @@ test('diegetic HUD uses the real town state rather than fake MM3 status panels',
   assert.match(app, /data-town-move=\{action\}/);
   assert.match(app, /visited\?\.includes\('9,17'\)/); // no invented gate discovery
   assert.doesNotMatch(app.slice(app.indexOf("if (page === 'town')"), app.indexOf('  return (\n    <main className="chronicles-react">')),
-    /\b(?:maxHp|health|gold|experience|skillPoints)\b/);
+    /\b(?:health|gold|experience|skillPoints)\b/);
   assert.match(css, /\.react-town-frame\s*\{[^}]*height:100%/s);
   assert.match(css, /\.react-town-hud\s*\{[^}]*pointer-events:none/);
   assert.match(css, /\.react-town-controls\s*\{[^}]*position:absolute/);

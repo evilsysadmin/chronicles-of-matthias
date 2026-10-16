@@ -232,3 +232,28 @@
   .react-town-control-label{font-size:1.09rem}
   .react-town-message{font-size:1.16rem}
 }
+
+
+/* Real MM3 character bootstrap: initial PV/PH directly from the canonical
+ * world state. Nothing here simulates damage or a save that does not exist. */
+.react-town-party-member {
+  grid-template-rows: minmax(0,1fr) auto auto;
+}
+.react-town-party-member .react-town-party-vitals {
+  display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:clip;
+  color:#0d3f17!important;-webkit-text-fill-color:#0d3f17!important;
+  font:400 clamp(.72rem,1vw,1rem)/1 'Chronicles Pixel',sans-serif;
+  text-shadow:none;
+}
+.react-town-party-member .react-town-party-vitals i{
+  font:inherit;color:#163676!important;-webkit-text-fill-color:#163676!important;
+  font-style:normal;
+}
+@media(max-width:780px) and (orientation:portrait) {
+  .react-town-party-member .react-town-party-vitals{font-size:.83rem}
+  .react-town-journal{top:165px}
+}
+@media(max-width:780px) and (orientation:landscape) {
+  .react-town-party-member .react-town-party-vitals{font-size:.78rem}
+  .react-town-journal{top:145px}
+}
