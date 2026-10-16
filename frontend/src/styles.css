@@ -233,3 +233,38 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
 @media(prefers-reduced-motion:reduce){
   .react-town-controls button:active{transform:none}
 }
+
+
+/* Permission-aware landscape fallback. A webpage cannot override Android's
+   rotation lock; NEVER rotate the canvas using CSS (touch axes would break).
+   This appears only on coarse-pointer devices still reporting portrait. */
+.chronicles-landscape-prompt{
+  position:fixed;inset:0;z-index:10020;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(10px,3vh,22px);padding:24px max(20px,env(safe-area-inset-left));
+  background:radial-gradient(circle at 50% 25%,#304b51 0%,#101820 70%);
+  border:6px ridge #97825d;box-shadow:inset 0 0 0 3px #15252d;
+  text-align:center;color:#f6e2b8;
+}
+.chronicles-landscape-symbol{
+  font:700 clamp(3.3rem,18vw,6.2rem)/1 Georgia,serif;
+  color:#ddc38b;text-shadow:0 5px 12px #0008;letter-spacing:.08em;
+}
+.chronicles-landscape-prompt strong{
+  font:700 clamp(1.45rem,6vw,2.4rem)/1.2 Georgia,serif;
+}
+.chronicles-landscape-prompt p{
+  max-width:40ch;margin:0;font:400 1rem/1.5 system-ui,sans-serif;
+  color:#dadad2;
+}
+.chronicles-landscape-prompt button{
+  min-width:210px;min-height:48px;padding:11px 20px;
+  border:2px ridge #b8a475;border-radius:7px;
+  background:#28414d;color:#ffe6bb;font:700 .96rem system-ui,sans-serif;
+  touch-action:manipulation;
+}
+.chronicles-landscape-prompt button:focus-visible{outline:3px solid #ffdc8f;outline-offset:3px}
+@media (prefers-reduced-motion:no-preference){
+  .chronicles-landscape-symbol{animation:chronicles-rotate-hint 1.8s ease-out 1}
+  @keyframes chronicles-rotate-hint{0%{transform:rotate(-12deg)}70%{transform:rotate(8deg)}100%{transform:rotate(0)}}
+}
