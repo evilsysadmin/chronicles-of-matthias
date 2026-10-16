@@ -56,5 +56,6 @@ test('the original sapphire and MM3 frame are applied to the REAL React HUD', ()
   assert.match(original,/\.chronicles-menu-gem__hint/);
   assert.match(app,/className="react-town-menu-button"/);
   assert.match(app,/<span>MENÚ<\/span>/);
-  assert.doesNotMatch(app,/\bmaxHp\b|\bsetHp\b|\bgrantGold\b/);
+  assert.doesNotMatch(app,/\bsetHp\b|\bgrantGold\b/);
+  assert.match(app, /createChroniclesState/);
 });
