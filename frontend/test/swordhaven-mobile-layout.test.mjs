@@ -44,6 +44,22 @@ test('sparse narration and deeper explanation remain honest about unfinished gam
   assert.match(app, /<details className="react-town-help">/);
   assert.match(app, /todavía no hay comerciantes, misiones, combate/);
   assert.match(app, /ni guardados/);
-  assert.match(app, /onClick=\{\(\) => setTown\(createSwordhavenWalkState\(\)\)\}/);
+  assert.match(app, /aria-label="Reiniciar recorrido en Swordhaven"/);
+  assert.match(app, /setTown\(createSwordhavenWalkState\(\)\)/);
   assert.match(css, /\.react-town-message\s*\{[^}]*position:absolute/s);
+});
+
+test('diegetic HUD uses the real town state rather than fake MM3 status panels', () => {
+  assert.match(app, /<SwordhavenMiniMap state=\{town\}/);
+  assert.match(app, /<ChroniclesJournalModal open=\{townJournalOpen\}/);
+  assert.match(app, /className="react-town-objective"/);
+  assert.match(app, /className="react-town-hud"/);
+  assert.match(app, /className="react-town-menu-button"/);
+  assert.match(app, /data-town-move=\{action\}/);
+  assert.match(app, /visited\?\.includes\('9,17'\)/); // no invented gate discovery
+  assert.doesNotMatch(app.slice(app.indexOf("if (page === 'town')"), app.indexOf('  return (\n    <main className="chronicles-react">')),
+    /\b(?:maxHp|health|gold|experience|skillPoints)\b/);
+  assert.match(css, /\.react-town-frame\s*\{[^}]*height:100%/s);
+  assert.match(css, /\.react-town-hud\s*\{[^}]*pointer-events:none/);
+  assert.match(css, /\.react-town-controls\s*\{[^}]*position:absolute/);
 });
