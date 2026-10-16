@@ -20,3 +20,15 @@ test('only same-origin modules, no Chess Studio or other remote endpoints', () =
   assert.match(html, /connect-src 'none'/);
   assert.match(dockerfile, /COPY --chown=101:101 game\//);
 });
+
+test('the extracted dungeon is visible, honest about scope and supports keyboard/touch', () => {
+  assert.match(html, /id="crypt-exploration"/);
+  assert.match(html, /id="crypt-map"/);
+  assert.match(html, /Cripta de las Ocho Casillas/);
+  assert.match(html, /sin combate, cambios de región ni guardado/);
+  for (const action of ['forward', 'backward', 'turn-left', 'turn-right', 'strafe-left', 'strafe-right', 'interact']) {
+    assert.ok(html.includes('data-explore-action="' + action + '"'), action);
+  }
+  assert.match(html, /<script type="module" src="\.\/game\/exploration-preview\.js"><\/script>/);
+  assert.match(dockerfile, /COPY --chown=101:101 game\//);
+});
