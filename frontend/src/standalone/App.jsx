@@ -1,9 +1,10 @@
-// Shell standalone: login original de Chess Studio → vestíbulo → juego original.
+// Shell standalone: login original de Chess Studio → directo al juego.
 // Monta Chronicles exactamente como lo hace LabScreen en Chess Studio
-// (lazy + Suspense + onExit + petición de horizontal en el gesto de entrada).
+// (lazy + Suspense + onExit + petición de horizontal en la entrada).
+// Tactics no tiene botón propio: se abre en /#tactics.
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
-import { isLoggedIn, logout, watchSessionIdentity, getUsername } from '../auth.js';
+import { isLoggedIn, watchSessionIdentity } from '../auth.js';
 import {
   releaseChroniclesLandscape,
   requestChroniclesLandscapeOnEntry,
@@ -16,33 +17,37 @@ function Loading() {
   return <div className="menu tournament-panel lab-screen"><p className="hint-text friendly-lead">Cargando Chronicles…</p></div>;
 }
 
+function currentMode() {
+  return window.location.hash === '#tactics' ? 'chronicles-tactics' : 'chronicles';
+}
+
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
-  const [mode, setMode] = useState('hub');
+  const [mode, setMode] = useState(currentMode);
+  // Sin castillo al que volver: salir del juego reinicia el libro de expediciones.
+  const [mountKey, setMountKey] = useState(0);
 
   useEffect(() => watchSessionIdentity?.(() => setLoggedIn(isLoggedIn())), []);
+  useEffect(() => {
+    const onHash = () => setMode(currentMode());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  useEffect(() => {
+    if (loggedIn) void requestChroniclesLandscapeOnEntry();
+  }, [loggedIn]);
 
   if (!loggedIn) return <LoginScreen onLoggedIn={() => setLoggedIn(true)} />;
 
-  const exit = () => { void releaseChroniclesLandscape(); setMode('hub'); };
-  const enter = (next) => { void requestChroniclesLandscapeOnEntry(); setMode(next); };
-
-  if (mode === 'chronicles') {
-    return <Suspense fallback={<Loading />}><ChroniclesOfMatthias onExit={exit} /></Suspense>;
-  }
-  if (mode === 'chronicles-tactics') {
-    return <Suspense fallback={<Loading />}><ChroniclesOfMatthiasTactics onExit={exit} /></Suspense>;
-  }
+  const exit = () => {
+    void releaseChroniclesLandscape();
+    setMountKey((k) => k + 1);
+  };
+  const Game = mode === 'chronicles-tactics' ? ChroniclesOfMatthiasTactics : ChroniclesOfMatthias;
 
   return (
-    <main className="standalone-hub">
-      <h1>Chronicles of Matthias</h1>
-      <p className="standalone-hub__user">{getUsername()}</p>
-      <div className="standalone-hub__actions">
-        <button type="button" onClick={() => enter('chronicles')}>Jugar Chronicles</button>
-        <button type="button" onClick={() => enter('chronicles-tactics')}>Chronicles Tactics</button>
-        <button type="button" className="standalone-hub__logout" onClick={() => { logout(); setLoggedIn(false); }}>Cerrar sesión</button>
-      </div>
-    </main>
+    <Suspense fallback={<Loading />}>
+      <Game key={`${mode}-${mountKey}`} onExit={exit} />
+    </Suspense>
   );
 }
