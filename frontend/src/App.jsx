@@ -1,0 +1,155 @@
+import { useEffect, useState } from 'react';
+import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
+import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
+import {
+  createCanonicalChroniclesCharacterBuild,
+  validateChroniclesCharacterBuild,
+} from './chronicles/chroniclesCharacterBuilds.js';
+import { CHRONICLES_MM3_CLASSES } from './chronicles/chroniclesMM3Rules.js';
+import { CRYPT_MAP } from '../../web/game/crypt-map.js';
+import {
+  DIRECTIONS, activeEnemies, createExplorationState, explorationStep, visibleInteraction,
+} from '../../web/game/exploration-core.js';
+
+const FACING = ['↑', '→', '↓', '←'];
+const KEY_MOVES = {
+  ArrowUp: 'forward', w: 'forward', ArrowDown: 'backward', s: 'backward',
+  ArrowLeft: 'turn-left', a: 'turn-left', ArrowRight: 'turn-right', d: 'turn-right',
+  q: 'strafe-left', e: 'strafe-right',
+};
+const COMMANDS = [
+  ['turn-left', '↶ Girar'], ['forward', '↑ Avanzar'], ['turn-right', '↷ Girar'],
+  ['strafe-left', '← Lateral'], ['backward', '↓ Atrás'], ['strafe-right', '→ Lateral'],
+];
+
+function AuthoredCryptMap({ state }) {
+  const enemies = new Map(activeEnemies(state).map(enemy => {
+    const position = state.enemyPositions?.[enemy.id]
+      || (enemy.positionKey && enemy.positions?.[state[enemy.positionKey]])
+      || { x: enemy.x, y: enemy.y };
+    return [position.x + ',' + position.y, enemy];
+  }));
+  return (
+    <div className="react-crypt-map" role="img"
+      aria-label={`Cripta original. Posición ${state.x + 1},${state.y + 1}; rumbo ${DIRECTIONS[state.direction]?.label}; ${enemies.size} enemigos activos.`}>
+      {CRYPT_MAP.grid.flatMap((row, y) => [...row].map((tile, x) => {
+        const enemy = enemies.get(x + ',' + y);
+        const party = x === state.x && y === state.y;
+        const symbol = party ? FACING[state.direction] : enemy ? '✹'
+          : tile === 'X' ? '◆' : tile === 'S' ? (state.sigilAwake ? '✦' : '◇')
+          : (x === 5 && y === 5) ? '⚙' : tile === '#' ? '' : '·';
+        return (
+          <span key={x + ',' + y}
+            className={['react-crypt-cell', tile === '#' ? 'wall' : '', party ? 'party' : '',
+              enemy ? 'enemy' : '', tile === 'S' ? 'sigil' : '', tile === 'X' ? 'gate' : ''].filter(Boolean).join(' ')}
+            title={enemy?.name || ''}>{symbol}</span>
+        );
+      }))}
+    </div>
+  );
+}
+
+export default function App() {
+  const [page, setPage] = useState('home');
+  const [build, setBuild] = useState(() => createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY));
+  const [state, setState] = useState(createExplorationState);
+  const validity = validateChroniclesCharacterBuild(build);
+
+  useEffect(() => {
+    if (page !== 'explore') return undefined;
+    const listener = event => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      const action = KEY_MOVES[event.key.toLowerCase() === 'arrowup' ? 'ArrowUp'
+        : event.key.toLowerCase() === 'arrowdown' ? 'ArrowDown'
+        : event.key.toLowerCase() === 'arrowleft' ? 'ArrowLeft'
+        : event.key.toLowerCase() === 'arrowright' ? 'ArrowRight'
+        : event.key.toLowerCase()];
+      if (!action) return;
+      event.preventDefault();
+      setState(previous => explorationStep(previous, action));
+    };
+    window.addEventListener('keydown', listener);
+    return () => window.removeEventListener('keydown', listener);
+  }, [page]);
+
+  if (page === 'forge') {
+    return (
+      <div className="chronicles-react">
+        <ChroniclesCharacterSetup currentBuild={build} onExit={() => setPage('home')}
+          onConfirm={chosen => {
+            if (!validateChroniclesCharacterBuild(chosen).valid) return;
+            setBuild(chosen);
+            setState(createExplorationState());
+            setPage('explore');
+          }} />
+      </div>
+    );
+  }
+
+  return (
+    <main className="chronicles-react">
+      <header className="chronicles-react-header">
+        <div><small>CHRONICLES OF MATTHIAS · REACT MIGRATION</small><h1>Crónicas de Matthias</h1></div>
+        <span className="react-stage">STAGING · REACT</span>
+      </header>
+      {page === 'home' ? (
+        <section className="react-home">
+          <div className="react-intro"><span>LIBRO I · LA COMPAÑÍA</span>
+            <h2>La aventura comienza con una decisión.</h2>
+            <p>Este es el frontend React autónomo en construcción. El creador de personajes y sus retratos son los originales de Chess Studio, no una simulación.</p>
+            <button className="react-primary" type="button" onClick={() => setPage('forge')}>Formar compañía</button>
+            <p className="react-note">La exploración posterior es todavía parcial. No hay autenticación, combate ni guardados de partida.</p>
+          </div>
+        </section>
+      ) : (
+        <section className="react-expedition" aria-label="Exploración">
+          <div className="react-topline">
+            <div><span>CRIPTA DE LAS OCHO CASILLAS · PREVIEW</span>
+              <h2>Primera expedición</h2></div>
+            <div className="react-top-actions">
+              <button type="button" onClick={() => setPage('forge')}>Editar compañía</button>
+              <button type="button" onClick={() => setPage('home')}>Salir</button>
+            </div>
+          </div>
+          <p className="react-note">Mapa y lógica básica extraídos de Chronicles. El motor 3D, el combate por iniciativa y la persistencia se integrarán en las siguientes etapas; esta preview no concede experiencia ni modifica guardados.</p>
+          <div className="react-expedition-layout">
+            <section className="react-board">
+              <AuthoredCryptMap state={state}/>
+              <p className="react-map-legend">↑ Grupo · ✹ Enemigo · ◇ Sello · ◆ Puerta · ⚙ Palanca</p>
+            </section>
+            <section className="react-actions">
+              <p className="react-coordinates">{`Columna ${state.x + 1} · Fila ${state.y + 1} · Rumbo ${DIRECTIONS[state.direction]?.label} · Turno ${state.turns}`}</p>
+              <p className="react-message" role="status" aria-live="polite">{state.message}</p>
+              <div className="react-control-grid">
+                {COMMANDS.map(([action, label]) => (
+                  <button type="button" key={action}
+                    onClick={() => setState(previous => explorationStep(previous, action))}>{label}</button>
+                ))}
+              </div>
+              <button className="react-primary" type="button"
+                onClick={() => setState(previous => explorationStep(previous, 'interact'))}>
+                {visibleInteraction(state)?.label || 'Interactuar'}
+              </button>
+              <button className="react-muted" type="button"
+                onClick={() => setState(createExplorationState())}>Reiniciar exploración</button>
+              <p className="react-note">Teclado: WASD o flechas para avanzar, retroceder y girar. Q/E para movimiento lateral.</p>
+            </section>
+          </div>
+          <section className="react-party" aria-label="Compañía">
+            {validity.valid && build.characters.map(person => (
+              <div key={person.slotId}>
+                <strong>{person.name}</strong>
+                <span>{CHRONICLES_MM3_CLASSES[person.classId]?.label}</span>
+              </div>
+            ))}
+          </section>
+          <details className="react-journal"><summary>Crónica de expedición ({state.journal.length})</summary>
+            <ol>{state.journal.map(entry => <li key={entry.id}><b>{entry.title}</b><p>{entry.body}</p></li>)}</ol>
+          </details>
+        </section>
+      )}
+      <footer className="react-footer">Interfaz React independiente · Sin escrituras de partidas · El juego completo sigue en migración</footer>
+    </main>
+  );
+}

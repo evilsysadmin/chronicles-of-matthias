@@ -1,0 +1,49 @@
+name: Standalone Chronicles React frontend
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'web/game/**'
+      - '.github/workflows/react-frontend.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'web/game/**'
+      - '.github/workflows/react-frontend.yml'
+permissions:
+  contents: read
+jobs:
+  build-react:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test extracted React component and isolation contract
+        run: node --test frontend/test/*.test.mjs
+      - name: Install pinned React and Vite dependencies
+        working-directory: frontend
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Compile actual standalone React app
+        working-directory: frontend
+        run: npm run build
+      - name: Verify generated entry HTML and bundles
+        run: |
+          set -euo pipefail
+          test -s frontend/dist/index.html
+          grep -q 'Chronicles of Matthias' frontend/dist/index.html
+          find frontend/dist/assets -maxdepth 1 -name '*.js' -size +0c | grep -q .
+          find frontend/dist/assets -maxdepth 1 -name '*.css' -size +0c | grep -q .
+          test "$(find frontend/dist/assets -maxdepth 1 -name '*.webp' | wc -l)" -ge 4
+      - name: Keep source PR read-only; attach built artifact for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicles-react-pr-build
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 3

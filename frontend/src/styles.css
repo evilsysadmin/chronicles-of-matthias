@@ -1,0 +1,41 @@
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#10171c;color:#eee6d8;--text:#eee6d8}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 68% 15%,#253c3f 0%,#10171c 65%);color:#eee6d8}
+button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #ffdb9b;outline-offset:3px}
+.chronicles-react{min-height:100vh;max-width:1200px;padding:clamp(16px,4vw,44px);margin:auto}
+.chronicles-react-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-bottom:26px;border-bottom:1px solid #566058}
+.chronicles-react-header small,.react-intro>span,.react-topline span{color:#d8b97d;font-size:.71rem;letter-spacing:.19em;font-weight:800}
+.chronicles-react-header h1{font:clamp(1.6rem,4vw,2.8rem)/1.12 Georgia,serif;margin:8px 0 0}
+.react-stage{border:1px solid #897650;border-radius:50px;padding:8px 14px;color:#dbca9e;font-size:.75rem}
+.react-home{min-height:min(65vh,700px);display:grid;place-items:center;padding:50px 0}
+.react-intro{max-width:700px;padding:clamp(24px,6vw,65px);border:1px solid #796b55;background:linear-gradient(145deg,#283736,#141f25);box-shadow:0 20px 70px #0007}
+.react-intro h2,.react-expedition h2{font:clamp(2rem,5vw,3.5rem)/1.12 Georgia,serif;color:#ebd4a0;margin:16px 0 14px}
+.react-intro p,.react-note{line-height:1.6;color:#cad0c9}
+.react-primary,.react-top-actions button,.react-control-grid button,.react-muted{border:1px solid #987d51;background:#503c23;color:#f9e4b7;min-height:46px;padding:10px 17px;border-radius:7px}
+.react-primary:hover,.react-control-grid button:hover{background:#69502f}
+.react-muted,.react-top-actions button{background:#24363c;border-color:#62706c;color:#eee6d8}
+.react-expedition{padding-top:26px}
+.react-topline{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px}
+.react-topline h2{font-size:clamp(1.7rem,4vw,2.7rem);margin:8px 0}
+.react-top-actions{display:flex;gap:8px}
+.react-expedition-layout{display:grid;grid-template-columns:minmax(0,500px) minmax(0,1fr);gap:clamp(16px,3vw,36px);align-items:start;margin-top:20px}
+.react-board{max-width:520px;width:100%}
+.react-crypt-map{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));aspect-ratio:1;border:5px ridge #867450;box-shadow:0 20px 55px #0008;overflow:hidden}
+.react-crypt-cell{min-width:0;min-height:0;display:grid;place-items:center;background:radial-gradient(circle at 45% 35%,#2f4142,#15242a);border:1px solid #36494a;color:#bbcac5;font:900 clamp(.9rem,3vw,1.8rem) Georgia,serif}
+.react-crypt-cell.wall{background:linear-gradient(130deg,#4f5859,#2c3438);border-color:#636968;box-shadow:inset 2px 2px 5px #0008}
+.react-crypt-cell.party{background:#476760;color:#ffe4a0;box-shadow:inset 0 0 0 3px #ddc185}
+.react-crypt-cell.enemy{color:#f78c7b}.react-crypt-cell.sigil,.react-crypt-cell.gate{color:#e5bb72}
+.react-map-legend,.react-note{font-size:.83rem}
+.react-actions{display:flex;flex-direction:column;gap:9px}
+.react-coordinates{font-size:.85rem;color:#d7b87b;margin:0 0 8px;font-weight:700}
+.react-message{min-height:76px;background:#1b282d;border-left:3px solid #baa069;padding:16px;margin:0;color:#eee3c8;font:1.04rem/1.55 Georgia,serif}
+.react-control-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.react-control-grid button{background:#243a3e;border-color:#5b6d67;padding:11px 5px;font-size:.86rem}
+.react-actions>.react-primary,.react-actions>.react-muted{width:100%}
+.react-party{margin-top:25px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.react-party>div{border:1px solid #5f6654;background:#1d2b2f;padding:12px;min-width:0}
+.react-party strong,.react-party span{display:block;overflow-wrap:anywhere}.react-party span{font-size:.75rem;margin-top:6px;color:#c5ae83}
+.react-journal{border:1px solid #5f6654;margin-top:18px;padding:15px}.react-journal summary{cursor:pointer}.react-journal li{margin:12px 0}.react-journal p{color:#b9c7c4}
+.react-footer{margin:30px 0 0;color:#91a7a7;font-size:.79rem}
+@media(max-width:780px){.react-expedition-layout{grid-template-columns:1fr}.react-board{max-width:460px;margin:auto}.react-party{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.chronicles-react{padding:14px}.react-control-grid button{font-size:.73rem}.react-crypt-cell{font-size:1.13rem}}
