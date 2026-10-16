@@ -50,6 +50,12 @@ JS_IMPORT = re.compile(
     r"""|\bimport\(\s*['"]([^'"]+)['"]\s*\)"""
     r"""|new\s+URL\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url"""
 )
+# Vite glob imports: import.meta.glob('./maps/*.json') or an array of patterns.
+GLOB_CALL = re.compile(r"""import\.meta\.glob\(\s*(\[[^\]]*\]|['"][^'"]+['"])""")
+GLOB_PATTERN = re.compile(r"""['"]([^'"]+)['"]""")
+# Anything dynamic we cannot resolve statically must stop vendoring, never
+# silently drop files (a missing glob once shipped a game without 44 maps).
+DYNAMIC = re.compile(r"""import\(\s*[^'"\s)]|new\s+URL\(\s*`|import\.meta\.glob\(\s*[^'"\[\s]""")
 CSS_IMPORT = re.compile(r"""@import\s+(?:url\()?\s*['"]?([^'")\s;]+)""")
 CSS_URL = re.compile(r"""url\(\s*['"]?([^'")]+)['"]?\s*\)""")
 
@@ -85,6 +91,21 @@ def closure(src_root: Path) -> tuple[list[str], set[str]]:
         if path.suffix in JS_EXT:
             text = path.read_text(encoding="utf-8", errors="replace")
             specs = [next(g for g in m.groups() if g) for m in JS_IMPORT.finditer(text)]
+            for m in DYNAMIC.finditer(text):
+                unresolved.append(f"{path.relative_to(src_root)} -> unsupported dynamic import: {m.group(0)}")
+            for call in GLOB_CALL.findall(text):
+                for pattern in GLOB_PATTERN.findall(call):
+                    if pattern.startswith("!") or not pattern.startswith("."):
+                        unresolved.append(f"{path.relative_to(src_root)} -> unsupported glob: {pattern}")
+                        continue
+                    hits = sorted(path.parent.glob(pattern))
+                    if not hits:
+                        unresolved.append(f"{path.relative_to(src_root)} -> empty glob: {pattern}")
+                    for hit in hits:
+                        hit = hit.resolve()
+                        hit.relative_to(src_root)
+                        if hit.is_file():
+                            stack.append(hit)
         elif path.suffix == ".css":
             text = path.read_text(encoding="utf-8", errors="replace")
             specs = CSS_IMPORT.findall(text) + CSS_URL.findall(text)

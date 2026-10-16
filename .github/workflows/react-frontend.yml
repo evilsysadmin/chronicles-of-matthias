@@ -54,6 +54,21 @@ jobs:
           ls frontend/dist/assets/chroniclesOfMatthiasThree-*.js
           grep -lF '/chronicles/runs' frontend/dist/assets/*.js
           grep -lF 'api-staging.chess-studio.shadowops.dpdns.org' frontend/dist/assets/*.js
+      - name: Mount smoke — enter Chronicles and Tactics without crashing
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-audit --no-fund playwright@1
+          npx playwright install --with-deps chromium
+          npx vite preview --port 4173 --strictPort &
+          until curl -fs -o /dev/null http://localhost:4173/; do sleep 0.5; done
+          node smoke/mount.mjs http://localhost:4173/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chronicles-mount-smoke
+          path: frontend/smoke-*.png
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: chronicles-frontend-dist
