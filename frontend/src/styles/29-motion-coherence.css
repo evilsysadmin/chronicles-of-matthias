@@ -1,0 +1,98 @@
+/* Motion coherence: keep status/dialogue feedback restrained without changing
+ * lifecycle timing or gameplay semantics. Use dedicated keyframe names so the
+ * shared legacy statusPulse animation used by other surfaces is untouched. */
+
+@keyframes status-line-pulse-coherent {
+  0% { opacity: 0; transform: translateY(-2px) scale(.99); }
+  28% { opacity: 1; transform: translateY(0) scale(1.015); }
+  48% { transform: translateY(0) scale(1); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.status-line.pulse {
+  animation-name: status-line-pulse-coherent;
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes matthias-board-bubble-life-coherent {
+  0% { opacity: 0; transform: translateY(2px) scale(.99); }
+  8%, 78% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-1px) scale(.995); visibility: hidden; }
+}
+
+.matthias-board-bubble {
+  animation-name: matthias-board-bubble-life-coherent;
+}
+
+@keyframes audience-in-coherent {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
+.audience-reaction {
+  animation-name: audience-in-coherent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-line.pulse,
+  .audience-reaction {
+    animation: none;
+  }
+}
+
+/* High-contrast OS palettes replace normal color, alpha and shadow cues.
+ * Preserve board state with system colors plus distinct geometry so focus,
+ * selection and tactical targets remain readable without changing gameplay. */
+@media (forced-colors: active) {
+  .board-grid {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .square:focus-visible,
+  .square.last-move:focus-visible,
+  .square.mistake-move:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+    box-shadow: none;
+  }
+
+  .square.selected::after {
+    border: 3px solid Highlight;
+    forced-color-adjust: none;
+  }
+
+  .square.legal-move::before {
+    width: 28%;
+    height: 28%;
+    border: 2px solid Canvas;
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .square.legal-capture::before {
+    inset: 7%;
+    border: 3px dashed Highlight;
+    background: transparent;
+    forced-color-adjust: none;
+  }
+
+  .square.king-in-check::after {
+    border: 4px double CanvasText;
+    box-shadow: none;
+    animation: none;
+    forced-color-adjust: none;
+  }
+
+  .square.hint-move::after {
+    border: 2px dashed CanvasText;
+    animation: none;
+    forced-color-adjust: none;
+  }
+
+  .square.mistake-move::before {
+    border: 3px dotted CanvasText;
+    forced-color-adjust: none;
+  }
+}

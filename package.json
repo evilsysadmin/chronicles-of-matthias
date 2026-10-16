@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test frontend/test/*.test.mjs test/*.test.mjs tests/*.test.mjs web/*.test.mjs web/game/*.test.mjs",
+    "test": "node --test test/*.test.mjs tests/*.test.mjs web/*.test.mjs web/game/*.test.mjs",
     "check": "npm test"
   }
 }

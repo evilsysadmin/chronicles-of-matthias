@@ -1,0 +1,20 @@
+.standalone-hub {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 16px;
+  text-align: center;
+}
+.standalone-hub h1 { margin: 0; }
+.standalone-hub__user { margin: 0; opacity: 0.7; }
+.standalone-hub__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(320px, 100%);
+}
+.standalone-hub__actions button { padding: 14px 18px; font-size: 1rem; }
+.standalone-hub__logout { opacity: 0.75; }

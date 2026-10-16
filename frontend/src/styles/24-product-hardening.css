@@ -1,0 +1,517 @@
+/* Product hardening: onboarding, accesibilidad operativa y SLOs. */
+.skip-link {
+  position: fixed;
+  z-index: 5000;
+  top: .6rem;
+  left: .6rem;
+  transform: translateY(-160%);
+  padding: .55rem .8rem;
+  border: 2px solid var(--brass);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--parchment);
+  font-weight: 800;
+  text-decoration: none;
+}
+.skip-link:focus { transform: translateY(0); }
+
+.home-start-guide-path > button { position: relative; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; column-gap: .5rem; }
+.home-start-guide-path > button > i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  grid-row: 1 / span 2;
+  place-items: center;
+  border: 1px solid var(--ink-3);
+  border-radius: 50%;
+  color: var(--parchment-dim);
+  font: 800 .65rem/1 var(--font-mono);
+  font-style: normal;
+}
+.home-start-guide-path > button > b,
+.home-start-guide-path > button > small { grid-column: 2; }
+.home-start-guide-path > button.is-next { border-color: color-mix(in srgb, var(--brass) 58%, var(--line-soft)); background: color-mix(in srgb, var(--brass) 7%, rgba(0,0,0,.12)); }
+.home-start-guide-path > button.is-next > i { border-color: var(--brass); color: var(--brass); }
+.home-start-guide-path > button.is-done { opacity: .82; }
+.home-start-guide-path > button.is-done > i { border-color: color-mix(in srgb, var(--success) 65%, var(--ink-3)); color: var(--success); }
+
+.admin-observability-launcher-kpis > .admin-slo-kpi { grid-column: span 2; align-content: start; }
+.admin-slo-kpi small { display: block; margin-top: .2rem; color: var(--parchment-dim); font-size: .6rem; line-height: 1.35; }
+.admin-slo-kpi.is-warn { border-color: color-mix(in srgb, var(--danger) 52%, var(--ink-3)); }
+.admin-slo-kpi.is-warn strong { color: var(--danger); }
+
+@media (pointer: coarse) {
+  :where(button, a, summary, [role="button"]) { min-height: 44px; }
+}
+
+@media (max-width: 700px) {
+  .admin-observability-launcher-kpis > .admin-slo-kpi { grid-column: 1 / -1; }
+}
+
+@media (forced-colors: active) {
+  .skip-link,
+  .home-start-guide-path > button.is-next,
+  .admin-slo-kpi.is-warn { border: 2px solid CanvasText; }
+  :where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid Highlight; }
+}
+
+/* dm46q · Combat: el retro-player forma parte del rail táctico, igual que en
+   una partida normal. Nunca se auto-coloca en una fila fantasma del grid. */
+.combat-board-live-row {
+  grid-template-columns: max-content minmax(280px, 310px);
+  grid-template-areas: "board chat";
+  gap: 1rem;
+  justify-items: stretch;
+}
+.combat-game-side-column {
+  width: min(100%, 310px);
+  height: min(620px, calc(100dvh - 8rem));
+  max-height: 620px;
+}
+.combat-side-music { flex: 0 0 auto; }
+.combat-side-music .music-deck { width: 100%; }
+.combat-side-music .music-deck-expanded { max-height: 290px; overflow-y: auto; }
+.combat-tactical-panel { height: auto; flex: 1 1 0; min-height: 0; }
+
+/* dm46t · Layout táctico de Combat: una sola fuente de verdad para el tamaño
+   del tablero. En escritorio se adapta a ancho y alto del viewport; el rail
+   comparte exactamente su altura visual. En tablet/móvil el tablero usa el
+   ancho disponible y el rail baja debajo. */
+.combat-battle-screen {
+  --combat-board-size: min(608px, calc(100dvh - 170px), calc(100vw - 420px));
+  --combat-board-shell-height: calc(var(--combat-board-size) + 34px);
+}
+.combat-board-live-row {
+  grid-template-columns: max-content minmax(280px, 310px);
+  grid-template-areas: "board chat";
+  gap: 1rem;
+  align-items: start;
+  justify-items: stretch;
+}
+.combat-battle-screen .board-grid {
+  width: var(--combat-board-size);
+  height: var(--combat-board-size);
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+}
+.combat-battle-screen .rank-labels {
+  height: var(--combat-board-size);
+  grid-template-rows: repeat(8, 1fr);
+}
+.combat-battle-screen .file-labels {
+  width: var(--combat-board-size);
+  grid-template-columns: repeat(8, 1fr);
+}
+.combat-game-side-column {
+  width: min(100%, 310px);
+  height: var(--combat-board-shell-height);
+  max-height: var(--combat-board-shell-height);
+  overflow: hidden;
+}
+.combat-side-music { flex: 0 0 auto; }
+.combat-side-music .music-deck { width: 100%; }
+.combat-side-music .music-deck-expanded { max-height: min(260px, 38dvh); overflow-y: auto; }
+.combat-tactical-panel { height: auto; flex: 1 1 0; min-height: 0; overflow: hidden; }
+.combat-tactical-panel .combat-log-section { min-height: 0; overflow: hidden; }
+.combat-tactical-panel .combat-log-list { max-height: none; overflow-y: auto; }
+
+@media (max-width: 980px) {
+  .combat-battle-screen {
+    --combat-board-size: min(608px, calc(100vw - 46px));
+    --combat-board-shell-height: auto;
+  }
+  .combat-board-live-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "board" "chat";
+    justify-items: center;
+  }
+  .combat-game-layout,
+  .combat-game-layout .board-column,
+  .combat-board-live-row,
+  .combat-board-live-row .game-board-stack { width: 100%; max-width: 100%; }
+  .combat-battle-screen { width: 100%; }
+  .combat-battle-screen .board-wrap { max-width: 100%; box-sizing: border-box; }
+  .combat-game-side-column { width: min(100%, 646px); height: auto; max-height: none; overflow: visible; }
+  .combat-side-music .music-deck-expanded { max-height: none; }
+  .combat-tactical-panel { max-height: 430px; }
+}
+
+@media (max-width: 620px) {
+  .combat-battle-screen { --combat-board-size: min(608px, calc(100vw - 24px)); }
+  .combat-game-side-column { width: 100%; }
+}
+
+/* dm46q · Grafana/Tempo diagnostics stay compact and actionable. */
+.admin-grafana-shortcuts {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+.admin-grafana-shortcuts a,
+.admin-tempo-check > a {
+  color: var(--parchment-dim);
+  font: 650 .58rem var(--font-mono);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(198,164,93,.22);
+  padding: .18rem .04rem;
+}
+.admin-grafana-shortcuts a:hover,
+.admin-tempo-check > a:hover { color: var(--brass); border-color: var(--brass-dim); }
+.admin-tempo-check {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: .45rem .6rem;
+  min-width: min(100%, 360px);
+}
+.admin-tempo-check small {
+  color: var(--parchment-dim);
+  font: .57rem/1.35 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.admin-tempo-check code { color: var(--brass); font-size: .55rem; }
+@media (max-width: 700px) {
+  .admin-grafana-shortcuts { width: 100%; }
+  .admin-tempo-check { grid-template-columns: 1fr; width: 100%; }
+  .admin-tempo-check .secondary-btn { width: 100%; }
+}
+
+/* Campaña · Mercado es una herramienta táctica, no un enlace escondido al
+   final de un briefing. Reiniciar existe, pero se mantiene claramente como
+   acción secundaria y destructiva sólo para la operación temporal. */
+.campaign-command-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin: .5rem 0 .65rem;
+}
+.campaign-command-actions .secondary-btn { min-height: 38px; padding: .55rem .78rem; }
+.campaign-market-primary {
+  border-color: color-mix(in srgb, var(--brass) 56%, var(--ink-3));
+  background: color-mix(in srgb, var(--brass) 9%, rgba(0,0,0,.14));
+  color: var(--parchment);
+}
+.campaign-market-primary:hover,
+.campaign-market-primary:focus-visible { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 15%, rgba(0,0,0,.12)); }
+.campaign-restart-action { color: var(--parchment-dim); }
+.campaign-restart-action:hover,
+.campaign-restart-action:focus-visible { border-color: color-mix(in srgb, var(--danger) 54%, var(--ink-3)); color: var(--parchment); }
+@media (max-width: 620px) {
+  .campaign-command-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .campaign-command-actions .secondary-btn { width: 100%; }
+}
+
+/* Home · el desafío diario se comporta como una misión compacta, no como una
+   tarjeta-banner con metros cuadrados vacíos. Tres chips muestran qué queda
+   por hacer y la racha se lee de un vistazo. */
+.home-friendly .home-today-card {
+  grid-template-columns: auto minmax(240px, 1fr) minmax(270px, auto) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: .8rem;
+  row-gap: .28rem;
+  min-height: 0;
+  padding: .62rem .72rem;
+}
+.home-today-emblem { grid-row: 1 / span 2; }
+.home-today-copy { grid-column: 2; grid-row: 1 / span 2; }
+.home-today-copy small { white-space: normal; line-height: 1.3; }
+.home-today-missions {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(74px, 1fr));
+  gap: .3rem;
+}
+.home-today-missions > span,
+.home-today-missions > button {
+  display: flex;
+  align-items: center;
+  gap: .28rem;
+  min-height: 28px;
+  padding: .28rem .42rem;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 7px;
+  background: rgba(0,0,0,.10);
+  color: var(--parchment-dim);
+  font: 650 .58rem/1 var(--font-mono);
+}
+.home-today-missions > span i, .home-today-missions > button i { color: var(--brass-dim); font-style: normal; }
+.home-today-missions > span.done, .home-today-missions > button.done { border-color: rgba(95,170,110,.36); background: rgba(95,170,110,.07); color: var(--parchment); }
+.home-today-missions > span.done i, .home-today-missions > button.done i { color: var(--success); }
+.home-today-streaks {
+  grid-column: 3;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .4rem;
+  color: var(--parchment-dim);
+  font: .56rem/1 var(--font-mono);
+}
+.home-today-streaks b { color: var(--parchment); }
+.home-today-streaks > i { opacity: .45; font-style: normal; }
+.home-today-actions { grid-column: 4; grid-row: 1 / span 2; align-self: center; }
+
+@media (max-width: 980px) {
+  .home-friendly .home-today-card { grid-template-columns: auto minmax(0,1fr) auto; }
+  .home-today-copy { grid-column: 2; grid-row: 1; }
+  .home-today-missions { grid-column: 2; grid-row: 2; }
+  .home-today-streaks { grid-column: 2; grid-row: 3; }
+  .home-today-emblem { grid-row: 1 / span 3; }
+  .home-today-actions { grid-column: 3; grid-row: 1 / span 3; }
+}
+@media (max-width: 620px) {
+  .home-friendly .home-today-card { grid-template-columns: auto minmax(0,1fr); }
+  .home-today-emblem { grid-row: 1; }
+  .home-today-copy { grid-column: 2; grid-row: 1; }
+  .home-today-missions { grid-column: 1 / -1; grid-row: 2; }
+  .home-today-streaks { grid-column: 1 / -1; grid-row: 3; }
+  .home-today-actions { grid-column: 1 / -1; grid-row: 4; width: 100%; }
+  .home-today-actions > button { width: 100%; }
+}
+
+/* dm46v · Combat Chess product polish: one visual language for routes, bosses,
+   market and debrief. Gold = action/reward, green = safe, red = danger,
+   blue = intel. Advanced detail stays secondary. */
+.campaign-route-decision {
+  position: absolute;
+  left: 50%;
+  bottom: -2.2rem;
+  translate: -50% 0;
+  z-index: 6;
+  display: grid;
+  min-width: 112px;
+  gap: .12rem;
+  padding: .34rem .46rem;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ink-1) 92%, transparent);
+  box-shadow: 0 6px 18px rgba(0,0,0,.26);
+  pointer-events: none;
+  text-align: center;
+}
+.campaign-route-decision b { font: 700 .52rem/1 var(--font-mono); letter-spacing: .09em; color: var(--parchment); }
+.campaign-route-decision small { font: .49rem/1.2 var(--font-mono); color: var(--parchment-dim); white-space: nowrap; }
+.campaign-route-decision.safe { border-color: color-mix(in srgb, var(--success) 48%, transparent); }
+.campaign-route-decision.safe b { color: var(--success); }
+.campaign-route-decision.intel { border-color: rgba(91,160,211,.45); }
+.campaign-route-decision.intel b { color: #8bc8f1; }
+.campaign-route-decision.danger,
+.campaign-route-decision.boss { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.campaign-route-decision.danger b,
+.campaign-route-decision.boss b { color: #df7a68; }
+
+.campaign-boss-dossier {
+  display: grid;
+  grid-template-columns: 92px minmax(0,1fr);
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line-soft));
+  border-radius: 10px;
+  background: linear-gradient(100deg, rgba(83,27,24,.18), rgba(0,0,0,.10));
+}
+.campaign-boss-dossier img { width: 92px; height: 112px; object-fit: cover; object-position: top center; filter: saturate(.9) contrast(1.05); }
+.campaign-boss-dossier > div { display: grid; align-content: center; gap: .28rem; padding: .7rem .85rem; }
+.campaign-boss-dossier small { color: #d47763; font: 700 .55rem/1 var(--font-mono); letter-spacing: .12em; }
+.campaign-boss-dossier strong { color: var(--parchment); font: 700 1.05rem/1.1 var(--font-serif); }
+.campaign-boss-dossier span { color: var(--parchment-dim); line-height: 1.35; }
+.campaign-boss-dossier span b { color: var(--brass); }
+
+.roguelike-boss-hud {
+  grid-template-columns: auto minmax(0,1fr);
+  align-items: stretch;
+  overflow: hidden;
+}
+.roguelike-boss-portrait { width: 76px; min-height: 82px; height: 100%; object-fit: cover; object-position: top center; border-right: 1px solid rgba(255,255,255,.08); }
+.roguelike-boss-copy { display: grid; gap: .15rem; align-content: center; min-width: 0; }
+.roguelike-boss-copy em { color: var(--parchment-dim); font: normal .58rem/1.3 var(--font-mono); }
+.roguelike-boss-copy em b { color: var(--brass); }
+.roguelike-boss-hud.boss-shadow { border-color: rgba(136,89,190,.52); box-shadow: inset 0 0 30px rgba(83,42,125,.08); }
+.roguelike-boss-hud.boss-iron { border-color: rgba(185,94,62,.5); }
+.roguelike-boss-hud.boss-nomad { border-color: rgba(181,137,68,.5); }
+
+.mercenary-value-card {
+  display: grid;
+  gap: .18rem;
+  margin: .55rem 0 .65rem;
+  padding: .52rem .58rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--line-soft));
+  border-radius: 7px;
+  background: rgba(0,0,0,.12);
+}
+.mercenary-value-card strong { color: var(--brass); font-size: .78rem; }
+.mercenary-value-card span { color: var(--parchment); font-size: .7rem; line-height: 1.35; }
+.mercenary-value-card small { color: var(--success); font: .58rem/1.2 var(--font-mono); }
+
+.combat-debrief-overview {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr 1fr;
+  gap: .55rem;
+  margin: .7rem 0;
+}
+.combat-debrief-overview section {
+  display: grid;
+  align-content: start;
+  gap: .3rem;
+  min-height: 82px;
+  padding: .62rem .68rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(0,0,0,.10);
+}
+.combat-debrief-overview small { color: var(--brass-dim); font: 700 .52rem/1 var(--font-mono); letter-spacing: .1em; }
+.combat-debrief-overview strong { color: var(--parchment); font-size: .72rem; line-height: 1.4; font-weight: 600; }
+.combat-debrief-overview section:nth-child(2) strong { color: var(--success); }
+
+@media (max-width: 900px) {
+  .campaign-route-decision { display: none; }
+  .combat-debrief-overview { grid-template-columns: 1fr; }
+  .combat-debrief-overview section { min-height: 0; }
+}
+@media (max-width: 560px) {
+  .campaign-boss-dossier { grid-template-columns: 72px minmax(0,1fr); }
+  .campaign-boss-dossier img { width: 72px; height: 96px; }
+  .roguelike-boss-portrait { width: 62px; }
+  .roguelike-boss-copy em { display: none; }
+}
+.campaign-map-point-core.has-boss-sprite { overflow: hidden; padding: 0; background: rgba(0,0,0,.55); }
+.campaign-map-point-core.has-boss-sprite img { width: 100%; height: 100%; object-fit: cover; object-position: top center; filter: saturate(.92) contrast(1.08); }
+.combat-debrief.compact .combat-debrief-overview { display: none; }
+
+
+/* dm46w · Home/direct actions, board ergonomics and endgame dialog. */
+.home-today-missions > button {
+  appearance:none; cursor:pointer; font:inherit; text-align:left;
+}
+.home-today-missions > button:hover,
+.home-today-missions > button:focus-visible {
+  border-color:var(--brass-dim); background:rgba(198,164,93,.09); color:var(--parchment); outline:none;
+}
+.masthead-actions { align-items:flex-start; }
+.masthead-feedback-trigger { align-self:start; }
+.masthead-account-stack { align-items:start; justify-items:stretch; }
+.masthead-release-trigger { width:100%; box-sizing:border-box; }
+.masthead-game-compact .masthead-release-trigger { display:none; }
+
+.game-screen { width:100%; min-width:0; }
+.game-screen .game-layout { gap:.75rem; }
+.game-screen .board-column { gap:.48rem; }
+.game-screen .status-line { min-height:1.05rem; margin:0; }
+.game-screen .game-controls {
+  position:sticky; bottom:max(.45rem, env(safe-area-inset-bottom)); z-index:24;
+  width:min(100%,646px); display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:.42rem;
+  margin:.18rem auto 0; padding:.38rem .46rem; border:1px solid rgba(198,164,93,.22); border-radius:10px;
+  background:color-mix(in srgb, var(--ink-1) 92%, transparent); box-shadow:0 10px 28px rgba(0,0,0,.28); backdrop-filter:blur(10px);
+}
+.game-controls-status { margin-right:auto; padding:.35rem .48rem; border-radius:7px; color:var(--parchment-dim); font:750 .58rem/1 var(--font-mono); letter-spacing:.055em; }
+.game-controls-status.is-active { color:var(--brass); background:rgba(198,164,93,.07); }
+
+.endgame-modal-backdrop { z-index:120; align-items:center; padding:clamp(.65rem,2vw,1.4rem); }
+.endgame-dialog {
+  width:min(560px,calc(100vw - 1.3rem)); max-height:min(88vh,760px); overflow:auto; margin:0;
+  display:grid; gap:.72rem; padding:clamp(1rem,3vw,1.55rem); text-align:left;
+  box-shadow:0 28px 80px rgba(0,0,0,.62);
+}
+.endgame-dialog .endgame-modal-kicker { color:var(--brass); font:750 .62rem/1 var(--font-mono); letter-spacing:.14em; }
+.endgame-dialog .endgame-eyebrow { margin:0; }
+.endgame-dialog h2,.endgame-dialog p { margin:0; }
+.endgame-dialog .primary-btn,.endgame-dialog .secondary-btn { margin-top:0 !important; width:100%; }
+.endgame-cpu-verdict { margin:.1rem 0; padding:.72rem .8rem; border-left:2px solid color-mix(in srgb,var(--success) 58%, var(--studio-line)); background:rgba(95,170,110,.055); }
+.endgame-cpu-verdict span { display:block; margin-bottom:.28rem; color:var(--success); font:750 .58rem/1 var(--font-mono); letter-spacing:.1em; }
+.endgame-cpu-verdict p { color:var(--parchment-dim); font-style:italic; line-height:1.45; }
+
+@media(max-width:820px){
+  .game-screen .game-layout { gap:.4rem; }
+  .game-screen .board-column { gap:.36rem; width:100%; }
+  .game-screen .game-controls { width:calc(100vw - 1rem); max-width:646px; border-radius:9px; }
+}
+@media(max-width:520px){
+  .game-screen .game-controls { grid-template-columns:1fr 1fr; display:grid; }
+  .game-controls-status { grid-column:1/-1; margin:0; text-align:center; }
+  .game-screen .game-controls .secondary-btn { min-height:42px; }
+}
+
+/* dm46w · Cabecera alineada, viewport de partida y una única escala de tablero. */
+.masthead:not(.masthead-game-compact) .masthead-actions {
+  display:grid;
+  grid-template-columns:auto minmax(132px,auto);
+  grid-template-rows:auto auto;
+  align-items:start;
+  gap:.28rem .5rem;
+}
+.masthead:not(.masthead-game-compact) .masthead-feedback-trigger {
+  grid-column:1;
+  grid-row:1;
+  min-height:42px;
+  align-self:start;
+}
+.masthead:not(.masthead-game-compact) .masthead-account-stack {
+  grid-column:2;
+  grid-row:1 / span 2;
+  width:100%;
+  min-width:132px;
+  align-items:stretch;
+  justify-items:stretch;
+}
+.masthead:not(.masthead-game-compact) .masthead-account-menu,
+.masthead:not(.masthead-game-compact) .masthead-account-trigger,
+.masthead:not(.masthead-game-compact) .masthead-release-trigger { width:100%; box-sizing:border-box; }
+.masthead:not(.masthead-game-compact) .masthead-account-trigger { min-height:42px; }
+.masthead:not(.masthead-game-compact) .masthead-release-trigger { min-height:26px; }
+.masthead-game-compact .masthead-actions { display:flex; align-items:center; }
+
+.app-shell-board-game {
+  padding-top:max(.5rem,env(safe-area-inset-top));
+  padding-bottom:max(1rem,env(safe-area-inset-bottom));
+}
+.app-shell-board-game .masthead-game-compact {
+  margin-bottom:.25rem;
+  padding-bottom:.22rem;
+}
+.game-screen {
+  --game-board-size:min(592px, calc(100vw - 25rem), calc(100dvh - 11.25rem));
+}
+.game-screen .board-grid {
+  grid-template-columns:repeat(8,calc(var(--game-board-size) / 8));
+  grid-template-rows:repeat(8,calc(var(--game-board-size) / 8));
+}
+.game-screen .rank-labels { grid-template-rows:repeat(8,calc(var(--game-board-size) / 8)); }
+.game-screen .file-labels { grid-template-columns:repeat(8,calc(var(--game-board-size) / 8)); }
+.game-screen .game-board-stack { width:auto; max-width:calc(var(--game-board-size) + 1.8rem); }
+.game-screen .game-player-rail,
+.game-screen .prediction-strip,
+.game-screen .contract-strip { width:min(100%,calc(var(--game-board-size) + 1.15rem)); }
+.game-screen .board-live-row {
+  grid-template-columns:max-content minmax(280px,330px);
+  column-gap:clamp(.65rem,1.4vw,1rem);
+  align-items:start;
+}
+.game-screen .game-side-column {
+  width:min(330px,calc(100vw - var(--game-board-size) - 4rem));
+  min-width:280px;
+  height:min(calc(var(--game-board-size) + 7rem),calc(100dvh - 5.4rem));
+  max-height:none;
+}
+
+@media(max-width:980px){
+  .game-screen { --game-board-size:min(592px,calc(100vw - 2.2rem),calc(100dvh - 10rem)); }
+  .game-screen .board-live-row { grid-template-columns:minmax(0,1fr); grid-template-areas:'board' 'chat'; justify-items:center; }
+  .game-screen .game-side-column { width:min(100%,646px); min-width:0; height:auto; max-height:none; }
+}
+@media(max-width:700px){
+  .masthead:not(.masthead-game-compact) .masthead-actions { display:flex; align-items:center; }
+  .masthead:not(.masthead-game-compact) .masthead-account-stack { width:auto; min-width:0; }
+  .game-screen { --game-board-size:min(calc(100vw - 1.15rem),calc(100dvh - 8.5rem)); }
+  .app-shell-board-game { padding-inline:max(.45rem,env(safe-area-inset-left),env(safe-area-inset-right)); }
+}
+@media(max-width:520px){
+  .game-screen { --game-board-size:calc(100vw - 1rem); }
+  .game-screen .rank-labels { display:none; }
+  .game-screen .file-labels { display:none; }
+  .game-screen .board-wrap { grid-template-columns:1fr; grid-template-rows:1fr; }
+  .game-screen .board-grid { grid-column:1; grid-row:1; }
+  .game-screen .game-board-stack { max-width:100%; width:100%; }
+  .game-screen .game-player-rail { width:100%; }
+}

@@ -1,22 +1,22 @@
 {
-  "name": "chronicles-react",
+  "name": "chronicles-of-matthias-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "test": "node --test test/*.test.mjs"
+    "preview": "vite preview",
+    "vendor:check": "python3 ../scripts/vendor_chess_studio.py check"
   },
   "dependencies": {
+    "chess.js": "1.4.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "three": "0.186.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "4.7.0",
-    "vite": "6.4.3",
-    "@playwright/test": "1.56.1"
+    "vite": "6.4.3"
   }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import intro from '../chronicles/campaign/intro.json';
-import { chroniclesQuestEntries } from '../chronicles/chroniclesQuestEntries.js';
+import { chroniclesQuestEntries } from '../chronicles/chroniclesContentRuntime.js';
 
 // The main storyline is the authored «El rey desaparecido» thread; every
 // other quest a region hands out is a side contract.

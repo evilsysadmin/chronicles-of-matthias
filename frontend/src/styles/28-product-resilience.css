@@ -1,0 +1,1131 @@
+/* Product resilience contract.
+   Consolidates the late viewport, onboarding and product-polish layers in the
+   same cascade order so future stability fixes have one final owner. */
+
+/* v16.6dm46zen · Viewport & action coherence
+   Contrato visual: las vistas de juego caben en un desktop normal y las
+   botoneras de una misma pantalla comparten geometría. No cambia reglas. */
+
+/* ---------- Partida normal / torneo ----------
+   La altura disponible debe presupuestar masthead + estado + dos rails +
+   controles. El cálculo anterior sólo descontaba parte de esa chrome y podía
+   empujar el rail inferior/controles fuera del viewport a 900px de alto. */
+@media (min-width: 981px) {
+  .app-shell-board-game {
+    min-height: 100dvh;
+    box-sizing: border-box;
+    padding-top: max(.35rem, env(safe-area-inset-top));
+    padding-bottom: max(.45rem, env(safe-area-inset-bottom));
+  }
+
+  .app-shell-board-game .masthead-game-compact {
+    min-height: 32px;
+    margin-bottom: .18rem;
+    padding-bottom: .18rem;
+  }
+  .app-shell-board-game .masthead-game-compact .masthead-top-row { min-height: 30px; }
+  .app-shell-board-game .masthead-game-compact .settings-gear-button { width: 34px; height: 34px; }
+
+  .game-screen {
+    --game-board-size: min(600px, calc(100vw - 24rem), calc(100dvh - 15.6rem));
+  }
+  @supports (width: round(down, 16px, 8px)) {
+    .game-screen {
+      --game-board-size: round(down, min(600px, calc(100vw - 24rem), calc(100dvh - 15.6rem)), 8px);
+    }
+  }
+
+  .game-screen .board-column { gap: .34rem; }
+  .game-screen .status-line { min-height: .9rem; line-height: 1; }
+  .game-screen .game-board-stack { gap: .38rem; }
+  .game-screen .game-player-rail {
+    min-height: 44px;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: .52rem;
+    padding: .34rem .48rem;
+    border-radius: 8px;
+  }
+  .game-screen .game-player-avatar { width: 30px; height: 30px; border-radius: 7px; font-size: 1.08rem; }
+  .game-screen .game-player-identity strong { font-size: .8rem; }
+  .game-screen .game-player-identity small { font-size: .62rem; }
+  .game-screen .game-player-rail .clock-chip { min-height: 32px; min-width: 78px; font-size: .9rem; }
+
+  .game-screen .game-side-column {
+    width: clamp(300px, 27vw, 340px);
+    min-width: 300px;
+    /* stretch hereda exactamente la altura de rival + tablero + jugador */
+    height: auto;
+    max-height: none;
+  }
+  .game-screen .game-side-music .music-deck-collapsed { min-height: 38px; }
+  .game-screen .game-notation-disclosure > summary { min-height: 36px; }
+
+  /* En desktop la botonera forma parte del layout. Sticky la hacía flotar
+     sobre el rail inferior y daba la sensación de controles descolgados. */
+  .game-screen .game-controls {
+    position: static;
+    width: min(100%, calc(var(--game-board-size) + 1.15rem));
+    min-height: 44px;
+    margin: .12rem auto 0;
+    padding: .3rem .36rem;
+    gap: .38rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ink-1) 95%, transparent);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .game-screen .game-controls-status {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    margin-right: auto;
+    padding: 0 .55rem;
+  }
+  .game-screen .game-controls > :where(.primary-btn, .secondary-btn, .danger-btn) {
+    min-height: 36px;
+    height: 36px;
+    padding: .45rem .72rem;
+    border-radius: 7px;
+    font-size: .72rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .game-screen .game-abandon-btn {
+    border-color: color-mix(in srgb, var(--danger) 38%, var(--ui-border));
+    color: color-mix(in srgb, var(--danger) 54%, var(--parchment));
+  }
+  .game-screen .game-abandon-btn:hover,
+  .game-screen .game-abandon-btn:focus-visible {
+    border-color: color-mix(in srgb, var(--danger) 66%, var(--ui-border));
+    background: color-mix(in srgb, var(--danger) 8%, var(--ui-panel-raised));
+    color: var(--parchment);
+  }
+
+}
+
+/* Portátiles 768–900px de alto: preservamos la pantalla completa antes que
+   exprimir diez píxeles más de tablero. */
+@media (min-width: 981px) and (max-height: 900px) {
+  .game-screen {
+    --game-board-size: min(568px, calc(100vw - 24rem), calc(100dvh - 15.25rem));
+  }
+  @supports (width: round(down, 16px, 8px)) {
+    .game-screen {
+      --game-board-size: round(down, min(568px, calc(100vw - 24rem), calc(100dvh - 15.25rem)), 8px);
+    }
+  }
+}
+
+@media (min-width: 981px) and (max-height: 780px) {
+  .game-screen {
+    --game-board-size: min(500px, calc(100vw - 24rem), calc(100dvh - 15.25rem));
+  }
+  @supports (width: round(down, 16px, 8px)) {
+    .game-screen {
+      --game-board-size: round(down, min(500px, calc(100vw - 24rem), calc(100dvh - 15.25rem)), 8px);
+    }
+  }
+  .game-screen .game-player-rail { min-height: 40px; padding-block: .26rem; }
+  .game-screen .game-player-avatar { width: 28px; height: 28px; }
+  .game-screen .game-controls { min-height: 40px; padding-block: .22rem; }
+  .game-screen .game-controls > :where(.primary-btn, .secondary-btn, .danger-btn) { min-height: 34px; height: 34px; }
+}
+
+/* ---------- Combat ---------- */
+@media (min-width: 981px) {
+  .combat-battle-screen {
+    --combat-board-size: min(584px, calc(100vw - 430px), calc(100dvh - 14.5rem));
+  }
+  @supports (width: round(down, 16px, 8px)) {
+    .combat-battle-screen {
+      --combat-board-size: round(down, min(584px, calc(100vw - 430px), calc(100dvh - 14.5rem)), 8px);
+    }
+  }
+  .combat-game-controls {
+    gap: .48rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+  .combat-game-controls > :where(.primary-btn, .secondary-btn, .danger-btn) {
+    min-height: 38px;
+    padding: .48rem .68rem;
+    border-radius: 7px;
+    font-size: .72rem;
+  }
+}
+
+@media (min-width: 981px) and (max-height: 820px) {
+  .combat-battle-screen {
+    --combat-board-size: min(520px, calc(100vw - 430px), calc(100dvh - 13.25rem));
+  }
+  @supports (width: round(down, 16px, 8px)) {
+    .combat-battle-screen {
+      --combat-board-size: round(down, min(520px, calc(100vw - 430px), calc(100dvh - 13.25rem)), 8px);
+    }
+  }
+}
+
+/* ---------- Acción coherente en pantallas de producto ----------
+   Sólo agrupaciones de acciones de usuario; quedan fuera toolbars/admin
+   densos y controles especiales que sí necesitan una escala compacta. */
+:where(
+  .abandon-confirm-actions,
+  .campaign-briefing-actions,
+  .campaign-command-actions,
+  .campaign-preparation-secondary-actions,
+  .campaign-secondary-actions,
+  .combat-army-actions,
+  .combat-summary-actions,
+  .deployment-auto-actions,
+  .error-boundary-actions,
+  .home-start-guide-actions,
+  .home-today-actions,
+  .mechanic-tutorial-actions,
+  .nemesis-actions,
+  .post-game-feedback-actions,
+  .release-update-actions,
+  .share-result-actions,
+  .tutorial-nav
+) > :where(.primary-btn, .secondary-btn, .danger-btn) {
+  min-height: var(--ui-control-h);
+  border-radius: var(--ui-control-radius);
+  padding-block: .58rem;
+  line-height: 1.1;
+}
+
+/* Filas de acciones no deben dejar un único botón huérfano con otra altura. */
+:where(
+  .abandon-confirm-actions,
+  .campaign-briefing-actions,
+  .campaign-command-actions,
+  .campaign-preparation-secondary-actions,
+  .campaign-secondary-actions,
+  .combat-army-actions,
+  .combat-summary-actions,
+  .deployment-auto-actions,
+  .home-start-guide-actions,
+  .post-game-feedback-actions,
+  .share-result-actions
+) {
+  align-items: stretch;
+}
+
+/* Ningún diálogo debe perder sus acciones por debajo del viewport. */
+.modal-backdrop > :where([role='dialog'], .army-card, .feedback-modal, .rating-detail-modal) {
+  max-height: calc(100dvh - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 980px) {
+  /* En layouts apilados el scroll de página es intencional: no intentamos
+     comprimir tablero + rail en la altura del móvil. */
+  .game-screen .game-controls { bottom: max(.35rem, env(safe-area-inset-bottom)); }
+}
+
+
+/* v16.6dm46zep · Onboarding visual + coherencia de acciones de partida.
+   Capa final deliberadamente pequeña: guía contextual sin modal y una sola
+   familia visual para acciones normales/destructivas en el tablero. */
+
+/* ---------- Barra de partida: misma familia, distinta intención ---------- */
+.game-screen .game-controls-actions > .zen-mode-toggle,
+.game-screen .game-controls-actions > .game-abandon-btn {
+  border: 1px solid color-mix(in srgb, var(--ui-border) 92%, transparent);
+  background: color-mix(in srgb, var(--ui-panel-raised) 72%, var(--ink) 28%);
+  color: var(--parchment-dim);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.game-screen .game-controls-actions > .zen-mode-toggle:hover,
+.game-screen .game-controls-actions > .zen-mode-toggle:focus-visible,
+.game-screen .game-controls-actions > .game-abandon-btn:hover,
+.game-screen .game-controls-actions > .game-abandon-btn:focus-visible {
+  transform: none;
+  background: color-mix(in srgb, var(--ui-panel-raised) 88%, var(--ink) 12%);
+  color: var(--parchment);
+}
+
+.game-screen .game-controls-actions > .zen-mode-toggle:hover,
+.game-screen .game-controls-actions > .zen-mode-toggle:focus-visible {
+  border-color: color-mix(in srgb, var(--brass) 46%, var(--ui-border));
+}
+
+.game-screen .game-controls-actions > .zen-mode-toggle.active {
+  border-color: color-mix(in srgb, var(--brass) 58%, var(--ui-border));
+  background: color-mix(in srgb, var(--brass) 8%, var(--ui-panel-raised));
+  color: color-mix(in srgb, var(--brass) 72%, var(--parchment));
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--brass) 72%, transparent);
+}
+
+.game-screen .game-controls-actions > .game-abandon-btn {
+  /* Destructivo, pero no otra especie de botón. El peligro aparece en el
+     acento y se intensifica al interactuar, no en una pastilla roja. */
+  border-color: color-mix(in srgb, var(--danger) 26%, var(--ui-border));
+  color: color-mix(in srgb, var(--danger) 36%, var(--parchment-dim));
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--danger) 42%, transparent);
+}
+
+.game-screen .game-controls-actions > .game-abandon-btn:hover,
+.game-screen .game-controls-actions > .game-abandon-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--danger) 52%, var(--ui-border));
+  background: color-mix(in srgb, var(--danger) 6%, var(--ui-panel-raised));
+  color: color-mix(in srgb, var(--danger) 62%, var(--parchment));
+}
+
+/* ---------- Onboarding de Home: el siguiente paso vive sobre el producto ---------- */
+.home-onboarding-target {
+  position: relative;
+  isolation: isolate;
+}
+
+.home-onboarding-target.is-next {
+  border-color: color-mix(in srgb, var(--brass) 72%, var(--ui-border)) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--brass) 28%, transparent),
+    0 12px 34px rgba(0,0,0,.20),
+    0 0 28px color-mix(in srgb, var(--brass) 8%, transparent);
+}
+
+.home-onboarding-target.is-next::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  z-index: 0;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--brass) 22%, transparent);
+  border-radius: max(5px, calc(var(--radius-card, 10px) - 3px));
+}
+
+.home-onboarding-target.is-next > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-onboarding-cue {
+  position: absolute !important;
+  z-index: 4 !important;
+  top: .55rem;
+  right: .55rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: .28rem .48rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 70%, #fff 8%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 82%, var(--brass) 18%);
+  color: #f0d58d;
+  box-shadow: 0 6px 18px rgba(0,0,0,.24);
+  font: 800 .52rem/1 var(--font-mono);
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+.home-start-guide {
+  border-color: color-mix(in srgb, var(--brass) 24%, var(--line-soft));
+}
+.home-start-guide-path > button.is-next {
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--brass) 66%, transparent);
+}
+
+/* El puzzle clásico vive detrás de progressive disclosure. Sólo abrimos esa
+   bandeja automáticamente mientras ES el siguiente paso del recorrido. */
+.home-learning-more[open] .home-onboarding-target.is-next {
+  scroll-margin-top: 5.5rem;
+}
+
+@media (max-width: 700px) {
+  .home-onboarding-cue {
+    top: .42rem;
+    right: .42rem;
+    min-height: 22px;
+    padding: .24rem .4rem;
+    font-size: .48rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-onboarding-target.is-next {
+    animation: home-onboarding-breathe 2.8s ease-in-out infinite;
+  }
+  @keyframes home-onboarding-breathe {
+    0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--brass) 24%, transparent), 0 12px 34px rgba(0,0,0,.20), 0 0 24px color-mix(in srgb, var(--brass) 6%, transparent); }
+    50% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--brass) 36%, transparent), 0 12px 34px rgba(0,0,0,.20), 0 0 34px color-mix(in srgb, var(--brass) 12%, transparent); }
+  }
+}
+
+@media (forced-colors: active) {
+  .home-onboarding-target.is-next,
+  .home-onboarding-cue,
+  .game-screen .game-controls-actions > .zen-mode-toggle,
+  .game-screen .game-controls-actions > .game-abandon-btn {
+    border: 2px solid CanvasText;
+  }
+}
+
+/* ---------- Estados de producto: visibles donde ocurre la acción ---------- */
+.home-error-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .25rem .7rem;
+  align-items: center;
+  margin: 0 0 .35rem;
+  padding: .58rem .72rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--ui-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 6%, var(--ui-panel));
+  color: var(--parchment);
+}
+.home-error-banner b { font-size: .72rem; }
+.home-error-banner span { color: var(--parchment-dim); font-size: .7rem; line-height: 1.35; }
+
+.personal-puzzle-empty-notice {
+  width: min(100%, 760px);
+  box-sizing: border-box;
+  margin: .3rem auto .75rem;
+  padding: .55rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--brass) 5%, var(--ui-panel));
+  color: var(--parchment-dim);
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 620px) {
+  .home-error-banner { grid-template-columns: 1fr; }
+}
+
+.quick-match-error {
+  margin: .25rem 0 0;
+  padding: .5rem .62rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--ui-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--danger) 6%, var(--ui-panel));
+  color: color-mix(in srgb, var(--danger) 52%, var(--parchment));
+  font-size: .7rem;
+  line-height: 1.4;
+}
+
+
+/* v16.6dm46zeq · Product polish: tablero, mapa, footer y feedback.
+   Esta capa final corrige geometría visible sin reabrir hojas históricas. */
+
+/* Partida: una única barra de mando bajo el tablero. Estado a la izquierda y
+   acciones a la derecha; sin una segunda franja de herramientas que robe altura. */
+.game-screen .game-command-deck {
+  width: 100%;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 82%, transparent);
+  border-radius: 9px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink-1) 95%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+}
+.game-screen .game-controls {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (min-width: 981px) {
+  .game-screen .game-controls {
+    display: grid;
+    grid-template-columns: minmax(130px, 1fr) auto;
+    align-items: center;
+    justify-content: stretch;
+    gap: .55rem;
+    min-height: 44px;
+    padding: .25rem .35rem;
+  }
+  .game-screen .game-controls-status {
+    justify-self: start;
+    min-height: 36px;
+    height: 36px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+    margin: 0;
+    padding: 0 .58rem;
+    border: 1px solid color-mix(in srgb, var(--ui-border) 70%, transparent);
+    border-radius: 7px;
+    background: rgba(255,255,255,.018);
+    color: var(--parchment-dim);
+    font-weight: 760;
+  }
+  .game-screen .game-controls-status > i {
+    width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: currentColor; opacity: .55;
+  }
+  .game-screen .game-controls-status.is-active {
+    border-color: color-mix(in srgb, var(--brass) 38%, var(--ui-border));
+    background: color-mix(in srgb, var(--brass) 7%, var(--ui-panel));
+    color: color-mix(in srgb, var(--brass) 86%, var(--parchment));
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--brass) 68%, transparent);
+  }
+  .game-screen .game-controls-status.is-active > i { opacity: 1; box-shadow: 0 0 8px color-mix(in srgb, var(--brass) 55%, transparent); }
+  .game-screen .game-controls-actions {
+    display: flex; min-height: 36px; align-items: center; justify-content: flex-end; gap: .38rem; flex-wrap: wrap;
+  }
+  .game-screen .game-controls-actions > :where(.primary-btn, .secondary-btn, .danger-btn) {
+    min-height: 36px; height: 36px; margin: 0; padding: .45rem .72rem; border-radius: 7px; line-height: 1; white-space: nowrap;
+  }
+  .game-screen .game-controls-actions > .zen-mode-toggle,
+  .game-screen .game-controls-actions > .game-abandon-btn {
+    background: color-mix(in srgb, var(--ui-panel-raised) 72%, var(--ink) 28%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+  }
+  .game-screen .game-controls-actions > .zen-mode-toggle.active { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--brass) 72%, transparent); }
+  .game-screen .game-controls-actions > .game-abandon-btn { box-shadow: inset 2px 0 0 color-mix(in srgb, var(--danger) 42%, transparent); }
+}
+
+@media (max-width: 980px) {
+  .game-screen .game-command-deck { width: 100%; }
+  .game-screen .game-controls { display: grid; grid-template-columns: 1fr; align-items: stretch; padding: .4rem; gap: .4rem; }
+  .game-screen .game-controls-status { justify-content: center; margin: 0; min-height: 36px; }
+  .game-screen .game-controls-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .4rem; }
+  .game-screen .game-controls-actions > button { width: 100%; min-width: 0; }
+}
+@media (max-width: 520px) { .game-screen .game-controls-actions { grid-template-columns: 1fr; } }
+
+/* El onboarding introduce también la idea de Reto sin añadir otro modal. */
+.home-onboarding-tip {
+  margin: .1rem 0 0; padding: .5rem .62rem; border-left: 2px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  background: rgba(198,164,93,.035); color: var(--parchment-dim); font-size: .7rem; line-height: 1.45;
+}
+.home-onboarding-tip b { color: var(--brass); }
+
+/* Campaign map: deja margen real a BASE/BOSS y devuelve protagonismo al art. */
+.combat-workspace .combat-campaign-map,
+.combat-campaign-map {
+  min-height: 0;
+  height: clamp(500px, 37vw, 590px);
+  aspect-ratio: auto;
+}
+.campaign-map-art {
+  opacity: .76;
+  filter: saturate(.82) contrast(1.06) brightness(.72) blur(.25px);
+  background-image:
+    linear-gradient(90deg, rgba(5,8,6,.28) 0%, rgba(5,8,6,.08) 20%, rgba(5,8,6,.08) 75%, rgba(5,8,6,.25) 100%),
+    linear-gradient(180deg, rgba(5,8,6,.22), rgba(5,8,6,.02) 27%, rgba(5,8,6,.07) 72%, rgba(5,8,6,.32)),
+    var(--campaign-map-art);
+  background-position: var(--campaign-art-focus, 50%) 48%;
+  background-size: cover;
+  transform: scale(1.012);
+}
+.campaign-map-sector-bands span,
+.campaign-map-point { left: calc(9.375% + var(--stage) * 11.607%); }
+.campaign-map-point {
+  --node-size: 48px;
+  width: 108px;
+  min-height: 72px;
+  padding: .3rem .34rem;
+  background: rgba(8,12,10,.84);
+  backdrop-filter: blur(2px);
+}
+.campaign-map-point-core { width: var(--node-size); height: var(--node-size); }
+.campaign-map-point-copy strong { font-size: .65rem; }
+.campaign-route-decision { bottom: -1.78rem; min-width: 104px; padding: .27rem .38rem; }
+.campaign-route-decision small { font-size: .46rem; }
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .campaign-map-point { width: 98px; --node-size: 44px; min-height: 68px; }
+}
+@media (max-width: 760px) {
+  .combat-workspace .combat-campaign-map, .combat-campaign-map { height: auto; min-height: 1120px; }
+  .campaign-map-art { opacity: .62; filter: saturate(.84) brightness(.74) contrast(1.05); }
+  .campaign-map-point { left: calc(22.85% + var(--lane) * 26.65%); }
+  .campaign-map-sector-bands span { left: 9px; }
+}
+
+/* Footer informativo: enlaces centrados y con respiración uniforme. */
+.home-footer-bar {
+  display: grid;
+  grid-template-columns: minmax(40px,1fr) auto minmax(40px,1fr);
+  align-items: center;
+  gap: 1rem;
+}
+.home-footer-links { grid-column: 2; justify-content: center; gap: .3rem clamp(.8rem, 2vw, 1.5rem); }
+.home-footer-release { grid-column: 3; justify-self: end; }
+@media (max-width: 640px) {
+  .home-footer-bar { grid-template-columns: 1fr; justify-items: center; gap: .35rem; }
+  .home-footer-links, .home-footer-release { grid-column: 1; justify-self: center; text-align: center; }
+  .home-footer-links { justify-content: center; }
+}
+
+.admin-feedback-delete {
+  margin-left: auto;
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--ui-border));
+  color: color-mix(in srgb, var(--danger) 42%, var(--parchment-dim));
+}
+.admin-feedback-delete:hover, .admin-feedback-delete:focus-visible {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--ui-border));
+  background: color-mix(in srgb, var(--danger) 6%, var(--ui-panel));
+  color: var(--parchment);
+}
+
+/* Admin feedback: los mensajes resueltos pueden bajar de tono, pero sus acciones nunca desaparecen. */
+.admin-feedback-card.status-resolved { opacity: 1; }
+.admin-feedback-card.status-resolved > :where(.admin-feedback-meta, p, .admin-feedback-reply-sent, .admin-feedback-reply) { opacity: .72; }
+.admin-feedback-card.status-resolved .admin-feedback-actions { opacity: 1; }
+.admin-feedback-actions { min-height: 38px; }
+.admin-feedback-actions .admin-feedback-delete { margin-left: 0; }
+.admin-feedback-actions .admin-feedback-status { margin-left: auto; }
+
+/* Inbox operativo: sólo admins y sólo cuando existe feedback realmente nuevo. */
+.masthead-admin-feedback-inbox {
+  position: relative;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brass) 48%, var(--ui-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-panel-raised) 74%, var(--ink) 26%);
+  color: var(--parchment);
+  box-shadow: 0 0 0 1px rgba(198,164,93,.025), 0 0 18px rgba(198,164,93,.06);
+  cursor: pointer;
+}
+.masthead-admin-feedback-envelope { font-size: 1rem; line-height: 1; color: var(--brass); transform: translateY(-1px); }
+.masthead-admin-feedback-count {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--brass);
+  color: var(--ink);
+  font: 850 .58rem/1 var(--font-mono);
+}
+.masthead-admin-feedback-inbox:hover,
+.masthead-admin-feedback-inbox:focus-visible { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 8%, var(--ui-panel-raised)); outline: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .masthead-admin-feedback-inbox { animation: adminInboxArrival .7s ease-out 1; }
+  @keyframes adminInboxArrival { 0% { transform: scale(.9); box-shadow: 0 0 0 0 rgba(198,164,93,.18); } 70% { transform: scale(1.035); box-shadow: 0 0 0 8px rgba(198,164,93,0); } 100% { transform: scale(1); } }
+}
+
+/* Puzzles: tablero + coach comparten el lenguaje de partida/replay, no el de una ficha técnica. */
+.tutorial-shell.puzzle-screen {
+  max-width: 1180px;
+  align-items: start;
+  gap: .85rem;
+}
+.puzzle-screen > .back-link,
+.puzzle-screen > .puzzle-source-picker,
+.puzzle-screen > .personal-puzzle-empty-notice,
+.puzzle-screen > .puzzle-rush-banner,
+.puzzle-screen > .error-text { flex: 1 0 100%; }
+.puzzle-screen .puzzle-source-picker.friendly-tabs {
+  width: min(100%, 930px);
+  margin: 0 auto .25rem;
+  padding: .28rem;
+  gap: .25rem;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 82%, transparent);
+  border-radius: 10px;
+  background: rgba(0,0,0,.13);
+}
+.puzzle-screen .puzzle-source-picker > button {
+  flex: 1 1 180px;
+  min-height: 38px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+.puzzle-screen .puzzle-source-picker > .primary-btn {
+  background: color-mix(in srgb, var(--brass) 10%, var(--ui-panel-raised));
+  border-color: color-mix(in srgb, var(--brass) 55%, var(--ui-border));
+  color: var(--parchment);
+}
+.puzzle-training-workspace {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(500px, 1fr) minmax(320px, 390px);
+  align-items: start;
+  justify-content: center;
+  gap: clamp(.8rem, 1.5vw, 1.25rem);
+}
+.puzzle-board-column { min-width: 0; width: 100%; gap: .55rem; }
+.puzzle-board-column .game-controls {
+  width: min(100%, 540px);
+  margin-inline: auto;
+  display: flex;
+  justify-content: center;
+  gap: .45rem;
+}
+.puzzle-board-column .game-controls > button { min-height: 38px; }
+.puzzle-coach-panel {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  max-height: min(690px, calc(100dvh - 10rem));
+  overflow: auto;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 88%, transparent);
+  background: color-mix(in srgb, var(--ui-panel) 92%, var(--ink) 8%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+}
+.puzzle-coach-panel > :not(.puzzle-coach-chrome) { margin-left: .95rem; margin-right: .95rem; }
+.puzzle-coach-panel > :last-child { margin-bottom: .95rem; }
+.puzzle-coach-chrome {
+  min-height: 48px;
+  padding: .72rem .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 78%, transparent);
+  background: rgba(0,0,0,.12);
+}
+.puzzle-coach-chrome .eyebrow { margin: 0; color: color-mix(in srgb, var(--brass) 72%, var(--parchment-dim)); }
+.puzzle-coach-state {
+  flex: 0 0 auto;
+  padding: .2rem .42rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  color: var(--parchment-dim);
+  font: 760 .55rem/1 var(--font-mono);
+  letter-spacing: .06em;
+}
+.puzzle-coach-state.is-success { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--ui-border)); }
+.puzzle-coach-state.is-revealed { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 45%, var(--ui-border)); }
+.puzzle-coach-kind { display: block; margin-top: .9rem !important; margin-bottom: .15rem; }
+.puzzle-coach-panel h2 { margin: .25rem 0 .4rem; font-size: clamp(1.35rem, 2vw, 1.7rem); }
+.puzzle-coach-panel > p { margin-top: .35rem; line-height: 1.5; }
+.puzzle-coach-solution {
+  margin-top: .8rem;
+  margin-bottom: .25rem;
+  grid-template-columns: 1fr;
+  border-top: 1px solid color-mix(in srgb, var(--ui-border) 65%, transparent);
+  padding-top: .75rem;
+}
+.puzzle-screen-personal .personal-puzzle-note {
+  border-left-width: 2px;
+  border-color: color-mix(in srgb, var(--brass) 58%, transparent);
+  background: rgba(198,164,93,.035);
+}
+.puzzle-screen-personal .personal-puzzle-training-panel { margin-top: .7rem; padding-top: .7rem; border-top: 1px solid color-mix(in srgb, var(--ui-border) 62%, transparent); }
+.puzzle-screen-personal .personal-puzzle-ai-action { background: rgba(0,0,0,.12); border-color: color-mix(in srgb, var(--ui-border) 88%, transparent); }
+.puzzle-screen-personal .personal-puzzle-history-row { background: rgba(255,255,255,.018); }
+
+@media (max-width: 920px) {
+  .puzzle-training-workspace { grid-template-columns: 1fr; max-width: 650px; margin-inline: auto; }
+  .puzzle-coach-panel { max-height: none; }
+}
+@media (max-width: 620px) {
+  .puzzle-screen .puzzle-source-picker.friendly-tabs { display: grid; grid-template-columns: 1fr; }
+  .puzzle-board-column .game-controls { display: grid; grid-template-columns: 1fr; width: 100%; }
+}
+
+/* v16.6dm46zeu · Matthias: identidad de CPU integrada, no pegatina flotante. */
+.game-player-avatar.has-portrait {
+  overflow: hidden;
+  padding: 0;
+  border-color: color-mix(in srgb, var(--brass) 38%, var(--studio-line));
+  background: #111822;
+}
+.game-player-avatar.has-portrait img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 50% 36%;
+}
+.game-player-rail.is-active .game-player-avatar.has-portrait {
+  border-color: color-mix(in srgb, var(--brass) 72%, var(--studio-line));
+  box-shadow: 0 0 0 1px rgba(210,174,88,.08), 0 0 16px rgba(210,174,88,.08);
+}
+
+.game-chat-title-block.game-chat-matthias {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: .55rem;
+  align-items: center;
+}
+.game-chat-matthias-avatar {
+  grid-row: 1 / 3;
+  width: 30px;
+  height: 30px;
+  display: block;
+  object-fit: cover;
+  object-position: 50% 36%;
+  border: 1px solid color-mix(in srgb, var(--brass) 42%, #344038);
+  border-radius: 7px;
+  background: #111822;
+}
+.game-chat-matthias .game-chat-kicker,
+.game-chat-matthias h3 { grid-column: 2; min-width: 0; }
+.game-chat-matthias h3 { margin-top: .02rem; }
+
+/* Matthias firma el diagnóstico de Así juegas sin convertir el retrato en un
+   banner: personaje a la izquierda, lectura útil a la derecha. */
+.ai-player-portrait-layout {
+  display: grid;
+  grid-template-columns: 154px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: .8rem;
+}
+.ai-player-portrait-character {
+  display: grid;
+  gap: .52rem;
+  align-content: start;
+  justify-items: center;
+  padding: .55rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 32%, var(--ui-border));
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(210,174,88,.07), rgba(12,17,24,.22));
+}
+.ai-player-portrait-character img {
+  width: 138px;
+  height: 162px;
+  display: block;
+  object-fit: contain;
+  object-position: 50% 100%;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--brass) 55%, var(--ui-border));
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.ai-player-portrait-character div { display: grid; gap: .08rem; text-align: center; }
+.ai-player-portrait-character strong { color: var(--parchment); font-family: var(--font-display); font-size: 1rem; }
+.ai-player-portrait-character small { color: var(--parchment-dim); font-size: .67rem; line-height: 1.25; }
+.ai-player-portrait-commentary { min-width: 0; }
+.ai-player-portrait-commentary .ai-player-portrait-text { margin-top: .05rem; }
+
+@media (max-width: 680px) {
+  .ai-player-portrait-layout { grid-template-columns: 1fr; }
+  .ai-player-portrait-character {
+    grid-template-columns: 70px minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
+  }
+  .ai-player-portrait-character img { width: 70px; height: 82px; }
+  .ai-player-portrait-character div { text-align: left; }
+}
+
+/* Admin feedback: prueba real del circuito y badge comparten una sola cabecera. */
+.admin-feedback-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: .45rem; flex-wrap: wrap; }
+.admin-feedback-heading-actions > .secondary-btn { min-height: 34px; padding: .4rem .62rem; }
+@media (max-width: 680px) { .admin-feedback-heading-actions { justify-content: flex-start; } }
+
+/* Matthias · audiencia diaria guiada. Una función útil, no otro chatbot. */
+.matthias-daily { margin: .7rem 0 1rem; padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--brass) 32%, var(--ui-border)); border-radius: var(--radius-lg); background: linear-gradient(135deg, color-mix(in srgb, var(--brass) 5%, var(--ui-panel)), var(--ui-panel)); display: grid; gap: .7rem; }
+.matthias-daily-heading { display: flex; align-items: center; gap: .7rem; }
+.matthias-daily-heading img { width: 54px; height: 54px; border-radius: 12px; object-fit: cover; object-position: 50% 36%; border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent); }
+.matthias-daily-heading h3 { margin: .08rem 0 0; font-family: var(--font-display); font-size: 1rem; color: var(--parchment); }
+.matthias-daily-brandline { display: inline-flex; align-items: center; gap: .34rem; }
+.matthias-daily-heading .matthias-brand-mark { width: 20px; height: 20px; border: 0; border-radius: 4px; object-fit: contain; object-position: center; background: transparent; }
+.matthias-daily-options { display: flex; flex-wrap: wrap; gap: .45rem; }
+.matthias-daily-options .secondary-btn { min-height: 36px; }
+.matthias-daily > small, .matthias-daily-answer small { color: var(--parchment-dim); line-height: 1.4; }
+.matthias-daily-answer { display: grid; gap: .4rem; }
+.matthias-daily-answer p { margin: 0; color: var(--parchment); line-height: 1.55; }
+
+/* Confirmación propia: no usa window.confirm(), así WebAudio no se pausa. */
+.admin-confirm-backdrop { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 1rem; background: rgba(3, 5, 8, .72); backdrop-filter: blur(4px); }
+.admin-confirm-dialog { width: min(460px, 100%); display: grid; gap: .65rem; }
+.admin-confirm-dialog h2, .admin-confirm-dialog p { margin: 0; }
+.admin-confirm-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
+.admin-confirm-actions .danger-btn { border-color: color-mix(in srgb, #b64a4a 68%, var(--ui-border)); background: color-mix(in srgb, #7a2020 32%, var(--ui-panel-raised)); }
+
+/* Matthias admin status: real persistent memory, compact and inspectable. */
+.admin-matthias-status {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 34%, var(--line-soft));
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--panel) 92%, var(--brass) 8%);
+}
+.admin-matthias-status-heading { display: flex; gap: .8rem; align-items: center; margin-bottom: .8rem; }
+.admin-matthias-status-heading img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; object-position: 50% 36%; border: 1px solid color-mix(in srgb, var(--brass) 52%, var(--ink-3)); }
+.admin-matthias-status-heading h3 { margin: .12rem 0 0; }
+.admin-matthias-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; }
+.admin-matthias-status-grid > div { display: grid; gap: .12rem; padding: .65rem .7rem; border: 1px solid var(--line-soft); border-radius: var(--radius-control); background: rgba(0,0,0,.12); }
+.admin-matthias-status-grid strong { font-size: 1.05rem; color: var(--parchment); overflow-wrap: anywhere; }
+.admin-matthias-status-grid span { color: var(--parchment-dim); font-size: .68rem; }
+.admin-matthias-advice { margin-top: .65rem; padding: .72rem .8rem; border-left: 3px solid color-mix(in srgb, var(--brass) 70%, transparent); background: rgba(0,0,0,.1); }
+.admin-matthias-advice p { margin: .28rem 0 .2rem; }
+.admin-matthias-advice small, .admin-matthias-privacy { color: var(--parchment-dim); }
+.admin-matthias-privacy { display: block; margin-top: .55rem; font-size: .67rem; }
+@media (max-width: 760px) { .admin-matthias-status-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 430px) { .admin-matthias-status-grid { grid-template-columns: 1fr; } }
+
+/* Rincón de Matthias · una presencia estable, no un avatar flotante. El
+   bocadillo es su único lugar de voz en Home: callado muestra "…"; cuando el
+   sistema sparse decide que merece hablar, el mismo bloque gana peso. */
+.matthias-home-card {
+  width: 100%;
+  margin: .25rem 0 .15rem;
+  padding: .72rem .8rem .62rem;
+  display: grid;
+  gap: .48rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border));
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(198,164,93,.075), transparent 22%),
+    linear-gradient(105deg, rgba(198,164,93,.035), transparent 42%),
+    color-mix(in srgb, var(--ui-panel) 92%, var(--ink) 8%);
+  box-shadow: inset 0 1px rgba(255,255,255,.018);
+}
+.matthias-home-card--quiet { opacity: .84; }
+.matthias-home-card--important {
+  border-color: color-mix(in srgb, var(--brass) 48%, var(--ui-border));
+  background:
+    radial-gradient(circle at 88% 18%, rgba(198,164,93,.13), transparent 24%),
+    linear-gradient(105deg, rgba(198,164,93,.065), transparent 46%),
+    color-mix(in srgb, var(--ui-panel) 89%, var(--ink) 11%);
+}
+.matthias-home-card__main {
+  width: 100%;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 1rem;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.matthias-home-card__main:focus-visible { outline: 1px solid color-mix(in srgb, var(--brass) 76%, white); outline-offset: 5px; border-radius: 8px; }
+.matthias-home-card__speech {
+  position: relative;
+  min-width: 0;
+  min-height: 72px;
+  padding: .72rem .9rem;
+  display: grid;
+  align-content: center;
+  gap: .2rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border));
+  border-radius: 10px;
+  background: rgba(4,7,10,.23);
+}
+.matthias-home-card__speech::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border));
+  border-right: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-panel) 92%, var(--ink) 8%);
+  transform: translateY(-50%) rotate(45deg);
+}
+.matthias-home-card--important .matthias-home-card__speech,
+.matthias-home-card--important .matthias-home-card__speech::after { border-color: color-mix(in srgb, var(--brass) 48%, var(--ui-border)); }
+.matthias-home-card__speech .section-label { color: color-mix(in srgb, var(--brass) 84%, var(--parchment-dim)); }
+.matthias-home-card__speech p { margin: 0; max-width: 92ch; color: var(--parchment); font-size: .82rem; line-height: 1.5; }
+.matthias-home-card--quiet .matthias-home-card__speech p { color: var(--parchment-dim); font-family: var(--font-display); font-size: 1.18rem; letter-spacing: .12em; }
+.matthias-home-card__speech small { color: var(--parchment-dim); font-size: .66rem; line-height: 1.35; }
+.matthias-home-card__character {
+  display: grid;
+  justify-items: center;
+  gap: .1rem;
+  color: var(--parchment-dim);
+}
+.matthias-home-card__character img {
+  width: 72px;
+  height: 84px;
+  display: block;
+  object-fit: contain;
+  object-position: 50% 100%;
+  border: 1px solid color-mix(in srgb, var(--brass) 52%, var(--ui-border));
+  border-radius: 10px;
+  background: #111822;
+  box-shadow: 0 8px 22px rgba(0,0,0,.2);
+}
+
+/* El humor de Matthias se expresa con microseñales, no con un semáforo de
+   emociones. Mantiene el mismo retrato y sólo cambia pose óptica, borde y
+   temperatura del rincón a partir del estado calculado por rendimiento real. */
+.matthias-home-card--mood-pleased .matthias-home-card__character img,
+.matthias-home-card--mood-satisfied .matthias-home-card__character img { transform: translateY(-1px); filter: saturate(1.05) brightness(1.035); }
+.matthias-home-card--mood-impressed .matthias-home-card__character img { transform: translateY(-2px) scale(1.015); filter: contrast(1.035) brightness(1.045); }
+.matthias-home-card--mood-skeptical .matthias-home-card__character img { transform: rotate(-.55deg); filter: saturate(.9) contrast(1.045); }
+.matthias-home-card--mood-annoyed .matthias-home-card__character img { transform: translateY(1px) rotate(.45deg); filter: saturate(.82) contrast(1.09) brightness(.94); }
+.matthias-home-card--mood-annoyed { border-color: color-mix(in srgb, var(--danger, #b75b52) 28%, var(--ui-border)); }
+.matthias-home-card--mood-impressed { border-color: color-mix(in srgb, var(--brass) 58%, var(--ui-border)); }
+@media (prefers-reduced-motion: reduce) {
+  .matthias-home-card__character img { transform: none !important; }
+}
+.matthias-home-card__character span { margin-top: .12rem; font-size: .58rem; letter-spacing: .09em; text-transform: uppercase; }
+.matthias-home-card__character small { font-size: .56rem; opacity: .7; }
+.matthias-home-card__actions { display: flex; justify-content: flex-end; align-items: center; gap: .36rem; }
+.matthias-home-card__cta,
+.matthias-home-card__dismiss {
+  border: 0;
+  background: transparent;
+  color: var(--brass);
+  cursor: pointer;
+}
+.matthias-home-card__cta { min-height: 30px; padding: .18rem .24rem; font-size: .72rem; font-weight: 800; }
+.matthias-home-card__cta:hover,
+.matthias-home-card__cta:focus-visible { color: var(--parchment); text-decoration: underline; text-underline-offset: .22em; outline: none; }
+.matthias-home-card__dismiss {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--parchment-dim);
+  font-size: 1rem;
+}
+.matthias-home-card__dismiss:hover,
+.matthias-home-card__dismiss:focus-visible { background: rgba(255,255,255,.035); color: var(--parchment); outline: 1px solid var(--ui-border); }
+@media (max-width: 720px) {
+  .matthias-home-card { padding: .68rem; }
+  .matthias-home-card__main { grid-template-columns: 1fr; gap: .55rem; }
+  .matthias-home-card__character {
+    grid-row: 1;
+    grid-template-columns: 48px auto;
+    grid-template-rows: auto auto;
+    justify-content: start;
+    justify-items: start;
+    align-items: center;
+    column-gap: .55rem;
+  }
+  .matthias-home-card__character img { width: 58px; height: 68px; grid-row: 1 / 3; object-fit: contain; object-position: 50% 100%; }
+  .matthias-home-card__character span { align-self: end; }
+  .matthias-home-card__character small { align-self: start; }
+  .matthias-home-card__speech { grid-row: 2; min-height: 0; padding: .68rem .75rem; }
+  .matthias-home-card__speech::after {
+    top: -7px;
+    right: auto;
+    left: 20px;
+    transform: rotate(-45deg);
+  }
+  .matthias-home-card__actions { justify-content: space-between; }
+}
+
+
+/* Matthias · persistent coach surfaces */
+.matthias-quick-briefing {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: .65rem;
+  align-items: center;
+  margin: .55rem 0 .75rem;
+  padding: .65rem .72rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, var(--ui-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--brass) 4%, var(--ui-panel));
+}
+.matthias-quick-briefing img { width: 48px; height: 58px; border-radius: 10px; object-fit: contain; object-position: 50% 100%; border: 1px solid color-mix(in srgb, var(--brass) 48%, transparent); background: #111822; }
+.matthias-quick-briefing span { display: block; margin-bottom: .18rem; color: var(--brass); font-size: .61rem; letter-spacing: .08em; font-weight: 800; }
+.matthias-quick-briefing p { margin: 0; color: var(--parchment-dim); font-size: .77rem; line-height: 1.45; }
+
+.matthias-memory-card { border-top: 1px solid color-mix(in srgb, var(--brass) 20%, transparent); padding-top: .55rem; }
+.matthias-memory-card > summary { cursor: pointer; color: var(--parchment); font-weight: 700; }
+.matthias-memory-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .45rem; margin-top: .65rem; }
+.matthias-memory-grid > div { min-width: 0; padding: .5rem .55rem; border: 1px solid var(--ui-border); border-radius: var(--radius-sm); background: rgba(255,255,255,.018); }
+.matthias-memory-grid span { display: block; color: var(--parchment-dim); font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; }
+.matthias-memory-grid b { display: block; margin-top: .14rem; color: var(--parchment); font-size: .78rem; overflow-wrap: anywhere; }
+.matthias-memory-section, .matthias-memory-halls { margin-top: .6rem; color: var(--parchment-dim); }
+.matthias-memory-section ul, .matthias-memory-halls ul, .admin-matthias-memory-body ul { margin: .35rem 0 0; padding-left: 1.1rem; }
+.matthias-memory-halls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+
+.matthias-inline-answer { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: .65rem; align-items: start; }
+.matthias-inline-answer img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; object-position: 50% 35%; border: 1px solid color-mix(in srgb, var(--brass) 42%, transparent); }
+.matthias-inline-answer p { margin: 0; }
+.matthias-position-btn { margin-top: .55rem; }
+
+.admin-matthias-memory-inspector { margin: .75rem 0; padding: .65rem .75rem; border: 1px solid color-mix(in srgb, var(--brass) 22%, var(--ui-border)); border-radius: var(--radius-md); background: rgba(255,255,255,.014); }
+.admin-matthias-memory-inspector > summary { cursor: pointer; font-weight: 700; color: var(--parchment); }
+.admin-matthias-memory-body { display: grid; gap: .7rem; margin-top: .7rem; }
+
+@media (max-width: 720px) {
+  .matthias-memory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .matthias-memory-halls { grid-template-columns: 1fr; }
+}
+
+/* Matthias memorable: profundidad sin convertirlo en una radio parlante. */
+.admin-matthias-preview { margin-top: .72rem; display: grid; gap: .55rem; padding: .75rem .8rem; border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ui-border)); border-radius: var(--radius-md); background: rgba(0,0,0,.1); }
+.admin-matthias-preview p { margin: .18rem 0 0; }
+.admin-matthias-preview-controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.admin-matthias-preview-controls select { min-height: 38px; max-width: 240px; }
+.admin-matthias-preview-answer { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: .6rem; align-items: start; padding: .6rem; border-left: 3px solid color-mix(in srgb, var(--brass) 72%, transparent); background: rgba(0,0,0,.12); }
+.admin-matthias-preview-answer img { width: 42px; height: 42px; border-radius: 9px; object-fit: cover; object-position: 50% 36%; }
+.admin-matthias-preview-answer p { margin: 0; }
+.admin-matthias-preview-answer small { grid-column: 2; color: var(--parchment-dim); }
+.matthias-memory-section.is-obsession { border-left: 3px solid color-mix(in srgb, var(--brass) 72%, transparent); padding-left: .7rem; }
+.matthias-memory-section.is-challenge { border-left: 3px solid color-mix(in srgb, var(--danger) 42%, var(--brass)); padding-left: .7rem; }
+.matthias-silent-beat { display: inline-grid; grid-template-columns: 34px auto auto; align-items: center; gap: .45rem; margin: .45rem 0; padding: .35rem .55rem; border: 1px solid color-mix(in srgb, var(--brass) 28%, var(--ui-border)); border-radius: 999px; background: rgba(0,0,0,.28); color: var(--parchment-dim); }
+.matthias-silent-beat img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: 50% 36%; filter: saturate(.86); }
+.matthias-silent-beat span { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; }
+.matthias-silent-beat b { color: var(--parchment); font-size: 1.15rem; letter-spacing: .15em; }
+@media (max-width: 520px) { .admin-matthias-preview-controls { align-items: stretch; } .admin-matthias-preview-controls select, .admin-matthias-preview-controls button { width: 100%; max-width: none; } }
+
+/* Matthias · el despacho cuenta la historia sin convertirla en un nivel RPG. */
+.matthias-home-card__session {
+  margin-top: .15rem;
+  color: color-mix(in srgb, var(--parchment-dim) 86%, transparent);
+  font-size: .54rem;
+  font-style: normal;
+  letter-spacing: .02em;
+  text-align: center;
+}
+.matthias-home-card__desk {
+  margin-top: .18rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .22rem;
+}
+.matthias-home-card__desk i {
+  min-width: 0;
+  padding: .16rem .28rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 25%, var(--ui-border));
+  border-radius: 999px;
+  background: rgba(5, 8, 11, .42);
+  color: var(--parchment-dim);
+  font-size: .48rem;
+  font-style: normal;
+  line-height: 1;
+}
+.matthias-home-card__desk i b { color: var(--brass); font-size: .62rem; font-weight: 700; }
+.matthias-home-card__desk i span { max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.matthias-dossier-timeline ol {
+  margin: .55rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: .4rem;
+  list-style: none;
+}
+.matthias-dossier-timeline li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: .45rem;
+  align-items: start;
+  padding: .42rem .5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: rgba(255,255,255,.018);
+}
+.matthias-dossier-timeline li > span { color: var(--brass); text-align: center; }
+.matthias-dossier-timeline li.is-shame > span { color: var(--danger, #b75b52); }
+.matthias-dossier-timeline p { margin: 0; display: flex; justify-content: space-between; gap: .75rem; color: var(--parchment); font-size: .72rem; }
+.matthias-dossier-timeline p small { flex: 0 0 auto; color: var(--parchment-dim); font-size: .58rem; }
+.matthias-memory-halls.compact { margin-top: .5rem; color: var(--parchment-dim); font-size: .66rem; }
+
+@media (max-width: 720px) {
+  .matthias-home-card__desk { grid-column: 1 / 3; justify-content: flex-start; }
+  .matthias-home-card__session { text-align: left; }
+  .matthias-dossier-timeline p { display: grid; gap: .15rem; }
+}
