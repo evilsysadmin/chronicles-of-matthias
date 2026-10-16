@@ -23,7 +23,7 @@ export function createSwordhavenWalkState() {
     y: SWORDHAVEN_SPAWN.y,
     direction: SWORDHAVEN_SPAWN.direction,
     turns: 0,
-    message: 'Swordhaven. Recorrido visual por la ciudad original. Las misiones, comercios y guardados aún no están conectados.',
+    message: 'Swordhaven. La compañía se adentra en sus calles.',
   };
 }
 
