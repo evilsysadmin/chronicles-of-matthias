@@ -186,7 +186,8 @@ export default function App() {
                   onClick={() => setTownMenuOpen(value => !value)}><span>MENÚ</span></button>
               </div>
 
-              <section className="react-town-party" aria-label="Compañía">
+              <section className="react-town-party" aria-label="Compañía" data-chronicles-initial-mm3="true"
+                data-chronicles-map-id={initialTownRun.mapId} data-chronicles-phase={initialTownRun.phase}>
                 {initialTownRun.party.map(member => (
                   <div key={member.id} className="react-town-party-member">
                     <img src={chroniclesPartyPortraitUrl(member.id)} alt="" aria-hidden="true"/>
