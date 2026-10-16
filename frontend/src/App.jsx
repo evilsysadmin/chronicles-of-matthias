@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
 import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
+import SwordhavenViewport from './components/SwordhavenViewport.jsx';
+import { chroniclesPartyPortraitUrl } from './chronicles/chroniclesPartyPortraitAssets.js';
+import { createSwordhavenWalkState, swordhavenWalkStep, SWORDHAVEN_DIRECTIONS } from './chronicles/swordhavenWalk.js';
 import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
 import {
   createCanonicalChroniclesCharacterBuild,
@@ -54,6 +57,7 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [build, setBuild] = useState(() => createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY));
   const [state, setState] = useState(createExplorationState);
+  const [town, setTown] = useState(createSwordhavenWalkState);
   const [journalOpen, setJournalOpen] = useState(false);
   const validity = validateChroniclesCharacterBuild(build);
 
@@ -90,6 +94,20 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [page]);
 
+  useEffect(() => {
+    if (page !== 'town') return undefined;
+    const onKeyDown = event => {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      const action = KEY_MOVES[event.key] || KEY_MOVES[event.key.toLowerCase()];
+      if (!action) return;
+      event.preventDefault();
+      setTown(current => swordhavenWalkStep(current, action));
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [page]);
+
   if (page === 'forge') {
     return (
       <div className="chronicles-react">
@@ -117,6 +135,10 @@ export default function App() {
             <h2>La aventura comienza con una decisión.</h2>
             <p>Este es el frontend React autónomo en construcción. El creador de personajes y sus retratos son los originales de Chess Studio, no una simulación.</p>
             <button className="react-primary" type="button" onClick={() => setPage('forge')}>Formar compañía</button>
+            <button className="react-primary react-town-entry" type="button"
+              onClick={() => { setTown(createSwordhavenWalkState()); setPage('town'); }}>
+              Recorrer Swordhaven original en 3D
+            </button>
             <p className="react-note">La exploración posterior es todavía parcial. No hay autenticación, combate ni guardados de partida.</p>
           </div>
         </section>
