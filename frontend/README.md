@@ -91,3 +91,31 @@ source repository **does not publish Pages**; ShadowOps alone builds and
 assembles the protected source SHA after validating source ownership.
 The React path is a development preview only, with no auth, combat, backend
 or saved games. Do not change `/` or production before browser smoke.
+
+## First ORIGINAL Swordhaven 3D scene — visual migration slice
+
+Source: `chess-studio@86036ea3b1799e2b5ce927b8746eb0567a6ac4bc`.
+The two source files `src/chronicles/chroniclesSwordhaven3D.js` and
+`src/chronicles/chroniclesPixelTextures.js` are **byte-for-byte identical**
+to their original counterparts (Git blob SHA tested). The original
+`buildSwordhavenScene` renders the actual authored Swordhaven buildings,
+fountain, road, sky, trees, clouds, pixel-art materials, lighting and shadows.
+
+`SwordhavenViewport.jsx` is an isolated lifecycle adapter that mounts
+the real Three.js scene with its original camera position/facing/FOV formula.
+`swordhavenWalk.js` moves across the original 19x19 authored collision grid
+and real spawn location; it prevents walking through buildings/fountain/walls,
+respects touch/keyboard controls and keeps turns in ephemeral React memory.
+
+The Home entry **Recorrer Swordhaven original en 3D** opens this new visual
+slice without replacing the crypt. The party portraits are the original
+assets imported in the prior React extraction. The view does not yet use
+the full original `createChroniclesOfMatthiasGame` engine or real authenticated
+game state. It intentionally does **not** offer combat, monsters, trading,
+quests, cross-map transitions, items, gold or resumable save operations.
+
+Browser smoke and visual parity against the real screenshot are required
+before calling this successful 3D migration; CI compilation and source
+provenance only establish that it packages correct source files. If WebGL
+initialization fails, the view reports it instead of pretending the town is
+playable. The static root fallback and Chess Studio remain untouched.
