@@ -252,3 +252,25 @@ Screenshot validation of landscape Chromium/WebGL verifies computed
 texture backgrounds and the actual loaded pixel font, alongside the
 existing 360/390/430 portrait and landscape fit tests. Cloudflare remains
 published exclusively by ShadowOps with the stable static `/` rollback.
+
+## Canonical game-engine prerequisite extraction
+
+A focused source-only foundation copies **unchanged original** world/catalog
+and mechanical code from `chess-studio@55e95f75d5c417e95dbe39f87c9e2732bf3736fa`:
+13 modules covering map catalog, world material atlas and return links,
+content effects/quests, item equipment and real inventory transfers,
+spell point rules, shops, guilds, EnemyBuild AI attributes, authored arrival,
+Lost King introduction and the Swordhaven portal; plus the 17 explicit
+authored maps and the original campaign intro manifest (31 files total).
+Every source file was transferred by its original Git blob SHA.
+
+The first integration tests assert real equipment equip/unequip inventory
+ownership, spell points from class/stat/level, enemy skill modifiers,
+unique rectangular authored maps and original source blob checks.
+This prepares for replacing the temporary `src/chroniclesOfMatthias.js`
+compatibility party stub with the **real** reducer and for mounting the
+real MM3 game component in subsequent small PRs. This source-only PR
+deliberately does not switch the visible gameplay, save API, scene renderer,
+auth, Mongo or production. It does not yet include optional Terra maps
+discovered by the original catalog's import.meta.glob; those must be
+imported before declaring **full** world parity.
