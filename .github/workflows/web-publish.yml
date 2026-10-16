@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test test/web-image-workflow.test.mjs web/shell.test.mjs test/party-preview.test.mjs
+      - run: node --test test/web-image-workflow.test.mjs web/shell.test.mjs test/party-preview.test.mjs web/game/exploration-core.test.mjs
 
   publish-staging-web:
     needs: web-image-policy
@@ -63,6 +63,9 @@ jobs:
           docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/party-preview.js
           docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/chroniclesMM3Rules.js
           docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/chroniclesCharacterBuilds.js
+          docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/crypt-map.js
+          docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/exploration-core.js
+          docker exec chronicles-web-arm64 wget -q -O /dev/null http://127.0.0.1:8080/game/exploration-preview.js
           test "$(docker image inspect "$IMAGE:$TAG-arm64-test" --format '{{.Config.User}}')" != "root"
       - name: Authenticate with GHCR
         uses: docker/login-action@v3
