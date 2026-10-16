@@ -228,3 +228,27 @@ by incompatible legacy service imports. The active Home, original character
 creator, Chronicle dialog and authored Swordhaven 3D are already wired in
 `frontend/src/`; actual original combat, map transitions, party state and
 reliable authenticated saves still require modular integration.
+
+## Visual parity: original MM3 VGA art extracted verbatim
+
+Source: `evilsysadmin/chess-studio@55e95f75d5c417e95dbe39f87c9e2732bf3736fa`.
+All five original `mm3-*.png` stone/gem/sapphire/frame texture assets and
+the original VT323 pixel font are **byte-for-byte identical**, verified by
+their Git blob hashes in CI. The original font's SIL OFL license is copied
+with it. In contrast to the earlier approximation with flat CSS, the
+independent Swordhaven now renders its HUD controls, ornate frame,
+ruby corners, sapphire menu, stone portraits, sandstone narration,
+map bezel and typography using the actual original artwork. The extracted
+art is loaded only for the in-game view, not for party setup or login.
+
+The standalone app still uses an interim React HUD, not the legacy
+`ChroniclesOfMatthias.jsx` or its complete MM3 state machine. The real
+original battle controls, member HP/SP, pause/save menu, shops, quests,
+NPC conversations and full Three.js engine must be ported rather than
+faked with decorative buttons or fabricated party numbers.
+This visual pass improves *asset fidelity*, not feature equivalence.
+
+Screenshot validation of landscape Chromium/WebGL verifies computed
+texture backgrounds and the actual loaded pixel font, alongside the
+existing 360/390/430 portrait and landscape fit tests. Cloudflare remains
+published exclusively by ShadowOps with the stable static `/` rollback.
