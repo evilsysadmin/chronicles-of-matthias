@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-react:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +43,24 @@ jobs:
           find frontend/dist/assets -maxdepth 1 -name '*.js' -size +0c | grep -q .
           find frontend/dist/assets -maxdepth 1 -name '*.css' -size +0c | grep -q .
           test "$(find frontend/dist/assets -maxdepth 1 -name '*.webp' | wc -l)" -ge 4
+      - name: Install headless Chromium for real mobile WebGL smoke
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Verify 360, 390, 430 px and landscape layout in Chromium
+        working-directory: frontend
+        env:
+          CI: 'true'
+        run: npx playwright test --config=playwright.config.mjs
+      - name: Attach mobile screenshot evidence (even on visual failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicles-swordhaven-mobile-screenshots
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: warn
+          retention-days: 5
       - name: Keep source PR read-only; attach built artifact for review
         uses: actions/upload-artifact@v4
         with:
