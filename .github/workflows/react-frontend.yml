@@ -29,14 +29,17 @@ jobs:
       - name: Install pinned React and Vite dependencies
         working-directory: frontend
         run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Compile actual standalone React app
+      - name: Compile actual standalone React app at isolated /react/ staging path
         working-directory: frontend
+        env:
+          CHRONICLES_DEPLOY_BASE: /react/
         run: npm run build
       - name: Verify generated entry HTML and bundles
         run: |
           set -euo pipefail
           test -s frontend/dist/index.html
           grep -q 'Chronicles of Matthias' frontend/dist/index.html
+          grep -q '/react/assets/' frontend/dist/index.html
           find frontend/dist/assets -maxdepth 1 -name '*.js' -size +0c | grep -q .
           find frontend/dist/assets -maxdepth 1 -name '*.css' -size +0c | grep -q .
           test "$(find frontend/dist/assets -maxdepth 1 -name '*.webp' | wc -l)" -ge 4
