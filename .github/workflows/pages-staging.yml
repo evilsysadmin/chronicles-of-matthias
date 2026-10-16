@@ -1,0 +1,64 @@
+name: Chronicles independent Pages staging
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/pages-staging.yml'
+      - 'scripts/pages_staging.py'
+      - 'test/pages-publish-workflow.test.mjs'
+      - 'web/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: chronicles-pages-staging
+  cancel-in-progress: false
+jobs:
+  policy:
+    name: Pages deployment policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test test/pages-publish-workflow.test.mjs web/shell.test.mjs
+      - run: python3 scripts/pages_staging.py self-test
+
+  publish:
+    name: Publish independent staging landing page
+    needs: policy
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: staging
+      url: https://staging.chronicles.shadowops.dpdns.org
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require isolated Cloudflare credentials
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify fixed staging project exists
+        run: python3 scripts/pages_staging.py project
+      - name: Upload this exact standalone static shell to Pages
+        run: >-
+          npx --yes wrangler@4.127.1 pages deploy web
+          --project-name chronicles-staging
+          --branch main
+          --commit-hash "$GITHUB_SHA"
+          --commit-dirty=false
+      - name: Reconcile only Chronicles Pages custom domain and its DNS
+        run: python3 scripts/pages_staging.py domain
+      - name: Require active custom domain, valid TLS and staging marker
+        run: python3 scripts/pages_staging.py verify
