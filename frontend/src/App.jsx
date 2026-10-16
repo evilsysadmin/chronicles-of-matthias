@@ -26,6 +26,15 @@ const COMMANDS = [
   ['strafe-left', '← Lateral'], ['backward', '↓ Atrás'], ['strafe-right', '→ Lateral'],
 ];
 
+const TOWN_CONTROL_ACCESSIBLE = Object.freeze({
+  'turn-left': 'Girar a la izquierda',
+  'turn-right': 'Girar a la derecha',
+  forward: 'Avanzar',
+  backward: 'Retroceder',
+  'strafe-left': 'Desplazarse a la izquierda',
+  'strafe-right': 'Desplazarse a la derecha',
+});
+
 function AuthoredCryptMap({ state }) {
   const enemies = new Map(activeEnemies(state).map(enemy => {
     const position = state.enemyPositions?.[enemy.id]
@@ -150,7 +159,7 @@ export default function App() {
           <section className="react-town-controls" aria-label="Controles de primera persona">
             {COMMANDS.map(([action, label]) => (
               <button type="button" key={action} data-town-move={action}
-                aria-label={label.replace(/[↑↓←→↶↷]/g, '').trim()}
+                aria-label={TOWN_CONTROL_ACCESSIBLE[action]}
                 onClick={() => setTown(previous => swordhavenWalkStep(previous, action))}>
                 <span className="react-town-control-icon" aria-hidden="true">{label.split(' ')[0]}</span>
                 <span className="react-town-control-label">{label.substring(label.indexOf(' ') + 1)}</span>
