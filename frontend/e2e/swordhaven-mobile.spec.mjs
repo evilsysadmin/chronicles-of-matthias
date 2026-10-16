@@ -11,7 +11,7 @@ for (const viewport of VIEWPORTS) {
   test('Swordhaven 3D immersive layout: ' + viewport.name, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/react/', { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Recorrer Swordhaven original en 3D' }).click();
+    await page.getByRole('button', { name: /Nueva campaña/ }).click();
 
     const frame = page.locator('.react-town-frame');
     const canvas = page.locator('.react-swordhaven-canvas');
