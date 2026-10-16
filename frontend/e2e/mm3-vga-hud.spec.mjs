@@ -9,7 +9,7 @@ test('original MM3 texture atlas and pixel font really render in landscape WebGL
     }
   });
   await page.goto('/react/', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Recorrer Swordhaven original en 3D' }).click();
+  await page.getByRole('button', { name: /Nueva campaña/ }).click();
   await expect(page.locator('.react-swordhaven-canvas')).toBeVisible();
   await expect(page.locator('.react-town-party-member')).toHaveCount(4);
   const actual = await page.evaluate(async () => {
