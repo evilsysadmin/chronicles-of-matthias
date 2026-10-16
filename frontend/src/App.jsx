@@ -177,7 +177,7 @@ export default function App() {
                   onClick={() => { setTown(createSwordhavenWalkState()); setTownMapOpen(false); }}>↻</button>
                 <button type="button" className="react-town-menu-button"
                   aria-label="Abrir menú de Swordhaven" aria-expanded={townMenuOpen}
-                  onClick={() => setTownMenuOpen(value => !value)}>MENÚ</button>
+                  onClick={() => setTownMenuOpen(value => !value)}><span>MENÚ</span></button>
               </div>
 
               <section className="react-town-party" aria-label="Compañía">
