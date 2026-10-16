@@ -145,3 +145,29 @@ collision and mobile WebGL setup are unchanged. The authenticated runtime,
 true party HP/MP, monster encounters, treasure, stores, quests, combat, and
 persistence remain in the source migration backlog. A viewport fit check
 does not establish full MM3 gameplay parity.
+
+## Mobile landscape on entering Chronicles gameplay
+
+Entering Swordhaven 3D or confirming the party into the dungeon now calls
+`requestFullscreen({navigationUI:'hide'})` and
+`screen.orientation.lock('landscape')` as part of the **actual Play/Confirm
+tap**, the only context in which Android Chromium-class browsers may grant
+those APIs. The game releases its own landscape lock and fullscreen on
+returning to Home. Existing user fullscreen is never forcibly closed.
+Desktop, tablets already in landscape and browsers without support are safe.
+
+A mobile web page **cannot change OS autorotation settings** and cannot
+guarantee a device rotation when the user merely opens a URL: browser
+permissions, fullscreen availability, installed-app mode, and the Android
+rotation lock are authoritative. If Brave denies the API, a concise prompt
+offers retry and manual rotation; no fake CSS rotation or touch-axis
+transformation is used. Once the physical viewport changes to landscape,
+the prompt automatically disappears.
+
+The relative PWA manifest also declares `orientation: landscape` and
+`display: standalone` for installed-app use; this is not a promise that
+ordinary Brave tabs obey it.
+
+Node contracts and touch-emulated Chromium tests cover successful lock,
+missing/denied API, responsive prompt, entering/exiting the view and
+fullscreen ownership. The complete gameplay migration is still pending.
