@@ -20,6 +20,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npm run preview -- --port 4173 --strictPort',
+    env: { CHRONICLES_DEPLOY_BASE: '/react/' },
     url: 'http://127.0.0.1:4173/react/',
     timeout: 30_000,
     reuseExistingServer: !process.env.CI,
