@@ -2,13 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import {
-  SWORDHAVEN_BUILDINGS, SWORDHAVEN_SPAWN,
-  SWORDHAVEN_GATE_CELL, createSwordhavenWalkGrid,
-} from '../src/chronicles/chroniclesSwordhaven3D.js';
-import {
-  createSwordhavenWalkState, swordhavenWalkStep, SWORDHAVEN_WALK_GRID,
-} from '../src/chronicles/swordhavenWalk.js';
+// The root repository's zero-dependency npm test also discovers this file.
+// It always verifies original Git blob hashes. Runtime Three.js tests execute
+// in the dedicated React CI, after frontend npm dependencies are installed.
+let runtime = null;
+try {
+  const town = await import('../src/chronicles/chroniclesSwordhaven3D.js');
+  const walk = await import('../src/chronicles/swordhavenWalk.js');
+  runtime = { ...town, ...walk };
+} catch (error) {
+  if (error?.code !== 'ERR_MODULE_NOT_FOUND' || !String(error?.message).includes("'three'")) throw error;
+}
+const {
+  SWORDHAVEN_BUILDINGS, SWORDHAVEN_SPAWN, SWORDHAVEN_GATE_CELL,
+  createSwordhavenWalkGrid, createSwordhavenWalkState,
+  swordhavenWalkStep, SWORDHAVEN_WALK_GRID,
+} = runtime || {};
 
 function originalBlob(path) {
   const bytes = readFileSync(new URL(path, import.meta.url));
@@ -23,7 +32,7 @@ test('Swordhaven builder and pixel textures are byte-identical to original Chess
     '3c4599b733d30402c5022e9fb514fd956e121fbe');
 });
 
-test('real authored city and 19x19 collision grid remain intact', () => {
+test('real authored city and 19x19 collision grid remain intact', { skip: !runtime }, () => {
   assert.equal(SWORDHAVEN_BUILDINGS.length, 5);
   assert.deepEqual(SWORDHAVEN_SPAWN, { x: 9, y: 16, direction: 0 });
   assert.deepEqual(SWORDHAVEN_GATE_CELL, { x: 9, y: 17 });
@@ -37,7 +46,7 @@ test('real authored city and 19x19 collision grid remain intact', () => {
   for (const b of SWORDHAVEN_BUILDINGS) assert.equal(grid[b.y][b.x], '#');
 });
 
-test('first-person movement respects original building, fountain and perimeter collisions', () => {
+test('first-person movement respects original building, fountain and perimeter collisions', { skip: !runtime }, () => {
   const start = createSwordhavenWalkState();
   const forward = swordhavenWalkStep(start, 'forward');
   assert.deepEqual([forward.x, forward.y, forward.direction, forward.turns], [9, 15, 0, 1]);
@@ -52,7 +61,7 @@ test('first-person movement respects original building, fountain and perimeter c
   assert.equal(start.turns, 0); // no mutation
 });
 
-test('orientation, strafing and unknown actions cannot bypass the grid', () => {
+test('orientation, strafing and unknown actions cannot bypass the grid', { skip: !runtime }, () => {
   const start = createSwordhavenWalkState();
   assert.equal(swordhavenWalkStep(start, 'unsupported'), start);
   assert.equal(swordhavenWalkStep({ ...start, direction: 99 }, 'forward').turns, 0);
