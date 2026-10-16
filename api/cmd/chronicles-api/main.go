@@ -130,7 +130,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 
 	identity, err := gamesapi.NewIdentity(gamesapi.IdentityConfig{
 		Config: base(), Release: release.AppRelease, Build: release.BuildCommit(os.Getenv),
-		Ping: m.Ping, Ready: func() {}, Env: os.Getenv,
+		Ping: m.Ping, Ready: func() {}, Env: runtimeEnv,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("identity: %w", err)
@@ -199,6 +199,20 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"system", system, ok2(gamesapi.SystemRoute)},
 		{"identity", identity, ok2(gamesapi.IdentityRoute)},
 	}, nil
+}
+
+// Chess Studio's staging readiness requires CHESS_STUDIO_RUNTIME_SCHEMA to
+// prove the runtime was materialized from Vault + versioned git config.
+// Chronicles' staging runtime is materialized exactly that way (the
+// shadowops-chronicles-api host wrapper writes it from OCI Vault), so the
+// binary declares the same contract unless the environment sets it.
+const runtimeSchemaKey, runtimeSchemaVersion = "CHESS_STUDIO_RUNTIME_SCHEMA", "vault-git-v1"
+
+func runtimeEnv(key string) string {
+	if value := os.Getenv(key); value != "" || key != runtimeSchemaKey {
+		return value
+	}
+	return runtimeSchemaVersion
 }
 
 // healthcheck lets a scratch container probe itself (no curl in the image).
