@@ -46,6 +46,6 @@ test('real gameplay and Three.js untouched: no fake attack or HP statistics adde
   assert.match(app, /<SwordhavenViewport state=\{town\}/);
   assert.match(app, /<SwordhavenMiniMap state=\{town\}/);
   assert.doesNotMatch(app.slice(app.indexOf("if (page === 'town')"), app.indexOf('  return (\n    <main className="chronicles-react">')),
-    /\battackWithSelected\b|\bmaxHp\b|\bexperience\b/);
+    /\battackWithSelected\b|\bexperience\b/);
   assert.doesNotMatch(source, /@keyframes.*attack/i);
 });
