@@ -2,12 +2,21 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
-test('standalone shell is explicit about staging and non-playable status', () => {
- assert.match(html, /CHRONICLES OF MATTHIAS/);
- assert.match(html, /todavía no es el juego/);
- assert.match(html, /Sin escrituras de guardados/);
- assert.match(html, /name="viewport"/);
+const dockerfile = readFileSync(new URL('./Dockerfile', import.meta.url), 'utf8');
+
+test('standalone preview is explicit about partial functionality and no saves', () => {
+  assert.match(html, /CHRONICLES OF MATTHIAS/);
+  assert.match(html, /todavía no es el juego/);
+  assert.match(html, /Sin escrituras de guardados/);
+  assert.match(html, /name="viewport"/);
+  assert.match(html, /Forja de héroes/);
+  assert.match(html, /role="tablist"/);
 });
-test('shell never references Chess Studio runtime or remote endpoints', () => {
- assert.doesNotMatch(html, /<script|https?:\/\/|localStorage|fetch\(/i);
+
+test('only same-origin modules, no Chess Studio or other remote endpoints', () => {
+  assert.match(html, /<script type="module" src="\.\/game\/party-preview\.js"><\/script>/);
+  assert.doesNotMatch(html, /<script[^>]*\b(?:https?:|\/\/)/);
+  assert.doesNotMatch(html, /fetch\(|localStorage|sessionStorage|chess-studio\.shadowops/i);
+  assert.match(html, /connect-src 'none'/);
+  assert.match(dockerfile, /COPY --chown=101:101 game\//);
 });

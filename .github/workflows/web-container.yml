@@ -30,6 +30,9 @@ jobs:
           grep -q 'CHRONICLES OF MATTHIAS' /tmp/chronicles.html
           grep -q 'todavía no es el juego' /tmp/chronicles.html
           curl -fsS http://127.0.0.1:18080/style.css | grep -q 'color-scheme:dark'
+          for asset in party-preview.js chroniclesMM3Rules.js chroniclesCharacterBuilds.js; do
+            curl -fsS --max-time 3 "http://127.0.0.1:18080/game/$asset" | grep -q 'Chronicles'
+          done
       - name: Container logs
         if: always()
         run: docker logs chronicles-web || true

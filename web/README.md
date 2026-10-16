@@ -36,3 +36,7 @@ publisher is an **artifact build**, not a live deployment. It reports
 an immutable signed OCI manifest digest to be consumed by a verified
 ShadowOps release path. No API, saved game, accounts or production
 resources are modified by this static page.
+
+## First interactive extraction
+
+See [the character forge extraction contract](./game/EXTRACTION.md). The staging shell now allows temporary creation of a real MM3 adventuring company, **not** the full playable dungeon or a saved run. The original source and hosting boundaries remain unchanged.
