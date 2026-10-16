@@ -81,3 +81,13 @@ The full character sheet still requires the original combat, equipment,
 progression and spell APIs; it is **not** being faked with preview-only values.
 The public Cloudflare Pages staging site is still the existing static shell
 until ShadowOps explicitly validates and promotes the Vite/React bundle.
+
+## Parallel preview deployment path
+
+Vite supports `CHRONICLES_DEPLOY_BASE=/react/ npm run build` so the
+independent React app can be hosted at `/react/` on the existing Chronicles
+staging Pages site **without replacing** the static `/` rollback. The
+source repository **does not publish Pages**; ShadowOps alone builds and
+assembles the protected source SHA after validating source ownership.
+The React path is a development preview only, with no auth, combat, backend
+or saved games. Do not change `/` or production before browser smoke.
