@@ -1,3 +1,39 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101820"><title>Chronicles of Matthias — Staging</title><link rel="stylesheet" href="./style.css"></head>
-<body><main class="shell"><div class="eyebrow">CHRONICLES OF MATTHIAS · STAGING</div><h1>Las crónicas comienzan aquí.</h1><p>Un mundo de mazmorras, decisiones y combates por turnos. Estamos preparando su hogar independiente.</p><section class="status" aria-label="Estado de la migración"><h2>Próximo capítulo</h2><p>La interfaz jugable se está separando de Chess Studio. Esta pantalla confirma únicamente que el frontend independiente puede servirse; <strong>todavía no es el juego.</strong></p></section><footer>Staging · Sin acceso a partidas reales · Sin escrituras de guardados</footer></main></body></html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101820">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Chronicles of Matthias · La forja de héroes</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">CHRONICLES OF MATTHIAS · STAGING</div>
+    <h1>Reúne a tu compañía.</h1>
+    <p class="lead">Las mazmorras todavía esperan, pero ya puedes preparar a quienes entrarán en ellas. Es el <strong>creador de personajes auténtico</strong> extraído de Chronicles, con sus diez clases, tiradas 3d6 y reglas MM3.</p>
+
+    <section class="forge" aria-labelledby="forge-title">
+      <header class="forge-header">
+        <div><div class="chapter">CAPÍTULO 0 · EL RECLUTAMIENTO</div><h2 id="forge-title">Forja de héroes</h2></div>
+        <div class="forge-actions">
+          <button type="button" id="roll-party" class="action">🎲 Nueva compañía</button>
+          <button type="button" id="reset-party" class="action action-muted">Compañía original</button>
+        </div>
+      </header>
+      <div id="party-tabs" class="party-tabs" role="tablist" aria-label="Selecciona un aventurero"></div>
+      <div id="character-sheet" class="character-sheet" role="tabpanel" aria-label="Ficha del aventurero"></div>
+      <p id="forge-message" class="forge-message" role="status" aria-live="polite"></p>
+      <p class="privacy">Este adelanto funciona exclusivamente en tu navegador. No inicia sesión, no conserva personajes ni modifica partidas.</p>
+    </section>
+
+    <section class="status" aria-label="Estado de la migración">
+      <h2>Próximo capítulo</h2>
+      <p>La exploración, el combate y los guardados reales siguen migrándose desde Chess Studio. Este reclutamiento sí utiliza lógica del juego, pero <strong>todavía no es el juego.</strong></p>
+    </section>
+    <footer>Staging · Sin acceso a partidas reales · Sin escrituras de guardados</footer>
+  </main>
+  <script type="module" src="./game/party-preview.js"></script>
+</body>
+</html>
