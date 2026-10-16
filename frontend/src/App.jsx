@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
 import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
 import SwordhavenViewport from './components/SwordhavenViewport.jsx';
+import SwordhavenMiniMap from './components/SwordhavenMiniMap.jsx';
 import { chroniclesPartyPortraitUrl } from './chronicles/chroniclesPartyPortraitAssets.js';
 import { createSwordhavenWalkState, swordhavenWalkStep, SWORDHAVEN_DIRECTIONS } from './chronicles/swordhavenWalk.js';
 import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
@@ -67,6 +68,9 @@ export default function App() {
   const [build, setBuild] = useState(() => createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY));
   const [state, setState] = useState(createExplorationState);
   const [town, setTown] = useState(createSwordhavenWalkState);
+  const [townMenuOpen, setTownMenuOpen] = useState(false);
+  const [townMapOpen, setTownMapOpen] = useState(false);
+  const [townJournalOpen, setTownJournalOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const validity = validateChroniclesCharacterBuild(build);
 
@@ -108,6 +112,16 @@ export default function App() {
     const onKeyDown = event => {
       if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (townMenuOpen) {
+        if (event.key === 'Escape') { event.preventDefault(); setTownMenuOpen(false); }
+        return;
+      }
+      if (townJournalOpen) return; // Journal modal owns Escape, J and focus.
+      if (event.key.toLowerCase() === 'j') {
+        event.preventDefault();
+        setTownJournalOpen(true);
+        return;
+      }
       const action = KEY_MOVES[event.key] || KEY_MOVES[event.key.toLowerCase()];
       if (!action) return;
       event.preventDefault();
@@ -115,7 +129,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [page]);
+  }, [page, townMenuOpen, townJournalOpen]);
 
   if (page === 'forge') {
     return (
@@ -133,60 +147,97 @@ export default function App() {
   }
 
   if (page === 'town') {
+    const journalEntries = [
+      { id: 'swordhaven-arrival', title: 'Llegada a Swordhaven',
+        body: 'La compañía ha entrado en la ciudad de Swordhaven.' },
+      ...(town.visited?.includes('9,17')
+        ? [{ id: 'swordhaven-gate-seen', title: 'Puerta sur',
+          body: 'La compañía encontró la salida sur. El viaje al siguiente mapa aún no está disponible.' }]
+        : []),
+    ];
     return (
       <main className="chronicles-react react-town-screen">
-        <header className="react-town-topbar">
-          <button type="button" className="react-town-back" aria-label="Volver al inicio" title="Volver al inicio"
-            onClick={() => setPage('home')}>← <span>Salir</span></button>
-          <div className="react-town-heading">
-            <small>CHRONICLES · VISTA 3D</small>
-            <h1>Swordhaven</h1>
-          </div>
-          <button type="button" className="react-town-reset" title="Reiniciar recorrido"
-            aria-label="Reiniciar recorrido en Swordhaven" onClick={() => setTown(createSwordhavenWalkState())}>↻</button>
-        </header>
-
+        <h1 className="react-town-sr-only">Swordhaven · Chronicles of Matthias</h1>
         <div className="react-town-playfield">
-          <section className="react-town-frame" aria-label="Exploración visual de Swordhaven">
+          <section className="react-town-frame" aria-label="Exploración 3D de Swordhaven">
             <SwordhavenViewport state={town}/>
-            <div className="react-town-status">
-              <span>SWORDHAVEN</span>
-              <strong>Rumbo {SWORDHAVEN_DIRECTIONS[town.direction]?.name} · X{town.x} Y{town.y} · {town.turns} pasos</strong>
-            </div>
-            <p className="react-town-message" role="status" aria-live="polite">{town.message}</p>
-          </section>
+            <div className="react-town-hud">
+              <div className="react-town-objective" aria-label="Objetivo de exploración">
+                <small>EXPLORACIÓN · SWORDHAVEN</small>
+                <strong>Recorre las calles de Swordhaven</strong>
+              </div>
 
-          <section className="react-town-controls" aria-label="Controles de primera persona">
-            {COMMANDS.map(([action, label]) => (
-              <button type="button" key={action} data-town-move={action}
-                aria-label={TOWN_CONTROL_ACCESSIBLE[action]}
-                onClick={() => setTown(previous => swordhavenWalkStep(previous, action))}>
-                <span className="react-town-control-icon" aria-hidden="true">{label.split(' ')[0]}</span>
-                <span className="react-town-control-label">{label.substring(label.indexOf(' ') + 1)}</span>
-              </button>
-            ))}
+              <div className="react-town-topbar">
+                <button type="button" className="react-town-reset"
+                  aria-label="Reiniciar recorrido en Swordhaven" title="Reiniciar recorrido"
+                  onClick={() => { setTown(createSwordhavenWalkState()); setTownMapOpen(false); }}>↻</button>
+                <button type="button" className="react-town-menu-button"
+                  aria-label="Abrir menú de Swordhaven" aria-expanded={townMenuOpen}
+                  onClick={() => setTownMenuOpen(value => !value)}>MENÚ</button>
+              </div>
+
+              <section className="react-town-party" aria-label="Compañía">
+                {build.characters.map(character => (
+                  <div key={character.slotId} className="react-town-party-member">
+                    <img src={chroniclesPartyPortraitUrl(character.slotId)} alt="" aria-hidden="true"/>
+                    <span>{character.name}</span>
+                  </div>
+                ))}
+              </section>
+
+              <button type="button" className="react-town-journal"
+                onClick={() => setTownJournalOpen(true)}>✥ <span>Crónica</span></button>
+
+              <button type="button" className="react-town-map-toggle"
+                aria-label={townMapOpen ? 'Ocultar mapa' : 'Mostrar mapa'}
+                aria-expanded={townMapOpen} onClick={() => setTownMapOpen(value => !value)}>▦ <span>Mapa</span></button>
+              <div className={'react-town-map-panel' + (townMapOpen ? ' is-open' : '')}>
+                <SwordhavenMiniMap state={town}/>
+              </div>
+
+              <div className="react-town-status" role="status" aria-live="polite">
+                Rumbo {SWORDHAVEN_DIRECTIONS[town.direction]?.name} · X{town.x} Y{town.y} · {town.turns} pasos
+              </div>
+
+              <section className="react-town-controls" aria-label="Controles de primera persona">
+                {COMMANDS.map(([action, label]) => (
+                  <button type="button" key={action} data-town-move={action}
+                    aria-label={TOWN_CONTROL_ACCESSIBLE[action]}
+                    onClick={() => setTown(previous => swordhavenWalkStep(previous, action))}>
+                    <span className="react-town-control-icon" aria-hidden="true">{label.split(' ')[0]}</span>
+                    <span className="react-town-control-label">{label.substring(label.indexOf(' ') + 1)}</span>
+                  </button>
+                ))}
+              </section>
+              <p className="react-town-message" role="status" aria-live="polite">{town.message}</p>
+
+              {townMenuOpen && (
+                <div className="react-town-menu" role="dialog" aria-label="Menú de Swordhaven">
+                  <strong>Swordhaven</strong>
+                  <button type="button" onClick={() => setTownMenuOpen(false)}>Continuar exploración</button>
+                  <button type="button" onClick={() => {
+                    setTown(createSwordhavenWalkState()); setTownMapOpen(false); setTownMenuOpen(false);
+                  }}>Reiniciar recorrido</button>
+                  <button type="button" onClick={() => {
+                    setTownMenuOpen(false); setTownJournalOpen(false); setPage('home');
+                  }}>Salir al inicio</button>
+                  <details className="react-town-help">
+                    <summary>Acerca de esta vista</summary>
+                    <p>
+                      Escenario y colisiones originales de Chess Studio. Teclado: WASD/flechas y Q/E.
+                      Esta vista es una migración visual: todavía no hay comerciantes, misiones,
+                      combate, cambios de mapa ni guardados. Los retratos no muestran estadísticas de partida.
+                    </p>
+                  </details>
+                </div>
+              )}
+            </div>
           </section>
         </div>
 
-        <section className="react-town-party" aria-label="Compañía">
-          {build.characters.map(character => (
-            <div key={character.slotId} className="react-town-party-member">
-              <img src={chroniclesPartyPortraitUrl(character.slotId)} alt="" aria-hidden="true"/>
-              <div><strong>{character.name}</strong><span>{CHRONICLES_MM3_CLASSES[character.classId]?.label}</span></div>
-            </div>
-          ))}
-        </section>
-
-        <details className="react-town-help">
-          <summary>Acerca de esta vista de Swordhaven</summary>
-          <p>
-            La escena y la cuadrícula de colisiones son originales de Chess Studio.
-            Controles de teclado: WASD/flechas para avanzar, retroceder y girar; Q/E para movimiento lateral.
-            Esta es una migración visual: todavía no hay comerciantes, misiones, combate,
-            cambios de mapa ni guardados. Los personajes aparecen como grupo de referencia,
-            sin estadísticas de una partida activa.
-          </p>
-        </details>
+        <ChroniclesJournalModal open={townJournalOpen}
+          state={{ quests: {} }} entries={journalEntries}
+          onClose={() => setTownJournalOpen(false)}/>
       </main>
     );
   }
