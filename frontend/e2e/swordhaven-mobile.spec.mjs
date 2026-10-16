@@ -24,6 +24,17 @@ for (const viewport of VIEWPORTS) {
     await expect(controls).toBeVisible();
     await expect(party.locator('.react-town-party-member')).toHaveCount(4);
     await expect(page.getByRole('button', { name: 'Avanzar' })).toBeVisible();
+    await expect(page.locator('.react-town-objective')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Abrir menú de Swordhaven' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Crónica/ })).toBeVisible();
+    if (viewport.height < viewport.width) {
+      await expect(page.locator('.react-town-minimap')).toBeVisible();
+    } else {
+      await page.getByRole('button', { name: 'Mostrar mapa' }).click();
+      await expect(page.locator('.react-town-minimap')).toBeVisible();
+      await page.getByRole('button', { name: 'Ocultar mapa' }).click();
+    }
+
 
     const metrics = await page.evaluate(() => {
       const rect = selector => {
@@ -39,6 +50,10 @@ for (const viewport of VIEWPORTS) {
         canvas: rect('.react-swordhaven-canvas'),
         controls: rect('.react-town-controls'),
         party: rect('.react-town-party'),
+        hud: rect('.react-town-hud'),
+        objective: rect('.react-town-objective'),
+        minimap: rect('.react-town-map-panel'),
+
       };
     });
 
@@ -48,6 +63,13 @@ for (const viewport of VIEWPORTS) {
       viewport.height < 500 ? 140 : viewport.height * 0.35
     );
     expect(metrics.canvas.width).toBeGreaterThan(180);
+    expect(metrics.frame.height, '3D canvas should occupy almost the entire game window')
+      .toBeGreaterThan(metrics.innerHeight * 0.91);
+    expect(metrics.party.y, 'portraits must float above the game rather than below it')
+      .toBeLessThan(metrics.innerHeight * 0.30);
+    expect(metrics.controls.y, 'controls must live in the lower game HUD')
+      .toBeGreaterThan(metrics.innerHeight * 0.50);
+
     expect(metrics.party.bottom, 'four party portraits visible without scrolling').toBeLessThanOrEqual(viewport.height + 2);
     expect(metrics.controls.bottom, 'all movement controls visible').toBeLessThanOrEqual(viewport.height + 2);
 
@@ -56,5 +78,12 @@ for (const viewport of VIEWPORTS) {
     await expect(page.locator('.react-town-status')).toContainText('Y15');
     await page.getByRole('button', { name: 'Reiniciar recorrido en Swordhaven' }).click();
     await expect(page.locator('.react-town-status')).toContainText('Y16');
+    await page.getByRole('button', { name: 'Abrir menú de Swordhaven' }).click();
+    await expect(page.getByRole('dialog', { name: 'Menú de Swordhaven' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar exploración' }).click();
+    await page.getByRole('button', { name: /Crónica/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Crónica de expedición' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cerrar Crónica' }).click();
+
   });
 }

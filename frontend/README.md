@@ -119,3 +119,29 @@ before calling this successful 3D migration; CI compilation and source
 provenance only establish that it packages correct source files. If WebGL
 initialization fails, the view reports it instead of pretending the town is
 playable. The static root fallback and Chess Studio remain untouched.
+
+## Reference-driven HUD parity pass — Swordhaven 3D
+
+The user's side-by-side portrait/landscape references made the remaining
+problem explicit: React's 3D renderer is authentic but its UI still looked
+like a document. This pass renders **one fullscreen first-person scene** in
+either orientation, with objective and four canonical portrait miniatures at
+the upper left; a compact, real visited-cells minimap at the right; Chronicle
+(J) / menu controls; and six keyboard/touch movement controls at the lower
+left. The old header, large below-canvas panel and stacked article layout
+are removed from the Swordhaven view only.
+
+The minimap uses the original `createSwordhavenWalkGrid()` 19×19 collision
+data and the ephemeral list of cells actually visited in this visual walk.
+Fog-of-war defaults to undiscovered; only immediate neighbors of genuinely
+visited cells are revealed. No invented shops, loot or enemies are placed.
+The journal uses the original React modal. It records only the real arrival
+and reaching the original southern gate if those have happened; it does not
+create fictitious quests. The menu provides existing real navigation, reset
+and help; there is **no pretend attack button** without the migrated engine.
+
+Source original Three.js scene, textures, field of view, keyboard controls,
+collision and mobile WebGL setup are unchanged. The authenticated runtime,
+true party HP/MP, monster encounters, treasure, stores, quests, combat, and
+persistence remain in the source migration backlog. A viewport fit check
+does not establish full MM3 gameplay parity.
