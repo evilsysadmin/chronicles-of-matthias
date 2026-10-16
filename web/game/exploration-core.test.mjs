@@ -60,7 +60,7 @@ test('rotate and strafe to the genuine sigil tile to activate authored enemies',
   assert.equal(state.sigilAwake, true);
   assert.equal(activeEnemies(state).length, 3); // fourth requires fallen jailer
   assert.ok(state.journal.some((entry) => entry.id === 'tactics-sigil-awake'));
-  const revisit = explorationStep(explorationStep(state, 'backward'), 'forward');
+  const revisit = explorationStep(explorationStep(state, 'strafe-left'), 'strafe-right');
   assert.equal(revisit.journal.length, state.journal.length); // no duplicate event
 });
 
