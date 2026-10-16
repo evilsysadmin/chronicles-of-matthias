@@ -50,6 +50,7 @@ jobs:
           test "$(docker image inspect "$IMAGE:$TAG-arm64-test" --format '{{.Architecture}}')" = arm64
           docker run -d --name chronicles-web-arm64 \
             --platform linux/arm64 --read-only --cap-drop ALL \
+            --tmpfs /tmp:rw,nosuid,nodev,size=16m \
             --security-opt no-new-privileges \
             -p 127.0.0.1:18083:8080 "$IMAGE:$TAG-arm64-test"
           trap 'docker rm -f chronicles-web-arm64 >/dev/null 2>&1 || true' EXIT
