@@ -1,3 +1,4 @@
+@import './components/ChroniclesMM3Chrome.css';
 :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#10171c;color:#eee6d8;--text:#eee6d8}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(circle at 68% 15%,#253c3f 0%,#10171c 65%);color:#eee6d8}
@@ -267,4 +268,117 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
 @media (prefers-reduced-motion:no-preference){
   .chronicles-landscape-symbol{animation:chronicles-rotate-hint 1.8s ease-out 1}
   @keyframes chronicles-rotate-hint{0%{transform:rotate(-12deg)}70%{transform:rotate(8deg)}100%{transform:rotate(0)}}
+}
+
+
+/* Original Chess Studio Chronicles art and palette now own the standalone UI.
+   Tokens, sprites and licensed bitmap font are copied byte-for-byte from
+   chess-studio@ab0531d7e2812eed8c24003e8ef3386e8853b5a9. */
+
+.react-home-migration-note{
+  position:fixed;z-index:10001;bottom:max(4px,env(safe-area-inset-bottom));
+  left:50%;transform:translateX(-50%);margin:0;padding:5px 10px;
+  max-width:calc(100vw - 16px);width:max-content;
+  color:#e7ce96;background:#14161ee6;border:1px solid #8c7248;
+  font:400 .76rem/1.2 Georgia,serif;text-align:center;pointer-events:none;
+}
+/* Real sapphire from the original Chronicles UI, not a CSS approximation. */
+.react-town-topbar .react-town-menu-button{
+  width:84px;height:54px;min-height:54px;min-width:74px;
+  padding:0;border:0!important;border-radius:0;background:
+    var(--mm3-sapphire) center / 84px 54px no-repeat!important;
+  image-rendering:pixelated;
+  box-shadow:none;color:#fff6dc!important;-webkit-text-fill-color:#fff6dc!important;
+  text-shadow:0 1px 2px #00163e;
+  font:400 1.06rem/1 var(--mm3-pixel-font);
+}
+.react-town-topbar .react-town-menu-button span{
+  display:inline-block;margin-top:6px;padding:2px 3px;
+  color:#fff6dc!important;-webkit-text-fill-color:#fff6dc!important;
+  background:#05244add;border:1px solid #abd2ffe0;
+  font:400 1rem/1 var(--mm3-pixel-font);
+  letter-spacing:.02em;
+}
+.react-town-topbar .react-town-menu-button:hover,
+.react-town-topbar .react-town-menu-button:focus-visible{
+  filter:brightness(1.13) drop-shadow(0 0 5px #68b6ffb4);
+}
+.react-town-frame{
+  border:14px solid transparent;
+  border-image:var(--mm3-frame) 16 / 14px round;
+  image-rendering:pixelated;
+}
+.react-town-frame::after{
+  content:'';position:absolute;inset:0;z-index:9;pointer-events:none;
+  background:
+    var(--mm3-gem) left top / 19px 19px no-repeat,
+    var(--mm3-gem) right top / 19px 19px no-repeat,
+    var(--mm3-gem) left bottom / 19px 19px no-repeat,
+    var(--mm3-gem) right bottom / 19px 19px no-repeat;
+  image-rendering:pixelated;
+}
+.react-town-controls button,
+.react-town-map-toggle,
+.react-town-reset,
+.react-town-journal,
+.react-town-menu>button {
+  color-scheme:only light;
+  border:2px solid!important;
+  border-color:#f6f4f1 #47474e #47474e #f6f4f1!important;
+  border-radius:0;
+  background:#9d9da2 var(--mm3-stone) 0 0 / 128px 128px!important;
+  image-rendering:pixelated;
+  color:#101014!important;-webkit-text-fill-color:#101014!important;
+  text-shadow:1px 1px 0 #fff6!important;
+  box-shadow:0 0 0 1px #141416,0 3px 0 #0006;
+  font-family:var(--mm3-pixel-font);
+}
+.react-town-controls button .react-town-control-label,
+.react-town-controls button .react-town-control-icon {
+  color:#101014!important;-webkit-text-fill-color:#101014!important;
+}
+.react-town-objective,.react-town-status,.react-town-message {
+  font-family:var(--mm3-pixel-font);
+}
+.react-town-objective small{font:400 .9rem/1 var(--mm3-pixel-font)}
+.react-town-objective strong{font:400 1.3rem/1.13 var(--mm3-pixel-font)}
+.react-town-party-member,.react-town-minimap{
+  border:3px ridge #c1bfc0;background:#62636a var(--mm3-stone) 0 0 / 128px 128px;
+  image-rendering:pixelated;
+}
+.react-town-party-member span{font:400 1rem/1 var(--mm3-pixel-font);color:#08080a}
+.react-town-journal{
+  background:#9d9da2 var(--mm3-stone) 0 0 / 128px 128px!important;
+  font:400 1.23rem/1 var(--mm3-pixel-font);
+}
+.react-town-menu{
+  border:12px solid transparent;
+  border-image:var(--mm3-frame) 16 / 12px round;
+  background:#b87033 var(--mm3-sand) 0 0 / 64px 64px;
+  image-rendering:pixelated;
+}
+.react-town-menu>strong,.react-town-menu .react-town-help{color:#201309}
+@media (max-width:780px) and (orientation:portrait){
+  .react-town-frame{border-width:7px;border-image-width:7px}
+  .react-town-frame::after{background-size:13px 13px}
+  .react-town-topbar .react-town-menu-button{
+    min-width:61px;width:64px;height:43px;min-height:43px;
+    background-size:64px 43px!important;
+  }
+  .react-town-topbar .react-town-menu-button span{font-size:.83rem}
+  .react-town-party-member span{font-size:.85rem}
+  .react-town-objective strong{font-size:1.05rem}
+  .react-town-objective small{font-size:.78rem}
+}
+@media (max-width:780px) and (orientation:landscape){
+  .react-town-frame{border-width:7px;border-image-width:7px}
+  .react-town-frame::after{background-size:13px 13px}
+  .react-town-topbar .react-town-menu-button{
+    min-width:59px;width:64px;height:43px;min-height:43px;
+    background-size:64px 43px!important;
+  }
+  .react-town-topbar .react-town-menu-button span{font-size:.83rem}
+  .react-town-objective strong{font-size:.94rem}
+  .react-town-controls button{font-size:1rem}
+  .react-town-party-member span{font-size:.79rem}
 }

@@ -30,7 +30,7 @@ test('portrait Android gameplay requests fullscreen + landscape from Play gestur
   });
   await page.goto('/react/', { waitUntil: 'networkidle' });
   expect(await page.evaluate(() => window.__landscapeCalls)).toEqual([]); // no fake load-time lock
-  await page.getByRole('button', { name: 'Recorrer Swordhaven original en 3D' }).click();
+  await page.getByRole('button', { name: /Nueva campaña/ }).click();
   await expect.poll(() => page.evaluate(() => window.__landscapeCalls.slice(0, 2)))
     .toEqual(['fullscreen', 'lock:landscape']);
   await expect(page.getByRole('dialog', { name: 'Chronicles se juega en apaisado' })).toBeVisible();
@@ -41,7 +41,7 @@ test('portrait Android gameplay requests fullscreen + landscape from Play gestur
   await expect(page.locator('.react-swordhaven-canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Abrir menú de Swordhaven' }).click();
   await page.getByRole('button', { name: 'Salir al inicio' }).click();
-  await expect(page.getByRole('button', { name: 'Recorrer Swordhaven original en 3D' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Nueva campaña/ })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.__landscapeCalls.slice(-2)))
     .toEqual(['unlock', 'exit']);
 });
@@ -60,7 +60,7 @@ test('portrait phone with rejected orientation lock shows manual rotation hint b
     };
   });
   await page.goto('/react/', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Recorrer Swordhaven original en 3D' }).click();
+  await page.getByRole('button', { name: /Nueva campaña/ }).click();
   await expect(page.getByRole('dialog', { name: 'Chronicles se juega en apaisado' })).toBeVisible();
   await page.setViewportSize({ width: 844, height: 390 });
   await expect(page.getByRole('dialog', { name: 'Chronicles se juega en apaisado' })).toHaveCount(0);

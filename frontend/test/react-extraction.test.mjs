@@ -41,6 +41,9 @@ test('initial React integration is honest about gameplay and never requests live
   assert.match(app, /explorationStep/);
   assert.match(app, /CRIPTA DE LAS OCHO CASILLAS/);
   assert.match(app, /no concede experiencia ni modifica guardados/);
-  assert.doesNotMatch(app, /\bfetch\s*\(|\blocalStorage\b|\bXMLHttpRequest\b|chess-studio\.shadowops/i);
+  assert.doesNotMatch(app, /\bfetch\s*\(|\blocalStorage\b|\bXMLHttpRequest\b/i);
+  // Explicit optional navigation to the old castle is not a dependency on its
+  // auth, save APIs, frontend runtime or game engine.
+  assert.match(app, /window\.location\.assign\('https:\/\/staging\.chess-studio\.shadowops\.dpdns\.org\/'\)/);
   assert.match(read('src/chroniclesOfMatthias.js'), /Temporary compatibility boundary/);
 });

@@ -171,3 +171,60 @@ ordinary Brave tabs obey it.
 Node contracts and touch-emulated Chromium tests cover successful lock,
 missing/denied API, responsive prompt, entering/exiting the view and
 fullscreen ownership. The complete gameplay migration is still pending.
+
+## Exact original Chronicles Home and MM3 look (visual parity tranche)
+
+Pinned source: `evilsysadmin/chess-studio@ab0531d7e2812eed8c24003e8ef3386e8853b5a9`.
+
+The **actual original** `ChroniclesSaveMenu.jsx`, original
+`ChroniclesSaveMenu.css`, the untouched 49 KB `ChroniclesMM3Chrome.css`,
+two canonical expedition-library AVIF backdrops, five original MM3 PNG
+materials (sapphire menu, ruby, carved frame, gray stone, sandstone) and
+the licensed VT323 bitmap-style font/attribution have been imported into
+their original paths. Source blob SHA tests prove CSS/art byte identity.
+The original Home component has precisely **one changed import**:
+`chroniclesSavedExpeditionArea` points to an explicit standalone adapter
+so the app does not transitively depend on Chess Studio's full map catalog.
+
+`App.jsx` now **mounts that original book/library Home**, not a recreation.
+The source Home disables Resume/Load when the independent backend has not
+delivered real saves; Manage correctly reports none. Original Home action
+Nueva campaña enters **only the current authored Swordhaven visual preview**,
+and Nuevo juego opens the migrated authentic character creator; the UI
+clearly marks combat and saved runs unavailable. Returning to castle is an
+explicit link to the stable Chess Studio staging host, not a fake router.
+
+The real `mm3-sapphire.png` gem and other original MM3 assets are applied
+to the actual Swordhaven React HUD, with additional responsive bridging
+selectors; pixel art is not generated or imitated with a new stylesheet.
+Source JS and mobile Chromium tests cover Home, backgrounds, disabled
+save actions, genuine castle-navigation button presence, gemstone URL and
+navigation to real WebGL scene.
+
+**This is a visual-source extraction, not the entire React game transfer.**
+The full `ChroniclesOfMatthias.jsx` still imports hundreds of files from
+Chess Studio (renderer, quests, combat, saves, sound, auth, overlays).
+Move those originals under an immutable provenance snapshot in separate
+small PRs, resolve external dependencies, then switch to the canonical
+runtime, with non-fabricated backend state and real regression tests.
+Do not copy or overwrite the current preview reducer blindly: preserve
+root / legacy publishing rollback and secure save behavior.
+
+## Complete pinned Chronicles React source snapshot (418 files)
+
+The reproducible vendoring workflow has now committed **418 original source
+files** to `frontend/original-chess-studio/` (source pin
+`ab0531d7e2812eed8c24003e8ef3386e8853b5a9`). This includes original
+`ChroniclesOfMatthias.jsx`, all `Chronicles*` React components and styling,
+the original `chroniclesOfMatthias*.js` core/renderer/AI/turn logic,
+`src/chronicles/` campaign runtime/map catalog/tests, image/UI/sprite
+assets, and the legacy shared sound/persistence hooks needed to inspect and
+untangle the original imports.
+
+These files are **in the new repository, not yet the app's active runtime**.
+The original files are preserved in a separate read-only migration snapshot,
+so compilation and current standalone staging are not silently altered
+by incompatible legacy service imports. The active Home, original character
+creator, Chronicle dialog and authored Swordhaven 3D are already wired in
+`frontend/src/`; actual original combat, map transitions, party state and
+reliable authenticated saves still require modular integration.

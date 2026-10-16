@@ -1,0 +1,55 @@
+name: Vendor original Chronicles React source
+on:
+  push:
+    branches: [feat/legacy-chronicles-react-look-and-feel]
+    paths:
+      - 'scripts/vendor_chronicles_frontend.sh'
+      - '.github/workflows/vendor-original-chronicles.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: chronicles
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/checkout@v4
+        with:
+          repository: evilsysadmin/chess-studio
+          ref: ab0531d7e2812eed8c24003e8ef3386e8853b5a9
+          path: legacy
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify branch and pin before adding source snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "feat/legacy-chronicles-react-look-and-feel"
+          test "$(git -C legacy rev-parse HEAD)" = "ab0531d7e2812eed8c24003e8ef3386e8853b5a9"
+          test ! -e chronicles/frontend/original-chess-studio
+      - name: Snapshot complete Chronicles-specific React, game engine, CSS, tests and art
+        shell: bash
+        run: bash chronicles/scripts/vendor_chronicles_frontend.sh legacy chronicles
+      - name: Show provenance and size boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          du -sh chronicles/frontend/original-chess-studio
+          find chronicles/frontend/original-chess-studio -type f | wc -l
+          test -f chronicles/frontend/original-chess-studio/PROVENANCE.md
+      - name: Commit snapshot back to the feature branch only
+        working-directory: chronicles
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/original-chess-studio
+          git diff --cached --quiet && exit 0
+          git commit -m "feat(chronicles): vendor pinned original React and full game source for controlled migration"
+          git push origin HEAD:refs/heads/feat/legacy-chronicles-react-look-and-feel

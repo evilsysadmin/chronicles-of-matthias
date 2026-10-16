@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ChroniclesCharacterSetup from './components/ChroniclesCharacterSetup.jsx';
+import ChroniclesSaveMenu from './components/ChroniclesSaveMenu.jsx';
 import ChroniclesJournalModal from './components/ChroniclesJournalModal.jsx';
 import SwordhavenViewport from './components/SwordhavenViewport.jsx';
 import SwordhavenMiniMap from './components/SwordhavenMiniMap.jsx';
@@ -176,7 +177,7 @@ export default function App() {
                   onClick={() => { setTown(createSwordhavenWalkState()); setTownMapOpen(false); }}>↻</button>
                 <button type="button" className="react-town-menu-button"
                   aria-label="Abrir menú de Swordhaven" aria-expanded={townMenuOpen}
-                  onClick={() => setTownMenuOpen(value => !value)}>MENÚ</button>
+                  onClick={() => setTownMenuOpen(value => !value)}><span>MENÚ</span></button>
               </div>
 
               <section className="react-town-party" aria-label="Compañía">
@@ -262,18 +263,27 @@ export default function App() {
         <span className="react-stage">STAGING · REACT</span>
       </header>
       {page === 'home' ? (
-        <section className="react-home">
-          <div className="react-intro"><span>LIBRO I · LA COMPAÑÍA</span>
-            <h2>La aventura comienza con una decisión.</h2>
-            <p>Este es el frontend React autónomo en construcción. El creador de personajes y sus retratos son los originales de Chess Studio, no una simulación.</p>
-            <button className="react-primary" type="button" onClick={() => setPage('forge')}>Formar compañía</button>
-            <button className="react-primary react-town-entry" type="button"
-              onClick={() => { landscape.start(); setTown(createSwordhavenWalkState()); setPage('town'); }}>
-              Recorrer Swordhaven original en 3D
-            </button>
-            <p className="react-note">La exploración posterior es todavía parcial. No hay autenticación, combate ni guardados de partida.</p>
-          </div>
-        </section>
+        <>
+          <ChroniclesSaveMenu
+            saves={[]}
+            onNew={(kind) => {
+              if (kind === 'swordhaven-first-book') {
+                // The canonical campaign is not yet ported. This offers the
+                // genuine authored Swordhaven walk without claiming a save.
+                landscape.start();
+                setTown(createSwordhavenWalkState());
+                setPage('town');
+                return;
+              }
+              setPage('forge');
+            }}
+            onLoad={() => {}}
+            onExit={() => window.location.assign('https://staging.chess-studio.shadowops.dpdns.org/')}
+          />
+          <p className="react-home-migration-note" role="status">
+            Versión de migración · Sin combate ni guardados de partidas disponibles
+          </p>
+        </>
       ) : (
         <section className="react-expedition" aria-label="Exploración">
           {landscape.needsRotation && (
