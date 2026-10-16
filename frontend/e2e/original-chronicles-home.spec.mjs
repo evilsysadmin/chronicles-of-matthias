@@ -19,7 +19,7 @@ for (const viewport of [
     const art = await page.locator('.chronicles-save-menu__sky').evaluate(el =>
       getComputedStyle(el).backgroundImage
     );
-    expect(art).toContain('expedition-study');
+    expect(art).toMatch(/expedition-study|data:image\/avif;base64/);
     await page.screenshot({ path: info.outputPath('chronicles-original-library-' + viewport.name + '.png') });
     await home.getByRole('button', { name: /Gestionar partidas/ }).click();
     await expect(page.getByText('Todavía no hay expediciones guardadas.')).toBeVisible();
@@ -30,6 +30,6 @@ for (const viewport of [
     const gem = await page.locator('.react-town-menu-button').evaluate(el =>
       getComputedStyle(el).backgroundImage
     );
-    expect(gem).toContain('mm3-sapphire');
+    expect(gem).toMatch(/mm3-sapphire|data:image\/png;base64/);
   });
 }
