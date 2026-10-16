@@ -174,7 +174,7 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
 .react-town-help{font:.78rem/1.45 system-ui,sans-serif;color:#d4d8d2}
 .react-town-help summary{cursor:pointer;padding:5px;color:#ead3a1}
 .react-town-help p{margin:5px 0;max-height:25vh;overflow:auto}
-@media(max-width:780px) and (orientation:portrait){
+@media (max-width:780px) and (orientation:portrait){
   .react-town-screen{height:100dvh;padding:0}
   .react-town-playfield{min-height:0}
   .react-town-frame{border-width:2px}
@@ -201,7 +201,7 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
   .react-town-message{left:7px;right:7px;bottom:124px;padding:6px;font-size:.82rem;max-height:3.25em}
   .react-town-menu{top:52px;right:7px}
 }
-@media(max-width:780px) and (orientation:landscape){
+@media (max-width:780px) and (orientation:landscape){
   .react-town-screen{height:100dvh;padding:0}
   .react-town-frame{border-width:2px}
   .react-town-objective{top:4px;left:5px;max-width:calc(100% - 160px);padding:5px 8px}
