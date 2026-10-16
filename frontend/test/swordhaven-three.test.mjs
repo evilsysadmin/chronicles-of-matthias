@@ -78,7 +78,7 @@ test('React is wired to the original 3D builder with controlled lifecycle and no
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(pkg.dependencies.three, '0.186.1');
   assert.match(app, /<SwordhavenViewport state=\{town\}/);
-  assert.match(app, /Recorrer Swordhaven original en 3D/);
+  assert.match(app, /ChroniclesSaveMenu/);
   assert.match(app, /chroniclesPartyPortraitUrl/);
   assert.match(viewport, /buildSwordhavenScene\(scene/);
   assert.match(viewport, /new THREE.WebGLRenderer/);
