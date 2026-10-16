@@ -1,0 +1,97 @@
+name: Publish Chronicles staging web image
+on:
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-publish.yml'
+      - 'test/web-image-workflow.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-publish.yml'
+      - 'test/web-image-workflow.test.mjs'
+permissions:
+  contents: read
+jobs:
+  web-image-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test test/web-image-workflow.test.mjs web/shell.test.mjs
+
+  publish-staging-web:
+    needs: web-image-policy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/evilsysadmin/chronicles-web
+      TAG: staging-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Test ARM64 container before publishing
+        run: |
+          set -euo pipefail
+          docker buildx build --pull --platform linux/arm64 --load \
+            -t "$IMAGE:$TAG-arm64-test" ./web
+          test "$(docker image inspect "$IMAGE:$TAG-arm64-test" --format '{{.Architecture}}')" = arm64
+          docker run -d --name chronicles-web-arm64 \
+            --platform linux/arm64 --read-only --cap-drop ALL \
+            --security-opt no-new-privileges \
+            -p 127.0.0.1:18083:8080 "$IMAGE:$TAG-arm64-test"
+          trap 'docker rm -f chronicles-web-arm64 >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 2 http://127.0.0.1:18083/ -o "$RUNNER_TEMP/chronicles-web.html"; then break; fi
+            sleep 1
+          done
+          grep -q 'CHRONICLES OF MATTHIAS' "$RUNNER_TEMP/chronicles-web.html"
+          grep -q 'todavía no es el juego' "$RUNNER_TEMP/chronicles-web.html"
+          test "$(docker image inspect "$IMAGE:$TAG-arm64-test" --format '{{.Config.User}}')" != "root"
+      - name: Authenticate with GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish SHA-pinned multiarch staging web manifest
+        id: publish
+        run: |
+          set -euo pipefail
+          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --label org.opencontainers.image.source="https://github.com/evilsysadmin/chronicles-of-matthias" \
+            --metadata-file "$RUNNER_TEMP/chronicles-web-metadata.json" \
+            --push -t "$IMAGE:$TAG" ./web
+          digest="$(jq -r '."containerimage.digest" // empty' "$RUNNER_TEMP/chronicles-web-metadata.json")"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          docker buildx imagetools inspect --raw "$IMAGE@$digest" > "$RUNNER_TEMP/chronicles-web-manifest.json"
+          jq -e '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")] | length == 1' "$RUNNER_TEMP/chronicles-web-manifest.json"
+          jq -e '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length == 1' "$RUNNER_TEMP/chronicles-web-manifest.json"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Attest immutable staging web image
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/evilsysadmin/chronicles-web
+          subject-digest: ${{ steps.publish.outputs.digest }}
+          push-to-registry: true
+      - name: Report staging image digest
+        run: |
+          {
+            echo "### Chronicles standalone web (staging only)"
+            echo "Source SHA: \`$GITHUB_SHA\`"
+            echo "Immutable image: \`$IMAGE@${{ steps.publish.outputs.digest }}\`"
+            echo "This does NOT deploy a site, modify DNS, or make Chronicles playable."
+          } >> "$GITHUB_STEP_SUMMARY"
