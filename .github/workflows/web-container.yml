@@ -33,6 +33,9 @@ jobs:
           for asset in party-preview.js chroniclesMM3Rules.js chroniclesCharacterBuilds.js; do
             curl -fsS --max-time 3 "http://127.0.0.1:18080/game/$asset" | grep -q 'Chronicles'
           done
+          curl -fsS http://127.0.0.1:18080/game/crypt-map.js | grep -q 'export const CRYPT_MAP'
+          curl -fsS http://127.0.0.1:18080/game/exploration-core.js | grep -q 'explorationStep'
+          curl -fsS http://127.0.0.1:18080/game/exploration-preview.js | grep -q 'mountExplorationPreview'
       - name: Container logs
         if: always()
         run: docker logs chronicles-web || true

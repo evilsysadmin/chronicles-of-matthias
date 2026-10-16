@@ -36,3 +36,35 @@ runs the app's shell test and checks the unchanged non-playable marker.
 Do not remove the legacy Chess Studio feature or transfer live saved games
 until the complete independent runtime has parity and a separately tested,
 owner-scoped migration.
+
+## Second extraction: crypt exploration (still not a complete game)
+
+Original source: `evilsysadmin/chess-studio` commit
+`e4f8e6c4c78390c89e4ebc4fa63914bf8ac6bc6b`.
+
+- `web/game/crypt-map.js` contains the full, unchanged map data from
+  `frontend/src/chronicles/maps/crypt-eight-squares.json`, served as
+  a same-origin ES module (no fetch, no cookies, no credentials).
+- `web/game/exploration-core.js` adapts the movement subset of
+  `frontend/src/chroniclesOfMatthias.js`: facing, tile-step/strafe,
+  walls, authored hostile blockers, exit requirements, the sigil trigger,
+  a set-only lever, and journal entries. Unit tests pin representative
+  real map behaviors.
+- `web/game/exploration-preview.js` shows this as a modest accessible
+  map with keyboard and touch controls. No scene/3D runtime is claimed.
+
+**Explicit limitations:** no combat, enemy roaming, initiative, full
+content effects (e.g. ability refill), cross-map transitions, quests,
+login, profile/account state, saved games or resumability. The full
+engine remains in Chess Studio, which is untouched. The preview may
+activate the sigil, but it cannot defeat the awakened enemies or
+complete the dungeon. No fake completion/reward or writes are issued.
+The character forge remains a separate, unsaved preview; it is not yet
+wired to the explorer.
+
+The Pages deploy is owned by ShadowOps, not by this source repository.
+A green source PR or published GHCR digest does **not** imply the latest
+source has reached `https://staging.chronicles.shadowops.dpdns.org/`.
+The source SHA must be published and verified by the separate Infra
+release workflow.
+

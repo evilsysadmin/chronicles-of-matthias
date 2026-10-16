@@ -12,7 +12,36 @@
   <main class="shell">
     <div class="eyebrow">CHRONICLES OF MATTHIAS · STAGING</div>
     <h1>Reúne a tu compañía.</h1>
-    <p class="lead">Las mazmorras todavía esperan, pero ya puedes preparar a quienes entrarán en ellas. Es el <strong>creador de personajes auténtico</strong> extraído de Chronicles, con sus diez clases, tiradas 3d6 y reglas MM3.</p>
+    <p class="lead">Ya puedes reclutar una compañía y recorrer un primer escenario de la cripta con <strong>geometría y reglas de movimiento extraídas de Chronicles</strong>. El combate y las partidas completas siguen pendientes.</p>
+
+    <section class="forge crypt-preview" id="crypt-exploration" tabindex="0" aria-labelledby="crypt-title">
+      <header class="forge-header">
+        <div><div class="chapter">CAPÍTULO 1 · EL PRIMER PASO</div><h2 id="crypt-title">Cripta de las Ocho Casillas</h2></div>
+        <button type="button" id="crypt-restart" class="action action-muted">Reiniciar exploración</button>
+      </header>
+      <p class="crypt-intro">Recorre el <strong>mapa original</strong>, gira, avanza, esquiva paredes, observa enemigos y despierta el sello. Este adelanto es exploración parcial: <strong>sin combate, cambios de región ni guardado</strong>.</p>
+      <div class="crypt-layout">
+        <div class="crypt-map-frame">
+          <div class="crypt-map" id="crypt-map" role="img" aria-label="Mapa de la Cripta de las Ocho Casillas"></div>
+          <p class="crypt-legend">↑ Compañía · ✹ Hostil · ◇ Sello · ◆ Puerta · ⚙ Palanca</p>
+        </div>
+        <div class="crypt-controls">
+          <p id="crypt-readout" class="crypt-readout" aria-live="polite"></p>
+          <p id="crypt-message" class="crypt-message" role="status" aria-live="polite"></p>
+          <p id="crypt-interaction" class="crypt-interaction"></p>
+          <div class="crypt-pad" aria-label="Controles de exploración">
+            <button type="button" data-explore-action="turn-left">↶ Girar izquierda</button>
+            <button type="button" data-explore-action="forward">↑ Avanzar</button>
+            <button type="button" data-explore-action="turn-right">↷ Girar derecha</button>
+            <button type="button" data-explore-action="strafe-left">← Lateral izq.</button>
+            <button type="button" data-explore-action="backward">↓ Retroceder</button>
+            <button type="button" data-explore-action="strafe-right">→ Lateral der.</button>
+          </div>
+          <button type="button" data-explore-action="interact" class="action crypt-interact-button">Interactuar</button>
+          <p class="privacy">Teclado: ↑ ↓ para avanzar/retroceder, ← → para girar, Q/E para desplazarte lateralmente. Primero selecciona esta zona con Tab o un clic; el teclado no interfiere con el editor de personajes.</p>
+        </div>
+      </div>
+    </section>
 
     <section class="forge" aria-labelledby="forge-title">
       <header class="forge-header">
@@ -30,10 +59,11 @@
 
     <section class="status" aria-label="Estado de la migración">
       <h2>Próximo capítulo</h2>
-      <p>La exploración, el combate y los guardados reales siguen migrándose desde Chess Studio. Este reclutamiento sí utiliza lógica del juego, pero <strong>todavía no es el juego.</strong></p>
+      <p>La forja y la navegación básica por la cripta funcionan de manera independiente; el combate, las misiones, el contenido completo y los guardados reales siguen migrándose desde Chess Studio. Este adelanto <strong>todavía no es el juego.</strong></p>
     </section>
     <footer>Staging · Sin acceso a partidas reales · Sin escrituras de guardados</footer>
   </main>
+  <script type="module" src="./game/exploration-preview.js"></script>
   <script type="module" src="./game/party-preview.js"></script>
 </body>
 </html>
