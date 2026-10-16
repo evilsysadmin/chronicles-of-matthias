@@ -303,3 +303,20 @@ than adding decorative buttons.
 Browser smoke runs on both portrait and landscape and validates
 the same original map, four heroes, actual initial health values and
 no fatal JS errors. Source integrity tests guard against regressions.
+
+### Complete Terra world topology — required for reducer boot
+
+The first integration attempt exposed a genuine authored-world dependency:
+six bidirectional return gates in `banner-road-first-book` and
+`rookwood-first-book` point into Terra. The extracted 17 explicit maps
+alone make the *unchanged* catalog throw on module initialization.
+Rather than bypass its validation, this same runtime PR imports **all
+44 additional authored maps** from the original `maps/` folder,
+byte-for-byte. Together with the earlier 17, **61/61 original map JSONs
+are now present**, including every Terra grid and named overworld region.
+A regression test traverses the entire source catalog's transition graph
+and verifies reciprocal return links and original Git blob hashes.
+
+This is the actual original world topology, not a synthetic landing map.
+With the missing manifests restored, the unaltered reducer can validate
+and bootstrap without weakening original map safety rules.
