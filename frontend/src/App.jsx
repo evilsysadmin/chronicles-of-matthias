@@ -126,39 +126,39 @@ export default function App() {
   if (page === 'town') {
     return (
       <main className="chronicles-react react-town-screen">
-        <header className="chronicles-react-header">
-          <div>
-            <small>CHRONICLES OF MATTHIAS · THREE.JS ORIGINAL</small>
+        <header className="react-town-topbar">
+          <button type="button" className="react-town-back" aria-label="Volver al inicio" title="Volver al inicio"
+            onClick={() => setPage('home')}>← <span>Salir</span></button>
+          <div className="react-town-heading">
+            <small>CHRONICLES · VISTA 3D</small>
             <h1>Swordhaven</h1>
           </div>
-          <button type="button" className="react-muted" onClick={() => setPage('home')}>
-            Volver al inicio
-          </button>
+          <button type="button" className="react-town-reset" title="Reiniciar recorrido"
+            aria-label="Reiniciar recorrido en Swordhaven" onClick={() => setTown(createSwordhavenWalkState())}>↻</button>
         </header>
-        <section className="react-town-frame" aria-label="Exploración visual de Swordhaven">
-          <SwordhavenViewport state={town}/>
-          <div className="react-town-status" role="status" aria-live="polite">
-            <span>CIUDAD · SWORDHAVEN</span>
-            <strong>Rumbo {SWORDHAVEN_DIRECTIONS[town.direction]?.name} · X{town.x} Y{town.y} · Paso {town.turns}</strong>
-          </div>
-        </section>
-        <p className="react-town-message" role="status" aria-live="polite">{town.message}</p>
-        <div className="react-town-bottom">
-          <div className="react-town-controls" aria-label="Controles de primera persona">
+
+        <div className="react-town-playfield">
+          <section className="react-town-frame" aria-label="Exploración visual de Swordhaven">
+            <SwordhavenViewport state={town}/>
+            <div className="react-town-status">
+              <span>SWORDHAVEN</span>
+              <strong>Rumbo {SWORDHAVEN_DIRECTIONS[town.direction]?.name} · X{town.x} Y{town.y} · {town.turns} pasos</strong>
+            </div>
+            <p className="react-town-message" role="status" aria-live="polite">{town.message}</p>
+          </section>
+
+          <section className="react-town-controls" aria-label="Controles de primera persona">
             {COMMANDS.map(([action, label]) => (
-              <button type="button" key={action}
-                onClick={() => setTown(previous => swordhavenWalkStep(previous, action))}>{label}</button>
+              <button type="button" key={action} data-town-move={action}
+                aria-label={label.replace(/[↑↓←→↶↷]/g, '').trim()}
+                onClick={() => setTown(previous => swordhavenWalkStep(previous, action))}>
+                <span className="react-town-control-icon" aria-hidden="true">{label.split(' ')[0]}</span>
+                <span className="react-town-control-label">{label.substring(label.indexOf(' ') + 1)}</span>
+              </button>
             ))}
-            <button type="button" className="react-muted" onClick={() => setTown(createSwordhavenWalkState())}>
-              Volver al inicio de la ciudad
-            </button>
-          </div>
-          <p className="react-note">
-            Cámara y edificios 3D reales del código original de Chess Studio; cuadrícula de colisiones original.
-            Teclas WASD/flechas, Q/E. Esta vista es una migración visual aislada:
-            todavía no hay comerciantes, misiones, combate, transición de mapas ni guardados.
-          </p>
+          </section>
         </div>
+
         <section className="react-town-party" aria-label="Compañía">
           {build.characters.map(character => (
             <div key={character.slotId} className="react-town-party-member">
@@ -167,7 +167,17 @@ export default function App() {
             </div>
           ))}
         </section>
-        <footer className="react-footer">Escenario original Swordhaven · Vista de migración sin escrituras de partidas</footer>
+
+        <details className="react-town-help">
+          <summary>Acerca de esta vista de Swordhaven</summary>
+          <p>
+            La escena y la cuadrícula de colisiones son originales de Chess Studio.
+            Controles de teclado: WASD/flechas para avanzar, retroceder y girar; Q/E para movimiento lateral.
+            Esta es una migración visual: todavía no hay comerciantes, misiones, combate,
+            cambios de mapa ni guardados. Los personajes aparecen como grupo de referencia,
+            sin estadísticas de una partida activa.
+          </p>
+        </details>
       </main>
     );
   }
