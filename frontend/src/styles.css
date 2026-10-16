@@ -47,31 +47,155 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
 .react-journal-trigger:focus-visible{outline:3px solid #ffdb9b;outline-offset:3px}
 
 
-/* Original Swordhaven 3D scene in the standalone React migration.
-   Geometry, pixel textures and placement come from Chess Studio's builder. */
+/* Swordhaven 3D: immersive game shell instead of a long article. The actual
+   WebGL scene builder, lighting and geometry are unchanged. */
 .react-town-entry{display:block;margin-top:12px}
-.react-town-screen{max-width:1500px}
-.react-town-frame{position:relative;margin-top:18px;border:5px ridge #8c7856;min-height:240px;box-shadow:0 18px 60px #0009}
-.react-swordhaven-host{position:relative;aspect-ratio:16/8.2;width:100%;overflow:hidden;background:linear-gradient(#b8dce9 0%,#94c5d8 48%,#63875a 49%,#6c8959)}
+.react-town-screen{
+  width:100%;max-width:1480px;height:100dvh;min-height:0;
+  padding:clamp(8px,1vw,15px);display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto auto;gap:8px;
+  overflow:hidden;background:#12171b;
+}
+.react-town-topbar{
+  display:flex;align-items:center;gap:12px;min-height:46px;
+  border-bottom:1px solid #716044;padding:0 4px 7px;
+}
+.react-town-heading{min-width:0;flex:1;text-align:center}
+.react-town-heading small{
+  color:#cba76f;display:block;letter-spacing:.14em;
+  font-size:clamp(.57rem,1.6vw,.72rem);font-weight:700;
+}
+.react-town-heading h1{
+  font:clamp(1.35rem,3vw,1.9rem)/1.1 Georgia,serif;
+  margin:3px 0 0;color:#f1d9a6;
+}
+.react-town-back,.react-town-reset{
+  border:1px solid #846c49;border-radius:5px;flex:0 0 auto;
+  color:#f1daba;background:#293b41;min-height:44px;
+  padding:7px 12px;font-size:.86rem;
+}
+.react-town-back:hover,.react-town-reset:hover{background:#375358}
+.react-town-reset{font-size:1.4rem;min-width:44px;padding:4px 10px}
+.react-town-playfield{
+  min-width:0;min-height:0;display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(215px,260px);gap:8px;
+}
+.react-town-frame{
+  position:relative;min-height:0;overflow:hidden;
+  border:4px ridge #8b7652;background:#151f23;
+  box-shadow:0 5px 30px #0008;
+}
+.react-swordhaven-host{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;
+  background:linear-gradient(#b8dce9 0%,#94c5d8 48%,#63875a 49%,#6c8959)}
 .react-swordhaven-canvas{display:block;width:100%;height:100%;touch-action:none}
-.react-swordhaven-error{position:absolute;inset:12px;padding:16px;background:#1c1d23ee;color:#f7d2a4;display:grid;place-items:center;text-align:center}
-.react-town-status{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:11px 16px;background:linear-gradient(transparent,#100e0add);text-shadow:0 2px 4px #000;color:#f5d9a3;font:600 .82rem/1.5 system-ui,sans-serif;pointer-events:none}
+.react-swordhaven-error{
+  position:absolute;inset:12px;padding:16px;background:#1c1d23ee;
+  color:#f7d2a4;display:grid;place-items:center;text-align:center;
+}
+.react-town-status{
+  position:absolute;top:0;left:0;right:0;display:flex;
+  justify-content:space-between;gap:8px;align-items:center;
+  flex-wrap:wrap;padding:7px 10px;background:linear-gradient(#101417d9,#10141700);
+  text-shadow:0 2px 4px #000;color:#f6d9a1;
+  font:600 clamp(.65rem,1.3vw,.78rem)/1.35 system-ui,sans-serif;pointer-events:none;
+}
 .react-town-status span{letter-spacing:.13em}
 .react-town-status strong{font-variant-numeric:tabular-nums}
-.react-town-message{margin:0;border:1px solid #846a42;border-top:none;background:linear-gradient(90deg,#4a3220,#30231f);padding:12px 17px;color:#f0dfc1;text-align:center;font:1rem/1.5 Georgia,serif;min-height:53px}
-.react-town-bottom{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,1fr);gap:20px;align-items:start;margin-top:16px}
-.react-town-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.react-town-controls button{min-height:47px;padding:9px 5px;border-radius:6px;border:1px solid #a38454;background:#253c40;color:#f1ddc0;font:600 .86rem system-ui,sans-serif}
-.react-town-controls button:hover{background:#385962}
-.react-town-controls button:focus-visible{outline:3px solid #ffda8d;outline-offset:3px}
-.react-town-controls button:last-child{grid-column:1/-1}
-.react-town-party{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
-.react-town-party-member{border:1px solid #94764b;background:#253036;display:flex;align-items:center;gap:10px;padding:6px;min-width:0;box-shadow:inset 0 0 0 2px #0c1720}
-.react-town-party-member img{width:60px;height:68px;object-fit:cover;object-position:center;flex-shrink:0;border:1px solid #a08360}
+.react-town-message{
+  position:absolute;bottom:0;left:0;right:0;margin:0;padding:10px 12px;
+  background:linear-gradient(#22170de3,#22170df2);color:#f3dfb8;
+  border-top:1px solid #92784c;text-align:center;
+  font:clamp(.8rem,1.4vw,1rem)/1.35 Georgia,serif;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  line-clamp:2;overflow:hidden;max-height:3.5em;
+  pointer-events:none;
+}
+.react-town-controls{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:6px;align-items:stretch;min-height:0;
+}
+.react-town-controls button{
+  min-width:0;min-height:44px;padding:6px 2px;border-radius:6px;
+  border:1px solid #987e58;background:#263a42;color:#f1dfc1;
+  font:600 .8rem/1.12 system-ui,sans-serif;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  touch-action:manipulation;
+}
+.react-town-controls button:hover{background:#385961}
+.react-town-controls button:active{background:#55716e}
+.react-town-controls button:focus-visible{outline:3px solid #ffda8d;outline-offset:1px}
+.react-town-control-icon{font-size:1.75rem;line-height:1}
+.react-town-control-label{font-size:.76rem}
+.react-town-party{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;
+  min-width:0;min-height:0;
+}
+.react-town-party-member{
+  border:1px solid #94764b;background:#253036;display:flex;align-items:center;
+  gap:8px;padding:4px;min-width:0;box-shadow:inset 0 0 0 2px #0c1720;
+}
+.react-town-party-member img{
+  width:52px;height:60px;object-fit:cover;object-position:center;
+  flex-shrink:0;border:1px solid #a08360;
+}
 .react-town-party-member div{min-width:0}
-.react-town-party-member strong,.react-town-party-member span{display:block;overflow-wrap:anywhere}
-.react-town-party-member strong{font-size:.85rem}
-.react-town-party-member span{color:#c2ac86;font-size:.73rem;margin-top:4px}
-@media(max-width:800px){.react-town-bottom{grid-template-columns:1fr}.react-town-party{grid-template-columns:repeat(2,minmax(0,1fr))}.react-swordhaven-host{aspect-ratio:16/9}}
-@media(max-width:400px){.react-town-frame{border-width:3px}.react-town-controls button{font-size:.74rem}.react-town-party-member img{width:52px;height:61px}.react-town-status{font-size:.65rem;padding:5px 8px}}
-@media(prefers-reduced-motion:reduce){.react-swordhaven-host{scroll-behavior:auto}}
+.react-town-party-member strong,.react-town-party-member span{display:block;overflow:hidden;text-overflow:ellipsis}
+.react-town-party-member strong{font-size:.8rem}
+.react-town-party-member span{color:#c2ac86;font-size:.69rem;margin-top:3px}
+.react-town-help{
+  min-width:0;border-top:1px solid #4a4d47;color:#adbbb9;
+  font:400 .78rem/1.5 system-ui,sans-serif;
+}
+.react-town-help summary{cursor:pointer;padding:3px 8px;color:#e2d1a9}
+.react-town-help p{margin:4px 8px 0;max-width:90ch}
+@media (max-width:780px) and (orientation:portrait) {
+  .react-town-screen{
+    height:100dvh;min-height:0;
+    grid-template-rows:auto minmax(0,1fr) auto auto;gap:6px;
+    padding:6px 7px max(4px,env(safe-area-inset-bottom));
+  }
+  .react-town-topbar{min-height:45px;padding-bottom:4px;gap:6px}
+  .react-town-heading h1{font-size:1.35rem}
+  .react-town-heading small{letter-spacing:.08em;font-size:.55rem}
+  .react-town-back,.react-town-reset{min-height:40px;min-width:42px;padding:5px 7px}
+  .react-town-playfield{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:6px}
+  .react-town-frame{border-width:3px;min-height:0}
+  .react-town-controls{grid-template-rows:repeat(2,48px);gap:5px}
+  .react-town-controls button{min-height:48px;flex-direction:row;gap:6px}
+  .react-town-control-icon{font-size:1.55rem}
+  .react-town-control-label{font-size:.74rem}
+  .react-town-party{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .react-town-party-member{flex-direction:column;gap:2px;padding:3px;text-align:center}
+  .react-town-party-member img{width:42px;height:45px;flex-shrink:1}
+  .react-town-party-member strong{font-size:.69rem}
+  .react-town-party-member span{display:none}
+  .react-town-help{font-size:.69rem}
+  .react-town-help:not([open]){max-height:26px;overflow:hidden}
+  .react-town-help[open]{position:absolute;inset:auto 7px max(4px,env(safe-area-inset-bottom)) 7px;
+    background:#152127f7;border:1px solid #8c7651;padding:8px;z-index:5;box-shadow:0 0 25px #000}
+}
+@media (max-width:780px) and (orientation:landscape) {
+  .react-town-screen{height:100dvh;padding:4px 7px;gap:4px}
+  .react-town-topbar{min-height:38px;padding-bottom:2px}
+  .react-town-heading h1{font-size:1.12rem}
+  .react-town-heading small{font-size:.55rem}
+  .react-town-back,.react-town-reset{min-height:35px;min-width:36px;padding:3px 8px}
+  .react-town-playfield{grid-template-columns:minmax(0,1fr) minmax(160px,30%);gap:5px}
+  .react-town-controls{gap:4px}
+  .react-town-control-label{font-size:.7rem}
+  .react-town-control-icon{font-size:1.3rem}
+  .react-town-party-member img{width:35px;height:36px}
+  .react-town-party-member span{display:none}
+  .react-town-party-member strong{font-size:.65rem}
+  .react-town-help:not([open]){max-height:23px;overflow:hidden}
+  .react-town-help[open]{position:absolute;bottom:0;left:8px;right:8px;
+    background:#152127f7;border:1px solid #8c7651;padding:8px;z-index:5}
+}
+@media (max-height:580px) {
+  .react-town-party-member img{height:34px;width:34px}
+  .react-town-controls button{min-height:35px}
+  .react-town-control-label{font-size:.67rem}
+}
+@media (prefers-reduced-motion:reduce) {
+  .react-swordhaven-host{scroll-behavior:auto}
+}
