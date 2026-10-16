@@ -225,8 +225,8 @@ export default function App() {
                     <summary>Acerca de esta vista</summary>
                     <p>
                       Escenario y colisiones originales de Chess Studio. Teclado: WASD/flechas y Q/E.
-                      Esta vista es una migración visual: todavía no hay comerciantes, misiones,
-                      combate, cambios de mapa ni guardados. Los retratos no muestran estadísticas de partida.
+                      Esta vista es una migración visual: todavía no hay comerciantes, misiones, combate,
+                      cambios de mapa ni guardados. Los retratos no muestran estadísticas de partida.
                     </p>
                   </details>
                 </div>
