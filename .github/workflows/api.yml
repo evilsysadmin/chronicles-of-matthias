@@ -1,18 +1,10 @@
 name: Chronicles API (verbatim Chess Studio backend)
 on:
+  # Unfiltered on purpose: its verify job is a required check on main, so it
+  # must report on every PR (a path-filtered required check blocks merges).
   pull_request:
-    paths:
-      - 'api/**'
-      - 'frontend/**'
-      - 'scripts/vendor_chess_studio_api.py'
-      - '.github/workflows/api.yml'
   push:
     branches: [main]
-    paths:
-      - 'api/**'
-      - 'frontend/**'
-      - 'scripts/vendor_chess_studio_api.py'
-      - '.github/workflows/api.yml'
   workflow_dispatch:
 permissions:
   contents: read
