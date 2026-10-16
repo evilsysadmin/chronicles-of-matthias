@@ -23,6 +23,7 @@ export function createSwordhavenWalkState() {
     y: SWORDHAVEN_SPAWN.y,
     direction: SWORDHAVEN_SPAWN.direction,
     turns: 0,
+    visited: [SWORDHAVEN_SPAWN.x + ',' + SWORDHAVEN_SPAWN.y],
     message: 'Swordhaven. La compañía se adentra en sus calles.',
   };
 }
@@ -48,7 +49,10 @@ export function swordhavenWalkStep(state, action) {
     return { ...state, turns: state.turns + 1,
       message: 'El edificio, muro o árbol bloquea el paso. La geometría manda.' };
   }
+  const nextCell = x + ',' + y;
+  const visited = Array.isArray(state.visited) ? state.visited : [];
   return { ...state, x, y, turns: state.turns + 1,
+    visited: visited.includes(nextCell) ? visited : [...visited, nextCell].slice(-361),
     message: x === SWORDHAVEN_GATE_CELL.x && y === SWORDHAVEN_GATE_CELL.y
       ? 'La salida de Swordhaven aún no está conectada al siguiente mapa en esta vista de migración.'
       : 'La compañía recorre Swordhaven.' };
