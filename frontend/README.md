@@ -209,3 +209,22 @@ small PRs, resolve external dependencies, then switch to the canonical
 runtime, with non-fabricated backend state and real regression tests.
 Do not copy or overwrite the current preview reducer blindly: preserve
 root / legacy publishing rollback and secure save behavior.
+
+## Complete pinned Chronicles React source snapshot (418 files)
+
+The reproducible vendoring workflow has now committed **418 original source
+files** to `frontend/original-chess-studio/` (source pin
+`ab0531d7e2812eed8c24003e8ef3386e8853b5a9`). This includes original
+`ChroniclesOfMatthias.jsx`, all `Chronicles*` React components and styling,
+the original `chroniclesOfMatthias*.js` core/renderer/AI/turn logic,
+`src/chronicles/` campaign runtime/map catalog/tests, image/UI/sprite
+assets, and the legacy shared sound/persistence hooks needed to inspect and
+untangle the original imports.
+
+These files are **in the new repository, not yet the app's active runtime**.
+The original files are preserved in a separate read-only migration snapshot,
+so compilation and current standalone staging are not silently altered
+by incompatible legacy service imports. The active Home, original character
+creator, Chronicle dialog and authored Swordhaven 3D are already wired in
+`frontend/src/`; actual original combat, map transitions, party state and
+reliable authenticated saves still require modular integration.
