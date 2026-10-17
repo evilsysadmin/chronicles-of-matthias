@@ -68,12 +68,38 @@ function Marker({ marker }) {
   );
 }
 
+// The next step towards the objective: a star when it is in view, or an
+// arrow on the rim of the minimap pointing the way when it is not.
+function TargetMarker({ target, state, radius }) {
+  const dx = target.x - state.x;
+  const dy = target.y - state.y;
+  if (Math.abs(dx) <= radius && Math.abs(dy) <= radius) {
+    return (
+      <g className="chronicles-minimap__target" data-chronicles-route-target="in-view">
+        <circle cx={target.x + .5} cy={target.y + .5} r=".42" />
+        <text x={target.x + .5} y={target.y + .56} textAnchor="middle" dominantBaseline="middle">★</text>
+      </g>
+    );
+  }
+  const scale = (radius + .1) / Math.max(Math.abs(dx), Math.abs(dy));
+  const ex = state.x + .5 + dx * scale;
+  const ey = state.y + .5 + dy * scale;
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  return (
+    <g className="chronicles-minimap__target is-offscreen" data-chronicles-route-target="edge"
+      transform={`rotate(${angle} ${ex} ${ey})`}>
+      <path d={`M ${ex + .32} ${ey} L ${ex - .22} ${ey - .26} L ${ex - .1} ${ey} L ${ex - .22} ${ey + .26} Z`} />
+    </g>
+  );
+}
+
 export default function ChroniclesMinimap({
   state,
   visitedCells,
   hidden = false,
   radius = CHRONICLES_MINIMAP_RADIUS,
   onExpand,
+  target = null,
 }) {
   const map = chroniclesMapForState(state);
   const visited = useMemo(
@@ -148,6 +174,7 @@ export default function ChroniclesMinimap({
             marker={marker}
           />
         ))}
+        {target && <TargetMarker target={target} state={state} radius={radius} />}
         <g
           className="chronicles-minimap__party"
           transform={`rotate(${facing} ${cx} ${cy})`}
