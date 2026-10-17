@@ -11,6 +11,6 @@ export function isConnectionFailure(error) {
 export function connectionErrorCopy(error, language = 'es') {
   if (!isConnectionFailure(error)) return String(error?.message || error || 'No se pudo completar la operación.');
   return language === 'en'
-    ? 'We could not reach Chess Studio. Check your connection and try again. Your account and progress are safe.'
-    : 'No hemos podido conectar con Chess Studio. Comprueba tu conexión y vuelve a intentarlo. Tu cuenta y tu progreso están a salvo.';
+    ? 'We could not reach Chronicles. Check your connection and try again. Your account and progress are safe.'
+    : 'No hemos podido conectar con Chronicles. Comprueba tu conexión y vuelve a intentarlo. Tu cuenta y tu progreso están a salvo.';
 }

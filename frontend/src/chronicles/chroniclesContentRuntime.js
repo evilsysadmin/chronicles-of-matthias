@@ -10,6 +10,13 @@ const CARDINAL_DIRECTIONS = Object.freeze([
 
 const CONTENT_GROUPS = Object.freeze(['triggers', 'interactables', 'treasures', 'traps', 'exits']);
 
+// Spanish contracts "a el" → "al" and "de el" → "del": names like
+// "el Canciller Varren" need it whenever they follow those prepositions.
+export function chroniclesToName(name) {
+  const text = String(name || '');
+  return text.startsWith('el ') ? `al ${text.slice(3)}` : `a ${text}`;
+}
+
 function inventoryFor(state) {
   return state?.inventory && typeof state.inventory === 'object' ? state.inventory : {};
 }

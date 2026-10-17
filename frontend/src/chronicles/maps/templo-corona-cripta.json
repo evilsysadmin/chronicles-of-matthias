@@ -150,7 +150,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Carcelero del Silencio con {attack}.",
+        "message": "{attacker} derriba al Carcelero del Silencio con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -194,7 +194,7 @@
     {
       "id": "crypt-edric-ghost",
       "kind": "lore",
-      "visualType": "rookwood-mourner-voice",
+      "visualType": "oathbound-knight",
       "x": 9,
       "y": 3,
       "label": "Hablar con el espectro de Sir Edric",
@@ -232,7 +232,7 @@
     {
       "id": "crypt-edric-rest",
       "kind": "lore",
-      "visualType": "rookwood-mourner-voice",
+      "visualType": "oathbound-knight",
       "x": 9,
       "y": 3,
       "label": "Despedirse de Sir Edric",

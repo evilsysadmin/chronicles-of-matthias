@@ -4,6 +4,7 @@
   "progressionKey": "molinoviejo-v1",
   "title": "Molinoviejo",
   "areaCode": "B5",
+  "biome": "plains",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [

@@ -209,7 +209,7 @@
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el contramaestre ahogado con {attack}.",
+        "message": "{attacker} derriba al contramaestre ahogado con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -255,7 +255,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Capitán Ahogado con {attack}.",
+        "message": "{attacker} derriba al Capitán Ahogado con {attack}.",
         "effects": [
           {
             "type": "set",

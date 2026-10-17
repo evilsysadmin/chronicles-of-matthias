@@ -26,7 +26,7 @@
   "partyStart": {
     "x": 1,
     "y": 1,
-    "direction": 1
+    "direction": 2
   },
   "initialFlags": {},
   "enemies": [
@@ -208,7 +208,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el cuidador de la nidada con {attack}.",
+        "message": "{attacker} derriba al cuidador de la nidada con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -254,7 +254,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Dragón de Ceniza con {attack}.",
+        "message": "{attacker} derriba al Dragón de Ceniza con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -282,7 +282,7 @@
       },
       "defeatedFlag": "guarida_del_dragonBossDefeated",
       "blockingMessage": "El Dragón de Ceniza cierra el paso.",
-      "visualScale": 1.9
+      "visualScale": 2.7
     }
   ],
   "triggers": [],

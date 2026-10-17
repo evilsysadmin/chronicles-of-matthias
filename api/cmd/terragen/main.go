@@ -207,6 +207,28 @@ func sync(root string, outputs map[string][]byte, check bool) (stale []string) {
 	return stale
 }
 
+// contractSpanish fixes "a el"/"de el" (→ "al"/"del") that the tables
+// produce when a sentence and a name like "el capitán del puerto" meet.
+func contractSpanish(v any) any {
+	switch x := v.(type) {
+	case *O:
+		for i := range x.kv {
+			x.kv[i].v = contractSpanish(x.kv[i].v)
+		}
+		return x
+	case A:
+		for i := range x {
+			x[i] = contractSpanish(x[i])
+		}
+		return x
+	case []string:
+		return x
+	case string:
+		return strings.NewReplacer(" a el ", " al ", " de el ", " del ").Replace(x)
+	}
+	return v
+}
+
 func main() {
 	check := flag.Bool("check", false, "fail if committed manifests differ from the generated ones")
 	flag.Parse()
@@ -216,6 +238,9 @@ func main() {
 		manifests[id] = m
 	}
 	fixArrivals(root, manifests)
+	for _, m := range manifests {
+		contractSpanish(m)
+	}
 
 	outputs := map[string][]byte{}
 	entries, err := os.ReadDir(filepath.Join(root, frontendMaps))

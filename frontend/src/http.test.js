@@ -41,12 +41,12 @@ describe('HTTP común', () => {
 
   it('tolera error sin cuerpo JSON sin enseñar el mensaje técnico', async () => {
     global.fetch.mockResolvedValue({ ok: false, status: 500, headers: { get: () => null }, json: async () => { throw new Error('no json'); } });
-    await expect(requestJson('/api/test')).rejects.toThrow('Chess Studio ha tenido un problema al procesar esto.');
+    await expect(requestJson('/api/test')).rejects.toThrow('Chronicles ha tenido un problema al procesar esto.');
   });
 
   it('normaliza también fallos de red antes de recibir HTTP', async () => {
     global.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
-    await expect(requestJson('/api/test')).rejects.toThrow('No hemos podido conectar con Chess Studio.');
+    await expect(requestJson('/api/test')).rejects.toThrow('No hemos podido conectar con Chronicles.');
   });
 
   it('aborta un fetch colgado y libera el watchdog', async () => {

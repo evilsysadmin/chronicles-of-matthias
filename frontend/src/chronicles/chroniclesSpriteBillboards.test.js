@@ -43,7 +43,14 @@ describe('procedural placeholder creatures', () => {
     const procedural = (await import('../../../scripts/art/chronicles_sprites/procedural-sprites.json')).default;
     const { chroniclesEnemyVisualSpec } = await import('../chroniclesEnemyVisualRegistry.js');
     expect(procedural.sprites.length).toBeGreaterThanOrEqual(5);
-    procedural.sprites.forEach((id) => {
+    // Creatures fight (attack/hurt/dead frames + a Tactics model); the
+    // final act's NPCs (a king of stone, an empty throne) only idle.
+    const npcs = new Set(['stone-king', 'empty-throne']);
+    npcs.forEach((id) => {
+      expect(chroniclesHasSpriteBillboard(id), id).toBe(true);
+      expect(spriteManifest[id].frames, id).toEqual(['idle-a', 'idle-b']);
+    });
+    procedural.sprites.filter((id) => !npcs.has(id)).forEach((id) => {
       expect(chroniclesHasSpriteBillboard(id), id).toBe(true);
       expect(spriteManifest[id].frames, id).toEqual(['idle-a', 'idle-b', 'attack', 'hurt', 'dead']);
       expect(chroniclesEnemyVisualSpec(id), id).not.toBeNull();

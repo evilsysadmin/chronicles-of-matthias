@@ -316,12 +316,12 @@ func buildAtrium() *O {
 func buildCrypt() *O {
 	id := CryptID
 	interactables := A{
-		lore(loreSpec{id: "crypt-edric-ghost", pos: point{9, 3}, visual: "rookwood-mourner-voice", label: "Hablar con el espectro de Sir Edric",
+		lore(loreSpec{id: "crypt-edric-ghost", pos: point{9, 3}, visual: "oathbound-knight", label: "Hablar con el espectro de Sir Edric",
 			message: "Un caballero translúcido se arrodilla sin poder evitarlo: «Soy Edric, de la escolta de la Dama. Varren nos trajo aquí y nos hizo jurar ante su corona hueca. Ahora servimos a quien la lleve. La tablilla del Primer Pacto puede romper nuestro juramento… o devolvérselo al Rey. No ambas cosas. Decidid vosotros: nosotros ya no podemos».",
 			when:    A{flagIs("templeKnightsFreed", false)},
 			effects: A{obj("type", "set", "key", "templeEdricMet", "value", true), adv("Decide qué hacer con la tablilla del juramento y consigue la llave del Trono.")},
 			journal: journal("crypt-edric", "Los caballeros juramentados", "Los caballeros de la Dama están atados a la corona hueca de Varren. La tablilla del Pacto puede liberarlos o devolverle el juramento al Rey, pero no ambas cosas.", "♛")}),
-		lore(loreSpec{id: "crypt-edric-rest", pos: point{9, 3}, visual: "rookwood-mourner-voice", label: "Despedirse de Sir Edric",
+		lore(loreSpec{id: "crypt-edric-rest", pos: point{9, 3}, visual: "oathbound-knight", label: "Despedirse de Sir Edric",
 			message: "El espectro de Edric sonríe por primera vez: «Decidle a la Dama que volvimos. Aunque fuera así».",
 			when:    A{flagIs("templeKnightsFreed", true)}}),
 		lore(loreSpec{id: "crypt-oath-altar", pos: point{11, 3}, visual: "shrine", label: "Leer la tablilla ante el altar y liberar a los caballeros",
@@ -395,7 +395,7 @@ func buildThrone() *O {
 	afterVarren := func() A { return A{flagIs("varrenDefeated", true), flagIs("lostKingEnding", false)} }
 	king := capFirst(kingName)
 	interactables := A{
-		lore(loreSpec{id: "throne-king-stone", pos: point{9, 1}, visual: "rookwood-mourner-voice", label: "Sacar al Rey de la piedra, sin juramento",
+		lore(loreSpec{id: "throne-king-stone", pos: point{9, 1}, visual: "stone-king", label: "Sacar al Rey de la piedra, sin juramento",
 			when:    afterVarren(),
 			effects: endingEffects("regency", 250, 300, "El Rey vive. La Dama gobernará como regente."),
 			message: "Rompéis la piedra con las manos y con lo que tenéis. " + king + " sale del trono como sale un hombre de un pozo: vivo, débil y sin corona. «No volveré a jurar», dice. «Que el reino lo gobierne quien recuerde los nombres». El Silencio se queda sin rey y sin dueño.",
@@ -414,10 +414,10 @@ func buildThrone() *O {
 			effects:      append(A{obj("type", "consume-item", "itemId", "oath-tablet", "quantity", 1)}, endingEffects("broken", 200, 400, "El Pacto está roto. Los nombres borrados han vuelto.")...),
 			message:      "Rompes la tablilla contra el brazo del trono. El Pacto se deshace con un ruido de mil puertas abriéndose a la vez. Por todo Terra, los nombres que el Silencio se había llevado vuelven a sus dueños. " + king + " sale de la piedra convertido en un hombre corriente, y por primera vez en su vida parece aliviado.",
 			journal:      journal("lost-king-ending-broken", "Sin corona", "La compañía rompió el Primer Pacto. El Silencio ha soltado todos los nombres; el reino ya no tiene quien lo haga olvidar.", "♛")}),
-		lore(loreSpec{id: "throne-varren-before", pos: point{9, 1}, visual: "rookwood-mourner-voice", label: "Mirar el trono",
+		lore(loreSpec{id: "throne-varren-before", pos: point{9, 1}, visual: "stone-king", label: "Mirar el trono",
 			when:    A{flagIs("varrenDefeated", false)},
 			message: "En el trono de piedra hay un hombre de piedra: " + kingName + ". Delante, de pie, el Canciller Varren se ajusta una corona que no pesa nada."}),
-		lore(loreSpec{id: "throne-after", pos: point{9, 1}, visual: "rookwood-mourner-voice", label: "Mirar el trono vacío",
+		lore(loreSpec{id: "throne-after", pos: point{9, 1}, visual: "empty-throne", label: "Mirar el trono vacío",
 			when:    A{flagIs("lostKingEnding", true)},
 			message: "El trono está vacío. En el suelo, la corona hueca de Varren ya no brilla. Esta historia ha terminado; Terra sigue ahí arriba."}),
 	}

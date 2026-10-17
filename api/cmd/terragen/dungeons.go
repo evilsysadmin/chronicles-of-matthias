@@ -95,6 +95,17 @@ func openSides(grid [][]byte, p point) int {
 	return n
 }
 
+// openFacing is the first direction (N, E, S, W) with floor ahead, so the
+// company arrives looking down a corridor rather than at a wall.
+func openFacing(grid [][]byte, p point) int {
+	for d, step := range []point{{0, -1}, {1, 0}, {0, 1}, {-1, 0}} {
+		if grid[p.y+step.y][p.x+step.x] == '.' {
+			return d
+		}
+	}
+	return 1
+}
+
 func itemLabel(id string) string { return capFirst(strings.ReplaceAll(id, "-", " ")) }
 
 func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
@@ -246,7 +257,7 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 	return obj(
 		"id", d.id, "version", 1, "progressionKey", d.id+"-v1", "title", d.name, "hudTitle", d.hud,
 		"areaCode", code, "regionKind", "dungeon", "dungeonRole", "main", "layoutMode", "authored",
-		"grid", rows, "partyStart", obj("x", 1, "y", 1, "direction", 1),
+		"grid", rows, "partyStart", obj("x", 1, "y", 1, "direction", openFacing(grid, start)),
 		"initialFlags", obj(), "enemies", objs(enemies), "triggers", A{}, "interactables", interactables, "treasures", treasures, "traps", traps,
 		"exits", A{obj(
 			"id", "dungeon-exit", "kind", "exit", "x", 1, "y", 1, "requiresReturn", true,

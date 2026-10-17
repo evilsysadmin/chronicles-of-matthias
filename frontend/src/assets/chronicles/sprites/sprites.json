@@ -91,6 +91,16 @@
     "worldHeight": 2.75,
     "idleFps": 1.2
   },
+  "empty-throne": {
+    "frames": [
+      "idle-a",
+      "idle-b"
+    ],
+    "framePx": 224,
+    "pixelArt": true,
+    "worldHeight": 3.6,
+    "idleFps": 0.6
+  },
   "harpy": {
     "frames": [
       "idle-a",
@@ -219,6 +229,16 @@
     "pixelArt": true,
     "worldHeight": 2.7,
     "idleFps": 1.6
+  },
+  "stone-king": {
+    "frames": [
+      "idle-a",
+      "idle-b"
+    ],
+    "framePx": 224,
+    "pixelArt": true,
+    "worldHeight": 3.6,
+    "idleFps": 0.8
   },
   "troll": {
     "frames": [

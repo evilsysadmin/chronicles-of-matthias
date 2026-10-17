@@ -129,7 +129,7 @@
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} abate a el Ahogado del Acantilado con {attack}.",
+        "message": "{attacker} abate al Ahogado del Acantilado con {attack}.",
         "effects": [
           {
             "type": "set",

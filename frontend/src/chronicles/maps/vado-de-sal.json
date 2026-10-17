@@ -4,6 +4,7 @@
   "progressionKey": "vado-de-sal-v1",
   "title": "Vado de Sal",
   "areaCode": "C5",
+  "biome": "marsh",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -289,7 +290,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el alguacil del vado · 30 oro",
+      "label": "Cobrar la caza al alguacil del vado · 30 oro",
       "when": [
         {
           "questId": "vado-watch-hunt",

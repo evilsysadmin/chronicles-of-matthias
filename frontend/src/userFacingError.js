@@ -38,8 +38,8 @@ export function userFacingError(error, fallback = 'No se pudo completar la opera
     if (!error?.authenticatedRequest && isSafeBackendMessage(message)) return message;
     return 'Esta cuenta no tiene permiso para realizar esa acción.';
   }
-  if (status === 429) return `Chess Studio ha recibido demasiadas solicitudes seguidas. Espera un momento y reintenta.${reference}`;
-  if (status >= 500) return `Chess Studio ha tenido un problema al procesar esto. Tu progreso guardado no se borra; reintenta en unos segundos.${reference}`;
+  if (status === 429) return `Chronicles ha recibido demasiadas solicitudes seguidas. Espera un momento y reintenta.${reference}`;
+  if (status >= 500) return `Chronicles ha tenido un problema al procesar esto. Tu progreso guardado no se borra; reintenta en unos segundos.${reference}`;
 
   if (isSafeBackendMessage(message)) return message;
   return fallback;

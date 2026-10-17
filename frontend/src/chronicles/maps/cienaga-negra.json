@@ -209,7 +209,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el familiar de la bruja con {attack}.",
+        "message": "{attacker} derriba al familiar de la bruja con {attack}.",
         "effects": [
           {
             "type": "set",

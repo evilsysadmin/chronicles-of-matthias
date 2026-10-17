@@ -130,7 +130,7 @@
         "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} abate a el Cuervo Blanco con {attack}.",
+        "message": "{attacker} abate al Cuervo Blanco con {attack}.",
         "effects": [
           {
             "type": "set",

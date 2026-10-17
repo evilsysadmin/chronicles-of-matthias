@@ -15,6 +15,7 @@ import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
+import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 
 const CELL = 4;
@@ -374,6 +375,13 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
       glow.position.y = 0.58;
       root.add(cradle, core, glow);
       contentProps.push({ id: entry.id, kind: entry.kind, root, core, glow, phase: index * 1.17 });
+    } else if (entry.kind === 'lore' && chroniclesHasSpriteBillboard(entry.visualType)) {
+      // A character in the dungeon (a ghost, a king of stone) is a painted
+      // billboard, like the creatures; a plain lore entry stays a plaque.
+      const billboard = buildChroniclesSpriteBillboard(entry.visualType);
+      root.add(billboard);
+      root.userData.updateChroniclesSprite = billboard.userData.updateChroniclesSprite;
+      contentProps.push({ id: entry.id, kind: entry.kind, root, phase: index * 1.17 });
     } else if (entry.kind === 'lore') {
       const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.46), contentMaterial);
       plinth.position.y = 0.08;

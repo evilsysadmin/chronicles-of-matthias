@@ -717,6 +717,7 @@ func buildTown(code string, people []*O) *O {
 	interactables = append(interactables, people...)
 	return obj(
 		"id", t.id, "version", 1, "progressionKey", t.id+"-v1", "title", t.name, "areaCode", code,
+		"biome", areas[code].biome,
 		"regionKind", "settlement", "layoutMode", "authored", "grid", townGrid,
 		"partyStart", obj("x", 9, "y", 1, "direction", 2), "initialFlags", obj(), "enemies", A{}, "triggers", A{},
 		"interactables", objs(interactables), "treasures", A{}, "traps", A{},
