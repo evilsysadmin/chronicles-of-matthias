@@ -6,6 +6,7 @@
 import {
   CHRONICLES_DIRECTIONS,
   chroniclesActiveEnemies,
+  chroniclesEnemyPosition,
   chroniclesEnemyTargetAhead,
   chroniclesPartyArmorClass,
   chroniclesPartyAttackStats,
@@ -41,6 +42,7 @@ import {
 } from '../chroniclesEquipment.js';
 import { CHRONICLES_SPELLS, chroniclesMemberKnowsSpell, chroniclesMemberSp } from '../chroniclesMagic.js';
 import { CHRONICLES_CONSUMABLES, chroniclesConsumableCount } from '../chroniclesConsumables.js';
+import { chroniclesGuildCanLearn, chroniclesGuildMember } from '../chroniclesGuild.js';
 
 const STEP = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const ATTRIBUTE_PLAN = {
@@ -77,6 +79,14 @@ function itemScore(item, member = null) {
     + (member?.row === 'back' ? reach * 2 : item.twoHanded && item.reach > 1 ? -4 : 0);
 }
 
+// What a careful player copies into each caster's book, best first. The
+// guild must sell it and the school must teach it.
+const SPELL_PRIORITY = Object.freeze([
+  'heal-wounds', 'fireball', 'mass-heal', 'lightning-bolt', 'holy-strike', 'faith-ward',
+  'paralyze', 'cold-ray', 'poison-cloud', 'elemental-arrow', 'flying-fist', 'first-aid',
+]);
+const ATTACK_SPELLS = Object.freeze(['lightning-bolt', 'holy-strike', 'poison-cloud', 'cold-ray', 'elemental-arrow', 'flying-fist']);
+
 // Potions a careful player keeps in the pack, bought at every botica.
 const POTION_KIT = Object.freeze({ 'healing-potion': 3, 'revive-draught': 1 });
 
@@ -105,6 +115,8 @@ export class ChroniclesCampaignBot {
     this.swings = {};
     this.attributePlan = Object.fromEntries(Object.entries(ATTRIBUTE_PLAN).map(([id, plan]) => [id, [...plan]]));
     this.shoppedAt = new Set();
+    this.casts = {};
+    this.learned = [];
     this.arrivedOnce = false;
     this.currentLabel = 'inicio';
   }
@@ -269,8 +281,38 @@ export class ChroniclesCampaignBot {
     const wounded = this.state.party
       .filter((ally) => ally.hp > 0 && ally.hp <= ally.maxHp * 0.45)
       .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];
-    const heal = ['heal-wounds', 'first-aid'].find((id) => chroniclesMemberKnowsSpell(this.state, member, id) && sp >= CHRONICLES_SPELLS[id].cost);
-    if (wounded && heal) return { type: 'cast', memberId, spellId: heal };
+    const knows = (id) => chroniclesMemberKnowsSpell(this.state, member, id) && sp >= CHRONICLES_SPELLS[id].cost;
+    const cast = (spellId) => {
+      this.casts[spellId] = (this.casts[spellId] || 0) + 1;
+      return { type: 'cast', memberId, spellId };
+    };
+    // Several allies hurt at once: one group heal beats two single ones.
+    const hurt = this.state.party.filter((ally) => ally.hp > 0 && ally.hp <= ally.maxHp * 0.55);
+    if (hurt.length >= 2 && knows('mass-heal')) return cast('mass-heal');
+    const heal = ['heal-wounds', 'first-aid'].find(knows);
+    if (wounded && heal) return cast(heal);
+    // A healer keeps enough for one more cure before spending on anything else.
+    const healReserve = ['heal-wounds', 'first-aid']
+      .filter((id) => chroniclesMemberKnowsSpell(this.state, member, id))
+      .map((id) => CHRONICLES_SPELLS[id].cost)[0] || 0;
+    const affordable = (id) => knows(id) && sp - CHRONICLES_SPELLS[id].cost >= healReserve;
+    const foes = chroniclesActiveEnemies(this.state);
+    // Open a hard fight with the ward: several foes, or a boss-grade one.
+    if (this.state.initiative && !this.state.combatWard && affordable('faith-ward')
+      && (foes.length >= 3 || foes.some((enemy) => enemy.maxHp >= 30))) return cast('faith-ward');
+    const ahead = chroniclesEnemyTargetAhead(this.state, 3);
+    // Hold the toughest thing in front of us still while the rest hit it.
+    if (ahead && ahead.enemy.maxHp >= 30 && !this.state.enemyStatus?.[ahead.enemy.id]?.paralyzed
+      && affordable('paralyze')) return cast('paralyze');
+    // A fireball pays when it also burns a neighbour of the target.
+    if (ahead && affordable('fireball')) {
+      const center = chroniclesEnemyPosition(this.state, ahead.enemy);
+      const neighbours = foes.filter((enemy) => enemy.id !== ahead.enemy.id && (() => {
+        const position = chroniclesEnemyPosition(this.state, enemy);
+        return Math.max(Math.abs(position.x - center.x), Math.abs(position.y - center.y)) <= 1;
+      })());
+      if (neighbours.length) return cast('fireball');
+    }
     // No healing magic at hand: drink from the pack.
     const fallen = this.state.party.some((ally) => ally.hp <= 0);
     if (fallen && chroniclesConsumableCount(this.state, 'revive-draught') > 0) {
@@ -282,12 +324,11 @@ export class ChroniclesCampaignBot {
       return { type: 'use-item', memberId, itemId: 'healing-potion' };
     }
     const reach = chroniclesPartyAttackStats(this.state, memberId).reach;
-    const attackSpell = ['lightning-bolt', 'holy-strike', 'poison-cloud', 'cold-ray', 'elemental-arrow', 'flying-fist']
-      .find((id) => chroniclesMemberKnowsSpell(this.state, member, id) && sp >= CHRONICLES_SPELLS[id].cost
-        && chroniclesEnemyTargetAhead(this.state, CHRONICLES_SPELLS[id].reach));
-    if (attackSpell && !chroniclesEnemyTargetAhead(this.state, reach)) return { type: 'cast', memberId, spellId: attackSpell };
+    const attackSpell = ATTACK_SPELLS
+      .find((id) => affordable(id) && chroniclesEnemyTargetAhead(this.state, CHRONICLES_SPELLS[id].reach));
+    if (attackSpell && !chroniclesEnemyTargetAhead(this.state, reach)) return cast(attackSpell);
     if (chroniclesEnemyTargetAhead(this.state, reach)) return { type: 'attack', memberId };
-    if (attackSpell) return { type: 'cast', memberId, spellId: attackSpell };
+    if (attackSpell) return cast(attackSpell);
     // Nobody in reach ahead: close in on the nearest foe by a real path,
     // then face it. A foe walled off from us is left behind.
     const target = this.nearestEnemy({ reachable: true });
@@ -556,6 +597,7 @@ export class ChroniclesCampaignBot {
     if (map.regionKind === 'settlement' && !this.shoppedAt.has(map.id + this.shopVisitKey())) {
       this.shoppedAt.add(map.id + this.shopVisitKey());
       for (const entry of (map.interactables || []).filter((candidate) => candidate.shop)) this.shop(map, entry);
+      for (const entry of (map.interactables || []).filter((candidate) => candidate.guild)) this.study(map, entry);
     }
   }
 
@@ -611,6 +653,38 @@ export class ChroniclesCampaignBot {
       this.equipBest();
     }
     this.state = chroniclesReduce(this.state, { type: 'shop-close' });
+  }
+
+  // The spells this guild sells that someone alive could still learn, best first.
+  spellWants(entry) {
+    const sold = new Set(entry.guild.spells || []);
+    return SPELL_PRIORITY.filter((spellId) => sold.has(spellId)).flatMap((spellId) => this.state.party
+      .filter((member) => chroniclesGuildCanLearn(this.state, member, spellId))
+      .map((member) => ({ member, spell: CHRONICLES_SPELLS[spellId] })));
+  }
+
+  study(map, entry) {
+    // Keep enough for an inn night and a temple visit.
+    const reserve = 40;
+    const joined = chroniclesGuildMember(this.state, entry.id);
+    const fee = joined ? 0 : Number(entry.guild.membership || 0);
+    const first = this.spellWants(entry)[0];
+    if (!first || chroniclesGoldBalance(this.state) - reserve < fee + first.spell.price) return;
+    this.walkTo(chroniclesMapContentPosition(map, entry));
+    while (this.state.initiative) this.fight();
+    this.act('interact');
+    if (!this.state.guild) return;
+    if (!joined) this.state = chroniclesReduce(this.state, { type: 'guild-join' });
+    for (let guard = 0; guard < 12; guard += 1) {
+      const budget = chroniclesGoldBalance(this.state) - reserve;
+      const pick = this.spellWants(entry).find((want) => want.spell.price <= budget);
+      if (!pick) break;
+      const before = chroniclesGoldBalance(this.state);
+      this.state = chroniclesReduce(this.state, { type: 'guild-learn', memberId: pick.member.id, spellId: pick.spell.id });
+      if (chroniclesGoldBalance(this.state) === before) break;
+      this.learned.push({ memberId: pick.member.id, spellId: pick.spell.id, price: pick.spell.price, step: this.currentLabel });
+    }
+    this.state = chroniclesReduce(this.state, { type: 'guild-close' });
   }
 
   stockPotions(map, entry, reserve) {
