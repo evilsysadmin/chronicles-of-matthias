@@ -246,6 +246,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 12,
+      "y": 6
+    }
+  ],
   "initialJournal": {
     "id": "terra-d1-arrival",
     "title": "D1 · Túmulos del Pacto",

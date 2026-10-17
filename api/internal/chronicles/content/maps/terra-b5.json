@@ -309,6 +309,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 18,
+      "y": 8
+    }
+  ],
   "initialJournal": {
     "id": "terra-b5-arrival",
     "title": "B5 · Molinos del Oeste",

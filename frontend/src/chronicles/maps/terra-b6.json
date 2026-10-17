@@ -374,6 +374,28 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 18,
+      "y": 1
+    },
+    {
+      "type": "ruin",
+      "x": 14,
+      "y": 0
+    },
+    {
+      "type": "banner",
+      "x": 15,
+      "y": 0
+    },
+    {
+      "type": "ruin",
+      "x": 6,
+      "y": 9
+    }
+  ],
   "initialJournal": {
     "id": "terra-b6-arrival",
     "title": "B6 · Dunas Costeras",

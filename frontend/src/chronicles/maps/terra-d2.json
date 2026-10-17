@@ -248,6 +248,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 2,
+      "y": 4
+    }
+  ],
   "initialJournal": {
     "id": "terra-d2-arrival",
     "title": "D2 · Viñedos del Rey",

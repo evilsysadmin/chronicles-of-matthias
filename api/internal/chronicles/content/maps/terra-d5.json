@@ -469,6 +469,28 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "campfire",
+      "x": 11,
+      "y": 1
+    },
+    {
+      "type": "tent",
+      "x": 14,
+      "y": 1
+    },
+    {
+      "type": "banner",
+      "x": 15,
+      "y": 1
+    },
+    {
+      "type": "tent",
+      "x": 10,
+      "y": 0
+    }
+  ],
   "initialJournal": {
     "id": "terra-d5-arrival",
     "title": "D5 · Marismas de Sal",

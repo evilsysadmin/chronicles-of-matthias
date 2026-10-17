@@ -371,6 +371,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 17,
+      "y": 6
+    }
+  ],
   "initialJournal": {
     "id": "terra-b4-arrival",
     "title": "B4 · Granjas del Trigo",

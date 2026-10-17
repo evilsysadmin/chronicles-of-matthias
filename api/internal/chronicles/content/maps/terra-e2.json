@@ -397,6 +397,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 18,
+      "y": 6
+    }
+  ],
   "initialJournal": {
     "id": "terra-e2-arrival",
     "title": "E2 · Estribaciones de Escoria",

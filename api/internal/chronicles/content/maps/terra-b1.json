@@ -454,6 +454,23 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 16,
+      "y": 1
+    },
+    {
+      "type": "ruin",
+      "x": 17,
+      "y": 1
+    },
+    {
+      "type": "ruin",
+      "x": 2,
+      "y": 11
+    }
+  ],
   "initialJournal": {
     "id": "terra-b1-arrival",
     "title": "B1 · Paso de los Juramentos",

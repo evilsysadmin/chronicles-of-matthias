@@ -7,6 +7,7 @@ import {
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
 // File-authored exterior topology: no independent collision map or invisible
 // decorative blockers. Impassable cells alone own boulders/low walls; every
@@ -78,8 +79,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     sunlight.shadow.camera.bottom = -42;
   }
   scene.add(sunlight);
+  // Terra's wilds are dressed per biome (boulders, pines, reeds, basalt...)
+  // instead of stone blocks, and continue past the edge of the map.
+  const wilds = !settlement && chroniclesTerraSceneryBiomes().includes(scenePlan.biome) && !forest;
   // A forest continues past the playable grid so its gaps never show the void.
-  const margin = forest ? FOREST_MARGIN_CELLS * 2 : 0;
+  const margin = forest ? FOREST_MARGIN_CELLS * 2 : wilds ? TERRA_SCENERY_MARGIN * 2 : 0;
   const terrain = new THREE.Mesh(new THREE.BoxGeometry((width + margin) * CELL, 0.25, (height + margin) * CELL), earth);
   terrain.name = 'chronicles-campaign-terrain';
   terrain.position.y = -0.19;
@@ -159,6 +163,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       }
     }
     scene.add(buildForestCanopy([...blocked, ...outskirts], sceneCenter, { coarsePointer }));
+  } else if (wilds) {
+    // Blocked cells become scenery; collision is still the grid alone.
   } else if (blocked.length) {
     const barrier = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL * 0.98, 1.6, CELL * 0.98), stone, blocked.length);
     const dummy = new THREE.Object3D();
@@ -173,6 +179,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     barrier.castShadow = !coarsePointer;
     barrier.receiveShadow = true;
     scene.add(barrier);
+  }
+
+  if (!settlement && (wilds || forest)) {
+    scene.add(buildTerraScenery({
+      grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, scenery: scenePlan.scenery,
+      coarsePointer, keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
+    }));
   }
 
   const contentProps = [];

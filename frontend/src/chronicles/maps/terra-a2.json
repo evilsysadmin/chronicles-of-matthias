@@ -449,6 +449,33 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "campfire",
+      "x": 10,
+      "y": 0
+    },
+    {
+      "type": "tent",
+      "x": 11,
+      "y": 0
+    },
+    {
+      "type": "tent",
+      "x": 12,
+      "y": 0
+    },
+    {
+      "type": "banner",
+      "x": 13,
+      "y": 0
+    },
+    {
+      "type": "ruin",
+      "x": 2,
+      "y": 6
+    }
+  ],
   "initialJournal": {
     "id": "terra-a2-arrival",
     "title": "A2 · Acantilados de Hollín",

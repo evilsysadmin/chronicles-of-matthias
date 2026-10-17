@@ -287,6 +287,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 5,
+      "y": 8
+    }
+  ],
   "initialJournal": {
     "id": "terra-a6-arrival",
     "title": "A6 · Isla del Faro Roto",
