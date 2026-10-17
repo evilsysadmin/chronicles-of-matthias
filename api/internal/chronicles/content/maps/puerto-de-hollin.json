@@ -423,6 +423,108 @@
         }
       ],
       "lockedLabel": "El capitán del puerto · «¿Ya cayó el Ahogado del Acantilado?»"
+    },
+    {
+      "id": "maura-light-brief",
+      "kind": "lore",
+      "x": 15,
+      "y": 4,
+      "visualType": "building-hall",
+      "label": "Hablar con la vieja farera Maura",
+      "when": [
+        {
+          "key": "hollinLighthouseStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "hollinLighthouseStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "hollin-lighthouse",
+            "title": "La luz de la isla",
+            "description": "La hermana de Maura cuidaba el Faro Roto (A6). Se ahogó, y desde entonces algo enciende la linterna para estrellar barcos.",
+            "objective": "Entra en el Faro Roto (A6) y apaga lo que enciende la linterna.",
+            "order": 55
+          }
+        ],
+        "message": "Maura reza junto al altar: «Mi hermana cuidaba el Faro Roto, en la isla de A6. Se ahogó la noche que el Silencio pasó por la costa. Desde entonces algo enciende la linterna para que los barcos se estrellen. Apagadla. Apagadla a ella, si hace falta»",
+        "journal": {
+          "id": "hollin-lighthouse",
+          "title": "La luz de la isla",
+          "body": "Algo enciende la linterna del Faro Roto (A6) para estrellar barcos.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "maura-light-report",
+      "kind": "quest",
+      "x": 15,
+      "y": 4,
+      "visualType": "building-hall",
+      "label": "Devolver la llave del faro a Maura · 80 oro",
+      "when": [
+        {
+          "questId": "hollin-lighthouse",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:hollin-lighthouse:v1",
+            "requirements": [
+              {
+                "itemId": "lighthouse-key",
+                "quantity": 1
+              }
+            ],
+            "effects": [
+              {
+                "type": "consume-item",
+                "itemId": "lighthouse-key",
+                "quantity": 1
+              },
+              {
+                "type": "complete-quest",
+                "questId": "hollin-lighthouse",
+                "objective": "El Faro Roto está apagado y la farera descansa."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 80
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:hollin-lighthouse:v1",
+                "amount": 120
+              }
+            ]
+          }
+        ],
+        "message": "Maura sostiene la llave contra el pecho: «Ya puede descansar. Y los barcos, volver»",
+        "journal": {
+          "id": "hollin-lighthouse-done",
+          "title": "Una luz apagada",
+          "body": "La farera ahogada cayó. Maura guarda la llave del Faro Roto.",
+          "sigil": "◆"
+        }
+      },
+      "requirements": [
+        {
+          "itemId": "lighthouse-key",
+          "quantity": 1,
+          "message": "Maura: «La llave la tiene ella. En el Faro Roto, en A6»"
+        }
+      ],
+      "lockedLabel": "Maura espera noticias del Faro Roto (A6)"
     }
   ],
   "treasures": [],

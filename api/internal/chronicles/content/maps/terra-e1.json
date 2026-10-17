@@ -18,7 +18,7 @@
     "#...................#",
     "#...####...#.#......#",
     "#....###...#........#",
-    "###........###..#####",
+    "###.............#####",
     "#................####",
     "##....##........#####",
     "###.#.##.....#..#####",
@@ -116,11 +116,24 @@
   "triggers": [],
   "interactables": [
     {
+      "id": "terra-e1-sign",
+      "kind": "lore",
+      "visualType": "signpost",
+      "x": 15,
+      "y": 4,
+      "persistentVisual": true,
+      "label": "Leer el cartel",
+      "action": {
+        "effects": [],
+        "message": "Cartel: Pinohelado, entre los pinos. Al sur, las Estribaciones de Escoria (E2)."
+      }
+    },
+    {
       "id": "terra-e1-shrine",
       "kind": "lore",
       "visualType": "shrine",
       "x": 5,
-      "y": 4,
+      "y": 10,
       "label": "Beber de la Fuente de Escarcha",
       "when": [
         {
@@ -149,11 +162,50 @@
   ],
   "treasures": [
     {
+      "id": "e1-frost-moss",
+      "kind": "pickup",
+      "visualType": "chest",
+      "label": "Arrancar musgo de escarcha",
+      "when": [
+        {
+          "questId": "pinohelado-greta",
+          "questStatus": "active"
+        },
+        {
+          "key": "e2GretaFound",
+          "truthy": true
+        },
+        {
+          "key": "e1FrostMossTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "e1FrostMossTaken",
+            "value": true
+          },
+          {
+            "type": "grant-item",
+            "itemId": "frost-moss",
+            "name": "Musgo de escarcha",
+            "description": "Cura heridas de trol y, según los leñadores, también las de leñador.",
+            "quantity": 1
+          }
+        ],
+        "message": "Bajo la nieve, al pie de un pino viejo, el musgo de escarcha brilla como cristal verde."
+      },
+      "x": 15,
+      "y": 10
+    },
+    {
       "id": "terra-e1-chest",
       "kind": "pickup",
       "visualType": "chest",
-      "x": 15,
-      "y": 4,
+      "x": 4,
+      "y": 7,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -245,13 +297,33 @@
         ],
         "message": "La compañía entra en F1."
       }
+    },
+    {
+      "id": "e1-to-town",
+      "kind": "exit",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Entrar en Pinohelado",
+      "lockedLabel": "Pinohelado · puertas cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "pinohelado",
+            "entryExitId": "town-gate"
+          }
+        ],
+        "message": "La compañía cruza las puertas de Pinohelado."
+      }
     }
   ],
   "initialJournal": {
     "id": "terra-e1-arrival",
     "title": "E1 · Bosque de Escarcha",
-    "body": "Pinos cargados de hielo crujen como huesos viejos.",
+    "body": "Pinos cargados de hielo crujen como huesos viejos. Entre ellos humea Pinohelado.",
     "sigil": "E1"
   },
-  "introMessage": "E1 · Bosque de Escarcha. Pinos cargados de hielo crujen como huesos viejos."
+  "introMessage": "E1 · Bosque de Escarcha. Pinos cargados de hielo crujen como huesos viejos. Entre ellos humea Pinohelado."
 }

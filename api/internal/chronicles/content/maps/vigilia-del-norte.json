@@ -157,7 +157,9 @@
           "first-aid",
           "flying-fist",
           "elemental-arrow",
-          "detect-magic"
+          "detect-magic",
+          "lightning-bolt",
+          "heal-wounds"
         ]
       }
     },

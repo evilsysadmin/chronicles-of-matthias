@@ -19,7 +19,7 @@
     "#.##.............#..#",
     "#.##........##......#",
     "#..#.......#........#",
-    "#.#.#...............#",
+    "#.#.................#",
     "#...................#",
     "#...#...............#",
     "#####################"
@@ -84,6 +84,53 @@
           }
         ]
       }
+    },
+    {
+      "id": "b2-wind-matron",
+      "visualType": "harpy",
+      "visualScale": 1.3,
+      "name": "la Señora del Viento",
+      "hpKey": "b2WindMatronHp",
+      "maxHp": 24,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "defeatedFlag": "b2WindMatronGone",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 1
+      },
+      "blockingMessage": "La Señora del Viento abre las alas: «¿Grano o acero, forasteros?»",
+      "onDefeat": {
+        "message": "{attacker} derriba a la Señora del Viento con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "b2WindMatronGone",
+            "value": true
+          },
+          {
+            "type": "set",
+            "key": "molinoviejoWindSlain",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "molinoviejo-wind",
+            "objective": "La Señora del Viento ha caído. Vuelve con Fermín (B5)."
+          }
+        ],
+        "journal": {
+          "id": "b2-wind-matron",
+          "title": "Cae la Señora del Viento",
+          "body": "Entre las plumas del nido duerme el sobrino de Fermín, vivo.",
+          "sigil": "†"
+        }
+      },
+      "x": 3,
+      "y": 11
     }
   ],
   "triggers": [],
@@ -118,6 +165,63 @@
         ],
         "message": "El agua de la Fuente de los Lobos está helada y sabe a hierro. La compañía recupera fuerzas y puntos de hechizo."
       }
+    },
+    {
+      "id": "b2-wind-nest",
+      "kind": "lore",
+      "visualType": "shrine",
+      "label": "Dejar el grano de Fermín en el nido y pactar",
+      "lockedLabel": "El nido de la Señora del Viento",
+      "when": [
+        {
+          "questId": "molinoviejo-wind",
+          "questStatus": "active"
+        },
+        {
+          "key": "b2WindMatronGone",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "blessed-grain",
+          "quantity": 1,
+          "message": "La Señora del Viento no acepta palabras: acepta grano."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "blessed-grain",
+            "quantity": 1
+          },
+          {
+            "type": "set",
+            "key": "molinoviejoWindPact",
+            "value": true
+          },
+          {
+            "type": "set",
+            "key": "b2WindMatronGone",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "molinoviejo-wind",
+            "objective": "Pacto sellado con la Señora del Viento. Vuelve con Fermín (B5)."
+          }
+        ],
+        "message": "Vacías el saco en el nido. La Señora del Viento picotea el grano, os mira largo rato y suelta un chiflido: de entre las plumas sale el sobrino de Fermín, despeinado y vivo. Luego alza el vuelo hacia los molinos.",
+        "journal": {
+          "id": "b2-wind-pact",
+          "title": "Grano por viento",
+          "body": "La Señora del Viento aceptó el grano y devolvió al sobrino de Fermín.",
+          "sigil": "◆"
+        }
+      },
+      "x": 15,
+      "y": 4
     }
   ],
   "treasures": [
@@ -125,8 +229,8 @@
       "id": "terra-b2-chest",
       "kind": "pickup",
       "visualType": "chest",
-      "x": 15,
-      "y": 4,
+      "x": 5,
+      "y": 10,
       "label": "Abrir el cofre",
       "when": [
         {

@@ -146,7 +146,7 @@
       "id": "terra-a6-shrine",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 5,
+      "x": 15,
       "y": 4,
       "label": "Beber de la Fuente del Faro",
       "when": [
@@ -179,8 +179,8 @@
       "id": "terra-a6-chest",
       "kind": "pickup",
       "visualType": "chest",
-      "x": 15,
-      "y": 4,
+      "x": 5,
+      "y": 10,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -251,6 +251,27 @@
           }
         ],
         "message": "La compañía entra en B6."
+      }
+    },
+    {
+      "id": "a6-to-dungeon",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Entrar en Faro Roto",
+      "lockedLabel": "Faro Roto · sellada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "faro-roto",
+            "entryExitId": "dungeon-exit"
+          }
+        ],
+        "message": "La compañía desciende a Faro Roto."
       }
     }
   ],

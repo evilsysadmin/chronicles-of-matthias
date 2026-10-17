@@ -1,0 +1,413 @@
+{
+  "id": "molinoviejo",
+  "version": 1,
+  "progressionKey": "molinoviejo-v1",
+  "title": "Molinoviejo",
+  "areaCode": "B5",
+  "regionKind": "settlement",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.................#",
+    "#........#........#",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 9,
+    "y": 1,
+    "direction": 2
+  },
+  "initialFlags": {},
+  "enemies": [],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "molinoviejo-inn",
+      "kind": "service",
+      "x": 7,
+      "y": 10,
+      "visualType": "building-tavern",
+      "label": "Posada · descansar y curar · 8 oro",
+      "lockedLabel": "Posada · necesitas 8 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 8,
+          "message": "El posadero cobra por adelantado."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 8
+          },
+          {
+            "type": "heal-party",
+            "amount": 12
+          },
+          {
+            "type": "refill-class-abilities"
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "La compañía duerme en la posada de Molinoviejo. Heridas curadas, puntos de hechizo recuperados."
+      }
+    },
+    {
+      "id": "molinoviejo-weapons",
+      "kind": "merchant",
+      "x": 7,
+      "y": 4,
+      "visualType": "building-forge",
+      "label": "Armería de Molinoviejo",
+      "shop": {
+        "stock": [
+          "iron-mace",
+          "iron-axe",
+          "iron-spear",
+          "wooden-bow"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El armero no levanta la vista del afilador: «Mira lo que quieras. Rompes, pagas»."
+      }
+    },
+    {
+      "id": "molinoviejo-armour",
+      "kind": "merchant",
+      "x": 11,
+      "y": 4,
+      "visualType": "building-armor",
+      "label": "Coracería de Molinoviejo",
+      "shop": {
+        "stock": [
+          "iron-leather",
+          "iron-scale",
+          "iron-ring",
+          "iron-shield"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El forjador golpea una coraza al rojo: «Hecha a mano. Como mis precios»."
+      }
+    },
+    {
+      "id": "molinoviejo-temple",
+      "kind": "service",
+      "x": 14,
+      "y": 6,
+      "visualType": "building-temple",
+      "label": "Templo · sanar a la compañía · 4 oro",
+      "lockedLabel": "Templo · necesitas 4 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 4,
+          "message": "El templo pide una ofrenda de cuatro monedas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 4
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran."
+      }
+    },
+    {
+      "id": "fermin-wind-brief",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con el molinero Fermín",
+      "when": [
+        {
+          "key": "molinoviejoWindStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "molinoviejoWindStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "molinoviejo-wind",
+            "title": "El viento prestado",
+            "description": "Los molinos de Molinoviejo giran sin viento desde que la Señora del Viento anida en el Brezal de los Lobos (B2). Cada luna se cobra un cordero; la última, al sobrino de Fermín.",
+            "objective": "Sube al Brezal de los Lobos (B2) y resuelve el asunto de la Señora del Viento: a espada o con el grano de Fermín.",
+            "order": 50
+          },
+          {
+            "type": "grant-item",
+            "itemId": "blessed-grain",
+            "name": "Saco de grano de Fermín",
+            "description": "Lo que pide la Señora del Viento a cambio de seguir soplando.",
+            "quantity": 1
+          }
+        ],
+        "message": "Fermín se sacude la harina del delantal: «Los molinos giran solos desde que la Señora del Viento anida en el Brezal de los Lobos, en B2. Al principio era una bendición. Ahora se lleva un cordero cada luna, y la última luna se llevó a mi sobrino. Si queréis hablar con ella, llevadle este grano: es lo que pide. Si no, ya sabéis lo que hacen los héroes»",
+        "journal": {
+          "id": "molinoviejo-wind",
+          "title": "El viento prestado",
+          "body": "La Señora del Viento anida en B2. Pactar con el grano de Fermín o acabar con ella.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "fermin-wind-pact",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Contarle a Fermín el pacto · 30 oro",
+      "when": [
+        {
+          "questId": "molinoviejo-wind",
+          "questStatus": "active"
+        },
+        {
+          "key": "molinoviejoWindPact",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:molinoviejo-wind:pact:v1",
+            "requirements": [
+              {
+                "key": "molinoviejoWindPact",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "molinoviejo-wind",
+                "objective": "Pacto sellado: los molinos siguen girando."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 30
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:molinoviejo-wind:v1",
+                "amount": 80
+              }
+            ]
+          }
+        ],
+        "message": "Fermín abraza a su sobrino, que ha bajado del brezal con plumas en el pelo: «Un cordero por luna es buen precio por pan y por sobrino. Que siga soplando»",
+        "journal": {
+          "id": "molinoviejo-wind-pact",
+          "title": "Un viento con precio",
+          "body": "La compañía pactó con la Señora del Viento. Molinoviejo conserva sus molinos y paga un cordero cada luna.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "fermin-wind-slain",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Contarle a Fermín que la Señora del Viento ha muerto · 60 oro",
+      "when": [
+        {
+          "questId": "molinoviejo-wind",
+          "questStatus": "active"
+        },
+        {
+          "key": "molinoviejoWindSlain",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:molinoviejo-wind:slain:v1",
+            "requirements": [
+              {
+                "key": "molinoviejoWindSlain",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "molinoviejo-wind",
+                "objective": "La Señora del Viento ha caído. Los molinos se han parado."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 60
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:molinoviejo-wind:v1",
+                "amount": 80
+              }
+            ]
+          }
+        ],
+        "message": "Los molinos se detienen mientras Fermín cuenta las monedas. Su sobrino vuelve a casa, pálido. «Volveremos a moler a mano», dice Fermín. «Pero nadie más desaparecerá.»",
+        "journal": {
+          "id": "molinoviejo-wind-slain",
+          "title": "Molinos quietos",
+          "body": "La compañía mató a la Señora del Viento. Molinoviejo muele a mano, pero ya no paga tributo.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "molinoviejo-watch-hunt-brief",
+      "kind": "lore",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Hablar con la guardia del molino",
+      "when": [
+        {
+          "key": "molinoviejo_watchHuntStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "molinoviejo_watchHuntStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "molinoviejo-watch-hunt",
+            "title": "Caza: el Rey Rata",
+            "description": "«Hay una rata del tamaño de un perro en las Granjas del Trigo (B4). Se come el grano de tres graneros».",
+            "objective": "Acaba con el Rey Rata en B4 · Granjas del Trigo.",
+            "order": 40
+          }
+        ],
+        "message": "«Hay una rata del tamaño de un perro en las Granjas del Trigo (B4). Se come el grano de tres graneros»."
+      }
+    },
+    {
+      "id": "molinoviejo-watch-hunt-report",
+      "kind": "quest",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Cobrar la caza a la guardia del molino · 30 oro",
+      "when": [
+        {
+          "questId": "molinoviejo-watch-hunt",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:molinoviejo-watch-hunt:v1",
+            "requirements": [
+              {
+                "key": "molinoviejo_watchHunted",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "molinoviejo-watch-hunt",
+                "objective": "Side quest completada."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 30
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:molinoviejo-watch-hunt:v1",
+                "amount": 50
+              }
+            ]
+          }
+        ],
+        "message": "«Por fin se podrá guardar el trigo en paz. Tomad»."
+      },
+      "requirements": [
+        {
+          "key": "molinoviejo_watchHunted",
+          "truthy": true,
+          "message": "«El Rey Rata sigue vivo en B4»."
+        }
+      ],
+      "lockedLabel": "La guardia del molino · «¿Ya cayó el Rey Rata?»"
+    }
+  ],
+  "treasures": [],
+  "traps": [],
+  "exits": [
+    {
+      "id": "town-gate",
+      "kind": "exit",
+      "x": 9,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a B5 · Molinos del Oeste",
+      "lockedLabel": "Las puertas están cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-b5",
+            "entryExitId": "b5-to-town"
+          }
+        ],
+        "message": "La compañía sale de Molinoviejo."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "molinoviejo-arrival",
+    "title": "Molinoviejo",
+    "body": "Casas de piedra a la sombra de molinos que giran solos. El pan sabe a harina y a algo más.",
+    "sigil": "B5"
+  },
+  "introMessage": "Molinoviejo. Casas de piedra a la sombra de molinos que giran solos. El pan sabe a harina y a algo más."
+}

@@ -84,6 +84,35 @@
           }
         ]
       }
+    },
+    {
+      "id": "molinoviejo-watch-quarry",
+      "visualType": "sewer-rat",
+      "name": "el Rey Rata",
+      "hpKey": "molinoviejo_watchQuarryHp",
+      "maxHp": 19,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "defeatedFlag": "molinoviejo_watchHunted",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} abate a el Rey Rata con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "molinoviejo_watchHunted",
+            "value": true
+          }
+        ]
+      },
+      "x": 3,
+      "y": 11
     }
   ],
   "triggers": [],

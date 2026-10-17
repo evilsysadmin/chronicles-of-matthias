@@ -445,6 +445,119 @@
         }
       ],
       "lockedLabel": "La capitana de la forja · «¿Ya cayó el Coloso de Escoria?»"
+    },
+    {
+      "id": "hilde-dragon-brief",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Preguntar a Hilde por el dragón",
+      "when": [
+        {
+          "key": "ascuafriaHildeReported",
+          "truthy": true
+        },
+        {
+          "key": "ascuaDragonStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "ascuaDragonStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "ascua-dragon-scale",
+            "title": "Escama de dragón",
+            "description": "Hilde quiere forjar con una escama del Dragón de Ceniza, que duerme en el Desierto de Ceniza (F5).",
+            "objective": "Baja a la Guarida del Dragón de Ceniza (F5) y trae una escama.",
+            "order": 55
+          }
+        ],
+        "message": "Hilde se limpia las manos: «Ya que estáis de paso por el sur: en el Desierto de Ceniza, en F5, duerme un dragón que nadie recuerda. Traedme una escama y os forjo el mejor escudo de Terra»",
+        "journal": {
+          "id": "ascua-dragon",
+          "title": "Escama de dragón",
+          "body": "Hilde forjará un escudo con una escama del Dragón de Ceniza (F5).",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "hilde-dragon-report",
+      "kind": "quest",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Entregar la escama a Hilde · 120 oro",
+      "when": [
+        {
+          "questId": "ascua-dragon-scale",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:ascua-dragon-scale:v1",
+            "requirements": [
+              {
+                "itemId": "dragon-scale",
+                "quantity": 1
+              }
+            ],
+            "effects": [
+              {
+                "type": "consume-item",
+                "itemId": "dragon-scale",
+                "quantity": 1
+              },
+              {
+                "type": "complete-quest",
+                "questId": "ascua-dragon-scale",
+                "objective": "Hilde ha forjado un escudo con la escama."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 120
+              },
+              {
+                "type": "grant-item",
+                "itemId": "steel-shield",
+                "name": "Escudo de escama de dragón",
+                "description": "Hilde lo forjó con la escama del Dragón de Ceniza. Todavía está tibio.",
+                "quantity": 1
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:ascua-dragon-scale:v1",
+                "amount": 150
+              }
+            ]
+          }
+        ],
+        "message": "Hilde trabaja la escama toda la noche. Al amanecer os da un escudo que todavía está tibio: «Si algún día vuelve a nacer un dragón, que se lo piense dos veces».",
+        "journal": {
+          "id": "ascua-dragon-done",
+          "title": "Un escudo tibio",
+          "body": "Hilde forjó un escudo con la escama del Dragón de Ceniza.",
+          "sigil": "◆"
+        }
+      },
+      "requirements": [
+        {
+          "itemId": "dragon-scale",
+          "quantity": 1,
+          "message": "Hilde: «Sin escama no hay escudo. El dragón duerme en F5»."
+        }
+      ],
+      "lockedLabel": "Hilde espera la escama del dragón"
     }
   ],
   "treasures": [],

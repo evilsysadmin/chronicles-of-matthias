@@ -92,13 +92,13 @@
       "id": "terra-d2-sign",
       "kind": "lore",
       "visualType": "signpost",
-      "x": 5,
+      "x": 15,
       "y": 4,
       "persistentVisual": true,
       "label": "Leer el cartel",
       "action": {
         "effects": [],
-        "message": "Cartel: al este, Ascuafría (F2), por las estribaciones. Al norte, la Vigilia (C1)."
+        "message": "Cartel: Viñarrey, entre las viñas. Al este, Ascuafría (F2); al norte, la Vigilia (C1)."
       }
     }
   ],
@@ -107,8 +107,8 @@
       "id": "terra-d2-chest",
       "kind": "pickup",
       "visualType": "chest",
-      "x": 15,
-      "y": 4,
+      "x": 5,
+      "y": 10,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -220,13 +220,33 @@
         ],
         "message": "La compañía entra en E2."
       }
+    },
+    {
+      "id": "d2-to-town",
+      "kind": "exit",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Entrar en Viñarrey",
+      "lockedLabel": "Viñarrey · puertas cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "vinarrey",
+            "entryExitId": "town-gate"
+          }
+        ],
+        "message": "La compañía cruza las puertas de Viñarrey."
+      }
     }
   ],
   "initialJournal": {
     "id": "terra-d2-arrival",
     "title": "D2 · Viñedos del Rey",
-    "body": "Vides sin vendimiar. Las uvas se pudren desde que el Rey desapareció.",
+    "body": "Vides sin vendimiar alrededor de Viñarrey. Las uvas se pudren desde que el Rey desapareció.",
     "sigil": "D2"
   },
-  "introMessage": "D2 · Viñedos del Rey. Vides sin vendimiar. Las uvas se pudren desde que el Rey desapareció."
+  "introMessage": "D2 · Viñedos del Rey. Vides sin vendimiar alrededor de Viñarrey. Las uvas se pudren desde que el Rey desapareció."
 }

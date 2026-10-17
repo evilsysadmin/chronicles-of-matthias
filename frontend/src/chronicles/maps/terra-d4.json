@@ -19,7 +19,7 @@
     "#...............#...#",
     "#...................#",
     "#.....#..#.#..#..#..#",
-    "#....#.#.#......##..#",
+    "#...............##..#",
     "#..#....#.....#.....#",
     "#...#...#...........#",
     "#####################"
@@ -84,6 +84,35 @@
           }
         ]
       }
+    },
+    {
+      "id": "vinarrey-watch-quarry",
+      "visualType": "bog-toad",
+      "name": "el Sapo Rey",
+      "hpKey": "vinarrey_watchQuarryHp",
+      "maxHp": 19,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "defeatedFlag": "vinarrey_watchHunted",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} abate a el Sapo Rey con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "vinarrey_watchHunted",
+            "value": true
+          }
+        ]
+      },
+      "x": 3,
+      "y": 11
     }
   ],
   "triggers": [],

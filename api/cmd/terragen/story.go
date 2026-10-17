@@ -12,16 +12,19 @@ func grantItem(itemID, name, description string) *O {
 	return obj("type", "grant-item", "itemId", itemID, "name", name, "description", description, "quantity", 1)
 }
 
-var bossDropOrder = []string{"C6", "A4", "E3", "D1", "E5"}
 
 func bossDrops() map[string]*O {
-	return map[string]*O{
+	drops := map[string]*O{
 		"C6": grantItem("squire-testimony", "Testimonio del escudero", "El escudero Bran, el último de la escolta, dejó escrito lo que vio: la campana de Puerto de Hollín sonó la noche de la emboscada."),
 		"A4": grantItem("bell-ledger", "Registro de la campana", "Los contrabandistas cobraban por tocar la campana. El último pago, en lingotes con marca de Ascuafría."),
 		"E3": grantItem("hollow-crown-mould", "Molde de la corona hueca", "Un molde de corona sin peso. Lleva un sello que no es de la Corona: el del Primer Pacto."),
 		"D1": grantItem("oath-tablet", "Tablilla del juramento", "La tablilla del Primer Pacto. Quien la lea en voz alta puede reclamar el juramento del Rey."),
 		"E5": grantItem("witch-ladle", "Cucharón de la bruja", "Un cucharón de hueso, todavía tibio. Prueba de que la bruja no volverá a cocinar."),
 	}
+	for code, drop := range expansionBossDrops() {
+		drops[code] = drop
+	}
+	return drops
 }
 
 // step is one face of a townsperson: who stands at a door, when they speak,
@@ -234,5 +237,6 @@ func story() storyOut {
 	hunt("D6", "corte-guard", "el capitán de la guardia", watch, "F5", "ember-wisp", "el Fantasma del Dragón",
 		"«Una luz roja recorre el Desierto de Ceniza (F5) junto al esqueleto del dragón. Las caravanas no pasan».",
 		"«Las caravanas volverán. Y con ellas, los impuestos».", 50, 100, "")
+	expansionStory(&s, hunt, errand)
 	return s
 }

@@ -11,14 +11,14 @@
     "#####################",
     "#...........####.####",
     "#.............##..#.#",
-    "#..............#..#.#",
+    "#.................#.#",
     "#...................#",
     "#......#...#.#......#",
     "#...#.............###",
     "#...................#",
     "#.......#....##.....#",
     "#.......##....#.....#",
-    "#.####..##.....##...#",
+    "#.###...........#...#",
     "###..............#..#",
     "#...##..#...........#",
     "#........#..##....#.#",
@@ -111,6 +111,53 @@
           }
         ]
       }
+    },
+    {
+      "id": "e2-grum",
+      "visualType": "troll",
+      "visualScale": 1.15,
+      "name": "Grum, el trol herido",
+      "hpKey": "e2GrumHp",
+      "maxHp": 30,
+      "retaliation": 4,
+      "optional": true,
+      "activation": "always",
+      "defeatedFlag": "e2GrumGone",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "blockingMessage": "Grum gruñe de dolor y no se aparta de la cueva.",
+      "onDefeat": {
+        "message": "{attacker} derriba a Grum con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "e2GrumGone",
+            "value": true
+          },
+          {
+            "type": "set",
+            "key": "pinoheladoGrumSlain",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "pinohelado-greta",
+            "objective": "Grum ha muerto. Lleva a Greta con su padre, en Pinohelado (E1)."
+          }
+        ],
+        "journal": {
+          "id": "e2-grum",
+          "title": "Cae Grum",
+          "body": "El trol cae junto a la cueva. Greta llora.",
+          "sigil": "†"
+        }
+      },
+      "x": 17,
+      "y": 3
     }
   ],
   "triggers": [],
@@ -127,6 +174,96 @@
         "effects": [],
         "message": "Cartel: Ascuafría (F2) al este. Minas de Escoria (E3) al sur."
       }
+    },
+    {
+      "id": "e2-greta",
+      "kind": "lore",
+      "visualType": "rookwood-mourner",
+      "label": "Hablar con Greta",
+      "when": [
+        {
+          "questId": "pinohelado-greta",
+          "questStatus": "active"
+        },
+        {
+          "key": "e2GrumGone",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "e2GretaFound",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "pinohelado-greta",
+            "objective": "Cura a Grum con musgo de escarcha del Bosque de Escarcha (E1), o acaba con él."
+          }
+        ],
+        "message": "Greta se planta delante de la cueva: «¡No le hagáis daño! Grum me salvó de los lobos y le mordieron la pierna. Si le traéis musgo de escarcha del bosque de Pinohelado, en E1, se curará y se irá monte arriba»"
+      },
+      "x": 15,
+      "y": 4
+    },
+    {
+      "id": "e2-grum-cure",
+      "kind": "lore",
+      "visualType": "shrine",
+      "label": "Curar a Grum con el musgo de escarcha",
+      "lockedLabel": "La pierna de Grum necesita musgo de escarcha",
+      "when": [
+        {
+          "questId": "pinohelado-greta",
+          "questStatus": "active"
+        },
+        {
+          "key": "e2GrumGone",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "frost-moss",
+          "quantity": 1,
+          "message": "Hace falta musgo de escarcha del Bosque de Escarcha (E1)."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "frost-moss",
+            "quantity": 1
+          },
+          {
+            "type": "set",
+            "key": "e2GrumGone",
+            "value": true
+          },
+          {
+            "type": "set",
+            "key": "pinoheladoGrumHealed",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "pinohelado-greta",
+            "objective": "Grum se ha curado. Acompaña a Greta a Pinohelado (E1)."
+          }
+        ],
+        "message": "Grum deja que le pongáis el musgo en la pierna con la cara de quien soporta a unos dentistas. Se levanta, os mira, mira a Greta y se va monte arriba cojeando cada vez menos.",
+        "journal": {
+          "id": "e2-grum-cured",
+          "title": "Musgo para un trol",
+          "body": "Grum se curó y se marchó al monte.",
+          "sigil": "◆"
+        }
+      },
+      "x": 5,
+      "y": 10
     }
   ],
   "treasures": [
@@ -135,7 +272,7 @@
       "kind": "pickup",
       "visualType": "chest",
       "x": 15,
-      "y": 4,
+      "y": 10,
       "label": "Abrir el cofre",
       "when": [
         {

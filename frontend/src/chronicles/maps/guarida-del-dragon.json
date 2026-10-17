@@ -1,0 +1,541 @@
+{
+  "id": "guarida-del-dragon",
+  "version": 1,
+  "progressionKey": "guarida-del-dragon-v1",
+  "title": "Guarida del Dragón de Ceniza",
+  "hudTitle": "Guarida",
+  "areaCode": "F5",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "#####################",
+    "#.#...........#.....#",
+    "#.###.###.###.#####.#",
+    "#...#.#...#.#.....#.#",
+    "###.#.#.###.#####.#.#",
+    "#.#.....#.......#...#",
+    "#.#####.###.#######.#",
+    "#.....#...........#.#",
+    "#.#####.#.#.#.#.###.#",
+    "#.#.....#.#.#.#.....#",
+    "#.#.#####.###.#######",
+    "#.......#...........#",
+    "#####################"
+  ],
+  "partyStart": {
+    "x": 1,
+    "y": 1,
+    "direction": 1
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "guarida-del-dragon-foe-0",
+      "visualType": "ash-goblin",
+      "name": "goblin minero",
+      "x": 8,
+      "y": 1,
+      "hpKey": "guarida_del_dragonFoe0Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin minero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-1",
+      "visualType": "ember-wisp",
+      "name": "lumbre de mina",
+      "x": 9,
+      "y": 11,
+      "hpKey": "guarida_del_dragonFoe1Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de mina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-2",
+      "visualType": "bone-hound",
+      "name": "sabueso de escoria",
+      "x": 11,
+      "y": 11,
+      "hpKey": "guarida_del_dragonFoe2Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sabueso de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-3",
+      "visualType": "crypt-spider",
+      "name": "araña de galería",
+      "x": 13,
+      "y": 3,
+      "hpKey": "guarida_del_dragonFoe3Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña de galería usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-4",
+      "visualType": "ash-salamander",
+      "name": "salamandra de la forja",
+      "x": 1,
+      "y": 8,
+      "hpKey": "guarida_del_dragonFoe4Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de la forja usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-5",
+      "visualType": "ash-goblin",
+      "name": "goblin minero",
+      "x": 17,
+      "y": 5,
+      "hpKey": "guarida_del_dragonFoe5Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin minero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-8",
+      "visualType": "ash-goblin",
+      "name": "el cuidador de la nidada",
+      "x": 7,
+      "y": 11,
+      "hpKey": "guarida_del_dragonFoe8Hp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el cuidador de la nidada con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 24
+          },
+          {
+            "type": "grant-item",
+            "itemId": "hoard-key",
+            "name": "Llave del tesoro",
+            "description": "El cuidador de la nidada lleva colgada la llave del tesoro del dragón.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "guarida-del-dragon-elite",
+          "title": "Llave del tesoro",
+          "body": "El cuidador de la nidada lleva colgada la llave del tesoro del dragón.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "guarida_del_dragonEliteDefeated"
+    },
+    {
+      "id": "guarida-del-dragon-foe-9",
+      "visualType": "ash-salamander",
+      "name": "el Dragón de Ceniza",
+      "x": 15,
+      "y": 1,
+      "hpKey": "guarida_del_dragonFoe9Hp",
+      "maxHp": 44,
+      "retaliation": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el Dragón de Ceniza con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonBossDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 34
+          },
+          {
+            "type": "grant-item",
+            "itemId": "dragon-scale",
+            "name": "Escama de dragón",
+            "description": "Una escama del tamaño de un escudo, todavía caliente. Hilde, en Ascuafría, sabría qué hacer con ella.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "guarida-del-dragon-boss",
+          "title": "Cae el Dragón de Ceniza",
+          "body": "Una escama del tamaño de un escudo, todavía caliente. Hilde, en Ascuafría, sabría qué hacer con ella.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "guarida_del_dragonBossDefeated",
+      "blockingMessage": "El Dragón de Ceniza cierra el paso.",
+      "visualScale": 1.9
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "guarida-del-dragon-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 3,
+      "y": 1,
+      "label": "Leer los grabados del cubil",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonNoteRead",
+            "value": true
+          }
+        ],
+        "message": "Alguien grabó en la roca: «Aquí durmió un dragón al que el Silencio dejó sin nombre antes de que naciera. Por eso no muere: nadie recuerda que vive». Debajo, en otra letra: «Lleva sus escamas a Ascuafría».",
+        "journal": {
+          "id": "guarida-del-dragon-note",
+          "title": "Guarida del Dragón de Ceniza",
+          "body": "Alguien grabó en la roca: «Aquí durmió un dragón al que el Silencio dejó sin nombre antes de que naciera. Por eso no muere: nadie recuerda que vive». Debajo, en otra letra: «Lleva sus escamas a Ascuafría».",
+          "sigil": "F5"
+        }
+      }
+    },
+    {
+      "id": "guarida-del-dragon-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 11,
+      "y": 3,
+      "label": "Beber del Manantial de agua tibia",
+      "when": [
+        {
+          "key": "guarida_del_dragonFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 22
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Manantial de agua tibia está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "id": "guarida-del-dragon-chest",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 17,
+      "y": 7,
+      "label": "Abrir el cofre",
+      "when": [
+        {
+          "key": "guarida_del_dragonChestOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonChestOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 63
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-mace",
+            "name": "Steel mace",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-chain",
+            "name": "Steel chain",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          }
+        ],
+        "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
+      }
+    },
+    {
+      "id": "guarida-del-dragon-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 5,
+      "y": 7,
+      "label": "Abrir el tesoro del dragón",
+      "lockedLabel": "Abrir el tesoro del dragón · cerrado con llave",
+      "when": [
+        {
+          "key": "guarida_del_dragonCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "hoard-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El cuidador de la nidada lleva colgada la llave del tesoro del dragón."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "hoard-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 102
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-sword",
+            "name": "Steel sword",
+            "description": "Del tesoro del dragón.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-plate",
+            "name": "Steel plate",
+            "description": "Del tesoro del dragón.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:guarida-del-dragon:cache:v1",
+            "amount": 100
+          }
+        ],
+        "message": "El tesoro del dragón: monedas fundidas en una sola masa, una espada de acero y una armadura de placas que alguien no llegó a estrenar."
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "guarida-del-dragon-trap-0",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 9,
+      "y": 9,
+      "label": "Grieta de ceniza",
+      "when": [
+        {
+          "key": "guarida_del_dragonTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Una grieta exhala ceniza ardiente. El dragón no necesita estar despierto para quemar."
+      }
+    },
+    {
+      "id": "guarida-del-dragon-trap-1",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 16,
+      "y": 7,
+      "label": "Grieta de ceniza",
+      "when": [
+        {
+          "key": "guarida_del_dragonTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "guarida_del_dragonTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Una grieta exhala ceniza ardiente. El dragón no necesita estar despierto para quemar."
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "dungeon-exit",
+      "kind": "exit",
+      "x": 1,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a F5 · Desierto de Ceniza",
+      "lockedLabel": "La salida está bloqueada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-f5",
+            "entryExitId": "f5-to-dungeon"
+          }
+        ],
+        "message": "La compañía sale a la luz."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "guarida-del-dragon-arrival",
+    "title": "Guarida del Dragón de Ceniza",
+    "body": "Guarida del Dragón de Ceniza, bajo F5.",
+    "sigil": "F5"
+  },
+  "introMessage": "Guarida del Dragón de Ceniza. El aire huele a cerrado y a algo que no quiere visitas.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Guarida del Dragón de Ceniza. Al fondo de los pasillos espera el Dragón de Ceniza."
+  }
+}

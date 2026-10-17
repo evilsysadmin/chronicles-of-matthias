@@ -18,8 +18,8 @@
     "#...................#",
     "#....#...#.......#..#",
     "#..##...##....##....#",
-    "#..####.....##......#",
-    "#.####..............#",
+    "#..#.##.....##......#",
+    "#.#.................#",
     "#..#..........#.#...#",
     "#..#..........#.....#",
     "#####################"
@@ -84,6 +84,35 @@
           }
         ]
       }
+    },
+    {
+      "id": "pinohelado-watch-quarry",
+      "visualType": "harpy",
+      "name": "la Arpía Coronada",
+      "hpKey": "pinohelado_watchQuarryHp",
+      "maxHp": 16,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "defeatedFlag": "pinohelado_watchHunted",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} abate a la Arpía Coronada con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "pinohelado_watchHunted",
+            "value": true
+          }
+        ]
+      },
+      "x": 3,
+      "y": 11
     }
   ],
   "triggers": [],
