@@ -181,7 +181,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return nil, fmt.Errorf("recovery: %w", err)
 	}
 	runs, err := gamesapi.NewChroniclesRuns(gamesapi.ChroniclesRunsConfig{
-		Config: base(), Runs: chroniclesrun.NewMongo(db, timeout),
+		Config: base(), Runs: chroniclesrun.NewMongo(db, timeout), Admins: adminUsernames(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("chronicles runs: %w", err)

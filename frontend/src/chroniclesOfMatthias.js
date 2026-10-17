@@ -8,6 +8,7 @@ import {
   chroniclesRuntimeEntryMapId,
 } from './chronicles/chroniclesMapCatalog.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chronicles/chroniclesSettlementLayout.js';
+import { chroniclesAdminReduce } from './chronicles/chroniclesAdmin.js';
 import {
   chroniclesApplyContentAction,
   chroniclesApplyContentEffects,
@@ -742,6 +743,7 @@ function explorationCellBlocker(state, x, y) {
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
+  if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'shop-buy') return chroniclesShopBuy(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-sell') return chroniclesShopSell(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-close') return chroniclesCloseShop(state);

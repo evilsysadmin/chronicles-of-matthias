@@ -1,0 +1,14 @@
+.chronicles-admin{position:absolute;right:16px;top:16px;z-index:45;width:min(420px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;padding:14px 16px;background:#16171c;color:#e8e2d4;border:2px solid #b38a2e;box-shadow:0 18px 50px rgba(0,0,0,.7);font:14px/1.35 system-ui,sans-serif}
+.chronicles-admin__head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.chronicles-admin__head small{display:block;color:#b38a2e;font-size:.66rem;letter-spacing:.18em;font-weight:700}
+.chronicles-admin__head strong{font-size:1.05rem}
+.chronicles-admin__head button{background:none;border:0;color:#e8e2d4;font-size:1.4rem;line-height:1;cursor:pointer}
+.chronicles-admin__where,.chronicles-admin__hint{margin:.2rem 0 .6rem;color:#a39d8f;font-size:.78rem}
+.chronicles-admin__row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.5rem 0}
+.chronicles-admin__row label{width:100%;font-size:.72rem;letter-spacing:.08em;color:#b38a2e;text-transform:uppercase}
+.chronicles-admin select,.chronicles-admin input{flex:1;min-width:0;padding:6px 8px;background:#0e0f13;color:#e8e2d4;border:1px solid #4a4536;font:inherit}
+.chronicles-admin .chronicles-admin__qty{flex:0 0 64px}
+.chronicles-admin button{padding:6px 10px;background:#2a2620;color:#f2e6c4;border:1px solid #6e5a2c;font:inherit;cursor:pointer}
+.chronicles-admin button:hover{background:#3a3326}
+.chronicles-admin__buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:.6rem 0}
+.chronicles-admin__buttons button:first-child{grid-column:1/-1;border-color:#b38a2e}

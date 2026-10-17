@@ -111,6 +111,9 @@ import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 import ChroniclesCombatRoster, { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
 import ChroniclesBookOneEpilogue from './ChroniclesBookOneEpilogue.jsx';
 import ChroniclesCampaignEpilogue from './ChroniclesCampaignEpilogue.jsx';
+import ChroniclesAdminPanel from './ChroniclesAdminPanel.jsx';
+import { CHRONICLES_ADMIN_TRAVEL_KEY } from '../chronicles/chroniclesAdmin.js';
+import { fetchMe } from '../auth.js';
 import {
   CHRONICLES_EPILOGUE_SEEN_KEY,
   chroniclesCampaignEnding,
@@ -232,6 +235,14 @@ export default function ChroniclesOfMatthias({ onExit }) {
   const [retaliationCue, setRetaliationCue] = useState(null);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  // Admin tools appear only for accounts the API reports as admins.
+  useEffect(() => {
+    let alive = true;
+    fetchMe().then((user) => { if (alive) setIsAdmin(Boolean(user?.isAdmin)); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [fxVolume, setFxVolume] = useState(() => getChroniclesFxVolume());
   const [musicVolume, setMusicVolume] = useState(getAmbientVolume);
   const lastFxVolumeRef = useRef(fxVolume || 0.75);
@@ -849,8 +860,16 @@ export default function ChroniclesOfMatthias({ onExit }) {
       if (!checkpointExistsRef.current || fingerprint !== checkpointFingerprintRef.current) {
         const updated = await chroniclesCheckpointState(
           requestedRunId, snapshot, currentRun.worldVersion,
-          { terminalStatus: snapshot.phase === 'escaped' ? 'completed' : null },
+          {
+            terminalStatus: snapshot.phase === 'escaped' ? 'completed' : null,
+            adminTravel: Boolean(snapshot[CHRONICLES_ADMIN_TRAVEL_KEY]),
+          },
         );
+        if (snapshot[CHRONICLES_ADMIN_TRAVEL_KEY] && stateRef.current?.[CHRONICLES_ADMIN_TRAVEL_KEY]) {
+          const { [CHRONICLES_ADMIN_TRAVEL_KEY]: _done, ...settled } = stateRef.current;
+          stateRef.current = settled;
+          setState(settled);
+        }
         if (authoritativeRunRef.current?.runId !== requestedRunId) return false;
         authoritativeRunRef.current = { ...currentRun, ...updated };
         checkpointFingerprintRef.current = fingerprint;
@@ -1273,6 +1292,9 @@ export default function ChroniclesOfMatthias({ onExit }) {
                     {saveBusy ? 'Guardando…' : 'Guardar partida'}
                   </button>
                   <button type="button" onClick={() => void saveAndExit()} disabled={saveBusy}>Guardar y salir</button>
+                  {isAdmin && (
+                    <button type="button" onClick={() => { setMenuOpen(false); setAdminOpen(true); }}>Modo admin</button>
+                  )}
                   {!confirmExitWithoutSaving ? (
                     <button type="button" onClick={() => setConfirmExitWithoutSaving(true)}>Salir sin guardar</button>
                   ) : (
@@ -1380,6 +1402,9 @@ export default function ChroniclesOfMatthias({ onExit }) {
             {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}
             {state.phase === 'escaped' && chroniclesCampaignEnding(state) && (
               <ChroniclesCampaignEpilogue state={state} closed onRestart={restart} onExit={exitChronicles} />
+            )}
+            {isAdmin && adminOpen && !expeditionOver && (
+              <ChroniclesAdminPanel state={state} onAction={dispatch} onClose={() => setAdminOpen(false)} />
             )}
             {chroniclesCampaignEpiloguePending(state) && (
               <ChroniclesCampaignEpilogue
