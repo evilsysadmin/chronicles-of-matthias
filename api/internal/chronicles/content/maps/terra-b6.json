@@ -33,8 +33,8 @@
   "enemies": [
     {
       "id": "terra-b6-foe-0",
-      "visualType": "salt-crab",
-      "name": "cangrejo de roca",
+      "visualType": "harpy",
+      "name": "arpía del acantilado",
       "x": 7,
       "y": 3,
       "hpKey": "terra_b6Foe0Hp",
@@ -46,10 +46,10 @@
         "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "knight-chase",
-        "engageRange": 2
+        "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
+        "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

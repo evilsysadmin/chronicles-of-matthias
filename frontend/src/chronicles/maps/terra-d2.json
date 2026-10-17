@@ -33,38 +33,11 @@
   "enemies": [
     {
       "id": "terra-d2-foe-0",
-      "visualType": "road-bandit",
-      "name": "salteador",
+      "visualType": "ash-goblin",
+      "name": "goblin",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d2Foe0Hp",
-      "maxHp": 8,
-      "retaliation": 1,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con salteador usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 6
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-d2-foe-1",
-      "visualType": "ash-goblin",
-      "name": "goblin",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_d2Foe1Hp",
       "maxHp": 8,
       "retaliation": 1,
       "optional": true,
@@ -77,6 +50,33 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con goblin usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d2-foe-1",
+      "visualType": "skeleton",
+      "name": "ahorcado del camino",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_d2Foe1Hp",
+      "maxHp": 8,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahorcado del camino usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

@@ -60,8 +60,8 @@
     },
     {
       "id": "terra-b2-foe-1",
-      "visualType": "ash-goblin",
-      "name": "goblin de las colinas",
+      "visualType": "troll",
+      "name": "trol de las colinas",
       "x": 13,
       "y": 11,
       "hpKey": "terra_b2Foe1Hp",
@@ -70,13 +70,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con goblin de las colinas usando {attack}.",
+        "message": "{attacker} acaba con trol de las colinas usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

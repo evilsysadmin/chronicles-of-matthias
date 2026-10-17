@@ -60,8 +60,8 @@
     },
     {
       "id": "terra-d6-foe-1",
-      "visualType": "sewer-rat",
-      "name": "rata gigante",
+      "visualType": "skeleton",
+      "name": "ahorcado del camino",
       "x": 13,
       "y": 11,
       "hpKey": "terra_d6Foe1Hp",
@@ -70,13 +70,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con rata gigante usando {attack}.",
+        "message": "{attacker} acaba con ahorcado del camino usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

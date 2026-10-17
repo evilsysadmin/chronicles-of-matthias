@@ -60,11 +60,38 @@
     },
     {
       "id": "terra-c6-foe-1",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
       "x": 13,
       "y": 11,
       "hpKey": "terra_c6Foe1Hp",
+      "maxHp": 10,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-2",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_c6Foe2Hp",
       "maxHp": 10,
       "retaliation": 2,
       "optional": true,
@@ -77,33 +104,6 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 8
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-c6-foe-2",
-      "visualType": "drowned",
-      "name": "ahogado",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_c6Foe2Hp",
-      "maxHp": 10,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 3
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con ahogado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

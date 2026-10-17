@@ -34,6 +34,14 @@ const VISUALS = Object.freeze({
   'silent-acolyte': Object.freeze({ build: buildSpectralBishop, scale: 0.86 }),
   'oathbound-knight': Object.freeze({ build: buildScavengerKnight, scale: 1.06 }),
   'chancellor-varren': Object.freeze({ build: buildSpectralBishop, scale: 1.04 }),
+  // Terra's wider bestiary: first-person shows their billboards; Tactics
+  // borrows the closest procedural silhouette.
+  skeleton: Object.freeze({ build: buildScavengerKnight, scale: 0.92 }),
+  harpy: Object.freeze({ build: buildForkStalker, scale: 0.94 }),
+  troll: Object.freeze({ build: buildGateJailer, scale: 1.26 }),
+  'ice-wraith': Object.freeze({ build: buildSpectralBishop, scale: 1.0 }),
+  'ash-salamander': Object.freeze({ build: buildCryptSpider, scale: 1.12 }),
+  'bog-toad': Object.freeze({ build: buildBoneHound, scale: 0.9 }),
 });
 
 export function chroniclesEnemyVisualSpec(visualType) {

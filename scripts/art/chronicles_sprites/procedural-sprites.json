@@ -1,10 +1,19 @@
 {
-  "_comment": "Creatures drawn by build_chronicles_procedural_sprites.py: placeholders until painted SpriteCook art replaces them.",
+  "_comment": "Creatures drawn by api/cmd/spritegen (creatures.go): placeholders until painted SpriteCook art replaces them.",
   "sprites": [
     "ash-goblin",
+    "ash-salamander",
+    "bog-toad",
+    "chancellor-varren",
     "drowned",
+    "harpy",
+    "ice-wraith",
     "mire-witch",
+    "oathbound-knight",
     "salt-crab",
-    "sewer-rat"
+    "sewer-rat",
+    "silent-acolyte",
+    "skeleton",
+    "troll"
   ]
 }

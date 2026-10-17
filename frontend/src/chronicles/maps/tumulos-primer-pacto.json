@@ -85,8 +85,8 @@
     },
     {
       "id": "tumulos-primer-pacto-foe-2",
-      "visualType": "bone-hound",
-      "name": "lobo de hueso",
+      "visualType": "skeleton",
+      "name": "esqueleto del túmulo",
       "x": 4,
       "y": 1,
       "hpKey": "tumulos_primer_pactoFoe2Hp",
@@ -95,13 +95,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 4
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con lobo de hueso usando {attack}.",
+        "message": "{attacker} acaba con esqueleto del túmulo usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -139,11 +139,39 @@
     },
     {
       "id": "tumulos-primer-pacto-foe-4",
-      "visualType": "scavenger-knight",
-      "name": "guerrero del túmulo",
+      "visualType": "ice-wraith",
+      "name": "espectro del túmulo",
       "x": 14,
       "y": 9,
       "hpKey": "tumulos_primer_pactoFoe4Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con espectro del túmulo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-foe-5",
+      "visualType": "scavenger-knight",
+      "name": "guerrero del túmulo",
+      "x": 19,
+      "y": 5,
+      "hpKey": "tumulos_primer_pactoFoe5Hp",
       "maxHp": 12,
       "retaliation": 2,
       "optional": true,
@@ -156,32 +184,6 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con guerrero del túmulo usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "tumulos-primer-pacto-foe-5",
-      "visualType": "spectral-bishop",
-      "name": "sacerdote espectral",
-      "x": 19,
-      "y": 5,
-      "hpKey": "tumulos_primer_pactoFoe5Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 3,
-        "requiresLineOfSight": true
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con sacerdote espectral usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

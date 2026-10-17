@@ -33,11 +33,38 @@
   "enemies": [
     {
       "id": "terra-e6-foe-0",
-      "visualType": "ash-goblin",
-      "name": "goblin de las colinas",
+      "visualType": "harpy",
+      "name": "arpía del brezal",
       "x": 7,
       "y": 3,
       "hpKey": "terra_e6Foe0Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del brezal usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e6-foe-1",
+      "visualType": "ash-goblin",
+      "name": "goblin de las colinas",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_e6Foe1Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -59,12 +86,12 @@
       }
     },
     {
-      "id": "terra-e6-foe-1",
+      "id": "terra-e6-foe-2",
       "visualType": "road-bandit",
       "name": "bandolero",
-      "x": 13,
+      "x": 3,
       "y": 11,
-      "hpKey": "terra_e6Foe1Hp",
+      "hpKey": "terra_e6Foe2Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -86,12 +113,12 @@
       }
     },
     {
-      "id": "terra-e6-foe-2",
+      "id": "terra-e6-foe-3",
       "visualType": "bone-hound",
       "name": "lobo de hueso",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_e6Foe2Hp",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_e6Foe3Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,

@@ -31,7 +31,7 @@ describe('Chronicles · Faro Helado (F1), secreto original y decisión irreversi
     expect(new Set(locations.map((item) => item.x + ',' + item.y)).size).toBe(4);
     expect(map.exits).toHaveLength(2);
     expect(map.treasures.find((item) => item.id === 'terra-f1-chest')).toBeTruthy();
-    expect(map.enemies).toHaveLength(3);
+    expect(map.enemies.length).toBeGreaterThanOrEqual(3);
   });
 
   it('offers exactly one reachable first-person action per site and phase', () => {

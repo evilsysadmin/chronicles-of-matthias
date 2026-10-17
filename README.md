@@ -10,7 +10,8 @@ juego y de su API** (origen en [`docs/PROVENANCE.md`](docs/PROVENANCE.md)).
 | Juego (React + Three.js) | `frontend/` | `https://staging.chronicles.shadowops.dpdns.org` (Cloudflare Pages) |
 | API (Go: cuentas, sesión y partidas guardadas — saves) | `api/` | `https://chronicles-api-staging.shadowops.dpdns.org` (OCI A1 + túnel propio) |
 | Mundo de Terra (generador Go: mapas, historia, side quests) | `api/cmd/terragen` | se incrusta en el juego y en la API |
-| Pipeline de arte | `scripts/art`, `scripts/blender` | — |
+| Sprites de criaturas (generador Go: dibuja y empaqueta) | `api/cmd/spritegen` | `frontend/src/assets/chronicles/sprites` |
+| Pipeline de arte restante (UI MM3, tiendas, Blender) | `scripts/art`, `scripts/blender` | — |
 
 La infraestructura (Pages, túnel, Vault, despliegue en OCI) vive en
 [`shadowops-infra`](https://github.com/evilsysadmin/shadowops-infra).
@@ -24,6 +25,7 @@ VITE_API_URL=http://127.0.0.1:8090/api npm run dev
 
 cd api && go build ./cmd/chronicles-api   # MONGO_URL, MONGO_DB_NAME, JWT_SECRET
 cd api && go run ./cmd/terragen          # regenera Terra en frontend/ y api/ (-check en CI)
+cd api && go run ./cmd/spritegen         # dibuja las criaturas procedurales y empaqueta sus hojas
 ```
 
 Los mapas viven dos veces, byte a byte: `frontend/src/chronicles/maps` (los

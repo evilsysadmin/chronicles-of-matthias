@@ -11,7 +11,7 @@
     "#####################",
     "#...##..............#",
     "#.###.........#.....#",
-    "#.####........##....#",
+    "#.####..............#",
     "#.#.................#",
     "#........#...#.#....#",
     "#...#.##............#",
@@ -33,8 +33,8 @@
   "enemies": [
     {
       "id": "terra-f6-foe-0",
-      "visualType": "gate-jailer",
-      "name": "guardián de escoria",
+      "visualType": "ash-salamander",
+      "name": "salamandra de ceniza",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f6Foe0Hp",
@@ -44,12 +44,11 @@
       "activation": "always",
       "ai": {
         "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "attackReach": 2,
+        "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -87,11 +86,38 @@
     },
     {
       "id": "terra-f6-foe-2",
-      "visualType": "ember-wisp",
-      "name": "lumbre de ceniza",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
       "x": 3,
       "y": 11,
       "hpKey": "terra_f6Foe2Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f6-foe-3",
+      "visualType": "ash-salamander",
+      "name": "salamandra de ceniza",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_f6Foe3Hp",
       "maxHp": 16,
       "retaliation": 3,
       "optional": true,
@@ -102,7 +128,7 @@
         "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

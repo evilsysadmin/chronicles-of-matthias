@@ -33,8 +33,8 @@
   "enemies": [
     {
       "id": "terra-e5-foe-0",
-      "visualType": "sewer-rat",
-      "name": "rata de marisma",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
       "x": 7,
       "y": 3,
       "hpKey": "terra_e5Foe0Hp",
@@ -43,13 +43,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
+        "movement": "hold",
+        "attackReach": 2,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con rata de marisma usando {attack}.",
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

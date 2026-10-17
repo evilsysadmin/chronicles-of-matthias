@@ -3,6 +3,7 @@ module github.com/evilsysadmin/chess-studio/backend-go
 go 1.26.0
 
 require (
+	github.com/HugoSmits86/nativewebp v1.3.0
 	github.com/google/uuid v1.6.0
 	go.mongodb.org/mongo-driver/v2 v2.9.1
 	go.opentelemetry.io/otel v1.47.0
@@ -26,6 +27,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.47.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
+	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
