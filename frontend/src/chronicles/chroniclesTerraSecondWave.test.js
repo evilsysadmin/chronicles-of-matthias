@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesTacticsInteractions, chroniclesTacticsUse } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
-import { CHRONICLES_EQUIPMENT } from './chroniclesEquipment.js';
+import { chroniclesShopItem } from './chroniclesConsumables.js';
 import { CHRONICLES_SPELLS } from './chroniclesMagic.js';
 import { chroniclesMapById, chroniclesMapIds, chroniclesMapInitialEnemyState } from './chroniclesMapCatalog.js';
 import { chroniclesCampaignEpilogue } from './chroniclesCampaignEpilogue.js';
@@ -33,10 +33,10 @@ describe('Terra, second wave', () => {
     expect(chroniclesMapById('terra-f5').exits.some((exit) => exit.id === 'f5-to-dungeon')).toBe(true);
   });
 
-  it('sells only real equipment and real spells everywhere', () => {
+  it('sells only real equipment, consumables and spells everywhere', () => {
     chroniclesMapIds().forEach((mapId) => {
       chroniclesMapById(mapId).interactables.forEach((entry) => {
-        (entry.shop?.stock || []).forEach((itemId) => expect(CHRONICLES_EQUIPMENT[itemId], `${mapId}: ${itemId}`).toBeTruthy());
+        (entry.shop?.stock || []).forEach((itemId) => expect(chroniclesShopItem(itemId), `${mapId}: ${itemId}`).toBeTruthy());
         (entry.guild?.spells || []).forEach((spellId) => expect(CHRONICLES_SPELLS[spellId], `${mapId}: ${spellId}`).toBeTruthy());
       });
     });

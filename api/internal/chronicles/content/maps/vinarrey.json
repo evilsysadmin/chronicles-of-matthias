@@ -81,7 +81,9 @@
           "bronze-sword",
           "iron-dagger",
           "iron-staff",
-          "bronze-mace"
+          "bronze-mace",
+          "bronze-longbow",
+          "brass-crossbow"
         ]
       },
       "action": {
@@ -143,6 +145,27 @@
       }
     },
     {
+      "id": "vinarrey-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica del Lagar · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
+      }
+    },
+    {
       "id": "vinarrey-guild",
       "kind": "merchant",
       "x": 15,
@@ -161,7 +184,9 @@
           "first-aid",
           "flying-fist",
           "heal-wounds",
-          "holy-strike"
+          "holy-strike",
+          "faith-ward",
+          "paralyze"
         ]
       }
     },

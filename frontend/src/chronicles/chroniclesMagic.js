@@ -76,7 +76,36 @@ export const CHRONICLES_SPELLS = Object.freeze({
     kind: 'heal', amount: 15,
     description: 'Cura 15 PV al compañero más herido.',
   }),
+  // Master spells, sold by the guilds of Terra's third wave: the first ones
+  // that shape a whole fight instead of a single blow.
+  fireball: spell({
+    id: 'fireball', name: 'Bola de fuego', schools: ['cosmonium'], cost: 5, price: 45,
+    kind: 'attack', damage: 12, reach: 3, element: 'fire', area: 1,
+    description: 'Estalla sobre un enemigo a tres casillas y quema también a los que tiene al lado. No falla.',
+  }),
+  paralyze: spell({
+    id: 'paralyze', name: 'Paralizar', schools: ['esoterica', 'gaiam'], cost: 4, price: 38,
+    kind: 'paralyze', reach: 3, turns: 2,
+    description: 'Un enemigo a tres casillas pierde sus dos próximas acciones (los jefes, una).',
+  }),
+  'mass-heal': spell({
+    id: 'mass-heal', name: 'Sanación en grupo', schools: ['esoterica', 'gaiam'], cost: 6, price: 50,
+    kind: 'heal', amount: 10, everyone: true,
+    description: 'Cura 10 PV a toda la compañía en pie.',
+  }),
+  'faith-ward': spell({
+    id: 'faith-ward', name: 'Escudo de fe', schools: ['esoterica'], cost: 4, price: 36,
+    kind: 'ward', armorClass: 3,
+    description: 'La compañía gana +3 de armadura hasta que acabe el combate. Sólo en combate.',
+  }),
 });
+
+// How long Paralizar holds an enemy: bosses (and anything as tough) shake it
+// off sooner.
+export function chroniclesParalysisTurns(definition, enemy) {
+  const tough = /-foe-9$/.test(String(enemy?.id || '')) || Number(enemy?.maxHp || 0) >= 30;
+  return tough ? Math.max(1, definition.turns - 1) : definition.turns;
+}
 
 export const CHRONICLES_ELEMENT_LABELS = Object.freeze({
   fire: 'fuego', electricity: 'electricidad', cold: 'frío', poison: 'veneno', energy: 'energía', magic: 'magia',

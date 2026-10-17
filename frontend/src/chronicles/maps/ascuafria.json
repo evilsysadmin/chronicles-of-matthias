@@ -81,7 +81,9 @@
           "steel-dagger",
           "iron-axe",
           "silver-sword",
-          "steel-mace"
+          "steel-mace",
+          "iron-longbow",
+          "iron-crossbow"
         ]
       },
       "action": {
@@ -143,6 +145,29 @@
       }
     },
     {
+      "id": "ascuafria-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica de la Ceniza · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "greater-healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll",
+          "lightning-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
+      }
+    },
+    {
       "id": "ascuafria-guild",
       "kind": "merchant",
       "x": 15,
@@ -160,7 +185,8 @@
         "spells": [
           "first-aid",
           "elemental-arrow",
-          "detect-magic"
+          "detect-magic",
+          "fireball"
         ]
       }
     },

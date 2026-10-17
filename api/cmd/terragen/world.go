@@ -770,6 +770,9 @@ func buildTown(code string, people []*O) *O {
 			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 10), obj("type", "revive-party"), obj("type", "heal-party", "amount", 20)},
 				"message", "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar.")),
 	}
+	if shop := apothecary(code, t); shop != nil {
+		interactables = append(interactables, shop)
+	}
 	if g, ok := guilds[code]; ok {
 		interactables = append(interactables, obj(
 			"id", prefix+"-guild", "kind", "merchant", "x", 15, "y", 4, "visualType", "building-guild",

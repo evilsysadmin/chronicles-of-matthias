@@ -81,7 +81,9 @@
           "iron-mace",
           "iron-axe",
           "iron-spear",
-          "wooden-bow"
+          "wooden-bow",
+          "iron-crossbow",
+          "iron-sling"
         ]
       },
       "action": {
@@ -140,6 +142,27 @@
           }
         ],
         "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar."
+      }
+    },
+    {
+      "id": "molinoviejo-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica del Molino · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
       }
     },
     {

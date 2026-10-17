@@ -35,10 +35,17 @@ import {
   chroniclesDetectMagicMessage,
   chroniclesMemberKnowsSpell,
   chroniclesMemberSp,
+  chroniclesMemberMaxSp,
   chroniclesMostWoundedAlly,
+  chroniclesParalysisTurns,
   chroniclesSpellDamage,
   chroniclesSpendSp,
 } from './chronicles/chroniclesMagic.js';
+import {
+  CHRONICLES_CONSUMABLES,
+  chroniclesConsumableCount,
+  chroniclesConsumableTarget,
+} from './chronicles/chroniclesConsumables.js';
 import {
   chroniclesMM3AttackHits,
   chroniclesMM3EnemyArmorClass,
@@ -357,7 +364,9 @@ export function chroniclesPartyAttackStats(state, memberId) {
 export function chroniclesPartyArmorClass(state, memberId) {
   const member = partyMember(state, memberId);
   if (!member) return 0;
-  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0) + chroniclesEquipmentBonuses(state, memberId).armorClassBonus);
+  // Escudo de fe holds only while the fight it was cast in lasts.
+  const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
+  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0) + chroniclesEquipmentBonuses(state, memberId).armorClassBonus + ward);
 }
 
 export function chroniclesUsesMM3Combat(state) {
@@ -535,6 +544,93 @@ function resolveAttack(state, memberId, spell = null) {
   return markPartyDefeated(evadeAfterHit(nextState, enemy));
 }
 
+// The other living enemies within `radius` cells (any direction) of the one
+// an area spell bursts on.
+function splashTargets(state, primary, radius) {
+  const center = chroniclesEnemyPosition(state, primary);
+  return chroniclesActiveEnemies(state).filter((enemy) => {
+    if (enemy.id === primary.id) return false;
+    const position = chroniclesEnemyPosition(state, enemy);
+    return Math.max(Math.abs(position.x - center.x), Math.abs(position.y - center.y)) <= radius;
+  });
+}
+
+function applySplash(state, caster, spell, enemies) {
+  let next = state;
+  const notes = [];
+  enemies.forEach((enemy) => {
+    if (!enemyAlive(next, enemy)) return;
+    const hp = Math.max(0, Number(next[enemy.hpKey] || 0) - chroniclesSpellDamage(spell, enemy));
+    const name = `${enemy.name[0].toUpperCase()}${enemy.name.slice(1)}`;
+    next = { ...next, [enemy.hpKey]: hp };
+    if (hp === 0) {
+      next = journalForDefeat(rewardForDefeat(next, enemy), { ...caster, attackName: spell.name }, enemy);
+      notes.push(`${name} cae`);
+    } else {
+      notes.push(`${name} ${hp}/${enemy.maxHp}`);
+    }
+  });
+  return notes.length ? { ...next, message: `${next.message} La explosión alcanza: ${notes.join(', ')}.` } : next;
+}
+
+// A potion, the revive draught or a scroll from the shared pack. Using one is
+// the user's action (a turn in combat); a refusal costs nothing.
+function resolveUseItem(state, memberId, itemId, targetId = null) {
+  const refuse = (message) => ({ ...state, message });
+  const user = partyMember(state, memberId);
+  const item = CHRONICLES_CONSUMABLES[itemId];
+  if (!user || !item) return state;
+  if (chroniclesConsumableCount(state, itemId) < 1) return refuse(`No queda ningún ${item.name.toLowerCase()} en la mochila.`);
+  if (user.hp <= 0) return refuse(`${user.name} está fuera de combate y no puede usar objetos.`);
+  const consume = (next) => chroniclesApplyContentEffects(next, [{ type: 'consume-item', itemId, quantity: 1 }]);
+  if (item.kind === 'scroll') {
+    const { spell } = item;
+    const ahead = chroniclesEnemyTargetAhead(state, spell.reach);
+    if (!ahead) return refuse(`${user.name} desenrolla ${item.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
+    const next = resolveAttack(state, memberId, spell);
+    if (next === state) return state;
+    return { ...consume(next), message: `${next.message} (${item.name}, ${CHRONICLES_ELEMENT_LABELS[spell.element]})` };
+  }
+  const target = chroniclesConsumableTarget(state, item, targetId);
+  if (!target) {
+    return refuse({
+      heal: `${user.name} destapa ${item.name}, pero nadie de la compañía está herido.`,
+      mana: `${user.name} mira ${item.name}: nadie necesita recuperar puntos de hechizo.`,
+      revive: `${user.name} guarda ${item.name}: no hay nadie caído.`,
+    }[item.kind] || `${item.name} no sirve de nada ahora.`);
+  }
+  const who = target.id === user.id ? `${user.name} bebe ${item.name}` : `${user.name} da ${item.name} a ${target.name}`;
+  if (item.kind === 'heal') {
+    const hp = Math.min(target.maxHp, target.hp + item.amount);
+    return {
+      ...consume(state),
+      party: state.party.map((member) => (member.id === target.id ? { ...member, hp } : member)),
+      turns: state.turns + 1,
+      message: `${who}: ${target.hp} → ${hp} PV.`,
+    };
+  }
+  if (item.kind === 'mana') {
+    const before = chroniclesMemberSp(state, target);
+    const sp = Math.min(chroniclesMemberMaxSp(state, target), before + item.amount);
+    return {
+      ...consume(state),
+      spellPoints: { ...(state.spellPoints || {}), [target.id]: sp },
+      turns: state.turns + 1,
+      message: `${who}: ${before} → ${sp} PH.`,
+    };
+  }
+  if (item.kind === 'revive') {
+    const hp = Math.max(1, Math.ceil(target.maxHp * item.fraction));
+    return {
+      ...consume(state),
+      party: state.party.map((member) => (member.id === target.id ? { ...member, hp } : member)),
+      turns: state.turns + 1,
+      message: `${user.name} vierte ${item.name} en los labios de ${target.name}, que vuelve en sí con ${hp} PV.`,
+    };
+  }
+  return state;
+}
+
 function resolveCast(state, memberId, spellId) {
   // A refused cast costs no turn: MM3 simply tells you why.
   const refuse = (message) => ({ ...state, message });
@@ -550,9 +646,47 @@ function resolveCast(state, memberId, spellId) {
     if (!chroniclesEnemyTargetAhead(state, spell.reach)) {
       return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
     }
-    const next = resolveAttack(state, memberId, spell);
+    const splash = spell.area ? splashTargets(state, chroniclesEnemyTargetAhead(state, spell.reach).enemy, spell.area) : [];
+    let next = resolveAttack(state, memberId, spell);
+    if (next === state) return state;
+    if (splash.length) next = applySplash(next, caster, spell, splash);
     const element = CHRONICLES_ELEMENT_LABELS[spell.element];
-    return next === state ? state : { ...next, message: `${next.message} (${spell.name}, ${element}: ${spell.cost} PH)` };
+    return { ...next, message: `${next.message} (${spell.name}, ${element}: ${spell.cost} PH)` };
+  }
+  if (spell.kind === 'heal' && spell.everyone) {
+    const wounded = state.party.filter((member) => member.hp > 0 && member.hp < member.maxHp);
+    if (!wounded.length) return refuse(`${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    return {
+      ...chroniclesSpendSp(state, caster.id, spell.cost),
+      party: state.party.map((member) => (member.hp > 0
+        ? { ...member, hp: Math.min(member.maxHp, member.hp + spell.amount) }
+        : member)),
+      turns: state.turns + 1,
+      message: `${caster.name} conjura ${spell.name}: ${wounded.map((member) => member.name).join(', ')} recuperan hasta ${spell.amount} PV.`,
+    };
+  }
+  if (spell.kind === 'paralyze') {
+    const target = chroniclesEnemyTargetAhead(state, spell.reach);
+    if (!target) return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
+    const { enemy } = target;
+    const turns = chroniclesParalysisTurns(spell, enemy);
+    const name = `${enemy.name[0].toUpperCase()}${enemy.name.slice(1)}`;
+    return {
+      ...chroniclesSpendSp(state, caster.id, spell.cost),
+      enemyStatus: { ...(state.enemyStatus || {}), [enemy.id]: { ...(state.enemyStatus?.[enemy.id] || {}), paralyzed: turns } },
+      turns: state.turns + 1,
+      message: `${caster.name} conjura ${spell.name}. ${name} queda rígido: pierde ${turns === 1 ? 'su próxima acción' : `sus ${turns} próximas acciones`}.`,
+    };
+  }
+  if (spell.kind === 'ward') {
+    if (!state.initiative) return refuse(`${caster.name} recita ${spell.name}, pero la fe sólo se sostiene en combate.`);
+    if (state.combatWard) return refuse(`${spell.name} ya protege a la compañía en este combate.`);
+    return {
+      ...chroniclesSpendSp(state, caster.id, spell.cost),
+      combatWard: { armorClass: spell.armorClass, by: caster.id },
+      turns: state.turns + 1,
+      message: `${caster.name} conjura ${spell.name}: la compañía gana +${spell.armorClass} de armadura hasta el final del combate.`,
+    };
   }
   if (spell.kind === 'heal') {
     const patient = chroniclesMostWoundedAlly(state);
@@ -741,6 +875,20 @@ function explorationCellBlocker(state, x, y) {
   return null;
 }
 
+// Which active quest the OBJETIVO line follows. Choosing costs no turn;
+// following a quest that is not active (or `null`) goes back to automatic.
+export function chroniclesTrackQuest(state, questId) {
+  const active = chroniclesQuestEntries(state, 'active').some((quest) => quest.id === questId);
+  if (!active) {
+    if (!state.trackedQuestId) return state;
+    const { trackedQuestId: _dropped, ...rest } = state;
+    return rest;
+  }
+  if (state.trackedQuestId === questId) return state;
+  const quest = chroniclesQuestEntries(state, 'active').find((entry) => entry.id === questId);
+  return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
+}
+
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
@@ -753,6 +901,7 @@ export function chroniclesReduce(state, action) {
     return chroniclesGuildLearn(state, chroniclesMapForState(state), action.memberId, action.spellId);
   }
   if (actionType === 'guild-close') return chroniclesCloseGuild(state);
+  if (actionType === 'track-quest') return chroniclesTrackQuest(state, action.questId);
   // Any other action (moving, turning, fighting) walks away from the counter.
   if ((state.shop || state.guild) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
     return chroniclesReduce(chroniclesCloseGuild(chroniclesCloseShop(state)), action);
@@ -763,6 +912,7 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
   if (actionType === 'attack') return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias');
   if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
+  if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
@@ -843,16 +993,22 @@ export function chroniclesObjective(state) {
 
   // In the open world the party follows its quests, not the nearest gate.
   // A quest with content on this map wins; otherwise the story thread. An
-  // exit objective a designer wrote by hand (legacy Swordhaven) still rules.
+  // exit objective a designer wrote by hand (legacy Swordhaven's «encuentra
+  // la salida») only speaks when no quest does: it used to hide the quest,
+  // which then showed only inside the Crónica.
   const campaignArea = ['settlement', 'wilderness'].includes(map.regionKind)
     || (map.regionKind === 'dungeon' && exit?.requiresReturn === true);
-  if (campaignArea && !exit?.explorationObjective) {
+  if (campaignArea) {
     const active = chroniclesQuestEntries(state, 'active').filter((quest) => quest.objective);
     const localQuestIds = new Set((map.interactables || []).flatMap((entry) => (
       (entry.when || []).map((requirement) => requirement?.questId).filter(Boolean)
     )));
-    const tracked = active.find((quest) => localQuestIds.has(quest.id)) || active[0];
+    // A quest the player chose to follow (Crónica → «Seguir») comes first.
+    const tracked = active.find((quest) => quest.id === state.trackedQuestId)
+      || active.find((quest) => localQuestIds.has(quest.id)) || active[0];
     if (tracked) return tracked.objective;
+  }
+  if (campaignArea && !exit?.explorationObjective) {
     // Nothing tracked yet: point at whoever here hands out work.
     const questGiver = (map.interactables || []).find((entry) => chroniclesRequirementsMet(state, entry.when)
       && (entry.action?.effects || []).some((effect) => effect.type === 'start-quest'));

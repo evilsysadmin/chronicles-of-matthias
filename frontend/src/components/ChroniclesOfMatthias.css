@@ -1575,6 +1575,15 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
     -webkit-line-clamp: 2;
     line-height: 1.15;
   }
+  /* With a route hint the objective keeps one line, so the box stays two
+     lines tall and never covers the portraits; the full text is one tap
+     away in the Crónica. */
+  .chronicles-statusbar > span:nth-child(4):has(.chronicles-route-hint) b { -webkit-line-clamp: 1; }
+  .chronicles-statusbar .chronicles-route-hint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ── Terra world map and the way to the objective ───────────────────────── */
@@ -1731,4 +1740,49 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   .chronicles-worldmap__cell { aspect-ratio: 1 / .62; padding: 2px 4px; }
   .chronicles-worldmap__cell small { -webkit-line-clamp: 1; font-size: .56rem; }
   .chronicles-worldmap__icons { font-size: .7rem; }
+}
+
+/* OBJETIVO is also the way into the Crónica: it keeps the look of the status
+   line and only shows a small «Crónica ⌄» tag. */
+.chronicles .chronicles-objective-trigger {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* The phone status bar lets taps through to the view; this one is ours. */
+  pointer-events: auto;
+}
+.chronicles .chronicles-objective-trigger:focus-visible { outline: 2px solid #e4bd7a; outline-offset: 2px; }
+.chronicles .chronicles-objective-trigger__more {
+  display: inline-block;
+  margin-left: 8px;
+  color: #e4bd7a;
+  font-size: .72em;
+  font-style: normal;
+  letter-spacing: .04em;
+  opacity: .85;
+}
+/* On a phone the separate Crónica button only repeated the objective box. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-stage .chronicles-dm-overlay { display: none; }
+}
+/* Phones: the objective box must not grow into the portraits; the Crónica
+   tag becomes a chevron in its corner. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-objective-trigger { position: relative; padding-right: 22px; }
+  .chronicles .chronicles-objective-trigger__more {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    font-size: 0;
+  }
+  .chronicles .chronicles-objective-trigger__more::after { content: '⌄'; font-size: 1.1rem; }
 }
