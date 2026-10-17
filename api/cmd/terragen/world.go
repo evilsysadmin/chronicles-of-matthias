@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -756,98 +755,4 @@ func distances(grid [][]byte, start point) map[point]int {
 		}
 	}
 	return dist
-}
-
-func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
-	d := dungeons[code]
-	level := danger(code) + 1
-	grid := maze(saltOf(d.id), 17, 11)
-	dist := distances(grid, point{1, 1})
-	ordered := make([]point, 0, len(dist))
-	for p := range dist {
-		ordered = append(ordered, p)
-	}
-	sort.Slice(ordered, func(i, j int) bool {
-		a, b := ordered[i], ordered[j]
-		if dist[a] != dist[b] {
-			return dist[a] < dist[b]
-		}
-		if a.x != b.x {
-			return a.x < b.x
-		}
-		return a.y < b.y
-	})
-	bossPos := ordered[len(ordered)-1]
-	var deadEnds []point
-	for _, p := range ordered {
-		openSides := 0
-		for _, s := range stepOrder {
-			dd := stepDir[s]
-			if grid[p.y+dd.y][p.x+dd.x] == '.' {
-				openSides++
-			}
-		}
-		if openSides == 1 && p != (point{1, 1}) && p != bossPos {
-			deadEnds = append(deadEnds, p)
-		}
-	}
-	chestPos := ordered[len(ordered)/2]
-	if len(deadEnds) > 0 {
-		chestPos = deadEnds[len(deadEnds)/2]
-	}
-	slug := camelFlag(d.id)
-	foes := dungeonFoes[d.theme]
-	var enemies []*O
-	for i, k := range []int{2, 3, 4, 5} {
-		pos := ordered[len(ordered)*k/6]
-		if pos == bossPos || pos == chestPos || pos == (point{1, 1}) {
-			continue
-		}
-		sp := foes[i%len(foes)]
-		enemies = append(enemies, foe(d.id, i, level, sp.visual, sp.name, pos, false, nil))
-	}
-	bossFlag := slug + "BossDefeated"
-	bossEnemy := foe(d.id, 9, level, d.boss.visual, d.boss.name, bossPos, true, obj(
-		"maxHp", d.boss.hp, "defeatedFlag", bossFlag,
-		"ai", obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2),
-		"blockingMessage", capFirst(d.boss.name)+" cierra el paso.",
-		"onDefeat", obj("message", "{attacker} derriba a "+d.boss.name+" con {attack}.",
-			"effects", A{obj("type", "set", "key", bossFlag, "value", true), obj("type", "grant-gold", "amount", 10+level*4), bossDrop},
-			"journal", obj("id", d.id+"-boss", "title", "Cae "+d.boss.name, "body", bossDrop.Str("description"), "sigil", "†")),
-	))
-	enemies = append(enemies, bossEnemy)
-	chestFlag := slug + "ChestOpened"
-	loot := tier(level+1) + "-" + []string{"sword", "axe", "mace", "spear"}[saltOf(d.id)%4]
-	armourKind := "scale"
-	if level > 3 {
-		armourKind = "chain"
-	}
-	armour := tier(level+1) + "-" + armourKind
-	rows := make([]string, len(grid))
-	for i, r := range grid {
-		rows[i] = string(r)
-	}
-	treasures := A{obj(
-		"id", d.id+"-chest", "kind", "pickup", "visualType", "ember-cache", "x", chestPos.x, "y", chestPos.y,
-		"label", "Abrir el cofre", "when", A{obj("key", chestFlag, "falsy", true)},
-		"action", obj("effects", A{obj("type", "set", "key", chestFlag, "value", true), obj("type", "grant-gold", "amount", 15+level*8),
-			obj("type", "grant-item", "itemId", loot, "name", capFirst(strings.ReplaceAll(loot, "-", " ")), "description", "Botín de mazmorra.", "quantity", 1),
-			obj("type", "grant-item", "itemId", armour, "name", capFirst(strings.ReplaceAll(armour, "-", " ")), "description", "Botín de mazmorra.", "quantity", 1)},
-			"message", "Un cofre con herrajes de bronce: oro y equipo de calidad."),
-	)}
-	return obj(
-		"id", d.id, "version", 1, "progressionKey", d.id+"-v1", "title", d.name, "hudTitle", d.hud,
-		"areaCode", code, "regionKind", "dungeon", "dungeonRole", "main", "layoutMode", "authored",
-		"grid", rows, "partyStart", obj("x", 1, "y", 1, "direction", 1),
-		"initialFlags", obj(), "enemies", objs(enemies), "triggers", A{}, "interactables", A{}, "treasures", treasures, "traps", A{},
-		"exits", A{obj(
-			"id", "dungeon-exit", "kind", "exit", "x", 1, "y", 1, "requiresReturn", true,
-			"openLabel", "Salir a "+code+" · "+areas[code].name, "lockedLabel", "La salida está bloqueada", "requirements", A{},
-			"action", obj("effects", A{obj("type", "transition-map", "mapId", mapID(code), "entryExitId", strings.ToLower(code)+"-to-dungeon")},
-				"message", "La compañía sale a la luz."),
-		)},
-		"initialJournal", obj("id", d.id+"-arrival", "title", d.name, "body", d.name+", bajo "+code+".", "sigil", code),
-		"introMessage", d.name+". El aire huele a cerrado y a algo que no quiere visitas.",
-		"arrivalAction", obj("effects", A{}, "message", d.name+". Al fondo de los pasillos espera "+d.boss.name+"."),
-	)
 }
