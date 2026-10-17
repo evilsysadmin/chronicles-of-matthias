@@ -96,6 +96,9 @@ type ChroniclesRunsConfig struct {
 	// NewSeed is secrets.randbelow(MAX_SEED + 1); NewRunID is uuid4.
 	NewSeed  func() int64
 	NewRunID func() string
+	// Admins may move a run to any shipped map (adminTravel checkpoints),
+	// to test content without replaying the campaign.
+	Admins []string
 }
 
 type ChroniclesRunsHandler struct {
@@ -104,6 +107,7 @@ type ChroniclesRunsHandler struct {
 	newSeed  func() int64
 	newRunID func() string
 	limits   map[string]*limiter
+	admins   map[string]bool
 }
 
 func NewChroniclesRuns(cfg ChroniclesRunsConfig) (*ChroniclesRunsHandler, error) {
@@ -115,7 +119,11 @@ func NewChroniclesRuns(cfg ChroniclesRunsConfig) (*ChroniclesRunsHandler, error)
 	if err != nil {
 		return nil, err
 	}
-	h := &ChroniclesRunsHandler{base: base, runs: cfg.Runs, newSeed: cfg.NewSeed, newRunID: cfg.NewRunID, limits: map[string]*limiter{
+	admins := map[string]bool{}
+	for _, name := range cfg.Admins {
+		admins[strings.ToLower(strings.TrimSpace(name))] = true
+	}
+	h := &ChroniclesRunsHandler{base: base, runs: cfg.Runs, newSeed: cfg.NewSeed, newRunID: cfg.NewRunID, admins: admins, limits: map[string]*limiter{
 		ChroniclesRunCreatePattern:     newLimiter(120, time.Minute),
 		ChroniclesRunListPattern:       newLimiter(120, time.Minute),
 		ChroniclesRunDeletePattern:     newLimiter(120, time.Minute),
@@ -254,6 +262,7 @@ type checkpointBody struct {
 	worldFlags, inventory, quests bson.D
 	consumed, claimed             []string
 	terminalStatus                *string
+	adminTravel                   bool
 }
 
 func strField(loc bson.A, value any, minLen, maxLen int) (string, bson.D) {
@@ -343,6 +352,13 @@ func checkpointRunBody(body any) (checkpointBody, bson.A) {
 			req.terminalStatus = &s
 		} else {
 			problems = append(problems, problemDoc("literal_error", loc, "Input should be 'completed' or 'defeated'", value, bson.D{{Key: "expected", Value: "'completed' or 'defeated'"}}))
+		}
+	}
+	if loc, value, present := field("adminTravel", "admin_travel"); present && value != nil {
+		if b, ok := value.(bool); ok {
+			req.adminTravel = b
+		} else {
+			problems = append(problems, problemDoc("bool_type", loc, "Input should be a valid boolean", value, nil))
 		}
 	}
 	return req, append(problems, extras(object, used)...)
@@ -733,7 +749,11 @@ func (h *ChroniclesRunsHandler) checkpoint(ctx context.Context, username, runID 
 		return nil, fail(404, "Mapa de Chronicles no encontrado.")
 	}
 	manifest, _ := lookupOr(current, "manifest", nil).(bson.D)
-	if target != currentMapID && !chronicles.TransitionTargets(manifest)[target] && !legacySwordhavenReturnAllowed(run, currentMapID, target) {
+	adminTravel := body.adminTravel && (h.admins["*"] || h.admins[strings.ToLower(username)])
+	if body.adminTravel && !adminTravel {
+		return nil, fail(403, "Solo un administrador puede viajar a cualquier mapa.")
+	}
+	if target != currentMapID && !adminTravel && !chronicles.TransitionTargets(manifest)[target] && !legacySwordhavenReturnAllowed(run, currentMapID, target) {
 		return nil, fail(409, "La transición solicitada no pertenece al mundo actual de la run.")
 	}
 	targetArea := current
