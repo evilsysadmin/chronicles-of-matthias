@@ -11,7 +11,11 @@ export function chroniclesHealthBand(hp, maxHp) {
 
 export default function ChroniclesCombatRoster({ state }) {
   if (!state?.initiative) return null;
-  const foes = chroniclesActiveEnemies(state).filter((enemy) => Number(state[enemy.hpKey] || 0) > 0);
+  // Only the creatures in this fight's initiative order, not every creature
+  // still alive somewhere on the map.
+  const engaged = new Set((state.initiative.order || []).filter((actor) => actor.kind === 'enemy').map((actor) => actor.id));
+  const foes = chroniclesActiveEnemies(state)
+    .filter((enemy) => Number(state[enemy.hpKey] || 0) > 0 && (!engaged.size || engaged.has(enemy.id)));
   if (!foes.length) return null;
 
   const targetId = chroniclesEnemyTargetAhead(state, 3)?.enemy?.id;

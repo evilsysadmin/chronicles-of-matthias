@@ -11,4 +11,9 @@ describe('ChroniclesTacticalMargin', () => {
   it('keeps a compact safe label outside retaliation range', () => {
     expect(chroniclesRetaliationLabel({ willRetaliate: false, retaliation: 2 })).toBe('SIN REPRESALIA');
   });
+
+  it('shows how hard the target hits during turn-based combat, never zero', () => {
+    expect(chroniclesRetaliationLabel({ willRetaliate: true, retaliation: 0 }, { combat: true })).toBe('GOLPEA · 1 PV');
+    expect(chroniclesRetaliationLabel({ willRetaliate: false, retaliation: 5 }, { combat: true })).toBe('GOLPEA · 5 PV');
+  });
 });

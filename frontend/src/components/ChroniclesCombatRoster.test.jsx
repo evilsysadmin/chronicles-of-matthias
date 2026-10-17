@@ -31,10 +31,9 @@ describe('ChroniclesCombatRoster', () => {
     expect(html).toContain('Combate');
     expect(html).toContain('<details>');
     expect(html).toContain('<summary>');
-    const aliveCount = chroniclesActiveEnemies(hurt).filter(
-      (enemy) => Number(hurt[enemy.hpKey] || 0) > 0,
-    ).length;
-    expect(html).toContain(`Combate · ${aliveCount} ${aliveCount === 1 ? 'enemigo' : 'enemigos'}`);
+    // The captain is alive elsewhere on the road but not in this fight.
+    expect(chroniclesActiveEnemies(hurt).filter((enemy) => Number(hurt[enemy.hpKey] || 0) > 0).length).toBeGreaterThan(1);
+    expect(html).toContain('Combate · 1 enemigo');
     expect(html).toContain(`Objetivo: ${deserter.name}`);
     expect(html).toContain('aria-label="Enemigos en combate"');
 

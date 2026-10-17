@@ -1,5 +1,5 @@
 import { chroniclesMapContentPosition, chroniclesMapForState, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
-import { chroniclesRestoreSpellPoints } from './chroniclesMagic.js';
+import { chroniclesLearnSpell, chroniclesRestoreSpellPoints } from './chroniclesMagic.js';
 
 const CARDINAL_DIRECTIONS = Object.freeze([
   Object.freeze({ key: 'north', dx: 0, dy: -1 }),
@@ -233,7 +233,7 @@ function grantGold(state, effect) {
 
 const REWARD_EFFECT_TYPES = new Set([
   'grant-gold', 'grant-item', 'consume-item', 'start-quest',
-  'advance-quest', 'complete-quest', 'set', 'award-xp',
+  'advance-quest', 'complete-quest', 'set', 'award-xp', 'teach-spell',
 ]);
 
 // Quest XP, MM3 style: every living hero earns it. The content runtime only
@@ -384,6 +384,11 @@ export function chroniclesApplyContentEffects(state, effects, adapters = {}) {
     }
     if (effect.type === 'damage-party') return damageParty(next, effect);
     if (effect.type === 'restore-spell-points') return chroniclesRestoreSpellPoints(next);
+    // A quest reward that copies a spell into the book of every hero whose
+    // school teaches it (and who does not know it yet).
+    if (effect.type === 'teach-spell' && typeof effect.spellId === 'string') {
+      return (next.party || []).reduce((taught, member) => chroniclesLearnSpell(taught, member.id, effect.spellId), next);
+    }
     if (effect.type === 'refill-class-abilities' && typeof adapters.refillClassAbilities === 'function') {
       return adapters.refillClassAbilities(next);
     }
