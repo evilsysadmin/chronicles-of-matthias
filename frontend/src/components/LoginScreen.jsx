@@ -46,7 +46,7 @@ function clearAuthParamsFromUrl() {
   }
 }
 
-export default function LoginScreen({ onLoggedIn }) {
+export default function LoginScreen({ onLoggedIn, initialNotice = null }) {
   const initialAuthParams = authParamsFromUrl();
   const [mode, setMode] = useState(initialAuthParams.resetToken ? 'reset' : initialAuthParams.inviteCode ? 'register' : 'login');
   const [resetToken] = useState(initialAuthParams.resetToken);
@@ -57,7 +57,7 @@ export default function LoginScreen({ onLoggedIn }) {
   const [inviteCode, setInviteCode] = useState(initialAuthParams.inviteCode);
   const [language, setLanguage] = useState('es');
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useState(initialNotice);
   const [loading, setLoading] = useState(false);
   const submitInFlightRef = useRef(false);
   const submitAbortRef = useRef(null);
