@@ -105,6 +105,7 @@ import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
+import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import {
   CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
@@ -201,7 +202,7 @@ export function chroniclesSaveListErrorMessage(error) {
   return `No se pudo consultar el servidor (${cause}). Se muestran los guardados locales; pulsa «Reintentar sincronización».`;
 }
 
-export default function ChroniclesOfMatthias({ onExit }) {
+export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const hostRef = useRef(null);
   const gameRootRef = useRef(null);
   const engineRef = useRef(null);
@@ -1117,38 +1118,42 @@ export default function ChroniclesOfMatthias({ onExit }) {
 
   if (entryView === 'menu') {
     return (
-      <ChroniclesSaveMenu
-        saves={saveInventory ?? chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE)}
-        loading={saveMenuLoading}
-        error={saveMenuError}
-        busyRunId={saveMenuBusy}
-        onRetrySync={() => refreshSaves((value) => value + 1)}
-        onNew={startFreshGame}
-        onLoad={loadSavedGame}
-        onRename={(id, title) => {
-          const result = chroniclesRenameSavedRun(FIRST_PERSON_RUN_SCOPE, id, title);
-          if (result) refreshSaves((value) => value + 1);
-          return result;
-        }}
-        onDelete={async (id, remote) => {
-          if (saveMenuBusy !== null) return false;
-          setSaveMenuBusy(id);
-          setSaveMenuError('');
-          try {
-            if (remote) await chroniclesDeleteRemoteRun(id);
-            if (!chroniclesForgetSavedRun(FIRST_PERSON_RUN_SCOPE, id)) return false;
-            setSaveInventory(chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE));
-            refreshSaves((value) => value + 1);
-            return true;
-          } catch {
-            setSaveMenuError('No se pudo eliminar la expedición del servidor. No se ha retirado de tu lista.');
-            return false;
-          } finally {
-            setSaveMenuBusy(null);
-          }
-        }}
-        onExit={exitChronicles}
-      />
+      <>
+        <ChroniclesSaveMenu
+          saves={saveInventory ?? chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE)}
+          loading={saveMenuLoading}
+          error={saveMenuError}
+          busyRunId={saveMenuBusy}
+          onRetrySync={() => refreshSaves((value) => value + 1)}
+          onNew={startFreshGame}
+          onLoad={loadSavedGame}
+          onRename={(id, title) => {
+            const result = chroniclesRenameSavedRun(FIRST_PERSON_RUN_SCOPE, id, title);
+            if (result) refreshSaves((value) => value + 1);
+            return result;
+          }}
+          onDelete={async (id, remote) => {
+            if (saveMenuBusy !== null) return false;
+            setSaveMenuBusy(id);
+            setSaveMenuError('');
+            try {
+              if (remote) await chroniclesDeleteRemoteRun(id);
+              if (!chroniclesForgetSavedRun(FIRST_PERSON_RUN_SCOPE, id)) return false;
+              setSaveInventory(chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE));
+              refreshSaves((value) => value + 1);
+              return true;
+            } catch {
+              setSaveMenuError('No se pudo eliminar la expedición del servidor. No se ha retirado de tu lista.');
+              return false;
+            } finally {
+              setSaveMenuBusy(null);
+            }
+          }}
+          // The standalone site has no castle to go back to: its cog signs out.
+          onExit={onLogout ? null : exitChronicles}
+        />
+        {onLogout && <ChroniclesAccountMenu onLogout={onLogout} />}
+      </>
     );
   }
 

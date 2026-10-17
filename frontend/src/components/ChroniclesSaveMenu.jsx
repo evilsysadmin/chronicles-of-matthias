@@ -105,11 +105,13 @@ export default function ChroniclesSaveMenu({
               <span className="chronicles-save-menu__action-copy">Gestionar partidas</span>
               <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
             </button>
-            <button type="button" className="is-exit" onClick={onExit}>
-              <ExpeditionMenuIcon kind="castle" />
-              <span className="chronicles-save-menu__action-copy">Volver al castillo</span>
-              <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
-            </button>
+            {onExit && (
+              <button type="button" className="is-exit" onClick={onExit}>
+                <ExpeditionMenuIcon kind="castle" />
+                <span className="chronicles-save-menu__action-copy">Volver al castillo</span>
+                <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
+              </button>
+            )}
           </nav>
         ) : (
           <div className="chronicles-save-menu__browser">

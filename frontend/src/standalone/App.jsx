@@ -4,7 +4,7 @@
 // Tactics no tiene botón propio: se abre en /#tactics.
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
-import { fetchMeStatus, isLoggedIn, logout, watchSessionIdentity } from '../auth.js';
+import { fetchMeStatus, isLoggedIn, logout, reportLogoutPresence, watchSessionIdentity } from '../auth.js';
 import { onSessionExpired } from '../sessionExpiry.js';
 import {
   releaseChroniclesLandscape,
@@ -71,11 +71,19 @@ export default function App() {
     void releaseChroniclesLandscape();
     setMountKey((k) => k + 1);
   };
+  // The book's cog: tell the server this session is leaving, then forget it.
+  const signOut = async () => {
+    await reportLogoutPresence().catch(() => {});
+    void releaseChroniclesLandscape();
+    logout();
+    setExpiredNotice(null);
+    setLoggedIn(false);
+  };
   const Game = mode === 'chronicles-tactics' ? ChroniclesOfMatthiasTactics : ChroniclesOfMatthias;
 
   return (
     <Suspense fallback={<Loading />}>
-      <Game key={`${mode}-${mountKey}`} onExit={exit} />
+      <Game key={`${mode}-${mountKey}`} onExit={exit} onLogout={signOut} />
     </Suspense>
   );
 }
