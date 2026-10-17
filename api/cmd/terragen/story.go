@@ -23,6 +23,9 @@ func bossDrops() map[string]*O {
 	for code, drop := range expansionBossDrops() {
 		drops[code] = drop
 	}
+	for code, drop := range thirdWaveBossDrops() {
+		drops[code] = drop
+	}
 	return drops
 }
 
@@ -171,7 +174,7 @@ func story() storyOut {
 		toHit, armorClass := combatRating(level + 1)
 		s.area(where).enemies = append(s.area(where).enemies, obj(
 			"id", giverID+"-quarry", "visualType", beastVisual, "name", beastName, "hpKey", camelFlag(giverID)+"QuarryHp",
-			"maxHp", 10+level*3, "retaliation", 2+level/3, "toHit", toHit, "armorClass", armorClass, "optional", true, "activation", "always",
+			"maxHp", 10+level*3, "retaliation", 2+level/3, "toHit", toHit, "armorClass", armorClass, "agility", speedFor(beastVisual, level+1), "optional", true, "activation", "always",
 			"defeatedFlag", flag, "ai", aiFor(beastVisual),
 			"onDefeat", obj("message", "{attacker} abate a "+beastName+" con {attack}.", "effects", A{obj("type", "set", "key", flag, "value", true)}),
 		))
@@ -238,5 +241,6 @@ func story() storyOut {
 		"«Una luz roja recorre el Desierto de Ceniza (F5) junto al esqueleto del dragón. Las caravanas no pasan».",
 		"«Las caravanas volverán. Y con ellas, los impuestos».", 50, 100, "")
 	expansionStory(&s, hunt, errand)
+	thirdWaveStory(&s)
 	return s
 }

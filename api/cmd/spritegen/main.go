@@ -83,6 +83,11 @@ var sheets = map[string]sheet{
 	"ice-wraith":        standard(104, 3.0, 1.5),
 	"ash-salamander":    standard(108, 1.9, 2.0),
 	"bog-toad":          standard(100, 2.0, 1.4),
+	"bandit-archer":     standard(100, 2.6, 1.6),
+	"dire-wolf":         standard(100, 2.0, 2.6),
+	"stone-golem":       standard(124, 3.8, 0.8),
+	"ghoul":             standard(100, 2.5, 1.8),
+	"name-scribe":       standard(124, 3.9, 1.0),
 	// Final-act NPCs: only an idle loop.
 	"stone-king":   npc(112, 3.6, 0.8),
 	"empty-throne": npc(112, 3.6, 0.6),

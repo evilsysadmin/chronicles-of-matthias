@@ -33,25 +33,26 @@
   "enemies": [
     {
       "id": "terra-e1-foe-0",
-      "visualType": "troll",
-      "name": "trol del bosque",
+      "visualType": "dire-wolf",
+      "name": "lobo gris",
       "x": 7,
       "y": 3,
       "hpKey": "terra_e1Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 6,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 1
+        "engageRange": 5
       },
       "onDefeat": {
-        "message": "{attacker} acaba con trol del bosque usando {attack}.",
+        "message": "{attacker} acaba con lobo gris usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -62,44 +63,16 @@
     },
     {
       "id": "terra-e1-foe-1",
-      "visualType": "bone-hound",
-      "name": "sabueso de hueso",
+      "visualType": "weaver-spider",
+      "name": "araña tejedora",
       "x": 13,
       "y": 11,
       "hpKey": "terra_e1Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con sabueso de hueso usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-e1-foe-2",
-      "visualType": "weaver-spider",
-      "name": "araña tejedora",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_e1Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
-      "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -110,6 +83,36 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con araña tejedora usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e1-foe-2",
+      "visualType": "troll",
+      "name": "trol del bosque",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_e1Foe2Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con trol del bosque usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

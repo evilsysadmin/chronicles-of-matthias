@@ -33,44 +33,16 @@
   "enemies": [
     {
       "id": "terra-d6-foe-0",
-      "visualType": "ash-goblin",
-      "name": "goblin",
+      "visualType": "skeleton",
+      "name": "ahorcado del camino",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d6Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con goblin usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-d6-foe-1",
-      "visualType": "skeleton",
-      "name": "ahorcado del camino",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_d6Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
-      "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -90,26 +62,57 @@
       }
     },
     {
-      "id": "terra-d6-foe-2",
-      "visualType": "road-bandit",
-      "name": "salteador",
-      "x": 3,
+      "id": "terra-d6-foe-1",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
+      "x": 13,
       "y": 11,
-      "hpKey": "terra_d6Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "hpKey": "terra_d6Foe1Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "ai": {
         "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d6-foe-2",
+      "visualType": "ash-goblin",
+      "name": "goblin",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_d6Foe2Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con salteador usando {attack}.",
+        "message": "{attacker} acaba con goblin usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

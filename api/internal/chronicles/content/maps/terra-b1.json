@@ -10,8 +10,8 @@
   "grid": [
     "#####################",
     "#.#..#..##......###.#",
-    "#..........#........#",
-    "#.............#.....#",
+    "#...................#",
+    "#...................#",
     "#...................#",
     "#.#...........#.....#",
     "#.............##....#",
@@ -33,15 +33,46 @@
   "enemies": [
     {
       "id": "terra-b1-foe-0",
-      "visualType": "ice-wraith",
-      "name": "espectro de escarcha",
+      "visualType": "scavenger-knight",
+      "name": "caballero helado",
       "x": 7,
       "y": 3,
       "hpKey": "terra_b1Foe0Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-1",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_b1Foe1Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -62,26 +93,27 @@
       }
     },
     {
-      "id": "terra-b1-foe-1",
-      "visualType": "skeleton",
-      "name": "guerrero congelado",
-      "x": 13,
+      "id": "terra-b1-foe-2",
+      "visualType": "dire-wolf",
+      "name": "lobo de las cumbres",
+      "x": 3,
       "y": 11,
-      "hpKey": "terra_b1Foe1Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "hpKey": "terra_b1Foe2Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 5
       },
       "onDefeat": {
-        "message": "{attacker} acaba con guerrero congelado usando {attack}.",
+        "message": "{attacker} acaba con lobo de las cumbres usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -91,26 +123,131 @@
       }
     },
     {
-      "id": "terra-b1-foe-2",
-      "visualType": "bone-hound",
-      "name": "lobo de escarcha",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_b1Foe2Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
-      "armorClass": 3,
+      "id": "terra-b1-foe-20",
+      "visualType": "dire-wolf",
+      "name": "la Loba Blanca",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_b1Foe20Hp",
+      "maxHp": 41,
+      "retaliation": 6,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 7,
       "optional": true,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 4
+        "engageRange": 5
       },
       "onDefeat": {
-        "message": "{attacker} acaba con lobo de escarcha usando {attack}.",
+        "message": "{attacker} derriba a la Loba Blanca con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campB1LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 22
+          }
+        ],
+        "journal": {
+          "id": "terra-b1-camp",
+          "title": "Cae la Loba Blanca",
+          "body": "La Loba Blanca guía a la manada que vacía los rediles del norte. Los pastores dicen que entiende cuando hablan de ella. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campB1LeaderDown",
+      "blockingMessage": "La Loba Blanca no deja pasar a nadie sin pagar.",
+      "visualScale": 1.35
+    },
+    {
+      "id": "terra-b1-foe-21",
+      "visualType": "dire-wolf",
+      "name": "lobo gris",
+      "x": 16,
+      "y": 3,
+      "hpKey": "terra_b1Foe21Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lobo gris usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-22",
+      "visualType": "dire-wolf",
+      "name": "loba gris",
+      "x": 18,
+      "y": 3,
+      "hpKey": "terra_b1Foe22Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con loba gris usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-23",
+      "visualType": "dire-wolf",
+      "name": "lobezno crecido",
+      "x": 17,
+      "y": 4,
+      "hpKey": "terra_b1Foe23Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lobezno crecido usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -205,6 +342,52 @@
           }
         ],
         "message": "El cofre guarda 24 monedas y algo de equipo."
+      }
+    },
+    {
+      "id": "terra-b1-camp-spoils",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 17,
+      "y": 2,
+      "label": "Registrar el botín del campamento",
+      "when": [
+        {
+          "key": "campB1LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "campB1SpoilsTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "campB1SpoilsTaken",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 44
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-shield",
+            "name": "Silver-shield",
+            "description": "Botín de Cubil de la Loba Blanca.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-dagger",
+            "name": "Silver-dagger",
+            "description": "Botín de Cubil de la Loba Blanca.",
+            "quantity": 1
+          }
+        ],
+        "message": "Entre los fardos de Cubil de la Loba Blanca quedan 44 monedas y armas de buena factura."
       }
     }
   ],

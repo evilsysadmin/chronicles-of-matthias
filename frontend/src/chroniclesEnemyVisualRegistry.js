@@ -42,6 +42,12 @@ const VISUALS = Object.freeze({
   'ice-wraith': Object.freeze({ build: buildSpectralBishop, scale: 1.0 }),
   'ash-salamander': Object.freeze({ build: buildCryptSpider, scale: 1.12 }),
   'bog-toad': Object.freeze({ build: buildBoneHound, scale: 0.9 }),
+  // Third wave: camps, wolf packs and the Tower of Names.
+  'bandit-archer': Object.freeze({ build: buildScavengerKnight, scale: 0.94 }),
+  'dire-wolf': Object.freeze({ build: buildBoneHound, scale: 1.0 }),
+  'stone-golem': Object.freeze({ build: buildGateJailer, scale: 1.3 }),
+  ghoul: Object.freeze({ build: buildScavengerKnight, scale: 0.9 }),
+  'name-scribe': Object.freeze({ build: buildSpectralBishop, scale: 1.2 }),
 });
 
 export function chroniclesEnemyVisualSpec(visualType) {

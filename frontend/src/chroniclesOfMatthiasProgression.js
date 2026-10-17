@@ -700,13 +700,21 @@ function award(progress, awards, levelUps, memberId, amount, awardId, reason) {
   return result.progression;
 }
 
-// One XP per point of damage. Two per point let the front line hit the
-// level cap with half the campaign still to play (campaign bot, 2026-10).
+// One XP for every two points of damage in a blow (rounded up). Two
+// per point let the front line hit the level cap with half the campaign
+// still to play (campaign bot, 2026-10).
 export const CHRONICLES_DAMAGE_XP_PER_HP = 1;
+export const CHRONICLES_DAMAGE_XP_EVERY_HP = 2;
+
+// The company's bonus for a kill, before it is shared among the living.
+export function chroniclesKillXp(enemy) {
+  return 5 + Math.max(1, nonNegativeInteger(enemy?.maxHp));
+}
 
 function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace) {
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
+    if ((before - 1 - hp) % CHRONICLES_DAMAGE_XP_EVERY_HP !== 0) continue;
     next = award(
       next,
       awards,
@@ -761,7 +769,7 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
         // the hero who lands the blows does not outlevel the rest by half a
         // campaign (the damage XP above stays with whoever dealt it).
         const living = (next.party || []).filter((member) => member.hp > 0 && HERO_IDS.includes(member.id));
-        const share = Math.ceil((10 + Math.max(1, nonNegativeInteger(enemy.maxHp)) * 2) / Math.max(1, living.length));
+        const share = Math.ceil(chroniclesKillXp(enemy) / Math.max(1, living.length));
         living.forEach((member) => {
           progress = award(
             progress,

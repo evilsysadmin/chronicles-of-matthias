@@ -452,6 +452,119 @@
         }
       ],
       "lockedLabel": "El sargento de la Vigilia · «¿Ya cayó el Cuervo Blanco?»"
+    },
+    {
+      "id": "osric-tower-brief",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con el archivero ciego Osric",
+      "when": [
+        {
+          "key": "vigiliaOsricReported",
+          "truthy": true
+        },
+        {
+          "key": "osricTowerStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "osricTowerStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "lost-names",
+            "title": "Los nombres perdidos",
+            "description": "Osric sabe dónde guardaba el Silencio los nombres que borraba.",
+            "objective": "Sube a la Torre de los Nombres (A1), derrota al Escriba sin Nombre y trae su libro a Osric (C1).",
+            "order": 36
+          }
+        ],
+        "message": "Osric baja la voz: «Hay una torre en el norte helado donde el Silencio escribe a quién borrar. Si alguien trae ese libro, quizá podamos devolver algún nombre. Es la cosa más peligrosa que os voy a pedir»",
+        "journal": {
+          "id": "osric-tower",
+          "title": "La Torre de los Nombres",
+          "body": "El Silencio anota a quién borrar en un libro guardado en la Torre de los Nombres (A1).",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "osric-tower-report",
+      "kind": "quest",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Entregar el Libro de los Nombres a Osric · 150 oro",
+      "when": [
+        {
+          "questId": "lost-names",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:lost-names:v1",
+            "requirements": [
+              {
+                "key": "torre_de_los_nombresBossDefeated",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "lost-names",
+                "objective": "Osric guarda el Libro de los Nombres."
+              },
+              {
+                "type": "set",
+                "key": "lostNamesRestored",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 150
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:lost-names:v1",
+                "amount": 250
+              },
+              {
+                "type": "grant-item",
+                "itemId": "steel-ring",
+                "name": "Steel ring",
+                "description": "Una cota de anillas de la armería de la Vigilia.",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "message": "Osric pasa las páginas sin verlas y sonríe cuando sus dedos encuentran un nombre que conoce: «Mi hermana. La había olvidado. Gracias»",
+        "journal": {
+          "id": "osric-tower-done",
+          "title": "Los nombres perdidos",
+          "body": "Osric tiene el Libro de los Nombres. Los nombres tachados pueden volver a decirse.",
+          "sigil": "◆"
+        }
+      },
+      "requirements": [
+        {
+          "key": "torre_de_los_nombresBossDefeated",
+          "truthy": true,
+          "message": "Osric espera: «El Escriba sigue escribiendo en la Torre de los Nombres (A1)»"
+        }
+      ],
+      "lockedLabel": "Osric · «El Escriba sigue en la Torre de los Nombres (A1)»"
     }
   ],
   "treasures": [],

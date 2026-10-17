@@ -27,3 +27,21 @@ export const MAIN_ROUTE = [
   ['Varren', (bot) => bot.kill('templo-corona-trono', 'templo-corona-trono-varren')],
   ['Final', (bot) => bot.interact('templo-corona-trono', 'throne-oath-restore')],
 ];
+
+// Optional content the bot also plays, so new side quests stay completable:
+// the bounty board of Vado de Sal and the Tower of Names.
+const CAMPS = [['A2', 'desertores'], ['B1', 'loba-blanca'], ['B6', 'necrofagos'], ['D5', 'raqueros'], ['F4', 'golem']];
+export const SIDE_CONTENT = [
+  ['Tablón de recompensas', (bot) => bot.interact('vado-de-sal', 'vado-bounty-board')],
+  ...CAMPS.map(([code]) => [`Campamento ${code}`, (bot) => bot.kill(`terra-${code.toLowerCase()}`, `terra-${code.toLowerCase()}-foe-20`)]),
+  ...CAMPS.map(([code, key]) => [`Recompensa ${code}`, (bot) => bot.interact('vado-de-sal', `vado-bounty-${key}`)]),
+  ['Bolsa del tablón', (bot) => bot.interact('vado-de-sal', 'vado-bounty-complete')],
+  ['Encargo de Osric', (bot) => bot.interact('vigilia-del-norte', 'osric-tower-brief')],
+  ['Torre de los Nombres', (bot) => bot.kill('torre-de-los-nombres', 'torre-de-los-nombres-foe-9')],
+  ['Libro de los Nombres', (bot) => bot.interact('vigilia-del-norte', 'osric-tower-report')],
+];
+
+// The main story with the optional content where a player would do it:
+// after Osric's report, before the Dama's audience.
+const BEFORE_DAMA = MAIN_ROUTE.findIndex(([label]) => label === 'La Dama');
+export const FULL_ROUTE = [...MAIN_ROUTE.slice(0, BEFORE_DAMA), ...SIDE_CONTENT, ...MAIN_ROUTE.slice(BEFORE_DAMA)];

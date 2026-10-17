@@ -10,7 +10,7 @@
   "grid": [
     "#####################",
     "#....#............#.#",
-    "#.....#.##......#...#",
+    "#.....#.##..........#",
     "#...................#",
     "#...................#",
     "#...................#",
@@ -38,10 +38,11 @@
       "x": 7,
       "y": 3,
       "hpKey": "terra_b6Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 6,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -67,10 +68,11 @@
       "x": 13,
       "y": 11,
       "hpKey": "terra_b6Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -96,10 +98,11 @@
       "x": 3,
       "y": 11,
       "hpKey": "terra_b6Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -110,6 +113,110 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b6-foe-20",
+      "visualType": "ghoul",
+      "name": "el Comehuesos",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_b6Foe20Hp",
+      "maxHp": 47,
+      "retaliation": 7,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 7,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba al Comehuesos con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campB6LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 26
+          }
+        ],
+        "journal": {
+          "id": "terra-b6-camp",
+          "title": "Cae el Comehuesos",
+          "body": "En la playa de los naufragios algo desentierra a los ahogados antes de que el mar se los lleve. El Comehuesos es el más viejo y el más gordo. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campB6LeaderDown",
+      "blockingMessage": "El Comehuesos no deja pasar a nadie sin pagar.",
+      "visualScale": 1.25
+    },
+    {
+      "id": "terra-b6-foe-21",
+      "visualType": "ghoul",
+      "name": "necrófago",
+      "x": 16,
+      "y": 3,
+      "hpKey": "terra_b6Foe21Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con necrófago usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b6-foe-22",
+      "visualType": "ghoul",
+      "name": "necrófaga",
+      "x": 18,
+      "y": 3,
+      "hpKey": "terra_b6Foe22Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con necrófaga usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -155,6 +262,52 @@
           }
         ],
         "message": "El cofre guarda 30 monedas y algo de equipo."
+      }
+    },
+    {
+      "id": "terra-b6-camp-spoils",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 17,
+      "y": 2,
+      "label": "Registrar el botín del campamento",
+      "when": [
+        {
+          "key": "campB6LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "campB6SpoilsTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "campB6SpoilsTaken",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 52
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-mace",
+            "name": "Silver-mace",
+            "description": "Botín de Fosa de los Necrófagos.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-scale",
+            "name": "Silver-scale",
+            "description": "Botín de Fosa de los Necrófagos.",
+            "quantity": 1
+          }
+        ],
+        "message": "Entre los fardos de Fosa de los Necrófagos quedan 52 monedas y armas de buena factura."
       }
     }
   ],

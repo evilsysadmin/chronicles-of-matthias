@@ -33,43 +33,16 @@
   "enemies": [
     {
       "id": "terra-f6-foe-0",
-      "visualType": "ash-salamander",
-      "name": "salamandra de ceniza",
+      "visualType": "ash-goblin",
+      "name": "goblin de ceniza",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f6Foe0Hp",
-      "maxHp": 24,
-      "retaliation": 4,
-      "toHit": 7,
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
       "armorClass": 6,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 2,
-        "requiresLineOfSight": true
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 14
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-f6-foe-1",
-      "visualType": "ash-goblin",
-      "name": "goblin de ceniza",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_f6Foe1Hp",
-      "maxHp": 24,
-      "retaliation": 4,
-      "toHit": 7,
-      "armorClass": 6,
+      "agility": 6,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -89,16 +62,46 @@
       }
     },
     {
+      "id": "terra-f6-foe-1",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_f6Foe1Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
       "id": "terra-f6-foe-2",
       "visualType": "gate-jailer",
       "name": "guardián de escoria",
       "x": 3,
       "y": 11,
       "hpKey": "terra_f6Foe2Hp",
-      "maxHp": 24,
-      "retaliation": 4,
-      "toHit": 7,
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
       "armorClass": 6,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -124,10 +127,11 @@
       "x": 17,
       "y": 3,
       "hpKey": "terra_f6Foe3Hp",
-      "maxHp": 24,
-      "retaliation": 4,
-      "toHit": 7,
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
       "armorClass": 6,
+      "agility": 6,
       "optional": true,
       "activation": "always",
       "ai": {

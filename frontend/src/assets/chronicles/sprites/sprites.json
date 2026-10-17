@@ -25,6 +25,19 @@
     "worldHeight": 1.9,
     "idleFps": 2
   },
+  "bandit-archer": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2.6,
+    "idleFps": 1.6
+  },
   "bandit-captain": {
     "frames": [
       "idle-a",
@@ -78,6 +91,19 @@
     "worldHeight": 3.3,
     "idleFps": 1.2
   },
+  "dire-wolf": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2,
+    "idleFps": 2.6
+  },
   "drowned": {
     "frames": [
       "idle-a",
@@ -100,6 +126,19 @@
     "pixelArt": true,
     "worldHeight": 3.6,
     "idleFps": 0.6
+  },
+  "ghoul": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2.5,
+    "idleFps": 1.8
   },
   "harpy": {
     "frames": [
@@ -139,6 +178,19 @@
     "pixelArt": true,
     "worldHeight": 3,
     "idleFps": 1.4
+  },
+  "name-scribe": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 248,
+    "pixelArt": true,
+    "worldHeight": 3.9,
+    "idleFps": 1
   },
   "oathbound-knight": {
     "frames": [
@@ -229,6 +281,19 @@
     "pixelArt": true,
     "worldHeight": 2.7,
     "idleFps": 1.6
+  },
+  "stone-golem": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 248,
+    "pixelArt": true,
+    "worldHeight": 3.8,
+    "idleFps": 0.8
   },
   "stone-king": {
     "frames": [

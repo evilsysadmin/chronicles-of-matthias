@@ -33,73 +33,16 @@
   "enemies": [
     {
       "id": "terra-d5-foe-0",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d5Foe0Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 8
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-d5-foe-1",
-      "visualType": "drowned",
-      "name": "ahogado",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_d5Foe1Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
-      "armorClass": 3,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 3
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con ahogado usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 8
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-d5-foe-2",
-      "visualType": "sewer-rat",
-      "name": "rata de marisma",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_d5Foe2Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
-      "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -119,14 +62,75 @@
       }
     },
     {
+      "id": "terra-d5-foe-1",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_d5Foe1Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d5-foe-2",
+      "visualType": "ghoul",
+      "name": "necrófago de la marisma",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_d5Foe2Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con necrófago de la marisma usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
       "id": "vado-watch-quarry",
       "visualType": "salt-crab",
       "name": "la Reina Tenaza",
       "hpKey": "vado_watchQuarryHp",
       "maxHp": 22,
       "retaliation": 3,
-      "toHit": 6,
+      "toHit": 8,
       "armorClass": 5,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "vado_watchHunted",
@@ -148,6 +152,139 @@
       },
       "x": 17,
       "y": 3
+    },
+    {
+      "id": "terra-d5-foe-20",
+      "visualType": "bandit-captain",
+      "name": "el capitán Ruy",
+      "x": 13,
+      "y": 3,
+      "hpKey": "terra_d5Foe20Hp",
+      "maxHp": 41,
+      "retaliation": 6,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba al capitán Ruy con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campD5LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 22
+          }
+        ],
+        "journal": {
+          "id": "terra-d5-camp",
+          "title": "Cae el capitán Ruy",
+          "body": "El capitán Ruy enciende hogueras en la marisma para que las barcas encallen. Lo que el barro no se queda, se lo queda él. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campD5LeaderDown",
+      "blockingMessage": "El capitán Ruy no deja pasar a nadie sin pagar."
+    },
+    {
+      "id": "terra-d5-foe-21",
+      "visualType": "bandit-archer",
+      "name": "arponero raquero",
+      "x": 12,
+      "y": 3,
+      "hpKey": "terra_d5Foe21Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arponero raquero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d5-foe-22",
+      "visualType": "road-bandit",
+      "name": "raquero",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_d5Foe22Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con raquero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d5-foe-23",
+      "visualType": "bandit-archer",
+      "name": "arponera raquera",
+      "x": 13,
+      "y": 4,
+      "hpKey": "terra_d5Foe23Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arponera raquera usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
@@ -200,6 +337,52 @@
           }
         ],
         "message": "El cofre guarda 24 monedas y algo de equipo."
+      }
+    },
+    {
+      "id": "terra-d5-camp-spoils",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 13,
+      "y": 2,
+      "label": "Registrar el botín del campamento",
+      "when": [
+        {
+          "key": "campD5LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "campD5SpoilsTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "campD5SpoilsTaken",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 44
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-spear",
+            "name": "Silver-spear",
+            "description": "Botín de Barcazas de los Raqueros.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-ring",
+            "name": "Silver-ring",
+            "description": "Botín de Barcazas de los Raqueros.",
+            "quantity": 1
+          }
+        ],
+        "message": "Entre los fardos de Barcazas de los Raqueros quedan 44 monedas y armas de buena factura."
       }
     }
   ],

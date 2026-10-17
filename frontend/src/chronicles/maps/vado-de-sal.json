@@ -424,6 +424,480 @@
         }
       ],
       "lockedLabel": "La curandera Ada · «¿Ya cayó la Bruja del Cieno?»"
+    },
+    {
+      "id": "vado-bounty-desertores",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la recompensa: Brenna la Tuerta · 60 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "campA2LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "bountyA2Paid",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:desertores:v1",
+            "requirements": [
+              {
+                "key": "campA2LeaderDown",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "bountyA2Paid",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 60
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:desertores:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil de Vado de Sal tacha el nombre de Brenna la Tuerta en el tablón y cuenta 60 monedas."
+      },
+      "requirements": [
+        {
+          "key": "campA2LeaderDown",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la recompensa: Brenna la Tuerta · 60 oro"
+    },
+    {
+      "id": "vado-bounty-loba-blanca",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la recompensa: la Loba Blanca · 50 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "campB1LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "bountyB1Paid",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:loba-blanca:v1",
+            "requirements": [
+              {
+                "key": "campB1LeaderDown",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "bountyB1Paid",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 50
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:loba-blanca:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil de Vado de Sal tacha el nombre de la Loba Blanca en el tablón y cuenta 50 monedas."
+      },
+      "requirements": [
+        {
+          "key": "campB1LeaderDown",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la recompensa: la Loba Blanca · 50 oro"
+    },
+    {
+      "id": "vado-bounty-necrofagos",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la recompensa: el Comehuesos · 55 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "campB6LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "bountyB6Paid",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:necrofagos:v1",
+            "requirements": [
+              {
+                "key": "campB6LeaderDown",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "bountyB6Paid",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 55
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:necrofagos:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil de Vado de Sal tacha el nombre del Comehuesos en el tablón y cuenta 55 monedas."
+      },
+      "requirements": [
+        {
+          "key": "campB6LeaderDown",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la recompensa: el Comehuesos · 55 oro"
+    },
+    {
+      "id": "vado-bounty-raqueros",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la recompensa: el capitán Ruy · 65 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "campD5LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "bountyD5Paid",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:raqueros:v1",
+            "requirements": [
+              {
+                "key": "campD5LeaderDown",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "bountyD5Paid",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 65
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:raqueros:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil de Vado de Sal tacha el nombre del capitán Ruy en el tablón y cuenta 65 monedas."
+      },
+      "requirements": [
+        {
+          "key": "campD5LeaderDown",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la recompensa: el capitán Ruy · 65 oro"
+    },
+    {
+      "id": "vado-bounty-golem",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la recompensa: el Gólem de la Cantera · 80 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "campF4LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "bountyF4Paid",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:golem:v1",
+            "requirements": [
+              {
+                "key": "campF4LeaderDown",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "bountyF4Paid",
+                "value": true
+              },
+              {
+                "type": "grant-gold",
+                "amount": 80
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:golem:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil de Vado de Sal tacha el nombre del Gólem de la Cantera en el tablón y cuenta 80 monedas."
+      },
+      "requirements": [
+        {
+          "key": "campF4LeaderDown",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la recompensa: el Gólem de la Cantera · 80 oro"
+    },
+    {
+      "id": "vado-bounty-complete",
+      "kind": "quest",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Cobrar la bolsa del tablón · 120 oro",
+      "when": [
+        {
+          "questId": "terra-bounties",
+          "questStatus": "active"
+        },
+        {
+          "key": "bountyA2Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyB1Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyB6Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyD5Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyF4Paid",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:bounty:all:v1",
+            "requirements": [
+              {
+                "key": "bountyA2Paid",
+                "truthy": true
+              },
+              {
+                "key": "bountyB1Paid",
+                "truthy": true
+              },
+              {
+                "key": "bountyB6Paid",
+                "truthy": true
+              },
+              {
+                "key": "bountyD5Paid",
+                "truthy": true
+              },
+              {
+                "key": "bountyF4Paid",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "terra-bounties",
+                "objective": "El tablón de Vado de Sal está limpio."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 120
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:bounty:all:v1",
+                "amount": 150
+              },
+              {
+                "type": "grant-item",
+                "itemId": "steel-shield",
+                "name": "Steel shield",
+                "description": "El escudo del alguacil, regalo para quien limpió el tablón.",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "message": "El alguacil arranca el tablón entero y os da su propio escudo: «Cinco nombres menos. Ya no me queda a quién buscar».",
+        "journal": {
+          "id": "vado-bounty-complete",
+          "title": "Cazarrecompensas",
+          "body": "Los cinco campamentos de Terra han caído. Vado de Sal pagó la bolsa del tablón.",
+          "sigil": "◆"
+        }
+      },
+      "requirements": [
+        {
+          "key": "bountyA2Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyB1Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyB6Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyD5Paid",
+          "truthy": true
+        },
+        {
+          "key": "bountyF4Paid",
+          "truthy": true
+        }
+      ],
+      "lockedLabel": "Cobrar la bolsa del tablón · 120 oro"
+    },
+    {
+      "id": "vado-bounty-board",
+      "kind": "lore",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Leer el tablón de recompensas",
+      "when": [
+        {
+          "key": "vadoBountyRead",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "vadoBountyRead",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "terra-bounties",
+            "title": "Cazarrecompensas",
+            "description": "El alguacil de Vado de Sal paga por los jefes de los campamentos que asaltan Terra.",
+            "objective": "Derrota a los jefes de los campamentos y cobra en el tablón de Vado de Sal (C5): Brenna la Tuerta (A2), la Loba Blanca (B1), el Comehuesos (B6), el capitán Ruy (D5) y el Gólem de la Cantera (F4).",
+            "order": 35
+          }
+        ],
+        "message": "El tablón de la plaza tiene cinco carteles clavados con puñal. «Se paga en oro. Se paga por cabeza. Preguntad al alguacil.»",
+        "journal": {
+          "id": "vado-bounty",
+          "title": "El tablón de Vado de Sal",
+          "body": "Recompensas por Brenna la Tuerta (A2), la Loba Blanca (B1), el Comehuesos (B6), el capitán Ruy (D5) y el Gólem de la Cantera (F4).",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "vado-bounty-idle",
+      "kind": "lore",
+      "x": 10,
+      "y": 6,
+      "visualType": "signpost",
+      "label": "Leer el tablón de recompensas",
+      "when": [
+        {
+          "key": "vadoBountyRead",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "Carteles con nombres tachados y otros que todavía esperan. Los campamentos están en las Colinas Rotas (A2), el norte nevado (B1), la playa de los naufragios (B6), la marisma (D5) y la cantera de ceniza (F4)."
+      },
+      "persistentVisual": true
     }
   ],
   "treasures": [],
