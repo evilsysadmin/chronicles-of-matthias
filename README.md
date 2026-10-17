@@ -1,16 +1,29 @@
 # Chronicles of Matthias
 
-Independent repository for Chronicles of Matthias, originally developed inside [Chess Studio](https://github.com/evilsysadmin/chess-studio).
+Juego de rol en primera persona estilo Might and Magic III, con su modo Tactics.
+Nació dentro de [Chess Studio](https://github.com/evilsysadmin/chess-studio) y
+desde octubre de 2026 vive aquí: **este repo es la única fuente de verdad del
+juego y de su API** (origen en [`docs/PROVENANCE.md`](docs/PROVENANCE.md)).
 
-**Migration in progress:** the playable game remains in Chess Studio until independent builds, tests, deployment and save portability are validated.
+| Parte | Ruta | Desplegado en |
+| --- | --- | --- |
+| Juego (React + Three.js) | `frontend/` | `https://staging.chronicles.shadowops.dpdns.org` (Cloudflare Pages) |
+| API (Go: cuentas, sesión, partidas) | `api/` | `https://chronicles-api-staging.shadowops.dpdns.org` (OCI A1 + túnel propio) |
+| Pipeline de arte y mundo | `scripts/art`, `scripts/blender`, `scripts/chronicles` | — |
 
-## Migration safeguards
+La infraestructura (Pages, túnel, Vault, despliegue en OCI) vive en
+[`shadowops-infra`](https://github.com/evilsysadmin/shadowops-infra).
 
-- Pin a Chess Studio source commit and inventory all Chronicles code, assets, dependencies and tests.
-- Preserve gameplay rules and existing player saves.
-- Establish independent CI and staging before production cutover.
-- Cross-origin browser saves require an explicit verified transfer mechanism.
-- Keep rollback available; do not remove the original game prematurely.
-- Godot is a separate future prototype, not part of the extraction.
+## Desarrollo
 
-Tracking: [Chess Studio #5632](https://github.com/evilsysadmin/chess-studio/issues/5632).
+```sh
+cd frontend && npm ci
+npm test                 # tests del juego (Vitest)
+VITE_API_URL=http://127.0.0.1:8090/api npm run dev
+
+cd api && go build ./cmd/chronicles-api   # MONGO_URL, MONGO_DB_NAME, JWT_SECRET
+```
+
+CI: `react-frontend.yml` (tests, build, smoke de montaje) y `api.yml` (build,
+E2E del juego real contra la API y un MongoDB; en `main` publica la imagen
+`ghcr.io/evilsysadmin/chronicles-api:staging-<sha>`).

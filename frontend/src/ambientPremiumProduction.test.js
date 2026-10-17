@@ -1,0 +1,211 @@
+import { describe, expect, it } from 'vitest';
+import { AMBIENT_GENRE_ORDER } from './ambientCatalog.js';
+import {
+  GENRE_FINISH,
+  GENRE_PRODUCTION,
+  PERFORMANCE_FINISH,
+  withAmbientPremiumProduction,
+} from './ambientPremiumProduction.js';
+
+describe('ambient premium production pass', () => {
+  it('defines mix and timbre finishing targets for every published radio genre', () => {
+    expect(Object.keys(GENRE_PRODUCTION)).toEqual(expect.arrayContaining(AMBIENT_GENRE_ORDER));
+    expect(Object.keys(GENRE_FINISH)).toEqual(expect.arrayContaining(AMBIENT_GENRE_ORDER));
+    for (const genre of AMBIENT_GENRE_ORDER) {
+      expect(GENRE_FINISH[genre]).toEqual(expect.objectContaining({
+        brightness: expect.any(Number),
+        reflectionScale: expect.any(Number),
+        stereoWidth: expect.any(Number),
+        driftCents: expect.any(Number),
+      }));
+    }
+  });
+
+  it('upgrades generic smooth-jazz instruments without erasing the written feel', () => {
+    const theme = {
+      id: 'test-smooth',
+      genre: 'Smooth Jazz',
+      leadInstrument: 'guitar2',
+      counterInstrument: 'brass',
+      chordInstrument: 'epiano',
+      bassInstrument: 'bass',
+    };
+    const feel = {
+      family: 'test-smooth-family',
+      warmth: 1.04,
+      releaseScale: 1.2,
+      space: 0.04,
+      delayMs: 90,
+      mix: { lead: 0.8, counter: 0.52, bass: 1.08, chord: 0.34 },
+      percussion: { kit: 'brushes', punch: 0.9, period: 16, pattern: { 0: 'K' } },
+    };
+
+    const premium = withAmbientPremiumProduction(theme, feel);
+
+    expect(premium.family).toBe(feel.family);
+    expect(premium.leadInstrument).toBe('jazzGuitar');
+    expect(premium.counterInstrument).toBe('mutedHorn');
+    expect(premium.chordInstrument).toBe('rhodesWarm');
+    expect(premium.bassInstrument).toBe('uprightBass');
+    expect(premium.space).toBeGreaterThan(feel.space);
+    expect(premium.space).toBeLessThan(0.2);
+    expect(premium.production).toEqual(expect.objectContaining({
+      grade: 'premium-v2',
+      performance: 'articulation-v2',
+      timbre: 'coherent-voice-v2',
+      intent: 'warm-controlled',
+    }));
+    expect(Object.isFrozen(premium)).toBe(true);
+    expect(Object.isFrozen(premium.mix)).toBe(true);
+    expect(Object.isFrozen(premium.finish)).toBe(true);
+    expect(premium.finish).toEqual(expect.objectContaining({
+      brightness: GENRE_FINISH['Smooth Jazz'].brightness,
+      reflectionScale: GENRE_FINISH['Smooth Jazz'].reflectionScale,
+      stereoWidth: GENRE_FINISH['Smooth Jazz'].stereoWidth,
+      driftCents: GENRE_FINISH['Smooth Jazz'].driftCents,
+    }));
+  });
+
+  it('warms generic trip-hop EP chords without replacing the noir rhythm section', () => {
+    const premium = withAmbientPremiumProduction(
+      {
+        id: 'concrete-like',
+        genre: 'Trip-Hop / Downtempo',
+        leadInstrument: 'mutedHorn',
+        counterInstrument: 'rhodesWarm',
+        chordInstrument: 'epiano',
+        bassInstrument: 'synthbass',
+      },
+      {
+        family: 'concrete-trip-hop-noir',
+        leadInstrument: 'mutedHorn',
+        counterInstrument: 'rhodesWarm',
+        chordInstrument: 'epiano',
+        bassInstrument: 'synthbass',
+        swing: 0.08,
+        mix: { lead: 0.48, counter: 0.3, bass: 1.08, chord: 0.56 },
+        percussion: { kit: 'trip-hop', punch: 0.9, period: 16, pattern: { 0: 'K', 8: 'S' } },
+      },
+    );
+
+    expect(premium.chordInstrument).toBe('rhodesWarm');
+    expect(premium.leadInstrument).toBe('mutedHorn');
+    expect(premium.counterInstrument).toBe('rhodesWarm');
+    expect(premium.bassInstrument).toBe('synthbass');
+  });
+
+  it('gives rigid jazz and lounge patterns a subtle pocket without flattening strong written swing', () => {
+    const straight = withAmbientPremiumProduction(
+      { id: 'straight', genre: 'Smooth Jazz' },
+      { swing: 0, mix: {}, percussion: { kit: 'brushes', punch: 0.8 } },
+    );
+    const alreadySwung = withAmbientPremiumProduction(
+      { id: 'swung', genre: 'Bossa / Latin Lounge' },
+      { swing: 0.2, mix: {}, percussion: { kit: 'latin', punch: 0.8 } },
+    );
+
+    expect(straight.swing).toBeGreaterThan(0);
+    expect(straight.swing).toBeLessThan(PERFORMANCE_FINISH['Smooth Jazz'].swing);
+    expect(alreadySwung.swing).toBe(0.2);
+  });
+
+  it('shapes signature phrases while preserving motif, instrument and cadence', () => {
+    const signature = Object.freeze({
+      instrument: 'clarinet',
+      sections: Object.freeze([0, 2]),
+      everyCycles: 2,
+      repeatPeriod: 64,
+      durationSteps: 2.8,
+      volume: 0.34,
+      motif: Object.freeze({ 6: 67, 22: 70 }),
+    });
+    const premium = withAmbientPremiumProduction(
+      { id: 'night-jazz', genre: 'Jazz / Mediterráneo' },
+      { swing: 0.08, signature, mix: {}, percussion: { kit: 'maghreb-hand', punch: 0.9 } },
+    );
+
+    expect(premium.signature).not.toBe(signature);
+    expect(premium.signature.instrument).toBe(signature.instrument);
+    expect(premium.signature.motif).toBe(signature.motif);
+    expect(premium.signature.sections).toBe(signature.sections);
+    expect(premium.signature.everyCycles).toBe(signature.everyCycles);
+    expect(premium.signature.repeatPeriod).toBe(signature.repeatPeriod);
+    expect(premium.signature.volume).toBeLessThan(signature.volume);
+    expect(premium.signature.durationSteps).toBeGreaterThan(signature.durationSteps);
+    expect(Object.isFrozen(premium.signature)).toBe(true);
+  });
+
+  it('keeps deliberately silent percussion silent', () => {
+    const percussion = Object.freeze({ kit: 'none', punch: 0, period: 32, pattern: Object.freeze({}) });
+    const premium = withAmbientPremiumProduction(
+      { id: 'quiet', genre: 'Piano / Minimal', leadInstrument: 'felt', chordInstrument: 'felt' },
+      { family: 'quiet-room', percussion, mix: { lead: 0.5, counter: 0.3, bass: 0.4, chord: 0.4 } },
+    );
+
+    expect(premium.percussion).toBe(percussion);
+    expect(premium.percussion.punch).toBe(0);
+  });
+
+  it('preserves deliberately deep spatial identities up to the useful wet ceiling', () => {
+    const premium = withAmbientPremiumProduction(
+      { id: 'wide-onsen', genre: 'SPA / Zen' },
+      {
+        family: 'wide-onsen-room',
+        warmth: 1.02,
+        releaseScale: 1.5,
+        space: 0.36,
+        delayMs: 360,
+        mix: { lead: 0.4, counter: 0.28, bass: 0.32, chord: 0.3 },
+        percussion: { kit: 'brush-jazz', punch: 0.28, period: 40, pattern: { 8: 'B' } },
+      },
+    );
+
+    expect(premium.space).toBe(0.30);
+    expect(premium.space).toBeGreaterThan(0.24);
+    expect(premium.releaseScale).toBe(1.5);
+    expect(premium.production.intent).toBe('deep-wide');
+  });
+
+  it('preserves long chamber and minimal sustain tails instead of mastering them short', () => {
+    const chamber = withAmbientPremiumProduction(
+      { id: 'adagio-like', genre: 'Clásica' },
+      {
+        family: 'chamber-adagio', releaseScale: 1.72, space: 0.28,
+        mix: { lead: 0.52, counter: 0.28, bass: 0.42, chord: 0.46 },
+        percussion: { kit: 'none', punch: 0, period: 32, pattern: {} },
+      },
+    );
+    const minimal = withAmbientPremiumProduction(
+      { id: 'four-squares-like', genre: 'Piano / Minimal' },
+      {
+        family: 'four-squares-minimal-piano', releaseScale: 1.6, space: 0.24,
+        mix: { lead: 0.48, counter: 0.26, bass: 0.34, chord: 0.36 },
+        percussion: { kit: 'none', punch: 0, period: 40, pattern: {} },
+      },
+    );
+
+    expect(chamber.releaseScale).toBe(1.72);
+    expect(minimal.releaseScale).toBe(1.6);
+  });
+
+  it('keeps energetic mixes tight instead of washing them in ambience', () => {
+    const premium = withAmbientPremiumProduction(
+      { id: 'drive', genre: 'Energía', leadInstrument: 'synth', bassInstrument: 'synthbass' },
+      {
+        family: 'drive-family',
+        warmth: 0.8,
+        releaseScale: 1.1,
+        space: 0.16,
+        delayMs: 180,
+        mix: { lead: 0.6, counter: 0.4, bass: 0.9, chord: 0.4 },
+        percussion: { kit: 'electronic', punch: 1.02, period: 16, pattern: { 0: 'K' } },
+      },
+    );
+
+    expect(premium.releaseScale).toBeLessThan(1.1);
+    expect(premium.space).toBeLessThan(0.16);
+    expect(premium.delayMs).toBeLessThan(180);
+    expect(premium.percussion.punch).toBeGreaterThan(1.02);
+    expect(premium.production.intent).toBe('tight-forward');
+  });
+});
