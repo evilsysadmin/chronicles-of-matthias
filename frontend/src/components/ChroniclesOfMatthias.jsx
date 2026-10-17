@@ -21,12 +21,7 @@ import {
 } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficultyPolicy.js';
 import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.js';
-import { getAmbientVolume, setAmbientVolume } from '../sound.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
-import {
-  getChroniclesFxVolume,
-  setChroniclesFxVolume,
-} from '../chronicles/chroniclesAudioSettings.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
@@ -106,6 +101,7 @@ import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
+import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import {
   CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
@@ -256,10 +252,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     fetchMe().then((user) => { if (alive) setIsAdmin(Boolean(user?.isAdmin)); }).catch(() => {});
     return () => { alive = false; };
   }, []);
-  const [fxVolume, setFxVolume] = useState(() => getChroniclesFxVolume());
-  const [musicVolume, setMusicVolume] = useState(getAmbientVolume);
-  const lastFxVolumeRef = useRef(fxVolume || 0.75);
-  const lastMusicVolumeRef = useRef(musicVolume || 0.75);
   const menuSummaryRef = useRef(null);
   const [journalOpen, setJournalOpen] = useState(false);
   const [chronicleModalOpen, setChronicleModalOpen] = useState(false);
@@ -1360,74 +1352,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     </div>
                   )}
                 </div>
-                <fieldset id="chronicles-audio-options" className="chronicles-audio-controls">
-                  <legend>SONIDO</legend>
-                  <div className="chronicles-audio-row">
-                    <div className="chronicles-audio-row__label">
-                      <label htmlFor="chronicles-music-volume">Música de Chronicles</label>
-                      <output htmlFor="chronicles-music-volume">{Math.round(musicVolume * 100)} %</output>
-                    </div>
-                    <div className="chronicles-audio-row__slider">
-                      <button
-                        type="button"
-                        aria-label={musicVolume > 0 ? 'Silenciar música' : 'Activar música'}
-                        aria-pressed={musicVolume === 0}
-                        onClick={() => {
-                          if (musicVolume > 0) lastMusicVolumeRef.current = musicVolume;
-                          setMusicVolume(setAmbientVolume(musicVolume > 0 ? 0 : lastMusicVolumeRef.current));
-                        }}
-                      >{musicVolume > 0 ? '♫' : '×'}</button>
-                      <input
-                        id="chronicles-music-volume"
-                        aria-label="Volumen de música de Chronicles"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        value={Math.round(musicVolume * 100)}
-                        onChange={(event) => {
-                          const volume = Number(event.target.value) / 100;
-                          if (volume > 0) lastMusicVolumeRef.current = volume;
-                          setMusicVolume(setAmbientVolume(volume));
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-                  <div className="chronicles-audio-row">
-                    <div className="chronicles-audio-row__label">
-                      <label htmlFor="chronicles-sfx-volume">Efectos · SFX</label>
-                      <output htmlFor="chronicles-sfx-volume">{Math.round(fxVolume * 100)} %</output>
-                    </div>
-                    <div className="chronicles-audio-row__slider">
-                      <button
-                        type="button"
-                        aria-label={fxVolume > 0 ? 'Silenciar efectos' : 'Activar efectos'}
-                        aria-pressed={fxVolume === 0}
-                        onClick={() => {
-                          if (fxVolume > 0) lastFxVolumeRef.current = fxVolume;
-                          setFxVolume(setChroniclesFxVolume(fxVolume > 0 ? 0 : lastFxVolumeRef.current));
-                        }}
-                      >{fxVolume > 0 ? '✦' : '×'}</button>
-                      <input
-                        id="chronicles-sfx-volume"
-                        aria-label="Volumen de efectos de Chronicles"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        value={Math.round(fxVolume * 100)}
-                        onChange={(event) => {
-                          const volume = Number(event.target.value) / 100;
-                          if (volume > 0) lastFxVolumeRef.current = volume;
-                          setFxVolume(setChroniclesFxVolume(volume));
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-                  <small>First Verse en el libro de expediciones; Second Verse durante la aventura.</small>
-                </fieldset>
+                <ChroniclesAudioControls
+                  id="chronicles-audio-options"
+                  hint="First Verse en el libro de expediciones; Second Verse durante la aventura."
+                />
                 <small className="chronicles-game-menu__hint">ESC · cerrar · TAB · navegar</small>
               </div>
             </details>
