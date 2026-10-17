@@ -1331,3 +1331,39 @@
   /* With MENÚ removed the map plaque uses the whole statusbar width. */
   .chronicles .chronicles-statusbar .chronicles-map-trigger { grid-column: 1 / -1; }
 }
+
+/* Hechizos | Objetos tabs inside the cast panel. */
+.chronicles .chronicles-spell-menu__tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.chronicles .chronicles-spell-menu__tabs button {
+  flex: 1;
+  min-height: 36px;
+  border: 2px solid;
+  border-color: var(--mm3-hi, #8a8a94) var(--mm3-lo, #1a1a1e) var(--mm3-lo, #1a1a1e) var(--mm3-hi, #8a8a94);
+  background: #2b2b30;
+  color: #d8cfb8;
+  font: inherit;
+  cursor: pointer;
+}
+.chronicles .chronicles-spell-menu__tabs button[aria-selected='true'] {
+  background: #1a34a8;
+  color: #f2e6c4;
+}
+.chronicles .chronicles-spell-menu__empty { padding: 8px; color: #d8cfb8; font-size: .9em; }
+.chronicles-quest-log__track {
+  margin-top: 6px;
+  padding: 4px 10px;
+  min-height: 32px;
+  border: 1px solid rgba(131, 67, 28, .7);
+  border-radius: 6px;
+  background: rgba(255, 231, 190, .5);
+  color: #3a1f0a;
+  font: inherit;
+  font-size: .85em;
+  cursor: pointer;
+}
+.chronicles-quest-log__track[aria-pressed='true'] { background: #83431c; color: #fff3dc; }
+.chronicles-quest-log__quest.is-tracked { outline: 2px solid #c88a3a; }

@@ -40,6 +40,7 @@ import {
   chroniclesMemberCanEquip,
 } from '../chroniclesEquipment.js';
 import { CHRONICLES_SPELLS, chroniclesMemberKnowsSpell, chroniclesMemberSp } from '../chroniclesMagic.js';
+import { CHRONICLES_CONSUMABLES, chroniclesConsumableCount } from '../chroniclesConsumables.js';
 
 const STEP = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const ATTRIBUTE_PLAN = {
@@ -67,9 +68,17 @@ function serviceCost(entry) {
     .reduce((sum, requirement) => sum + (requirement.quantity || 0), 0);
 }
 
-function itemScore(item) {
-  return item ? item.attackDamageBonus * 3 + item.armorClassBonus * 2 + item.damageReduction * 3 + (item.toHitBonus || 0) : -1;
+// Reach counts for the back row: a bow lets it strike over the front line.
+// The front line wants the shield hand free instead.
+function itemScore(item, member = null) {
+  if (!item) return -1;
+  const reach = Math.max(0, (item.reach || 1) - 1);
+  return item.attackDamageBonus * 3 + item.armorClassBonus * 2 + item.damageReduction * 3 + (item.toHitBonus || 0)
+    + (member?.row === 'back' ? reach * 2 : item.twoHanded && item.reach > 1 ? -4 : 0);
 }
+
+// Potions a careful player keeps in the pack, bought at every botica.
+const POTION_KIT = Object.freeze({ 'healing-potion': 3, 'revive-draught': 1 });
 
 // Everything an interaction can change, minus the narration.
 function fingerprint(state) {
@@ -110,8 +119,10 @@ export class ChroniclesCampaignBot {
     let next;
     const active = chroniclesCurrentInitiativeActor(current.initiative);
     if (!current.initiative) {
-      const spell = actionType === 'cast' ? CHRONICLES_SPELLS[action.spellId] : null;
-      const offensive = actionType === 'attack' || spell?.kind === 'attack';
+      const spell = actionType === 'cast' ? CHRONICLES_SPELLS[action.spellId]
+        : actionType === 'use-item' && CHRONICLES_CONSUMABLES[action.itemId]?.kind === 'scroll'
+          ? { ...CHRONICLES_CONSUMABLES[action.itemId].spell, kind: 'attack' } : null;
+      const offensive = actionType === 'attack' || ['attack', 'paralyze'].includes(spell?.kind);
       const exploratory = offensive ? current : chroniclesGridExplorationStep(current, action);
       const attacker = offensive ? current.party.find((member) => member.id === action.memberId) : null;
       const forced = attacker
@@ -124,7 +135,7 @@ export class ChroniclesCampaignBot {
       next = started !== exploratory ? started : offensive ? chroniclesReduce(current, action) : exploratory;
     } else {
       next = chroniclesReduce(current, action);
-      const spentTurn = actionType !== 'cast' || next.turns !== current.turns;
+      const spentTurn = (actionType !== 'cast' && actionType !== 'use-item') || next.turns !== current.turns;
       if (next !== current && spentTurn && next.phase !== 'defeated' && next.phase !== 'escaped') {
         next = chroniclesAdvanceCombatInitiative(next, chroniclesActiveEnemies(next));
       }
@@ -260,6 +271,16 @@ export class ChroniclesCampaignBot {
       .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];
     const heal = ['heal-wounds', 'first-aid'].find((id) => chroniclesMemberKnowsSpell(this.state, member, id) && sp >= CHRONICLES_SPELLS[id].cost);
     if (wounded && heal) return { type: 'cast', memberId, spellId: heal };
+    // No healing magic at hand: drink from the pack.
+    const fallen = this.state.party.some((ally) => ally.hp <= 0);
+    if (fallen && chroniclesConsumableCount(this.state, 'revive-draught') > 0) {
+      this.potionsUsed = (this.potionsUsed || 0) + 1;
+      return { type: 'use-item', memberId, itemId: 'revive-draught' };
+    }
+    if (wounded && wounded.hp <= wounded.maxHp * 0.35 && chroniclesConsumableCount(this.state, 'healing-potion') > 0) {
+      this.potionsUsed = (this.potionsUsed || 0) + 1;
+      return { type: 'use-item', memberId, itemId: 'healing-potion' };
+    }
     const reach = chroniclesPartyAttackStats(this.state, memberId).reach;
     const attackSpell = ['lightning-bolt', 'holy-strike', 'poison-cloud', 'cold-ray', 'elemental-arrow', 'flying-fist']
       .find((id) => chroniclesMemberKnowsSpell(this.state, member, id) && sp >= CHRONICLES_SPELLS[id].cost
@@ -550,12 +571,13 @@ export class ChroniclesCampaignBot {
         const current = chroniclesEquippedItem(this.state, member.id, slot);
         const owned = Object.keys(this.state.inventory || {}).map((itemId) => CHRONICLES_EQUIPMENT[itemId])
           .filter((item) => item && item.slot === slot && chroniclesMemberCanEquip(member, item));
-        const have = Math.max(itemScore(current), ...owned.map(itemScore));
+        const score = (item) => itemScore(item, member);
+        const have = Math.max(score(current), ...owned.map(score));
         const best = stock
           .map((itemId) => CHRONICLES_EQUIPMENT[itemId])
-          .filter((item) => item && item.slot === slot && chroniclesMemberCanEquip(member, item) && itemScore(item) > have)
-          .sort((left, right) => itemScore(right) - itemScore(left) || left.price - right.price);
-        if (best.length) wants.push({ member, slot, options: best, gain: itemScore(best[0]) - have });
+          .filter((item) => item && item.slot === slot && chroniclesMemberCanEquip(member, item) && score(item) > have)
+          .sort((left, right) => score(right) - score(left) || left.price - right.price);
+        if (best.length) wants.push({ member, slot, options: best, gain: score(best[0]) - have });
       }
     }
     return wants.sort((left, right) => right.gain - left.gain);
@@ -563,6 +585,10 @@ export class ChroniclesCampaignBot {
 
   shop(map, entry) {
     const reserve = 24;
+    if (entry.shop.stock.some((itemId) => POTION_KIT[itemId])) {
+      this.stockPotions(map, entry, reserve);
+      return;
+    }
     if (!this.upgradesIn(entry.shop.stock).some((want) => want.options.some((item) => item.price <= chroniclesGoldBalance(this.state) - reserve))) return;
     const position = chroniclesMapContentPosition(map, entry);
     this.walkTo(position);
@@ -583,6 +609,27 @@ export class ChroniclesCampaignBot {
       if (chroniclesGoldBalance(this.state) === before) break;
       this.purchases.push({ itemId: pick.id, price: pick.price, step: this.currentLabel });
       this.equipBest();
+    }
+    this.state = chroniclesReduce(this.state, { type: 'shop-close' });
+  }
+
+  stockPotions(map, entry, reserve) {
+    const wanted = () => Object.entries(POTION_KIT)
+      .filter(([itemId, count]) => entry.shop.stock.includes(itemId) && chroniclesConsumableCount(this.state, itemId) < count)
+      .map(([itemId]) => CHRONICLES_CONSUMABLES[itemId])
+      .find((item) => item.price <= chroniclesGoldBalance(this.state) - reserve);
+    if (!wanted()) return;
+    this.walkTo(chroniclesMapContentPosition(map, entry));
+    while (this.state.initiative) this.fight();
+    this.act('interact');
+    if (!this.state.shop) return;
+    for (let guard = 0; guard < 8; guard += 1) {
+      const pick = wanted();
+      if (!pick) break;
+      const before = chroniclesGoldBalance(this.state);
+      this.state = chroniclesReduce(this.state, { type: 'shop-buy', itemId: pick.id });
+      if (chroniclesGoldBalance(this.state) === before) break;
+      this.purchases.push({ itemId: pick.id, price: pick.price, step: this.currentLabel });
     }
     this.state = chroniclesReduce(this.state, { type: 'shop-close' });
   }
@@ -690,8 +737,8 @@ export class ChroniclesCampaignBot {
         const owned = Object.keys(this.state.inventory || {})
           .map((itemId) => CHRONICLES_EQUIPMENT[itemId])
           .filter((item) => item && item.slot === slot && chroniclesMemberCanEquip(member, item));
-        const best = owned.sort((left, right) => itemScore(right) - itemScore(left))[0];
-        if (best && itemScore(best) > itemScore(current)) this.state = chroniclesEquipItem(this.state, member.id, best.id);
+        const best = owned.sort((left, right) => itemScore(right, member) - itemScore(left, member))[0];
+        if (best && itemScore(best, member) > itemScore(current, member)) this.state = chroniclesEquipItem(this.state, member.id, best.id);
       }
     }
   }

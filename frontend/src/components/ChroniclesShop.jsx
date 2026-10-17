@@ -11,7 +11,7 @@ import {
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
 import './ChroniclesShop.css';
 
-const SLOT_LABEL = Object.freeze({ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo' });
+const SLOT_LABEL = Object.freeze({ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
 
 function ShopComparison({ state, item }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
@@ -87,7 +87,9 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const room = chroniclesShopRoom(entry);
   const gold = chroniclesGoldBalance(state);
   const stock = chroniclesShopStock(entry);
-  const sellable = chroniclesShopSellable(state);
+  const sellable = chroniclesShopSellable(state, entry);
+  const owned = (itemId) => Math.max(0, Number(state.inventory?.[itemId]?.quantity) || 0);
+  const sellsGear = stock.some((item) => item.slot !== 'consumable');
 
   return (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
@@ -128,7 +130,8 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
         {tab === 'buy' ? (
           <ul className="chronicles-shop__list">
             {stock.map((item) => {
-              const able = users(state, item);
+              const consumable = item.slot === 'consumable';
+              const able = consumable ? [] : users(state, item);
               const affordable = gold >= item.price;
               return (
                 <li key={item.id} data-chronicles-shop-item={item.id} className={affordable ? '' : 'is-expensive'}>
@@ -136,17 +139,19 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     <small>{SLOT_LABEL[item.slot]}</small>
                     <strong>{item.name}</strong>
                     <span>{item.description}</span>
-                    <em>{able.length
-                      ? `Lo pueden usar: ${able.map((member) => member.name).join(', ')}`
-                      : 'Nadie de la compañía puede usarlo'}</em>
+                    <em>{consumable
+                      ? `Para toda la compañía · en la mochila: ${owned(item.id)}`
+                      : able.length
+                        ? `Lo pueden usar: ${able.map((member) => member.name).join(', ')}`
+                        : 'Nadie de la compañía puede usarlo'}</em>
                   </div>
                   <div className="chronicles-shop__actions">
-                    <button type="button" className="chronicles-shop__compare-button"
+                    {!consumable && <button type="button" className="chronicles-shop__compare-button"
                       aria-expanded={comparedItemId === item.id}
                       aria-controls={comparedItemId === item.id ? `chronicles-shop-compare-${item.id}` : undefined}
                       onClick={() => setComparedItemId((selected) => selected === item.id ? null : item.id)}>
                       {comparedItemId === item.id ? 'Ocultar' : 'Comparar'}
-                    </button>
+                    </button>}
                     <button type="button" disabled={!affordable}
                       onClick={() => onAction({ type: 'shop-buy', itemId: item.id })}>
                       {item.price} oro
@@ -163,7 +168,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
           </ul>
         ) : (
           <ul className="chronicles-shop__list">
-            {sellable.length === 0 && <li className="chronicles-shop__empty">No hay equipo en la mochila. Lo que llevas puesto no se vende.</li>}
+            {sellable.length === 0 && <li className="chronicles-shop__empty">{sellsGear ? 'No hay equipo en la mochila. Lo que llevas puesto no se vende.' : 'No llevas pociones ni pergaminos que vender.'}</li>}
             {sellable.map(({ item, quantity }) => (
               <li key={item.id} data-chronicles-shop-sell={item.id}>
                 <div className="chronicles-shop__item">
@@ -179,7 +184,9 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
           </ul>
         )}
         <footer className="chronicles-shop__foot">
-          Lo comprado va a la mochila de la compañía. Equípalo desde la ficha de cada personaje.
+          {sellsGear
+            ? 'Lo comprado va a la mochila de la compañía. Equípalo desde la ficha de cada personaje.'
+            : 'Las pociones y pergaminos van a la mochila. Úsalos con MAGIA/OBJETOS (tecla I), también en combate.'}
         </footer>
       </section>
     </div>

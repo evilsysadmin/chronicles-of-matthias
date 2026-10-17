@@ -81,7 +81,9 @@
           "steel-sword",
           "steel-axe",
           "steel-spear",
-          "silver-mace"
+          "silver-mace",
+          "steel-longbow",
+          "steel-crossbow"
         ]
       },
       "action": {
@@ -140,6 +142,29 @@
           }
         ],
         "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar."
+      }
+    },
+    {
+      "id": "corte-de-bronce-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica de la Corte · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "greater-healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll",
+          "lightning-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
       }
     },
     {

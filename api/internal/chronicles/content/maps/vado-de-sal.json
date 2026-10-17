@@ -81,7 +81,9 @@
           "iron-mace",
           "iron-spear",
           "bronze-sword",
-          "ivory-staff"
+          "ivory-staff",
+          "wooden-longbow",
+          "bronze-sling"
         ]
       },
       "action": {
@@ -140,6 +142,26 @@
           }
         ],
         "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar."
+      }
+    },
+    {
+      "id": "vado-de-sal-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica de Ada · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "mana-potion",
+          "fire-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
       }
     },
     {

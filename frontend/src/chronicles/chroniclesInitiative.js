@@ -158,8 +158,9 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   const deployedState = chroniclesDeployPartyForCombat(state);
   const initiative = chroniclesRollInitiative(deployedState, engaged, options);
   if (!initiative.order.length) return state;
+  const { combatWard: _staleWard, ...fresh } = deployedState;
   return {
-    ...deployedState,
+    ...fresh,
     phase: 'combat',
     initiative,
     message: `Combate por turnos · iniciativa = AGI + 1d8: ${initiative.order.map((actor) => `${actor.name} ${actor.initiative}`).join(' · ')}.`,
@@ -172,7 +173,8 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   const livingOrder = state.initiative.order.filter((actor) => actorIsAlive(state, enemyById, actor));
   const enemiesRemain = livingOrder.some((actor) => actor.kind === 'enemy');
   if (!enemiesRemain) {
-    const collapsed = chroniclesCollapsePartyAfterCombat(state);
+    // Escudo de fe and any paralysis end with the fight.
+    const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return {
       ...collapsed,
       phase: state.phase === 'defeated' ? 'defeated' : 'explore',

@@ -182,6 +182,17 @@ function runtimeCheckpointFlags(state) {
     if (safeGuildId && joined === true) flags[runtimeKey('guild', safeGuildId)] = true;
   });
 
+  // The quest OBJETIVO follows, Escudo de fe and paralysed enemies.
+  const trackedQuestId = shortStringOrNull(source.trackedQuestId, 64);
+  if (trackedQuestId) flags[runtimeKey('trackedQuest')] = trackedQuestId;
+  const ward = integerOrNull(source.combatWard?.armorClass, 1, 9);
+  if (ward !== null && source.initiative) flags[runtimeKey('ward')] = ward;
+  Object.entries(source.enemyStatus || {}).forEach(([enemyId, status]) => {
+    const safeEnemyId = shortStringOrNull(enemyId, 64);
+    const paralyzed = integerOrNull(status?.paralyzed, 1, 9);
+    if (safeEnemyId && paralyzed !== null) flags[runtimeKey('enemy', safeEnemyId, 'paralyzed')] = paralyzed;
+  });
+
   Object.entries(source.classAbilityCharges || {}).forEach(([memberId, rawCharges]) => {
     const safeMemberId = shortStringOrNull(memberId, 40);
     const charges = integerOrNull(rawCharges, 0, 99);
@@ -309,6 +320,17 @@ function applyRuntimeCheckpoint(state, flags) {
     .map(([key]) => [key.slice(guildPrefix.length), true]));
   if (Object.keys(guildMemberships).length) next.guildMemberships = guildMemberships;
   else delete next.guildMemberships;
+
+  const trackedQuestId = shortStringOrNull(flags[runtimeKey('trackedQuest')], 64);
+  if (trackedQuestId) next.trackedQuestId = trackedQuestId;
+  const ward = integerOrNull(flags[runtimeKey('ward')], 1, 9);
+  if (ward !== null && next.initiative) next.combatWard = { armorClass: ward };
+  const enemyStatus = {};
+  (map?.enemies || []).forEach((enemy) => {
+    const paralyzed = integerOrNull(flags[runtimeKey('enemy', enemy.id, 'paralyzed')], 1, 9);
+    if (paralyzed !== null) enemyStatus[enemy.id] = { paralyzed };
+  });
+  if (Object.keys(enemyStatus).length) next.enemyStatus = enemyStatus;
 
   if (next.classAbilityCharges && typeof next.classAbilityCharges === 'object') {
     const charges = { ...next.classAbilityCharges };

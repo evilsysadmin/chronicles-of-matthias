@@ -81,7 +81,9 @@
           "silver-axe",
           "silver-spear",
           "steel-dagger",
-          "ivory-staff"
+          "ivory-staff",
+          "silver-crossbow",
+          "silver-longbow"
         ]
       },
       "action": {
@@ -143,6 +145,29 @@
       }
     },
     {
+      "id": "pinohelado-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica de la Resina · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "greater-healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll",
+          "lightning-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
+      }
+    },
+    {
       "id": "pinohelado-guild",
       "kind": "merchant",
       "x": 15,
@@ -162,7 +187,9 @@
           "elemental-arrow",
           "cold-ray",
           "poison-cloud",
-          "heal-wounds"
+          "heal-wounds",
+          "paralyze",
+          "mass-heal"
         ]
       }
     },

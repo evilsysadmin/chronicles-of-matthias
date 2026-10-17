@@ -454,6 +454,12 @@ function partyDefeated(state) {
   return state.party.every((member) => member.hp <= 0);
 }
 
+function paralysedMessage(enemy, events) {
+  const left = events.find((event) => event.type === 'paralyzed')?.left || 0;
+  const name = `${enemy.name[0].toUpperCase()}${enemy.name.slice(1)}`;
+  return left > 0 ? `${name} sigue paralizado y no puede actuar.` : `${name} forcejea contra la parálisis y se libera; actuará en su próximo turno.`;
+}
+
 function turnSummary(state, events) {
   const swings = events.filter((event) => event.type === 'attack');
   const attacks = swings.filter((event) => !event.missed);
@@ -461,7 +467,23 @@ function turnSummary(state, events) {
   if (swings.length && !attacks.length) return `Turno de las criaturas: ${swings.length === 1 ? 'el golpe rebota en la armadura' : `${swings.length} golpes fallan contra la formación`}.`;
   if (attacks.length) return `Turno de las criaturas: ${attacks.length === 1 ? 'un impacto encuentra carne, piedra o dignidad' : `${attacks.length} impactos sacuden la formación`}.`;
   if (events.some((event) => event.type === 'move')) return 'Turno de las criaturas: piedra contra piedra; algo cambia de casilla en la oscuridad.';
+  if (events.some((event) => event.type === 'paralyzed')) return 'Turno de las criaturas: la parálisis mantiene a raya a un enemigo.';
   return state.message;
+}
+
+// Paralizar: a held enemy spends its action shaking the spell off.
+function paralysedTurns(state, enemy) {
+  return Math.max(0, Math.floor(Number(state?.enemyStatus?.[enemy.id]?.paralyzed) || 0));
+}
+
+function holdParalysed(state, enemy, events) {
+  const left = paralysedTurns(state, enemy) - 1;
+  const { [enemy.id]: current, ...others } = state.enemyStatus || {};
+  const status = left > 0 ? { ...others, [enemy.id]: { ...current, paralyzed: left } } : others;
+  events.push({ type: 'paralyzed', enemyId: enemy.id, left });
+  const next = { ...state, enemyStatus: status };
+  if (!Object.keys(status).length) delete next.enemyStatus;
+  return next;
 }
 
 export function chroniclesResolveEnemyActor(state, enemyId) {
@@ -472,6 +494,10 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
   const enemy = activeEnemies[enemyIndex];
   const events = [];
   let next = chroniclesRememberEnemySight({ ...state, turnPhase: 'enemy', enemyTurnEvents: events }, enemy);
+  if (paralysedTurns(next, enemy) > 0) {
+    next = holdParalysed(next, enemy, events);
+    return { ...next, enemyTurnEvents: [...events], message: paralysedMessage(enemy, events) };
+  }
   const position = chroniclesRuntimeEnemyPosition(next, enemy);
   const disengageStep = chroniclesChooseEnemyDisengageStep(next, enemy);
   const target = chroniclesEnemyAttackTarget(next, enemy, position);
@@ -517,6 +543,10 @@ export function chroniclesResolveEnemyTurn(state) {
   activeEnemies.forEach((enemy, enemyIndex) => {
     if (partyDefeated(next)) return;
     next = chroniclesRememberEnemySight(next, enemy);
+    if (paralysedTurns(next, enemy) > 0) {
+      next = holdParalysed(next, enemy, events);
+      return;
+    }
     const position = chroniclesRuntimeEnemyPosition(next, enemy);
     const disengageStep = chroniclesChooseEnemyDisengageStep(next, enemy);
     const target = chroniclesEnemyAttackTarget(next, enemy, position);

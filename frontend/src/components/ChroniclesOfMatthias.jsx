@@ -123,6 +123,7 @@ import {
 import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
+import { CHRONICLES_CONSUMABLES, chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
 import ChroniclesJournalModal from './ChroniclesJournalModal.jsx';
 import ChroniclesDefeatOverlay from './ChroniclesDefeatOverlay.jsx';
 import ChroniclesEnemyRetaliationFx from './ChroniclesEnemyRetaliationFx.jsx';
@@ -252,6 +253,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
   const [journalOpen, setJournalOpen] = useState(false);
   const [chronicleModalOpen, setChronicleModalOpen] = useState(false);
   const [automapOpen, setAutomapOpen] = useState(false);
+  // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
   const [spellMenuOpen, setSpellMenuOpen] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
@@ -450,7 +452,8 @@ export default function ChroniclesOfMatthias({ onExit }) {
     }
     if (actionType === 'equip-item' || actionType === 'unequip-item'
       || actionType === 'shop-buy' || actionType === 'shop-sell' || actionType === 'shop-close'
-      || actionType === 'guild-join' || actionType === 'guild-learn' || actionType === 'guild-close') {
+      || actionType === 'guild-join' || actionType === 'guild-learn' || actionType === 'guild-close'
+      || actionType === 'track-quest') {
       const updated = chroniclesReduce(current, action);
       if (updated !== current) {
         stateRef.current = updated;
@@ -462,7 +465,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
     if (current.initiative && activeActor?.kind === 'enemy') return;
     if (
       current.initiative
-      && (actionType === 'attack' || actionType === 'cast')
+      && (actionType === 'attack' || actionType === 'cast' || actionType === 'use-item')
       && activeActor?.kind === 'party'
       && typeof action === 'object'
       && action.memberId !== activeActor.id
@@ -470,10 +473,13 @@ export default function ChroniclesOfMatthias({ onExit }) {
 
     let next;
     if (!current.initiative) {
-      // An offensive spell opens combat exactly like a swing, at the spell's reach.
-      const offensiveSpell = actionType === 'cast' && CHRONICLES_SPELLS[action.spellId]?.kind === 'attack'
+      // An offensive spell or scroll opens combat exactly like a swing, at
+      // its own reach (Paralizar counts: it is an act of war too).
+      const offensiveSpell = actionType === 'cast' && ['attack', 'paralyze'].includes(CHRONICLES_SPELLS[action.spellId]?.kind)
         ? CHRONICLES_SPELLS[action.spellId]
-        : null;
+        : actionType === 'use-item' && CHRONICLES_CONSUMABLES[action.itemId]?.kind === 'scroll'
+          ? CHRONICLES_CONSUMABLES[action.itemId].spell
+          : null;
       const offensive = actionType === 'attack' || Boolean(offensiveSpell);
       const exploratoryNext = offensive ? current : chroniclesGridExplorationStep(current, action);
       const attackingMember = offensive && typeof action === 'object'
@@ -499,8 +505,8 @@ export default function ChroniclesOfMatthias({ onExit }) {
           : exploratoryNext;
     } else {
       next = chroniclesReduce(current, action);
-      // A refused cast (no spell points, no target) keeps the hero's turn.
-      const spentTurn = actionType !== 'cast' || next.turns !== current.turns;
+      // A refused cast or item (no spell points, no target) keeps the hero's turn.
+      const spentTurn = (actionType !== 'cast' && actionType !== 'use-item') || next.turns !== current.turns;
       if (next !== current && spentTurn && next.phase !== 'defeated' && next.phase !== 'escaped') {
         next = chroniclesAdvanceCombatInitiative(next, chroniclesActiveEnemies(next));
       }
@@ -1026,7 +1032,12 @@ export default function ChroniclesOfMatthias({ onExit }) {
       }
       if (event.key === 'c' || event.key === 'C') {
         event.preventDefault();
-        setSpellMenuOpen((open) => !open);
+        setSpellMenuOpen((open) => (open ? false : 'spells'));
+        return;
+      }
+      if (event.key === 'i' || event.key === 'I') {
+        event.preventDefault();
+        setSpellMenuOpen((open) => (open ? false : 'items'));
         return;
       }
       const action = KEY_ACTIONS[event.key];
@@ -1168,6 +1179,11 @@ export default function ChroniclesOfMatthias({ onExit }) {
     ? state.party.find((member) => member.id === activeInitiativeActor.id) || selectedMember
     : selectedMember;
   const casterKnowsSpells = caster ? chroniclesMemberSpells(state, caster).length > 0 : false;
+  const carriesItems = chroniclesCarriedConsumables(state).length > 0;
+  // One button for the hero's magic and the company's pack.
+  const actionMenuAvailable = Boolean(caster) && (casterKnowsSpells || carriesItems);
+  // Exploring, a fallen hero cannot open the pack: whoever still stands does.
+  const itemUser = caster?.hp > 0 ? caster : activeInitiativeActor ? null : state.party.find((member) => member.hp > 0) || null;
 
   return (
     <div
@@ -1250,7 +1266,24 @@ export default function ChroniclesOfMatthias({ onExit }) {
             <span>{locationHud.kind} <b>{locationHud.value}</b></span>
             <span>RUMBO <b>{direction.label} · {chroniclesMapCoordinatesLabel(chroniclesMapForState(state), state)}</b></span>
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
-            <span>OBJETIVO <b>{objective}</b>{routeHint && <small className="chronicles-route-hint" data-chronicles-route-hint>→ {routeHint.text}</small>}</span>
+            {/* The objective is the Crónica's cover: tapping it opens the
+                quest log and the narration behind that one line. */}
+            <span>
+              <button type="button" className="chronicles-objective-trigger" data-chronicles-objective
+                aria-haspopup="dialog" aria-expanded={chronicleModalOpen}
+                title="Abrir la Crónica: misiones y narración (J)"
+                onClick={() => {
+                  clearTouchHold();
+                  setJournalOpen(false);
+                  setMenuOpen(false);
+                  setAutomapOpen(false);
+                  setChronicleModalOpen((open) => !open);
+                }}>
+                OBJETIVO <b>{objective}</b>
+                {routeHint && <small className="chronicles-route-hint" data-chronicles-route-hint>→ {routeHint.text}</small>}
+                <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
+              </button>
+            </span>
             {needsRotation && (
               <button
                 type="button"
@@ -1396,7 +1429,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
                 }
                 setChronicleModalOpen(next);
               }}>
-              {activeQuests.length > 0 && <ChroniclesQuestLog state={state} />}
+              {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
             <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark} />
             <ChroniclesTacticalMargin target={tacticalTarget} />
@@ -1466,15 +1499,15 @@ export default function ChroniclesOfMatthias({ onExit }) {
                   onClick={attackWithSelected}
                   aria-label="Atacar"
                 >⚔<small>{selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
-                {casterKnowsSpells && (
+                {actionMenuAvailable && (
                   <button
                     type="button"
                     className="is-magic"
                     data-chronicles-touch-action="cast"
-                    aria-expanded={spellMenuOpen}
-                    onClick={() => setSpellMenuOpen((open) => !open)}
-                    aria-label={`Hechizos de ${caster.name}`}
-                  >✧<small>MAGIA</small></button>
+                    aria-expanded={Boolean(spellMenuOpen)}
+                    onClick={() => setSpellMenuOpen((open) => (open ? false : 'spells'))}
+                    aria-label={casterKnowsSpells ? `Hechizos y objetos de ${caster.name}` : `Objetos para ${caster.name}`}
+                  >{casterKnowsSpells ? '✧' : '⚗'}<small>{casterKnowsSpells ? 'MAGIA' : 'OBJETOS'}</small></button>
                 )}
                 {(contextualAction || npcAtPosition) && (
                   <button
@@ -1516,6 +1549,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
                 <span><kbd>ESPACIO</kbd> atacar</span>
                 <span><kbd>F</kbd> usar/recoger</span>
                 <span><kbd>C</kbd> hechizos</span>
+                <span><kbd>I</kbd> objetos</span>
                 <span><kbd>M</kbd> mapa</span>
               </div>
             </>
@@ -1540,14 +1574,20 @@ export default function ChroniclesOfMatthias({ onExit }) {
         </div>
       </div>
 
-      {spellMenuOpen && casterKnowsSpells && !expeditionOver && !sheetMember && !state.shop && !state.guild && (
+      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && (
         <ChroniclesSpellMenu
           state={state}
           member={caster}
+          initialTab={spellMenuOpen === 'items' ? 'items' : 'spells'}
+          itemUser={itemUser}
           onClose={() => setSpellMenuOpen(false)}
           onCast={(spellId) => {
             setSpellMenuOpen(false);
             dispatch({ type: 'cast', memberId: caster.id, spellId });
+          }}
+          onUse={(itemId) => {
+            setSpellMenuOpen(false);
+            if (itemUser) dispatch({ type: 'use-item', memberId: itemUser.id, itemId });
           }}
         />
       )}

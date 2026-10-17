@@ -16,8 +16,11 @@ export function chroniclesQuestLogEntries(state) {
       || Number(left.order || 0) - Number(right.order || 0));
 }
 
-export default function ChroniclesQuestLog({ state }) {
+export default function ChroniclesQuestLog({ state, onTrack = null }) {
   const quests = chroniclesQuestLogEntries(state);
+  // The quest OBJETIVO follows: the chosen one, else the first active one.
+  const active = quests.filter((quest) => quest.status === 'active');
+  const followed = active.find((quest) => quest.id === state?.trackedQuestId)?.id || null;
   if (!quests.length) return null;
   return (
     <section className="chronicles-quest-log" aria-label="Encargos">
@@ -26,7 +29,7 @@ export default function ChroniclesQuestLog({ state }) {
         {quests.map((quest) => (
           <li
             key={quest.id}
-            className={`chronicles-quest-log__quest is-${quest.status}${quest.main ? ' is-main' : ''}`}
+            className={`chronicles-quest-log__quest is-${quest.status}${quest.main ? ' is-main' : ''}${followed === quest.id ? ' is-tracked' : ''}`}
             data-chronicles-quest-id={quest.id}
             data-chronicles-quest-status={quest.status}
           >
@@ -35,6 +38,13 @@ export default function ChroniclesQuestLog({ state }) {
               <small>{quest.main ? 'Historia' : 'Side quest'}{quest.status === 'completed' ? ' · completado' : ''}</small>
               <strong>{quest.title}</strong>
               {quest.objective && <p>{quest.objective}</p>}
+              {onTrack && quest.status === 'active' && active.length > 1 && (
+                <button type="button" className="chronicles-quest-log__track"
+                  data-chronicles-track-quest={quest.id} aria-pressed={followed === quest.id}
+                  onClick={() => onTrack(followed === quest.id ? null : quest.id)}>
+                  {followed === quest.id ? '★ Siguiendo · dejar de seguir' : '☆ Seguir esta misión'}
+                </button>
+              )}
             </div>
           </li>
         ))}

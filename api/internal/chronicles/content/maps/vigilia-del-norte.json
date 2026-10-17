@@ -81,7 +81,8 @@
           "silver-spear",
           "steel-sword",
           "ivory-dagger",
-          "silver-staff"
+          "silver-staff",
+          "silver-longbow"
         ]
       },
       "action": {
@@ -143,6 +144,29 @@
       }
     },
     {
+      "id": "vigilia-del-norte-apothecary",
+      "kind": "merchant",
+      "x": 3,
+      "y": 4,
+      "visualType": "building-apothecary",
+      "label": "Botica de la Vigilia · pociones y pergaminos",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "greater-healing-potion",
+          "mana-potion",
+          "revive-draught",
+          "fire-scroll",
+          "lightning-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y pergaminos para quien no sabe leer runas. Se paga antes de beber»."
+      },
+      "action": {
+        "effects": [],
+        "message": "Huele a hierbas, cera y algo que chisporrotea en un frasco."
+      }
+    },
+    {
       "id": "vigilia-del-norte-guild",
       "kind": "merchant",
       "x": 15,
@@ -163,7 +187,10 @@
           "elemental-arrow",
           "detect-magic",
           "lightning-bolt",
-          "heal-wounds"
+          "heal-wounds",
+          "fireball",
+          "faith-ward",
+          "mass-heal"
         ]
       }
     },

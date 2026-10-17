@@ -59,6 +59,15 @@ const BASE_WEAPONS = Object.freeze({
   sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 1, allowed: LEGACY_MARTIAL },
   axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 2, allowed: LEGACY_MARTIAL },
   bow: { name: 'Arco corto', family: 'bow', basePrice: 8, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: LEGACY_ALL },
+  // Ranged arms of Terra's third wave: the long bow reaches farthest, the
+  // crossbow hits harder, the sling is a one-hand option for slingers who
+  // keep a shield (barbarians, druids, robbers). Reach is paid in damage: a
+  // steel crossbow hits like a steel axe, a long bow like a sword, and both
+  // take the shield hand (campaign bot, 2026-10: at axe+2 every hero
+  // carried a crossbow).
+  longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 1, twoHanded: true, reach: 4, allowed: ['knight'] },
+  crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 2, twoHanded: true, reach: 3, allowed: ['knight'] },
+  sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, reach: 2, allowed: LEGACY_ALL },
 });
 
 const BASE_ARMORS = Object.freeze({
@@ -75,7 +84,11 @@ const BASE_ARMORS = Object.freeze({
 // armour; ivory (our extension) is carved into daggers, staves and shields.
 const WEAPON_MATERIALS = Object.freeze(['brass', 'bronze', 'iron', 'silver', 'steel']);
 // Wood makes staves, clubs (wooden maces) and spears; ivory is carved.
-const WOODEN_WEAPONS = Object.freeze(['staff', 'mace', 'spear', 'bow']);
+const WOODEN_WEAPONS = Object.freeze(['staff', 'mace', 'spear', 'bow', 'longbow', 'sling']);
+// A long bow is wood with metal-shod limbs and arrows: «arco largo de acero».
+const SHOD_BOW_MATERIALS = Object.freeze(['bronze', 'iron', 'silver', 'steel']);
+// A sling's material is its shot: lead-grey brass, bronze or iron balls.
+const SLING_MATERIALS = Object.freeze(['brass', 'bronze', 'iron']);
 const CARVED_MATERIALS = Object.freeze(['ivory']);
 const SOFT_ARMOR_MATERIALS = Object.freeze(['leather', 'bronze', 'iron', 'steel']);
 const METAL_ARMOR_MATERIALS = Object.freeze(['brass', 'bronze', 'iron', 'silver', 'steel']);
@@ -102,7 +115,7 @@ function weaponItem(baseId, materialId) {
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
-    description: `${base.name}${base.twoHanded ? ' a dos manos' : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
+    description: `${base.name}${base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
   });
 }
 
@@ -155,7 +168,9 @@ function catalog() {
     const carved = baseId === 'dagger' || baseId === 'staff' ? CARVED_MATERIALS : [];
     const wooden = WOODEN_WEAPONS.includes(baseId) ? ['wooden'] : [];
     // Wooden bows are real bows, not a fictitious solid brass/steel bow.
-    const forged = baseId === 'bow' ? [] : WEAPON_MATERIALS;
+    const forged = {
+      bow: [], longbow: SHOD_BOW_MATERIALS, sling: SLING_MATERIALS,
+    }[baseId] ?? WEAPON_MATERIALS;
     for (const materialId of [...wooden, ...forged, ...carved]) {
       items[`${materialId}-${baseId}`] = weaponItem(baseId, materialId);
     }
