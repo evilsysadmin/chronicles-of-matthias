@@ -33,37 +33,11 @@
   "enemies": [
     {
       "id": "terra-f5-foe-0",
-      "visualType": "ember-wisp",
-      "name": "lumbre de ceniza",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f5Foe0Hp",
-      "maxHp": 14,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 2,
-        "requiresLineOfSight": true
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 12
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-f5-foe-1",
-      "visualType": "gate-jailer",
-      "name": "guardián de escoria",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_f5Foe1Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -76,6 +50,32 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-1",
+      "visualType": "ash-salamander",
+      "name": "salamandra de ceniza",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_f5Foe1Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -112,6 +112,32 @@
       }
     },
     {
+      "id": "terra-f5-foe-3",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_f5Foe3Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
       "id": "corte-guard-quarry",
       "visualType": "ember-wisp",
       "name": "el Fantasma del Dragón",
@@ -136,7 +162,7 @@
           }
         ]
       },
-      "x": 17,
+      "x": 13,
       "y": 3
     }
   ],

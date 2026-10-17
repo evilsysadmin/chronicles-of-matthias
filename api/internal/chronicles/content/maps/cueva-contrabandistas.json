@@ -139,11 +139,38 @@
     },
     {
       "id": "cueva-contrabandistas-foe-4",
-      "visualType": "road-bandit",
-      "name": "contrabandista",
+      "visualType": "skeleton",
+      "name": "contrabandista ahorcado",
       "x": 13,
       "y": 11,
       "hpKey": "cueva_contrabandistasFoe4Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista ahorcado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "cueva-contrabandistas-foe-5",
+      "visualType": "road-bandit",
+      "name": "contrabandista",
+      "x": 19,
+      "y": 2,
+      "hpKey": "cueva_contrabandistasFoe5Hp",
       "maxHp": 12,
       "retaliation": 2,
       "optional": true,
@@ -156,33 +183,6 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con contrabandista usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "cueva-contrabandistas-foe-5",
-      "visualType": "salt-crab",
-      "name": "cangrejo de cueva",
-      "x": 19,
-      "y": 2,
-      "hpKey": "cueva_contrabandistasFoe5Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de cueva usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

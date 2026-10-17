@@ -139,11 +139,37 @@
     },
     {
       "id": "minas-de-escoria-foe-4",
-      "visualType": "ash-goblin",
-      "name": "goblin minero",
+      "visualType": "ash-salamander",
+      "name": "salamandra de la forja",
       "x": 15,
       "y": 11,
       "hpKey": "minas_de_escoriaFoe4Hp",
+      "maxHp": 10,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de la forja usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "minas-de-escoria-foe-5",
+      "visualType": "ash-goblin",
+      "name": "goblin minero",
+      "x": 2,
+      "y": 9,
+      "hpKey": "minas_de_escoriaFoe5Hp",
       "maxHp": 10,
       "retaliation": 2,
       "optional": true,
@@ -156,32 +182,6 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con goblin minero usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 8
-          }
-        ]
-      }
-    },
-    {
-      "id": "minas-de-escoria-foe-5",
-      "visualType": "ember-wisp",
-      "name": "lumbre de mina",
-      "x": 2,
-      "y": 9,
-      "hpKey": "minas_de_escoriaFoe5Hp",
-      "maxHp": 10,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 2,
-        "requiresLineOfSight": true
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con lumbre de mina usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

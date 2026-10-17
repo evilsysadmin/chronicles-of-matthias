@@ -33,38 +33,11 @@
   "enemies": [
     {
       "id": "terra-c1-foe-0",
-      "visualType": "bone-hound",
-      "name": "lobo de escarcha",
+      "visualType": "scavenger-knight",
+      "name": "caballero helado",
       "x": 7,
       "y": 3,
       "hpKey": "terra_c1Foe0Hp",
-      "maxHp": 8,
-      "retaliation": 1,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con lobo de escarcha usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 6
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-c1-foe-1",
-      "visualType": "scavenger-knight",
-      "name": "caballero helado",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_c1Foe1Hp",
       "maxHp": 8,
       "retaliation": 1,
       "optional": true,
@@ -77,6 +50,34 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c1-foe-1",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_c1Foe1Hp",
+      "maxHp": 8,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con espectro de escarcha usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

@@ -33,38 +33,11 @@
   "enemies": [
     {
       "id": "terra-f4-foe-0",
-      "visualType": "ash-goblin",
-      "name": "goblin de ceniza",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f4Foe0Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-f4-foe-1",
-      "visualType": "ember-wisp",
-      "name": "lumbre de ceniza",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_f4Foe1Hp",
       "maxHp": 12,
       "retaliation": 2,
       "optional": true,
@@ -85,12 +58,12 @@
       }
     },
     {
-      "id": "terra-f4-foe-2",
+      "id": "terra-f4-foe-1",
       "visualType": "gate-jailer",
       "name": "guardián de escoria",
-      "x": 3,
+      "x": 13,
       "y": 11,
-      "hpKey": "terra_f4Foe2Hp",
+      "hpKey": "terra_f4Foe1Hp",
       "maxHp": 12,
       "retaliation": 2,
       "optional": true,
@@ -103,6 +76,33 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f4-foe-2",
+      "visualType": "ash-goblin",
+      "name": "goblin de ceniza",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_f4Foe2Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

@@ -33,8 +33,8 @@
   "enemies": [
     {
       "id": "terra-b1-foe-0",
-      "visualType": "scavenger-knight",
-      "name": "caballero helado",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
       "x": 7,
       "y": 3,
       "hpKey": "terra_b1Foe0Hp",
@@ -43,13 +43,14 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
-        "attackReach": 1,
+        "movement": "cardinal-roam",
+        "attackReach": 2,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3,
+        "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "message": "{attacker} acaba con espectro de escarcha usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -60,8 +61,8 @@
     },
     {
       "id": "terra-b1-foe-1",
-      "visualType": "drowned",
-      "name": "congelado",
+      "visualType": "skeleton",
+      "name": "guerrero congelado",
       "x": 13,
       "y": 11,
       "hpKey": "terra_b1Foe1Hp",
@@ -70,13 +71,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-chase",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con congelado usando {attack}.",
+        "message": "{attacker} acaba con guerrero congelado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

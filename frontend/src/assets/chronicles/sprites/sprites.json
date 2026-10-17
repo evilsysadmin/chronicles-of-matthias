@@ -1,27 +1,5 @@
 {
-  "bone-hound": {
-    "frames": [
-      "idle-a",
-      "idle-b",
-      "menace",
-      "attack",
-      "hurt",
-      "dead"
-    ],
-    "framePx": 320,
-    "pixelArt": true
-  },
-  "rookwood-mourner": {
-    "frames": [
-      "idle-a",
-      "idle-b",
-      "speak",
-      "grateful"
-    ],
-    "framePx": 400,
-    "pixelArt": true
-  },
-  "road-bandit": {
+  "ash-goblin": {
     "frames": [
       "idle-a",
       "idle-b",
@@ -29,8 +7,23 @@
       "hurt",
       "dead"
     ],
-    "framePx": 336,
-    "pixelArt": true
+    "framePx": 176,
+    "pixelArt": true,
+    "worldHeight": 2.2,
+    "idleFps": 2.2
+  },
+  "ash-salamander": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 216,
+    "pixelArt": true,
+    "worldHeight": 1.9,
+    "idleFps": 2
   },
   "bandit-captain": {
     "frames": [
@@ -41,19 +34,11 @@
       "dead"
     ],
     "framePx": 512,
-    "pixelArt": true
+    "pixelArt": true,
+    "worldHeight": 3.15,
+    "idleFps": 1.4
   },
-  "weaver-spider": {
-    "frames": [
-      "idle-a",
-      "idle-b",
-      "attack",
-      "dead"
-    ],
-    "framePx": 304,
-    "pixelArt": true
-  },
-  "sewer-rat": {
+  "bog-toad": {
     "frames": [
       "idle-a",
       "idle-b",
@@ -61,10 +46,26 @@
       "hurt",
       "dead"
     ],
-    "framePx": 168,
-    "pixelArt": true
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2,
+    "idleFps": 1.4
   },
-  "ash-goblin": {
+  "bone-hound": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "menace",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 320,
+    "pixelArt": true,
+    "worldHeight": 2.8,
+    "idleFps": 2.2
+  },
+  "chancellor-varren": {
     "frames": [
       "idle-a",
       "idle-b",
@@ -72,19 +73,10 @@
       "hurt",
       "dead"
     ],
-    "framePx": 176,
-    "pixelArt": true
-  },
-  "salt-crab": {
-    "frames": [
-      "idle-a",
-      "idle-b",
-      "attack",
-      "hurt",
-      "dead"
-    ],
-    "framePx": 184,
-    "pixelArt": true
+    "framePx": 232,
+    "pixelArt": true,
+    "worldHeight": 3.3,
+    "idleFps": 1.2
   },
   "drowned": {
     "frames": [
@@ -95,7 +87,35 @@
       "dead"
     ],
     "framePx": 192,
-    "pixelArt": true
+    "pixelArt": true,
+    "worldHeight": 2.75,
+    "idleFps": 1.2
+  },
+  "harpy": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 216,
+    "pixelArt": true,
+    "worldHeight": 2.6,
+    "idleFps": 2.4
+  },
+  "ice-wraith": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 208,
+    "pixelArt": true,
+    "worldHeight": 3,
+    "idleFps": 1.5
   },
   "mire-witch": {
     "frames": [
@@ -106,6 +126,123 @@
       "dead"
     ],
     "framePx": 208,
-    "pixelArt": true
+    "pixelArt": true,
+    "worldHeight": 3,
+    "idleFps": 1.4
+  },
+  "oathbound-knight": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 216,
+    "pixelArt": true,
+    "worldHeight": 3.1,
+    "idleFps": 1.1
+  },
+  "road-bandit": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 336,
+    "pixelArt": true,
+    "worldHeight": 2.55,
+    "idleFps": 1.8
+  },
+  "rookwood-mourner": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "speak",
+      "grateful"
+    ],
+    "framePx": 400,
+    "pixelArt": true,
+    "worldHeight": 2.6,
+    "idleFps": 1.3
+  },
+  "salt-crab": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 184,
+    "pixelArt": true,
+    "worldHeight": 2,
+    "idleFps": 1.8
+  },
+  "sewer-rat": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 168,
+    "pixelArt": true,
+    "worldHeight": 1.7,
+    "idleFps": 2.6
+  },
+  "silent-acolyte": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2.7,
+    "idleFps": 1.3
+  },
+  "skeleton": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 200,
+    "pixelArt": true,
+    "worldHeight": 2.7,
+    "idleFps": 1.6
+  },
+  "troll": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "hurt",
+      "dead"
+    ],
+    "framePx": 248,
+    "pixelArt": true,
+    "worldHeight": 3.6,
+    "idleFps": 1
+  },
+  "weaver-spider": {
+    "frames": [
+      "idle-a",
+      "idle-b",
+      "attack",
+      "dead"
+    ],
+    "framePx": 304,
+    "pixelArt": true,
+    "worldHeight": 2.3,
+    "idleFps": 2.6
   }
 }

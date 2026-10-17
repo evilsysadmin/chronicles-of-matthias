@@ -33,11 +33,38 @@
   "enemies": [
     {
       "id": "terra-a6-foe-0",
-      "visualType": "drowned",
-      "name": "náufrago ahogado",
+      "visualType": "salt-crab",
+      "name": "cangrejo de roca",
       "x": 7,
       "y": 3,
       "hpKey": "terra_a6Foe0Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a6-foe-1",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_a6Foe1Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -59,12 +86,12 @@
       }
     },
     {
-      "id": "terra-a6-foe-1",
+      "id": "terra-a6-foe-2",
       "visualType": "road-bandit",
       "name": "pirata",
-      "x": 13,
+      "x": 3,
       "y": 11,
-      "hpKey": "terra_a6Foe1Hp",
+      "hpKey": "terra_a6Foe2Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -86,12 +113,12 @@
       }
     },
     {
-      "id": "terra-a6-foe-2",
-      "visualType": "salt-crab",
-      "name": "cangrejo de roca",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_a6Foe2Hp",
+      "id": "terra-a6-foe-3",
+      "visualType": "harpy",
+      "name": "arpía del acantilado",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_a6Foe3Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -100,10 +127,10 @@
         "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "knight-chase",
-        "engageRange": 2
+        "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
+        "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

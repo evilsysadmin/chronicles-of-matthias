@@ -33,38 +33,11 @@
   "enemies": [
     {
       "id": "terra-d1-foe-0",
-      "visualType": "drowned",
-      "name": "congelado",
+      "visualType": "bone-hound",
+      "name": "lobo de escarcha",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d1Foe0Hp",
-      "maxHp": 10,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 3
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con congelado usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 8
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-d1-foe-1",
-      "visualType": "bone-hound",
-      "name": "lobo de escarcha",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_d1Foe1Hp",
       "maxHp": 10,
       "retaliation": 2,
       "optional": true,
@@ -86,12 +59,12 @@
       }
     },
     {
-      "id": "terra-d1-foe-2",
+      "id": "terra-d1-foe-1",
       "visualType": "scavenger-knight",
       "name": "caballero helado",
-      "x": 3,
+      "x": 13,
       "y": 11,
-      "hpKey": "terra_d1Foe2Hp",
+      "hpKey": "terra_d1Foe1Hp",
       "maxHp": 10,
       "retaliation": 2,
       "optional": true,
@@ -104,6 +77,34 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d1-foe-2",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_d1Foe2Hp",
+      "maxHp": 10,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con espectro de escarcha usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

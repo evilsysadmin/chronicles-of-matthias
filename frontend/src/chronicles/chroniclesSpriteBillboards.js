@@ -2,34 +2,27 @@
 // the world stays 3D (walls, forest, light, fog) while creatures and NPCs are
 // painted sprites that always face the camera and swap frames for idle,
 // menace and hurt. Sheets are SpriteCook-generated pixel art (or procedural
-// placeholders from build_chronicles_procedural_sprites.py) packed by
-// scripts/art/pack_chronicles_sprites.py (one row, square cells).
+// placeholders drawn by api/cmd/spritegen) packed by spritegen too (one
+// row, square cells).
 import * as THREE from 'three';
-import boneHoundSheet from '../assets/chronicles/sprites/bone-hound.webp';
-import mournerSheet from '../assets/chronicles/sprites/rookwood-mourner.webp';
-import roadBanditSheet from '../assets/chronicles/sprites/road-bandit.webp';
-import banditCaptainSheet from '../assets/chronicles/sprites/bandit-captain.webp';
-import weaverSpiderSheet from '../assets/chronicles/sprites/weaver-spider.webp';
-import sewerRatSheet from '../assets/chronicles/sprites/sewer-rat.webp';
-import ashGoblinSheet from '../assets/chronicles/sprites/ash-goblin.webp';
-import saltCrabSheet from '../assets/chronicles/sprites/salt-crab.webp';
-import drownedSheet from '../assets/chronicles/sprites/drowned.webp';
-import mireWitchSheet from '../assets/chronicles/sprites/mire-witch.webp';
 import spriteManifest from '../assets/chronicles/sprites/sprites.json';
 
-const SPRITES = Object.freeze({
-  'bone-hound': Object.freeze({ url: boneHoundSheet, worldHeight: 2.8, idleFps: 2.2 }),
-  'rookwood-mourner': Object.freeze({ url: mournerSheet, worldHeight: 2.6, idleFps: 1.3 }),
-  'road-bandit': Object.freeze({ url: roadBanditSheet, worldHeight: 2.55, idleFps: 1.8 }),
-  'bandit-captain': Object.freeze({ url: banditCaptainSheet, worldHeight: 3.15, idleFps: 1.4 }),
-  'weaver-spider': Object.freeze({ url: weaverSpiderSheet, worldHeight: 2.3, idleFps: 2.6 }),
-  // Procedural placeholders until painted SpriteCook art replaces them.
-  'sewer-rat': Object.freeze({ url: sewerRatSheet, worldHeight: 1.7, idleFps: 2.6 }),
-  'ash-goblin': Object.freeze({ url: ashGoblinSheet, worldHeight: 2.2, idleFps: 2.2 }),
-  'salt-crab': Object.freeze({ url: saltCrabSheet, worldHeight: 2.0, idleFps: 1.8 }),
-  drowned: Object.freeze({ url: drownedSheet, worldHeight: 2.75, idleFps: 1.2 }),
-  'mire-witch': Object.freeze({ url: mireWitchSheet, worldHeight: 3.0, idleFps: 1.4 }),
-});
+// Every packed sheet next to sprites.json, keyed by sprite id. World height
+// and idle speed come from the manifest that api/cmd/spritegen writes.
+const SHEETS = Object.fromEntries(
+  Object.entries(import.meta.glob('../assets/chronicles/sprites/*.webp', { eager: true, import: 'default' }))
+    .map(([path, url]) => [path.split('/').pop().replace(/\.webp$/, ''), url]),
+);
+
+const SPRITES = Object.freeze(Object.fromEntries(
+  Object.entries(spriteManifest)
+    .filter(([id]) => SHEETS[id])
+    .map(([id, entry]) => [id, Object.freeze({
+      url: SHEETS[id],
+      worldHeight: Number(entry.worldHeight) || 2.5,
+      idleFps: Number(entry.idleFps) || 1.6,
+    })]),
+));
 
 export function chroniclesHasSpriteBillboard(visualType) {
   return Boolean(SPRITES[visualType] && spriteManifest[visualType]?.frames?.length);

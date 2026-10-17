@@ -138,13 +138,13 @@ var hermits = map[string]hermit{
 type species struct{ visual, name string }
 
 var biomeFoes = map[string][]species{
-	"plains": {{"road-bandit", "salteador"}, {"ash-goblin", "goblin"}, {"sewer-rat", "rata gigante"}},
-	"forest": {{"bone-hound", "sabueso de hueso"}, {"weaver-spider", "araña tejedora"}, {"ash-goblin", "goblin del bosque"}},
-	"hills":  {{"ash-goblin", "goblin de las colinas"}, {"road-bandit", "bandolero"}, {"bone-hound", "lobo de hueso"}},
-	"marsh":  {{"salt-crab", "cangrejo de salitre"}, {"drowned", "ahogado"}, {"sewer-rat", "rata de marisma"}},
-	"coast":  {{"salt-crab", "cangrejo de roca"}, {"drowned", "náufrago ahogado"}, {"road-bandit", "pirata"}},
-	"snow":   {{"bone-hound", "lobo de escarcha"}, {"scavenger-knight", "caballero helado"}, {"drowned", "congelado"}},
-	"ash":    {{"ash-goblin", "goblin de ceniza"}, {"ember-wisp", "lumbre de ceniza"}, {"gate-jailer", "guardián de escoria"}},
+	"plains": {{"road-bandit", "salteador"}, {"ash-goblin", "goblin"}, {"sewer-rat", "rata gigante"}, {"skeleton", "ahorcado del camino"}},
+	"forest": {{"bone-hound", "sabueso de hueso"}, {"weaver-spider", "araña tejedora"}, {"ash-goblin", "goblin del bosque"}, {"troll", "trol del bosque"}},
+	"hills":  {{"ash-goblin", "goblin de las colinas"}, {"road-bandit", "bandolero"}, {"bone-hound", "lobo de hueso"}, {"troll", "trol de las colinas"}, {"harpy", "arpía del brezal"}},
+	"marsh":  {{"salt-crab", "cangrejo de salitre"}, {"drowned", "ahogado"}, {"sewer-rat", "rata de marisma"}, {"bog-toad", "sapo de la ciénaga"}},
+	"coast":  {{"salt-crab", "cangrejo de roca"}, {"drowned", "náufrago ahogado"}, {"road-bandit", "pirata"}, {"harpy", "arpía del acantilado"}},
+	"snow":   {{"bone-hound", "lobo de escarcha"}, {"scavenger-knight", "caballero helado"}, {"ice-wraith", "espectro de escarcha"}, {"skeleton", "guerrero congelado"}},
+	"ash":    {{"ash-goblin", "goblin de ceniza"}, {"ember-wisp", "lumbre de ceniza"}, {"gate-jailer", "guardián de escoria"}, {"ash-salamander", "salamandra de ceniza"}},
 }
 
 // Species keep their tactical identity (chroniclesBestiaryBehavior.test.js).
@@ -167,8 +167,30 @@ func aiFor(visual string) *O {
 		return obj("movement", "cardinal-chase", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 3)
 	case "sewer-rat":
 		return obj("movement", "cardinal-roam", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 3)
+	// Terra's wider bestiary: each species fights its own way.
+	case "skeleton": // a sentry that marches once it sees you
+		return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 3)
+	case "harpy": // dives in from odd angles
+		return obj("movement", "cardinal-roam", "attackReach", 1, "engagedMovement", "knight-chase", "engageRange", 4)
+	case "troll": // slow brute: waits, then never lets go
+		return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 1)
+	case "ice-wraith": // drifts in and claws from two cells away
+		return obj("movement", "cardinal-roam", "attackReach", 2, "engagedMovement", "cardinal-chase", "engageRange", 3, "requiresLineOfSight", true)
+	case "ash-salamander": // spits fire from where it basks
+		return obj("movement", "hold", "attackReach", 2, "requiresLineOfSight", true)
+	case "bog-toad": // a tongue that reaches two cells
+		return obj("movement", "hold", "attackReach", 2, "engagedMovement", "cardinal-chase", "engageRange", 1)
 	}
 	return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2)
+}
+
+// signature is how an enemy moves and strikes, as the bestiary test reads it.
+func signature(ai *O) string {
+	engaged := ai.Str("engagedMovement")
+	if engaged == "" {
+		engaged = "-"
+	}
+	return fmt.Sprintf("%s>%s@%d", ai.Str("movement"), engaged, ai.Int("attackReach"))
 }
 
 var density = map[string]float64{"plains": 0.12, "forest": 0.46, "hills": 0.3, "marsh": 0.32, "coast": 0.24, "snow": 0.22, "ash": 0.28}
@@ -522,9 +544,13 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 	}
 
 	foes := biomeFoes[a.biome]
-	count := 3
-	if level < 3 {
-		count = 2
+	// Danger grows with distance from Swordhaven: more foes far away.
+	count := 2
+	switch {
+	case level >= 5:
+		count = 4
+	case level >= 3:
+		count = 3
 	}
 	var enemies []*O
 	var freeFoeSlots []point
@@ -539,8 +565,17 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 			freeFoeSlots = append(freeFoeSlots, s)
 		}
 	}
-	for i := 0; i < count; i++ {
-		sp := foes[(salt+i)%len(foes)]
+	// A crowded area mixes ways of fighting: prefer a species whose movement
+	// pattern is not on the field yet (chroniclesBestiaryBehavior.test.js).
+	seen := map[string]bool{}
+	for i, offset := 0, 0; i < count; i++ {
+		sp := foes[(salt+offset)%len(foes)]
+		for tries := 0; tries < len(foes) && seen[signature(aiFor(sp.visual))]; tries++ {
+			offset++
+			sp = foes[(salt+offset)%len(foes)]
+		}
+		offset++
+		seen[signature(aiFor(sp.visual))] = true
 		enemies = append(enemies, foe(areaID, i, level, sp.visual, sp.name, freeFoeSlots[i], false, nil))
 	}
 	if q != nil {
@@ -693,10 +728,10 @@ func buildTown(code string, people []*O) *O {
 // ─── dungeons ──────────────────────────────────────────────────────────────
 
 var dungeonFoes = map[string][]species{
-	"marsh": {{"drowned", "ahogado"}, {"salt-crab", "cangrejo de salitre"}, {"sewer-rat", "rata de salina"}, {"ember-wisp", "fuego fatuo"}},
-	"coast": {{"road-bandit", "contrabandista"}, {"salt-crab", "cangrejo de cueva"}, {"sewer-rat", "rata de bodega"}, {"ember-wisp", "farol encantado"}},
-	"ash":   {{"ash-goblin", "goblin minero"}, {"ember-wisp", "lumbre de mina"}, {"bone-hound", "sabueso de escoria"}, {"crypt-spider", "araña de galería"}},
-	"snow":  {{"scavenger-knight", "guerrero del túmulo"}, {"spectral-bishop", "sacerdote espectral"}, {"bone-hound", "lobo de hueso"}, {"crypt-spider", "araña de túmulo"}},
+	"marsh": {{"drowned", "ahogado"}, {"salt-crab", "cangrejo de salitre"}, {"bog-toad", "sapo de salina"}, {"ember-wisp", "fuego fatuo"}, {"sewer-rat", "rata de salina"}},
+	"coast": {{"road-bandit", "contrabandista"}, {"salt-crab", "cangrejo de cueva"}, {"sewer-rat", "rata de bodega"}, {"ember-wisp", "farol encantado"}, {"skeleton", "contrabandista ahorcado"}},
+	"ash":   {{"ash-goblin", "goblin minero"}, {"ember-wisp", "lumbre de mina"}, {"bone-hound", "sabueso de escoria"}, {"crypt-spider", "araña de galería"}, {"ash-salamander", "salamandra de la forja"}},
+	"snow":  {{"scavenger-knight", "guerrero del túmulo"}, {"spectral-bishop", "sacerdote espectral"}, {"skeleton", "esqueleto del túmulo"}, {"crypt-spider", "araña de túmulo"}, {"ice-wraith", "espectro del túmulo"}},
 }
 
 func maze(seed, w, h int) [][]byte {

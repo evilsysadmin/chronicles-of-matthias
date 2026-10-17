@@ -86,8 +86,8 @@
     },
     {
       "id": "cienaga-negra-foe-2",
-      "visualType": "sewer-rat",
-      "name": "rata de salina",
+      "visualType": "bog-toad",
+      "name": "sapo de salina",
       "x": 18,
       "y": 5,
       "hpKey": "cienaga_negraFoe2Hp",
@@ -96,13 +96,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
+        "movement": "hold",
+        "attackReach": 2,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con rata de salina usando {attack}.",
+        "message": "{attacker} acaba con sapo de salina usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -139,11 +139,38 @@
     },
     {
       "id": "cienaga-negra-foe-4",
-      "visualType": "drowned",
-      "name": "ahogado",
+      "visualType": "sewer-rat",
+      "name": "rata de salina",
       "x": 17,
       "y": 3,
       "hpKey": "cienaga_negraFoe4Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de salina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "cienaga-negra-foe-5",
+      "visualType": "drowned",
+      "name": "ahogado",
+      "x": 6,
+      "y": 1,
+      "hpKey": "cienaga_negraFoe5Hp",
       "maxHp": 14,
       "retaliation": 2,
       "optional": true,
@@ -156,33 +183,6 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con ahogado usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 12
-          }
-        ]
-      }
-    },
-    {
-      "id": "cienaga-negra-foe-5",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
-      "x": 6,
-      "y": 1,
-      "hpKey": "cienaga_negraFoe5Hp",
-      "maxHp": 14,
-      "retaliation": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
