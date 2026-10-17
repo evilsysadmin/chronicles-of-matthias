@@ -197,3 +197,21 @@ describe('Chronicles · objective over legacy exits', () => {
     expect(chroniclesObjective(state)).toBe('Investiga el antiguo sello de la Cripta de las Ocho Casillas.');
   });
 });
+
+describe('Chronicles · early magic', () => {
+  it('Aldric pays the sewers with two spell pages for whoever can read them', () => {
+    const map = chroniclesMapById('swordhaven-first-book');
+    const report = map.interactables.find((entry) => entry.id === 'swordhaven-mayor-sewers');
+    let state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    state = { ...state, swordhavenMayorMet: true, sewersSluiceClosed: true, sewersSmugglerDefeated: true };
+    state = chroniclesApplyContentEffects(state, report.action.effects);
+    const book = (id) => (state.spellbook?.[id] || []);
+    expect(book('bishop')).toContain('flying-fist');
+    expect(book('rook')).toContain('flying-fist');
+    expect(book('knight')).toContain('elemental-arrow');
+    expect(book('matthias')).toEqual([]);
+    // Claimed once: a second report teaches nothing new and pays nothing.
+    const again = chroniclesApplyContentEffects(state, report.action.effects);
+    expect(again.inventory['crown-gold'].quantity).toBe(state.inventory['crown-gold'].quantity);
+  });
+});

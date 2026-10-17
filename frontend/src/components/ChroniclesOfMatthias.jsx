@@ -1432,7 +1432,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
             <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark} />
-            <ChroniclesTacticalMargin target={tacticalTarget} />
+            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
             <ChroniclesEnemyRetaliationFx key={retaliationCue?.token || 'none'} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}

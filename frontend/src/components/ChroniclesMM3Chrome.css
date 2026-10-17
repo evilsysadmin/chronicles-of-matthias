@@ -1367,3 +1367,31 @@
 }
 .chronicles-quest-log__track[aria-pressed='true'] { background: #83431c; color: #fff3dc; }
 .chronicles-quest-log__quest.is-tracked { outline: 2px solid #c88a3a; }
+
+/* ─── Short landscape phones in combat ────────────────────────────────────
+   The right edge stacks minimap, combat roster and the attack button. MAGIA
+   and USAR move down beside the attack button so they never cover the
+   roster, the tactical note keeps to the free middle band, and the
+   objective stays inside its box (the full text is in the Crónica). */
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 480px) {
+  .chronicles .chronicles-touch {
+    grid-template-columns: 54px 54px 54px minmax(0, 1fr) auto auto 74px;
+  }
+  .chronicles .chronicles-touch button.is-attack { grid-column: 7; }
+  .chronicles .chronicles-touch button.is-magic { grid-column: 6; grid-row: 2; align-self: end; }
+  .chronicles .chronicles-touch button.is-contextual { grid-column: 5; grid-row: 2; align-self: end; }
+  .chronicles .chronicles-objective-trigger b {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chronicles .chronicles-stage .chronicles-target-margin,
+  .chronicles:has(.chronicles-initiative-rail) .chronicles-stage .chronicles-target-margin {
+    top: calc(max(4px, env(safe-area-inset-top)) + 162px);
+    left: 196px;
+    right: calc(max(8px, env(safe-area-inset-right)) + min(210px, 48vw) + 10px);
+    width: auto;
+    transform: none;
+  }
+}
