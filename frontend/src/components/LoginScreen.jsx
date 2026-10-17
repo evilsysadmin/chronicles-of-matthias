@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { forgotPassword, login, register, resetPassword, wakeBackend } from '../auth.js';
 import { SUPPORTED_UI_LANGUAGES } from '../userPreferences.js';
 import { connectionErrorCopy } from '../networkErrorCopy.js';
+import { addressWithoutAuthParams, authParamsFromLocation } from '../authUrlParams.js';
 
 const NEW_PASSWORD_MIN_LENGTH = 8;
 
@@ -24,11 +25,7 @@ const COPY = {
 
 function authParamsFromUrl() {
   try {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      resetToken: params.get('resetToken') || '',
-      inviteCode: params.get('invite') || params.get('inviteCode') || '',
-    };
+    return authParamsFromLocation(window.location);
   } catch (_) {
     return { resetToken: '', inviteCode: '' };
   }
@@ -36,11 +33,9 @@ function authParamsFromUrl() {
 
 function clearAuthParamsFromUrl() {
   try {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('resetToken');
-    url.searchParams.delete('invite');
-    url.searchParams.delete('inviteCode');
-    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    const next = addressWithoutAuthParams(window.location);
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next !== current) window.history.replaceState(null, '', next);
   } catch (_) {
     // No bloquea el login si un navegador raro no permite tocar history.
   }
