@@ -50,6 +50,32 @@ export const CHRONICLES_SPELLS = Object.freeze({
     kind: 'detect',
     description: 'Revela cuántos tesoros quedan sin abrir en esta zona y hacia dónde.',
   }),
+  // Adept spells, sold by the guilds of Terra's second wave.
+  'cold-ray': spell({
+    id: 'cold-ray', name: 'Rayo gélido', schools: ['cosmonium', 'gaiam'], cost: 3, price: 22,
+    kind: 'attack', damage: 10, reach: 3, element: 'cold',
+    description: 'Un haz de escarcha a tres casillas. No falla.',
+  }),
+  'poison-cloud': spell({
+    id: 'poison-cloud', name: 'Nube venenosa', schools: ['gaiam'], cost: 3, price: 24,
+    kind: 'attack', damage: 11, reach: 2, element: 'poison',
+    description: 'Una nube verde envuelve a un enemigo a dos casillas. No falla.',
+  }),
+  'holy-strike': spell({
+    id: 'holy-strike', name: 'Golpe sagrado', schools: ['esoterica'], cost: 4, price: 32,
+    kind: 'attack', damage: 13, reach: 2, element: 'magic',
+    description: 'La fe golpea a un enemigo a dos casillas. No falla.',
+  }),
+  'lightning-bolt': spell({
+    id: 'lightning-bolt', name: 'Relámpago', schools: ['cosmonium'], cost: 4, price: 34,
+    kind: 'attack', damage: 15, reach: 3, element: 'electricity',
+    description: 'Un rayo a tres casillas. No falla, y deja olor a tormenta.',
+  }),
+  'heal-wounds': spell({
+    id: 'heal-wounds', name: 'Curar heridas', schools: ['esoterica', 'gaiam'], cost: 3, price: 25,
+    kind: 'heal', amount: 15,
+    description: 'Cura 15 PV al compañero más herido.',
+  }),
 });
 
 export const CHRONICLES_ELEMENT_LABELS = Object.freeze({

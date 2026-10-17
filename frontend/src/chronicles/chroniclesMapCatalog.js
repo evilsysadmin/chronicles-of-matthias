@@ -21,6 +21,7 @@ const TERRA_MAP_IDS = new Set([
   'puerto-de-hollin', 'vado-de-sal', 'ascuafria', 'vigilia-del-norte', 'corte-de-bronce',
   'salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria', 'tumulos-primer-pacto', 'cienaga-negra',
   'templo-corona-atrio', 'templo-corona-cripta', 'templo-corona-trono',
+  'molinoviejo', 'pinohelado', 'vinarrey', 'cripta-del-obispo', 'guarida-del-dragon', 'faro-roto',
 ]);
 const TERRA_MANIFESTS = Object.fromEntries(
   Object.entries(import.meta.glob('./maps/*.json', { eager: true, import: 'default' }))

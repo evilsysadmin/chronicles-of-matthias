@@ -18,7 +18,7 @@
     "#...................#",
     "#..#..............#.#",
     "#.#.................#",
-    "#......#............#",
+    "#...................#",
     "#...................#",
     "#...................#",
     "#...................#",
@@ -116,11 +116,24 @@
   "triggers": [],
   "interactables": [
     {
+      "id": "terra-b5-sign",
+      "kind": "lore",
+      "visualType": "signpost",
+      "x": 15,
+      "y": 4,
+      "persistentVisual": true,
+      "label": "Leer el cartel",
+      "action": {
+        "effects": [],
+        "message": "Cartel: Molinoviejo, aquí mismo. Al norte, la calzada hacia Puerto de Hollín (A3)."
+      }
+    },
+    {
       "id": "terra-b5-shrine",
       "kind": "lore",
       "visualType": "shrine",
       "x": 5,
-      "y": 4,
+      "y": 10,
       "label": "Beber de la Fuente del Molino",
       "when": [
         {
@@ -153,7 +166,7 @@
       "kind": "pickup",
       "visualType": "chest",
       "x": 15,
-      "y": 4,
+      "y": 10,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -265,13 +278,33 @@
         ],
         "message": "La compañía entra en C5."
       }
+    },
+    {
+      "id": "b5-to-town",
+      "kind": "exit",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Entrar en Molinoviejo",
+      "lockedLabel": "Molinoviejo · puertas cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "molinoviejo",
+            "entryExitId": "town-gate"
+          }
+        ],
+        "message": "La compañía cruza las puertas de Molinoviejo."
+      }
     }
   ],
   "initialJournal": {
     "id": "terra-b5-arrival",
     "title": "B5 · Molinos del Oeste",
-    "body": "Molinos que giran sin viento. Nadie quiere saber por qué.",
+    "body": "Molinos que giran sin viento junto a las casas de Molinoviejo. Nadie quiere saber por qué.",
     "sigil": "B5"
   },
-  "introMessage": "B5 · Molinos del Oeste. Molinos que giran sin viento. Nadie quiere saber por qué."
+  "introMessage": "B5 · Molinos del Oeste. Molinos que giran sin viento junto a las casas de Molinoviejo. Nadie quiere saber por qué."
 }

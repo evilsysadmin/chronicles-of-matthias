@@ -1,0 +1,542 @@
+{
+  "id": "cripta-del-obispo",
+  "version": 1,
+  "progressionKey": "cripta-del-obispo-v1",
+  "title": "Cripta del Obispo",
+  "hudTitle": "Cripta",
+  "areaCode": "E6",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "#####################",
+    "#...#...#...#.......#",
+    "###.#.#.#.#.#######.#",
+    "#.#.#.#...#.......#.#",
+    "#.#.#.#######.###.#.#",
+    "#.#...#.....#...#.#.#",
+    "#.#####.###.#.#.#.#.#",
+    "#...#...#.....#.#.#.#",
+    "#.###.#.#######.#.#.#",
+    "#.....#...#...#.#.#.#",
+    "#.#######.#.#.###.#.#",
+    "#.......#...........#",
+    "#####################"
+  ],
+  "partyStart": {
+    "x": 1,
+    "y": 1,
+    "direction": 1
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "cripta-del-obispo-foe-0",
+      "visualType": "skeleton",
+      "name": "esqueleto de monje",
+      "x": 15,
+      "y": 3,
+      "hpKey": "cripta_del_obispoFoe0Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con esqueleto de monje usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-1",
+      "visualType": "spectral-bishop",
+      "name": "monje espectral",
+      "x": 15,
+      "y": 8,
+      "hpKey": "cripta_del_obispoFoe1Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con monje espectral usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-2",
+      "visualType": "crypt-spider",
+      "name": "araña de osario",
+      "x": 16,
+      "y": 11,
+      "hpKey": "cripta_del_obispoFoe2Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña de osario usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-3",
+      "visualType": "ice-wraith",
+      "name": "alma en pena",
+      "x": 12,
+      "y": 11,
+      "hpKey": "cripta_del_obispoFoe3Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con alma en pena usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-4",
+      "visualType": "ember-wisp",
+      "name": "cirio fatuo",
+      "x": 9,
+      "y": 11,
+      "hpKey": "cripta_del_obispoFoe4Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cirio fatuo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-5",
+      "visualType": "skeleton",
+      "name": "esqueleto de monje",
+      "x": 2,
+      "y": 11,
+      "hpKey": "cripta_del_obispoFoe5Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con esqueleto de monje usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-8",
+      "visualType": "skeleton",
+      "name": "el sacristán",
+      "x": 1,
+      "y": 3,
+      "hpKey": "cripta_del_obispoFoe8Hp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el sacristán con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 24
+          },
+          {
+            "type": "grant-item",
+            "itemId": "sacristy-key",
+            "name": "Llave de la sacristía",
+            "description": "El sacristán guarda la llave de la sacristía entre las costillas.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "cripta-del-obispo-elite",
+          "title": "Llave de la sacristía",
+          "body": "El sacristán guarda la llave de la sacristía entre las costillas.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "cripta_del_obispoEliteDefeated"
+    },
+    {
+      "id": "cripta-del-obispo-foe-9",
+      "visualType": "spectral-bishop",
+      "name": "el Obispo Hueco",
+      "x": 13,
+      "y": 1,
+      "hpKey": "cripta_del_obispoFoe9Hp",
+      "maxHp": 30,
+      "retaliation": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el Obispo Hueco con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoBossDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 34
+          },
+          {
+            "type": "grant-item",
+            "itemId": "tithe-ledger",
+            "name": "Registro del diezmo",
+            "description": "Barricas de Viñarrey entregadas al Silencio, firmadas por el mayordomo Orsino y por una V.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "cripta-del-obispo-boss",
+          "title": "Cae el Obispo Hueco",
+          "body": "Barricas de Viñarrey entregadas al Silencio, firmadas por el mayordomo Orsino y por una V.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "cripta_del_obispoBossDefeated",
+      "blockingMessage": "El Obispo Hueco cierra el paso.",
+      "visualScale": 1.3
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "cripta-del-obispo-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 9,
+      "y": 7,
+      "label": "Leer el libro de horas del abad",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoNoteRead",
+            "value": true
+          }
+        ],
+        "message": "«Vísperas: las barricas de Viñarrey llegan de noche y bajan a la cripta. El mayordomo Orsino cobra; el Canciller paga. Completas: el Obispo ya no reza. Escucha.» La última página está en blanco, como si alguien la hubiera olvidado a propósito.",
+        "journal": {
+          "id": "cripta-del-obispo-note",
+          "title": "Cripta del Obispo",
+          "body": "«Vísperas: las barricas de Viñarrey llegan de noche y bajan a la cripta. El mayordomo Orsino cobra; el Canciller paga. Completas: el Obispo ya no reza. Escucha.» La última página está en blanco, como si alguien la hubiera olvidado a propósito.",
+          "sigil": "E6"
+        }
+      }
+    },
+    {
+      "id": "cripta-del-obispo-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 15,
+      "y": 9,
+      "label": "Beber del Agua bendita del claustro",
+      "when": [
+        {
+          "key": "cripta_del_obispoFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 22
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Agua bendita del claustro está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "id": "cripta-del-obispo-chest",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 3,
+      "y": 7,
+      "label": "Abrir el cofre",
+      "when": [
+        {
+          "key": "cripta_del_obispoChestOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoChestOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 63
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-axe",
+            "name": "Steel axe",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-chain",
+            "name": "Steel chain",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          }
+        ],
+        "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
+      }
+    },
+    {
+      "id": "cripta-del-obispo-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 7,
+      "y": 11,
+      "label": "Abrir la sacristía",
+      "lockedLabel": "Abrir la sacristía · cerrado con llave",
+      "when": [
+        {
+          "key": "cripta_del_obispoCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "sacristy-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El sacristán guarda la llave de la sacristía entre las costillas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "sacristy-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 102
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-mace",
+            "name": "Silver mace",
+            "description": "Del abrir la sacristía.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-ring",
+            "name": "Steel ring",
+            "description": "Del abrir la sacristía.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:cripta-del-obispo:cache:v1",
+            "amount": 100
+          }
+        ],
+        "message": "En la sacristía quedan cálices de plata, una maza de ceremonia y un anillo de abad."
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "cripta-del-obispo-trap-0",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 17,
+      "y": 3,
+      "label": "Losa del osario",
+      "when": [
+        {
+          "key": "cripta_del_obispoTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "La losa cede sobre un osario. Los huesos de abajo no se alegran de veros."
+      }
+    },
+    {
+      "id": "cripta-del-obispo-trap-1",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 19,
+      "y": 9,
+      "label": "Losa del osario",
+      "when": [
+        {
+          "key": "cripta_del_obispoTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cripta_del_obispoTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "La losa cede sobre un osario. Los huesos de abajo no se alegran de veros."
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "dungeon-exit",
+      "kind": "exit",
+      "x": 1,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a E6 · Ruinas del Obispo",
+      "lockedLabel": "La salida está bloqueada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-e6",
+            "entryExitId": "e6-to-dungeon"
+          }
+        ],
+        "message": "La compañía sale a la luz."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "cripta-del-obispo-arrival",
+    "title": "Cripta del Obispo",
+    "body": "Cripta del Obispo, bajo E6.",
+    "sigil": "E6"
+  },
+  "introMessage": "Cripta del Obispo. El aire huele a cerrado y a algo que no quiere visitas.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Cripta del Obispo. Al fondo de los pasillos espera el Obispo Hueco."
+  }
+}

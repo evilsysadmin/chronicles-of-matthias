@@ -74,6 +74,21 @@ export function chroniclesCampaignEpilogue(state) {
   } else if (state.f1BeaconChoice === 'salvage') {
     lines.push('El Faro Helado sigue a oscuras. La plata del espejo se gastó hace tiempo.');
   }
+  if (state.molinoviejoWindPact) {
+    lines.push('En Molinoviejo los molinos siguen girando sin viento. Cada luna, un cordero sube al Brezal de los Lobos y nadie pregunta por qué.');
+  } else if (state.molinoviejoWindSlain) {
+    lines.push('En Molinoviejo se muele a mano. Los molinos están quietos, pero nadie más ha desaparecido.');
+  }
+  if (state.pinoheladoGrumHealed) {
+    lines.push('En Pinohelado cuentan que un trol cojo deja leña en la puerta de Joris cada invierno.');
+  } else if (state.pinoheladoGrumSlain) {
+    lines.push('En Pinohelado, Greta corta leña sola y no saluda a los forasteros.');
+  }
+  if (state.vinarreyOrsinoJudged) {
+    lines.push('En Viñarrey, Orsino pisa uva hasta pagar la última barrica. El vino de este año sabe a justicia, y un poco a pies.');
+  } else if (state.vinarreyOrsinoBribed) {
+    lines.push('En Viñarrey, Orsino sigue cobrando el diezmo. Ahora sabe que la compañía tiene precio.');
+  }
   if (questCompleted(state, 'names-in-wood')) {
     lines.push('En Rookwood, el Roble del claro luce tres placas nuevas.');
   }

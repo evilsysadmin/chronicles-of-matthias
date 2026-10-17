@@ -146,7 +146,7 @@
       "id": "terra-e6-shrine",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 5,
+      "x": 15,
       "y": 4,
       "label": "Beber de la Pila del Obispo",
       "when": [
@@ -207,14 +207,14 @@
         ],
         "message": "Aquí está: la campanilla de la abadía."
       },
-      "x": 15,
-      "y": 4
+      "x": 5,
+      "y": 10
     },
     {
       "id": "terra-e6-chest",
       "kind": "pickup",
       "visualType": "chest",
-      "x": 5,
+      "x": 15,
       "y": 10,
       "label": "Abrir el cofre",
       "when": [
@@ -306,6 +306,27 @@
           }
         ],
         "message": "La compañía entra en F6."
+      }
+    },
+    {
+      "id": "e6-to-dungeon",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Entrar en Cripta del Obispo",
+      "lockedLabel": "Cripta del Obispo · sellada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "cripta-del-obispo",
+            "entryExitId": "dungeon-exit"
+          }
+        ],
+        "message": "La compañía desciende a Cripta del Obispo."
       }
     }
   ],

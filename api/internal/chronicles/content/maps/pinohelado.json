@@ -1,0 +1,437 @@
+{
+  "id": "pinohelado",
+  "version": 1,
+  "progressionKey": "pinohelado-v1",
+  "title": "Pinohelado",
+  "areaCode": "E1",
+  "regionKind": "settlement",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.................#",
+    "#........#........#",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 9,
+    "y": 1,
+    "direction": 2
+  },
+  "initialFlags": {},
+  "enemies": [],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "pinohelado-inn",
+      "kind": "service",
+      "x": 7,
+      "y": 10,
+      "visualType": "building-tavern",
+      "label": "Posada · descansar y curar · 8 oro",
+      "lockedLabel": "Posada · necesitas 8 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 8,
+          "message": "El posadero cobra por adelantado."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 8
+          },
+          {
+            "type": "heal-party",
+            "amount": 12
+          },
+          {
+            "type": "refill-class-abilities"
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "La compañía duerme en la posada de Pinohelado. Heridas curadas, puntos de hechizo recuperados."
+      }
+    },
+    {
+      "id": "pinohelado-weapons",
+      "kind": "merchant",
+      "x": 7,
+      "y": 4,
+      "visualType": "building-forge",
+      "label": "Armería de Pinohelado",
+      "shop": {
+        "stock": [
+          "silver-axe",
+          "silver-spear",
+          "steel-dagger",
+          "ivory-staff"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El armero no levanta la vista del afilador: «Mira lo que quieras. Rompes, pagas»."
+      }
+    },
+    {
+      "id": "pinohelado-armour",
+      "kind": "merchant",
+      "x": 11,
+      "y": 4,
+      "visualType": "building-armor",
+      "label": "Coracería de Pinohelado",
+      "shop": {
+        "stock": [
+          "steel-leather",
+          "silver-scale",
+          "silver-ring",
+          "ivory-shield"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El forjador golpea una coraza al rojo: «Hecha a mano. Como mis precios»."
+      }
+    },
+    {
+      "id": "pinohelado-temple",
+      "kind": "service",
+      "x": 14,
+      "y": 6,
+      "visualType": "building-temple",
+      "label": "Templo · sanar a la compañía · 4 oro",
+      "lockedLabel": "Templo · necesitas 4 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 4,
+          "message": "El templo pide una ofrenda de cuatro monedas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 4
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran."
+      }
+    },
+    {
+      "id": "pinohelado-guild",
+      "kind": "merchant",
+      "x": 15,
+      "y": 4,
+      "visualType": "building-guild",
+      "label": "Círculo de la Escarcha · hechizos",
+      "action": {
+        "effects": [],
+        "message": "Una archivista encapuchada señala el registro de socios de Círculo de la Escarcha."
+      },
+      "guild": {
+        "membership": 25,
+        "greeting": "«Círculo de la Escarcha. Firmad y pagad 25 de oro, y las estanterías son vuestras».",
+        "memberGreeting": "«Lo que quepa en vuestros libros, y en vuestra bolsa».",
+        "spells": [
+          "first-aid",
+          "elemental-arrow",
+          "cold-ray",
+          "poison-cloud",
+          "heal-wounds"
+        ]
+      }
+    },
+    {
+      "id": "joris-greta-brief",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con el leñador Joris",
+      "when": [
+        {
+          "key": "pinoheladoGretaStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "pinoheladoGretaStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "pinohelado-greta",
+            "title": "La leñadora y el trol",
+            "description": "Greta, la hija de Joris, no volvió de las Estribaciones de Escoria (E2). Los cazadores dicen que allí vive un trol.",
+            "objective": "Busca a Greta en las Estribaciones de Escoria (E2).",
+            "order": 50
+          }
+        ],
+        "message": "Joris aprieta el mango del hacha: «Mi hija Greta subió a por leña a las Estribaciones de Escoria, en E2, hace tres días. Los cazadores dicen que allí vive un trol. Traedla. Viva, si puede ser»",
+        "journal": {
+          "id": "pinohelado-greta",
+          "title": "La leñadora y el trol",
+          "body": "Greta desapareció en E2, donde vive un trol.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "joris-greta-healed",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Volver con Joris y Greta · 40 oro",
+      "when": [
+        {
+          "questId": "pinohelado-greta",
+          "questStatus": "active"
+        },
+        {
+          "key": "pinoheladoGrumHealed",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:pinohelado-greta:healed:v1",
+            "requirements": [
+              {
+                "key": "pinoheladoGrumHealed",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "pinohelado-greta",
+                "objective": "Grum se curó y Greta volvió a casa."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 40
+              },
+              {
+                "type": "grant-item",
+                "itemId": "steel-axe",
+                "name": "Hacha de Grum",
+                "description": "Un hacha de acero que Grum dejó en la puerta de Joris. Los trols también dan las gracias.",
+                "quantity": 1
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:pinohelado-greta:v1",
+                "amount": 90
+              }
+            ]
+          }
+        ],
+        "message": "Greta entra corriendo en casa. Esa noche aparece un hacha de acero clavada en la puerta de Joris, y huellas enormes que se pierden hacia el monte. «Los trols también dan las gracias», dice Greta.",
+        "journal": {
+          "id": "pinohelado-grum-healed",
+          "title": "Un trol agradecido",
+          "body": "La compañía curó a Grum. Greta volvió y el trol dejó un hacha de regalo.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "joris-greta-slain",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Volver con Joris y Greta · 50 oro",
+      "when": [
+        {
+          "questId": "pinohelado-greta",
+          "questStatus": "active"
+        },
+        {
+          "key": "pinoheladoGrumSlain",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:pinohelado-greta:slain:v1",
+            "requirements": [
+              {
+                "key": "pinoheladoGrumSlain",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "pinohelado-greta",
+                "objective": "Grum ha muerto. Greta ha vuelto, pero no os habla."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 50
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:pinohelado-greta:v1",
+                "amount": 60
+              }
+            ]
+          }
+        ],
+        "message": "Joris paga sin dudar. Greta no os mira: «Me salvó de los lobos. Y vosotros le cobrasteis la cabeza».",
+        "journal": {
+          "id": "pinohelado-grum-slain",
+          "title": "Una cabeza de trol",
+          "body": "La compañía mató a Grum. Joris pagó; Greta no lo perdona.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "pinohelado-watch-hunt-brief",
+      "kind": "lore",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Hablar con el cazador mayor",
+      "when": [
+        {
+          "key": "pinohelado_watchHuntStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "pinohelado_watchHuntStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "pinohelado-watch-hunt",
+            "title": "Caza: la Arpía Coronada",
+            "description": "«En las Colinas de la Corona (C2) caza una arpía con una diadema robada. Se lleva las piezas de los cepos y a los perros».",
+            "objective": "Acaba con la Arpía Coronada en C2 · Colinas de la Corona.",
+            "order": 40
+          }
+        ],
+        "message": "«En las Colinas de la Corona (C2) caza una arpía con una diadema robada. Se lleva las piezas de los cepos y a los perros»."
+      }
+    },
+    {
+      "id": "pinohelado-watch-hunt-report",
+      "kind": "quest",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Cobrar la caza a el cazador mayor · 45 oro",
+      "when": [
+        {
+          "questId": "pinohelado-watch-hunt",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:pinohelado-watch-hunt:v1",
+            "requirements": [
+              {
+                "key": "pinohelado_watchHunted",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "pinohelado-watch-hunt",
+                "objective": "Side quest completada."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 45
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:pinohelado-watch-hunt:v1",
+                "amount": 80
+              }
+            ]
+          }
+        ],
+        "message": "«Con esto compro cepos nuevos. Y perros nuevos»."
+      },
+      "requirements": [
+        {
+          "key": "pinohelado_watchHunted",
+          "truthy": true,
+          "message": "«La Arpía Coronada sigue vivo en C2»."
+        }
+      ],
+      "lockedLabel": "El cazador mayor · «¿Ya cayó la Arpía Coronada?»"
+    }
+  ],
+  "treasures": [],
+  "traps": [],
+  "exits": [
+    {
+      "id": "town-gate",
+      "kind": "exit",
+      "x": 9,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a E1 · Bosque de Escarcha",
+      "lockedLabel": "Las puertas están cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-e1",
+            "entryExitId": "e1-to-town"
+          }
+        ],
+        "message": "La compañía sale de Pinohelado."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "pinohelado-arrival",
+    "title": "Pinohelado",
+    "body": "Cabañas de leñadores entre pinos helados. Huele a resina y a sopa de setas.",
+    "sigil": "E1"
+  },
+  "introMessage": "Pinohelado. Cabañas de leñadores entre pinos helados. Huele a resina y a sopa de setas."
+}

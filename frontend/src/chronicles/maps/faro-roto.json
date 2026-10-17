@@ -1,0 +1,542 @@
+{
+  "id": "faro-roto",
+  "version": 1,
+  "progressionKey": "faro-roto-v1",
+  "title": "Faro Roto",
+  "hudTitle": "Faro",
+  "areaCode": "A6",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "#####################",
+    "#.#...#...#.........#",
+    "#.#.#.#.#.#####.#.#.#",
+    "#...#...#.....#.#.#.#",
+    "#############.#.#.###",
+    "#...........#.#.#...#",
+    "#.###.#####.#.#####.#",
+    "#...#...#...#...#...#",
+    "###.###.#######.#...#",
+    "#.#...#...#...#...#.#",
+    "#.##..###.#.#.#####.#",
+    "#.......#...#.......#",
+    "#####################"
+  ],
+  "partyStart": {
+    "x": 1,
+    "y": 1,
+    "direction": 1
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "faro-roto-foe-0",
+      "visualType": "road-bandit",
+      "name": "contrabandista",
+      "x": 15,
+      "y": 9,
+      "hpKey": "faro_rotoFoe0Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-1",
+      "visualType": "salt-crab",
+      "name": "cangrejo de cueva",
+      "x": 18,
+      "y": 11,
+      "hpKey": "faro_rotoFoe1Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de cueva usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-2",
+      "visualType": "sewer-rat",
+      "name": "rata de bodega",
+      "x": 15,
+      "y": 1,
+      "hpKey": "faro_rotoFoe2Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de bodega usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-3",
+      "visualType": "ember-wisp",
+      "name": "farol encantado",
+      "x": 10,
+      "y": 11,
+      "hpKey": "faro_rotoFoe3Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con farol encantado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-4",
+      "visualType": "skeleton",
+      "name": "contrabandista ahorcado",
+      "x": 3,
+      "y": 5,
+      "hpKey": "faro_rotoFoe4Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista ahorcado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-5",
+      "visualType": "road-bandit",
+      "name": "contrabandista",
+      "x": 10,
+      "y": 7,
+      "hpKey": "faro_rotoFoe5Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-8",
+      "visualType": "harpy",
+      "name": "la arpía del faro",
+      "x": 9,
+      "y": 7,
+      "hpKey": "faro_rotoFoe8Hp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a la arpía del faro con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 24
+          },
+          {
+            "type": "grant-item",
+            "itemId": "lantern-room-key",
+            "name": "Llave del cuarto de la linterna",
+            "description": "La arpía del faro anida con la llave del cuarto de la linterna.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "faro-roto-elite",
+          "title": "Llave del cuarto de la linterna",
+          "body": "La arpía del faro anida con la llave del cuarto de la linterna.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "faro_rotoEliteDefeated"
+    },
+    {
+      "id": "faro-roto-foe-9",
+      "visualType": "drowned",
+      "name": "la Farera Ahogada",
+      "x": 1,
+      "y": 9,
+      "hpKey": "faro_rotoFoe9Hp",
+      "maxHp": 30,
+      "retaliation": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a la Farera Ahogada con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoBossDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 34
+          },
+          {
+            "type": "grant-item",
+            "itemId": "lighthouse-key",
+            "name": "Llave del Faro Roto",
+            "description": "La farera ahogada la apretaba en el puño. Con ella se apaga la linterna para siempre.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "faro-roto-boss",
+          "title": "Cae la Farera Ahogada",
+          "body": "La farera ahogada la apretaba en el puño. Con ella se apaga la linterna para siempre.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "faro_rotoBossDefeated",
+      "blockingMessage": "La Farera Ahogada cierra el paso.",
+      "visualScale": 1.2
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "faro-roto-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 19,
+      "y": 3,
+      "label": "Leer el diario de la farera",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoNoteRead",
+            "value": true
+          }
+        ],
+        "message": "«Mi hermana Maura dice que el faro es para los barcos. Yo digo que es para los que se pierden. Esta noche algo sin nombre me pide que apague la luz.» La última línea está escrita con otra mano, mojada: «encendida».",
+        "journal": {
+          "id": "faro-roto-note",
+          "title": "Faro Roto",
+          "body": "«Mi hermana Maura dice que el faro es para los barcos. Yo digo que es para los que se pierden. Esta noche algo sin nombre me pide que apague la luz.» La última línea está escrita con otra mano, mojada: «encendida».",
+          "sigil": "A6"
+        }
+      }
+    },
+    {
+      "id": "faro-roto-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 11,
+      "y": 1,
+      "label": "Beber del Cisterna de lluvia",
+      "when": [
+        {
+          "key": "faro_rotoFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 22
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Cisterna de lluvia está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "id": "faro-roto-chest",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 15,
+      "y": 5,
+      "label": "Abrir el cofre",
+      "when": [
+        {
+          "key": "faro_rotoChestOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoChestOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 63
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-mace",
+            "name": "Steel mace",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-chain",
+            "name": "Steel chain",
+            "description": "Botín de mazmorra.",
+            "quantity": 1
+          }
+        ],
+        "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
+      }
+    },
+    {
+      "id": "faro-roto-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 7,
+      "y": 11,
+      "label": "Abrir el cuarto de la linterna",
+      "lockedLabel": "Abrir el cuarto de la linterna · cerrado con llave",
+      "when": [
+        {
+          "key": "faro_rotoCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "lantern-room-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. La arpía del faro anida con la llave del cuarto de la linterna."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "lantern-room-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 102
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-spear",
+            "name": "Silver spear",
+            "description": "Del cuarto de la linterna.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "ivory-shield",
+            "name": "Ivory shield",
+            "description": "Del cuarto de la linterna.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:faro-roto:cache:v1",
+            "amount": 100
+          }
+        ],
+        "message": "En el cuarto de la linterna: el sueldo de un año de farera, una lanza de plata y un escudo de marfil."
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "faro-roto-trap-0",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 19,
+      "y": 9,
+      "label": "Escalón podrido",
+      "when": [
+        {
+          "key": "faro_rotoTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Un escalón podrido cede y la compañía se golpea contra la barandilla de hierro."
+      }
+    },
+    {
+      "id": "faro-roto-trap-1",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 15,
+      "y": 4,
+      "label": "Escalón podrido",
+      "when": [
+        {
+          "key": "faro_rotoTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Un escalón podrido cede y la compañía se golpea contra la barandilla de hierro."
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "dungeon-exit",
+      "kind": "exit",
+      "x": 1,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a A6 · Isla del Faro Roto",
+      "lockedLabel": "La salida está bloqueada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-a6",
+            "entryExitId": "a6-to-dungeon"
+          }
+        ],
+        "message": "La compañía sale a la luz."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "faro-roto-arrival",
+    "title": "Faro Roto",
+    "body": "Faro Roto, bajo A6.",
+    "sigil": "A6"
+  },
+  "introMessage": "Faro Roto. El aire huele a cerrado y a algo que no quiere visitas.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Faro Roto. Al fondo de los pasillos espera la Farera Ahogada."
+  }
+}

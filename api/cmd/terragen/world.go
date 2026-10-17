@@ -91,6 +91,7 @@ var towns = map[string]town{
 type boss struct {
 	visual, name string
 	hp           int
+	scale        float64 // 0 = the species' usual size
 }
 
 type dungeon struct {
@@ -100,11 +101,11 @@ type dungeon struct {
 
 var dungeonOrder = []string{"C6", "A4", "E3", "D1", "E5"}
 var dungeons = map[string]dungeon{
-	"C6": {"salinas-hundidas", "Salinas Hundidas", "Salinas", "marsh", boss{"drowned", "el Capitán Ahogado", 16}},
-	"A4": {"cueva-contrabandistas", "Cueva de los Contrabandistas", "Cueva", "coast", boss{"bandit-captain", "Mano Negra, jefa de contrabandistas", 18}},
-	"E3": {"minas-de-escoria", "Minas de Escoria", "Minas", "ash", boss{"gate-jailer", "el Capataz de Escoria", 22}},
-	"D1": {"tumulos-primer-pacto", "Túmulos del Primer Pacto", "Túmulos", "snow", boss{"spectral-bishop", "el Guardián del Túmulo", 24}},
-	"E5": {"cienaga-negra", "Choza de la Ciénaga Negra", "Ciénaga", "marsh", boss{"mire-witch", "la Bruja del Cieno", 20}},
+	"C6": {"salinas-hundidas", "Salinas Hundidas", "Salinas", "marsh", boss{"drowned", "el Capitán Ahogado", 16, 0}},
+	"A4": {"cueva-contrabandistas", "Cueva de los Contrabandistas", "Cueva", "coast", boss{"bandit-captain", "Mano Negra, jefa de contrabandistas", 18, 0}},
+	"E3": {"minas-de-escoria", "Minas de Escoria", "Minas", "ash", boss{"gate-jailer", "el Capataz de Escoria", 22, 0}},
+	"D1": {"tumulos-primer-pacto", "Túmulos del Primer Pacto", "Túmulos", "snow", boss{"spectral-bishop", "el Guardián del Túmulo", 24, 0}},
+	"E5": {"cienaga-negra", "Choza de la Ciénaga Negra", "Ciénaga", "marsh", boss{"mire-witch", "la Bruja del Cieno", 20, 0}},
 }
 
 var signposts = map[string]string{
@@ -401,8 +402,9 @@ func foe(areaID string, index, level int, visual, name string, pos point, isBoss
 }
 
 type areaQuests struct {
-	treasures []*O
-	enemies   []*O
+	interactables []*O
+	treasures     []*O
+	enemies       []*O
 }
 
 func otherAreaName(dst string) string {
@@ -523,6 +525,10 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 	}
 	q := quests[code]
 	if q != nil {
+		for _, entry := range q.interactables {
+			p := take()
+			interactables = append(interactables, entry.With("x", p.x, "y", p.y))
+		}
 		for _, entry := range q.treasures {
 			p := take()
 			treasures = append(treasures, entry.With("x", p.x, "y", p.y))
@@ -579,8 +585,8 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 		enemies = append(enemies, foe(areaID, i, level, sp.visual, sp.name, freeFoeSlots[i], false, nil))
 	}
 	if q != nil {
-		for _, entry := range q.enemies {
-			s := freeFoeSlots[count]
+		for i, entry := range q.enemies {
+			s := freeFoeSlots[count+i]
 			enemies = append(enemies, entry.With("x", s.x, "y", s.y))
 		}
 	}

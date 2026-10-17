@@ -1,0 +1,453 @@
+{
+  "id": "vinarrey",
+  "version": 1,
+  "progressionKey": "vinarrey-v1",
+  "title": "Viñarrey",
+  "areaCode": "D2",
+  "regionKind": "settlement",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.##...........##.#",
+    "#.................#",
+    "#........#........#",
+    "#.................#",
+    "#.###.###.###.###.#",
+    "#.###.###.###.###.#",
+    "#.................#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 9,
+    "y": 1,
+    "direction": 2
+  },
+  "initialFlags": {},
+  "enemies": [],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "vinarrey-inn",
+      "kind": "service",
+      "x": 7,
+      "y": 10,
+      "visualType": "building-tavern",
+      "label": "Posada · descansar y curar · 8 oro",
+      "lockedLabel": "Posada · necesitas 8 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 8,
+          "message": "El posadero cobra por adelantado."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 8
+          },
+          {
+            "type": "heal-party",
+            "amount": 12
+          },
+          {
+            "type": "refill-class-abilities"
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "La compañía duerme en la posada de Viñarrey. Heridas curadas, puntos de hechizo recuperados."
+      }
+    },
+    {
+      "id": "vinarrey-weapons",
+      "kind": "merchant",
+      "x": 7,
+      "y": 4,
+      "visualType": "building-forge",
+      "label": "Armería de Viñarrey",
+      "shop": {
+        "stock": [
+          "bronze-sword",
+          "iron-dagger",
+          "iron-staff",
+          "bronze-mace"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El armero no levanta la vista del afilador: «Mira lo que quieras. Rompes, pagas»."
+      }
+    },
+    {
+      "id": "vinarrey-armour",
+      "kind": "merchant",
+      "x": 11,
+      "y": 4,
+      "visualType": "building-armor",
+      "label": "Coracería de Viñarrey",
+      "shop": {
+        "stock": [
+          "bronze-leather",
+          "bronze-ring",
+          "iron-scale",
+          "bronze-shield"
+        ]
+      },
+      "action": {
+        "effects": [],
+        "message": "El forjador golpea una coraza al rojo: «Hecha a mano. Como mis precios»."
+      }
+    },
+    {
+      "id": "vinarrey-temple",
+      "kind": "service",
+      "x": 14,
+      "y": 6,
+      "visualType": "building-temple",
+      "label": "Templo · sanar a la compañía · 4 oro",
+      "lockedLabel": "Templo · necesitas 4 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 4,
+          "message": "El templo pide una ofrenda de cuatro monedas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 4
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran."
+      }
+    },
+    {
+      "id": "vinarrey-guild",
+      "kind": "merchant",
+      "x": 15,
+      "y": 4,
+      "visualType": "building-guild",
+      "label": "Hermandad del Lagar · hechizos",
+      "action": {
+        "effects": [],
+        "message": "Una archivista encapuchada señala el registro de socios de Hermandad del Lagar."
+      },
+      "guild": {
+        "membership": 20,
+        "greeting": "«Hermandad del Lagar. Firmad y pagad 20 de oro, y las estanterías son vuestras».",
+        "memberGreeting": "«Lo que quepa en vuestros libros, y en vuestra bolsa».",
+        "spells": [
+          "first-aid",
+          "flying-fist",
+          "heal-wounds",
+          "holy-strike"
+        ]
+      }
+    },
+    {
+      "id": "calixta-tithe-brief",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con la vinatera Calixta",
+      "when": [
+        {
+          "key": "vinarreyTitheStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "vinarreyTitheStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "vinarrey-tithe",
+            "title": "El diezmo del Canciller",
+            "description": "El mayordomo Orsino cobra en Viñarrey un diezmo de vino en nombre del Canciller. Las barricas salen hacia la Corte… y nunca llegan.",
+            "objective": "Busca adónde van las barricas: en la Cripta del Obispo (E6) dicen que se oye vino caer.",
+            "order": 50
+          }
+        ],
+        "message": "Calixta golpea una barrica vacía: «El mayordomo Orsino cobra un diezmo de vino en nombre del Canciller. Las barricas salen hacia la Corte… y nunca llegan. Los de las Ruinas del Obispo, en E6, dicen que por las noches se oye vino caer bajo tierra»",
+        "journal": {
+          "id": "vinarrey-tithe",
+          "title": "El diezmo del Canciller",
+          "body": "Las barricas de Viñarrey desaparecen. Pista: la Cripta del Obispo (E6).",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "calixta-tithe-judge",
+      "kind": "quest",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Entregar el registro a Calixta · 40 oro",
+      "when": [
+        {
+          "questId": "vinarrey-tithe",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:vinarrey-tithe:v1",
+            "requirements": [
+              {
+                "itemId": "tithe-ledger",
+                "quantity": 1
+              }
+            ],
+            "effects": [
+              {
+                "type": "consume-item",
+                "itemId": "tithe-ledger",
+                "quantity": 1
+              },
+              {
+                "type": "set",
+                "key": "vinarreyOrsinoJudged",
+                "value": true
+              },
+              {
+                "type": "complete-quest",
+                "questId": "vinarrey-tithe",
+                "objective": "Orsino será juzgado por el pueblo."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 40
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:vinarrey-tithe:v1",
+                "amount": 90
+              }
+            ]
+          }
+        ],
+        "message": "Calixta lee el registro en voz alta en la plaza. A Orsino lo sacan de su casa en camisón. «No lo colgaremos», dice Calixta. «Va a pisar uva hasta que pague cada barrica»",
+        "journal": {
+          "id": "vinarrey-orsino-judged",
+          "title": "La uva de Orsino",
+          "body": "La compañía entregó el registro. Viñarrey juzgó a Orsino.",
+          "sigil": "◆"
+        }
+      },
+      "requirements": [
+        {
+          "itemId": "tithe-ledger",
+          "quantity": 1,
+          "message": "Calixta necesita pruebas: algo de la Cripta del Obispo (E6)."
+        }
+      ],
+      "lockedLabel": "Calixta espera pruebas de la Cripta del Obispo (E6)"
+    },
+    {
+      "id": "orsino-bribe",
+      "kind": "lore",
+      "x": 15,
+      "y": 10,
+      "visualType": "building-store",
+      "label": "Hablar con el mayordomo Orsino",
+      "when": [
+        {
+          "questId": "vinarrey-tithe",
+          "questStatus": "active"
+        },
+        {
+          "itemId": "tithe-ledger",
+          "quantity": 1
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:vinarrey-tithe:v1",
+            "requirements": [
+              {
+                "itemId": "tithe-ledger",
+                "quantity": 1
+              }
+            ],
+            "effects": [
+              {
+                "type": "consume-item",
+                "itemId": "tithe-ledger",
+                "quantity": 1
+              },
+              {
+                "type": "set",
+                "key": "vinarreyOrsinoBribed",
+                "value": true
+              },
+              {
+                "type": "complete-quest",
+                "questId": "vinarrey-tithe",
+                "objective": "Orsino compró vuestro silencio."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 90
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:vinarrey-tithe:v1",
+                "amount": 30
+              }
+            ]
+          }
+        ],
+        "message": "Orsino ve el registro y palidece. Luego sonríe y pone una bolsa sobre la mesa: «Noventa monedas por ese papel, y aquí no ha pasado nada». Os lleváis la bolsa. El papel arde en su chimenea.",
+        "journal": {
+          "id": "vinarrey-orsino-bribed",
+          "title": "Noventa monedas",
+          "body": "La compañía vendió el registro a Orsino. El diezmo sigue.",
+          "sigil": "◆"
+        }
+      }
+    },
+    {
+      "id": "vinarrey-watch-hunt-brief",
+      "kind": "lore",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Hablar con el guarda del lagar",
+      "when": [
+        {
+          "key": "vinarrey_watchHuntStarted",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "vinarrey_watchHuntStarted",
+            "value": true
+          },
+          {
+            "type": "start-quest",
+            "questId": "vinarrey-watch-hunt",
+            "title": "Caza: el Sapo Rey",
+            "description": "«Un sapo como un tonel se ha instalado en las Lindes de las Marismas (D4). Se come a los perros del lagar».",
+            "objective": "Acaba con el Sapo Rey en D4 · Lindes de las Marismas.",
+            "order": 40
+          }
+        ],
+        "message": "«Un sapo como un tonel se ha instalado en las Lindes de las Marismas (D4). Se come a los perros del lagar»."
+      }
+    },
+    {
+      "id": "vinarrey-watch-hunt-report",
+      "kind": "quest",
+      "x": 4,
+      "y": 6,
+      "visualType": "building-watch",
+      "label": "Cobrar la caza a el guarda del lagar · 40 oro",
+      "when": [
+        {
+          "questId": "vinarrey-watch-hunt",
+          "questStatus": "active"
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:vinarrey-watch-hunt:v1",
+            "requirements": [
+              {
+                "key": "vinarrey_watchHunted",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "complete-quest",
+                "questId": "vinarrey-watch-hunt",
+                "objective": "Side quest completada."
+              },
+              {
+                "type": "grant-gold",
+                "amount": 40
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:vinarrey-watch-hunt:v1",
+                "amount": 70
+              }
+            ]
+          }
+        ],
+        "message": "«Esta noche brindamos por vosotros. Con vino agrio, que es el que queda»."
+      },
+      "requirements": [
+        {
+          "key": "vinarrey_watchHunted",
+          "truthy": true,
+          "message": "«El Sapo Rey sigue vivo en D4»."
+        }
+      ],
+      "lockedLabel": "El guarda del lagar · «¿Ya cayó el Sapo Rey?»"
+    }
+  ],
+  "treasures": [],
+  "traps": [],
+  "exits": [
+    {
+      "id": "town-gate",
+      "kind": "exit",
+      "x": 9,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Salir a D2 · Viñedos del Rey",
+      "lockedLabel": "Las puertas están cerradas",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-d2",
+            "entryExitId": "d2-to-town"
+          }
+        ],
+        "message": "La compañía sale de Viñarrey."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "vinarrey-arrival",
+    "title": "Viñarrey",
+    "body": "Lagares vacíos y barricas apiladas. El vino del Rey se agria esperando a su dueño.",
+    "sigil": "D2"
+  },
+  "introMessage": "Viñarrey. Lagares vacíos y barricas apiladas. El vino del Rey se agria esperando a su dueño."
+}

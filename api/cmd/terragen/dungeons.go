@@ -164,14 +164,18 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 			"journal", journal(d.id+"-elite", capFirst(x.keyName), x.eliteLine, "†")),
 	)))
 	bossFlag := slug + "BossDefeated"
-	enemies = append(enemies, foe(d.id, 9, level, d.boss.visual, d.boss.name, bossPos, true, obj(
+	bossEnemy := foe(d.id, 9, level, d.boss.visual, d.boss.name, bossPos, true, obj(
 		"maxHp", d.boss.hp, "defeatedFlag", bossFlag,
 		"ai", obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2),
 		"blockingMessage", capFirst(d.boss.name)+" cierra el paso.",
 		"onDefeat", obj("message", "{attacker} derriba a "+d.boss.name+" con {attack}.",
 			"effects", A{obj("type", "set", "key", bossFlag, "value", true), obj("type", "grant-gold", "amount", 10+level*4), bossDrop},
 			"journal", obj("id", d.id+"-boss", "title", "Cae "+d.boss.name, "body", bossDrop.Str("description"), "sigil", "†")),
-	)))
+	))
+	if d.boss.scale > 0 {
+		bossEnemy.Set("visualScale", d.boss.scale)
+	}
+	enemies = append(enemies, bossEnemy)
 
 	chestFlag := slug + "ChestOpened"
 	loot := tier(level+1) + "-" + []string{"sword", "axe", "mace", "spear"}[saltOf(d.id)%4]
