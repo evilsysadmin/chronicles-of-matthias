@@ -215,7 +215,7 @@
   color: #8d7a61;
 }
 .chronicles-statusbar span:first-child { padding-left: 2px; }
-.chronicles-statusbar span:last-child { border-right: 0; }
+.chronicles-statusbar span:last-of-type { border-right: 0; }
 .chronicles-statusbar b {
   font-size: .72rem;
   letter-spacing: .02em;

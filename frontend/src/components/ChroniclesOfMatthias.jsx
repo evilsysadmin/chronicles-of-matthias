@@ -1294,6 +1294,22 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
               </button>
             </span>
+            {/* Desktop: a plain way into the expedition Crónica, the same book J
+                opens. Phones reach it from the objective box instead. */}
+            <div className="chronicles-chronicle-slot">
+              <button type="button" className="chronicles-chronicle-trigger" data-chronicles-journal-trigger
+                aria-haspopup="dialog" aria-expanded={journalOpen}
+                title="Crónica de expedición: encargos y folios (J)"
+                onClick={() => {
+                  clearTouchHold();
+                  setAutomapOpen(false);
+                  setMenuOpen(false);
+                  setChronicleModalOpen(false);
+                  setJournalOpen((open) => !open);
+                }}>
+                <i aria-hidden="true">📜</i> CRÓNICA <kbd>J</kbd>
+              </button>
+            </div>
             {needsRotation && (
               <button
                 type="button"
@@ -1335,6 +1351,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 {saveNotice && <small role="status">{saveNotice}</small>}
                 <div className="chronicles-game-menu__actions">
                   <button type="button" className="chronicles-game-menu__continue" onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); }}>Continuar</button>
+                  <button type="button" data-chronicles-menu-journal onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}>Crónica · J</button>
                   <button type="button" onClick={() => void persistCheckpoint(stateRef.current, 'manual')} disabled={saveBusy}>
                     {saveBusy ? 'Guardando…' : 'Guardar partida'}
                   </button>

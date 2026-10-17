@@ -16,6 +16,15 @@ describe('Chronicles admin tools', () => {
     expect(ids).toContain('molinoviejo');
   });
 
+  it('never offers two destinations with the same label', () => {
+    const groups = chroniclesAdminDestinations();
+    const labels = groups.flatMap((group) => group.maps.map((map) => map.label));
+    expect(new Set(labels).size).toBe(labels.length);
+    const towns = Object.fromEntries(groups[0].maps.map((map) => [map.id, map.label]));
+    expect(towns['swordhaven-first-book']).toBe('Swordhaven (campaña)');
+    expect(towns['swordhaven-square']).toBe('Swordhaven (plaza de Nuevo juego)');
+  });
+
   it('travels anywhere and marks the jump for the next checkpoint only in memory', () => {
     const state = admin(createChroniclesState('swordhaven-first-book'), 'travel', { mapId: 'templo-corona-trono' });
     expect(state.mapId).toBe('templo-corona-trono');
