@@ -191,6 +191,16 @@ function BootstrapFailure({ error, onRetry, onMenu, onExit }) {
   );
 }
 
+export function chroniclesSaveListErrorMessage(error) {
+  const status = Number(error?.status) || 0;
+  if (status === 401) {
+    return 'Tu sesión ha caducado: sal y vuelve a entrar para ver tus partidas del servidor. Mientras, se muestran los guardados locales.';
+  }
+  const reference = typeof error?.requestId === 'string' && error.requestId ? ` · ref. ${error.requestId.slice(0, 12)}` : '';
+  const cause = status ? `error ${status}${reference}` : `sin respuesta${reference}`;
+  return `No se pudo consultar el servidor (${cause}). Se muestran los guardados locales; pulsa «Reintentar sincronización».`;
+}
+
 export default function ChroniclesOfMatthias({ onExit }) {
   const hostRef = useRef(null);
   const gameRootRef = useRef(null);
@@ -312,9 +322,12 @@ export default function ChroniclesOfMatthias({ onExit }) {
         if (!active || controller.signal.aborted) return;
         setSaveInventory(chroniclesMergeRemoteSavedRuns(FIRST_PERSON_RUN_SCOPE, rows, { expectedOwner: ownerAtRequest }));
       })
-      .catch(() => {
+      .catch((error) => {
         if (!active || controller.signal.aborted) return;
-        setSaveMenuError('No se pudo consultar el servidor. Se muestran los guardados locales; inténtalo de nuevo cuando vuelva la conexión.');
+        // Say what failed: an expired session, a server error with its
+        // reference (the request id the API logs) or no answer at all.
+        console.warn('[chronicles] no se pudo listar las partidas del servidor', error);
+        setSaveMenuError(chroniclesSaveListErrorMessage(error));
         setSaveInventory(chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE));
       })
       .finally(() => {
