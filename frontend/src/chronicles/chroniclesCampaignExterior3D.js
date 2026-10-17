@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import {
   addSwordhavenClouds, buildSwordhavenFountain, buildSwordhavenHouse, buildSwordhavenTree, createSwordhavenMaterials,
   createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture,
@@ -441,64 +442,10 @@ const TOWN_HOME_STYLES = Object.freeze([
   Object.freeze({ roof: 0x8b5b3a, emblem: 'home' }),
 ]);
 
-// Wide blocks face north/south, tall blocks east/west — always toward the
-// side whose door cell is walkable and nearer the town centre.
-export function settlementHouseFacing(block, grid, center) {
-  const { minX, maxX, minY, maxY } = block;
-  const cx = Math.round(block.cx);
-  const cy = Math.round(block.cy);
-  const open = ({ x, y }) => grid[y]?.[x] === '.';
-  const options = (maxX - minX) >= (maxY - minY)
-    ? [
-      { yaw: 0, door: { x: cx, y: maxY + 1 }, toward: center.y >= block.cy },
-      { yaw: Math.PI, door: { x: cx, y: minY - 1 }, toward: center.y < block.cy },
-    ]
-    : [
-      { yaw: Math.PI / 2, door: { x: maxX + 1, y: cy }, toward: center.x >= block.cx },
-      { yaw: -Math.PI / 2, door: { x: minX - 1, y: cy }, toward: center.x < block.cx },
-    ];
-  return options.find(o => o.toward && open(o.door)) || options.find(o => open(o.door)) || options[0];
-}
-
 function TOWN_TREE_CELLS(width, height) {
   return [[-1, -1], [width, -1], [-1, height], [width, height],
     [-1, Math.floor(height / 2)], [width, Math.floor(height / 2)],
     [Math.floor(width / 4), -1], [Math.floor(width * 3 / 4), -1]];
-}
-
-// Solid interior '#' blocks of at least 2×2 cells become houses (a block may
-// back onto the town wall; the wall itself is never part of a block),
-// ordered north-west → south-east for a stable style mapping.
-export function settlementHouseBlocks(grid, width, height) {
-  const seen = new Set();
-  const blocks = [];
-  for (let y = 1; y < height - 1; y += 1) {
-    for (let x = 1; x < width - 1; x += 1) {
-      if (grid[y]?.[x] !== '#' || seen.has(x + ',' + y)) continue;
-      const cells = [];
-      const queue = [{ x, y }];
-      seen.add(x + ',' + y);
-      while (queue.length) {
-        const cell = queue.pop();
-        cells.push(cell);
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const nx = cell.x + dx;
-          const ny = cell.y + dy;
-          const key = nx + ',' + ny;
-          const interior = nx > 0 && ny > 0 && nx < width - 1 && ny < height - 1;
-          if (interior && grid[ny]?.[nx] === '#' && !seen.has(key)) { seen.add(key); queue.push({ x: nx, y: ny }); }
-        }
-      }
-      const xs = cells.map(c => c.x);
-      const ys = cells.map(c => c.y);
-      const minX = Math.min(...xs); const maxX = Math.max(...xs);
-      const minY = Math.min(...ys); const maxY = Math.max(...ys);
-      const solid = cells.length === (maxX - minX + 1) * (maxY - minY + 1);
-      if (!solid || maxX - minX < 1 || maxY - minY < 1) continue;
-      blocks.push({ cells, minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 });
-    }
-  }
-  return blocks;
 }
 
 // Deterministic per-cell jitter: the same map always grows the same forest.
@@ -651,3 +598,5 @@ function buildMourner(root) {
   glow.position.set(0.45, 0.9, 0.3);
   root.add(body, shoulders, head, hood, arm, lantern, glow);
 }
+
+export { settlementHouseBlocks, settlementHouseFacing };

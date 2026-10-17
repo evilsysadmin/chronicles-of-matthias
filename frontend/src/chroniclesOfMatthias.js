@@ -7,6 +7,7 @@ import {
   chroniclesMapTileAt,
   chroniclesRuntimeEntryMapId,
 } from './chronicles/chroniclesMapCatalog.js';
+import { settlementHouseBlocks, settlementHouseFacing } from './chronicles/chroniclesSettlementLayout.js';
 import {
   chroniclesApplyContentAction,
   chroniclesApplyContentEffects,
@@ -637,26 +638,82 @@ function stepsWord(count) {
   return count === 1 ? 'un paso' : `${count} pasos`;
 }
 
-function bumpIntoBuilding(state, front) {
-  const map = chroniclesMapForState(state);
-  const doors = buildingDoorsFor(map, front.x, front.y);
-  if (!doors.length) return null;
-  const here = doors.find((entry) => entry.x === state.x && entry.y === state.y);
-  if (here) {
-    const contextual = chroniclesContextualContentAction(state);
-    if (contextual) return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
-    return withMessage(state, `${buildingName(here)}: no hay nadie que te atienda ahora mismo.`);
+// The town house (as the renderer draws it) whose footprint contains `cell`,
+// with its single door cell and the building content standing at that door.
+const renderedTownHouses = new WeakMap();
+function renderedTownHouseAt(map, cell) {
+  if (!map?.grid) return null;
+  if (!renderedTownHouses.has(map)) {
+    const grid = map.grid;
+    const width = Math.max(...grid.map((row) => row.length));
+    const center = { x: (width - 1) / 2, y: (grid.length - 1) / 2 };
+    renderedTownHouses.set(map, settlementHouseBlocks(grid, width, grid.length).map((block) => {
+      const { door } = settlementHouseFacing(block, grid, center);
+      const entries = (map.interactables || []).filter((entry) => entry.x === door.x && entry.y === door.y
+        && String(entry.visualType || '').startsWith('building-'));
+      return { block, door, entries };
+    }).filter((house) => house.entries.length));
   }
-  const door = doors[0];
+  return renderedTownHouses.get(map).find(({ block }) => block.cells.some(({ x, y }) => x === cell.x && y === cell.y)) || null;
+}
+
+// Standing anywhere along the facade that carries the door (and facing in)
+// counts as walking through that door, as in MM3: the counter opens.
+function onDoorFacade(state, { block, door }) {
+  const horizontal = door.y === block.minY - 1 || door.y === block.maxY + 1;
+  return horizontal
+    ? state.y === door.y && state.x >= block.minX && state.x <= block.maxX
+    : state.x === door.x && state.y >= block.minY && state.y <= block.maxY;
+}
+
+function enterBuildingAt(state, entryCell, label) {
+  const atDoor = { ...state, x: entryCell.x, y: entryCell.y };
+  if (chroniclesContextualContentAction(atDoor)) {
+    return chroniclesArriveOnTransition(atDoor, chroniclesAdvanceLostKingIntro(atDoor, resolveContextualContentAction(atDoor)));
+  }
+  return withMessage(state, `${label}: no hay nadie que te atienda ahora mismo.`);
+}
+
+function pointToDoor(state, door, name) {
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   const dx = door.x - state.x;
   const dy = door.y - state.y;
   const lateral = dx * -direction.dy + dy * direction.dx;
   const ahead = dx * direction.dx + dy * direction.dy;
   if (lateral !== 0 && ahead === 0) {
-    return withMessage(state, `La puerta de ${buildingName(door)} está ${stepsWord(Math.abs(lateral))} a tu ${lateral > 0 ? 'derecha' : 'izquierda'}.`);
+    return withMessage(state, `La puerta de ${name} está ${stepsWord(Math.abs(lateral))} a tu ${lateral > 0 ? 'derecha' : 'izquierda'}.`);
   }
-  return withMessage(state, `Es la pared de ${buildingName(door)}. La puerta da a otra calle: rodea el edificio.`);
+  return withMessage(state, `Es la pared de ${name}. La puerta da a otra calle: rodea el edificio.`);
+}
+
+// The state standing on the door of the town house the party is walking
+// into from its door facade (null otherwise). The UI uses it to open an
+// NPC audience exactly as if the party were at the door.
+export function chroniclesBuildingEntryState(state) {
+  if (!state || state.phase !== 'explore' || state.initiative) return null;
+  const direction = CHRONICLES_DIRECTIONS[state.direction];
+  if (!direction) return null;
+  const front = { x: state.x + direction.dx, y: state.y + direction.dy };
+  const house = renderedTownHouseAt(chroniclesMapForState(state), front);
+  if (!house || !onDoorFacade(state, house)) return null;
+  return { ...state, x: house.door.x, y: house.door.y };
+}
+
+function bumpIntoBuilding(state, front) {
+  const map = chroniclesMapForState(state);
+  // Towns drawn as houses: the door is where the renderer puts it.
+  const house = renderedTownHouseAt(map, front);
+  if (house) {
+    const name = buildingName(house.entries[0]);
+    if (onDoorFacade(state, house)) return enterBuildingAt(state, house.door, name);
+    return pointToDoor(state, house.door, name);
+  }
+  // Other authored maps: any building entry touching the bumped block.
+  const doors = buildingDoorsFor(map, front.x, front.y);
+  if (!doors.length) return null;
+  const here = doors.find((entry) => entry.x === state.x && entry.y === state.y);
+  if (here) return enterBuildingAt(state, here, buildingName(here));
+  return pointToDoor(state, doors[0], buildingName(doors[0]));
 }
 
 function blockingEnemyMessage(enemy) {
