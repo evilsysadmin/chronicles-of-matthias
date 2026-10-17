@@ -4,7 +4,8 @@
 // Tactics no tiene botón propio: se abre en /#tactics.
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
-import { isLoggedIn, watchSessionIdentity } from '../auth.js';
+import { fetchMeStatus, isLoggedIn, logout, watchSessionIdentity } from '../auth.js';
+import { onSessionExpired } from '../sessionExpiry.js';
 import {
   releaseChroniclesLandscape,
   requestChroniclesLandscapeOnEntry,
@@ -27,6 +28,25 @@ export default function App() {
   // Sin castillo al que volver: salir del juego reinicia el libro de expediciones.
   const [mountKey, setMountKey] = useState(0);
 
+  // A stored token is not proof of a session: the API may have rejected it
+  // (expired, revoked, issued by another server). Check once on entry and
+  // drop to the login screen whenever any request answers 401.
+  const [expiredNotice, setExpiredNotice] = useState(null);
+  useEffect(() => {
+    const expire = () => {
+      logout();
+      setExpiredNotice('Tu sesión ha caducado. Vuelve a entrar para seguir tu expedición.');
+      setLoggedIn(false);
+    };
+    const stop = onSessionExpired(expire);
+    if (isLoggedIn()) {
+      void fetchMeStatus().then((result) => {
+        if (result.status === 'unauthorized' && isLoggedIn()) expire();
+      });
+    }
+    return stop;
+  }, []);
+
   useEffect(() => watchSessionIdentity?.(() => setLoggedIn(isLoggedIn())), []);
   useEffect(() => {
     const onHash = () => setMode(currentMode());
@@ -37,7 +57,15 @@ export default function App() {
     if (loggedIn) void requestChroniclesLandscapeOnEntry();
   }, [loggedIn]);
 
-  if (!loggedIn) return <LoginScreen onLoggedIn={() => setLoggedIn(true)} />;
+  if (!loggedIn) {
+    return (
+      <LoginScreen
+        key={expiredNotice || 'login'}
+        initialNotice={expiredNotice}
+        onLoggedIn={() => { setExpiredNotice(null); setLoggedIn(true); }}
+      />
+    );
+  }
 
   const exit = () => {
     void releaseChroniclesLandscape();

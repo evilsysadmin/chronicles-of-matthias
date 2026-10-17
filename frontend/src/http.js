@@ -1,6 +1,7 @@
 import { withRequestId, requestErrorMessage } from './requestId.js';
 import { DEFAULT_REQUEST_TIMEOUT_MS } from './requestTimeout.js';
 import { userFacingError } from './userFacingError.js';
+import { notifySessionExpired } from './sessionExpiry.js';
 
 export { DEFAULT_REQUEST_TIMEOUT_MS } from './requestTimeout.js';
 
@@ -67,7 +68,11 @@ function hasAuthorizationHeader(headers) {
   return Object.keys(headers).some((key) => String(key).toLowerCase() === 'authorization');
 }
 
-async function parseJsonResponse(response, { authenticatedRequest = false } = {}) {
+// These answer 401 for a wrong *current password* while the session itself
+// is fine; they must not log the player out.
+const PASSWORD_CHECK_RE = /\/auth\/(?:password|email|delete-account)(?:[?#]|$)/;
+
+async function parseJsonResponse(response, { authenticatedRequest = false, url = '' } = {}) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const { message, requestId } = requestErrorMessage(response, body);
@@ -78,6 +83,7 @@ async function parseJsonResponse(response, { authenticatedRequest = false } = {}
     error.technicalMessage = message;
     error.authenticatedRequest = authenticatedRequest;
     error.message = userFacingError(error, message);
+    if (response.status === 401 && authenticatedRequest && !PASSWORD_CHECK_RE.test(String(url))) notifySessionExpired();
     throw error;
   }
   return body;
@@ -85,5 +91,5 @@ async function parseJsonResponse(response, { authenticatedRequest = false } = {}
 
 export async function requestJson(url, options = {}) {
   const authenticatedRequest = hasAuthorizationHeader(options?.headers);
-  return parseJsonResponse(await request(url, options), { authenticatedRequest });
+  return parseJsonResponse(await request(url, options), { authenticatedRequest, url });
 }
