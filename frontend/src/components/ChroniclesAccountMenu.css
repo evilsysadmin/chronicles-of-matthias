@@ -1,0 +1,68 @@
+.chronicles-account {
+  position: fixed;
+  z-index: 10001; /* just above the expedition book (10000) */
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.chronicles-account__cog {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(214, 170, 103, .55);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(74, 58, 36, .95), rgba(20, 16, 11, .95));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 236, 200, .12);
+  color: #e7c98f;
+  font-size: 1.55rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .2s ease, border-color .2s ease;
+}
+.chronicles-account__cog:hover { transform: rotate(30deg); border-color: #e4bd7a; }
+.chronicles-account__cog:focus-visible { outline: 3px solid #e4bd7a; outline-offset: 3px; }
+
+.chronicles-account__popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(300px, calc(100vw - 28px));
+  padding: 8px;
+  border: 1px solid rgba(214, 170, 103, .45);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(36, 29, 21, .98), rgba(15, 12, 9, .98));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, .55);
+  color: #ead8b8;
+}
+
+.chronicles-account__who,
+.chronicles-account__popover button {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.chronicles-account__who { border-bottom: 1px solid rgba(214, 170, 103, .2); border-radius: 10px 10px 0 0; }
+.chronicles-account__popover button { cursor: pointer; min-height: 48px; }
+.chronicles-account__popover button:hover,
+.chronicles-account__popover button:focus-visible { background: rgba(214, 170, 103, .12); outline: none; }
+.chronicles-account__popover button:disabled { opacity: .6; cursor: progress; }
+.chronicles-account__who > span:first-child,
+.chronicles-account__popover button > span:first-child { font-size: 1.25rem; text-align: center; color: #e7c98f; }
+.chronicles-account__who > span:last-child,
+.chronicles-account__popover button > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.chronicles-account__popover b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chronicles-account__popover small { color: #a8957a; font-size: .78rem; }
+.chronicles-account__separator { height: 1px; margin: 6px 4px; background: rgba(214, 170, 103, .2); }
+.chronicles-account__logout b { color: #f0b49a; }
