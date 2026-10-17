@@ -99,6 +99,7 @@ import {
 } from '../chronicles/chroniclesAutomap.js';
 import { useEscapeToClose } from '../useEscapeToClose.js';
 import ChroniclesAutomap from './ChroniclesAutomap.jsx';
+import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
@@ -1145,6 +1146,8 @@ export default function ChroniclesOfMatthias({ onExit }) {
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
+  // Where the objective points, and the next exit on the way there.
+  const routeHint = chroniclesRouteHint(state, chroniclesObjectiveDestination(objective));
   const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const selectedCondition = chroniclesPartyCondition(selectedMember);
@@ -1247,7 +1250,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
             <span>{locationHud.kind} <b>{locationHud.value}</b></span>
             <span>RUMBO <b>{direction.label} · {chroniclesMapCoordinatesLabel(chroniclesMapForState(state), state)}</b></span>
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
-            <span>OBJETIVO <b>{objective}</b></span>
+            <span>OBJETIVO <b>{objective}</b>{routeHint && <small className="chronicles-route-hint" data-chronicles-route-hint>→ {routeHint.text}</small>}</span>
             {needsRotation && (
               <button
                 type="button"
@@ -1419,6 +1422,7 @@ export default function ChroniclesOfMatthias({ onExit }) {
           {/* Desktop puts these in the MM3 panel; mobile floats them over the view. */}
           <ChroniclesMinimap
             state={state}
+            target={routeHint?.position || null}
             visitedCells={automapVisitedByMap[state.mapId] || []}
             hidden={automapOpen || expeditionOver}
             onExpand={() => {
@@ -1599,6 +1603,9 @@ export default function ChroniclesOfMatthias({ onExit }) {
       <ChroniclesAutomap
         open={automapOpen}
         state={state}
+        target={routeHint?.position || null}
+        objective={objective}
+        visitedMapIds={Object.keys(automapVisitedByMap)}
         visitedCells={automapVisitedByMap[state.mapId] || []}
         onClose={() => setAutomapOpen(false)}
       />

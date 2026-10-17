@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { TERRA_COLUMNS, chroniclesWorldMapModel } from '../chronicles/chroniclesWorldMap.js';
 import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
@@ -53,8 +54,72 @@ function MapMarker({ marker }) {
   );
 }
 
-export default function ChroniclesAutomap({ open, state, visitedCells, onClose }) {
+const BIOME_LABELS = Object.freeze({
+  plains: 'llanura', hills: 'colinas', marsh: 'marisma', coast: 'costa', snow: 'nieve', ash: 'ceniza', forest: 'bosque',
+});
+
+// Terra, 6×6: seen areas by name, towns always (travellers know them),
+// dungeons once their area has been walked, the party and the objective.
+function WorldView({ model }) {
+  return (
+    <div className="chronicles-worldmap" data-chronicles-worldmap="open">
+      <div className="chronicles-worldmap__grid" role="grid" aria-label="Mapa de Terra">
+        <span className="chronicles-worldmap__corner" aria-hidden="true" />
+        {TERRA_COLUMNS.map((column) => <span key={column} className="chronicles-worldmap__axis" aria-hidden="true">{column}</span>)}
+        {model.cells.map((cell, index) => (
+          <FragmentRow key={cell.code} index={index} row={cell.code.slice(1)}>
+            <div
+              role="gridcell"
+              className={[
+                'chronicles-worldmap__cell',
+                cell.visited ? 'is-visited' : 'is-unknown',
+                cell.here ? 'is-here' : '',
+                cell.target ? 'is-target' : '',
+                cell.biome ? `is-${cell.biome}` : '',
+              ].join(' ')}
+              data-chronicles-world-cell={cell.code}
+              aria-label={[
+                cell.code, cell.title, cell.here && 'estás aquí', cell.target && 'objetivo',
+                ...cell.towns, ...cell.dungeons,
+              ].filter(Boolean).join(' · ')}
+            >
+              <b>{cell.code}</b>
+              {cell.title && <small>{cell.title}</small>}
+              {!cell.title && cell.biome && <small className="is-faint">{BIOME_LABELS[cell.biome] || ''}</small>}
+              <span className="chronicles-worldmap__icons" aria-hidden="true">
+                {cell.towns.length > 0 && <i className="is-town" title={cell.towns.join(', ')}>⌂</i>}
+                {cell.dungeons.length > 0 && <i className="is-dungeon" title={cell.dungeons.join(', ')}>↓</i>}
+                {cell.target && <i className="is-target">★</i>}
+                {cell.here && <i className="is-here">▲</i>}
+              </span>
+            </div>
+          </FragmentRow>
+        ))}
+      </div>
+      {model.destination && (
+        <p className="chronicles-worldmap__target">★ Objetivo: <b>{model.destination.title}</b> ({model.destination.code})</p>
+      )}
+    </div>
+  );
+}
+
+// Each Terra row starts with its number on the axis.
+function FragmentRow({ index, row, children }) {
+  return (
+    <>
+      {index % 6 === 0 && <span className="chronicles-worldmap__axis" aria-hidden="true">{row}</span>}
+      {children}
+    </>
+  );
+}
+
+export default function ChroniclesAutomap({ open, state, visitedCells, onClose, target = null, visitedMapIds = [], objective = '' }) {
   const closeRef = useRef(null);
+  const [view, setView] = useState('area');
+  const worldModel = useMemo(
+    () => (view === 'world' ? chroniclesWorldMapModel({ state, visitedMapIds, objective }) : null),
+    [view, state, visitedMapIds, objective],
+  );
   const map = chroniclesMapForState(state);
   const visited = useMemo(() => {
     const next = new Set(Array.isArray(visitedCells) ? visitedCells : []);
@@ -98,10 +163,17 @@ export default function ChroniclesAutomap({ open, state, visitedCells, onClose }
             <span data-chronicles-coordinates>AUTOMAPA · {[map.areaCode, chroniclesMapCoordinatesLabel(map, state)].filter(Boolean).join(' · ') || 'EXPLORACIÓN'}</span>
             <strong>{map.title || 'Chronicles of Matthias'}</strong>
           </div>
+          <div className="chronicles-automap__tabs" role="tablist" aria-label="Vista del mapa">
+            <button type="button" role="tab" aria-selected={view === 'area'} className={view === 'area' ? 'is-active' : ''}
+              onClick={() => setView('area')}>Zona</button>
+            <button type="button" role="tab" aria-selected={view === 'world'} className={view === 'world' ? 'is-active' : ''}
+              data-chronicles-world-tab onClick={() => setView('world')}>Terra</button>
+          </div>
           <button ref={closeRef} type="button" onClick={onClose} aria-label="Cerrar automapa">×</button>
         </header>
 
-        <div className="chronicles-automap__canvas">
+        {view === 'world' && worldModel && <WorldView model={worldModel} />}
+        <div className="chronicles-automap__canvas" hidden={view === 'world'}>
           <svg
             viewBox={`${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`}
             role="img"
@@ -139,6 +211,12 @@ export default function ChroniclesAutomap({ open, state, visitedCells, onClose }
                 marker={marker}
               />
             ))}
+            {target && (
+              <g className="chronicles-automap__target" data-chronicles-route-target aria-label="Siguiente paso hacia el objetivo">
+                <circle cx={target.x + 0.5} cy={target.y + 0.5} r="0.46" />
+                <text x={target.x + 0.5} y={target.y + 0.55} textAnchor="middle" dominantBaseline="middle">★</text>
+              </g>
+            )}
             <g
               className="chronicles-automap__party-marker"
               data-chronicles-map-facing={state.direction}
@@ -155,7 +233,7 @@ export default function ChroniclesAutomap({ open, state, visitedCells, onClose }
           <span><i className="is-party" aria-hidden="true">▲</i> grupo</span>
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
           <span>F forja · A armaduras · G gremio · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span>Solo lugares descubiertos · <kbd>M</kbd> cerrar</span>
+          <span><i className="is-target" aria-hidden="true">★</i> camino al objetivo · Solo lugares descubiertos · <kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>

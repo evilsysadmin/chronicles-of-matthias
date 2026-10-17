@@ -25,4 +25,16 @@ describe('ChroniclesMinimap', () => {
       <ChroniclesMinimap state={state} visitedCells={[]} hidden />,
     )).toBe('');
   });
+
+  it('marks the next step to the objective, or points to it from the rim', () => {
+    const state = createChroniclesState('crypt-eight-squares');
+    const near = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} visitedCells={[]} target={{ x: state.x + 1, y: state.y }} />,
+    );
+    expect(near).toContain('data-chronicles-route-target="in-view"');
+    const far = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} visitedCells={[]} target={{ x: state.x + 9, y: state.y }} />,
+    );
+    expect(far).toContain('data-chronicles-route-target="edge"');
+  });
 });
