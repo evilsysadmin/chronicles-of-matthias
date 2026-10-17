@@ -144,3 +144,8 @@ function playCue(cue) {
 export function playChroniclesActionSound(previous, next, action) {
   playCue(chroniclesActionAudioCue(previous, next, action));
 }
+
+// A short sample at the chosen SFX level, so moving the slider is audible.
+export function playChroniclesPreviewSound() {
+  playCue('hit');
+}
