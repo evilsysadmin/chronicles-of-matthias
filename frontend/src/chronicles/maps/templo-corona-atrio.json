@@ -39,6 +39,8 @@
       "hpKey": "temploCoronaAtrioAcolyteWestHp",
       "maxHp": 16,
       "retaliation": 2,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -65,6 +67,8 @@
       "hpKey": "temploCoronaAtrioAcolyteEastHp",
       "maxHp": 16,
       "retaliation": 2,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -91,6 +95,8 @@
       "hpKey": "temploCoronaAtrioHoundHp",
       "maxHp": 15,
       "retaliation": 2,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -117,6 +123,8 @@
       "hpKey": "temploCoronaAtrioWispHp",
       "maxHp": 12,
       "retaliation": 3,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "hold",
@@ -140,8 +148,10 @@
       "x": 9,
       "y": 3,
       "hpKey": "temploCoronaAtrioHeraldHp",
-      "maxHp": 30,
-      "retaliation": 3,
+      "maxHp": 36,
+      "retaliation": 4,
+      "toHit": 9,
+      "armorClass": 8,
       "activation": "always",
       "ai": {
         "movement": "hold",

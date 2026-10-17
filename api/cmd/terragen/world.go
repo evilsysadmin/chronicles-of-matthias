@@ -270,7 +270,9 @@ func tier(level int) string {
 	return "steel"
 }
 
-func adv(objective string) *O { return mainQuest().With("type", "advance-quest").reorderFirst("type").With("objective", objective) }
+func adv(objective string) *O {
+	return mainQuest().With("type", "advance-quest").reorderFirst("type").With("objective", objective)
+}
 
 // reorderFirst moves key k to the front (to mirror {"type": ..., **MAIN}).
 func (o *O) reorderFirst(k string) *O {
@@ -284,7 +286,9 @@ func (o *O) reorderFirst(k string) *O {
 	return o
 }
 
-func xp(award string, amount int) *O { return obj("type", "award-xp", "awardId", award, "amount", amount) }
+func xp(award string, amount int) *O {
+	return obj("type", "award-xp", "awardId", award, "amount", amount)
+}
 
 func capFirst(s string) string {
 	r, size := utf8.DecodeRuneInString(s)
@@ -374,19 +378,40 @@ func areaGrid(code, biome string, keep []point) []string {
 	return rows
 }
 
-func foe(areaID string, index, level int, visual, name string, pos point, isBoss bool, extra *O) *O {
-	bossHP, bossRet := 0, 0
-	if isBoss {
-		bossHP, bossRet = 6, 1
+// combatRating is a creature's MM3 to-hit and armour class for its danger
+// level. Without it every creature swung and parried like a level-1 rat, so
+// armour bought in later towns made the company all but untouchable (the
+// campaign bot saw 15–25% enemy hit rates from the third act on).
+func combatRating(level int) (toHit, armorClass int) {
+	return level + 1, level
+}
+
+// rating is one side of a boss-grade rating for an area: toHit when hit is
+// 1, armour class when 0.
+func rating(code string, hit int) int {
+	toHit, armorClass := combatRating(danger(code) + 2)
+	if hit == 1 {
+		return toHit
 	}
+	return armorClass
+}
+
+func foe(areaID string, index, level int, visual, name string, pos point, isBoss bool, extra *O) *O {
+	bossHP, bossRet, bossRating := 0, 0, 0
+	if isBoss {
+		bossHP, bossRet, bossRating = 8+2*level, 2, 1
+	}
+	toHit, armorClass := combatRating(level + bossRating)
 	enemy := obj(
 		"id", fmt.Sprintf("%s-foe-%d", areaID, index),
 		"visualType", visual,
 		"name", name,
 		"x", pos.x, "y", pos.y,
 		"hpKey", fmt.Sprintf("%sFoe%dHp", camelFlag(areaID), index),
-		"maxHp", 4+level*2+bossHP,
-		"retaliation", 1+level/3+bossRet,
+		"maxHp", 6+level*3+bossHP,
+		"retaliation", 1+level/2+bossRet,
+		"toHit", toHit,
+		"armorClass", armorClass,
 		"optional", true,
 		"activation", "always",
 		"ai", aiFor(visual),
@@ -701,10 +726,10 @@ func buildTown(code string, people []*O) *O {
 			"label", "Coracería de "+t.name, "shop", obj("stock", strs(stock[1])),
 			"action", obj("effects", A{}, "message", "El forjador golpea una coraza al rojo: «Hecha a mano. Como mis precios».")),
 		obj("id", prefix+"-temple", "kind", "service", "x", 14, "y", 6, "visualType", "building-temple",
-			"label", "Templo · sanar a la compañía · 4 oro", "lockedLabel", "Templo · necesitas 4 oro",
-			"requirements", A{obj("itemId", "crown-gold", "quantity", 4, "message", "El templo pide una ofrenda de cuatro monedas.")},
-			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 4), obj("type", "heal-party", "amount", 20)},
-				"message", "Los sacerdotes rezan sobre la compañía. Las heridas se cierran.")),
+			"label", "Templo · sanar y alzar a los caídos · 10 oro", "lockedLabel", "Templo · necesitas 10 oro",
+			"requirements", A{obj("itemId", "crown-gold", "quantity", 10, "message", "El templo pide una ofrenda de diez monedas.")},
+			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 10), obj("type", "revive-party"), obj("type", "heal-party", "amount", 20)},
+				"message", "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar.")),
 	}
 	if g, ok := guilds[code]; ok {
 		interactables = append(interactables, obj(

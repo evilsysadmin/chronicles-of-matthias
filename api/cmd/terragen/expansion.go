@@ -146,7 +146,7 @@ func expansionStory(s *storyOut, hunt huntFn, errand errandFn) {
 	)
 	s.area("B2").enemies = append(s.area("B2").enemies, obj(
 		"id", "b2-wind-matron", "visualType", "harpy", "visualScale", 1.3, "name", "la Señora del Viento", "hpKey", "b2WindMatronHp",
-		"maxHp", 24, "retaliation", 3, "optional", true, "activation", "always", "defeatedFlag", "b2WindMatronGone",
+		"maxHp", 24, "retaliation", 3, "toHit", rating("B2", 1), "armorClass", rating("B2", 0), "optional", true, "activation", "always", "defeatedFlag", "b2WindMatronGone",
 		"ai", obj("movement", "hold", "attackReach", 1, "engagedMovement", "knight-chase", "engageRange", 1),
 		"blockingMessage", "La Señora del Viento abre las alas: «¿Grano o acero, forasteros?»",
 		"onDefeat", obj("message", "{attacker} derriba a la Señora del Viento con {attack}.",
@@ -196,7 +196,7 @@ func expansionStory(s *storyOut, hunt huntFn, errand errandFn) {
 	)
 	s.area("E2").enemies = append(s.area("E2").enemies, obj(
 		"id", "e2-grum", "visualType", "troll", "visualScale", 1.15, "name", "Grum, el trol herido", "hpKey", "e2GrumHp",
-		"maxHp", 30, "retaliation", 4, "optional", true, "activation", "always", "defeatedFlag", "e2GrumGone",
+		"maxHp", 30, "retaliation", 4, "toHit", rating("E2", 1), "armorClass", rating("E2", 0), "optional", true, "activation", "always", "defeatedFlag", "e2GrumGone",
 		"ai", obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 1),
 		"blockingMessage", "Grum gruñe de dolor y no se aparta de la cueva.",
 		"onDefeat", obj("message", "{attacker} derriba a Grum con {attack}.",

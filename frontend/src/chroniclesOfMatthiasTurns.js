@@ -49,6 +49,10 @@ function occupiedByEnemy(state, position, ignoredEnemyId) {
 function canOccupy(state, enemy, position) {
   if (!walkable(state, position)) return false;
   if (chroniclesPartyCellOccupied(state, position)) return false;
+  // The camera's cell is the company's even when the combat formation had
+  // to leave it empty (a trap or a relic underfoot): a creature standing
+  // inside the viewer cannot be seen or struck.
+  if (Number(position.x) === Number(state.x) && Number(position.y) === Number(state.y)) return false;
   return !occupiedByEnemy(state, position, enemy.id);
 }
 
@@ -171,10 +175,19 @@ function chooseCardinalStep(state, enemy, from) {
 
 function chooseKnightStep(state, enemy, from) {
   const targets = partyTargetPositions(state);
-  return KNIGHT_STEPS
+  const best = KNIGHT_STEPS
     .map((step, index) => ({ x: from.x + step.dx, y: from.y + step.dy, index }))
     .filter((position) => canOccupy(state, enemy, position))
     .sort((left, right) => candidateScore(left, targets, left.index) - candidateScore(right, targets, right.index))[0] || null;
+  // In tight corridors no jump may land closer: the creature used to hop
+  // back and forth forever, never in reach and never reachable. Then it
+  // crawls a plain step toward the company instead.
+  // The chess knight of the scavenger crypt is a rules piece: it only jumps.
+  if (enemy.visualType === 'scavenger-knight') return best;
+  if (!best || nearestPartyDistance(state, best) >= nearestPartyDistance(state, from)) {
+    return chooseCardinalStep(state, enemy, from) || best;
+  }
+  return best;
 }
 
 function choosePatrolRouteStep(state, enemy, from) {

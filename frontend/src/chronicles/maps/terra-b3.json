@@ -38,8 +38,10 @@
       "x": 7,
       "y": 3,
       "hpKey": "terra_b3Foe0Hp",
-      "maxHp": 6,
+      "maxHp": 9,
       "retaliation": 1,
+      "toHit": 2,
+      "armorClass": 1,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -65,8 +67,10 @@
       "x": 13,
       "y": 11,
       "hpKey": "terra_b3Foe1Hp",
-      "maxHp": 6,
+      "maxHp": 9,
       "retaliation": 1,
+      "toHit": 2,
+      "armorClass": 1,
       "optional": true,
       "activation": "always",
       "ai": {

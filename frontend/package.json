@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sim": "vitest run --config vitest.sim.config.js"
   },
   "dependencies": {
     "chess.js": "1.4.0",

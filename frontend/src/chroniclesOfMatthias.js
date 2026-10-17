@@ -49,6 +49,7 @@ import { chroniclesAdvanceLostKingIntro } from './chronicles/chroniclesLostKingI
 import { chroniclesArriveOnTransition } from './chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID, chroniclesSwordhavenReturnAvailable } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesIsOverworldTravelExit } from './chronicles/chroniclesWorldReturnLinks.js';
+import { chroniclesDeployPartyForCombat } from './chroniclesPartyFootprint.js';
 
 const DEFAULT_MAP = chroniclesMapById(DEFAULT_CHRONICLES_MAP_ID);
 
@@ -782,7 +783,14 @@ export function chroniclesReduce(state, action) {
     if (entered) return entered;
   }
   if (blocker) return withMessage(state, blocker.message);
-  return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, enterTile(state, x, y)));
+  const moved = chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, enterTile(state, x, y)));
+  // In combat the heroes stand on their own cells around the camera. A step
+  // moves the whole company: redeploy it around the new position instead of
+  // leaving the heroes behind (enemies would walk into the camera's cell).
+  if (state.initiative && moved.mapId === state.mapId && moved.partyPositions && Object.keys(moved.partyPositions).length) {
+    return chroniclesDeployPartyForCombat({ ...moved, partyPositions: {} });
+  }
+  return moved;
 }
 
 export function chroniclesObjective(state) {

@@ -302,6 +302,39 @@
       }
     },
     {
+      "id": "first-book-temple-altar",
+      "kind": "service",
+      "x": 13,
+      "y": 6,
+      "visualType": "shrine",
+      "label": "Altar de Ilse · sanar y alzar a los caídos · 10 oro",
+      "lockedLabel": "Altar de Ilse · necesitas 10 oro",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 10,
+          "message": "La ofrenda del altar es de diez monedas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 10
+          },
+          {
+            "type": "revive-party"
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Ilse reza ante el altar del templo. Las heridas se cierran y los caídos vuelven a respirar."
+      }
+    },
+    {
       "id": "first-book-temple",
       "kind": "lore",
       "x": 14,
