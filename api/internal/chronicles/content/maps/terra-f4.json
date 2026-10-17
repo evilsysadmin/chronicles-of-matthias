@@ -33,15 +33,16 @@
   "enemies": [
     {
       "id": "terra-f4-foe-0",
-      "visualType": "ember-wisp",
-      "name": "lumbre de ceniza",
+      "visualType": "ash-salamander",
+      "name": "salamandra de ceniza",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f4Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -50,7 +51,7 @@
         "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -61,15 +62,16 @@
     },
     {
       "id": "terra-f4-foe-1",
-      "visualType": "gate-jailer",
-      "name": "guardián de escoria",
+      "visualType": "stone-golem",
+      "name": "gólem de escoria",
       "x": 13,
       "y": 11,
       "hpKey": "terra_f4Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -79,7 +81,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "message": "{attacker} acaba con gólem de escoria usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -95,10 +97,11 @@
       "x": 3,
       "y": 11,
       "hpKey": "terra_f4Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -124,8 +127,9 @@
       "hpKey": "ascua_watchQuarryHp",
       "maxHp": 25,
       "retaliation": 3,
-      "toHit": 7,
+      "toHit": 9,
       "armorClass": 6,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "ascua_watchHunted",
@@ -147,6 +151,110 @@
       },
       "x": 17,
       "y": 3
+    },
+    {
+      "id": "terra-f4-foe-20",
+      "visualType": "stone-golem",
+      "name": "el Gólem de la Cantera",
+      "x": 13,
+      "y": 3,
+      "hpKey": "terra_f4Foe20Hp",
+      "maxHp": 47,
+      "retaliation": 7,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba al Gólem de la Cantera con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campF4LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 26
+          }
+        ],
+        "journal": {
+          "id": "terra-f4-camp",
+          "title": "Cae el Gólem de la Cantera",
+          "body": "Los goblins de la ceniza despertaron al gólem de la cantera vieja y lo adoran como a un rey. Un rey que aplasta todo lo que se acerca. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campF4LeaderDown",
+      "blockingMessage": "El Gólem de la Cantera no deja pasar a nadie sin pagar.",
+      "visualScale": 1.15
+    },
+    {
+      "id": "terra-f4-foe-21",
+      "visualType": "ash-goblin",
+      "name": "goblin cantero",
+      "x": 12,
+      "y": 3,
+      "hpKey": "terra_f4Foe21Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin cantero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f4-foe-22",
+      "visualType": "ash-goblin",
+      "name": "goblin del martillo",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_f4Foe22Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin del martillo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
@@ -185,6 +293,52 @@
           }
         ],
         "message": "El cofre guarda 30 monedas y algo de equipo."
+      }
+    },
+    {
+      "id": "terra-f4-camp-spoils",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 13,
+      "y": 2,
+      "label": "Registrar el botín del campamento",
+      "when": [
+        {
+          "key": "campF4LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "campF4SpoilsTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "campF4SpoilsTaken",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 52
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-mace",
+            "name": "Steel-mace",
+            "description": "Botín de Cantera del Gólem.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-chain",
+            "name": "Silver-chain",
+            "description": "Botín de Cantera del Gólem.",
+            "quantity": 1
+          }
+        ],
+        "message": "Entre los fardos de Cantera del Gólem quedan 52 monedas y armas de buena factura."
       }
     }
   ],

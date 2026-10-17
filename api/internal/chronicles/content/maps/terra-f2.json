@@ -33,15 +33,16 @@
   "enemies": [
     {
       "id": "terra-f2-foe-0",
-      "visualType": "ash-salamander",
-      "name": "salamandra de ceniza",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
       "x": 7,
       "y": 3,
       "hpKey": "terra_f2Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -50,7 +51,7 @@
         "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
+        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -61,44 +62,16 @@
     },
     {
       "id": "terra-f2-foe-1",
-      "visualType": "ash-goblin",
-      "name": "goblin de ceniza",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
       "x": 13,
       "y": 11,
       "hpKey": "terra_f2Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-f2-foe-2",
-      "visualType": "gate-jailer",
-      "name": "guardián de escoria",
-      "x": 3,
-      "y": 11,
-      "hpKey": "terra_f2Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
-      "armorClass": 4,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -109,6 +82,36 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f2-foe-2",
+      "visualType": "ash-goblin",
+      "name": "goblin de ceniza",
+      "x": 3,
+      "y": 11,
+      "hpKey": "terra_f2Foe2Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

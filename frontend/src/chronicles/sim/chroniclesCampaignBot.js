@@ -228,8 +228,10 @@ export class ChroniclesCampaignBot {
     let guard = 0;
     let lowest = 1;
     const maxHp = this.state.party.reduce((sum, member) => sum + member.maxHp, 0);
+    let heroLowest = 1;
     const track = () => {
       lowest = Math.min(lowest, this.partyHp() / maxHp);
+      this.state.party.forEach((member) => { heroLowest = Math.min(heroLowest, Math.max(0, member.hp) / member.maxHp); });
     };
     while (this.state.initiative && this.state.phase !== 'defeated') {
       guard += 1;
@@ -245,6 +247,7 @@ export class ChroniclesCampaignBot {
       partyTurns,
       hpLost: Math.max(0, hpBefore - this.partyHp()),
       lowest,
+      heroLowest,
     });
     if (this.hurt(0.35)) this.needsRest = true;
   }

@@ -33,44 +33,16 @@
   "enemies": [
     {
       "id": "terra-c1-foe-0",
-      "visualType": "scavenger-knight",
-      "name": "caballero helado",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
       "x": 7,
       "y": 3,
       "hpKey": "terra_c1Foe0Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
       "armorClass": 2,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con caballero helado usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 6
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-c1-foe-1",
-      "visualType": "ice-wraith",
-      "name": "espectro de escarcha",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_c1Foe1Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
-      "armorClass": 2,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -82,6 +54,36 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con espectro de escarcha usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c1-foe-1",
+      "visualType": "skeleton",
+      "name": "guerrero congelado",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_c1Foe1Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guerrero congelado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

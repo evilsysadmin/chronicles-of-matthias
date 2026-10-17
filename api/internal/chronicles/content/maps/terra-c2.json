@@ -33,44 +33,16 @@
   "enemies": [
     {
       "id": "terra-c2-foe-0",
-      "visualType": "troll",
-      "name": "trol de las colinas",
+      "visualType": "harpy",
+      "name": "arpía del brezal",
       "x": 7,
       "y": 3,
       "hpKey": "terra_c2Foe0Hp",
-      "maxHp": 9,
-      "retaliation": 1,
-      "toHit": 2,
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
       "armorClass": 1,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 1
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con trol de las colinas usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 4
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-c2-foe-1",
-      "visualType": "harpy",
-      "name": "arpía del brezal",
-      "x": 13,
-      "y": 11,
-      "hpKey": "terra_c2Foe1Hp",
-      "maxHp": 9,
-      "retaliation": 1,
-      "toHit": 2,
-      "armorClass": 1,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -90,14 +62,45 @@
       }
     },
     {
+      "id": "terra-c2-foe-1",
+      "visualType": "bandit-archer",
+      "name": "ballestero de las colinas",
+      "x": 13,
+      "y": 11,
+      "hpKey": "terra_c2Foe1Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero de las colinas usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
       "id": "pinohelado-watch-quarry",
       "visualType": "harpy",
       "name": "la Arpía Coronada",
       "hpKey": "pinohelado_watchQuarryHp",
       "maxHp": 16,
       "retaliation": 2,
-      "toHit": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "pinohelado_watchHunted",

@@ -10,7 +10,7 @@
   "grid": [
     "#####################",
     "#...##.............##",
-    "#..#.........#......#",
+    "#..#................#",
     "#..#................#",
     "#................#.##",
     "#......##........#..#",
@@ -38,10 +38,11 @@
       "x": 7,
       "y": 3,
       "hpKey": "terra_a2Foe0Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -67,10 +68,11 @@
       "x": 13,
       "y": 11,
       "hpKey": "terra_a2Foe1Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -96,10 +98,11 @@
       "x": 3,
       "y": 11,
       "hpKey": "terra_a2Foe2Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -125,8 +128,9 @@
       "hpKey": "hollin_watchQuarryHp",
       "maxHp": 22,
       "retaliation": 3,
-      "toHit": 6,
+      "toHit": 8,
       "armorClass": 5,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "hollin_watchHunted",
@@ -148,6 +152,139 @@
       },
       "x": 17,
       "y": 3
+    },
+    {
+      "id": "terra-a2-foe-20",
+      "visualType": "bandit-captain",
+      "name": "Brenna la Tuerta",
+      "x": 13,
+      "y": 3,
+      "hpKey": "terra_a2Foe20Hp",
+      "maxHp": 41,
+      "retaliation": 6,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a Brenna la Tuerta con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campA2LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 22
+          }
+        ],
+        "journal": {
+          "id": "terra-a2-camp",
+          "title": "Cae Brenna la Tuerta",
+          "body": "Brenna la Tuerta mandaba una compañía de la Corona antes de que el Rey faltara. Ahora cobra peaje a quien pase por las Colinas Rotas. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campA2LeaderDown",
+      "blockingMessage": "Brenna la Tuerta no deja pasar a nadie sin pagar."
+    },
+    {
+      "id": "terra-a2-foe-21",
+      "visualType": "bandit-archer",
+      "name": "ballestero desertor",
+      "x": 12,
+      "y": 3,
+      "hpKey": "terra_a2Foe21Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero desertor usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a2-foe-22",
+      "visualType": "bandit-archer",
+      "name": "ballestera desertora",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_a2Foe22Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestera desertora usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a2-foe-23",
+      "visualType": "road-bandit",
+      "name": "desertor",
+      "x": 13,
+      "y": 4,
+      "hpKey": "terra_a2Foe23Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con desertor usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
@@ -200,6 +337,52 @@
           }
         ],
         "message": "El cofre guarda 24 monedas y algo de equipo."
+      }
+    },
+    {
+      "id": "terra-a2-camp-spoils",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 13,
+      "y": 2,
+      "label": "Registrar el botín del campamento",
+      "when": [
+        {
+          "key": "campA2LeaderDown",
+          "truthy": true
+        },
+        {
+          "key": "campA2SpoilsTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "campA2SpoilsTaken",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 44
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-sword",
+            "name": "Silver-sword",
+            "description": "Botín de Campamento de los Desertores.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "iron-chain",
+            "name": "Iron-chain",
+            "description": "Botín de Campamento de los Desertores.",
+            "quantity": 1
+          }
+        ],
+        "message": "Entre los fardos de Campamento de los Desertores quedan 44 monedas y armas de buena factura."
       }
     }
   ],

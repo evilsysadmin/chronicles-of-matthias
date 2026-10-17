@@ -181,6 +181,17 @@ func aiFor(visual string) *O {
 		return obj("movement", "hold", "attackReach", 2, "requiresLineOfSight", true)
 	case "bog-toad": // a tongue that reaches two cells
 		return obj("movement", "hold", "attackReach", 2, "engagedMovement", "cardinal-chase", "engageRange", 1)
+	// Third wave.
+	case "bandit-archer": // shoots from three cells and backs off when you close in
+		return obj("movement", "hold", "attackReach", 3, "requiresLineOfSight", true, "disengageRange", 1)
+	case "dire-wolf": // hunts in packs from far away
+		return obj("movement", "cardinal-roam", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 5)
+	case "stone-golem": // stands like a statue until you are close enough to crush
+		return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2)
+	case "ghoul": // smells the living and never stops coming
+		return obj("movement", "cardinal-chase", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 4)
+	case "name-scribe": // writes you out of the world from across the room
+		return obj("movement", "hold", "attackReach", 3, "requiresLineOfSight", true, "engagedMovement", "cardinal-chase", "engageRange", 1)
 	}
 	return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2)
 }
@@ -383,7 +394,19 @@ func areaGrid(code, biome string, keep []point) []string {
 // armour bought in later towns made the company all but untouchable (the
 // campaign bot saw 15–25% enemy hit rates from the third act on).
 func combatRating(level int) (toHit, armorClass int) {
-	return level + 1, level
+	return level + 3, level
+}
+
+// speedFor is a creature's initiative agility (AGI + 1d8 decides the order).
+// It used to be 0 for every creature, so the company nearly always struck
+// first and many creatures died before they ever swung.
+func speedFor(visual string, level int) int {
+	bonus := map[string]int{"dire-wolf": 2, "bone-hound": 2, "harpy": 2, "ghoul": 1, "bandit-archer": 1,
+		"stone-golem": -2, "troll": -2, "gate-jailer": -2}[visual]
+	if v := level + bonus; v > 0 {
+		return v
+	}
+	return 0
 }
 
 // rating is one side of a boss-grade rating for an area: toHit when hit is
@@ -408,10 +431,11 @@ func foe(areaID string, index, level int, visual, name string, pos point, isBoss
 		"name", name,
 		"x", pos.x, "y", pos.y,
 		"hpKey", fmt.Sprintf("%sFoe%dHp", camelFlag(areaID), index),
-		"maxHp", 6+level*3+bossHP,
-		"retaliation", 1+level/2+bossRet,
+		"maxHp", 9+level*4+bossHP,
+		"retaliation", 2+2*level/3+bossRet,
 		"toHit", toHit,
 		"armorClass", armorClass,
+		"agility", speedFor(visual, level+bossRating),
 		"optional", true,
 		"activation", "always",
 		"ai", aiFor(visual),
@@ -609,11 +633,21 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 		seen[signature(aiFor(sp.visual))] = true
 		enemies = append(enemies, foe(areaID, i, level, sp.visual, sp.name, freeFoeSlots[i], false, nil))
 	}
+	questFoes := 0
 	if q != nil {
 		for i, entry := range q.enemies {
 			s := freeFoeSlots[count+i]
 			enemies = append(enemies, entry.With("x", s.x, "y", s.y))
 		}
+		questFoes = len(q.enemies)
+	}
+	if _, ok := camps[code]; ok {
+		if count+questFoes >= len(freeFoeSlots) {
+			panic(code + ": no free slot for the camp")
+		}
+		campFoes, spoils := campContent(code, areaID, level, freeFoeSlots[count+questFoes])
+		enemies = append(enemies, campFoes...)
+		treasures = append(treasures, spoils...)
 	}
 
 	var keep []point

@@ -38,10 +38,11 @@
       "x": 7,
       "y": 3,
       "hpKey": "terra_e5Foe0Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
@@ -62,25 +63,26 @@
     },
     {
       "id": "terra-e5-foe-1",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
+      "visualType": "ghoul",
+      "name": "necrófago de la marisma",
       "x": 13,
       "y": 11,
       "hpKey": "terra_e5Foe1Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "cardinal-chase",
         "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "message": "{attacker} acaba con necrófago de la marisma usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -91,25 +93,26 @@
     },
     {
       "id": "terra-e5-foe-2",
-      "visualType": "drowned",
-      "name": "ahogado",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
       "x": 3,
       "y": 11,
       "hpKey": "terra_e5Foe2Hp",
-      "maxHp": 18,
-      "retaliation": 3,
-      "toHit": 5,
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-chase",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con ahogado usando {attack}.",
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

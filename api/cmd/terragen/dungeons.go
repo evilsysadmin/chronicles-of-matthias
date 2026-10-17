@@ -111,7 +111,7 @@ func itemLabel(id string) string { return capFirst(strings.ReplaceAll(id, "-", "
 func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 	d := dungeons[code]
 	x := dungeonExtras[code]
-	level := danger(code) + 1
+	level := danger(code) + 1 + dungeonLevelBonus[code]
 	slug := camelFlag(d.id)
 	grid := maze(saltOf(d.id), dungeonW, dungeonH)
 	start := point{1, 1}
@@ -185,6 +185,9 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 	))
 	if d.boss.scale > 0 {
 		bossEnemy.Set("visualScale", d.boss.scale)
+	}
+	if d.boss.visual == "name-scribe" {
+		bossEnemy.Set("ai", aiFor("name-scribe"))
 	}
 	enemies = append(enemies, bossEnemy)
 

@@ -505,6 +505,158 @@ func bogToad(pose string) *image.NRGBA {
 	return s.img
 }
 
+// ─── Terra, third wave: camps, packs and the Tower of Names ───────────────
+
+var (
+	leather = ramp(0x1e140a, 0x38261a, 0x56402a, 0x765a3c, 0x967650)
+	wolfFur = ramp(0x1a1c20, 0x2e3238, 0x484e56, 0x666e78, 0x8a929c, 0xb4bac2)
+	moss    = ramp(0x0e1a0a, 0x1c3214, 0x2e4c20, 0x46682e)
+	ghoulSk = ramp(0x1e2218, 0x34392a, 0x4e5440, 0x6a7058, 0x8a8e74)
+	ink     = ramp(0x08060e, 0x16101e, 0x261c32, 0x3a2c4a, 0x54406a)
+	parch   = ramp(0x6a5a3a, 0x9a8656, 0xc4b07a, 0xe6d6a6, 0xfaf0d0)
+)
+
+// A bandit crossbowman: hood, quilted coat, a crossbow levelled or lowered.
+func banditArcher(pose string) *image.NRGBA {
+	s := newSprite(64, 88)
+	aim := pose == "attack"
+	s.fill(union(line([]pt{p(26, 60), p(24, 86)}, 6), line([]pt{p(38, 60), p(40, 86)}, 6)), cloth, flatLight(0.35))
+	s.fill(poly(p(18, 64), p(20, 34), p(44, 34), p(46, 64)), leather, litDefault(28, 44, 26))
+	s.flat(line([]pt{p(19, 52), p(45, 52)}, 2), rag, flatLight(0.5))
+	s.fill(poly(p(20, 36), p(24, 14), p(32, 8), p(40, 14), p(44, 36)), rag, shade(0.6, 1.0/50, 20))
+	s.fill(ellipse(32, 24, 6, 7), skin, litDefault(32, 22, 6))
+	s.flat(poly(p(26, 26), p(38, 26), p(36, 32), p(28, 32)), cloth, flatLight(0.25))
+	s.dot(29, 23, outlineColour)
+	s.dot(35, 23, outlineColour)
+	// Quiver of bolts on the back.
+	s.fill(poly(p(42, 30), p(48, 28), p(50, 50), p(44, 52)), leather, flatLight(0.4))
+	for i := 0; i < 3; i++ {
+		s.flat(line([]pt{p(fx(44+i*2), 30), p(fx(43+i*2), 24)}, 1), bone, flatLight(0.8))
+	}
+	if aim {
+		s.fill(union(line([]pt{p(24, 40), p(46, 40)}, 5), line([]pt{p(40, 40), p(54, 38)}, 5)), leather, flatLight(0.45))
+		s.fill(line([]pt{p(42, 38), p(62, 38)}, 3), wood, flatLight(0.6))
+		s.flat(line([]pt{p(56, 30), p(54, 38), p(56, 46)}, 2), wood, flatLight(0.7))
+		s.flat(line([]pt{p(54, 37), p(64, 37)}, 1), steel, flatLight(0.9))
+	} else {
+		s.fill(line([]pt{p(42, 40), p(48, 58)}, 5), leather, flatLight(0.45))
+		s.fill(line([]pt{p(40, 58), p(56, 58)}, 3), wood, flatLight(0.6))
+		s.flat(line([]pt{p(42, 52), p(40, 58), p(42, 64)}, 2), wood, flatLight(0.7))
+	}
+	return s.img
+}
+
+// A grey wolf: lean, low, always half a step ahead of the pack.
+func direWolf(pose string) *image.NRGBA {
+	s := newSprite(96, 60)
+	lunge := pose == "attack"
+	s.fill(line([]pt{p(78, 30), p(90, 24), p(94, 30)}, 5), wolfFur, flatLight(0.5))
+	body := ellipse(52, 32, 26, 12)
+	legs := union(line([]pt{p(36, 38), p(32, 58)}, 5), line([]pt{p(44, 40), p(46, 58)}, 5),
+		line([]pt{p(64, 38), p(62, 58)}, 5), line([]pt{p(72, 36), p(76, 58)}, 5))
+	if lunge {
+		legs = union(line([]pt{p(36, 38), p(24, 54)}, 5), line([]pt{p(44, 40), p(36, 56)}, 5),
+			line([]pt{p(64, 38), p(70, 58)}, 5), line([]pt{p(72, 36), p(82, 56)}, 5))
+	}
+	s.fill(union(body, legs), wolfFur, litDefault(50, 26, 28))
+	hx, hy := 24.0, 22.0
+	if lunge {
+		hx, hy = 16, 28
+	}
+	s.fill(union(ellipse(hx, hy, 11, 9), poly(p(hx-8, hy-2), p(hx-20, hy+2), p(hx-18, hy+6), p(hx-6, hy+6)),
+		poly(p(hx-2, hy-8), p(hx+2, hy-18), p(hx+6, hy-8)), poly(p(hx+5, hy-8), p(hx+10, hy-17), p(hx+12, hy-6))),
+		wolfFur, litDefault(hx, hy-4, 12))
+	s.dot(int(hx)-4, int(hy)-2, eyeYellow)
+	s.dot(int(hx)-3, int(hy)-2, eyeYellow)
+	if lunge {
+		s.flat(union(poly(p(hx-18, hy+4), p(hx-17, hy+9), p(hx-15, hy+4)), poly(p(hx-12, hy+5), p(hx-11, hy+10), p(hx-9, hy+5))), bone, flatLight(0.95))
+	}
+	s.flat(line([]pt{p(40, 22), p(70, 22)}, 2), wolfFur, flatLight(0.95))
+	return s.img
+}
+
+// A stone golem: blocks of quarry stone, moss in the joints, one rune lit.
+func stoneGolem(pose string) *image.NRGBA {
+	s := newSprite(96, 112)
+	slam := pose == "attack"
+	armL, armR := p(16, 96), p(80, 96)
+	if slam {
+		armL, armR = p(20, 18), p(76, 18)
+	}
+	s.fill(union(line([]pt{p(36, 78), p(32, 110)}, 15), line([]pt{p(60, 78), p(64, 110)}, 15)), stone, flatLight(0.4))
+	s.fill(poly(p(20, 80), p(16, 36), p(30, 24), p(66, 24), p(80, 36), p(76, 80)), stone, litDefault(44, 40, 40))
+	s.fill(union(line([]pt{p(22, 36), armL}, 14), line([]pt{p(74, 36), armR}, 14)), stone, flatLight(0.55))
+	s.fill(union(ellipse(armL.x, armL.y, 10, 9), ellipse(armR.x, armR.y, 10, 9)), stone, flatLight(0.65))
+	s.fill(poly(p(36, 26), p(38, 8), p(58, 8), p(60, 26)), stone, litDefault(46, 12, 14))
+	s.flat(union(line([]pt{p(20, 56), p(76, 56)}, 1), line([]pt{p(48, 26), p(48, 80)}, 1)), stone, flatLight(0.1))
+	for i := 0; i < 6; i++ {
+		s.dot(22+(i*11)%54, 54+(i*5)%6, moss[2+i%2])
+	}
+	s.flat(poly(p(44, 40), p(52, 40), p(48, 50)), flame, flatLight(0.8))
+	s.dot(42, 16, eyeCyan)
+	s.dot(54, 16, eyeCyan)
+	return s.img
+}
+
+// A ghoul: grey-green skin over bone, long claws, crouched to feed.
+func ghoul(pose string) *image.NRGBA {
+	s := newSprite(68, 84)
+	claw := pose == "attack"
+	s.fill(union(line([]pt{p(26, 56), p(18, 82)}, 6), line([]pt{p(42, 56), p(48, 82)}, 6)), ghoulSk, flatLight(0.35))
+	s.fill(poly(p(20, 60), p(22, 30), p(46, 30), p(48, 60)), ghoulSk, litDefault(32, 40, 24))
+	s.fill(poly(p(20, 62), p(48, 62), p(46, 72), p(22, 72)), rag, flatLight(0.35))
+	for i := 0; i < 4; i++ {
+		y := 36 + float64(i)*5
+		s.flat(line([]pt{p(26, y), p(42, y)}, 1), ghoulSk, flatLight(0.05))
+	}
+	l, r := p(10, 66), p(58, 66)
+	if claw {
+		l, r = p(4, 30), p(66, 26)
+	}
+	s.fill(union(line([]pt{p(22, 34), l}, 4), line([]pt{p(46, 34), r}, 4)), ghoulSk, flatLight(0.5))
+	for _, h := range []pt{l, r} {
+		for _, d := range []float64{-3, 0, 3} {
+			s.flat(line([]pt{h, p(h.x+d, h.y+7)}, 1), bone, flatLight(0.9))
+		}
+	}
+	s.fill(ellipse(34, 22, 9, 10), ghoulSk, litDefault(34, 20, 9))
+	s.dot(30, 20, eyeGreen)
+	s.dot(38, 20, eyeGreen)
+	s.flat(poly(p(28, 27), p(40, 27), p(38, 31), p(30, 31)), []color.NRGBA{outlineColour}, flatLight(0))
+	s.flat(union(poly(p(30, 27), p(31, 31), p(32, 27)), poly(p(36, 27), p(37, 31), p(38, 27))), bone, flatLight(0.9))
+	return s.img
+}
+
+// The Nameless Scribe: a tall ink-dark robe, an open book of struck-out
+// names, a quill like a spear. It writes people out of the world.
+func nameScribe(pose string) *image.NRGBA {
+	s := newSprite(76, 112)
+	write := pose == "attack"
+	hem := []pt{p(12, 108), p(20, 100), p(28, 110), p(38, 100), p(48, 110), p(56, 100), p(64, 108)}
+	s.fill(poly(append([]pt{p(24, 30), p(52, 30), p(64, 108)}, reverse(hem)...)...), ink, litDefault(38, 50, 40))
+	s.fill(poly(p(24, 36), p(28, 12), p(38, 4), p(48, 12), p(52, 36), p(38, 42)), ink, shade(0.6, 1.0/60, 24))
+	s.fill(ellipse(38, 24, 7, 9), void, flatLight(0.15))
+	s.dot(35, 22, eyeCyan)
+	s.dot(41, 22, eyeCyan)
+	// The book, open, held before the chest.
+	s.fill(union(poly(p(18, 50), p(38, 54), p(38, 70), p(18, 66)), poly(p(38, 54), p(58, 50), p(58, 66), p(38, 70))), parch, flatLight(0.75))
+	for i := 0; i < 4; i++ {
+		y := 56 + float64(i)*3
+		s.flat(union(line([]pt{p(21, y), p(35, y+1)}, 1), line([]pt{p(41, y+1), p(55, y)}, 1)), ink, flatLight(0.2))
+	}
+	s.flat(line([]pt{p(20, 60), p(36, 58)}, 1), velvet, flatLight(0.6))
+	if write {
+		s.fill(line([]pt{p(56, 40), p(72, 6)}, 3), parch, flatLight(0.9))
+		s.flat(line([]pt{p(56, 40), p(52, 48)}, 2), ink, flatLight(0.1))
+		for i := 0; i < 5; i++ {
+			s.dot(60+i*3, 30-i*5, void[4])
+		}
+	} else {
+		s.fill(line([]pt{p(58, 52), p(66, 24)}, 3), parch, flatLight(0.9))
+	}
+	return s.img
+}
+
 // ─── NPCs of the final act ─────────────────────────────────────────────────
 
 var stone = ramp(0x2a2a2e, 0x46464c, 0x64646c, 0x86868e, 0xa8a8b0, 0xcacad0)
@@ -578,6 +730,11 @@ var procedural = []struct {
 	{"ice-wraith", iceWraith},
 	{"ash-salamander", ashSalamander},
 	{"bog-toad", bogToad},
+	{"bandit-archer", banditArcher},
+	{"dire-wolf", direWolf},
+	{"stone-golem", stoneGolem},
+	{"ghoul", ghoul},
+	{"name-scribe", nameScribe},
 	{"stone-king", stoneKing},
 	{"empty-throne", emptyThrone},
 }

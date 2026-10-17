@@ -33,25 +33,26 @@
   "enemies": [
     {
       "id": "terra-d1-foe-0",
-      "visualType": "bone-hound",
-      "name": "lobo de escarcha",
+      "visualType": "skeleton",
+      "name": "guerrero congelado",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d1Foe0Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 4
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con lobo de escarcha usando {attack}.",
+        "message": "{attacker} acaba con guerrero congelado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -62,25 +63,26 @@
     },
     {
       "id": "terra-d1-foe-1",
-      "visualType": "scavenger-knight",
-      "name": "caballero helado",
+      "visualType": "dire-wolf",
+      "name": "lobo de las cumbres",
       "x": 13,
       "y": 11,
       "hpKey": "terra_d1Foe1Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 5,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 5
       },
       "onDefeat": {
-        "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "message": "{attacker} acaba con lobo de las cumbres usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -96,10 +98,11 @@
       "x": 3,
       "y": 11,
       "hpKey": "terra_d1Foe2Hp",
-      "maxHp": 15,
-      "retaliation": 2,
-      "toHit": 4,
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
       "armorClass": 3,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {

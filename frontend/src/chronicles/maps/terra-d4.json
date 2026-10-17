@@ -33,25 +33,26 @@
   "enemies": [
     {
       "id": "terra-d4-foe-0",
-      "visualType": "bog-toad",
-      "name": "sapo de la ciénaga",
+      "visualType": "drowned",
+      "name": "ahogado",
       "x": 7,
       "y": 3,
       "hpKey": "terra_d4Foe0Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
       "armorClass": 2,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
-        "attackReach": 2,
+        "movement": "cardinal-chase",
+        "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 1
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
+        "message": "{attacker} acaba con ahogado usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -62,25 +63,26 @@
     },
     {
       "id": "terra-d4-foe-1",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
       "x": 13,
       "y": 11,
       "hpKey": "terra_d4Foe1Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
       "armorClass": 2,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "message": "{attacker} acaba con rata de marisma usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -96,8 +98,9 @@
       "hpKey": "vinarrey_watchQuarryHp",
       "maxHp": 19,
       "retaliation": 3,
-      "toHit": 5,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "vinarrey_watchHunted",

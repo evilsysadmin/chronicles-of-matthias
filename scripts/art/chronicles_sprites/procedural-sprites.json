@@ -3,18 +3,23 @@
   "sprites": [
     "ash-goblin",
     "ash-salamander",
+    "bandit-archer",
     "bog-toad",
     "chancellor-varren",
+    "dire-wolf",
     "drowned",
     "empty-throne",
+    "ghoul",
     "harpy",
     "ice-wraith",
     "mire-witch",
+    "name-scribe",
     "oathbound-knight",
     "salt-crab",
     "sewer-rat",
     "silent-acolyte",
     "skeleton",
+    "stone-golem",
     "stone-king",
     "troll"
   ]

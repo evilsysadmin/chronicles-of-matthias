@@ -2,10 +2,10 @@
 import fs from 'node:fs';
 import { describe, it } from 'vitest';
 import { BotError, ChroniclesCampaignBot, seededRandom } from './chroniclesCampaignBot.js';
-import { MAIN_ROUTE } from './campaignRoute.js';
+import { FULL_ROUTE, MAIN_ROUTE } from './campaignRoute.js';
 
 
-export function runCampaign({ seed = 1, route = MAIN_ROUTE } = {}) {
+export function runCampaign({ seed = 1, route = process.env.SIM_ROUTE === 'main' ? MAIN_ROUTE : FULL_ROUTE } = {}) {
   const original = Math.random;
   Math.random = seededRandom(seed);
   const bot = new ChroniclesCampaignBot({ runId: `sim-${seed}` });
@@ -33,7 +33,8 @@ function report(results) {
   const fights = results.flatMap((result) => result.bot.fights);
   const deaths = results.reduce((sum, result) => sum + result.bot.deaths.length, 0);
   lines.push(`${done}/${results.length} campañas completadas · ${fights.length} peleas · `
-    + `${fights.filter((fight) => fight.lowest < 0.5).length} bajan de 50% PV · ${fights.filter((fight) => fight.lowest < 0.25).length} de 25% · ${deaths} caídos.`, '');
+    + `${fights.filter((fight) => fight.lowest < 0.5).length} bajan al grupo de 50% PV · `
+    + `${fights.filter((fight) => fight.heroLowest < 0.25).length} dejan a algún héroe por debajo del 25% · ${deaths} caídos.`, '');
   for (const { seed, failure, bot } of results) {
     lines.push(`## Semilla ${seed}`, '');
     lines.push(failure ? `**Se detiene en «${failure.step}»**: ${failure.reason}` : '**Campaña completada.**', '');

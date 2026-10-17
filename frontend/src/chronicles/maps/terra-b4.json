@@ -33,25 +33,26 @@
   "enemies": [
     {
       "id": "terra-b4-foe-0",
-      "visualType": "ash-goblin",
-      "name": "goblin",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
       "x": 7,
       "y": 3,
       "hpKey": "terra_b4Foe0Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
       "armorClass": 2,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con goblin usando {attack}.",
+        "message": "{attacker} acaba con ballestero usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -62,25 +63,26 @@
     },
     {
       "id": "terra-b4-foe-1",
-      "visualType": "skeleton",
-      "name": "ahorcado del camino",
+      "visualType": "road-bandit",
+      "name": "salteador",
       "x": 13,
       "y": 11,
       "hpKey": "terra_b4Foe1Hp",
-      "maxHp": 12,
-      "retaliation": 2,
-      "toHit": 3,
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
       "armorClass": 2,
+      "agility": 2,
       "optional": true,
       "activation": "always",
       "ai": {
         "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con ahorcado del camino usando {attack}.",
+        "message": "{attacker} acaba con salteador usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -96,8 +98,9 @@
       "hpKey": "molinoviejo_watchQuarryHp",
       "maxHp": 19,
       "retaliation": 3,
-      "toHit": 5,
+      "toHit": 7,
       "armorClass": 4,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "defeatedFlag": "molinoviejo_watchHunted",

@@ -95,6 +95,8 @@ const MAP_ENVIRONMENT = Object.freeze({
   'minas-de-escoria': 'iron-foundry',
   'tumulos-primer-pacto': 'dungeon',
   'cienaga-negra': 'cave-water',
+  // A library tower: dressed stone and shelves, not a crypt.
+  'torre-de-los-nombres': 'castle-interior',
 });
 
 export function chroniclesMaterialProfile(profileId) {

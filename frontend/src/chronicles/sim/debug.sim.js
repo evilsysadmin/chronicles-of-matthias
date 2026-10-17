@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import { it } from 'vitest';
 import { ChroniclesCampaignBot, seededRandom } from './chroniclesCampaignBot.js';
-import { MAIN_ROUTE } from './campaignRoute.js';
+import { FULL_ROUTE as MAIN_ROUTE } from './campaignRoute.js';
 import { chroniclesCurrentInitiativeActor } from '../chroniclesInitiative.js';
 import { chroniclesRuntimeEnemyPosition } from '../../chroniclesOfMatthiasTurns.js';
 import { chroniclesLivingPartyPositions } from '../../chroniclesPartyFootprint.js';

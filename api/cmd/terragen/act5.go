@@ -142,7 +142,7 @@ func authoredFoe(mapID string, f foeSpec) *O {
 	enemy := obj(
 		"id", mapID+"-"+f.key, "visualType", f.visual, "name", f.name, "x", f.pos.x, "y", f.pos.y,
 		"hpKey", camel(mapID+"-"+f.key)+"Hp", "maxHp", f.hp, "retaliation", f.retaliation,
-		"toHit", toHit, "armorClass", armorClass,
+		"toHit", toHit, "armorClass", armorClass, "agility", speedFor(f.visual, rating),
 		"activation", "always", "ai", f.ai,
 		"onDefeat", obj("message", "{attacker} derriba a "+f.name+" con {attack}.", "effects", effects),
 	)
