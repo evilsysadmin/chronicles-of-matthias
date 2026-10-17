@@ -180,6 +180,12 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	if err != nil {
 		return nil, fmt.Errorf("recovery: %w", err)
 	}
+	ops := gamesapi.NewOps(gamesapi.OpsConfig{
+		Secret: []byte(jwtSecret), Environment: environment, Store: accountstore.New(db, timeout),
+		Purge: func(ctx context.Context, username string) (userdata.Purged, error) {
+			return userdata.Purge(ctx, purgeStore, username)
+		},
+	})
 	runs, err := gamesapi.NewChroniclesRuns(gamesapi.ChroniclesRunsConfig{
 		Config: base(), Runs: chroniclesrun.NewMongo(db, timeout), Admins: adminUsernames(),
 	})
@@ -198,6 +204,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"runs", runs, func(r *http.Request) bool { _, _, ok := gamesapi.ChroniclesRunsRoute(r); return ok }},
 		{"system", system, ok2(gamesapi.SystemRoute)},
 		{"identity", identity, ok2(gamesapi.IdentityRoute)},
+		{"ops", ops, gamesapi.OpsRoute},
 	}, nil
 }
 
