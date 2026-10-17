@@ -102,7 +102,7 @@
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} abate a el Rey Rata con {attack}.",
+        "message": "{attacker} abate al Rey Rata con {attack}.",
         "effects": [
           {
             "type": "set",

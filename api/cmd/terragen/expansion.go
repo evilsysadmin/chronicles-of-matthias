@@ -40,7 +40,7 @@ func init() {
 		dungeonOrder = append(dungeonOrder, code)
 	}
 	dungeons["E6"] = dungeon{"cripta-del-obispo", "Cripta del Obispo", "Cripta", "crypt", boss{"spectral-bishop", "el Obispo Hueco", 30, 1.3}}
-	dungeons["F5"] = dungeon{"guarida-del-dragon", "Guarida del Dragón de Ceniza", "Guarida", "ash", boss{"ash-salamander", "el Dragón de Ceniza", 44, 1.9}}
+	dungeons["F5"] = dungeon{"guarida-del-dragon", "Guarida del Dragón de Ceniza", "Guarida", "ash", boss{"ash-salamander", "el Dragón de Ceniza", 44, 2.7}}
 	dungeons["A6"] = dungeon{"faro-roto", "Faro Roto", "Faro", "coast", boss{"drowned", "la Farera Ahogada", 30, 1.2}}
 	dungeonFoes["crypt"] = []species{{"skeleton", "esqueleto de monje"}, {"spectral-bishop", "monje espectral"}, {"crypt-spider", "araña de osario"},
 		{"ice-wraith", "alma en pena"}, {"ember-wisp", "cirio fatuo"}}

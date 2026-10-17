@@ -4,6 +4,7 @@
   "progressionKey": "ascuafria-v1",
   "title": "Ascuafría",
   "areaCode": "F2",
+  "biome": "ash",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [

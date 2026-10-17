@@ -26,7 +26,7 @@
   "partyStart": {
     "x": 1,
     "y": 1,
-    "direction": 1
+    "direction": 2
   },
   "initialFlags": {},
   "enemies": [
@@ -210,7 +210,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el guerrero del primer rey con {attack}.",
+        "message": "{attacker} derriba al guerrero del primer rey con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -256,7 +256,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Guardián del Túmulo con {attack}.",
+        "message": "{attacker} derriba al Guardián del Túmulo con {attack}.",
         "effects": [
           {
             "type": "set",

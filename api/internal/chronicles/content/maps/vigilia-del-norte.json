@@ -4,6 +4,7 @@
   "progressionKey": "vigilia-del-norte-v1",
   "title": "Vigilia del Norte",
   "areaCode": "C1",
+  "biome": "snow",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -211,7 +212,7 @@
       "x": 11,
       "y": 10,
       "visualType": "building-hall",
-      "label": "Informar a el archivero ciego Osric · 70 oro",
+      "label": "Informar al archivero ciego Osric · 70 oro",
       "when": [
         {
           "key": "vigiliaOsricBriefed",
@@ -402,7 +403,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el sargento de la Vigilia · 50 oro",
+      "label": "Cobrar la caza al sargento de la Vigilia · 50 oro",
       "when": [
         {
           "questId": "vigilia-watch-hunt",

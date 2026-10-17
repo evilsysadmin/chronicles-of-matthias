@@ -505,6 +505,52 @@ func bogToad(pose string) *image.NRGBA {
 	return s.img
 }
 
+// ─── NPCs of the final act ─────────────────────────────────────────────────
+
+var stone = ramp(0x2a2a2e, 0x46464c, 0x64646c, 0x86868e, 0xa8a8b0, 0xcacad0)
+
+func throne(s *sprite) {
+	s.fill(union(poly(p(14, 102), p(14, 20), p(24, 8), p(56, 8), p(66, 20), p(66, 102)),
+		poly(p(6, 102), p(6, 60), p(16, 56), p(16, 102)), poly(p(64, 102), p(64, 56), p(74, 60), p(74, 102))),
+		stone, litDefault(40, 40, 40))
+	s.fill(poly(p(20, 64), p(60, 64), p(62, 74), p(18, 74)), stone, flatLight(0.75))
+	for i := 0; i < 5; i++ {
+		x := 22 + i*8
+		s.flat(line([]pt{p(fx(x), 14), p(fx(x), 26)}, 1), stone, flatLight(0.2))
+	}
+}
+
+func stoneKing(pose string) *image.NRGBA {
+	s := newSprite(80, 104)
+	throne(s)
+	// A king turned to stone, seated, hands on his knees.
+	s.fill(union(poly(p(28, 40), p(52, 40), p(54, 66), p(26, 66)),
+		line([]pt{p(30, 44), p(24, 64)}, 6), line([]pt{p(50, 44), p(56, 64)}, 6),
+		line([]pt{p(32, 66), p(30, 96)}, 7), line([]pt{p(48, 66), p(50, 96)}, 7),
+		ellipse(40, 32, 8, 9)), stone, litDefault(38, 40, 20))
+	s.fill(poly(p(32, 26), p(34, 18), p(37, 23), p(40, 16), p(43, 23), p(46, 18), p(48, 26)), gold, flatLight(0.35))
+	s.dot(37, 32, outlineColour)
+	s.dot(43, 32, outlineColour)
+	// Cracks where the oath still holds him.
+	s.flat(line([]pt{p(34, 46), p(38, 52), p(36, 58)}, 1), stone, flatLight(0))
+	s.flat(line([]pt{p(46, 50), p(42, 56)}, 1), stone, flatLight(0))
+	if pose == "attack" {
+		s.flat(line([]pt{p(36, 30), p(44, 30)}, 1), eyeHalo, flatLight(1))
+	}
+	return s.img
+}
+
+func emptyThrone(pose string) *image.NRGBA {
+	s := newSprite(80, 104)
+	throne(s)
+	// The hollow crown, fallen at the foot of the throne.
+	crown := poly(p(28, 102), p(30, 94), p(33, 98), p(36, 92), p(39, 98), p(42, 94), p(44, 102))
+	s.fill(crown, gold, flatLight(0.4))
+	return s.img
+}
+
+var eyeHalo = ramp(0x9a8a40, 0xf4e8a0)
+
 func reverse(points []pt) []pt {
 	out := make([]pt, len(points))
 	for i, v := range points {
@@ -532,4 +578,6 @@ var procedural = []struct {
 	{"ice-wraith", iceWraith},
 	{"ash-salamander", ashSalamander},
 	{"bog-toad", bogToad},
+	{"stone-king", stoneKing},
+	{"empty-throne", emptyThrone},
 }

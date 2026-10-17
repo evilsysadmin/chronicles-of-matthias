@@ -4,6 +4,7 @@
   "progressionKey": "puerto-de-hollin-v1",
   "title": "Puerto de Hollín",
   "areaCode": "A3",
+  "biome": "coast",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -186,7 +187,7 @@
       "x": 11,
       "y": 10,
       "visualType": "building-hall",
-      "label": "Informar a el campanero Ulric · 50 oro",
+      "label": "Informar al campanero Ulric · 50 oro",
       "when": [
         {
           "key": "hollinUlricBriefed",
@@ -377,7 +378,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el capitán del puerto · 30 oro",
+      "label": "Cobrar la caza al capitán del puerto · 30 oro",
       "when": [
         {
           "questId": "hollin-watch-hunt",

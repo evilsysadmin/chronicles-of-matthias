@@ -149,7 +149,7 @@
         "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Heraldo del Silencio con {attack}.",
+        "message": "{attacker} derriba al Heraldo del Silencio con {attack}.",
         "effects": [
           {
             "type": "set",

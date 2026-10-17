@@ -128,7 +128,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} abate a el Coloso de Escoria con {attack}.",
+        "message": "{attacker} abate al Coloso de Escoria con {attack}.",
         "effects": [
           {
             "type": "set",

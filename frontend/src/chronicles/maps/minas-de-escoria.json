@@ -26,7 +26,7 @@
   "partyStart": {
     "x": 1,
     "y": 1,
-    "direction": 1
+    "direction": 2
   },
   "initialFlags": {},
   "enemies": [
@@ -208,7 +208,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el goblin capataz con {attack}.",
+        "message": "{attacker} derriba al goblin capataz con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -254,7 +254,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Capataz de Escoria con {attack}.",
+        "message": "{attacker} derriba al Capataz de Escoria con {attack}.",
         "effects": [
           {
             "type": "set",

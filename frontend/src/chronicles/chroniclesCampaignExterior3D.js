@@ -6,7 +6,7 @@ import {
 } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
-import { buildChroniclesSpriteBillboard } from './chroniclesSpriteBillboards.js';
+import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 
 // File-authored exterior topology: no independent collision map or invisible
 // decorative blockers. Impassable cells alone own boulders/low walls; every
@@ -202,6 +202,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       } else {
         buildMourner(root);
       }
+    } else if (entry.kind === 'lore' && chroniclesHasSpriteBillboard(entry.visualType)) {
+      // Any other painted character (a troll's friend, a ghost) by its sheet.
+      const billboard = buildChroniclesSpriteBillboard(entry.visualType);
+      root.add(billboard);
+      root.userData.updateChroniclesSprite = billboard.userData.updateChroniclesSprite;
     } else if (entry.visualType === 'sewer-grate') {
       // A town's dungeon mouth: iron grate in a stone ring, flush with the road.
       const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.12, 12), stone);

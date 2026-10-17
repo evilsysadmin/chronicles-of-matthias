@@ -18,6 +18,7 @@ import {
   chroniclesRequirementFailure,
   chroniclesRequirementMet,
   chroniclesRequirementsMet,
+  chroniclesToName,
 } from './chronicles/chroniclesContentRuntime.js';
 import { resolveChroniclesCharacterParty } from './chronicles/chroniclesCharacterBuilds.js';
 import { chroniclesEquipItem, chroniclesUnequipItem, chroniclesEquipmentBonuses, chroniclesEquippedItem } from './chronicles/chroniclesEquipment.js';
@@ -405,13 +406,13 @@ function renderCombatTemplate(template, attacker, enemy) {
 function defeatMessage(attacker, enemy) {
   const authored = renderCombatTemplate(enemy.onDefeat?.message, attacker, enemy);
   if (authored) return authored;
-  return `${attacker.name} derrota a ${enemy.name} con ${attacker.attackName.toLowerCase()}. La expedición continúa.`;
+  return `${attacker.name} derrota ${chroniclesToName(enemy.name)} con ${attacker.attackName.toLowerCase()}. La expedición continúa.`;
 }
 
 function rangedHitMessage(attacker, enemy) {
   const authored = renderCombatTemplate(enemy.rangedHitMessage, attacker, enemy);
   if (authored) return authored;
-  return `${attacker.name} alcanza a ${enemy.name} desde la retaguardia con ${attacker.attackName.toLowerCase()}. El objetivo queda demasiado lejos para devolver el golpe.`;
+  return `${attacker.name} alcanza ${chroniclesToName(enemy.name)} desde la retaguardia con ${attacker.attackName.toLowerCase()}. El objetivo queda demasiado lejos para devolver el golpe.`;
 }
 
 function rewardForDefeat(state, enemy) {
@@ -788,7 +789,7 @@ export function chroniclesObjective(state) {
   if (state.phase === 'escaped') return map.explorationCompleteLabel || 'Exploración completada';
 
   const requiredEnemy = (map.enemies || []).find((enemy) => !enemy.optional && enemyAlive(state, enemy));
-  if (requiredEnemy) return requiredEnemy.explorationObjective || `Derrota a ${requiredEnemy.name}`;
+  if (requiredEnemy) return requiredEnemy.explorationObjective || `Derrota ${chroniclesToName(requiredEnemy.name)}`;
 
   const pendingTrigger = (map.triggers || []).find((entry) => chroniclesRequirementsMet(state, entry.when));
   if (pendingTrigger) return pendingTrigger.explorationObjective || pendingTrigger.label || 'Activa el siguiente evento';

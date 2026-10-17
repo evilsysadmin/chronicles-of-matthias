@@ -46,7 +46,7 @@
         "requiresLineOfSight": true
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Canciller Varren con {attack}.",
+        "message": "{attacker} derriba al Canciller Varren con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -200,7 +200,7 @@
     {
       "id": "throne-king-stone",
       "kind": "lore",
-      "visualType": "rookwood-mourner-voice",
+      "visualType": "stone-king",
       "x": 9,
       "y": 1,
       "label": "Sacar al Rey de la piedra, sin juramento",
@@ -335,7 +335,7 @@
             ]
           }
         ],
-        "message": "Pones la tablilla en las manos de piedra de el rey Aurelio. La lee sin abrir los ojos. La piedra se agrieta desde dentro y el Rey se levanta con el juramento intacto: «El Pacto es mío otra vez. Nadie volverá a jurar en mi nombre». El Silencio se arrodilla como un perro que reconoce a su amo.",
+        "message": "Pones la tablilla en las manos de piedra del rey Aurelio. La lee sin abrir los ojos. La piedra se agrieta desde dentro y el Rey se levanta con el juramento intacto: «El Pacto es mío otra vez. Nadie volverá a jurar en mi nombre». El Silencio se arrodilla como un perro que reconoce a su amo.",
         "journal": {
           "id": "lost-king-ending-restored",
           "title": "El Rey vuelve",
@@ -427,7 +427,7 @@
     {
       "id": "throne-varren-before",
       "kind": "lore",
-      "visualType": "rookwood-mourner-voice",
+      "visualType": "stone-king",
       "x": 9,
       "y": 1,
       "label": "Mirar el trono",
@@ -445,7 +445,7 @@
     {
       "id": "throne-after",
       "kind": "lore",
-      "visualType": "rookwood-mourner-voice",
+      "visualType": "empty-throne",
       "x": 9,
       "y": 1,
       "label": "Mirar el trono vacío",

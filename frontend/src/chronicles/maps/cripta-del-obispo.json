@@ -209,7 +209,7 @@
         "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el sacristán con {attack}.",
+        "message": "{attacker} derriba al sacristán con {attack}.",
         "effects": [
           {
             "type": "set",
@@ -255,7 +255,7 @@
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} derriba a el Obispo Hueco con {attack}.",
+        "message": "{attacker} derriba al Obispo Hueco con {attack}.",
         "effects": [
           {
             "type": "set",

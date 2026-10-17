@@ -83,6 +83,13 @@ var sheets = map[string]sheet{
 	"ice-wraith":        standard(104, 3.0, 1.5),
 	"ash-salamander":    standard(108, 1.9, 2.0),
 	"bog-toad":          standard(100, 2.0, 1.4),
+	// Final-act NPCs: only an idle loop.
+	"stone-king":   npc(112, 3.6, 0.8),
+	"empty-throne": npc(112, 3.6, 0.6),
+}
+
+func npc(cell int, worldHeight, idleFps float64) sheet {
+	return sheet{cell: cell, worldHeight: worldHeight, idleFps: idleFps, frames: []frame{{"idle-a", "idle", 0}, {"idle-b", "", 0}}}
 }
 
 func repoRoot() string {

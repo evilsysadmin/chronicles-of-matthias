@@ -21,6 +21,7 @@ import {
   chroniclesContentDefinition,
   chroniclesContentInteractions,
   chroniclesContentLockedMessage,
+  chroniclesToName,
 } from './chronicles/chroniclesContentRuntime.js';
 
 const MOVE_LABELS = Object.freeze({
@@ -512,7 +513,7 @@ export function chroniclesTacticsAttack(state, memberId, enemyId) {
     turns: Number(state.turns || 0) + 1,
     message: nextHp > 0
       ? `${attacker.name} usa ${profile.attackName.toLowerCase()} contra ${enemy.name}. ${nextHp}/${enemy.maxHp} HP.`
-      : `${attacker.name} derriba a ${enemy.name} con ${profile.attackName.toLowerCase()}.`,
+      : `${attacker.name} derriba ${chroniclesToName(enemy.name)} con ${profile.attackName.toLowerCase()}.`,
   };
   if (nextHp === 0) next = rewardEnemyDefeat(next, enemy, attacker);
   return next;

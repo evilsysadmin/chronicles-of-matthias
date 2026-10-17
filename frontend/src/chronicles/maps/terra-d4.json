@@ -102,7 +102,7 @@
         "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} abate a el Sapo Rey con {attack}.",
+        "message": "{attacker} abate al Sapo Rey con {attack}.",
         "effects": [
           {
             "type": "set",

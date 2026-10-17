@@ -4,6 +4,7 @@
   "progressionKey": "vinarrey-v1",
   "title": "Viñarrey",
   "areaCode": "D2",
+  "biome": "plains",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -371,7 +372,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el guarda del lagar · 40 oro",
+      "label": "Cobrar la caza al guarda del lagar · 40 oro",
       "when": [
         {
           "questId": "vinarrey-watch-hunt",

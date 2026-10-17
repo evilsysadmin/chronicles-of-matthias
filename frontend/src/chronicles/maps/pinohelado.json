@@ -4,6 +4,7 @@
   "progressionKey": "pinohelado-v1",
   "title": "Pinohelado",
   "areaCode": "E1",
+  "biome": "forest",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -355,7 +356,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el cazador mayor · 45 oro",
+      "label": "Cobrar la caza al cazador mayor · 45 oro",
       "when": [
         {
           "questId": "pinohelado-watch-hunt",

@@ -4,6 +4,7 @@
   "progressionKey": "corte-de-bronce-v1",
   "title": "Corte de Bronce",
   "areaCode": "D6",
+  "biome": "plains",
   "regionKind": "settlement",
   "layoutMode": "authored",
   "grid": [
@@ -403,7 +404,7 @@
       "x": 4,
       "y": 6,
       "visualType": "building-watch",
-      "label": "Cobrar la caza a el capitán de la guardia · 50 oro",
+      "label": "Cobrar la caza al capitán de la guardia · 50 oro",
       "when": [
         {
           "questId": "corte-guard-hunt",
