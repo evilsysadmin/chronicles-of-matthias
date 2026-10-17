@@ -537,9 +537,10 @@ export default function ChroniclesOfMatthias({ onExit }) {
       partyBarkSequenceRef.current = token;
       if (partyBarkTimerRef.current) clearTimeout(partyBarkTimerRef.current);
       setPartyBark({ ...bark, token });
+      // Long remarks (why a door will not open) stay up long enough to read.
       partyBarkTimerRef.current = setTimeout(() => {
         setPartyBark((active) => active?.token === token ? null : active);
-      }, 2800);
+      }, Math.max(2800, String(bark.text || '').length * 55));
     }
 
     const cue = chroniclesRetaliationCue(current, next);

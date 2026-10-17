@@ -16,6 +16,9 @@ import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js'
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
+import {
+  chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements,
+} from './chronicles/chroniclesDungeonLighting.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 
@@ -431,9 +434,14 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
     side: THREE.DoubleSide,
   });
   const torches = [];
+  // Generated dungeons spread their torches over the whole maze; the lights
+  // themselves come from a small pool lent to the torches nearest the party.
+  const generatedDungeon = scenePlan?.useAuthoredCryptDressing === false;
   const torchPlacements = scenePlan?.useAuthoredCryptDressing
     ? CHRONICLES_TORCH_PLACEMENTS
-    : (scenePlan?.wallFaces || [])
+    : generatedDungeon
+      ? chroniclesSpreadTorchPlacements(scenePlan?.wallFaces || [], { spacing: 2, max: coarsePointer ? 36 : 60 })
+      : (scenePlan?.wallFaces || [])
       .filter((_, index) => index % 3 === 0)
       .slice(0, coarsePointer ? 5 : 8)
       .map((face, index) => ({
@@ -489,22 +497,72 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
     flameCore.scale.set(0.52 * flameScale, 0.46 * flameScale, 0.52 * flameScale);
     flameCore.position.set(0.51, 0.09, 0);
     flameCore.renderOrder = 2;
-    const baseIntensity = (coarsePointer ? 1.5 : 1.95) * intensity;
-    const light = new THREE.PointLight(0xff7a32, baseIntensity, 9.5, 2);
-    light.position.set(0.51, 0.22, 0);
-    if (!coarsePointer && (index === 2 || index === 3)) {
+    const baseIntensity = (generatedDungeon ? (coarsePointer ? 2.3 : 2.7) : (coarsePointer ? 1.5 : 1.95)) * intensity;
+    const light = generatedDungeon ? null : new THREE.PointLight(0xff7a32, baseIntensity, 9.5, 2);
+    light?.position.set(0.51, 0.22, 0);
+    if (light && !coarsePointer && (index === 2 || index === 3)) {
       light.castShadow = true;
       light.shadow.mapSize.set(256, 256);
       light.shadow.bias = -0.001;
       light.shadow.normalBias = 0.04;
     }
     if (soot) root.add(soot);
-    root.add(wallPlate, bracket, emberCup, emberLip, flame, flameCore, light);
+    root.add(wallPlate, bracket, emberCup, emberLip, flame, flameCore);
+    if (light) root.add(light);
     root.position.copy(transform.position);
     root.rotation.y = transform.yaw;
     scene.add(root);
-    torches.push({ root, flame, flameCore, light, baseIntensity, flameScale, phase: index * 1.7 });
+    root.updateMatrixWorld(true);
+    const lightAt = root.localToWorld(new THREE.Vector3(0.51, 0.22, 0));
+    torches.push({ root, flame, flameCore, light, baseIntensity, flameScale, phase: index * 1.7, lightAt });
   });
+
+  // Braziers mark where the elite and the boss wait.
+  if (generatedDungeon) {
+    const ironMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2622, roughness: 0.6, metalness: 0.6 });
+    const coalMaterial = new THREE.MeshStandardMaterial({ color: 0x3a1408, emissive: 0xc2400c, emissiveIntensity: 1.4 });
+    chroniclesBrazierPlacements(grid, enemyDefinitions).forEach((placement, index) => {
+      const cell = worldForCell(placement.x, placement.y, sceneCenter);
+      const root = new THREE.Group();
+      root.name = `chronicles-brazier-${index}`;
+      root.position.set(cell.x + placement.dx * 1.35, 0, cell.z + placement.dy * 1.35);
+      for (let leg = 0; leg < 3; leg += 1) {
+        const angle = (leg / 3) * Math.PI * 2;
+        const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.95, 5), ironMaterial);
+        rod.position.set(Math.cos(angle) * 0.22, 0.46, Math.sin(angle) * 0.22);
+        rod.rotation.set(Math.sin(angle) * 0.18, 0, -Math.cos(angle) * 0.18);
+        root.add(rod);
+      }
+      const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.24, 0.26, 10, 1, true), ironMaterial);
+      bowl.position.y = 1.0;
+      const coals = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.06, 10), coalMaterial);
+      coals.position.y = 1.08;
+      const scale = placement.boss ? 2.1 : 1.7;
+      const flame = new THREE.Mesh(createTorchFlameGeometry(coarsePointer), flameMaterial);
+      flame.position.y = 1.1;
+      const flameCore = new THREE.Mesh(createTorchFlameGeometry(coarsePointer), flameCoreMaterial);
+      flameCore.position.y = 1.12;
+      flameCore.renderOrder = 2;
+      root.add(bowl, coals, flame, flameCore);
+      scene.add(root);
+      torches.push({
+        root, flame, flameCore, light: null, flameScale: scale, phase: 3.1 + index * 2.3, coreBaseY: 1.16,
+        baseIntensity: (coarsePointer ? 3.0 : 3.6) * (placement.boss ? 1.2 : 1),
+        lightAt: new THREE.Vector3(root.position.x, 1.45, root.position.z),
+      });
+    });
+  }
+
+  // A fixed pool of practical lights, lent each frame to the nearest flames.
+  const lightPool = generatedDungeon
+    ? Array.from({ length: coarsePointer ? 4 : 7 }, (_, index) => {
+      const pooled = new THREE.PointLight(0xff8a3c, 0, 11.5, 2);
+      pooled.name = `chronicles-torch-light-${index}`;
+      pooled.castShadow = false;
+      scene.add(pooled);
+      return pooled;
+    })
+    : [];
 
   const materialArt = installChroniclesFirstPersonPremiumMaterials(scene, {
     coarsePointer,
@@ -520,6 +578,7 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
     gateMaterial,
     gateRunes,
     torches,
+    lightPool,
     contentProps,
     sceneCenter,
     materialArt,
@@ -602,7 +661,9 @@ export function createChroniclesOfMatthiasGame(host, {
 
   const scene = new THREE.Scene();
   const outdoors = scenePlan?.regionKind === 'settlement' || scenePlan?.regionKind === 'wilderness';
-  if (!outdoors) scene.fog = new THREE.FogExp2(0x0a0c0f, coarse ? 0.038 : 0.034);
+  // Torch-lit generated dungeons can afford to show more of the corridor.
+  const fogScale = scenePlan?.useAuthoredCryptDressing === false ? 0.72 : 1;
+  if (!outdoors) scene.fog = new THREE.FogExp2(0x0a0c0f, (coarse ? 0.038 : 0.034) * fogScale);
   if (!outdoors) scene.add(new THREE.HemisphereLight(0x6f8191, 0x1b130d, coarse ? 0.35 : 0.24));
   const camera = new THREE.PerspectiveCamera(CHRONICLES_FIRST_PERSON_VFOV, 1, 0.08, 70);
   camera.rotation.order = 'YXZ';
@@ -788,17 +849,38 @@ export function createChroniclesOfMatthiasGame(host, {
     return angle;
   }
 
+  // Lend the pooled lights to the flames nearest the camera.
+  function lendTorchLights() {
+    const pool = dungeon.lightPool || [];
+    if (!pool.length) return;
+    const sources = dungeon.torches.map((torch) => torch.lightAt).filter(Boolean);
+    if (!sources.length) return;
+    const nearest = chroniclesNearestLightSources(sources, camera.position.x, camera.position.z, pool.length);
+    const lit = dungeon.torches.filter((torch) => torch.lightAt);
+    pool.forEach((light, slot) => {
+      const torch = lit[nearest[slot]];
+      if (!torch) {
+        light.intensity = 0;
+        return;
+      }
+      light.position.copy(torch.lightAt);
+      light.intensity = torch.baseIntensity * (torch.pulse ?? 1);
+    });
+  }
+
   function render() {
     if (destroyed) return;
     frame = requestAnimationFrame(render);
     if (!visible) return;
     const time = clock.getElapsedTime();
+    lendTorchLights();
     if (!reducedMotion) {
       camera.position.lerp(desiredPosition, 0.16);
       camera.rotation.y += wrapAngle(desiredYaw - camera.rotation.y) * 0.18;
       dungeon.torches.forEach((torch) => {
         const pulse = 0.9 + Math.sin(time * 8.5 + torch.phase) * 0.08 + Math.sin(time * 17 + torch.phase) * 0.04;
-        torch.light.intensity = torch.baseIntensity * pulse;
+        torch.pulse = pulse;
+        if (torch.light) torch.light.intensity = torch.baseIntensity * pulse;
         const width = 0.91 + (pulse - 0.9) * 0.42;
         const flameScale = torch.flameScale || 1;
         torch.flame.scale.set(width * flameScale, (1.03 + pulse * 0.13) * flameScale, width * flameScale);
@@ -809,7 +891,7 @@ export function createChroniclesOfMatthiasGame(host, {
           (1.22 + (pulse - 0.9) * 0.28) * flameScale,
           corePulse * flameScale,
         );
-        torch.flameCore.position.y = 0.18 + Math.sin(time * 9.4 + torch.phase) * 0.008;
+        torch.flameCore.position.y = (torch.coreBaseY ?? 0.18) + Math.sin(time * 9.4 + torch.phase) * 0.008;
       });
 
       dungeon.contentProps.forEach((prop) => {

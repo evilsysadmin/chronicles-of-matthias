@@ -95,16 +95,24 @@ function addMistPatch(root, texture, { name, x, z, width, depth, color, opacity,
   return { material, baseOpacity: opacity };
 }
 
+// Generated dungeons (everything but the hand-dressed crypt) are lit by
+// torches spread over the whole maze; the fixed fills below were placed for
+// the crypt's own rooms and would light random spots elsewhere.
+function isGeneratedDungeon(scenePlan) {
+  return scenePlan?.useAuthoredCryptDressing === false;
+}
+
 function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
   const lightingProfile = scenePlan?.materials?.lightingProfile || 'default';
   const profileScale = lightingProfile === 'crypt-dark' ? 0.72 : 1;
+  const generated = isGeneratedDungeon(scenePlan);
   // Chronicles should be gloomy, not crushed. The ambient level is deliberately
   // high enough to preserve stone/material detail after ACES while practical
   // torches still carry the mood and direction of the scene.
   const ambientFloor = CHRONICLES_MINIMUM_VISIBILITY.firstPerson;
   const ambient = new THREE.AmbientLight(
     0x73808c,
-    coarsePointer ? ambientFloor.ambientCoarse : ambientFloor.ambientDesktop,
+    (coarsePointer ? ambientFloor.ambientCoarse : ambientFloor.ambientDesktop) * (generated ? 1.3 : 1),
   );
   ambient.name = 'chronicles-readability-ambient';
 
@@ -189,18 +197,14 @@ function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
   partyTorchBounce.name = 'chronicles-party-torch-bounce';
   partyTorchBounce.castShadow = false;
 
-  root.add(
-    ambient,
-    entryBounce,
-    cryptBounce,
-    floorBounce,
-    corridorFill,
-    farFill,
-    partyTorchKey,
-    partyTorchBounce,
-  );
+  const lights = generated
+    ? [ambient, corridorFill, partyTorchKey, partyTorchBounce]
+    : [ambient, entryBounce, cryptBounce, floorBounce, corridorFill, farFill, partyTorchKey, partyTorchBounce];
+  root.add(...lights);
   return {
-    count: 8,
+    count: lights.length,
+    // In a generated maze the cool fill walks ahead of the party.
+    corridorFill: generated ? corridorFill : null,
     partyTorchKey,
     partyTorchBounce,
     partyTorchKeyBaseIntensity: partyTorchKey.intensity,
@@ -237,7 +241,7 @@ export function buildChroniclesDungeonAtmosphere({
   let mistTexture = null;
   let mistTextureDisposed = false;
   const mistMaterials = [];
-  if (!coarsePointer) {
+  if (!coarsePointer && !isGeneratedDungeon(scenePlan)) {
     mistTexture = createSoftMistTexture();
     const patches = [
       { name: 'chronicles-gate-mist', x: 0, z: -7.15, width: 4.5, depth: 2.2, color: 0x929ca4, opacity: 0.075, rotation: 0.04 },
@@ -283,6 +287,10 @@ export function buildChroniclesDungeonAtmosphere({
       .addScaledVector(partyRight, -0.12);
     partyBouncePosition.y = 1.05;
     readabilityLighting.partyTorchBounce.position.copy(partyBouncePosition);
+    if (readabilityLighting.corridorFill) {
+      readabilityLighting.corridorFill.position.copy(partyCamera.position).addScaledVector(partyForward, 6.5);
+      readabilityLighting.corridorFill.position.y = 2.35;
+    }
 
     const flicker = reducedMotion
       ? 1

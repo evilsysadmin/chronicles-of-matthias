@@ -41,5 +41,28 @@ export function chroniclesPartyBark(previous, next) {
   if (previous.phase !== 'escaped' && next.phase === 'escaped') {
     return bark(next, 'matthias', 'Consta en acta: salir con piezas todavía enteras cuenta como brillante estrategia.', 'escaped');
   }
+  // A refused step or use (a locked grate, a missing key, an unpaid inn):
+  // the reason used to land only in the folded chronicle, so on a phone the
+  // door simply did nothing. Say it out loud.
+  if (refusal(previous, next)) {
+    return bark(next, 'matthias', next.message, `refused:${next.message}`);
+  }
   return null;
+}
+
+const ROUTINE_MESSAGES = [/^Hay una pared/i, /^Giras a la /i, /contra absolutamente nada/i];
+
+// Time passing (a turn, creatures shuffling about) is all a refusal changes;
+// anything else (a flag, an item, a quest) means the action did something.
+const TIME_KEYS = new Set(['message', 'turns', 'enemyPositions', 'explorationEnemySteps', 'enemyAwareness', 'round', 'turnPhase', 'enemyTurnEvents']);
+
+function refusal(previous, next) {
+  if (next.initiative || previous.initiative) return false;
+  if (!next.message || next.message === previous.message) return false;
+  if (ROUTINE_MESSAGES.some((pattern) => pattern.test(next.message))) return false;
+  const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  for (const key of keys) {
+    if (!TIME_KEYS.has(key) && previous[key] !== next[key]) return false;
+  }
+  return true;
 }
