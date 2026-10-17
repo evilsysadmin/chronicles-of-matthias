@@ -9,17 +9,19 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#################",
-    "#...#...........#",
-    "###.#.#.###.###.#",
-    "#.#.#.#...#...#.#",
-    "#.#.#.###.#.#.###",
-    "#.#.#...#...#...#",
-    "#.#.#.#########.#",
-    "#.#.#.#.....#...#",
-    "#.#.###.###.#.#.#",
-    "#.......#.....#.#",
-    "#################"
+    "#####################",
+    "#...#...#.......#...#",
+    "###.#.#.#.###.#.#.#.#",
+    "#.#.#.#...#.......#.#",
+    "#.#.#.#####.#.#######",
+    "#.#.#.#...#.#.#.....#",
+    "#.#.#.#.#.#.###.###.#",
+    "#.#.#...#.#.......#.#",
+    "#.#.###############.#",
+    "#...#...#.....#.....#",
+    "#.#.#.#.#.###.#.###.#",
+    "#.....#...#.....#...#",
+    "#####################"
   ],
   "partyStart": {
     "x": 1,
@@ -32,8 +34,8 @@
       "id": "cienaga-negra-foe-0",
       "visualType": "drowned",
       "name": "ahogado",
-      "x": 9,
-      "y": 7,
+      "x": 7,
+      "y": 10,
       "hpKey": "cienaga_negraFoe0Hp",
       "maxHp": 14,
       "retaliation": 2,
@@ -60,7 +62,7 @@
       "visualType": "salt-crab",
       "name": "cangrejo de salitre",
       "x": 15,
-      "y": 8,
+      "y": 11,
       "hpKey": "cienaga_negraFoe1Hp",
       "maxHp": 14,
       "retaliation": 2,
@@ -86,8 +88,8 @@
       "id": "cienaga-negra-foe-2",
       "visualType": "sewer-rat",
       "name": "rata de salina",
-      "x": 10,
-      "y": 1,
+      "x": 18,
+      "y": 5,
       "hpKey": "cienaga_negraFoe2Hp",
       "maxHp": 14,
       "retaliation": 2,
@@ -113,8 +115,8 @@
       "id": "cienaga-negra-foe-3",
       "visualType": "ember-wisp",
       "name": "fuego fatuo",
-      "x": 7,
-      "y": 2,
+      "x": 11,
+      "y": 3,
       "hpKey": "cienaga_negraFoe3Hp",
       "maxHp": 14,
       "retaliation": 2,
@@ -136,11 +138,111 @@
       }
     },
     {
+      "id": "cienaga-negra-foe-4",
+      "visualType": "drowned",
+      "name": "ahogado",
+      "x": 17,
+      "y": 3,
+      "hpKey": "cienaga_negraFoe4Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "cienaga-negra-foe-5",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 6,
+      "y": 1,
+      "hpKey": "cienaga_negraFoe5Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "cienaga-negra-foe-8",
+      "visualType": "salt-crab",
+      "name": "el familiar de la bruja",
+      "x": 13,
+      "y": 5,
+      "hpKey": "cienaga_negraFoe8Hp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el familiar de la bruja con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 21
+          },
+          {
+            "type": "grant-item",
+            "itemId": "witch-pantry-key",
+            "name": "Llave de la alacena",
+            "description": "El familiar de la bruja lleva la llave de la alacena entre las pinzas.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "cienaga-negra-elite",
+          "title": "Llave de la alacena",
+          "body": "El familiar de la bruja lleva la llave de la alacena entre las pinzas.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "cienaga_negraEliteDefeated"
+    },
+    {
       "id": "cienaga-negra-foe-9",
       "visualType": "mire-witch",
       "name": "la Bruja del Cieno",
-      "x": 7,
-      "y": 5,
+      "x": 9,
+      "y": 7,
       "hpKey": "cienaga_negraFoe9Hp",
       "maxHp": 20,
       "retaliation": 3,
@@ -184,14 +286,70 @@
     }
   ],
   "triggers": [],
-  "interactables": [],
+  "interactables": [
+    {
+      "id": "cienaga-negra-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 1,
+      "y": 3,
+      "label": "Leer el recetario de la bruja",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraNoteRead",
+            "value": true
+          }
+        ],
+        "message": "«Para que un pozo olvide que fue agua: tres hojas de cicuta, un nombre que nadie diga y la paciencia de esperar a que el Silencio pase a cobrar. El Canciller paga bien. El Canciller paga siempre.»",
+        "journal": {
+          "id": "cienaga-negra-note",
+          "title": "Choza de la Ciénaga Negra",
+          "body": "«Para que un pozo olvide que fue agua: tres hojas de cicuta, un nombre que nadie diga y la paciencia de esperar a que el Silencio pase a cobrar. El Canciller paga bien. El Canciller paga siempre.»",
+          "sigil": "E5"
+        }
+      }
+    },
+    {
+      "id": "cienaga-negra-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 17,
+      "y": 11,
+      "label": "Beber del Charca limpia",
+      "when": [
+        {
+          "key": "cienaga_negraFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Charca limpia está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
   "treasures": [
     {
       "id": "cienaga-negra-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 15,
-      "y": 9,
+      "x": 17,
+      "y": 7,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -227,9 +385,126 @@
         ],
         "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
       }
+    },
+    {
+      "id": "cienaga-negra-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 19,
+      "y": 3,
+      "label": "Abrir la alacena de la bruja",
+      "lockedLabel": "Abrir la alacena de la bruja · cerrado con llave",
+      "when": [
+        {
+          "key": "cienaga_negraCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "witch-pantry-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El familiar de la bruja lleva la llave de la alacena entre las pinzas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "witch-pantry-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 90
+          },
+          {
+            "type": "grant-item",
+            "itemId": "ivory-staff",
+            "name": "Ivory staff",
+            "description": "Del abrir la alacena de la bruja.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-shield",
+            "name": "Silver shield",
+            "description": "Del abrir la alacena de la bruja.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:cienaga-negra:cache:v1",
+            "amount": 90
+          }
+        ],
+        "message": "En la alacena hay frascos que es mejor no abrir, una bolsa de monedas y un bastón de marfil tallado con caras que parpadean."
+      }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "cienaga-negra-trap-0",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 10,
+      "y": 9,
+      "label": "Raíz que agarra",
+      "when": [
+        {
+          "key": "cienaga_negraTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una raíz se enrosca en los tobillos y aprieta. Dos puntos de daño y un respeto nuevo por la jardinería."
+      }
+    },
+    {
+      "id": "cienaga-negra-trap-1",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 11,
+      "y": 6,
+      "label": "Raíz que agarra",
+      "when": [
+        {
+          "key": "cienaga_negraTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una raíz se enrosca en los tobillos y aprieta. Dos puntos de daño y un respeto nuevo por la jardinería."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "dungeon-exit",

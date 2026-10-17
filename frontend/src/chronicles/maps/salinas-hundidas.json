@@ -9,17 +9,19 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#################",
-    "#...#...#.......#",
-    "###.###.#.###.#.#",
-    "#.#...#...#...#.#",
-    "#.###.#.###.###.#",
-    "#.#...#.#...#.#.#",
-    "#.#.#####.###.#.#",
-    "#.#.#.....#.....#",
-    "#.#.###.###.#####",
-    "#.......#.......#",
-    "#################"
+    "#####################",
+    "#...#.......#...#...#",
+    "###.#####.#.#.#.#.#.#",
+    "#.#...#...#...#...#.#",
+    "#.###.#.###########.#",
+    "#.#...#.#.#.......#.#",
+    "#.#.#.#.#.#.###.###.#",
+    "#.#.#...#.#...#.....#",
+    "#.#.###.#.###.#######",
+    "#.#.#...#...#.#...#.#",
+    "#.#.#.###.###.#.#.#.#",
+    "#.....#.........#...#",
+    "#####################"
   ],
   "partyStart": {
     "x": 1,
@@ -32,8 +34,8 @@
       "id": "salinas-hundidas-foe-0",
       "visualType": "drowned",
       "name": "ahogado",
-      "x": 7,
-      "y": 7,
+      "x": 4,
+      "y": 11,
       "hpKey": "salinas_hundidasFoe0Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -59,8 +61,8 @@
       "id": "salinas-hundidas-foe-1",
       "visualType": "salt-crab",
       "name": "cangrejo de salitre",
-      "x": 12,
-      "y": 3,
+      "x": 11,
+      "y": 1,
       "hpKey": "salinas_hundidasFoe1Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -87,7 +89,7 @@
       "visualType": "sewer-rat",
       "name": "rata de salina",
       "x": 15,
-      "y": 4,
+      "y": 2,
       "hpKey": "salinas_hundidasFoe2Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -113,8 +115,8 @@
       "id": "salinas-hundidas-foe-3",
       "visualType": "ember-wisp",
       "name": "fuego fatuo",
-      "x": 6,
-      "y": 1,
+      "x": 17,
+      "y": 7,
       "hpKey": "salinas_hundidasFoe3Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -136,10 +138,110 @@
       }
     },
     {
+      "id": "salinas-hundidas-foe-4",
+      "visualType": "drowned",
+      "name": "ahogado",
+      "x": 13,
+      "y": 8,
+      "hpKey": "salinas_hundidasFoe4Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "salinas-hundidas-foe-5",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 9,
+      "y": 9,
+      "hpKey": "salinas_hundidasFoe5Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "salinas-hundidas-foe-8",
+      "visualType": "drowned",
+      "name": "el contramaestre ahogado",
+      "x": 11,
+      "y": 9,
+      "hpKey": "salinas_hundidasFoe8Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el contramaestre ahogado con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 18
+          },
+          {
+            "type": "grant-item",
+            "itemId": "salinas-chest-key",
+            "name": "Llave del arcón de la escolta",
+            "description": "El contramaestre ahogado aún lleva al cinto la llave del arcón de la escolta.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "salinas-hundidas-elite",
+          "title": "Llave del arcón de la escolta",
+          "body": "El contramaestre ahogado aún lleva al cinto la llave del arcón de la escolta.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "salinas_hundidasEliteDefeated"
+    },
+    {
       "id": "salinas-hundidas-foe-9",
       "visualType": "drowned",
       "name": "el Capitán Ahogado",
-      "x": 15,
+      "x": 19,
       "y": 9,
       "hpKey": "salinas_hundidasFoe9Hp",
       "maxHp": 16,
@@ -184,14 +286,70 @@
     }
   ],
   "triggers": [],
-  "interactables": [],
+  "interactables": [
+    {
+      "id": "salinas-hundidas-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 5,
+      "y": 1,
+      "label": "Leer la lista empapada de la escolta",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasNoteRead",
+            "value": true
+          }
+        ],
+        "message": "Doce nombres en una lista empapada. Once están tachados con la misma tinta. Junto al último, «Bran, escudero», alguien escribió: «sigue vivo, más abajo». La tinta es de la Cancillería.",
+        "journal": {
+          "id": "salinas-hundidas-note",
+          "title": "Salinas Hundidas",
+          "body": "Doce nombres en una lista empapada. Once están tachados con la misma tinta. Junto al último, «Bran, escudero», alguien escribió: «sigue vivo, más abajo». La tinta es de la Cancillería.",
+          "sigil": "C6"
+        }
+      }
+    },
+    {
+      "id": "salinas-hundidas-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 17,
+      "y": 5,
+      "label": "Beber del Ojo de agua dulce",
+      "when": [
+        {
+          "key": "salinas_hundidasFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 18
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Ojo de agua dulce está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
   "treasures": [
     {
       "id": "salinas-hundidas-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 5,
-      "y": 1,
+      "x": 7,
+      "y": 11,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -227,9 +385,126 @@
         ],
         "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
       }
+    },
+    {
+      "id": "salinas-hundidas-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 9,
+      "y": 5,
+      "label": "Abrir el arcón de la escolta",
+      "lockedLabel": "Abrir el arcón de la escolta · cerrado con llave",
+      "when": [
+        {
+          "key": "salinas_hundidasCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "salinas-chest-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El contramaestre ahogado aún lleva al cinto la llave del arcón de la escolta."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "salinas-chest-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 78
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-sword",
+            "name": "Silver sword",
+            "description": "Del arcón de la escolta.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "iron-ring",
+            "name": "Iron ring",
+            "description": "Del arcón de la escolta.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:salinas-hundidas:cache:v1",
+            "amount": 80
+          }
+        ],
+        "message": "El arcón de la escolta guarda la paga que nunca llegaron a cobrar y las armas de los que no volvieron."
+      }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "salinas-hundidas-trap-0",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 1,
+      "y": 10,
+      "label": "Lodo salobre",
+      "when": [
+        {
+          "key": "salinas_hundidasTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "El suelo cede en un lodo salado que muerde como cal viva. Dos puntos de daño para cada uno."
+      }
+    },
+    {
+      "id": "salinas-hundidas-trap-1",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 19,
+      "y": 6,
+      "label": "Lodo salobre",
+      "when": [
+        {
+          "key": "salinas_hundidasTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "salinas_hundidasTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "El suelo cede en un lodo salado que muerde como cal viva. Dos puntos de daño para cada uno."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "dungeon-exit",

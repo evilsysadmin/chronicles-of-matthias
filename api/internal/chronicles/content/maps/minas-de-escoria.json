@@ -9,17 +9,19 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#################",
-    "#.#.........#...#",
-    "#.#######.#.###.#",
-    "#.........#.....#",
-    "###############.#",
-    "#.....#.......#.#",
-    "###.###.##..###.#",
-    "#...#...#...#...#",
-    "#.###.###.###.###",
-    "#.......#.......#",
-    "#################"
+    "#####################",
+    "#.#.........#.......#",
+    "#.#######.#.####..#.#",
+    "#.........#.......#.#",
+    "###############.###.#",
+    "#.....#.......#...#.#",
+    "#.#####.###.###.#.#.#",
+    "#.#...#...#.....#...#",
+    "#.#.#.###.###########",
+    "#...#...#...#...#...#",
+    "#.###.#####.#.#.#.#.#",
+    "#...#.........#...#.#",
+    "#####################"
   ],
   "partyStart": {
     "x": 1,
@@ -32,8 +34,8 @@
       "id": "minas-de-escoria-foe-0",
       "visualType": "ash-goblin",
       "name": "goblin minero",
-      "x": 15,
-      "y": 3,
+      "x": 16,
+      "y": 2,
       "hpKey": "minas_de_escoriaFoe0Hp",
       "maxHp": 10,
       "retaliation": 2,
@@ -59,8 +61,8 @@
       "id": "minas-de-escoria-foe-1",
       "visualType": "ember-wisp",
       "name": "lumbre de mina",
-      "x": 14,
-      "y": 9,
+      "x": 13,
+      "y": 7,
       "hpKey": "minas_de_escoriaFoe1Hp",
       "maxHp": 10,
       "retaliation": 2,
@@ -85,7 +87,7 @@
       "id": "minas-de-escoria-foe-2",
       "visualType": "bone-hound",
       "name": "sabueso de escoria",
-      "x": 11,
+      "x": 12,
       "y": 5,
       "hpKey": "minas_de_escoriaFoe2Hp",
       "maxHp": 10,
@@ -112,8 +114,8 @@
       "id": "minas-de-escoria-foe-3",
       "visualType": "crypt-spider",
       "name": "araña de galería",
-      "x": 3,
-      "y": 9,
+      "x": 10,
+      "y": 11,
       "hpKey": "minas_de_escoriaFoe3Hp",
       "maxHp": 10,
       "retaliation": 2,
@@ -134,6 +136,105 @@
           }
         ]
       }
+    },
+    {
+      "id": "minas-de-escoria-foe-4",
+      "visualType": "ash-goblin",
+      "name": "goblin minero",
+      "x": 15,
+      "y": 11,
+      "hpKey": "minas_de_escoriaFoe4Hp",
+      "maxHp": 10,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin minero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "minas-de-escoria-foe-5",
+      "visualType": "ember-wisp",
+      "name": "lumbre de mina",
+      "x": 2,
+      "y": 9,
+      "hpKey": "minas_de_escoriaFoe5Hp",
+      "maxHp": 10,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de mina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "minas-de-escoria-foe-8",
+      "visualType": "ash-goblin",
+      "name": "el goblin capataz",
+      "x": 19,
+      "y": 11,
+      "hpKey": "minas_de_escoriaFoe8Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el goblin capataz con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 15
+          },
+          {
+            "type": "grant-item",
+            "itemId": "mine-cart-key",
+            "name": "Llave de la vagoneta",
+            "description": "El goblin capataz cuelga la llave de la vagoneta de una cadena al cuello.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "minas-de-escoria-elite",
+          "title": "Llave de la vagoneta",
+          "body": "El goblin capataz cuelga la llave de la vagoneta de una cadena al cuello.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "minas_de_escoriaEliteDefeated"
     },
     {
       "id": "minas-de-escoria-foe-9",
@@ -184,14 +285,70 @@
     }
   ],
   "triggers": [],
-  "interactables": [],
+  "interactables": [
+    {
+      "id": "minas-de-escoria-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 3,
+      "y": 1,
+      "label": "Leer las órdenes del capataz",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaNoteRead",
+            "value": true
+          }
+        ],
+        "message": "«Fundir de noche. Nadie pregunta. El molde lo trae V. en persona y se lo lleva en persona. Pagar en lingotes; los lingotes bajan a las calas.» La firma es una corona sin peso dibujada con prisa.",
+        "journal": {
+          "id": "minas-de-escoria-note",
+          "title": "Minas de Escoria",
+          "body": "«Fundir de noche. Nadie pregunta. El molde lo trae V. en persona y se lo lleva en persona. Pagar en lingotes; los lingotes bajan a las calas.» La firma es una corona sin peso dibujada con prisa.",
+          "sigil": "E3"
+        }
+      }
+    },
+    {
+      "id": "minas-de-escoria-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 13,
+      "y": 5,
+      "label": "Beber del Pozo de agua fría",
+      "when": [
+        {
+          "key": "minas_de_escoriaFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 16
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Pozo de agua fría está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
   "treasures": [
     {
       "id": "minas-de-escoria-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 13,
-      "y": 5,
+      "x": 7,
+      "y": 9,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -227,9 +384,126 @@
         ],
         "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
       }
+    },
+    {
+      "id": "minas-de-escoria-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 3,
+      "y": 11,
+      "label": "Abrir la vagoneta cerrada",
+      "lockedLabel": "Abrir la vagoneta cerrada · cerrado con llave",
+      "when": [
+        {
+          "key": "minas_de_escoriaCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "mine-cart-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El goblin capataz cuelga la llave de la vagoneta de una cadena al cuello."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "mine-cart-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 66
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-axe",
+            "name": "Steel axe",
+            "description": "Del abrir la vagoneta cerrada.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-chain",
+            "name": "Steel chain",
+            "description": "Del abrir la vagoneta cerrada.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:minas-de-escoria:cache:v1",
+            "amount": 70
+          }
+        ],
+        "message": "La vagoneta cerrada lleva lingotes con la marca de Ascuafría, un hacha de acero y una cota de malla de capataz."
+      }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "minas-de-escoria-trap-0",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 15,
+      "y": 1,
+      "label": "Respiradero de escoria",
+      "when": [
+        {
+          "key": "minas_de_escoriaTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 2
+          }
+        ],
+        "message": "Un respiradero escupe escoria al rojo. Dos puntos de daño y un olor a pelo quemado que tardará en irse."
+      }
+    },
+    {
+      "id": "minas-de-escoria-trap-1",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 11,
+      "y": 9,
+      "label": "Respiradero de escoria",
+      "when": [
+        {
+          "key": "minas_de_escoriaTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 2
+          }
+        ],
+        "message": "Un respiradero escupe escoria al rojo. Dos puntos de daño y un olor a pelo quemado que tardará en irse."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "dungeon-exit",

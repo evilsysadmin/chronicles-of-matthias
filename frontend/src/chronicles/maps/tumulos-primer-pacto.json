@@ -9,17 +9,19 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#################",
-    "#.#.....#...#...#",
-    "#.###.#.#.#.#.#.#",
-    "#...#.#...#...#.#",
-    "###.#.#########.#",
-    "#...#...#.....#.#",
-    "#..######.##..#.#",
-    "#...#.....#...#.#",
-    "###.#.#####.###.#",
-    "#.....#.........#",
-    "#################"
+    "#####################",
+    "#.#.......#.........#",
+    "#.###.#####.###.###.#",
+    "#...#.......#.#...#.#",
+    "###.###.#.###.###.###",
+    "#...#...#.#.....#...#",
+    "#.###.###.#.#.#####.#",
+    "#...#.......#.#...#.#",
+    "###.#.#########.#.#.#",
+    "#.....#...#.....#.#.#",
+    "#.#####.#.#.#####.#.#",
+    "#.......#...#.......#",
+    "#####################"
   ],
   "partyStart": {
     "x": 1,
@@ -32,7 +34,7 @@
       "id": "tumulos-primer-pacto-foe-0",
       "visualType": "scavenger-knight",
       "name": "guerrero del túmulo",
-      "x": 9,
+      "x": 6,
       "y": 5,
       "hpKey": "tumulos_primer_pactoFoe0Hp",
       "maxHp": 12,
@@ -59,8 +61,8 @@
       "id": "tumulos-primer-pacto-foe-1",
       "visualType": "spectral-bishop",
       "name": "sacerdote espectral",
-      "x": 12,
-      "y": 9,
+      "x": 8,
+      "y": 3,
       "hpKey": "tumulos_primer_pactoFoe1Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -85,7 +87,7 @@
       "id": "tumulos-primer-pacto-foe-2",
       "visualType": "bone-hound",
       "name": "lobo de hueso",
-      "x": 15,
+      "x": 4,
       "y": 1,
       "hpKey": "tumulos_primer_pactoFoe2Hp",
       "maxHp": 12,
@@ -112,8 +114,8 @@
       "id": "tumulos-primer-pacto-foe-3",
       "visualType": "crypt-spider",
       "name": "araña de túmulo",
-      "x": 8,
-      "y": 3,
+      "x": 10,
+      "y": 11,
       "hpKey": "tumulos_primer_pactoFoe3Hp",
       "maxHp": 12,
       "retaliation": 2,
@@ -136,11 +138,110 @@
       }
     },
     {
+      "id": "tumulos-primer-pacto-foe-4",
+      "visualType": "scavenger-knight",
+      "name": "guerrero del túmulo",
+      "x": 14,
+      "y": 9,
+      "hpKey": "tumulos_primer_pactoFoe4Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guerrero del túmulo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-foe-5",
+      "visualType": "spectral-bishop",
+      "name": "sacerdote espectral",
+      "x": 19,
+      "y": 5,
+      "hpKey": "tumulos_primer_pactoFoe5Hp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sacerdote espectral usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-foe-8",
+      "visualType": "scavenger-knight",
+      "name": "el guerrero del primer rey",
+      "x": 9,
+      "y": 1,
+      "hpKey": "tumulos_primer_pactoFoe8Hp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el guerrero del primer rey con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoEliteDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 18
+          },
+          {
+            "type": "grant-item",
+            "itemId": "barrow-bone-key",
+            "name": "Llave de hueso",
+            "description": "El guerrero del primer rey custodia la llave de hueso del ajuar.",
+            "quantity": 1
+          }
+        ],
+        "journal": {
+          "id": "tumulos-primer-pacto-elite",
+          "title": "Llave de hueso",
+          "body": "El guerrero del primer rey custodia la llave de hueso del ajuar.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "tumulos_primer_pactoEliteDefeated"
+    },
+    {
       "id": "tumulos-primer-pacto-foe-9",
       "visualType": "spectral-bishop",
       "name": "el Guardián del Túmulo",
-      "x": 7,
-      "y": 5,
+      "x": 13,
+      "y": 11,
       "hpKey": "tumulos_primer_pactoFoe9Hp",
       "maxHp": 24,
       "retaliation": 3,
@@ -184,14 +285,70 @@
     }
   ],
   "triggers": [],
-  "interactables": [],
+  "interactables": [
+    {
+      "id": "tumulos-primer-pacto-note",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 3,
+      "y": 1,
+      "label": "Leer la inscripción del túmulo central",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoNoteRead",
+            "value": true
+          }
+        ],
+        "message": "«Siete reyes juraron aquí. El Silencio aceptó. Quien lea la tablilla en voz alta ante el trono hablará con la voz del Rey; quien la rompa, romperá el Pacto.» Debajo, muy pequeño: «o liberará a quien juró por él».",
+        "journal": {
+          "id": "tumulos-primer-pacto-note",
+          "title": "Túmulos del Primer Pacto",
+          "body": "«Siete reyes juraron aquí. El Silencio aceptó. Quien lea la tablilla en voz alta ante el trono hablará con la voz del Rey; quien la rompa, romperá el Pacto.» Debajo, muy pequeño: «o liberará a quien juró por él».",
+          "sigil": "D1"
+        }
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 13,
+      "y": 7,
+      "label": "Beber del Pila del túmulo",
+      "when": [
+        {
+          "key": "tumulos_primer_pactoFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 18
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "El agua del Pila del túmulo está fría y limpia. La compañía recupera fuerzas y puntos de hechizo."
+      }
+    }
+  ],
   "treasures": [
     {
       "id": "tumulos-primer-pacto-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 7,
-      "y": 9,
+      "x": 15,
+      "y": 5,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -227,9 +384,126 @@
         ],
         "message": "Un cofre con herrajes de bronce: oro y equipo de calidad."
       }
+    },
+    {
+      "id": "tumulos-primer-pacto-cache",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 19,
+      "y": 3,
+      "label": "Abrir el ajuar del rey sin nombre",
+      "lockedLabel": "Abrir el ajuar del rey sin nombre · cerrado con llave",
+      "when": [
+        {
+          "key": "tumulos_primer_pactoCacheOpened",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "barrow-bone-key",
+          "quantity": 1,
+          "message": "Cerrado con llave. El guerrero del primer rey custodia la llave de hueso del ajuar."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoCacheOpened",
+            "value": true
+          },
+          {
+            "type": "consume-item",
+            "itemId": "barrow-bone-key",
+            "quantity": 1
+          },
+          {
+            "type": "grant-gold",
+            "amount": 78
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-plate",
+            "name": "Silver plate",
+            "description": "Del ajuar del rey sin nombre.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-shield",
+            "name": "Silver shield",
+            "description": "Del ajuar del rey sin nombre.",
+            "quantity": 1
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:tumulos-primer-pacto:cache:v1",
+            "amount": 80
+          }
+        ],
+        "message": "El ajuar del rey sin nombre: oro antiguo, una armadura de placas de plata y un escudo que todavía brilla."
+      }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "tumulos-primer-pacto-trap-0",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 7,
+      "y": 4,
+      "label": "Losa del juramento",
+      "when": [
+        {
+          "key": "tumulos_primer_pactoTrap0Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoTrap0Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una losa cede bajo el peso de la compañía. Desde el techo cae polvo de huesos y algo más pesado."
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-trap-1",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 8,
+      "y": 1,
+      "label": "Losa del juramento",
+      "when": [
+        {
+          "key": "tumulos_primer_pactoTrap1Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "tumulos_primer_pactoTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una losa cede bajo el peso de la compañía. Desde el techo cae polvo de huesos y algo más pesado."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "dungeon-exit",
