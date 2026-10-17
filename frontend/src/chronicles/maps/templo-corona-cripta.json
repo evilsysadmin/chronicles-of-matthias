@@ -1,0 +1,542 @@
+{
+  "id": "templo-corona-cripta",
+  "version": 1,
+  "progressionKey": "templo-corona-cripta-v1",
+  "title": "Cripta de los Juramentos",
+  "hudTitle": "Cripta",
+  "areaCode": "F6",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#.....#.......#...#",
+    "#.###.#.#####.#.#.#",
+    "#.#.....#...#...#.#",
+    "#.#.#####.#.#####.#",
+    "#.#.......#.......#",
+    "#.#######.#.#####.#",
+    "#.........#.#...#.#",
+    "#####.#####.#.#.#.#",
+    "#.....#.....#.#...#",
+    "#.#####.#####.###.#",
+    "#.......#.........#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 1,
+    "y": 1,
+    "direction": 2
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "templo-corona-cripta-spider",
+      "visualType": "crypt-spider",
+      "name": "una araña de osario",
+      "x": 5,
+      "y": 5,
+      "hpKey": "temploCoronaCriptaSpiderHp",
+      "maxHp": 16,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una araña de osario con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-cripta-hound",
+      "visualType": "bone-hound",
+      "name": "un lobo de hueso",
+      "x": 17,
+      "y": 7,
+      "hpKey": "temploCoronaCriptaHoundHp",
+      "maxHp": 17,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un lobo de hueso con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-cripta-acolyte",
+      "visualType": "silent-acolyte",
+      "name": "un acólito del Silencio",
+      "x": 13,
+      "y": 9,
+      "hpKey": "temploCoronaCriptaAcolyteHp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un acólito del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-cripta-wisp",
+      "visualType": "ember-wisp",
+      "name": "una vela del Silencio",
+      "x": 5,
+      "y": 9,
+      "hpKey": "temploCoronaCriptaWispHp",
+      "maxHp": 13,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una vela del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-cripta-jailer",
+      "visualType": "gate-jailer",
+      "name": "el Carcelero del Silencio",
+      "x": 10,
+      "y": 11,
+      "hpKey": "temploCoronaCriptaJailerHp",
+      "maxHp": 34,
+      "retaliation": 4,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el Carcelero del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeJailerDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 40
+          },
+          {
+            "type": "grant-item",
+            "itemId": "throne-key",
+            "name": "Llave del Trono",
+            "description": "Una llave de hierro frío que abre la escalera al Trono Bajo la Piedra.",
+            "quantity": 1
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Tienes la llave del Trono. Baja y detén al Canciller Varren."
+          }
+        ],
+        "journal": {
+          "id": "crypt-jailer",
+          "title": "Cae el Carcelero",
+          "body": "Del cinturón del Carcelero cuelga la Llave del Trono.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "templeJailerDefeated",
+      "blockingMessage": "El Carcelero del Silencio cierra el paso con su cuerpo de hierro.",
+      "visualScale": 1.14
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "crypt-edric-ghost",
+      "kind": "lore",
+      "visualType": "rookwood-mourner-voice",
+      "x": 9,
+      "y": 3,
+      "label": "Hablar con el espectro de Sir Edric",
+      "when": [
+        {
+          "key": "templeKnightsFreed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeEdricMet",
+            "value": true
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Decide qué hacer con la tablilla del juramento y consigue la llave del Trono."
+          }
+        ],
+        "message": "Un caballero translúcido se arrodilla sin poder evitarlo: «Soy Edric, de la escolta de la Dama. Varren nos trajo aquí y nos hizo jurar ante su corona hueca. Ahora servimos a quien la lleve. La tablilla del Primer Pacto puede romper nuestro juramento… o devolvérselo al Rey. No ambas cosas. Decidid vosotros: nosotros ya no podemos».",
+        "journal": {
+          "id": "crypt-edric",
+          "title": "Los caballeros juramentados",
+          "body": "Los caballeros de la Dama están atados a la corona hueca de Varren. La tablilla del Pacto puede liberarlos o devolverle el juramento al Rey, pero no ambas cosas.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "crypt-edric-rest",
+      "kind": "lore",
+      "visualType": "rookwood-mourner-voice",
+      "x": 9,
+      "y": 3,
+      "label": "Despedirse de Sir Edric",
+      "when": [
+        {
+          "key": "templeKnightsFreed",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "El espectro de Edric sonríe por primera vez: «Decidle a la Dama que volvimos. Aunque fuera así»."
+      }
+    },
+    {
+      "id": "crypt-oath-altar",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 11,
+      "y": 3,
+      "label": "Leer la tablilla ante el altar y liberar a los caballeros",
+      "when": [
+        {
+          "key": "templeKnightsFreed",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "oath-tablet",
+          "quantity": 1,
+          "message": "Sin la tablilla del juramento, el altar es sólo piedra."
+        }
+      ],
+      "lockedLabel": "El altar de los juramentos espera la tablilla",
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:temple:knights-freed:v1",
+            "requirements": [
+              {
+                "itemId": "oath-tablet",
+                "quantity": 1
+              }
+            ],
+            "effects": [
+              {
+                "type": "consume-item",
+                "itemId": "oath-tablet",
+                "quantity": 1
+              },
+              {
+                "type": "set",
+                "key": "templeKnightsFreed",
+                "value": true
+              },
+              {
+                "type": "set",
+                "key": "templeKnightHadricDown",
+                "value": true
+              },
+              {
+                "type": "set",
+                "key": "templeKnightYsoldeDown",
+                "value": true
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:temple:knights-freed:v1",
+                "amount": 150
+              },
+              {
+                "type": "advance-quest",
+                "questId": "lost-king",
+                "title": "El rey desaparecido",
+                "description": "La Dama busca a sus caballeros desaparecidos.",
+                "order": 1,
+                "objective": "Los caballeros descansan. Consigue la llave del Trono y baja a enfrentarte a Varren."
+              }
+            ]
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Lees la tablilla en voz alta. Las palabras del Primer Pacto suenan distintas aquí abajo: no como una promesa, sino como una llave. Uno a uno, los caballeros se ponen en pie, se quitan el yelmo y se desvanecen. La tablilla se agrieta y se convierte en polvo.",
+        "journal": {
+          "id": "crypt-knights-freed",
+          "title": "Los que volvieron",
+          "body": "La compañía usó la tablilla para liberar a los caballeros de la Dama. Ya no guardarán a Varren; tampoco queda tablilla para el Rey.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "crypt-edric-diary",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 3,
+      "y": 3,
+      "label": "Leer el diario de Sir Edric",
+      "action": {
+        "effects": [],
+        "message": "«Día 3. El Canciller nos esperaba en el vado con vino y una corona que no pesaba. Día 4. No recuerdo el nombre de mi madre. Día 5. Juré algo. No sé qué. Día ¿?. Si alguien lee esto: no le dejéis sentarse en el trono»."
+      }
+    },
+    {
+      "id": "crypt-font",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 1,
+      "y": 11,
+      "label": "Beber de la Pila de los Juramentos",
+      "when": [
+        {
+          "key": "templeCryptFontUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeCryptFontUsed",
+            "value": true
+          },
+          {
+            "type": "heal-party",
+            "amount": 30
+          },
+          {
+            "type": "restore-spell-points"
+          },
+          {
+            "type": "refill-class-abilities"
+          }
+        ],
+        "message": "El agua de la pila está quieta como un espejo. Al beber, la compañía recuerda con nitidez sus propios nombres. Heridas cerradas, puntos de hechizo recuperados."
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "id": "crypt-chest",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 17,
+      "y": 1,
+      "label": "Abrir el cofre",
+      "when": [
+        {
+          "key": "templeCryptChestOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeCryptChestOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 120
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-plate",
+            "name": "Steel plate",
+            "description": "Armadura de placas de un caballero que ya no la necesita.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "silver-staff",
+            "name": "Silver staff",
+            "description": "Bastón de plata de un capellán de la escolta.",
+            "quantity": 1
+          }
+        ],
+        "message": "El ajuar de la escolta: 120 monedas, una armadura de placas de acero y un bastón de plata."
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "crypt-plate-centre",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 9,
+      "y": 7,
+      "label": "Losa de los juramentos",
+      "when": [
+        {
+          "key": "cryptPlateCentreSpent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cryptPlateCentreSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Una losa grabada con un juramento se hunde. Las cadenas del techo caen sobre la compañía: cuatro puntos de daño."
+      }
+    },
+    {
+      "id": "crypt-vent-south",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 14,
+      "y": 11,
+      "label": "Respiradero de ceniza",
+      "when": [
+        {
+          "key": "cryptVentSouthSpent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cryptVentSouthSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "El suelo exhala ceniza ardiente. Tres puntos de daño y una lección sobre mirar dónde se pisa."
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "crypt-up",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 1,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Subir al Atrio de las Siete Coronas",
+      "lockedLabel": "La escalera está sellada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "templo-corona-atrio",
+            "entryExitId": "temple-atrium-down"
+          }
+        ],
+        "message": "Subir al Atrio de las Siete Coronas."
+      }
+    },
+    {
+      "id": "crypt-down",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 9,
+      "y": 11,
+      "requiresReturn": true,
+      "openLabel": "Bajar al Trono Bajo la Piedra",
+      "lockedLabel": "Reja del Trono · cerrada con llave",
+      "requirements": [
+        {
+          "itemId": "throne-key",
+          "quantity": 1,
+          "message": "La reja del Trono necesita la llave del Carcelero."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "templo-corona-trono",
+            "entryExitId": "throne-up"
+          }
+        ],
+        "message": "La Llave del Trono gira. La compañía baja hacia una luz que no viene de ninguna antorcha."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "templo-corona-cripta-arrival",
+    "title": "Cripta de los Juramentos",
+    "body": "Nichos llenos de yelmos vacíos. En el centro, un altar donde se juraba en nombre del Rey.",
+    "sigil": "F6"
+  },
+  "introMessage": "Cripta de los Juramentos. Yelmos alineados en los nichos, todos mirando hacia el mismo altar.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Cripta de los Juramentos. Entre los nichos, siluetas de caballeros de rodillas. No respiran, pero escuchan."
+  }
+}

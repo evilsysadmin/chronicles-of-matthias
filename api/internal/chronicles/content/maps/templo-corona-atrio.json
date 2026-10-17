@@ -1,0 +1,571 @@
+{
+  "id": "templo-corona-atrio",
+  "version": 1,
+  "progressionKey": "templo-corona-atrio-v1",
+  "title": "Atrio de las Siete Coronas",
+  "hudTitle": "Atrio",
+  "areaCode": "F6",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#.......#.#.......#",
+    "#.#####.#.#.#####.#",
+    "#.#...#.....#...#.#",
+    "#.#.#.#######.#.#.#",
+    "#...#.........#...#",
+    "###.###.###.###.###",
+    "#.....#.#.#.#.....#",
+    "#.###.#.#.#.#.###.#",
+    "#.#...#.....#...#.#",
+    "#.#.#####.#####.#.#",
+    "#.................#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 9,
+    "y": 11,
+    "direction": 0
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "templo-corona-atrio-acolyte-west",
+      "visualType": "silent-acolyte",
+      "name": "un acólito del Silencio",
+      "x": 3,
+      "y": 5,
+      "hpKey": "temploCoronaAtrioAcolyteWestHp",
+      "maxHp": 16,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un acólito del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-atrio-acolyte-east",
+      "visualType": "silent-acolyte",
+      "name": "una acólita del Silencio",
+      "x": 15,
+      "y": 5,
+      "hpKey": "temploCoronaAtrioAcolyteEastHp",
+      "maxHp": 16,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una acólita del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-atrio-hound",
+      "visualType": "bone-hound",
+      "name": "un sabueso del templo",
+      "x": 1,
+      "y": 9,
+      "hpKey": "temploCoronaAtrioHoundHp",
+      "maxHp": 15,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un sabueso del templo con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-atrio-wisp",
+      "visualType": "ember-wisp",
+      "name": "una vela del Silencio",
+      "x": 17,
+      "y": 9,
+      "hpKey": "temploCoronaAtrioWispHp",
+      "maxHp": 12,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una vela del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-atrio-herald",
+      "visualType": "spectral-bishop",
+      "name": "el Heraldo del Silencio",
+      "x": 9,
+      "y": 3,
+      "hpKey": "temploCoronaAtrioHeraldHp",
+      "maxHp": 30,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el Heraldo del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeHeraldDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 30
+          }
+        ],
+        "journal": {
+          "id": "temple-herald",
+          "title": "Cae el Heraldo",
+          "body": "El Heraldo guardaba el sello del Atrio. Llevaba la marca de Varren en el sello de su anillo.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "templeHeraldDefeated",
+      "blockingMessage": "El Heraldo del Silencio no deja pasar a nadie con nombre.",
+      "visualScale": 1.12
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "temple-atrium-mural",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 8,
+      "y": 9,
+      "label": "Leer el mural del Primer Pacto",
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeMuralRead",
+            "value": true
+          }
+        ],
+        "message": "El mural cuenta el Primer Pacto: siete reyes juraron ante el Silencio. El Silencio guardaría el reino haciendo olvidar a sus enemigos; a cambio, cada rey pagaría con su nombre al morir. Tres coronas del friso no tienen nombre. Alguien las ha bajado de su sitio.",
+        "journal": {
+          "id": "temple-mural",
+          "title": "El Primer Pacto",
+          "body": "El Silencio protege el reino borrando a sus enemigos. El precio son nombres. Tres coronas sin nombre abren el sello del Atrio.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "temple-atrium-tomb",
+      "kind": "lore",
+      "visualType": "name-plaque",
+      "x": 1,
+      "y": 1,
+      "label": "Leer la lápida sin nombre",
+      "action": {
+        "effects": [],
+        "message": "«Aquí yace un rey. El Silencio se llevó su nombre y el reino le dio las gracias». Debajo, una mano reciente ha añadido con tiza: «V. — que el próximo sea el último»."
+      }
+    },
+    {
+      "id": "temple-atrium-seal",
+      "kind": "relic-socket",
+      "visualType": "chain-altar",
+      "x": 9,
+      "y": 2,
+      "label": "Colocar las tres coronas en el sello",
+      "when": [
+        {
+          "key": "templeAtriumSealOpen",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "temple-crown-iron",
+          "quantity": 1,
+          "message": "Al sello le faltan coronas. Busca en las alas del Atrio."
+        },
+        {
+          "itemId": "temple-crown-salt",
+          "quantity": 1,
+          "message": "Al sello le faltan coronas. Busca en las alas del Atrio."
+        },
+        {
+          "itemId": "temple-crown-ash",
+          "quantity": 1,
+          "message": "Al sello le faltan coronas. Busca en las alas del Atrio."
+        }
+      ],
+      "lockedLabel": "El sello espera tres coronas sin nombre",
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "temple-crown-iron",
+            "quantity": 1
+          },
+          {
+            "type": "consume-item",
+            "itemId": "temple-crown-salt",
+            "quantity": 1
+          },
+          {
+            "type": "consume-item",
+            "itemId": "temple-crown-ash",
+            "quantity": 1
+          },
+          {
+            "type": "set",
+            "key": "templeAtriumSealOpen",
+            "value": true
+          },
+          {
+            "type": "award-xp",
+            "awardId": "terra:temple:atrium-seal:v1",
+            "amount": 120
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "El sello se ha abierto. Baja a la Cripta de los Juramentos."
+          }
+        ],
+        "message": "Las tres coronas encajan en el friso y el sello gira con un suspiro de piedra. Al norte, una escalera baja hacia un frío que huele a hierro y a juramentos viejos.",
+        "journal": {
+          "id": "temple-seal-open",
+          "title": "Tres coronas, ningún nombre",
+          "body": "El sello del Atrio cede. Debajo esperan la Cripta de los Juramentos y, más abajo, el trono.",
+          "sigil": "♛"
+        }
+      }
+    }
+  ],
+  "treasures": [
+    {
+      "id": "temple-crown-iron",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 4,
+      "y": 3,
+      "label": "Tomar la corona de hierro sin nombre",
+      "when": [
+        {
+          "key": "templeCrownIronTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeCrownIronTaken",
+            "value": true
+          },
+          {
+            "type": "grant-item",
+            "itemId": "temple-crown-iron",
+            "name": "Corona de hierro sin nombre",
+            "description": "Una diadema de hierro negro. Alguien limó el nombre del rey que la llevó.",
+            "quantity": 1
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Reúne las tres coronas sin nombre del Atrio y colócalas en el sello del norte."
+          }
+        ],
+        "message": "Levantas la corona de hierro sin nombre. Pesa menos de lo que debería: le falta un nombre."
+      }
+    },
+    {
+      "id": "temple-crown-salt",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 14,
+      "y": 3,
+      "label": "Tomar la corona de sal sin nombre",
+      "when": [
+        {
+          "key": "templeCrownSaltTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeCrownSaltTaken",
+            "value": true
+          },
+          {
+            "type": "grant-item",
+            "itemId": "temple-crown-salt",
+            "name": "Corona de sal sin nombre",
+            "description": "Cristal de sal prensado en forma de corona. El nombre se disolvió hace siglos.",
+            "quantity": 1
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Reúne las tres coronas sin nombre del Atrio y colócalas en el sello del norte."
+          }
+        ],
+        "message": "Levantas la corona de sal sin nombre. Pesa menos de lo que debería: le falta un nombre."
+      }
+    },
+    {
+      "id": "temple-crown-ash",
+      "kind": "pickup",
+      "visualType": "chain-altar",
+      "x": 9,
+      "y": 7,
+      "label": "Tomar la corona de ceniza sin nombre",
+      "when": [
+        {
+          "key": "templeCrownAshTaken",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeCrownAshTaken",
+            "value": true
+          },
+          {
+            "type": "grant-item",
+            "itemId": "temple-crown-ash",
+            "name": "Corona de ceniza sin nombre",
+            "description": "Ceniza apelmazada que conserva la forma de una corona y el calor de un nombre quemado.",
+            "quantity": 1
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Reúne las tres coronas sin nombre del Atrio y colócalas en el sello del norte."
+          }
+        ],
+        "message": "Levantas la corona de ceniza sin nombre. Pesa menos de lo que debería: le falta un nombre."
+      }
+    },
+    {
+      "id": "temple-atrium-chest",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 17,
+      "y": 1,
+      "label": "Abrir el cofre",
+      "when": [
+        {
+          "key": "templeAtriumChestOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeAtriumChestOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 90
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-sword",
+            "name": "Steel sword",
+            "description": "Espada de acero de la guardia del Templo.",
+            "quantity": 1
+          },
+          {
+            "type": "grant-item",
+            "itemId": "steel-shield",
+            "name": "Steel shield",
+            "description": "Escudo de acero con siete coronas grabadas.",
+            "quantity": 1
+          }
+        ],
+        "message": "Ofrendas de peregrinos que nunca volvieron: 90 monedas, una espada y un escudo de acero."
+      }
+    }
+  ],
+  "traps": [
+    {
+      "id": "temple-plate-west",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 7,
+      "y": 5,
+      "label": "Losa de las cadenas",
+      "when": [
+        {
+          "key": "templePlateWestSpent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templePlateWestSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una losa cede y dos cadenas barren el pasillo. Tres puntos de daño por cabeza."
+      }
+    },
+    {
+      "id": "temple-plate-east",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 11,
+      "y": 5,
+      "label": "Losa de las cadenas",
+      "when": [
+        {
+          "key": "templePlateEastSpent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "templePlateEastSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Otra losa. Otras dos cadenas. La arquitectura del Templo no cree en las segundas oportunidades."
+      }
+    }
+  ],
+  "exits": [
+    {
+      "id": "temple-to-f6",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 9,
+      "y": 11,
+      "requiresReturn": true,
+      "openLabel": "Salir al Umbral Bajo la Corona (F6)",
+      "lockedLabel": "La escalera está sellada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "terra-f6",
+            "entryExitId": "f6-to-temple"
+          }
+        ],
+        "message": "La compañía sube la escalinata y sale a la ceniza de F6."
+      }
+    },
+    {
+      "id": "temple-atrium-down",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 9,
+      "y": 1,
+      "requiresReturn": true,
+      "openLabel": "Bajar a la Cripta de los Juramentos",
+      "lockedLabel": "El sello de las siete coronas sigue cerrado",
+      "requirements": [
+        {
+          "key": "templeAtriumSealOpen",
+          "truthy": true,
+          "message": "El sello de las siete coronas sigue cerrado."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "templo-corona-cripta",
+            "entryExitId": "crypt-up"
+          }
+        ],
+        "message": "La compañía baja a la Cripta de los Juramentos."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "templo-corona-atrio-arrival",
+    "title": "Atrio de las Siete Coronas",
+    "body": "Bajo F6 duerme el Templo Bajo la Corona. Siete coronas presiden el friso del Atrio; tres han desaparecido.",
+    "sigil": "F6"
+  },
+  "introMessage": "Atrio de las Siete Coronas. Siete coronas de piedra presiden el friso; en tres de ellas sólo queda el hueco.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Atrio de las Siete Coronas. Al norte, un sello circular con tres huecos. A los lados, pasos de sandalias en el polvo."
+  }
+}

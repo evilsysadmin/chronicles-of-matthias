@@ -110,6 +110,12 @@ import {
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 import ChroniclesCombatRoster, { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
 import ChroniclesBookOneEpilogue from './ChroniclesBookOneEpilogue.jsx';
+import ChroniclesCampaignEpilogue from './ChroniclesCampaignEpilogue.jsx';
+import {
+  CHRONICLES_EPILOGUE_SEEN_KEY,
+  chroniclesCampaignEnding,
+  chroniclesCampaignEpiloguePending,
+} from '../chronicles/chroniclesCampaignEpilogue.js';
 import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
@@ -404,6 +410,8 @@ export default function ChroniclesOfMatthias({ onExit }) {
     if (!current) return;
 
     const actionType = typeof action === 'string' ? action : action?.type;
+    // The campaign epilogue is a decision screen: nothing moves behind it.
+    if (chroniclesCampaignEpiloguePending(current)) return current;
     // A held touch control must not keep moving the expedition behind an NPC.
     // The deliberate dialogue quest option alone may invoke 'interact'.
     if (audienceRef.current && actionType !== 'interact') return current;
@@ -882,6 +890,22 @@ export default function ChroniclesOfMatthias({ onExit }) {
     }
   }, [ready, state?.mapId, persistCheckpoint]);
 
+  // The throne decided the ending: keep exploring Terra (the run stays
+  // active) or close the chronicle (the run is completed for good). Either
+  // way the choice is checkpointed at once so a reload does not undo it.
+  const resolveCampaignEpilogue = useCallback((closeChronicle) => {
+    const current = stateRef.current;
+    if (!chroniclesCampaignEpiloguePending(current)) return;
+    const next = {
+      ...current,
+      [CHRONICLES_EPILOGUE_SEEN_KEY]: true,
+      ...(closeChronicle ? { phase: 'escaped' } : {}),
+    };
+    stateRef.current = next;
+    setState(next);
+    void persistCheckpoint(next, 'epilogue');
+  }, [persistCheckpoint]);
+
   const saveAndExit = useCallback(async () => {
     if (saveBusy) return;
     const saved = await persistCheckpoint(stateRef.current, 'manual');
@@ -1353,7 +1377,17 @@ export default function ChroniclesOfMatthias({ onExit }) {
             <ChroniclesEnemyRetaliationFx key={retaliationCue?.token || 'none'} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
-            {state.phase === 'escaped' && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}
+            {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}
+            {state.phase === 'escaped' && chroniclesCampaignEnding(state) && (
+              <ChroniclesCampaignEpilogue state={state} closed onRestart={restart} onExit={exitChronicles} />
+            )}
+            {chroniclesCampaignEpiloguePending(state) && (
+              <ChroniclesCampaignEpilogue
+                state={state}
+                onContinue={() => resolveCampaignEpilogue(false)}
+                onClose={() => resolveCampaignEpilogue(true)}
+              />
+            )}
           </div>
 
           {/* Desktop puts these in the MM3 panel; mobile floats them over the view. */}

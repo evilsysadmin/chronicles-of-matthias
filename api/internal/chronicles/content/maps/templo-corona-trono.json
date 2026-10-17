@@ -1,0 +1,500 @@
+{
+  "id": "templo-corona-trono",
+  "version": 1,
+  "progressionKey": "templo-corona-trono-v1",
+  "title": "Trono Bajo la Piedra",
+  "hudTitle": "Trono",
+  "areaCode": "F6",
+  "regionKind": "dungeon",
+  "dungeonRole": "main",
+  "layoutMode": "authored",
+  "grid": [
+    "###################",
+    "#########.#########",
+    "#######.....#######",
+    "######.......######",
+    "#####.........#####",
+    "####...........####",
+    "###.............###",
+    "##...#.......#...##",
+    "#....#.......#....#",
+    "#....##.....##....#",
+    "#.......#.#.......#",
+    "#.................#",
+    "###################"
+  ],
+  "partyStart": {
+    "x": 9,
+    "y": 11,
+    "direction": 0
+  },
+  "initialFlags": {},
+  "enemies": [
+    {
+      "id": "templo-corona-trono-varren",
+      "visualType": "chancellor-varren",
+      "name": "el Canciller Varren",
+      "x": 9,
+      "y": 4,
+      "hpKey": "temploCoronaTronoVarrenHp",
+      "maxHp": 52,
+      "retaliation": 5,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a el Canciller Varren con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "varrenDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 150
+          },
+          {
+            "type": "grant-item",
+            "itemId": "hollow-crown",
+            "name": "Corona hueca",
+            "description": "La corona sin peso con la que Varren quiso jurar en nombre del Rey. Ya no sirve para nada, y eso es lo mejor que se puede decir de ella.",
+            "quantity": 1
+          },
+          {
+            "type": "advance-quest",
+            "questId": "lost-king",
+            "title": "El rey desaparecido",
+            "description": "La Dama busca a sus caballeros desaparecidos.",
+            "order": 1,
+            "objective": "Varren ha caído. Decide ante el trono el destino del Rey."
+          }
+        ],
+        "journal": {
+          "id": "throne-varren",
+          "title": "Cae el Canciller",
+          "body": "Varren cae con la corona hueca en la cabeza. Al tocar el suelo, la corona se apaga. Queda decidir qué hacer con el Rey.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "varrenDefeated",
+      "blockingMessage": "Varren alza la corona hueca: «Un paso más y olvidaréis vuestros nombres».",
+      "visualScale": 1.1
+    },
+    {
+      "id": "templo-corona-trono-knight-west",
+      "visualType": "oathbound-knight",
+      "name": "Sir Hadric, juramentado",
+      "x": 6,
+      "y": 7,
+      "hpKey": "temploCoronaTronoKnightWestHp",
+      "maxHp": 26,
+      "retaliation": 4,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} rinde a Sir Hadric, juramentado con {attack}. El juramento se rompe con su armadura.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeKnightHadricDown",
+            "value": true
+          }
+        ]
+      },
+      "defeatedFlag": "templeKnightHadricDown",
+      "visualScale": 1.04
+    },
+    {
+      "id": "templo-corona-trono-knight-east",
+      "visualType": "oathbound-knight",
+      "name": "Dama Ysolde, juramentada",
+      "x": 12,
+      "y": 7,
+      "hpKey": "temploCoronaTronoKnightEastHp",
+      "maxHp": 26,
+      "retaliation": 4,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} rinde a Dama Ysolde, juramentada con {attack}. El juramento se rompe con su armadura.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "templeKnightYsoldeDown",
+            "value": true
+          }
+        ]
+      },
+      "defeatedFlag": "templeKnightYsoldeDown",
+      "visualScale": 1.04
+    },
+    {
+      "id": "templo-corona-trono-acolyte-west",
+      "visualType": "silent-acolyte",
+      "name": "un acólito del Silencio",
+      "x": 3,
+      "y": 9,
+      "hpKey": "temploCoronaTronoAcolyteWestHp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un acólito del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "templo-corona-trono-acolyte-east",
+      "visualType": "silent-acolyte",
+      "name": "una acólita del Silencio",
+      "x": 15,
+      "y": 9,
+      "hpKey": "temploCoronaTronoAcolyteEastHp",
+      "maxHp": 18,
+      "retaliation": 3,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una acólita del Silencio con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    }
+  ],
+  "triggers": [],
+  "interactables": [
+    {
+      "id": "throne-king-stone",
+      "kind": "lore",
+      "visualType": "rookwood-mourner-voice",
+      "x": 9,
+      "y": 1,
+      "label": "Sacar al Rey de la piedra, sin juramento",
+      "when": [
+        {
+          "key": "varrenDefeated",
+          "truthy": true
+        },
+        {
+          "key": "lostKingEnding",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:lost-king:ending:v1",
+            "requirements": [
+              {
+                "key": "lostKingEnding",
+                "falsy": true
+              },
+              {
+                "key": "varrenDefeated",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "lostKingEnding",
+                "value": "regency"
+              },
+              {
+                "type": "grant-gold",
+                "amount": 250
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:lost-king:ending:regency:v1",
+                "amount": 300
+              },
+              {
+                "type": "complete-quest",
+                "questId": "lost-king",
+                "title": "El rey desaparecido",
+                "description": "La Dama busca a sus caballeros desaparecidos.",
+                "order": 1,
+                "objective": "El Rey vive. La Dama gobernará como regente."
+              }
+            ]
+          }
+        ],
+        "message": "Rompéis la piedra con las manos y con lo que tenéis. El rey Aurelio sale del trono como sale un hombre de un pozo: vivo, débil y sin corona. «No volveré a jurar», dice. «Que el reino lo gobierne quien recuerde los nombres». El Silencio se queda sin rey y sin dueño.",
+        "journal": {
+          "id": "lost-king-ending-regency",
+          "title": "Un rey sin juramento",
+          "body": "La compañía liberó al Rey sin renovar el Pacto. Aurelio abdica; la Dama gobernará como regente.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "throne-oath-restore",
+      "kind": "lore",
+      "visualType": "shrine",
+      "x": 8,
+      "y": 2,
+      "label": "Devolver el juramento al Rey con la tablilla",
+      "when": [
+        {
+          "key": "varrenDefeated",
+          "truthy": true
+        },
+        {
+          "key": "lostKingEnding",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "oath-tablet",
+          "quantity": 1,
+          "message": "Sin la tablilla no hay juramento que devolver."
+        }
+      ],
+      "lockedLabel": "Sin la tablilla no hay juramento que devolver",
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "oath-tablet",
+            "quantity": 1
+          },
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:lost-king:ending:v1",
+            "requirements": [
+              {
+                "key": "lostKingEnding",
+                "falsy": true
+              },
+              {
+                "key": "varrenDefeated",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "lostKingEnding",
+                "value": "restored"
+              },
+              {
+                "type": "grant-gold",
+                "amount": 300
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:lost-king:ending:restored:v1",
+                "amount": 350
+              },
+              {
+                "type": "complete-quest",
+                "questId": "lost-king",
+                "title": "El rey desaparecido",
+                "description": "La Dama busca a sus caballeros desaparecidos.",
+                "order": 1,
+                "objective": "El Rey ha vuelto con el juramento intacto."
+              }
+            ]
+          }
+        ],
+        "message": "Pones la tablilla en las manos de piedra de el rey Aurelio. La lee sin abrir los ojos. La piedra se agrieta desde dentro y el Rey se levanta con el juramento intacto: «El Pacto es mío otra vez. Nadie volverá a jurar en mi nombre». El Silencio se arrodilla como un perro que reconoce a su amo.",
+        "journal": {
+          "id": "lost-king-ending-restored",
+          "title": "El Rey vuelve",
+          "body": "La compañía devolvió el juramento del Primer Pacto al rey Aurelio. El Silencio vuelve a tener amo.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "throne-oath-break",
+      "kind": "lore",
+      "visualType": "chain-altar",
+      "x": 10,
+      "y": 2,
+      "label": "Romper la tablilla sobre el trono y acabar con el Pacto",
+      "when": [
+        {
+          "key": "varrenDefeated",
+          "truthy": true
+        },
+        {
+          "key": "lostKingEnding",
+          "falsy": true
+        }
+      ],
+      "requirements": [
+        {
+          "itemId": "oath-tablet",
+          "quantity": 1,
+          "message": "Necesitas la tablilla para romper el Pacto."
+        }
+      ],
+      "lockedLabel": "Necesitas la tablilla para romper el Pacto",
+      "action": {
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "oath-tablet",
+            "quantity": 1
+          },
+          {
+            "type": "claim-reward",
+            "rewardId": "terra:lost-king:ending:v1",
+            "requirements": [
+              {
+                "key": "lostKingEnding",
+                "falsy": true
+              },
+              {
+                "key": "varrenDefeated",
+                "truthy": true
+              }
+            ],
+            "effects": [
+              {
+                "type": "set",
+                "key": "lostKingEnding",
+                "value": "broken"
+              },
+              {
+                "type": "grant-gold",
+                "amount": 200
+              },
+              {
+                "type": "award-xp",
+                "awardId": "terra:lost-king:ending:broken:v1",
+                "amount": 400
+              },
+              {
+                "type": "complete-quest",
+                "questId": "lost-king",
+                "title": "El rey desaparecido",
+                "description": "La Dama busca a sus caballeros desaparecidos.",
+                "order": 1,
+                "objective": "El Pacto está roto. Los nombres borrados han vuelto."
+              }
+            ]
+          }
+        ],
+        "message": "Rompes la tablilla contra el brazo del trono. El Pacto se deshace con un ruido de mil puertas abriéndose a la vez. Por todo Terra, los nombres que el Silencio se había llevado vuelven a sus dueños. El rey Aurelio sale de la piedra convertido en un hombre corriente, y por primera vez en su vida parece aliviado.",
+        "journal": {
+          "id": "lost-king-ending-broken",
+          "title": "Sin corona",
+          "body": "La compañía rompió el Primer Pacto. El Silencio ha soltado todos los nombres; el reino ya no tiene quien lo haga olvidar.",
+          "sigil": "♛"
+        }
+      }
+    },
+    {
+      "id": "throne-varren-before",
+      "kind": "lore",
+      "visualType": "rookwood-mourner-voice",
+      "x": 9,
+      "y": 1,
+      "label": "Mirar el trono",
+      "when": [
+        {
+          "key": "varrenDefeated",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "En el trono de piedra hay un hombre de piedra: el rey Aurelio. Delante, de pie, el Canciller Varren se ajusta una corona que no pesa nada."
+      }
+    },
+    {
+      "id": "throne-after",
+      "kind": "lore",
+      "visualType": "rookwood-mourner-voice",
+      "x": 9,
+      "y": 1,
+      "label": "Mirar el trono vacío",
+      "when": [
+        {
+          "key": "lostKingEnding",
+          "truthy": true
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "El trono está vacío. En el suelo, la corona hueca de Varren ya no brilla. Esta historia ha terminado; Terra sigue ahí arriba."
+      }
+    }
+  ],
+  "treasures": [],
+  "traps": [],
+  "exits": [
+    {
+      "id": "throne-up",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 9,
+      "y": 11,
+      "requiresReturn": true,
+      "openLabel": "Subir a la Cripta de los Juramentos",
+      "lockedLabel": "La escalera está sellada",
+      "requirements": [],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "templo-corona-cripta",
+            "entryExitId": "crypt-down"
+          }
+        ],
+        "message": "Subir a la Cripta de los Juramentos."
+      }
+    }
+  ],
+  "initialJournal": {
+    "id": "templo-corona-trono-arrival",
+    "title": "Trono Bajo la Piedra",
+    "body": "Una nave abovedada bajo la montaña. Al fondo, un trono de piedra con un hombre de piedra sentado en él.",
+    "sigil": "F6"
+  },
+  "introMessage": "Trono Bajo la Piedra. Al fondo, un trono. En el trono, un rey de piedra. Delante, un canciller con corona.",
+  "arrivalAction": {
+    "effects": [],
+    "message": "Trono Bajo la Piedra. Varren no se vuelve: «Llegáis tarde. Dentro de un momento el Rey seré yo, y nadie recordará que hubo otro»."
+  }
+}

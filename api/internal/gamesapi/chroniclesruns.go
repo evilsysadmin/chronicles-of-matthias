@@ -390,7 +390,7 @@ func canonicalLen(value bson.D) int {
 func runeLen(s string) int { return utf8.RuneCountInString(s) }
 
 func normalizeFlags(flags bson.D) (bson.D, error) {
-	if len(flags) > 512 || canonicalLen(flags) > 65_536 {
+	if len(flags) > 1024 || canonicalLen(flags) > 131_072 {
 		return nil, fail(400, "El checkpoint contiene demasiados flags.")
 	}
 	for _, e := range flags {
@@ -418,7 +418,7 @@ func lookupOr(d bson.D, key string, fallback any) any {
 }
 
 func normalizeInventory(inventory bson.D) (bson.D, error) {
-	if len(inventory) > 64 || canonicalLen(inventory) > 16_384 {
+	if len(inventory) > 256 || canonicalLen(inventory) > 65_536 {
 		return nil, fail(400, "El checkpoint contiene demasiado inventario.")
 	}
 	out := bson.D{}
@@ -461,7 +461,7 @@ func normalizeInventory(inventory bson.D) (bson.D, error) {
 var errUnhashable = errors.New("TypeError: unhashable type")
 
 func normalizeQuests(quests bson.D) (bson.D, error) {
-	if len(quests) > 64 || canonicalLen(quests) > 32_768 {
+	if len(quests) > 128 || canonicalLen(quests) > 65_536 {
 		return nil, fail(400, "El checkpoint contiene demasiadas quests.")
 	}
 	out := bson.D{}
@@ -602,9 +602,15 @@ func bootstrap(run bson.D, route *chronicles.RouteSnapshot) (bson.D, error) {
 	if area == nil {
 		return nil, fail(409, "El mapa actual de esta run ya no está disponible.")
 	}
+	// Content upgrade: the world is authored in this repository and keeps
+	// growing. A save whose current map was revised resumes on the shipped
+	// revision instead of becoming unloadable; the client re-validates the
+	// saved position against the new grid, and the next checkpoint stores
+	// the new revision.
 	if !pydoc.Equal(lookupOr(area, "contentVersion", nil), lookupOr(run, "contentVersion", nil)) ||
 		!pydoc.Equal(lookupOr(area, "manifestRevision", nil), lookupOr(run, "manifestRevision", nil)) {
-		return nil, fail(409, "La revisión de contenido de esta run ya no está disponible.")
+		run = pydoc.Set(append(bson.D(nil), run...), "contentVersion", lookupOr(area, "contentVersion", nil))
+		run = pydoc.Set(run, "manifestRevision", lookupOr(area, "manifestRevision", nil))
 	}
 	payload := append(append(bson.D(nil), run...), bson.E{Key: "area", Value: area}, bson.E{Key: "areas", Value: areas})
 	if route != nil {
@@ -720,10 +726,8 @@ func (h *ChroniclesRunsHandler) checkpoint(ctx context.Context, username, runID 
 	if err != nil {
 		return nil, areaErr(err)
 	}
-	if !pydoc.Equal(lookupOr(current, "contentVersion", nil), lookupOr(run, "contentVersion", nil)) ||
-		!pydoc.Equal(lookupOr(current, "manifestRevision", nil), lookupOr(run, "manifestRevision", nil)) {
-		return nil, fail(409, "La revisión de contenido de esta run ya no está disponible.")
-	}
+	// A revised current map is not a conflict (see bootstrap): the
+	// checkpoint below stores the shipped revision of the target map.
 	target := body.currentMapID
 	if !chroniclesMapID(target) {
 		return nil, fail(404, "Mapa de Chronicles no encontrado.")
