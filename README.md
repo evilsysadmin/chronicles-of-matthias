@@ -8,7 +8,7 @@ juego y de su API** (origen en [`docs/PROVENANCE.md`](docs/PROVENANCE.md)).
 | Parte | Ruta | Desplegado en |
 | --- | --- | --- |
 | Juego (React + Three.js) | `frontend/` | `https://staging.chronicles.shadowops.dpdns.org` (Cloudflare Pages) |
-| API (Go: cuentas, sesión, partidas) | `api/` | `https://chronicles-api-staging.shadowops.dpdns.org` (OCI A1 + túnel propio) |
+| API (Go: cuentas, sesión y partidas guardadas — saves) | `api/` | `https://chronicles-api-staging.shadowops.dpdns.org` (OCI A1 + túnel propio) |
 | Pipeline de arte y mundo | `scripts/art`, `scripts/blender`, `scripts/chronicles` | — |
 
 La infraestructura (Pages, túnel, Vault, despliegue en OCI) vive en
