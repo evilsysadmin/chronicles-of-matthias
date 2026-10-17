@@ -8,6 +8,11 @@ export default defineConfig({
   // release.js (vendorizado) lee esta constante igual que en Chess Studio.
   define: { __CHESS_BUILD_ID__: JSON.stringify(BUILD_ID) },
   plugins: [react()],
+  test: {
+    environment: 'node',
+    setupFiles: ['./src/standalone/test-setup.js'],
+    include: ['src/**/*.test.{js,jsx}', 'test/**/*.test.{js,jsx}'],
+  },
   build: {
     chunkSizeWarningLimit: 750,
     rollupOptions: {

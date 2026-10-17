@@ -1,15 +1,13 @@
-name: Chronicles frontend (verbatim Chess Studio game)
+name: Chronicles frontend
 on:
   pull_request:
     paths:
       - 'frontend/**'
-      - 'scripts/vendor_chess_studio.py'
       - '.github/workflows/react-frontend.yml'
   push:
     branches: [main]
     paths:
       - 'frontend/**'
-      - 'scripts/vendor_chess_studio.py'
       - '.github/workflows/react-frontend.yml'
 permissions:
   contents: read
@@ -21,28 +19,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Read pinned Chess Studio commit
-        id: lock
-        run: echo "commit=$(python3 -c 'import json;print(json.load(open("frontend/VENDOR.lock.json"))["commit"])')" >> "$GITHUB_OUTPUT"
-      - name: Checkout pinned Chess Studio source
-        uses: actions/checkout@v4
-        with:
-          repository: evilsysadmin/chess-studio
-          ref: ${{ steps.lock.outputs.commit }}
-          path: .chess-studio
-          persist-credentials: false
-      - name: Prove vendored game is byte-identical to Chess Studio
-        run: python3 scripts/vendor_chess_studio.py check .chess-studio
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install pinned dependencies
         working-directory: frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Build against Chess Studio staging API
+      - name: Game tests (Vitest)
+        working-directory: frontend
+        run: npm test
+      - name: Build against the Chronicles staging API
         working-directory: frontend
         env:
-          VITE_API_URL: https://api-staging.chess-studio.shadowops.dpdns.org/api
+          VITE_API_URL: https://chronicles-api-staging.shadowops.dpdns.org/api
           VITE_BUILD_SHA: ${{ github.sha }}
         run: npm run build
       - name: Verify the real game is in the bundle
@@ -53,7 +42,9 @@ jobs:
           ls frontend/dist/assets/ChroniclesOfMatthiasTactics-*.js
           ls frontend/dist/assets/chroniclesOfMatthiasThree-*.js
           grep -lF '/chronicles/runs' frontend/dist/assets/*.js
-          grep -lF 'api-staging.chess-studio.shadowops.dpdns.org' frontend/dist/assets/*.js
+          grep -lF 'chronicles-api-staging.shadowops.dpdns.org' frontend/dist/assets/*.js
+          test -s frontend/dist/audio/orchestra/violin-fs3.mp3
+          test -s frontend/dist/models/matthias-home-canonical.glb
       - name: Mount smoke — enter Chronicles and Tactics without crashing
         working-directory: frontend
         run: |

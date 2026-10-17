@@ -4,6 +4,7 @@ import {
   chroniclesActiveEnemies,
   CHRONICLES_PARTY,
   chroniclesEnemyTargetAhead,
+  chroniclesBuildingEntryState,
   chroniclesContextualContentAction,
   chroniclesPartyAttackStats,
   chroniclesJournalEntries,
@@ -412,13 +413,19 @@ export default function ChroniclesOfMatthias({ onExit }) {
       const face = CHRONICLES_DIRECTIONS[current.direction];
       const map = chroniclesMapForState(current);
       const nextTile = face ? map?.grid?.[current.y + face.dy]?.[current.x + face.dx] : null;
+      // Walking into any cell of a house's door facade is walking through its door.
+      const atDoor = nextTile === '#' ? (chroniclesBuildingEntryState(current) || current) : current;
       const dialogue = nextTile === '#' ? chroniclesNpcDialogueForState(
-        current, chroniclesContextualContentAction(current),
+        atDoor, chroniclesContextualContentAction(atDoor),
       ) : null;
       if (dialogue) {
+        if (atDoor !== current) {
+          stateRef.current = atDoor;
+          setState(atDoor);
+        }
         audienceRef.current = dialogue;
         setAudience(dialogue);
-        return current;
+        return atDoor;
       }
     }
     if (actionType === 'equip-item' || actionType === 'unequip-item'

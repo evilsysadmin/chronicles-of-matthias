@@ -1,5 +1,5 @@
-// Única parte propia del frontend standalone. Todo lo demás en frontend/src
-// es el juego de Chess Studio copiado byte a byte (ver VENDOR.lock.json).
+// Shell standalone del juego (login → libro de expediciones). El juego vive en
+// frontend/src; su origen en Chess Studio está en docs/PROVENANCE.md.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '../styles.css';
