@@ -626,7 +626,7 @@
       "x": 11,
       "y": 10,
       "visualType": "building-hall",
-      "label": "Informar al alcalde: alcantarillas limpias · 25 oro",
+      "label": "Informar al alcalde: alcantarillas limpias · 40 oro",
       "lockedLabel": "Alcalde Aldric · las alcantarillas siguen infestadas",
       "when": [
         {
@@ -673,7 +673,7 @@
               },
               {
                 "type": "grant-gold",
-                "amount": 25
+                "amount": 40
               },
               {
                 "type": "award-xp",
@@ -687,19 +687,11 @@
                 "description": "La Dama busca a sus caballeros desaparecidos. Swordhaven es el primer paso.",
                 "order": 1,
                 "objective": "Garrah asaltó el carro de los caballeros. Búscalo en el Camino de los Estandartes, al norte."
-              },
-              {
-                "type": "teach-spell",
-                "spellId": "flying-fist"
-              },
-              {
-                "type": "teach-spell",
-                "spellId": "elemental-arrow"
               }
             ]
           }
         ],
-        "message": "Aldric hojea el libro de Tobías y palidece: «Un carro con el lacre de la Dama… y Garrah lo asaltó en el Camino. Si alguien sabe adónde iban los caballeros, es él». Cuenta veinticinco monedas. «Y llevaos esto»: dos páginas copiadas del gremio. Quien sepa leerlas aprende Puño volador o Flecha elemental.",
+        "message": "Aldric hojea el libro de Tobías y palidece: «Un carro con el lacre de la Dama… y Garrah lo asaltó en el Camino. Si alguien sabe adónde iban los caballeros, es él». Cuenta cuarenta monedas. «Y pasad por el gremio de Mirela: Garrah no se rinde a golpe de espada sola».",
         "journal": {
           "id": "lost-king-sewers-reported",
           "title": "El carro de los caballeros",

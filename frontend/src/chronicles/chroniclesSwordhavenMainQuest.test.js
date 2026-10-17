@@ -79,17 +79,17 @@ describe('Chronicles · Swordhaven main quest: never «and now what?»', () => {
 
     state = travel(clearSewers(state), 1, 1, 'sewers-to-swordhaven');
     state = use(state, 11, 10, 'swordhaven-mayor-sewers');
-    expect(chroniclesGoldBalance(state)).toBe(25);
+    expect(chroniclesGoldBalance(state)).toBe(40);
     expect(state.claimedRewards).toContain('swordhaven:sewers:v1');
     expect(state.xpAwards).toContainEqual({ id: 'swordhaven:sewers:v1', amount: 40 });
     expect(state.quests[MAIN].objective).toMatch(/Garrah/);
-    expect(chroniclesGoldBalance(use(state, 11, 10, 'swordhaven-mayor-sewers'))).toBe(25);
+    expect(chroniclesGoldBalance(use(state, 11, 10, 'swordhaven-mayor-sewers'))).toBe(40);
 
     // Garrah's defeat is remembered by the world, whichever quest sent you.
     const waiting = use(state, 11, 10, 'swordhaven-mayor-route');
-    expect(chroniclesGoldBalance(waiting)).toBe(25);
+    expect(chroniclesGoldBalance(waiting)).toBe(40);
     state = use({ ...state, bannerRoadCaptainDefeated: true }, 11, 10, 'swordhaven-mayor-route');
-    expect(chroniclesGoldBalance(state)).toBe(55);
+    expect(chroniclesGoldBalance(state)).toBe(70);
     expect(state.quests[MAIN].objective).toMatch(/Vado de Sal/);
   });
 

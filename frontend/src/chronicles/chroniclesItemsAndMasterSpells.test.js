@@ -7,10 +7,10 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
-import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
+import { chroniclesApplyContentEffects, chroniclesGoldBalance } from './chroniclesContentRuntime.js';
 import { CHRONICLES_EQUIPMENT, chroniclesMemberCanEquip } from './chroniclesEquipment.js';
 import { CHRONICLES_CONSUMABLES, chroniclesCarriedConsumables } from './chroniclesConsumables.js';
-import { chroniclesMemberSp } from './chroniclesMagic.js';
+import { CHRONICLES_SPELLS, chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 import { chroniclesShopSellable, chroniclesShopStock } from './chroniclesShops.js';
 import { chroniclesAdvanceCombatInitiative } from './chroniclesInitiative.js';
@@ -199,19 +199,23 @@ describe('Chronicles · objective over legacy exits', () => {
 });
 
 describe('Chronicles · early magic', () => {
-  it('Aldric pays the sewers with two spell pages for whoever can read them', () => {
+  it('Aldric pays enough to learn both early spells at the guild, but teaches none', () => {
     const map = chroniclesMapById('swordhaven-first-book');
     const report = map.interactables.find((entry) => entry.id === 'swordhaven-mayor-sewers');
+    const guild = map.interactables.find((entry) => entry.id === 'first-book-guild').guild;
     let state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     state = { ...state, swordhavenMayorMet: true, sewersSluiceClosed: true, sewersSmugglerDefeated: true };
+    const before = chroniclesGoldBalance(state);
     state = chroniclesApplyContentEffects(state, report.action.effects);
-    const book = (id) => (state.spellbook?.[id] || []);
-    expect(book('bishop')).toContain('flying-fist');
-    expect(book('rook')).toContain('flying-fist');
-    expect(book('knight')).toContain('elemental-arrow');
-    expect(book('matthias')).toEqual([]);
-    // Claimed once: a second report teaches nothing new and pays nothing.
+    for (const id of ['bishop', 'rook', 'knight', 'matthias']) {
+      expect(state.spellbook?.[id] || []).not.toContain('flying-fist');
+      expect(state.spellbook?.[id] || []).not.toContain('elemental-arrow');
+    }
+    expect(guild.spells).toEqual(expect.arrayContaining(['flying-fist', 'elemental-arrow']));
+    const membershipAndBoth = guild.membership + CHRONICLES_SPELLS['flying-fist'].price + CHRONICLES_SPELLS['elemental-arrow'].price;
+    expect(chroniclesGoldBalance(state) - before).toBeGreaterThanOrEqual(membershipAndBoth);
+    // Claimed once: a second report pays nothing.
     const again = chroniclesApplyContentEffects(state, report.action.effects);
-    expect(again.inventory['crown-gold'].quantity).toBe(state.inventory['crown-gold'].quantity);
+    expect(chroniclesGoldBalance(again)).toBe(chroniclesGoldBalance(state));
   });
 });
