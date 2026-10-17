@@ -1395,3 +1395,57 @@
     transform: none;
   }
 }
+
+/* CRÓNICA under OBJETIVO on desktop; phones open it from the objective box. */
+.chronicles .chronicles-statusbar > div.chronicles-chronicle-slot { display: none; }
+@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
+  .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot {
+    display: block;
+    grid-column: 1 / -1;
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+  .chronicles .chronicles-chronicle-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 10px;
+    border: 2px solid;
+    border-color: var(--mm3-hi) var(--mm3-lo) var(--mm3-lo) var(--mm3-hi);
+    background: #a3a3a8 var(--mm3-stone) 0 0 / 128px 128px;
+    box-shadow: 0 0 0 1px #141416;
+    color: #0c0c0e;
+    font: inherit;
+    font-weight: 700;
+    letter-spacing: .08em;
+    cursor: pointer;
+  }
+  .chronicles .chronicles-chronicle-trigger:hover { filter: brightness(1.08); }
+  .chronicles .chronicles-chronicle-trigger:active,
+  .chronicles .chronicles-chronicle-trigger[aria-expanded="true"] {
+    border-color: var(--mm3-lo) var(--mm3-hi) var(--mm3-hi) var(--mm3-lo);
+  }
+  .chronicles .chronicles-chronicle-trigger:focus-visible { outline: 2px solid #e4bd7a; outline-offset: 2px; }
+  .chronicles .chronicles-chronicle-trigger kbd {
+    padding: 0 5px;
+    border: 1px solid rgba(12, 12, 14, .55);
+    background: rgba(255, 255, 255, .25);
+    font: inherit;
+    font-size: .8em;
+  }
+  .chronicles .chronicles-chronicle-trigger i { font-style: normal; }
+  /* The CRÓNICA button replaces the small tag inside the objective. */
+  .chronicles .chronicles-objective-trigger__more { display: none; }
+  /* The objective wraps to two lines instead of running off the panel. */
+  .chronicles .chronicles-statusbar > span:nth-child(4) b {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}

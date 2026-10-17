@@ -15,16 +15,33 @@ const GROUPS = Object.freeze([
   Object.freeze({ id: 'wilderness', label: 'Terra' }),
 ]);
 
+// Several maps share a title (the campaign's Swordhaven, the classic square
+// of «Nuevo juego», an older campaign layout, a Terra cell named after its
+// dungeon). The admin list must tell them apart, so those carry the variant
+// they belong to.
+const ADMIN_VARIANTS = Object.freeze({
+  'swordhaven-first-book': 'campaña',
+  'swordhaven-square': 'plaza de Nuevo juego',
+  'swordhaven-campaign': 'trazado antiguo',
+  'banner-road': 'trazado antiguo',
+  'terra-c6': 'exterior',
+});
+
+function adminLabel(map) {
+  const base = map.areaCode ? `${map.areaCode} · ${map.title}` : map.title;
+  return ADMIN_VARIANTS[map.id] ? `${base} (${ADMIN_VARIANTS[map.id]})` : base;
+}
+
 export function chroniclesAdminDestinations() {
-  const maps = chroniclesMapIds().map((id) => chroniclesMapById(id));
+  const maps = chroniclesMapIds().map((id) => ({ ...chroniclesMapById(id), label: adminLabel(chroniclesMapById(id)) }));
+  const seen = new Map();
+  for (const map of maps) seen.set(map.label, (seen.get(map.label) || 0) + 1);
   return GROUPS.map((group) => Object.freeze({
     ...group,
     maps: Object.freeze(maps
       .filter((map) => (map.regionKind || 'dungeon') === group.id)
-      .map((map) => Object.freeze({
-        id: map.id,
-        label: map.areaCode ? `${map.areaCode} · ${map.title}` : map.title,
-      }))
+      // Last resort for a new duplicate nobody named yet: show its id.
+      .map((map) => Object.freeze({ id: map.id, label: seen.get(map.label) > 1 ? `${map.label} · ${map.id}` : map.label }))
       .sort((left, right) => left.label.localeCompare(right.label, 'es'))),
   }));
 }
