@@ -578,6 +578,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 11,
+      "y": 10
+    }
+  ],
   "initialJournal": {
     "id": "terra-f1-arrival",
     "title": "F1 · Faro Helado",

@@ -18,6 +18,7 @@ type camp struct {
 	loot       []string
 	bounty     int
 	line       string
+	props      []string // set pieces drawn on blocked cells around the camp
 }
 
 var campOrder = []string{"A2", "B1", "B6", "D5", "F4"}
@@ -26,23 +27,23 @@ var camps = map[string]camp{
 	"A2": {"desertores", "Campamento de los Desertores", species{"bandit-captain", "Brenna la Tuerta"}, 0,
 		[]species{{"bandit-archer", "ballestero desertor"}, {"bandit-archer", "ballestera desertora"}, {"road-bandit", "desertor"}},
 		[]string{"silver-sword", "iron-chain"}, 60,
-		"Brenna la Tuerta mandaba una compañía de la Corona antes de que el Rey faltara. Ahora cobra peaje a quien pase por las Colinas Rotas."},
+		"Brenna la Tuerta mandaba una compañía de la Corona antes de que el Rey faltara. Ahora cobra peaje a quien pase por las Colinas Rotas.", []string{"campfire", "tent", "tent", "banner"}},
 	"B1": {"loba-blanca", "Cubil de la Loba Blanca", species{"dire-wolf", "la Loba Blanca"}, 1.35,
 		[]species{{"dire-wolf", "lobo gris"}, {"dire-wolf", "loba gris"}, {"dire-wolf", "lobezno crecido"}},
 		[]string{"silver-shield", "silver-dagger"}, 50,
-		"La Loba Blanca guía a la manada que vacía los rediles del norte. Los pastores dicen que entiende cuando hablan de ella."},
+		"La Loba Blanca guía a la manada que vacía los rediles del norte. Los pastores dicen que entiende cuando hablan de ella.", []string{"ruin", "ruin"}},
 	"B6": {"necrofagos", "Fosa de los Necrófagos", species{"ghoul", "el Comehuesos"}, 1.25,
 		[]species{{"ghoul", "necrófago"}, {"ghoul", "necrófaga"}},
 		[]string{"silver-mace", "silver-scale"}, 55,
-		"En la playa de los naufragios algo desentierra a los ahogados antes de que el mar se los lleve. El Comehuesos es el más viejo y el más gordo."},
+		"En la playa de los naufragios algo desentierra a los ahogados antes de que el mar se los lleve. El Comehuesos es el más viejo y el más gordo.", []string{"ruin", "ruin", "banner"}},
 	"D5": {"raqueros", "Barcazas de los Raqueros", species{"bandit-captain", "el capitán Ruy"}, 0,
 		[]species{{"bandit-archer", "arponero raquero"}, {"road-bandit", "raquero"}, {"bandit-archer", "arponera raquera"}},
 		[]string{"silver-spear", "silver-ring"}, 65,
-		"El capitán Ruy enciende hogueras en la marisma para que las barcas encallen. Lo que el barro no se queda, se lo queda él."},
+		"El capitán Ruy enciende hogueras en la marisma para que las barcas encallen. Lo que el barro no se queda, se lo queda él.", []string{"campfire", "tent", "banner", "tent"}},
 	"F4": {"golem", "Cantera del Gólem", species{"stone-golem", "el Gólem de la Cantera"}, 1.15,
 		[]species{{"ash-goblin", "goblin cantero"}, {"ash-goblin", "goblin del martillo"}},
 		[]string{"steel-mace", "silver-chain"}, 80,
-		"Los goblins de la ceniza despertaron al gólem de la cantera vieja y lo adoran como a un rey. Un rey que aplasta todo lo que se acerca."},
+		"Los goblins de la ceniza despertaron al gólem de la cantera vieja y lo adoran como a un rey. Un rey que aplasta todo lo que se acerca.", []string{"ruin", "ruin", "campfire", "tent"}},
 }
 
 func campFlag(code string) string { return "camp" + code + "LeaderDown" }
@@ -211,4 +212,54 @@ func thirdWaveBossDrops() map[string]*O {
 func thirdWaveStory(s *storyOut) {
 	s.people["C5"] = append(s.people["C5"], bountyBoard()...)
 	s.people["C1"] = append(s.people["C1"], towerPeople()...)
+}
+
+// areaScenery lists the set pieces the renderer draws on impassable cells:
+// a camp's fire, tents and banner around its leader, and an old ruin in the
+// open lands. They only ever stand on '#' cells, so collision is unchanged.
+func areaScenery(code, biome string, grid []string, campSlot *point) A {
+	out := A{}
+	used := map[point]bool{}
+	blocked := func(p point) bool {
+		return p.y >= 0 && p.y < len(grid) && p.x >= 0 && p.x < len(grid[p.y]) && grid[p.y][p.x] == '#'
+	}
+	if campSlot != nil {
+		var near []point
+		for r := 1; r <= 4 && len(near) < 4; r++ {
+			for dy := -r; dy <= r; dy++ {
+				for dx := -r; dx <= r; dx++ {
+					if abs(dx) != r && abs(dy) != r {
+						continue
+					}
+					p := point{campSlot.x + dx, campSlot.y + dy}
+					if blocked(p) && !used[p] && len(near) < 4 {
+						near = append(near, p)
+						used[p] = true
+					}
+				}
+			}
+		}
+		props := camps[code].props
+		for i, p := range near {
+			if i < len(props) {
+				out = append(out, obj("type", props[i], "x", p.x, "y", p.y))
+			}
+		}
+	}
+	if biome == "plains" || biome == "hills" || biome == "coast" || biome == "snow" {
+		salt := saltOf(code)
+		var inner []point
+		for y := 2; y < len(grid)-2; y++ {
+			for x := 2; x < len(grid[y])-2; x++ {
+				if p := (point{x, y}); blocked(p) && !used[p] {
+					inner = append(inner, p)
+				}
+			}
+		}
+		if len(inner) > 0 {
+			p := inner[salt%len(inner)]
+			out = append(out, obj("type", "ruin", "x", p.x, "y", p.y))
+		}
+	}
+	return out
 }

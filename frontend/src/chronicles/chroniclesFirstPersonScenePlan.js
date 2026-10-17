@@ -18,6 +18,7 @@ export function chroniclesFirstPersonScenePlan(state) {
     ]),
     regionKind: map.regionKind || 'dungeon',
     biome: map.biome || null,
+    scenery: map.scenery || [],
     useAuthoredCryptDressing: map.id === 'crypt-eight-squares',
   });
 }

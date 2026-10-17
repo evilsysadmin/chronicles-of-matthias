@@ -273,6 +273,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 17,
+      "y": 5
+    }
+  ],
   "initialJournal": {
     "id": "terra-a5-arrival",
     "title": "A5 · Arrecifes del Naufragio",

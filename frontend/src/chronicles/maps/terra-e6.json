@@ -342,6 +342,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 18,
+      "y": 8
+    }
+  ],
   "initialJournal": {
     "id": "terra-e6-arrival",
     "title": "E6 · Ruinas del Obispo",

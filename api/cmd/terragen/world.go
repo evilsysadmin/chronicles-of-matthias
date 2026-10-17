@@ -641,11 +641,14 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 		}
 		questFoes = len(q.enemies)
 	}
+	var campSlot *point
 	if _, ok := camps[code]; ok {
 		if count+questFoes >= len(freeFoeSlots) {
 			panic(code + ": no free slot for the camp")
 		}
-		campFoes, spoils := campContent(code, areaID, level, freeFoeSlots[count+questFoes])
+		slot := freeFoeSlots[count+questFoes]
+		campSlot = &slot
+		campFoes, spoils := campContent(code, areaID, level, slot)
 		enemies = append(enemies, campFoes...)
 		treasures = append(treasures, spoils...)
 	}
@@ -666,6 +669,7 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 			panic(fmt.Sprintf("%s: %d,%d walled", code, p.x, p.y))
 		}
 	}
+	scenery := areaScenery(code, a.biome, grid, campSlot)
 	if code == "F1" {
 		lighthouse := jsonList(f1LighthouseJSON)
 		for _, e := range lighthouse {
@@ -682,6 +686,7 @@ func buildArea(code string, quests map[string]*areaQuests) *O {
 		"grid", grid, "partyStart", obj("x", CX, "y", CY, "direction", 0),
 		"initialFlags", obj(), "enemies", objs(enemies), "triggers", A{},
 		"interactables", objs(interactables), "treasures", objs(treasures), "traps", A{}, "exits", objs(exits),
+		"scenery", scenery,
 		"initialJournal", obj("id", areaID+"-arrival", "title", code+" · "+a.name, "body", a.flavour, "sigil", code),
 		"introMessage", code+" · "+a.name+". "+a.flavour,
 	)

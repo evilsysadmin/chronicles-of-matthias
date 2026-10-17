@@ -245,6 +245,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 9,
+      "y": 2
+    }
+  ],
   "initialJournal": {
     "id": "terra-a4-arrival",
     "title": "A4 · Calas de los Contrabandistas",

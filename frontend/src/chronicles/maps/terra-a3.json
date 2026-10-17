@@ -214,6 +214,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 6,
+      "y": 6
+    }
+  ],
   "initialJournal": {
     "id": "terra-a3-arrival",
     "title": "A3 · Bahía de Hollín",

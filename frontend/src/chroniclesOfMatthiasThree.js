@@ -15,6 +15,7 @@ import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
+import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 
@@ -622,6 +623,21 @@ export function createChroniclesOfMatthiasGame(host, {
     ? buildChroniclesDungeonDressing({ coarsePointer: coarse })
     : new THREE.Group();
   dressing.name ||= 'chronicles-map-specific-dressing';
+  // Generated dungeons get small props against their walls (barrels, bones,
+  // books...); the hand-dressed crypt keeps its authored set.
+  if (!outdoors && !scenePlan?.useAuthoredCryptDressing && scenePlan?.grid?.length) {
+    const start = scenePlan.partyStart || {};
+    dressing.add(buildChroniclesDungeonClutter({
+      grid: scenePlan.grid,
+      center: dungeon.sceneCenter,
+      mapId: scenePlan.mapId,
+      coarsePointer: coarse,
+      keepClear: [
+        { x: start.x, y: start.y },
+        ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean),
+      ],
+    }));
+  }
   const atmosphere = outdoors
     ? new THREE.Group()
     : buildChroniclesDungeonAtmosphere({ coarsePointer: coarse, reducedMotion, scenePlan });

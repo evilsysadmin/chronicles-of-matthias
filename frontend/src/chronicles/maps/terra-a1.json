@@ -258,6 +258,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 14,
+      "y": 5
+    }
+  ],
   "initialJournal": {
     "id": "terra-a1-arrival",
     "title": "A1 · Glaciar del Cuervo",

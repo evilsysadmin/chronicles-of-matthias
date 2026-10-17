@@ -215,6 +215,13 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 13,
+      "y": 3
+    }
+  ],
   "initialJournal": {
     "id": "terra-c1-arrival",
     "title": "C1 · Llanura de la Vigilia",

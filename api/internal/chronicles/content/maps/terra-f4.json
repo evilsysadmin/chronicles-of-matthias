@@ -405,6 +405,28 @@
       }
     }
   ],
+  "scenery": [
+    {
+      "type": "ruin",
+      "x": 14,
+      "y": 4
+    },
+    {
+      "type": "ruin",
+      "x": 15,
+      "y": 4
+    },
+    {
+      "type": "campfire",
+      "x": 15,
+      "y": 5
+    },
+    {
+      "type": "tent",
+      "x": 10,
+      "y": 0
+    }
+  ],
   "initialJournal": {
     "id": "terra-f4-arrival",
     "title": "F4 · Fundición en Ruinas",
