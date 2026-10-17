@@ -60,6 +60,8 @@ function report(results) {
     lines.push('', `Doctrinas: ${bot.skills.map((skill) => `${skill.skillId}@${skill.step}`).join(', ') || 'ninguna'}.`);
     const spent = bot.purchases.reduce((sum, purchase) => sum + purchase.price, 0);
     lines.push('', `Compras (${spent} oro): ${bot.purchases.map((purchase) => `${purchase.itemId} ${purchase.price}@${purchase.step}`).join(', ') || 'ninguna'}.`);
+    lines.push('', `Hechizos aprendidos: ${bot.learned.map((entry) => `${entry.memberId}:${entry.spellId} ${entry.price}@${entry.step}`).join(', ') || 'ninguno'}.`);
+    lines.push('', `Lanzamientos: ${Object.entries(bot.casts).map(([id, count]) => `${id} ×${count}`).join(', ') || 'ninguno'}.`);
     lines.push('', `Muertes: ${bot.deaths.map((d) => `${d.memberId}@${d.step}`).join(', ') || 'ninguna'}. Resurrecciones: ${bot.revives}. Pociones usadas: ${bot.potionsUsed || 0}. Oro en curas: ${bot.restGold}. Acciones: ${bot.actions}.`, '');
   }
   return lines.join('\n');
