@@ -44,13 +44,17 @@ function runtimeEnemyPosition(state, enemy) {
   return chroniclesEnemyPosition(state, enemy);
 }
 
-function occupiedCells(state) {
-  const occupied = new Set();
-
+function enemyCells(state) {
+  const cells = new Set();
   chroniclesEnemyRenderRoster(state).forEach(({ definition }) => {
     const active = chroniclesEnemyIsActive(state, definition) && Number(state?.[definition.hpKey] || 0) > 0;
-    if (active) occupied.add(cellKey(runtimeEnemyPosition(state, definition)));
+    if (active) cells.add(cellKey(runtimeEnemyPosition(state, definition)));
   });
+  return cells;
+}
+
+function occupiedCells(state) {
+  const occupied = enemyCells(state);
 
   chroniclesContentVisualStates(state).forEach((entry) => {
     if (entry.visible && entry.position) occupied.add(cellKey(entry.position));
@@ -64,26 +68,39 @@ function deployableCell(state, cell, occupied) {
   return Boolean(tile && tile !== '#' && !occupied.has(cellKey(cell)));
 }
 
+// Candidate cells are found by walking from the camera, never by straight
+// distance: a hero must not be deployed on the far side of a wall (the bot
+// once saw the whole company appear in a parallel corridor of the crypt).
 function deployCandidates(state, origin, occupied, basis) {
   const candidates = [];
-  for (let radius = 0; radius <= MAX_DEPLOY_RADIUS; radius += 1) {
-    for (let dx = -radius; dx <= radius; dx += 1) {
-      const dyMagnitude = radius - Math.abs(dx);
-      const dys = dyMagnitude === 0 ? [0] : [-dyMagnitude, dyMagnitude];
-      dys.forEach((dy) => {
-        const cell = { x: origin.x + dx, y: origin.y + dy };
-        if (!deployableCell(state, cell, occupied)) return;
-        const localForward = dx * basis.forward.dx + dy * basis.forward.dy;
-        const localLeft = dx * basis.left.dx + dy * basis.left.dy;
+  const blocked = enemyCells(state);
+  const seen = new Set([cellKey(origin)]);
+  let frontier = [origin];
+  for (let radius = 0; radius <= MAX_DEPLOY_RADIUS && frontier.length; radius += 1) {
+    const next = [];
+    frontier.forEach((cell) => {
+      if (deployableCell(state, cell, occupied)) {
+        const dx = cell.x - origin.x;
+        const dy = cell.y - origin.y;
         candidates.push(Object.freeze({
           x: cell.x,
           y: cell.y,
           distance: radius,
-          localForward,
-          localLeft,
+          localForward: dx * basis.forward.dx + dy * basis.forward.dy,
+          localLeft: dx * basis.left.dx + dy * basis.left.dy,
         }));
+      }
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([stepX, stepY]) => {
+        const neighbor = { x: cell.x + stepX, y: cell.y + stepY };
+        const key = cellKey(neighbor);
+        if (seen.has(key)) return;
+        seen.add(key);
+        const tile = chroniclesTileAt(neighbor.x, neighbor.y, state);
+        if (!tile || tile === '#' || blocked.has(key)) return;
+        next.push(neighbor);
       });
-    }
+    });
+    frontier = next;
   }
 
   return candidates
@@ -124,7 +141,7 @@ function connectedCluster(cells) {
 }
 
 function clusterScore(cells, origin) {
-  const distances = cells.map((cell) => manhattan(cell, origin));
+  const distances = cells.map((cell) => cell.distance ?? manhattan(cell, origin));
   const xs = cells.map((cell) => cell.x);
   const ys = cells.map((cell) => cell.y);
   const spanX = Math.max(...xs) - Math.min(...xs);

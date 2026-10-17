@@ -12,7 +12,6 @@ func grantItem(itemID, name, description string) *O {
 	return obj("type", "grant-item", "itemId", itemID, "name", name, "description", description, "quantity", 1)
 }
 
-
 func bossDrops() map[string]*O {
 	drops := map[string]*O{
 		"C6": grantItem("squire-testimony", "Testimonio del escudero", "El escudero Bran, el último de la escolta, dejó escrito lo que vio: la campana de Puerto de Hollín sonó la noche de la emboscada."),
@@ -169,9 +168,10 @@ func story() storyOut {
 			return
 		}
 		level := danger(where) + 1
+		toHit, armorClass := combatRating(level + 1)
 		s.area(where).enemies = append(s.area(where).enemies, obj(
 			"id", giverID+"-quarry", "visualType", beastVisual, "name", beastName, "hpKey", camelFlag(giverID)+"QuarryHp",
-			"maxHp", 10+level*3, "retaliation", 2+level/3, "optional", true, "activation", "always",
+			"maxHp", 10+level*3, "retaliation", 2+level/3, "toHit", toHit, "armorClass", armorClass, "optional", true, "activation", "always",
 			"defeatedFlag", flag, "ai", aiFor(beastVisual),
 			"onDefeat", obj("message", "{attacker} abate a "+beastName+" con {attack}.", "effects", A{obj("type", "set", "key", flag, "value", true)}),
 		))

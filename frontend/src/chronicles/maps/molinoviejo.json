@@ -115,13 +115,13 @@
       "x": 14,
       "y": 6,
       "visualType": "building-temple",
-      "label": "Templo · sanar a la compañía · 4 oro",
-      "lockedLabel": "Templo · necesitas 4 oro",
+      "label": "Templo · sanar y alzar a los caídos · 10 oro",
+      "lockedLabel": "Templo · necesitas 10 oro",
       "requirements": [
         {
           "itemId": "crown-gold",
-          "quantity": 4,
-          "message": "El templo pide una ofrenda de cuatro monedas."
+          "quantity": 10,
+          "message": "El templo pide una ofrenda de diez monedas."
         }
       ],
       "action": {
@@ -129,14 +129,17 @@
           {
             "type": "consume-item",
             "itemId": "crown-gold",
-            "quantity": 4
+            "quantity": 10
+          },
+          {
+            "type": "revive-party"
           },
           {
             "type": "heal-party",
             "amount": 20
           }
         ],
-        "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran."
+        "message": "Los sacerdotes rezan sobre la compañía. Las heridas se cierran y los caídos vuelven a respirar."
       }
     },
     {

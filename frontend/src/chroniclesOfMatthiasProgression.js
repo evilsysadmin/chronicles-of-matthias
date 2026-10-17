@@ -700,6 +700,10 @@ function award(progress, awards, levelUps, memberId, amount, awardId, reason) {
   return result.progression;
 }
 
+// One XP per point of damage. Two per point let the front line hit the
+// level cap with half the campaign still to play (campaign bot, 2026-10).
+export const CHRONICLES_DAMAGE_XP_PER_HP = 1;
+
 function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace) {
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
@@ -708,7 +712,7 @@ function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, 
       awards,
       levelUps,
       memberId,
-      2,
+      CHRONICLES_DAMAGE_XP_PER_HP,
       `${namespace}:damage:${enemy.id}:hp-${hp}`,
       'daño útil',
     );
@@ -753,19 +757,28 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
       if (after >= before) return;
       progress = awardDamageBudget(progress, awards, levelUps, actorMemberId, enemy, before, after, namespace);
       if (before > 0 && after === 0) {
-        progress = award(
-          progress,
-          awards,
-          levelUps,
-          actorMemberId,
-          10 + Math.max(1, nonNegativeInteger(enemy.maxHp)) * 2,
-          `${namespace}:kill:${enemy.id}`,
-          'baja',
-        );
+        // The kill is the company's: its bonus is split among the living, so
+        // the hero who lands the blows does not outlevel the rest by half a
+        // campaign (the damage XP above stays with whoever dealt it).
+        const living = (next.party || []).filter((member) => member.hp > 0 && HERO_IDS.includes(member.id));
+        const share = Math.ceil((10 + Math.max(1, nonNegativeInteger(enemy.maxHp)) * 2) / Math.max(1, living.length));
+        living.forEach((member) => {
+          progress = award(
+            progress,
+            awards,
+            levelUps,
+            member.id,
+            share,
+            member.id === actorMemberId ? `${namespace}:kill:${enemy.id}` : `${namespace}:kill:${enemy.id}:${member.id}`,
+            'baja',
+          );
+        });
       }
     });
 
-    if (actionKind === 'ability') {
+    // Healing earns XP whether it comes from a class ability or a spell (the
+    // game dispatches spells as 'cast').
+    if (actionKind === 'ability' || actionKind === 'cast') {
       const beforeParty = new Map((previous.party || []).map((member) => [member.id, member]));
       (next.party || []).forEach((member) => {
         const before = beforeParty.get(member.id);

@@ -117,6 +117,9 @@ type foeSpec struct {
 	journal           *O
 	blocking          string
 	scale             float64
+	// The temple is the last act: its creatures fight at danger level 7
+	// unless a spec says otherwise (bosses one step above).
+	rating int
 }
 
 func authoredFoe(mapID string, f foeSpec) *O {
@@ -128,9 +131,18 @@ func authoredFoe(mapID string, f foeSpec) *O {
 		effects = append(effects, obj("type", "grant-gold", "amount", f.gold))
 	}
 	effects = append(effects, f.effects...)
+	rating := f.rating
+	if rating == 0 {
+		rating = 7
+		if f.flag != "" {
+			rating = 8
+		}
+	}
+	toHit, armorClass := combatRating(rating)
 	enemy := obj(
 		"id", mapID+"-"+f.key, "visualType", f.visual, "name", f.name, "x", f.pos.x, "y", f.pos.y,
 		"hpKey", camel(mapID+"-"+f.key)+"Hp", "maxHp", f.hp, "retaliation", f.retaliation,
+		"toHit", toHit, "armorClass", armorClass,
 		"activation", "always", "ai", f.ai,
 		"onDefeat", obj("message", "{attacker} derriba a "+f.name+" con {attack}.", "effects", effects),
 	)
@@ -177,9 +189,9 @@ func stairs(id string, p point, label, target, entry string, requirements A, loc
 
 type loreSpec struct {
 	id, kind, visual, label, message, locked string
-	pos                                     point
-	when, effects, requirements             A
-	journal                                 *O
+	pos                                      point
+	when, effects, requirements              A
+	journal                                  *O
 }
 
 func lore(l loreSpec) *O {
@@ -291,7 +303,7 @@ func buildAtrium() *O {
 		authoredFoe(id, foeSpec{key: "acolyte-east", visual: "silent-acolyte", name: "una acólita del Silencio", pos: point{15, 5}, hp: 16, retaliation: 2, ai: acolyteAI(), gold: 8}),
 		authoredFoe(id, foeSpec{key: "hound", visual: "bone-hound", name: "un sabueso del templo", pos: point{1, 9}, hp: 15, retaliation: 2, ai: aiFor("bone-hound"), gold: 6}),
 		authoredFoe(id, foeSpec{key: "wisp", visual: "ember-wisp", name: "una vela del Silencio", pos: point{17, 9}, hp: 12, retaliation: 3, ai: aiFor("ember-wisp"), gold: 6}),
-		authoredFoe(id, foeSpec{key: "herald", visual: "spectral-bishop", name: "el Heraldo del Silencio", pos: point{9, 3}, hp: 30, retaliation: 3, ai: casterAI(),
+		authoredFoe(id, foeSpec{key: "herald", visual: "spectral-bishop", name: "el Heraldo del Silencio", pos: point{9, 3}, hp: 36, retaliation: 4, ai: casterAI(),
 			flag: "templeHeraldDefeated", gold: 30, scale: 1.12, blocking: "El Heraldo del Silencio no deja pasar a nadie con nombre.",
 			journal: journal("temple-herald", "Cae el Heraldo", "El Heraldo guardaba el sello del Atrio. Llevaba la marca de Varren en el sello de su anillo.", "†")}),
 	}
@@ -357,7 +369,7 @@ func buildCrypt() *O {
 		authoredFoe(id, foeSpec{key: "hound", visual: "bone-hound", name: "un lobo de hueso", pos: point{17, 7}, hp: 17, retaliation: 2, ai: aiFor("bone-hound"), gold: 8}),
 		authoredFoe(id, foeSpec{key: "acolyte", visual: "silent-acolyte", name: "un acólito del Silencio", pos: point{13, 9}, hp: 18, retaliation: 3, ai: acolyteAI(), gold: 10}),
 		authoredFoe(id, foeSpec{key: "wisp", visual: "ember-wisp", name: "una vela del Silencio", pos: point{5, 9}, hp: 13, retaliation: 3, ai: aiFor("ember-wisp"), gold: 8}),
-		authoredFoe(id, foeSpec{key: "jailer", visual: "gate-jailer", name: "el Carcelero del Silencio", pos: point{10, 11}, hp: 34, retaliation: 4, ai: sentryAI(),
+		authoredFoe(id, foeSpec{key: "jailer", visual: "gate-jailer", name: "el Carcelero del Silencio", pos: point{10, 11}, hp: 42, retaliation: 5, ai: sentryAI(),
 			flag: "templeJailerDefeated", gold: 40, scale: 1.14,
 			effects: A{grantItem("throne-key", "Llave del Trono", "Una llave de hierro frío que abre la escalera al Trono Bajo la Piedra."),
 				adv("Tienes la llave del Trono. Baja y detén al Canciller Varren.")},
@@ -422,14 +434,14 @@ func buildThrone() *O {
 			message: "El trono está vacío. En el suelo, la corona hueca de Varren ya no brilla. Esta historia ha terminado; Terra sigue ahí arriba."}),
 	}
 	knight := func(key, name, flag string, p point) *O {
-		k := authoredFoe(id, foeSpec{key: key, visual: "oathbound-knight", name: name, pos: p, hp: 26, retaliation: 4, ai: knightAI(),
+		k := authoredFoe(id, foeSpec{key: key, visual: "oathbound-knight", name: name, pos: p, hp: 30, retaliation: 4, ai: knightAI(),
 			flag: flag, scale: 1.04})
 		// A freed knight never fights; a defeated one has its oath broken too.
 		k.Obj("onDefeat").Set("message", "{attacker} rinde a "+name+" con {attack}. El juramento se rompe con su armadura.")
 		return k
 	}
 	enemies := A{
-		authoredFoe(id, foeSpec{key: "varren", visual: "chancellor-varren", name: "el Canciller Varren", pos: point{9, 4}, hp: 52, retaliation: 5,
+		authoredFoe(id, foeSpec{key: "varren", visual: "chancellor-varren", name: "el Canciller Varren", pos: point{9, 4}, hp: 70, retaliation: 6,
 			ai: obj("movement", "hold", "attackReach", 3, "requiresLineOfSight", true), flag: "varrenDefeated", gold: 150, scale: 1.1,
 			effects: A{grantItem("hollow-crown", "Corona hueca", "La corona sin peso con la que Varren quiso jurar en nombre del Rey. Ya no sirve para nada, y eso es lo mejor que se puede decir de ella."),
 				adv("Varren ha caído. Decide ante el trono el destino del Rey.")},

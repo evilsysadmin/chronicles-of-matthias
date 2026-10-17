@@ -371,6 +371,17 @@ export function chroniclesApplyContentEffects(state, effects, adapters = {}) {
           : next.party,
       };
     }
+    // Temples raise the fallen: back on their feet with the given HP (1 by
+    // default); a heal-party after it then tends them like everyone else.
+    if (effect.type === 'revive-party') {
+      const hp = Math.max(1, Number(effect.hp || 1));
+      return {
+        ...next,
+        party: Array.isArray(next.party)
+          ? next.party.map((member) => (member.hp > 0 ? member : { ...member, hp: Math.min(member.maxHp, hp) }))
+          : next.party,
+      };
+    }
     if (effect.type === 'damage-party') return damageParty(next, effect);
     if (effect.type === 'restore-spell-points') return chroniclesRestoreSpellPoints(next);
     if (effect.type === 'refill-class-abilities' && typeof adapters.refillClassAbilities === 'function') {

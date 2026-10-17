@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createChroniclesState } from './chroniclesOfMatthias.js';
 import {
+  CHRONICLES_DAMAGE_XP_PER_HP,
   CHRONICLES_PROGRESSION_STORAGE_KEY,
   CHRONICLES_RUN_STORAGE_KEY,
   CHRONICLES_TACTICS_RUN_STORAGE_KEY,
@@ -220,7 +221,7 @@ describe('Chronicles Tactics · progression', () => {
       awardId: 'legacy-profile:crypt-01:damage:corrupted-pawn:hp-5',
       reason: 'daño útil',
     }));
-    expect(chroniclesHeroProgress(result.progression, 'rook').xp).toBe(4);
+    expect(chroniclesHeroProgress(result.progression, 'rook').xp).toBe(2 + CHRONICLES_DAMAGE_XP_PER_HP);
   });
 
   it('gives each map an independent finite XP budget even when enemy ids are reused', () => {
@@ -352,5 +353,28 @@ describe('Chronicles Tactics · progression', () => {
 
     const stored = JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY));
     expect(stored.owner).toBe('bob');
+  });
+
+  it('shares a kill among the living heroes and keeps damage XP with the striker', () => {
+    const before = tacticsState({ enemyHp: 1 });
+    const after = tacticsState({ enemyHp: 0 });
+    const result = applyChroniclesTacticsProgression(createChroniclesProgression(), before, after, {
+      actorMemberId: 'rook', actionKind: 'attack', runId: 'share-run',
+    });
+    const kills = result.awards.filter((entry) => entry.reason === 'baja');
+    expect(kills.map((entry) => entry.memberId).sort()).toEqual(['bishop', 'knight', 'matthias', 'rook']);
+    const killShare = kills[0].xp;
+    expect(kills.every((entry) => entry.xp === killShare)).toBe(true);
+    expect(chroniclesHeroProgress(result.progression, 'rook').xp).toBe(killShare + CHRONICLES_DAMAGE_XP_PER_HP);
+  });
+
+  it('pays healing XP for a healing spell as well as for an ability', () => {
+    const base = tacticsState();
+    const hurt = { ...base, party: base.party.map((member) => (member.id === 'rook' ? { ...member, hp: 1 } : member)) };
+    const healed = { ...hurt, party: hurt.party.map((member) => (member.id === 'rook' ? { ...member, hp: 3 } : member)) };
+    const result = applyChroniclesTacticsProgression(createChroniclesProgression(), hurt, healed, {
+      actorMemberId: 'bishop', actionKind: 'cast', runId: 'heal-run',
+    });
+    expect(chroniclesHeroProgress(result.progression, 'bishop').xp).toBeGreaterThan(0);
   });
 });

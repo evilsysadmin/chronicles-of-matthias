@@ -39,6 +39,8 @@
       "hpKey": "temploCoronaCriptaSpiderHp",
       "maxHp": 16,
       "retaliation": 2,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -65,6 +67,8 @@
       "hpKey": "temploCoronaCriptaHoundHp",
       "maxHp": 17,
       "retaliation": 2,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -91,6 +95,8 @@
       "hpKey": "temploCoronaCriptaAcolyteHp",
       "maxHp": 18,
       "retaliation": 3,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
@@ -117,6 +123,8 @@
       "hpKey": "temploCoronaCriptaWispHp",
       "maxHp": 13,
       "retaliation": 3,
+      "toHit": 8,
+      "armorClass": 7,
       "activation": "always",
       "ai": {
         "movement": "hold",
@@ -140,8 +148,10 @@
       "x": 10,
       "y": 11,
       "hpKey": "temploCoronaCriptaJailerHp",
-      "maxHp": 34,
-      "retaliation": 4,
+      "maxHp": 42,
+      "retaliation": 5,
+      "toHit": 9,
+      "armorClass": 8,
       "activation": "always",
       "ai": {
         "movement": "hold",
