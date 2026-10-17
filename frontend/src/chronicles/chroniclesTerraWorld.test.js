@@ -91,27 +91,15 @@ describe('Chronicles · Terra, areas A1–F6', () => {
     expect(state.quests['lost-king'].objective).toMatch(/Templo Bajo la Corona \(F6\)/);
   });
 
-  it('keeps the unfinished F6 final-act seal diegetic, never teleports to itself or ends the run', () => {
+  it('opens the F6 temple stairs only once the Dama has spoken, never onto itself', () => {
     const f6 = areaFor('F6');
     expect(f6.exits.every((exit) => !exit.action.effects.some(
       (effect) => effect.type === 'transition-map' && effect.mapId === f6.id,
     ))).toBe(true);
-    const seal = f6.interactables.find((entry) => entry.id === 'f6-sealed-temple');
-    expect(seal).toMatchObject({ kind: 'lore', visualType: 'dungeon-arch' });
-
-    const beforeAudience = use(createChroniclesState(f6.id), seal);
-    expect(beforeAudience.terraF6SealExamined).not.toBe(true);
-
-    const afterAudience = use({ ...createChroniclesState(f6.id), lostKingFinalActOpen: true }, seal);
-    expect(afterAudience.mapId).toBe(f6.id);
-    expect(afterAudience.phase).not.toBe('escaped');
-    expect(afterAudience.terraF6SealExamined).toBe(true);
-    expect(afterAudience.message).toMatch(/juramento del Rey/);
-
-    const saved = chroniclesRunCheckpointPayload(afterAudience, 2);
-    expect(saved.worldFlags.terraF6SealExamined).toBe(true);
-    const restored = chroniclesApplyRunCheckpoint(createChroniclesState(f6.id), saved);
-    expect(restored.terraF6SealExamined).toBe(true);
+    const temple = f6.exits.find((entry) => entry.id === 'f6-to-temple');
+    expect(temple).toMatchObject({ kind: 'exit', visualType: 'dungeon-arch', requiresReturn: true });
+    expect(temple.requirements).toContainEqual(expect.objectContaining({ key: 'lostKingFinalActOpen', truthy: true }));
+    expect(temple.action.effects[0]).toMatchObject({ type: 'transition-map', mapId: 'templo-corona-atrio', entryExitId: 'temple-to-f6' });
   });
 
   it('gives every town at least two side quests and every area something to find', () => {

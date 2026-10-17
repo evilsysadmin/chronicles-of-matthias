@@ -9,7 +9,8 @@ juego y de su API** (origen en [`docs/PROVENANCE.md`](docs/PROVENANCE.md)).
 | --- | --- | --- |
 | Juego (React + Three.js) | `frontend/` | `https://staging.chronicles.shadowops.dpdns.org` (Cloudflare Pages) |
 | API (Go: cuentas, sesión y partidas guardadas — saves) | `api/` | `https://chronicles-api-staging.shadowops.dpdns.org` (OCI A1 + túnel propio) |
-| Pipeline de arte y mundo | `scripts/art`, `scripts/blender`, `scripts/chronicles` | — |
+| Mundo de Terra (generador Go: mapas, historia, side quests) | `api/cmd/terragen` | se incrusta en el juego y en la API |
+| Pipeline de arte | `scripts/art`, `scripts/blender` | — |
 
 La infraestructura (Pages, túnel, Vault, despliegue en OCI) vive en
 [`shadowops-infra`](https://github.com/evilsysadmin/shadowops-infra).
@@ -22,7 +23,13 @@ npm test                 # tests del juego (Vitest)
 VITE_API_URL=http://127.0.0.1:8090/api npm run dev
 
 cd api && go build ./cmd/chronicles-api   # MONGO_URL, MONGO_DB_NAME, JWT_SECRET
+cd api && go run ./cmd/terragen          # regenera Terra en frontend/ y api/ (-check en CI)
 ```
+
+Los mapas viven dos veces, byte a byte: `frontend/src/chronicles/maps` (los
+lee el juego) y `api/internal/chronicles/content/maps` (la API los incrusta
+para validar transiciones). `terragen` escribe ambos y espeja los mapas hechos
+a mano; no edites solo uno.
 
 CI: `react-frontend.yml` (tests, build, smoke de montaje) y `api.yml` (build,
 E2E del juego real contra la API y un MongoDB; en `main` publica la imagen

@@ -113,35 +113,7 @@
     }
   ],
   "triggers": [],
-  "interactables": [
-    {
-      "id": "f6-sealed-temple",
-      "kind": "lore",
-      "visualType": "dungeon-arch",
-      "x": 5,
-      "y": 4,
-      "persistentVisual": true,
-      "label": "Examinar las siete coronas",
-      "lockedLabel": "Las siete coronas no reconocen a la compañía",
-      "requirements": [
-        {
-          "key": "lostKingFinalActOpen",
-          "truthy": true,
-          "message": "La Dama aún no ha revelado el camino al Trono Bajo la Piedra."
-        }
-      ],
-      "action": {
-        "effects": [
-          {
-            "type": "set",
-            "key": "terraF6SealExamined",
-            "value": true
-          }
-        ],
-        "message": "Apoyas la mano sobre las siete coronas. Detrás de la piedra late el Silencio, pero ninguna cede: el juramento del Rey sigue incompleto."
-      }
-    }
-  ],
+  "interactables": [],
   "treasures": [
     {
       "id": "terra-f6-chest",
@@ -219,6 +191,33 @@
           }
         ],
         "message": "La compañía entra en E6."
+      }
+    },
+    {
+      "id": "f6-to-temple",
+      "kind": "exit",
+      "visualType": "dungeon-arch",
+      "x": 5,
+      "y": 4,
+      "requiresReturn": true,
+      "openLabel": "Descender al Templo Bajo la Corona",
+      "lockedLabel": "Las siete coronas no reconocen a la compañía",
+      "requirements": [
+        {
+          "key": "lostKingFinalActOpen",
+          "truthy": true,
+          "message": "Las siete coronas no ceden. La Dama, en la Corte de Bronce (D6), sabe cómo abrirlas."
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "transition-map",
+            "mapId": "templo-corona-atrio",
+            "entryExitId": "temple-to-f6"
+          }
+        ],
+        "message": "La compañía desciende por la escalinata de las siete coronas."
       }
     }
   ],

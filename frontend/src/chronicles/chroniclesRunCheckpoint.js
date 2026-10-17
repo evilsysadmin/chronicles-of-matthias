@@ -29,15 +29,19 @@ function authoredSetKeys(map) {
 // World flags persist for every region; enemy HP only for the current one,
 // because entering any other region resets its foes anyway. With dozens of
 // Terra areas, keeping every visited map's HP would overflow the checkpoint.
+// Durable choices the client makes outside map content (the campaign
+// epilogue's "seen" mark) persist like any authored flag.
+const CLIENT_DURABLE_KEYS = Object.freeze(['lostKingEpilogueSeen']);
+
 function checkpointFlagKeys(currentMapId) {
-  return chroniclesMapIds().flatMap((mapId) => {
+  return [...CLIENT_DURABLE_KEYS, ...chroniclesMapIds().flatMap((mapId) => {
     const map = chroniclesMapById(mapId);
     return [
       ...Object.keys(map.initialFlags || {}),
       ...authoredSetKeys(map),
       ...(mapId === currentMapId ? (map.enemies || []).map((enemy) => enemy?.hpKey).filter(Boolean) : []),
     ];
-  });
+  })];
 }
 
 function durableFlagValue(value) {

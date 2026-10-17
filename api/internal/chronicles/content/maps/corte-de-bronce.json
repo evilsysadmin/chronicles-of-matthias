@@ -187,18 +187,94 @@
                 "title": "El rey desaparecido",
                 "description": "La Dama busca a sus caballeros desaparecidos.",
                 "order": 1,
-                "objective": "La Dama ha abierto el Templo Bajo la Corona (F6). El Rey espera allí, bajo la piedra. (Último acto en preparación.)"
+                "objective": "Entra en el Templo Bajo la Corona (F6), abre el sello de las siete coronas y detén al Canciller Varren."
               }
             ]
           }
         ],
-        "message": "La Dama recibe la tablilla sin testigos: «El Canciller Varren fundió una corona hueca para jurar en lugar del Rey. Y el Rey… el Rey sigue vivo, bajo la piedra, en el Templo Bajo la Corona. Tomad esto: abre las siete coronas»",
+        "message": "La Dama recibe la tablilla sin testigos: «El Canciller Varren fundió una corona hueca para jurar en lugar del Rey. Anoche huyó al Templo Bajo la Corona, en F6, con la mitad de mis guardias. El Rey sigue vivo bajo la piedra. Guardad la tablilla: allí abajo la vais a necesitar, y sólo vosotros sabréis para qué»",
         "journal": {
           "id": "lost-king-dama",
           "title": "La Dama",
-          "body": "El Rey vive bajo el Templo Bajo la Corona (F6). El Canciller Varren es el traidor.",
+          "body": "El Rey vive bajo el Templo Bajo la Corona (F6). El Canciller Varren es el traidor y ha huido allí. La tablilla del juramento hará falta abajo.",
           "sigil": "♛"
         }
+      }
+    },
+    {
+      "id": "dama-waiting",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con la Dama",
+      "when": [
+        {
+          "key": "lostKingFinalActOpen",
+          "truthy": true
+        },
+        {
+          "key": "lostKingEnding",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "La Dama no se ha movido de la ventana que mira al sureste: «F6. El Umbral Bajo la Corona. Volved con el Rey, o volved con la verdad»."
+      }
+    },
+    {
+      "id": "dama-after-restored",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con la Dama",
+      "when": [
+        {
+          "key": "lostKingEnding",
+          "equals": "restored"
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "La Dama sonríe con cansancio mientras el Rey firma decretos a su lado: «Ha vuelto. Con su juramento y con su Silencio. Rezad para que esta vez lo use mejor»."
+      }
+    },
+    {
+      "id": "dama-after-broken",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con la Dama",
+      "when": [
+        {
+          "key": "lostKingEnding",
+          "equals": "broken"
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "La Dama tiene una lista larguísima sobre la mesa: «Son nombres. Gente que había desaparecido y hoy ha llamado a su puerta. No sé gobernar un reino sin Silencio, pero voy a aprender»."
+      }
+    },
+    {
+      "id": "dama-after-regency",
+      "kind": "lore",
+      "x": 11,
+      "y": 10,
+      "visualType": "building-hall",
+      "label": "Hablar con la Dama",
+      "when": [
+        {
+          "key": "lostKingEnding",
+          "equals": "regency"
+        }
+      ],
+      "action": {
+        "effects": [],
+        "message": "La Dama lleva el sello de la regencia como quien lleva un peso ajeno: «El Rey descansa. Yo gobierno. Y vosotros, si queréis, tenéis aquí una casa»."
       }
     },
     {

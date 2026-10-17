@@ -30,6 +30,10 @@ const VISUALS = Object.freeze({
   'salt-crab': Object.freeze({ build: buildCryptSpider, scale: 1.05 }),
   drowned: Object.freeze({ build: buildScavengerKnight, scale: 0.94 }),
   'mire-witch': Object.freeze({ build: buildSpectralBishop, scale: 1.06 }),
+  // Act V: Varren's cult and the knights bound to his hollow crown.
+  'silent-acolyte': Object.freeze({ build: buildSpectralBishop, scale: 0.86 }),
+  'oathbound-knight': Object.freeze({ build: buildScavengerKnight, scale: 1.06 }),
+  'chancellor-varren': Object.freeze({ build: buildSpectralBishop, scale: 1.04 }),
 });
 
 export function chroniclesEnemyVisualSpec(visualType) {
