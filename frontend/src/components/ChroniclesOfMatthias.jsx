@@ -102,6 +102,8 @@ import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
+import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
+import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
 import {
   CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
@@ -242,6 +244,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const partyHotkeyRef = useRef({ key: '', at: 0 });
   const [rendererError, setRendererError] = useState('');
   const [retaliationCue, setRetaliationCue] = useState(null);
+  const [hitSplats, setHitSplats] = useState([]);
+  const hitSplatSequenceRef = useRef(0);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -554,6 +558,21 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       partyBarkTimerRef.current = setTimeout(() => {
         setPartyBark((active) => active?.token === token ? null : active);
       }, Math.max(2800, String(bark.text || '').length * 55));
+    }
+
+    const impacts = chroniclesHitImpacts(current, next);
+    if (impacts.length) {
+      const token = hitSplatSequenceRef.current + 1;
+      hitSplatSequenceRef.current = token;
+      const fresh = impacts.map((impact, index) => ({ ...impact, token: `${token}-${index}` }));
+      // A new blow on the same victim replaces its splat; others keep theirs.
+      setHitSplats((active) => [
+        ...active.filter((splat) => !fresh.some((entry) => entry.kind === splat.kind && entry.id === splat.id)),
+        ...fresh,
+      ]);
+      window.setTimeout(() => {
+        setHitSplats((active) => active.filter((splat) => !fresh.some((entry) => entry.token === splat.token)));
+      }, CHRONICLES_SPLAT_MS);
     }
 
     const cue = chroniclesRetaliationCue(current, next);
@@ -1236,12 +1255,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     draggable="false"
                     data-chronicles-party-thumbnail={member.id}
                   />
-                  {retaliationCue?.targetId === member.id ? (
-                    <span
-                      key={retaliationCue.token}
-                      className="chronicles-party-damage-slash"
-                    />
-                  ) : null}
+                  {hitSplats.filter((splat) => splat.kind === 'party' && splat.id === member.id).map((splat) => (
+                    <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
+                  ))}
                 </span>
                 <span><strong>{index + 1}. {member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level} · {member.row === 'front' ? 'FRENTE' : 'RETAGUARDIA'}</small></span>
                 <span className="chronicles-party-bars" aria-hidden="true" data-band={chroniclesHealthBand(member.hp, member.maxHp)}>
@@ -1381,6 +1397,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
             <div className="chronicles-crosshair" aria-hidden="true">·</div>
+            {hitSplats.filter((splat) => splat.kind === 'enemy').map((splat, index, all) => (
+              <ChroniclesHitSplat key={splat.token} impact={splat} className="is-enemy"
+                style={all.length > 1 ? { left: `${50 + (index - (all.length - 1) / 2) * 14}%` } : null} />
+            ))}
             <ChroniclesInitiativeRail initiative={state.initiative} />
             <ChroniclesNarratorOverlay message={state.message} open={chronicleModalOpen}
               onOpenChange={(next) => {

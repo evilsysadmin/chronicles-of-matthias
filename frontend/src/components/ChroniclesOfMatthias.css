@@ -125,7 +125,9 @@
     inset 0 0 28px rgba(209, 126, 39, .075),
     0 5px 20px rgba(0, 0, 0, .2);
 }
-.chronicles-party-member.is-down { opacity: .46; filter: saturate(.45); }
+.chronicles-party-member.is-down > :not(.chronicles-party-glyph),
+.chronicles-party-member.is-down .chronicles-party-glyph > :not(.chronicles-hit-splat) { opacity: .46; filter: saturate(.45); }
+/* The blow that drops a hero still shows its splat at full colour. */
 .chronicles-party-member:hover,
 .chronicles-party-member:focus-visible {
   border-color: rgba(221, 174, 100, .72);
@@ -148,27 +150,6 @@
     0 0 16px rgba(174, 51, 34, .2);
 }
 
-.chronicles-party-damage-slash {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  left: 50%;
-  width: 145%;
-  height: 3px;
-  border-radius: 999px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255, 226, 208, .98) 16%, #dc4234 50%, rgba(255, 226, 208, .98) 84%, transparent);
-  box-shadow: 0 0 5px rgba(255, 82, 61, .95), 0 0 12px rgba(178, 34, 26, .72);
-  transform: translate(-50%, -50%) rotate(-34deg);
-  animation: chronicles-party-damage-slash 1.8s ease-out both;
-}
-
-@keyframes chronicles-party-damage-slash {
-  0% { opacity: 0; transform: translate(-58%, -50%) rotate(-34deg) scaleX(.35); }
-  12% { opacity: 1; transform: translate(-50%, -50%) rotate(-34deg) scaleX(1); }
-  72% { opacity: .9; }
-  100% { opacity: 0; transform: translate(-44%, -50%) rotate(-34deg) scaleX(1.04); }
-}
 .chronicles-party-member span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
 .chronicles-party-member strong { font-size: .86rem; }
 .chronicles-party-member small {
@@ -1439,7 +1420,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chronicles * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
-  .chronicles-party-damage-slash { opacity: .92; }
 }
 
 
