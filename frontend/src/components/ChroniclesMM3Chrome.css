@@ -1415,13 +1415,31 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* The tactical note sits in the free top band (right of the portraits,
+     under the objective, left of the minimap), never over the creature it
+     describes, which is drawn in the middle of the view. */
   .chronicles .chronicles-stage .chronicles-target-margin,
   .chronicles:has(.chronicles-initiative-rail) .chronicles-stage .chronicles-target-margin {
-    top: calc(max(4px, env(safe-area-inset-top)) + 162px);
-    left: 196px;
-    right: calc(max(8px, env(safe-area-inset-right)) + min(210px, 48vw) + 10px);
+    top: calc(max(4px, env(safe-area-inset-top)) + 58px);
+    left: calc(max(6px, env(safe-area-inset-left)) + 208px);
+    right: calc(max(8px, env(safe-area-inset-right)) + 120px);
     width: auto;
+    max-width: 460px;
     transform: none;
+    /* One line, so it ends above the initiative rail (top: 118px). */
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 0 10px;
+    padding: 4px 8px;
+  }
+  .chronicles .chronicles-stage .chronicles-target-margin .chronicles-target-glyph {
+    grid-row: auto;
+    width: 26px;
+    height: 26px;
+    font-size: 1rem;
+  }
+  .chronicles .chronicles-stage .chronicles-target-margin em {
+    grid-column: auto;
+    white-space: nowrap;
   }
 }
 
