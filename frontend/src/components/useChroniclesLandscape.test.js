@@ -162,3 +162,23 @@ describe('Chronicles landscape after switching apps', () => {
     await releaseChroniclesLandscape({ doc, screenApi });
   });
 });
+
+describe('Chronicles landscape wish survives the browser reloading the tab', () => {
+  it('still asks for the tap after the page is reloaded', async () => {
+    const portrait = { innerWidth: 390, matchMedia: vi.fn((query) => ({ matches: !query.includes('orientation: landscape') })) };
+    const doc = {
+      visibilityState: 'visible',
+      fullscreenElement: null,
+      documentElement: { requestFullscreen: vi.fn(async () => { doc.fullscreenElement = {}; }) },
+    };
+    const screenApi = { orientation: { lock: vi.fn(async () => {}), unlock: vi.fn() } };
+    await requestChroniclesLandscapeOnEntry({ win: portrait, doc, screenApi });
+    // Android drops the page while in another app: modules load from scratch.
+    vi.resetModules();
+    const reloaded = await import('./useChroniclesLandscape.js');
+    doc.fullscreenElement = null;
+    expect(reloaded.shouldRelockChroniclesOnTap({ win: portrait, doc })).toBe(true);
+    await reloaded.releaseChroniclesLandscape({ doc: { ...doc, exitFullscreen: vi.fn() }, screenApi });
+    expect(reloaded.shouldRelockChroniclesOnTap({ win: portrait, doc })).toBe(false);
+  });
+});
