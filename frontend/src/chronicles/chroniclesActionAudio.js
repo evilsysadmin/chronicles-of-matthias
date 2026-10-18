@@ -21,23 +21,36 @@ function enemyHpSnapshot(state) {
 export function chroniclesActionAudioCue(previous, next, action) {
   if (!previous || !next) return null;
   const type = actionType(action);
+  const partyBefore = totalPartyHp(previous);
+  const partyAfter = totalPartyHp(next);
+  const hurt = partyAfter < partyBefore;
   if (type === 'turn-left' || type === 'turn-right') return 'turn';
 
   if (type === 'forward' || type === 'backward') {
     if (next.phase === 'escaped' && previous.phase !== 'escaped') return 'exit';
+    // A trap or a waiting foe: the blow is louder than the footstep.
+    if (hurt) return 'hurt';
     return previous.x !== next.x || previous.y !== next.y ? 'step' : 'blocked';
   }
-
-  if (type !== 'attack') return null;
 
   const beforeEnemies = enemyHpSnapshot(previous);
   const afterById = new Map(enemyHpSnapshot(next).map((enemy) => [enemy.id, enemy.hp]));
   const damaged = beforeEnemies.filter((enemy) => (afterById.get(enemy.id) ?? enemy.hp) < enemy.hp);
-  if (!damaged.length) return 'miss';
+
+  if (type === 'cast' || type === 'use-item') {
+    if (damaged.length) return 'spell-hit';
+    if (hurt) return 'hurt';
+    if (partyAfter > partyBefore) return 'heal';
+    return next.message !== previous.message && next !== previous ? 'spell' : null;
+  }
+
+  if (type !== 'attack') return hurt ? 'hurt' : null;
+
+  if (!damaged.length) return hurt ? 'hurt' : 'miss';
 
   const defeated = damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0);
   if (defeated) return 'defeat';
-  if (totalPartyHp(next) < totalPartyHp(previous)) return 'retaliation';
+  if (hurt) return 'retaliation';
   return 'hit';
 }
 
@@ -118,6 +131,29 @@ function playCue(cue) {
   if (cue === 'miss') {
     connectNoise(ctx, bus, { duration: 0.09, gain: 0.018, centerHz: 1350 });
     connectTone(ctx, bus, { frequency: 210, endFrequency: 155, duration: 0.07, gain: 0.014 });
+    return;
+  }
+  if (cue === 'spell' || cue === 'spell-hit') {
+    // A shimmer: two sine voices rising a fifth, with air on top.
+    connectTone(ctx, bus, { frequency: 523, endFrequency: 784, duration: 0.24, gain: 0.02, type: 'sine' });
+    connectTone(ctx, bus, { frequency: 659, endFrequency: 988, duration: 0.28, gain: 0.014, type: 'sine', delay: 0.05 });
+    connectNoise(ctx, bus, { duration: 0.2, gain: 0.008, centerHz: 4200, type: 'highpass' });
+    if (cue === 'spell-hit') {
+      connectNoise(ctx, bus, { duration: 0.06, gain: 0.04, centerHz: 900, delay: 0.2 });
+      connectTone(ctx, bus, { frequency: 170, endFrequency: 96, duration: 0.16, gain: 0.04, delay: 0.2 });
+    }
+    return;
+  }
+  if (cue === 'heal') {
+    [392, 494, 587].forEach((frequency, index) => {
+      connectTone(ctx, bus, { frequency, duration: 0.34, gain: 0.014, type: 'sine', delay: index * 0.07 });
+    });
+    return;
+  }
+  if (cue === 'hurt') {
+    // A dull blow on the company: low thump and a grunt of noise.
+    connectTone(ctx, bus, { frequency: 120, endFrequency: 58, duration: 0.2, gain: 0.06 });
+    connectNoise(ctx, bus, { duration: 0.08, gain: 0.04, centerHz: 320, type: 'lowpass' });
     return;
   }
   if (cue === 'exit') {
