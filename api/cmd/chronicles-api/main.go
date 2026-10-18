@@ -32,6 +32,7 @@ import (
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/accountstore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/authguard"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesprogression"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesrun"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamesapi"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/mongoruntime"
@@ -193,6 +194,13 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return nil, fmt.Errorf("chronicles runs: %w", err)
 	}
 
+	progression, err := gamesapi.NewChroniclesProgression(gamesapi.ChroniclesProgressionConfig{
+		Config: base(), Progression: chroniclesprogression.NewMongo(db, timeout),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("chronicles progression: %w", err)
+	}
+
 	ok2 := func(f func(*http.Request) (string, bool)) func(*http.Request) bool {
 		return func(r *http.Request) bool { _, ok := f(r); return ok }
 	}
@@ -202,6 +210,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"account", account, ok2(gamesapi.AccountRoute)},
 		{"recovery", recovery, ok2(gamesapi.RecoveryRoute)},
 		{"runs", runs, func(r *http.Request) bool { _, _, ok := gamesapi.ChroniclesRunsRoute(r); return ok }},
+		{"progression", progression, gamesapi.ChroniclesProgressionRoute},
 		{"system", system, ok2(gamesapi.SystemRoute)},
 		{"identity", identity, ok2(gamesapi.IdentityRoute)},
 		{"ops", ops, gamesapi.OpsRoute},
