@@ -3,6 +3,7 @@ import {
   releaseChroniclesLandscape,
   requestChroniclesLandscapeOnEntry,
   shouldAutoRotateChroniclesOnEntry,
+  shouldRelockChroniclesOnTap,
   shouldRestoreChroniclesLandscapeOnResume,
 } from './useChroniclesLandscape.js';
 
@@ -117,5 +118,47 @@ describe('Chronicles immersive entry', () => {
     });
     expect(unlock).toHaveBeenCalledOnce();
     expect(exitFullscreen).not.toHaveBeenCalled();
+  });
+});
+
+describe('Chronicles landscape after switching apps', () => {
+  const setup = () => {
+    let landscape = false;
+    const win = {
+      innerWidth: 390,
+      matchMedia: vi.fn((query) => ({ matches: query.includes('orientation: landscape') ? landscape : true })),
+    };
+    const doc = {
+      visibilityState: 'visible',
+      fullscreenElement: null,
+      documentElement: { requestFullscreen: vi.fn(async () => { doc.fullscreenElement = {}; }) },
+      exitFullscreen: vi.fn(async () => { doc.fullscreenElement = null; }),
+    };
+    const screenApi = { orientation: { lock: vi.fn(async () => {}), unlock: vi.fn() } };
+    return { win, doc, screenApi, rotate: (value) => { landscape = value; } };
+  };
+
+  it('asks for the next tap only after the player had chosen landscape', async () => {
+    const { win, doc, screenApi } = setup();
+    await releaseChroniclesLandscape({ doc, screenApi });
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+    const entry = await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
+    expect(entry.landscape).toBe(true);
+    // Back from another app: fullscreen is gone and the phone is upright.
+    doc.fullscreenElement = null;
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(true);
+    await releaseChroniclesLandscape({ doc, screenApi });
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+  });
+
+  it('does nothing while hidden or already in landscape', async () => {
+    const { win, doc, screenApi, rotate } = setup();
+    await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
+    doc.visibilityState = 'hidden';
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+    doc.visibilityState = 'visible';
+    rotate(true);
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+    await releaseChroniclesLandscape({ doc, screenApi });
   });
 });
