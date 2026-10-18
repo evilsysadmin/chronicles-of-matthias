@@ -102,6 +102,7 @@ import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
+import { createPortal } from 'react-dom';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
 import {
   chroniclesClearSessionResume,
@@ -299,7 +300,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const audienceRef = useRef(null);
   const [automapVisitedByMap, setAutomapVisitedByMap] = useState({});
   const touchHoldRef = useRef({ delayId: null, repeatId: null });
-  const { needsRotation, lockState, activateLandscape } = useChroniclesLandscape(characterSetupDone);
+  const { needsRotation, lockState, activateLandscape, relockPrompt, declineLandscape } = useChroniclesLandscape(characterSetupDone);
 
   // Real Brave/Chrome forced a light glyph despite matching !important CSS.
   // Applying an inline important override to the concrete DOM nodes was
@@ -1477,6 +1478,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
             <div className="chronicles-crosshair" aria-hidden="true">·</div>
+            {relockPrompt && typeof document !== 'undefined' && createPortal(
+              <div className="chronicles-relock" role="dialog" aria-modal="true" aria-labelledby="chronicles-relock-title" data-chronicles-relock>
+                <button type="button" className="chronicles-relock__go" onClick={() => { void activateLandscape(); }}>
+                  <span aria-hidden="true">⟳</span>
+                  <b id="chronicles-relock-title">Toca para volver a apaisado</b>
+                  <small>{lockState === 'rejected'
+                    ? 'El navegador no ha dejado girar. Prueba otra vez o gira el móvil a mano.'
+                    : 'Al cambiar de app, el navegador sale de pantalla completa.'}</small>
+                </button>
+                <button type="button" className="chronicles-relock__stay" onClick={declineLandscape}>Seguir en vertical</button>
+              </div>, document.body,
+            )}
             {hitSplats.filter((splat) => splat.kind === 'enemy').map((splat, index, all) => (
               <ChroniclesHitSplat key={splat.token} impact={splat} className="is-enemy"
                 style={all.length > 1 ? { left: `${50 + (index - (all.length - 1) / 2) * 14}%` } : null} />

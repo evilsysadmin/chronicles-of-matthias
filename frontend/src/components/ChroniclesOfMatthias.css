@@ -1766,3 +1766,41 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   }
   .chronicles .chronicles-objective-trigger__more::after { content: '⌄'; font-size: 1.1rem; }
 }
+
+/* Back from another app in portrait: one big, honest tap to rotate again. */
+.chronicles-relock {
+  position: fixed;
+  inset: 0;
+  z-index: 10050; /* above the game shell and its HUD */
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(8, 8, 12, .82);
+}
+.chronicles-relock__go {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(340px, 100%);
+  padding: 26px 20px;
+  border: 3px solid;
+  border-color: #f0c48a #5a2e12 #5a2e12 #f0c48a;
+  background: #b87033;
+  color: #fff6e0;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.chronicles-relock__go span { font-size: 3rem; line-height: 1; }
+.chronicles-relock__go b { font-size: 1.25rem; }
+.chronicles-relock__go small { color: #ffe7c2; font-size: .85rem; line-height: 1.35; }
+.chronicles-relock__stay {
+  padding: 10px 18px;
+  border: 1px solid rgba(240, 196, 138, .5);
+  background: transparent;
+  color: #e8d5b4;
+  font: inherit;
+  cursor: pointer;
+}
