@@ -35,6 +35,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesprogression"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesrun"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamesapi"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/legacyimport"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/mongoruntime"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/presence"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/release"
@@ -187,6 +188,14 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 			return userdata.Purge(ctx, purgeStore, username)
 		},
 	})
+	legacyDB := db.Client().Database(legacyimport.SourceDatabase)
+	opsImport := gamesapi.NewOpsImport(gamesapi.OpsImportConfig{
+		Secret: []byte(jwtSecret), Environment: environment, Accounts: accountstore.New(db, timeout),
+		Import: func(ctx context.Context, username string) (any, error) {
+			return legacyimport.Import(ctx, legacyimport.NewMongoSource(legacyDB, 20*time.Second),
+				legacyimport.NewMongoRuns(db, timeout), chroniclesprogression.NewMongo(db, timeout), username, time.Now())
+		},
+	})
 	runs, err := gamesapi.NewChroniclesRuns(gamesapi.ChroniclesRunsConfig{
 		Config: base(), Runs: chroniclesrun.NewMongo(db, timeout), Admins: adminUsernames(),
 	})
@@ -214,6 +223,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"system", system, ok2(gamesapi.SystemRoute)},
 		{"identity", identity, ok2(gamesapi.IdentityRoute)},
 		{"ops", ops, gamesapi.OpsRoute},
+		{"ops-import", opsImport, gamesapi.OpsImportLegacyRoute},
 	}, nil
 }
 

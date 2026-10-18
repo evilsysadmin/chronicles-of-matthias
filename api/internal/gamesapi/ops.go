@@ -89,3 +89,84 @@ func (h *OpsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ops delete-account username=%s deleted=%t games=%d", username, deleted, purged.Games)
 	writeJSON(w, http.StatusOK, map[string]any{"deleted": deleted, "username": username, "deletedGames": purged.Games})
 }
+
+// POST /api/ops/import-legacy — staging only. Copies one player's runs and
+// hero progression from Chess Studio's staging database (where the game
+// lived before it had its own API) into Chronicles' database. Idempotent and
+// never overwrites. Authorised like delete-account, with its own purpose.
+const (
+	OpsImportLegacyPattern = "/api/ops/import-legacy"
+	opsImportLegacyPurpose = "ops_import_legacy"
+)
+
+func OpsImportLegacyRoute(r *http.Request) bool { return r.URL.Path == OpsImportLegacyPattern }
+
+type OpsAccountLookup interface {
+	Exists(ctx context.Context, username string) (bool, error)
+}
+
+type OpsImportConfig struct {
+	Secret      []byte
+	Environment string
+	Accounts    OpsAccountLookup
+	Import      func(ctx context.Context, username string) (any, error)
+	Now         func() time.Time
+}
+
+type OpsImportHandler struct{ cfg OpsImportConfig }
+
+func NewOpsImport(cfg OpsImportConfig) *OpsImportHandler {
+	if cfg.Now == nil {
+		cfg.Now = time.Now
+	}
+	return &OpsImportHandler{cfg: cfg}
+}
+
+func (h *OpsImportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.ToLower(strings.TrimSpace(h.cfg.Environment)) != "staging" || h.cfg.Accounts == nil || h.cfg.Import == nil {
+		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "Not Found"})
+		return
+	}
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"detail": "Method Not Allowed"})
+		return
+	}
+	token := strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	subject, ok := sessionauth.VerifyOps(token, opsImportLegacyPurpose, h.cfg.Secret, h.cfg.Now())
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{"detail": "Operator token required."})
+		return
+	}
+	var body struct {
+		Username string `json:"username"`
+	}
+	raw, err := io.ReadAll(io.LimitReader(r.Body, 1024))
+	if err != nil || json.Unmarshal(raw, &body) != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "Invalid body."})
+		return
+	}
+	username := strings.ToLower(strings.TrimSpace(body.Username))
+	if username == "" || username != subject {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "Username does not match the operator token."})
+		return
+	}
+	ctx := context.WithoutCancel(r.Context())
+	exists, err := h.cfg.Accounts.Exists(ctx, username)
+	if err != nil {
+		storageUnavailable(w)
+		return
+	}
+	if !exists {
+		writeJSON(w, http.StatusNotFound, map[string]any{"detail": "That account does not exist in Chronicles yet: register first."})
+		return
+	}
+	result, err := h.cfg.Import(ctx, username)
+	if err != nil {
+		log.Printf("ops import-legacy username=%s failed: %v", username, err)
+		storageUnavailable(w)
+		return
+	}
+	log.Printf("ops import-legacy username=%s result=%+v", username, result)
+	writeJSON(w, http.StatusOK, map[string]any{"username": username, "result": result})
+}
