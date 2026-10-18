@@ -218,7 +218,7 @@
           },
           {
             "type": "heal-party",
-            "amount": 6
+            "amount": 999
           },
           {
             "type": "refill-class-abilities"
@@ -227,7 +227,7 @@
             "type": "restore-spell-points"
           }
         ],
-        "message": "La compañía descansa en la taberna de La Espada Mellada. Heridas tratadas, puntos de hechizo recuperados."
+        "message": "La compañía duerme en la taberna de La Espada Mellada. Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo."
       },
       "visualType": "building-tavern"
     },
