@@ -9,19 +9,25 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#####################",
-    "#...#...#.......#...#",
-    "###.#.#.#.###.#.#.#.#",
-    "#.#.#.#...#.......#.#",
-    "#.#.#.#####.#.#######",
-    "#.#.#.#...#.#.#.....#",
-    "#.#.#.#.#.#.###.###.#",
-    "#.#.#...#.#.......#.#",
-    "#.#.###############.#",
-    "#...#...#.....#.....#",
-    "#.#.#.#.#.###.#.###.#",
-    "#.....#...#.....#...#",
-    "#####################"
+    "#########################",
+    "#...#.........#.......#.#",
+    "###.###.#####.#####.#...#",
+    "#.#.#...#...#.......#...#",
+    "#.#.#.###.#.###########.#",
+    "#.#.#.#...#.#.....#...#.#",
+    "#.#.#.#.###.#####.#.#.#.#",
+    "#.#.#.....#.....#...#...#",
+    "#.#.#.#####.###.#.#######",
+    "#.#.#.#...#...#.#.#.....#",
+    "#.#.#.#.#.#####.#.#####.#",
+    "#...#.#.#.#.....#.....#.#",
+    "#.#####.#.#.#########.#.#",
+    "#...#...#...#...#.....#.#",
+    "###.#.#######.###.#####.#",
+    "#...#...#.......#...#...#",
+    "#.#####.#.#####.###.#.#.#",
+    "#.......#.....#.......#.#",
+    "#########################"
   ],
   "partyStart": {
     "x": 1,
@@ -34,8 +40,8 @@
       "id": "cienaga-negra-foe-0",
       "visualType": "drowned",
       "name": "ahogado",
-      "x": 7,
-      "y": 10,
+      "x": 9,
+      "y": 11,
       "hpKey": "cienaga_negraFoe0Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -64,8 +70,8 @@
       "id": "cienaga-negra-foe-1",
       "visualType": "salt-crab",
       "name": "cangrejo de salitre",
-      "x": 15,
-      "y": 11,
+      "x": 10,
+      "y": 3,
       "hpKey": "cienaga_negraFoe1Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -94,8 +100,8 @@
       "id": "cienaga-negra-foe-2",
       "visualType": "bog-toad",
       "name": "sapo de salina",
-      "x": 18,
-      "y": 5,
+      "x": 9,
+      "y": 1,
       "hpKey": "cienaga_negraFoe2Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -124,7 +130,7 @@
       "id": "cienaga-negra-foe-3",
       "visualType": "ember-wisp",
       "name": "fuego fatuo",
-      "x": 11,
+      "x": 23,
       "y": 3,
       "hpKey": "cienaga_negraFoe3Hp",
       "maxHp": 29,
@@ -150,11 +156,41 @@
       }
     },
     {
+      "id": "cienaga-negra-foe-10",
+      "visualType": "drowned",
+      "name": "ahogado",
+      "x": 18,
+      "y": 7,
+      "hpKey": "cienaga_negraFoe10Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
       "id": "cienaga-negra-foe-4",
       "visualType": "sewer-rat",
       "name": "rata de salina",
-      "x": 17,
-      "y": 3,
+      "x": 20,
+      "y": 11,
       "hpKey": "cienaga_negraFoe4Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -180,11 +216,41 @@
       }
     },
     {
+      "id": "cienaga-negra-foe-11",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 19,
+      "y": 17,
+      "hpKey": "cienaga_negraFoe11Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
       "id": "cienaga-negra-foe-5",
       "visualType": "drowned",
       "name": "ahogado",
-      "x": 6,
-      "y": 1,
+      "x": 23,
+      "y": 14,
       "hpKey": "cienaga_negraFoe5Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -201,6 +267,36 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "cienaga-negra-foe-12",
+      "visualType": "bog-toad",
+      "name": "sapo de salina",
+      "x": 23,
+      "y": 10,
+      "hpKey": "cienaga_negraFoe12Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sapo de salina usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -262,8 +358,8 @@
       "id": "cienaga-negra-foe-9",
       "visualType": "mire-witch",
       "name": "la Bruja del Cieno",
-      "x": 9,
-      "y": 7,
+      "x": 13,
+      "y": 17,
       "hpKey": "cienaga_negraFoe9Hp",
       "maxHp": 20,
       "retaliation": 7,
@@ -339,7 +435,7 @@
       "id": "cienaga-negra-font",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 17,
+      "x": 5,
       "y": 11,
       "label": "Beber del Charca limpia",
       "when": [
@@ -372,8 +468,8 @@
       "id": "cienaga-negra-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 17,
-      "y": 7,
+      "x": 15,
+      "y": 1,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -415,7 +511,7 @@
       "kind": "pickup",
       "visualType": "chain-altar",
       "x": 19,
-      "y": 3,
+      "y": 9,
       "label": "Abrir la alacena de la bruja",
       "lockedLabel": "Abrir la alacena de la bruja · cerrado con llave",
       "when": [
@@ -476,8 +572,8 @@
       "id": "cienaga-negra-trap-0",
       "kind": "trap",
       "visualType": "chain-plate",
-      "x": 10,
-      "y": 9,
+      "x": 15,
+      "y": 11,
       "label": "Raíz que agarra",
       "when": [
         {
@@ -504,8 +600,8 @@
       "id": "cienaga-negra-trap-1",
       "kind": "trap",
       "visualType": "chain-plate",
-      "x": 11,
-      "y": 6,
+      "x": 10,
+      "y": 1,
       "label": "Raíz que agarra",
       "when": [
         {
@@ -518,6 +614,34 @@
           {
             "type": "set",
             "key": "cienaga_negraTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Una raíz se enrosca en los tobillos y aprieta. Dos puntos de daño y un respeto nuevo por la jardinería."
+      }
+    },
+    {
+      "id": "cienaga-negra-trap-2",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 17,
+      "y": 8,
+      "label": "Raíz que agarra",
+      "when": [
+        {
+          "key": "cienaga_negraTrap2Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cienaga_negraTrap2Spent",
             "value": true
           },
           {

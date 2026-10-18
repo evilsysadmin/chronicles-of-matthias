@@ -9,19 +9,25 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#####################",
-    "#.#...............#.#",
-    "#.###.#######.###.#.#",
-    "#...#...#...#...#...#",
-    "###.#.#.#.#.###.#####",
-    "#...#.#...#...#.#...#",
-    "#.#.#.#.#####.#.#.#.#",
-    "#...#.#...#.#.#...#.#",
-    "###.#.###.#.#.#####.#",
-    "#...#.#...#.#.....#.#",
-    "#.#.###.###.###.#.#.#",
-    "#.......#...........#",
-    "#####################"
+    "#########################",
+    "#.#.......#...#.....#...#",
+    "#.#.###.#...#.###.#.###.#",
+    "#...#...#...#.....#.....#",
+    "###.#.#################.#",
+    "#...#.....#...#.......#.#",
+    "#.###.###.###...#.#####.#",
+    "#...#...#...#...#.......#",
+    "###.#.#####.###.#########",
+    "#...#.#...#...#.......#.#",
+    "#.#####.#.###.#######.#.#",
+    "#...#...#...#.......#...#",
+    "###.#.#####.#.#.###.###.#",
+    "#.#.#...#.#.#.....#.#.#.#",
+    "#.#.###.#.#.#######.#.#.#",
+    "#.#.....#.#.....#...#...#",
+    "#.#######.#####.#.###.###",
+    "#.................#.....#",
+    "#########################"
   ],
   "partyStart": {
     "x": 1,
@@ -35,7 +41,7 @@
       "visualType": "road-bandit",
       "name": "contrabandista",
       "x": 9,
-      "y": 9,
+      "y": 5,
       "hpKey": "cueva_contrabandistasFoe0Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -64,8 +70,8 @@
       "id": "cueva-contrabandistas-foe-1",
       "visualType": "salt-crab",
       "name": "cangrejo de cueva",
-      "x": 5,
-      "y": 4,
+      "x": 7,
+      "y": 14,
       "hpKey": "cueva_contrabandistasFoe1Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -94,8 +100,8 @@
       "id": "cueva-contrabandistas-foe-2",
       "visualType": "sewer-rat",
       "name": "rata de bodega",
-      "x": 12,
-      "y": 5,
+      "x": 23,
+      "y": 4,
       "hpKey": "cueva_contrabandistasFoe2Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -124,8 +130,8 @@
       "id": "cueva-contrabandistas-foe-3",
       "visualType": "ember-wisp",
       "name": "farol encantado",
-      "x": 13,
-      "y": 3,
+      "x": 17,
+      "y": 16,
       "hpKey": "cueva_contrabandistasFoe3Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -150,11 +156,41 @@
       }
     },
     {
+      "id": "cueva-contrabandistas-foe-10",
+      "visualType": "road-bandit",
+      "name": "contrabandista",
+      "x": 16,
+      "y": 5,
+      "hpKey": "cueva_contrabandistasFoe10Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
       "id": "cueva-contrabandistas-foe-4",
       "visualType": "skeleton",
       "name": "contrabandista ahorcado",
-      "x": 13,
-      "y": 11,
+      "x": 14,
+      "y": 6,
       "hpKey": "cueva_contrabandistasFoe4Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -180,11 +216,41 @@
       }
     },
     {
+      "id": "cueva-contrabandistas-foe-11",
+      "visualType": "salt-crab",
+      "name": "cangrejo de cueva",
+      "x": 12,
+      "y": 5,
+      "hpKey": "cueva_contrabandistasFoe11Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de cueva usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
       "id": "cueva-contrabandistas-foe-5",
       "visualType": "road-bandit",
       "name": "contrabandista",
-      "x": 19,
-      "y": 2,
+      "x": 3,
+      "y": 17,
       "hpKey": "cueva_contrabandistasFoe5Hp",
       "maxHp": 25,
       "retaliation": 4,
@@ -210,11 +276,41 @@
       }
     },
     {
+      "id": "cueva-contrabandistas-foe-12",
+      "visualType": "sewer-rat",
+      "name": "rata de bodega",
+      "x": 23,
+      "y": 9,
+      "hpKey": "cueva_contrabandistasFoe12Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de bodega usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
       "id": "cueva-contrabandistas-foe-8",
       "visualType": "road-bandit",
       "name": "el contable de Mano Negra",
-      "x": 19,
-      "y": 1,
+      "x": 1,
+      "y": 13,
       "hpKey": "cueva_contrabandistasFoe8Hp",
       "maxHp": 29,
       "retaliation": 5,
@@ -262,8 +358,8 @@
       "id": "cueva-contrabandistas-foe-9",
       "visualType": "bandit-captain",
       "name": "Mano Negra, jefa de contrabandistas",
-      "x": 19,
-      "y": 5,
+      "x": 23,
+      "y": 17,
       "hpKey": "cueva_contrabandistasFoe9Hp",
       "maxHp": 18,
       "retaliation": 6,
@@ -315,8 +411,8 @@
       "id": "cueva-contrabandistas-note",
       "kind": "lore",
       "visualType": "name-plaque",
-      "x": 3,
-      "y": 1,
+      "x": 5,
+      "y": 9,
       "label": "Leer el libro de turnos de la campana",
       "action": {
         "effects": [
@@ -339,8 +435,8 @@
       "id": "cueva-contrabandistas-font",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 5,
-      "y": 9,
+      "x": 21,
+      "y": 1,
       "label": "Beber del Manantial de la cueva",
       "when": [
         {
@@ -372,8 +468,8 @@
       "id": "cueva-contrabandistas-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 9,
-      "y": 11,
+      "x": 11,
+      "y": 5,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -414,8 +510,8 @@
       "id": "cueva-contrabandistas-cache",
       "kind": "pickup",
       "visualType": "chain-altar",
-      "x": 11,
-      "y": 7,
+      "x": 19,
+      "y": 17,
       "label": "Abrir el alijo de los contrabandistas",
       "lockedLabel": "Abrir el alijo de los contrabandistas · cerrado con llave",
       "when": [
@@ -476,8 +572,8 @@
       "id": "cueva-contrabandistas-trap-0",
       "kind": "trap",
       "visualType": "chain-plate",
-      "x": 7,
-      "y": 4,
+      "x": 3,
+      "y": 15,
       "label": "Cepo de contrabandista",
       "when": [
         {
@@ -504,8 +600,8 @@
       "id": "cueva-contrabandistas-trap-1",
       "kind": "trap",
       "visualType": "chain-plate",
-      "x": 13,
-      "y": 2,
+      "x": 7,
+      "y": 11,
       "label": "Cepo de contrabandista",
       "when": [
         {
@@ -518,6 +614,34 @@
           {
             "type": "set",
             "key": "cueva_contrabandistasTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 3
+          }
+        ],
+        "message": "Un cepo oxidado salta entre las rocas. Los contrabandistas no querían visitas, y lo dejaron muy claro."
+      }
+    },
+    {
+      "id": "cueva-contrabandistas-trap-2",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 13,
+      "y": 17,
+      "label": "Cepo de contrabandista",
+      "when": [
+        {
+          "key": "cueva_contrabandistasTrap2Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "cueva_contrabandistasTrap2Spent",
             "value": true
           },
           {

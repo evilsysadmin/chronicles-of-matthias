@@ -7,12 +7,14 @@ import { chroniclesMapById } from './chroniclesMapCatalog.js';
 const DUNGEONS = ['salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria', 'tumulos-primer-pacto', 'cienaga-negra'];
 
 describe('Chronicles · Terra dungeons have something inside', () => {
-  it.each(DUNGEONS)('%s: a note, a font, two traps, a chest, an elite and a boss', (id) => {
+  it.each(DUNGEONS)('%s: a note, a font, three traps, a chest, an elite and a boss in a sizeable maze', (id) => {
     const map = chroniclesMapById(id);
     expect(map.interactables.map((entry) => entry.id)).toEqual([`${id}-note`, `${id}-font`]);
-    expect(map.traps).toHaveLength(2);
+    expect(map.traps).toHaveLength(3);
+    // As long as Swordhaven's sewers: an expedition, not a corridor.
+    expect(map.grid.join('').replace(/#/g, '').length).toBeGreaterThanOrEqual(200);
     expect(map.treasures.map((entry) => entry.id)).toEqual([`${id}-chest`, `${id}-cache`]);
-    expect(map.enemies.length).toBeGreaterThanOrEqual(6);
+    expect(map.enemies.length).toBeGreaterThanOrEqual(9);
     expect(map.enemies.filter((enemy) => enemy.defeatedFlag)).toHaveLength(2);
   });
 
