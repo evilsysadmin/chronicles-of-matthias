@@ -103,6 +103,11 @@ import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
+import {
+  chroniclesClearSessionResume,
+  chroniclesLoadSessionResume,
+  chroniclesSaveSessionResume,
+} from '../chronicles/chroniclesSessionResume.js';
 import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
 import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.js';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
@@ -378,6 +383,21 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   useEffect(() => {
     automapVisitedRef.current = automapVisitedByMap;
   }, [automapVisitedByMap]);
+  // Keep this tab's resume copy current (see chroniclesSessionResume).
+  useEffect(() => {
+    if (!ready || !state) return undefined;
+    const timer = setTimeout(() => {
+      const run = authoritativeRunRef.current;
+      if (!run?.runId || activeRunIdRef.current !== run.runId) return;
+      chroniclesSaveSessionResume(run.runId, {
+        state: stateRef.current,
+        worldVersion: run.worldVersion,
+        progression: progressionRef.current,
+        automap: automapVisitedRef.current,
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [ready, state, automapVisitedByMap]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -807,7 +827,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         );
         const restored = chroniclesApplyRunCheckpoint(progressed, world);
         // The run id seeds every MM3 die so F5 never rerolls a blow.
-        const next = {
+        let next = {
           ...chroniclesApplyArrival(chroniclesInitializeLostKingIntro(restored, {
             fresh: !remoteSelection && world.worldVersion === 0,
           })),
@@ -821,9 +841,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // Record the authoritative bootstrap as our comparison baseline.
         // New runs have no durable checkpoint until an explicit Save or area exit.
         checkpointFingerprintRef.current = chroniclesRunCheckpointFingerprint(restored);
-        checkpointMapRef.current = next.mapId;
         checkpointExistsRef.current = remoteSelection || Number(world.worldVersion || 0) > 0;
-        setAutomapVisitedByMap(loadChroniclesAutomapVisited(confirmedId));
+        // A reload resumes this tab's own copy, unless the server saw a newer save.
+        const resumed = chroniclesLoadSessionResume(confirmedId, world.worldVersion);
+        if (resumed) {
+          next = { ...resumed.state, runSeed: world.runId };
+          if (resumed.progression) {
+            progressionRef.current = resumed.progression;
+            setProgression(resumed.progression);
+          }
+        }
+        checkpointMapRef.current = next.mapId;
+        setAutomapVisitedByMap(resumed?.automap || loadChroniclesAutomapVisited(confirmedId));
         stateRef.current = next;
         staleRunRecoveryAttemptedRef.current = false;
         setSelectedMemberId('matthias');
@@ -837,6 +866,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (error?.status === 409 && !remoteSelection && !staleRunRecoveryAttemptedRef.current) {
           staleRunRecoveryAttemptedRef.current = true;
           clearChroniclesAutomapVisited(operationId);
+          chroniclesClearSessionResume(operationId);
           const replacementRunId = renewChroniclesRun(FIRST_PERSON_RUN_SCOPE, operationId);
           activeRunIdRef.current = replacementRunId;
           chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, replacementRunId);
@@ -990,6 +1020,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [exitChronicles, persistCheckpoint, saveBusy]);
 
   const discardAndExit = useCallback(() => {
+    chroniclesClearSessionResume(activeRunIdRef.current);
     // Exiting the game never waits for DELETE: a failed/slow server request
     // must not trap the player inside Chronicles. Checkpoint cleanup remains
     // serialized and never removes an existing durable area/manual save.
@@ -1137,6 +1168,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   };
 
   const returnToSaveMenu = () => {
+    chroniclesClearSessionResume(activeRunIdRef.current);
     chroniclesClearPlayingRun();
     setMenuOpen(false);
     clearTouchHold();
