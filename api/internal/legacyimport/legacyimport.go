@@ -32,6 +32,27 @@ const (
 
 var ErrUnavailable = errors.New("legacy import storage unavailable")
 
+// Error says which side failed and how, without leaking connection details,
+// so an operator can tell a missing permission from an outage.
+type Error struct {
+	Stage  string // "read-legacy-runs", "read-legacy-profile", "write-runs", "progression"
+	Reason string // "unauthorized", "timeout" or "unavailable"
+}
+
+func (e *Error) Error() string { return "legacy import failed at " + e.Stage + ": " + e.Reason }
+
+func fail(stage string, err error) error {
+	reason := "unavailable"
+	var server mongo.ServerError
+	switch {
+	case errors.As(err, &server) && (server.HasErrorCode(13) || server.HasErrorCode(8000)):
+		reason = "unauthorized"
+	case mongo.IsTimeout(err) || errors.Is(err, context.DeadlineExceeded):
+		reason = "timeout"
+	}
+	return &Error{Stage: stage, Reason: reason}
+}
+
 // Source reads the legacy data.
 type Source interface {
 	Runs(ctx context.Context, owner string) ([]bson.D, error)
@@ -55,12 +76,12 @@ func Import(ctx context.Context, src Source, runs RunTarget, progression chronic
 	var result Result
 	legacyRuns, err := src.Runs(ctx, owner)
 	if err != nil {
-		return Result{}, ErrUnavailable
+		return Result{}, fail("read-legacy-runs", err)
 	}
 	for _, run := range legacyRuns {
 		inserted, err := runs.InsertIfAbsent(ctx, run)
 		if err != nil {
-			return Result{}, ErrUnavailable
+			return Result{}, fail("write-runs", err)
 		}
 		if inserted {
 			result.RunsImported++
@@ -71,7 +92,7 @@ func Import(ctx context.Context, src Source, runs RunTarget, progression chronic
 
 	legacy, err := src.Progression(ctx, owner)
 	if err != nil {
-		return Result{}, ErrUnavailable
+		return Result{}, fail("read-legacy-profile", err)
 	}
 	if legacy == "" || len(legacy) > chroniclesprogression.MaxDocumentBytes || !isObject(legacy) {
 		result.Progression = "none"
@@ -79,14 +100,14 @@ func Import(ctx context.Context, src Source, runs RunTarget, progression chronic
 	}
 	current, err := progression.Get(ctx, owner)
 	if err != nil {
-		return Result{}, ErrUnavailable
+		return Result{}, fail("progression", err)
 	}
 	if current.Revision > 0 && TotalXP(current.Document) >= TotalXP(legacy) {
 		result.Progression = "kept"
 		return result, nil
 	}
 	if _, err := progression.Put(ctx, owner, legacy, current.Revision, now); err != nil {
-		return Result{}, err
+		return Result{}, fail("progression", err)
 	}
 	result.Progression = "imported"
 	return result, nil

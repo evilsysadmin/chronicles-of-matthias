@@ -76,7 +76,9 @@ func TestOpsDeleteAccount(t *testing.T) {
 
 type fakeOpsAccounts map[string]bool
 
-func (f fakeOpsAccounts) Exists(_ context.Context, username string) (bool, error) { return f[username], nil }
+func (f fakeOpsAccounts) Exists(_ context.Context, username string) (bool, error) {
+	return f[username], nil
+}
 
 func opsTokenFor(secret, sub, purpose string, exp time.Time) string {
 	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))

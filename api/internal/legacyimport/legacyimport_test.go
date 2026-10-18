@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesprogression"
 )
@@ -75,5 +76,22 @@ func TestImportIgnoresMissingOrBrokenProgression(t *testing.T) {
 		if err != nil || result.Progression != "none" {
 			t.Fatalf("%q: %+v %v", raw, result, err)
 		}
+	}
+}
+
+type failingSource struct{ err error }
+
+func (f failingSource) Runs(context.Context, string) ([]bson.D, error)      { return nil, f.err }
+func (f failingSource) Progression(context.Context, string) (string, error) { return "", nil }
+
+func TestImportNamesTheFailingStage(t *testing.T) {
+	denied := mongo.CommandError{Code: 13, Name: "Unauthorized"}
+	_, err := Import(context.Background(), failingSource{denied}, fakeRuns{}, chroniclesprogression.NewMemory(), "ana", time.Now())
+	if err == nil || err.Error() != "legacy import failed at read-legacy-runs: unauthorized" {
+		t.Fatalf("err %v", err)
+	}
+	_, err = Import(context.Background(), failingSource{context.DeadlineExceeded}, fakeRuns{}, chroniclesprogression.NewMemory(), "ana", time.Now())
+	if err == nil || err.Error() != "legacy import failed at read-legacy-runs: timeout" {
+		t.Fatalf("err %v", err)
 	}
 }

@@ -164,7 +164,9 @@ func (h *OpsImportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	result, err := h.cfg.Import(ctx, username)
 	if err != nil {
 		log.Printf("ops import-legacy username=%s failed: %v", username, err)
-		storageUnavailable(w)
+		// The operator only sees this through CI; the message carries the
+		// failing stage and an error class, never connection details.
+		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"detail": err.Error()})
 		return
 	}
 	log.Printf("ops import-legacy username=%s result=%+v", username, result)
