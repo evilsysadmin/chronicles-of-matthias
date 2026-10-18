@@ -4,7 +4,11 @@
 // Tactics no tiene botón propio: se abre en /#tactics.
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
-import { fetchMeStatus, isLoggedIn, logout, reportLogoutPresence, watchSessionIdentity } from '../auth.js';
+import {
+  fetchMeStatus, isLoggedIn, logout, refreshSsoToken, reportLogoutPresence, restoreSsoSession, startSsoRefresh,
+  watchSessionIdentity,
+} from '../auth.js';
+import { ssoEnabled } from '../shadowopsIdentity.js';
 import { onSessionExpired } from '../sessionExpiry.js';
 import {
   releaseChroniclesLandscape,
@@ -24,6 +28,20 @@ function currentMode() {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
+  // Already signed in to ShadowOps (Chess Studio or another game)? Then
+  // there is no form: ask the identity provider silently first.
+  const [checkingSso, setCheckingSso] = useState(() => !isLoggedIn() && ssoEnabled());
+  useEffect(() => {
+    if (!checkingSso) return;
+    let alive = true;
+    void restoreSsoSession().then((restored) => {
+      if (!alive) return;
+      if (restored) setLoggedIn(true);
+      setCheckingSso(false);
+    });
+    return () => { alive = false; };
+  }, [checkingSso]);
+  useEffect(() => (loggedIn ? startSsoRefresh() : undefined), [loggedIn]);
   const [mode, setMode] = useState(currentMode);
   // Sin castillo al que volver: salir del juego reinicia el libro de expediciones.
   const [mountKey, setMountKey] = useState(0);
@@ -40,8 +58,11 @@ export default function App() {
     };
     const stop = onSessionExpired(expire);
     if (isLoggedIn()) {
-      void fetchMeStatus().then((result) => {
-        if (result.status === 'unauthorized' && isLoggedIn()) expire();
+      void fetchMeStatus().then(async (result) => {
+        if (result.status !== 'unauthorized' || !isLoggedIn()) return;
+        // An expired ShadowOps token is renewed from the cookie, not a logout.
+        if (await refreshSsoToken()) return;
+        expire();
       });
     }
     return stop;
@@ -57,6 +78,7 @@ export default function App() {
     if (loggedIn) void requestChroniclesLandscapeOnEntry();
   }, [loggedIn]);
 
+  if (checkingSso) return <Loading />;
   if (!loggedIn) {
     return (
       <LoginScreen

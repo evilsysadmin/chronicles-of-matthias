@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { forgotPassword, login, register, resetPassword, wakeBackend } from '../auth.js';
+import { ssoEnabled } from '../shadowopsIdentity.js';
 import { SUPPORTED_UI_LANGUAGES } from '../userPreferences.js';
 import { connectionErrorCopy } from '../networkErrorCopy.js';
 import { addressWithoutAuthParams, authParamsFromLocation } from '../authUrlParams.js';
@@ -12,6 +13,8 @@ const COPY = {
     loginHint: 'Entra con tu usuario para seguir donde lo dejaste.', registerHint: 'Cada cuenta tiene su propio progreso. El email se usa únicamente para recuperar el acceso.',
     forgotHint: 'Te enviaremos un enlace temporal si el email pertenece a una cuenta.', resetHint: 'El enlace caduca a los 30 minutos y queda invalidado después de usarlo.',
     username: 'Usuario', email: 'Email', password: 'Contraseña', newPassword: 'Nueva contraseña', repeatPassword: 'Repite la contraseña', language: 'Idioma', invite: 'Código de invitación', invitePlaceholder: 'Sólo si el servidor lo exige',
+    ssoLoginHint: 'Entra con tu cuenta ShadowOps: la misma de Chess Studio. Una sola cuenta para todos los juegos.',
+    ssoRegisterHint: 'Crearás una cuenta ShadowOps: te sirve para Chess Studio, Chronicles y lo que venga. El email solo se usa para recuperar el acceso.',
     wait: 'Un momento…', create: 'Crear cuenta', send: 'Enviar enlace', change: 'Cambiar contraseña', enter: 'Entrar', forgotLink: 'He olvidado la contraseña', createLink: '¿No tienes cuenta? Créala', back: 'Volver a iniciar sesión', mismatch: 'Las contraseñas no coinciden.', missingToken: 'Falta el token de recuperación. Solicita un enlace nuevo.', recoveryNotice: 'Si ese email está registrado, recibirás un enlace de recuperación.',
   },
   en: {
@@ -19,6 +22,8 @@ const COPY = {
     loginHint: 'Sign in to continue where you left off.', registerHint: 'Each account keeps its own progress. Your email is only used for account recovery.',
     forgotHint: 'We will send a temporary link if the email belongs to an account.', resetHint: 'The link expires after 30 minutes and can only be used once.',
     username: 'Username', email: 'Email', password: 'Password', newPassword: 'New password', repeatPassword: 'Repeat password', language: 'Language', invite: 'Invitation code', invitePlaceholder: 'Only if required by the server',
+    ssoLoginHint: 'Sign in with your ShadowOps account: the same as Chess Studio. One account for every game.',
+    ssoRegisterHint: 'You are creating a ShadowOps account: it works for Chess Studio, Chronicles and whatever comes next. Your email is only used for account recovery.',
     wait: 'One moment…', create: 'Create account', send: 'Send link', change: 'Change password', enter: 'Sign in', forgotLink: 'I forgot my password', createLink: 'No account yet? Create one', back: 'Back to sign in', mismatch: 'Passwords do not match.', missingToken: 'The recovery token is missing. Request a new link.', recoveryNotice: 'If that email is registered, you will receive a recovery link.',
   },
 };
@@ -124,6 +129,7 @@ export default function LoginScreen({ onLoggedIn, initialNotice = null }) {
   }
 
   const text = COPY[language];
+  const sso = ssoEnabled();
   const title = mode === 'register'
     ? text.register
     : mode === 'forgot'
@@ -139,8 +145,8 @@ export default function LoginScreen({ onLoggedIn, initialNotice = null }) {
           <span className="eyebrow">Chronicles of Matthias</span>
           <h2>{title}</h2>
           <p className="hint-text" style={{ marginBottom: '1rem' }}>
-            {mode === 'register' && text.registerHint}
-            {mode === 'login' && text.loginHint}
+            {mode === 'register' && (sso ? text.ssoRegisterHint : text.registerHint)}
+            {mode === 'login' && (sso ? text.ssoLoginHint : text.loginHint)}
             {mode === 'forgot' && text.forgotHint}
             {mode === 'reset' && text.resetHint}
           </p>

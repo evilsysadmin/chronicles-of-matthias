@@ -4,7 +4,8 @@
 // quién es el progreso que está subiendo o bajando.
 
 import { bindProfileStorageIdentity, clearLocalUserState } from './profileKeys.js';
-import { request, requestJson } from './http.js';
+import { request, requestJson, setSessionRefresher } from './http.js';
+import { ssoEnabled, ssoForgotPassword, ssoLogin, ssoLogout, ssoRegister, ssoSilentToken } from './shadowopsIdentity.js';
 import { markAmbientThemeSessionFresh, clearAmbientThemeSessionStorage } from './audioSession.js';
 import { clearSessionView } from './viewState.js';
 import { clearAllClockSnapshots } from './clockPersistence.js';
@@ -25,6 +26,7 @@ export const PRESENCE_DOCUMENT_OWNER_KEY = 'chess-study-presence-owner-v1';
 const AUTH_STORAGE_KEYS = Object.freeze([TOKEN_KEY, USERNAME_KEY]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const SSO_EXPIRY_KEY = 'chronicles-sso-expires-at';
 
 const AUTH_REQUEST_TIMEOUT_MS = 65000; // deja margen al cold-start de Render, pero nunca bloquea para siempre
 const BACKGROUND_REQUEST_TIMEOUT_MS = 7000;
@@ -175,14 +177,76 @@ export function logout() {
   clearSessionRuntimeState();
   clearLocalUserState();
   clearMatthiasSessionSignals();
+  if (getToken()) void ssoLogout();
   removeStorageItem(STORAGE_LOCAL, TOKEN_KEY);
   removeStorageItem(STORAGE_LOCAL, USERNAME_KEY);
+  removeStorageItem(STORAGE_LOCAL, SSO_EXPIRY_KEY);
   removeStorageItem(STORAGE_SESSION, PRESENCE_SESSION_KEY);
   removeStorageItem(STORAGE_SESSION, PRESENCE_DOCUMENT_OWNER_KEY);
   bindProfileStorageIdentity(null);
 }
 
+// ShadowOps account: the token came from the IdP; remember when it ends so
+// it can be renewed from the SSO cookie before it does.
+function saveSsoSession(session) {
+  if (getUsername() === session.username && getToken()) {
+    // Same player, fresh token: keep everything else as it is.
+    setStorageItem(STORAGE_LOCAL, TOKEN_KEY, session.token);
+  } else {
+    saveSession(session.token, session.username);
+  }
+  setStorageItem(STORAGE_LOCAL, SSO_EXPIRY_KEY, String(session.expiresAt || 0));
+}
+
+let refreshInFlight = null;
+// A fresh token for the same player, from the SSO cookie; null if there is
+// no ShadowOps session or it belongs to someone else now.
+export function refreshSsoToken() {
+  if (!ssoEnabled()) return Promise.resolve(null);
+  refreshInFlight ||= ssoSilentToken().then((session) => {
+    if (!session || (getUsername() && session.username !== getUsername())) return null;
+    saveSsoSession(session);
+    return session.token;
+  }).finally(() => { refreshInFlight = null; });
+  return refreshInFlight;
+}
+setSessionRefresher(refreshSsoToken);
+
+// Entering Chronicles already signed in to ShadowOps (in another game, or
+// earlier here): no form at all.
+export async function restoreSsoSession() {
+  if (!ssoEnabled()) return false;
+  const session = await ssoSilentToken();
+  if (!session) return false;
+  saveSsoSession(session);
+  return true;
+}
+
+// Renew a few minutes before the hour runs out, and on returning to a tab
+// that slept through it.
+export function startSsoRefresh() {
+  if (!ssoEnabled()) return () => {};
+  const check = () => {
+    const expiresAt = Number(getStorageItem(STORAGE_LOCAL, SSO_EXPIRY_KEY) || 0) * 1000;
+    if (isLoggedIn() && expiresAt && expiresAt - Date.now() < 10 * 60 * 1000) void refreshSsoToken();
+  };
+  const timer = setInterval(check, 60 * 1000);
+  const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+  document.addEventListener('visibilitychange', onVisible);
+  check();
+  return () => {
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', onVisible);
+  };
+}
+
 export async function register(username, password, email, inviteCode = '', language = 'es', { signal } = {}) {
+  if (ssoEnabled()) {
+    const session = await ssoRegister(username, password, email, inviteCode, { signal });
+    saveSsoSession(session);
+    setUiLanguage(language);
+    return session;
+  }
   const body = await requestJson(`${BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -196,6 +260,11 @@ export async function register(username, password, email, inviteCode = '', langu
 }
 
 export async function login(username, password, { signal } = {}) {
+  if (ssoEnabled()) {
+    const session = await ssoLogin(username, password, { signal });
+    saveSsoSession(session);
+    return session;
+  }
   const body = await requestJson(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -208,6 +277,7 @@ export async function login(username, password, { signal } = {}) {
 }
 
 export async function forgotPassword(email, { signal } = {}) {
+  if (ssoEnabled()) return ssoForgotPassword(email, { signal });
   return requestJson(`${BASE_URL}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

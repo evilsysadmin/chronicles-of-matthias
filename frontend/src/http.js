@@ -89,7 +89,33 @@ async function parseJsonResponse(response, { authenticatedRequest = false, url =
   return body;
 }
 
+// With a ShadowOps account the game token lives an hour: before a 401 logs
+// the player out, renew it once from the SSO cookie and retry.
+let sessionRefresher = null;
+export function setSessionRefresher(refresher) {
+  sessionRefresher = typeof refresher === 'function' ? refresher : null;
+}
+
+function withAuthorization(headers, token) {
+  const plainHeaders = Object.fromEntries(
+    Object.entries(headers || {}).filter(([key]) => String(key).toLowerCase() !== 'authorization'),
+  );
+  return { ...plainHeaders, Authorization: `Bearer ${token}` };
+}
+
 export async function requestJson(url, options = {}) {
   const authenticatedRequest = hasAuthorizationHeader(options?.headers);
-  return parseJsonResponse(await request(url, options), { authenticatedRequest, url });
+  const response = await request(url, options);
+  const plainHeaders = !(typeof Headers !== 'undefined' && options?.headers instanceof Headers) && !Array.isArray(options?.headers);
+  if (response.status === 401 && authenticatedRequest && sessionRefresher && plainHeaders
+    && !PASSWORD_CHECK_RE.test(String(url)) && !(typeof options.body === 'object' && options.body?.getReader)) {
+    const fresh = await sessionRefresher().catch(() => null);
+    if (fresh) {
+      return parseJsonResponse(
+        await request(url, { ...options, headers: withAuthorization(options.headers, fresh) }),
+        { authenticatedRequest, url },
+      );
+    }
+  }
+  return parseJsonResponse(response, { authenticatedRequest, url });
 }
