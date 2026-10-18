@@ -4,7 +4,7 @@ import { useEscapeToClose } from '../useEscapeToClose.js';
 import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import './ChroniclesJournalModal.css';
 
-export default function ChroniclesJournalModal({ open, state, entries = [], onClose }) {
+export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
@@ -83,6 +83,10 @@ export default function ChroniclesJournalModal({ open, state, entries = [], onCl
                   <div><strong>{entry.title}</strong><p>{entry.body}</p></div>
                 </li>
               ))}</ol> : <p className="chronicles-journal-modal__empty">Aún no hay anotaciones. Cada viaje deja su historia.</p>}
+              <h3>Diario de la expedición</h3>
+              {narrations.length ? <ol className="chronicles-journal-modal__diary" data-chronicles-narration-log>{narrations.map((entry) => (
+                <li key={`${entry.at}-${entry.text}`}>{entry.text}</li>
+              ))}</ol> : <p className="chronicles-journal-modal__empty">Lo que cuente la crónica durante el viaje quedará aquí.</p>}
             </section>
           </div>
         </div>

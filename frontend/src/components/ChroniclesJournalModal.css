@@ -317,3 +317,15 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 }
+
+/* Diario: what the chronicle said on the way, newest first. */
+.chronicles-journal-modal__diary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 0 18px;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+.chronicles-journal-modal__diary li::marker { color: #a0743a; }
+.chronicles-journal-modal__diary li:first-child { font-weight: 600; }

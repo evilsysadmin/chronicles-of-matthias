@@ -1017,6 +1017,16 @@
 
   /* The chronicle speaks in a sandstone band along the bottom of the view. */
   .chronicles .chronicles-stage .chronicles-dm-overlay { display: none; }
+  .chronicles .chronicles-stage .chronicles-dm-band[data-visible="false"] {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(6px);
+    transition: opacity .6s ease, transform .6s ease, visibility 0s linear .6s;
+  }
+  .chronicles .chronicles-stage .chronicles-dm-band[data-visible="true"] {
+    transition: opacity .25s ease, transform .25s ease;
+    cursor: pointer;
+  }
   .chronicles .chronicles-stage .chronicles-dm-band {
     position: absolute;
     z-index: 6;

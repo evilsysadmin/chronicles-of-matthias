@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
+import { chroniclesNarrationDurationMs } from '../chronicles/chroniclesNarrationLog.js';
 import './ChroniclesNarratorOverlay.css';
 
 const LOW_SIGNAL_NARRATION = Object.freeze([
@@ -38,8 +39,14 @@ export default function ChroniclesNarratorOverlay({ message, children = null, op
   const dialogRef = useRef(null);
   const scrollRef = useRef(null);
 
+  // The band speaks for a few seconds and fades; the Crónica keeps the line.
+  const [bandVisible, setBandVisible] = useState(isMeaningful);
   useEffect(() => {
-    if (isMeaningful) setLastNarration(message);
+    if (!isMeaningful) return undefined;
+    setLastNarration(message);
+    setBandVisible(true);
+    const timer = setTimeout(() => setBandVisible(false), chroniclesNarrationDurationMs(message));
+    return () => clearTimeout(timer);
   }, [isMeaningful, message]);
 
   useEffect(() => {
@@ -83,7 +90,8 @@ export default function ChroniclesNarratorOverlay({ message, children = null, op
   return (
     <>
       {/* The desktop MM3 note stays as a passive band; the reader is opt-in. */}
-      <div className="chronicles-dm-band" role="status" aria-live="polite">{narration}</div>
+      <div className="chronicles-dm-band" role="status" aria-live="polite" data-visible={bandVisible ? 'true' : 'false'}
+        onClick={() => setBandVisible(false)}>{narration}</div>
       <div className="chronicles-dm-overlay">
         <button ref={triggerRef} type="button" className="chronicles-dm-trigger"
           aria-label="Crónica de expedición" aria-haspopup="dialog" aria-expanded={open}
