@@ -37,7 +37,7 @@ describe('Chronicles · MM3 starting kit', () => {
       matthias: { weapon: 'bronze-sword' },
       rook: { weapon: 'bronze-mace' },
       bishop: { weapon: 'bronze-mace' },
-      knight: { weapon: 'wooden-bow' },
+      knight: { weapon: 'bronze-dagger', missile: 'wooden-bow' },
     });
     for (const member of state.party) {
       const weapon = chroniclesEquippedItem(state, member.id, 'weapon');
@@ -49,6 +49,9 @@ describe('Chronicles · MM3 starting kit', () => {
     expect(CHRONICLES_EQUIPMENT['wooden-bow'].name).toBe('Arco corto de madera');
     expect(chroniclesPartyAttackStats(state, 'matthias').reach).toBe(1);
     expect(chroniclesPartyAttackStats(state, 'bishop').reach).toBe(1);
+    // The archer stabs with the dagger (A) and shoots the bow (S).
+    expect(chroniclesPartyAttackStats(state, 'knight', 'melee').reach).toBe(1);
+    expect(chroniclesPartyAttackStats(state, 'knight', 'missile').reach).toBe(3);
     expect(chroniclesPartyAttackStats(state, 'knight').reach).toBe(3);
     expect(chroniclesPartyAttackStats(state, 'knight').damage).toBeGreaterThan(0);
   });
@@ -70,7 +73,8 @@ describe('Chronicles · MM3 starting kit', () => {
     expect(chroniclesGoldBalance(resumed)).toBe(13);
     expect(chroniclesEquippedItem(resumed, 'matthias', 'weapon')).toBeNull();
     expect(resumed.inventory['bronze-sword'].quantity).toBe(1);
-    expect(chroniclesEquippedItem(resumed, 'knight', 'weapon')?.id).toBe('wooden-bow');
+    expect(chroniclesEquippedItem(resumed, 'knight', 'weapon')?.id).toBe('bronze-dagger');
+    expect(chroniclesEquippedItem(resumed, 'knight', 'missile')?.id).toBe('wooden-bow');
     expect(chroniclesApplyStartingKit(resumed, EMPTY_RUN)).toBe(resumed);
   });
 

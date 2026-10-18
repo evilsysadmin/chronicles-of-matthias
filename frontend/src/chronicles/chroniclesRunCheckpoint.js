@@ -1,4 +1,4 @@
-import { CHRONICLES_EQUIPMENT_SLOTS, chroniclesEquippedItem } from './chroniclesEquipment.js';
+import { CHRONICLES_EQUIPMENT_SLOTS, chroniclesEquippedItem, chroniclesNormalizeMemberEquipment } from './chroniclesEquipment.js';
 import { chroniclesApplyStartingKit } from './chroniclesStartingKit.js';
 import { chroniclesSpellAvailableTo } from './chroniclesMagic.js';
 import {
@@ -315,8 +315,13 @@ function applyRuntimeCheckpoint(state, flags) {
 
   const equipment = {};
   (next.party || []).forEach((member) => {
+    const stored = Object.fromEntries(CHRONICLES_EQUIPMENT_SLOTS.map((slot) => (
+      [slot, shortStringOrNull(flags[runtimeKey('gear', member.id, slot)], 64)]
+    )).filter(([, itemId]) => itemId));
+    // Saves from before the missile slot kept the bow as the weapon.
+    const gear = chroniclesNormalizeMemberEquipment(stored);
     for (const slot of CHRONICLES_EQUIPMENT_SLOTS) {
-      const itemId = shortStringOrNull(flags[runtimeKey('gear', member.id, slot)], 64);
+      const itemId = gear[slot];
       if (!itemId) continue;
       // Validate against the same class/slot catalog as live equip actions.
       const matched = chroniclesEquippedItem({ party: [member], equipment: { [member.id]: { [slot]: itemId } } }, member.id, slot);

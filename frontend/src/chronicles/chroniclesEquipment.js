@@ -24,7 +24,7 @@ export const CHRONICLES_ITEM_MATERIALS = Object.freeze({
 function authoredEquipment(spec) {
   const material = CHRONICLES_ITEM_MATERIALS[spec.materialId];
   if (!material) throw new Error(`Unknown Chronicles equipment material: ${spec.materialId}`);
-  const weapon = spec.slot === 'weapon';
+  const weapon = spec.slot === 'weapon' || spec.slot === 'missile';
   return Object.freeze({
     ...spec,
     // Catalog weapons apply half the MM3 material damage: this world's base
@@ -104,18 +104,24 @@ function signed(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
+// MM3 carries two weapons: one for the melee (A · atacar) and a missile
+// weapon for shooting (S · disparar). Bows, crossbows and slings go in the
+// missile slot and never take the shield hand.
+export const CHRONICLES_MISSILE_FAMILIES = Object.freeze(['bow', 'crossbow', 'sling']);
+
 function weaponItem(baseId, materialId) {
   const base = BASE_WEAPONS[baseId];
+  const slot = CHRONICLES_MISSILE_FAMILIES.includes(base.family) ? 'missile' : 'weapon';
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
   const damage = base.baseDamageBonus + Math.round(material.damage / 2);
   return authoredEquipment({
-    id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot: 'weapon',
+    id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot,
     baseItemId: baseId, materialId, basePrice: base.basePrice,
     baseDamageBonus: base.baseDamageBonus, baseDamageReduction: 0, materialDamageScale: 0.5,
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
-    description: `${base.name}${base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
+    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
   });
 }
 
@@ -187,7 +193,17 @@ function catalog() {
 
 export const CHRONICLES_EQUIPMENT = catalog();
 
-export const CHRONICLES_EQUIPMENT_SLOTS = Object.freeze(['weapon', 'armor', 'shield']);
+export const CHRONICLES_EQUIPMENT_SLOTS = Object.freeze(['weapon', 'missile', 'armor', 'shield']);
+
+// Before the missile slot existed a bow sat in the weapon slot. Move it to
+// where it belongs; a melee weapon is never moved.
+export function chroniclesNormalizeMemberEquipment(memberEquipment) {
+  const current = memberEquipment && typeof memberEquipment === 'object' ? memberEquipment : {};
+  const legacy = CHRONICLES_EQUIPMENT[current.weapon];
+  if (legacy?.slot !== 'missile') return current;
+  const { weapon: _bow, ...rest } = current;
+  return rest.missile ? current : { ...rest, missile: current.weapon };
+}
 
 function stock(state) {
   return state?.inventory && typeof state.inventory === 'object' && !Array.isArray(state.inventory)
@@ -200,7 +216,7 @@ export function chroniclesMemberCanEquip(member, item) {
   if (!member || !item) return false;
   const definition = chroniclesMM3Class(member.mm3?.classId);
   if (!definition) return item.allowedMembers.includes(member.id);
-  if (item.slot === 'weapon') return definition.weapons.includes(item.weaponFamily);
+  if (item.slot === 'weapon' || item.slot === 'missile') return definition.weapons.includes(item.weaponFamily);
   if (item.slot === 'armor') return definition.maxArmorTier >= (CHRONICLES_MM3_ARMOR_TIERS[item.armorType] ?? 0);
   if (item.slot === 'shield') return definition.shield === true;
   return false;
@@ -212,7 +228,7 @@ function memberById(state, memberId) {
 
 function equippedId(state, memberId, slot) {
   if (!CHRONICLES_EQUIPMENT_SLOTS.includes(slot)) return null;
-  const id = state?.equipment?.[memberId]?.[slot];
+  const id = chroniclesNormalizeMemberEquipment(state?.equipment?.[memberId])[slot];
   const item = CHRONICLES_EQUIPMENT[id];
   return item?.slot === slot && chroniclesMemberCanEquip(memberById(state, memberId), item) ? id : null;
 }
@@ -221,8 +237,11 @@ export function chroniclesEquippedItem(state, memberId, slot) {
   return CHRONICLES_EQUIPMENT[equippedId(state, memberId, slot)] || null;
 }
 
-export function chroniclesEquipmentBonuses(state, memberId) {
-  const items = CHRONICLES_EQUIPMENT_SLOTS
+// Attack bonuses come from the weapon in use (melee by default, or the
+// missile weapon when shooting); defence from armour and shield.
+export function chroniclesEquipmentBonuses(state, memberId, { mode = 'melee' } = {}) {
+  const attackSlot = mode === 'missile' ? 'missile' : 'weapon';
+  const items = [attackSlot, 'armor', 'shield']
     .map((slot) => chroniclesEquippedItem(state, memberId, slot))
     .filter(Boolean);
   return {
@@ -267,13 +286,14 @@ export function chroniclesEquipItem(state, memberId, itemId) {
   const inventory = stock(state);
   const count = inventoryQuantity(inventory, item.id);
   if (count < 1 || equippedId(state, memberId, item.slot) === item.id) return state;
+  state = { ...state, equipment: { ...state.equipment, [memberId]: chroniclesNormalizeMemberEquipment(state.equipment?.[memberId]) } };
   // A shield needs a free hand: no shield beside a two-handed weapon.
   if (item.slot === 'shield' && chroniclesEquippedItem(state, memberId, 'weapon')?.twoHanded) {
     return { ...state, message: `${member.name} necesita una mano libre para el escudo.` };
   }
   const existing = chroniclesEquippedItem(state, memberId, item.slot);
   // Taking up a two-handed weapon stows the shield in the shared pack.
-  const displacedShield = item.twoHanded ? chroniclesEquippedItem(state, memberId, 'shield') : null;
+  const displacedShield = item.twoHanded && item.slot === 'weapon' ? chroniclesEquippedItem(state, memberId, 'shield') : null;
   let nextInventory = { ...inventory };
   if (count === 1) delete nextInventory[item.id];
   else nextInventory[item.id] = { ...inventory[item.id], quantity: count - 1 };
@@ -299,7 +319,7 @@ export function chroniclesUnequipItem(state, memberId, slot) {
   if (!member || !item) return state;
   const inventory = putBack(stock(state), item);
   if (!inventory) return state;
-  const currentEquipment = { ...state.equipment?.[memberId] };
+  const currentEquipment = { ...chroniclesNormalizeMemberEquipment(state.equipment?.[memberId]) };
   delete currentEquipment[slot];
   return {
     ...state, inventory,

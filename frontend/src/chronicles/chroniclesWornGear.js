@@ -1,7 +1,7 @@
 import { CHRONICLES_EQUIPMENT_SLOTS, chroniclesEquippedItem } from './chroniclesEquipment.js';
 
-const SLOT_LABELS = Object.freeze({ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo' });
-const SLOT_GLYPHS = Object.freeze({ weapon: '⚔', armor: '⛊', shield: '⛨' });
+const SLOT_LABELS = Object.freeze({ weapon: 'Arma · A', missile: 'Proyectil · S', armor: 'Armadura', shield: 'Escudo' });
+const SLOT_GLYPHS = Object.freeze({ weapon: '⚔', missile: '➶', armor: '⛊', shield: '⛨' });
 
 function signed(value) {
   return value >= 0 ? `+${value}` : `${value}`;
@@ -14,8 +14,9 @@ function effects(item) {
   if (item.attackDamageBonus) lines.push(`Daño ${signed(item.attackDamageBonus)}`);
   if (item.toHitBonus) lines.push(`Acierto ${signed(item.toHitBonus)}`);
   if (item.armorClassBonus) lines.push(`CA ${signed(item.armorClassBonus)}`);
-  if (item.slot === 'weapon' && Number(item.reach) > 1) lines.push(`Alcance ${item.reach}`);
-  if (item.twoHanded) lines.push('A dos manos');
+  if (Number(item.reach) > 1) lines.push(`Alcance ${item.reach}`);
+  // A missile weapon never takes the shield hand (MM3).
+  if (item.twoHanded && item.slot === 'weapon') lines.push('A dos manos');
   return lines;
 }
 
@@ -28,11 +29,20 @@ export function chroniclesWornGear(state, memberId) {
     return {
       slot,
       label: SLOT_LABELS[slot],
-      glyph: slot === 'weapon' && Number(weapon?.reach) > 1 ? '➶' : SLOT_GLYPHS[slot],
+      glyph: SLOT_GLYPHS[slot],
       item,
       name: item?.name || (blocked ? 'Manos ocupadas' : 'Sin equipar'),
       effects: blocked ? ['El arma va a dos manos'] : effects(item),
       empty: !item,
     };
   });
+}
+
+// What the hero fights with, in one line: «Daga de bronce · Arco corto de
+// madera», just the one carried, or «Sin arma».
+export function chroniclesArmsLabel(state, memberId) {
+  const names = ['weapon', 'missile']
+    .map((slot) => chroniclesEquippedItem(state, memberId, slot)?.name)
+    .filter(Boolean);
+  return names.length ? names.join(' · ') : 'Sin arma';
 }
