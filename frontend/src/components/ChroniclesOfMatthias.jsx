@@ -103,6 +103,9 @@ import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
+import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
+import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.js';
+import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
 import {
   CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
@@ -279,6 +282,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [journalOpen, setJournalOpen] = useState(false);
   const [narrationLog, setNarrationLog] = useState([]);
   const narrationRunRef = useRef(null);
+  const [quickStatusOpen, setQuickStatusOpen] = useState(false);
   const [chronicleModalOpen, setChronicleModalOpen] = useState(false);
   const [automapOpen, setAutomapOpen] = useState(false);
   // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
@@ -1037,6 +1041,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         setJournalOpen((open) => !open);
         return;
       }
+      if (event.key === 'g' || event.key === 'G') {
+        event.preventDefault();
+        if (event.repeat) return;
+        clearTouchHold();
+        setAutomapOpen(false);
+        setMenuOpen(false);
+        setJournalOpen(false);
+        setQuickStatusOpen((open) => !open);
+        return;
+      }
       if (event.key === 'm' || event.key === 'M') {
         event.preventDefault();
         if (event.repeat) return;
@@ -1046,7 +1060,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         setAutomapOpen((open) => !open);
         return;
       }
-      if (automapOpen || menuOpen || journalOpen) return;
+      if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
       if (/^[1-4]$/.test(event.key)) {
         if (event.repeat) return;
         const member = current.party[Number(event.key) - 1];
@@ -1094,7 +1108,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [attackWithSelected, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, ready, sheetMemberId, spellMenuOpen]);
+  }, [attackWithSelected, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, quickStatusOpen, ready, sheetMemberId, spellMenuOpen]);
 
   const startFreshGame = (entryMapId = null) => {
     chroniclesClearPlayingRun();
@@ -1346,6 +1360,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}>
                 <i aria-hidden="true">📜</i> CRÓNICA <kbd>J</kbd>
               </button>
+              <button type="button" className="chronicles-chronicle-trigger" data-chronicles-quick-status-trigger
+                aria-haspopup="dialog" aria-expanded={quickStatusOpen}
+                title="Estado del grupo: PV, PH, CA y arma de cada héroe (G)"
+                onClick={() => {
+                  clearTouchHold();
+                  setAutomapOpen(false);
+                  setMenuOpen(false);
+                  setJournalOpen(false);
+                  setQuickStatusOpen((open) => !open);
+                }}>
+                <i aria-hidden="true">⚑</i> GRUPO <kbd>G</kbd>
+              </button>
             </div>
             {needsRotation && (
               <button
@@ -1389,6 +1415,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <div className="chronicles-game-menu__actions">
                   <button type="button" className="chronicles-game-menu__continue" onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); }}>Continuar</button>
                   <button type="button" data-chronicles-menu-journal onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}>Crónica · J</button>
+                  <button type="button" data-chronicles-menu-quick-status onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}>Estado del grupo · G</button>
                   <button type="button" onClick={() => void persistCheckpoint(stateRef.current, 'manual')} disabled={saveBusy}>
                     {saveBusy ? 'Guardando…' : 'Guardar partida'}
                   </button>
@@ -1471,6 +1498,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           />
           <ChroniclesCombatRoster state={state} />
 
+          <ChroniclesQuickStatus
+            open={quickStatusOpen}
+            rows={quickStatusOpen ? chroniclesQuickStatusRows(state, (memberId) => chroniclesHeroProgress(progression, memberId).level) : []}
+            gold={chroniclesGoldBalance(state)}
+            onClose={() => setQuickStatusOpen(false)}
+            onOpenSheet={(memberId) => { setQuickStatusOpen(false); openMemberSheet(memberId); }}
+          />
           <ChroniclesJournalModal open={journalOpen} state={state} entries={journalEntries} narrations={narrationLog} onClose={() => setJournalOpen(false)} />
 
           {!expeditionOver && (

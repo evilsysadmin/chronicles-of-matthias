@@ -440,7 +440,7 @@
     min-height: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 6px;
     border: 0;
     background: none;
@@ -1410,7 +1410,9 @@
 .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot { display: none; }
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
   .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
     grid-column: 1 / -1;
     padding: 0;
     border: 0;
@@ -1420,18 +1422,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
+    min-width: 0;
     min-height: 40px;
-    padding: 6px 10px;
+    padding: 6px 6px;
+    overflow: hidden;
+    white-space: nowrap;
     border: 2px solid;
     border-color: var(--mm3-hi) var(--mm3-lo) var(--mm3-lo) var(--mm3-hi);
     background: #a3a3a8 var(--mm3-stone) 0 0 / 128px 128px;
     box-shadow: 0 0 0 1px #141416;
     color: #0c0c0e;
     font: inherit;
+    font-size: clamp(.8rem, 1vw, 1rem);
     font-weight: 700;
-    letter-spacing: .08em;
+    letter-spacing: .04em;
     cursor: pointer;
   }
   .chronicles .chronicles-chronicle-trigger:hover { filter: brightness(1.08); }
