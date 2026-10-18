@@ -24,6 +24,7 @@ import {
   chroniclesMemberCanEquip,
 } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyArmorClass, chroniclesPartyAttackStats } from '../chroniclesOfMatthias.js';
+import { chroniclesWornGear } from '../chronicles/chroniclesWornGear.js';
 import { chroniclesPartyInitiativeAgility } from '../chronicles/chroniclesInitiative.js';
 import {
   CHRONICLES_MM3_STATS,
@@ -230,7 +231,31 @@ export default function ChroniclesCharacterSheet({
           <div><span>ALCANCE</span><b>{reach}</b></div>
         </div>
 
-        <div className="chronicles-character-sheet__combat"
+        {mm3 && (
+          <div className="chronicles-character-sheet__worn" hidden={activeFolio !== 'record'} data-chronicles-worn-gear={member.id}>
+            <div className="chronicles-character-sheet__section-head">
+              <div><span>EQUIPO PUESTO</span><small>{member.hp > 0 ? 'Operativo' : 'Fuera de combate'} · {className}</small></div>
+              <button type="button" className="chronicles-character-sheet__worn-change" onClick={() => setActiveFolio('equipment')}>Cambiar equipo ›</button>
+            </div>
+            <ul>
+              {chroniclesWornGear(state, member.id).map((slot) => (
+                <li key={slot.slot} data-slot={slot.slot} className={slot.empty ? 'is-empty' : ''}>
+                  <i aria-hidden="true">{slot.glyph}</i>
+                  <span>
+                    <small>{slot.label}</small>
+                    <b>{slot.name}</b>
+                    {slot.effects.length > 0 && <em>{slot.effects.join(' · ')}</em>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <small className="chronicles-character-sheet__worn-total">
+              Total del equipo: daño +{gearBonus.attackDamageBonus} · acierto {signed(gearBonus.toHitBonus)} · CA +{gearBonus.armorClassBonus}
+            </small>
+          </div>
+        )}
+
+        {!mm3 && <div className="chronicles-character-sheet__combat"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>Clase</span><b>{className}</b></div>
           <div><span>Arma</span><b>{mm3 ? (equippedWeapon?.name || 'Sin arma') : profile.weaponName}</b></div>
@@ -244,7 +269,7 @@ export default function ChroniclesCharacterSheet({
             </>
           )}
           <div><span>Estado</span><b>{member.hp > 0 ? 'Operativo' : 'Fuera de combate'}</b></div>
-        </div>
+        </div>}
 
         {mm3 && (
           <div className="chronicles-character-sheet__section chronicles-character-sheet__section--core-stats"
@@ -474,6 +499,12 @@ export default function ChroniclesCharacterSheet({
                 <img src={chroniclesPartyPortraitUrl(hero.id)} alt="" draggable="false" />
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
                 <span className="chronicles-character-sheet__party-hp">{hero.hp}/{hero.maxHp} PV</span>
+                <span className="chronicles-character-sheet__party-gear" aria-label={chroniclesWornGear(state, hero.id).map((slot) => `${slot.label}: ${slot.name}`).join(', ')}>
+                  {chroniclesWornGear(state, hero.id).map((slot) => (
+                    <i key={slot.slot} className={slot.empty ? 'is-empty' : ''} title={`${slot.label}: ${slot.name}`}>{slot.glyph}</i>
+                  ))}
+                  <small>{chroniclesWornGear(state, hero.id)[0].item?.name || 'Sin arma'}</small>
+                </span>
               </button>
             ))}
           </nav>
