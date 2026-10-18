@@ -426,8 +426,28 @@ function rangedHitMessage(attacker, enemy) {
   return `${attacker.name} alcanza ${chroniclesToName(enemy.name)} desde la retaguardia con ${attacker.attackName.toLowerCase()}. El objetivo queda demasiado lejos para devolver el golpe.`;
 }
 
+// Ordinary foes carry a few coins and, now and then, a potion. Named foes
+// keep their authored rewards. The roll comes from the run seed, so a
+// reload never changes what fell.
+export function chroniclesCommonLoot(state, enemy) {
+  if (!enemy || enemy.defeatedFlag || enemy.onDefeat?.effects?.length) return null;
+  const roll = chroniclesMM3Roll(state, 'loot', enemy.id);
+  const gold = Math.max(1, Math.round(Number(enemy.maxHp || 1) / 2)) + (roll % 4);
+  const potion = roll >= 18;
+  return { gold, potion };
+}
+
 function rewardForDefeat(state, enemy) {
-  return chroniclesApplyContentEffects(state, enemy.onDefeat?.effects);
+  const rewarded = chroniclesApplyContentEffects(state, enemy.onDefeat?.effects);
+  const loot = chroniclesCommonLoot(state, enemy);
+  if (!loot) return rewarded;
+  const effects = [{ type: 'grant-gold', amount: loot.gold }];
+  if (loot.potion) {
+    effects.push({ type: 'grant-item', itemId: 'healing-potion', name: 'Poción de curación', description: 'Cura 15 PV a un héroe.', quantity: 1 });
+  }
+  const looted = chroniclesApplyContentEffects(rewarded, effects);
+  const found = loot.potion ? `${loot.gold} monedas y una poción de curación` : `${loot.gold} monedas`;
+  return { ...looted, message: `${looted.message || ''} Lleva encima ${found}.`.trim() };
 }
 
 function journalForDefeat(state, attacker, enemy) {
