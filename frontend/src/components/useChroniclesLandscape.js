@@ -7,6 +7,10 @@ import {
 
 // Only fullscreen initiated by Chronicles may be dismissed when the game exits.
 let chroniclesFullscreenOwned = false;
+// The player chose landscape (on entry or with the rotate control). A task
+// switch on Android drops fullscreen and the lock with it; this remembers to
+// put both back on the next tap.
+let chroniclesLandscapeWanted = false;
 
 export const CHRONICLES_PHONE_QUERY = '(pointer: coarse) and (max-width: 920px)';
 export const CHRONICLES_LANDSCAPE_QUERY = '(orientation: landscape) and (max-width: 920px) and (max-height: 620px)';
@@ -35,6 +39,20 @@ export function shouldRestoreChroniclesLandscapeOnResume({
   );
 }
 
+// Back from another app in portrait, after the player had chosen landscape:
+// the next tap is the user gesture fullscreen needs.
+export function shouldRelockChroniclesOnTap({
+  win = globalThis.window,
+  doc = globalThis.document,
+} = {}) {
+  return Boolean(
+    chroniclesLandscapeWanted
+    && win && doc && doc.visibilityState !== 'hidden'
+    && shouldAutoRotateChroniclesOnEntry({ win })
+    && !win.matchMedia(CHRONICLES_LANDSCAPE_QUERY).matches,
+  );
+}
+
 // Mobile browsers commonly refuse orientation.lock() unless the document is
 // fullscreen. The user gesture that launches Chronicles is our chance to
 // request both. Native fullscreen may consume the first Escape; the in-game
@@ -49,6 +67,7 @@ export async function requestChroniclesLandscapeOnEntry({
   }
   const result = await requestWarRoomLandscapeFullscreen({ doc, screenApi });
   if (result.fullscreen) chroniclesFullscreenOwned = true;
+  if (result.landscape) chroniclesLandscapeWanted = true;
   return { requested: true, ...result };
 }
 
@@ -58,6 +77,7 @@ export async function releaseChroniclesLandscape({
 } = {}) {
   const ownedFullscreen = chroniclesFullscreenOwned;
   chroniclesFullscreenOwned = false;
+  chroniclesLandscapeWanted = false;
   const unlocked = unlockWarRoomOrientation(screenApi);
   // Never dismiss pre-existing or user-owned fullscreen.
   const fullscreen = ownedFullscreen ? await exitWarRoomBrowserFullscreen(doc) : false;
@@ -114,14 +134,31 @@ export default function useChroniclesLandscape(enabled = true) {
         if (active) setLockState('rejected');
       }
     };
+    // Fullscreen did not survive the switch: wait for a real tap (touchend /
+    // click carry user activation; pointerdown does not on touch screens).
+    const relockOnTap = () => {
+      if (retrying || !shouldRelockChroniclesOnTap()) return;
+      retrying = true;
+      requestChroniclesLandscapeOnEntry().then(
+        (result) => { if (active) setLockState(result.landscape ? 'locked' : 'rejected'); },
+        () => { if (active) setLockState('rejected'); },
+      ).finally(() => {
+        retrying = false;
+        if (active) setViewport(readViewport());
+      });
+    };
     document.addEventListener('visibilitychange', resume);
     window.addEventListener('pageshow', resume);
     window.addEventListener('focus', resume);
+    window.addEventListener('touchend', relockOnTap, { capture: true, passive: true });
+    window.addEventListener('click', relockOnTap, { capture: true });
     return () => {
       active = false;
       document.removeEventListener('visibilitychange', resume);
       window.removeEventListener('pageshow', resume);
       window.removeEventListener('focus', resume);
+      window.removeEventListener('touchend', relockOnTap, { capture: true });
+      window.removeEventListener('click', relockOnTap, { capture: true });
     };
   }, [enabled, readViewport]);
 
