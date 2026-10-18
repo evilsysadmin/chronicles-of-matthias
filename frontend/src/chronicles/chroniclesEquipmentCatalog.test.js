@@ -17,8 +17,8 @@ function mm3Company(...itemIds) {
 }
 
 describe('Chronicles · MM3 equipment catalog', () => {
-  it('forges every base item in its materials, with three slots including the shield', () => {
-    expect(CHRONICLES_EQUIPMENT_SLOTS).toEqual(['weapon', 'armor', 'shield']);
+  it('forges every base item in its materials, with four slots: melee, missile, armour and shield', () => {
+    expect(CHRONICLES_EQUIPMENT_SLOTS).toEqual(['weapon', 'missile', 'armor', 'shield']);
     for (const id of ['bronze-dagger', 'ivory-dagger', 'iron-sword', 'steel-axe', 'silver-mace', 'ivory-staff',
       'leather-padded', 'leather-leather', 'iron-chain', 'steel-plate', 'bronze-shield', 'ivory-shield']) {
       expect(CHRONICLES_EQUIPMENT[id], id).toBeTruthy();

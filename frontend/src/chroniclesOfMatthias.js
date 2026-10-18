@@ -331,9 +331,17 @@ function partyMember(state, memberId) {
   return state.party.find((member) => member.id === memberId) || null;
 }
 
-export function chroniclesPartyAttackStats(state, memberId) {
+// `mode`: 'melee' (A · atacar, the melee weapon), 'missile' (S · disparar,
+// the missile weapon) or 'auto' (the plain attack: melee stats, but the
+// longest reach the hero has, so a target in bow range counts as in reach).
+export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
   const member = partyMember(state, memberId);
   if (!member) return { damage: 0, reach: 0 };
+  if (mode === 'auto' && chroniclesUsesMM3Combat(state)) {
+    const melee = chroniclesPartyAttackStats(state, memberId, 'melee');
+    const missile = chroniclesPartyAttackStats(state, memberId, 'missile');
+    return { ...melee, reach: Math.max(melee.reach, missile.reach) };
+  }
   const modifiers = state?.rpgModifiers?.[memberId] || {};
   const creator = member.characterBuild?.creatorModifiers || {};
   const persistentDamageBonus = Math.max(
@@ -344,8 +352,11 @@ export function chroniclesPartyAttackStats(state, memberId) {
     0,
     Number(modifiers.reachBonus || 0) - Number(creator.reachBonus || 0),
   );
-  const equipment = chroniclesEquipmentBonuses(state, memberId);
-  const weapon = chroniclesEquippedItem(state, memberId, 'weapon');
+  const shooting = mode === 'missile';
+  const equipment = chroniclesEquipmentBonuses(state, memberId, { mode: shooting ? 'missile' : 'melee' });
+  const weapon = chroniclesEquippedItem(state, memberId, shooting ? 'missile' : 'weapon');
+  // Without a missile weapon there is nothing to shoot with.
+  if (shooting && chroniclesUsesMM3Combat(state) && !weapon) return { damage: 0, reach: 0, toHit: 0 };
   return {
     damage: Math.max(0, Number(member.damage || 0) + persistentDamageBonus + equipment.attackDamageBonus),
     // MM3 is a weapon-based RPG: melee can strike adjacent enemies, bows
@@ -481,20 +492,43 @@ function evadeAfterHit(state, enemy) {
 }
 // `spell` turns the swing into an offensive spell: its own reach and damage
 // (after the target's elemental resistance), no to-hit roll, SP already paid.
-function resolveAttack(state, memberId, spell = null) {
+// MM3's plain attack: melee when something is adjacent, otherwise shoot if
+// the hero carries a missile weapon and the target is within its range.
+export function chroniclesAttackMode(state, memberId) {
+  if (!chroniclesUsesMM3Combat(state)) return 'melee';
+  const melee = chroniclesPartyAttackStats(state, memberId, 'melee');
+  if (chroniclesEnemyTargetAhead(state, melee.reach)) return 'melee';
+  const missile = chroniclesPartyAttackStats(state, memberId, 'missile');
+  return chroniclesEquippedItem(state, memberId, 'missile') && chroniclesEnemyTargetAhead(state, missile.reach) ? 'missile' : 'melee';
+}
+
+function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const member = partyMember(state, memberId);
   if (!member) return state;
   if (member.hp <= 0) return withMessage(state, `${member.name} está fuera de combate. Incluso la épica tiene límites médicos.`);
+  const mm3 = chroniclesUsesMM3Combat(state);
+  const mode = spell || !mm3 ? 'melee' : requestedMode === 'auto' ? chroniclesAttackMode(state, member.id) : requestedMode;
+  if (mode === 'missile' && !chroniclesEquippedItem(state, member.id, 'missile')) {
+    return withMessage(state, `${member.name} no lleva arma de proyectiles. Un arco, una ballesta o una honda, en el hueco de proyectil.`);
+  }
   const attacker = spell
     ? { ...member, attackName: spell.name }
-    : chroniclesUsesMM3Combat(state)
-      ? { ...member, attackName: chroniclesEquippedItem(state, member.id, 'weapon')?.name || 'golpe desarmado' }
+    : mm3
+      ? {
+        ...member,
+        attackName: mode === 'missile'
+          ? chroniclesEquippedItem(state, member.id, 'missile').name
+          : chroniclesEquippedItem(state, member.id, 'weapon')?.name || 'golpe desarmado',
+      }
       : member;
 
-  const weaponStats = chroniclesPartyAttackStats(state, attacker.id);
+  const weaponStats = chroniclesPartyAttackStats(state, attacker.id, mm3 ? mode : 'auto');
   const attackStats = spell ? { ...weaponStats, reach: spell.reach } : weaponStats;
   const target = chroniclesEnemyTargetAhead(state, attackStats.reach);
-  if (!target) return withMessage(state, `${attacker.name} ejecuta ${attacker.attackName.toLowerCase()} contra absolutamente nada. La nada resiste.`);
+  if (!target) {
+    if (mode === 'missile') return withMessage(state, `${attacker.name} tensa ${attacker.attackName.toLowerCase()}, pero no hay nada a tiro (alcance ${attackStats.reach}).`);
+    return withMessage(state, `${attacker.name} ejecuta ${attacker.attackName.toLowerCase()} contra absolutamente nada. La nada resiste.`);
+  }
 
   const { enemy, distance } = target;
   if (spell) {
@@ -930,7 +964,10 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
   if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };
   if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
-  if (actionType === 'attack') return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias');
+  if (actionType === 'attack') {
+    const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
+    return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode);
+  }
   if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));

@@ -10,12 +10,18 @@ export const CHRONICLES_STARTER_WEAPON_BY_CLASS = Object.freeze({
   knight: 'bronze-sword',
   paladin: 'bronze-mace',
   cleric: 'bronze-mace',
-  archer: 'wooden-bow',
+  archer: 'bronze-dagger',
   sorcerer: 'wooden-staff',
   robber: 'bronze-dagger',
   ninja: 'bronze-dagger',
   barbarian: 'bronze-axe',
   druid: 'wooden-staff',
+  ranger: 'bronze-sword',
+});
+
+// MM3 heroes carry a missile weapon beside the melee one (S · disparar).
+export const CHRONICLES_STARTER_MISSILE_BY_CLASS = Object.freeze({
+  archer: 'wooden-bow',
   ranger: 'wooden-bow',
 });
 
@@ -31,10 +37,11 @@ export function chroniclesApplyStartingKit(state, run) {
 
   const equipment = {};
   for (const member of state.party) {
-    const itemId = CHRONICLES_STARTER_WEAPON_BY_CLASS[member.mm3?.classId];
-    const item = CHRONICLES_EQUIPMENT[itemId];
-    if (!item || !chroniclesMemberCanEquip(member, item)) continue;
-    equipment[member.id] = { weapon: item.id };
+    for (const [slot, table] of [['weapon', CHRONICLES_STARTER_WEAPON_BY_CLASS], ['missile', CHRONICLES_STARTER_MISSILE_BY_CLASS]]) {
+      const item = CHRONICLES_EQUIPMENT[table[member.mm3?.classId]];
+      if (!item || item.slot !== slot || !chroniclesMemberCanEquip(member, item)) continue;
+      equipment[member.id] = { ...equipment[member.id], [slot]: item.id };
+    }
   }
 
   return {

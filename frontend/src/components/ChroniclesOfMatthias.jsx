@@ -7,6 +7,7 @@ import {
   chroniclesBuildingEntryState,
   chroniclesContextualContentAction,
   chroniclesPartyAttackStats,
+  chroniclesAttackMode,
   chroniclesJournalEntries,
   chroniclesObjective,
   chroniclesReduce,
@@ -161,10 +162,9 @@ import './ChroniclesMM3Chrome.css';
 import './ChroniclesCharacterSheetMM3.css';
 
 const KEY_ACTIONS = Object.freeze({
-  ArrowUp: 'forward', w: 'forward', W: 'forward',
-  ArrowDown: 'backward', s: 'backward', S: 'backward',
-  ArrowLeft: 'turn-left', a: 'turn-left', A: 'turn-left',
-  ArrowRight: 'turn-right', d: 'turn-right', D: 'turn-right',
+  // MM3 layout: arrows move and turn; A and S attack and shoot.
+  ArrowUp: 'forward', ArrowDown: 'backward',
+  ArrowLeft: 'turn-left', ArrowRight: 'turn-right',
   q: 'strafe-left', Q: 'strafe-left', e: 'strafe-right', E: 'strafe-right',
 });
 
@@ -568,7 +568,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         ? current.party.find((member) => member.id === action.memberId)
         : null;
       const forcedTarget = attackingMember
-        ? chroniclesEnemyTargetAhead(current, offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id).reach)
+        ? chroniclesEnemyTargetAhead(current, offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id, action.mode || 'auto').reach)
         : null;
       // Entering an area is not a tactical movement inside it. The player
       // gets to see the new room/return portal before enemies can engage.
@@ -740,7 +740,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     dispatch('interact');
   }, [dispatch]);
 
-  const attackWithSelected = useCallback(() => {
+  // mode: 'auto' (botón y espacio), 'melee' (A · atacar), 'missile' (S · disparar).
+  const attackWithSelected = useCallback((mode = 'auto') => {
     const current = stateRef.current;
     if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
     const initiativeActor = chroniclesCurrentInitiativeActor(current.initiative);
@@ -751,9 +752,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const member = current.party.find((candidate) => candidate.id === memberId);
     const startsCombat = !current.initiative
       && member
-      && chroniclesEnemyTargetAhead(current, chroniclesPartyAttackStats(current, member.id).reach);
+      && chroniclesEnemyTargetAhead(current, chroniclesPartyAttackStats(current, member.id, mode).reach);
     if (!startsCombat) engineRef.current?.playAttack?.(memberId);
-    dispatch({ type: 'attack', memberId });
+    dispatch(mode === 'auto' ? { type: 'attack', memberId } : { type: 'attack', memberId, mode });
   }, [dispatch]);
 
   const applyLiveProgression = useCallback((nextProgression) => {
@@ -1149,6 +1150,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         attackWithSelected();
         return;
       }
+      // MM3: A ataca cuerpo a cuerpo, S dispara el arma de proyectiles.
+      if (event.key === 'a' || event.key === 'A' || event.key === 's' || event.key === 'S') {
+        event.preventDefault();
+        if (event.repeat) return;
+        attackWithSelected(event.key.toLowerCase() === 'a' ? 'melee' : 'missile');
+        return;
+      }
       if (event.key === 'c' || event.key === 'C') {
         event.preventDefault();
         setSpellMenuOpen((open) => (open ? false : 'spells'));
@@ -1285,6 +1293,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const routeHint = chroniclesRouteHint(state, chroniclesObjectiveDestination(objective));
   const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
+  const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
   const selectedCondition = chroniclesPartyCondition(selectedMember);
   const selectedRelic = chroniclesPartyRelic(state, selectedMember?.id);
   const selectedAttackStats = chroniclesPartyAttackStats(state, selectedMember?.id);
@@ -1606,9 +1615,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   className="is-attack"
                   data-chronicles-touch-action="attack"
-                  onClick={attackWithSelected}
-                  aria-label="Atacar"
-                >⚔<small>{selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
+                  onClick={() => attackWithSelected()}
+                  aria-label={plannedAttackMode === 'missile' ? 'Disparar (S)' : 'Atacar (A)'}
+                  title="A · atacar cuerpo a cuerpo · S · disparar"
+                >{plannedAttackMode === 'missile' ? '➶' : '⚔'}<small>{selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
                   <button
                     type="button"
