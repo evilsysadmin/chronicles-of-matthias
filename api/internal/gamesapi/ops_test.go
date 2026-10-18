@@ -73,3 +73,61 @@ func TestOpsDeleteAccount(t *testing.T) {
 		t.Fatalf("account not deleted: %v %v", store.deleted, purged)
 	}
 }
+
+type fakeOpsAccounts map[string]bool
+
+func (f fakeOpsAccounts) Exists(_ context.Context, username string) (bool, error) { return f[username], nil }
+
+func opsTokenFor(secret, sub, purpose string, exp time.Time) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"` + sub + `","purpose":"` + purpose + `","exp":` + strconv.FormatInt(exp.Unix(), 10) + `}`))
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, _ = mac.Write([]byte(header + "." + payload))
+	return header + "." + payload + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func TestOpsImportLegacy(t *testing.T) {
+	now := time.Unix(1_800_000_000, 0)
+	secret := "0123456789abcdef0123456789abcdef"
+	imported := []string{}
+	handler := func(env string) *OpsImportHandler {
+		return NewOpsImport(OpsImportConfig{
+			Secret: []byte(secret), Environment: env, Accounts: fakeOpsAccounts{"evilsysadmin": true},
+			Now: func() time.Time { return now },
+			Import: func(_ context.Context, username string) (any, error) {
+				imported = append(imported, username)
+				return map[string]int{"runsImported": 2}, nil
+			},
+		})
+	}
+	call := func(h http.Handler, token, body string) int {
+		req := httptest.NewRequest(http.MethodPost, OpsImportLegacyPattern, strings.NewReader(body))
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	good := opsTokenFor(secret, "evilsysadmin", "ops_import_legacy", now.Add(5*time.Minute))
+	cases := []struct {
+		env, token, body string
+		want             int
+	}{
+		{"production", good, `{"username":"evilsysadmin"}`, http.StatusNotFound},
+		{"staging", "", `{"username":"evilsysadmin"}`, http.StatusUnauthorized},
+		// A delete-account token must not import, and vice versa.
+		{"staging", opsTokenFor(secret, "evilsysadmin", "ops_delete_account", now.Add(time.Minute)), `{"username":"evilsysadmin"}`, http.StatusUnauthorized},
+		{"staging", good, `{"username":"someone"}`, http.StatusBadRequest},
+		{"staging", opsTokenFor(secret, "ghost", "ops_import_legacy", now.Add(time.Minute)), `{"username":"ghost"}`, http.StatusNotFound},
+		{"staging", good, `{"username":"evilsysadmin"}`, http.StatusOK},
+	}
+	for i, c := range cases {
+		if code := call(handler(c.env), c.token, c.body); code != c.want {
+			t.Fatalf("case %d: got %d want %d", i, code, c.want)
+		}
+	}
+	if len(imported) != 1 || imported[0] != "evilsysadmin" {
+		t.Fatalf("imported %v", imported)
+	}
+}
