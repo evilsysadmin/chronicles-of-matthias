@@ -32,4 +32,19 @@ describe('Chronicles action audio cues', () => {
     const defeated = chroniclesReduce(almostDead, { type: 'attack', memberId: 'matthias' });
     expect(chroniclesActionAudioCue(almostDead, defeated, { type: 'attack', memberId: 'matthias' })).toBe('defeat');
   });
+
+  it('gives spells, healing and blows on the company their own sounds', () => {
+    const start = createChroniclesState();
+    const hurtParty = { ...start, party: start.party.map((member, index) => index === 0 ? { ...member, hp: member.hp - 2 } : member) };
+    const healedParty = { ...start, party: start.party.map((member) => ({ ...member, hp: member.hp + 1 })) };
+    const hitEnemy = { ...start, enemyHp: Number(start.enemyHp || 3) - 1 };
+    const cast = { type: 'cast', spellId: 'x' };
+    expect(chroniclesActionAudioCue(start, hitEnemy, cast)).toBe('spell-hit');
+    expect(chroniclesActionAudioCue(start, healedParty, cast)).toBe('heal');
+    expect(chroniclesActionAudioCue(start, { ...start, message: 'Brilla.' }, cast)).toBe('spell');
+    expect(chroniclesActionAudioCue(start, start, cast)).toBeNull();
+    // A trap or an enemy turn while walking or waiting.
+    expect(chroniclesActionAudioCue(start, { ...hurtParty, x: start.x + 1 }, 'forward')).toBe('hurt');
+    expect(chroniclesActionAudioCue(start, hurtParty, 'wait')).toBe('hurt');
+  });
 });
