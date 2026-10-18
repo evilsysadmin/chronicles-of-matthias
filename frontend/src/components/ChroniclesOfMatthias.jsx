@@ -101,6 +101,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
+import ChroniclesTavern from './ChroniclesTavern.jsx';
 import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
@@ -1080,7 +1081,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // plain Tab traverses its accessible controls rather than closing it.
       const target = event.target;
       if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-      if (chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
+      if (chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.tavern || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       if (event.key === 'Tab') {
         if (event.shiftKey || target?.closest?.('.chronicles-game-menu')) return;
@@ -1161,6 +1162,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (event.key === 'c' || event.key === 'C') {
         event.preventDefault();
         setSpellMenuOpen((open) => (open ? false : 'spells'));
+        return;
+      }
+      // MM3: R descansa. Fuera de los pueblos, se acampa con raciones.
+      if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault();
+        if (event.repeat) return;
+        dispatch('camp');
         return;
       }
       if (event.key === 'i' || event.key === 'I') {
@@ -1486,6 +1494,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   <button type="button" className="chronicles-game-menu__continue" onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); }}>Continuar</button>
                   <button type="button" data-chronicles-menu-journal onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}>Crónica · J</button>
                   <button type="button" data-chronicles-menu-quick-status onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}>Estado del grupo · G</button>
+                  <button type="button" data-chronicles-menu-camp onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); dispatch('camp'); }}>Acampar · R</button>
                   <button type="button" onClick={() => void persistCheckpoint(stateRef.current, 'manual')} disabled={saveBusy}>
                     {saveBusy ? 'Guardando…' : 'Guardar partida'}
                   </button>
@@ -1695,7 +1704,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         </div>
       </div>
 
-      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && (
+      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && !state.tavern && (
         <ChroniclesSpellMenu
           state={state}
           member={caster}
@@ -1710,6 +1719,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             setSpellMenuOpen(false);
             if (itemUser) dispatch({ type: 'use-item', memberId: itemUser.id, itemId });
           }}
+        />
+      )}
+
+      {state.tavern && !sheetMember && (
+        <ChroniclesTavern
+          state={state}
+          onAction={dispatch}
+          onClose={() => dispatch({ type: 'tavern-close' })}
         />
       )}
 

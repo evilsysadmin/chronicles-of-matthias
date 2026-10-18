@@ -661,3 +661,9 @@ export function chroniclesPreviewEnemyTurn(state) {
     partyWouldFall: resolved.phase === 'defeated',
   };
 }
+
+// Whether a creature could stand on a cell (walkable, free of the company
+// and of other creatures).
+export function chroniclesEnemyCanOccupy(state, enemy, position) {
+  return canOccupy(state, enemy, position);
+}

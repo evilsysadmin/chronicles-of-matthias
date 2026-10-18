@@ -756,9 +756,10 @@ func buildTown(code string, people []*O) *O {
 	stock := shopStock[code]
 	prefix := t.id
 	interactables := []*O{
+		// The inn opens its tavern room; the night (8 oro) is its action.
 		obj("id", prefix+"-inn", "kind", "service", "x", 7, "y", 10, "visualType", "building-tavern",
-			"label", "Posada · descansar y curar · 8 oro", "lockedLabel", "Posada · necesitas 8 oro",
-			"requirements", A{obj("itemId", "crown-gold", "quantity", 8, "message", "El posadero cobra por adelantado.")},
+			"label", "Taberna "+taverns[code].name+" · dormir, comer y rumores",
+			"tavern", tavernFor(code, 8),
 			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 8), obj("type", "heal-party", "amount", innFullRest),
 				obj("type", "refill-class-abilities"), obj("type", "restore-spell-points")},
 				"message", "La compañía duerme en la posada de "+t.name+". Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo.")),

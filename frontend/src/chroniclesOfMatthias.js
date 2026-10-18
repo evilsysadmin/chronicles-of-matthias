@@ -30,6 +30,15 @@ import {
   chroniclesCloseGuild, chroniclesGuildJoin, chroniclesGuildLearn, chroniclesOpenGuild,
 } from './chronicles/chroniclesGuild.js';
 import {
+  chroniclesCloseTavern,
+  chroniclesOpenTavern,
+  chroniclesTavernBuyRations,
+  chroniclesTavernDrink,
+  chroniclesTavernRest,
+  chroniclesTavernTip,
+} from './chronicles/chroniclesTavern.js';
+import { chroniclesCamp } from './chronicles/chroniclesCamp.js';
+import {
   CHRONICLES_ELEMENT_LABELS,
   CHRONICLES_SPELLS,
   chroniclesDetectMagicMessage,
@@ -318,6 +327,7 @@ function resolveContextualContentAction(state) {
   // A merchant with a stock list opens its counter instead of a scripted trade.
   if (definition?.shop && Array.isArray(definition.shop.stock)) return chroniclesOpenShop(state, definition);
   if (definition?.guild && Array.isArray(definition.guild.spells)) return chroniclesOpenGuild(state, definition);
+  if (definition?.tavern) return chroniclesOpenTavern(state, definition);
   if (!definition?.action) return state;
   if (contextual.locked) {
     const blocked = chroniclesRequirementFailure(state, definition.requirements);
@@ -955,11 +965,17 @@ export function chroniclesReduce(state, action) {
     return chroniclesGuildLearn(state, chroniclesMapForState(state), action.memberId, action.spellId);
   }
   if (actionType === 'guild-close') return chroniclesCloseGuild(state);
+  if (actionType === 'tavern-rest') return chroniclesTavernRest(state, chroniclesMapForState(state));
+  if (actionType === 'tavern-rations') return chroniclesTavernBuyRations(state, chroniclesMapForState(state), action.quantity);
+  if (actionType === 'tavern-drink') return chroniclesTavernDrink(state, chroniclesMapForState(state));
+  if (actionType === 'tavern-tip') return chroniclesTavernTip(state, chroniclesMapForState(state), chroniclesObjective(state) || null);
+  if (actionType === 'tavern-close') return chroniclesCloseTavern(state);
   if (actionType === 'track-quest') return chroniclesTrackQuest(state, action.questId);
   // Any other action (moving, turning, fighting) walks away from the counter.
-  if ((state.shop || state.guild) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
-    return chroniclesReduce(chroniclesCloseGuild(chroniclesCloseShop(state)), action);
+  if ((state.shop || state.guild || state.tavern) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
+    return chroniclesReduce(chroniclesCloseTavern(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
   }
+  if (actionType === 'camp') return chroniclesCamp(state);
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
   if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };

@@ -200,15 +200,7 @@
       "kind": "service",
       "x": 7,
       "y": 10,
-      "label": "Taberna · descansar y curar · 5 oro",
-      "lockedLabel": "Taberna · necesitas 5 oro",
-      "requirements": [
-        {
-          "itemId": "crown-gold",
-          "quantity": 5,
-          "message": "La posadera no ofrece crédito a los héroes, por muy heroicos que parezcan."
-        }
-      ],
+      "label": "Taberna La Espada Mellada · dormir, comer y rumores",
       "action": {
         "effects": [
           {
@@ -229,7 +221,63 @@
         ],
         "message": "La compañía duerme en la taberna de La Espada Mellada. Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo."
       },
-      "visualType": "building-tavern"
+      "visualType": "building-tavern",
+      "tavern": {
+        "name": "La Espada Mellada",
+        "keeper": "Berta la posadera",
+        "greeting": "«Pasad, que fuera solo hay ratas y malas noticias. Cama a cinco, ración a uno y, si dejáis una moneda en la barra, os cuento lo que se dice».",
+        "prices": {
+          "rest": 5,
+          "ration": 1,
+          "drink": 2,
+          "tip": 1
+        },
+        "toasts": [
+          "Matthias levanta la jarra por el Rey. Media taberna la levanta con él; la otra media, por la cerveza.",
+          "Alguien entona una copla sobre una espada mellada. Nadie se sabe el final.",
+          "Berta brinda con vosotros y luego os cobra la suya."
+        ],
+        "rumors": [
+          {
+            "id": "sewer-smuggler",
+            "text": "Lo que sube de noche de las cloacas no son ratas: es un tal Tobías, contrabandista, con su escondrijo al sur de los túneles.",
+            "when": [
+              {
+                "key": "sewersSmugglerDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "sewer-sluice",
+            "text": "Las bodegas del pueblo se inundan porque nadie ha cerrado la compuerta del desagüe. Está en el extremo sureste de las cloacas.",
+            "when": [
+              {
+                "key": "sewersSluiceClosed",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "garrah",
+            "text": "Garrah y su banda asaltaron el carro de los caballeros en el Camino del Estandarte. Dicen que se queda las armas buenas para él.",
+            "when": [
+              {
+                "key": "bannerRoadCaptainDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "king",
+            "text": "El Rey no desapareció solo: tres de sus caballeros se fueron detrás y ninguno ha vuelto. La Dama de la Corte de Bronce paga por noticias."
+          },
+          {
+            "id": "crowns",
+            "text": "Bajo la Corona (F6) hay una puerta sellada con siete coronas. Dicen que tres bastan para abrirla, si sabes dónde dejarlas."
+          }
+        ]
+      }
     },
     {
       "id": "first-book-weaponsmith",

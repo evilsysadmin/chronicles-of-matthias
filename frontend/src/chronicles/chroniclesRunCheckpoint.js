@@ -183,6 +183,12 @@ function runtimeCheckpointFlags(state) {
     const safeGuildId = shortStringOrNull(guildId, 64);
     if (safeGuildId && joined === true) flags[runtimeKey('guild', safeGuildId)] = true;
   });
+  // How many rumours each tavern has told (their rotation).
+  Object.entries(source.tavernTips || {}).forEach(([tavernId, told]) => {
+    const safeTavernId = shortStringOrNull(tavernId, 64);
+    const count = integerOrNull(told, 1, 9999);
+    if (safeTavernId && count !== null) flags[runtimeKey('tips', safeTavernId)] = count;
+  });
 
   // The quest OBJETIVO follows, Escudo de fe and paralysed enemies.
   const trackedQuestId = shortStringOrNull(source.trackedQuestId, 64);
@@ -351,6 +357,13 @@ function applyRuntimeCheckpoint(state, flags) {
     .map(([key]) => [key.slice(guildPrefix.length), true]));
   if (Object.keys(guildMemberships).length) next.guildMemberships = guildMemberships;
   else delete next.guildMemberships;
+  const tipsPrefix = runtimeKey('tips', '');
+  const tavernTips = Object.fromEntries(Object.entries(flags)
+    .filter(([key]) => key.startsWith(tipsPrefix))
+    .map(([key, value]) => [key.slice(tipsPrefix.length), integerOrNull(value, 1, 9999)])
+    .filter(([, count]) => count !== null));
+  if (Object.keys(tavernTips).length) next.tavernTips = tavernTips;
+  else delete next.tavernTips;
 
   const trackedQuestId = shortStringOrNull(flags[runtimeKey('trackedQuest')], 64);
   if (trackedQuestId) next.trackedQuestId = trackedQuestId;

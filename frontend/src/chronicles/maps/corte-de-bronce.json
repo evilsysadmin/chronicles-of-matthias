@@ -39,15 +39,200 @@
       "x": 7,
       "y": 10,
       "visualType": "building-tavern",
-      "label": "Posada · descansar y curar · 8 oro",
-      "lockedLabel": "Posada · necesitas 8 oro",
-      "requirements": [
-        {
-          "itemId": "crown-gold",
-          "quantity": 8,
-          "message": "El posadero cobra por adelantado."
-        }
-      ],
+      "label": "Taberna El Último Brindis · dormir, comer y rumores",
+      "tavern": {
+        "name": "El Último Brindis",
+        "keeper": "Leandra",
+        "greeting": "«En la Corte se brinda en voz baja desde que falta el Rey. Pedid lo que queráis, pero no cantéis».",
+        "prices": {
+          "rest": 8,
+          "ration": 1,
+          "drink": 2,
+          "tip": 1
+        },
+        "toasts": [
+          "La compañía brinda por los que no están.",
+          "Matthias brinda por el Rey; el tabernero, por que paguéis.",
+          "Alguien entona una copla sobre una espada mellada. Nadie se sabe el final.",
+          "Brindáis por la Corona. Un viejo en la esquina escupe en el suelo."
+        ],
+        "rumors": [
+          {
+            "id": "crowns",
+            "text": "Bajo la Corona (F6) hay una puerta sellada con siete coronas. Dicen que tres bastan para abrirla, si sabes dónde dejarlas."
+          },
+          {
+            "id": "deserters",
+            "text": "Brenna la Tuerta cobra peaje en los acantilados de Hollín (A2). Mandaba una compañía de la Corona; ahora manda en desertores.",
+            "when": [
+              {
+                "key": "campA2LeaderDown",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "tithe",
+            "text": "Las barricas de Viñarrey se esfuman de noche. El último que preguntó acabó en la Cripta del Obispo (E6), y no de visita.",
+            "when": [
+              {
+                "key": "vinarreyTitheStarted",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "drowned",
+            "text": "En las Salinas Hundidas (C6) hay una compuerta que baja a los túneles. Dicen que el Capitán Ahogado sigue al mando ahí abajo, y que no ha soltado el timón.",
+            "when": [
+              {
+                "key": "salinas_hundidasBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "smugglers",
+            "text": "Mano Negra paga bien a quien calla y mejor a quien desaparece. Su cueva respira en las calas del suroeste (A4).",
+            "when": [
+              {
+                "key": "cueva_contrabandistasBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "slag",
+            "text": "El Capataz de Escoria no deja salir a nadie de las Minas (E3). Los mineros que bajan ya no suben, ni siquiera a cobrar.",
+            "when": [
+              {
+                "key": "minas_de_escoriaBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "barrows",
+            "text": "Siete túmulos en círculo al norte (D1). En el del centro no entra el viento, y algo vela a los muertos con más celo que un obispo.",
+            "when": [
+              {
+                "key": "tumulos_primer_pactoBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "witch",
+            "text": "Si veis luz verde sobre el agua de la Ciénaga Negra (E5), no la sigáis. La Bruja del Cieno cambia remedios por años de vida.",
+            "when": [
+              {
+                "key": "cienaga_negraBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "tower",
+            "text": "Osric, en Vigilia del Norte, busca un libro que borra nombres. Dicen que lo guarda un escriba sin cara en la Torre de los Nombres (A1).",
+            "when": [
+              {
+                "key": "torre_de_los_nombresBossDefeated",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "bounty",
+            "text": "El tablón de Vado de Sal paga por cinco cabecillas de los caminos. Con la bolsa entera se vive un invierno sin trabajar.",
+            "when": [
+              {
+                "key": "vadoBountyRead",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "wolf",
+            "text": "Los pastores del norte juran que la Loba Blanca (B1) entiende cuando hablan de ella. Por eso ya no hablan.",
+            "when": [
+              {
+                "key": "campB1LeaderDown",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "ghouls",
+            "text": "En la playa de los naufragios (B6) algo desentierra a los ahogados antes de que el mar se los lleve. Lo llaman el Comehuesos.",
+            "when": [
+              {
+                "key": "campB6LeaderDown",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "wreckers",
+            "text": "Las hogueras de las Marismas de Sal (D5) no son de pescadores: el capitán Ruy enciende luces para que las barcas encallen.",
+            "when": [
+              {
+                "key": "campD5LeaderDown",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "golem",
+            "text": "Los goblins de la ceniza despertaron al gólem de la cantera vieja (F4) y lo adoran como a un rey que aplasta.",
+            "when": [
+              {
+                "key": "campF4LeaderDown",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "lighthouse",
+            "text": "Alguien enciende la linterna del Faro Roto (A6) y los barcos se estrellan. Maura, la del puerto, sabe más de lo que cuenta.",
+            "when": [
+              {
+                "key": "hollinLighthouseStarted",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "dragon",
+            "text": "Hilde, la herrera de Ascuafría, daría su mejor yunque por una escama del Dragón de Ceniza (F5). Nadie se ha atrevido a medir al bicho.",
+            "when": [
+              {
+                "key": "ascuaDragonStarted",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "wind",
+            "text": "Los molinos de Molinoviejo giran sin viento desde que algo anida en el Brezal (B2). Fermín sabe con quién hay que hablar.",
+            "when": [
+              {
+                "key": "molinoviejoWindStarted",
+                "falsy": true
+              }
+            ]
+          },
+          {
+            "id": "troll",
+            "text": "Greta, la leñadora de Pinohelado, se fue hacia las Estribaciones (E2) y no volvió. Allí vive un trol al que nadie ha oído quejarse.",
+            "when": [
+              {
+                "key": "pinoheladoGretaStarted",
+                "falsy": true
+              }
+            ]
+          }
+        ]
+      },
       "action": {
         "effects": [
           {
