@@ -7,14 +7,6 @@ import {
 
 const AUTOMAP_STORAGE_PREFIX = 'chess-study-chronicles-automap-v1:';
 
-// N/E/S/W follow the same orientation as the first-person camera.
-const FACING_VECTORS = Object.freeze([
-  Object.freeze({ dx: 0, dy: -1 }),
-  Object.freeze({ dx: 1, dy: 0 }),
-  Object.freeze({ dx: 0, dy: 1 }),
-  Object.freeze({ dx: -1, dy: 0 }),
-]);
-
 export function chroniclesAutomapCellKey(x, y) {
   return `${Number(x)}:${Number(y)}`;
 }
@@ -43,19 +35,20 @@ export function chroniclesAutomapMarkVisited(visitedByMap, state) {
 }
 
 // The automap remembers only geometry that entered the camera's field of view.
-// Seen-but-unvisited floors AND walls use `x:y:s`, preserving the walked route
-// separately and preventing unseen corners from leaking into the map.
+// MM3 rules: the map only learns what the company touches. The tile it
+// stands on is recorded as visited; the walls around it (including the
+// corners) are recorded as `x:y:s`. Nothing at a distance, not even straight
+// ahead, so the map is earned step by step.
 const SEEN_SUFFIX = ':s';
 
-export function chroniclesAutomapMarkSeen(visitedByMap, map, state, radius = 3) {
+export function chroniclesAutomapMarkSeen(visitedByMap, map, state) {
   const marked = chroniclesAutomapMarkVisited(visitedByMap, state);
   if (!map?.grid || !state?.mapId) return marked;
   const visited = Array.isArray(marked[state.mapId]) ? marked[state.mapId] : [];
   const known = new Set(visited.map((key) => String(key).replace(SEEN_SUFFIX, '')));
-  const seen = [...chroniclesAutomapLocalVisibleCells(map, state, radius)].filter((key) => {
-    const cell = parseCellKey(key);
-    return cell && !known.has(key);
-  }).map((key) => `${key}${SEEN_SUFFIX}`);
+  const seen = [...chroniclesAutomapTouchedCells(map, state)]
+    .filter((key) => !known.has(key))
+    .map((key) => `${key}${SEEN_SUFFIX}`);
   if (!seen.length) return marked;
   return { ...marked, [state.mapId]: [...visited, ...seen] };
 }
@@ -78,71 +71,26 @@ export function chroniclesAutomapRevealedCells(map, visitedCells) {
   return revealed;
 }
 
-// Cast a ray from the centers of two cells, stopping at the first opaque tile.
-// At exact diagonal corners, the side cells must both be clear: an angled
-// glimpse cannot slip through the join between two pieces of masonry.
-function chroniclesAutomapClearSight(map, startX, startY, targetX, targetY) {
-  const dx = targetX - startX;
-  const dy = targetY - startY;
-  const stepX = Math.sign(dx);
-  const stepY = Math.sign(dy);
-  const deltaX = dx ? 1 / Math.abs(dx) : Infinity;
-  const deltaY = dy ? 1 / Math.abs(dy) : Infinity;
-  let nextX = deltaX / 2;
-  let nextY = deltaY / 2;
-  let x = startX;
-  let y = startY;
-  const opaque = (col, row) => map.grid[row]?.[col] === '#' || map.grid[row]?.[col] === undefined;
-
-  while (x !== targetX || y !== targetY) {
-    if (nextX + 1e-9 < nextY) {
-      x += stepX;
-      nextX += deltaX;
-    } else if (nextY + 1e-9 < nextX) {
-      y += stepY;
-      nextY += deltaY;
-    } else {
-      if (opaque(x + stepX, y) || opaque(x, y + stepY)) return false;
-      x += stepX;
-      y += stepY;
-      nextX += deltaX;
-      nextY += deltaY;
-    }
-    if (opaque(x, y) && (x !== targetX || y !== targetY)) return false;
-  }
-  return true;
-}
-
-export function chroniclesAutomapLocalVisibleCells(map, state, radius = 3) {
-  const visible = new Set();
+// The tile under the company and the walls that ring it. Open floor next
+// to the company stays unknown until someone steps on it.
+export function chroniclesAutomapTouchedCells(map, state) {
+  const touched = new Set();
   const width = Number(map?.grid?.[0]?.length || 0);
   const height = Number(map?.grid?.length || 0);
-  const startX = Number(state?.x);
-  const startY = Number(state?.y);
-  const safeRadius = Math.max(0, Math.min(8, Math.trunc(Number(radius) || 0)));
-  if (
-    !width || !height
-    || !Number.isInteger(startX) || !Number.isInteger(startY)
-    || startX < 0 || startY < 0 || startX >= width || startY >= height
-  ) return visible;
-
-  // Conservative 90° forward field of view (inside the 3D camera's 96°
-  // maximum horizontal FOV). Turns expose new geometry without leaking bends.
-  const direction = ((Math.trunc(Number(state?.direction) || 0) % 4) + 4) % 4;
-  const facing = FACING_VECTORS[direction];
-  for (let y = Math.max(0, startY - safeRadius); y <= Math.min(height - 1, startY + safeRadius); y += 1) {
-    for (let x = Math.max(0, startX - safeRadius); x <= Math.min(width - 1, startX + safeRadius); x += 1) {
-      const dx = x - startX;
-      const dy = y - startY;
-      const distance = Math.hypot(dx, dy);
-      if (distance > safeRadius) continue;
-      if (distance && (dx * facing.dx + dy * facing.dy) / distance < Math.SQRT1_2) continue;
-      if (chroniclesAutomapClearSight(map, startX, startY, x, y)) {
-        visible.add(chroniclesAutomapCellKey(x, y));
-      }
+  const x = Number(state?.x);
+  const y = Number(state?.y);
+  if (!width || !height || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= width || y >= height) {
+    return touched;
+  }
+  touched.add(chroniclesAutomapCellKey(x, y));
+  for (let dy = -1; dy <= 1; dy += 1) {
+    for (let dx = -1; dx <= 1; dx += 1) {
+      const col = x + dx;
+      const row = y + dy;
+      if ((dx || dy) && map.grid[row]?.[col] === '#') touched.add(chroniclesAutomapCellKey(col, row));
     }
   }
-  return visible;
+  return touched;
 }
 
 // MM3-style position inside the current map: X grows east, Y grows north

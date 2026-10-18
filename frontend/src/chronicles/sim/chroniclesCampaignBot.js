@@ -490,6 +490,7 @@ export class ChroniclesCampaignBot {
 
   engage(enemy) {
     let guard = 0;
+    let plan = null;
     while (Number(this.state[enemy.hpKey] || 0) > 0) {
       guard += 1;
       if (guard > 400) throw new BotError(`cannot engage ${enemy.id}`);
@@ -503,14 +504,26 @@ export class ChroniclesCampaignBot {
         this.act({ type: 'attack', memberId: this.frontAttacker() });
         continue;
       }
-      // Others in the corridor are fought on the way.
-      const steps = this.path(position) || this.path(position, { throughEnemies: true });
+      // Others in the corridor are fought on the way. A roaming enemy far
+      // away flips between equally short routes as it moves; keep walking the
+      // route already chosen until it is close, so the company does not dither.
+      const fresh = () => this.path(position) || this.path(position, { throughEnemies: true });
+      const keepPlan = distance > 3 && plan?.length > 0
+        && Math.abs(plan[0][0] - this.state.x) + Math.abs(plan[0][1] - this.state.y) === 1;
+      const steps = keepPlan ? plan : fresh();
       if (!steps) throw new BotError(`no way to ${enemy.id} in ${this.state.mapId}`);
       const [nx, ny] = steps[0];
       const dir = STEP.findIndex(([dx, dy]) => this.state.x + dx === nx && this.state.y + dy === ny);
       if (dir !== this.state.direction) { this.act(this.turnToward(dir)); continue; }
-      if (this.enemyAt(nx, ny)) this.act({ type: 'attack', memberId: this.frontAttacker() });
-      else this.act('forward');
+      if (this.enemyAt(nx, ny)) {
+        plan = null;
+        this.act({ type: 'attack', memberId: this.frontAttacker() });
+      } else {
+        const before = [this.state.x, this.state.y];
+        this.act('forward');
+        const moved = this.state.x !== before[0] || this.state.y !== before[1];
+        plan = moved ? steps.slice(1) : null;
+      }
     }
   }
 

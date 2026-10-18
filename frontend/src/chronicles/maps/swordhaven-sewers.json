@@ -8,17 +8,25 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#################",
-    "#...#.....#.....#",
-    "#...#.###.#.###.#",
-    "#.#...#.....#...#",
-    "#.#####.#####.#.#",
-    "#.....#...#...#.#",
-    "###.#.###.#.###.#",
-    "#...#...#.....#.#",
-    "#.#####.#.###.#.#",
-    "#.......#...#...#",
-    "#################"
+    "#########################",
+    "#...#.....#.....#.......#",
+    "#...#.###.#.###.#.#####.#",
+    "#.#...#.....#...#.#...#.#",
+    "#.#####.#####.#.#.#.#.#.#",
+    "#.....#...#...#.#...#...#",
+    "###.#.###.#.###.#####.###",
+    "#...#...#.....#.#.....#.#",
+    "#.#####.#.###.#.#.###...#",
+    "#.......#...#.......#.#.#",
+    "#.#######.###########.#.#",
+    "#.#.......#.....#.....#.#",
+    "#.#.#####.#.###.#.###.#.#",
+    "#...#...#...#...#.#.....#",
+    "#####.#.#####.###.#.#####",
+    "#.....#.......#...#.....#",
+    "#.#####.#####.#.#######.#",
+    "#.......#.........#.....#",
+    "#########################"
   ],
   "partyStart": {
     "x": 1,
@@ -111,8 +119,8 @@
       "id": "sewers-smuggler",
       "visualType": "road-bandit",
       "name": "Tobías, el contrabandista",
-      "x": 11,
-      "y": 9,
+      "x": 9,
+      "y": 17,
       "hpKey": "sewersSmugglerHp",
       "maxHp": 9,
       "retaliation": 2,
@@ -153,6 +161,106 @@
       },
       "defeatedFlag": "sewersSmugglerDefeated",
       "blockingMessage": "Tobías se interpone delante de su alijo: «Estas cloacas son mías. El alcalde puede venir a decírmelo él»."
+    },
+    {
+      "id": "sewers-goblin-east",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 21,
+      "y": 3,
+      "hpKey": "sewersGoblinEastHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "visualScale": 0.9,
+      "visualMotion": "grounded"
+    },
+    {
+      "id": "sewers-goblin-cistern",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 19,
+      "y": 7,
+      "hpKey": "sewersGoblinCisternHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "visualScale": 0.9,
+      "visualMotion": "grounded"
+    },
+    {
+      "id": "sewers-spider-south",
+      "visualType": "crypt-spider",
+      "name": "araña de cloaca",
+      "x": 5,
+      "y": 15,
+      "hpKey": "sewersSpiderSouthHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "visualScale": 0.9,
+      "visualMotion": "skitter"
+    },
+    {
+      "id": "sewers-hound-south",
+      "visualType": "bone-hound",
+      "name": "sabueso del limo",
+      "x": 13,
+      "y": 15,
+      "hpKey": "sewersHoundSouthHp",
+      "maxHp": 6,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "visualScale": 0.95,
+      "visualMotion": "grounded"
+    },
+    {
+      "id": "sewers-goblin-sluice",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca veterano",
+      "x": 21,
+      "y": 15,
+      "hpKey": "sewersGoblinSluiceHp",
+      "maxHp": 6,
+      "retaliation": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "visualScale": 0.9,
+      "visualMotion": "grounded"
     }
   ],
   "triggers": [],
@@ -161,8 +269,8 @@
       "id": "sewers-sluice-wheel",
       "kind": "lever",
       "visualType": "sluice-wheel",
-      "x": 15,
-      "y": 9,
+      "x": 19,
+      "y": 17,
       "label": "Cerrar la compuerta del desagüe",
       "when": [
         {
@@ -193,8 +301,8 @@
       "id": "sewers-smuggler-stash",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 11,
-      "y": 9,
+      "x": 9,
+      "y": 17,
       "label": "Abrir el alijo de Tobías",
       "when": [
         {
@@ -261,9 +369,101 @@
         ],
         "message": "Una bolsa empapada con cinco monedas. Alguien de arriba la echará de menos; nadie de abajo la reclamará."
       }
+    },
+    {
+      "id": "sewers-contraband-crate",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 23,
+      "y": 7,
+      "label": "Abrir una caja de contrabando",
+      "when": [
+        {
+          "key": "sewersCrateOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "sewersCrateOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 6
+          },
+          {
+            "type": "grant-item",
+            "itemId": "healing-potion",
+            "name": "Poción de curación",
+            "description": "Cura 15 PV a un héroe.",
+            "quantity": 2
+          }
+        ],
+        "message": "La caja lleva el sello de un boticario de Vado de Sal: dos pociones de curación y seis monedas. Tobías no solo traficaba con vino."
+      }
+    },
+    {
+      "id": "sewers-old-bones",
+      "kind": "pickup",
+      "visualType": "ember-cache",
+      "x": 11,
+      "y": 9,
+      "label": "Registrar unos huesos",
+      "when": [
+        {
+          "key": "sewersBonesSearched",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "sewersBonesSearched",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ],
+        "message": "Un pocero que no volvió a subir. En el cinturón, cuatro monedas verdes de moho."
+      }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "sewers-loose-slab",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 17,
+      "y": 11,
+      "label": "Losa suelta",
+      "when": [
+        {
+          "key": "sewersSlabSpent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "sewersSlabSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 1
+          }
+        ],
+        "message": "La losa cede y la compañía cae hasta la cintura en agua negra. Un punto de daño por cabeza y un olor que tardará días en irse."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "sewers-to-swordhaven",
@@ -292,7 +492,7 @@
     "body": "Túneles de ladrillo bajo la plaza. Algo ha estado subiendo de noche a las bodegas.",
     "sigil": "≈"
   },
-  "introMessage": "Las alcantarillas de Swordhaven. Agua negra hasta el tobillo y huellas recientes que no son de rata.",
+  "introMessage": "Las alcantarillas de Swordhaven. Agua negra hasta el tobillo, galerías que bajan hacia el sur y huellas recientes que no son de rata.",
   "arrivalAction": {
     "effects": [
       {
