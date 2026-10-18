@@ -9,19 +9,25 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#####################",
-    "#.#.........#.......#",
-    "#.#######.#.####..#.#",
-    "#.........#.......#.#",
-    "###############.###.#",
-    "#.....#.......#...#.#",
-    "#.#####.###.###.#.#.#",
-    "#.#...#...#.....#...#",
-    "#.#.#.###.###########",
-    "#...#...#...#...#...#",
-    "#.###.#####.#.#.#.#.#",
-    "#...#.........#...#.#",
-    "#####################"
+    "#########################",
+    "#.#.........#.......#...#",
+    "#.#######.#.#####.#.#.#.#",
+    "#.........#.......#...#.#",
+    "#####################.#.#",
+    "#.#.....#...#.#.......#.#",
+    "#.#.#.#.#.#.#.#.###.###.#",
+    "#...#.#...#...#...#.....#",
+    "#.###.#######.###.#######",
+    "#.#.#.......#...#...#...#",
+    "#.#.#######.#.#.###.###.#",
+    "#.......#.#...#...#.#...#",
+    "#######.#.###.#####.#.###",
+    "#.....#.#...#.......#...#",
+    "#.###.#.###.###########.#",
+    "#...#.#.#.......#...#...#",
+    "#.#.###.#.#####.#.#.#.#.#",
+    "#.#.......#.......#...#.#",
+    "#########################"
   ],
   "partyStart": {
     "x": 1,
@@ -34,8 +40,8 @@
       "id": "minas-de-escoria-foe-0",
       "visualType": "ash-goblin",
       "name": "goblin minero",
-      "x": 16,
-      "y": 2,
+      "x": 23,
+      "y": 3,
       "hpKey": "minas_de_escoriaFoe0Hp",
       "maxHp": 21,
       "retaliation": 4,
@@ -65,7 +71,7 @@
       "visualType": "ember-wisp",
       "name": "lumbre de mina",
       "x": 13,
-      "y": 7,
+      "y": 13,
       "hpKey": "minas_de_escoriaFoe1Hp",
       "maxHp": 21,
       "retaliation": 4,
@@ -93,8 +99,8 @@
       "id": "minas-de-escoria-foe-2",
       "visualType": "bone-hound",
       "name": "sabueso de escoria",
-      "x": 12,
-      "y": 5,
+      "x": 6,
+      "y": 9,
       "hpKey": "minas_de_escoriaFoe2Hp",
       "maxHp": 21,
       "retaliation": 4,
@@ -123,7 +129,7 @@
       "id": "minas-de-escoria-foe-3",
       "visualType": "crypt-spider",
       "name": "araña de galería",
-      "x": 10,
+      "x": 2,
       "y": 11,
       "hpKey": "minas_de_escoriaFoe3Hp",
       "maxHp": 21,
@@ -150,11 +156,41 @@
       }
     },
     {
+      "id": "minas-de-escoria-foe-10",
+      "visualType": "ash-goblin",
+      "name": "goblin minero",
+      "x": 6,
+      "y": 17,
+      "hpKey": "minas_de_escoriaFoe10Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin minero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
       "id": "minas-de-escoria-foe-4",
       "visualType": "ash-salamander",
       "name": "salamandra de la forja",
-      "x": 15,
-      "y": 11,
+      "x": 11,
+      "y": 14,
       "hpKey": "minas_de_escoriaFoe4Hp",
       "maxHp": 21,
       "retaliation": 4,
@@ -179,11 +215,40 @@
       }
     },
     {
+      "id": "minas-de-escoria-foe-11",
+      "visualType": "ember-wisp",
+      "name": "lumbre de mina",
+      "x": 9,
+      "y": 12,
+      "hpKey": "minas_de_escoriaFoe11Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de mina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
       "id": "minas-de-escoria-foe-5",
       "visualType": "ash-goblin",
       "name": "goblin minero",
-      "x": 2,
-      "y": 9,
+      "x": 17,
+      "y": 16,
       "hpKey": "minas_de_escoriaFoe5Hp",
       "maxHp": 21,
       "retaliation": 4,
@@ -209,10 +274,40 @@
       }
     },
     {
+      "id": "minas-de-escoria-foe-12",
+      "visualType": "bone-hound",
+      "name": "sabueso de escoria",
+      "x": 23,
+      "y": 14,
+      "hpKey": "minas_de_escoriaFoe12Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sabueso de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
       "id": "minas-de-escoria-foe-8",
       "visualType": "ash-goblin",
       "name": "el goblin capataz",
-      "x": 19,
+      "x": 9,
       "y": 11,
       "hpKey": "minas_de_escoriaFoe8Hp",
       "maxHp": 25,
@@ -261,8 +356,8 @@
       "id": "minas-de-escoria-foe-9",
       "visualType": "gate-jailer",
       "name": "el Capataz de Escoria",
-      "x": 5,
-      "y": 5,
+      "x": 21,
+      "y": 9,
       "hpKey": "minas_de_escoriaFoe9Hp",
       "maxHp": 22,
       "retaliation": 6,
@@ -338,8 +433,8 @@
       "id": "minas-de-escoria-font",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 13,
-      "y": 5,
+      "x": 17,
+      "y": 11,
       "label": "Beber del Pozo de agua fría",
       "when": [
         {
@@ -371,7 +466,7 @@
       "id": "minas-de-escoria-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 7,
+      "x": 3,
       "y": 9,
       "label": "Abrir el cofre",
       "when": [
@@ -413,8 +508,8 @@
       "id": "minas-de-escoria-cache",
       "kind": "pickup",
       "visualType": "chain-altar",
-      "x": 3,
-      "y": 11,
+      "x": 23,
+      "y": 17,
       "label": "Abrir la vagoneta cerrada",
       "lockedLabel": "Abrir la vagoneta cerrada · cerrado con llave",
       "when": [
@@ -475,8 +570,8 @@
       "id": "minas-de-escoria-trap-0",
       "kind": "trap",
       "visualType": "slag-vent",
-      "x": 15,
-      "y": 1,
+      "x": 23,
+      "y": 7,
       "label": "Respiradero de escoria",
       "when": [
         {
@@ -503,8 +598,8 @@
       "id": "minas-de-escoria-trap-1",
       "kind": "trap",
       "visualType": "slag-vent",
-      "x": 11,
-      "y": 9,
+      "x": 10,
+      "y": 5,
       "label": "Respiradero de escoria",
       "when": [
         {
@@ -517,6 +612,34 @@
           {
             "type": "set",
             "key": "minas_de_escoriaTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 2
+          }
+        ],
+        "message": "Un respiradero escupe escoria al rojo. Dos puntos de daño y un olor a pelo quemado que tardará en irse."
+      }
+    },
+    {
+      "id": "minas-de-escoria-trap-2",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 5,
+      "y": 17,
+      "label": "Respiradero de escoria",
+      "when": [
+        {
+          "key": "minas_de_escoriaTrap2Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "minas_de_escoriaTrap2Spent",
             "value": true
           },
           {

@@ -9,19 +9,25 @@
   "dungeonRole": "main",
   "layoutMode": "authored",
   "grid": [
-    "#####################",
-    "#.#...#...#.........#",
-    "#.#.#.#.#.#####.#.#.#",
-    "#...#...#.....#.#.#.#",
-    "#############.#.#.###",
-    "#...........#.#.#...#",
-    "#.###.#####.#.#####.#",
-    "#...#...#...#...#...#",
-    "###.###.#######.#...#",
-    "#.#...#...#...#...#.#",
-    "#.##..###.#.#.#####.#",
-    "#.......#...#.......#",
-    "#####################"
+    "#########################",
+    "#.#...#...#.............#",
+    "#.#.#.#.#.#####.#.###.#.#",
+    "#...#...#.....#...#.#.#.#",
+    "#############.#.###.#.###",
+    "#...#.......#.#.....#...#",
+    "#...#####.#.#.#########.#",
+    "#.#.......#.#...#.......#",
+    "#.###.#########.#.#####.#",
+    "#...#.#.......#...#...#.#",
+    "#.#.###.#####.#####.#.#.#",
+    "#.#.....#...#...#...#...#",
+    "#.#######.#.###.#.#######",
+    "#...#.....#...#.#...#...#",
+    "###.###.#####.#.###.###.#",
+    "#.#...#...#...#...#.#...#",
+    "#.###.#.#.#.#.#.###.#.#.#",
+    "#.......#...#.#.......#.#",
+    "#########################"
   ],
   "partyStart": {
     "x": 1,
@@ -34,8 +40,8 @@
       "id": "faro-roto-foe-0",
       "visualType": "road-bandit",
       "name": "contrabandista",
-      "x": 15,
-      "y": 9,
+      "x": 21,
+      "y": 10,
       "hpKey": "faro_rotoFoe0Hp",
       "maxHp": 33,
       "retaliation": 6,
@@ -64,8 +70,8 @@
       "id": "faro-roto-foe-1",
       "visualType": "salt-crab",
       "name": "cangrejo de cueva",
-      "x": 18,
-      "y": 11,
+      "x": 17,
+      "y": 13,
       "hpKey": "faro_rotoFoe1Hp",
       "maxHp": 33,
       "retaliation": 6,
@@ -94,8 +100,8 @@
       "id": "faro-roto-foe-2",
       "visualType": "sewer-rat",
       "name": "rata de bodega",
-      "x": 15,
-      "y": 1,
+      "x": 23,
+      "y": 15,
       "hpKey": "faro_rotoFoe2Hp",
       "maxHp": 33,
       "retaliation": 6,
@@ -124,7 +130,7 @@
       "id": "faro-roto-foe-3",
       "visualType": "ember-wisp",
       "name": "farol encantado",
-      "x": 10,
+      "x": 4,
       "y": 11,
       "hpKey": "faro_rotoFoe3Hp",
       "maxHp": 33,
@@ -150,11 +156,41 @@
       }
     },
     {
+      "id": "faro-roto-foe-10",
+      "visualType": "road-bandit",
+      "name": "contrabandista",
+      "x": 1,
+      "y": 13,
+      "hpKey": "faro_rotoFoe10Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
       "id": "faro-roto-foe-4",
       "visualType": "skeleton",
       "name": "contrabandista ahorcado",
-      "x": 3,
-      "y": 5,
+      "x": 6,
+      "y": 7,
       "hpKey": "faro_rotoFoe4Hp",
       "maxHp": 33,
       "retaliation": 6,
@@ -180,11 +216,41 @@
       }
     },
     {
+      "id": "faro-roto-foe-11",
+      "visualType": "salt-crab",
+      "name": "cangrejo de cueva",
+      "x": 2,
+      "y": 17,
+      "hpKey": "faro_rotoFoe11Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de cueva usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
       "id": "faro-roto-foe-5",
       "visualType": "road-bandit",
       "name": "contrabandista",
-      "x": 10,
-      "y": 7,
+      "x": 5,
+      "y": 5,
       "hpKey": "faro_rotoFoe5Hp",
       "maxHp": 33,
       "retaliation": 6,
@@ -210,11 +276,41 @@
       }
     },
     {
+      "id": "faro-roto-foe-12",
+      "visualType": "sewer-rat",
+      "name": "rata de bodega",
+      "x": 11,
+      "y": 17,
+      "hpKey": "faro_rotoFoe12Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de bodega usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
       "id": "faro-roto-foe-8",
       "visualType": "harpy",
       "name": "la arpía del faro",
-      "x": 9,
-      "y": 7,
+      "x": 1,
+      "y": 15,
       "hpKey": "faro_rotoFoe8Hp",
       "maxHp": 37,
       "retaliation": 6,
@@ -262,8 +358,8 @@
       "id": "faro-roto-foe-9",
       "visualType": "drowned",
       "name": "la Farera Ahogada",
-      "x": 1,
-      "y": 9,
+      "x": 13,
+      "y": 17,
       "hpKey": "faro_rotoFoe9Hp",
       "maxHp": 30,
       "retaliation": 8,
@@ -316,7 +412,7 @@
       "id": "faro-roto-note",
       "kind": "lore",
       "visualType": "name-plaque",
-      "x": 19,
+      "x": 23,
       "y": 3,
       "label": "Leer el diario de la farera",
       "action": {
@@ -340,8 +436,8 @@
       "id": "faro-roto-font",
       "kind": "lore",
       "visualType": "shrine",
-      "x": 11,
-      "y": 1,
+      "x": 17,
+      "y": 15,
       "label": "Beber del Cisterna de lluvia",
       "when": [
         {
@@ -373,8 +469,8 @@
       "id": "faro-roto-chest",
       "kind": "pickup",
       "visualType": "ember-cache",
-      "x": 15,
-      "y": 5,
+      "x": 21,
+      "y": 13,
       "label": "Abrir el cofre",
       "when": [
         {
@@ -415,8 +511,8 @@
       "id": "faro-roto-cache",
       "kind": "pickup",
       "visualType": "chain-altar",
-      "x": 7,
-      "y": 11,
+      "x": 5,
+      "y": 13,
       "label": "Abrir el cuarto de la linterna",
       "lockedLabel": "Abrir el cuarto de la linterna · cerrado con llave",
       "when": [
@@ -477,8 +573,8 @@
       "id": "faro-roto-trap-0",
       "kind": "trap",
       "visualType": "chain-plate",
-      "x": 19,
-      "y": 9,
+      "x": 23,
+      "y": 2,
       "label": "Escalón podrido",
       "when": [
         {
@@ -506,7 +602,7 @@
       "kind": "trap",
       "visualType": "chain-plate",
       "x": 15,
-      "y": 4,
+      "y": 14,
       "label": "Escalón podrido",
       "when": [
         {
@@ -519,6 +615,34 @@
           {
             "type": "set",
             "key": "faro_rotoTrap1Spent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 4
+          }
+        ],
+        "message": "Un escalón podrido cede y la compañía se golpea contra la barandilla de hierro."
+      }
+    },
+    {
+      "id": "faro-roto-trap-2",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 2,
+      "y": 13,
+      "label": "Escalón podrido",
+      "when": [
+        {
+          "key": "faro_rotoTrap2Spent",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "faro_rotoTrap2Spent",
             "value": true
           },
           {

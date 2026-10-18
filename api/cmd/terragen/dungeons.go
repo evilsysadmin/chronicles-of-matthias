@@ -13,7 +13,9 @@ import (
 	"strings"
 )
 
-const dungeonW, dungeonH = 21, 13
+// 25x19 like Swordhaven's sewers: about 210 walkable cells, so a dungeon is
+// an expedition rather than a corridor.
+const dungeonW, dungeonH = 25, 19
 
 type dungeonExtra struct {
 	noteLabel, note    string
@@ -154,9 +156,13 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 
 	foes := dungeonFoes[d.theme]
 	var enemies []*O
-	for i, k := range []int{2, 3, 4, 5, 6, 7} {
-		pos := ordered[len(ordered)*k/8]
-		for j := len(ordered) * k / 8; taken[pos] && j < len(ordered)-1; j++ {
+	// Regular foes spread along the way in: ids 0-5 as always, 10-12 for the
+	// larger maze (8 and 9 stay the elite and the boss).
+	slots := []struct{ id, at int }{{0, 4}, {1, 6}, {2, 8}, {3, 10}, {10, 11}, {4, 12}, {11, 13}, {5, 14}, {12, 15}}
+	for _, slot := range slots {
+		i, at := slot.id, slot.at
+		pos := ordered[len(ordered)*at/16]
+		for j := len(ordered) * at / 16; taken[pos] && j < len(ordered)-1; j++ {
 			pos = ordered[j+1]
 		}
 		if taken[pos] {
@@ -237,7 +243,7 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 	if d.theme == "ash" {
 		trapVisual = "slag-vent"
 	}
-	for t, frac := range []int{3, 6} {
+	for t, frac := range []int{3, 5, 7} {
 		for j := len(ordered) * frac / 10; j < len(ordered); j++ {
 			p := ordered[j]
 			if taken[p] || openSides(grid, p) != 2 {
