@@ -127,7 +127,12 @@ import ChroniclesJournalModal from './ChroniclesJournalModal.jsx';
 import ChroniclesDefeatOverlay from './ChroniclesDefeatOverlay.jsx';
 import ChroniclesEnemyRetaliationFx from './ChroniclesEnemyRetaliationFx.jsx';
 import ChroniclesInitiativeRail from './ChroniclesInitiativeRail.jsx';
-import ChroniclesNarratorOverlay from './ChroniclesNarratorOverlay.jsx';
+import ChroniclesNarratorOverlay, { shouldShowChroniclesNarration } from './ChroniclesNarratorOverlay.jsx';
+import {
+  chroniclesAppendNarration,
+  chroniclesLoadNarrationLog,
+  chroniclesSaveNarrationLog,
+} from '../chronicles/chroniclesNarrationLog.js';
 import ChroniclesPartyBark from './ChroniclesPartyBark.jsx';
 import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
 import useChroniclesLandscape, {
@@ -246,6 +251,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [retaliationCue, setRetaliationCue] = useState(null);
   const [hitSplats, setHitSplats] = useState([]);
   const hitSplatSequenceRef = useRef(0);
+  // Every line the chronicle shows is kept for the Crónica (per run), since
+  // the band on the view fades after a few seconds.
+  useEffect(() => {
+    const message = state?.message;
+    if (!shouldShowChroniclesNarration(message)) return;
+    const runId = activeRunIdRef.current;
+    setNarrationLog((current) => {
+      const base = narrationRunRef.current === runId ? current : chroniclesLoadNarrationLog(runId);
+      narrationRunRef.current = runId;
+      const next = chroniclesAppendNarration(base, message);
+      if (next !== base) chroniclesSaveNarrationLog(runId, next);
+      return next;
+    });
+  }, [state?.message]);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -258,6 +277,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, []);
   const menuSummaryRef = useRef(null);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [narrationLog, setNarrationLog] = useState([]);
+  const narrationRunRef = useRef(null);
   const [chronicleModalOpen, setChronicleModalOpen] = useState(false);
   const [automapOpen, setAutomapOpen] = useState(false);
   // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
@@ -1450,7 +1471,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           />
           <ChroniclesCombatRoster state={state} />
 
-          <ChroniclesJournalModal open={journalOpen} state={state} entries={journalEntries} onClose={() => setJournalOpen(false)} />
+          <ChroniclesJournalModal open={journalOpen} state={state} entries={journalEntries} narrations={narrationLog} onClose={() => setJournalOpen(false)} />
 
           {!expeditionOver && (
             <>
