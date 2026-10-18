@@ -14,6 +14,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesPartyBark } from '../chroniclesOfMatthiasBarks.js';
+import { chroniclesArmsLabel } from '../chronicles/chroniclesWornGear.js';
 import { chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
 import {
   chroniclesAdvanceCombatInitiative,
@@ -1689,7 +1690,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <div className="chronicles-party-preview-copy">
             <span>{selectedMember?.role}</span>
             <strong>{selectedMember?.name}</strong>
-            <small>{state.combatRules === 'mm3' ? (chroniclesEquippedItem(state, selectedMember?.id, 'weapon')?.name || 'Sin arma') : selectedMember?.attackName} · daño {selectedAttackStats.damage} · alcance {selectedAttackStats.reach}</small>
+            <small>{state.combatRules === 'mm3' ? chroniclesArmsLabel(state, selectedMember?.id) : selectedMember?.attackName} · daño {selectedAttackStats.damage} · alcance {selectedAttackStats.reach}</small>
           </div>
         </div>
       </div>

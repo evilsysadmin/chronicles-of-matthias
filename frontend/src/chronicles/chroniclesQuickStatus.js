@@ -3,6 +3,7 @@ import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesMM3Class } from './chroniclesMM3Rules.js';
+import { chroniclesArmsLabel } from './chroniclesWornGear.js';
 
 const CONDITION_LABELS = Object.freeze({ fresh: 'Bien', worn: 'Tocado', critical: 'Grave', down: 'Caído' });
 
@@ -22,7 +23,7 @@ export function chroniclesQuickStatusRows(state, levelOf = () => 1) {
       sp: maxSp > 0 ? chroniclesMemberSp(state, member) : null,
       maxSp: maxSp > 0 ? maxSp : null,
       armorClass: chroniclesPartyArmorClass(state, member.id),
-      weapon: chroniclesEquippedItem(state, member.id, 'weapon')?.name || 'Sin arma',
+      weapon: chroniclesArmsLabel(state, member.id),
       condition,
       conditionLabel: CONDITION_LABELS[condition] || condition,
     };

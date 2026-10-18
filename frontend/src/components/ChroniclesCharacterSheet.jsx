@@ -24,7 +24,7 @@ import {
   chroniclesMemberCanEquip,
 } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyArmorClass, chroniclesPartyAttackStats } from '../chroniclesOfMatthias.js';
-import { chroniclesWornGear } from '../chronicles/chroniclesWornGear.js';
+import { chroniclesArmsLabel, chroniclesWornGear } from '../chronicles/chroniclesWornGear.js';
 import { chroniclesPartyInitiativeAgility } from '../chronicles/chroniclesInitiative.js';
 import {
   CHRONICLES_MM3_STATS,
@@ -258,7 +258,7 @@ export default function ChroniclesCharacterSheet({
         {!mm3 && <div className="chronicles-character-sheet__combat"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>Clase</span><b>{className}</b></div>
-          <div><span>Arma</span><b>{mm3 ? (equippedWeapon?.name || 'Sin arma') : profile.weaponName}</b></div>
+          <div><span>Arma</span><b>{mm3 ? chroniclesArmsLabel(state, member.id) : profile.weaponName}</b></div>
           {mm3 ? (
             <div><span>Tipo</span><b>{equippedWeapon?.reach > 1 ? 'A distancia' : 'Cuerpo a cuerpo'}</b></div>
           ) : (
@@ -503,7 +503,7 @@ export default function ChroniclesCharacterSheet({
                   {chroniclesWornGear(state, hero.id).map((slot) => (
                     <i key={slot.slot} className={slot.empty ? 'is-empty' : ''} title={`${slot.label}: ${slot.name}`}>{slot.glyph}</i>
                   ))}
-                  <small>{chroniclesWornGear(state, hero.id)[0].item?.name || 'Sin arma'}</small>
+                  <small>{chroniclesArmsLabel(state, hero.id)}</small>
                 </span>
               </button>
             ))}

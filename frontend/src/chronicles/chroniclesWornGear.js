@@ -37,3 +37,12 @@ export function chroniclesWornGear(state, memberId) {
     };
   });
 }
+
+// What the hero fights with, in one line: «Daga de bronce · Arco corto de
+// madera», just the one carried, or «Sin arma».
+export function chroniclesArmsLabel(state, memberId) {
+  const names = ['weapon', 'missile']
+    .map((slot) => chroniclesEquippedItem(state, memberId, slot)?.name)
+    .filter(Boolean);
+  return names.length ? names.join(' · ') : 'Sin arma';
+}
