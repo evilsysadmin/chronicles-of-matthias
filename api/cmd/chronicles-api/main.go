@@ -40,6 +40,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/presence"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/release"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/resetmail"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/telemetry"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/userdata"
 )
@@ -118,10 +119,17 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	origins := splitCSV(os.Getenv("CORS_ORIGINS"))
 	toucher := presence.New(db, tel.TrustCloudflare, 2*time.Second)
 	sessions := presence.NewSessions(presence.NewMongoSessions(db), toucher, 2*time.Second)
+	// ShadowOps account: Chess Studio of the same environment is the identity
+	// provider (SSO_ISSUER overrides it, e.g. a local Chess Studio).
+	var sso *ssoauth.Verifier
+	if issuer := ssoauth.IssuerFor(os.Getenv("ENVIRONMENT"), os.Getenv("SSO_ISSUER")); issuer != "" {
+		sso = ssoauth.NewVerifier(issuer)
+		log.Printf("ShadowOps SSO: trusting %s", issuer)
+	}
 	base := func() gamesapi.Config {
 		return gamesapi.Config{
 			Accounts: accountstore.New(db, timeout), Presence: toucher, JWTSecret: jwtSecret,
-			AllowedOrigins: origins, TrustCloudflare: tel.TrustCloudflare,
+			AllowedOrigins: origins, TrustCloudflare: tel.TrustCloudflare, SSO: sso,
 		}
 	}
 	guardTimeout := envDurationMS("AUTH_GUARD_MONGO_TIMEOUT_MS", 2000*time.Millisecond)

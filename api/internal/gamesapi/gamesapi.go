@@ -29,6 +29,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamecore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamestore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
 )
 
 // Route patterns as FastAPI reports them (telemetry http.route).
@@ -102,6 +103,9 @@ type Config struct {
 	// share the nginx/sidecar address otherwise).
 	TrustCloudflare bool
 	Now             func() time.Time
+	// SSO accepts ShadowOps account tokens (Chess Studio as identity
+	// provider) besides local sessions; nil keeps local sessions only.
+	SSO *ssoauth.Verifier
 }
 
 type Handler struct {
@@ -113,6 +117,7 @@ type Handler struct {
 	limiter  *limiter
 	now      func() time.Time
 	trustCF  bool
+	sso      *ssoauth.Verifier
 }
 
 func New(cfg Config) (*Handler, error) {
@@ -146,6 +151,7 @@ func New(cfg Config) (*Handler, error) {
 		limiter:  newLimiter(rate, time.Minute),
 		trustCF:  cfg.TrustCloudflare,
 		now:      now,
+		sso:      cfg.SSO,
 	}, nil
 }
 
@@ -203,7 +209,26 @@ func (h *Handler) verify(r *http.Request) (string, int64, error) {
 	if !strings.HasPrefix(header, "Bearer ") {
 		return "", 0, errMissingToken
 	}
-	return sessionauth.VerifySession(header[len("Bearer "):], h.secret, h.now())
+	raw := header[len("Bearer "):]
+	if h.sso != nil && ssoauth.IsToken(raw) {
+		claims, err := h.sso.Verify(r.Context(), raw, h.now())
+		if err != nil {
+			return "", 0, err
+		}
+		return claims.Subject, ssoSessionVersion, nil
+	}
+	return sessionauth.VerifySession(raw, h.secret, h.now())
+}
+
+// ssoSessionVersion marks a subject vouched for by the identity provider:
+// the IdP checked its own session version when it issued the token (it
+// lives an hour), so the local one does not apply.
+const ssoSessionVersion int64 = -1
+
+// SSOAccounts creates the local record of a ShadowOps account the first
+// time it plays here (no password: it signs in through the IdP).
+type SSOAccounts interface {
+	EnsureSSOUser(ctx context.Context, username, createdAt string) error
 }
 
 var errMissingToken = errors.New("missing token")
@@ -215,6 +240,16 @@ func (h *Handler) currentUser(r *http.Request, subject string, version int64, to
 	}
 	if tokenErr != nil {
 		return "", http.StatusUnauthorized, "Sesión inválida o expirada. Inicia sesión de nuevo."
+	}
+	if version == ssoSessionVersion {
+		ensure, ok := h.accounts.(SSOAccounts)
+		if !ok {
+			return "", http.StatusUnauthorized, "Cuenta ShadowOps no admitida aquí."
+		}
+		if err := ensure.EnsureSSOUser(r.Context(), subject, h.now().UTC().Format(time.RFC3339)); err != nil {
+			return "", http.StatusServiceUnavailable, "No se puede verificar la sesión temporalmente."
+		}
+		return subject, 0, ""
 	}
 	exists, accountVersion, err := h.accounts.AuthState(r.Context(), subject)
 	if err != nil {

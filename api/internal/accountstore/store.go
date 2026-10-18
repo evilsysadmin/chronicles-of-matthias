@@ -240,6 +240,26 @@ func (s *Store) Create(ctx context.Context, username, passwordHash, email, creat
 }
 
 // Delete mirrors users_store.delete_user.
+// EnsureSSOUser records a ShadowOps account the first time it plays here.
+// Its password lives with the identity provider: the local hash is empty,
+// so a local password login can never match it. An existing account (the
+// same username registered here before SSO) is left as it is.
+func (s *Store) EnsureSSOUser(ctx context.Context, username, createdAt string) error {
+	queryCtx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	_, err := s.users.UpdateOne(queryCtx, bson.M{"_id": username}, bson.M{"$setOnInsert": bson.D{
+		{Key: "password_hash", Value: ""},
+		{Key: "session_version", Value: int32(0)},
+		{Key: "created_at", Value: createdAt},
+		{Key: "last_activity", Value: createdAt},
+		{Key: "sso", Value: true},
+	}}, options.UpdateOne().SetUpsert(true))
+	if mongo.IsDuplicateKeyError(err) {
+		return nil // created concurrently
+	}
+	return err
+}
+
 func (s *Store) Delete(ctx context.Context, username string) (bool, error) {
 	queryCtx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
