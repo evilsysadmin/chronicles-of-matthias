@@ -502,6 +502,41 @@ export function chroniclesAttackMode(state, memberId) {
   return chroniclesEquippedItem(state, memberId, 'missile') && chroniclesEnemyTargetAhead(state, missile.reach) ? 'missile' : 'melee';
 }
 
+// MM3's Shoot (S) out of combat: every hero on their feet with a missile
+// weapon and something within its range lets fly, in marching order. Each
+// arrow picks whatever stands ahead then, so a creature that falls passes
+// the next arrows on to the one behind it.
+export function chroniclesVolleyShooters(state) {
+  if (!chroniclesUsesMM3Combat(state)) return [];
+  return (state?.party || [])
+    .filter((member) => member.hp > 0 && chroniclesEquippedItem(state, member.id, 'missile'))
+    .filter((member) => chroniclesEnemyTargetAhead(state, chroniclesPartyAttackStats(state, member.id, 'missile').reach))
+    .map((member) => member.id);
+}
+
+function resolveVolley(state) {
+  const shooters = chroniclesVolleyShooters(state);
+  if (!shooters.length) {
+    const armed = (state.party || []).some((member) => member.hp > 0 && chroniclesEquippedItem(state, member.id, 'missile'));
+    return withMessage(state, armed
+      ? 'Las flechas esperan en la cuerda: no hay nada a tiro.'
+      : 'Nadie de la compañía lleva arco, ballesta ni honda en el hueco de proyectil.');
+  }
+  let next = state;
+  const lines = [];
+  for (const memberId of shooters) {
+    const member = partyMember(next, memberId);
+    if (!member || member.hp <= 0) continue;
+    const reach = chroniclesPartyAttackStats(next, memberId, 'missile').reach;
+    if (!chroniclesEnemyTargetAhead(next, reach)) continue;
+    const shot = resolveAttack(next, memberId, null, 'missile');
+    if (shot.message && shot.message !== next.message) lines.push(shot.message);
+    next = shot;
+    if (next.phase === 'defeated') break;
+  }
+  return { ...next, turns: state.turns + 1, message: `¡Andanada! ${lines.join(' ')}`.trim() };
+}
+
 function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const member = partyMember(state, memberId);
   if (!member) return state;
@@ -968,6 +1003,7 @@ export function chroniclesReduce(state, action) {
     const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
     return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode);
   }
+  if (actionType === 'volley') return resolveVolley(state);
   if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
