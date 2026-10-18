@@ -3,7 +3,7 @@ import { ChroniclesCampaignBot, seededRandom } from './chroniclesCampaignBot.js'
 import { MAIN_ROUTE } from './campaignRoute.js';
 
 // A quick slice of the balance bot in the regular suite: the first act must
-// stay playable end to end (talk, sewers, report, Garrah, report). The full
+// stay playable end to end (talk, Tobías, sewers, report, Garrah, report). The full
 // campaign runs with `npm run sim`.
 describe('Chronicles campaign bot', () => {
   it('plays the first act of the main story', () => {
@@ -11,7 +11,7 @@ describe('Chronicles campaign bot', () => {
     Math.random = seededRandom(1);
     try {
       const bot = new ChroniclesCampaignBot({ runId: 'sim-ci' });
-      for (const [label, step] of MAIN_ROUTE.slice(0, 5)) {
+      for (const [label, step] of MAIN_ROUTE.slice(0, 6)) {
         bot.currentLabel = label;
         bot.restIfHurt();
         step(bot);

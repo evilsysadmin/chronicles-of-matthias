@@ -1,6 +1,7 @@
 // The main story as the bot plays it, step by step.
 export const MAIN_ROUTE = [
   ['Aldric', (bot) => bot.interact('swordhaven-first-book', 'swordhaven-mayor')],
+  ['Tobías', (bot) => bot.kill('swordhaven-sewers', 'sewers-smuggler')],
   ['Alcantarillas', (bot) => bot.interact('swordhaven-sewers', 'sewers-sluice-wheel')],
   ['Informe alcantarillas', (bot) => bot.interact('swordhaven-first-book', 'swordhaven-mayor-sewers')],
   ['Garrah', (bot) => bot.kill('banner-road-first-book', 'banner-road-bandit-captain')],

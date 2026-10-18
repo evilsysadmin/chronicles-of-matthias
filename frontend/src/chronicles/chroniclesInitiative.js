@@ -1,5 +1,5 @@
 import { resolveChroniclesEnemyBuildDefinition } from './chroniclesEnemyBuilds.js';
-import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import {
   chroniclesCollapsePartyAfterCombat,
   chroniclesDeployPartyForCombat,
@@ -123,14 +123,32 @@ function enemyEngagementRange(enemy) {
     : attackReach;
 }
 
+// A creature joins a fight only if it is close AND can see the party: a
+// spider three tiles away behind solid masonry must not start combat.
 export function chroniclesEngagedEnemies(state, enemies) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return [];
   const partyPosition = { x: state.x, y: state.y };
   return (Array.isArray(enemies) ? enemies : []).filter((enemy) => {
     if (Number(state?.[enemy?.hpKey] || 0) <= 0) return false;
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
-    return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy);
+    return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
+      && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
   });
+}
+
+// Extra tiles beyond its engage range before a creature that also cannot see
+// the party gives up the chase and leaves the initiative order.
+export const CHRONICLES_COMBAT_LEASH = 2;
+
+// A creature that lost the party (far away and out of sight) is no longer in
+// the fight. Without this, an enemy stuck behind walls kept combat going
+// forever while the party walked off.
+export function chroniclesEnemyLostParty(state, enemy) {
+  if (!enemy || !Number.isFinite(Number(enemy.ai?.engageRange))) return false;
+  const partyPosition = { x: state.x, y: state.y };
+  const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
+  return manhattanDistance(partyPosition, enemyPosition) > enemyEngagementRange(enemy) + CHRONICLES_COMBAT_LEASH
+    && !chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
 }
 
 function actorIsAlive(state, enemyById, actor) {
@@ -170,6 +188,27 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
   const enemyById = new Map((Array.isArray(enemies) ? enemies : []).map((enemy) => [enemy.id, enemy]));
+  const lost = state.initiative.order.filter((actor) => (
+    actor.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
+  ));
+  if (lost.length) {
+    const lostIds = new Set(lost.map((actor) => actor.id));
+    const order = state.initiative.order.filter((actor) => actor.kind !== 'enemy' || !lostIds.has(actor.id));
+    // Keep the cursor on the last remaining actor at or before the current
+    // one, so whoever comes next still gets their turn.
+    const original = state.initiative.order;
+    const at = Math.min(original.length - 1, nonNegativeInteger(state.initiative.cursor));
+    let cursor = order.length - 1;
+    for (let index = at; index >= 0; index -= 1) {
+      const kept = order.findIndex((actor) => actor.kind === original[index].kind && actor.id === original[index].id);
+      if (kept >= 0) { cursor = kept; break; }
+    }
+    state = {
+      ...state,
+      initiative: { ...state.initiative, order, cursor },
+      message: `${lost.map((actor) => actor.name).join(' y ')} ${lost.length === 1 ? 'pierde' : 'pierden'} vuestro rastro.`,
+    };
+  }
   const livingOrder = state.initiative.order.filter((actor) => actorIsAlive(state, enemyById, actor));
   const enemiesRemain = livingOrder.some((actor) => actor.kind === 'enemy');
   if (!enemiesRemain) {

@@ -276,3 +276,41 @@ describe('Chronicles initiative', () => {
     })).toBe(4);
   });
 });
+
+describe('Chronicles combat engagement and leash', () => {
+  // Real sewers map: row 17 is split by a wall at x=8.
+  const tobias = { id: 'tobias', name: 'Tobías', hpKey: 'tobiasHp', x: 9, y: 17, ai: { engageRange: 2, attackReach: 1 } };
+  const party = [{ id: 'matthias', name: 'Matthias', hp: 8, agility: 3 }];
+  const base = { mapId: 'swordhaven-sewers', party, tobiasHp: 5, rpgModifiers: {}, phase: 'explore' };
+
+  it('does not start a fight through a wall', () => {
+    const state = { ...base, x: 7, y: 17 };
+    expect(chroniclesStartInitiativeCombat(state, [tobias], { random: () => 0 }).initiative).toBeFalsy();
+  });
+
+  it('starts a fight when the creature can see the party', () => {
+    const state = { ...base, x: 11, y: 17 };
+    const started = chroniclesStartInitiativeCombat(state, [tobias], { random: () => 0 });
+    expect(started.initiative.order.map((actor) => actor.id)).toContain('tobias');
+  });
+
+  it('ends the fight when the creature has lost the party out of sight', () => {
+    const order = [
+      { kind: 'party', id: 'matthias', name: 'Matthias', initiative: 9 },
+      { kind: 'enemy', id: 'tobias', name: 'Tobías', initiative: 4 },
+    ];
+    const state = { ...base, phase: 'combat', x: 1, y: 15, initiative: { order, cursor: 0, round: 3 } };
+    const next = chroniclesAdvanceCombatInitiative(state, [tobias]);
+    expect(next.initiative).toBeNull();
+    expect(next.phase).toBe('explore');
+  });
+
+  it('keeps fighting a creature that is still close', () => {
+    const order = [
+      { kind: 'party', id: 'matthias', name: 'Matthias', initiative: 9 },
+      { kind: 'enemy', id: 'tobias', name: 'Tobías', initiative: 4 },
+    ];
+    const state = { ...base, phase: 'combat', x: 7, y: 17, initiative: { order, cursor: 0, round: 3 } };
+    expect(chroniclesAdvanceCombatInitiative(state, [tobias]).initiative.order).toHaveLength(2);
+  });
+});
