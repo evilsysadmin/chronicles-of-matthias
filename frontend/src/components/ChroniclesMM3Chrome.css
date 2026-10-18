@@ -879,6 +879,25 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+  /* Arrows speak for themselves; the action buttons (attack, magic/items,
+     use) carry their caption so ✧ and ✦ are never confused. */
+  .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    line-height: 1;
+  }
+  .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) small {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    font-size: .62rem;
+    letter-spacing: .08em;
+  }
 
   /* Faces and gem bars only; numbers live in the tooltip and the sheet. */
   /* The company fills the whole strip under the view, as MM3's faces do. */
