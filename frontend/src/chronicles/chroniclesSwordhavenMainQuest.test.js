@@ -25,7 +25,7 @@ function travel(state, x, y, exitId) {
 
 // The sewers' two goals, as combat and the wheel would leave them.
 function clearSewers(state) {
-  let next = use(state, 15, 9, 'sewers-sluice-wheel');
+  let next = use(state, 19, 17, 'sewers-sluice-wheel');
   next = { ...next, sewersSmugglerHp: 0, sewersSmugglerDefeated: true };
   return next;
 }
@@ -74,7 +74,7 @@ describe('Chronicles · Swordhaven main quest: never «and now what?»', () => {
   it('pays the sewers once, then sends the company after Garrah, then to Vado de Sal', () => {
     let state = travel(use(arrive(), 11, 10, 'swordhaven-mayor'), 13, 13, 'swordhaven-to-sewers');
     // Half the job is not the job.
-    const half = travel(use(state, 15, 9, 'sewers-sluice-wheel'), 1, 1, 'sewers-to-swordhaven');
+    const half = travel(use(state, 19, 17, 'sewers-sluice-wheel'), 1, 1, 'sewers-to-swordhaven');
     expect(chroniclesGoldBalance(use(half, 11, 10, 'swordhaven-mayor-sewers'))).toBe(0);
 
     state = travel(clearSewers(state), 1, 1, 'sewers-to-swordhaven');

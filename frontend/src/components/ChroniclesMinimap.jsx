@@ -6,7 +6,7 @@ import {
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
-  chroniclesAutomapLocalVisibleCells,
+  chroniclesAutomapTouchedCells,
   chroniclesAutomapRevealedCells,
   chroniclesMapCoordinatesLabel,
 } from '../chronicles/chroniclesAutomap.js';
@@ -111,8 +111,8 @@ export default function ChroniclesMinimap({
     [map, visited],
   );
   const localVisible = useMemo(
-    () => chroniclesAutomapLocalVisibleCells(map, state, radius),
-    [map, radius, state?.x, state?.y],
+    () => chroniclesAutomapTouchedCells(map, state),
+    [map, state?.x, state?.y],
   );
   const revealed = useMemo(
     () => new Set([...discovered, ...localVisible]),

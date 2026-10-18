@@ -3,7 +3,7 @@ import { clearStorageMemoryFallback } from '../safeStorage.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
-  chroniclesAutomapLocalVisibleCells,
+  chroniclesAutomapTouchedCells,
   chroniclesAutomapMarkVisited,
   chroniclesAutomapMarkSeen,
   chroniclesAutomapRevealedCells,
@@ -67,69 +67,37 @@ describe('Chronicles automap', () => {
     expect(chroniclesAutomapFacingDegrees(4)).toBe(0);
     expect(chroniclesAutomapFacingDegrees(-1)).toBe(270);
   });
-  it('reveals nearby walkable cells but does not flood through walls', () => {
-    const map = {
-      grid: [
-        '#######',
-        '#..#..#',
-        '#..#..#',
-        '#.....#',
-        '#######',
-      ],
-    };
-
-    const visible = chroniclesAutomapLocalVisibleCells(map, { x: 1, y: 1, direction: 1 }, 3);
-
-    expect(visible.has('1:1')).toBe(true);
-    expect(visible.has('2:1')).toBe(true);
-    expect(visible.has('3:1')).toBe(true);
-    expect(visible.has('4:1')).toBe(false);
-    expect(visible.has('4:2')).toBe(false);
-  });
-
-
 });
 
-describe('Chronicles automap remembers actual sight, not reachable geometry', () => {
+describe('Chronicles automap learns only what the company touches (MM3)', () => {
   const map = { grid: ['#######', '#.....#', '#.###.#', '#.....#', '#######'] };
 
-  it('records forward sight including visible walls, preserving distinct visited tiles', () => {
+  it('records the tile underfoot and the walls around it, nothing ahead', () => {
     const state = { mapId: 'm', x: 1, y: 1, direction: 1 };
-    const seen = chroniclesAutomapMarkSeen({}, map, state, 3);
-    expect(seen.m).toEqual(expect.arrayContaining(['1:1', '2:1:s', '3:1:s', '4:1:s']));
-    expect(seen.m).not.toContain('1:2:s');
-    expect(seen.m).not.toContain('1:3:s');
-    expect(seen.m).not.toContain('2:3:s');
-    expect(seen.m).not.toContain('2:1');
-    const walked = chroniclesAutomapMarkSeen(seen, map, { ...state, x: 2 }, 3);
-    expect(walked.m).toContain('2:1');
-    expect(chroniclesAutomapMarkSeen(seen, map, state, 3)).toBe(seen);
+    const seen = chroniclesAutomapMarkSeen({}, map, state);
+    expect(seen.m).toContain('1:1');
+    expect(seen.m).toEqual(expect.arrayContaining(['0:0:s', '1:0:s', '2:0:s', '0:1:s', '0:2:s', '2:2:s']));
+    // Open floor next to the company stays unknown, however it faces.
+    for (const key of ['2:1', '3:1', '1:2', '1:3']) {
+      expect(seen.m).not.toContain(key);
+      expect(seen.m).not.toContain(`${key}:s`);
+    }
+    expect(chroniclesAutomapMarkSeen(seen, map, { ...state, direction: 2 })).toBe(seen);
   });
 
-  it('discovers a new corridor only when the company turns to see it', () => {
-    const east = chroniclesAutomapMarkSeen({}, map, { mapId: 'm', x: 1, y: 1, direction: 1 });
-    expect(east.m).not.toContain('1:3:s');
-    const south = chroniclesAutomapMarkSeen(east, map, { mapId: 'm', x: 1, y: 1, direction: 2 });
-    expect(south.m).toContain('1:2:s');
-    expect(south.m).toContain('1:3:s');
-    expect(south.m).toContain('3:1:s'); // East remains in explored memory.
+  it('grows the map one step at a time', () => {
+    const first = chroniclesAutomapMarkSeen({}, map, { mapId: 'm', x: 1, y: 1, direction: 1 });
+    const second = chroniclesAutomapMarkSeen(first, map, { mapId: 'm', x: 2, y: 1, direction: 1 });
+    expect(second.m).toContain('2:1');
+    expect(second.m).toContain('3:2:s');
+    expect(second.m).not.toContain('3:1');
+    const revealed = chroniclesAutomapRevealedCells(map, second.m);
+    expect(revealed.has('3:1')).toBe(false);
   });
 
-  it('does not see through a wall, past a right-angle bend, or behind the group', () => {
-    const bend = { grid: ['########', '#....###', '####.###', '####...#', '########'] };
-    const visible = chroniclesAutomapLocalVisibleCells(bend, { x: 1, y: 1, direction: 1 }, 4);
-    expect(visible.has('4:1')).toBe(true);
-    expect(visible.has('4:2')).toBe(false);
-    expect(visible.has('4:3')).toBe(false);
-    expect(visible.has('0:1')).toBe(false);
-  });
-
-  it('shows the nearest wall face but no floor behind it', () => {
-    const blocked = { grid: ['#######', '#.#...#', '#.....#', '#######'] };
-    const seen = chroniclesAutomapMarkSeen({}, blocked, { mapId: 'm', x: 1, y: 1, direction: 1 }, 4);
-    expect(seen.m).toContain('2:1:s');
-    expect(seen.m).not.toContain('3:1:s');
-    expect(chroniclesAutomapRevealedCells(blocked, seen.m).has('3:1')).toBe(false);
+  it('touches nothing outside the grid', () => {
+    expect(chroniclesAutomapTouchedCells(map, { x: 0, y: 0 }).has('-1:-1')).toBe(false);
+    expect(chroniclesAutomapTouchedCells(map, { x: 99, y: 0 }).size).toBe(0);
   });
 });
 
