@@ -104,6 +104,7 @@ import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
+import { chroniclesPullProgression, chroniclesPushProgression } from '../chronicles/chroniclesProgressionSync.js';
 import {
   chroniclesClearSessionResume,
   chroniclesLoadSessionResume,
@@ -224,6 +225,30 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const partyBarkSequenceRef = useRef(0);
   const [progression, setProgression] = useState(() => loadChroniclesProgression());
   const progressionRef = useRef(progression);
+  // The heroes' progression also lives on the server (it follows the account
+  // between devices). Runs bootstrap only once it has been pulled, or the
+  // pull failed and the local copy stands.
+  const [progressionSynced, setProgressionSynced] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    chroniclesPullProgression(progressionRef.current, { signal: controller.signal })
+      .then((pulled) => {
+        if (!active) return;
+        if (pulled.from === 'remote') {
+          const saved = saveChroniclesProgression(pulled.progression);
+          progressionRef.current = saved;
+          setProgression(saved);
+        }
+        if (pulled.needsPush) void chroniclesPushProgression(pulled.progression).catch(() => {});
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setProgressionSynced(true); });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
   // A reload of a playing expedition must return straight to the server
   // checkpoint. An intentional visit to the expedition book stays in 'menu'.
   // Never create a new run as part of the initial render.
@@ -447,6 +472,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const selected = setChroniclesCharacterBuild(progression, build);
     if (!selected.updated) return;
     const saved = saveChroniclesProgression(selected.progression);
+    void chroniclesPushProgression(saved).catch(() => {});
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, ensureChroniclesRun(FIRST_PERSON_RUN_SCOPE));
     progressionRef.current = saved;
     stateRef.current = null;
@@ -798,7 +824,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [clearTouchHold]);
 
   useEffect(() => {
-    if (!characterSetupDone || entryView !== 'playing') return undefined;
+    if (!characterSetupDone || entryView !== 'playing' || !progressionSynced) return undefined;
     const controller = new AbortController();
     let active = true;
 
@@ -887,7 +913,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       controller.abort();
       chroniclesClearRuntimeMapDefinitions();
     };
-  }, [bootstrapRevision, characterSetupDone, entryView]);
+  }, [bootstrapRevision, characterSetupDone, entryView, progressionSynced]);
 
   useEffect(() => {
     let cancelled = false;
@@ -968,6 +994,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       checkpointExistsRef.current = true;
       saveChroniclesAutomapVisited(requestedRunId, visited);
       saveChroniclesProgression(stagedProgression);
+      void chroniclesPushProgression(stagedProgression).catch(() => {});
       chroniclesNoteSavedRunCheckpoint(FIRST_PERSON_RUN_SCOPE, requestedRunId, snapshot.mapId);
       if (reason === 'manual') setSaveNotice('Partida guardada correctamente.');
       return true;

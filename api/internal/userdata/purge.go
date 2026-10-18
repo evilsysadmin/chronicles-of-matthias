@@ -53,6 +53,7 @@ func Purge(ctx context.Context, store Deleter, username string) (Purged, error) 
 			purged.ChroniclesRuns, err = store.DeleteMany(ctx, "chronicles_runs", is("owner"))
 			return err
 		},
+		func() error { return store.DeleteOne(ctx, "chronicles_progression", is("_id")) },
 		func() error { return store.DeleteOne(ctx, "matthias_daily", is("_id")) },
 		func() error { return store.DeleteOne(ctx, "matthias_memory", is("_id")) },
 		func() error { purged.Feedback, err = store.DeleteMany(ctx, "feedback", is("username")); return err },
