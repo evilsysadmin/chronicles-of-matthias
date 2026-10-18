@@ -440,11 +440,28 @@ export function chroniclesMapInteractable(mapOrState, id) {
   return map.interactables.find((entry) => entry.id === id) || null;
 }
 
+// Monsters do not respawn: for every map the company has left, the indices
+// (in map.enemies order) of the ones it killed there. Kept per run.
+export function chroniclesSlainIndices(map, state) {
+  return (map?.enemies || []).flatMap((enemy, index) => (
+    state?.[enemy.hpKey] !== undefined && Number(state[enemy.hpKey]) <= 0 ? [index] : []
+  ));
+}
+
+export function chroniclesMergeSlain(slainByMap, mapId, indices) {
+  const current = slainByMap && typeof slainByMap === 'object' ? slainByMap : {};
+  if (!mapId || !indices?.length) return current;
+  const merged = [...new Set([...(current[mapId] || []), ...indices])].sort((a, b) => a - b);
+  return { ...current, [mapId]: merged };
+}
+
 export function chroniclesMapInitialEnemyState(mapId = DEFAULT_CHRONICLES_MAP_ID, world = null) {
   const map = chroniclesMapById(mapId);
-  return map.enemies.reduce((state, enemy) => {
-    // A named foe whose defeat the world remembers stays down on re-entry.
-    state[enemy.hpKey] = enemy.defeatedFlag && world?.[enemy.defeatedFlag] ? 0 : enemy.maxHp;
+  const slain = new Set(world?.slainEnemies?.[map.id] || []);
+  return map.enemies.reduce((state, enemy, index) => {
+    // A named foe whose defeat the world remembers stays down on re-entry,
+    // and so does anything the company already killed here.
+    state[enemy.hpKey] = (enemy.defeatedFlag && world?.[enemy.defeatedFlag]) || slain.has(index) ? 0 : enemy.maxHp;
     if (enemy.positionKey && enemy.initialPosition) state[enemy.positionKey] = enemy.initialPosition;
     return state;
   }, {});
@@ -461,14 +478,16 @@ function clearedEnemyState(map) {
 export function chroniclesMapTransitionState(state, mapId) {
   const previousMap = chroniclesMapForState(state);
   const map = chroniclesMapById(mapId);
+  const slainEnemies = chroniclesMergeSlain(state?.slainEnemies, previousMap?.id, chroniclesSlainIndices(previousMap, state));
   return {
     ...state,
     ...clearedEnemyState(previousMap),
+    slainEnemies,
     mapId: map.id,
     x: map.partyStart.x,
     y: map.partyStart.y,
     direction: map.partyStart.direction,
-    ...chroniclesMapInitialEnemyState(map.id, state),
+    ...chroniclesMapInitialEnemyState(map.id, { ...state, slainEnemies }),
     ...map.initialFlags,
     phase: 'explore',
     turnPhase: 'party',

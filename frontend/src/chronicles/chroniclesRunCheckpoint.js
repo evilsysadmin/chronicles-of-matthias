@@ -3,6 +3,8 @@ import { chroniclesApplyStartingKit } from './chroniclesStartingKit.js';
 import { chroniclesSpellAvailableTo } from './chroniclesMagic.js';
 import {
   chroniclesMapById,
+  chroniclesMergeSlain,
+  chroniclesSlainIndices,
   chroniclesMapIds,
 } from './chroniclesMapCatalog.js';
 
@@ -222,7 +224,31 @@ function runtimeCheckpointFlags(state) {
     flags[runtimeKey('enemy', enemy.id, 'y')] = enemyY;
   });
 
+  // Who stays dead where (including the current map), as «0,3,7» per map.
+  const currentMap = source.mapId ? chroniclesMapById(source.mapId) : null;
+  const slain = chroniclesMergeSlain(source.slainEnemies, currentMap?.id, chroniclesSlainIndices(currentMap, source));
+  Object.entries(slain).forEach(([mapId, indices]) => {
+    const list = (Array.isArray(indices) ? indices : []).filter((index) => Number.isInteger(index) && index >= 0);
+    if (list.length && mapId.length <= 64) flags[runtimeKey('slain', mapId)] = list.join(',').slice(0, 256);
+  });
+
   return flags;
+}
+
+function slainFromFlags(flags) {
+  const prefix = runtimeKey('slain', '');
+  const slain = {};
+  Object.entries(flags || {}).forEach(([key, value]) => {
+    if (!key.startsWith(prefix) || typeof value !== 'string') return;
+    const mapId = key.slice(prefix.length);
+    let map = null;
+    try { map = chroniclesMapById(mapId); } catch { return; }
+    if (!map || map.id !== mapId) return;
+    const indices = value.split(',').map(Number)
+      .filter((index) => Number.isInteger(index) && index >= 0 && index < map.enemies.length);
+    if (indices.length) slain[mapId] = [...new Set(indices)].sort((a, b) => a - b);
+  });
+  return slain;
 }
 
 function authoredWorldFlags(flags) {
@@ -366,6 +392,8 @@ function applyRuntimeCheckpoint(state, flags) {
     enemyAwareness[enemy.id] = { x: seenX, y: seenY, tick, phase: seenPhase, mapId: state.mapId };
   });
   next.enemyAwareness = enemyAwareness;
+  const slain = slainFromFlags(flags);
+  if (Object.keys(slain).length) next.slainEnemies = slain;
 
   if (
     Array.isArray(next.party)
