@@ -747,6 +747,10 @@ func strs(list []string) A {
 	return out
 }
 
+// A night at the inn restores everyone standing to full, as in MM3 (heal-party
+// caps at each hero's maximum). The fallen still need the temple.
+const innFullRest = 999
+
 func buildTown(code string, people []*O) *O {
 	t := towns[code]
 	stock := shopStock[code]
@@ -755,9 +759,9 @@ func buildTown(code string, people []*O) *O {
 		obj("id", prefix+"-inn", "kind", "service", "x", 7, "y", 10, "visualType", "building-tavern",
 			"label", "Posada · descansar y curar · 8 oro", "lockedLabel", "Posada · necesitas 8 oro",
 			"requirements", A{obj("itemId", "crown-gold", "quantity", 8, "message", "El posadero cobra por adelantado.")},
-			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 8), obj("type", "heal-party", "amount", 12),
+			"action", obj("effects", A{obj("type", "consume-item", "itemId", "crown-gold", "quantity", 8), obj("type", "heal-party", "amount", innFullRest),
 				obj("type", "refill-class-abilities"), obj("type", "restore-spell-points")},
-				"message", "La compañía duerme en la posada de "+t.name+". Heridas curadas, puntos de hechizo recuperados.")),
+				"message", "La compañía duerme en la posada de "+t.name+". Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo.")),
 		obj("id", prefix+"-weapons", "kind", "merchant", "x", 7, "y", 4, "visualType", "building-forge",
 			"label", "Armería de "+t.name, "shop", obj("stock", strs(stock[0])),
 			"action", obj("effects", A{}, "message", "El armero no levanta la vista del afilador: «Mira lo que quieras. Rompes, pagas».")),

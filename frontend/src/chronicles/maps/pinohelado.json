@@ -57,7 +57,7 @@
           },
           {
             "type": "heal-party",
-            "amount": 12
+            "amount": 999
           },
           {
             "type": "refill-class-abilities"
@@ -66,7 +66,7 @@
             "type": "restore-spell-points"
           }
         ],
-        "message": "La compañía duerme en la posada de Pinohelado. Heridas curadas, puntos de hechizo recuperados."
+        "message": "La compañía duerme en la posada de Pinohelado. Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo."
       }
     },
     {
