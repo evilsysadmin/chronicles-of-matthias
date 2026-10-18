@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
@@ -13,15 +13,23 @@ import {
 
 export const CHRONICLES_MINIMAP_RADIUS = 3;
 
-function inWindow(position, state, radius) {
+// Rows stay at 2·radius+1; columns grow with the frame's width so the known
+// map fills the whole black area instead of a square in the middle of it.
+export function chroniclesMinimapRadiusX(radius, aspect) {
+  const ratio = Number(aspect);
+  if (!Number.isFinite(ratio) || ratio <= 1) return radius;
+  return Math.max(radius, Math.ceil(((2 * radius + 1) * ratio - 1) / 2));
+}
+
+function inWindow(position, state, radiusX, radiusY = radiusX) {
   return Boolean(
     position
-    && Math.abs(position.x - state.x) <= radius
-    && Math.abs(position.y - state.y) <= radius
+    && Math.abs(position.x - state.x) <= radiusX
+    && Math.abs(position.y - state.y) <= radiusY
   );
 }
 
-function discoveredLocalMarkers(map, state, revealed, radius) {
+function discoveredLocalMarkers(map, state, revealed, radiusX, radiusY) {
   const groups = [
     ['exit', map?.exits || []],
     ['treasure', map?.treasures || []],
@@ -30,7 +38,7 @@ function discoveredLocalMarkers(map, state, revealed, radius) {
 
   return groups.flatMap(([kind, entries]) => entries.flatMap((entry) => {
     const position = chroniclesMapContentPosition(map, entry);
-    if (!inWindow(position, state, radius)) return [];
+    if (!inWindow(position, state, radiusX, radiusY)) return [];
     if (!revealed.has(chroniclesAutomapCellKey(position.x, position.y))) return [];
     return [{ kind, entry, position }];
   }));
@@ -70,10 +78,10 @@ function Marker({ marker }) {
 
 // The next step towards the objective: a star when it is in view, or an
 // arrow on the rim of the minimap pointing the way when it is not.
-function TargetMarker({ target, state, radius }) {
+function TargetMarker({ target, state, radiusX, radiusY }) {
   const dx = target.x - state.x;
   const dy = target.y - state.y;
-  if (Math.abs(dx) <= radius && Math.abs(dy) <= radius) {
+  if (Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY) {
     return (
       <g className="chronicles-minimap__target" data-chronicles-route-target="in-view">
         <circle cx={target.x + .5} cy={target.y + .5} r=".42" />
@@ -81,7 +89,10 @@ function TargetMarker({ target, state, radius }) {
       </g>
     );
   }
-  const scale = (radius + .1) / Math.max(Math.abs(dx), Math.abs(dy));
+  const scale = Math.min(
+    dx ? (radiusX + .1) / Math.abs(dx) : Infinity,
+    dy ? (radiusY + .1) / Math.abs(dy) : Infinity,
+  );
   const ex = state.x + .5 + dx * scale;
   const ey = state.y + .5 + dy * scale;
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
@@ -102,6 +113,22 @@ export default function ChroniclesMinimap({
   target = null,
 }) {
   const map = chroniclesMapForState(state);
+  const svgRef = useRef(null);
+  const [aspect, setAspect] = useState(1);
+  useEffect(() => {
+    const node = svgRef.current;
+    if (!node || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => {
+      const { width, height } = node.getBoundingClientRect();
+      if (width > 0 && height > 0) setAspect(width / height);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hidden, Boolean(state && map)]);
+  const radiusX = chroniclesMinimapRadiusX(radius, aspect);
+  const radiusY = radius;
   const visited = useMemo(
     () => new Set(Array.isArray(visitedCells) ? visitedCells : []),
     [visitedCells],
@@ -121,13 +148,14 @@ export default function ChroniclesMinimap({
 
   if (hidden || !state || !map) return null;
 
-  const size = radius * 2 + 1;
-  const minX = state.x - radius;
-  const minY = state.y - radius;
+  const width = radiusX * 2 + 1;
+  const height = radiusY * 2 + 1;
+  const minX = state.x - radiusX;
+  const minY = state.y - radiusY;
   const cx = state.x + .5;
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
-  const markers = discoveredLocalMarkers(map, state, discovered, radius);
+  const markers = discoveredLocalMarkers(map, state, discovered, radiusX, radiusY);
 
   return (
     <button
@@ -139,7 +167,9 @@ export default function ChroniclesMinimap({
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
       <svg
-        viewBox={`${minX} ${minY} ${size} ${size}`}
+        ref={svgRef}
+        viewBox={`${minX} ${minY} ${width} ${height}`}
+        preserveAspectRatio="xMidYMid slice"
         role="img"
         aria-label={`Entorno explorado en un radio de ${radius} casillas`}
       >
@@ -150,7 +180,7 @@ export default function ChroniclesMinimap({
           </pattern>
         </defs>
         {map.grid.flatMap((row, y) => Array.from(row).map((tile, x) => {
-          if (Math.abs(x - state.x) > radius || Math.abs(y - state.y) > radius) return null;
+          if (Math.abs(x - state.x) > radiusX || Math.abs(y - state.y) > radiusY) return null;
           const key = chroniclesAutomapCellKey(x, y);
           if (!revealed.has(key)) return null;
           return (
@@ -174,7 +204,7 @@ export default function ChroniclesMinimap({
             marker={marker}
           />
         ))}
-        {target && <TargetMarker target={target} state={state} radius={radius} />}
+        {target && <TargetMarker target={target} state={state} radiusX={radiusX} radiusY={radiusY} />}
         <g
           className="chronicles-minimap__party"
           transform={`rotate(${facing} ${cx} ${cy})`}
