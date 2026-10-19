@@ -38,7 +38,7 @@ describe('Chronicles S · visible pre-contact shots even without a target (#134)
       .toEqual(['bow', 'crossbow', 'sling']);
     const resolved = chroniclesReduce(empty, { type: 'volley' });
     expect(resolved.message).toMatch(/dispara al frente/i);
-    expect(resolved.turns).toBe(empty.turns);
+    expect(resolved.turns).toBe(empty.turns + 1);
     expect(chroniclesActionAudioCue(empty, resolved, 'volley'))
       .toBe('volley:bow,crossbow,sling');
   });
