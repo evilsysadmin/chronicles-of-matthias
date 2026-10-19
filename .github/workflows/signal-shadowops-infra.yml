@@ -1,0 +1,86 @@
+name: Signal ShadowOps Chronicles staging after green source CI
+on:
+  workflow_run:
+    workflows:
+      - Chronicles CI
+      - Chronicles frontend
+      - Chronicles API
+    types: [completed]
+    branches: [main]
+
+# workflow_run can access secrets: NEVER checkout the triggering commit,
+# trust PR artifacts, accept fork runs, or run code from event payloads.
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: chronicles-infra-signal-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  signal:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      INFRA_ACTIONS_TOKEN: ${{ secrets.SHADOWOPS_INFRA_ACTIONS_TOKEN }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Require current protected source main with three green workflows
+        id: admit
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$SOURCE_SHA"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          head="$(gh api repos/evilsysadmin/chronicles-of-matthias/commits/main --jq .sha)"
+          if [[ "$sha" != "$head" ]]; then
+            echo 'Older source run superseded by a newer main commit'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          runs="$(gh api -X GET repos/evilsysadmin/chronicles-of-matthias/actions/runs \
+            -f head_sha="$sha" -f event=push -f per_page=100)"
+          # Only complete successful push workflows of this exact SHA matter.
+          # Infra independently revalidates all three with stronger identities.
+          if ! jq -e --arg sha "$sha" '
+            (.total_count <= 100) and (
+              [385763056,386812503,387132683] as $ids |
+              all($ids[]; . as $id |
+                ([.workflow_runs[]? | select(.workflow_id == $id and .head_sha == $sha and
+                  .event == "push" and .head_branch == "main" and
+                  .repository.full_name == "evilsysadmin/chronicles-of-matthias")] |
+                  max_by(.id)) as $run |
+                $run != null and $run.status == "completed" and $run.conclusion == "success"
+              )
+            )
+          ' <<<"$runs" >/dev/null; then
+            echo 'Source checks not all green yet; the last completed workflow or hourly Infra poll will retry'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Dispatch only the two dedicated staging CD workflows
+        if: steps.admit.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$INFRA_ACTIONS_TOKEN" ]]; then
+            echo '::notice title=Optional instant CD disabled::Set SHADOWOPS_INFRA_ACTIONS_TOKEN with Actions:write on evilsysadmin/shadowops-infra; hourly Infra polls remain active.'
+            exit 0
+          fi
+          # Never pass the token, SHA or environment from an untrusted payload.
+          GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-api-staging.yml \
+            --repo evilsysadmin/shadowops-infra --ref main \
+            -f action=deploy -f environment=staging \
+            -f source_sha="$SOURCE_SHA" -f only_if_new=true
+          GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-pages-release.yml \
+            --repo evilsysadmin/shadowops-infra --ref main \
+            -f environment=staging -f source_sha="$SOURCE_SHA" -f only_if_new=true
+          echo "Dispatched staging source SHA $SOURCE_SHA to ShadowOps Infra"
