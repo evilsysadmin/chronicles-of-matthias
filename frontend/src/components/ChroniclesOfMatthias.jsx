@@ -9,6 +9,7 @@ import {
   chroniclesPartyAttackStats,
   chroniclesAttackMode,
   chroniclesOpeningVolleyShooters,
+  chroniclesOpeningVolleyShots,
   chroniclesJournalEntries,
   chroniclesObjective,
   chroniclesReduce,
@@ -776,10 +777,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       attackWithSelected('missile');
       return;
     }
-    const shooters = chroniclesOpeningVolleyShooters(current);
-    const maxReach = Math.max(0, ...shooters.map((member) => chroniclesPartyAttackStats(current, member.id, 'missile').reach));
-    if (maxReach > 0 && chroniclesEnemyTargetAhead(current, maxReach)) {
-      engineRef.current?.playAttack?.(shooters[0].id);
+    const shots = chroniclesOpeningVolleyShots(current).shots;
+    if (shots.length) {
+      if (engineRef.current?.playVolley) engineRef.current.playVolley(shots.map((shot) => shot.memberId));
+      else engineRef.current?.playAttack?.(shots[0].memberId);
     }
     dispatch({ type: 'volley' });
   }, [attackWithSelected, dispatch]);
