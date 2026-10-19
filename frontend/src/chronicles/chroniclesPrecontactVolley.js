@@ -1,9 +1,21 @@
-import { chroniclesActiveEnemies, chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
 import {
   chroniclesResolveEnemyActor,
   chroniclesRuntimeEnemyPosition,
 } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+
+// A single touch attack button advertises the *company* salvo even when
+// the selected member has no bow. Melee adjacent targets keep attack priority.
+// Do not expose the salvos in initiative: there S is the active hero's shot.
+export function chroniclesTouchVolleyOpportunity(state) {
+  if (!state || state.combatRules !== 'mm3' || state.phase !== 'explore'
+    || state.initiative || chroniclesEnemyTargetAhead(state, 1)) {
+    return { available: false, shooters: 0 };
+  }
+  const shooters = chroniclesOpeningVolleyShots(state).shots.length;
+  return { available: shooters > 0, shooters };
+}
 
 // The party occupies the camera tile while exploring (as opposed to the
 // deployed four-cell formation during initiative). Only physical adjacency

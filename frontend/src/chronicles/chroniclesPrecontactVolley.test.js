@@ -9,6 +9,7 @@ import {
 import {
   chroniclesAdvanceOpeningVolley,
   chroniclesPrecontactMeleeContact,
+  chroniclesTouchVolleyOpportunity,
 } from './chroniclesPrecontactVolley.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
@@ -52,6 +53,27 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
     // authored AI has at most one action and cannot cross several tiles.
     expect(movement).toBeLessThanOrEqual(2);
     expect((next.enemyTurnEvents || []).filter((event) => event.type === 'attack').length).toBeLessThanOrEqual(1);
+  });
+
+  it('exposes group shooting on touch independently of the selected hero, while giving adjacency to melee', () => {
+    const base = rangedCompany();
+    // In the canonical road fixture the deserter starts *adjacent* at x11.
+    // Reposition it to x12 to exercise a genuinely ranged encounter.
+    const target = chroniclesEnemyTargetAhead(base, 3);
+    const ranged = {
+      ...base,
+      enemyPositions: { ...base.enemyPositions, [target.enemy.id]: { x: base.x + 2, y: base.y } },
+    };
+    expect(chroniclesTouchVolleyOpportunity(ranged)).toEqual({ available: true, shooters: 2 });
+    // No weapon, no magical projectile: the button stays on melee.
+    expect(chroniclesTouchVolleyOpportunity({ ...ranged, equipment: {} }))
+      .toEqual({ available: false, shooters: 0 });
+    const adjacent = {
+      ...ranged,
+      enemyPositions: { ...ranged.enemyPositions, [target.enemy.id]: { x: base.x + 1, y: base.y } },
+    };
+    expect(chroniclesTouchVolleyOpportunity(adjacent).available).toBe(false);
+    expect(chroniclesTouchVolleyOpportunity({ ...base, initiative: { order: [] } }).available).toBe(false);
   });
 
   it('does not grant an enemy response when no legal shot was launched', () => {
