@@ -642,3 +642,77 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Backpack browsing stays within the existing folio; only one Equipar
+   action lives in the selected item's details, not in a giant button list. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack {
+  min-width: 0;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-tools {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters button {
+  min-height: 40px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid #806346;
+  background: #2e261e;
+  color: #f2d9ad;
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters button[aria-pressed='true'] {
+  border-color: #f1c783;
+  background: #675034;
+  color: #fff4d9;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters small {
+  font-size: .82em;
+  color: #e3cda8;
+  font-variant-numeric: tabular-nums;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-search {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #dec69d;
+  font-size: .92rem;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #896f4e;
+  border-radius: 2px;
+  background: #18130f;
+  color: #fff1d7;
+  font: inherit;
+  font-size: 1rem;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters button:focus-visible,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-search input:focus-visible {
+  outline: 2px solid #f4c778;
+  outline-offset: 2px;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-count,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-empty {
+  color: #cdbb9e;
+  line-height: 1.4;
+}
+@media (max-width: 430px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__backpack-filters button {
+    min-height: 44px;
+    padding: 8px;
+    font-size: .85rem;
+  }
+}
