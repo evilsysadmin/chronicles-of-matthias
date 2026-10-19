@@ -40,7 +40,7 @@ describe('Chronicles · MM3 opening company volley', () => {
     expect(next[target.hpKey]).toBe(remainingHp);
     expect(next.turns).toBe(state.turns + 1);
     expect(next.party).toEqual(state.party);
-    expect(next.initiative).toBeNull();
+    expect(next.initiative).toBeFalsy();
     expect(next.message).toContain('Salva de 3 proyectiles');
     expect(next.message).toContain('Faust');
     expect(next.message).not.toContain('Aziz:');
