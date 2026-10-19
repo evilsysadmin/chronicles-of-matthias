@@ -1,7 +1,7 @@
 import { getAudioContext } from '../audioContext.js';
 import { getChroniclesFxVolume } from './chroniclesAudioSettings.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
-import { chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
+import { chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 
 function actionType(action) {
@@ -47,11 +47,11 @@ export function chroniclesActionAudioCue(previous, next, action) {
   }
 
   if (type === 'volley') {
-    const fired = chroniclesOpeningVolleyShots(previous).shots;
+    const fired = chroniclesVolleyPresentationShooterIds(previous);
     if (!fired.length) return null;
     // Preserve one audible event for each actual projectile; an archer,
     // crossbowman and slinger sound distinct even in the same company.
-    const families = fired.map(({ memberId }) => (
+    const families = fired.map((memberId) => (
       chroniclesEquippedItem(previous, memberId, 'missile')?.weaponFamily || 'bow'
     ));
     return `volley:${families.join(',')}`;

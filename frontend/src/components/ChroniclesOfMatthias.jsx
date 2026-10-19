@@ -31,6 +31,7 @@ import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
+import { chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
@@ -790,10 +791,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       attackWithSelected('missile');
       return;
     }
-    const shots = chroniclesOpeningVolleyShots(current).shots;
-    if (shots.length) {
-      if (engineRef.current?.playVolley) engineRef.current.playVolley(shots.map((shot) => shot.memberId));
-      else engineRef.current?.playAttack?.(shots[0].memberId);
+    // An empty corridor still gets actual visible launches from armed heroes.
+    // Only the combat reducer decides whether those shots hit anything.
+    const shooterIds = chroniclesVolleyPresentationShooterIds(current);
+    if (shooterIds.length) {
+      if (engineRef.current?.playVolley) engineRef.current.playVolley(shooterIds);
+      else engineRef.current?.playAttack?.(shooterIds[0]);
     }
     dispatch({ type: 'volley' });
   }, [attackWithSelected, dispatch]);
