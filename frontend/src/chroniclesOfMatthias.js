@@ -532,7 +532,9 @@ function resolveOpeningVolley(state) {
     return withMessage(state, 'Salva imposible: nadie lleva un arma de proyectiles equipada que su clase pueda usar.');
   }
   if (!target || !shots.length) {
-    return withMessage(state, 'La compañía dispara al frente, pero no hay enemigos al alcance: los proyectiles se pierden en la distancia.');
+    // Firing into empty air costs a turn but is not a narrative event.
+    // Visual missile FX and audio are selected separately by the UI.
+    return withMessage(state, '');
   }
   const damage = shots.reduce((total, shot) => total + shot.damage, 0);
   const report = shots.map((shot) => `${shot.name}: ${shot.hit ? 'acierta' : 'falla'}`).join(' · ');
