@@ -642,6 +642,47 @@ function createCombatFx(camera) {
   return { group, slash, ring, slashMaterial, ringMaterial };
 }
 
+// Camera-local trajectories are deterministic and independent of FPS: one
+// physical projectile per valid shooter, converging into the forward view.
+export function chroniclesVolleyFlightPositions(count, progress) {
+  const shots = Math.max(0, Math.min(6, Math.floor(Number(count) || 0)));
+  const t = THREE.MathUtils.clamp(Number(progress) || 0, 0, 1);
+  return Array.from({ length: shots }, (_, index) => ({
+    x: (index - (shots - 1) / 2) * 0.38 * (1 - t * 0.62),
+    y: -0.34 + 0.27 * t,
+    z: -0.72 - 3.8 * t,
+  }));
+}
+
+function createVolleyFx(camera) {
+  const group = new THREE.Group();
+  group.name = 'chronicles-party-projectile-volley';
+  group.visible = false;
+  const shaftGeometry = new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6);
+  const tipGeometry = new THREE.ConeGeometry(0.043, 0.12, 6);
+  const fletchingGeometry = new THREE.BoxGeometry(0.105, 0.018, 0.075);
+  const wood = new THREE.MeshBasicMaterial({ color: 0xe7b56d, depthTest: false, depthWrite: false });
+  const metal = new THREE.MeshBasicMaterial({ color: 0xdfe6e3, depthTest: false, depthWrite: false });
+  const feather = new THREE.MeshBasicMaterial({ color: 0xeee0c7, depthTest: false, depthWrite: false });
+  const projectiles = Array.from({ length: 6 }, () => {
+    const root = new THREE.Group();
+    const shaft = new THREE.Mesh(shaftGeometry, wood);
+    shaft.rotation.x = Math.PI / 2;
+    const head = new THREE.Mesh(tipGeometry, metal);
+    head.rotation.x = -Math.PI / 2;
+    head.position.z = -0.265;
+    const vanes = new THREE.Mesh(fletchingGeometry, feather);
+    vanes.position.z = 0.23;
+    for (const mesh of [shaft, head, vanes]) mesh.renderOrder = 21;
+    root.add(shaft, head, vanes);
+    root.visible = false;
+    group.add(root);
+    return root;
+  });
+  camera.add(group);
+  return { group, projectiles };
+}
+
 export function createChroniclesOfMatthiasGame(host, {
   onReady,
   initialState = null,
@@ -669,6 +710,7 @@ export function createChroniclesOfMatthiasGame(host, {
   camera.rotation.order = 'YXZ';
   scene.add(camera);
   const combatFx = createCombatFx(camera);
+  const volleyFx = createVolleyFx(camera);
 
   // Every authored outdoor region uses the campaign exterior, except the
   // legacy Swordhaven square, which keeps its own historic builder.
@@ -716,6 +758,8 @@ export function createChroniclesOfMatthiasGame(host, {
   let frame = 0;
   let attackFxStartedAt = -1;
   let attackFxConfig = ATTACK_FX.matthias;
+  let volleyFxStartedAt = -1;
+  let volleyFxCount = 0;
   const enemyHitStartedAt = new Map();
   const enemyAttackStartedAt = new Map();
   const enemyDeathStartedAt = new Map();
@@ -840,6 +884,13 @@ export function createChroniclesOfMatthiasGame(host, {
     combatFx.slash.scale.set(attackFxConfig.width, 1, 1);
     combatFx.ring.scale.setScalar(attackFxConfig.ring);
     combatFx.group.visible = true;
+  }
+
+  function playVolley(shooterIds = []) {
+    if (reducedMotion || destroyed) return;
+    volleyFxCount = Math.min(6, Array.isArray(shooterIds) ? shooterIds.length : 0);
+    volleyFxStartedAt = clock.getElapsedTime();
+    volleyFx.group.visible = volleyFxCount > 0;
   }
 
   function wrapAngle(value) {
@@ -978,6 +1029,19 @@ export function createChroniclesOfMatthiasGame(host, {
         }
       });
 
+      const volleyElapsed = time - volleyFxStartedAt;
+      const volleyVisible = volleyFxCount > 0 && volleyElapsed >= 0 && volleyElapsed < 0.42;
+      volleyFx.group.visible = volleyVisible;
+      if (volleyVisible) {
+        const positions = chroniclesVolleyFlightPositions(volleyFxCount, volleyElapsed / 0.42);
+        volleyFx.projectiles.forEach((arrow, index) => {
+          arrow.visible = index < positions.length;
+          if (!arrow.visible) return;
+          const position = positions[index];
+          arrow.position.set(position.x, position.y, position.z);
+        });
+      }
+
       const fxElapsed = time - attackFxStartedAt;
       if (fxElapsed >= 0 && fxElapsed < 0.24) {
         const progress = fxElapsed / 0.24;
@@ -1027,6 +1091,7 @@ export function createChroniclesOfMatthiasGame(host, {
   return {
     renderState: syncState,
     playAttack,
+    playVolley,
     destroy() {
       if (destroyed) return;
       destroyed = true;
