@@ -21,6 +21,7 @@ import {
 } from './chronicles/chroniclesDungeonLighting.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
+import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -654,35 +655,6 @@ export function chroniclesVolleyFlightPositions(count, progress) {
   }));
 }
 
-function createVolleyFx(camera) {
-  const group = new THREE.Group();
-  group.name = 'chronicles-party-projectile-volley';
-  group.visible = false;
-  const shaftGeometry = new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6);
-  const tipGeometry = new THREE.ConeGeometry(0.043, 0.12, 6);
-  const fletchingGeometry = new THREE.BoxGeometry(0.105, 0.018, 0.075);
-  const wood = new THREE.MeshBasicMaterial({ color: 0xe7b56d, depthTest: false, depthWrite: false });
-  const metal = new THREE.MeshBasicMaterial({ color: 0xdfe6e3, depthTest: false, depthWrite: false });
-  const feather = new THREE.MeshBasicMaterial({ color: 0xeee0c7, depthTest: false, depthWrite: false });
-  const projectiles = Array.from({ length: 6 }, () => {
-    const root = new THREE.Group();
-    const shaft = new THREE.Mesh(shaftGeometry, wood);
-    shaft.rotation.x = Math.PI / 2;
-    const head = new THREE.Mesh(tipGeometry, metal);
-    head.rotation.x = -Math.PI / 2;
-    head.position.z = -0.265;
-    const vanes = new THREE.Mesh(fletchingGeometry, feather);
-    vanes.position.z = 0.23;
-    for (const mesh of [shaft, head, vanes]) mesh.renderOrder = 21;
-    root.add(shaft, head, vanes);
-    root.visible = false;
-    group.add(root);
-    return root;
-  });
-  camera.add(group);
-  return { group, projectiles };
-}
-
 export function createChroniclesOfMatthiasGame(host, {
   onReady,
   initialState = null,
@@ -710,7 +682,7 @@ export function createChroniclesOfMatthiasGame(host, {
   camera.rotation.order = 'YXZ';
   scene.add(camera);
   const combatFx = createCombatFx(camera);
-  const volleyFx = createVolleyFx(camera);
+  const volleyFx = createChroniclesVolleyProjectileArt(THREE, camera);
 
   // Every authored outdoor region uses the campaign exterior, except the
   // legacy Swordhaven square, which keeps its own historic builder.
@@ -888,7 +860,7 @@ export function createChroniclesOfMatthiasGame(host, {
 
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
-    volleyFxCount = Math.min(6, Array.isArray(shooterIds) ? shooterIds.length : 0);
+    volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
     volleyFxStartedAt = clock.getElapsedTime();
     volleyFx.group.visible = volleyFxCount > 0;
   }
@@ -1034,11 +1006,16 @@ export function createChroniclesOfMatthiasGame(host, {
       volleyFx.group.visible = volleyVisible;
       if (volleyVisible) {
         const positions = chroniclesVolleyFlightPositions(volleyFxCount, volleyElapsed / 0.42);
-        volleyFx.projectiles.forEach((arrow, index) => {
-          arrow.visible = index < positions.length;
-          if (!arrow.visible) return;
+        volleyFx.projectiles.forEach((projectile, index) => {
+          projectile.visible = index < positions.length;
+          if (!projectile.visible) return;
           const position = positions[index];
-          arrow.position.set(position.x, position.y, position.z);
+          // The sling's stone describes a modest arc; shafts stay straight.
+          const flight = volleyElapsed / 0.42;
+          const arc = projectile.userData.volleyKind === 'sling'
+            ? Math.sin(Math.PI * flight) * 0.16 : 0;
+          projectile.position.set(position.x, position.y + arc, position.z);
+          projectile.rotation.z = projectile.userData.volleyKind === 'sling' ? flight * 1.7 : 0;
         });
       }
 
