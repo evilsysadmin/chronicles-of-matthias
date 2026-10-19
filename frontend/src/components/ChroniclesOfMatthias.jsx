@@ -8,6 +8,7 @@ import {
   chroniclesContextualContentAction,
   chroniclesPartyAttackStats,
   chroniclesAttackMode,
+  chroniclesOpeningVolleyShooters,
   chroniclesJournalEntries,
   chroniclesObjective,
   chroniclesReduce,
@@ -563,14 +564,22 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         : actionType === 'use-item' && CHRONICLES_CONSUMABLES[action.itemId]?.kind === 'scroll'
           ? CHRONICLES_CONSUMABLES[action.itemId].spell
           : null;
-      const offensive = actionType === 'attack' || Boolean(offensiveSpell);
-      const exploratoryNext = offensive ? current : chroniclesGridExplorationStep(current, action);
+      const openingVolley = actionType === 'volley' && current.combatRules === 'mm3';
+      const openingShooters = openingVolley ? chroniclesOpeningVolleyShooters(current) : [];
+      const volleyReach = Math.max(0, ...openingShooters.map((member) => chroniclesPartyAttackStats(current, member.id, 'missile').reach));
+      const volleyTarget = volleyReach > 0 ? chroniclesEnemyTargetAhead(current, volleyReach) : null;
+      const offensive = actionType === 'attack' || openingVolley || Boolean(offensiveSpell);
+      // A collective salvo lands before combat is deployed. No separate
+      // retaliation or initiative action is spent by each archer.
+      const exploratoryNext = openingVolley
+        ? chroniclesReduce(current, action)
+        : offensive ? current : chroniclesGridExplorationStep(current, action);
       const attackingMember = offensive && typeof action === 'object'
         ? current.party.find((member) => member.id === action.memberId)
         : null;
-      const forcedTarget = attackingMember
+      const forcedTarget = volleyTarget || (attackingMember
         ? chroniclesEnemyTargetAhead(current, offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id, action.mode || 'auto').reach)
-        : null;
+        : null);
       // Entering an area is not a tactical movement inside it. The player
       // gets to see the new room/return portal before enemies can engage.
       const transitionedMap = exploratoryNext?.mapId !== current.mapId;
@@ -578,13 +587,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         exploratoryNext,
         chroniclesActiveEnemies(exploratoryNext),
         {
-          forceEnemyIds: forcedTarget ? [forcedTarget.enemy.id] : [],
+          forceEnemyIds: forcedTarget && Number(exploratoryNext[forcedTarget.enemy.hpKey] || 0) > 0 ? [forcedTarget.enemy.id] : [],
         },
       );
       next = started !== exploratoryNext
         ? started
         : offensive
-          ? chroniclesReduce(current, action)
+          ? openingVolley ? exploratoryNext : chroniclesReduce(current, action)
           : exploratoryNext;
     } else {
       next = chroniclesReduce(current, action);
@@ -757,6 +766,23 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (!startsCombat) engineRef.current?.playAttack?.(memberId);
     dispatch(mode === 'auto' ? { type: 'attack', memberId } : { type: 'attack', memberId, mode });
   }, [dispatch]);
+
+  // S is a company volley before initiative; once engaged it is the
+  // current hero's ordinary missile attack.
+  const shootWithParty = useCallback(() => {
+    const current = stateRef.current;
+    if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
+    if (current.initiative || current.combatRules !== 'mm3') {
+      attackWithSelected('missile');
+      return;
+    }
+    const shooters = chroniclesOpeningVolleyShooters(current);
+    const maxReach = Math.max(0, ...shooters.map((member) => chroniclesPartyAttackStats(current, member.id, 'missile').reach));
+    if (maxReach > 0 && chroniclesEnemyTargetAhead(current, maxReach)) {
+      engineRef.current?.playAttack?.(shooters[0].id);
+    }
+    dispatch({ type: 'volley' });
+  }, [attackWithSelected, dispatch]);
 
   const applyLiveProgression = useCallback((nextProgression) => {
     // Character-sheet spending is also part of the player's next saved game.
@@ -1155,7 +1181,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (event.key === 'a' || event.key === 'A' || event.key === 's' || event.key === 'S') {
         event.preventDefault();
         if (event.repeat) return;
-        attackWithSelected(event.key.toLowerCase() === 'a' ? 'melee' : 'missile');
+        if (event.key.toLowerCase() === 'a') attackWithSelected('melee');
+        else shootWithParty();
         return;
       }
       if (event.key === 'c' || event.key === 'C') {
@@ -1176,7 +1203,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [attackWithSelected, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, quickStatusOpen, ready, sheetMemberId, spellMenuOpen]);
+  }, [attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, quickStatusOpen, ready, sheetMemberId, spellMenuOpen]);
 
   const startFreshGame = (entryMapId = null) => {
     chroniclesClearPlayingRun();
@@ -1616,8 +1643,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   className="is-attack"
                   data-chronicles-touch-action="attack"
-                  onClick={() => attackWithSelected()}
-                  aria-label={plannedAttackMode === 'missile' ? 'Disparar (S)' : 'Atacar (A)'}
+                  onClick={() => plannedAttackMode === 'missile' ? shootWithParty() : attackWithSelected()}
+                  aria-label={plannedAttackMode === 'missile' ? 'Salva de proyectiles (S)' : 'Atacar (A)'}
                   title="A · atacar cuerpo a cuerpo · S · disparar"
                 >{plannedAttackMode === 'missile' ? '➶' : '⚔'}<small>{selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
