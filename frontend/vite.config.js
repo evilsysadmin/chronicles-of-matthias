@@ -15,7 +15,7 @@ function chroniclesReleaseManifest() {
       this.emitFile({
         type: 'asset',
         fileName: 'release.json',
-        source: JSON.stringify(manifest) + '\\n',
+        source: JSON.stringify(manifest),
       });
     },
   };
