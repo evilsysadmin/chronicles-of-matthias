@@ -29,7 +29,12 @@ jobs:
         env:
           VITE_API_URL: https://chronicles-api-staging.shadowops.dpdns.org/api
           VITE_BUILD_SHA: ${{ github.sha }}
-        run: npm run build
+        run: |
+          set -euo pipefail
+          npm run build
+          # Browser notice must compare the same immutable SHA as the bundle.
+          test -s dist/release.json
+          node -e "const m=require('./dist/release.json');if(m.build!==process.env.VITE_BUILD_SHA) process.exit(1)"
       - name: Verify the real game is in the bundle
         run: |
           set -euo pipefail
