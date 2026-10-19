@@ -32,8 +32,13 @@ describe('ChroniclesCharacterSetup', () => {
     expect(html).toContain('chronicles-character-setup__hero-grid');
     expect((html.match(/chronicles-character-setup__hero-plaque/g) || []).length).toBe(4);
     expect(html).toContain('matthias-chronicles-canonical-v3');
-    expect(html).toContain('Entrar con grupo canónico');
-    expect(html).toContain('Crear PJs');
+    expect(html).toContain('Empezar con este grupo');
+    expect(html).toContain('Crear mis personajes');
+    expect(html).toContain('¿Primera expedición?');
+    expect(html).toContain('¿Qué aporta cada aventurero?');
+    expect(html).toContain('data-testid="chronicles-party-role-guide"');
+    expect(html).toContain('Matthias · Caballero');
+    expect(html).toContain('Aziz · Clérigo');
     expect(html).not.toContain('COMPAÑÍA GUARDADA');
   });
 
@@ -69,7 +74,9 @@ describe('ChroniclesCharacterSetup', () => {
 
     expect(html).toContain('COMPAÑÍA GUARDADA');
     expect(html).toContain('Continuar con mi compañía');
-    expect(html).toContain('Editar PJs');
+    expect(html).toContain('Tu compañía está lista.');
+    expect(html).toContain('data-testid="chronicles-party-role-guide"');
+    expect(html).toContain('Editar personajes');
     expect(html).toContain('Volver al grupo canónico');
   });
 });
