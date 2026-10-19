@@ -8,6 +8,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
+import { applyChroniclesTacticsProgression, createChroniclesProgression, chroniclesKillXp } from '../chroniclesOfMatthiasProgression.js';
 
 function volleyCompany() {
   const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
@@ -57,6 +58,35 @@ describe('Chronicles · MM3 opening company volley', () => {
     const result = chroniclesReduce(state, 'volley');
     expect(result.message).toMatch(/Salva de 1 proyectil/);
     expect(result.turns).toBe(state.turns + 1);
+  });
+
+  it('credits useful damage XP to the actual projectile owners and shares the kill only once', () => {
+    const state = volleyCompany();
+    const target = chroniclesOpeningVolleyShots(state).target;
+    expect(target).toBeTruthy();
+    const previous = { ...state, [target.hpKey]: 4 };
+    const next = { ...previous, [target.hpKey]: 0, turns: previous.turns + 1 };
+    const args = {
+      actorMemberId: 'knight',
+      actionKind: 'volley',
+      volleyContributions: {
+        enemyId: target.id,
+        shots: [
+          { memberId: 'matthias', damage: 2 },
+          { memberId: 'knight', damage: 2 },
+        ],
+      },
+      runId: 'mm3-volley-xp-regression',
+    };
+    const first = applyChroniclesTacticsProgression(createChroniclesProgression(), previous, next, args);
+    const killShare = Math.ceil(chroniclesKillXp(target) / 4);
+    expect(first.progression.heroes.matthias.xp).toBe(killShare + 1);
+    expect(first.progression.heroes.knight.xp).toBe(killShare + 1);
+    expect(first.progression.heroes.rook.xp).toBe(killShare);
+    expect(first.progression.heroes.bishop.xp).toBe(killShare);
+    // Replaying/checkpoint retry must not pay the same volley twice.
+    const duplicate = applyChroniclesTacticsProgression(first.progression, previous, next, args);
+    expect(duplicate.awards).toEqual([]);
   });
 
   it('does not conjure arrows without equipped legal ranged weapons, and refuses group fire inside initiative', () => {

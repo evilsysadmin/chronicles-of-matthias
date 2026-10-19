@@ -711,10 +711,12 @@ export function chroniclesKillXp(enemy) {
   return 5 + Math.max(1, nonNegativeInteger(enemy?.maxHp));
 }
 
-function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace) {
+function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace, originHp = before) {
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
-    if ((before - 1 - hp) % CHRONICLES_DAMAGE_XP_EVERY_HP !== 0) continue;
+    // Preserve the original per-blow XP budget across different shooters:
+    // splitting 4 HP into two 2-HP shots must not create extra XP.
+    if ((originHp - 1 - hp) % CHRONICLES_DAMAGE_XP_EVERY_HP !== 0) continue;
     next = award(
       next,
       awards,
@@ -747,6 +749,7 @@ function awardHealingBudget(progress, awards, levelUps, memberId, targetId, befo
 export function applyChroniclesTacticsProgression(progression, previous, next, {
   actorMemberId = null,
   actionKind = 'action',
+  volleyContributions = null,
   runId,
 } = {}) {
   let progress = normalizeChroniclesProgression(progression);
@@ -763,7 +766,28 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
       const before = enemyHp(previous, enemy);
       const after = enemyHp(next, enemy);
       if (after >= before) return;
-      progress = awardDamageBudget(progress, awards, levelUps, actorMemberId, enemy, before, after, namespace);
+      const volleyShots = actionKind === 'volley' && volleyContributions?.enemyId === enemy.id
+        && Array.isArray(volleyContributions?.shots) ? volleyContributions.shots : null;
+      if (volleyShots) {
+        let remaining = before;
+        for (const shot of volleyShots) {
+          if (!HERO_IDS.includes(shot.memberId) || remaining <= after) continue;
+          const creditedDamage = Math.min(remaining - after, nonNegativeInteger(shot.damage));
+          if (!creditedDamage) continue;
+          progress = awardDamageBudget(
+            progress, awards, levelUps, shot.memberId, enemy,
+            remaining, remaining - creditedDamage, namespace, before,
+          );
+          remaining -= creditedDamage;
+        }
+        // Defensive fallback if action/results ever diverge; never inflate the
+        // total damage budget, and keep normal non-volley actions unchanged.
+        if (remaining > after) {
+          progress = awardDamageBudget(progress, awards, levelUps, actorMemberId, enemy, remaining, after, namespace, before);
+        }
+      } else {
+        progress = awardDamageBudget(progress, awards, levelUps, actorMemberId, enemy, before, after, namespace);
+      }
       if (before > 0 && after === 0) {
         // The kill is the company's: its bonus is split among the living, so
         // the hero who lands the blows does not outlevel the rest by half a
