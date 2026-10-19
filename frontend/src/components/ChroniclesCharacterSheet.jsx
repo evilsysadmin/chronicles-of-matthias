@@ -152,7 +152,8 @@ export default function ChroniclesCharacterSheet({
     }
     // The classic party portraits are also hotkeys; they must never move
     // the squad while a character sheet is open.
-    if (!tacticsMode && /^[1-4]$/.test(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey) {
+    if (!tacticsMode && /^[1-4]$/.test(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey
+      && !event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
       const hero = state.party[Number(event.key) - 1];
       if (!hero || !onSelectMember) return;
       event.preventDefault();
