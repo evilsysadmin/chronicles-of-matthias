@@ -30,7 +30,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
-import { chroniclesAdvanceOpeningVolley } from '../chronicles/chroniclesPrecontactVolley.js';
+import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
@@ -1336,6 +1336,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
+  const touchVolley = chroniclesTouchVolleyOpportunity(state);
+  const touchWillShoot = touchVolley.available || plannedAttackMode === 'missile';
   const selectedCondition = chroniclesPartyCondition(selectedMember);
   const selectedRelic = chroniclesPartyRelic(state, selectedMember?.id);
   const selectedAttackStats = chroniclesPartyAttackStats(state, selectedMember?.id);
@@ -1657,10 +1659,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   className="is-attack"
                   data-chronicles-touch-action="attack"
-                  onClick={() => plannedAttackMode === 'missile' ? shootWithParty() : attackWithSelected()}
-                  aria-label={plannedAttackMode === 'missile' ? 'Salva de proyectiles (S)' : 'Atacar (A)'}
-                  title="A · atacar cuerpo a cuerpo · S · disparar"
-                >{plannedAttackMode === 'missile' ? '➶' : '⚔'}<small>{selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
+                  onClick={() => touchWillShoot ? shootWithParty() : attackWithSelected()}
+                  aria-label={touchVolley.available
+                    ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
+                    : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
+                  title="A · atacar cuerpo a cuerpo · S · disparar con el grupo antes del contacto"
+                >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
+                    ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
                   <button
                     type="button"
