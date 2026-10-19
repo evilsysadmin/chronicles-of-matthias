@@ -1,6 +1,8 @@
 import { getAudioContext } from '../audioContext.js';
 import { getChroniclesFxVolume } from './chroniclesAudioSettings.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
+import { chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
+import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 
 function actionType(action) {
   return typeof action === 'string' ? action : action?.type;
@@ -44,7 +46,18 @@ export function chroniclesActionAudioCue(previous, next, action) {
     return next.message !== previous.message && next !== previous ? 'spell' : null;
   }
 
-  if (type !== 'attack' && type !== 'volley') return hurt ? 'hurt' : null;
+  if (type === 'volley') {
+    const fired = chroniclesOpeningVolleyShots(previous).shots;
+    if (!fired.length) return null;
+    // Preserve one audible event for each actual projectile; an archer,
+    // crossbowman and slinger sound distinct even in the same company.
+    const families = fired.map(({ memberId }) => (
+      chroniclesEquippedItem(previous, memberId, 'missile')?.weaponFamily || 'bow'
+    ));
+    return `volley:${families.join(',')}`;
+  }
+
+  if (type !== 'attack') return hurt ? 'hurt' : null;
 
   if (!damaged.length) return hurt ? 'hurt' : 'miss';
 
@@ -113,6 +126,29 @@ function playCue(cue) {
   bus.gain.value = 0.82 * volume;
   bus.connect(ctx.destination);
 
+  if (cue.startsWith('volley:')) {
+    // Procedural transient instruments, not heavyweight samples. Stagger
+    // no more than six real releases and normalize loudness for groups.
+    const families = cue.slice('volley:'.length).split(',').slice(0, 6);
+    const attenuation = 1 / Math.sqrt(Math.max(1, families.length));
+    families.forEach((family, index) => {
+      const delay = index * 0.026;
+      if (family === 'crossbow') {
+        // Mechanical catch followed by the heavier bolt release.
+        connectNoise(ctx, bus, { duration: 0.045, gain: 0.047 * attenuation, centerHz: 920, delay, type: 'bandpass' });
+        connectTone(ctx, bus, { frequency: 166, endFrequency: 91, duration: 0.13, gain: 0.048 * attenuation, delay: delay + 0.014 });
+      } else if (family === 'sling') {
+        // Round stone whistles briefly through the air.
+        connectNoise(ctx, bus, { duration: 0.105, gain: 0.017 * attenuation, centerHz: 2700, delay, type: 'highpass' });
+        connectTone(ctx, bus, { frequency: 720, endFrequency: 270, duration: 0.13, gain: 0.018 * attenuation, type: 'sine', delay });
+      } else {
+        // Bowstring pluck plus fletching hiss.
+        connectTone(ctx, bus, { frequency: 295, endFrequency: 142, duration: 0.08, gain: 0.035 * attenuation, delay });
+        connectNoise(ctx, bus, { duration: 0.11, gain: 0.018 * attenuation, centerHz: 1900, delay: delay + 0.015, type: 'highpass' });
+      }
+    });
+    return;
+  }
   if (cue === 'step') {
     connectNoise(ctx, bus, { duration: 0.055, gain: 0.024, centerHz: 430 });
     connectTone(ctx, bus, { frequency: 92, endFrequency: 74, duration: 0.085, gain: 0.032 });
