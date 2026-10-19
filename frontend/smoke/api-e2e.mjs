@@ -38,7 +38,7 @@ try {
   expect(!(await body(page)).includes('No se pudo consultar el servidor'), 'book could not reach the API');
 
   await page.getByText('Nueva campaña').click();
-  await page.getByText('Entrar con grupo canónico').click();
+  await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
   await page.waitForTimeout(2000);
   await page.getByLabel('Abrir menú de Chronicles').click();
