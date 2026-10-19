@@ -33,6 +33,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
+import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -129,6 +130,10 @@ export default function ChroniclesCharacterSheet({
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
+  const weaponModes = !tacticsMode ? chroniclesGearAttackModes(state, member.id) : null;
+  const weaponSwap = selectedEquipment && mm3
+    ? chroniclesGearSwapPreview(state, member.id, selectedEquipment.id)
+    : null;
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
@@ -333,11 +338,25 @@ export default function ChroniclesCharacterSheet({
             </article>
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
               <span>Armas y armaduras equipadas</span>
+              {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
+                {[
+                  { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
+                  { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
+                ].map(({ slot, label, stats }) => (
+                  <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
+                    <b>{label}</b>
+                    <strong>{chroniclesEquippedItem(state, member.id, slot)?.name || 'Sin equipar'}</strong>
+                    <small>{stats.reach > 0
+                      ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                      : 'Sin arma de proyectiles · no puede disparar'}</small>
+                  </div>
+                ))}
+              </div>}
               {CHRONICLES_EQUIPMENT_SLOTS.map((slot) => {
                 const worn = chroniclesEquippedItem(state, member.id, slot);
                 return (
                   <div className="chronicles-character-sheet__gear-slot" key={slot}>
-                    <small>{{ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
+                    <small>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
                     <strong>{worn?.name || 'Sin equipar'}</strong>
                     {worn && <button type="button" disabled={!canChangeEquipment}
                       onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
@@ -348,7 +367,7 @@ export default function ChroniclesCharacterSheet({
               })}
               <small>
                 {mm3
-                  ? `Daño +${gearBonus.attackDamageBonus} · acierto ${signed(gearBonus.toHitBonus)} · armadura +${gearBonus.armorClassBonus}. Sólo cuenta el equipo puesto.`
+                  ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
               {Object.values(CHRONICLES_EQUIPMENT)
@@ -386,7 +405,7 @@ export default function ChroniclesCharacterSheet({
                   <dl>
                     <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
                     {selectedEquipment && <>
-                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
+                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
                       <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
                       <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
                       <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
@@ -396,7 +415,16 @@ export default function ChroniclesCharacterSheet({
                   </dl>
                   {selectedEquipment && <>
                     <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
-                    {currentlyEquipped && <small> Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
+                    {weaponSwap ? (
+                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
+                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
+                        <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
+                        <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
+                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
+                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
+                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
+                      </div>
+                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
                     <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
                       onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
                       Equipar {selectedEquipment.name}
