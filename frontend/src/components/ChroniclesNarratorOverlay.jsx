@@ -6,6 +6,8 @@ import './ChroniclesNarratorOverlay.css';
 
 const LOW_SIGNAL_NARRATION = Object.freeze([
   /^Giras a la (izquierda|derecha)\.$/i,
+  /^Salva de \d+ proyectil(?:es)?:/i,
+  /^La compañía dispara al frente, pero no hay enemigos al alcance:/i,
   /^Piedra, polvo y la sospecha de que algo respira detrás del muro\.$/i,
   /^Hay una pared\./i,
   /contra absolutamente nada\./i,
@@ -42,7 +44,12 @@ export default function ChroniclesNarratorOverlay({ message, children = null, op
   // The band speaks for a few seconds and fades; the Crónica keeps the line.
   const [bandVisible, setBandVisible] = useState(isMeaningful);
   useEffect(() => {
-    if (!isMeaningful) return undefined;
+    // An S shot with no target, or a routine damaging salvo, must also
+    // dismiss a still-visible earlier orange band immediately.
+    if (!isMeaningful) {
+      setBandVisible(false);
+      return undefined;
+    }
     setLastNarration(message);
     setBandVisible(true);
     const timer = setTimeout(() => setBandVisible(false), chroniclesNarrationDurationMs(message));

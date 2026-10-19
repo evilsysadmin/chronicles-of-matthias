@@ -160,18 +160,12 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
 // The first-person folio must override both base and old MM3 chrome styles.
 import './ChroniclesCharacterSheetMM3.css';
-
-const KEY_ACTIONS = Object.freeze({
-  // MM3 layout: arrows move and turn; A and S attack and shoot.
-  ArrowUp: 'forward', ArrowDown: 'backward',
-  ArrowLeft: 'turn-left', ArrowRight: 'turn-right',
-  q: 'strafe-left', Q: 'strafe-left', e: 'strafe-right', E: 'strafe-right',
-});
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
 
@@ -1189,17 +1183,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           return;
         }
       }
-      if (event.key === ' ') {
-        event.preventDefault();
-        attackWithSelected();
-        return;
-      }
-      // MM3: A ataca cuerpo a cuerpo, S dispara el arma de proyectiles.
-      if (event.key === 'a' || event.key === 'A' || event.key === 's' || event.key === 'S') {
+      // MM3: directional arrows navigate; A attacks, S shoots.
+      // Space stays an optional auto-attack alias.
+      const combatMode = chroniclesCombatKeyMode(event.key);
+      if (combatMode) {
         event.preventDefault();
         if (event.repeat) return;
-        if (event.key.toLowerCase() === 'a') attackWithSelected('melee');
-        else shootWithParty();
+        if (combatMode === 'missile') shootWithParty();
+        else attackWithSelected(combatMode);
         return;
       }
       if (event.key === 'c' || event.key === 'C') {
@@ -1212,7 +1203,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         setSpellMenuOpen((open) => (open ? false : 'items'));
         return;
       }
-      const action = KEY_ACTIONS[event.key];
+      const action = CHRONICLES_DIRECTION_KEYS[event.key];
       if (!action) return;
       event.preventDefault();
       if (event.repeat) return; // discrete grid step, independent of OS repeat rate
@@ -1433,7 +1424,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             <div key={`hireling-${slot}`} className="chronicles-party-hireling" data-chronicles-hireling-slot={slot}
               aria-label={`Hueco ${slot} para contratado, libre`}>
               <span className="chronicles-party-hireling__face" aria-hidden="true" />
-              <span className="chronicles-party-hireling__label"><strong>Contratado</strong><small>Hueco libre</small></span>
+              <span className="chronicles-party-hireling__label"><strong>Plaza libre</strong><small>Sin contratar</small></span>
             </div>
           ))}
         </aside>
@@ -1666,7 +1657,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   aria-label={touchVolley.available
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
-                  title="A · atacar cuerpo a cuerpo · S · disparar con el grupo antes del contacto"
+                  title="Flechas · mover/girar · A · atacar · S · disparar"
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
                     ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
@@ -1711,12 +1702,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               </div>
 
               <div className="chronicles-keyboard-help">
-                <span><kbd>W</kbd>/<kbd>↑</kbd> avanzar</span>
-                <span><kbd>S</kbd>/<kbd>↓</kbd> retroceder</span>
-                <span><kbd>A</kbd><kbd>D</kbd> girar</span>
-                <span><kbd>Q</kbd>/<kbd>E</kbd> desplazamiento lateral</span>
+                <span><kbd>↑</kbd> avanzar</span>
+                <span><kbd>↓</kbd> retroceder</span>
+                <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
+                <span><kbd>A</kbd> atacar</span>
+                <span><kbd>S</kbd> disparar</span>
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>
-                <span><kbd>ESPACIO</kbd> atacar</span>
+                <span><kbd>ESPACIO</kbd> ataque automático</span>
                 <span><kbd>F</kbd> usar/recoger</span>
                 <span><kbd>C</kbd> hechizos</span>
                 <span><kbd>I</kbd> objetos</span>
