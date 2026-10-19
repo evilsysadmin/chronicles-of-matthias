@@ -33,6 +33,26 @@ describe('Chronicles action audio cues', () => {
     expect(chroniclesActionAudioCue(almostDead, defeated, { type: 'attack', memberId: 'matthias' })).toBe('defeat');
   });
 
+  it('sounds one missile per actual MM3 shooter and differentiates bows, crossbows and slings', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const party = { ...base, x: 10, y: 5, direction: 1 };
+    const equipped = {
+      ...party,
+      equipment: {
+        matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' },
+        rook: { weapon: 'bronze-mace', missile: 'bronze-crossbow' },
+        knight: { weapon: 'bronze-dagger', missile: 'wooden-sling' },
+        bishop: { weapon: 'bronze-mace', missile: 'wooden-bow' },
+      },
+    };
+    const shot = chroniclesReduce(equipped, 'volley');
+    // The cleric's forged invalid bow is correctly ignored.
+    expect(chroniclesActionAudioCue(equipped, shot, 'volley')).toBe('volley:bow,crossbow,sling');
+    expect(chroniclesActionAudioCue(equipped, shot, { type: 'volley' })).toBe('volley:bow,crossbow,sling');
+    const noArrows = { ...equipped, equipment: {} };
+    expect(chroniclesActionAudioCue(noArrows, chroniclesReduce(noArrows, 'volley'), 'volley')).toBeNull();
+  });
+
   it('gives spells, healing and blows on the company their own sounds', () => {
     const start = createChroniclesState();
     const hurtParty = { ...start, party: start.party.map((member, index) => index === 0 ? { ...member, hp: member.hp - 2 } : member) };
