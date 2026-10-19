@@ -605,11 +605,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
     }
 
-    const actorMemberId = typeof action === 'object' && action?.memberId
+    // Opening volleys are one action with several real damage contributors.
+    // The selected hero might not even carry a bow, so never give them all XP.
+    const volleyResult = actionType === 'volley' && !current.initiative
+      ? chroniclesOpeningVolleyShots(current)
+      : null;
+    const lastDamagingShooter = volleyResult?.shots.filter((shot) => shot.damage > 0).at(-1)?.memberId;
+    const actorMemberId = lastDamagingShooter || (typeof action === 'object' && action?.memberId
       ? action.memberId
       : activeActor?.kind === 'party'
         ? activeActor.id
-        : selectedMemberIdRef.current;
+        : selectedMemberIdRef.current);
     const progressResult = applyChroniclesTacticsProgression(
       progressionRef.current,
       current,
@@ -617,6 +623,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       {
         actorMemberId,
         actionKind: actionType,
+        volleyContributions: volleyResult ? {
+          enemyId: volleyResult.target?.id,
+          shots: volleyResult.shots,
+        } : null,
         runId: activeRunIdRef.current,
       },
     );
