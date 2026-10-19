@@ -44,7 +44,7 @@ export function chroniclesActionAudioCue(previous, next, action) {
     return next.message !== previous.message && next !== previous ? 'spell' : null;
   }
 
-  if (type !== 'attack') return hurt ? 'hurt' : null;
+  if (type !== 'attack' && type !== 'volley') return hurt ? 'hurt' : null;
 
   if (!damaged.length) return hurt ? 'hurt' : 'miss';
 

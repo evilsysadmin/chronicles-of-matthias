@@ -492,6 +492,59 @@ function evadeAfterHit(state, enemy) {
 }
 // `spell` turns the swing into an offensive spell: its own reach and damage
 // (after the target's elemental resistance), no to-hit roll, SP already paid.
+// Outside initiative MM3 fires as one company: each living hero with a
+// class-legal missile weapon contributes exactly one shot. Lock the target
+// before resolving damage; arrows cannot retarget another foe mid-salvo.
+export function chroniclesOpeningVolleyShooters(state) {
+  if (!chroniclesUsesMM3Combat(state) || state?.initiative) return [];
+  return (state?.party || []).filter((member) => (
+    member.hp > 0 && Boolean(chroniclesEquippedItem(state, member.id, 'missile'))
+  ));
+}
+
+export function chroniclesOpeningVolleyShots(state) {
+  const shooters = chroniclesOpeningVolleyShooters(state);
+  const armed = shooters.map((member) => ({
+    member,
+    stats: chroniclesPartyAttackStats(state, member.id, 'missile'),
+  }));
+  const maxReach = Math.max(0, ...armed.map(({ stats }) => stats.reach));
+  const sighted = maxReach > 0 ? chroniclesEnemyTargetAhead(state, maxReach) : null;
+  if (!sighted) return { target: null, shooters, shots: [], remainingHp: null };
+  const { enemy } = sighted;
+  let remainingHp = Math.max(0, Number(state[enemy.hpKey] || 0));
+  const shots = armed.filter(({ stats }) => (
+    chroniclesEnemyTargetAhead(state, stats.reach)?.enemy.id === enemy.id
+  )).map(({ member, stats }) => {
+    const roll = chroniclesMM3Roll(state, 'opening-volley', member.id, enemy.id);
+    const hit = chroniclesMM3AttackHits(roll, stats.toHit, chroniclesMM3EnemyArmorClass(enemy));
+    const damage = hit ? Math.min(remainingHp, stats.damage) : 0;
+    remainingHp -= damage;
+    return { memberId: member.id, name: member.name, roll, hit, damage };
+  });
+  return { target: enemy, shooters, shots, remainingHp };
+}
+
+function resolveOpeningVolley(state) {
+  if (!chroniclesUsesMM3Combat(state) || state.initiative) return state;
+  const { target, shooters, shots, remainingHp } = chroniclesOpeningVolleyShots(state);
+  if (!shooters.length) {
+    return withMessage(state, 'Salva imposible: nadie lleva un arma de proyectiles equipada que su clase pueda usar.');
+  }
+  if (!target || !shots.length) {
+    return withMessage(state, 'La compañía prepara la salva, pero no hay enemigos dentro del alcance de sus proyectiles.');
+  }
+  const damage = shots.reduce((total, shot) => total + shot.damage, 0);
+  const report = shots.map((shot) => `${shot.name}: ${shot.hit ? 'acierta' : 'falla'}`).join(' · ');
+  const message = `Salva de ${shots.length} proyectil${shots.length === 1 ? '' : 'es'}: ${report}. ${target.name} recibe ${damage} de daño.`;
+  const next = { ...state, [target.hpKey]: remainingHp, turns: state.turns + 1, message };
+  if (remainingHp === 0 && Number(state[target.hpKey] || 0) > 0) {
+    const rewarded = rewardForDefeat(next, target);
+    return journalForDefeat(rewarded, { name: 'La compañía', attackName: 'salva de proyectiles' }, target);
+  }
+  return damage > 0 ? evadeAfterHit(next, target) : next;
+}
+
 // MM3's plain attack: melee when something is adjacent, otherwise shoot if
 // the hero carries a missile weapon and the target is within its range.
 export function chroniclesAttackMode(state, memberId) {
@@ -962,6 +1015,7 @@ export function chroniclesReduce(state, action) {
   }
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
+  if (actionType === 'volley') return resolveOpeningVolley(state);
   if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };
   if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
   if (actionType === 'attack') {
