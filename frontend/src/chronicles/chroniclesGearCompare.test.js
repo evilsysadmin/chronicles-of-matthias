@@ -8,7 +8,7 @@ function company() {
     ...base,
     equipment: {
       ...base.equipment,
-      matthias: { weapon: 'bronze-sword', missile: 'wooden-bow', shield: 'bronze-shield' },
+      matthias: { weapon: 'bronze-sword', missile: 'wooden-bow', shield: 'iron-shield' },
     },
   };
 }
@@ -43,7 +43,7 @@ describe('Chronicles MM3 · ficha de doble arma (#134)', () => {
     const state = company();
     const melee = chroniclesGearSwapPreview(state, 'matthias', 'iron-staff');
     expect(melee.slot).toBe('weapon');
-    expect(melee.displacedShieldName).toBe('Escudo de bronce');
+    expect(melee.displacedShieldName).toBe('Escudo de hierro');
     expect(melee.armorClassDelta).toBeLessThan(0);
     const missile = chroniclesGearSwapPreview(state, 'matthias', 'wooden-bow');
     expect(missile.displacedShieldName).toBeNull();
