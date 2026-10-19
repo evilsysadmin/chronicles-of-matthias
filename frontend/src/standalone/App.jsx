@@ -4,6 +4,7 @@
 // Tactics no tiene botón propio: se abre en /#tactics.
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
+import ReleaseUpdateNotice from './ReleaseUpdateNotice.jsx';
 import {
   fetchMeStatus, isLoggedIn, logout, refreshSsoToken, reportLogoutPresence, restoreSsoSession, startSsoRefresh,
   watchSessionIdentity,
@@ -78,14 +79,17 @@ export default function App() {
     if (loggedIn) void requestChroniclesLandscapeOnEntry();
   }, [loggedIn]);
 
-  if (checkingSso) return <Loading />;
+  if (checkingSso) return <><Loading /><ReleaseUpdateNotice deferReload /></>;
   if (!loggedIn) {
     return (
-      <LoginScreen
-        key={expiredNotice || 'login'}
-        initialNotice={expiredNotice}
-        onLoggedIn={() => { setExpiredNotice(null); setLoggedIn(true); }}
-      />
+      <>
+        <LoginScreen
+          key={expiredNotice || 'login'}
+          initialNotice={expiredNotice}
+          onLoggedIn={() => { setExpiredNotice(null); setLoggedIn(true); }}
+        />
+        <ReleaseUpdateNotice deferReload={false} />
+      </>
     );
   }
 
@@ -104,8 +108,11 @@ export default function App() {
   const Game = mode === 'chronicles-tactics' ? ChroniclesOfMatthiasTactics : ChroniclesOfMatthias;
 
   return (
-    <Suspense fallback={<Loading />}>
-      <Game key={`${mode}-${mountKey}`} onExit={exit} onLogout={signOut} />
-    </Suspense>
+    <>
+      <Suspense fallback={<Loading />}>
+        <Game key={`${mode}-${mountKey}`} onExit={exit} onLogout={signOut} />
+      </Suspense>
+      <ReleaseUpdateNotice deferReload />
+    </>
   );
 }
