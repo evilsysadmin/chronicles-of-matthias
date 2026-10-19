@@ -50,10 +50,11 @@ jobs:
           # Only complete successful push workflows of this exact SHA matter.
           # Infra independently revalidates all three with stronger identities.
           if ! jq -e --arg sha "$sha" '
-            (.total_count <= 100) and (
-              [385763056,386812503,387132683] as $ids |
-              all($ids[]; . as $id |
-                ([.workflow_runs[]? | select(.workflow_id == $id and .head_sha == $sha and
+            . as $payload |
+            ($payload.total_count <= 100) and (
+              [385763056,386812503,387132683] |
+              all(.[]; . as $id |
+                ([$payload.workflow_runs[]? | select(.workflow_id == $id and .head_sha == $sha and
                   .event == "push" and .head_branch == "main" and
                   .repository.full_name == "evilsysadmin/chronicles-of-matthias")] |
                   max_by(.id)) as $run |
