@@ -22,6 +22,7 @@ import {
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyFlightSample } from './chronicles/chroniclesVolleyMotion.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -1002,20 +1003,19 @@ export function createChroniclesOfMatthiasGame(host, {
       });
 
       const volleyElapsed = time - volleyFxStartedAt;
-      const volleyVisible = volleyFxCount > 0 && volleyElapsed >= 0 && volleyElapsed < 0.42;
+      const volleyVisible = volleyFxCount > 0 && volleyElapsed >= 0
+        && volleyElapsed < CHRONICLES_VOLLEY_MAX_DURATION;
       volleyFx.group.visible = volleyVisible;
       if (volleyVisible) {
-        const positions = chroniclesVolleyFlightPositions(volleyFxCount, volleyElapsed / 0.42);
         volleyFx.projectiles.forEach((projectile, index) => {
-          projectile.visible = index < positions.length;
-          if (!projectile.visible) return;
-          const position = positions[index];
-          // The sling's stone describes a modest arc; shafts stay straight.
-          const flight = volleyElapsed / 0.42;
-          const arc = projectile.userData.volleyKind === 'sling'
-            ? Math.sin(Math.PI * flight) * 0.16 : 0;
-          projectile.position.set(position.x, position.y + arc, position.z);
-          projectile.rotation.z = projectile.userData.volleyKind === 'sling' ? flight * 1.7 : 0;
+          const flight = chroniclesVolleyFlightSample(
+            volleyFxCount, index, volleyElapsed, projectile.userData.volleyKind,
+          );
+          projectile.visible = Boolean(flight);
+          if (!flight) return;
+          projectile.position.set(flight.x, flight.y, flight.z);
+          projectile.rotation.set(flight.pitch, flight.yaw, flight.roll);
+          projectile.scale.setScalar(flight.scale);
         });
       }
 

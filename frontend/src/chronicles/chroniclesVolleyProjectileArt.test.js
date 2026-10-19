@@ -47,6 +47,11 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
     expect(fx.projectiles.slice(0, 3).map((root) => root.userData.volleyKind))
       .toEqual(['bow', 'crossbow', 'sling']);
     expect(fx.projectiles[0].getObjectByName('bow-shaft')?.visible).toBe(true);
+    expect(fx.projectiles[0].getObjectByName('bow-head')?.geometry.type).toBe('ConeGeometry');
+    expect(fx.projectiles[0].getObjectByName('bow-fletching-0')?.geometry.type).toBe('ShapeGeometry');
+    expect(fx.projectiles[0].getObjectByName('bow-trail')?.material.transparent).toBe(true);
+    expect(fx.projectiles[1].getObjectByName('crossbow-trail')).toBeTruthy();
+    expect(fx.projectiles[2].getObjectByName('sling-trail')).toBeTruthy();
     expect(fx.projectiles[1].getObjectByName('crossbow-shaft')?.visible).toBe(true);
     expect(fx.projectiles[2].getObjectByName('sling-stone')?.geometry.type)
       .toBe('IcosahedronGeometry');
