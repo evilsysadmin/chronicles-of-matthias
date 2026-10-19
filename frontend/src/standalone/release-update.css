@@ -1,0 +1,37 @@
+/* Standalone Chronicles only: quiet, accessible and safe above the game. */
+.chronicles-release-notice {
+  position: fixed;
+  z-index: 10000;
+  inset: auto max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) auto;
+  width: min(390px, calc(100vw - 24px));
+  box-sizing: border-box;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  color: #f6f0de;
+  background: rgba(22, 27, 34, .97);
+  border: 1px solid rgba(220, 183, 115, .52);
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, .42);
+  font: 13px/1.4 Inter, sans-serif;
+}
+.chronicles-release-copy { flex: 1 1 195px; display: grid; gap: 3px; }
+.chronicles-release-copy strong { color: #f2cf90; font-weight: 700; }
+.chronicles-release-actions { display: flex; flex: 0 0 auto; gap: 7px; }
+.chronicles-release-actions button {
+  cursor: pointer; min-height: 36px; padding: 8px 11px;
+  border: 1px solid #a88a5b; border-radius: 7px;
+  background: #32343a; color: #f7f2e9; font: inherit;
+}
+.chronicles-release-actions .chronicles-release-primary {
+  background: #d9b579; color: #1a1b1e;
+}
+.chronicles-release-actions button:focus-visible {
+  outline: 3px solid #e7c68e; outline-offset: 3px;
+}
+@media (max-width: 430px) {
+  .chronicles-release-notice { inset-inline: 12px; width: auto; }
+}

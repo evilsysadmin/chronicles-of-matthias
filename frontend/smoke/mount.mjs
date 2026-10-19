@@ -29,5 +29,34 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   await ctx.close();
 }
 
+
+// An unauthenticated client must see an accessible, explicit update action.
+// The real Pages manifest is emitted from VITE_BUILD_SHA; this browser route
+// substitutes a newer SHA so the notice is tested without deploying a release.
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.route('**/release.json*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ release: 'v16.6dm46zfrv', build: 'b'.repeat(40) }),
+  }));
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  const banner = page.getByRole('status').filter({ hasText: 'Nueva versión disponible' });
+  try {
+    await banner.waitFor({ timeout: 12_000 });
+    const update = await banner.getByRole('button', { name: 'Actualizar' }).count();
+    const defer = await banner.getByRole('button', { name: 'Ahora no' }).count();
+    if (update !== 1 || defer !== 1 || errors.length) throw new Error('missing actions or page errors');
+    console.log('OK   Releases: explicit refresh offered on login');
+  } catch (error) {
+    failed = true;
+    console.log('FAIL Releases:', error.message, errors);
+  }
+  await ctx.close();
+}
+
 await browser.close();
 process.exit(failed ? 1 : 0);
