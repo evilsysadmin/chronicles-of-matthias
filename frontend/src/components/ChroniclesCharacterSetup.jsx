@@ -159,16 +159,21 @@ export default function ChroniclesCharacterSetup({
 
   if (!editing) {
     const hasCustom = normalizedCurrent.mode === 'custom';
+    const previewCharacters = hasCustom
+      ? normalizedCurrent.characters
+      : createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY).characters;
     return (
       <div className="chronicles-character-setup chronicles-character-setup--choice" data-chronicles-character-setup="choice">
         <section className="chronicles-character-setup__panel chronicles-character-setup__panel--choice" aria-labelledby="chronicles-character-setup-title">
           <header className="chronicles-character-setup__choice-head">
             <span className="chronicles-character-setup__eyebrow">FORMAR COMPAÑÍA</span>
             <h2 id="chronicles-character-setup-title">Elige tus personajes</h2>
-            <p>Cuatro aventureros aguardan tu decisión. Entra con la compañía canónica o tira los dados para forjar tu propia historia.</p>
+            <p>{hasCustom
+              ? 'Tu compañía está lista. Puedes empezar la aventura o volver a personalizar a tus héroes.'
+              : '¿Primera expedición? Este grupo ya está preparado para partir. Puedes entrar directamente o crear tus propios héroes.'}</p>
           </header>
           <div className="chronicles-character-setup__hero-grid" aria-label="Personajes de la compañía">
-            {(hasCustom ? normalizedCurrent.characters : createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY).characters).map((character) => (
+            {previewCharacters.map((character) => (
               <article className="chronicles-character-setup__hero" key={character.slotId}>
                 <img src={chroniclesPartyPortraitUrl(character.slotId)} alt={`Retrato canónico de ${character.name}`} draggable="false" />
                 <div className="chronicles-character-setup__hero-plaque">
@@ -178,6 +183,17 @@ export default function ChroniclesCharacterSetup({
               </article>
             ))}
           </div>
+          <details className="chronicles-character-setup__mechanics" data-testid="chronicles-party-role-guide">
+            <summary>¿Qué aporta cada aventurero?</summary>
+            <div>
+              {previewCharacters.map((character) => (
+                <span key={character.slotId}>
+                  <strong>{character.name} · {CHRONICLES_MM3_CLASSES[character.classId]?.label || 'Aventurero'}</strong>
+                  <small>{CHRONICLES_MM3_CLASSES[character.classId]?.summary || 'Explora y lucha con tu compañía.'}</small>
+                </span>
+              ))}
+            </div>
+          </details>
           {hasCustom && (
             <div className="chronicles-character-setup__saved" data-testid="chronicles-custom-party-summary">
               <span>COMPAÑÍA GUARDADA</span>
@@ -193,11 +209,11 @@ export default function ChroniclesCharacterSetup({
               ) : (
                 <button type="button" className="primary-btn"
                   onClick={() => confirmBuild(createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY))}>
-                  Entrar con grupo canónico
+                  Empezar con este grupo
                 </button>
               )}
               <button type="button" className="secondary-btn" onClick={beginCustom}>
-                {hasCustom ? 'Editar PJs' : 'Crear PJs'}
+                {hasCustom ? 'Editar personajes' : 'Crear mis personajes'}
               </button>
             </div>
             {hasCustom && (
