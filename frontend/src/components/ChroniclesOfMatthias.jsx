@@ -30,6 +30,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
+import { chroniclesAdvanceOpeningVolley } from '../chronicles/chroniclesPrecontactVolley.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
@@ -566,9 +567,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           ? CHRONICLES_CONSUMABLES[action.itemId].spell
           : null;
       const openingVolley = actionType === 'volley' && current.combatRules === 'mm3';
-      const openingShooters = openingVolley ? chroniclesOpeningVolleyShooters(current) : [];
-      const volleyReach = Math.max(0, ...openingShooters.map((member) => chroniclesPartyAttackStats(current, member.id, 'missile').reach));
-      const volleyTarget = volleyReach > 0 ? chroniclesEnemyTargetAhead(current, volleyReach) : null;
       const offensive = actionType === 'attack' || openingVolley || Boolean(offensiveSpell);
       // A collective salvo lands before combat is deployed. No separate
       // retaliation or initiative action is spent by each archer.
@@ -578,19 +576,24 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const attackingMember = offensive && typeof action === 'object'
         ? current.party.find((member) => member.id === action.memberId)
         : null;
-      const forcedTarget = volleyTarget || (attackingMember
+      const forcedTarget = attackingMember
         ? chroniclesEnemyTargetAhead(current, offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id, action.mode || 'auto').reach)
-        : null);
+        : null;
       // Entering an area is not a tactical movement inside it. The player
       // gets to see the new room/return portal before enemies can engage.
       const transitionedMap = exploratoryNext?.mapId !== current.mapId;
-      const started = transitionedMap ? exploratoryNext : chroniclesStartInitiativeCombat(
-        exploratoryNext,
-        chroniclesActiveEnemies(exploratoryNext),
-        {
-          forceEnemyIds: forcedTarget && Number(exploratoryNext[forcedTarget.enemy.hpKey] || 0) > 0 ? [forcedTarget.enemy.id] : [],
-        },
-      );
+      // A distant volley is a complete pre-contact exchange: the target
+      // responds (move or ranged attack), but initiative waits for physical
+      // melee contact. Other actions preserve their existing engagement.
+      const started = transitionedMap ? exploratoryNext : openingVolley
+        ? chroniclesAdvanceOpeningVolley(current, exploratoryNext)
+        : chroniclesStartInitiativeCombat(
+          exploratoryNext,
+          chroniclesActiveEnemies(exploratoryNext),
+          {
+            forceEnemyIds: forcedTarget && Number(exploratoryNext[forcedTarget.enemy.hpKey] || 0) > 0 ? [forcedTarget.enemy.id] : [],
+          },
+        );
       next = started !== exploratoryNext
         ? started
         : offensive
