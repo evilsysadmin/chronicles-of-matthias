@@ -1,14 +1,10 @@
 name: Chronicles frontend
 on:
+  # Every protected-main SHA must have a verifiable frontend CI result.
+  # Infra admits an exact SHA only after frontend + API + repository CI pass.
   pull_request:
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/react-frontend.yml'
   push:
     branches: [main]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/react-frontend.yml'
 permissions:
   contents: read
 jobs:
