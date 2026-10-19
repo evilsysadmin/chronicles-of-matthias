@@ -24,15 +24,15 @@ describe('Chronicles MM3 · ficha de doble arma (#134)', () => {
     expect(modes.weapon.damage).not.toBe(0);
   });
 
-  it('previews a bow upgrade only for S and does not mutate the equipped weapon or inventory', () => {
+  it('previews a missile weapon swap only for S and does not mutate the equipped weapon or inventory', () => {
     const state = company();
     const original = JSON.stringify(state);
     const melee = chroniclesGearAttackModes(state, 'matthias').weapon;
-    const preview = chroniclesGearSwapPreview(state, 'matthias', 'iron-bow');
+    const preview = chroniclesGearSwapPreview(state, 'matthias', 'bronze-sling');
     expect(preview.slot).toBe('missile');
     expect(preview.after).toEqual(chroniclesPartyAttackStats({
       ...state, equipment: { ...state.equipment,
-        matthias: { ...state.equipment.matthias, missile: 'iron-bow' } },
+        matthias: { ...state.equipment.matthias, missile: 'bronze-sling' } },
     }, 'matthias', 'missile'));
     expect(preview.delta.damage).toBe(preview.after.damage - preview.before.damage);
     expect(chroniclesGearAttackModes(state, 'matthias').weapon).toEqual(melee);
