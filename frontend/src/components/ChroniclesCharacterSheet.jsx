@@ -34,6 +34,7 @@ import {
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
+import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -101,6 +102,8 @@ export default function ChroniclesCharacterSheet({
   // Navigation belongs to the sheet, not the durable campaign state.
   const [activeFolio, setActiveFolio] = useState('record');
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [backpackFilter, setBackpackFilter] = useState('all');
+  const [backpackSearch, setBackpackSearch] = useState('');
   if (!state || !progression || !member) return null;
 
   const profile = chroniclesTacticsEffectiveProfile(state, member.id);
@@ -126,7 +129,9 @@ export default function ChroniclesCharacterSheet({
   const relic = relicDetails(state, member.id);
   const inventory = chroniclesInventoryEntries(state).filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
   const gold = chroniclesGoldBalance(state);
-  const selectedInventoryItem = inventory.find((item) => item.id === selectedItemId);
+  const backpackCounts = chroniclesBackpackCounts(inventory);
+  const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
+  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId);
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
@@ -147,7 +152,8 @@ export default function ChroniclesCharacterSheet({
     }
     // The classic party portraits are also hotkeys; they must never move
     // the squad while a character sheet is open.
-    if (!tacticsMode && /^[1-4]$/.test(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey) {
+    if (!tacticsMode && /^[1-4]$/.test(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey
+      && !event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
       const hero = state.party[Number(event.key) - 1];
       if (!hero || !onSelectMember) return;
       event.preventDefault();
@@ -370,31 +376,47 @@ export default function ChroniclesCharacterSheet({
                   ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
-              {Object.values(CHRONICLES_EQUIPMENT)
-                .filter((item) => inventory.some((owned) => owned.id === item.id && owned.quantity > 0))
-                .map((item) => (
-                  <button type="button" key={item.id}
-                    disabled={!canChangeEquipment || !chroniclesMemberCanEquip(member, item)}
-                    title={item.description}
-                    onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: item.id })}>
-                    Equipar {item.name} · {item.description}
-                  </button>
-                ))}
             </article>}
-            <article>
+            <article className="chronicles-character-sheet__backpack">
               <span>Mochila de expedición</span>
-              {inventory.length ? (
-                <div className="chronicles-character-sheet__inventory">
-                  {inventory.map((item) => (
-                    <button type="button" key={item.id}
-                      className={selectedItemId === item.id ? 'is-selected' : ''}
-                      aria-pressed={selectedItemId === item.id}
-                      onClick={() => setSelectedItemId(item.id)}
-                    >
-                      {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ''}
-                    </button>
-                  ))}
+              {!tacticsMode && inventory.length > 0 && (
+                <div className="chronicles-character-sheet__backpack-tools">
+                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
+                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
+                      .map(({ id, label }) => (
+                        <button type="button" key={id}
+                          aria-pressed={backpackFilter === id}
+                          onClick={() => { setBackpackFilter(id); setSelectedItemId(null); }}>
+                          {label} <small>{backpackCounts[id]}</small>
+                        </button>
+                      ))}
+                  </div>
+                  <label className="chronicles-character-sheet__backpack-search">
+                    Buscar en la mochila
+                    <input type="search" value={backpackSearch}
+                      placeholder="Nombre, material u objeto…"
+                      onChange={(event) => { setBackpackSearch(event.target.value); setSelectedItemId(null); }}
+                    />
+                  </label>
+                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
+                    {visibleBackpack.length} de {inventory.length} tipos de objeto
+                  </small>
                 </div>
+              )}
+              {inventory.length ? (
+                visibleBackpack.length ? (
+                  <div className="chronicles-character-sheet__inventory">
+                    {visibleBackpack.map((item) => (
+                      <button type="button" key={item.id}
+                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
+                        aria-pressed={selectedInventoryItem?.id === item.id}
+                        onClick={() => setSelectedItemId(item.id)}
+                      >
+                        {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
               ) : (
                 <small>Sin objetos recuperados en esta expedición.</small>
               )}
