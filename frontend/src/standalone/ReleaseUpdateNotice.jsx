@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_BUILD_ID } from '../release.js';
 import { CHECK_INTERVAL_MS, fetchPublishedRelease, updateAvailable } from './releaseUpdate.js';
 import './release-update.css';
@@ -21,17 +21,16 @@ export default function ReleaseUpdateNotice({ deferReload = true }) {
   const [latest, setLatest] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [snoozed, setSnoozed] = useState(false);
-  const inFlight = useRef(false);
-
   useEffect(() => {
     let active = true;
     let timer = null;
     let rerun = false;
+    let inFlight = false;
     const controller = new AbortController();
 
     async function check() {
-      if (inFlight.current) { rerun = true; return; }
-      inFlight.current = true;
+      if (inFlight) { rerun = true; return; }
+      inFlight = true;
       try {
         do {
           rerun = false;
@@ -44,7 +43,7 @@ export default function ReleaseUpdateNotice({ deferReload = true }) {
           }
         } while (active && !controller.signal.aborted && rerun);
       } finally {
-        inFlight.current = false;
+        inFlight = false;
       }
     }
 
