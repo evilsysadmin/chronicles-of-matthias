@@ -35,3 +35,11 @@ test('live combat diagnostics describe server and UI without tokens', () => {
   assert.ok(source.includes("chronicles-combat-mobile.png"));
   assert.doesNotMatch(source, /console\.log\([^\n]*\btoken\b/);
 });
+
+test('combat actions wait for actual crypt render and a real turn', () => {
+  assert.ok(source.includes('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]'));
+  assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_CRYPT_READY'));
+  assert.ok(source.includes('data-chronicles-turns'));
+  assert.ok(source.indexOf("crypt.waitFor") < source.indexOf("page.keyboard.press('s')"));
+  assert.ok(source.indexOf("page.waitForFunction(previous") < source.indexOf("page.keyboard.press('ArrowUp')"));
+});
