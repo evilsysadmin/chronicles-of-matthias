@@ -72,6 +72,11 @@ try {
       }
       await page.screenshot({ path: `smoke-shop-${width}.png` });
 
+      // Longbows are real missile weapons, never generic potion-like items.
+      const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
+      assert.match(await longbow.innerText(), /Armas a distancia/);
+      assert.equal(await longbow.locator('svg').getAttribute('aria-label'), 'Arma a distancia');
+
       // Filtering, sorting and selection must only alter presentation.
       const catalog = dialog.locator('.chronicles-shop__catalog');
       await catalog.getByRole('searchbox', { name: 'Buscar mercancía' }).fill('daga');
