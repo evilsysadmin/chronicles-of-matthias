@@ -13,6 +13,7 @@ import { installChroniclesFirstPersonPremiumMaterials } from './chroniclesOfMatt
 import { buildChroniclesEnemyVisual } from './chroniclesEnemyVisualRegistry.js';
 import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
+import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFrameGate.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
@@ -658,6 +659,7 @@ export function chroniclesVolleyFlightPositions(count, progress) {
 
 export function createChroniclesOfMatthiasGame(host, {
   onReady,
+  onFirstFrame,
   initialState = null,
   onContentClick = null,
 } = {}) {
@@ -719,6 +721,7 @@ export function createChroniclesOfMatthiasGame(host, {
     : buildChroniclesDungeonAtmosphere({ coarsePointer: coarse, reducedMotion, scenePlan });
   scene.add(dressing, atmosphere);
   let destroyed = false;
+  const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
   let desiredPosition = worldForCell(
     Number(initialState?.x ?? scenePlan?.partyStart?.x ?? 1),
@@ -839,11 +842,13 @@ export function createChroniclesOfMatthiasGame(host, {
       runeMaterial.emissive.setHex(state.sigilAwake ? 0x9d410b : 0x4b1d05);
       runeMaterial.emissiveIntensity = state.sigilAwake ? 1.35 : 0.55;
     });
+    firstFrameGate.markStateSynchronized();
     if (reducedMotion) {
       camera.position.copy(desiredPosition);
       camera.rotation.y = desiredYaw;
       atmosphere.userData.updateChroniclesAtmosphere?.(now);
       renderer.render(scene, camera);
+      firstFrameGate.markFrameRendered();
     }
   }
 
@@ -1036,6 +1041,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
     renderer.render(scene, camera);
+    firstFrameGate.markFrameRendered();
   }
 
   const onContentPointerUp = (event) => {

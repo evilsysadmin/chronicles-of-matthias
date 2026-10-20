@@ -257,6 +257,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [saveMenuError, setSaveMenuError] = useState('');
   const [saveMenuBusy, setSaveMenuBusy] = useState(null);
   const [ready, setReady] = useState(false);
+  const [scenePainted, setScenePainted] = useState(false);
   const [bootstrapError, setBootstrapError] = useState(null);
   const [bootstrapRevision, setBootstrapRevision] = useState(0);
   const staleRunRecoveryAttemptedRef = useRef(false);
@@ -976,17 +977,40 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
   }, [bootstrapRevision, characterSetupDone, entryView, progressionSynced]);
 
-  useEffect(() => {
+  // A ready React tree or an empty canvas is not a painted scene.
+  useLayoutEffect(() => {
     let cancelled = false;
+    let painted = false;
     let engine = null;
     const host = hostRef.current;
     if (!ready || !stateRef.current || !host) return undefined;
+    setScenePainted(false);
+    let watchdog;
+    const armWatchdog = () => {
+      watchdog = window.setTimeout(() => {
+        if (cancelled || painted) return;
+        // Browsers legitimately suspend WebGL while the tab is hidden.
+        // Never turn background-tab time into a false renderer failure.
+        if (document.visibilityState === 'hidden') {
+          armWatchdog();
+          return;
+        }
+        setRendererError('La escena 3D no consiguió dibujar su primer fotograma. Reintenta.');
+      }, 20000);
+    };
+    armWatchdog();
 
     void loadChroniclesFirstPersonRenderer()
       .then(({ createChroniclesOfMatthiasGame }) => {
         if (cancelled) return;
         engine = createChroniclesOfMatthiasGame(host, {
           initialState: stateRef.current,
+          onFirstFrame: () => {
+            if (cancelled || painted) return;
+            painted = true;
+            window.clearTimeout(watchdog);
+            setScenePainted(true);
+          },
           onContentClick: (contentId) => {
             const current = stateRef.current;
             const contextual = chroniclesContextualContentAction(current);
@@ -1000,12 +1024,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       .catch((error) => {
         console.error('Chronicles of Matthias Three.js boot failed', error);
         if (!cancelled) {
+          window.clearTimeout(watchdog);
           setRendererError('La cripta se ha negado a materializarse. La escena no ha podido arrancar.');
         }
       });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(watchdog);
       engine?.destroy();
       if (engineRef.current === engine) engineRef.current = null;
     };
@@ -1347,6 +1373,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return <BootstrapFailure error={bootstrapError} onRetry={retryBootstrap} onMenu={returnToSaveMenu} onExit={exitChronicles} />;
   }
   if (!ready || !state) return <LoadingScreen />;
+  if (rendererError && !scenePainted) {
+    return (
+      <div className="menu chronicles-bootstrap">
+        <section className="menu-section" role="alert">
+          <h2>La escena de Chronicles no ha podido dibujarse</h2>
+          <p>{rendererError}</p>
+          <div className="game-controls">
+            <button type="button" className="primary-btn" onClick={retryBootstrap}>Reintentar</button>
+            <button type="button" className="secondary-btn" onClick={returnToSaveMenu}>Volver a expediciones</button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
@@ -1834,6 +1874,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         />
       )}
 
+      {!scenePainted && <LoadingScreen />}
       <ChroniclesAutomap
         open={automapOpen}
         state={state}
