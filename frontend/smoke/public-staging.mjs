@@ -16,6 +16,12 @@ if (!invite || !/^[0-9a-f]{40}$/.test(expectedSha || '')) {
 
 const versionResponse = await fetch(`${origin}/release.json?ts=${Date.now()}`, { cache: 'no-store' });
 assert.equal(versionResponse.status, 200);
+const requireNoStore = (response, resource) => {
+  const control = response.headers.get('cache-control') || '';
+  assert.match(control, /(?:^|,)\s*no-store(?:\s*,|$)/i,
+    'Public Pages ' + resource + ' must be uncacheable (Cache-Control: ' + (control || '<missing>') + ')');
+};
+requireNoStore(versionResponse, '/release.json');
 const published = await versionResponse.json();
 assert.equal(published.build, expectedSha, 'Public browser release must match admitted SHA');
 
@@ -25,6 +31,10 @@ assert.equal(published.build, expectedSha, 'Public browser release must match ad
 const expectedIndex = readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8');
 const rootResponse = await fetch(origin + '/', { cache: 'no-store' });
 assert.ok(rootResponse.ok, 'Public staging root HTML is unavailable');
+requireNoStore(rootResponse, '/');
+const explicitIndex = await fetch(origin + '/index.html', { cache: 'no-store' });
+assert.ok(explicitIndex.ok, 'Public Pages explicit index.html is unavailable');
+requireNoStore(explicitIndex, '/index.html');
 const actualIndex = await rootResponse.text();
 function entrypointAssets(html) {
   return [...html.matchAll(/(?:src|href)=["']\/?(assets\/[^"'?#]+)[^"']*["']/g)]
