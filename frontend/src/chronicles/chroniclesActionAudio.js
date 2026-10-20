@@ -37,16 +37,37 @@ function partyImpactFamily(state, memberId, requestedMode = 'auto') {
   );
 }
 
-function enemyImpactFamily(state, enemyId) {
-  const enemy = chroniclesMapForState(state)?.enemies?.find((entry) => entry.id === enemyId);
+// Only creatures whose actual visual identity is explicit get a distinct
+// attack timbre. Future authored enemies may opt in via attackSoundFamily;
+// the generic fallback never assumes a sword, claws or magic.
+const CREATURE_ATTACK_FAMILIES = Object.freeze({
+  'bone-hound': 'bite',
+  'crypt-spider': 'fang',
+  'weaver-spider': 'fang',
+  'ember-wisp': 'spectral',
+  'spectral-bishop': 'spectral',
+});
+const AUTHORED_ATTACK_FAMILIES = new Set([
+  'blunt', 'cut', 'cleave', 'pierce', 'arrow', 'bite', 'fang', 'claw', 'spectral',
+]);
+
+export function chroniclesEnemyAttackSoundFamily(enemy) {
   if (!enemy) return 'blunt';
+  if (AUTHORED_ATTACK_FAMILIES.has(enemy.attackSoundFamily)) return enemy.attackSoundFamily;
   if (enemy.weaponFamily) return chroniclesWeaponImpactFamily(enemy.weaponFamily);
+  if (CREATURE_ATTACK_FAMILIES[enemy.visualType]) return CREATURE_ATTACK_FAMILIES[enemy.visualType];
   const type = [enemy.visualType, enemy.enemyBuild?.archetype].filter(Boolean).join(' ').toLowerCase();
   if (/archer|crossbow|bowman/.test(type)) return 'arrow';
   if (/axeman|axe-wielder/.test(type)) return 'cleave';
   if (/swordsman|sword-wielder/.test(type)) return 'cut';
   if (/spearman|pikeman/.test(type)) return 'pierce';
-  return 'blunt'; // Don't invent steel weapons for creatures with unknown attacks.
+  return 'blunt';
+}
+
+function enemyImpactFamily(state, enemyId) {
+  return chroniclesEnemyAttackSoundFamily(
+    chroniclesMapForState(state)?.enemies?.find((entry) => entry.id === enemyId),
+  );
 }
 
 export function chroniclesActionAudioCue(previous, next, action) {
@@ -324,6 +345,22 @@ function playImpactCue(ctx, cue, volume, delay = 0, variation = IMPACT_VARIATION
   } else if (family === 'arrow') {
     noise({ duration: 0.052, gain: 0.019 * weight, centerHz: 1530, delay });
     tone({ frequency: 375, endFrequency: 155, duration: 0.08, gain: 0.018 * weight, delay });
+  } else if (family === 'bite') {
+    // Hound jaws: close, damp snap, never a metallic clash.
+    noise({ duration: 0.058, gain: 0.021 * weight, centerHz: 690, type: 'lowpass', delay });
+    tone({ frequency: 182, endFrequency: 88, duration: 0.092, gain: 0.033 * weight, delay });
+  } else if (family === 'fang') {
+    // Spider fangs: tight puncture with a breath of chitin.
+    noise({ duration: 0.058, gain: 0.023 * weight, centerHz: 2260, delay });
+    tone({ frequency: 408, endFrequency: 180, duration: 0.075, gain: 0.016 * weight, delay });
+  } else if (family === 'claw') {
+    // Reserved for explicitly authored claw users: a light double rake.
+    noise({ duration: 0.057, gain: 0.016 * weight, centerHz: 2050, delay });
+    noise({ duration: 0.047, gain: 0.013 * weight, centerHz: 1560, delay: delay + 0.045 });
+  } else if (family === 'spectral') {
+    // Spectres and wisps leave an airy pulse, not steel or blunt percussion.
+    noise({ duration: 0.13, gain: 0.012 * weight, centerHz: 2800, type: 'highpass', delay });
+    tone({ frequency: 388, endFrequency: 168, duration: 0.16, gain: 0.019 * weight, type: 'sine', delay });
   }
 
   // Small body response on taking damage; no second heavy impact instrument.
