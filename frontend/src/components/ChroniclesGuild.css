@@ -197,7 +197,9 @@
     overflow: auto;
   }
   .chronicles-guild .chronicles-shop__join { gap: 7px; }
-  .chronicles-guild__spells { padding: 8px; height: auto; }
+  /* Override the generic shop's max-height: 29dvh. The spell list owns the
+     remaining viewport height and must not leave a dead blank band below. */
+  .chronicles-guild__spells { padding: 8px; height: 100%; max-height: none; min-height: 0; overflow-y: auto; }
   .chronicles-guild__spells > li { padding: 9px; }
   .chronicles-guild .chronicles-shop__foot { display: none; }
 }
