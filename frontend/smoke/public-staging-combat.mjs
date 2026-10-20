@@ -91,9 +91,25 @@ try {
   // A manual save may legally reuse the durable area-change checkpoint
   // when no gameplay state changed. Wait for the visible result, then inspect
   // the authoritative world the REAL Chronicles backend will reload.
+  const saveResponses = [];
+  page.on('response', response => {
+    if (response.url().startsWith(api) && /\/chronicles\/runs\//.test(response.url())) {
+      saveResponses.push(response.request().method() + ' ' + response.status() + ' '
+        + new URL(response.url()).pathname.replace(game.runId, ':run'));
+    }
+  });
   await page.getByRole('button', { name: 'Guardar partida', exact: true }).click();
-  await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15_000 });
+  // Capture diagnostics before making a timeout the only actionable error.
+  await page.waitForFunction(() =>
+    Boolean(document.querySelector('.chronicles-game-menu__notice')?.textContent?.trim()),
+    null, { timeout: 10000 }).catch(() => {});
+  const saveMessage = await page.locator('.chronicles-game-menu__notice').textContent().catch(() => '');
+  const openDialog = await page.locator('[data-chronicles-adventure-menu]').count();
   await page.screenshot({ path: 'chronicles-combat-mobile.png', fullPage: false });
+  console.log('CHRONICLES_PUBLIC_COMBAT_SAVE ' + JSON.stringify({
+    message: saveMessage?.trim() || '(none)', menuOpen: Boolean(openDialog),
+    apiResponses: saveResponses.slice(-8), browserErrors: errors.slice(-3),
+  }));
   const persisted = await fetch(api + '/chronicles/runs/' + encodeURIComponent(game.runId) + '/bootstrap', {
     headers: { Authorization: 'Bearer ' + token },
   });
@@ -107,6 +123,8 @@ try {
     enemyHp, initiativeStarted: Boolean(initiative), turns: flags['__chrRuntime.turns'],
     x: flags['__chrRuntime.x'], y: flags['__chrRuntime.y'],
   }));
+  assert.equal(saveMessage?.trim(), 'Partida guardada correctamente.',
+    'Manual combat save was not acknowledged by the real game UI');
   // Genuine authored enemy damage OR initiative. Never substitute a fake hit.
   assert.ok((typeof enemyHp === 'number' && enemyHp < 5)
     || (typeof initiative === 'string' && initiative.length > 10),
