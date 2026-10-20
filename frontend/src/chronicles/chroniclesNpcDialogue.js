@@ -89,11 +89,17 @@ export function chroniclesNpcDialogueForState(state, contextual = null) {
     id: topic.id, kind: 'say', label: topic.label, answer: topic.answer,
   }));
   if (active?.action && contextual?.id === active.id) {
-    choices.push({
+    const firstMeeting = active.id === 'swordhaven-mayor' && state.swordhavenMayorMet !== true;
+    const questChoice = {
       id: 'quest', kind: 'action',
-      label: contextual.locked ? (contextual.label || 'Preguntar por el encargo') : 'Hablar del encargo',
+      label: firstMeeting ? 'Presentar la carta de la Dama'
+        : contextual.locked ? (contextual.label || 'Preguntar por el encargo') : 'Hablar del encargo',
       actionId: active.id,
-    });
+    };
+    // The first story action must be discoverable before optional lore.
+    // Every other NPC/repeat visit retains its authored choice order.
+    if (firstMeeting) choices.unshift(questChoice);
+    else choices.push(questChoice);
   }
   choices.push({ id: 'leave', kind: 'leave', label: 'Despedirse y salir' });
   return {
