@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -8,19 +8,41 @@ import {
 } from '../chronicles/chroniclesMagic.js';
 import { chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
 
-// MM3 "Cast" and "Use": the acting hero's spellbook with the cost of each
-// incantation, and the company's pack of potions and scrolls. One panel with
-// two tabs, so the touch layout keeps a single MAGIA/OBJETOS button.
+const SPELL_KINDS = Object.freeze({
+  heal: { label: 'Curación', glyph: '✚' },
+  attack: { label: 'Ataque', glyph: '✦' },
+  detect: { label: 'Exploración', glyph: '◈' },
+  paralyze: { label: 'Control', glyph: '◇' },
+  ward: { label: 'Protección', glyph: '⬡' },
+  scroll: { label: 'Pergamino', glyph: '✧' },
+  revive: { label: 'Resurrección', glyph: '✚' },
+  mana: { label: 'Maná', glyph: '✦' },
+});
+export function chroniclesSpellMenuKind(kind) {
+  return SPELL_KINDS[kind] || { label: 'Objeto', glyph: '◇' };
+}
+
+// A single folio owns the focus while it is open. This component only
+// chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
   state, member, itemUser = member, onCast, onUse = () => {}, onClose, initialTab = 'spells',
 }) {
   const spells = chroniclesMemberSpells(state, member);
   const items = chroniclesCarriedConsumables(state);
   const [tab, setTab] = useState(() => (initialTab === 'items' || !spells.length ? 'items' : 'spells'));
+  const panelRef = useRef(null);
   const firstRef = useRef(null);
+  const labelId = useId();
+  const spellsTabId = useId();
+  const itemsTabId = useId();
+  const pageId = useId();
+
   useEffect(() => {
-    firstRef.current?.focus();
+    const fallback = panelRef.current?.querySelector('[role="tab"][aria-selected="true"]')
+      || panelRef.current?.querySelector('.chronicles-spell-menu__close');
+    (firstRef.current && !firstRef.current.disabled ? firstRef.current : fallback)?.focus();
   }, [tab]);
+
   useEffect(() => {
     const onKey = (event) => {
       if (event.key !== 'Escape') return;
@@ -32,74 +54,135 @@ export default function ChroniclesSpellMenu({
     return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [onClose]);
 
+  function trapFocus(event) {
+    if (event.key !== 'Tab') return;
+    const controls = [...(panelRef.current?.querySelectorAll('button:not([disabled])') || [])];
+    if (!controls.length) return;
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   const sp = chroniclesMemberSp(state, member);
+  const maxSp = chroniclesMemberMaxSp(state, member);
   const school = CHRONICLES_SPELL_SCHOOLS[chroniclesMemberSchool(member)];
   const down = member.hp <= 0;
+  const stock = items.reduce((sum, entry) => sum + entry.quantity, 0);
+  const actingMember = tab === 'items' && itemUser ? itemUser : member;
+
   return (
-    <section className="chronicles-spell-menu" role="dialog"
-      aria-label={tab === 'items' ? `Objetos para ${member.name}` : `Hechizos de ${member.name}`}
-      data-chronicles-spell-menu={member.id} data-chronicles-menu-tab={tab}>
-      <header>
-        <span>{tab === 'items' ? 'Mochila' : school?.label}</span>
-        <strong>{tab === 'items' && itemUser ? itemUser.name : member.name}</strong>
-        {tab === 'spells' && (
-          <b aria-label={`Puntos de hechizo: ${sp} de ${chroniclesMemberMaxSp(state, member)}`}>
-            {sp}/{chroniclesMemberMaxSp(state, member)} PH
-          </b>
+    <div className="chronicles-cast-backdrop" onPointerDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section ref={panelRef} className="chronicles-spell-menu chronicles-spell-menu--folio"
+        role="dialog" aria-modal="true" aria-labelledby={labelId} onKeyDown={trapFocus}
+        data-chronicles-spell-menu={member.id} data-chronicles-menu-tab={tab}>
+        <header className="chronicles-spell-menu__folio-header">
+          <span className="chronicles-spell-menu__seal" aria-hidden="true">✦</span>
+          <div className="chronicles-spell-menu__identity">
+            <span className="chronicles-spell-menu__eyebrow">{tab === 'items' ? 'LA BOTICA DE LA COMPAÑÍA' : 'EL LIBRO DE LOS CONJUROS'}</span>
+            <h2 id={labelId}>{tab === 'items' ? 'Mochila de viaje' : 'Grimorio de magia'}</h2>
+            <p>{actingMember.name} · {tab === 'items' ? 'Objetos de un solo uso' : school?.label || 'Magia'}</p>
+          </div>
+          <button type="button" className="chronicles-spell-menu__close" onClick={onClose}
+            aria-label="Cerrar grimorio" title="Cerrar · Esc">✕</button>
+          <div className="chronicles-spell-menu__resource">
+            {tab === 'spells' ? (
+              <>
+                <span><b>Reserva arcana</b><strong>{sp} / {maxSp} PH</strong></span>
+                <div className="chronicles-spell-menu__mana" role="progressbar"
+                  aria-label="Puntos de hechizo disponibles" aria-valuemin={0}
+                  aria-valuenow={sp} aria-valuemax={maxSp || 1}>
+                  <i style={{ width: `${maxSp ? sp * 100 / maxSp : 0}%` }} />
+                </div>
+              </>
+            ) : (
+              <span><b>Recursos disponibles</b><strong>{stock} {stock === 1 ? 'unidad' : 'unidades'}</strong></span>
+            )}
+          </div>
+        </header>
+        {spells.length > 0 && (
+          <div className="chronicles-spell-menu__tabs" role="tablist" aria-label="Páginas del grimorio">
+            <button id={spellsTabId} type="button" role="tab" aria-selected={tab === 'spells'}
+              aria-controls={pageId} tabIndex={tab === 'spells' ? 0 : -1}
+              data-chronicles-menu-tab-button="spells" onClick={() => setTab('spells')}>
+              ✦ Hechizos <small>{spells.length}</small>
+            </button>
+            <button id={itemsTabId} type="button" role="tab" aria-selected={tab === 'items'}
+              aria-controls={pageId} tabIndex={tab === 'items' ? 0 : -1}
+              data-chronicles-menu-tab-button="items" onClick={() => setTab('items')}>
+              ◈ Objetos <small>{stock}</small>
+            </button>
+          </div>
         )}
-        <button type="button" className="chronicles-spell-menu__close" onClick={onClose} aria-label="Cerrar">✕</button>
-      </header>
-      {spells.length > 0 && (
-        <div className="chronicles-spell-menu__tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === 'spells'} data-chronicles-menu-tab-button="spells"
-            onClick={() => setTab('spells')}>Hechizos</button>
-          <button type="button" role="tab" aria-selected={tab === 'items'} data-chronicles-menu-tab-button="items"
-            onClick={() => setTab('items')}>Objetos{items.length ? ` (${items.reduce((sum, entry) => sum + entry.quantity, 0)})` : ''}</button>
+        <div id={pageId} className="chronicles-spell-menu__pages"
+          role={spells.length ? 'tabpanel' : undefined}
+          aria-labelledby={spells.length ? (tab === 'spells' ? spellsTabId : itemsTabId) : undefined}>
+          {tab === 'spells' ? (
+            <ul className="chronicles-spell-menu__entries">
+              {spells.map((spell, index) => {
+                const affordable = !down && sp >= spell.cost;
+                const kind = chroniclesSpellMenuKind(spell.kind);
+                return (
+                  <li key={spell.id}>
+                    <button ref={index === 0 ? firstRef : undefined} type="button"
+                      data-chronicles-cast={spell.id} data-cast-kind={spell.kind}
+                      disabled={!affordable} onClick={() => onCast(spell.id)}
+                      title={down ? 'El personaje está fuera de combate' : sp < spell.cost ? 'No tienes suficientes PH' : `Lanzar ${spell.name}`}>
+                      <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
+                      <span className="chronicles-spell-menu__entry">
+                        <strong>{spell.name}</strong>
+                        <small>{spell.description}</small>
+                        <span className="chronicles-spell-menu__kind">{kind.label}</span>
+                      </span>
+                      <span className="chronicles-spell-menu__cost"><b>{spell.cost} PH</b><small>{affordable ? 'LANZAR' : 'SIN PH'}</small></span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <ul className="chronicles-spell-menu__entries">
+              {items.map(({ item, quantity }, index) => {
+                const kind = chroniclesSpellMenuKind(item.kind);
+                return (
+                  <li key={item.id}>
+                    <button ref={index === 0 ? firstRef : undefined} type="button"
+                      data-chronicles-use-item={item.id} data-cast-kind={item.kind}
+                      disabled={!itemUser || itemUser.hp <= 0} onClick={() => onUse(item.id)}>
+                      <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
+                      <span className="chronicles-spell-menu__entry">
+                        <strong>{item.name}</strong>
+                        <small>{item.description}</small>
+                        <span className="chronicles-spell-menu__kind">{kind.label}</span>
+                      </span>
+                      <span className="chronicles-spell-menu__cost"><b>×{quantity}</b><small>{itemUser?.hp > 0 ? 'USAR' : 'NO DISP.'}</small></span>
+                    </button>
+                  </li>
+                );
+              })}
+              {!items.length && <li className="chronicles-spell-menu__empty">
+                <span aria-hidden="true">◇</span>
+                <strong>La mochila está vacía</strong>
+                <small>Los boticarios de Terra venden pociones y pergaminos.</small>
+              </li>}
+            </ul>
+          )}
         </div>
-      )}
-      {tab === 'spells' ? (
-        <ul>
-          {spells.map((spell, index) => (
-            <li key={spell.id}>
-              <button
-                ref={index === 0 ? firstRef : undefined}
-                type="button"
-                data-chronicles-cast={spell.id}
-                disabled={sp < spell.cost || down}
-                onClick={() => onCast(spell.id)}
-              >
-                <strong>{spell.name}</strong>
-                <small>{spell.description}</small>
-                <em>{spell.cost} PH</em>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <ul>
-          {items.map(({ item, quantity }, index) => (
-            <li key={item.id}>
-              <button
-                ref={index === 0 ? firstRef : undefined}
-                type="button"
-                data-chronicles-use-item={item.id}
-                disabled={!itemUser || itemUser.hp <= 0}
-                onClick={() => onUse(item.id)}
-              >
-                <strong>{item.name}</strong>
-                <small>{item.description}</small>
-                <em>×{quantity}</em>
-              </button>
-            </li>
-          ))}
-          {!items.length && <li className="chronicles-spell-menu__empty">La mochila no lleva pociones ni pergaminos. El boticario de cada pueblo los vende.</li>}
-        </ul>
-      )}
-      <footer>
-        {tab === 'items'
-          ? 'Usar un objeto gasta el turno de quien lo usa.'
-          : 'Más hechizos en el gremio. La posada devuelve los PH.'}
-      </footer>
-    </section>
+        <footer className="chronicles-spell-menu__folio-footer">
+          <span>{tab === 'items'
+            ? 'Usar un objeto gasta el turno de quien lo usa.'
+            : down ? 'El personaje no puede lanzar hechizos mientras esté caído.'
+              : 'Más hechizos en el gremio. La posada devuelve los PH.'}</span>
+          <kbd>ESC · CERRAR</kbd>
+        </footer>
+      </section>
+    </div>
   );
 }
