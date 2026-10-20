@@ -23,7 +23,9 @@
   content: '';
   position: absolute;
   inset: -6%;
-  background: url('/chronicles-loading-art.svg') 65% center / cover no-repeat;
+  background: url('/chronicles-loading-art.svg') right center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, #000 72%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, #000 72%);
   filter: blur(30px) brightness(.75) saturate(1.15);
   opacity: .58;
   pointer-events: none;
@@ -43,11 +45,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% center;
+  object-position: right center;
   opacity: 0;
   filter: blur(2px) brightness(.7);
-  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 42%, transparent 58%, #000 84%, #000 100%);
-  mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 42%, transparent 58%, #000 84%, #000 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, #000 72%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 26%, #000 72%);
   transition: opacity 260ms ease-out;
 }
 .chronicles-loading__art.is-ready {
@@ -132,7 +134,7 @@
 /* The wide cinematic painting becomes atmosphere on portrait screens.
    The crisp, real text/crest remain usable instead of shrinking with it. */
 @media (max-width: 700px) {
-  .chronicles-loading::before { background-position: 84% center; }
+  .chronicles-loading::before { background-position: 84% center; -webkit-mask-image: none; mask-image: none; }
   .chronicles-loading__art.is-ready {
     opacity: .44;
     object-fit: cover;
