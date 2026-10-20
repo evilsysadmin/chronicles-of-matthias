@@ -5,6 +5,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
 import ReleaseUpdateNotice from './ReleaseUpdateNotice.jsx';
+import LoadingScreen from './LoadingScreen.jsx';
 import {
   fetchMeStatus, isLoggedIn, logout, refreshSsoToken, reportLogoutPresence, restoreSsoSession, startSsoRefresh,
   watchSessionIdentity,
@@ -18,10 +19,6 @@ import {
 
 const ChroniclesOfMatthias = lazy(() => import('../components/ChroniclesOfMatthias.jsx'));
 const ChroniclesOfMatthiasTactics = lazy(() => import('../components/ChroniclesOfMatthiasTactics.jsx'));
-
-function Loading() {
-  return <div className="menu tournament-panel lab-screen"><p className="hint-text friendly-lead">Cargando Chronicles…</p></div>;
-}
 
 function currentMode() {
   return window.location.hash === '#tactics' ? 'chronicles-tactics' : 'chronicles';
@@ -79,7 +76,7 @@ export default function App() {
     if (loggedIn) void requestChroniclesLandscapeOnEntry();
   }, [loggedIn]);
 
-  if (checkingSso) return <><Loading /><ReleaseUpdateNotice deferReload /></>;
+  if (checkingSso) return <><LoadingScreen /><ReleaseUpdateNotice deferReload /></>;
   if (!loggedIn) {
     return (
       <>
@@ -109,7 +106,7 @@ export default function App() {
 
   return (
     <>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<LoadingScreen />}>
         <Game key={`${mode}-${mountKey}`} onExit={exit} onLogout={signOut} />
       </Suspense>
       <ReleaseUpdateNotice deferReload />
