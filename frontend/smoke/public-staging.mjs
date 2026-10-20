@@ -2,6 +2,7 @@
 // CI sets CHRONICLES_STAGING_INVITE_CODE; the account is always deleted.
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { assertAdventureFolioInk } from './adventure-contrast.mjs';
 
@@ -17,6 +18,26 @@ const versionResponse = await fetch(`${origin}/release.json?ts=${Date.now()}`, {
 assert.equal(versionResponse.status, 200);
 const published = await versionResponse.json();
 assert.equal(published.build, expectedSha, 'Public browser release must match admitted SHA');
+
+// Verify the *actual root HTML* points at the assets built from this SHA.
+// A versioned release.json can be fresh while Cloudflare still serves a
+// cached old index.html; that produces mismatched styles and invisible ink.
+const expectedIndex = readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8');
+const rootResponse = await fetch(origin + '/', { cache: 'no-store' });
+assert.ok(rootResponse.ok, 'Public staging root HTML is unavailable');
+const actualIndex = await rootResponse.text();
+function entrypointAssets(html) {
+  return [...html.matchAll(/(?:src|href)=["']\/?(assets\/[^"'?#]+)[^"']*["']/g)]
+    .map((match) => match[1]).sort();
+}
+const expectedAssets = entrypointAssets(expectedIndex);
+const actualAssets = entrypointAssets(actualIndex);
+assert(expectedAssets.length > 0, 'Local Vite build has no entrypoint asset URLs');
+console.log('CHRONICLES_PUBLIC_HTML_ASSETS', JSON.stringify({
+  expected: expectedAssets, delivered: actualAssets,
+}));
+assert.deepEqual(actualAssets, expectedAssets,
+  'Public HTML points to stale/mismatched JS/CSS, despite the release manifest SHA');
 
 let browser;
 try {
@@ -144,7 +165,38 @@ try {
         assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
           `${label} requires horizontal scrolling`);
         assert.ok(await canvas.isVisible(), '3D stage disappeared behind an overlay');
-        if (label === 'adventure') await assertAdventureFolioInk(dialog, `${viewport.width}x${viewport.height}`);
+        if (label === 'adventure') {
+          try {
+            await assertAdventureFolioInk(dialog, `${viewport.width}x${viewport.height}`);
+          } catch (error) {
+            // Only public CSS/DOM metadata, never auth tokens or player details.
+            const probe = await dialog.evaluate((root) => {
+              const selectors = [
+                '.chronicles-game-menu__actions > button',
+                '.chronicles-audio-controls label',
+                '.chronicles-game-menu__hint',
+              ];
+              const samples = selectors.map((selector) => {
+                const el = root.querySelector(selector);
+                const style = el && getComputedStyle(el);
+                return { selector, cssColor: style?.color,
+                  textFill: style?.getPropertyValue('-webkit-text-fill-color'),
+                  className: el?.className || '' };
+              });
+              const sheets = [...document.styleSheets].map((sheet) => {
+                try {
+                  return { href: sheet.href, count: sheet.cssRules.length,
+                    folioRules: [...sheet.cssRules].filter((rule) =>
+                      rule.selectorText?.includes('chronicles-game-menu__panel--folio'))
+                      .length };
+                } catch { return { href: sheet.href, inaccessible: true }; }
+              });
+              return { samples, sheets };
+            });
+            console.error('CHRONICLES_PUBLIC_ADVENTURE_STYLE_PROBE', JSON.stringify(probe));
+            throw error;
+          }
+        }
         await page.screenshot({ path: `chronicles-public-${label}-${viewport.width}.png` });
         console.log(`CHRONICLES_PUBLIC_FOLIO_OK name=${label} viewport=${viewport.width}`);
       }
