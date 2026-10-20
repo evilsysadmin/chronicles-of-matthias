@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
 import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
+import { chroniclesQuestRecordedEvents } from '../chronicles/chroniclesQuestRecordedEvents.js';
 import './ChroniclesJournalModal.css';
 
 // One readable page at a time. The old side-by-side quest dashboard left half
@@ -106,6 +107,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                     const expanded = selectedId === quest.id;
                     const hint = chroniclesQuestRegionHint(quest, state);
                     const orientation = chroniclesQuestRegionContext(hint, state);
+                    const recorded = chroniclesQuestRecordedEvents(quest, entries);
                     const detailId = `chronicles-journal-quest-${index}`;
                     return (
                       <li key={quest.id} className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
@@ -128,6 +130,18 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                           <div id={detailId} className="chronicles-journal-modal__quest-detail">
                             {quest.description && <p className="chronicles-journal-modal__quest-story">{quest.description}</p>}
                             {quest.objective && <p className="chronicles-journal-modal__quest-objective">{quest.objective}</p>}
+                            {recorded.length > 0 && (
+                              <section className="chronicles-journal-modal__quest-history"
+                                aria-label="Acontecimientos registrados del encargo">
+                                <h4>Lo que vivimos</h4>
+                                <ol>{recorded.map((event) => (
+                                  <li key={event.id} data-chronicles-quest-event={event.id}>
+                                    <strong>{event.title}</strong>
+                                    <p>{event.body}</p>
+                                  </li>
+                                ))}</ol>
+                              </section>
+                            )}
                             {hint && (
                               <aside className="chronicles-journal-modal__quest-hint">
                                 <small>PISTA DEL LUGAR · {hint.kind}</small>

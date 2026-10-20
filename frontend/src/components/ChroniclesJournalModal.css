@@ -608,3 +608,46 @@
 .chronicles-journal-modal__quest-orientation[data-chronicles-quest-relation='same-map'] {
   color: #486143;
 }
+
+
+/* Real campaign receipts read as handwritten marginalia, not event cards. */
+.chronicles-journal-modal__quest-history {
+  margin: 14px 0 18px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid #ac8a60;
+}
+.chronicles-journal-modal__quest-history h4 {
+  margin: 0 0 10px;
+  color: #684220;
+  font: 700 1rem/1.2 Georgia, serif;
+}
+.chronicles-journal-modal__quest-history ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.chronicles-journal-modal__quest-history li {
+  position: relative;
+  padding: 0 0 12px 13px;
+}
+.chronicles-journal-modal__quest-history li::before {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  left: -18px;
+  top: 6px;
+  border-radius: 50%;
+  background: #9d784b;
+  outline: 2px solid #f0dcb6;
+}
+.chronicles-journal-modal__quest-history strong {
+  display: block;
+  color: #452e19;
+  font: 700 .94rem/1.35 Georgia, serif;
+}
+.chronicles-journal-modal__quest-history li p {
+  margin: 4px 0 0;
+  color: #675039;
+  font: italic .89rem/1.44 Georgia, serif;
+}

@@ -29,6 +29,9 @@ try {
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.match(await first.innerText(), /Camino de los Estandartes/);
       assert.match(await first.innerText(), /mojón sin nombre/);
+      await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"]').waitFor();
+      assert.equal(await first.locator('[data-chronicles-quest-event="first-book-banner-found"]').count(), 0,
+        'Unreached quest milestones must never be invented');
       assert.equal(await first.locator('[data-chronicles-quest-relation="another-region"]').count(), 1,
         'The party starts in Swordhaven; the banner clue points to the road');
       const second = dialog.locator('[data-chronicles-quest-id="names-in-wood"]');
@@ -37,6 +40,8 @@ try {
       assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'false');
       assert.match(await second.innerText(), /Roble del Claro/);
+      assert.equal(await second.locator('[data-chronicles-quest-event]').count(), 0,
+        'Quest without journal receipts must not fabricate a history');
       assert.match(await second.locator('[data-chronicles-quest-relation="another-region"]').innerText(),
         /Desde Swordhaven, tus notas apuntan a Rookwood/);
       // Reuse the true reducer's existing trackedQuestId contract. HUD and
@@ -58,6 +63,10 @@ try {
       const completed = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
+      await completed.locator('.chronicles-journal-modal__quest-heading').click();
+      await completed.locator('[data-chronicles-quest-event="banner-road-captain-falls"]').waitFor();
+      assert.match(await completed.innerText(), /Cae Garrah/);
+      await second.locator('.chronicles-journal-modal__quest-heading').click();
       assert.equal(await completed.locator('[data-chronicles-track-quest]').count(), 0,
         'A completed contract cannot be followed');
       await page.screenshot({ path: 'smoke-journal-quests-' + width + '.png' });
