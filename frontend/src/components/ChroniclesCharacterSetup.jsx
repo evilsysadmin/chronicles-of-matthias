@@ -407,10 +407,11 @@ export default function ChroniclesCharacterSetup({
                     className={selected ? 'is-selected' : ''}
                     aria-pressed={selected}
                     disabled={unmet.length > 0}
+                    title={unmet.length ? `${definition.label}: requiere ${requirementText(classId)}. Vuelve a tirar atributos para optar a esta clase.` : definition.summary}
                     onClick={() => chooseClass(classId)}
                   >
                     <strong>{definition.label}</strong>
-                    <em>{unmet.length ? `Requiere ${requirementText(classId)}` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
+                    <em>{unmet.length ? `Requiere ${requirementText(classId)} · Vuelve a tirar atributos` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
                   </button>
                 );
               })}
