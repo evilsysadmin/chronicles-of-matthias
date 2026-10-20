@@ -39,7 +39,63 @@
     "swordhavenArrived": true,
     "campaignRouteV1": true
   },
-  "enemies": [],
+  "enemies": [
+    {
+      "id": "swordhaven-south-cutpurse",
+      "visualType": "road-bandit",
+      "name": "ratero de los callejones",
+      "explorationObjective": "Un ratero acecha a los viajeros en los callejones del barrio sur.",
+      "x": 3,
+      "y": 17,
+      "hpKey": "swordhavenSouthCutpurseHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "blockingMessage": "Un ratero sale de entre las casas y exige tu bolsa.",
+      "onDefeat": {
+        "message": "{attacker} derrota al ratero con {attack}. Entre sus ropas aparecen cuatro monedas robadas.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "swordhavenSouthCutpurseDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ],
+        "journal": {
+          "id": "swordhaven-south-cutpurse-falls",
+          "title": "Callejón despejado",
+          "body": "La compañía acaba con un ratero que acechaba en el barrio sur de Swordhaven.",
+          "sigil": "†"
+        }
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      },
+      "defeatedFlag": "swordhavenSouthCutpurseDefeated"
+    }
+  ],
   "triggers": [],
   "interactables": [
     {
