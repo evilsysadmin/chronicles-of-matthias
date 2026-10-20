@@ -18,15 +18,41 @@ function menu(saves, props = {}) {
 }
 
 describe('Chronicles expedition entry', () => {
-  it('shows New, Load and Save management without allocating a new run on mount', () => {
-    const html = menu([]);
+  it('prioritizes a first expedition without creating a run on mount', () => {
+    const onNew = vi.fn();
+    const html = menu([], { onNew });
+    expect(html).toContain('data-chronicles-primary-action="new"');
+    expect(html).toContain('Nueva expedición');
+    expect(html).not.toContain('Continuar expedición');
+    expect(html).not.toContain('Elegir otra expedición');
+    expect(html).toContain('<summary>Otras opciones</summary>');
     expect(html).toContain('Nuevo juego');
-    expect(html).toContain('Continuar partida');
-    expect(html).toContain('Cargar juego');
     expect(html).toContain('Gestionar partidas');
     expect(html).toContain('Volver al castillo');
-    expect(html).toContain('data-chronicles-save-menu="home"');
-    expect(html).toContain('disabled=""');
+    expect(onNew).not.toHaveBeenCalled();
+  });
+
+  it('prioritizes a real saved run and offers choosing another only when needed', () => {
+    const saved = [{ id: 'one', active: true, title: 'La torre', currentMapId: 'swordhaven-square' }];
+    const html = menu(saved);
+    expect(html).toContain('data-chronicles-primary-action="continue"');
+    expect(html.indexOf('Continuar expedición')).toBeLessThan(html.indexOf('Nueva expedición'));
+    expect(html).toContain('La torre');
+    expect(html).not.toContain('Elegir otra expedición');
+    expect(menu([...saved, { id: 'two', title: 'La cripta' }])).toContain('Elegir otra expedición');
+  });
+
+  it.each([
+    { loading: true, error: '' },
+    { loading: false, error: 'Sesión caducada' },
+  ])('disables start and cached resume while server catalog is unresolved: %j', (props) => {
+    for (const saves of [[], [{ id: 'cached', active: true, title: 'Caché local' }]]) {
+      const html = menu(saves, props);
+      const primary = html.match(/<button[^>]*class="is-primary[^"]*"[^>]*>/)?.[0];
+      expect(primary).toContain('disabled=""');
+      if (saves.length) expect(html).toContain('Caché local');
+      expect(html).toContain('Otras opciones');
+    }
   });
 
   it('shows an explicit retry only for failed catalog sync, disabled while busy', () => {
