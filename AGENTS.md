@@ -100,6 +100,14 @@
   sangre con **número de daño** compartida:
   `chroniclesHitImpacts` / `ChroniclesHitSplat`. No duplicar feedback
   con banners u overlays competidores.
+- **Pistas de región de la Crónica:** autorar las fases en
+  `frontend/src/chronicles/campaign/quest-region-hints.json` con un
+  `mapId` canónico, `clue` y, si procede, requisitos declarativos
+  `when` o `objectiveIncludes`. El motor
+  `chroniclesQuestRegionHint` resuelve por orden y nunca inventa
+  coordenadas o lugares de encargos desconocidos. Mantener las condiciones
+  acordes a los efectos reales `start-quest`/`advance-quest`; no añadir
+  `switch` específicos de misiones ni duplicar pistas en el estado guardado.
 - La banda naranja/narrador se reserva para **sucesos narrativos relevantes**;
   no mostrarla por acciones rutinarias, disparos al aire, cada impacto o
   mensajes mecánicos repetidos. La Crónica puede conservar contexto útil.
