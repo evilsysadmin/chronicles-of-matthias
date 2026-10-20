@@ -17,6 +17,17 @@
     #080f18;
   color: #ecd1a6;
 }
+/* The approved panorama is exceptionally wide: a blurred cover layer prevents
+   letterbox bands on taller screens while the sharper edges preserve the scene. */
+.chronicles-loading::before {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  background: url('/chronicles-loading-art.svg') center / cover no-repeat;
+  filter: blur(30px) brightness(.75) saturate(1.15);
+  opacity: .58;
+  pointer-events: none;
+}
 .chronicles-loading::after {
   content: '';
   position: absolute;
@@ -121,9 +132,11 @@
    The crisp, real text/crest remain usable instead of shrinking with it. */
 @media (max-width: 700px) {
   .chronicles-loading__art.is-ready {
-    opacity: .38;
+    opacity: .44;
     object-fit: cover;
-    filter: blur(11px) brightness(.6);
+    filter: blur(11px) brightness(.9) saturate(1.25);
+    -webkit-mask-image: none;
+    mask-image: none;
     transform: scale(1.08);
   }
   .chronicles-loading__fallback.has-art {
