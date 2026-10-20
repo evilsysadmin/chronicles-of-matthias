@@ -33,10 +33,13 @@
   height: 100%;
   object-fit: contain;
   opacity: 0;
+  filter: blur(2px) brightness(.7);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 42%, transparent 58%, #000 84%, #000 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 42%, transparent 58%, #000 84%, #000 100%);
   transition: opacity 260ms ease-out;
 }
 .chronicles-loading__art.is-ready {
-  opacity: 1;
+  opacity: .9;
 }
 .chronicles-loading__fallback {
   z-index: 1;
@@ -50,8 +53,8 @@
   transition: opacity 200ms ease-out, visibility 200ms;
 }
 .chronicles-loading__fallback.has-art {
-  opacity: 0;
-  visibility: hidden;
+  opacity: 1;
+  visibility: visible;
 }
 .chronicles-loading__crest {
   width: clamp(105px, 18vmin, 155px);
@@ -118,7 +121,7 @@
    The crisp, real text/crest remain usable instead of shrinking with it. */
 @media (max-width: 700px) {
   .chronicles-loading__art.is-ready {
-    opacity: .28;
+    opacity: .38;
     object-fit: cover;
     filter: blur(11px) brightness(.6);
     transform: scale(1.08);
