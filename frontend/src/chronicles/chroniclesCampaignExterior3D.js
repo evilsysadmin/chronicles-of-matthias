@@ -451,7 +451,8 @@ const TOWN_BUILDING_STYLES = Object.freeze({
   apothecary: Object.freeze({ roof: 0x554481, emblem: 'crystal', label: 'BOTICA' }),
   guild: Object.freeze({ roof: 0x3f4f8a, emblem: 'crystal', label: 'GREMIO' }),
   watch: Object.freeze({ roof: 0x5c3b38, emblem: 'shield', label: 'GUARDIA' }),
-  hall: Object.freeze({ roof: 0x6e2e2a, emblem: 'sun', label: 'AYUNTAMIENTO' }),
+  // Civic silhouette and seal are distinct from the temple's sun and spire.
+  hall: Object.freeze({ roof: 0x6e2e2a, emblem: 'civic', label: 'AYUNTAMIENTO' }),
 });
 const TOWN_HOME_STYLES = Object.freeze([
   Object.freeze({ roof: 0x7d4a36, emblem: 'home' }),
