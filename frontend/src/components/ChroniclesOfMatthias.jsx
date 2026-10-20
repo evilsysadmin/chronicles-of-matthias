@@ -151,6 +151,7 @@ import {
 } from '../chronicles/chroniclesNarrationLog.js';
 import ChroniclesPartyBark from './ChroniclesPartyBark.jsx';
 import ChroniclesFirstSteps from './ChroniclesFirstSteps.jsx';
+import ChroniclesFirstAudienceCue from './ChroniclesFirstAudienceCue.jsx';
 import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
 import useChroniclesLandscape, {
   releaseChroniclesLandscape,
@@ -1603,6 +1604,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
             <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark} />
+            <ChroniclesFirstAudienceCue
+              state={state}
+              contextualAction={contextualAction}
+              npc={npcAtPosition}
+              suspended={Boolean(audience || chronicleModalOpen || menuOpen || journalOpen
+                || quickStatusOpen || automapOpen || sheetMemberId || spellMenuOpen
+                || state.shop || state.guild || expeditionOver)}
+              onTalk={interactWithContext}
+            />
             <ChroniclesFirstSteps
               key={activeRunIdRef.current || 'no-run'}
               state={state}
