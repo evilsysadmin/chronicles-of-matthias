@@ -58,6 +58,24 @@ describe('Chronicles · MM3 shops', () => {
     expect(chroniclesReduce(worn, { type: 'shop-sell', itemId: 'brass-mace' })).toBe(worn);
   });
 
+  it('rejects over-cap gold sales without losing inventory, then allows a sale after spending', () => {
+    const open = atForge(9999);
+    const seeded = chroniclesApplyContentEffects(open, [
+      { type: 'grant-item', itemId: 'brass-dagger', name: 'Daga de latón', quantity: 1 },
+    ]);
+    expect(chroniclesGoldBalance(seeded)).toBe(9999);
+    expect(seeded.inventory['brass-dagger'].quantity).toBe(1);
+    const refused = chroniclesReduce(seeded, { type: 'shop-sell', itemId: 'brass-dagger' });
+    expect(refused).toBe(seeded);
+    const purchased = chroniclesReduce(seeded, { type: 'shop-buy', itemId: 'brass-dagger' });
+    const salePrice = chroniclesShopSellPrice(CHRONICLES_EQUIPMENT['brass-dagger']);
+    expect(chroniclesGoldBalance(purchased)).toBe(9999 - CHRONICLES_EQUIPMENT['brass-dagger'].price);
+    expect(chroniclesGoldBalance(purchased) + salePrice).toBeLessThanOrEqual(9999);
+    const sold = chroniclesReduce(purchased, { type: 'shop-sell', itemId: 'brass-dagger' });
+    expect(sold.inventory['brass-dagger'].quantity).toBe(1);
+    expect(chroniclesGoldBalance(sold)).toBe(9999 - CHRONICLES_EQUIPMENT['brass-dagger'].price + salePrice);
+  });
+
   it('closes the counter when the party walks away, and only trades at the merchant', () => {
     const open = atForge(30);
     const walked = chroniclesReduce(open, 'turn-left');
