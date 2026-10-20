@@ -20,6 +20,9 @@
   left: auto;
   width: min(710px, 100%);
   max-width: 100%;
+  /* Include the ornate frame in the viewport ceiling, particularly on
+     short landscape phones. Content-box added 24px to 100dvh previously. */
+  box-sizing: border-box;
   max-height: min(740px, calc(100dvh - 16px));
   transform: none;
   padding: 0;
