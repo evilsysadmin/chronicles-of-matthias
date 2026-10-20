@@ -8,6 +8,8 @@ describe('Chronicles shop rooms', () => {
     const room = (id) => chroniclesShopRoom(town.interactables.find((entry) => entry.id === id))?.id;
     expect(room('first-book-armorer')).toBe('odo-forge');
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
+    const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
+    expect(brunna.src).toContain('brunna-forge.webp');
     expect(room('first-book-guild')).toBe('guild-sanctum');
   });
 
