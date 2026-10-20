@@ -128,6 +128,15 @@
   intactos en PRs puramente visuales; tests y capturas por pantalla.
   Esta sección es una **dirección de trabajo**, no una afirmación de que
   esos cortes estén completados. Revisar PRs/issue antes de iterar.
+- **Tiendas MM3:** interiores de comercio a pantalla completa, catálogo seleccionable y
+  ficha de compra/venta con datos reales; no mostrar la escena del juego detrás.
+  La Forja de Brunna usa el mock canónico optimizado en
+  `frontend/src/assets/chronicles/ui/shops/brunna-forge.webp` (WebP 1672×941),
+  con tendera visible entre los paneles. No reintroducir el antiguo sprite
+  pixelado como fondo principal ni añadir decoraciones que escondan la cara.
+  Presentación, filtros y ordenación jamás deben mutar el inventario, el oro,
+  las reglas de equipabilidad ni las operaciones `shop-buy` / `shop-sell`.
+  La venta solo ofrece existencias sin equipar; la compra no equipa.
 - Evitar alertas, bandas y carteles persistentes para feedback de combate.
   Respetar UX móvil y preferencias de movimiento reducido sin dejar
   desaparecida toda señal de una acción válida.
