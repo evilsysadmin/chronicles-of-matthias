@@ -16,14 +16,16 @@
       }
       .chronicles-boot::before {
         content:'';position:absolute;inset:-6%;pointer-events:none;
-        background:url('/chronicles-loading-art.svg') center / cover no-repeat;
+        background:url('/chronicles-loading-art.svg') right center / cover no-repeat;
         filter:blur(30px) brightness(.75) saturate(1.15);opacity:.58;
+        -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 26%,#000 72%);
+        mask-image:linear-gradient(90deg,transparent 0%,transparent 26%,#000 72%);
       }
       .chronicles-boot__art {
         position:absolute; inset:0; width:100%; height:100%;
-        object-fit:contain; opacity:.7; filter:blur(2px) brightness(.7);
-        -webkit-mask-image:linear-gradient(90deg,#000 0%,transparent 42%,transparent 58%,#000 100%);
-        mask-image:linear-gradient(90deg,#000 0%,transparent 42%,transparent 58%,#000 100%);
+        object-fit:cover; object-position:right center; opacity:.7; filter:blur(2px) brightness(.7);
+        -webkit-mask-image:linear-gradient(90deg,transparent 0%,transparent 26%,#000 72%);
+        mask-image:linear-gradient(90deg,transparent 0%,transparent 26%,#000 72%);
       }
       .chronicles-boot__center { position:relative;z-index:1; width:min(90vw,460px);padding:24px 0; }
       .chronicles-boot__crest { display:block;width:108px;height:126px;margin:0 auto 14px;filter:drop-shadow(0 0 22px #c4996644); }
@@ -32,7 +34,7 @@
       .chronicles-boot__track { display:block;width:min(62vw,320px);height:3px;overflow:hidden;margin:auto;background:#ddba8d22; }
       .chronicles-boot__light { display:block;width:34%;height:100%;background:linear-gradient(90deg,transparent,#f5d59a,transparent);animation:chronicles-boot-sweep 2s ease-in-out infinite; }
       @keyframes chronicles-boot-sweep { from {transform:translateX(-100%)} to {transform:translateX(300%)} }
-      @media(max-width:700px) { .chronicles-boot__art { object-fit:cover;filter:blur(11px) brightness(.9) saturate(1.25);opacity:.44;-webkit-mask-image:none;mask-image:none; } }
+      @media(max-width:700px) { .chronicles-boot::before { background-position:84% center;-webkit-mask-image:none;mask-image:none; } .chronicles-boot__art { object-fit:cover;object-position:84% center;filter:blur(7px) brightness(.9) saturate(1.25);opacity:.44;-webkit-mask-image:none;mask-image:none; } }
       @media(prefers-reduced-motion:reduce) { .chronicles-boot__light {animation:none;transform:translateX(85%);} }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
