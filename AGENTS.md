@@ -108,6 +108,12 @@
   coordenadas o lugares de encargos desconocidos. Mantener las condiciones
   acordes a los efectos reales `start-quest`/`advance-quest`; no añadir
   `switch` específicos de misiones ni duplicar pistas en el estado guardado.
+- **Historia de cada encargo:** la Crónica solo presenta acontecimientos
+  que existen de verdad en el registro de la expedición. Mantener los vínculos
+  entre misión y recibos `journal.id` en
+  `frontend/src/chronicles/campaign/quest-event-links.json`, sin inventar
+  hitos a partir del estado `completed` ni generar comentarios ficticios
+  de Matthias. El orden es el de `state.journal`, no el del catálogo.
 - La banda naranja/narrador se reserva para **sucesos narrativos relevantes**;
   no mostrarla por acciones rutinarias, disparos al aire, cada impacto o
   mensajes mecánicos repetidos. La Crónica puede conservar contexto útil.
