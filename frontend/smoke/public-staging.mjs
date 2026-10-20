@@ -69,8 +69,17 @@ try {
       await page.getByLabel('Usuario').fill(username);
       await page.getByLabel('Contraseña').fill(password);
       await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-      await page.getByRole('button', { name: 'Entrar', exact: true }).waitFor({ state: 'hidden', timeout: 30_000 });
+      // "Entrar" disappears immediately while loading; that alone is NOT a
+      // successful login. Wait for the actual session and disappearance of
+      // the login screen or surface its error explicitly.
+      await page.waitForFunction(() =>
+        Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
+      await page.getByRole('heading', { name: 'Iniciar sesión' }).waitFor({
+        state: 'hidden', timeout: 30_000,
+      });
       await page.getByText('Cargando Chronicles…').waitFor({ state: 'hidden', timeout: 30_000 }).catch(() => {});
+      assert.ok(await page.evaluate(() => !!localStorage.getItem('chess-study-auth-token')),
+        'Authenticated session was not preserved');
       assert.ok((await page.locator('#root').innerHTML()).length > 500, 'Empty authenticated game');
       assert.deepEqual(errors, [], 'Uncaught browser errors');
       assert.ok((await page.locator('#root').innerHTML()).includes('Chronicles'), 'Game did not render');
