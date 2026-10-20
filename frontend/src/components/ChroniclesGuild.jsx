@@ -101,7 +101,7 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
           ) : (
             <div className="chronicles-guild__member">
               <strong>Compañía afiliada</strong>
-              <p>Las estanterías están abiertas. Selecciona un hechizo y el personaje que lo aprenderá.</p>
+              <p>Las estanterías están abiertas. Elige un hechizo y pulsa el nombre del personaje que lo aprenderá.</p>
             </div>
           )}
         </aside>
