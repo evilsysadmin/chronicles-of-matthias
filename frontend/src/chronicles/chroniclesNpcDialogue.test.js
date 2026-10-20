@@ -39,7 +39,7 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
       }
     }
     expect(seen.has('3,17')).toBe(true);
-    expect(seen.has('15,20')).toBe(true);
+    expect(seen.has('15,21')).toBe(true);
     for (const entry of [...town.interactables, ...town.exits]) {
       expect(seen.has(entry.x + ',' + entry.y), entry.id).toBe(true);
     }
