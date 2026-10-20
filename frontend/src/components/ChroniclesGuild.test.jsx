@@ -31,6 +31,17 @@ describe('Chronicles guild full-room experience', () => {
     expect(html).not.toContain('chronicles-shop__tabs');
   });
 
+  it('provides an optional compatibility filter without hiding authored spell stock', () => {
+    const html = renderGuild();
+    expect(html).toContain('Solo compatibles');
+    expect(html).toContain('aria-pressed="false"');
+    expect(html).toContain('hechizos');
+    expect(html).toContain('data-chronicles-guild-compatible=');
+    expect((html.match(/data-chronicles-guild-spell=/g) || []).length).toBe(4);
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+  });
+
   it('marks a joined company without showing the membership CTA again', () => {
     const html = renderGuild(true);
     expect(html).toContain('Compañía afiliada');
