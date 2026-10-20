@@ -47,11 +47,16 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       <section ref={dialogRef} className="chronicles-journal-modal" role="dialog" aria-modal="true"
         aria-labelledby="chronicles-journal-modal-title"
         onKeyDown={(event) => {
-          event.stopPropagation();
-          if (event.key === 'j' || event.key === 'J') {
+          // The dialog intentionally blocks the parent game's shortcuts.
+          // Escape must close locally because the global back-stack listener
+          // sits on document and cannot see a stopped bubbling event.
+          if (event.key === 'Escape' || event.key === 'j' || event.key === 'J') {
             event.preventDefault();
+            event.stopPropagation();
             onClose();
+            return;
           }
+          event.stopPropagation();
           if (event.key !== 'Tab') return;
           const focusable = Array.from(dialogRef.current?.querySelectorAll('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])') || []);
           const first = focusable[0];
