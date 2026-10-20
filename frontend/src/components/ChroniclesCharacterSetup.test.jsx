@@ -55,6 +55,8 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).not.toContain('aria-label="Nombre de bishop"');
       expect(html).toContain('data-editor-step="identity"');
       expect(html).toContain('role="tablist"');
+      expect(html).toMatch(/role="tab"[^>]*aria-selected="true"[^>]*tabindex="0"/);
+      expect((html.match(/tabindex="-1"/g) || []).length).toBe(2);
       expect(html).toContain('aria-controls="chronicles-step-panel-stats"');
       expect(html).toContain('Siguiente: atributos');
       expect(html).not.toContain('Anterior: atributos');

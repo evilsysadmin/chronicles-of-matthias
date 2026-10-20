@@ -273,6 +273,18 @@ export default function ChroniclesCharacterSetup({
               id={`chronicles-step-tab-${step.id}`}
               aria-controls={`chronicles-step-panel-${step.id}`}
               aria-selected={editorStep === step.id}
+              tabIndex={editorStep === step.id ? 0 : -1}
+              onKeyDown={(event) => {
+                const steps = ['identity', 'stats', 'class'];
+                const index = steps.indexOf(step.id);
+                const next = event.key === 'ArrowRight' ? (index + 1) % steps.length
+                  : event.key === 'ArrowLeft' ? (index + steps.length - 1) % steps.length
+                    : event.key === 'Home' ? 0 : event.key === 'End' ? steps.length - 1 : -1;
+                if (next < 0) return;
+                event.preventDefault();
+                jumpToStep(steps[next]);
+                event.currentTarget.parentElement?.querySelectorAll('[role="tab"]')[next]?.focus();
+              }}
               onClick={() => jumpToStep(step.id)}>
               <small>{step.next}</small>{step.label}
             </button>
