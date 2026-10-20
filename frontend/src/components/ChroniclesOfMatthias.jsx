@@ -720,6 +720,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const latestActor = chroniclesCurrentInitiativeActor(latest?.initiative);
       if (!latest?.initiative || latestActor?.kind !== 'enemy' || latestActor.id !== actor.id) return;
       const acted = chroniclesResolveEnemyActor(latest, actor.id);
+      // Enemy initiative does not go through dispatch(): play the genuine
+      // incoming hit using its authored attack family, never on a miss.
+      playChroniclesActionSound(latest, acted, { type: 'enemy-turn', enemyId: actor.id });
       const cue = chroniclesRetaliationCue(latest, acted);
       if (cue) {
         const token = retaliationSequenceRef.current + 1;

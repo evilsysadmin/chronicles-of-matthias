@@ -3,6 +3,7 @@ import { getChroniclesFxVolume } from './chroniclesAudioSettings.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
+import { chroniclesAttackMode, chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
 
 function actionType(action) {
   return typeof action === 'string' ? action : action?.type;
@@ -18,6 +19,34 @@ function enemyHpSnapshot(state) {
     id: enemy.id,
     hp: Math.max(0, Number(state?.[enemy.hpKey] || 0)),
   }));
+}
+
+// Actual weapon family, never an inferred effect from an attack hotkey.
+export function chroniclesWeaponImpactFamily(family) {
+  if (family === 'bow' || family === 'crossbow') return 'arrow';
+  if (family === 'axe') return 'cleave';
+  if (family === 'sword' || family === 'dagger') return 'cut';
+  if (family === 'spear') return 'pierce';
+  return 'blunt'; // staff, mace, sling, unarmed and unknown
+}
+
+function partyImpactFamily(state, memberId, requestedMode = 'auto') {
+  const mode = requestedMode === 'auto' ? chroniclesAttackMode(state, memberId) : requestedMode;
+  return chroniclesWeaponImpactFamily(
+    chroniclesEquippedItem(state, memberId, mode === 'missile' ? 'missile' : 'weapon')?.weaponFamily,
+  );
+}
+
+function enemyImpactFamily(state, enemyId) {
+  const enemy = chroniclesMapForState(state)?.enemies?.find((entry) => entry.id === enemyId);
+  if (!enemy) return 'blunt';
+  if (enemy.weaponFamily) return chroniclesWeaponImpactFamily(enemy.weaponFamily);
+  const type = [enemy.visualType, enemy.enemyBuild?.archetype].filter(Boolean).join(' ').toLowerCase();
+  if (/archer|crossbow|bowman/.test(type)) return 'arrow';
+  if (/axeman|axe-wielder/.test(type)) return 'cleave';
+  if (/swordsman|sword-wielder/.test(type)) return 'cut';
+  if (/spearman|pikeman/.test(type)) return 'pierce';
+  return 'blunt'; // Don't invent steel weapons for creatures with unknown attacks.
 }
 
 export function chroniclesActionAudioCue(previous, next, action) {
@@ -39,6 +68,16 @@ export function chroniclesActionAudioCue(previous, next, action) {
   const afterById = new Map(enemyHpSnapshot(next).map((enemy) => [enemy.id, enemy.hp]));
   const damaged = beforeEnemies.filter((enemy) => (afterById.get(enemy.id) ?? enemy.hp) < enemy.hp);
 
+  if (type === 'enemy-turn') {
+    // The turn engine records actual attack attempts: roaming or paralysis
+    // must NEVER generate a fake 'miss' whoosh.
+    const swing = (next.enemyTurnEvents || [])
+      .find((event) => event.type === 'attack' && event.enemyId === action?.enemyId);
+    if (!swing) return null;
+    const family = enemyImpactFamily(previous, action.enemyId);
+    return hurt && swing.damage > 0 ? `hurt:${family}` : `miss:${family}`;
+  }
+
   if (type === 'cast' || type === 'use-item') {
     if (damaged.length) return 'spell-hit';
     if (hurt) return 'hurt';
@@ -54,17 +93,31 @@ export function chroniclesActionAudioCue(previous, next, action) {
     const families = fired.map((memberId) => (
       chroniclesEquippedItem(previous, memberId, 'missile')?.weaponFamily || 'bow'
     ));
-    return `volley:${families.join(',')}`;
+    const shots = chroniclesOpeningVolleyShots(previous);
+    const landed = shots.shots.find((shot) => shot.damage > 0);
+    const impact = landed
+      ? chroniclesWeaponImpactFamily(chroniclesEquippedItem(previous, landed.memberId, 'missile')?.weaponFamily)
+      : null;
+    // A volley has one restrained impact at most, never a clang per projectile.
+    return [
+      `volley:${families.join(',')}`,
+      impact && damaged.length ? `impact:${impact}` : shots.target ? 'miss:arrow' : null,
+      hurt ? `hurt:${enemyImpactFamily(previous, shots.target?.id)}` : null,
+    ].filter(Boolean).join('|');
   }
 
   if (type !== 'attack') return hurt ? 'hurt' : null;
 
-  if (!damaged.length) return hurt ? 'hurt' : 'miss';
+  if (previous.combatRules !== 'mm3') {
+    if (!damaged.length) return hurt ? 'hurt' : 'miss';
+    const defeated = damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0);
+    return defeated ? 'defeat' : hurt ? 'retaliation' : 'hit';
+  }
 
-  const defeated = damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0);
-  if (defeated) return 'defeat';
-  if (hurt) return 'retaliation';
-  return 'hit';
+  const family = partyImpactFamily(previous, action?.memberId || 'matthias', action?.mode || 'auto');
+  const strike = !damaged.length ? 'miss'
+    : damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0) ? 'defeat' : 'hit';
+  return `${strike}:${family}${hurt ? '|hurt:blunt' : ''}`;
 }
 
 function connectTone(ctx, destination, { frequency, duration, gain, type = 'triangle', delay = 0, endFrequency = null }) {
@@ -115,13 +168,7 @@ function connectNoise(ctx, destination, { duration, gain, centerHz, delay = 0, t
   source.stop(start + duration + 0.02);
 }
 
-function playCue(cue) {
-  const volume = getChroniclesFxVolume();
-  if (!cue || volume <= 0) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume?.().catch(() => {});
-
+function playBasicCue(ctx, cue, volume) {
   const bus = ctx.createGain();
   bus.gain.value = 0.82 * volume;
   bus.connect(ctx.destination);
@@ -213,11 +260,78 @@ function playCue(cue) {
   }
 }
 
+function playImpactCue(ctx, cue, volume, delay = 0) {
+  const [event, family = 'blunt'] = cue.split(':');
+  const bus = ctx.createGain();
+  bus.gain.value = 0.58 * volume;
+  bus.connect(ctx.destination);
+  const weight = event === 'hurt' ? 0.72 : event === 'defeat' ? 1.05 : 1;
+
+  if (event === 'miss') {
+    // Zziuumm! The weapon whistles past; NO contact thud for a miss.
+    const heavy = family === 'blunt' || family === 'cleave';
+    connectNoise(ctx, bus, {
+      duration: heavy ? 0.14 : 0.19, gain: (heavy ? 0.027 : 0.019) * weight,
+      centerHz: heavy ? 780 : family === 'arrow' ? 2800 : 2050,
+      type: 'bandpass', delay,
+    });
+    connectTone(ctx, bus, {
+      frequency: heavy ? 235 : family === 'arrow' ? 920 : 590,
+      endFrequency: heavy ? 110 : family === 'arrow' ? 290 : 190,
+      duration: heavy ? 0.15 : 0.21, gain: (heavy ? 0.013 : 0.01) * weight,
+      type: 'sine', delay,
+    });
+    return;
+  }
+
+  // Tight, almost dry transients: convincing hit without a metallic clatter.
+  if (family === 'blunt') {
+    connectTone(ctx, bus, { frequency: 131, endFrequency: 60, duration: 0.12, gain: 0.052 * weight, delay });
+    connectNoise(ctx, bus, { duration: 0.065, gain: 0.023 * weight, centerHz: 400, type: 'lowpass', delay });
+  } else if (family === 'cleave') {
+    connectNoise(ctx, bus, { duration: 0.13, gain: 0.029 * weight, centerHz: 1150, delay });
+    connectTone(ctx, bus, { frequency: 162, endFrequency: 75, duration: 0.15, gain: 0.045 * weight, delay: delay + 0.015 });
+  } else if (family === 'cut') {
+    connectNoise(ctx, bus, { duration: 0.087, gain: 0.024 * weight, centerHz: 2000, delay });
+    connectTone(ctx, bus, { frequency: 255, endFrequency: 120, duration: 0.11, gain: 0.025 * weight, delay: delay + 0.009 });
+  } else if (family === 'pierce') {
+    connectNoise(ctx, bus, { duration: 0.045, gain: 0.026 * weight, centerHz: 1750, delay });
+    connectTone(ctx, bus, { frequency: 215, endFrequency: 120, duration: 0.096, gain: 0.026 * weight, delay });
+  } else if (family === 'arrow') {
+    connectNoise(ctx, bus, { duration: 0.052, gain: 0.019 * weight, centerHz: 1530, delay });
+    connectTone(ctx, bus, { frequency: 375, endFrequency: 155, duration: 0.08, gain: 0.018 * weight, delay });
+  }
+
+  // Small body response on taking damage; no second heavy impact instrument.
+  if (event === 'hurt' && family !== 'blunt') {
+    connectTone(ctx, bus, { frequency: 100, endFrequency: 65, duration: 0.1, gain: 0.021, delay: delay + 0.02 });
+  }
+}
+
+function playCue(cue) {
+  const volume = getChroniclesFxVolume();
+  if (!cue || volume <= 0) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume?.().catch(() => {});
+
+  // Cap voices and normalize combined energy. Multi-hit turns stay composed.
+  const layers = cue.split('|').slice(0, 3);
+  const mix = volume / Math.sqrt(layers.length);
+  layers.forEach((layer, index) => {
+    if (/^(hit|defeat|impact|hurt|miss):/.test(layer) || layer === 'miss') {
+      playImpactCue(ctx, layer === 'miss' ? 'miss:blunt' : layer, mix, index ? 0.13 + (index - 1) * 0.07 : 0);
+    } else {
+      playBasicCue(ctx, layer, mix);
+    }
+  });
+}
+
 export function playChroniclesActionSound(previous, next, action) {
   playCue(chroniclesActionAudioCue(previous, next, action));
 }
 
 // A short sample at the chosen SFX level, so moving the slider is audible.
 export function playChroniclesPreviewSound() {
-  playCue('hit');
+  playCue('hit:cut');
 }
