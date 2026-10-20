@@ -106,9 +106,14 @@ describe('Chronicles action audio cues', () => {
       ...armed,
       party: armed.party.map((member, index) => index === 0 ? { ...member, hp: member.hp - 1 } : member),
     };
-    expect(chroniclesActionAudioCue(armed, hurtParty, { type: 'enemy-turn', enemyId: enemy.id }))
+    const enemyHit = { ...hurtParty, enemyTurnEvents: [{ type: 'attack', enemyId: enemy.id, damage: 1, missed: false }] };
+    const enemyMiss = { ...armed, enemyTurnEvents: [{ type: 'attack', enemyId: enemy.id, damage: 0, missed: true }] };
+    const enemyWalking = { ...armed, enemyTurnEvents: [{ type: 'move', enemyId: enemy.id }] };
+    expect(chroniclesActionAudioCue(armed, enemyHit, { type: 'enemy-turn', enemyId: enemy.id }))
       .toBe('hurt:blunt');
-    expect(chroniclesActionAudioCue(armed, armed, { type: 'enemy-turn', enemyId: enemy.id }))
+    expect(chroniclesActionAudioCue(armed, enemyMiss, { type: 'enemy-turn', enemyId: enemy.id }))
+      .toBe('miss:blunt');
+    expect(chroniclesActionAudioCue(armed, enemyWalking, { type: 'enemy-turn', enemyId: enemy.id }))
       .toBeNull();
     expect(chroniclesActionAudioCue(armed, { ...hit, party: hurtParty.party }, memberAttack('matthias')))
       .toBe('hit:cut|hurt:blunt');
