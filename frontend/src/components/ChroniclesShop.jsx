@@ -190,6 +190,9 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const selectedItem = selected?.item;
   const eligible = selectedItem && selectedItem.slot !== 'consumable' ? users(state, selectedItem) : [];
   const affordable = selected && gold >= selected.price;
+  // The reducer refuses sales above its hard 9,999 gold purse cap. Explain
+  // that refusal before the user clicks instead of silently doing nothing.
+  const saleExceedsGoldCap = tab === 'sell' && Boolean(selected) && gold + selected.price > 9999;
 
   const switchTab = (next) => {
     setTab(next);
@@ -335,12 +338,16 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     <strong>◉ {selected.price} oro</strong>
                   </div>
                   <button type="button" className="chronicles-shop__primary"
-                    disabled={tab === 'buy' && !affordable}
+                    disabled={(tab === 'buy' && !affordable) || saleExceedsGoldCap}
                     onClick={() => onAction({ type: tab === 'buy' ? 'shop-buy' : 'shop-sell', itemId: selectedItem.id })}>
-                    {tab === 'buy' ? (affordable ? 'Comprar' : 'Oro insuficiente') : 'Vender una unidad'}
+                    {tab === 'buy' ? (affordable ? 'Comprar' : 'Oro insuficiente')
+                      : saleExceedsGoldCap ? 'Bolsa de oro llena' : 'Vender una unidad'}
                   </button>
                   <small className="chronicles-shop__checkout-hint">
-                    {tab === 'buy' ? 'La compra va a la mochila. Equipar es una acción aparte.' : 'Solo se venden objetos sin equipar.'}
+                    {tab === 'buy' ? 'La compra va a la mochila. Equipar es una acción aparte.'
+                      : saleExceedsGoldCap
+                        ? `Límite: 9.999 oro. Gasta al menos ${gold + selected.price - 9999} oro para vender este objeto.`
+                        : 'Solo se venden objetos sin equipar.'}
                   </small>
                 </div>
               </>
