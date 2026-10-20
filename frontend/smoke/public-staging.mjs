@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { chromium } from 'playwright';
+import { assertAdventureFolioInk } from './adventure-contrast.mjs';
 
 const origin = 'https://staging.chronicles.shadowops.dpdns.org';
 const api = 'https://chronicles-api-staging.shadowops.dpdns.org/api';
@@ -143,6 +144,7 @@ try {
         assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
           `${label} requires horizontal scrolling`);
         assert.ok(await canvas.isVisible(), '3D stage disappeared behind an overlay');
+        if (label === 'adventure') await assertAdventureFolioInk(dialog, `${viewport.width}x${viewport.height}`);
         await page.screenshot({ path: `chronicles-public-${label}-${viewport.width}.png` });
         console.log(`CHRONICLES_PUBLIC_FOLIO_OK name=${label} viewport=${viewport.width}`);
       }

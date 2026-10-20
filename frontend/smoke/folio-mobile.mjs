@@ -3,6 +3,7 @@
 // Launches in Chromium against a temporary local Vite server, no user account.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { assertAdventureFolioInk } from './adventure-contrast.mjs';
 
 const base = process.argv[2] || 'http://localhost:4174/smoke/folio-mobile.html';
 const browser = await chromium.launch({
@@ -57,6 +58,7 @@ try {
         const undersized = buttons.filter((button) => button.height < 39 || button.width < 38);
         assert.deepEqual(undersized, [], `${view} ${width} touch target too small`);
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
+        if (view === 'adventure') await assertAdventureFolioInk(dialog, `${width}x${height}`);
         await page.screenshot({ path: `smoke-folio-${view}-${width}.png` });
         if(view === 'cast') {
           await dialog.getByRole('tab', { name: /Objetos/ }).click();
