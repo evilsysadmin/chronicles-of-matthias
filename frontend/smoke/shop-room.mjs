@@ -183,6 +183,7 @@ try {
             market: bounds('.chronicles-shop__market'),
             catalog: bounds('.chronicles-shop__catalog'),
             detail: bounds('.chronicles-shop__detail'),
+            spells: bounds('.chronicles-guild__spells'),
             overflow: document.documentElement.scrollWidth,
             bodyScroll: document.body.style.overflow,
           };
@@ -194,6 +195,10 @@ try {
         if (room === 'odo') assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
         else {
           assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
+          if (width <= 844) {
+            assert(geometry.spells.bottom >= height - 26,
+              'Guild catalogue leaves dead space on mobile: ' + JSON.stringify(geometry));
+          }
           assert.equal(await scene.evaluate((element) => getComputedStyle(element).pointerEvents), 'none',
             'Guild art must never intercept the membership button');
         }
