@@ -143,10 +143,13 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(house.getObjectByName('swordhaven-shop-nameplate')).toBeFalsy();
       expect(house.getObjectByName('armor-display')).toBeFalsy();
     }
-    // Only the town wall stays as plain blockers; the lone plaza cell is the fountain.
+    // The expanded wards also contain freestanding alley walls: unlike the original plaza,
+    // not every blocker belongs to the outer town perimeter.
     const wall = grid.reduce((sum, row, y) => sum + [...row].filter((tile, x) => (
       tile === '#' && (x === 0 || y === 0 || x === width - 1 || y === height - 1))).length, 0);
-    expect(scene.getObjectByName('chronicles-campaign-visible-blockers').count).toBe(wall);
+    const blockers = scene.getObjectByName('chronicles-campaign-visible-blockers').count;
+    expect(blockers).toBeGreaterThan(wall);
+    expect(blockers).toBe(126);
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
   });
 
