@@ -419,6 +419,12 @@ export default function ChroniclesCharacterSetup({
 
         <footer className="chronicles-character-setup__footer">
           <div className="chronicles-character-setup__step-actions">
+            {editorStep !== 'identity' && (
+              <button type="button" className="secondary-btn"
+                onClick={() => jumpToStep(editorStep === 'class' ? 'stats' : 'identity')}>
+                ← {editorStep === 'class' ? 'Anterior: atributos' : 'Anterior: identidad'}
+              </button>
+            )}
             {editorStep !== 'class' && (
               <button type="button" className="secondary-btn"
                 onClick={() => jumpToStep(editorStep === 'identity' ? 'stats' : 'class')}>
