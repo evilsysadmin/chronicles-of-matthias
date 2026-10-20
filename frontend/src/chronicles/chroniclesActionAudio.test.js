@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActionAudioCue, chroniclesWeaponImpactFamily } from './chroniclesActionAudio.js';
+import { chroniclesActionAudioCue, chroniclesWeaponImpactFamily, chroniclesImpactAudioVariation } from './chroniclesActionAudio.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { createChroniclesState, chroniclesReduce } from '../chroniclesOfMatthias.js';
 
@@ -68,6 +68,24 @@ describe('Chronicles action audio cues', () => {
     expect(chroniclesActionAudioCue(start, { ...hurtParty, x: start.x + 1 }, 'forward')).toBe('hurt');
     expect(chroniclesActionAudioCue(start, hurtParty, 'wait')).toBe('hurt');
   });
+  it('cycles three subtle timbres without changing the loudness budget or the selected weapon', () => {
+    const variations = [0, 1, 2].map(chroniclesImpactAudioVariation);
+    expect(new Set(variations.map(({ pitch }) => pitch)).size).toBe(3);
+    expect(new Set(variations.map(({ air }) => air)).size).toBe(3);
+    for (const variant of variations) {
+      expect(variant.pitch).toBeGreaterThanOrEqual(0.96);
+      expect(variant.pitch).toBeLessThanOrEqual(1.04);
+      expect(variant.air).toBeGreaterThanOrEqual(0.94);
+      expect(variant.air).toBeLessThanOrEqual(1.06);
+      expect(variant.level).toBeGreaterThan(0);
+      expect(variant.level).toBeLessThanOrEqual(1);
+    }
+    expect(chroniclesImpactAudioVariation(3)).toEqual(variations[0]);
+    expect(chroniclesImpactAudioVariation(4)).toEqual(variations[1]);
+    expect(chroniclesImpactAudioVariation(-1)).toEqual(variations[2]);
+    expect(chroniclesImpactAudioVariation(Number.NaN)).toEqual(variations[0]);
+  });
+
   it('maps genuine equipped weapon families onto distinct restrained contacts', () => {
     expect(['mace', 'staff', 'sling', undefined].map(chroniclesWeaponImpactFamily))
       .toEqual(['blunt', 'blunt', 'blunt', 'blunt']);

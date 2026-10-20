@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import LoadingScreen from '../standalone/LoadingScreen.jsx';
 import {
   CHRONICLES_DIRECTIONS,
@@ -278,6 +278,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [retaliationCue, setRetaliationCue] = useState(null);
   const [hitSplats, setHitSplats] = useState([]);
   const hitSplatSequenceRef = useRef(0);
+  const pendingActionSoundRef = useRef(null);
+  // Effects begin after React has committed the blood splat and the new HP to
+  // the DOM, in the same paint frame—not ahead of the visible contact.
+  useLayoutEffect(() => {
+    const queued = pendingActionSoundRef.current;
+    if (!queued || queued.committed !== state) return;
+    pendingActionSoundRef.current = null; // StrictMode must not replay sounds.
+    playChroniclesActionSound(queued.previous, queued.resolved, queued.action);
+  }, [state]);
   // Every line the chronicle shows is kept for the Crónica (per run), since
   // the band on the view fades after a few seconds.
   useEffect(() => {
@@ -320,6 +329,22 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [automapVisitedByMap, setAutomapVisitedByMap] = useState({});
   const touchHoldRef = useRef({ delayId: null, repeatId: null });
   const { needsRotation, lockState, activateLandscape, relockPrompt, declineLandscape } = useChroniclesLandscape(characterSetupDone);
+
+  const showHitSplats = useCallback((previous, next) => {
+    const impacts = chroniclesHitImpacts(previous, next);
+    if (!impacts.length) return;
+    const token = hitSplatSequenceRef.current + 1;
+    hitSplatSequenceRef.current = token;
+    const fresh = impacts.map((impact, index) => ({ ...impact, token: `${token}-${index}` }));
+    // Replace an existing victim's splat; keep distinct simultaneous hits.
+    setHitSplats((active) => [
+      ...active.filter((splat) => !fresh.some((entry) => entry.kind === splat.kind && entry.id === splat.id)),
+      ...fresh,
+    ]);
+    window.setTimeout(() => {
+      setHitSplats((active) => active.filter((splat) => !fresh.some((entry) => entry.token === splat.token)));
+    }, CHRONICLES_SPLAT_MS);
+  }, []);
 
   // Real Brave/Chrome forced a light glyph despite matching !important CSS.
   // Applying an inline important override to the concrete DOM nodes was
@@ -634,7 +659,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       next = reconcileChroniclesProgressionInTacticsState(next, progressResult.progression);
     }
 
-    playChroniclesActionSound(current, next, action);
+    if (next !== current) pendingActionSoundRef.current = {
+      previous: current, resolved: next, committed: next, action,
+    };
     stateRef.current = next;
     setState(next);
 
@@ -650,20 +677,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }, Math.max(2800, String(bark.text || '').length * 55));
     }
 
-    const impacts = chroniclesHitImpacts(current, next);
-    if (impacts.length) {
-      const token = hitSplatSequenceRef.current + 1;
-      hitSplatSequenceRef.current = token;
-      const fresh = impacts.map((impact, index) => ({ ...impact, token: `${token}-${index}` }));
-      // A new blow on the same victim replaces its splat; others keep theirs.
-      setHitSplats((active) => [
-        ...active.filter((splat) => !fresh.some((entry) => entry.kind === splat.kind && entry.id === splat.id)),
-        ...fresh,
-      ]);
-      window.setTimeout(() => {
-        setHitSplats((active) => active.filter((splat) => !fresh.some((entry) => entry.token === splat.token)));
-      }, CHRONICLES_SPLAT_MS);
-    }
+    showHitSplats(current, next);
 
     const cue = chroniclesRetaliationCue(current, next);
     if (cue) {
@@ -676,7 +690,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }, 1800);
     }
     return next;
-  }, []);
+  }, [showHitSplats]);
 
   const clearTouchHold = useCallback(() => {
     const active = touchHoldRef.current;
@@ -720,9 +734,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const latestActor = chroniclesCurrentInitiativeActor(latest?.initiative);
       if (!latest?.initiative || latestActor?.kind !== 'enemy' || latestActor.id !== actor.id) return;
       const acted = chroniclesResolveEnemyActor(latest, actor.id);
-      // Enemy initiative does not go through dispatch(): play the genuine
-      // incoming hit using its authored attack family, never on a miss.
-      playChroniclesActionSound(latest, acted, { type: 'enemy-turn', enemyId: actor.id });
+      // Enemy initiative bypasses dispatch; it must share the same post-commit
+      // audio/visual pipeline as player attacks, including actual blood splats.
       const cue = chroniclesRetaliationCue(latest, acted);
       if (cue) {
         const token = retaliationSequenceRef.current + 1;
@@ -736,11 +749,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const advanced = acted.phase === 'defeated'
         ? acted
         : chroniclesAdvanceCombatInitiative(acted, chroniclesActiveEnemies(acted));
+      showHitSplats(latest, acted);
+      pendingActionSoundRef.current = {
+        previous: latest,
+        resolved: acted,
+        committed: advanced,
+        action: { type: 'enemy-turn', enemyId: actor.id },
+      };
       stateRef.current = advanced;
       setState(advanced);
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [sheetMemberId, state?.initiative?.cursor, state?.initiative?.round, state?.phase]);
+  }, [sheetMemberId, state?.initiative?.cursor, state?.initiative?.round, state?.phase, showHitSplats]);
 
   useEffect(() => {
     const actor = chroniclesCurrentInitiativeActor(state?.initiative);
