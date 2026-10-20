@@ -218,11 +218,11 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
         <div className="chronicles-shop__art-space" aria-hidden="true" />
         <div className="chronicles-shop__tabs" role="tablist" aria-label="Operación comercial">
           <button id="chronicles-shop-tab-buy" type="button" role="tab" aria-selected={tab === 'buy'}
-            aria-controls="chronicles-shop-market" tabIndex={tab === 'buy' ? 0 : -1}
+            aria-controls="chronicles-shop-market"
             onClick={() => switchTab('buy')}>Comprar</button>
           {entry.shop?.buys !== false && (
             <button id="chronicles-shop-tab-sell" type="button" role="tab" aria-selected={tab === 'sell'}
-              aria-controls="chronicles-shop-market" tabIndex={tab === 'sell' ? 0 : -1}
+              aria-controls="chronicles-shop-market"
               onClick={() => switchTab('sell')}>Vender{sellable.length ? ' (' + sellable.length + ')' : ''}</button>
           )}
         </div>
