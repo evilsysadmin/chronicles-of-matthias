@@ -69,7 +69,7 @@ try {
   // Observe the real server-backed area transition; do not spawn an enemy by fiat.
   const cryptCheckpoint = page.waitForResponse(r =>
     r.request().method() === 'PUT'
-      && /\\/api\\/chronicles\\/runs\\/[^/]+\\/checkpoint$/.test(new URL(r.url()).pathname)
+      && /\/api\/chronicles\/runs\/[^/]+\/checkpoint$/.test(new URL(r.url()).pathname)
       && r.status() === 200
       && r.request().postDataJSON()?.currentMapId === 'crypt-eight-squares',
   { timeout: 30_000 });
