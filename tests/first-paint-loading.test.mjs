@@ -10,7 +10,7 @@ test('the HTML shell shows branded loading before any React module executes', ()
   assert.match(rootMarkup, /<main class="chronicles-boot" role="status"/);
   assert.match(rootMarkup, /aria-label="Cargando Chronicles"/);
   assert.match(rootMarkup, /CHRONICLES/);
-  assert.match(rootMarkup, /<svg class="chronicles-boot__crest"/);
+  assert.match(rootMarkup, /<img class="chronicles-boot__crest" src="\/chronicles-loading-crest.svg"/);
   assert.match(rootMarkup, /chronicles-boot__light/);
   assert.match(html, /prefers-reduced-motion:reduce/);
   assert.match(html, /<noscript>Chronicles necesita JavaScript/);
@@ -21,6 +21,8 @@ test('the pre-React loader uses the same local artwork as the runtime fallback',
   const runtime = readFileSync(new URL('../frontend/src/standalone/LoadingScreen.jsx', import.meta.url), 'utf8');
   assert.match(html, /href="\/chronicles-loading-art.svg"/);
   assert.match(html, /src="\/chronicles-loading-art.svg"/);
+  assert.match(html, /href="\/chronicles-loading-crest.svg"/);
+  assert.match(html, /src="\/chronicles-loading-crest.svg"/);
   assert.match(runtime, /'\/chronicles-loading-art.svg'/);
   assert.doesNotMatch(html, /(?:^|\s)(?:value|aria-valuenow)="\d+"/);
 });
