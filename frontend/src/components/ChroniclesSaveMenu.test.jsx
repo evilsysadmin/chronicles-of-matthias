@@ -26,7 +26,10 @@ describe('Chronicles expedition entry', () => {
     expect(html).not.toContain('Continuar expedición');
     expect(html).not.toContain('Elegir otra expedición');
     expect(html).toContain('<summary>Otras opciones</summary>');
-    expect(html).toContain('Nuevo juego');
+    expect(html).toContain('Otra aventura');
+    expect(html).toContain('¿Tu primera expedición?');
+    expect(html).toContain('Elige un grupo preparado o crea cuatro aventureros.');
+    expect(html).toContain('data-testid="chronicles-home-first-steps"');
     expect(html).toContain('Gestionar partidas');
     expect(html).toContain('Volver al castillo');
     expect(onNew).not.toHaveBeenCalled();
@@ -38,6 +41,8 @@ describe('Chronicles expedition entry', () => {
     expect(html).toContain('data-chronicles-primary-action="continue"');
     expect(html.indexOf('Continuar expedición')).toBeLessThan(html.indexOf('Nueva expedición'));
     expect(html).toContain('La torre');
+    expect(html).toContain('Tu compañía tiene una historia pendiente.');
+    expect(html).not.toContain('data-testid="chronicles-home-first-steps"');
     expect(html).not.toContain('Elegir otra expedición');
     expect(menu([...saved, { id: 'two', title: 'La cripta' }])).toContain('Elegir otra expedición');
   });
@@ -52,6 +57,7 @@ describe('Chronicles expedition entry', () => {
       expect(primary).toContain('disabled=""');
       if (saves.length) expect(html).toContain('Caché local');
       expect(html).toContain('Otras opciones');
+      expect(html).not.toContain('data-testid="chronicles-home-first-steps"');
     }
   });
 
