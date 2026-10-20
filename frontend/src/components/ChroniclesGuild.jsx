@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesGuildCanLearn, chroniclesGuildMember, chroniclesGuildSpells } from '../chronicles/chroniclesGuild.js';
@@ -11,6 +11,7 @@ import './ChroniclesGuild.css';
 // The guild counter shares the shop's parchment frame: membership first,
 // then one "learn" button per caster who could copy each spell.
 export default function ChroniclesGuild({ state, onAction, onClose }) {
+  const [compatibleOnly, setCompatibleOnly] = useState(false);
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -58,6 +59,10 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
   const gold = chroniclesGoldBalance(state);
   const member = chroniclesGuildMember(state, entry.id);
   const fee = Number(entry.guild.membership || 0);
+  const allSpells = chroniclesGuildSpells(entry);
+  const compatibleSpells = allSpells.filter((spell) =>
+    state.party.some((hero) => chroniclesSpellAvailableTo(hero, spell.id)));
+  const visibleSpells = compatibleOnly ? compatibleSpells : allSpells;
 
   const guildScene = (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
@@ -81,7 +86,7 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
           <div className="chronicles-shop__identity">
             <span>GREMIO</span>
             <h2>{entry.label}</h2>
-            <p>{state.message}</p>
+            <p role="status" aria-live="polite">{state.message}</p>
           </div>
           <b className="chronicles-shop__purse" aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
           <button ref={closeRef} type="button" className="chronicles-shop__close" onClick={onClose}
@@ -107,12 +112,28 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
         </aside>
 
         <ul className="chronicles-shop__list chronicles-guild__spells" aria-label="Hechizos del gremio">
-          {chroniclesGuildSpells(entry).map((spell) => {
+          <li className="chronicles-guild__filter-item" role="presentation">
+            <div className="chronicles-guild__spell-filter">
+              <span>{visibleSpells.length} de {allSpells.length} hechizos</span>
+              <button type="button" aria-pressed={compatibleOnly}
+                onClick={() => setCompatibleOnly((value) => !value)}>
+                Solo compatibles
+              </button>
+            </div>
+            <p>Filtra por las escuelas que estudia tu compañía, sin ocultar permanentemente el catálogo.</p>
+          </li>
+          {visibleSpells.length === 0 && (
+            <li className="chronicles-guild__no-spells">
+              Ningún personaje de la compañía estudia las escuelas de estos hechizos.
+            </li>
+          )}
+          {visibleSpells.map((spell) => {
             const learners = state.party.filter((hero) => chroniclesGuildCanLearn(state, hero, spell.id));
             const known = state.party.filter((hero) => chroniclesMemberKnowsSpell(state, hero, spell.id));
             const anyone = state.party.some((hero) => chroniclesSpellAvailableTo(hero, spell.id));
             return (
-              <li key={spell.id} data-chronicles-guild-spell={spell.id}>
+              <li key={spell.id} data-chronicles-guild-spell={spell.id}
+                data-chronicles-guild-compatible={anyone ? 'true' : 'false'}>
                 <div className="chronicles-shop__item">
                   <small>{spell.schools.map((id) => CHRONICLES_SPELL_SCHOOLS[id].label).join(' · ')} · {spell.cost} PH</small>
                   <strong>{spell.name}</strong>
