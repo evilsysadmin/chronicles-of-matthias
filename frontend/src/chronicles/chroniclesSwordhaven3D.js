@@ -438,8 +438,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'civic-cupola-tower', [0, height + 2.25, -depth * 0.11], !coarse);
     mesh(root, new THREE.ConeGeometry(1.15, 1.30, 8), roof,
       'civic-cupola-roof', [0, height + 3.82, -depth * 0.11], !coarse);
-    mesh(root, new THREE.BoxGeometry(1.33, 0.22, 0.34), mats.gold,
-      'civic-cupola-crest', [0, height + 1.97, facadeZ + 0.25]);
+    mesh(root, new THREE.CylinderGeometry(1.02, 1.02, 0.13, 8), mats.gold,
+      'civic-cupola-crest', [0, height + 1.40, -depth * 0.11]);
   } else if (isMagic) {
     mesh(root, new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), mats.plaster,
       'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);
