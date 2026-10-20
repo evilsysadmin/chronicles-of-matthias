@@ -45,6 +45,8 @@ export default function ChroniclesSaveMenu({
   const [draftName, setDraftName] = useState('');
   const [confirmForget, setConfirmForget] = useState(null);
   const resume = saves.find((save) => save.active) || saves[0] || null;
+  // Absence of a local result while syncing is not proof of a new player.
+  const firstExpedition = !loading && !error && !resume;
 
   function openList(view) {
     setEditing(null);
@@ -63,8 +65,16 @@ export default function ChroniclesSaveMenu({
         <p className="chronicles-save-menu__kicker">EL LIBRO DE LAS EXPEDICIONES</p>
         <h1>Chronicles <span>of Matthias</span></h1>
         <p className="chronicles-save-menu__intro">
-          Tu compañía te espera. Y Matthias, naturalmente, lleva la cuenta de tus decisiones cuestionables.
+          {resume
+            ? 'Tu compañía tiene una historia pendiente. Matthias aún recuerda cómo empezó.'
+            : 'Tu próxima historia comienza en Terra. Matthias está preparado para juzgar tus decisiones.'}
         </p>
+        {screen === 'home' && firstExpedition && (
+          <div className="chronicles-save-menu__first-steps" data-testid="chronicles-home-first-steps">
+            <strong>¿Tu primera expedición?</strong>
+            <p>Elige un grupo preparado o crea cuatro aventureros. Después explorarás Swordhaven; podrás guardar desde el menú durante la aventura.</p>
+          </div>
+        )}
         {loading && <p className="chronicles-save-menu__sync" role="status">Consultando expediciones del servidor…</p>}
         {error && (
           <div className="chronicles-save-menu__sync-recovery">
@@ -92,7 +102,7 @@ export default function ChroniclesSaveMenu({
                 disabled={loading || Boolean(error) || busyRunId !== null}
                 onClick={() => onNew('swordhaven-first-book')}>
                 <ExpeditionMenuIcon kind="compass" />
-                <span className="chronicles-save-menu__action-copy">Nueva expedición <small>El rey desaparecido · Primera misión</small></span>
+                <span className="chronicles-save-menu__action-copy">Nueva expedición <small>El rey desaparecido · Elegir compañía y partir</small></span>
                 <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
               </button>
             )}
@@ -118,7 +128,7 @@ export default function ChroniclesSaveMenu({
               <div className="chronicles-save-menu__more-actions">
                 <button type="button" disabled={loading || Boolean(error) || busyRunId !== null} onClick={() => onNew()}>
                   <ExpeditionMenuIcon kind="scroll" />
-                  <span className="chronicles-save-menu__action-copy">Nuevo juego <small>Explorar otra aventura</small></span>
+                  <span className="chronicles-save-menu__action-copy">Otra aventura <small>Explorar un comienzo diferente</small></span>
                   <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
                 </button>
                 <button type="button" onClick={() => openList('manage')}>
