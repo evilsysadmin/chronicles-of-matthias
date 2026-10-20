@@ -16,7 +16,7 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     expect(audience.choices[0].label).toBe('Presentar la carta de la Dama');
     expect(audience.choices[0].actionId).toBe('swordhaven-mayor');
     expect(audience.choices[1].answer).toMatch(/caballeros|Dama/);
-    expect(chroniclesMapById(state.mapId).grid).toHaveLength(15);
+    expect(chroniclesMapById(state.mapId).grid).toHaveLength(23);
   });
 
   it('never grants rewards when merely opening a dialogue; talk uses the campaign reducer', () => {
