@@ -23,7 +23,7 @@
   content: '';
   position: absolute;
   inset: -6%;
-  background: url('/chronicles-loading-art.svg') center / cover no-repeat;
+  background: url('/chronicles-loading-art.svg') 65% center / cover no-repeat;
   filter: blur(30px) brightness(.75) saturate(1.15);
   opacity: .58;
   pointer-events: none;
@@ -42,7 +42,8 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: 65% center;
   opacity: 0;
   filter: blur(2px) brightness(.7);
   -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 16%, transparent 42%, transparent 58%, #000 84%, #000 100%);
@@ -131,10 +132,12 @@
 /* The wide cinematic painting becomes atmosphere on portrait screens.
    The crisp, real text/crest remain usable instead of shrinking with it. */
 @media (max-width: 700px) {
+  .chronicles-loading::before { background-position: 84% center; }
   .chronicles-loading__art.is-ready {
     opacity: .44;
     object-fit: cover;
-    filter: blur(11px) brightness(.9) saturate(1.25);
+    object-position: 84% center;
+    filter: blur(7px) brightness(.9) saturate(1.25);
     -webkit-mask-image: none;
     mask-image: none;
     transform: scale(1.08);
