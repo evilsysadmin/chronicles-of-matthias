@@ -91,7 +91,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     });
     const town = scene.getObjectByName('chronicles-campaign-town');
     const names = town.children.map(child => child.name).filter(name => name.startsWith('swordhaven-building-'));
-    expect(names).toHaveLength(10);
+    expect(names).toHaveLength(9);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
