@@ -166,6 +166,7 @@ import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
 // The first-person folio must override both base and old MM3 chrome styles.
 import './ChroniclesCharacterSheetMM3.css';
+import './ChroniclesSpellMenuFolio.css';
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
 

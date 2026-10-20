@@ -1,0 +1,327 @@
+/* A diegetic MM3 grimoire: intentionally separate from the adventure menu.
+   No extra assets: reuse the existing MM3 carved frame and sandstone atlas. */
+.chronicles .chronicles-cast-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  background: rgba(6, 9, 17, .70);
+  overflow: hidden;
+  color-scheme: only dark;
+}
+.chronicles .chronicles-spell-menu.chronicles-spell-menu--folio {
+  position: relative;
+  z-index: 1;
+  inset: auto;
+  bottom: auto;
+  left: auto;
+  width: min(710px, 100%);
+  max-width: 100%;
+  max-height: min(740px, calc(100dvh - 16px));
+  transform: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 12px solid transparent;
+  border-image: var(--mm3-frame) 16 / 12px round;
+  border-radius: 0;
+  background: #171b22;
+  color: #eadbc0;
+  box-shadow: 0 24px 80px #000c, inset 0 0 0 2px #98764e;
+  font-family: var(--mm3-pixel-font);
+  font-size: 1.2rem;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-header {
+  flex: 0 0 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 18px 20px 12px;
+  border-bottom: 3px solid #523725;
+  background:
+    linear-gradient(180deg, #5b322320, #30231e88),
+    #aa7140 var(--mm3-sand) 0 0 / 64px 64px;
+  color: #2c180d;
+}
+.chronicles .chronicles-spell-menu__seal {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 49px;
+  border: 3px double #dfbd7d;
+  border-radius: 50%;
+  background: radial-gradient(circle, #42608e, #131c35 72%);
+  color: #fff3b8 !important;
+  font-size: 1.65rem;
+  box-shadow: 0 0 0 2px #583c26, inset 0 0 13px #a4c4ff55;
+}
+.chronicles .chronicles-spell-menu__identity {
+  min-width: 0;
+}
+.chronicles .chronicles-spell-menu--folio header .chronicles-spell-menu__eyebrow {
+  display: block;
+  color: #4e2914;
+  font-size: .88rem;
+  letter-spacing: .13em;
+}
+.chronicles .chronicles-spell-menu--folio h2 {
+  margin: 2px 0 1px;
+  color: #24150f;
+  font: 400 clamp(1.65rem, 4vw, 2.1rem)/1 var(--mm3-pixel-font);
+  letter-spacing: .035em;
+}
+.chronicles .chronicles-spell-menu--folio header p {
+  margin: 0;
+  color: #462c1c;
+  font: 400 1.12rem/1.15 var(--mm3-pixel-font);
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__close {
+  width: 44px;
+  height: 44px;
+  grid-column: 3;
+  grid-row: 1;
+  color: #191819 !important;
+  font: 700 1.3rem var(--mm3-pixel-font);
+  border: 2px solid;
+  border-color: #fff #424047 #424047 #fff;
+  border-radius: 0;
+  background: #99999f var(--mm3-stone) 0 0 / 128px 128px;
+}
+.chronicles .chronicles-spell-menu__resource {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-top: 5px;
+}
+.chronicles .chronicles-spell-menu__resource > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #2c2019;
+  font-size: 1.08rem;
+}
+.chronicles .chronicles-spell-menu__resource b { font-weight: 400; }
+.chronicles .chronicles-spell-menu__resource strong { font-variant-numeric: tabular-nums; }
+.chronicles .chronicles-spell-menu__mana {
+  height: 10px;
+  margin-top: 5px;
+  border: 2px solid #4b3125;
+  background: #16182a;
+  box-shadow: inset 0 2px 5px #0009;
+}
+.chronicles .chronicles-spell-menu__mana i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #3654a0, #8cd6ed);
+  box-shadow: 0 0 9px #a6cfff66;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px 8px;
+  background: #242425;
+  border-bottom: 2px solid #5f513e;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs button {
+  min-width: 0;
+  min-height: 46px;
+  flex: 1;
+  padding: 6px 10px;
+  color: #bfb198;
+  font: 400 1.18rem var(--mm3-pixel-font);
+  background: #252a33;
+  border: 2px solid #665a48;
+  cursor: pointer;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs button[aria-selected='true'] {
+  color: #f6dfa8;
+  background: #3a4053;
+  border-color: #f3cb7f;
+  box-shadow: inset 0 -3px 0 #d3a761;
+}
+.chronicles .chronicles-spell-menu__tabs small { margin-left: 6px; color: #a8c4dc; }
+.chronicles .chronicles-spell-menu__pages {
+  min-width: 0;
+  min-height: 80px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-color: #937c57 #1d2025;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(ellipse at 50% 10%, #46403242, transparent 65%),
+    #191e24;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries {
+  margin: 0;
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 9px;
+  list-style: none;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li { min-width: 0; }
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 82px;
+  padding: 9px;
+  border: 2px solid #695943;
+  border-left: 4px solid #a78555;
+  border-radius: 0;
+  background: linear-gradient(130deg, #303846, #222731);
+  color: #f7e1ae;
+  font-family: var(--mm3-pixel-font);
+  font-size: 1.16rem;
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button[data-cast-kind='heal'],
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button[data-cast-kind='revive'] {
+  border-left-color: #8dcba5;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button[data-cast-kind='attack'] {
+  border-left-color: #e5a47b;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:hover:not(:disabled),
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:focus-visible {
+  border-color: #f0ca82;
+  border-left-color: #f8d68f;
+  background: linear-gradient(130deg, #445067, #2b3645);
+  outline: 2px solid #f3cf8b;
+  outline-offset: 2px;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:disabled {
+  cursor: not-allowed;
+  opacity: .54;
+  filter: saturate(.5);
+}
+.chronicles .chronicles-spell-menu__rune {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 2px solid #907c5b;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3d5a73, #192332);
+  color: #f5d39c;
+  font: 400 1.6rem var(--mm3-pixel-font);
+  box-shadow: inset 0 0 9px #9fbbd533;
+}
+.chronicles .chronicles-spell-menu__entry {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry strong {
+  color: #ffe5b3;
+  font-size: 1.26rem;
+  line-height: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small {
+  color: #ccd1cf;
+  font-size: 1.01rem;
+  line-height: 1.1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.chronicles .chronicles-spell-menu__kind {
+  color: #aebdad;
+  font-size: .97rem;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__cost {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  padding: 6px 4px;
+  color: #fbe1a7;
+  border: 1px solid #605338;
+  background: #1d202a;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.chronicles .chronicles-spell-menu__cost b { font-weight: 400; }
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__cost small {
+  color: #a6d0d6;
+  font-size: .96rem;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__empty {
+  display: grid;
+  gap: 6px;
+  padding: 24px;
+  color: #e6d0a5;
+  text-align: center;
+}
+.chronicles .chronicles-spell-menu__empty > span { font-size: 2rem; color: #d2a761; }
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 15px;
+  border-top: 2px solid #564c3d;
+  background: #23262c;
+  color: #c9baa2;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+.chronicles .chronicles-spell-menu__folio-footer kbd {
+  flex: 0 0 auto;
+  color: #f1ce8f;
+  font: inherit;
+  white-space: nowrap;
+}
+.chronicles .chronicles-spell-menu--folio :is(button:focus-visible) {
+  outline: 2px solid #f6d99b;
+  outline-offset: 2px;
+}
+@media (max-width: 520px) {
+  .chronicles .chronicles-spell-menu.chronicles-spell-menu--folio {
+    border-width: 8px;
+    border-image-width: 8px;
+    max-height: calc(100dvh - 16px);
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-header {
+    grid-template-columns: 38px minmax(0, 1fr) 42px;
+    gap: 6px 10px;
+    padding: 11px 11px 9px;
+  }
+  .chronicles .chronicles-spell-menu__seal { width: 36px; height: 36px; font-size: 1.35rem; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries { padding: 9px; gap: 6px; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button {
+    grid-template-columns: 35px minmax(0, 1fr) 62px;
+    gap: 7px;
+    min-height: 68px;
+    padding: 7px;
+    font-size: 1rem;
+  }
+  .chronicles .chronicles-spell-menu__rune { width: 32px; height: 32px; font-size: 1.2rem; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry strong { font-size: 1.15rem; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small { font-size: .95rem; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer { padding: 8px 10px; }
+}
+@media (max-height: 470px) {
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-header {
+    padding-top: 7px;
+    padding-bottom: 6px;
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button { min-height: 58px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles .chronicles-spell-menu--folio *,
+  .chronicles .chronicles-spell-menu--folio *::before,
+  .chronicles .chronicles-spell-menu--folio *::after { animation: none; transition: none; }
+}
