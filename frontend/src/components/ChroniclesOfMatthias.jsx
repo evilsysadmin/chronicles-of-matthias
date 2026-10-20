@@ -1634,7 +1634,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             onClose={() => setQuickStatusOpen(false)}
             onOpenSheet={(memberId) => { setQuickStatusOpen(false); openMemberSheet(memberId); }}
           />
-          <ChroniclesJournalModal open={journalOpen} state={state} entries={journalEntries} narrations={narrationLog} onClose={() => setJournalOpen(false)} />
+          <ChroniclesJournalModal open={journalOpen} state={state} entries={journalEntries} narrations={narrationLog}
+            onTrack={(questId) => dispatch({ type: 'track-quest', questId })}
+            onClose={() => setJournalOpen(false)} />
 
           {!expeditionOver && (
             <>
