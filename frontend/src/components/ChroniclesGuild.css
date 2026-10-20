@@ -1,0 +1,222 @@
+/* The Guild is a real spell-learning service, not a buy/sell merchant.
+   This is the authored room's own layout, over the shared fullscreen shell. */
+.chronicles-guild {
+  grid-template-columns: minmax(270px, 34%) minmax(70px, 1fr) minmax(265px, 29%);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head head'
+    'spells art membership'
+    'foot foot foot';
+}
+
+.chronicles-guild .chronicles-shop__scene {
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 53% 37%, rgba(74, 123, 126, .35), transparent 32%),
+    repeating-linear-gradient(90deg, transparent 0 77px, rgba(4, 5, 12, .21) 78px 82px),
+    repeating-linear-gradient(0deg, transparent 0 46px, rgba(159, 150, 124, .085) 47px 49px),
+    linear-gradient(140deg, #111925, #182b31 46%, #110f22);
+}
+
+.chronicles-guild .chronicles-shop__scene::before {
+  content: '';
+  position: absolute;
+  inset: 6% 34%;
+  border: 2px solid rgba(154, 167, 143, .32);
+  box-shadow: 0 0 0 13px rgba(6, 12, 19, .38), 0 0 70px rgba(75, 185, 181, .17);
+  background: linear-gradient(90deg, rgba(35, 51, 52, .52), rgba(8, 15, 24, .23), rgba(37, 46, 50, .58));
+}
+
+.chronicles-guild .chronicles-shop__scene img {
+  position: absolute;
+  width: clamp(180px, 24vw, 340px);
+  height: auto;
+  max-height: 62dvh;
+  left: 51.5%;
+  top: 51%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  object-position: center;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 14px 22px #02050ad9);
+}
+
+.chronicles-guild .chronicles-shop__identity {
+  background: linear-gradient(90deg, rgba(8, 17, 24, .97), rgba(12, 22, 31, .69), transparent);
+  border-color: #8dc8b7;
+}
+
+.chronicles-guild .chronicles-shop__identity > span { color: #b5d4c5; }
+
+.chronicles-guild .chronicles-shop__purse {
+  background: rgba(7, 18, 25, .94);
+  border-color: rgba(152, 188, 163, .65);
+}
+
+.chronicles-guild__spells,
+.chronicles-guild__membership {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(139, 184, 167, .49);
+  background: rgba(9, 19, 27, .91);
+  box-shadow: 0 16px 46px #0008, inset 0 0 28px #0005;
+  backdrop-filter: blur(7px);
+}
+
+.chronicles-guild__spells {
+  grid-area: spells;
+  display: block;
+  height: 100%;
+  padding: clamp(10px, 1.2vw, 18px);
+  margin: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-color: #668d7e #15252d;
+}
+
+.chronicles-guild__spells > li {
+  margin: 0 0 11px;
+  padding: 12px;
+  border: 1px solid rgba(130, 173, 164, .3);
+  background: rgba(27, 43, 48, .82);
+}
+
+.chronicles-guild .chronicles-shop__item {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.chronicles-guild .chronicles-shop__item small {
+  color: #9bbec2;
+  font-size: 10px;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.chronicles-guild .chronicles-shop__item strong {
+  color: #f1dfbd;
+  font: 600 clamp(17px, 1.4vw, 22px) Georgia, serif;
+}
+
+.chronicles-guild .chronicles-shop__item span,
+.chronicles-guild .chronicles-shop__item em {
+  color: #b8c7c4;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.chronicles-guild .chronicles-shop__item em {
+  color: #e1c893;
+  font-style: normal;
+  margin-top: 4px;
+}
+
+.chronicles-guild .chronicles-shop__learners {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  margin-top: 10px;
+}
+
+.chronicles-guild .chronicles-shop__learners button,
+.chronicles-guild .chronicles-shop__join button {
+  min-height: 43px;
+  padding: 8px 11px;
+  border: 1px solid #91bcb5;
+  background: linear-gradient(#7ba6a0, #3b7477);
+  color: #0c2027;
+  font: 700 13px system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.chronicles-guild .chronicles-shop__learners button:disabled,
+.chronicles-guild .chronicles-shop__join button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.chronicles-guild__membership {
+  grid-area: membership;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: clamp(14px, 1.5vw, 24px);
+  color: #d5ddd4;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.chronicles-guild .chronicles-shop__join {
+  display: grid;
+  gap: 18px;
+}
+
+.chronicles-guild .chronicles-shop__join p { margin: 0; }
+.chronicles-guild .chronicles-shop__join button { width: 100%; }
+
+.chronicles-guild__member strong {
+  font: 600 22px Georgia, serif;
+  color: #c5e4d4;
+}
+
+.chronicles-guild__member p { color: #b7cbbf; }
+.chronicles-guild__art-space { display: none; }
+
+.chronicles-guild .chronicles-shop__foot {
+  grid-area: foot;
+  max-width: min(700px, 65vw);
+  background: rgba(6, 17, 24, .87);
+  border-color: #82b4a6;
+}
+
+@media (max-width: 900px) {
+  .chronicles-guild {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto clamp(100px, 18dvh, 170px) auto minmax(0, 1fr);
+    grid-template-areas: 'head' 'art' 'membership' 'spells';
+  }
+  .chronicles-guild .chronicles-shop__scene { bottom: auto; height: 43dvh; }
+  .chronicles-guild .chronicles-shop__scene img {
+    width: auto;
+    max-width: min(74vw, 270px);
+    height: clamp(110px, 20dvh, 205px);
+    max-height: none;
+    left: 52%;
+    top: 56%;
+    object-fit: contain;
+  }
+  .chronicles-guild__art-space { display: block; grid-area: art; }
+  .chronicles-guild__membership {
+    padding: 10px 13px;
+    font-size: 12px;
+    overflow: auto;
+  }
+  .chronicles-guild .chronicles-shop__join { gap: 7px; }
+  .chronicles-guild__spells { padding: 8px; height: auto; }
+  .chronicles-guild__spells > li { padding: 9px; }
+  .chronicles-guild .chronicles-shop__foot { display: none; }
+}
+
+@media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .chronicles-guild {
+    grid-template-columns: minmax(220px, 32%) minmax(80px, 1fr) minmax(208px, 31%);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'head head head' 'spells art membership';
+  }
+  .chronicles-guild .chronicles-shop__scene { height: 100%; }
+  .chronicles-guild .chronicles-shop__scene img {
+    left: 51%;
+    top: 53%;
+    width: clamp(105px, 19vw, 180px);
+    height: auto;
+  }
+  .chronicles-guild__art-space { display: none; }
+  .chronicles-guild__spells { height: auto; }
+  .chronicles-guild__membership { padding: 9px; }
+  .chronicles-guild .chronicles-shop__identity h2 { font-size: 18px; }
+}
