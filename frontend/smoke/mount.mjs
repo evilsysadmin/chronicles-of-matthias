@@ -34,6 +34,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
       return {
         screen: rect(shell), title: rect(title), crest: rect(crest), track: rect(track),
         artworkLoaded: Boolean(artwork?.complete && artwork.naturalWidth),
+        crestLoaded: Boolean(crest?.complete && crest.naturalWidth),
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
         status: shell?.getAttribute('role'),
       };
@@ -42,7 +43,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
       && rect.left >= -1 && rect.top >= -1
       && rect.left + rect.width <= viewport.width + 1
       && rect.top + rect.height <= viewport.height + 1;
-    if (geometry.status !== 'status' || !geometry.artworkLoaded ||
+    if (geometry.status !== 'status' || !geometry.artworkLoaded || !geometry.crestLoaded ||
       geometry.horizontalOverflow || !fits(geometry.title) || !fits(geometry.crest) ||
       !fits(geometry.track) || geometry.screen?.width < viewport.width - 1 ||
       geometry.screen?.height < viewport.height - 1) {
