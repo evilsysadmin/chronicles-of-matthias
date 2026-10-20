@@ -5,6 +5,8 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { chroniclesReduce, createChroniclesState } from '../src/chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from '../src/chronicles/chroniclesContentRuntime.js';
+import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
+import { chroniclesOpenShop } from '../src/chronicles/chroniclesShops.js';
 import ChroniclesShop from '../src/components/ChroniclesShop.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesMM3Chrome.css';
@@ -14,7 +16,15 @@ function makeState() {
     createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
     [{ type: 'grant-gold', amount: 123 }],
   );
-  // Same real merchant interaction as chroniclesShops.test.js.
+  const room = new URLSearchParams(window.location.search).get('room');
+  // Directly mount other REAL Swordhaven counters for visual QA. The Brunna
+  // path still goes through the actual reducer and transactional smoke.
+  if (room === 'odo' || room === 'guild') {
+    const id = room === 'odo' ? 'first-book-armorer' : 'first-book-guild';
+    const entry = chroniclesMapById('swordhaven-first-book').interactables.find((candidate) => candidate.id === id);
+    if (!entry) throw new Error('Missing authored shop: ' + id);
+    return chroniclesOpenShop(base, entry);
+  }
   return chroniclesReduce({ ...base, x: 7, y: 4 }, 'interact');
 }
 
