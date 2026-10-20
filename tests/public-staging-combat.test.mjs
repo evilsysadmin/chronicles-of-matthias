@@ -27,3 +27,11 @@ test('combat is proven by a read of the durable backend state, not fabricated da
   assert.ok(source.includes("saved.worldFlags"));
   assert.ok(!source.includes("const checkpoint = page.waitForResponse"));
 });
+
+test('live combat diagnostics describe server and UI without tokens', () => {
+  assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_SAVE'));
+  assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_STATE'));
+  assert.ok(source.includes('Partida guardada correctamente.'));
+  assert.ok(source.includes("chronicles-combat-mobile.png"));
+  assert.doesNotMatch(source, /console\.log\([^\n]*\btoken\b/);
+});
