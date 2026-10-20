@@ -353,6 +353,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       '.chronicles-game-menu__panel > small',
     ].join(', '));
     for (const node of nodes) {
+      // This legacy workaround belongs to pale stone controls. The adventure
+      // folio is DARK slate: an inline !important black fill outranks its
+      // accessible ivory CSS and makes save/audio labels unreadable.
+      if (node.closest('.chronicles-game-menu__panel--folio')) continue;
       node.style.setProperty('color', '#08080a', 'important');
       node.style.setProperty('-webkit-text-fill-color', '#08080a', 'important');
       node.style.setProperty('-webkit-text-stroke-color', '#08080a', 'important');
