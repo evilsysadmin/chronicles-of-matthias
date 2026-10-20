@@ -814,7 +814,8 @@
     top: auto;
     right: auto;
     width: auto;
-    height: clamp(120px, 21vh, 214px);
+    /* Compact local radar; the full-size automap remains one click away. */
+    height: clamp(104px, 15vh, 152px);
     padding: 8px;
     border: 3px solid;
     border-color: #f0c48a #5a2e12 #5a2e12 #f0c48a;
