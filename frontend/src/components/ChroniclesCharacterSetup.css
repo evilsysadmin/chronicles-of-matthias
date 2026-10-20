@@ -199,6 +199,25 @@
 
 .chronicles-character-setup__attribute em.is-up { color: #a9cf8a; }
 .chronicles-character-setup__attribute em.is-down { color: #e0a08f; }
+.chronicles-character-setup__roll-delta {
+  grid-column: 1 / -1;
+  justify-self: end;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  color: #b6aea1;
+}
+.chronicles-character-setup__roll-delta.is-up { color: #a9cf8a; }
+.chronicles-character-setup__roll-delta.is-down { color: #e0a08f; }
+.chronicles-character-setup__roll-context {
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-left: 2px solid rgba(214, 174, 110, .7);
+  color: #e1cfae;
+  background: rgba(211, 177, 120, .07);
+  font-size: 12px;
+  line-height: 1.45;
+}
 
 .chronicles-character-setup__slots img {
   width: 44px;
@@ -267,8 +286,8 @@
   background: rgba(211, 177, 120, .1);
 }
 
-.chronicles-character-setup__class-grid > button:disabled {
-  opacity: .42;
+.chronicles-character-setup__class-grid > button[aria-disabled="true"] {
+  opacity: .48;
   cursor: not-allowed;
 }
 
@@ -743,7 +762,7 @@
   background: #99703b3f;
   box-shadow: inset 0 0 0 1px #b08d57;
 }
-.chronicles-character-setup__panel--editor .chronicles-character-setup__class-grid > button:disabled { opacity: .48; }
+.chronicles-character-setup__panel--editor .chronicles-character-setup__class-grid > button[aria-disabled="true"] { opacity: .48; }
 .chronicles-character-setup__panel--editor .chronicles-character-setup__class-grid > button strong {
   font-size: 13px;
   color: #f0e2c8;
