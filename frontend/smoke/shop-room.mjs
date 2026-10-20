@@ -263,6 +263,22 @@ try {
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
         } else {
+          // Compatibility is a presentation-only filter, never a school rule
+          // or a destructive change to the guild's authored spell catalogue.
+          const allGuildSpells = dialog.locator('[data-chronicles-guild-spell]');
+          const totalSpells = await allGuildSpells.count();
+          const usableSpells = await dialog.locator('[data-chronicles-guild-compatible="true"]').count();
+          assert(totalSpells > 0, 'Guild authored stock disappeared');
+          const filterButton = dialog.getByRole('button', { name: 'Solo compatibles' });
+          await filterButton.click();
+          assert.equal(await filterButton.getAttribute('aria-pressed'), 'true');
+          assert.equal(await allGuildSpells.count(), usableSpells,
+            'Guild compatible filter must match the actual character-school eligibility');
+          if (width === 390) await page.screenshot({ path: 'smoke-shop-guild-filter-390.png' });
+          await filterButton.click();
+          assert.equal(await filterButton.getAttribute('aria-pressed'), 'false');
+          assert.equal(await allGuildSpells.count(), totalSpells,
+            'Turning the filter off must restore every authored spell');
           // Membership and spells are the guild's real workflow, not shop tabs.
           await dialog.locator('[data-chronicles-guild-join]').waitFor();
           await dialog.locator('[data-chronicles-guild-join]').click();
