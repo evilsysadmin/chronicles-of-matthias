@@ -297,7 +297,7 @@ export default function ChroniclesCharacterSetup({
             <label>
               Nombre
               <input
-                aria-label={`Nombre de ${activeCharacter.slotId}`}
+                aria-label={`Nombre del héroe ${activeIndex + 1}: ${activeCharacter.name}`}
                 value={activeCharacter.name}
                 maxLength={24}
                 onChange={(event) => patchCharacter(activeCharacter.slotId, { name: event.target.value })}
