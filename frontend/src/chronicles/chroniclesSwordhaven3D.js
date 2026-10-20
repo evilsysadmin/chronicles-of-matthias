@@ -228,6 +228,13 @@ function emblem(group, kind, mats) {
   } else if (kind === 'sun') {
     mesh(group, new THREE.SphereGeometry(0.27, 10, 8), gold, 'temple-sun', [0, 0, 0.13]);
     mesh(group, new THREE.TorusGeometry(0.42, 0.045, 5, 16), gold, 'temple-halo', [0, 0, 0.13]);
+  } else if (kind === 'civic') {
+    // A small castellated civic seal: instantly distinct from the temple sun.
+    mesh(group, new THREE.BoxGeometry(0.70, 0.49, 0.12), gold, 'civic-seal-tower', [0, -0.11, 0.12]);
+    for (const x of [-0.27, 0, 0.27]) {
+      mesh(group, new THREE.BoxGeometry(0.17, 0.21, 0.12), gold,
+        'civic-seal-battlement', [x, 0.25, 0.12]);
+    }
   }
 }
 
@@ -238,6 +245,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   root.position.set(wx, 0, wz);
 
   const isTemple = spec.emblem === 'sun';
+  const isTownHall = spec.emblem === 'civic';
   const isTavern = spec.emblem === 'mug';
   const isMagic = spec.emblem === 'crystal';
   const isForge = spec.emblem === 'swords';
@@ -423,6 +431,15 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'temple-spire', [0, height + 5.5, -depth * 0.11], !coarse);
     mesh(root, new THREE.TorusGeometry(0.49, 0.10, 8, 20), mats.gold,
       'temple-rose-window', [0, height - 0.56, facadeZ + 0.14]);
+  } else if (isTownHall) {
+    // The mayor's red roof has a modest stone cupola rather than another
+    // temple spire. All decorative meshes remain over the solid house cells.
+    mesh(root, new THREE.CylinderGeometry(0.86, 0.96, 1.85, 8), mats.stone,
+      'civic-cupola-tower', [0, height + 2.25, -depth * 0.11], !coarse);
+    mesh(root, new THREE.ConeGeometry(1.15, 1.30, 8), roof,
+      'civic-cupola-roof', [0, height + 3.82, -depth * 0.11], !coarse);
+    mesh(root, new THREE.CylinderGeometry(1.02, 1.02, 0.13, 8), mats.gold,
+      'civic-cupola-crest', [0, height + 1.40, -depth * 0.11]);
   } else if (isMagic) {
     mesh(root, new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), mats.plaster,
       'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);

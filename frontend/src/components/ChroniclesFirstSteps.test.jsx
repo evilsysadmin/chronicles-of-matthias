@@ -42,6 +42,9 @@ describe('Chronicles · first Swordhaven steps', () => {
     const html = render(newSwordhaven());
     expect(html).toContain('MATTHIAS · PRIMEROS PASOS');
     expect(html).toContain('alcalde Aldric');
+    expect(html).toContain('sureste');
+    expect(html).toContain('tejado rojo');
+    expect(html).toContain('cúpula de piedra');
     expect(html).not.toContain('nos envía tras el Rey');
     expect(html).toContain('cuerpo a cuerpo');
     expect(html).toContain('Ver encargo');

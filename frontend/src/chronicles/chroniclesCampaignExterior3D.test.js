@@ -110,6 +110,35 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(lettering.material.map.image.height).toBe(64);
       expect(nameplate.position.z).toBeLessThan(5); // Within the blocking building footprint.
     }
+    // The first destination is a real, readable civic landmark, not a HUD
+    // waypoint: a red roof, a stone cupola, and its own engraved nameplate.
+    const hall = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-hall-'));
+    const temple = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-temple-'));
+    expect(hall).toBeTruthy();
+    expect(hall.getObjectByName('civic-cupola-tower')).toBeTruthy();
+    expect(hall.getObjectByName('civic-cupola-roof')).toBeTruthy();
+    expect(hall.getObjectByName('civic-seal-tower')).toBeTruthy();
+    expect(hall.getObjectByName('temple-bell-tower')).toBeFalsy();
+    expect(hall.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel)
+      .toBe('AYUNTAMIENTO');
+    expect(temple.getObjectByName('temple-bell-tower')).toBeTruthy();
+    expect(temple.getObjectByName('civic-cupola-tower')).toBeFalsy();
+
+    // From the authored spawn on the plaza, players can walk to the mayor:
+    // do not let architectural dressing imply a door behind solid collision.
+    const visited = new Set();
+    const pending = [[swordhavenFirstBook.partyStart.x, swordhavenFirstBook.partyStart.y]];
+    while (pending.length) {
+      const [x, y] = pending.shift();
+      const id = `${x},${y}`;
+      if (visited.has(id) || grid[y]?.[x] !== '.') continue;
+      visited.add(id);
+      pending.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+    expect(visited.has('11,10')).toBe(true);
+
     for (const house of town.children.filter(child => child.name.includes('-home-'))) {
       expect(house.getObjectByName('swordhaven-shop-nameplate')).toBeFalsy();
       expect(house.getObjectByName('armor-display')).toBeFalsy();
