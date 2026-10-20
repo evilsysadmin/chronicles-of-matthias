@@ -88,21 +88,30 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-chronicles-touch-action="attack"]').click();
   await page.getByLabel('Abrir menú de Chronicles').click();
-  const checkpoint = page.waitForResponse(r => r.request().method() === 'PUT'
-    && /\/api\/chronicles\/runs\/[^/]+\/checkpoint$/.test(new URL(r.url()).pathname)
-    && r.status() === 200, { timeout: 25_000 });
+  // A manual save may legally reuse the durable area-change checkpoint
+  // when no gameplay state changed. Wait for the visible result, then inspect
+  // the authoritative world the REAL Chronicles backend will reload.
   await page.getByRole('button', { name: 'Guardar partida', exact: true }).click();
-  const put = await checkpoint;
-  const flags = put.request().postDataJSON()?.worldFlags || {};
+  await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15_000 });
+  await page.screenshot({ path: 'chronicles-combat-mobile.png', fullPage: false });
+  const persisted = await fetch(api + '/chronicles/runs/' + encodeURIComponent(game.runId) + '/bootstrap', {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  assert.equal(persisted.status, 200, 'Cannot read authoritative combat checkpoint');
+  const saved = await persisted.json();
+  assert.equal(saved.currentMapId, 'crypt-eight-squares');
+  const flags = saved.worldFlags || {};
   const enemyHp = flags.enemyHp;
   const initiative = flags['__chrRuntime.initiative'];
-  // This is a REAL encounter test: no fake damage, hit messages or HP.
-  // It passes if the pawn sustained authentic damage OR initiative started.
-  assert.ok((typeof enemyHp === 'number' && enemyHp < 5) || (typeof initiative === 'string' && initiative.length > 10),
-    'No actual damage or initiative was recorded for the authored crypt encounter');
-  await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15_000 });
+  console.log('CHRONICLES_PUBLIC_COMBAT_STATE ' + JSON.stringify({
+    enemyHp, initiativeStarted: Boolean(initiative), turns: flags['__chrRuntime.turns'],
+    x: flags['__chrRuntime.x'], y: flags['__chrRuntime.y'],
+  }));
+  // Genuine authored enemy damage OR initiative. Never substitute a fake hit.
+  assert.ok((typeof enemyHp === 'number' && enemyHp < 5)
+    || (typeof initiative === 'string' && initiative.length > 10),
+  'No real enemy damage or initiative persisted after the crypt attacks');
   assert.deepEqual(errors, [], 'Browser exceptions during live combat');
-  await page.screenshot({ path: 'chronicles-combat-mobile.png', fullPage: false });
   console.log('CHRONICLES_PUBLIC_COMBAT_OK crypt-eight-squares real-enemy');
   await context.close();
 } finally {
