@@ -34,10 +34,10 @@ try {
   await fields[2].fill(password);
   if (!(await fields[3].inputValue())) await fields[3].fill(invite);
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
-  await page.getByText('Nueva campaña').waitFor({ timeout: 20000 });
+  await page.getByRole('button', { name: /Nueva expedición/ }).waitFor({ timeout: 20000 });
   expect(!(await body(page)).includes('No se pudo consultar el servidor'), 'book could not reach the API');
 
-  await page.getByText('Nueva campaña').click();
+  await page.getByRole('button', { name: /Nueva expedición/ }).click();
   await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
   await page.waitForTimeout(2000);
@@ -55,7 +55,7 @@ try {
   await login[0].fill(user);
   await login[1].fill(password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.getByText('Continuar partida').click({ timeout: 20000 });
+  await page.getByRole('button', { name: /Continuar expedición/ }).click({ timeout: 20000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
   await page.screenshot({ path: 'api-e2e-resumed.png' });
   await ctx.close();
