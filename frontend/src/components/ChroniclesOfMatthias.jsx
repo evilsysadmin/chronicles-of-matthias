@@ -150,6 +150,7 @@ import {
   chroniclesSaveNarrationLog,
 } from '../chronicles/chroniclesNarrationLog.js';
 import ChroniclesPartyBark from './ChroniclesPartyBark.jsx';
+import ChroniclesFirstSteps from './ChroniclesFirstSteps.jsx';
 import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
 import useChroniclesLandscape, {
   releaseChroniclesLandscape,
@@ -302,6 +303,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [state?.message]);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [firstStepsOpen, setFirstStepsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   // Admin tools appear only for accounts the API reports as admins.
@@ -1216,6 +1218,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, quickStatusOpen, ready, sheetMemberId, spellMenuOpen]);
 
   const startFreshGame = (entryMapId = null) => {
+    setFirstStepsOpen(false);
     chroniclesClearPlayingRun();
     beginChroniclesRun(FIRST_PERSON_RUN_SCOPE, { entryMapId });
     setCharacterSetupDone(false);
@@ -1225,6 +1228,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const loadSavedGame = (runId) => {
     if (!chroniclesSelectSavedRun(FIRST_PERSON_RUN_SCOPE, runId)) return;
+    setFirstStepsOpen(false);
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, runId);
     // Loading an existing expedition skips character setup; use this click to
     // request the same native fullscreen/orientation affordance as New game.
@@ -1242,6 +1246,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   };
 
   const returnToSaveMenu = () => {
+    setFirstStepsOpen(false);
     chroniclesClearSessionResume(activeRunIdRef.current);
     chroniclesClearPlayingRun();
     setMenuOpen(false);
@@ -1529,6 +1534,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     <div className="chronicles-game-menu__actions">
                   <button type="button" className="chronicles-game-menu__continue" onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); }}><span aria-hidden="true">▶</span> Continuar</button>
                   <button type="button" data-chronicles-menu-journal onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}>Crónica · J</button>
+                  <button type="button" data-chronicles-menu-first-steps
+                    onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setFirstStepsOpen(true); }}>
+                    Primeros pasos · controles
+                  </button>
                   <button type="button" data-chronicles-menu-quick-status onClick={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}>Estado del grupo · G</button>
                   <button type="button" className="chronicles-game-menu__save" onClick={() => void persistCheckpoint(stateRef.current, 'manual')} disabled={saveBusy}>
                     {saveBusy ? 'Guardando…' : 'Guardar partida'}
@@ -1594,6 +1603,22 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
             <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark} />
+            <ChroniclesFirstSteps
+              key={activeRunIdRef.current || 'no-run'}
+              state={state}
+              runId={activeRunIdRef.current}
+              open={firstStepsOpen}
+              suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
+                || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
+                || state.shop || state.guild || state.initiative || expeditionOver)}
+              onClose={() => setFirstStepsOpen(false)}
+              onOpenJournal={() => {
+                setMenuOpen(false);
+                setAutomapOpen(false);
+                setJournalOpen(false);
+                setChronicleModalOpen(true);
+              }}
+            />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
             <ChroniclesEnemyRetaliationFx key={retaliationCue?.token || 'none'} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
