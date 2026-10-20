@@ -1,25 +1,37 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
-import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
+import { chroniclesQuestRegionHint } from '../chronicles/chroniclesQuestRegionHint.js';
+import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import './ChroniclesJournalModal.css';
 
+// One readable page at a time. The old side-by-side quest dashboard left half
+// the screen blank when an expedition had few folios.
 export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
+  const [chapter, setChapter] = useState('quests');
+  const [openedQuestId, setOpenedQuestId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
   useEffect(() => {
     if (!open) return undefined;
     const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
-    return () => previousFocus?.isConnected && previousFocus.focus?.();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus?.();
+    };
   }, [open]);
 
   if (!open || typeof document === 'undefined') return null;
 
   const quests = chroniclesQuestLogEntries(state);
-  const activeCount = quests.filter((quest) => quest.status === 'active').length;
+  const active = quests.filter((quest) => quest.status === 'active');
+  const selectedId = openedQuestId === null ? (active[0] || quests[0])?.id : openedQuestId;
+  const foliosCount = entries.length + narrations.length;
 
   return createPortal(
     <div className="chronicles-journal-modal__backdrop" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => {
@@ -44,56 +56,105 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
         <header className="chronicles-journal-modal__header">
           <span className="chronicles-journal-modal__crest" aria-hidden="true">✥</span>
           <div className="chronicles-journal-modal__heading">
-            <small>ARCHIVO DE LA COMPAÑÍA</small>
+            <small>EL LIBRO DE LA COMPAÑÍA</small>
             <h2 id="chronicles-journal-modal-title">Crónica de expedición</h2>
-            <p>El rastro de nuestra aventura, escrito página a página.</p>
+            <p>Encargos que seguimos y memoria de lo vivido.</p>
           </div>
           <button ref={closeRef} type="button" aria-label="Cerrar Crónica" title="Cerrar (J o Esc)"
             onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onClose();
-            }}>×</button>
+            onClick={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}>×</button>
         </header>
-        <div className="chronicles-journal-modal__overview" aria-label="Resumen de la expedición">
-          <span><b>{activeCount}</b> {activeCount === 1 ? 'encargo activo' : 'encargos activos'}</span>
-          <span aria-hidden="true" className="chronicles-journal-modal__overview-divider">✦</span>
-          <span><b>{entries.length}</b> {entries.length === 1 ? 'folio escrito' : 'folios escritos'}</span>
-        </div>
+
+        <nav className="chronicles-journal-modal__chapters" aria-label="Capítulos de la crónica" role="tablist">
+          <button type="button" role="tab" id="chronicles-journal-tab-quests"
+            aria-controls="chronicles-journal-panel-quests" aria-selected={chapter === 'quests'}
+            onClick={() => setChapter('quests')}>
+            <span>Encargos</span><small>{active.length} {active.length === 1 ? 'pendiente' : 'pendientes'}</small>
+          </button>
+          <button type="button" role="tab" id="chronicles-journal-tab-memories"
+            aria-controls="chronicles-journal-panel-memories" aria-selected={chapter === 'memories'}
+            onClick={() => setChapter('memories')}>
+            <span>Memorias</span><small>{foliosCount} {foliosCount === 1 ? 'anotación' : 'anotaciones'}</small>
+          </button>
+        </nav>
+
         <div className="chronicles-journal-modal__scroll" tabIndex={0} role="region" aria-label="Páginas de la crónica">
-          <div className="chronicles-journal-modal__pages">
-            <section className="chronicles-journal-modal__page chronicles-journal-modal__page--quests" aria-label="Encargos de la compañía">
-              <div className="chronicles-journal-modal__page-intro">
-                <span>CAPÍTULO I · EL DEBER</span>
-                <p>Asuntos pendientes de la compañía</p>
+          {chapter === 'quests' ? (
+            <section id="chronicles-journal-panel-quests" role="tabpanel"
+              aria-labelledby="chronicles-journal-tab-quests" className="chronicles-journal-modal__chapter">
+              <div className="chronicles-journal-modal__chapter-head">
+                <small>CAPÍTULO I</small>
+                <h3>Los asuntos pendientes</h3>
+                <p>Abre un encargo para leer la pista y la región donde buscar. Los lugares no revelados siguen siendo desconocidos.</p>
               </div>
-              <ChroniclesQuestLog state={state} />
-              {!quests.length && <p className="chronicles-journal-modal__empty">Todavía no hay encargos que registrar.</p>}
+              {quests.length ? (
+                <ol className="chronicles-journal-modal__quest-pages" aria-label="Encargos de la compañía">
+                  {quests.map((quest, index) => {
+                    const expanded = selectedId === quest.id;
+                    const hint = chroniclesQuestRegionHint(quest, state);
+                    const detailId = `chronicles-journal-quest-${index}`;
+                    return (
+                      <li key={quest.id} className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
+                        data-chronicles-quest-id={quest.id} data-chronicles-quest-status={quest.status}>
+                        <button type="button" aria-expanded={expanded} aria-controls={detailId}
+                          className="chronicles-journal-modal__quest-heading"
+                          onClick={() => setOpenedQuestId(expanded ? '' : quest.id)}>
+                          <span className="chronicles-journal-modal__quest-number" aria-hidden="true">
+                            {quest.status === 'completed' ? '✓' : String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span className="chronicles-journal-modal__quest-heading-copy">
+                            <small>{quest.main ? 'Hilo principal' : 'Encargo secundario'}
+                              {quest.status === 'completed' ? ' · Resuelto' : ''}</small>
+                            <strong>{quest.title}</strong>
+                            {hint && <em>⌖ {hint.region}</em>}
+                          </span>
+                          <span aria-hidden="true" className="chronicles-journal-modal__quest-chevron">{expanded ? '−' : '+'}</span>
+                        </button>
+                        {expanded && (
+                          <div id={detailId} className="chronicles-journal-modal__quest-detail">
+                            {quest.description && <p className="chronicles-journal-modal__quest-story">{quest.description}</p>}
+                            {quest.objective && <p className="chronicles-journal-modal__quest-objective">{quest.objective}</p>}
+                            {hint && (
+                              <aside className="chronicles-journal-modal__quest-hint">
+                                <small>PISTA DEL LUGAR · {hint.kind}</small>
+                                <strong>{hint.region}</strong>
+                                <p>{hint.clue}</p>
+                              </aside>
+                            )}
+                            {!hint && quest.status === 'active' &&
+                              <p className="chronicles-journal-modal__quest-unknown">Aún no consta una región segura en las notas de este encargo.</p>}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : <p className="chronicles-journal-modal__empty">Todavía no hay encargos que registrar.</p>}
             </section>
-            <section className="chronicles-journal-modal__page chronicles-journal-modal__page--folios" aria-label="Folios de expedición">
-              <div className="chronicles-journal-modal__page-intro">
-                <span>CAPÍTULO II · LA MEMORIA</span>
-                <p>Los lugares y sucesos que dejamos atrás</p>
+          ) : (
+            <section id="chronicles-journal-panel-memories" role="tabpanel"
+              aria-labelledby="chronicles-journal-tab-memories" className="chronicles-journal-modal__chapter">
+              <div className="chronicles-journal-modal__chapter-head">
+                <small>CAPÍTULO II</small>
+                <h3>Memorias del camino</h3>
+                <p>Lo que la compañía descubrió, contó y sobrevivió.</p>
               </div>
-              <h3>Folios de expedición</h3>
-              {entries.length ? <ol className="chronicles-journal-modal__folios">{entries.map((entry) => (
-                <li key={entry.id}>
-                  <span className="chronicles-journal-modal__folio-sigil" aria-hidden="true">{entry.sigil}</span>
-                  <div><strong>{entry.title}</strong><p>{entry.body}</p></div>
-                </li>
-              ))}</ol> : <p className="chronicles-journal-modal__empty">Aún no hay anotaciones. Cada viaje deja su historia.</p>}
-              <h3>Diario de la expedición</h3>
+              {entries.length ? (
+                <ol className="chronicles-journal-modal__folios">{entries.map((entry) => (
+                  <li key={entry.id}>
+                    <span className="chronicles-journal-modal__folio-sigil" aria-hidden="true">{entry.sigil}</span>
+                    <div><strong>{entry.title}</strong><p>{entry.body}</p></div>
+                  </li>
+                ))}</ol>
+              ) : <p className="chronicles-journal-modal__empty">Todavía no se han escrito folios de expedición.</p>}
+              <h4>Voces del viaje</h4>
               {narrations.length ? <ol className="chronicles-journal-modal__diary" data-chronicles-narration-log>{narrations.map((entry) => (
                 <li key={`${entry.at}-${entry.text}`}>{entry.text}</li>
               ))}</ol> : <p className="chronicles-journal-modal__empty">Lo que cuente la crónica durante el viaje quedará aquí.</p>}
             </section>
-          </div>
+          )}
         </div>
-        <footer>
-          <span>ARCHIVO DE LA EXPEDICIÓN</span>
-          <span><kbd>J</kbd> / <kbd>Esc</kbd> para cerrar</span>
-        </footer>
+        <footer><span>LIBRO DE LA EXPEDICIÓN</span><span><kbd>J</kbd> / <kbd>Esc</kbd> para cerrar</span></footer>
       </section>
     </div>, document.body,
   );
