@@ -329,7 +329,7 @@
 .chronicles-save-menu--expedition .chronicles-save-menu__actions .is-primary .chronicles-save-menu__chevron {
   color: #754a20;
 }
-.chronicles-save-menu--expedition .chronicles-save-menu__actions button.is-resume:not(:disabled) {
+.chronicles-save-menu--expedition .chronicles-save-menu__actions button.is-resume:not(.is-primary):not(:disabled) {
   border-color: #e5b66c;
   background: linear-gradient(100deg, #16304e, #17406b 70%, #10253c);
   color: #fff1d9;
