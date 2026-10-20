@@ -76,11 +76,22 @@ try {
   await page.keyboard.press('ArrowDown');
   const area = await cryptCheckpoint;
   assert.equal(area.request().postDataJSON().currentMapId, 'crypt-eight-squares');
+  // A successful area-change checkpoint can arrive while the former map is
+  // still rendered. Wait for the ACTUAL new game state, not an old visible
+  // menu button. Otherwise S / A may hit the outgoing world or be dropped.
+  const crypt = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
+  await crypt.waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
+  const cryptTurns = Number(await crypt.getAttribute('data-chronicles-turns'));
+  assert.ok(Number.isInteger(cryptTurns), 'Crypt UI did not expose real turn count');
+  console.log('CHRONICLES_PUBLIC_COMBAT_CRYPT_READY turns=' + cryptTurns);
 
   // With a real archer and the live crypt AI, S fires the opening volley.
   // Then approach the corrupted pawn and attempt a real melee action.
   await page.keyboard.press('s');
+  await page.waitForFunction(previous =>
+    Number(document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')?.getAttribute('data-chronicles-turns')) > previous,
+    cryptTurns, { timeout: 12000 });
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('a');
 
