@@ -14,9 +14,14 @@ import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesMM3Chrome.css';
 
 function makeState() {
+  const goldCap = new URLSearchParams(window.location.search).has('gold-cap');
   const base = chroniclesApplyContentEffects(
     createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
-    [{ type: 'grant-gold', amount: 123 }],
+    [
+      { type: 'grant-gold', amount: goldCap ? 9999 : 123 },
+      ...(goldCap ? [{ type: 'grant-item', itemId: 'brass-dagger',
+        name: 'Daga de latón', quantity: 1 }] : []),
+    ],
   );
   const room = new URLSearchParams(window.location.search).get('room');
   // Directly mount other REAL Swordhaven counters for visual QA. The Brunna
