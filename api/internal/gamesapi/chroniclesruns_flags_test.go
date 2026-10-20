@@ -69,8 +69,8 @@ func TestNormalizeFlagsKeepsNormalTextAndInitiativeLimits(t *testing.T) {
     }
     // Special-casing one field may not bypass the aggregate checkpoint cap.
     large := bson.D{}
-    for i := 0; i < 9; i++ {
-        large = append(large, bson.E{Key: fmt.Sprintf("flag-%d", i), Value: strings.Repeat("x", chroniclesInitiativeMaxRunes)})
+    for i := 0; i < 800; i++ {
+        large = append(large, bson.E{Key: fmt.Sprintf("flag-%d", i), Value: strings.Repeat("x", 200)})
     }
     if _, err := normalizeFlags(large); err == nil {
         t.Fatal("large checkpoint bypassed aggregate limit")
