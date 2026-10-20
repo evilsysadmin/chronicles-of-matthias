@@ -101,7 +101,7 @@ try {
           .first().getAttribute('data-chronicles-save-menu').catch(() => null);
         console.error('CHRONICLES_PUBLIC_SETUP_UNAVAILABLE', JSON.stringify({
           viewport: viewport.width, currentSetup, currentMenu,
-          excerpt: (await page.locator('body').innerText()).replace(/\\s+/g, ' ').slice(0, 360),
+          excerpt: (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 360),
         }));
         await page.screenshot({ path: `chronicles-public-setup-failed-${viewport.width}.png` }).catch(() => {});
         throw error;
