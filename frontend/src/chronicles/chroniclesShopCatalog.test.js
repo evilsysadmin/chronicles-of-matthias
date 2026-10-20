@@ -23,6 +23,15 @@ describe('Chronicles shop catalog view', () => {
     expect(chroniclesShopCategories(offers).map((entry) => entry.value)).toEqual(['weapon', 'consumable', 'other']);
     expect(chroniclesShopVisibleOffers(offers, { query: '  VIDA ' })[0].item.id).toBe('potion');
   });
+  it('keeps missile weapons separate from potions and melee swords', () => {
+    const missile = { item: { id: 'longbow', slot: 'missile', name: 'Arco largo', description: 'Alcance 4' }, price: 3 };
+    const stock = [...offers, missile];
+    expect(chroniclesShopCategories(stock)).toContainEqual({ value: 'missile', label: 'Armas a distancia' });
+    expect(chroniclesShopVisibleOffers(stock, { category: 'missile' })).toEqual([missile]);
+    expect(chroniclesShopVisibleOffers(stock, { category: 'consumable' }).map((offer) => offer.item.id))
+      .toEqual(['potion']);
+  });
+
   it('falls back to a visible offer when selected item has been sold or filtered away', () => {
     expect(chroniclesShopSelectedOffer(offers, 'iron')?.item.id).toBe('iron');
     expect(chroniclesShopSelectedOffer(offers.slice(0, 1), 'iron')?.item.id).toBe('oak');

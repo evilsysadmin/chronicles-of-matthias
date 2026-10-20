@@ -27,6 +27,19 @@ function combatMetrics(state, memberId) {
   };
 }
 
+// A shot uses the dedicated missile loadout, not melee's attack metrics.
+// Show the actual equipment modifiers (rather than inventing final to-hit
+// numbers which may also depend on class, position or the target).
+function missileEquipmentMetrics(state, memberId) {
+  const bonus = chroniclesEquipmentBonuses(state, memberId, { mode: 'missile' });
+  const equipped = chroniclesEquippedItem(state, memberId, 'missile');
+  return {
+    toHit: Number(bonus.toHitBonus || 0),
+    damage: Number(bonus.attackDamageBonus || 0),
+    reach: Number(equipped?.reach || 0),
+  };
+}
+
 function previewEquipped(state, memberId, item, displacedShield) {
   const gear = { ...state.equipment?.[memberId], [item.slot]: item.id };
   if (displacedShield) delete gear.shield;
@@ -37,7 +50,7 @@ function previewEquipped(state, memberId, item, displacedShield) {
 }
 
 export function chroniclesShopEquipmentComparisons(state, item) {
-  if (!state || !item || !['weapon', 'armor', 'shield'].includes(item.slot)) return [];
+  if (!state || !item || !['weapon', 'missile', 'armor', 'shield'].includes(item.slot)) return [];
 
   return (state.party || []).map((member) => {
     const current = chroniclesEquippedItem(state, member.id, item.slot);
@@ -58,11 +71,12 @@ export function chroniclesShopEquipmentComparisons(state, item) {
       return { memberId: member.id, name: member.name, current, eligible, reason, alreadyEquipped, displacedShield: null, stats: [] };
     }
 
-    const before = combatMetrics(state, member.id);
-    const after = combatMetrics(previewEquipped(state, member.id, item, displacedShield), member.id);
+    const nextState = previewEquipped(state, member.id, item, displacedShield);
+    const before = item.slot === 'missile' ? missileEquipmentMetrics(state, member.id) : combatMetrics(state, member.id);
+    const after = item.slot === 'missile' ? missileEquipmentMetrics(nextState, member.id) : combatMetrics(nextState, member.id);
     const keys = item.slot === 'weapon'
       ? ['toHit', 'damage', 'reach', ...(displacedShield ? ['armorClass', 'damageReduction'] : [])]
-      : ['armorClass', 'damageReduction'];
+      : item.slot === 'missile' ? ['toHit', 'damage', 'reach'] : ['armorClass', 'damageReduction'];
 
     return {
       memberId: member.id,
@@ -74,7 +88,7 @@ export function chroniclesShopEquipmentComparisons(state, item) {
       displacedShield,
       stats: keys.map((key) => ({
         key,
-        label: STAT_LABELS[key],
+        label: item.slot === 'missile' && key !== 'reach' ? `${STAT_LABELS[key]} (bono)` : STAT_LABELS[key],
         before: before[key],
         after: after[key],
         delta: after[key] - before[key],

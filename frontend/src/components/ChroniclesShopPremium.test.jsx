@@ -27,6 +27,8 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('chronicles-shop__catalog');
     expect(html).toContain('chronicles-shop__detail');
     expect(html).toContain('Bastón de madera');
+    expect(html).toContain('Armas a distancia');
+    expect(html).toContain('aria-label="Arma a distancia"');
     expect(html).toContain('Comparar con mi equipo');
     expect(html).toContain('type="search"');
     expect(html).toContain('Precio: menor primero');
