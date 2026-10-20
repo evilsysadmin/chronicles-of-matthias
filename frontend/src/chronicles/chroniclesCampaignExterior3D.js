@@ -221,19 +221,44 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       root.add(billboard);
       root.userData.updateChroniclesSprite = billboard.userData.updateChroniclesSprite;
     } else if (entry.visualType === 'sewer-grate') {
-      // A town's dungeon mouth: iron grate in a stone ring, flush with the road.
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.12, 12), stone);
-      ring.position.y = 0.06;
-      root.add(ring);
-      const iron = material(0x2b2b30, { metalness: 0.6, roughness: 0.55 });
-      for (let bar = -3; bar <= 3; bar += 1) {
-        const rod = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.5), iron);
-        rod.position.set(bar * 0.22, 0.14, 0);
+      // The sewer mouth is a real street landmark, not a waist-high
+      // waypoint. All geometry stays inside its walkable 4m cell, less
+      // than 30cm tall, with no extra collider or fake interactable.
+      const iron = material(0x41494b, { metalness: 0.68, roughness: 0.43 });
+      const throat = new THREE.Mesh(new THREE.PlaneGeometry(2.12, 2.12),
+        material(0x101a19, { roughness: 1, side: THREE.DoubleSide }));
+      throat.name = 'sewer-grate-dark-shaft';
+      throat.rotation.x = -Math.PI / 2;
+      throat.position.y = 0.055;
+      root.add(throat);
+      for (const side of [-1, 1]) {
+        const kerb = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.15, 2.83), stone);
+        kerb.name = 'sewer-grate-stone-frame';
+        kerb.position.set(side * 1.17, 0.12, 0);
+        root.add(kerb);
+        const end = new THREE.Mesh(new THREE.BoxGeometry(2.83, 0.15, 0.31), stone);
+        end.name = 'sewer-grate-stone-frame';
+        end.position.set(0, 0.12, side * 1.17);
+        root.add(end);
+      }
+      for (let bar = -4; bar <= 4; bar += 1) {
+        const rod = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.085, 2.10), iron);
+        rod.name = 'sewer-grate-iron-bar';
+        rod.position.set(bar * 0.235, 0.18, 0);
         root.add(rod);
       }
-      const cross = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 0.1), iron);
-      cross.position.y = 0.16;
-      root.add(cross);
+      for (const z of [-0.80, 0.80]) {
+        const brace = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.10, 0.14), iron);
+        brace.name = 'sewer-grate-iron-brace';
+        brace.position.set(0, 0.205, z);
+        root.add(brace);
+      }
+      // Worn municipal seal embedded into the lip, visible at street
+      // distance without any floating labels, markers or extra draw loop.
+      const seal = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.025, 0.18), plaque);
+      seal.name = 'sewer-grate-municipal-seal';
+      seal.position.set(0, 0.212, -1.16);
+      root.add(seal);
     } else if (entry.visualType === 'dungeon-arch') {
       // A dungeon mouth in the open: two pillars, a lintel and the dark inside.
       for (const side of [-1, 1]) {
