@@ -594,3 +594,17 @@
   color: #674e31;
   font: .79rem/1.38 system-ui, sans-serif;
 }
+
+
+/* Narrative proximity cue, grounded in the actual map and its known region.
+   It is part of the same parchment entry, not another dashboard status box. */
+.chronicles-journal-modal__quest-hint .chronicles-journal-modal__quest-orientation {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed #c9ac82;
+  color: #63513c;
+  font: italic .86rem/1.42 Georgia, serif;
+}
+.chronicles-journal-modal__quest-orientation[data-chronicles-quest-relation='same-map'] {
+  color: #486143;
+}

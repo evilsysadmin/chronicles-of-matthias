@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
-import { chroniclesQuestRegionHint } from '../chronicles/chroniclesQuestRegionHint.js';
+import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import './ChroniclesJournalModal.css';
 
@@ -105,6 +105,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                   {quests.map((quest, index) => {
                     const expanded = selectedId === quest.id;
                     const hint = chroniclesQuestRegionHint(quest, state);
+                    const orientation = chroniclesQuestRegionContext(hint, state);
                     const detailId = `chronicles-journal-quest-${index}`;
                     return (
                       <li key={quest.id} className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
@@ -132,6 +133,8 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                                 <small>PISTA DEL LUGAR · {hint.kind}</small>
                                 <strong>{hint.region}</strong>
                                 <p>{hint.clue}</p>
+                                {orientation && <p className="chronicles-journal-modal__quest-orientation"
+                                  data-chronicles-quest-relation={orientation.relation}>{orientation.text}</p>}
                               </aside>
                             )}
                             {!hint && quest.status === 'active' &&

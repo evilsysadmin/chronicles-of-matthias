@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesQuestRegionHint } from './chroniclesQuestRegionHint.js';
+import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from './chroniclesQuestRegionHint.js';
 import questRegionHints from './campaign/quest-region-hints.json';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
@@ -61,6 +61,20 @@ describe('authored first-book quest geography', () => {
         )).toBe(true);
       }
     }
+  });
+
+  it('orients from actual party location without pretending to know a route', () => {
+    const sought = chroniclesQuestRegionHint(active('banner-contract'), {});
+    expect(chroniclesQuestRegionContext(sought, { mapId: 'swordhaven-first-book' }))
+      .toMatchObject({ relation: 'another-region', text: expect.stringContaining('Camino de los Estandartes') });
+    expect(chroniclesQuestRegionContext(sought, { mapId: 'banner-road-first-book' }))
+      .toMatchObject({ relation: 'same-map' });
+
+    const found = chroniclesQuestRegionHint(active('banner-contract'), { bannerFound: true });
+    expect(chroniclesQuestRegionContext(found, { mapId: 'swordhaven-square' }))
+      .toMatchObject({ relation: 'same-region' });
+    expect(chroniclesQuestRegionContext(null, { mapId: 'swordhaven-square' })).toBeNull();
+    expect(chroniclesQuestRegionContext(found, {})).toBeNull();
   });
 
   it('never fabricates a location for a finished, unknown or unrecognized quest stage', () => {
