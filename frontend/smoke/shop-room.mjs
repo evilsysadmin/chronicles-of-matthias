@@ -170,6 +170,19 @@ try {
         assert(art.loaded, room + ': artwork did not decode at ' + width);
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
         assert(art.src.includes(expected + '.png'), room + ': wrong artwork source');
+        if (room === 'odo') {
+          const presentation = await img.evaluate((node) => ({
+            width: node.getBoundingClientRect().width,
+            fit: getComputedStyle(node).objectFit,
+            rendering: getComputedStyle(node).imageRendering,
+          }));
+          assert.equal(presentation.fit, 'contain',
+            'Odo pixel room must not be blown up via object-fit: cover');
+          assert.equal(presentation.rendering, 'pixelated',
+            'Pixel-room should be deliberately crisp, not blurred and stretched');
+          assert(presentation.width >= 150 && presentation.width <= Math.min(410, width * .8),
+            'Odo art is offscreen or stretched to full viewport: ' + JSON.stringify(presentation));
+        }
         const geometry = await page.evaluate(() => {
           const bounds = (selector) => {
             const node = document.querySelector(selector);
