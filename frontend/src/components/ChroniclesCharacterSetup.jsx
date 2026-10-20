@@ -411,7 +411,7 @@ export default function ChroniclesCharacterSetup({
                     onClick={() => chooseClass(classId)}
                   >
                     <strong>{definition.label}</strong>
-                    <em>{unmet.length ? `Requiere ${requirementText(classId)}` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
+                    <em>{unmet.length ? `Requiere ${requirementText(classId)} · Vuelve a tirar atributos` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
                   </button>
                 );
               })}
