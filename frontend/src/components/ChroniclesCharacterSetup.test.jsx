@@ -69,6 +69,7 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('Alineamiento');
       expect(html).toContain('Tirar dados');
       expect((html.match(/data-class-id=/g) || []).length).toBe(10);
+      expect(html).toMatch(/[0-9]+ de 10 profesiones disponibles para tus atributos\./);
       expect(html).toContain('Vuelve a tirar atributos para optar a esta clase.');
       expect(html).toMatch(/<em>Requiere [^<]+ · Vuelve a tirar atributos<\/em>/);
       expect(html).toContain('Hechizos');
