@@ -1,5 +1,5 @@
 import odoForge from '../assets/chronicles/ui/shops/odo-forge.png';
-import brunnaArmory from '../assets/chronicles/ui/shops/brunna-armory.png';
+import brunnaArmory from '../assets/chronicles/ui/shops/brunna-forge.webp';
 import guildSanctum from '../assets/chronicles/ui/shops/guild-sanctum.png';
 
 // MM3 shows the shopkeeper in their room. The room follows the building the
