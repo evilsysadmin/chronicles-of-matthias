@@ -12,9 +12,10 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     expect(contextual?.id).toBe('swordhaven-mayor');
     const audience = chroniclesNpcDialogueForState(state, contextual);
     expect(audience).toMatchObject({ name: 'Alcalde Aldric', room: 'aldric-hall' });
-    expect(audience.choices.map((choice) => choice.kind)).toEqual(['say', 'say', 'action', 'leave']);
-    expect(audience.choices[2].actionId).toBe('swordhaven-mayor');
-    expect(audience.choices[0].answer).toMatch(/caballeros|Dama/);
+    expect(audience.choices.map((choice) => choice.kind)).toEqual(['action', 'say', 'say', 'leave']);
+    expect(audience.choices[0].label).toBe('Presentar la carta de la Dama');
+    expect(audience.choices[0].actionId).toBe('swordhaven-mayor');
+    expect(audience.choices[1].answer).toMatch(/caballeros|Dama/);
     expect(chroniclesMapById(state.mapId).grid).toHaveLength(15);
   });
 
