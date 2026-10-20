@@ -405,6 +405,13 @@ func canonicalLen(value bson.D) int {
 
 func runeLen(s string) int { return utf8.RuneCountInString(s) }
 
+// Normal flags stay capped at 256 characters. The MM3 initiative is a
+// versioned JSON snapshot of up to 64 actors, so it legitimately needs more.
+// Keep this exception scoped to the known runtime key and bounded by both
+// its own cap and the existing 128 KiB aggregate checkpoint budget.
+const chroniclesInitiativeFlagKey = "__chrRuntime.initiative"
+const chroniclesInitiativeMaxRunes = 16_384
+
 func normalizeFlags(flags bson.D) (bson.D, error) {
 	if len(flags) > 1024 || canonicalLen(flags) > 131_072 {
 		return nil, fail(400, "El checkpoint contiene demasiados flags.")
@@ -416,7 +423,11 @@ func normalizeFlags(flags bson.D) (bson.D, error) {
 		switch v := e.Value.(type) {
 		case nil, bool, int32, int64:
 		case string:
-			if runeLen(v) > 256 {
+			maxRunes := 256
+			if e.Key == chroniclesInitiativeFlagKey {
+				maxRunes = chroniclesInitiativeMaxRunes
+			}
+			if runeLen(v) > maxRunes {
 				return nil, fail(400, fmt.Sprintf("El flag %s es demasiado largo.", e.Key))
 			}
 		default:
