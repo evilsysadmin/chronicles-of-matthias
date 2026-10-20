@@ -40,6 +40,29 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.inventory).toEqual(base.inventory);
   });
 
+  it('compares missile-slot bonuses and reach, not melee stats', () => {
+    const state = {
+      ...initial(),
+      equipment: {
+        matthias: { weapon: 'brass-sword', missile: 'wooden-bow' },
+      },
+    };
+    const before = { ...state.equipment.matthias };
+    const preview = memberPreview(state, 'matthias', 'wooden-longbow');
+    expect(preview.eligible).toBe(true);
+    expect(preview.current?.id).toBe('wooden-bow');
+    expect(preview.stats.map((stat) => stat.key)).toEqual(['toHit', 'damage', 'reach']);
+    expect(metric(preview, 'toHit').label).toBe('Acierto (bono)');
+    expect(metric(preview, 'damage').label).toBe('Daño (bono)');
+    expect(metric(preview, 'toHit').delta)
+      .toBe(item('wooden-longbow').toHitBonus - item('wooden-bow').toHitBonus);
+    expect(metric(preview, 'damage').delta)
+      .toBe(item('wooden-longbow').attackDamageBonus - item('wooden-bow').attackDamageBonus);
+    expect(metric(preview, 'reach').delta)
+      .toBe(item('wooden-longbow').reach - item('wooden-bow').reach);
+    expect(state.equipment.matthias).toEqual(before);
+  });
+
   it('warns about shields displaced by two-handed weapons and includes defensive losses', () => {
     const state = {
       ...initial(),
