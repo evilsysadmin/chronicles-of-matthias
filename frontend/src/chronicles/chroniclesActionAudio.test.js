@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActionAudioCue } from './chroniclesActionAudio.js';
+import { chroniclesActionAudioCue, chroniclesWeaponImpactFamily } from './chroniclesActionAudio.js';
+import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { createChroniclesState, chroniclesReduce } from '../chroniclesOfMatthias.js';
 
 describe('Chronicles action audio cues', () => {
@@ -47,8 +48,8 @@ describe('Chronicles action audio cues', () => {
     };
     const shot = chroniclesReduce(equipped, 'volley');
     // The cleric's forged invalid bow is correctly ignored.
-    expect(chroniclesActionAudioCue(equipped, shot, 'volley')).toBe('volley:bow,crossbow,sling');
-    expect(chroniclesActionAudioCue(equipped, shot, { type: 'volley' })).toBe('volley:bow,crossbow,sling');
+    expect(chroniclesActionAudioCue(equipped, shot, 'volley').split('|')[0]).toBe('volley:bow,crossbow,sling');
+    expect(chroniclesActionAudioCue(equipped, shot, { type: 'volley' }).split('|')[0]).toBe('volley:bow,crossbow,sling');
     const noArrows = { ...equipped, equipment: {} };
     expect(chroniclesActionAudioCue(noArrows, chroniclesReduce(noArrows, 'volley'), 'volley')).toBeNull();
   });
@@ -67,4 +68,50 @@ describe('Chronicles action audio cues', () => {
     expect(chroniclesActionAudioCue(start, { ...hurtParty, x: start.x + 1 }, 'forward')).toBe('hurt');
     expect(chroniclesActionAudioCue(start, hurtParty, 'wait')).toBe('hurt');
   });
+  it('maps genuine equipped weapon families onto distinct restrained contacts', () => {
+    expect(['mace', 'staff', 'sling', undefined].map(chroniclesWeaponImpactFamily))
+      .toEqual(['blunt', 'blunt', 'blunt', 'blunt']);
+    expect(['sword', 'dagger', 'axe', 'spear', 'bow', 'crossbow'].map(chroniclesWeaponImpactFamily))
+      .toEqual(['cut', 'cut', 'cleave', 'pierce', 'arrow', 'arrow']);
+  });
+
+  it('plays sharp or heavy hits, whooshing misses, missile punctures and incoming enemy blows from HP deltas', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const enemy = chroniclesMapForState(base).enemies[0];
+    const armed = {
+      ...base,
+      [enemy.hpKey]: 12,
+      equipment: {
+        matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' },
+        rook: { weapon: 'bronze-mace' },
+        knight: { weapon: 'bronze-axe' },
+        bishop: { weapon: 'bronze-spear' },
+      },
+    };
+    const hit = { ...armed, [enemy.hpKey]: 11 };
+    const dead = { ...armed, [enemy.hpKey]: 0 };
+    const memberAttack = (memberId, mode = 'melee') => ({ type: 'attack', memberId, mode });
+
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias'))).toBe('hit:cut');
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('rook'))).toBe('hit:blunt');
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('knight'))).toBe('hit:cleave');
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('bishop'))).toBe('hit:pierce');
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias', 'missile'))).toBe('hit:arrow');
+    expect(chroniclesActionAudioCue(armed, dead, memberAttack('knight'))).toBe('defeat:cleave');
+    expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias'))).toBe('miss:cut');
+    expect(chroniclesActionAudioCue(armed, armed, memberAttack('rook'))).toBe('miss:blunt');
+    expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias', 'missile'))).toBe('miss:arrow');
+
+    const hurtParty = {
+      ...armed,
+      party: armed.party.map((member, index) => index === 0 ? { ...member, hp: member.hp - 1 } : member),
+    };
+    expect(chroniclesActionAudioCue(armed, hurtParty, { type: 'enemy-turn', enemyId: enemy.id }))
+      .toBe('hurt:blunt');
+    expect(chroniclesActionAudioCue(armed, armed, { type: 'enemy-turn', enemyId: enemy.id }))
+      .toBeNull();
+    expect(chroniclesActionAudioCue(armed, { ...hit, party: hurtParty.party }, memberAttack('matthias')))
+      .toBe('hit:cut|hurt:blunt');
+  });
+
 });
