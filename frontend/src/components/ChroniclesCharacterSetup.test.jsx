@@ -75,6 +75,21 @@ describe('ChroniclesCharacterSetup', () => {
     }
   });
 
+  it('offers a previous step when recovering the attributes editor', () => {
+    localStorage.setItem('chess-study-auth-username', 'chronicles-editor-back-test');
+    const build = createSeededChroniclesCharacterBuild('back-navigation', CHRONICLES_PARTY);
+    expect(saveChroniclesCharacterDraft({ activeSlot: 'bishop', editorStep: 'stats', build }, CHRONICLES_PARTY)).toBe(true);
+    try {
+      const html = render(build);
+      expect(html).toContain('data-editor-step="stats"');
+      expect(html).toContain('Anterior: identidad');
+      expect(html).toContain('Siguiente: clase');
+    } finally {
+      clearChroniclesCharacterDraft();
+      localStorage.removeItem('chess-study-auth-username');
+    }
+  });
+
   it('surfaces a persisted custom party without hiding the canonical fallback', () => {
     const html = render(createSeededChroniclesCharacterBuild('vault-7', CHRONICLES_PARTY));
 
