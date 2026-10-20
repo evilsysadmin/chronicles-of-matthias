@@ -14,6 +14,7 @@ function dismissalKey(runId) {
 // minutes of the actual Swordhaven campaign. No tutorial for legacy/Tactics,
 // other maps, completed quests or returning expeditions.
 export function chroniclesFirstStepsStory(state) {
+  if (state?.swordhavenMayorMet === true) return null;
   if (state?.phase !== 'explore' || !Number.isInteger(state?.turns)
     || state.turns < 0 || state.turns > 2) return null;
   if (state.mapId === 'swordhaven-first-book'
@@ -27,6 +28,17 @@ export function chroniclesFirstStepsStory(state) {
 
 export function chroniclesShouldOfferFirstSteps(state) {
   return chroniclesFirstStepsStory(state) !== null;
+}
+
+// The help menu may be reopened at any turn. Show the current authored
+// mission, not an obsolete invitation to meet Aldric after receiving his key.
+export function chroniclesFirstStepsSewerReady(state) {
+  return state?.mapId === 'swordhaven-first-book'
+    && state?.phase === 'explore'
+    && state?.swordhavenMayorMet === true
+    && state?.quests?.['lost-king']?.status === 'active'
+    && /alcantarillas/i.test(state.quests['lost-king']?.objective || '')
+    && Number(state?.inventory?.['sewer-key']?.quantity || 0) > 0;
 }
 
 export function chroniclesFirstStepsDismissed(runId) {
@@ -54,11 +66,13 @@ export default function ChroniclesFirstSteps({
         <strong>MATTHIAS · PRIMEROS PASOS</strong>
         <button type="button" aria-label="Cerrar primeros pasos" onClick={close}>×</button>
       </div>
-      <p>{story === 'first-book'
-        ? 'El Rey ha desaparecido. Desde la plaza, busca al sureste el Ayuntamiento: tejado rojo, cúpula de piedra y letrero sobre la entrada. Allí te espera el alcalde Aldric.'
-        : story === 'prologue'
-          ? 'La carta de la Dama nos envía tras el Rey. Empecemos por orientarnos en Swordhaven.'
-          : 'Consulta el objetivo actual en la Crónica y oriéntate con el mapa.'}</p>
+      <p>{chroniclesFirstStepsSewerReady(state)
+        ? 'Ya tienes la llave de Aldric. Busca la reja de hierro al sureste de la plaza, cerca del borde sur de Swordhaven. Pisa la reja para bajar a las alcantarillas.'
+        : story === 'first-book'
+          ? 'El Rey ha desaparecido. Desde la plaza, busca al sureste el Ayuntamiento: tejado rojo, cúpula de piedra y letrero sobre la entrada. Allí te espera el alcalde Aldric.'
+          : story === 'prologue'
+            ? 'La carta de la Dama nos envía tras el Rey. Empecemos por orientarnos en Swordhaven.'
+            : 'Consulta el objetivo actual en la Crónica y oriéntate con el mapa.'}</p>
       <small>Flechas: avanzar y girar · <kbd>M</kbd> mapa · <kbd>J</kbd> Crónica</small>
       <details>
         <summary>¿Cómo se juega?</summary>
