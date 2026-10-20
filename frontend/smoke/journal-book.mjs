@@ -35,9 +35,27 @@ try {
       assert.equal(await second.locator('button').getAttribute('aria-expanded'), 'true');
       assert.equal(await first.locator('button').getAttribute('aria-expanded'), 'false');
       assert.match(await second.innerText(), /Roble del Claro/);
+      // Reuse the true reducer's existing trackedQuestId contract. HUD and
+      // quest overlay must see the same selected goal, including null reset.
+      const followed = page.locator('[data-test-tracked-quest]');
+      const followSecond = second.locator('[data-chronicles-track-quest="names-in-wood"]');
+      await followSecond.click();
+      assert.equal(await followed.textContent(), 'names-in-wood');
+      assert.equal(await followSecond.getAttribute('aria-pressed'), 'true');
+      await first.locator('.chronicles-journal-modal__quest-heading').click();
+      const followFirst = first.locator('[data-chronicles-track-quest="banner-contract"]');
+      await followFirst.click();
+      assert.equal(await followed.textContent(), 'banner-contract');
+      assert.equal(await followFirst.getAttribute('aria-pressed'), 'true');
+      await followFirst.click();
+      assert.equal(await followed.textContent(), 'automatico');
+      assert.equal(await followFirst.getAttribute('aria-pressed'), 'false');
+      await second.locator('.chronicles-journal-modal__quest-heading').click();
       const completed = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
+      assert.equal(await completed.locator('[data-chronicles-track-quest]').count(), 0,
+        'A completed contract cannot be followed');
       await page.screenshot({ path: 'smoke-journal-quests-' + width + '.png' });
       const size = await page.evaluate(() => {
         const rect = document.querySelector('.chronicles-journal-modal').getBoundingClientRect();
