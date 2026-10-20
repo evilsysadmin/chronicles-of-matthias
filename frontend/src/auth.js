@@ -214,10 +214,12 @@ setSessionRefresher(refreshSsoToken);
 
 // Entering Chronicles already signed in to ShadowOps (in another game, or
 // earlier here): no form at all.
-export async function restoreSsoSession() {
-  if (!ssoEnabled()) return false;
-  const session = await ssoSilentToken();
-  if (!session) return false;
+export async function restoreSsoSession({ signal } = {}) {
+  if (!ssoEnabled() || signal?.aborted) return false;
+  const session = await ssoSilentToken({ signal });
+  if (!session || signal?.aborted) return false;
+  // A late SSO response must never replace the identity after the loading
+  // deadline or after App unmounts (e.g. explicit login on the fallback).
   saveSsoSession(session);
   return true;
 }

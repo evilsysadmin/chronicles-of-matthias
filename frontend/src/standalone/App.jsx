@@ -6,6 +6,7 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import LoginScreen from '../components/LoginScreen.jsx';
 import ReleaseUpdateNotice from './ReleaseUpdateNotice.jsx';
 import LoadingScreen from './LoadingScreen.jsx';
+import { beginSilentSsoRestore } from './ssoRestoreGate.js';
 import {
   fetchMeStatus, isLoggedIn, logout, refreshSsoToken, reportLogoutPresence, restoreSsoSession, startSsoRefresh,
   watchSessionIdentity,
@@ -31,13 +32,13 @@ export default function App() {
   const [checkingSso, setCheckingSso] = useState(() => !isLoggedIn() && ssoEnabled());
   useEffect(() => {
     if (!checkingSso) return;
-    let alive = true;
-    void restoreSsoSession().then((restored) => {
-      if (!alive) return;
-      if (restored) setLoggedIn(true);
+    return beginSilentSsoRestore(restoreSsoSession, (result) => {
+      if (result === 'authenticated') setLoggedIn(true);
+      if (result === 'error' || result === 'timeout') {
+        setExpiredNotice('No se pudo comprobar tu sesión ShadowOps. Puedes entrar manualmente.');
+      }
       setCheckingSso(false);
     });
-    return () => { alive = false; };
   }, [checkingSso]);
   useEffect(() => (loggedIn ? startSsoRefresh() : undefined), [loggedIn]);
   const [mode, setMode] = useState(currentMode);
