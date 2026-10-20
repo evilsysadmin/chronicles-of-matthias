@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1b2230" />
     <title>Chronicles of Matthias</title>
+    <link rel="preload" as="image" href="/chronicles-loading-art.svg" type="image/svg+xml" />
+    <!-- Visible immediately, before React and the game bundles are ready. -->
+    <style>
+      html,body { margin:0; min-height:100%; background:#080f18; }
+      .chronicles-boot {
+        position:fixed; inset:0; min-height:100vh; min-height:100dvh; isolation:isolate;
+        display:grid; place-items:center; overflow:hidden; color:#e4c69a; text-align:center;
+        background:radial-gradient(ellipse 60% 60% at 50% 38%,#20303f,transparent 75%),#080f18;
+      }
+      .chronicles-boot__art {
+        position:absolute; inset:0; width:100%; height:100%;
+        object-fit:contain; opacity:.7; filter:blur(2px) brightness(.7);
+        -webkit-mask-image:linear-gradient(90deg,#000 0%,transparent 42%,transparent 58%,#000 100%);
+        mask-image:linear-gradient(90deg,#000 0%,transparent 42%,transparent 58%,#000 100%);
+      }
+      .chronicles-boot__center { position:relative;z-index:1; width:min(90vw,460px);padding:24px 0; }
+      .chronicles-boot__crest { display:block;width:108px;height:126px;margin:0 auto 14px;filter:drop-shadow(0 0 22px #c4996644); }
+      .chronicles-boot__title { font:500 clamp(1.8rem,6vw,2.9rem)/1.2 Georgia,serif;letter-spacing:.16em;margin:0;text-shadow:0 2px 16px #000; }
+      .chronicles-boot__label { font:400 1.1rem/1.5 Georgia,serif;margin:21px 0 18px; }
+      .chronicles-boot__track { display:block;width:min(62vw,320px);height:3px;overflow:hidden;margin:auto;background:#ddba8d22; }
+      .chronicles-boot__light { display:block;width:34%;height:100%;background:linear-gradient(90deg,transparent,#f5d59a,transparent);animation:chronicles-boot-sweep 2s ease-in-out infinite; }
+      @keyframes chronicles-boot-sweep { from {transform:translateX(-100%)} to {transform:translateX(300%)} }
+      @media(max-width:700px) { .chronicles-boot__art { object-fit:cover;filter:blur(11px) brightness(.5);opacity:.3; } }
+      @media(prefers-reduced-motion:reduce) { .chronicles-boot__light {animation:none;transform:translateX(85%);} }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,7 +38,27 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+
+    <div id="root">
+      <main class="chronicles-boot" role="status" aria-live="polite" aria-label="Cargando Chronicles">
+        <img class="chronicles-boot__art" src="/chronicles-loading-art.svg" alt="" aria-hidden="true" />
+        <div class="chronicles-boot__center" aria-hidden="true">
+          <svg class="chronicles-boot__crest" viewBox="0 0 160 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M80 32 136 51 129 113Q116 153 80 174 44 153 31 113L24 51Z" fill="#08131e" stroke="#caa36e" stroke-width="5" />
+            <circle cx="80" cy="103" r="33" stroke="#a88a5b" stroke-width="2" />
+            <path d="M80 57 88 95 126 103 88 111 80 149 72 111 34 103 72 95Z" fill="#a88a5b" opacity=".7" />
+            <path d="M80 14 85 22 80 30 75 22Z" fill="#e8c48f" />
+            <path d="M74 28H86L84 140 80 160 76 140Z" fill="#c8cbd0" stroke="#f3d5a5" />
+            <path d="M57 44 69 39 80 43 91 39 103 44 92 50 80 48 68 50Z" fill="#caa36e" />
+            <path d="M77 17H83V43H77Z" fill="#252d38" stroke="#caa36e" />
+          </svg>
+          <h1 class="chronicles-boot__title">CHRONICLES</h1>
+          <p class="chronicles-boot__label">Cargando Chronicles…</p>
+          <span class="chronicles-boot__track"><span class="chronicles-boot__light"></span></span>
+        </div>
+      </main>
+      <noscript>Chronicles necesita JavaScript para iniciar la aventura.</noscript>
+    </div>
     <script type="module" src="/src/standalone/main.jsx"></script>
   </body>
 </html>
