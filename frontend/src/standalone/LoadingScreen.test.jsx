@@ -11,7 +11,19 @@ describe('Chronicles branded loading screen', () => {
     expect(html).toContain('Cargando Chronicles');
     expect(html).toContain('/chronicles-loading-art.svg');
     expect(html).toContain('chronicles-loading__crest');
+    expect(html).toContain('/chronicles-loading-crest.svg');
     expect(html).not.toContain('tournament-panel');
+  });
+
+  it('uses one shared local emblem in HTML and React', () => {
+    const crest = readFileSync(new URL('../../public/chronicles-loading-crest.svg', import.meta.url), 'utf8');
+    expect(crest).toContain('<svg ');
+    expect(crest).toContain('linearGradient');
+    expect(crest).toContain('stroke-width=');
+    expect(crest).not.toContain('className=');
+    const boot = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+    expect(boot).toContain('src="/chronicles-loading-crest.svg"');
+    expect(boot).not.toContain('<svg class="chronicles-boot__crest"');
   });
 
   it('ships the approved image as a small self-contained local asset', () => {
