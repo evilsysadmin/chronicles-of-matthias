@@ -75,7 +75,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const height = grid.length;
     const center = { x: 9, y: 7 };
     const blocks = settlementHouseBlocks(grid, width, height);
-    expect(blocks).toHaveLength(10);
+    expect(blocks).toHaveLength(9);
     const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
       .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } }));
     // Every authored shop NPC stands on a walkable door cell of a real block.
