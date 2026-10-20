@@ -8,6 +8,56 @@ const base = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = false;
 
+// Freeze the *entrypoint* JavaScript, not the DOM, to exercise the HTML shell
+// users see with a cold cache or slow network. No simulated login and no
+// test-only runtime route: this loads the real built index.html and artwork.
+for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+  const ctx = await browser.newContext({ viewport });
+  await ctx.route('**/assets/*.js', (route) => route.fulfill({
+    status: 200, contentType: 'application/javascript', body: '',
+  }));
+  const page = await ctx.newPage();
+  try {
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    const shell = page.locator('#root > .chronicles-boot');
+    await shell.waitFor({ state: 'visible', timeout: 10_000 });
+    const geometry = await page.evaluate(() => {
+      const shell = document.querySelector('#root > .chronicles-boot');
+      const title = shell?.querySelector('.chronicles-boot__title');
+      const crest = shell?.querySelector('.chronicles-boot__crest');
+      const track = shell?.querySelector('.chronicles-boot__track');
+      const artwork = shell?.querySelector('.chronicles-boot__art');
+      const rect = (element) => {
+        const bounds = element?.getBoundingClientRect();
+        return bounds && { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height };
+      };
+      return {
+        screen: rect(shell), title: rect(title), crest: rect(crest), track: rect(track),
+        artworkLoaded: Boolean(artwork?.complete && artwork.naturalWidth),
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
+        status: shell?.getAttribute('role'),
+      };
+    });
+    const fits = (rect) => rect && rect.width > 0 && rect.height > 0
+      && rect.left >= -1 && rect.top >= -1
+      && rect.left + rect.width <= viewport.width + 1
+      && rect.top + rect.height <= viewport.height + 1;
+    if (geometry.status !== 'status' || !geometry.artworkLoaded ||
+      geometry.horizontalOverflow || !fits(geometry.title) || !fits(geometry.crest) ||
+      !fits(geometry.track) || geometry.screen?.width < viewport.width - 1 ||
+      geometry.screen?.height < viewport.height - 1) {
+      throw new Error('First-paint loader fails viewport contract: ' + JSON.stringify(geometry));
+    }
+    await page.screenshot({ path: 'smoke-loader-' + viewport.width + '.png' });
+    console.log('OK   First-paint loading: ' + viewport.width + 'x' + viewport.height);
+  } catch (error) {
+    failed = true;
+    console.log('FAIL First-paint loading:', viewport.width, error.message);
+  } finally {
+    await ctx.close();
+  }
+}
+
 for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await ctx.addInitScript(() => {
