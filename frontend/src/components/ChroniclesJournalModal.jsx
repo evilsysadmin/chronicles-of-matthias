@@ -7,7 +7,7 @@ import './ChroniclesJournalModal.css';
 
 // One readable page at a time. The old side-by-side quest dashboard left half
 // the screen blank when an expedition had few folios.
-export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose }) {
+export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose, onTrack = null }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
   const scrollRef = useRef(null);
@@ -31,7 +31,9 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
 
   const quests = chroniclesQuestLogEntries(state);
   const active = quests.filter((quest) => quest.status === 'active');
-  const selectedId = openedQuestId === null ? (active[0] || quests[0])?.id : openedQuestId;
+  const selectedId = openedQuestId === null
+    ? (active.find((quest) => quest.id === state?.trackedQuestId) || active[0] || quests[0])?.id
+    : openedQuestId;
   const foliosCount = entries.length + narrations.length;
   const changeChapter = (next) => {
     setChapter(next);
@@ -134,6 +136,19 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                             )}
                             {!hint && quest.status === 'active' &&
                               <p className="chronicles-journal-modal__quest-unknown">Aún no consta una región segura en las notas de este encargo.</p>}
+                            {onTrack && quest.status === 'active' && (
+                              <div className="chronicles-journal-modal__track-row">
+                                <button type="button" className="chronicles-journal-modal__track"
+                                  data-chronicles-track-quest={quest.id}
+                                  aria-pressed={state?.trackedQuestId === quest.id}
+                                  onClick={() => onTrack(state?.trackedQuestId === quest.id ? null : quest.id)}>
+                                  {state?.trackedQuestId === quest.id ? '★ Siguiendo · dejar de seguir' : '☆ Seguir este encargo'}
+                                </button>
+                                <small>{state?.trackedQuestId === quest.id
+                                  ? 'Este encargo guía el objetivo de la expedición.'
+                                  : 'Aparecerá como prioridad en el objetivo de la expedición.'}</small>
+                              </div>
+                            )}
                           </div>
                         )}
                       </li>

@@ -557,3 +557,40 @@
   .chronicles-journal-modal__quest-number { width: 28px; height: 28px; font-size: .68rem; }
   .chronicles-journal-modal__quest-detail { padding-left: 42px; }
 }
+
+
+/* Quest priority lives inside the opened journal entry; it reuses the same
+   trackedQuestId contract as the in-game quest overlay. */
+.chronicles-journal-modal__track-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 13px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #c6a879;
+}
+.chronicles-journal-modal__track {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid #946b37;
+  border-radius: 5px;
+  background: #4f3720;
+  color: #f7e8c8;
+  font: 700 .9rem/1.2 Georgia, serif;
+  cursor: pointer;
+}
+.chronicles-journal-modal__track[aria-pressed='true'] {
+  background: #e5d1a5;
+  border-color: #936b31;
+  color: #4a3318;
+}
+.chronicles-journal-modal__track:focus-visible {
+  outline: 3px solid #a26d21;
+  outline-offset: 3px;
+}
+.chronicles-journal-modal__track-row small {
+  flex: 1 1 145px;
+  color: #674e31;
+  font: .79rem/1.38 system-ui, sans-serif;
+}

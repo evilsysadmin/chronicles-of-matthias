@@ -2,7 +2,7 @@
 // No backend route or test controls ship in the production entrypoint.
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createChroniclesState } from '../src/chroniclesOfMatthias.js';
+import { chroniclesReduce, createChroniclesState } from '../src/chroniclesOfMatthias.js';
 import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
 
@@ -28,12 +28,15 @@ const state = {
 };
 function Fixture() {
   const [opened, setOpened] = useState(true);
+  const [campaign, setCampaign] = useState(state);
   return <>
     <button data-test-reopen type="button" onClick={() => setOpened(true)}>Abrir crónica</button>
-    <ChroniclesJournalModal open={opened} state={state}
+    <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
+    <ChroniclesJournalModal open={opened} state={campaign}
       entries={[{ id: 'first-footstep', sigil: 'I', title: 'Primera jornada',
         body: 'La compañía partió de Swordhaven al alba.' }]}
       narrations={[{ at: 1, text: 'El viento sopló desde el bosque.' }]}
+      onTrack={(questId) => setCampaign((current) => chroniclesReduce(current, { type: 'track-quest', questId }))}
       onClose={() => setOpened(false)} />
   </>;
 }
