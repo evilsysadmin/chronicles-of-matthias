@@ -63,6 +63,8 @@ jobs:
           node smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
           # Real expedition journal: truthful region hints, chapter navigation and mobile layout.
           node smoke/journal-book.mjs http://localhost:4174/smoke/journal-book.html
+          # Screenshot the actual React/Suspense loader at desktop and mobile widths.
+          node smoke/loader.mjs http://localhost:4174/smoke/loader.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:
