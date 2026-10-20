@@ -20,3 +20,10 @@ test('public crypt browser smoke passes native Node parse check before release',
     { encoding: 'utf8', timeout: 10000 });
   assert.equal(checked.status, 0, checked.stderr);
 });
+
+test('combat is proven by a read of the durable backend state, not fabricated damage', () => {
+  assert.ok(source.includes("'/bootstrap'"));
+  assert.ok(source.includes("CHRONICLES_PUBLIC_COMBAT_STATE"));
+  assert.ok(source.includes("saved.worldFlags"));
+  assert.ok(!source.includes("const checkpoint = page.waitForResponse"));
+});
