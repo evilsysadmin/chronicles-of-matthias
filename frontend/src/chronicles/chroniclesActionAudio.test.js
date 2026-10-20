@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActionAudioCue, chroniclesWeaponImpactFamily, chroniclesImpactAudioVariation } from './chroniclesActionAudio.js';
+import { chroniclesActionAudioCue, chroniclesWeaponImpactFamily, chroniclesImpactAudioVariation, chroniclesEnemyAttackSoundFamily } from './chroniclesActionAudio.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { createChroniclesState, chroniclesReduce } from '../chroniclesOfMatthias.js';
 
@@ -84,6 +84,42 @@ describe('Chronicles action audio cues', () => {
     expect(chroniclesImpactAudioVariation(4)).toEqual(variations[1]);
     expect(chroniclesImpactAudioVariation(-1)).toEqual(variations[2]);
     expect(chroniclesImpactAudioVariation(Number.NaN)).toEqual(variations[0]);
+  });
+
+  it('distinguishes authored creatures without inventing weapons for goblins or bandits', () => {
+    const sewers = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const creatures = chroniclesMapForState(sewers).enemies;
+    const hound = creatures.find((entry) => entry.visualType === 'bone-hound');
+    const spider = creatures.find((entry) => entry.visualType === 'crypt-spider');
+    const goblin = creatures.find((entry) => entry.visualType === 'ash-goblin');
+    expect(chroniclesEnemyAttackSoundFamily(hound)).toBe('bite');
+    expect(chroniclesEnemyAttackSoundFamily(spider)).toBe('fang');
+    expect(chroniclesEnemyAttackSoundFamily(goblin)).toBe('blunt');
+    const menagerie = chroniclesMapForState(createChroniclesState('menagerie-of-ash'));
+    expect(chroniclesEnemyAttackSoundFamily(menagerie.enemies.find((entry) => entry.visualType === 'ember-wisp')))
+      .toBe('spectral');
+    expect(chroniclesEnemyAttackSoundFamily({ visualType: 'ash-goblin', attackSoundFamily: 'claw' }))
+      .toBe('claw');
+    expect(chroniclesEnemyAttackSoundFamily({ visualType: 'bone-hound', weaponFamily: 'sword' }))
+      .toBe('cut');
+    expect(chroniclesEnemyAttackSoundFamily({ visualType: 'bone-hound', attackSoundFamily: 'unrealistic-clang' }))
+      .toBe('bite');
+    expect(chroniclesEnemyAttackSoundFamily(null)).toBe('blunt');
+
+    const hurtParty = sewers.party.map((member, index) => (
+      index === 0 ? { ...member, hp: member.hp - 1 } : member
+    ));
+    for (const [enemy, family] of [[hound, 'bite'], [spider, 'fang'], [goblin, 'blunt']]) {
+      const action = { type: 'enemy-turn', enemyId: enemy.id };
+      const hit = { ...sewers, party: hurtParty, enemyTurnEvents: [
+        { type: 'attack', enemyId: enemy.id, damage: 1, missed: false },
+      ] };
+      const miss = { ...sewers, enemyTurnEvents: [
+        { type: 'attack', enemyId: enemy.id, damage: 0, missed: true },
+      ] };
+      expect(chroniclesActionAudioCue(sewers, hit, action)).toBe(`hurt:${family}`);
+      expect(chroniclesActionAudioCue(sewers, miss, action)).toBe(`miss:${family}`);
+    }
   });
 
   it('maps genuine equipped weapon families onto distinct restrained contacts', () => {
