@@ -28,3 +28,24 @@ export function chroniclesQuestRegionHint(quest, state) {
       : map.regionKind === 'wilderness' ? 'Exterior' : 'Mazmorra',
   };
 }
+
+
+/**
+ * Relate an already-revealed quest hint to the party's actual map.
+ * This never invents walking directions, route lengths or secret coordinates.
+ * Maps in the same named region (e.g. Swordhaven square and its town) are
+ * nearby in narrative terms, not necessarily on the exact destination tile.
+ */
+export function chroniclesQuestRegionContext(hint, state) {
+  if (!hint?.mapId || !state?.mapId) return null;
+  const current = chroniclesMapById(state.mapId);
+  if (!current?.title) return null;
+  const here = String(current.title).split(' · ')[0];
+  if (state.mapId === hint.mapId) {
+    return { relation: 'same-map', text: 'Ya estás en el lugar indicado. Sigue la pista del encargo.' };
+  }
+  if (here === hint.region) {
+    return { relation: 'same-region', text: 'Estás en esta región. Puede que aún debas encontrar el acceso adecuado.' };
+  }
+  return { relation: 'another-region', text: `Desde ${here}, tus notas apuntan a ${hint.region}.` };
+}
