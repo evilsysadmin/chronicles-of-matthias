@@ -39,7 +39,7 @@ describe('Chronicles shop fullscreen experience', () => {
     const css = readFileSync(new URL('./ChroniclesShop.css', import.meta.url), 'utf8');
     expect(css).toMatch(/\.chronicles-shop__backdrop\s*\{[^}]*background: #100b08;/s);
     expect(css).toMatch(/\.chronicles-shop\s*\{[^}]*height: 100dvh;[^}]*overflow: hidden;/s);
-    expect(css).toContain("@media (max-width: 800px)");
+    expect(css).toContain("@media (max-width: 900px)");
     expect(css).toContain("'scene'");
     expect(css).toContain("'list'");
   });
