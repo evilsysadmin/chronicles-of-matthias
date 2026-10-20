@@ -44,7 +44,8 @@ describe('Chronicles premium shop UI', () => {
     const html = render('first-book-guild');
     expect(html).toContain('data-chronicles-shop-room="guild-sanctum"');
     expect(html).toContain('Comprar');
-    expect(html).toContain('chronicles-shop__checkout');
+    expect(html).toContain('chronicles-shop__detail-empty');
+    expect(html).toContain('0 de 0');
   });
 
   it('preserves full viewport layout, mobile inventory and accessible focus containment', () => {
