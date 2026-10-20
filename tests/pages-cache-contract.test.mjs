@@ -27,7 +27,7 @@ test('Cloudflare Pages never caches its root HTML, index or release.json', () =>
     assert.ok(groups.has(route), 'Missing Pages cache policy for ' + route);
     const fields = groups.get(route).filter((line) => /^cache-control\s*:/i.test(line));
     assert.equal(fields.length, 1, 'Expected one Cache-Control for ' + route);
-    assert.match(fields[0], /(?:^|,)\s*no-store(?:\s*,|$)/i,
+    assert.match(fields[0].replace(/^cache-control\s*:\s*/i, ''), /(?:^|,)\s*no-store(?:\s*,|$)/i,
       'Never cache mutable Pages resource ' + route);
   }
 });
