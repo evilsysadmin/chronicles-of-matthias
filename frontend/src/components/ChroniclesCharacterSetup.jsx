@@ -254,6 +254,7 @@ export default function ChroniclesCharacterSetup({
                 jumpToStep('identity');
               }}
               aria-pressed={character.slotId === activeCharacter.slotId}
+              aria-label={`Héroe ${index + 1} de ${draft.characters.length}: ${character.name}, ${CHRONICLES_MM3_CLASSES[character.classId]?.label || 'Aventurero'}`}
             >
               <img src={chroniclesPartyPortraitUrl(character.slotId)} alt="" aria-hidden="true" />
               <span>{index + 1} · {CHRONICLES_MM3_CLASSES[character.classId]?.label}</span>
