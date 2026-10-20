@@ -69,7 +69,13 @@ export function chroniclesActionAudioCue(previous, next, action) {
   const damaged = beforeEnemies.filter((enemy) => (afterById.get(enemy.id) ?? enemy.hp) < enemy.hp);
 
   if (type === 'enemy-turn') {
-    return hurt ? `hurt:${enemyImpactFamily(previous, action?.enemyId)}` : null;
+    // The turn engine records actual attack attempts: roaming or paralysis
+    // must NEVER generate a fake 'miss' whoosh.
+    const swing = (next.enemyTurnEvents || [])
+      .find((event) => event.type === 'attack' && event.enemyId === action?.enemyId);
+    if (!swing) return null;
+    const family = enemyImpactFamily(previous, action.enemyId);
+    return hurt && swing.damage > 0 ? `hurt:${family}` : `miss:${family}`;
   }
 
   if (type === 'cast' || type === 'use-item') {
@@ -96,7 +102,7 @@ export function chroniclesActionAudioCue(previous, next, action) {
     return [
       `volley:${families.join(',')}`,
       impact && damaged.length ? `impact:${impact}` : shots.target ? 'miss:arrow' : null,
-      hurt ? 'hurt:blunt' : null,
+      hurt ? `hurt:${enemyImpactFamily(previous, shots.target?.id)}` : null,
     ].filter(Boolean).join('|');
   }
 
@@ -313,8 +319,8 @@ function playCue(cue) {
   const layers = cue.split('|').slice(0, 3);
   const mix = volume / Math.sqrt(layers.length);
   layers.forEach((layer, index) => {
-    if (/^(hit|defeat|impact|hurt|miss):/.test(layer)) {
-      playImpactCue(ctx, layer, mix, index ? 0.13 + (index - 1) * 0.07 : 0);
+    if (/^(hit|defeat|impact|hurt|miss):/.test(layer) || layer === 'miss') {
+      playImpactCue(ctx, layer === 'miss' ? 'miss:blunt' : layer, mix, index ? 0.13 + (index - 1) * 0.07 : 0);
     } else {
       playBasicCue(ctx, layer, mix);
     }
@@ -327,5 +333,5 @@ export function playChroniclesActionSound(previous, next, action) {
 
 // A short sample at the chosen SFX level, so moving the slider is audible.
 export function playChroniclesPreviewSound() {
-  playCue('hit');
+  playCue('hit:cut');
 }
