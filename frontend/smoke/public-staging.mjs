@@ -84,6 +84,73 @@ try {
       assert.deepEqual(errors, [], 'Uncaught browser errors');
       assert.ok((await page.locator('#root').innerHTML()).includes('Chronicles'), 'Game did not render');
 
+      // Go beyond the expedition book: inspect the actual Three.js world and
+      // both real folios against it. This account exists only for this run
+      // and is removed in the finally block, along with its game data.
+      const newRun = page.getByRole('button', { name: /Nueva expedición/ }).first();
+      await newRun.click({ timeout: 45_000 });
+      await page.getByRole('button', { name: 'Empezar con este grupo' }).click({ timeout: 20_000 });
+      const world = page.locator('[data-chronicles="true"]');
+      await world.waitFor({ state: 'visible', timeout: 90_000 });
+      const canvas = world.locator('[data-chronicles-renderer="three"] canvas');
+      await canvas.waitFor({ state: 'visible', timeout: 45_000 });
+      await page.waitForTimeout(700); // at least one actual scene paint
+      const frame = await canvas.boundingBox();
+      assert.ok(frame && frame.width >= 100 && frame.height >= 80,
+        'Actual Three.js viewport must be measurable');
+      const firstSteps = world.locator('[data-chronicles-first-steps]');
+      if (await firstSteps.isVisible()) {
+        await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+      }
+      await page.screenshot({ path: `chronicles-public-world-${viewport.width}.png` });
+
+      async function verifyFolio(dialog, label) {
+        await dialog.waitFor({ state: 'visible', timeout: 12_000 });
+        const dimensions = await dialog.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            width: innerWidth, height: innerHeight, left: rect.left,
+            top: rect.top, right: rect.right, bottom: rect.bottom,
+            scrollWidth: node.scrollWidth, clientWidth: node.clientWidth,
+          };
+        });
+        assert.ok(dimensions.left >= -1 && dimensions.right <= dimensions.width + 1
+          && dimensions.top >= -1 && dimensions.bottom <= dimensions.height + 1,
+          `${label} exceeds real game viewport: ${JSON.stringify(dimensions)}`);
+        assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
+          `${label} requires horizontal scrolling`);
+        assert.ok(await canvas.isVisible(), '3D stage disappeared behind an overlay');
+        await page.screenshot({ path: `chronicles-public-${label}-${viewport.width}.png` });
+        console.log(`CHRONICLES_PUBLIC_FOLIO_OK name=${label} viewport=${viewport.width}`);
+      }
+
+      // Slot 2 of the canonical party is a caster. Use the same public
+      // keyboard shortcut and UI that an actual player sees.
+      await page.keyboard.press('2');
+      await page.keyboard.press('c');
+      const spellbook = page.locator('[data-chronicles-spell-menu]');
+      await verifyFolio(spellbook, 'cast');
+      assert.ok(await spellbook.locator('[data-chronicles-cast]').count() > 0,
+        'Expected real spells and costs for the selected caster');
+      await spellbook.getByRole('tab', { name: /Objetos/ }).click();
+      assert.equal(await spellbook.getAttribute('data-chronicles-menu-tab'), 'items');
+      await verifyFolio(spellbook, 'items');
+      await page.keyboard.press('Escape');
+      await spellbook.waitFor({ state: 'hidden', timeout: 8_000 });
+
+      // The pause menu must be the real in-game menu, not a fixture screenshot.
+      await world.locator('details.chronicles-game-menu > summary').click();
+      const adventure = world.locator('[data-chronicles-adventure-menu]');
+      await verifyFolio(adventure, 'adventure');
+      await adventure.getByRole('button', { name: 'Salir sin guardar' }).click();
+      await adventure.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor();
+      await adventure.getByRole('button', { name: 'Cancelar' }).click();
+      await adventure.getByRole('group', { name: 'Confirmar salida sin guardar' })
+        .waitFor({ state: 'hidden' });
+      await adventure.getByRole('button', { name: /Continuar/ }).click();
+      await adventure.waitFor({ state: 'hidden', timeout: 8_000 });
+      assert.deepEqual(errors, [], 'Browser errors after entering the real world and folios');
+
       // Simulate an incoming newer build during an authenticated expedition.
       await page.route('**/release.json*', route => route.fulfill({
         status: 200, contentType: 'application/json',
