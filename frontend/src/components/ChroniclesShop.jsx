@@ -13,7 +13,7 @@ import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
 import { SHOP_SLOT_LABELS, SHOP_SORTS, chroniclesShopCategories, chroniclesShopSelectedOffer, chroniclesShopVisibleOffers } from '../chronicles/chroniclesShopCatalog.js';
 import './ChroniclesShop.css';
 
-const SLOT_LABEL = Object.freeze({ weapon: 'Arma', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
+const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
 
 function ShopComparison({ state, item }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
@@ -74,6 +74,26 @@ function ShopItemGlyph({ item }) {
           <path d="M46 8 53 12 47 19 28 39 22 33 41 13Z" />
           <path d="m16 29 19 19M14 42l10 10M17 45l-6 6M22 49l-6 6" />
           <path d="M46 8 41 13M28 39l-5 5" />
+        </g>
+      ) : item.slot === 'missile' ? (
+        <g fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          {item.weaponFamily === 'crossbow' ? (
+            <>
+              <path d="M9 20Q32 4 55 20L47 27 32 22 17 27Z" />
+              <path d="M9 20h46M32 22v36M26 48h12M28 53h8" />
+              <path d="M32 7v19M27 12l5-5 5 5" />
+            </>
+          ) : item.weaponFamily === 'sling' ? (
+            <>
+              <path d="M22 9 32 37 45 9M32 37l-5 19M20 9q3-7 9 0M39 9q5-7 9 0" />
+              <path d="M27 30q5 7 10 0" />
+            </>
+          ) : (
+            <>
+              <path d="M18 7Q49 32 18 57M18 7V57M14 32h43" />
+              <path d="m49 25 8 7-8 7M47 27l10 5-10 5" />
+            </>
+          )}
         </g>
       ) : item.slot === 'shield' ? (
         <g fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round">
