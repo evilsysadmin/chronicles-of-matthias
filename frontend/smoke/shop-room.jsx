@@ -7,7 +7,9 @@ import { chroniclesReduce, createChroniclesState } from '../src/chroniclesOfMatt
 import { chroniclesApplyContentEffects } from '../src/chronicles/chroniclesContentRuntime.js';
 import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
 import { chroniclesOpenShop } from '../src/chronicles/chroniclesShops.js';
+import { chroniclesCloseGuild, chroniclesOpenGuild } from '../src/chronicles/chroniclesGuild.js';
 import ChroniclesShop from '../src/components/ChroniclesShop.jsx';
+import ChroniclesGuild from '../src/components/ChroniclesGuild.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesMM3Chrome.css';
 
@@ -23,7 +25,9 @@ function makeState() {
     const id = room === 'odo' ? 'first-book-armorer' : 'first-book-guild';
     const entry = chroniclesMapById('swordhaven-first-book').interactables.find((candidate) => candidate.id === id);
     if (!entry) throw new Error('Missing authored shop: ' + id);
-    return chroniclesOpenShop(base, entry);
+    return room === 'guild'
+      ? chroniclesOpenGuild({ ...base, x: entry.x, y: entry.y }, entry)
+      : chroniclesOpenShop({ ...base, x: entry.x, y: entry.y }, entry);
   }
   return chroniclesReduce({ ...base, x: 7, y: 4 }, 'interact');
 }
@@ -35,7 +39,9 @@ function Fixture() {
     setState((current) => chroniclesReduce(current, event));
     setLastAction(event.type + ':' + event.itemId);
   };
-  const close = () => setState((current) => chroniclesReduce(current, { type: 'shop-close' }));
+  const close = () => setState((current) => current.guild
+    ? chroniclesCloseGuild(current)
+    : chroniclesReduce(current, { type: 'shop-close' }));
   return (
     <>
       <button data-test-world type="button" style={{ position: 'fixed', left: 4, top: 4 }}
@@ -44,6 +50,7 @@ function Fixture() {
         {lastAction}
       </output>
       {state.shop && <ChroniclesShop state={state} onAction={action} onClose={close} />}
+      {state.guild && <ChroniclesGuild state={state} onAction={action} onClose={close} />}
     </>
   );
 }
