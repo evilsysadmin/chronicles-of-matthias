@@ -140,6 +140,72 @@ try {
       await context.close();
     }
   }
+
+  // The other merchant rooms need their own evidence. They intentionally use
+  // existing small authored PNGs: test their REAL fallback and layout; do not
+  // pass them off as the cinematic Brunna artwork.
+  for (const room of ['odo', 'guild']) {
+    for (const [width, height] of [[390, 844], [844, 390], [1280, 800]]) {
+      const context = await browser.newContext({
+        viewport: { width, height }, isMobile: width <= 844,
+        hasTouch: width <= 844, deviceScaleFactor: 1,
+      });
+      const page = await context.newPage();
+      const errors = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      try {
+        await page.goto(url + '?room=' + room, { waitUntil: 'networkidle' });
+        const dialog = page.getByRole('dialog');
+        await dialog.waitFor({ state: 'visible' });
+        const scene = dialog.locator('.chronicles-shop__scene');
+        const expected = room === 'odo' ? 'odo-forge' : 'guild-sanctum';
+        assert.equal(await scene.getAttribute('data-chronicles-shop-room'), expected);
+        const img = scene.locator('img');
+        await img.waitFor();
+        const art = await img.evaluate((image) => ({
+          loaded: image.complete && image.naturalWidth > 0,
+          width: image.naturalWidth, height: image.naturalHeight,
+          src: image.currentSrc,
+        }));
+        assert(art.loaded, room + ': artwork did not decode at ' + width);
+        assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
+        assert(art.src.includes(expected + '.png'), room + ': wrong artwork source');
+        const geometry = await page.evaluate(() => {
+          const bounds = (selector) => {
+            const r = document.querySelector(selector).getBoundingClientRect();
+            return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width };
+          };
+          return {
+            dialog: bounds('.chronicles-shop'),
+            scene: bounds('.chronicles-shop__scene'),
+            market: bounds('.chronicles-shop__market'),
+            catalog: bounds('.chronicles-shop__catalog'),
+            detail: bounds('.chronicles-shop__detail'),
+            overflow: document.documentElement.scrollWidth,
+            bodyScroll: document.body.style.overflow,
+          };
+        });
+        assert.equal(geometry.bodyScroll, 'hidden');
+        assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
+        assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
+        assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
+        assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
+        await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
+        await dialog.getByRole('tab', { name: /Vender/ }).click();
+        await dialog.getByRole('tab', { name: 'Comprar' }).click();
+        assert.deepEqual(errors, [], room + ': browser exceptions');
+        await page.keyboard.press('Escape');
+        await dialog.waitFor({ state: 'hidden' });
+        console.log(`CHRONICLES_SHOP_ROOM_OK room=${room} ${width}x${height} asset=${art.width}x${art.height}`);
+      } catch (error) {
+        failed++;
+        console.error(`CHRONICLES_SHOP_ROOM_FAIL ${room} ${width}x${height}: ${error.stack || error}`);
+        await page.screenshot({ path: `smoke-shop-FAIL-${room}-${width}.png` }).catch(() => {});
+      } finally {
+        await context.close();
+      }
+    }
+  }
 } finally {
   await browser.close();
 }
