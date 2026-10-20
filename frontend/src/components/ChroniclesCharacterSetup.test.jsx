@@ -55,6 +55,8 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('role="tablist"');
       expect(html).toContain('aria-controls="chronicles-step-panel-stats"');
       expect(html).toContain('Siguiente: atributos');
+      expect(html).toMatch(/aria-label="Héroe 1 de 4: [^"]+, [^"]+"/);
+      expect((html.match(/aria-label="Héroe [1-4] de 4:/g) || []).length).toBe(4);
       expect(html).toContain('chronicles-character-setup__mobile-overview');
       expect(html).toContain('Raza');
       expect(html).toContain('Semiorco');
