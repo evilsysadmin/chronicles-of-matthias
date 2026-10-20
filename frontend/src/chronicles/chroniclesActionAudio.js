@@ -260,22 +260,46 @@ function playBasicCue(ctx, cue, volume) {
   }
 }
 
-function playImpactCue(ctx, cue, volume, delay = 0) {
+// Short three-step timbre cycle, not three layers played at once. All
+// variations remain within a tight loudness range and respect the FX slider.
+const IMPACT_VARIATIONS = Object.freeze([
+  Object.freeze({ pitch: 0.963, air: 1.06, level: 0.985 }),
+  Object.freeze({ pitch: 1.036, air: 0.94, level: 0.985 }),
+  Object.freeze({ pitch: 1, air: 1, level: 1 }),
+]);
+
+export function chroniclesImpactAudioVariation(index) {
+  const step = Number.isFinite(Number(index)) ? Math.trunc(Number(index)) : 0;
+  return IMPACT_VARIATIONS[((step % IMPACT_VARIATIONS.length) + IMPACT_VARIATIONS.length) % IMPACT_VARIATIONS.length];
+}
+
+let impactVariationIndex = 0;
+
+function playImpactCue(ctx, cue, volume, delay = 0, variation = IMPACT_VARIATIONS[0]) {
   const [event, family = 'blunt'] = cue.split(':');
   const bus = ctx.createGain();
-  bus.gain.value = 0.58 * volume;
+  bus.gain.value = 0.58 * volume * variation.level;
+  const tone = (options) => connectTone(ctx, bus,{
+    ...options,
+    frequency: options.frequency * variation.pitch,
+    endFrequency: options.endFrequency ? options.endFrequency * variation.pitch : null,
+  });
+  const noise = (options) => connectNoise(ctx, bus,{
+    ...options,
+    centerHz: options.centerHz * variation.air,
+  });
   bus.connect(ctx.destination);
   const weight = event === 'hurt' ? 0.72 : event === 'defeat' ? 1.05 : 1;
 
   if (event === 'miss') {
     // Zziuumm! The weapon whistles past; NO contact thud for a miss.
     const heavy = family === 'blunt' || family === 'cleave';
-    connectNoise(ctx, bus, {
+    noise({
       duration: heavy ? 0.14 : 0.19, gain: (heavy ? 0.027 : 0.019) * weight,
       centerHz: heavy ? 780 : family === 'arrow' ? 2800 : 2050,
       type: 'bandpass', delay,
     });
-    connectTone(ctx, bus, {
+    tone({
       frequency: heavy ? 235 : family === 'arrow' ? 920 : 590,
       endFrequency: heavy ? 110 : family === 'arrow' ? 290 : 190,
       duration: heavy ? 0.15 : 0.21, gain: (heavy ? 0.013 : 0.01) * weight,
@@ -286,25 +310,25 @@ function playImpactCue(ctx, cue, volume, delay = 0) {
 
   // Tight, almost dry transients: convincing hit without a metallic clatter.
   if (family === 'blunt') {
-    connectTone(ctx, bus, { frequency: 131, endFrequency: 60, duration: 0.12, gain: 0.052 * weight, delay });
-    connectNoise(ctx, bus, { duration: 0.065, gain: 0.023 * weight, centerHz: 400, type: 'lowpass', delay });
+    tone({ frequency: 131, endFrequency: 60, duration: 0.12, gain: 0.052 * weight, delay });
+    noise({ duration: 0.065, gain: 0.023 * weight, centerHz: 400, type: 'lowpass', delay });
   } else if (family === 'cleave') {
-    connectNoise(ctx, bus, { duration: 0.13, gain: 0.029 * weight, centerHz: 1150, delay });
-    connectTone(ctx, bus, { frequency: 162, endFrequency: 75, duration: 0.15, gain: 0.045 * weight, delay: delay + 0.015 });
+    noise({ duration: 0.13, gain: 0.029 * weight, centerHz: 1150, delay });
+    tone({ frequency: 162, endFrequency: 75, duration: 0.15, gain: 0.045 * weight, delay: delay + 0.015 });
   } else if (family === 'cut') {
-    connectNoise(ctx, bus, { duration: 0.087, gain: 0.024 * weight, centerHz: 2000, delay });
-    connectTone(ctx, bus, { frequency: 255, endFrequency: 120, duration: 0.11, gain: 0.025 * weight, delay: delay + 0.009 });
+    noise({ duration: 0.087, gain: 0.024 * weight, centerHz: 2000, delay });
+    tone({ frequency: 255, endFrequency: 120, duration: 0.11, gain: 0.025 * weight, delay: delay + 0.009 });
   } else if (family === 'pierce') {
-    connectNoise(ctx, bus, { duration: 0.045, gain: 0.026 * weight, centerHz: 1750, delay });
-    connectTone(ctx, bus, { frequency: 215, endFrequency: 120, duration: 0.096, gain: 0.026 * weight, delay });
+    noise({ duration: 0.045, gain: 0.026 * weight, centerHz: 1750, delay });
+    tone({ frequency: 215, endFrequency: 120, duration: 0.096, gain: 0.026 * weight, delay });
   } else if (family === 'arrow') {
-    connectNoise(ctx, bus, { duration: 0.052, gain: 0.019 * weight, centerHz: 1530, delay });
-    connectTone(ctx, bus, { frequency: 375, endFrequency: 155, duration: 0.08, gain: 0.018 * weight, delay });
+    noise({ duration: 0.052, gain: 0.019 * weight, centerHz: 1530, delay });
+    tone({ frequency: 375, endFrequency: 155, duration: 0.08, gain: 0.018 * weight, delay });
   }
 
   // Small body response on taking damage; no second heavy impact instrument.
   if (event === 'hurt' && family !== 'blunt') {
-    connectTone(ctx, bus, { frequency: 100, endFrequency: 65, duration: 0.1, gain: 0.021, delay: delay + 0.02 });
+    tone({ frequency: 100, endFrequency: 65, duration: 0.1, gain: 0.021, delay: delay + 0.02 });
   }
 }
 
@@ -320,7 +344,11 @@ function playCue(cue) {
   const mix = volume / Math.sqrt(layers.length);
   layers.forEach((layer, index) => {
     if (/^(hit|defeat|impact|hurt|miss):/.test(layer) || layer === 'miss') {
-      playImpactCue(ctx, layer === 'miss' ? 'miss:blunt' : layer, mix, index ? 0.13 + (index - 1) * 0.07 : 0);
+      playImpactCue(
+        ctx, layer === 'miss' ? 'miss:blunt' : layer,
+        mix, index ? 0.13 + (index - 1) * 0.07 : 0,
+        chroniclesImpactAudioVariation(impactVariationIndex++),
+      );
     } else {
       playBasicCue(ctx, layer, mix);
     }
