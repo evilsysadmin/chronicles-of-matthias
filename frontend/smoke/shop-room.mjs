@@ -141,6 +141,49 @@ try {
     }
   }
 
+  // A near-full purse is a genuine boundary of the campaign reducer. Don't
+  // offer a clickable sale which would be silently rejected; once the company
+  // spends enough gold, the identical item must become sellable immediately.
+  {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    try {
+      await page.goto(url + '?gold-cap=1', { waitUntil: 'networkidle' });
+      const dialog = page.getByRole('dialog');
+      await dialog.waitFor();
+      await dialog.getByRole('tab', { name: /Vender/ }).click();
+      const soldItem = dialog.locator('[data-chronicles-shop-sell="brass-dagger"]');
+      await soldItem.locator('button').click();
+      const detail = dialog.locator('.chronicles-shop__detail');
+      const checkout = detail.locator('.chronicles-shop__primary');
+      assert.equal(await checkout.isDisabled(), true, 'Gold cap must block unpayable sale');
+      assert.match(await checkout.innerText(), /Bolsa de oro llena/);
+      assert.match(await detail.locator('.chronicles-shop__checkout-hint').innerText(),
+        /Límite: 9\.999 oro\. Gasta al menos 1 oro/);
+      await page.screenshot({ path: 'smoke-shop-gold-cap-1280.png' });
+      await dialog.getByRole('tab', { name: 'Comprar' }).click();
+      await dialog.locator('[data-chronicles-shop-item="brass-dagger"] button').click();
+      await detail.getByRole('button', { name: 'Comprar', exact: true }).click();
+      await page.getByRole('tab', { name: /Vender/ }).click();
+      await soldItem.locator('button').click();
+      const enabledSale = detail.getByRole('button', { name: 'Vender una unidad' });
+      await enabledSale.waitFor({ state: 'visible' });
+      assert.equal(await enabledSale.isEnabled(), true,
+        'Spending gold must immediately unblock sale');
+      await enabledSale.click();
+      await page.waitForFunction(() =>
+        document.querySelector('[data-test-action]')?.textContent?.includes('shop-sell:brass-dagger'));
+      assert.equal(await checkout.isDisabled(), true, 'Wallet is full again after sale');
+      console.log('CHRONICLES_SHOP_GOLD_CAP_OK 9999 blocked, spent 1, sold 1');
+    } catch (error) {
+      failed++;
+      console.error('CHRONICLES_SHOP_GOLD_CAP_FAIL: ' + (error.stack || error));
+      await page.screenshot({ path: 'smoke-shop-FAIL-gold-cap.png' }).catch(() => {});
+    } finally {
+      await context.close();
+    }
+  }
+
   // The other merchant rooms need their own evidence. They intentionally use
   // existing small authored PNGs: test their REAL fallback and layout; do not
   // pass them off as the cinematic Brunna artwork.
