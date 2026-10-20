@@ -408,3 +408,28 @@
       linear-gradient(150deg, #3c2415, #0a1730 72%);
   }
 }
+
+/* Secondary actions stay discoverable without competing with the main CTA. */
+.chronicles-save-menu--expedition .chronicles-save-menu__more {
+  margin-top: 6px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(226, 179, 100, .28);
+}
+.chronicles-save-menu--expedition .chronicles-save-menu__more summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #dfc69f;
+  font: 500 1rem/1.4 Georgia, serif;
+  cursor: pointer;
+}
+.chronicles-save-menu--expedition .chronicles-save-menu__more summary:focus-visible {
+  outline: 3px solid #edc57b;
+  outline-offset: 2px;
+}
+.chronicles-save-menu--expedition .chronicles-save-menu__more-actions {
+  display: grid;
+  gap: 8px;
+  padding-top: 7px;
+}
