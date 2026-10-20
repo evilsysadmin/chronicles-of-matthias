@@ -391,7 +391,9 @@ export default function ChroniclesCharacterSetup({
             <div className="chronicles-character-setup__section-head">
               <div>
                 <span>CLASE · 10 PROFESIONES</span>
-                <strong>Elige entre las habilitadas.</strong>
+                <strong>{CHRONICLES_MM3_CLASS_IDS.filter((classId) => (
+                  chroniclesMM3UnmetRequirements(classId, activeCharacter.stats).length === 0
+                )).length} de {CHRONICLES_MM3_CLASS_IDS.length} profesiones disponibles para tus atributos.</strong>
               </div>
             </div>
             <div className="chronicles-character-setup__class-grid">
