@@ -10,6 +10,7 @@ import './ChroniclesJournalModal.css';
 export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
+  const scrollRef = useRef(null);
   const [chapter, setChapter] = useState('quests');
   const [openedQuestId, setOpenedQuestId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
@@ -32,6 +33,11 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const active = quests.filter((quest) => quest.status === 'active');
   const selectedId = openedQuestId === null ? (active[0] || quests[0])?.id : openedQuestId;
   const foliosCount = entries.length + narrations.length;
+  const changeChapter = (next) => {
+    setChapter(next);
+    // Each bookmark opens at its first line even after a long quest scroll.
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  };
 
   return createPortal(
     <div className="chronicles-journal-modal__backdrop" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => {
@@ -67,18 +73,18 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
 
         <nav className="chronicles-journal-modal__chapters" aria-label="Capítulos de la crónica" role="tablist">
           <button type="button" role="tab" id="chronicles-journal-tab-quests"
-            aria-controls="chronicles-journal-panel-quests" aria-selected={chapter === 'quests'}
-            onClick={() => setChapter('quests')}>
+            aria-controls={chapter === 'quests' ? 'chronicles-journal-panel-quests' : undefined} aria-selected={chapter === 'quests'}
+            onClick={() => changeChapter('quests')}>
             <span>Encargos</span><small>{active.length} {active.length === 1 ? 'pendiente' : 'pendientes'}</small>
           </button>
           <button type="button" role="tab" id="chronicles-journal-tab-memories"
-            aria-controls="chronicles-journal-panel-memories" aria-selected={chapter === 'memories'}
-            onClick={() => setChapter('memories')}>
+            aria-controls={chapter === 'memories' ? 'chronicles-journal-panel-memories' : undefined} aria-selected={chapter === 'memories'}
+            onClick={() => changeChapter('memories')}>
             <span>Memorias</span><small>{foliosCount} {foliosCount === 1 ? 'anotación' : 'anotaciones'}</small>
           </button>
         </nav>
 
-        <div className="chronicles-journal-modal__scroll" tabIndex={0} role="region" aria-label="Páginas de la crónica">
+        <div ref={scrollRef} className="chronicles-journal-modal__scroll" tabIndex={0} role="region" aria-label="Páginas de la crónica">
           {chapter === 'quests' ? (
             <section id="chronicles-journal-panel-quests" role="tabpanel"
               aria-labelledby="chronicles-journal-tab-quests" className="chronicles-journal-modal__chapter">
