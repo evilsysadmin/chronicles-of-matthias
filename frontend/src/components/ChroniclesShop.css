@@ -563,6 +563,77 @@
   .chronicles-shop__comparison-grid { grid-template-columns: 1fr; }
 }
 
+/* Short landscape phones: retain the full Brunna room and put usable stock
+   and checkout above the fold. The portrait phone flow remains untouched. */
+@media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .chronicles-shop {
+    padding: 7px;
+    gap: 6px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: 'head' 'tabs' 'market';
+  }
+
+  .chronicles-shop::before {
+    background: linear-gradient(90deg, rgba(7, 5, 4, .56), rgba(8, 5, 4, .13) 51%, rgba(7, 5, 4, .5));
+  }
+
+  .chronicles-shop__head { gap: 6px; }
+  .chronicles-shop__identity { padding: 4px 9px; }
+  .chronicles-shop__identity h2 { font-size: 21px; margin: 1px 0; }
+  .chronicles-shop__identity p { display: none; }
+  .chronicles-shop__purse { padding: 7px 12px; }
+  .chronicles-shop__close { height: 36px; width: 36px; }
+  .chronicles-shop__scene { inset: 0; height: 100%; }
+  .chronicles-shop__scene img { object-position: 68% center; }
+  .chronicles-shop__art-space { display: none; }
+  .chronicles-shop__tabs { width: min(40%, 330px); }
+  .chronicles-shop__tabs button { min-height: 36px; padding: 5px 12px; font-size: 13px; }
+
+  .chronicles-shop__market {
+    display: grid;
+    grid-template-columns: minmax(220px, 31%) minmax(90px, 1fr) minmax(210px, 31%);
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .chronicles-shop__catalog {
+    grid-column: 1;
+    overflow: hidden;
+    padding: 8px;
+  }
+
+  .chronicles-shop__detail {
+    grid-column: 3;
+    margin-top: 0;
+    padding: 9px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .chronicles-shop__filters { gap: 3px 5px; margin-bottom: 3px; }
+  .chronicles-shop__filters label { gap: 2px; }
+  .chronicles-shop__filters label > span { font-size: 9px; }
+  .chronicles-shop__filters :is(input, select) { min-height: 31px; padding: 4px 6px; font-size: 11px; }
+  .chronicles-shop__catalog-title { padding: 2px 0 5px; font-size: 14px; }
+  .chronicles-shop__list { flex: 1; max-height: none; min-height: 0; }
+  .chronicles-shop__entry { min-height: 49px; padding: 3px 4px; gap: 5px; }
+  .chronicles-shop__entry-icon { width: 35px; height: 35px; }
+  .chronicles-shop__entry-description strong { font-size: 12px; }
+  .chronicles-shop__entry-description small { font-size: 10px; }
+  .chronicles-shop__entry-price { font-size: 11px; }
+  .chronicles-shop__detail h3 { margin: 2px 0 8px; font-size: 17px; }
+  .chronicles-shop__item-portrait { display: none; }
+  .chronicles-shop__detail-top p { margin-bottom: 7px; font-size: 11px; }
+  .chronicles-shop__eligibility { padding: 6px 0; font-size: 11px; }
+  .chronicles-shop__compare-region { margin-top: 6px; }
+  .chronicles-shop__compare-toggle { min-height: 34px; padding: 6px; font-size: 11px; }
+  .chronicles-shop__checkout { margin-top: 8px; padding-top: 0; gap: 6px; }
+  .chronicles-shop__checkout-price { padding-top: 5px; }
+  .chronicles-shop__checkout-price strong { font-size: 15px; }
+  .chronicles-shop__primary { min-height: 39px; padding: 6px; font-size: 14px; }
+  .chronicles-shop__checkout-hint { font-size: 10px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chronicles-shop__entry { transition: none; }
 }

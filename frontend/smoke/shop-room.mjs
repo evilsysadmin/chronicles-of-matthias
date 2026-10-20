@@ -69,6 +69,16 @@ try {
       } else {
         assert(boxes.market.width <= width + 1,
           `Mobile scroll pane spills horizontally: ${JSON.stringify(boxes)}`);
+        if (width >= 700 && height <= 500) {
+          assert(boxes.catalog.top < height * 0.48 && boxes.detail.top < height * 0.48,
+            `Landscape market is hidden below an empty art band: ${JSON.stringify(boxes)}`);
+          assert(boxes.catalog.right + 35 < boxes.detail.left,
+            `Landscape lost Brunna between the panels: ${JSON.stringify(boxes)}`);
+          assert(boxes.list.height > 80,
+            `Landscape stock cannot scroll: ${JSON.stringify(boxes)}`);
+          assert(boxes.catalog.bottom <= height + 1 && boxes.detail.bottom <= height + 1,
+            `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
+        }
       }
       await page.screenshot({ path: `smoke-shop-${width}.png` });
 
