@@ -162,13 +162,7 @@ function connectNoise(ctx, destination, { duration, gain, centerHz, delay = 0, t
   source.stop(start + duration + 0.02);
 }
 
-function playCue(cue) {
-  const volume = getChroniclesFxVolume();
-  if (!cue || volume <= 0) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume?.().catch(() => {});
-
+function playBasicCue(ctx, cue, volume) {
   const bus = ctx.createGain();
   bus.gain.value = 0.82 * volume;
   bus.connect(ctx.destination);
@@ -258,6 +252,73 @@ function playCue(cue) {
   } else if (cue === 'defeat') {
     connectTone(ctx, bus, { frequency: 246, endFrequency: 164, duration: 0.16, gain: 0.018, delay: 0.035 });
   }
+}
+
+function playImpactCue(ctx, cue, volume, delay = 0) {
+  const [event, family = 'blunt'] = cue.split(':');
+  const bus = ctx.createGain();
+  bus.gain.value = 0.58 * volume;
+  bus.connect(ctx.destination);
+  const weight = event === 'hurt' ? 0.72 : event === 'defeat' ? 1.05 : 1;
+
+  if (event === 'miss') {
+    // Zziuumm! The weapon whistles past; NO contact thud for a miss.
+    const heavy = family === 'blunt' || family === 'cleave';
+    connectNoise(ctx, bus, {
+      duration: heavy ? 0.14 : 0.19, gain: (heavy ? 0.027 : 0.019) * weight,
+      centerHz: heavy ? 780 : family === 'arrow' ? 2800 : 2050,
+      type: 'bandpass', delay,
+    });
+    connectTone(ctx, bus, {
+      frequency: heavy ? 235 : family === 'arrow' ? 920 : 590,
+      endFrequency: heavy ? 110 : family === 'arrow' ? 290 : 190,
+      duration: heavy ? 0.15 : 0.21, gain: (heavy ? 0.013 : 0.01) * weight,
+      type: 'sine', delay,
+    });
+    return;
+  }
+
+  // Tight, almost dry transients: convincing hit without a metallic clatter.
+  if (family === 'blunt') {
+    connectTone(ctx, bus, { frequency: 131, endFrequency: 60, duration: 0.12, gain: 0.052 * weight, delay });
+    connectNoise(ctx, bus, { duration: 0.065, gain: 0.023 * weight, centerHz: 400, type: 'lowpass', delay });
+  } else if (family === 'cleave') {
+    connectNoise(ctx, bus, { duration: 0.13, gain: 0.029 * weight, centerHz: 1150, delay });
+    connectTone(ctx, bus, { frequency: 162, endFrequency: 75, duration: 0.15, gain: 0.045 * weight, delay: delay + 0.015 });
+  } else if (family === 'cut') {
+    connectNoise(ctx, bus, { duration: 0.087, gain: 0.024 * weight, centerHz: 2000, delay });
+    connectTone(ctx, bus, { frequency: 255, endFrequency: 120, duration: 0.11, gain: 0.025 * weight, delay: delay + 0.009 });
+  } else if (family === 'pierce') {
+    connectNoise(ctx, bus, { duration: 0.045, gain: 0.026 * weight, centerHz: 1750, delay });
+    connectTone(ctx, bus, { frequency: 215, endFrequency: 120, duration: 0.096, gain: 0.026 * weight, delay });
+  } else if (family === 'arrow') {
+    connectNoise(ctx, bus, { duration: 0.052, gain: 0.019 * weight, centerHz: 1530, delay });
+    connectTone(ctx, bus, { frequency: 375, endFrequency: 155, duration: 0.08, gain: 0.018 * weight, delay });
+  }
+
+  // Small body response on taking damage; no second heavy impact instrument.
+  if (event === 'hurt' && family !== 'blunt') {
+    connectTone(ctx, bus, { frequency: 100, endFrequency: 65, duration: 0.1, gain: 0.021, delay: delay + 0.02 });
+  }
+}
+
+function playCue(cue) {
+  const volume = getChroniclesFxVolume();
+  if (!cue || volume <= 0) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume?.().catch(() => {});
+
+  // Cap voices and normalize combined energy. Multi-hit turns stay composed.
+  const layers = cue.split('|').slice(0, 3);
+  const mix = volume / Math.sqrt(layers.length);
+  layers.forEach((layer, index) => {
+    if (/^(hit|defeat|impact|hurt|miss):/.test(layer)) {
+      playImpactCue(ctx, layer, mix, index ? 0.13 + (index - 1) * 0.07 : 0);
+    } else {
+      playBasicCue(ctx, layer, mix);
+    }
+  });
 }
 
 export function playChroniclesActionSound(previous, next, action) {
