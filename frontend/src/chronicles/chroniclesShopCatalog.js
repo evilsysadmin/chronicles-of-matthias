@@ -2,6 +2,7 @@
 // Unknown item slots are retained under "Otros" rather than silently discarded.
 export const SHOP_SLOT_LABELS = Object.freeze({
   weapon: 'Armas',
+  missile: 'Armas a distancia',
   armor: 'Armaduras',
   shield: 'Escudos',
   consumable: 'Objetos',
