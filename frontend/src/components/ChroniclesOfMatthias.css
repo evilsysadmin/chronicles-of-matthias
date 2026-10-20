@@ -604,8 +604,10 @@
 }
 
 .chronicles-automap__panel {
-  width: min(760px, 94vw);
-  height: min(760px, 90dvh);
+  /* M opens a focused map, not a near-full-screen desktop overlay.
+     Mobile keeps the existing full-viewport treatment below. */
+  width: min(640px, 88vw);
+  height: min(600px, 78dvh);
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
