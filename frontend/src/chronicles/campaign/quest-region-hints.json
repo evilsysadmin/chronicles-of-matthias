@@ -1,0 +1,92 @@
+{
+  "banner-contract": [
+    {
+      "when": [
+        {
+          "key": "bannerFound",
+          "truthy": true
+        }
+      ],
+      "mapId": "swordhaven-first-book",
+      "clue": "Entrega el estandarte en el tablón de encargos."
+    },
+    {
+      "when": [
+        {
+          "itemId": "knight-banner"
+        }
+      ],
+      "mapId": "swordhaven-first-book",
+      "clue": "Entrega el estandarte en el tablón de encargos."
+    },
+    {
+      "mapId": "banner-road-first-book",
+      "clue": "Busca cerca del mojón sin nombre."
+    }
+  ],
+  "names-in-wood": [
+    {
+      "mapId": "rookwood-first-book",
+      "clue": "Busca las placas y llévalas al Roble del Claro."
+    }
+  ],
+  "road-bandits": [
+    {
+      "when": [
+        {
+          "key": "bannerRoadDeserterDefeated",
+          "truthy": true
+        },
+        {
+          "key": "bannerRoadCaptainDefeated",
+          "truthy": true
+        }
+      ],
+      "mapId": "swordhaven-first-book",
+      "clue": "Informa a la guardia de que el camino está libre."
+    },
+    {
+      "mapId": "banner-road-first-book",
+      "clue": "Busca a los desertores y su capitán."
+    }
+  ],
+  "weaver-silk": [
+    {
+      "when": [
+        {
+          "itemId": "weaver-silk"
+        }
+      ],
+      "mapId": "swordhaven-first-book",
+      "clue": "Entrega la seda a Ilse en el templo."
+    },
+    {
+      "mapId": "rookwood-first-book",
+      "clue": "Busca la seda de la tejedora."
+    }
+  ],
+  "lost-king-prologue": [
+    {
+      "objectiveIncludes": [
+        "Regresa a Swordhaven"
+      ],
+      "mapId": "swordhaven-square",
+      "clue": "Informa del hallazgo del sello."
+    },
+    {
+      "objectiveIncludes": [
+        "Puerta Negra",
+        "Galería"
+      ],
+      "mapId": "gallery-of-forks",
+      "clue": "Sigue el rastro documental de la galería."
+    },
+    {
+      "objectiveIncludes": [
+        "Cripta de las Ocho Casillas"
+      ],
+      "mapId": "crypt-eight-squares",
+      "clue": "Investiga el antiguo sello."
+    }
+  ]
+}
