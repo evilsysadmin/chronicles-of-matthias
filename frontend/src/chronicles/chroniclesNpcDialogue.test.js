@@ -16,7 +16,33 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     expect(audience.choices[0].label).toBe('Presentar la carta de la Dama');
     expect(audience.choices[0].actionId).toBe('swordhaven-mayor');
     expect(audience.choices[1].answer).toMatch(/caballeros|Dama/);
-    expect(chroniclesMapById(state.mapId).grid).toHaveLength(15);
+    expect(chroniclesMapById(state.mapId).grid).toHaveLength(23);
+  });
+
+  it('keeps the expanded southern wards connected to every original service and exit', () => {
+    const town = chroniclesMapById('swordhaven-first-book');
+    const grid = town.grid;
+    expect(grid).toHaveLength(23);
+    expect(grid.every((row) => row.length === 19)).toBe(true);
+    const start = town.partyStart;
+    const seen = new Set([start.x + ',' + start.y]);
+    const queue = [[start.x, start.y]];
+    for (let i = 0; i < queue.length; i += 1) {
+      const [x, y] = queue[i];
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const key = nx + ',' + ny;
+        if (grid[ny]?.[nx] !== '.' || seen.has(key)) continue;
+        seen.add(key);
+        queue.push([nx, ny]);
+      }
+    }
+    expect(seen.has('3,17')).toBe(true);
+    expect(seen.has('15,21')).toBe(true);
+    for (const entry of [...town.interactables, ...town.exits]) {
+      expect(seen.has(entry.x + ',' + entry.y), entry.id).toBe(true);
+    }
   });
 
   it('never grants rewards when merely opening a dialogue; talk uses the campaign reducer', () => {
