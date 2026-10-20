@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import LoadingScreen from '../standalone/LoadingScreen.jsx';
 import {
   CHRONICLES_DIRECTIONS,
   chroniclesActiveEnemies,
@@ -176,18 +177,6 @@ const FIRST_PERSON_RUN_SCOPE = 'first-person';
 
 function loadChroniclesFirstPersonRenderer() {
   return import('../chroniclesOfMatthiasThree.js');
-}
-
-function BootstrapStatus() {
-  return (
-    <div className="menu chronicles-bootstrap" role="status" aria-live="polite">
-      <section className="menu-section">
-        <span className="section-label">CHRONICLES OF MATTHIAS</span>
-        <h2>Preparando expedición…</h2>
-        <p>El Game Director está ensamblando el mundo de esta run.</p>
-      </section>
-    </div>
-  );
 }
 
 function BootstrapFailure({ error, onRetry, onMenu, onExit }) {
@@ -1334,7 +1323,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   if (bootstrapError) {
     return <BootstrapFailure error={bootstrapError} onRetry={retryBootstrap} onMenu={returnToSaveMenu} onExit={exitChronicles} />;
   }
-  if (!ready || !state) return <BootstrapStatus />;
+  if (!ready || !state) return <LoadingScreen />;
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
