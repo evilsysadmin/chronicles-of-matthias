@@ -20,6 +20,9 @@ concurrency:
 
 jobs:
   signal:
+    name: Verify source CI (not a deployment)
+    outputs:
+      ready: ${{ steps.admit.outputs.ready }}
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
@@ -29,7 +32,6 @@ jobs:
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ github.token }}
-      INFRA_ACTIONS_TOKEN: ${{ secrets.SHADOWOPS_INFRA_ACTIONS_TOKEN }}
       SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Require current protected source main with three green workflows
@@ -39,9 +41,11 @@ jobs:
           set -euo pipefail
           sha="$SOURCE_SHA"
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          printf '### Chronicles → ShadowOps staging handoff\n\nSource SHA: `%s`\n\n' "$sha" >> "$GITHUB_STEP_SUMMARY"
           head="$(gh api repos/evilsysadmin/chronicles-of-matthias/commits/main --jq .sha)"
           if [[ "$sha" != "$head" ]]; then
-            echo 'Older source run superseded by a newer main commit'
+            echo "::notice title=Chronicles CD not dispatched (superseded)::The source commit was replaced by a newer main SHA."
+            printf '**State: superseded.** Current main is `%s`. No Infra dispatch for this SHA.\n' "$head" >> "$GITHUB_STEP_SUMMARY"
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -62,19 +66,44 @@ jobs:
               )
             )
           ' <<<"$runs" >/dev/null; then
-            echo 'Source checks not all green yet; the last completed workflow or hourly Infra poll will retry'
+            echo '::notice title=Chronicles CD waiting for source CI::All three checks must succeed for this exact main SHA before dispatch.'
+            printf '**State: waiting for CI.** No Infra dispatch yet. The next source completion or hourly Infra reconciliation can retry.\n\n' >> "$GITHUB_STEP_SUMMARY"
+            printf '| Required check | Latest status |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+            jq -r --arg sha "$sha" '
+              . as $payload |
+              [{id: 385763056, name: "Chronicles CI"},
+               {id: 386812503, name: "Chronicles frontend"},
+               {id: 387132683, name: "Chronicles API"}] | .[] | . as $check |
+              ([$payload.workflow_runs[]? | select(.workflow_id == $check.id and .head_sha == $sha and
+                .event == "push" and .head_branch == "main" and
+                .repository.full_name == "evilsysadmin/chronicles-of-matthias")] | max_by(.id)) as $run |
+              "| \($check.name) | \($run.conclusion // $run.status // "not started") |"
+            ' <<<"$runs" >> "$GITHUB_STEP_SUMMARY"
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
+          echo '**State: source CI green.** Eligible for dispatch; see the separate dispatch job for delivery result.' >> "$GITHUB_STEP_SUMMARY"
+
+  dispatch:
+    name: Send staging API + Pages dispatch to Infra
+    needs: signal
+    if: needs.signal.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      INFRA_ACTIONS_TOKEN: ${{ secrets.SHADOWOPS_INFRA_ACTIONS_TOKEN }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
       - name: Dispatch only the two dedicated staging CD workflows
-        if: steps.admit.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          printf '### Chronicles staging dispatch\n\nSource SHA: `%s`\n\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
           if [[ -z "$INFRA_ACTIONS_TOKEN" ]]; then
-            echo '::notice title=Optional instant CD disabled::Set SHADOWOPS_INFRA_ACTIONS_TOKEN with Actions:write on evilsysadmin/shadowops-infra; hourly Infra polls remain active.'
-            exit 0
+            echo '::error title=Chronicles CD dispatch not sent::SHADOWOPS_INFRA_ACTIONS_TOKEN is missing; hourly Infra polls remain active.'
+            echo '**State: dispatch failed.** Token missing. Hourly Infra reconciliation remains available.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
           # Never pass the token, SHA or environment from an untrusted payload.
           GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-api-staging.yml \
@@ -84,4 +113,5 @@ jobs:
           GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-pages-release.yml \
             --repo evilsysadmin/shadowops-infra --ref main \
             -f environment=staging -f source_sha="$SOURCE_SHA" -f only_if_new=true
-          echo "Dispatched staging source SHA $SOURCE_SHA to ShadowOps Infra"
+          echo "::notice title=Chronicles staging dispatch sent::Requested API and Pages staging workflows in shadowops-infra for $SOURCE_SHA."
+          printf '**State: dispatch sent.** Requested API and Pages staging for `%s`. This does not certify deployment; verify the downstream jobs and release receipt.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
