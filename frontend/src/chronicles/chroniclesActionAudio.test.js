@@ -85,7 +85,7 @@ describe('Chronicles action audio cues', () => {
         matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' },
         rook: { weapon: 'bronze-mace' },
         knight: { weapon: 'bronze-axe' },
-        bishop: { weapon: 'bronze-spear' },
+        bishop: { weapon: 'bronze-mace' },
       },
     };
     const hit = { ...armed, [enemy.hpKey]: 11 };
@@ -95,7 +95,11 @@ describe('Chronicles action audio cues', () => {
     expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias'))).toBe('hit:cut');
     expect(chroniclesActionAudioCue(armed, hit, memberAttack('rook'))).toBe('hit:blunt');
     expect(chroniclesActionAudioCue(armed, hit, memberAttack('knight'))).toBe('hit:cleave');
-    expect(chroniclesActionAudioCue(armed, hit, memberAttack('bishop'))).toBe('hit:pierce');
+    // A bishop cannot carry a spear; the sound uses validated equipment,
+    // not a forged invalid slot. Rook can wield it legitimately.
+    const lancer = { ...armed, equipment: { ...armed.equipment, rook: { weapon: 'bronze-spear' } } };
+    expect(chroniclesActionAudioCue(lancer, { ...lancer, [enemy.hpKey]: 11 }, memberAttack('rook')))
+      .toBe('hit:pierce');
     expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias', 'missile'))).toBe('hit:arrow');
     expect(chroniclesActionAudioCue(armed, dead, memberAttack('knight'))).toBe('defeat:cleave');
     expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias'))).toBe('miss:cut');
