@@ -29,12 +29,16 @@ try {
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.match(await first.innerText(), /Camino de los Estandartes/);
       assert.match(await first.innerText(), /mojón sin nombre/);
+      assert.equal(await first.locator('[data-chronicles-quest-relation="another-region"]').count(), 1,
+        'The party starts in Swordhaven; the banner clue points to the road');
       const second = dialog.locator('[data-chronicles-quest-id="names-in-wood"]');
       assert.match(await second.innerText(), /Rookwood/);
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'false');
       assert.match(await second.innerText(), /Roble del Claro/);
+      assert.match(await second.locator('[data-chronicles-quest-relation="another-region"]').innerText(),
+        /Desde Swordhaven, tus notas apuntan a Rookwood/);
       // Reuse the true reducer's existing trackedQuestId contract. HUD and
       // quest overlay must see the same selected goal, including null reset.
       const followed = page.locator('[data-test-tracked-quest]');
