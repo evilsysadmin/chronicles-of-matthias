@@ -464,3 +464,305 @@
 @media (max-width: 360px) {
   .chronicles-shop__comparison-stats { display: grid; }
 }
+
+
+/* Immersive shop room: a full-screen location, NOT a modal over the world.
+   Keep the existing room sprites until individually art-directed replacements
+   are ready; merchants, prices, equipment and saves use unchanged logic. */
+.chronicles-shop__backdrop {
+  z-index: 10150;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: #100b08;
+  backdrop-filter: none;
+}
+
+.chronicles-shop {
+  box-sizing: border-box;
+  isolation: isolate;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  min-height: 0;
+  padding: clamp(14px, 2.8vw, 42px);
+  grid-template-columns: minmax(300px, min(43vw, 670px)) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head'
+    'tabs .'
+    'list .'
+    'foot .';
+  gap: clamp(10px, 1.3vw, 18px);
+  overflow: hidden;
+  image-rendering: auto;
+  background: #160e0a;
+  box-shadow: none;
+}
+
+/* Atmospheric depth and a quiet reading area; the shopkeeper is kept visible. */
+.chronicles-shop::before {
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(12, 8, 6, .93) 0%, rgba(12, 8, 6, .76) 38%, rgba(12, 8, 6, .06) 74%),
+    linear-gradient(0deg, rgba(9, 6, 4, .78), transparent 32%, rgba(9, 6, 4, .28) 100%);
+}
+
+.chronicles-shop::after {
+  z-index: 3;
+  inset: 0;
+  border: 0;
+  border-image: none;
+  background: none;
+  box-shadow: inset 0 0 0 2px rgba(222, 171, 99, .45), inset 0 0 80px rgba(0, 0, 0, .4);
+}
+
+.chronicles-shop__scene {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  box-shadow: none;
+  background:
+    radial-gradient(ellipse at 78% 66%, rgba(216, 89, 21, .36), transparent 43%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .15) 0 4px, transparent 4px 110px),
+    linear-gradient(145deg, #292018, #110e0d 64%, #302015);
+}
+
+.chronicles-shop__scene img,
+.chronicles-shop__scene[data-chronicles-shop-room='guild-sanctum'] img,
+.chronicles-shop__scene[data-chronicles-shop-room='odo-forge'] img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 96% center;
+  image-rendering: pixelated;
+}
+
+.chronicles-shop__head,
+.chronicles-shop__tabs,
+.chronicles-shop__list,
+.chronicles-shop__foot {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+.chronicles-shop__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 18px;
+  align-items: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #f9e7c8;
+}
+
+.chronicles-shop__head > div {
+  min-width: 0;
+  max-width: 670px;
+  padding: 12px 20px 14px;
+  background: linear-gradient(90deg, rgba(19, 12, 8, .95), rgba(19, 12, 8, .54));
+  border-left: 3px solid #c7974d;
+}
+
+.chronicles-shop__head span { color: #d3a764; }
+
+.chronicles-shop__head h2 {
+  margin: 3px 0 6px;
+  font-size: clamp(22px, 3vw, 39px);
+  color: #fff0cf;
+  text-shadow: 0 2px 8px #080502;
+}
+
+.chronicles-shop__head p {
+  max-width: 58ch;
+  color: #d2baa1;
+  font-size: clamp(12px, 1.05vw, 15px);
+  text-shadow: none;
+}
+
+.chronicles-shop__head b {
+  justify-self: end;
+  min-width: 110px;
+  margin-top: 10px;
+  padding: 10px 18px;
+  color: #ffda7d;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid #96703b;
+  background: rgba(16, 10, 6, .88);
+  box-shadow: 0 4px 22px #0007;
+}
+
+.chronicles-shop__close {
+  position: static;
+  width: 46px;
+  height: 46px;
+  margin-top: 9px;
+  border: 1px solid #b48e59;
+  border-radius: 2px;
+  background: rgba(21, 13, 8, .91);
+  box-shadow: 0 4px 22px #0007;
+  color: #ffe5ad;
+}
+
+.chronicles-shop__tabs {
+  display: flex;
+  width: fit-content;
+  min-width: min(100%, 280px);
+  gap: 8px;
+}
+
+.chronicles-shop__tabs button {
+  flex: 1;
+  min-width: 110px;
+  border: 1px solid #92734d;
+  background: rgba(24, 17, 12, .94);
+  box-shadow: 0 2px 10px #0008;
+  color: #e6c89a;
+  text-shadow: none;
+}
+
+.chronicles-shop__tabs button[aria-selected='true'] {
+  color: #261608;
+  background: linear-gradient(#f0d38e, #a97631);
+  border-color: #f5db9d;
+}
+
+.chronicles-shop__list {
+  width: 100%;
+  padding: clamp(8px, 1.2vw, 18px);
+  overscroll-behavior: contain;
+  border: 1px solid rgba(215, 169, 102, .45);
+  background: rgba(15, 11, 9, .88);
+  backdrop-filter: blur(5px);
+  box-shadow: inset 0 0 32px #0006, 0 14px 40px #0006;
+}
+
+.chronicles-shop__list li {
+  padding: 12px 8px;
+  border-color: rgba(237, 210, 163, .16);
+}
+
+.chronicles-shop__foot {
+  padding: 10px 14px;
+  max-width: 670px;
+  border: 1px solid rgba(210, 164, 100, .34);
+  color: #d4bfa4;
+  background: rgba(16, 10, 7, .85);
+}
+
+.chronicles-shop :is(button, [tabindex]):focus-visible {
+  outline: 3px solid #fff1b6;
+  outline-offset: 3px;
+}
+
+@media (max-width: 800px) {
+  .chronicles-shop {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto clamp(94px, 20dvh, 175px) auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head'
+      'scene'
+      'tabs'
+      'list'
+      'foot';
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .chronicles-shop::before {
+    background: linear-gradient(180deg, rgba(10, 7, 5, .25), rgba(10, 7, 5, .75) 40%, rgba(10, 7, 5, .95));
+  }
+
+  .chronicles-shop__head {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: start;
+  }
+
+  .chronicles-shop__head > div {
+    grid-column: 1;
+    max-width: none;
+    padding: 7px 9px;
+  }
+
+  .chronicles-shop__head h2 {
+    margin: 2px 0 4px;
+    font-size: clamp(18px, 5vw, 26px);
+  }
+
+  .chronicles-shop__head p {
+    font-size: 11px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .chronicles-shop__head b {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 7px;
+    font-size: 12px;
+  }
+
+  .chronicles-shop__close {
+    grid-column: 3;
+    grid-row: 1;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+  }
+
+  .chronicles-shop__scene {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    border: 1px solid rgba(221, 167, 95, .5);
+    background-color: #1b130e;
+  }
+
+  .chronicles-shop__scene img,
+  .chronicles-shop__scene[data-chronicles-shop-room='guild-sanctum'] img,
+  .chronicles-shop__scene[data-chronicles-shop-room='odo-forge'] img {
+    object-fit: cover;
+    object-position: 50% 38%;
+  }
+
+  .chronicles-shop__tabs { width: 100%; }
+  .chronicles-shop__tabs button { min-width: 0; min-height: 42px; }
+  .chronicles-shop__list { padding: 5px; }
+  .chronicles-shop__foot { padding: 6px 8px; font-size: 11px; }
+
+  .chronicles-shop__comparison-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 430px) {
+  .chronicles-shop { padding: 7px; gap: 6px; }
+  .chronicles-shop__head { gap: 5px; }
+  .chronicles-shop__head > div { padding: 6px; }
+  .chronicles-shop__head h2 { font-size: 18px; }
+  .chronicles-shop__head b { font-size: 11px; padding: 8px 4px; }
+  .chronicles-shop__close { width: 36px; height: 36px; }
+  .chronicles-shop__item em { overflow-wrap: anywhere; }
+  .chronicles-shop__list li { padding: 7px 5px; }
+  .chronicles-shop__actions { min-width: 74px; }
+}
+
+@media (max-height: 570px) and (min-width: 801px) {
+  .chronicles-shop { padding: 14px 24px; gap: 7px; }
+  .chronicles-shop__head > div { padding: 6px 12px; }
+  .chronicles-shop__head p { display: none; }
+}

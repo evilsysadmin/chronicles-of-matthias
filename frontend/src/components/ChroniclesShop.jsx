@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesMemberCanEquip } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
@@ -68,20 +69,55 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const [tab, setTab] = useState('buy');
   const [comparedItemId, setComparedItemId] = useState(null);
   const closeRef = useRef(null);
+  const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const map = chroniclesMapForState(state);
   const entry = (map?.interactables || []).find((item) => item.id === state.shop?.id);
 
+  // Shop is a true room transition. Keep focus and scrolling inside it even
+  // when the world canvas or a transformed parent uses its own stacking context.
   useEffect(() => {
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
+
     const onKey = (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = [...dialog.querySelectorAll(
+        'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )].filter((element) => element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', onKey, { capture: true });
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
 
   if (!entry) return null;
   const room = chroniclesShopRoom(entry);
@@ -91,9 +127,11 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const owned = (itemId) => Math.max(0, Number(state.inventory?.[itemId]?.quantity) || 0);
   const sellsGear = stock.some((item) => item.slot !== 'consumable');
 
-  return (
+  const shop = (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         className="chronicles-shop"
         role="dialog"
         aria-modal="true"
@@ -191,4 +229,5 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
       </section>
     </div>
   );
+  return typeof document === 'undefined' ? shop : createPortal(shop, document.body);
 }
