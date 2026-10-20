@@ -34,13 +34,14 @@ try {
           crest: box('.chronicles-loading__crest'), bar: box('.chronicles-loading__track'),
           overflow: document.documentElement.scrollWidth > innerWidth,
           artworkVisible: getComputedStyle(document.querySelector('.chronicles-loading__art')).opacity !== '0',
+          crestLoaded: Boolean(document.querySelector('.chronicles-loading__crest')?.naturalWidth),
         };
       });
       const fits = (rect) => rect && rect.width > 0 && rect.height > 0 &&
         rect.left >= -1 && rect.top >= -1 &&
         rect.left + rect.width <= viewport.width + 1 &&
         rect.top + rect.height <= viewport.height + 1;
-      assert.ok(!measure.overflow && measure.artworkVisible, JSON.stringify(measure));
+      assert.ok(!measure.overflow && measure.artworkVisible && measure.crestLoaded, JSON.stringify(measure));
       assert.ok(measure.frame?.width >= viewport.width - 1 &&
         measure.frame?.height >= viewport.height - 1, JSON.stringify(measure));
       for (const rect of [measure.title, measure.crest, measure.bar]) {
