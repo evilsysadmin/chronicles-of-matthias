@@ -260,3 +260,51 @@
     transition: none;
   }
 }
+
+
+/* Real staging screenshots showed the inherited stone-button ink (#111015)
+   on this folio's DARK slate backgrounds. Pin WebKit text fill as well as
+   color with higher specificity than ChroniclesMM3Chrome.css, independent
+   of Vite import order. */
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__actions > button:not(.chronicles-game-menu__continue) {
+  color: #f2e2c3 !important;
+  -webkit-text-fill-color: #f2e2c3 !important;
+  color-scheme: only dark !important;
+  text-shadow: none !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__actions > button.chronicles-game-menu__leave {
+  color: #f2bdb2 !important;
+  -webkit-text-fill-color: #f2bdb2 !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__actions > button.chronicles-game-menu__continue {
+  /* Dark ink is deliberate ONLY on this bright bronze action. */
+  color: #1a120b !important;
+  -webkit-text-fill-color: #1a120b !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-audio-controls :is(label, legend, small, output),
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__hint {
+  color: #f2d8a8 !important;
+  -webkit-text-fill-color: #f2d8a8 !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-audio-row__slider button,
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__exit-confirm button {
+  color: #f5e0b9 !important;
+  -webkit-text-fill-color: #f5e0b9 !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__exit-confirm small {
+  color: #ffdbbd !important;
+  -webkit-text-fill-color: #ffdbbd !important;
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
+.chronicles-game-menu__actions > button:disabled {
+  color: #bdb2a0 !important;
+  -webkit-text-fill-color: #bdb2a0 !important;
+}
