@@ -52,6 +52,18 @@ function requirementText(classId) {
     .join(' · ');
 }
 
+// Show real current/required values, rather than just the target number.
+export function chroniclesClassRequirementProgress(unmet) {
+  return unmet.map(({ stat, have, need }) => `${CHRONICLES_MM3_STAT_SHORT[stat]} ${have}/${need}`).join(' · ');
+}
+
+export function chroniclesRollStatDelta(previousStats, nextStats, stat) {
+  if (!previousStats || !nextStats) return null;
+  const before = Number(previousStats[stat]);
+  const after = Number(nextStats[stat]);
+  return Number.isFinite(before) && Number.isFinite(after) ? after - before : null;
+}
+
 export default function ChroniclesCharacterSetup({
   currentBuild,
   onConfirm,
@@ -64,7 +76,7 @@ export default function ChroniclesCharacterSetup({
   );
   const [recoveredDraft, setRecoveredDraft] = useState(() => loadChroniclesCharacterDraft(CHRONICLES_PARTY));
   const [editing, setEditing] = useState(() => Boolean(recoveredDraft));
-  const [rolls, setRolls] = useState(0);
+  const [rollHistory, setRollHistory] = useState({});
   const [editorStep, setEditorStep] = useState(() => recoveredDraft?.editorStep || 'identity');
   const editorTabsRef = useRef(null);
   const [activeSlot, setActiveSlot] = useState(() => recoveredDraft?.activeSlot || 'matthias');
@@ -102,10 +114,12 @@ export default function ChroniclesCharacterSetup({
     setDraft(customFrom(normalizedCurrent));
     setActiveSlot('matthias');
     setEditorStep('identity');
+    setRollHistory({});
     setEditing(false);
   };
 
   const activeCharacter = draft.characters.find((character) => character.slotId === activeSlot) || draft.characters[0];
+  const rollFeedback = rollHistory[activeCharacter.slotId] || null;
   const derived = chroniclesMM3Derived(activeCharacter.classId, activeCharacter.stats, { raceId: activeCharacter.raceId });
   const racialProfile = CHRONICLES_MM3_RACES[activeCharacter.raceId] || CHRONICLES_MM3_RACES.human;
   const spellPoints = chroniclesMM3MaxSpellPoints(activeCharacter.classId, activeCharacter.stats, activeCharacter.raceId);
@@ -117,6 +131,7 @@ export default function ChroniclesCharacterSetup({
     setDraft(customFrom(normalizedCurrent));
     setActiveSlot('matthias');
     setEditorStep('identity');
+    setRollHistory({});
     setEditing(true);
   };
 
@@ -134,8 +149,16 @@ export default function ChroniclesCharacterSetup({
   // if the new roll still qualifies, otherwise fall to the first that does.
   const rerollStats = () => {
     const { stats, classId } = chroniclesRollCharacterStats(Math.random, activeCharacter.classId);
-    patchCharacter(activeCharacter.slotId, { stats, classId });
-    setRolls((count) => count + 1);
+    const slotId = activeCharacter.slotId;
+    setRollHistory((current) => ({
+      ...current,
+      [slotId]: {
+        count: (current[slotId]?.count || 0) + 1,
+        previousStats: { ...activeCharacter.stats },
+        previousClassId: classId === activeCharacter.classId ? null : activeCharacter.classId,
+      },
+    }));
+    patchCharacter(slotId, { stats, classId });
   };
 
   const jumpToStep = (step) => {
@@ -155,6 +178,13 @@ export default function ChroniclesCharacterSetup({
   const chooseClass = (classId) => {
     if (chroniclesMM3UnmetRequirements(classId, activeCharacter.stats).length) return;
     patchCharacter(activeCharacter.slotId, { classId });
+    // A deliberate class choice must not be described as an automatic reroll change.
+    setRollHistory((current) => {
+      const previous = current[activeCharacter.slotId];
+      return previous?.previousClassId
+        ? { ...current, [activeCharacter.slotId]: { ...previous, previousClassId: null } }
+        : current;
+    });
   };
 
   if (!editing) {
@@ -362,7 +392,7 @@ export default function ChroniclesCharacterSetup({
             <div className="chronicles-character-setup__section-head">
               <div>
                 <span>ESTADÍSTICAS · 3D6</span>
-                <strong>{rolls > 0 ? `${rolls} ${rolls === 1 ? 'tirada' : 'tiradas'} en esta sesión` : 'Tirada inicial'}</strong>
+                <strong>{rollFeedback ? `${rollFeedback.count} ${rollFeedback.count === 1 ? 'tirada' : 'tiradas'} para ${activeCharacter.name}` : 'Tirada inicial'}</strong>
               </div>
               <button type="button" className="secondary-btn" onClick={rerollStats}>
                 🎲 Tirar dados
@@ -371,6 +401,7 @@ export default function ChroniclesCharacterSetup({
             {CHRONICLES_MM3_STATS.map((key) => {
               const value = Number(activeCharacter.stats?.[key] || 0);
               const bonus = derived.bonuses[key];
+              const delta = chroniclesRollStatDelta(rollFeedback?.previousStats, activeCharacter.stats, key);
               return (
                 <div className="chronicles-character-setup__attribute" key={key} data-stat={key}>
                   <span>
@@ -380,10 +411,24 @@ export default function ChroniclesCharacterSetup({
                   <div>
                     <strong>{value}</strong>
                     <em className={bonus > 0 ? 'is-up' : bonus < 0 ? 'is-down' : ''}>{signed(bonus)}</em>
+                    {delta !== null && (
+                      <small className={`chronicles-character-setup__roll-delta ${delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : ''}`}
+                        aria-label={`Cambio respecto a la tirada anterior: ${signed(delta)}`}>
+                        ${delta > 0 ? '↑' : delta < 0 ? '↓' : '—'} ${signed(delta)}
+                      </small>
+                    )}
                   </div>
                 </div>
               );
             })}
+            {rollFeedback && (
+              <p className="chronicles-character-setup__roll-context" role="status">
+                Cambios frente a la tirada anterior de {activeCharacter.name}.
+                {rollFeedback.previousClassId && (
+                  <> Tu nueva tirada cambió la clase de {CHRONICLES_MM3_CLASSES[rollFeedback.previousClassId]?.label} a {CHRONICLES_MM3_CLASSES[activeCharacter.classId]?.label}, según los requisitos reales.</>
+                )}
+              </p>
+            )}
           </section>
 
           <section id="chronicles-step-panel-class" role="tabpanel" aria-labelledby="chronicles-step-tab-class"
@@ -408,12 +453,12 @@ export default function ChroniclesCharacterSetup({
                     data-class-id={classId}
                     className={selected ? 'is-selected' : ''}
                     aria-pressed={selected}
-                    disabled={unmet.length > 0}
-                    title={unmet.length ? `${definition.label}: requiere ${requirementText(classId)}. Vuelve a tirar atributos para optar a esta clase.` : definition.summary}
+                    aria-disabled={unmet.length > 0}
+                    title={unmet.length ? `${definition.label}: tienes ${chroniclesClassRequirementProgress(unmet)}. Vuelve a tirar atributos para optar a esta clase.` : definition.summary}
                     onClick={() => chooseClass(classId)}
                   >
                     <strong>{definition.label}</strong>
-                    <em>{unmet.length ? `Requiere ${requirementText(classId)} · Vuelve a tirar atributos` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
+                    <em>{unmet.length ? `Te falta ${chroniclesClassRequirementProgress(unmet)} · Vuelve a tirar atributos` : `✓ ${requirementText(classId) || 'Sin requisitos'}`}</em>
                   </button>
                 );
               })}

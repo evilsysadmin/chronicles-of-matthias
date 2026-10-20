@@ -7,7 +7,7 @@ import {
 } from '../chronicles/chroniclesCharacterBuilds.js';
 import { CHRONICLES_PARTY } from '../chroniclesOfMatthias.js';
 import { saveChroniclesCharacterDraft, clearChroniclesCharacterDraft } from '../chronicles/chroniclesCharacterDraft.js';
-import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
+import ChroniclesCharacterSetup, { chroniclesClassRequirementProgress, chroniclesRollStatDelta } from './ChroniclesCharacterSetup.jsx';
 
 function render(build) {
   return renderToStaticMarkup(
@@ -71,7 +71,9 @@ describe('ChroniclesCharacterSetup', () => {
       expect((html.match(/data-class-id=/g) || []).length).toBe(10);
       expect(html).toMatch(/[0-9]+ de 10 profesiones disponibles para tus atributos\./);
       expect(html).toContain('Vuelve a tirar atributos para optar a esta clase.');
-      expect(html).toMatch(/<em>Requiere [^<]+ · Vuelve a tirar atributos<\/em>/);
+      expect(html).toMatch(/<em>Te falta [^<]+ · Vuelve a tirar atributos<\/em>/);
+      expect(html).toContain('aria-disabled="true"');
+      expect(html).toMatch(/title="[^"]+tienes [A-Z]{3} \d+\/\d+[^"]+"/);
       expect(html).toContain('Hechizos');
       expect(html).toContain('Confirmar compañía');
     } finally {
@@ -93,6 +95,20 @@ describe('ChroniclesCharacterSetup', () => {
       clearChroniclesCharacterDraft();
       localStorage.removeItem('chess-study-auth-username');
     }
+  });
+
+  it('compares actual rerolled attributes without inventing improvements', () => {
+    expect(chroniclesRollStatDelta({ might: 10 }, { might: 16 }, 'might')).toBe(6);
+    expect(chroniclesRollStatDelta({ might: 17 }, { might: 9 }, 'might')).toBe(-8);
+    expect(chroniclesRollStatDelta({ might: 12 }, { might: 12 }, 'might')).toBe(0);
+    expect(chroniclesRollStatDelta(null, { might: 12 }, 'might')).toBeNull();
+  });
+
+  it('shows class shortfalls as current and required stats', () => {
+    expect(chroniclesClassRequirementProgress([
+      { stat: 'might', have: 12, need: 15 },
+      { stat: 'endurance', have: 10, need: 13 },
+    ])).toBe('FUE 12/15 · RES 10/13');
   });
 
   it('surfaces a persisted custom party without hiding the canonical fallback', () => {
