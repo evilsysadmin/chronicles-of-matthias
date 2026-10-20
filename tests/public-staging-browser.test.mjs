@@ -19,3 +19,12 @@ test('throwaway user always deleted; no reload during a game', () => {
   assert.ok(source.includes("name: 'Después'"));
   assert.ok(source.includes('CHRONICLES_PUBLIC_BROWSER_OK'));
 });
+
+test('only ShadowOps IdP token handoff is stubbed; real Chronicles API is untouched', () => {
+  assert.ok(source.includes('api-staging.chess-studio.shadowops.dpdns.org/api/**'));
+  assert.ok(source.includes("url.pathname === '/api/identity/session'"));
+  assert.ok(source.includes("url.pathname === '/api/identity/token'"));
+  assert.ok(source.includes("url.pathname === '/api/auth/login'"));
+  assert.ok(source.includes("await fetch(api + '/auth/register'"));
+  assert.ok(!source.includes("page.route('https://chronicles-api-staging"));
+});

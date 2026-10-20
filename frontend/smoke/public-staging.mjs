@@ -1,4 +1,4 @@
-// Real-public-URL browser smoke; only ephemeral user data and no personal accounts.
+// Real-public-URL browser smoke with a test-only SSO bridge; no shared IdP accounts.
 // CI sets CHRONICLES_STAGING_INVITE_CODE; the account is always deleted.
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
@@ -35,16 +35,54 @@ try {
     const ctx = await browser.newContext({ viewport });
     try {
       const page = await ctx.newPage();
+      // The live staging frontend delegates login to Chess Studio's shared
+      // ShadowOps IdP. Stub ONLY that cross-origin credential exchange:
+      // never create users at Chess Studio, and keep the app/API fully real.
+      await page.route('https://api-staging.chess-studio.shadowops.dpdns.org/api/**', async (route) => {
+        const request = route.request();
+        const url = new URL(request.url());
+        const cors = {
+          'access-control-allow-origin': origin,
+          'access-control-allow-credentials': 'true',
+          'access-control-allow-methods': 'GET, POST, OPTIONS',
+          'access-control-allow-headers': 'authorization, content-type',
+        };
+        if (request.method() === 'OPTIONS') {
+          await route.fulfill({ status: 204, headers: cors });
+        } else if (url.pathname === '/api/identity/token') {
+          // The temporary context has no existing SSO cookie.
+          await route.fulfill({ status: 401, contentType: 'application/json', headers: cors,
+            body: JSON.stringify({ detail: 'No session' }) });
+        } else if (url.pathname === '/api/auth/login') {
+          await route.fulfill({ status: 200, contentType: 'application/json', headers: cors,
+            body: JSON.stringify({ token: 'temporary-idp-handshake' }) });
+        } else if (url.pathname === '/api/identity/session') {
+          await route.fulfill({ status: 200, contentType: 'application/json', headers: cors,
+            body: JSON.stringify({ token, username, expiresAt: Math.floor(Date.now() / 1000) + 3600 }) });
+        } else {
+          throw new Error('Unexpected shared IdP request: ' + url.pathname);
+        }
+      });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(origin, { waitUntil: 'domcontentloaded' });
       await page.getByLabel('Usuario').fill(username);
       await page.getByLabel('Contraseña').fill(password);
       await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-      await page.getByRole('button', { name: 'Entrar', exact: true }).waitFor({ state: 'hidden', timeout: 30_000 });
+      // "Entrar" disappears immediately while loading; that alone is NOT a
+      // successful login. Wait for the actual session and disappearance of
+      // the login screen or surface its error explicitly.
+      await page.waitForFunction(() =>
+        Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
+      await page.getByRole('heading', { name: 'Iniciar sesión' }).waitFor({
+        state: 'hidden', timeout: 30_000,
+      });
       await page.getByText('Cargando Chronicles…').waitFor({ state: 'hidden', timeout: 30_000 }).catch(() => {});
+      assert.ok(await page.evaluate(() => !!localStorage.getItem('chess-study-auth-token')),
+        'Authenticated session was not preserved');
       assert.ok((await page.locator('#root').innerHTML()).length > 500, 'Empty authenticated game');
       assert.deepEqual(errors, [], 'Uncaught browser errors');
+      assert.ok((await page.locator('#root').innerHTML()).includes('Chronicles'), 'Game did not render');
 
       // Simulate an incoming newer build during an authenticated expedition.
       await page.route('**/release.json*', route => route.fulfill({
