@@ -985,11 +985,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const host = hostRef.current;
     if (!ready || !stateRef.current || !host) return undefined;
     setScenePainted(false);
-    const watchdog = window.setTimeout(() => {
-      if (!cancelled && !painted) {
+    let watchdog;
+    const armWatchdog = () => {
+      watchdog = window.setTimeout(() => {
+        if (cancelled || painted) return;
+        // Browsers legitimately suspend WebGL while the tab is hidden.
+        // Never turn background-tab time into a false renderer failure.
+        if (document.visibilityState === 'hidden') {
+          armWatchdog();
+          return;
+        }
         setRendererError('La escena 3D no consiguió dibujar su primer fotograma. Reintenta.');
-      }
-    }, 20000);
+      }, 20000);
+    };
+    armWatchdog();
 
     void loadChroniclesFirstPersonRenderer()
       .then(({ createChroniclesOfMatthiasGame }) => {
