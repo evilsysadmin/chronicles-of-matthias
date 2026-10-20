@@ -3,6 +3,7 @@ import { getChroniclesFxVolume } from './chroniclesAudioSettings.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
+import { chroniclesAttackMode, chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
 
 function actionType(action) {
   return typeof action === 'string' ? action : action?.type;
@@ -18,6 +19,34 @@ function enemyHpSnapshot(state) {
     id: enemy.id,
     hp: Math.max(0, Number(state?.[enemy.hpKey] || 0)),
   }));
+}
+
+// Actual weapon family, never an inferred effect from an attack hotkey.
+export function chroniclesWeaponImpactFamily(family) {
+  if (family === 'bow' || family === 'crossbow') return 'arrow';
+  if (family === 'axe') return 'cleave';
+  if (family === 'sword' || family === 'dagger') return 'cut';
+  if (family === 'spear') return 'pierce';
+  return 'blunt'; // staff, mace, sling, unarmed and unknown
+}
+
+function partyImpactFamily(state, memberId, requestedMode = 'auto') {
+  const mode = requestedMode === 'auto' ? chroniclesAttackMode(state, memberId) : requestedMode;
+  return chroniclesWeaponImpactFamily(
+    chroniclesEquippedItem(state, memberId, mode === 'missile' ? 'missile' : 'weapon')?.weaponFamily,
+  );
+}
+
+function enemyImpactFamily(state, enemyId) {
+  const enemy = chroniclesMapForState(state)?.enemies?.find((entry) => entry.id === enemyId);
+  if (!enemy) return 'blunt';
+  if (enemy.weaponFamily) return chroniclesWeaponImpactFamily(enemy.weaponFamily);
+  const type = [enemy.visualType, enemy.enemyBuild?.archetype].filter(Boolean).join(' ').toLowerCase();
+  if (/archer|crossbow|bowman/.test(type)) return 'arrow';
+  if (/axeman|axe-wielder/.test(type)) return 'cleave';
+  if (/swordsman|sword-wielder/.test(type)) return 'cut';
+  if (/spearman|pikeman/.test(type)) return 'pierce';
+  return 'blunt'; // Don't invent steel weapons for creatures with unknown attacks.
 }
 
 export function chroniclesActionAudioCue(previous, next, action) {
@@ -39,6 +68,10 @@ export function chroniclesActionAudioCue(previous, next, action) {
   const afterById = new Map(enemyHpSnapshot(next).map((enemy) => [enemy.id, enemy.hp]));
   const damaged = beforeEnemies.filter((enemy) => (afterById.get(enemy.id) ?? enemy.hp) < enemy.hp);
 
+  if (type === 'enemy-turn') {
+    return hurt ? `hurt:${enemyImpactFamily(previous, action?.enemyId)}` : null;
+  }
+
   if (type === 'cast' || type === 'use-item') {
     if (damaged.length) return 'spell-hit';
     if (hurt) return 'hurt';
@@ -54,17 +87,31 @@ export function chroniclesActionAudioCue(previous, next, action) {
     const families = fired.map((memberId) => (
       chroniclesEquippedItem(previous, memberId, 'missile')?.weaponFamily || 'bow'
     ));
-    return `volley:${families.join(',')}`;
+    const shots = chroniclesOpeningVolleyShots(previous);
+    const landed = shots.shots.find((shot) => shot.damage > 0);
+    const impact = landed
+      ? chroniclesWeaponImpactFamily(chroniclesEquippedItem(previous, landed.memberId, 'missile')?.weaponFamily)
+      : null;
+    // A volley has one restrained impact at most, never a clang per projectile.
+    return [
+      `volley:${families.join(',')}`,
+      impact && damaged.length ? `impact:${impact}` : shots.target ? 'miss:arrow' : null,
+      hurt ? 'hurt:blunt' : null,
+    ].filter(Boolean).join('|');
   }
 
   if (type !== 'attack') return hurt ? 'hurt' : null;
 
-  if (!damaged.length) return hurt ? 'hurt' : 'miss';
+  if (previous.combatRules !== 'mm3') {
+    if (!damaged.length) return hurt ? 'hurt' : 'miss';
+    const defeated = damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0);
+    return defeated ? 'defeat' : hurt ? 'retaliation' : 'hit';
+  }
 
-  const defeated = damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0);
-  if (defeated) return 'defeat';
-  if (hurt) return 'retaliation';
-  return 'hit';
+  const family = partyImpactFamily(previous, action?.memberId || 'matthias', action?.mode || 'auto');
+  const strike = !damaged.length ? 'miss'
+    : damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0) ? 'defeat' : 'hit';
+  return `${strike}:${family}${hurt ? '|hurt:blunt' : ''}`;
 }
 
 function connectTone(ctx, destination, { frequency, duration, gain, type = 'triangle', delay = 0, endFrequency = null }) {
