@@ -52,8 +52,9 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.waitForFunction(() => Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
-  // Unlike the authored first-book town, "Otra aventura" starts in the
-  // crypt with an ACTUAL enemy two tiles east of the company's spawn.
+  // "Otra aventura" starts in legacy Swordhaven. Its south gate is
+  // immediately behind the spawn and transports to the authored crypt
+  // with a REAL corrupted pawn two tiles east (never stubbed).
   await page.locator('.chronicles-save-menu__more > summary').click();
   await page.getByRole('button', { name: /Otra aventura/ }).click();
   await page.locator('[data-chronicles-character-setup="choice"]').waitFor();
@@ -62,7 +63,19 @@ try {
   { timeout: 30_000 });
   await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
   const game = await (await newRun).json();
-  assert.equal(game.currentMapId, 'crypt-eight-squares', 'Expected the authored crypt enemy');
+  assert.equal(game.currentMapId, 'swordhaven-square', 'Legacy adventure must begin at Swordhaven');
+  await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
+  // At (9,16) facing north, one backward step enters the SOUTH exit at (9,17).
+  // Observe the real server-backed area transition; do not spawn an enemy by fiat.
+  const cryptCheckpoint = page.waitForResponse(r =>
+    r.request().method() === 'PUT'
+      && /\\/api\\/chronicles\\/runs\\/[^/]+\\/checkpoint$/.test(new URL(r.url()).pathname)
+      && r.status() === 200
+      && r.request().postDataJSON()?.currentMapId === 'crypt-eight-squares',
+  { timeout: 30_000 });
+  await page.keyboard.press('ArrowDown');
+  const area = await cryptCheckpoint;
+  assert.equal(area.request().postDataJSON().currentMapId, 'crypt-eight-squares');
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
 
   // With a real archer and the live crypt AI, S fires the opening volley.
