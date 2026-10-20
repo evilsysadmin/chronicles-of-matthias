@@ -67,7 +67,7 @@
 - Juego: `cd frontend && npm ci && npm test && npm run build`.
 - El workflow `.github/workflows/react-frontend.yml` incluye Vitest,
   build real y Chromium smoke de montaje de Chronicles/Tactics.
-- API: `cd api && go vet ./cmd/... && go test ./internal/chronicles/... ./cmd/...`
+- API: `cd api && go vet ./cmd/... && go test ./internal/chronicles/... ./internal/gamesapi/... ./cmd/...`
   y `go run ./cmd/terragen -check`. El workflow `api.yml` además ejerce
   registro, nueva campaña, save y recuperación con Go + MongoDB real.
 - Workflows obligatorios: **Chronicles CI**, **Chronicles frontend** y
