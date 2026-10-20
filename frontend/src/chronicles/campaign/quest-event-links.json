@@ -1,0 +1,23 @@
+{
+  "banner-contract": [
+    "first-book-contract-accepted",
+    "first-book-banner-found",
+    "first-book-banner-reward"
+  ],
+  "names-in-wood": [
+    "rookwood-quest-accepted",
+    "rookwood-plaque-hollow-found",
+    "rookwood-plaque-thicket-found",
+    "rookwood-plaque-den-found",
+    "rookwood-names-restored"
+  ],
+  "road-bandits": [
+    "banner-road-deserter-falls",
+    "banner-road-captain-falls"
+  ],
+  "weaver-silk": [
+    "first-book-temple",
+    "rookwood-weaver-falls",
+    "first-book-temple-reward"
+  ]
+}
