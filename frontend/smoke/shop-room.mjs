@@ -187,12 +187,16 @@ try {
             bodyScroll: document.body.style.overflow,
           };
         });
-        if (room === 'odo') assert.equal(geometry.bodyScroll, 'hidden');
+        assert.equal(geometry.bodyScroll, 'hidden', room + ': world scroll must remain locked');
         assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
         assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
         assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
         if (room === 'odo') assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
-        else assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
+        else {
+          assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
+          assert.equal(await scene.evaluate((element) => getComputedStyle(element).pointerEvents), 'none',
+            'Guild art must never intercept the membership button');
+        }
         await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
         if (room === 'odo') {
           await dialog.getByRole('tab', { name: /Vender/ }).click();
@@ -202,6 +206,8 @@ try {
           await dialog.locator('[data-chronicles-guild-join]').waitFor();
           await dialog.locator('[data-chronicles-guild-join]').click();
           await dialog.locator('[data-chronicles-guild-join]').waitFor({ state: 'detached' });
+          await dialog.getByText('Compañía afiliada').waitFor();
+          if (width === 390) await page.screenshot({ path: 'smoke-shop-guild-member-390.png' });
         }
         assert.deepEqual(errors, [], room + ': browser exceptions');
         await page.keyboard.press('Escape');
