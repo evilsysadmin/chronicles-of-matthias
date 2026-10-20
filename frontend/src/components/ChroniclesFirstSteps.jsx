@@ -55,7 +55,7 @@ export default function ChroniclesFirstSteps({
         <button type="button" aria-label="Cerrar primeros pasos" onClick={close}>×</button>
       </div>
       <p>{story === 'first-book'
-        ? 'El Rey ha desaparecido. En Swordhaven, busca al alcalde Aldric para recibir el primer encargo.'
+        ? 'El Rey ha desaparecido. Desde la plaza, busca al sureste el Ayuntamiento: tejado rojo, cúpula de piedra y letrero sobre la entrada. Allí te espera el alcalde Aldric.'
         : story === 'prologue'
           ? 'La carta de la Dama nos envía tras el Rey. Empecemos por orientarnos en Swordhaven.'
           : 'Consulta el objetivo actual en la Crónica y oriéntate con el mapa.'}</p>
