@@ -17,23 +17,25 @@ assert.equal(versionResponse.status, 200);
 const published = await versionResponse.json();
 assert.equal(published.build, expectedSha, 'Public browser release must match admitted SHA');
 
-const username = 'chromium-smoke-' + randomBytes(5).toString('hex');
-const password = randomBytes(20).toString('base64url');
-const registration = await fetch(api + '/auth/register', {
-  method: 'POST', headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ username, password, email: `${username}@example.com`, inviteCode: invite }),
-});
-assert.ok(registration.ok, `Smoke registration HTTP ${registration.status}`);
-const created = await registration.json();
-const token = created.token;
-assert.ok(token, 'Missing cleanup token after registration');
-
 let browser;
 try {
   browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  // A first-time-entry smoke needs a truly new player in EACH viewport.
+  // Cross-device continuity is exercised separately by public-staging-journey.mjs.
   for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
-    const ctx = await browser.newContext({ viewport });
+    const username = 'chromium-smoke-' + randomBytes(5).toString('hex');
+    const password = randomBytes(20).toString('base64url');
+    let token = null;
+    let ctx = null;
     try {
+      const registration = await fetch(api + '/auth/register', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password, email: username + '@example.com', inviteCode: invite }),
+      });
+      assert.ok(registration.ok, `Smoke registration HTTP ${registration.status}`);
+      token = (await registration.json()).token;
+      assert.ok(token, 'Missing cleanup token after registration');
+      ctx = await browser.newContext({ viewport });
       const page = await ctx.newPage();
       // The live staging frontend delegates login to Chess Studio's shared
       // ShadowOps IdP. Stub ONLY that cross-origin credential exchange:
@@ -189,15 +191,17 @@ try {
       await page.screenshot({ path: `chronicles-public-${viewport.width}.png`, fullPage: false });
       console.log(`CHRONICLES_PUBLIC_BROWSER_OK viewport=${viewport.width}`);
     } finally {
-      await ctx.close();
+      await ctx?.close();
+      if (token) {
+        const removed = await fetch(api + '/auth/delete-account', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ password }),
+        });
+        assert.ok(removed.ok, `Smoke account cleanup HTTP ${removed.status}`);
+      }
     }
   }
 } finally {
   await browser?.close();
-  const removed = await fetch(api + '/auth/delete-account', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ password }),
-  });
-  assert.ok(removed.ok, `Smoke account cleanup HTTP ${removed.status}`);
 }

@@ -38,3 +38,14 @@ test('public smoke enters a real party-choice screen and accepts the two legitim
   ]) assert.ok(source.includes(marker), marker);
   assert.ok(source.includes("throw error;"), 'missing setup must still fail the release gate');
 });
+
+test('each viewport uses an independent real account and always cleans it up', () => {
+  const loop = source.indexOf('for (const viewport of [');
+  const register = source.indexOf("const registration = await fetch(api + '/auth/register'");
+  const cleanup = source.indexOf("const removed = await fetch(api + '/auth/delete-account'");
+  const loopEnd = source.indexOf('  }\n} finally {\n  await browser?.close();');
+  assert.ok(loop > 0 && register > loop && cleanup > register && cleanup < loopEnd,
+    'register and delete-account must belong to each viewport, not the whole browser run');
+  assert.ok(source.includes('public-staging-journey.mjs'), 'cross-device tests stay independent');
+  assert.ok(source.includes('await ctx?.close()'));
+});
