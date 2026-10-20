@@ -28,3 +28,13 @@ test('only ShadowOps IdP token handoff is stubbed; real Chronicles API is untouc
   assert.ok(source.includes("await fetch(api + '/auth/register'"));
   assert.ok(!source.includes("page.route('https://chronicles-api-staging"));
 });
+
+test('public smoke enters a real party-choice screen and accepts the two legitimate CTAs', () => {
+  for (const marker of [
+    '[data-chronicles-character-setup="choice"]',
+    'Empezar con este grupo', 'Continuar con mi compañía',
+    'CHRONICLES_PUBLIC_SETUP_UNAVAILABLE',
+    'chronicles-public-setup-failed-',
+  ]) assert.ok(source.includes(marker), marker);
+  assert.ok(source.includes("throw error;"), 'missing setup must still fail the release gate');
+});

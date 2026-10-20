@@ -89,7 +89,28 @@ try {
       // and is removed in the finally block, along with its game data.
       const newRun = page.getByRole('button', { name: /Nueva expedición/ }).first();
       await newRun.click({ timeout: 45_000 });
-      await page.getByRole('button', { name: 'Empezar con este grupo' }).click({ timeout: 20_000 });
+      const setup = page.locator('[data-chronicles-character-setup="choice"]');
+      try {
+        await setup.waitFor({ state: 'visible', timeout: 20_000 });
+      } catch (error) {
+        // Distinguish a real new-run regression from a changed CTA label.
+        // Keep screenshots even on failure; the release must still fail closed.
+        const currentSetup = await page.locator('[data-chronicles-character-setup]')
+          .first().getAttribute('data-chronicles-character-setup').catch(() => null);
+        const currentMenu = await page.locator('[data-chronicles-save-menu]')
+          .first().getAttribute('data-chronicles-save-menu').catch(() => null);
+        console.error('CHRONICLES_PUBLIC_SETUP_UNAVAILABLE', JSON.stringify({
+          viewport: viewport.width, currentSetup, currentMenu,
+          excerpt: (await page.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 360),
+        }));
+        await page.screenshot({ path: `chronicles-public-setup-failed-${viewport.width}.png` }).catch(() => {});
+        throw error;
+      }
+      // A returned player may have a saved custom build; both choices must
+      // launch an actual expedition without forcing the canonical company.
+      await setup.getByRole('button', {
+        name: /^(Empezar con este grupo|Continuar con mi compañía)$/,
+      }).click({ timeout: 20_000 });
       const world = page.locator('[data-chronicles="true"]');
       await world.waitFor({ state: 'visible', timeout: 90_000 });
       const canvas = world.locator('[data-chronicles-renderer="three"] canvas');
