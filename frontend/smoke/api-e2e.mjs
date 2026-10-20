@@ -4,6 +4,7 @@
 // limpio: login → «Continuar partida» reanuda desde el servidor (bootstrap).
 // Uso: node smoke/api-e2e.mjs <frontendUrl> <apiOrigin> <inviteCode>
 import { chromium } from 'playwright';
+import { assertAdventureFolioInk } from './adventure-contrast.mjs';
 
 const [base = 'http://localhost:5173/', apiOrigin = 'http://127.0.0.1:8090', invite = 'TESTINV'] = process.argv.slice(2);
 const user = `cronista_${Date.now().toString(36)}`;
@@ -42,6 +43,12 @@ try {
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
   await page.waitForTimeout(2000);
   await page.getByLabel('Abrir menú de Chronicles').click();
+  const adventure = page.locator('[data-chronicles-adventure-menu]');
+  await adventure.waitFor({ state: 'visible' });
+  // Run the same computed-ink contract as the public-staging browser while
+  // still inside required API/Mongo E2E, not just the isolated folio fixture.
+  await page.screenshot({ path: 'api-e2e-adventure.png' });
+  await assertAdventureFolioInk(adventure, 'real-game-1280x800');
   await page.getByRole('button', { name: 'Guardar partida' }).click();
   await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15000 });
   await page.screenshot({ path: 'api-e2e-saved.png' });
