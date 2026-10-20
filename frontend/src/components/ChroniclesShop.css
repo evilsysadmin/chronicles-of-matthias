@@ -65,7 +65,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  /* Protect Brunna's face from the right-hand item panel on narrow desktop. */
+  object-position: 80% center;
   image-rendering: auto;
 }
 
