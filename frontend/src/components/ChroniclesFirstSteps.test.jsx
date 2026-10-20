@@ -3,13 +3,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesInitializeLostKingIntro } from '../chronicles/chroniclesLostKingIntro.js';
+import { chroniclesApplyArrival } from '../chronicles/chroniclesArrival.js';
 import { setStorageItem, STORAGE_SESSION } from '../safeStorage.js';
 import ChroniclesFirstSteps, {
   chroniclesShouldOfferFirstSteps,
+  chroniclesFirstStepsStory,
   chroniclesFirstStepsDismissed,
 } from './ChroniclesFirstSteps.jsx';
 
 function newSwordhaven() {
+  return chroniclesApplyArrival(createChroniclesState('swordhaven-first-book'));
+}
+function legacyPrologue() {
   return chroniclesInitializeLostKingIntro(createChroniclesState('swordhaven-square'), { fresh: true });
 }
 function render(state, options = {}) {
@@ -24,16 +29,20 @@ describe('Chronicles · first Swordhaven steps', () => {
   it('is offered only during the genuine authored first-minute commission', () => {
     const fresh = newSwordhaven();
     expect(chroniclesShouldOfferFirstSteps(fresh)).toBe(true);
+    expect(chroniclesFirstStepsStory(fresh)).toBe('first-book');
+    expect(chroniclesFirstStepsStory(legacyPrologue())).toBe('prologue');
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, turns: 3 })).toBe(false);
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, mapId: 'crypt-eight-squares' })).toBe(false);
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, quests: {} })).toBe(false);
+    expect(chroniclesShouldOfferFirstSteps(createChroniclesState('swordhaven-first-book'))).toBe(false);
     expect(chroniclesShouldOfferFirstSteps(createChroniclesState('swordhaven-square'))).toBe(false);
   });
 
   it('explains actual keys without obstructing or inventing progress', () => {
     const html = render(newSwordhaven());
     expect(html).toContain('MATTHIAS · PRIMEROS PASOS');
-    expect(html).toContain('orientarnos en Swordhaven');
+    expect(html).toContain('alcalde Aldric');
+    expect(html).not.toContain('nos envía tras el Rey');
     expect(html).toContain('cuerpo a cuerpo');
     expect(html).toContain('Ver encargo');
     expect(html).toContain('Cerrar primeros pasos');
