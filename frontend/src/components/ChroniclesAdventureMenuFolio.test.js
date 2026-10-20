@@ -21,6 +21,11 @@ describe('Chronicles adventure menu folio — visual-only refactor (#134)', () =
     expect(menu).toContain('data-chronicles-menu-quick-status');
     expect(menu).toContain('id="chronicles-audio-options"');
   });
+  it('preserves the dark folio from the legacy inline important black-ink workaround', () => {
+    // A source guard supplements the actual Chromium contrast gate in public staging.
+    expect(source).toContain("node.closest('.chronicles-game-menu__panel--folio')");
+    expect(styles).toContain('-webkit-text-fill-color: #f2e2c3 !important');
+  });
   it('keeps mobile touch and scroll affordances without adding rules or persistence', () => {
     expect(styles).toContain('max-height: calc(100dvh - 16px');
     expect(styles).toContain('overflow-y: auto');
