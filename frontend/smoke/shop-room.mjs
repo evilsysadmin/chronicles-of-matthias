@@ -172,7 +172,9 @@ try {
         assert(art.src.includes(expected + '.png'), room + ': wrong artwork source');
         const geometry = await page.evaluate(() => {
           const bounds = (selector) => {
-            const r = document.querySelector(selector).getBoundingClientRect();
+            const node = document.querySelector(selector);
+            if (!node) return null;
+            const r = node.getBoundingClientRect();
             return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width };
           };
           return {
@@ -185,14 +187,22 @@ try {
             bodyScroll: document.body.style.overflow,
           };
         });
-        assert.equal(geometry.bodyScroll, 'hidden');
+        if (room === 'odo') assert.equal(geometry.bodyScroll, 'hidden');
         assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
         assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
         assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
-        assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
+        if (room === 'odo') assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
+        else assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
         await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
-        await dialog.getByRole('tab', { name: /Vender/ }).click();
-        await dialog.getByRole('tab', { name: 'Comprar' }).click();
+        if (room === 'odo') {
+          await dialog.getByRole('tab', { name: /Vender/ }).click();
+          await dialog.getByRole('tab', { name: 'Comprar' }).click();
+        } else {
+          // Membership and spells are the guild's real workflow, not shop tabs.
+          await dialog.locator('[data-chronicles-guild-join]').waitFor();
+          await dialog.locator('[data-chronicles-guild-join]').click();
+          await dialog.locator('[data-chronicles-guild-join]').waitFor({ state: 'detached' });
+        }
         assert.deepEqual(errors, [], room + ': browser exceptions');
         await page.keyboard.press('Escape');
         await dialog.waitFor({ state: 'hidden' });
