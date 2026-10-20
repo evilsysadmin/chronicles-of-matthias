@@ -57,6 +57,8 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('role="tablist"');
       expect(html).toContain('aria-controls="chronicles-step-panel-stats"');
       expect(html).toContain('Siguiente: atributos');
+      expect(html).not.toContain('Anterior: atributos');
+      expect(html).not.toContain('Anterior: identidad');
       expect(html).toMatch(/aria-label="Héroe 1 de 4: [^"]+, [^"]+"/);
       expect((html.match(/aria-label="Héroe [1-4] de 4:/g) || []).length).toBe(4);
       expect(html).toContain('chronicles-character-setup__mobile-overview');
@@ -67,6 +69,21 @@ describe('ChroniclesCharacterSetup', () => {
       expect((html.match(/data-class-id=/g) || []).length).toBe(10);
       expect(html).toContain('Hechizos');
       expect(html).toContain('Confirmar compañía');
+    } finally {
+      clearChroniclesCharacterDraft();
+      localStorage.removeItem('chess-study-auth-username');
+    }
+  });
+
+  it('offers a previous step when recovering the attributes editor', () => {
+    localStorage.setItem('chess-study-auth-username', 'chronicles-editor-back-test');
+    const build = createSeededChroniclesCharacterBuild('back-navigation', CHRONICLES_PARTY);
+    expect(saveChroniclesCharacterDraft({ activeSlot: 'bishop', editorStep: 'stats', build }, CHRONICLES_PARTY)).toBe(true);
+    try {
+      const html = render(build);
+      expect(html).toContain('data-editor-step="stats"');
+      expect(html).toContain('Anterior: identidad');
+      expect(html).toContain('Siguiente: clase');
     } finally {
       clearChroniclesCharacterDraft();
       localStorage.removeItem('chess-study-auth-username');
