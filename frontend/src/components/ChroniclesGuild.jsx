@@ -1,29 +1,57 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesGuildCanLearn, chroniclesGuildMember, chroniclesGuildSpells } from '../chronicles/chroniclesGuild.js';
 import { CHRONICLES_SPELL_SCHOOLS, chroniclesMemberKnowsSpell, chroniclesSpellAvailableTo } from '../chronicles/chroniclesMagic.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
 import './ChroniclesShop.css';
+import './ChroniclesGuild.css';
 
 // The guild counter shares the shop's parchment frame: membership first,
 // then one "learn" button per caster who could copy each spell.
 export default function ChroniclesGuild({ state, onAction, onClose }) {
   const closeRef = useRef(null);
+  const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const map = chroniclesMapForState(state);
   const entry = (map?.interactables || []).find((item) => item.id === state.guild?.id);
 
   useEffect(() => {
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
     const onKey = (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = [...dialog.querySelectorAll(
+        'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )].filter((node) => node.getClientRects().length > 0);
+      if (!focusable.length) { event.preventDefault(); dialog.focus(); return; }
+      if (event.shiftKey && (document.activeElement === focusable[0] || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        focusable[focusable.length - 1].focus();
+      } else if (!event.shiftKey && (document.activeElement === focusable[focusable.length - 1] || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        focusable[0].focus();
+      }
     };
     window.addEventListener('keydown', onKey, { capture: true });
-    return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', onKey, { capture: true });
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
 
   if (!entry) return null;
   const room = chroniclesShopRoom(entry);
@@ -31,34 +59,38 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
   const member = chroniclesGuildMember(state, entry.id);
   const fee = Number(entry.guild.membership || 0);
 
-  return (
+  const guildScene = (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
       <section
-        className="chronicles-shop"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="chronicles-shop chronicles-guild"
         role="dialog"
         aria-modal="true"
         aria-label={entry.label}
         data-chronicles-guild={entry.id}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="chronicles-shop__head">
-          <div>
-            <span>GREMIO</span>
-            <h2>{entry.label}</h2>
-            <p>{state.message}</p>
-          </div>
-          <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
-          <button ref={closeRef} type="button" className="chronicles-shop__close" onClick={onClose}
-            aria-label="Salir del gremio">✕</button>
-        </header>
-
         {room ? (
           <figure className="chronicles-shop__scene" data-chronicles-shop-room={room.id}>
             <img src={room.src} alt={room.alt} draggable="false" />
           </figure>
         ) : null}
 
-        {!member ? (
+        <header className="chronicles-shop__head">
+          <div className="chronicles-shop__identity">
+            <span>GREMIO</span>
+            <h2>{entry.label}</h2>
+            <p>{state.message}</p>
+          </div>
+          <b className="chronicles-shop__purse" aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
+          <button ref={closeRef} type="button" className="chronicles-shop__close" onClick={onClose}
+            aria-label="Salir del gremio">✕</button>
+        </header>
+
+        <div className="chronicles-guild__art-space" aria-hidden="true" />
+        <aside className="chronicles-guild__membership" aria-label="Afiliación al gremio">
+          {!member ? (
           <div className="chronicles-shop__join">
             <p>Sólo los socios pueden comprar hechizos. La membresía vale para toda la compañía.</p>
             <button type="button" data-chronicles-guild-join disabled={gold < fee}
@@ -66,9 +98,15 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
               Hacerse socios · {fee} oro
             </button>
           </div>
-        ) : null}
+          ) : (
+            <div className="chronicles-guild__member">
+              <strong>Compañía afiliada</strong>
+              <p>Las estanterías están abiertas. Selecciona un hechizo y el personaje que lo aprenderá.</p>
+            </div>
+          )}
+        </aside>
 
-        <ul className="chronicles-shop__list">
+        <ul className="chronicles-shop__list chronicles-guild__spells" aria-label="Hechizos del gremio">
           {chroniclesGuildSpells(entry).map((spell) => {
             const learners = state.party.filter((hero) => chroniclesGuildCanLearn(state, hero, spell.id));
             const known = state.party.filter((hero) => chroniclesMemberKnowsSpell(state, hero, spell.id));
@@ -103,4 +141,5 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
       </section>
     </div>
   );
+  return typeof document === 'undefined' ? guildScene : createPortal(guildScene, document.body);
 }
