@@ -12,10 +12,9 @@
 .chronicles-dm-overlay {
   position: absolute;
   z-index: 6;
-  top: 16px;
-  left: 50%;
-  max-width: calc(100% - 32px);
-  transform: translateX(-50%);
+  top: 12px;
+  right: 12px;
+  max-width: calc(100% - 24px);
 }
 .chronicles-dm-trigger {
   display: inline-flex;
@@ -58,8 +57,8 @@
 .chronicles-dm-peek {
   position: absolute;
   top: calc(100% + 8px);
-  left: 50%;
-  transform: translate(-50%, -5px);
+  right: 0;
+  transform: translateY(-5px);
   box-sizing: border-box;
   width: min(335px, calc(100vw - 28px));
   max-height: min(30vh, 185px);
@@ -91,7 +90,7 @@
 .chronicles-dm-overlay:focus-within .chronicles-dm-peek {
   opacity: 1;
   visibility: visible;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 @media (hover: hover) and (pointer: fine) {
   .chronicles-dm-overlay:hover .chronicles-dm-peek {
@@ -210,8 +209,13 @@
 @media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
   .chronicles-dm-overlay {
     top: 112px;
+    right: auto;
     left: max(10px, env(safe-area-inset-left));
     transform: none;
+  }
+  .chronicles-dm-peek {
+    right: auto;
+    left: 0;
   }
   .chronicles-dm-dialog { max-height: calc(100dvh - 24px); }
   .chronicles-dm-dialog-header { padding: 10px 12px 10px 16px; }
