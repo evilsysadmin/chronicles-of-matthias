@@ -1,0 +1,45 @@
+# Keep maintenance PRs small and allow Chronicles' required checks to gate merges.
+# Weekly schedules are staggered to limit Chromium + MongoDB CI contention.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 2
+    groups:
+      frontend-safe-updates:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: gomod
+    directory: /api
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "05:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 1
+    groups:
+      go-safe-updates:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "05:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 1
+    groups:
+      actions-safe-updates:
+        update-types:
+          - minor
+          - patch
