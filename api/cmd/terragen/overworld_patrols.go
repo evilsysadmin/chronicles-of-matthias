@@ -27,7 +27,7 @@ func reinforceOverworld(m *O, areaCode string) {
 	if len(ordinary) >= 4 {
 		target = 4
 	}
-	rows := m.Arr("grid")
+	rows := parse(dump(m)).(*O).Arr("grid")
 	start := m.Obj("partyStart")
 	spawn := point{start.Int("x"), start.Int("y")}
 	exits := m.Arr("exits")
