@@ -185,7 +185,7 @@ try {
   }
 
   // The other merchant rooms need their own evidence. Odo now has widescreen
-  // authored vector art; the guild still uses its existing small PNG.
+  // authored vector art; the guild now has its own illustrated library.
   // Test each REAL scene and its interactive layout.
   for (const room of ['odo', 'guild']) {
     for (const [width, height] of [[390, 844], [844, 390], [1280, 800]]) {
@@ -212,7 +212,7 @@ try {
         }));
         assert(art.loaded, room + ': artwork did not decode at ' + width);
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
-        assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : expected + '.png'), room + ': wrong artwork source');
+        assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong artwork source');
         if (room === 'odo') {
           const presentation = await img.evaluate((node) => ({
             width: node.getBoundingClientRect().width,
@@ -227,6 +227,21 @@ try {
             'The new illustration should render smoothly');
           assert(presentation.width >= width - 2 && presentation.width <= width + 2,
             'Odo illustration must fill the available room width: ' + JSON.stringify(presentation));
+        }
+        if (room === 'guild') {
+          const presentation = await img.evaluate((node) => ({
+            width: node.getBoundingClientRect().width,
+            fit: getComputedStyle(node).objectFit,
+            rendering: getComputedStyle(node).imageRendering,
+          }));
+          assert(art.width >= 1500 && art.height >= 800,
+            'Guild art must be a native-size panoramic illustration');
+          assert.equal(presentation.fit, 'cover',
+            'Guild illustrated archive must fill its panoramic backdrop');
+          assert.notEqual(presentation.rendering, 'pixelated',
+            'Guild art is not the legacy small pixel sprite');
+          assert(presentation.width >= width - 2 && presentation.width <= width + 2,
+            'Guild illustration must fill the available width: ' + JSON.stringify(presentation));
         }
         const geometry = await page.evaluate(() => {
           const bounds = (selector) => {
