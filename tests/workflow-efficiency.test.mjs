@@ -61,3 +61,15 @@ test('Go API health readiness shares the bounded liveness and log-aware probe', 
   assert.doesNotMatch(api, /for i in \$\(seq 1 40\); do curl/);
   assert.match(api, /curl -fsS http:\/\/127\.0\.0\.1:8090\/api\/health/);
 });
+
+test('Chromium download cache is identical and exact-versioned for both browser suites', () => {
+  const expectedKey = 'chronicles-playwright-' + String.fromCharCode(36) + '{{ runner.os }}-' + String.fromCharCode(36) + '{{ runner.arch }}-1.64.1';
+  for (const workflow of [frontend, api]) {
+    assert.match(workflow, /uses: actions\/cache@v4/);
+    assert.match(workflow, /path: ~\/\.cache\/ms-playwright/);
+    assert.ok(workflow.includes('key: ' + expectedKey));
+    assert.match(workflow, /npm install --no-save --no-audit --no-fund playwright@1\.64\.1/);
+    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.doesNotMatch(workflow, /restore-keys:/);
+  }
+});

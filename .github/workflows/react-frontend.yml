@@ -52,6 +52,13 @@ jobs:
           grep -lF 'chronicles-api-staging.shadowops.dpdns.org' frontend/dist/assets/*.js
           test -s frontend/dist/audio/orchestra/violin-fs3.mp3
           test -s frontend/dist/models/matthias-home-canonical.glb
+      # Avoid Chromium CDN/DNS fetches on every PR and main SHA.
+      # The cache key is intentionally exact-versioned; never restore a different browser revision.
+      - name: Restore pinned Playwright Chromium browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-1.64.1
       - name: Mount smoke — enter Chronicles and Tactics without crashing
         working-directory: frontend
         run: |
