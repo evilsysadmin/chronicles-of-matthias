@@ -57,6 +57,21 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     expect(clue.action.journal.id).toBe('swordhaven-south-watch-notice-read');
   });
 
+  it('keeps both southern alley threats optional, separate and off the original service route', () => {
+    const town = chroniclesMapById('swordhaven-first-book');
+    const alleyEnemies = town.enemies.filter((enemy) => enemy.id.startsWith('swordhaven-south-'));
+    expect(alleyEnemies).toHaveLength(2);
+    expect(alleyEnemies.map((enemy) => [enemy.x, enemy.y])).toEqual([[3, 17], [15, 19]]);
+    expect(alleyEnemies.every((enemy) => enemy.optional && town.grid[enemy.y][enemy.x] === '.')).toBe(true);
+    expect(new Set(alleyEnemies.map((enemy) => enemy.defeatedFlag)).size).toBe(2);
+    expect(new Set(alleyEnemies.map((enemy) => enemy.hpKey)).size).toBe(2);
+    const falseWatch = alleyEnemies.find((enemy) => enemy.id === 'swordhaven-south-false-watch');
+    expect(falseWatch.onDefeat.effects).toContainEqual({
+      type: 'set', key: 'swordhavenSouthFalseWatchDefeated', value: true,
+    });
+    expect(falseWatch.onDefeat.journal.id).toBe('swordhaven-south-false-watch-falls');
+  });
+
   it('never grants rewards when merely opening a dialogue; talk uses the campaign reducer', () => {
     const before = at(11, 10);
     const audience = chroniclesNpcDialogueForState(before, chroniclesContextualContentAction(before));
