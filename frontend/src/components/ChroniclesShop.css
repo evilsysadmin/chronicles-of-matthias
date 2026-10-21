@@ -486,6 +486,20 @@
   outline-offset: 3px;
 }
 
+/* Cinematic desktop staging: leave more breathing room for the merchant.
+   The full authored label remains readable while the panels start higher.
+   Phone and short-landscape overrides keep their established sizing. */
+@media (min-width: 901px) {
+  .chronicles-shop__identity {
+    max-width: min(76vw, 770px);
+  }
+
+  .chronicles-shop__identity h2 {
+    font-size: clamp(24px, 2.35vw, 31px);
+    line-height: 1.08;
+  }
+}
+
 @media (max-width: 1100px) and (min-width: 901px) {
   .chronicles-shop__market {
     grid-template-columns: minmax(245px, 40%) minmax(10px, 1fr) minmax(270px, 37%);
