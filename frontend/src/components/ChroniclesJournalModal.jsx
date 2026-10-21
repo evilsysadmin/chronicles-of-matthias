@@ -75,7 +75,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
           }
           event.stopPropagation();
           if (event.key !== 'Tab') return;
-          const focusable = Array.from(dialogRef.current?.querySelectorAll('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])') || []);
+          const focusable = Array.from(dialogRef.current?.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), [href], [tabindex]:not([tabindex="-1"])') || []);
           const first = focusable[0];
           const last = focusable[focusable.length - 1];
           if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
@@ -93,13 +93,29 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
             onClick={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}>×</button>
         </header>
 
-        <nav className="chronicles-journal-modal__chapters" aria-label="Capítulos de la crónica" role="tablist">
+        <nav className="chronicles-journal-modal__chapters" aria-label="Capítulos de la crónica" role="tablist"
+          onKeyDown={(event) => {
+            const tabs = ['quests', 'memories'];
+            const index = tabs.indexOf(chapter);
+            const next = event.key === 'Home' ? 'quests'
+              : event.key === 'End' ? 'memories'
+                : event.key === 'ArrowRight' ? tabs[(index + 1) % tabs.length]
+                  : event.key === 'ArrowLeft' ? tabs[(index + tabs.length - 1) % tabs.length]
+                    : null;
+            if (!next) return;
+            event.preventDefault();
+            event.stopPropagation();
+            changeChapter(next);
+            dialogRef.current?.querySelector('#chronicles-journal-tab-' + next)?.focus();
+          }}>
           <button type="button" role="tab" id="chronicles-journal-tab-quests"
+            tabIndex={chapter === 'quests' ? 0 : -1}
             aria-controls={chapter === 'quests' ? 'chronicles-journal-panel-quests' : undefined} aria-selected={chapter === 'quests'}
             onClick={() => changeChapter('quests')}>
             <span>Encargos</span><small>{active.length} {active.length === 1 ? 'pendiente' : 'pendientes'}</small>
           </button>
           <button type="button" role="tab" id="chronicles-journal-tab-memories"
+            tabIndex={chapter === 'memories' ? 0 : -1}
             aria-controls={chapter === 'memories' ? 'chronicles-journal-panel-memories' : undefined} aria-selected={chapter === 'memories'}
             onClick={() => changeChapter('memories')}>
             <span>Memorias</span><small>{foliosCount} {foliosCount === 1 ? 'anotación' : 'anotaciones'}</small>
