@@ -144,11 +144,27 @@ describe('Chronicles landscape after switching apps', () => {
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
     const entry = await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
     expect(entry.landscape).toBe(true);
+    // A browser may still report the portrait viewport before its real
+    // fullscreen lock settles. Do not mistake first entry for a task switch.
+    expect(doc.fullscreenElement).toBeTruthy();
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
     // Back from another app: fullscreen is gone and the phone is upright.
     doc.fullscreenElement = null;
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(true);
     await releaseChroniclesLandscape({ doc, screenApi });
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+  });
+
+  it('does not remember a relock wish when orientation succeeds but fullscreen was refused', async () => {
+    const { win, doc, screenApi } = setup();
+    await releaseChroniclesLandscape({ doc, screenApi });
+    doc.documentElement.requestFullscreen = vi.fn(async () => {
+      throw new Error('Fullscreen disabled in embedded browser');
+    });
+    const entry = await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
+    expect(entry).toEqual({ requested: true, fullscreen: false, landscape: true });
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+    await releaseChroniclesLandscape({ doc, screenApi });
   });
 
   it('does nothing while hidden or already in landscape', async () => {
