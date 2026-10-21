@@ -90,6 +90,96 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-a3-foe-2",
+      "visualType": "salt-crab",
+      "name": "cangrejo de roca",
+      "x": 2,
+      "y": 10,
+      "hpKey": "terra_a3Foe2Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a3-foe-3",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 18,
+      "y": 4,
+      "hpKey": "terra_a3Foe3Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con náufrago ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a3-foe-4",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 13,
+      "y": 2,
+      "hpKey": "terra_a3Foe4Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

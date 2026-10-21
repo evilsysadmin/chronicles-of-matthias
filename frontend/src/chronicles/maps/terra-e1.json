@@ -120,6 +120,96 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-e1-foe-3",
+      "visualType": "weaver-spider",
+      "name": "araña tejedora",
+      "x": 17,
+      "y": 4,
+      "hpKey": "terra_e1Foe3Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña tejedora usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e1-foe-4",
+      "visualType": "troll",
+      "name": "trol del bosque",
+      "x": 8,
+      "y": 9,
+      "hpKey": "terra_e1Foe4Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con trol del bosque usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e1-foe-5",
+      "visualType": "dire-wolf",
+      "name": "lobo gris",
+      "x": 2,
+      "y": 2,
+      "hpKey": "terra_e1Foe5Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lobo gris usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
