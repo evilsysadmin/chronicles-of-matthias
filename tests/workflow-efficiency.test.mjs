@@ -65,11 +65,24 @@ test('Go API health readiness shares the bounded liveness and log-aware probe', 
 test('Chromium download cache is identical and exact-versioned for both browser suites', () => {
   const expectedKey = 'chronicles-playwright-' + String.fromCharCode(36) + '{{ runner.os }}-' + String.fromCharCode(36) + '{{ runner.arch }}-1.64.1';
   for (const workflow of [frontend, api]) {
-    assert.match(workflow, /uses: actions\/cache@v4/);
+    assert.match(workflow, /uses: actions\/cache@v5/);
     assert.match(workflow, /path: ~\/\.cache\/ms-playwright/);
     assert.ok(workflow.includes('key: ' + expectedKey));
     assert.match(workflow, /npm install --no-save --no-audit --no-fund playwright@1\.64\.1/);
     assert.match(workflow, /npx playwright install --with-deps chromium/);
     assert.doesNotMatch(workflow, /restore-keys:/);
+  }
+});
+
+test('first-party workflow actions use Node 24-compatible releases', () => {
+  for (const workflow of [ci, frontend, api]) {
+    assert.match(workflow, /actions\/checkout@v5/);
+    assert.match(workflow, /actions\/setup-node@v5/);
+    assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
+  }
+  assert.match(api, /actions\/setup-go@v6/);
+  for (const workflow of [frontend, api]) {
+    assert.match(workflow, /actions\/cache@v5/);
+    assert.match(workflow, /actions\/upload-artifact@v5/);
   }
 });
