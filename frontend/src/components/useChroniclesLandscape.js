@@ -80,7 +80,11 @@ export async function requestChroniclesLandscapeOnEntry({
   }
   const result = await requestWarRoomLandscapeFullscreen({ doc, screenApi });
   if (result.fullscreen) chroniclesFullscreenOwned = true;
-  if (result.landscape) rememberLandscapeWanted(true);
+  // The relock prompt repairs *lost fullscreen*, not a portrait viewport
+  // where fullscreen was refused yet orientation.lock() happened to succeed.
+  // Also honor an already-active, user-owned fullscreen session.
+  const hasFullscreen = Boolean(result.fullscreen || doc?.fullscreenElement || doc?.webkitFullscreenElement);
+  if (result.landscape && hasFullscreen) rememberLandscapeWanted(true);
   return { requested: true, ...result };
 }
 
