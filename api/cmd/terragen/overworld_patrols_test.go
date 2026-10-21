@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -16,10 +15,11 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 		previous := before.Arr("enemies")
 		after := m.Arr("enemies")
 		ordinary := 0
-		for _, raw := range previous {
-			if strings.HasPrefix(raw.(*O).Str("id"), mapID(code)+"-foe-") {
-				ordinary++
+		for i, raw := range previous {
+			if raw.(*O).Str("id") != fmt.Sprintf("%s-foe-%d", mapID(code), i) {
+				break
 			}
+			ordinary++
 		}
 		extra := 3
 		if ordinary >= 4 {
