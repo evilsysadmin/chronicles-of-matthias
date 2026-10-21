@@ -42,7 +42,14 @@ export function chroniclesAdventureMenuShortcut(event, {
 export function chroniclesContainAdventureMenuTab(event, menuDetails) {
   if (event?.key !== 'Tab' || !menuDetails?.open || event.defaultPrevented
     || event.ctrlKey || event.altKey || event.metaKey) return false;
-  const controls = Array.from(menuDetails.querySelectorAll(
+  // The Q confirmation is an inner decision: while visible, Tab must
+  // remain between "Sí, salir" and the safely focused "Cancelar" rather
+  // than reaching the mixer, Save or Continue behind the question.
+  const confirmation = menuDetails.querySelector?.(
+    '[role="group"][aria-label="Confirmar salida sin guardar"]',
+  );
+  const scope = confirmation || menuDetails;
+  const controls = Array.from(scope.querySelectorAll(
     'summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
   )).filter((control) => control.getClientRects().length > 0
     && control.getAttribute('aria-hidden') !== 'true'
@@ -52,6 +59,15 @@ export function chroniclesContainAdventureMenuTab(event, menuDetails) {
   const first = controls[0];
   const last = controls[controls.length - 1];
   const active = menuDetails.ownerDocument.activeElement;
+  // If the confirmation opened while focus was on another menu control,
+  // redirect keyboard navigation to its safe default instead of letting
+  // the next Tab jump through actions underneath the confirmation.
+  if (confirmation && !controls.includes(active)) {
+    event.preventDefault();
+    const safeCancel = controls.find((control) => control.textContent?.trim() === 'Cancelar');
+    (safeCancel || last).focus();
+    return true;
+  }
   if (event.shiftKey && active === first) {
     event.preventDefault();
     last.focus();
