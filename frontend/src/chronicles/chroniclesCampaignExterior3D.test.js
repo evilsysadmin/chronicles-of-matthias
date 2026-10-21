@@ -124,6 +124,29 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(squareTint.g).toBeCloseTo(1);
     expect(squareTint.b).toBeCloseTo(1);
     expect(paved.instanceColor).toBeTruthy();
+    // The south-ward walls now have visible window fronts rather than bare
+    // embankments. Both faces are batched: two instanced meshes total.
+    const frames = town.getObjectByName('chronicles-town-street-window-frames');
+    const panes = town.getObjectByName('chronicles-town-street-window-panes');
+    expect(frames).toBeInstanceOf(THREE.InstancedMesh);
+    expect(panes).toBeInstanceOf(THREE.InstancedMesh);
+    expect(frames.count).toBeGreaterThan(20);
+    expect(panes.count).toBe(frames.count);
+    // The first window faces a real alley from an existing solid cell.
+    // Its cladding must be in front of the 3.92m wall, but still inside the
+    // 4m impassable cell (never a new invisible street collision).
+    const facadeMatrix = new THREE.Matrix4();
+    const paneMatrix = new THREE.Matrix4();
+    frames.getMatrixAt(0, facadeMatrix);
+    panes.getMatrixAt(0, paneMatrix);
+    const facadePos = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
+    const panePos = new THREE.Vector3().setFromMatrixPosition(paneMatrix);
+    expect(grid[16][2]).toBe('#');
+    expect(grid[17][2]).toBe('.');
+    expect(facadePos.x).toBeCloseTo((2 - center.x) * 4);
+    expect(facadePos.z).toBeCloseTo((16 - center.y) * 4 + 1.972);
+    expect(panePos.z).toBeCloseTo((16 - center.y) * 4 + 1.988);
+    expect(panePos.z - (16 - center.y) * 4 + 0.007).toBeLessThan(2);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
