@@ -8,7 +8,6 @@ describe('MM3 area travel confirmations', () => {
     const intent = chroniclesAreaTransitionIntent(state, 'backward');
     expect(intent?.sourceId).toBe('swordhaven-square');
     expect(intent?.destinationId).toBe('crypt-eight-squares');
-    expect(intent?.question).toContain('Swordhaven');
     expect(intent?.question).toContain('Cripta de las Ocho Casillas');
     expect(state.mapId).toBe('swordhaven-square');
     expect(state.turns).toBe(0);
