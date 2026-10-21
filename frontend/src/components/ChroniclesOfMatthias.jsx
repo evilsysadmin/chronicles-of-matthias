@@ -1686,7 +1686,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               state={state}
               runId={activeRunIdRef.current}
               target={chroniclesEnemyTargetAhead(state, 4)}
-              shooterCount={chroniclesOpeningVolleyShooters(state).length}
               suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
                 || state.shop || state.guild || expeditionOver)}
