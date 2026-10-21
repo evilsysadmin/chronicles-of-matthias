@@ -74,6 +74,21 @@ try {
         assert.match(await steps.innerText(), /Crónica/);
       }
       await page.screenshot({ path: 'smoke-first-steps-' + width + '.png' });
+
+      // A real action at Aldric's door remains tappable. The hardware-only F
+      // hint is omitted on mobile, but kept for mouse/keyboard players.
+      await page.goto(url + '?view=mayor', { waitUntil: 'domcontentloaded' });
+      const mayor = page.locator('[data-chronicles-first-audience]');
+      await mayor.waitFor({ state: 'visible', timeout: 20000 });
+      assert.equal(await mayor.locator('kbd').isVisible(), !touchHint,
+        'Physical F key should only be suggested with keyboard layout');
+      const mayorBounds = await mayor.boundingBox();
+      assert.ok(mayorBounds && mayorBounds.x >= -1 && mayorBounds.x + mayorBounds.width <= width + 1,
+        'Mayor invitation must fit the viewport: ' + JSON.stringify(mayorBounds));
+      await page.screenshot({ path: 'smoke-first-mayor-' + width + '.png' });
+      await mayor.getByRole('button', { name: 'Entrar y hablar con el alcalde Aldric' }).click();
+      assert.equal(await page.locator('body').getAttribute('data-mayor-action-requested'), 'true',
+        'Click must reach the existing mayor interaction callback');
       await page.goto(url + '?view=threat', { waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: 'Entendido' }).click();
       assert.equal(await cue.count(), 0);
