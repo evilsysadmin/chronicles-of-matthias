@@ -180,42 +180,8 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "patrol-route",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "patrolRoute": [
-          {
-            "x": 7,
-            "y": 7
-          },
-          {
-            "x": 8,
-            "y": 7
-          },
-          {
-            "x": 9,
-            "y": 7
-          },
-          {
-            "x": 9,
-            "y": 6
-          },
-          {
-            "x": 9,
-            "y": 5
-          },
-          {
-            "x": 8,
-            "y": 5
-          },
-          {
-            "x": 7,
-            "y": 5
-          },
-          {
-            "x": 7,
-            "y": 6
-          }
-        ],
         "engagedMovement": "knight-chase",
         "engageRange": 3
       }
@@ -250,42 +216,8 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "patrol-route",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "patrolRoute": [
-          {
-            "x": 7,
-            "y": 7
-          },
-          {
-            "x": 8,
-            "y": 7
-          },
-          {
-            "x": 9,
-            "y": 7
-          },
-          {
-            "x": 9,
-            "y": 6
-          },
-          {
-            "x": 9,
-            "y": 5
-          },
-          {
-            "x": 8,
-            "y": 5
-          },
-          {
-            "x": 7,
-            "y": 5
-          },
-          {
-            "x": 7,
-            "y": 6
-          }
-        ],
         "engagedMovement": "knight-chase",
         "engageRange": 3
       }
