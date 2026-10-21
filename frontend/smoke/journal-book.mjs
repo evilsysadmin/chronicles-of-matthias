@@ -243,6 +243,9 @@ try {
           focusedClose: document.activeElement?.getAttribute('aria-label') === 'Cerrar Crónica',
         };
       });
+      assert.equal(followedGeometry.renderedQuestCount, 25, 'Exercise a genuinely long journal');
+      assert.equal(followedGeometry.followedPosition, followedGeometry.renderedQuestCount - 1,
+        'Tracked quest must be last under real catalog ordering: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.scrollTop > 0, 'Distant tracked quest should scroll the book: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.headingWithinBook, 'Tracked quest heading should be visible on first opening: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.focusedClose, 'Opening must preserve keyboard focus on dialog close');
