@@ -4,6 +4,7 @@ import {
   chroniclesMapById,
   chroniclesMapIds,
   chroniclesMapInitialEnemyState,
+  chroniclesReconcileCurrentMapEnemyHp,
   chroniclesMapRenderPlan,
   chroniclesMapTileAt,
   chroniclesMapWallMaterialIdAt,
@@ -11,6 +12,45 @@ import {
 } from './chroniclesMapCatalog.js';
 
 describe('Chronicles declarative map catalog', () => {
+  it('makes newly-authored Swordhaven enemies attackable after resuming a pre-enemy session', async () => {
+    const { createChroniclesState, chroniclesEnemyTargetAhead, chroniclesReduce } =
+      await import('../chroniclesOfMatthias.js');
+    const enemy = chroniclesMapById('swordhaven-first-book').enemies.find(
+      (entry) => entry.id === 'swordhaven-south-cutpurse',
+    );
+    const current = {
+      ...createChroniclesState('swordhaven-first-book'),
+      x: enemy.x + 1, y: enemy.y, direction: 3, // west, one tile from bandit
+    };
+    const legacy = { ...current };
+    delete legacy[enemy.hpKey]; // Saved before the town introduced this bandit.
+    expect(chroniclesEnemyTargetAhead(legacy, 1)).toBeNull();
+
+    const restored = chroniclesReconcileCurrentMapEnemyHp(legacy);
+    expect(restored[enemy.hpKey]).toBe(enemy.maxHp);
+    expect(chroniclesEnemyTargetAhead(restored, 1)?.enemy.id).toBe(enemy.id);
+    const struck = chroniclesReduce(restored, { type: 'attack', memberId: 'matthias', mode: 'melee' });
+    expect(struck.turns).toBe(restored.turns + 1);
+    expect(struck[enemy.hpKey]).toBeLessThan(restored[enemy.hpKey]);
+  });
+
+  it('never respawns a wounded or dead enemy when normalizing older sessions', () => {
+    const map = chroniclesMapById('swordhaven-first-book');
+    const [bandit, watch] = map.enemies;
+    const current = { mapId: map.id, [bandit.hpKey]: 0 };
+    expect(chroniclesReconcileCurrentMapEnemyHp(current)).toMatchObject({
+      [bandit.hpKey]: 0, [watch.hpKey]: watch.maxHp,
+    });
+    const defeated = { mapId: map.id, [bandit.defeatedFlag]: true };
+    expect(chroniclesReconcileCurrentMapEnemyHp(defeated)[bandit.hpKey]).toBe(0);
+    const slain = { mapId: map.id, slainEnemies: { [map.id]: [1] } };
+    expect(chroniclesReconcileCurrentMapEnemyHp(slain)[watch.hpKey]).toBe(0);
+    const wounded = { mapId: map.id, [bandit.hpKey]: 1, [watch.hpKey]: 0 };
+    expect(chroniclesReconcileCurrentMapEnemyHp(wounded)).toBe(wounded);
+    expect(chroniclesReconcileCurrentMapEnemyHp({ mapId: 'swordhaven-square' }))
+      .toEqual({ mapId: 'swordhaven-square' });
+  });
+
   it('loads Swordhaven as a safe, static and reachable 19x19 settlement', () => {
     const town = chroniclesMapById('swordhaven-square');
     expect(town.title).toBe('Swordhaven');
