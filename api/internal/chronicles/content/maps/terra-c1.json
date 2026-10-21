@@ -94,8 +94,8 @@
     },
     {
       "id": "terra-c1-foe-2",
-      "visualType": "skeleton",
-      "name": "guerrero congelado",
+      "visualType": "bone-hound",
+      "name": "lobo de escarcha",
       "x": 18,
       "y": 2,
       "hpKey": "terra_c1Foe2Hp",
@@ -103,17 +103,17 @@
       "retaliation": 3,
       "toHit": 5,
       "armorClass": 2,
-      "agility": 2,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con guerrero congelado usando {attack}.",
+        "message": "{attacker} acaba con lobo de escarcha usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
