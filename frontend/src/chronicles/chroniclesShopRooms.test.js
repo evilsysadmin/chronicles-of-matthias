@@ -12,6 +12,7 @@ describe('Chronicles shop rooms', () => {
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
     expect(room('first-book-guild')).toBe('guild-sanctum');
+    expect(chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-guild')).src).toContain('guild-archive.svg');
   });
 
   it('has no room for counters without a building', () => {
