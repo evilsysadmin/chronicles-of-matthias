@@ -60,6 +60,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(walls.count).toBe(demo.grid.join('').split('#').length - 1);
     expect(walls.geometry.parameters.height).toBe(1.6); // Wilderness walls stay low.
     expect(scene.getObjectByName('chronicles-first-person-ceiling')).toBeUndefined();
+    expect(scene.getObjectByName('chronicles-town-street-limewash-fronts')).toBeUndefined();
     expect(built.sceneCenter).toEqual(demo.center);
     expect(built.contentProps.map(x => x.id)).toEqual(['exit-1', 'milestone-1']);
     expect(built.enemies).toEqual({});
@@ -164,6 +165,45 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(uprights).toBeInstanceOf(THREE.InstancedMesh);
     expect(beams.count).toBe(188);
     expect(uprights.count).toBe(beams.count);
+    // Warm plaster between the timbers makes the blocked cells read as
+    // actual houses. Every open street-facing side shares ONE extra batch.
+    const plaster = town.getObjectByName('chronicles-town-street-limewash-fronts');
+    expect(plaster).toBeInstanceOf(THREE.InstancedMesh);
+    expect(plaster.count).toBe(94);
+    expect(plaster.instanceColor).toBeTruthy();
+    expect(plaster.castShadow).toBe(false);
+    expect(plaster.geometry.parameters.height).toBeCloseTo(6.4 - 0.52);
+    expect(plaster.geometry.parameters.width).toBeCloseTo(4 * 0.935);
+    const plasterMatrix = new THREE.Matrix4();
+    plaster.getMatrixAt(0, plasterMatrix);
+    const firstPlaster = new THREE.Vector3().setFromMatrixPosition(plasterMatrix);
+    expect(firstPlaster.x).toBeCloseTo((2 - center.x) * 4);
+    expect(firstPlaster.z).toBeCloseTo((16 - center.y) * 4 + 1.974);
+    expect(firstPlaster.y).toBeCloseTo(6.4 / 2 + 0.03);
+    // Keep the limewash in front of the masonry, behind the dark window
+    // frames and timber beams, but never over the neighbouring road tile.
+    const wallSurface = 4 * 0.98 / 2;
+    const plasterSurface = 1.974 + plaster.geometry.parameters.depth / 2;
+    const windowSurface = 1.972 + frames.geometry.parameters.depth / 2;
+    const timberSurface = 1.973 + beams.geometry.parameters.depth / 2;
+    expect(plasterSurface).toBeGreaterThan(wallSurface);
+    expect(windowSurface).toBeGreaterThan(plasterSurface);
+    expect(timberSurface).toBeGreaterThan(plasterSurface);
+    expect(plasterSurface).toBeLessThan(2);
+    // Three gentle limewash variants group a few walls per house; no
+    // additional materials/draw calls for each colour.
+    const shades = new Set();
+    for (let i = 0; i < plaster.count; i += 1) {
+      plaster.getMatrixAt(i, plasterMatrix);
+      const panel = new THREE.Vector3().setFromMatrixPosition(plasterMatrix);
+      const gx = Math.round(panel.x / 4 + center.x);
+      const gy = Math.round(panel.z / 4 + center.y);
+      expect(grid[gy]?.[gx]).toBe('#');
+      const shade = new THREE.Color();
+      plaster.getColorAt(i, shade);
+      shades.add(shade.getHexString());
+    }
+    expect(shades.size).toBe(3);
     expect(beams.castShadow).toBe(false);
     expect(uprights.castShadow).toBe(false);
     expect(beams.geometry.parameters.depth).toBe(0.04);
