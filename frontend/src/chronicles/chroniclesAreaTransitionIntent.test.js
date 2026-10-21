@@ -25,7 +25,7 @@ describe('MM3 area travel confirmations', () => {
   it('refuses the locked Black Gate, and prompts only when the guard and seal are cleared', () => {
     const locked = { ...createChroniclesState('crypt-eight-squares'), x: 4, y: 1, direction: 3 };
     expect(chroniclesAreaTransitionIntent(locked, 'forward')).toBeNull();
-    const unlocked = { ...locked, sigilAwake: true, jailerHp: 0, blackGateKey: true };
+    const unlocked = { ...locked, sigilAwake: true, jailerHp: 0, scavengerHp: 0, blackGateKey: true };
     const intent = chroniclesAreaTransitionIntent(unlocked, 'forward');
     expect(intent?.exitId).toBe('black-gate');
     expect(intent?.destinationId).toBeNull(); // Legacy dungeon exit completes the adventure.
