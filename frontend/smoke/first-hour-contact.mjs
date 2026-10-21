@@ -82,8 +82,8 @@ try {
       });
       assert.equal(skin.backdropPosition, 'fixed',
         'The real game character-sheet overlay must be viewport-fixed');
-      assert.equal(skin.scrollDisplay, 'grid',
-        'The first-person folio V2 layout must be loaded in visual QA');
+      assert.equal(skin.scrollDisplay, width <= 850 ? 'block' : 'grid',
+        'The real folio uses a single flowing column on mobile, two on desktop');
       assert.ok(skin.left >= -1 && skin.right <= width + 1,
         'Character sheet must fit horizontally: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
