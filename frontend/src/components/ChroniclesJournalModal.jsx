@@ -16,6 +16,15 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const [openedQuestId, setOpenedQuestId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
+  // The book remembers the entry while changing chapters, but a later visit
+  // belongs to the current campaign and its currently followed objective.
+  useEffect(() => {
+    if (!open) {
+      setChapter('quests');
+      setOpenedQuestId(null);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open) return undefined;
     const previousFocus = document.activeElement;
@@ -32,9 +41,14 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
 
   const quests = chroniclesQuestLogEntries(state);
   const active = quests.filter((quest) => quest.status === 'active');
-  const selectedId = openedQuestId === null
-    ? (active.find((quest) => quest.id === state?.trackedQuestId) || active[0] || quests[0])?.id
-    : openedQuestId;
+  // A quest may disappear on world reload / another expedition. Never leave
+  // the reader with every entry closed because an obsolete ID was retained.
+  // '' is intentional: clicking the open heading collapses all entries.
+  const fallbackQuestId = (active.find((quest) => quest.id === state?.trackedQuestId)
+    || active[0] || quests[0])?.id;
+  const selectedId = openedQuestId === '' ? ''
+    : openedQuestId && quests.some((quest) => quest.id === openedQuestId)
+      ? openedQuestId : fallbackQuestId;
   const foliosCount = entries.length + narrations.length;
   const changeChapter = (next) => {
     setChapter(next);
