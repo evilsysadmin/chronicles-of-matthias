@@ -33,7 +33,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
@@ -555,14 +555,14 @@ export default function ChroniclesCharacterSheet({
         </div>
         {!tacticsMode && (
           <nav className="chronicles-character-sheet__party-dock" aria-label="Seleccionar personaje de la compañía">
-            {(state.party || []).slice(0, 4).map((hero, index) => (
+            {chroniclesPartyHotkeySlots(state.party).map(({ member: hero, slot }) => (
               <button type="button" key={hero.id}
                 disabled={!onSelectMember}
                 aria-label={`Ver ficha de ${hero.name}`}
                 aria-pressed={hero.id === member.id}
                 onClick={() => onSelectMember?.(hero.id)}
               >
-                <span className="chronicles-character-sheet__party-number" aria-hidden="true">{index + 1}</span>
+                <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
                 <img src={chroniclesPartyPortraitUrl(hero)} alt="" draggable="false" />
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
                 <span className="chronicles-character-sheet__party-hp">{hero.hp}/{hero.maxHp} PV</span>

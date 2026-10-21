@@ -131,6 +131,27 @@ try {
         .filter({ hasText: 'Arma · A' }).locator('strong').innerText(), /Espada de bronce/,
       'Inspecting Faust must never equip/unequip Matthias');
 
+      // Regression: the real sheet must display the SAME hotkey numbering
+      // even when a view adapter or initiative reverses party state.
+      if (width === 390) {
+        await page.goto(url + '?view=loot-reordered', { waitUntil: 'domcontentloaded' });
+        await page.getByRole('button', { name: 'Revisar equipo' }).click();
+        const reversedDock = page.locator('.chronicles-character-sheet__party-dock');
+        await reversedDock.waitFor({ state: 'visible' });
+        const slots = await reversedDock.locator('button').evaluateAll((buttons) => buttons.map((button) => ({
+          slot: button.querySelector('.chronicles-character-sheet__party-number')?.textContent,
+          name: button.querySelector('.chronicles-character-sheet__party-name')?.textContent,
+        })));
+        assert.deepEqual(slots, [
+          { slot: '1', name: 'Matthias' },
+          { slot: '2', name: 'Hildegard' },
+          { slot: '3', name: 'Aziz' },
+          { slot: '4', name: 'Faust' },
+        ], 'Visible 1–4 numbers must match the actual hero keyboard bindings');
+        await page.keyboard.press('4');
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
