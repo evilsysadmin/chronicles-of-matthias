@@ -173,6 +173,8 @@ import './ChroniclesMM3Chrome.css';
 import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
 import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
+import { chroniclesAreaTransitionIntent } from '../chronicles/chroniclesAreaTransitionIntent.js';
+import './ChroniclesAreaTransition.css';
 import './ChroniclesAdventureMenuFolio.css';
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
@@ -328,6 +330,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
+  const [areaTransition, setAreaTransition] = useState(null);
+  const areaTransitionRef = useRef(null);
   const [audience, setAudience] = useState(null);
   const audienceRef = useRef(null);
   const [automapVisitedByMap, setAutomapVisitedByMap] = useState({});
@@ -492,7 +496,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       return;
     }
     setMenuOpen((open) => !open);
-  }, { contextMenu: false, disabled: chronicleModalOpen });
+  }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
 
   const confirmCharacterBuild = useCallback((build) => {
     void requestChroniclesLandscapeOnEntry();
@@ -528,9 +532,25 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     setBootstrapRevision((revision) => revision + 1);
   }, []);
 
-  const dispatch = useCallback((action) => {
+  const dispatch = useCallback((action, acceptedTravel = false) => {
     const current = stateRef.current;
     if (!current) return;
+    // The pending choice owns movement until it is answered. No turns,
+    // encounters or checkpoint may run while the prompt is on screen.
+    if (areaTransitionRef.current && !acceptedTravel) return current;
+    if (!acceptedTravel) {
+      const intent = chroniclesAreaTransitionIntent(current, action);
+      if (intent) {
+        areaTransitionRef.current = { action, sourceState: current };
+        setAreaTransition(intent);
+        // Touch controls may be held; prevent their delayed repeat after Yes/No.
+        const hold = touchHoldRef.current;
+        if (hold.delayId !== null) window.clearTimeout(hold.delayId);
+        if (hold.repeatId !== null) window.clearInterval(hold.repeatId);
+        touchHoldRef.current = { delayId: null, repeatId: null };
+        return current;
+      }
+    }
 
     const actionType = typeof action === 'string' ? action : action?.type;
     // The campaign epilogue is a decision screen: nothing moves behind it.
@@ -696,6 +716,31 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return next;
   }, [showHitSplats]);
 
+  const cancelAreaTravel = useCallback(() => {
+    areaTransitionRef.current = null;
+    setAreaTransition(null);
+  }, []);
+
+  const acceptAreaTravel = useCallback(() => {
+    const pending = areaTransitionRef.current;
+    if (!pending) return;
+    areaTransitionRef.current = null;
+    setAreaTransition(null);
+    // If another subsystem changed the state, do not execute a stale move.
+    if (stateRef.current === pending.sourceState) dispatch(pending.action, true);
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (areaTransition && state !== areaTransitionRef.current?.sourceState) {
+      cancelAreaTravel();
+    }
+  }, [areaTransition, state, cancelAreaTravel]);
+
+  useEffect(() => {
+    if (!areaTransition) return;
+    document.querySelector('[data-chronicles-area-transition] [data-area-transition-cancel]')?.focus();
+  }, [areaTransition]);
+
   const clearTouchHold = useCallback(() => {
     const active = touchHoldRef.current;
     if (active.delayId !== null) window.clearTimeout(active.delayId);
@@ -718,7 +763,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     }
 
     dispatch(action);
-    if (current.initiative) return;
+    if (areaTransitionRef.current || current.initiative) return;
 
   }, [clearTouchHold, dispatch]);
 
@@ -1171,6 +1216,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // plain Tab traverses its accessible controls rather than closing it.
       const target = event.target;
       if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      if (areaTransitionRef.current) {
+        if (event.key !== 'Tab') event.preventDefault();
+        if (event.repeat) return;
+        if (event.key === 'Escape' || event.key === 'n' || event.key === 'N') cancelAreaTravel();
+        else if (event.key === 'Enter' || event.key === 'y' || event.key === 'Y' || event.key === 's' || event.key === 'S') acceptAreaTravel();
+        return;
+      }
       const hero = chroniclesPartyHotkeyMember(event, current.party);
       if (hero) {
         event.preventDefault();
@@ -1289,7 +1341,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
+  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
     confirmExitWithoutSaving, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen]);
 
@@ -1649,6 +1701,34 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               <ChroniclesHitSplat key={splat.token} impact={splat} className="is-enemy"
                 style={all.length > 1 ? { left: `${50 + (index - (all.length - 1) / 2) * 14}%` } : null} />
             ))}
+            {areaTransition && typeof document !== 'undefined' && createPortal(
+              <div className="chronicles-area-transition" data-chronicles-area-transition
+                role="presentation">
+                <section className="chronicles-area-transition__card" role="dialog" aria-modal="true"
+                  aria-labelledby="chronicles-area-transition-title"
+                  aria-describedby="chronicles-area-transition-hint"
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Tab') return;
+                    const buttons = event.currentTarget.querySelectorAll('button:not([disabled])');
+                    if (buttons.length !== 2) return;
+                    if (event.shiftKey && document.activeElement === buttons[0]) {
+                      event.preventDefault();
+                      buttons[1].focus();
+                    } else if (!event.shiftKey && document.activeElement === buttons[1]) {
+                      event.preventDefault();
+                      buttons[0].focus();
+                    }
+                  }}>
+                  <div className="chronicles-area-transition__eyebrow">UN NUEVO UMBRAL</div>
+                  <h2 id="chronicles-area-transition-title">{areaTransition.question}</h2>
+                  <p id="chronicles-area-transition-hint">La compañía espera tu decisión.</p>
+                  <div className="chronicles-area-transition__actions">
+                    <button type="button" data-area-transition-cancel onClick={cancelAreaTravel}>No · Esc</button>
+                    <button type="button" className="is-primary" data-area-transition-accept onClick={acceptAreaTravel}>Sí · Enter</button>
+                  </div>
+                </section>
+              </div>, document.body,
+            )}
             <ChroniclesInitiativeRail initiative={state.initiative} />
             <ChroniclesNarratorOverlay message={state.message} open={chronicleModalOpen}
               onOpenChange={(next) => {

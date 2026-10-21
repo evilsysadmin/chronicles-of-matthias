@@ -1,0 +1,74 @@
+/* Area exits are a deliberate MM3 decision, not a HUD notification. */
+.chronicles-area-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  display: grid;
+  place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  background: rgba(8, 11, 15, .76);
+  backdrop-filter: blur(4px);
+}
+.chronicles-area-transition__card {
+  width: min(100%, 490px);
+  max-height: min(85vh, 540px);
+  overflow-y: auto;
+  padding: clamp(22px, 5vw, 38px);
+  color: #eee2c9;
+  text-align: center;
+  background: linear-gradient(155deg, #302b25, #191c1e 70%);
+  border: 1px solid #a68a56;
+  box-shadow: 0 0 0 5px #171918, 0 18px 70px #000b;
+  border-radius: 7px;
+}
+.chronicles-area-transition__eyebrow {
+  font: 700 .68rem/1.5 system-ui, sans-serif;
+  letter-spacing: .24em;
+  color: #c5ae80;
+}
+.chronicles-area-transition__card h2 {
+  margin: 19px 0 12px;
+  font: 600 clamp(1.35rem, 4vw, 1.85rem)/1.28 Georgia, serif;
+  color: #fff0ce;
+  text-wrap: balance;
+}
+.chronicles-area-transition__card p {
+  margin: 0 0 28px;
+  color: #c2b8a3;
+  font: .9rem/1.5 system-ui, sans-serif;
+}
+.chronicles-area-transition__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.chronicles-area-transition__actions button {
+  min-height: 48px;
+  padding: 11px 12px;
+  border: 1px solid #86765b;
+  border-radius: 4px;
+  color: #eee2c9;
+  font: 700 .92rem/1.25 system-ui, sans-serif;
+  background: #292b29;
+  cursor: pointer;
+}
+.chronicles-area-transition__actions button.is-primary {
+  border-color: #d3b575;
+  background: #775d33;
+  color: #fff2d8;
+}
+.chronicles-area-transition__actions button:hover {
+  filter: brightness(1.16);
+}
+.chronicles-area-transition__actions button:focus-visible {
+  outline: 3px solid #efce87;
+  outline-offset: 3px;
+}
+@media (max-width: 380px) {
+  .chronicles-area-transition__card { padding: 22px 16px; }
+  .chronicles-area-transition__actions { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-area-transition { backdrop-filter: none; }
+}
