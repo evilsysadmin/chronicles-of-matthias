@@ -141,6 +141,15 @@ try {
       assert.equal(await first.count(), 0, 'Old expedition quests must not remain visible');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
+      await page.locator('[data-test-only-completed]').click();
+      await dialog.waitFor({ state: 'visible' });
+      const oldDeeds = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
+      assert.equal(await oldDeeds.count(), 1,
+        'When no active quests exist, completed contracts must stay accessible');
+      assert.equal(await oldDeeds.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      assert.equal(await archive.count(), 0, 'An all-completed journal must not hide its entire list');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
       console.log('CHRONICLES_JOURNAL_BOOK_OK ' + width + 'x' + height);
     } catch (error) {
