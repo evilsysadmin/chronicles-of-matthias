@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
-import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -17,6 +17,13 @@ function MenuShortcutFixture() {
   const [saveRequests, setSaveRequests] = useState(0);
   const [exitRequests, setExitRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
+  const [backgroundActions, setBackgroundActions] = useState(0);
+  // Only this CI fixture offers direct state setters for controls that become
+  // physically unreachable behind an open modal.
+  useEffect(() => {
+    window.__chroniclesMenuFixture = { setSaveBusy };
+    return () => { delete window.__chroniclesMenuFixture; };
+  }, []);
   const [selectedHero, setSelectedHero] = useState('matthias');
   const [globalEscapeCount, setGlobalEscapeCount] = useState(0);
 
@@ -85,7 +92,10 @@ function MenuShortcutFixture() {
       data-shortcut-menu-open={String(open)}
       data-shortcut-confirm={String(confirmExitWithoutSaving)}
       data-shortcut-hero={selectedHero}
-      data-shortcut-global-esc={globalEscapeCount}>
+      data-shortcut-global-esc={globalEscapeCount}
+      onPointerDownCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}
+      onClickCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}
+      onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}>
       <div className="chronicles-stage" style={{ height: '100%', minHeight: 0 }}>
         <div style={{ position: 'absolute', left: 8, bottom: 8, zIndex: 1, display: 'grid', gap: 6 }}>
           <label>Campo de texto ajeno al menú
@@ -93,6 +103,9 @@ function MenuShortcutFixture() {
           </label>
           <button type="button" data-shortcut-busy-toggle
             onClick={() => setSaveBusy((value) => !value)}>Alternar guardado en curso</button>
+          <button type="button" data-shortcut-background-action
+            onClick={() => setBackgroundActions((n) => n + 1)}>Acción del mundo</button>
+          <output data-shortcut-background-actions>{backgroundActions}</output>
           <button type="button" data-shortcut-reopen onClick={() => setOpen(true)} disabled={open}>
             Reabrir menú
           </button>

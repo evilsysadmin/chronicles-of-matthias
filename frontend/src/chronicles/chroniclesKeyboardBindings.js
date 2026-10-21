@@ -98,6 +98,17 @@ export function chroniclesRestoreAdventureMenuFocus(menuDetails, focused) {
   return true;
 }
 
+// The adventure menu declares aria-modal. Background game controls must
+// therefore not react to taps/clicks while it is open. Capture at the root,
+// but let every control inside the actual menu behave natively.
+export function chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen = false) {
+  if (!menuOpen || !event?.target
+    || event.target.closest?.('.chronicles-game-menu')) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  return true;
+}
+
 // The physical 1–4 keys identify these four heroes by stable IDs, not by
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -282,5 +282,36 @@ describe('Chronicles adventure menu modal focus acquisition', () => {
     outside.focus();
     expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(false);
     expect(doc.activeElement).toBe(outside);
+  });
+});
+
+
+describe('Chronicles adventure-menu modal pointer guard', () => {
+  const eventFor = (inside) => ({
+    target: { closest: (selector) => inside && selector === '.chronicles-game-menu' ? {} : null },
+    prevented: false, stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopPropagation() { this.stopped = true; },
+  });
+
+  it('prevents pointerdown/clicks on game HUD controls while the menu is open', () => {
+    const event = eventFor(false);
+    expect(chroniclesBlockAdventureMenuBackgroundEvent(event, true)).toBe(true);
+    expect(event.prevented).toBe(true);
+    expect(event.stopped).toBe(true);
+  });
+
+  it('preserves native click/drag behaviour inside the menu, including audio sliders', () => {
+    const event = eventFor(true);
+    expect(chroniclesBlockAdventureMenuBackgroundEvent(event, true)).toBe(false);
+    expect(event.prevented).toBe(false);
+    expect(event.stopped).toBe(false);
+  });
+
+  it('restores game controls as soon as the menu closes', () => {
+    const event = eventFor(false);
+    expect(chroniclesBlockAdventureMenuBackgroundEvent(event, false)).toBe(false);
+    expect(event.prevented).toBe(false);
+    expect(event.stopped).toBe(false);
   });
 });

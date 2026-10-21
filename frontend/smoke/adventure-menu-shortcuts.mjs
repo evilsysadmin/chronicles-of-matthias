@@ -60,6 +60,18 @@ try {
       assert.match(await menu.innerText(), /Salir sin guardar · Q/);
       assert.equal(await count(page, 'save'), 0);
       assert.equal(await count(page, 'exit'), 0);
+      // Even a mouse/touch click on a game HUD button behind this aria-modal
+      // menu must not trigger gameplay. Check the real React capture handlers.
+      const blocked = await page.evaluate(() => {
+        const button = document.querySelector('[data-shortcut-background-action]');
+        const pointer = new PointerEvent('pointerdown', { bubbles: true, cancelable: true });
+        const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+        button.dispatchEvent(pointer);
+        button.dispatchEvent(click);
+        return { pointer: pointer.defaultPrevented, click: click.defaultPrevented };
+      });
+      assert.deepEqual(blocked, { pointer: true, click: true });
+      assert.equal(Number(await page.locator('[data-shortcut-background-actions]').innerText()), 0);
       // The 1–4 keys must not change the hero invisibly underneath the
       // Save/Quit folio (the party remains Matthias).
       await page.keyboard.press('4');
@@ -121,6 +133,9 @@ try {
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '2');
       assert.equal(await count(page, 'discard'), 0);
+      // Once the modal closes, the same background button must work normally.
+      await page.locator('[data-shortcut-background-action]').dispatchEvent('click');
+      assert.equal(Number(await page.locator('[data-shortcut-background-actions]').innerText()), 1);
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1,
         'S outside the menu must NOT invoke save (in-game S remains shooting)');
@@ -159,18 +174,16 @@ try {
       // The following keys exercise the menu guard, not the slider's native
       // input handling. Move focus back into an ordinary menu button first.
       await menu.getByRole('button', { name: 'Continuar' }).focus();
-      // Fixture instrumentation lives behind the modal on small screens,
-      // as background controls should. Trigger its DOM control without
-      // pretending the player can click through a real modal overlay.
-      await page.locator('[data-shortcut-busy-toggle]').evaluate((button) => button.click());
+      // Save-busy is internal fixture state: a blocked background button
+      // must never be used to change it while the modal owns pointer input.
+      await page.evaluate(() => window.__chroniclesMenuFixture.setSaveBusy(true));
       await page.keyboard.press('s');
       await page.keyboard.press('q');
       assert.equal(await count(page, 'save'), 1, 'Save busy must block duplicate saves');
       assert.equal(await count(page, 'exit'), 1, 'Save busy must block exits');
-      // Fixture instrumentation lives behind the modal on small screens,
-      // as background controls should. Trigger its DOM control without
-      // pretending the player can click through a real modal overlay.
-      await page.locator('[data-shortcut-busy-toggle]').evaluate((button) => button.click());
+      // Save-busy is internal fixture state: a blocked background button
+      // must never be used to change it while the modal owns pointer input.
+      await page.evaluate(() => window.__chroniclesMenuFixture.setSaveBusy(false));
       await menu.getByRole('button', { name: 'Guardar partida · S' }).focus();
       await page.keyboard.press('S');
       assert.equal(await count(page, 'save'), 2);

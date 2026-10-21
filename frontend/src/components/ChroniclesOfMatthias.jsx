@@ -166,7 +166,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -1579,6 +1579,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       data-party-hp-total={state.party.reduce((total, member) => total + Number(member.hp || 0), 0)}
       role="region"
       aria-label="Chronicles of Matthias"
+      onPointerDownCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
+      onClickCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
+      onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
     >
       <div className="chronicles-shell">
         <aside className="chronicles-party" aria-label="Grupo de Matthias">
@@ -1710,6 +1713,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               onToggle={(event) => {
                 setMenuOpen(event.currentTarget.open);
                 if (event.currentTarget.open) {
+                  clearTouchHold(); // Stop an existing long-press before gameplay becomes modal.
                   setAutomapOpen(false);
                   setJournalOpen(false);
                 } else {
