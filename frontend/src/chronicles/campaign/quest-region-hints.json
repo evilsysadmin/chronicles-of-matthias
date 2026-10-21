@@ -88,5 +88,109 @@
       "mapId": "crypt-eight-squares",
       "clue": "Investiga el antiguo sello."
     }
+  ],
+  "ascua-smith-errand": [
+    {
+      "when": [
+        {
+          "itemId": "lava-glass"
+        }
+      ],
+      "mapId": "ascuafria",
+      "clue": "Entrega el cristal de lava a Tomé, el aprendiz de Ascuafría."
+    },
+    {
+      "mapId": "terra-f3",
+      "clue": "Busca el cristal de lava en las Crestas Volcánicas (F3)."
+    }
+  ],
+  "ascua-watch-hunt": [
+    {
+      "when": [
+        {
+          "key": "ascua_watchHunted",
+          "truthy": true
+        }
+      ],
+      "mapId": "ascuafria",
+      "clue": "Comunica la caza a la capitana de la forja de Ascuafría."
+    },
+    {
+      "mapId": "terra-f4",
+      "clue": "Busca al Coloso de Escoria en la Fundición en Ruinas (F4)."
+    }
+  ],
+  "ascua-dragon-scale": [
+    {
+      "when": [
+        {
+          "itemId": "dragon-scale"
+        }
+      ],
+      "mapId": "ascuafria",
+      "clue": "Entrega la escama a Hilde en la forja de Ascuafría."
+    },
+    {
+      "mapId": "guarida-del-dragon",
+      "clue": "Busca una escama en la Guarida del Dragón de Ceniza (F5)."
+    }
+  ],
+  "molinoviejo-wind": [
+    {
+      "when": [
+        {
+          "key": "molinoviejoWindPact",
+          "truthy": true
+        }
+      ],
+      "mapId": "molinoviejo",
+      "clue": "Regresa con Fermín: el pacto con la Señora del Viento ya está sellado."
+    },
+    {
+      "when": [
+        {
+          "key": "molinoviejoWindSlain",
+          "truthy": true
+        }
+      ],
+      "mapId": "molinoviejo",
+      "clue": "Regresa con Fermín: la Señora del Viento ya ha caído."
+    },
+    {
+      "mapId": "terra-b2",
+      "clue": "Busca a la Señora del Viento en el Brezal de los Lobos (B2)."
+    }
+  ],
+  "molinoviejo-watch-hunt": [
+    {
+      "when": [
+        {
+          "key": "molinoviejo_watchHunted",
+          "truthy": true
+        }
+      ],
+      "mapId": "molinoviejo",
+      "clue": "Cobra la recompensa al guardia del molino en Molinoviejo."
+    },
+    {
+      "mapId": "terra-b4",
+      "clue": "Busca al Rey Rata entre las Granjas del Trigo (B4)."
+    }
+  ],
+  "pinohelado-watch-hunt": [
+    {
+      "when": [
+        {
+          "key": "pinohelado_watchHunted",
+          "truthy": true
+        }
+      ],
+      "mapId": "pinohelado",
+      "clue": "Regresa al cazador mayor de Pinohelado para cobrar la caza."
+    },
+    {
+      "mapId": "terra-c2",
+      "clue": "Busca a la Arpía Coronada en las Colinas de la Corona (C2)."
+    }
   ]
 }
