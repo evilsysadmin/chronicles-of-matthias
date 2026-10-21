@@ -72,6 +72,21 @@ try {
       await sheet.waitFor({ state: 'visible' });
       assert.match(await sheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
         /Equipo/, 'Loot CTA must land directly in equipment');
+      const skin = await sheet.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          backdropPosition: getComputedStyle(node.parentElement).position,
+          scrollDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__scroll')).display,
+          left: rect.left, right: rect.right,
+        };
+      });
+      assert.equal(skin.backdropPosition, 'fixed',
+        'The real game character-sheet overlay must be viewport-fixed');
+      assert.equal(skin.scrollDisplay, 'grid',
+        'The first-person folio V2 layout must be loaded in visual QA');
+      assert.ok(skin.left >= -1 && skin.right <= width + 1,
+        'Character sheet must fit horizontally: ' + JSON.stringify(skin));
+      await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The MM3 double-weapon summary is optional in the test fixture; the
