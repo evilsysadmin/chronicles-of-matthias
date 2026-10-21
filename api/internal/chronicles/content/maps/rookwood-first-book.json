@@ -295,6 +295,18 @@
             "amount": 1
           }
         ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "troll",
+        "level": 1,
+        "attributes": {
+          "vigor": 0,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": []
       }
     },
     {
