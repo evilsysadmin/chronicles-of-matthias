@@ -83,6 +83,12 @@ describe('Chronicles first-person runtime scene plan', () => {
       { x: 14, y: 14, side: 'west' },
       { x: 9, y: 20, side: 'west' },
     ]);
+    expect(plan.landscape.roofRuns).toEqual([
+      { x: 2, y: 16, width: 4 },
+      { x: 13, y: 16, width: 4 },
+      { x: 2, y: 20, width: 4 },
+      { x: 13, y: 20, width: 4 },
+    ]);
     expect(chroniclesFirstPersonScenePlan({ mapId: 'crypt-eight-squares' }).landscape).toBeNull();
   });
 

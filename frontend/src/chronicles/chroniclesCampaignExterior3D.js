@@ -166,6 +166,56 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
   }
 }
 
+// Pitched roof silhouettes on authored four-cell solid wall runs. The six
+// triangles are shared by ONE instanced mesh, with no new collisions and no
+// per-house geometry/material churn. Saved party cells never change.
+function addSettlementRoofRuns(town, { grid, blocked, center, runs }) {
+  if (!Array.isArray(runs) || !runs.length) return;
+  const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
+  const seen = new Set();
+  const valid = [];
+  for (const run of runs.slice(0, 12)) {
+    const { x, y, width } = run || {};
+    const id = x + ',' + y;
+    if (!Number.isInteger(x) || !Number.isInteger(y) || width !== 4
+      || seen.has(id) || ![0, 1, 2, 3].every(dx => solid.has((x + dx) + ',' + y))
+      || ![0, 1, 2, 3].some(dx =>
+        grid[y - 1]?.[x + dx] === '.' || grid[y + 1]?.[x + dx] === '.')) continue;
+    seen.add(id);
+    valid.push(run);
+  }
+  if (!valid.length) return;
+  const length = CELL * 4 - 0.16;
+  const depth = CELL - 0.16;
+  const vertices = new Float32Array([
+    -length / 2, 0, -depth / 2,
+    length / 2, 0, -depth / 2,
+    -length / 2, 0, depth / 2,
+    length / 2, 0, depth / 2,
+    -length / 2, 0.92, 0,
+    length / 2, 0.92, 0,
+  ]);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geometry.setIndex([0, 1, 5, 0, 5, 4, 4, 5, 3, 4, 3, 2, 0, 4, 2, 1, 3, 5]);
+  geometry.computeVertexNormals();
+  const roofs = new THREE.InstancedMesh(
+    geometry, material(0x775343, { side: THREE.DoubleSide, roughness: 0.95 }), valid.length,
+  );
+  const dummy = new THREE.Object3D();
+  valid.forEach(({ x, y }, index) => {
+    const [wx, wz] = gridToWorld(x + 1.5, y, center);
+    dummy.position.set(wx, 1.56, wz);
+    dummy.updateMatrix();
+    roofs.setMatrixAt(index, dummy.matrix);
+  });
+  roofs.instanceMatrix.needsUpdate = true;
+  roofs.name = 'chronicles-town-south-pitched-roofs';
+  roofs.castShadow = false;
+  roofs.receiveShadow = true;
+  town.add(roofs);
+}
+
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
   const grid = scenePlan.grid || [];
   const width = Math.max(1, Number(scenePlan.width) || grid[0]?.length || 19);
@@ -300,6 +350,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     addSettlementWallLanterns(town, {
       grid, blocked, center: sceneCenter,
       placements: scenePlan.landscape?.wallLanterns,
+    });
+    addSettlementRoofRuns(town, {
+      grid, blocked, center: sceneCenter,
+      runs: scenePlan.landscape?.roofRuns,
     });
     // Trees stand outside the town wall so no walkable cell gains a blocker.
     TOWN_TREE_CELLS(width, height).forEach(([x, y], index) => {

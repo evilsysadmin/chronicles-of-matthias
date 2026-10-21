@@ -178,6 +178,33 @@ describe('Chronicles file-authored exterior renderer', () => {
     // Lantern depth stays within the 4m solid cell, not the walkable street.
     expect(1.90 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
     expect(1.88 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
+    // Four existing solid street-wall strips now read as shallow houses with
+    // sloping roofs. One shared six-triangle geometry keeps the skyline cheap.
+    const roofRuns = swordhavenFirstBook.landscape.roofRuns;
+    expect(roofRuns).toEqual([
+      { x: 2, y: 16, width: 4 },
+      { x: 13, y: 16, width: 4 },
+      { x: 2, y: 20, width: 4 },
+      { x: 13, y: 20, width: 4 },
+    ]);
+    const roofs = town.getObjectByName('chronicles-town-south-pitched-roofs');
+    expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(roofs.count).toBe(4);
+    expect(roofs.castShadow).toBe(false);
+    expect(roofs.geometry.getAttribute('position').count).toBe(6);
+    expect(roofs.geometry.index.count).toBe(18);
+    roofs.geometry.computeBoundingBox();
+    expect(roofs.geometry.boundingBox.max.x).toBeLessThan(8);
+    expect(roofs.geometry.boundingBox.max.z).toBeLessThan(2);
+    for (const [index, run] of roofRuns.entries()) {
+      expect(grid[run.y].slice(run.x, run.x + run.width)).toBe('####');
+      expect(grid[run.y - 1].slice(run.x, run.x + run.width)).toContain('.');
+      roofs.getMatrixAt(index, facadeMatrix);
+      const roof = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
+      expect(roof.x).toBeCloseTo((run.x + 1.5 - center.x) * 4);
+      expect(roof.y).toBeCloseTo(1.56);
+      expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
+    }
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
