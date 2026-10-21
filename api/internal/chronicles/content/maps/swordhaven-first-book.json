@@ -922,7 +922,49 @@
       "visualFacing": 2
     }
   ],
-  "treasures": [],
+  "treasures": [
+    {
+      "id": "swordhaven-south-forgotten-crate",
+      "kind": "pickup",
+      "visualType": "chest",
+      "x": 9,
+      "y": 17,
+      "label": "Registrar el cajón olvidado",
+      "when": [
+        {
+          "key": "swordhavenSouthCrateOpened",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "swordhavenSouthCrateOpened",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 4
+          },
+          {
+            "type": "grant-item",
+            "itemId": "healing-potion",
+            "name": "Poción de curación",
+            "description": "Cura 15 PV a un héroe.",
+            "quantity": 1
+          }
+        ],
+        "message": "Detrás de unas tablas aparece un cajón con cuatro monedas y una poción de curación. Matthias declara que la contabilidad del barrio sur es creativa.",
+        "journal": {
+          "id": "swordhaven-south-hidden-crate",
+          "title": "Un cajón entre callejones",
+          "body": "En un recodo del barrio sur de Swordhaven, la compañía recupera cuatro monedas y una poción de un cajón escondido.",
+          "sigil": "◆"
+        }
+      }
+    }
+  ],
   "traps": [],
   "exits": [
     {
