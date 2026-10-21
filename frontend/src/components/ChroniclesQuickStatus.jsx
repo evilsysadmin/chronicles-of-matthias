@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useEscapeToClose } from '../useEscapeToClose.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesQuickStatus.css';
 
 // MM3's quick reference (G): the whole company at a glance. A row opens
@@ -21,7 +22,11 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
       <section className="chronicles-quick-status" role="dialog" aria-modal="true" aria-labelledby="chronicles-quick-status-title"
         onKeyDown={(event) => {
           event.stopPropagation();
-          if (event.key === 'g' || event.key === 'G') { event.preventDefault(); onClose(); }
+          if (event.key === 'g' || event.key === 'G') { event.preventDefault(); onClose(); return; }
+          // Directly open the matching dossier from G, including during
+          // initiative: inspecting a member never transfers their turn.
+          const hero = chroniclesPartyHotkeyMember(event, rows);
+          if (hero) { event.preventDefault(); onOpenSheet(hero.id); }
         }}>
         <header>
           <div>
@@ -43,7 +48,7 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
           </div>
           {rows.map((row) => (
             <button key={row.id} type="button" role="row" className="chronicles-quick-status__row" data-condition={row.condition}
-              aria-label={`${row.name}: ${row.hp} de ${row.maxHp} PV. Abrir ficha`} onClick={() => onOpenSheet(row.id)}>
+              aria-label={`Tecla ${row.slot}: ${row.name}: ${row.hp} de ${row.maxHp} PV. Abrir ficha`} onClick={() => onOpenSheet(row.id)}>
               <span role="cell">{row.slot}</span>
               <span role="cell" className="is-name"><b>{row.name}</b><small>{row.classLabel}</small></span>
               <span role="cell">{row.level}</span>
@@ -57,7 +62,7 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
         </div>
         <footer>
           <span>ORO <b>{gold}</b></span>
-          <small>Toca un héroe para ver su ficha · G o Esc para cerrar</small>
+          <small>Toca un héroe o pulsa 1–4 para ver su ficha · G o Esc para cerrar</small>
         </footer>
       </section>
     </div>

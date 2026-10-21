@@ -152,6 +152,32 @@ try {
         await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
       }
 
+      // G's own dialog must consume the same 1–4 keys as the hero dock.
+      // This is a real Quick Status → Character Sheet journey, not a mock row.
+      if (width === 390 || width === 1280) {
+        await page.goto(url + '?view=quick-status', { waitUntil: 'domcontentloaded' });
+        const status = page.getByRole('dialog', { name: 'ESTADO DEL GRUPO' });
+        await status.waitFor({ state: 'visible' });
+        assert.match(await status.locator('footer').innerText(), /1–4/);
+        await page.keyboard.press('Control+4');
+        await page.keyboard.press('5');
+        assert.equal(await status.count(), 1, 'Unsupported or modified keys leave G open');
+        await page.keyboard.press('4');
+        await status.waitFor({ state: 'hidden' });
+        const faustStatusSheet = page.getByRole('dialog', { name: 'Faust' });
+        await faustStatusSheet.waitFor({ state: 'visible' });
+        assert.equal(await page.getByRole('dialog').count(), 1,
+          'G → 4 must display one dossier, not overlay a second modal');
+        await page.keyboard.press('1');
+        await page.getByRole('dialog', { name: 'Matthias' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.getByRole('dialog').count(), 0);
+        await page.locator('[data-reopen-quick-status]').click();
+        await status.waitFor({ state: 'visible' });
+        await page.keyboard.press('g');
+        await status.waitFor({ state: 'hidden' });
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
