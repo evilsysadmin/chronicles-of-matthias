@@ -7,15 +7,19 @@ import {
   chroniclesEnemyTargetAhead,
   chroniclesOpeningVolleyShooters,
   chroniclesTileAt,
+  chroniclesContextualContentAction,
   createChroniclesState,
   chroniclesReduce,
 } from '../src/chroniclesOfMatthias.js';
 import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
 import { chroniclesTacticsUse } from '../src/chroniclesOfMatthiasTactics.js';
+import { chroniclesApplyArrival } from '../src/chronicles/chroniclesArrival.js';
+import { chroniclesNpcDialogueForState } from '../src/chronicles/chroniclesNpcDialogue.js';
 import { chroniclesPartyBark } from '../src/chroniclesOfMatthiasBarks.js';
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from '../src/chronicles/chroniclesContentRuntime.js';
 import { createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
 import ChroniclesFirstSteps from '../src/components/ChroniclesFirstSteps.jsx';
+import ChroniclesFirstAudienceCue from '../src/components/ChroniclesFirstAudienceCue.jsx';
 import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue.jsx';
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
@@ -209,6 +213,19 @@ function RealJournalHotkeyFlow() {
   );
 }
 
+// Use the genuine First Book quest and the real map/NPC interaction
+// resolver. The fixture only observes a click; it does not award story flags.
+function actualMayorInvitation() {
+  const arrived = chroniclesApplyArrival(createChroniclesState('swordhaven-first-book'));
+  const state = { ...arrived, x: 11, y: 10 };
+  const contextualAction = chroniclesContextualContentAction(state);
+  const npc = chroniclesNpcDialogueForState(state, contextualAction);
+  if (contextualAction?.id !== 'swordhaven-mayor' || npc?.id !== 'swordhaven-mayor') {
+    throw new Error('No real mayor action at Swordhaven door');
+  }
+  return { state, contextualAction, npc };
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -221,6 +238,10 @@ if (view === 'threat') {
     runId="qa-first-hour-threat" />;
   document.body.dataset.enemyId = target.enemy.id;
   document.body.dataset.realShooters = String(shooters);
+} else if (view === 'mayor') {
+  const { state, contextualAction, npc } = actualMayorInvitation();
+  content = <ChroniclesFirstAudienceCue state={state} contextualAction={contextualAction}
+    npc={npc} onTalk={() => { document.body.dataset.mayorActionRequested = 'true'; }} />;
 } else if (view === 'payment') {
   const { bark, gold } = earnedPayment();
   content = <ChroniclesPartyBark bark={bark} />;
