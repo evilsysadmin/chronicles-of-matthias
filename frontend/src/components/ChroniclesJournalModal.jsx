@@ -6,6 +6,16 @@ import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import { chroniclesQuestRecordedEvents } from '../chronicles/chroniclesQuestRecordedEvents.js';
 import './ChroniclesJournalModal.css';
 
+// Never invoke Element.scrollIntoView() from this portal: that API may also
+// move the underlying document and 3D exploration shell. Only turn the book's
+// own scrollable leaf; the caller can focus without a secondary scroll.
+function revealWithinBook(viewport, target) {
+  if (!viewport || !target) return;
+  const pageBounds = viewport.getBoundingClientRect();
+  const targetBounds = target.getBoundingClientRect();
+  viewport.scrollTop += (targetBounds.top + targetBounds.bottom - pageBounds.top - pageBounds.bottom) / 2;
+}
+
 // One readable page at a time. The old side-by-side quest dashboard left half
 // the screen blank when an expedition had few folios.
 export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose, onTrack = null }) {
@@ -89,7 +99,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     const target = Array.from(scrollRef.current?.querySelectorAll('[data-chronicles-memo-id]') || [])
       .find((element) => element.getAttribute('data-chronicles-memo-id') === memoryJumpId);
     if (!target) return;
-    target.scrollIntoView({ block: 'center', behavior: 'auto' });
+    revealWithinBook(scrollRef.current, target);
     target.focus({ preventScroll: true });
   }, [open, chapter, memoryJumpId]);
 
@@ -98,8 +108,9 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     const quest = Array.from(scrollRef.current?.querySelectorAll('[data-chronicles-quest-id]') || [])
       .find((element) => element.getAttribute('data-chronicles-quest-id') === returnToQuestId);
     if (quest) {
-      quest.scrollIntoView({ block: 'center', behavior: 'auto' });
-      quest.querySelector('.chronicles-journal-modal__quest-heading')?.focus({ preventScroll: true });
+      const heading = quest.querySelector('.chronicles-journal-modal__quest-heading');
+      revealWithinBook(scrollRef.current, heading);
+      heading?.focus({ preventScroll: true });
     }
     setReturnToQuestId(null);
   }, [open, chapter, returnToQuestId]);

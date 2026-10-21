@@ -50,6 +50,17 @@ try {
       assert.match(await first.innerText(), /Camino de los Estandartes/);
       assert.match(await first.innerText(), /mojón sin nombre/);
       await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"]').waitFor();
+      // Make the underlying world scrollable in this CI-only fixture, then
+      // ensure book navigation never moves the document behind the portal.
+      // Constrain only the journal leaf to exercise real internal scrolling.
+      const worldScroll = await page.evaluate(() => {
+        document.documentElement.style.minHeight = '3000px';
+        document.body.style.minHeight = '3000px';
+        const leaf = document.querySelector('.chronicles-journal-modal__scroll');
+        leaf.style.maxHeight = '180px';
+        window.scrollTo(0, 300);
+        return window.scrollY;
+      });
       // An actual recorded quest milestone is a direct link to its original
       // folio. Preserve the selected quest when navigating back to Encargos.
       await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"] .chronicles-journal-modal__quest-event-link').click();
@@ -59,6 +70,8 @@ try {
       assert.match(await sourceFolio.innerText(), /Encargo del alguacil/);
       assert.equal(await sourceFolio.evaluate((element) => document.activeElement === element), true,
         'Jumped-to original folio should receive keyboard/screen-reader focus');
+      assert.equal(await page.evaluate(() => window.scrollY), worldScroll,
+        'Jumping to saved memories must not move the world behind the book');
       assert.equal(await sourceFolio.getAttribute('class'), 'is-jump-target');
       const returnToQuest = dialog.locator('[data-chronicles-return-to-quest="banner-contract"]');
       await returnToQuest.click();
@@ -67,6 +80,13 @@ try {
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading')
         .evaluate((element) => document.activeElement === element), true,
         'Return bookmark must focus the actual quest heading');
+      assert.equal(await page.evaluate(() => window.scrollY), worldScroll,
+        'Returning to the quest must not scroll the underlying world');
+      await page.evaluate(() => {
+        document.querySelector('.chronicles-journal-modal__scroll').style.maxHeight = '';
+        document.documentElement.style.minHeight = '';
+        document.body.style.minHeight = '';
+      });
       assert.equal(await sourceFolio.count(), 0, 'Hidden chapter should not retain focusable folio');
 
       assert.equal(await first.locator('[data-chronicles-quest-event="first-book-banner-found"]').count(), 0,
