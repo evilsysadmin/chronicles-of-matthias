@@ -90,6 +90,18 @@ try {
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
         'Character sheet must fit vertically: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
+
+      // Real keyboard browsing in the SAME open equipment folio. Changing
+      // heroes must not close it, reset to Estado, or change any equipment.
+      await page.keyboard.press('4');
+      await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+      assert.match(await sheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, '4 must retain the equipment tab for the fourth hero');
+      assert.equal(await page.getByRole('dialog').count(), 1);
+      await page.keyboard.press('1');
+      await page.getByRole('dialog', { name: 'Matthias' }).waitFor({ state: 'visible' });
+      assert.match(await sheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, '1 must restore Matthias while keeping the equipment tab');
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The MM3 double-weapon summary is optional in the test fixture; the
