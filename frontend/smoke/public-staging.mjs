@@ -67,7 +67,9 @@ try {
       assert.ok(registration.ok, `Smoke registration HTTP ${registration.status}`);
       token = (await registration.json()).token;
       assert.ok(token, 'Missing cleanup token after registration');
-      ctx = await browser.newContext({ viewport });
+      // A narrow desktop viewport is not a touch device. Exercise true tap
+      // dispatch in the 390px public run without changing its viewport metrics.
+      ctx = await browser.newContext({ viewport, hasTouch: viewport.width === 390 });
       const page = await ctx.newPage();
       // The live staging frontend delegates login to Chess Studio's shared
       // ShadowOps IdP. Stub ONLY that cross-origin credential exchange:
@@ -258,6 +260,27 @@ try {
       )?.textContent?.trim() === name, firstHeroName);
       assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
         /Equipo/, 'Shortcut 1 must preserve the equipment tab');
+
+      if (viewport.width === 390) {
+        // Real touch input, not a mouse click on a small viewport.
+        await heroFolio.getByRole('button', {
+          name: 'Ver ficha de ' + fourthHeroName, exact: true,
+        }).tap();
+        await page.waitForFunction((name) => document.querySelector(
+          '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
+        )?.textContent?.trim() === name, fourthHeroName);
+        assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+          /Equipo/, 'Touch selection must keep the Equipment tab');
+        await heroFolio.getByRole('button', {
+          name: 'Ver ficha de ' + firstHeroName, exact: true,
+        }).tap();
+        await page.waitForFunction((name) => document.querySelector(
+          '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
+        )?.textContent?.trim() === name, firstHeroName);
+        assert.equal(await heroFolio.count(), 1, 'Touch hero navigation must not create extra dialogs');
+        assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+          /Equipo/, 'Returning by touch must preserve the Equipment tab');
+      }
       await heroFolio.getByRole('button', { name: 'Cerrar ficha' }).click();
       await heroFolio.waitFor({ state: 'hidden', timeout: 8_000 });
 
