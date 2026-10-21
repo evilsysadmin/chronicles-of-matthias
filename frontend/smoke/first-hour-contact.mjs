@@ -194,7 +194,18 @@ try {
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
-      await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
+      // Chromium occasionally aborts this final fixture navigation after
+      // several WebGL/component pages. Retry only ERR_ABORTED, never errors
+      // from the actual guide render or interaction checks that follow.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
+          break;
+        } catch (error) {
+          if (attempt || !String(error.message).includes('net::ERR_ABORTED')) throw error;
+          await page.waitForTimeout(180);
+        }
+      }
       const allGuides = page.locator('[data-chronicles-first-steps], [data-chronicles-first-threat]');
       for (let step = 0; step < 8; step += 1) {
         const visibleGuide = step % 2 === 0
