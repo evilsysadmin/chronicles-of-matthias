@@ -205,8 +205,8 @@ try {
       await dialog.getByText('El viento sopló desde el bosque.').waitFor();
       await page.screenshot({ path: 'smoke-journal-memories-' + width + '.png' });
       await tabQuests.click();
-      assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
-        'Switching back must retain the reader’s selected entry');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
+        'Switching chapters must retain the last quest explicitly chosen from a memory');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.body.style.overflow), '',
