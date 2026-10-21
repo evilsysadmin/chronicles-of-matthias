@@ -285,6 +285,139 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-a2-foe-7",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 2,
+      "y": 5,
+      "hpKey": "terra_a2Foe7Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a2-foe-8",
+      "visualType": "bandit-captain",
+      "name": "Brenna la Tuerta",
+      "x": 18,
+      "y": 9,
+      "hpKey": "terra_a2Foe8Hp",
+      "maxHp": 41,
+      "retaliation": 6,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a Brenna la Tuerta con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campA2LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 22
+          }
+        ],
+        "journal": {
+          "id": "terra-a2-camp",
+          "title": "Cae Brenna la Tuerta",
+          "body": "Brenna la Tuerta mandaba una compañía de la Corona antes de que el Rey faltara. Ahora cobra peaje a quien pase por las Colinas Rotas. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campA2LeaderDown",
+      "blockingMessage": "Brenna la Tuerta no deja pasar a nadie sin pagar."
+    },
+    {
+      "id": "terra-a2-foe-9",
+      "visualType": "bandit-archer",
+      "name": "ballestero desertor",
+      "x": 8,
+      "y": 9,
+      "hpKey": "terra_a2Foe9Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero desertor usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a2-foe-10",
+      "visualType": "bandit-archer",
+      "name": "ballestera desertora",
+      "x": 5,
+      "y": 7,
+      "hpKey": "terra_a2Foe10Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestera desertora usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

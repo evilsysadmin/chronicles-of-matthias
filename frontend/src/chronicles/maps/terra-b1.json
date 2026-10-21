@@ -255,6 +255,127 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-b1-foe-7",
+      "visualType": "dire-wolf",
+      "name": "lobezno crecido",
+      "x": 12,
+      "y": 5,
+      "hpKey": "terra_b1Foe7Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lobezno crecido usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-8",
+      "visualType": "scavenger-knight",
+      "name": "caballero helado",
+      "x": 8,
+      "y": 9,
+      "hpKey": "terra_b1Foe8Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con caballero helado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-9",
+      "visualType": "ice-wraith",
+      "name": "espectro de escarcha",
+      "x": 18,
+      "y": 12,
+      "hpKey": "terra_b1Foe9Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con espectro de escarcha usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b1-foe-10",
+      "visualType": "dire-wolf",
+      "name": "lobo de las cumbres",
+      "x": 2,
+      "y": 4,
+      "hpKey": "terra_b1Foe10Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 5
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lobo de las cumbres usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
