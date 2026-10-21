@@ -31,6 +31,7 @@ function MenuShortcutFixture() {
       }
       if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
       if (action === 'close') {
+        document.querySelector('.chronicles-game-menu > summary')?.focus();
         setConfirmExitWithoutSaving(false);
         setOpen(false);
       }
@@ -69,8 +70,14 @@ function MenuShortcutFixture() {
             }}>
             <summary aria-label="Abrir o cerrar menú de aventura">MENÚ</summary>
             <ChroniclesAdventureMenu
-              onClose={() => setOpen(false)}
-              onContinue={() => setOpen(false)}
+              onClose={() => {
+                document.querySelector('.chronicles-game-menu > summary')?.focus();
+                setOpen(false);
+              }}
+              onContinue={() => {
+                document.querySelector('.chronicles-game-menu > summary')?.focus();
+                setOpen(false);
+              }}
               onJournal={() => setOpen(false)}
               onQuickStatus={() => setOpen(false)}
               onSave={() => setSaveRequests((n) => n + 1)}
