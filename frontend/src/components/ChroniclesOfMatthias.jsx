@@ -165,7 +165,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -1198,6 +1198,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
       if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
+      const menuShortcut = chroniclesAdventureMenuShortcut(event, {
+        menuOpen, saveBusy, confirmExitWithoutSaving,
+      });
+      if (menuShortcut) {
+        event.preventDefault();
+        if (menuShortcut === 'save') void persistCheckpoint(stateRef.current, 'manual');
+        // Q starts the same explicit confirmation as "Salir sin guardar";
+        // a second Q can never commit data loss.
+        if (menuShortcut === 'request-exit') setConfirmExitWithoutSaving(true);
+        return;
+      }
       if (event.key === 'Tab') {
         if (event.shiftKey || target?.closest?.('.chronicles-game-menu')) return;
         event.preventDefault();
@@ -1273,7 +1284,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet, quickStatusOpen, ready, sheetMemberId, spellMenuOpen]);
+  }, [attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
+    confirmExitWithoutSaving, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet,
+    persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen]);
 
   const startFreshGame = (entryMapId = null) => {
     setFirstStepsOpen(false);

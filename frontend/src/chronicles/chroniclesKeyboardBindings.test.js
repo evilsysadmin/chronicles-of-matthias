@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -87,5 +87,42 @@ describe('Chronicles shared party slot numbering', () => {
     expect(chroniclesPartyHotkeySlots([{ slotId: 'knight' }])[0].slot).toBe(4);
     expect(chroniclesPartyHotkeySlots([{ id: 'alpha' }, { id: 'beta' }])
       .map(({ slot }) => slot)).toEqual([1, 2]);
+  });
+});
+
+
+describe('Chronicles adventure menu keyboard shortcuts', () => {
+  const keyEvent = (key, patch = {}) => ({
+    key, target: { isContentEditable: false, closest: () => null }, ...patch,
+  });
+
+  it('S saves and Q requests safe exit confirmation only while the adventure menu is open', () => {
+    for (const key of ['s', 'S']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: true })).toBe('save');
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: false })).toBeNull();
+    }
+    for (const key of ['q', 'Q']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: true })).toBe('request-exit');
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: false })).toBeNull();
+    }
+    expect(chroniclesAdventureMenuShortcut(keyEvent('a'), { menuOpen: true })).toBeNull();
+    expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
+  });
+
+  it('never saves twice, confirms exit by holding Q, or hijacks text and audio inputs', () => {
+    const menuOpen = { menuOpen: true };
+    for (const guard of ['repeat', 'defaultPrevented', 'isComposing', 'ctrlKey', 'altKey', 'metaKey']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent('s', { [guard]: true }), menuOpen)).toBeNull();
+      expect(chroniclesAdventureMenuShortcut(keyEvent('q', { [guard]: true }), menuOpen)).toBeNull();
+    }
+    for (const key of ['s', 'q']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: true, saveBusy: true })).toBeNull();
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key),
+        { menuOpen: true, confirmExitWithoutSaving: true })).toBeNull();
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key, { target: { isContentEditable: true } }), menuOpen)).toBeNull();
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key, {
+        target: { closest: () => ({ tagName: 'INPUT' }) },
+      }), menuOpen)).toBeNull();
+    }
   });
 });

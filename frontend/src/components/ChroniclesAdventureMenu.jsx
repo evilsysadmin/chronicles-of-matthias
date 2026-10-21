@@ -30,14 +30,14 @@ export default function ChroniclesAdventureMenu({
             <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
             <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
             <button type="button" className="chronicles-game-menu__save" onClick={onSave} disabled={saveBusy}>
-              {saveBusy ? 'Guardando…' : 'Guardar partida'}
+              {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
             </button>
             <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
             {isAdmin && (
               <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
             )}
             {!confirmExitWithoutSaving ? (
-              <button type="button" className="chronicles-game-menu__leave" onClick={onRequestExit}>Salir sin guardar</button>
+              <button type="button" className="chronicles-game-menu__leave" onClick={onRequestExit}>Salir sin guardar · Q</button>
             ) : (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
                 <small>Perderás lo jugado desde el último guardado o cambio de área.</small>
@@ -53,7 +53,7 @@ export default function ChroniclesAdventureMenu({
             hint="First Verse en el libro de expediciones; Second Verse durante la aventura." />
         </section>
       </div>
-      <small className="chronicles-game-menu__hint">ESC · cerrar · TAB · navegar</small>
+      <small className="chronicles-game-menu__hint">S · guardar · Q · salir · ESC · cerrar · TAB · navegar</small>
     </div>
   );
 }
