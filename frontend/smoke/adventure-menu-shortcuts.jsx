@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
-import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -17,6 +17,7 @@ function MenuShortcutFixture() {
   const [saveRequests, setSaveRequests] = useState(0);
   const [exitRequests, setExitRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
+  const [selectedHero, setSelectedHero] = useState('matthias');
   const [globalEscapeCount, setGlobalEscapeCount] = useState(0);
 
   // Mirrors the production back stack, which captures Escape on document
@@ -34,6 +35,15 @@ function MenuShortcutFixture() {
 
   useEffect(() => {
     const keyDown = (event) => {
+      // The same selection resolver as the game must NOT mutate the active
+      // hero while an unrelated menu (especially Q's prompt) is open.
+      const hero = chroniclesPartyHotkeyMember(event, [
+        { id: 'matthias' }, { id: 'rook' }, { id: 'bishop' }, { id: 'knight' },
+      ], { menuOpen: open });
+      if (hero) {
+        setSelectedHero(hero.id);
+        return;
+      }
       const action = chroniclesAdventureMenuShortcut(event, {
         menuOpen: open, saveBusy, confirmExitWithoutSaving,
       });
@@ -62,6 +72,7 @@ function MenuShortcutFixture() {
     }}
       data-shortcut-menu-open={String(open)}
       data-shortcut-confirm={String(confirmExitWithoutSaving)}
+      data-shortcut-hero={selectedHero}
       data-shortcut-global-esc={globalEscapeCount}>
       <div className="chronicles-stage" style={{ height: '100%', minHeight: 0 }}>
         <div style={{ position: 'absolute', left: 8, bottom: 8, zIndex: 1, display: 'grid', gap: 6 }}>

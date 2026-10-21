@@ -1260,7 +1260,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         else if (event.key === 'Enter' || event.key === 'y' || event.key === 'Y' || event.key === 's' || event.key === 'S') acceptAreaTravel();
         return;
       }
-      const hero = chroniclesPartyHotkeyMember(event, current.party);
+      const hero = chroniclesPartyHotkeyMember(event, current.party, { menuOpen });
       if (hero) {
         event.preventDefault();
         // Inspecting a hero does not grant the right to act out of turn.

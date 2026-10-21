@@ -103,8 +103,10 @@ export function chroniclesPartyHotkeySlots(party) {
 }
 
 // Pure, shared event filter for the four party-selection hotkeys.
-export function chroniclesPartyHotkeyMember(event, party) {
-  if (!event || !/^[1-4]$/.test(event.key) || event.repeat || event.defaultPrevented
+// A modal adventure menu owns keyboard focus: 1–4 must not silently change
+// the active hero underneath an unrelated Save/Quit confirmation.
+export function chroniclesPartyHotkeyMember(event, party, { menuOpen = false } = {}) {
+  if (menuOpen || !event || !/^[1-4]$/.test(event.key) || event.repeat || event.defaultPrevented
     || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
   const target = event.target;
   if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
