@@ -140,6 +140,13 @@ jobs:
             echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
             exit 66
           fi
+          prior_ids="$(jq -r --arg name "$receipt_name" '
+            [.artifacts[] | select(.name == $name and .expired == false)
+              | .workflow_run.id | select(type == "number" and . > 0)] | unique[]
+          ' <<<"$receipts")" || {
+            echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
+            exit 66
+          }
           while IFS= read -r prior_id; do
             [[ "$prior_id" =~ ^[0-9]+$ ]] || continue
             origin="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api "repos/evilsysadmin/chronicles-of-matthias/actions/runs/$prior_id")"
@@ -153,10 +160,7 @@ jobs:
               printf '**State: previously dispatched.** Trusted completed handoff receipt for `%s`; no duplicate Infra request.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
-          done < <(jq -r --arg name "$receipt_name" '
-            [.artifacts[] | select(.name == $name and .expired == false)
-              | .workflow_run.id | select(type == "number" and . > 0)] | unique[]
-          ' <<<"$receipts")
+          done <<<"$prior_ids"
           # Never pass the token, SHA or environment from an untrusted payload.
           GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-api-staging.yml \
             --repo evilsysadmin/shadowops-infra --ref main \
