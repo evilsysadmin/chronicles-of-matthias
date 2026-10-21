@@ -272,6 +272,40 @@ try {
         await journal.waitFor({ state: 'hidden' });
       }
 
+      // Real C/CAST → hero sheet, without stealing Aziz's combat turn.
+      if (width === 390 || width === 1280) {
+        await gotoFixture(page, url + '?view=spell-menu');
+        const cast = page.getByRole('dialog', { name: 'Grimorio de magia' });
+        await cast.waitFor({ state: 'visible' });
+        assert.match(await cast.locator('footer').innerText(), /1–4/);
+        await page.keyboard.press('Control+4');
+        await page.keyboard.press('5');
+        assert.equal(await cast.count(), 1);
+        await page.keyboard.press('4');
+        await cast.waitFor({ state: 'hidden' });
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+        assert.equal(await page.getByRole('dialog').count(), 1);
+        assert.equal(await page.locator('[data-chronicles-cast-test-actor]').getAttribute('data-chronicles-cast-test-actor'), 'bishop');
+        assert.equal(await page.locator('[data-chronicles-cast-test-actions]').getAttribute('data-chronicles-cast-test-actions'), '0');
+        await page.keyboard.press('Escape');
+        await page.locator('[data-reopen-cast]').click();
+        await cast.waitFor({ state: 'visible' });
+        assert.equal(await cast.getAttribute('data-chronicles-spell-menu'), 'bishop');
+        await page.keyboard.press('Escape');
+        await cast.waitFor({ state: 'hidden' });
+
+        await gotoFixture(page, url + '?view=spell-menu-enemy');
+        const enemyGrimoire = page.getByRole('dialog', { name: 'Grimorio de magia' });
+        await enemyGrimoire.waitFor({ state: 'visible' });
+        const spells = enemyGrimoire.locator('[data-chronicles-cast]');
+        assert.ok(await spells.count() > 0);
+        assert.equal(await spells.evaluateAll((nodes) => nodes.every((node) => node.disabled)), true);
+        assert.match(await enemyGrimoire.locator('footer').innerText(), /turno de otro/);
+        await page.keyboard.press('4');
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+        assert.equal(await page.locator('[data-chronicles-cast-test-actions]').getAttribute('data-chronicles-cast-test-actions'), '0');
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.

@@ -7,6 +7,8 @@ import {
   chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
 import { chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
+import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 
 const SPELL_KINDS = Object.freeze({
   heal: { label: 'Curación', glyph: '✚' },
@@ -25,7 +27,8 @@ export function chroniclesSpellMenuKind(kind) {
 // A single folio owns the focus while it is open. This component only
 // chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
-  state, member, itemUser = member, onCast, onUse = () => {}, onClose, initialTab = 'spells',
+  state, member, itemUser = member, onCast, onUse = () => {}, onClose,
+  onOpenSheet = null, initialTab = 'spells',
 }) {
   const spells = chroniclesMemberSpells(state, member);
   const items = chroniclesCarriedConsumables(state);
@@ -55,6 +58,15 @@ export default function ChroniclesSpellMenu({
   }, [onClose]);
 
   function trapFocus(event) {
+    // The open folio owns shortcuts. Inspecting another hero never
+    // transfers combat initiative or unlocks their spells.
+    const hero = onOpenSheet && chroniclesPartyHotkeyMember(event, state?.party);
+    event.stopPropagation();
+    if (hero) {
+      event.preventDefault();
+      onOpenSheet(hero.id);
+      return;
+    }
     if (event.key !== 'Tab') return;
     const controls = [...(panelRef.current?.querySelectorAll('button:not([disabled])') || [])];
     if (!controls.length) return;
@@ -73,6 +85,8 @@ export default function ChroniclesSpellMenu({
   const maxSp = chroniclesMemberMaxSp(state, member);
   const school = CHRONICLES_SPELL_SCHOOLS[chroniclesMemberSchool(member)];
   const down = member.hp <= 0;
+  const actor = chroniclesCurrentInitiativeActor(state?.initiative);
+  const canAct = !state?.initiative || (actor?.kind === 'party' && actor.id === member.id);
   const stock = items.reduce((sum, entry) => sum + entry.quantity, 0);
   const actingMember = tab === 'items' && itemUser ? itemUser : member;
 
@@ -127,21 +141,21 @@ export default function ChroniclesSpellMenu({
           {tab === 'spells' ? (
             <ul className="chronicles-spell-menu__entries">
               {spells.map((spell, index) => {
-                const affordable = !down && sp >= spell.cost;
+                const affordable = canAct && !down && sp >= spell.cost;
                 const kind = chroniclesSpellMenuKind(spell.kind);
                 return (
                   <li key={spell.id}>
                     <button ref={index === 0 ? firstRef : undefined} type="button"
                       data-chronicles-cast={spell.id} data-cast-kind={spell.kind}
                       disabled={!affordable} onClick={() => onCast(spell.id)}
-                      title={down ? 'El personaje está fuera de combate' : sp < spell.cost ? 'No tienes suficientes PH' : `Lanzar ${spell.name}`}>
+                      title={!canAct ? 'No es el turno de este personaje' : down ? 'El personaje está fuera de combate' : sp < spell.cost ? 'No tienes suficientes PH' : `Lanzar ${spell.name}`}>
                       <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
                       <span className="chronicles-spell-menu__entry">
                         <strong>{spell.name}</strong>
                         <small>{spell.description}</small>
                         <span className="chronicles-spell-menu__kind">{kind.label}</span>
                       </span>
-                      <span className="chronicles-spell-menu__cost"><b>{spell.cost} PH</b><small>{affordable ? 'LANZAR' : 'SIN PH'}</small></span>
+                      <span className="chronicles-spell-menu__cost"><b>{spell.cost} PH</b><small>{affordable ? 'LANZAR' : !canAct ? 'ESPERA' : 'SIN PH'}</small></span>
                     </button>
                   </li>
                 );
@@ -155,14 +169,14 @@ export default function ChroniclesSpellMenu({
                   <li key={item.id}>
                     <button ref={index === 0 ? firstRef : undefined} type="button"
                       data-chronicles-use-item={item.id} data-cast-kind={item.kind}
-                      disabled={!itemUser || itemUser.hp <= 0} onClick={() => onUse(item.id)}>
+                      disabled={!canAct || !itemUser || itemUser.hp <= 0} onClick={() => onUse(item.id)}>
                       <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
                       <span className="chronicles-spell-menu__entry">
                         <strong>{item.name}</strong>
                         <small>{item.description}</small>
                         <span className="chronicles-spell-menu__kind">{kind.label}</span>
                       </span>
-                      <span className="chronicles-spell-menu__cost"><b>×{quantity}</b><small>{itemUser?.hp > 0 ? 'USAR' : 'NO DISP.'}</small></span>
+                      <span className="chronicles-spell-menu__cost"><b>×{quantity}</b><small>{canAct && itemUser?.hp > 0 ? 'USAR' : 'NO DISP.'}</small></span>
                     </button>
                   </li>
                 );
@@ -176,11 +190,13 @@ export default function ChroniclesSpellMenu({
           )}
         </div>
         <footer className="chronicles-spell-menu__folio-footer">
-          <span>{tab === 'items'
-            ? 'Usar un objeto gasta el turno de quien lo usa.'
-            : down ? 'El personaje no puede lanzar hechizos mientras esté caído.'
-              : 'Más hechizos en el gremio. La posada devuelve los PH.'}</span>
-          <kbd>ESC · CERRAR</kbd>
+          <span>{!canAct
+            ? 'Es el turno de otro combatiente: puedes consultar, no actuar.'
+            : tab === 'items'
+              ? 'Usar un objeto gasta el turno de quien lo usa.'
+              : down ? 'El personaje no puede lanzar hechizos mientras esté caído.'
+                : 'Más hechizos en el gremio. La posada devuelve los PH.'}</span>
+          <kbd>{onOpenSheet ? '1–4 · FICHAS  |  ' : ''}ESC · CERRAR</kbd>
         </footer>
       </section>
     </div>
