@@ -225,22 +225,22 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
     emissive: 0x98521b, emissiveIntensity: 0.7, roughness: 0.36,
   });
   const mounts = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.22, 0.95, 0.1), iron, valid.length,
+    new THREE.BoxGeometry(0.22, 0.95, 0.035), iron, valid.length,
   );
   const glass = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.38, 0.46, 0.12), amber, valid.length,
+    new THREE.BoxGeometry(0.38, 0.46, 0.035), amber, valid.length,
   );
   const caps = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.54, 0.1, 0.18), iron, valid.length,
+    new THREE.BoxGeometry(0.54, 0.1, 0.035), iron, valid.length,
   );
   const dummy = new THREE.Object3D();
   valid.forEach(({ x, y, dx, dy, yaw }, i) => {
     const [wx, wz] = gridToWorld(x, y, center);
     dummy.rotation.y = yaw;
     for (const [mesh, outward, height] of [
-      [mounts, 1.88, 1.68],
-      [glass, 1.90, 1.88],
-      [caps, 1.88, 2.14],
+      [mounts, 1.974, 1.68],
+      [glass, 1.974, 1.88],
+      [caps, 1.974, 2.14],
     ]) {
       dummy.position.set(wx + dx * outward, height, wz + dy * outward);
       dummy.updateMatrix();
