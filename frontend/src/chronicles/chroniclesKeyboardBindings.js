@@ -19,19 +19,29 @@ export function chroniclesCombatKeyMode(key) {
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
 
+/**
+ * Visible party order and numeric keys share this same stable slot contract.
+ * Missing canonical heroes leave holes rather than borrowing someone else's
+ * number. Arbitrary noncanonical rosters keep their historical 1–4 order.
+ */
+export function chroniclesPartyHotkeySlots(party) {
+  if (!Array.isArray(party)) return [];
+  const memberId = (member) => member?.slotId || member?.id;
+  if (party.some((member) => CHRONICLES_PARTY_SLOT_IDS.includes(memberId(member)))) {
+    return CHRONICLES_PARTY_SLOT_IDS.flatMap((id, index) => {
+      const member = party.find((candidate) => memberId(candidate) === id);
+      return member ? [{ slot: index + 1, member }] : [];
+    });
+  }
+  return party.slice(0, 4).map((member, index) => ({ slot: index + 1, member }));
+}
+
 // Pure, shared event filter for the four party-selection hotkeys.
 export function chroniclesPartyHotkeyMember(event, party) {
   if (!event || !/^[1-4]$/.test(event.key) || event.repeat || event.defaultPrevented
     || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
   const target = event.target;
   if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
-  if (!Array.isArray(party)) return null;
-  const slotId = CHRONICLES_PARTY_SLOT_IDS[Number(event.key) - 1];
-  const memberId = (member) => member?.slotId || member?.id;
-  const hero = party.find((member) => memberId(member) === slotId);
-  if (hero) return hero;
-  // Never substitute the wrong hero when a canonical party is incomplete.
-  // An unrelated small roster can still use the original positional contract.
-  if (party.some((member) => CHRONICLES_PARTY_SLOT_IDS.includes(memberId(member)))) return null;
-  return party[Number(event.key) - 1] || null;
+  return chroniclesPartyHotkeySlots(party)
+    .find(({ slot }) => slot === Number(event.key))?.member || null;
 }

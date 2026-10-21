@@ -4,17 +4,18 @@ import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesMM3Class } from './chroniclesMM3Rules.js';
 import { chroniclesArmsLabel } from './chroniclesWornGear.js';
+import { chroniclesPartyHotkeySlots } from './chroniclesKeyboardBindings.js';
 
 const CONDITION_LABELS = Object.freeze({ fresh: 'Bien', worn: 'Tocado', critical: 'Grave', down: 'Caído' });
 
 // MM3's Quick Reference: one line per hero with what matters between fights.
 export function chroniclesQuickStatusRows(state, levelOf = () => 1) {
-  return (state?.party || []).map((member, index) => {
+  return chroniclesPartyHotkeySlots(state?.party).map(({ member, slot }) => {
     const maxSp = chroniclesMemberMaxSp(state, member);
     const condition = chroniclesPartyCondition(member);
     return {
       id: member.id,
-      slot: index + 1,
+      slot,
       name: member.name,
       classLabel: chroniclesMM3Class(member.mm3?.classId)?.label || '—',
       level: levelOf(member.id),

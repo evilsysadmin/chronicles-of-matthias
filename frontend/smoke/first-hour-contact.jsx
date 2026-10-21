@@ -121,8 +121,13 @@ function RealGuidesReconciliationFlow() {
   );
 }
 
-function RealLootEquipmentFlow() {
-  const [data, setData] = useState(actualFirstSword);
+function RealLootEquipmentFlow({ reorderParty = false }) {
+  const [data, setData] = useState(() => {
+    const original = actualFirstSword();
+    return reorderParty
+      ? { ...original, state: { ...original.state, party: [...original.state.party].reverse() } }
+      : original;
+  });
   const [open, setOpen] = useState(false);
   const [memberId, setMemberId] = useState('matthias');
   const [progression] = useState(createChroniclesProgression);
@@ -161,8 +166,8 @@ if (view === 'threat') {
   const { bark, gold } = earnedPayment();
   content = <ChroniclesPartyBark bark={bark} />;
   document.body.dataset.earnedGold = String(gold);
-} else if (view === 'loot') {
-  content = <RealLootEquipmentFlow />;
+} else if (view === 'loot' || view === 'loot-reordered') {
+  content = <RealLootEquipmentFlow reorderParty={view === 'loot-reordered'} />;
 } else if (view === 'guides') {
   content = <RealGuidesReconciliationFlow />;
 } else {

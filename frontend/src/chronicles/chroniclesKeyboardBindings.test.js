@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -68,5 +68,24 @@ describe('Chronicles stable numerical party identity', () => {
   it('preserves the positional contract for noncanonical test/temporary rosters', () => {
     const custom = [{ id: 'alpha' }, { id: 'beta' }, { id: 'gamma' }, { id: 'delta' }];
     expect(chroniclesPartyHotkeyMember(key(4), custom).id).toBe('delta');
+  });
+});
+
+describe('Chronicles shared party slot numbering', () => {
+  const canonical = ['knight', 'bishop', 'matthias', 'rook']
+    .map((id) => ({ id }));
+  it('presents the same 1–4 slots as hotkeys, regardless of party array ordering', () => {
+    expect(chroniclesPartyHotkeySlots(canonical).map(({ slot, member }) => [slot, member.id]))
+      .toEqual([[1, 'matthias'], [2, 'rook'], [3, 'bishop'], [4, 'knight']]);
+  });
+  it('retains the fourth slot for Faust even with missing earlier members', () => {
+    expect(chroniclesPartyHotkeySlots([{ id: 'knight' }, { id: 'matthias' }])
+      .map(({ slot, member }) => [slot, member.id]))
+      .toEqual([[1, 'matthias'], [4, 'knight']]);
+  });
+  it('accepts creator slot IDs and preserves fallback numbering', () => {
+    expect(chroniclesPartyHotkeySlots([{ slotId: 'knight' }])[0].slot).toBe(4);
+    expect(chroniclesPartyHotkeySlots([{ id: 'alpha' }, { id: 'beta' }])
+      .map(({ slot }) => slot)).toEqual([1, 2]);
   });
 });
