@@ -283,6 +283,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
         aria-modal="true"
         aria-label={entry.label}
         data-chronicles-shop={entry.id}
+        data-chronicles-shop-room-theme={room?.id || "none"}
         onClick={(event) => event.stopPropagation()}
       >
         {room && (
