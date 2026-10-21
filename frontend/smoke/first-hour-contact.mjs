@@ -60,6 +60,10 @@ try {
       await page.goto(url + '?view=loot', { waitUntil: 'domcontentloaded' });
       const lootCue = page.locator('.chronicles-party-bark');
       await lootCue.waitFor({ state: 'visible', timeout: 20000 });
+      await page.waitForFunction(() => {
+        const node = document.querySelector('.chronicles-party-bark');
+        return node && Number(getComputedStyle(node).opacity) > 0.95;
+      }, null, { timeout: 5000 });
       const equipmentLink = page.getByRole('button', { name: 'Revisar equipo' });
       await equipmentLink.waitFor({ state: 'visible' });
       await page.screenshot({ path: 'smoke-first-loot-' + width + '.png' });
