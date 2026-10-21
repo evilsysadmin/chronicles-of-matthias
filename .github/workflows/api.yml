@@ -117,6 +117,8 @@ jobs:
           context: api
           platforms: linux/arm64,linux/amd64
           push: true
+          build-args: |
+            CHRONICLES_SOURCE_SHA=${{ github.sha }}
           tags: ${{ env.IMAGE }}:staging-${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
