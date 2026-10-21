@@ -228,12 +228,18 @@ try {
         const row = element.getBoundingClientRect();
         return {
           scrollTop: scroll.scrollTop,
+          scrollHeight: scroll.scrollHeight,
+          clientHeight: scroll.clientHeight,
+          rowTop: Math.round(row.top),
+          rowBottom: Math.round(row.bottom),
+          viewportTop: Math.round(viewport.top),
+          viewportBottom: Math.round(viewport.bottom),
           headingWithinBook: row.top >= viewport.top - 2 && row.bottom <= viewport.bottom + 2,
           focusedClose: document.activeElement?.getAttribute('aria-label') === 'Cerrar Crónica',
         };
       });
-      assert(followedGeometry.scrollTop > 0, 'Distant tracked quest should scroll the book');
-      assert(followedGeometry.headingWithinBook, 'Tracked quest heading should be visible on first opening');
+      assert(followedGeometry.scrollTop > 0, 'Distant tracked quest should scroll the book: ' + JSON.stringify(followedGeometry));
+      assert(followedGeometry.headingWithinBook, 'Tracked quest heading should be visible on first opening: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.focusedClose, 'Opening must preserve keyboard focus on dialog close');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
