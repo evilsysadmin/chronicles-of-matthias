@@ -19,7 +19,8 @@ export default function ChroniclesAdventureMenu({
 
   return (
     <div className="chronicles-game-menu__panel chronicles-game-menu__panel--folio"
-      role="dialog" aria-modal="true" aria-label="Menú de aventura" data-chronicles-adventure-menu>
+      role="dialog" aria-modal="true" aria-label="Menú de aventura" data-chronicles-adventure-menu
+      data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}>
       <div className="chronicles-game-menu__heading">
         <div className="chronicles-game-menu__crest" aria-hidden="true">♜</div>
         <div className="chronicles-game-menu__heading-copy">
@@ -27,10 +28,12 @@ export default function ChroniclesAdventureMenu({
           <strong>MENÚ DE AVENTURA</strong>
           <span>La compañía aguarda tus órdenes.</span>
         </div>
-        <button type="button" className="chronicles-game-menu__close" aria-label="Cerrar menú" onClick={onClose}>×</button>
+        <button type="button" className="chronicles-game-menu__close" aria-label="Cerrar menú"
+          hidden={confirmExitWithoutSaving} onClick={onClose}>×</button>
       </div>
       {saveNotice && <small className="chronicles-game-menu__notice" role="status">{saveNotice}</small>}
-      <div className="chronicles-game-menu__folio-columns">
+      <div className="chronicles-game-menu__folio-columns"
+        data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}>
         <section className="chronicles-game-menu__folio-section" aria-label="Acciones de expedición">
           <span className="chronicles-game-menu__section-kicker">EXPEDICIÓN</span>
           <div className="chronicles-game-menu__actions">
