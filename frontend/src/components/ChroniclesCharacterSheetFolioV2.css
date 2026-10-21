@@ -398,14 +398,17 @@
   width: min(calc(100vw - 16px), 100%);
   min-width: 0;
   max-width: 100%;
-  height: calc(100dvh - 16px);
-  max-height: none;
+  /* Constrain height to the same padded overlay content box as width.
+     A viewport-only height could clip the top/bottom behind safe gutters. */
+  height: min(calc(100dvh - 16px), 100%);
+  min-height: 0;
+  max-height: 100%;
   box-sizing: border-box;
 }
 @media (max-width: 850px), (max-height: 580px) {
   .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 {
     width: min(calc(100vw - 8px), 100%);
-    height: calc(100dvh - 8px);
+    height: min(calc(100dvh - 8px), 100%);
   }
 }
 
