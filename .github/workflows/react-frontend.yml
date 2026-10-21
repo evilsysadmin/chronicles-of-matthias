@@ -77,6 +77,9 @@ jobs:
           node smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
           # First contact/payment: genuine road sightline and earned quest receipt, mobile + desktop.
           node smoke/first-hour-contact.mjs http://localhost:4174/smoke/first-hour-contact.html
+          # Actual authored Swordhaven geometry: visual evidence of house-height streets
+          # from reproducible fixed cameras, both mobile and desktop.
+          node smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v4
