@@ -53,3 +53,11 @@ test('API and frontend E2E install the same exact Playwright release', () => {
     assert.doesNotMatch(workflow, /playwright@\^|playwright@~|playwright@1(?:\r?\n|$)/);
   }
 });
+
+test('Go API health readiness shares the bounded liveness and log-aware probe', () => {
+  assert.match(api, /source frontend\/smoke\/wait-for-http\.sh/);
+  assert.match(api, /api_pid=\$!/);
+  assert.match(api, /wait_for_http http:\/\/127\.0\.0\.1:8090\/api\/health "\$api_pid" "\$RUNNER_TEMP\/api\.log" "Go API health"/);
+  assert.doesNotMatch(api, /for i in \$\(seq 1 40\); do curl/);
+  assert.match(api, /curl -fsS http:\/\/127\.0\.0\.1:8090\/api\/health/);
+});
