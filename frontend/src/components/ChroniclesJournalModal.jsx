@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
 import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
@@ -71,8 +71,12 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const active = quests.filter((quest) => quest.status === 'active');
   const completedCount = quests.filter((quest) => quest.status === 'completed').length;
   // A company with nothing pending must still be able to read its old deeds.
+  const unfinished = quests.filter((quest) => quest.status !== 'completed');
+  const finished = quests.filter((quest) => quest.status === 'completed');
+  // Keep the chronological order within each group; when the archive opens,
+  // the completed pages form a readable appendix after current objectives.
   const visibleQuests = archiveExpanded || active.length === 0
-    ? quests : quests.filter((quest) => quest.status !== 'completed');
+    ? [...unfinished, ...finished] : unfinished;
   // A quest may disappear on world reload / another expedition. Never leave
   // the reader with every entry closed because an obsolete ID was retained.
   // '' is intentional: clicking the open heading collapses all entries.
@@ -194,7 +198,15 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                     const recorded = chroniclesQuestRecordedEvents(quest, entries);
                     const detailId = `chronicles-journal-quest-${index}`;
                     return (
-                      <li key={quest.id} className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
+                      <Fragment key={quest.id}>
+                        {archiveExpanded && active.length > 0 && quest.status === 'completed'
+                          && index === unfinished.length && (
+                          <li className="chronicles-journal-modal__archive-heading" role="presentation">
+                            <h4>Gestas concluidas</h4>
+                            <p>Las páginas resueltas conservan su historia.</p>
+                          </li>
+                        )}
+                      <li className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
                         data-chronicles-quest-id={quest.id} data-chronicles-quest-status={quest.status}>
                         <button type="button" aria-expanded={expanded} aria-controls={expanded ? detailId : undefined}
                           className="chronicles-journal-modal__quest-heading"
@@ -261,6 +273,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                           </div>
                         )}
                       </li>
+                      </Fragment>
                     );
                   })}
                 </ol>

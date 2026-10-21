@@ -32,7 +32,9 @@ const state = {
       objective: 'Recupera tres placas con nombres y cuélgalas en el Roble del claro.',
     },
     'road-bandits': {
-      id: 'road-bandits', status: 'completed', order: 4,
+      // Deliberately sorted before active quests in authoring order to prove
+      // the journal always moves archived entries to its concluding appendix.
+      id: 'road-bandits', status: 'completed', order: 1,
       title: 'Bandidos del Camino', objective: 'El Camino está limpio.',
     },
   },

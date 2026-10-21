@@ -114,11 +114,25 @@ try {
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       const completed = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
       assert.equal(await completed.count(), 0, 'Archived quests should not clutter an active expedition');
+      assert.equal(await dialog.locator('.chronicles-journal-modal__archive-heading').count(), 0,
+        'A collapsed archive must not show a redundant heading');
       const archive = dialog.locator('.chronicles-journal-modal__archive-toggle');
       assert.equal(await archive.getAttribute('aria-expanded'), 'false');
       assert.match(await archive.innerText(), /Ver encargos resueltos \(1\)/);
       await archive.click();
       assert.equal(await archive.getAttribute('aria-expanded'), 'true');
+      const questRows = await dialog.locator('[data-chronicles-quest-id]').evaluateAll(
+        (nodes) => nodes.map((node) => node.getAttribute('data-chronicles-quest-id')));
+      assert.deepEqual(questRows, ['banner-contract', 'names-in-wood', 'road-bandits'],
+        'All active pages must precede the archived appendix, irrespective of original quest order');
+      const heading = dialog.locator('.chronicles-journal-modal__archive-heading');
+      assert.equal(await heading.count(), 1);
+      assert.match(await heading.innerText(), /Gestas concluidas/);
+      assert.equal(await heading.evaluate((element) => Boolean(
+        element.compareDocumentPosition(document.querySelector('[data-chronicles-quest-id="road-bandits"]'))
+          & Node.DOCUMENT_POSITION_FOLLOWING)), true,
+        'The appendix title must precede its first archived contract');
+
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
       await completed.locator('.chronicles-journal-modal__quest-heading').click();
@@ -132,6 +146,7 @@ try {
       await archive.click();
       assert.equal(await archive.getAttribute('aria-expanded'), 'false');
       assert.equal(await completed.count(), 0, 'Folded archive must remove completed rows again');
+      assert.equal(await heading.count(), 0, 'Folding the archive hides its appendix heading');
       assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
         'Folding the archive should restore the current active quest');
       await page.screenshot({ path: 'smoke-journal-quests-' + width + '.png' });
