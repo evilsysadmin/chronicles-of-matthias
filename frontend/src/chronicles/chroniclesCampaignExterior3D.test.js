@@ -362,6 +362,38 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
   });
 
+  it('rejects overlapping or non-solid roof runs rather than creating floating houses', () => {
+    const grid = [
+      '########',
+      '#......#',
+      '#.####.#',
+      '#......#',
+      '########',
+    ];
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer: true,
+      scenePlan: {
+        mapId: 'test-settlement', regionKind: 'settlement',
+        grid, width: 8, height: 5, center: { x: 3.5, y: 2 }, content: [],
+        landscape: {
+          streetWallHeight: 6.4,
+          roofRuns: [
+            { x: 2, y: 2, width: 4 },
+            { x: 2, y: 2, width: 4 }, // duplicate
+            { x: 3, y: 2, width: 3 }, // overlaps the accepted roof
+            { x: 0, y: 2, width: 2 }, // would cover walkable floor
+            { x: 2, y: 2, width: 7 }, // unsupported span
+          ],
+        },
+      },
+    });
+    const roofs = scene.getObjectByName('chronicles-town-south-pitched-roofs');
+    expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(roofs.count).toBe(1);
+    expect(scene.getObjectByName('chronicles-campaign-visible-blockers').geometry.parameters.height).toBe(6.4);
+  });
+
   it('builds the Rookwood forest with pixel-art bark and foliage', () => {
     const grid = rookwood.grid;
     const scene = new THREE.Scene();
