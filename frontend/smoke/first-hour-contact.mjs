@@ -5,6 +5,20 @@ import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4174/smoke/first-hour-contact.html';
 const browser = await chromium.launch();
 const failures = [];
+
+// Retry one transient Chromium navigation cancellation only; never rerun
+// assertions, suppress a script error or turn two aborted navigations green.
+async function gotoFixture(page, target) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await page.goto(target, { waitUntil: 'domcontentloaded' });
+    } catch (error) {
+      if (attempt || page.isClosed() || !String(error.message).includes('net::ERR_ABORTED')) throw error;
+      console.warn('CHRONICLES_FIXTURE_NAV_RETRY reason=ERR_ABORTED once=1');
+      await page.waitForTimeout(180);
+    }
+  }
+}
 try {
   for (const width of [360, 390, 430, 800, 1280]) {
     const height = width === 800 ? 440 : width === 1280 ? 800 : 844;
@@ -191,21 +205,36 @@ try {
         await status.waitFor({ state: 'hidden' });
       }
 
+      // Real Crónica → hero dossier, not a keyboard-only helper.
+      // Key modifiers must not open hidden world sheets or stack dialogs.
+      if (width === 390 || width === 1280) {
+        await gotoFixture(page, url + '?view=journal');
+        const journal = page.getByRole('dialog', { name: 'Crónica de expedición' });
+        await journal.waitFor({ state: 'visible' });
+        assert.match(await journal.locator('footer').innerText(), /1–4/);
+        await page.keyboard.press('Control+4');
+        await page.keyboard.press('5');
+        assert.equal(await journal.count(), 1, 'Modified/unassigned keys keep the journal open');
+        await page.keyboard.press('4');
+        await journal.waitFor({ state: 'hidden' });
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+        assert.equal(await page.getByRole('dialog').count(), 1,
+          'J → 4 must close the journal before opening Faust');
+        await page.keyboard.press('1');
+        await page.getByRole('dialog', { name: 'Matthias' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.getByRole('dialog').count(), 0);
+        await page.locator('[data-reopen-journal]').click();
+        await journal.waitFor({ state: 'visible' });
+        await page.keyboard.press('j');
+        await journal.waitFor({ state: 'hidden' });
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
-      // Chromium occasionally aborts this final fixture navigation after
-      // several WebGL/component pages. Retry only ERR_ABORTED, never errors
-      // from the actual guide render or interaction checks that follow.
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
-          break;
-        } catch (error) {
-          if (attempt || !String(error.message).includes('net::ERR_ABORTED')) throw error;
-          await page.waitForTimeout(180);
-        }
-      }
+      // Keep guide assertions strict; retry only an aborted fixture navigation.
+      await gotoFixture(page, url + '?view=guides');
       const allGuides = page.locator('[data-chronicles-first-steps], [data-chronicles-first-threat]');
       for (let step = 0; step < 8; step += 1) {
         const visibleGuide = step % 2 === 0

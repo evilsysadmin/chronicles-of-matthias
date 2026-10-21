@@ -20,6 +20,7 @@ import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
+import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx';
 import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
 import '../src/styles.css';
 // Match the actual first-person game CSS imports. The isolated fixture used
@@ -30,6 +31,7 @@ import '../src/components/ChroniclesCharacterSheet.css';
 import '../src/components/ChroniclesMM3Chrome.css';
 import '../src/components/ChroniclesCharacterSheetMM3.css';
 import '../src/components/ChroniclesQuickStatus.css';
+import '../src/components/ChroniclesJournalModal.css';
 
 // Find a real, unobstructed enemy directly in front of a traversable road
 // square. Coordinates are discovered from the versioned map, not fabricated.
@@ -182,6 +184,31 @@ function RealQuickStatusHotkeyFlow() {
   );
 }
 
+// Real Crónica and character sheet, exercising the same single-modal
+// navigation as the first-person game without changing expedition state.
+function RealJournalHotkeyFlow() {
+  const [state] = useState(() => createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }));
+  const [progression] = useState(createChroniclesProgression);
+  const [open, setOpen] = useState(true);
+  const [memberId, setMemberId] = useState(null);
+  const member = state.party.find((hero) => hero.id === memberId);
+  const openSheet = (id) => { setOpen(false); setMemberId(id); };
+  return (
+    <>
+      <button type="button" data-reopen-journal onClick={() => { setMemberId(null); setOpen(true); }}>
+        Crónica (J)
+      </button>
+      <ChroniclesJournalModal open={open} state={state}
+        onClose={() => setOpen(false)} onOpenSheet={openSheet} />
+      {member && <ChroniclesCharacterSheet state={state} progression={progression}
+        member={member} mode="first-person" onClose={() => setMemberId(null)}
+        onSelectMember={(id) => {
+          if (state.party.some((hero) => hero.id === id)) setMemberId(id);
+        }} />}
+    </>
+  );
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -202,6 +229,8 @@ if (view === 'threat') {
   content = <RealLootEquipmentFlow reorderParty={view === 'loot-reordered'} />;
 } else if (view === 'quick-status') {
   content = <RealQuickStatusHotkeyFlow />;
+} else if (view === 'journal') {
+  content = <RealJournalHotkeyFlow />;
 } else if (view === 'guides') {
   content = <RealGuidesReconciliationFlow />;
 } else {
