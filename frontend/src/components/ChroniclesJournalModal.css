@@ -676,3 +676,13 @@
   outline: 3px solid #a46d23;
   outline-offset: 2px;
 }
+
+
+/* Only one real tracked quest gets this restrained book-margin mark. */
+.chronicles-journal-modal__followed-mark {
+  width: max-content;
+  max-width: 100%;
+  color: #765021;
+  font: 700 .75rem/1.3 system-ui, sans-serif;
+  letter-spacing: .015em;
+}
