@@ -21,6 +21,33 @@ try {
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       const menu = page.getByRole('dialog', { name: 'Menú de aventura' });
       await menu.waitFor({ state: 'visible', timeout: 20000 });
+      // Modal keyboard navigation must wrap both ways instead of reaching
+      // the playable world and its hidden controls behind the folio.
+      const details = page.locator('details.chronicles-game-menu');
+      await details.evaluate((root) => {
+        const visible = Array.from(root.querySelectorAll(
+          'summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
+        )).filter((node) => node.getClientRects().length > 0
+          && node.getAttribute('aria-hidden') !== 'true'
+          && !node.closest('[hidden], [inert]')
+          && getComputedStyle(node).visibility !== 'hidden');
+        if (visible.length < 4) throw new Error('Modal has no meaningful keyboard controls');
+        visible[0].setAttribute('data-menu-first-focus', '');
+        visible[visible.length - 1].setAttribute('data-menu-last-focus', '');
+      });
+      const firstControl = page.locator('[data-menu-first-focus]');
+      const lastControl = page.locator('[data-menu-last-focus]');
+      await lastControl.focus();
+      await page.keyboard.press('Tab');
+      assert.equal(await firstControl.evaluate((node) => document.activeElement === node), true,
+        'Tab from last volume slider must wrap to the first menu control, not the game HUD');
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await lastControl.evaluate((node) => document.activeElement === node), true,
+        'Shift+Tab from the first menu control must wrap to the last');
+      // Shift+Tab deliberately leaves focus in the final VOLUME slider.
+      // S there belongs to the input, not to Save; restore ordinary menu
+      // focus before checking save/quit action routing below.
+      await menu.getByRole('button', { name: 'Continuar' }).focus();
       const bounds = await menu.boundingBox();
       assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
         'Menu must fit viewport: ' + JSON.stringify(bounds));

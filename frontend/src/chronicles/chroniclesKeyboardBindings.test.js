@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -139,5 +139,55 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
         target: { closest: () => ({ tagName: 'INPUT' }) },
       }), menuOpen)).toBeNull();
     }
+  });
+});
+
+
+describe('Chronicles modal adventure-menu Tab containment', () => {
+  const setup = () => {
+    const doc = { activeElement: null, defaultView: { getComputedStyle: () => ({ visibility: 'visible' }) } };
+    const controls = Array.from({ length: 3 }, () => ({
+      ownerDocument: doc,
+      getClientRects: () => [1],
+      getAttribute: () => null,
+      closest: () => null,
+      focus() { doc.activeElement = this; },
+    }));
+    const menu = { open: true, ownerDocument: doc, querySelectorAll: () => controls };
+    const event = (shiftKey = false, key = 'Tab') => ({
+      key, shiftKey, prevented: false,
+      preventDefault() { this.prevented = true; },
+    });
+    return { doc, controls, menu, event };
+  };
+
+  it('wraps forwards from the final control to the opener and back with Shift+Tab', () => {
+    const { doc, controls, menu, event } = setup();
+    controls[2].focus();
+    const forwards = event();
+    expect(chroniclesContainAdventureMenuTab(forwards, menu)).toBe(true);
+    expect(forwards.prevented).toBe(true);
+    expect(doc.activeElement).toBe(controls[0]);
+    const backwards = event(true);
+    expect(chroniclesContainAdventureMenuTab(backwards, menu)).toBe(true);
+    expect(backwards.prevented).toBe(true);
+    expect(doc.activeElement).toBe(controls[2]);
+  });
+
+  it('keeps native Tab order intact between controls and while menu is closed', () => {
+    const { doc, controls, menu, event } = setup();
+    controls[1].focus();
+    const interior = event();
+    expect(chroniclesContainAdventureMenuTab(interior, menu)).toBe(false);
+    expect(interior.prevented).toBe(false);
+    expect(doc.activeElement).toBe(controls[1]);
+    menu.open = false;
+    controls[2].focus();
+    const outside = event();
+    expect(chroniclesContainAdventureMenuTab(outside, menu)).toBe(false);
+    expect(outside.prevented).toBe(false);
+    menu.open = true;
+    const notTab = event(false, 's');
+    expect(chroniclesContainAdventureMenuTab(notTab, menu)).toBe(false);
   });
 });

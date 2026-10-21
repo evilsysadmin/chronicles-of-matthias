@@ -35,6 +35,36 @@ export function chroniclesAdventureMenuShortcut(event, {
   return null;
 }
 
+// The adventure menu advertises itself as a modal dialogue. Keep keyboard
+// focus within its own native <details> while open: otherwise Tab can escape
+// behind the overlay and accidentally operate the game HUD. Native Tab order
+// remains untouched everywhere except when wrapping the first/last control.
+export function chroniclesContainAdventureMenuTab(event, menuDetails) {
+  if (event?.key !== 'Tab' || !menuDetails?.open || event.defaultPrevented
+    || event.ctrlKey || event.altKey || event.metaKey) return false;
+  const controls = Array.from(menuDetails.querySelectorAll(
+    'summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
+  )).filter((control) => control.getClientRects().length > 0
+    && control.getAttribute('aria-hidden') !== 'true'
+    && !control.closest('[hidden], [inert]')
+    && control.ownerDocument.defaultView.getComputedStyle(control).visibility !== 'hidden');
+  if (!controls.length) return false;
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  const active = menuDetails.ownerDocument.activeElement;
+  if (event.shiftKey && active === first) {
+    event.preventDefault();
+    last.focus();
+    return true;
+  }
+  if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+    return true;
+  }
+  return false;
+}
+
 // The physical 1–4 keys identify these four heroes by stable IDs, not by
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
