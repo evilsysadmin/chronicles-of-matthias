@@ -4,6 +4,7 @@ import {
   requestWarRoomLandscapeFullscreen,
   exitWarRoomBrowserFullscreen,
   unlockWarRoomOrientation,
+  getWarRoomBrowserFullscreenElement,
 } from './useWarRoomImmersive.js';
 
 // Only fullscreen initiated by Chronicles may be dismissed when the game exits.
@@ -57,6 +58,9 @@ export function shouldRelockChroniclesOnTap({
   return Boolean(
     landscapeWanted()
     && win && doc && doc.visibilityState !== 'hidden'
+    // Still fullscreen? This is the initial landscape request, not a return
+    // from another app. Do not place a modal over the first-play tutorial.
+    && !getWarRoomBrowserFullscreenElement(doc)
     && shouldAutoRotateChroniclesOnEntry({ win })
     && !win.matchMedia(CHRONICLES_LANDSCAPE_QUERY).matches,
   );
@@ -76,7 +80,13 @@ export async function requestChroniclesLandscapeOnEntry({
   }
   const result = await requestWarRoomLandscapeFullscreen({ doc, screenApi });
   if (result.fullscreen) chroniclesFullscreenOwned = true;
-  if (result.landscape) rememberLandscapeWanted(true);
+  // Some Chromium/mobile environments accept orientation.lock() even if
+  // fullscreen itself was refused. That is not a fullscreen session we can
+  // later restore, and must not immediately spawn a "return to landscape"
+  // dialog over a freshly created expedition.
+  if (result.landscape && (result.fullscreen || getWarRoomBrowserFullscreenElement(doc))) {
+    rememberLandscapeWanted(true);
+  }
   return { requested: true, ...result };
 }
 
