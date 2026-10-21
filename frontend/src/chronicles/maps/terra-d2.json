@@ -93,8 +93,8 @@
     },
     {
       "id": "terra-d2-foe-2",
-      "visualType": "road-bandit",
-      "name": "salteador",
+      "visualType": "ash-goblin",
+      "name": "goblin",
       "x": 18,
       "y": 2,
       "hpKey": "terra_d2Foe2Hp",
@@ -106,13 +106,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con salteador usando {attack}.",
+        "message": "{attacker} acaba con goblin usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

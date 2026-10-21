@@ -93,8 +93,8 @@
     },
     {
       "id": "terra-a3-foe-2",
-      "visualType": "road-bandit",
-      "name": "pirata",
+      "visualType": "salt-crab",
+      "name": "cangrejo de roca",
       "x": 2,
       "y": 10,
       "hpKey": "terra_a3Foe2Hp",
@@ -106,13 +106,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
+        "engagedMovement": "knight-chase",
         "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con pirata usando {attack}.",
+        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
