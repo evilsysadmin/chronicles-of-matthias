@@ -652,6 +652,47 @@
   .chronicles-shop__entry { transition: none; }
 }
 
+/* The art remains the sole source of the scenery. Light belongs to the room,
+   never to the inventory: no embedded UI, extra canvas, or image request. */
+.chronicles-shop[data-chronicles-shop-room-theme='odo-forge']::before {
+  background:
+    linear-gradient(90deg, rgba(11, 8, 7, .51), rgba(8, 7, 7, .03) 39%, rgba(8, 7, 7, .01) 65%, rgba(8, 6, 6, .52)),
+    linear-gradient(0deg, rgba(8, 6, 6, .55), transparent 30%, rgba(8, 6, 6, .22));
+}
+
+/* Amber furnace glow behind the counter, with a trace of cool iron bounce.
+   Painting and compositing stay CSS-only; pointer input always passes through. */
+.chronicles-shop__scene[data-chronicles-shop-room='odo-forge']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 26% 35% at 29% 55%, rgba(255, 116, 32, .34), transparent 79%),
+    radial-gradient(ellipse 16% 30% at 72% 43%, rgba(112, 166, 191, .12), transparent 84%);
+  opacity: .77;
+  animation: chronicles-odo-forge-glow 7s ease-in-out infinite alternate;
+}
+
+@keyframes chronicles-odo-forge-glow {
+  from { opacity: .64; }
+  to { opacity: .84; }
+}
+
+@media (max-width: 900px) {
+  .chronicles-shop__scene[data-chronicles-shop-room='odo-forge']::after {
+    background: radial-gradient(ellipse 30% 45% at 35% 50%, rgba(255, 122, 38, .23), transparent 84%);
+    opacity: .63;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-shop__scene[data-chronicles-shop-room='odo-forge']::after {
+    animation: none;
+    opacity: .72;
+  }
+}
+
 /* Odo's authored armory illustration replaces the old 128x144 pixel inset.
    Keep the illustrated keeper centered in the open aisle between commerce panes. */
 .chronicles-shop__scene[data-chronicles-shop-room='odo-forge'] {

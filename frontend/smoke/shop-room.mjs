@@ -192,6 +192,7 @@ try {
       const context = await browser.newContext({
         viewport: { width, height }, isMobile: width <= 844,
         hasTouch: width <= 844, deviceScaleFactor: 1,
+        reducedMotion: room === 'odo' && width === 390 ? 'reduce' : 'no-preference',
       });
       const page = await context.newPage();
       const errors = [];
@@ -214,6 +215,21 @@ try {
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
         assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong artwork source');
         if (room === 'odo') {
+          // Verify the real room receives non-interactive light. One mobile
+          // scenario exercises the reduced-motion fallback, not just CSS text.
+          const light = await scene.evaluate((node) => ({
+            pointer: getComputedStyle(node, '::after').pointerEvents,
+            layer: getComputedStyle(node, '::after').backgroundImage,
+            animation: getComputedStyle(node, '::after').animationName,
+            opacity: Number.parseFloat(getComputedStyle(node, '::after').opacity),
+            theme: node.closest('.chronicles-shop')?.getAttribute('data-chronicles-shop-room-theme'),
+          }));
+          assert.equal(light.theme, 'odo-forge');
+          assert.equal(light.pointer, 'none', 'Forge light must never capture interaction');
+          assert.match(light.layer, /radial-gradient/, 'Forge lighting is not rendered');
+          assert(light.opacity > 0 && light.opacity <= 1, 'Invalid forge light opacity');
+          if (width === 390) assert.equal(light.animation, 'none',
+            'Reduced-motion users must not see forge light pulses');
           const presentation = await img.evaluate((node) => ({
             width: node.getBoundingClientRect().width,
             fit: getComputedStyle(node).objectFit,
