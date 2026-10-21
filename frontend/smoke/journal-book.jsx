@@ -79,7 +79,8 @@ function Fixture() {
           title: 'Recado del camino ' + (index + 1),
           objective: 'Un recado pendiente de la compañía.' },
       ]));
-      quests['names-in-wood'] = { id: 'names-in-wood', order: 100, status: 'active',
+      // Quest log sorts larger order values first. Keep the followed one last.
+      quests['names-in-wood'] = { id: 'names-in-wood', order: -100, status: 'active',
         title: 'Los nombres del bosque', objective: 'Visita el Roble del Claro.' };
       const nextCampaign = { ...source, quests };
       setCampaign(chroniclesReduce(nextCampaign, { type: 'track-quest', questId: 'names-in-wood' }));
