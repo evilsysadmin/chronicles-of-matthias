@@ -15,6 +15,22 @@ export function chroniclesCombatKeyMode(key) {
   return null;
 }
 
+// Adventure-menu shortcuts have their own scope: S must continue to shoot
+// outside the pause menu, while Q requests (never confirms) an unsafe exit.
+// Do not steal keys from text fields or repeated/composed browser events.
+export function chroniclesAdventureMenuShortcut(event, {
+  menuOpen = false, saveBusy = false, confirmExitWithoutSaving = false,
+} = {}) {
+  if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
+    || event.ctrlKey || event.altKey || event.metaKey || saveBusy || confirmExitWithoutSaving) return null;
+  const target = event.target;
+  if (target?.isContentEditable
+    || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  if (event.key === 's' || event.key === 'S') return 'save';
+  if (event.key === 'q' || event.key === 'Q') return 'request-exit';
+  return null;
+}
+
 // The physical 1–4 keys identify these four heroes by stable IDs, not by
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
