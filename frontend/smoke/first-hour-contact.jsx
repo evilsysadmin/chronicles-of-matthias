@@ -124,14 +124,16 @@ function RealGuidesReconciliationFlow() {
 function RealLootEquipmentFlow() {
   const [data, setData] = useState(actualFirstSword);
   const [open, setOpen] = useState(false);
+  const [selectedHeroId, setSelectedHeroId] = useState('matthias');
   const [progression] = useState(createChroniclesProgression);
-  const member = data.state.party.find((entry) => entry.id === 'matthias');
+  const member = data.state.party.find((entry) => entry.id === selectedHeroId);
   return (
     <>
       <ChroniclesPartyBark bark={data.bark} onOpenEquipment={() => setOpen(true)} />
       {open && <ChroniclesCharacterSheet
         state={data.state} progression={progression} member={member}
         mode="first-person" initialFolio="equipment"
+        onSelectMember={setSelectedHeroId}
         onClose={() => setOpen(false)}
         onEquipmentAction={(action) => setData((current) => ({
           ...current, state: chroniclesReduce(current.state, { ...action, memberId: member.id }),
