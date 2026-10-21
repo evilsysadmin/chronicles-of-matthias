@@ -763,3 +763,26 @@
   margin: 0;
   font: italic .85rem/1.35 Georgia, serif;
 }
+
+
+/* Related-contract marginal note beneath an actual saved memory. */
+.chronicles-journal-modal__memory-quest-link {
+  display: inline-block;
+  margin: 5px 9px 5px 0;
+  padding: 7px 9px;
+  min-height: 36px;
+  border: 0;
+  border-bottom: 1px solid #9e7540;
+  background: transparent;
+  color: #704923;
+  cursor: pointer;
+  text-align: left;
+  font: 700 .86rem/1.3 Georgia, serif;
+}
+.chronicles-journal-modal__memory-quest-link:hover {
+  background: #e1cba3;
+}
+.chronicles-journal-modal__memory-quest-link:focus-visible {
+  outline: 3px solid #a16c25;
+  outline-offset: 2px;
+}
