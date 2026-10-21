@@ -1,6 +1,7 @@
 // CI-only component captures. No fake combat, seeded rewards or backend writes.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { gotoSmokeFixture } from './fixture-navigation.mjs';
 
 const url = process.argv[2] || 'http://localhost:4174/smoke/first-hour-contact.html';
 const browser = await chromium.launch();
@@ -181,7 +182,7 @@ try {
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
-      await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
+      await gotoSmokeFixture(page, url + '?view=guides');
       const allGuides = page.locator('[data-chronicles-first-steps], [data-chronicles-first-threat]');
       for (let step = 0; step < 8; step += 1) {
         const visibleGuide = step % 2 === 0
