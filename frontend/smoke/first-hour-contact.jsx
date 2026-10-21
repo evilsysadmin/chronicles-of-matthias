@@ -1,6 +1,6 @@
 // CI-only visual fixture. Uses real authored map/targeting, real volley roster
 // and real banner-contract payment from the reducer. No mocked encounters or gold.
-import React from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   CHRONICLES_DIRECTIONS,
@@ -8,13 +8,16 @@ import {
   chroniclesOpeningVolleyShooters,
   chroniclesTileAt,
   createChroniclesState,
+  chroniclesReduce,
 } from '../src/chroniclesOfMatthias.js';
 import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
 import { chroniclesTacticsUse } from '../src/chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyBark } from '../src/chroniclesOfMatthiasBarks.js';
-import { chroniclesGoldBalance } from '../src/chronicles/chroniclesContentRuntime.js';
+import { chroniclesApplyContentEffects, chroniclesGoldBalance } from '../src/chronicles/chroniclesContentRuntime.js';
+import { createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
 import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue.jsx';
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
+import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import '../src/styles.css';
 
 // Find a real, unobstructed enemy directly in front of a traversable road
@@ -54,6 +57,43 @@ function earnedPayment() {
   return { bark, gold };
 }
 
+// Source-of-truth map drops, *not* generated loot. This fixture tests the
+// real bark -> first-person equipment folio -> actual equip action.
+function actualFirstSword() {
+  const map = chroniclesMapById('banner-road-first-book');
+  const enemy = map.enemies.find((entry) => entry.id === 'banner-road-deserter');
+  const before = createChroniclesState(map.id);
+  if (!(Number(before[enemy.hpKey]) > 0)) throw new Error('Missing live deserter');
+  const state = chroniclesApplyContentEffects({
+    ...before, [enemy.hpKey]: 0,
+  }, enemy.onDefeat.effects);
+  const bark = chroniclesPartyBark(before, state);
+  if (state.inventory?.['bronze-sword']?.quantity !== 1
+      || bark?.event !== 'first-book-deserter-loot') {
+    throw new Error('Real deserter item reward has drifted');
+  }
+  return { state, bark };
+}
+function RealLootEquipmentFlow() {
+  const [data, setData] = useState(actualFirstSword);
+  const [open, setOpen] = useState(false);
+  const [progression] = useState(createChroniclesProgression);
+  const member = data.state.party.find((entry) => entry.id === 'matthias');
+  return (
+    <>
+      <ChroniclesPartyBark bark={data.bark} onOpenEquipment={() => setOpen(true)} />
+      {open && <ChroniclesCharacterSheet
+        state={data.state} progression={progression} member={member}
+        mode="first-person" initialFolio="equipment"
+        onClose={() => setOpen(false)}
+        onEquipmentAction={(action) => setData((current) => ({
+          ...current, state: chroniclesReduce(current.state, { ...action, memberId: member.id }),
+        }))}
+      />}
+    </>
+  );
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -70,6 +110,8 @@ if (view === 'threat') {
   const { bark, gold } = earnedPayment();
   content = <ChroniclesPartyBark bark={bark} />;
   document.body.dataset.earnedGold = String(gold);
+} else if (view === 'loot') {
+  content = <RealLootEquipmentFlow />;
 } else {
   throw new Error('Unsupported smoke view');
 }
