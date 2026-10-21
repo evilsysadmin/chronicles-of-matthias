@@ -46,11 +46,23 @@ test('green main does not upload screenshots while PRs and failed main retain ev
   assert.match(frontend, /if: github\.event_name == 'pull_request'\n        with:\n          name: chronicles-frontend-dist/);
 });
 
-test('API and frontend E2E install the same exact Playwright release', () => {
+test('API and frontend E2E use npm-ci locked exact Playwright, never ad hoc npm install', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
+  const lock = JSON.parse(readFileSync(new URL('../frontend/package-lock.json', import.meta.url), 'utf8'));
+  const version = '1.64.1';
+  assert.equal(pkg.devDependencies.playwright, version);
+  assert.equal(lock.lockfileVersion, 3);
+  assert.equal(lock.packages[''].devDependencies.playwright, version);
+  for (const name of ['playwright', 'playwright-core']) {
+    const entry = lock.packages['node_modules/' + name];
+    assert.equal(entry?.version, version, name + ' must match pinned release');
+    assert.match(entry?.integrity ?? '', /^sha512-/);
+  }
   for (const workflow of [frontend, api]) {
-    assert.match(workflow, /npm install --no-save --no-audit --no-fund playwright@1\.64\.1(?:\r?\n|$)/);
+    assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund/);
     assert.match(workflow, /npx playwright install --with-deps chromium/);
-    assert.doesNotMatch(workflow, /playwright@\^|playwright@~|playwright@1(?:\r?\n|$)/);
+    assert.doesNotMatch(workflow, /npm install --no-save|npm install --package-lock-only|playwright@\^|playwright@~/);
+    assert.doesNotMatch(workflow, /CHRONICLES_LOCKCHUNK|Bootstrap exact Playwright lockfile/);
   }
 });
 
@@ -68,7 +80,7 @@ test('Chromium download cache is identical and exact-versioned for both browser 
     assert.match(workflow, /uses: actions\/cache@v5/);
     assert.match(workflow, /path: ~\/\.cache\/ms-playwright/);
     assert.ok(workflow.includes('key: ' + expectedKey));
-    assert.match(workflow, /npm install --no-save --no-audit --no-fund playwright@1\.64\.1/);
+    assert.match(workflow, /npx playwright install --with-deps chromium/);
     assert.match(workflow, /npx playwright install --with-deps chromium/);
     assert.doesNotMatch(workflow, /restore-keys:/);
   }
