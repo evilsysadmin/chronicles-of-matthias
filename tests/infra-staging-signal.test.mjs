@@ -17,6 +17,22 @@ test('source dispatch requires completed trusted main push and never checks out 
   assert.doesNotMatch(workflow, /actions\/checkout@/);
 });
 
+
+test('handoff only listens to CI and API because CI already gates Chromium', () => {
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const match = workflow.match(/    workflows:\n((?:      - .+\n)+)    types: \[completed\]/);
+  assert.ok(match, 'workflow_run triggers must remain explicit');
+  assert.deepEqual(match[1].trim().split('\n').map((line) => line.trim()), [
+    '- Chronicles CI',
+    '- Chronicles API',
+  ]);
+  // Source CI is only successful after the exact-SHA frontend browser job.
+  assert.match(ci, /Require real frontend Vitest, build and Chromium smoke for exact source SHA/);
+  assert.match(ci, /completed:success\)/);
+  // The handoff itself continues to check all three workflows, not only its triggers.
+  assert.match(workflow, /385763056,386812503,387132683/);
+});
+
 test('source CI must finish before two fixed infra dispatches, never production', () => {
   for (const piece of [
     '385763056,386812503,387132683',
