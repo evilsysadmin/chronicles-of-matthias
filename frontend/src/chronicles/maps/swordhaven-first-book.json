@@ -998,5 +998,16 @@
       "body": "Los caballeros de la Dama han desaparecido. Primer paso: hablar con el alcalde Aldric en el ayuntamiento de Swordhaven.",
       "sigil": "♛"
     }
+  },
+  "landscape": {
+    "roadTintZones": [
+      {
+        "minX": 1,
+        "maxX": 17,
+        "minY": 15,
+        "maxY": 21,
+        "color": "#c7b19c"
+      }
+    ]
   }
 }
