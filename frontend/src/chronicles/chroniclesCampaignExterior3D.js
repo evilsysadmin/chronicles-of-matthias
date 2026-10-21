@@ -260,22 +260,23 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
   }
 }
 
-// Pitched roof silhouettes on authored four-cell solid wall runs. The six
-// triangles are shared by ONE instanced mesh, with no new collisions and no
-// per-house geometry/material churn. Saved party cells never change.
+// Pitched roof silhouettes on authored 2–6-cell solid wall runs. The six
+// triangles are shared by ONE instanced mesh regardless of span width, with
+// no new collisions or per-house geometry. Saved party cells never change.
 function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6 }) {
   if (!Array.isArray(runs) || !runs.length) return;
   const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
-  const seen = new Set();
+  const claimedCells = new Set();
   const valid = [];
   for (const run of runs.slice(0, 12)) {
     const { x, y, width } = run || {};
-    const id = x + ',' + y;
-    if (!Number.isInteger(x) || !Number.isInteger(y) || width !== 4
-      || seen.has(id) || ![0, 1, 2, 3].every(dx => solid.has((x + dx) + ',' + y))
-      || ![0, 1, 2, 3].some(dx =>
+    if (!Number.isInteger(x) || !Number.isInteger(y)
+      || !Number.isInteger(width) || width < 2 || width > 6) continue;
+    const cells = Array.from({ length: width }, (_, dx) => (x + dx) + ',' + y);
+    if (cells.some(key => !solid.has(key) || claimedCells.has(key))
+      || !cells.some((_, dx) =>
         grid[y - 1]?.[x + dx] === '.' || grid[y + 1]?.[x + dx] === '.')) continue;
-    seen.add(id);
+    cells.forEach(key => claimedCells.add(key));
     valid.push(run);
   }
   if (!valid.length) return;
@@ -297,8 +298,11 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     geometry, material(0x775343, { side: THREE.DoubleSide, roughness: 0.95 }), valid.length,
   );
   const dummy = new THREE.Object3D();
-  valid.forEach(({ x, y }, index) => {
-    const [wx, wz] = gridToWorld(x + 1.5, y, center);
+  valid.forEach(({ x, y, width }, index) => {
+    const [wx, wz] = gridToWorld(x + (width - 1) / 2, y, center);
+    // X-scale alters only span length, not roof pitch/height: a pair of
+    // cottages and a five-cell terrace share the same triangle budget.
+    dummy.scale.set((CELL * width - 0.16) / length, 1, 1);
     dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);
