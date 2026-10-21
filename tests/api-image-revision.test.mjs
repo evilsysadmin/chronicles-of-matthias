@@ -12,3 +12,18 @@ test('immutable API image publishes its source SHA through /api/release', () => 
   assert.match(workflow, /org\.opencontainers\.image\.revision=\$\{\{ github\.sha \}\}/);
   assert.match(workflow, /ghcr\.io|env\.IMAGE/);
 });
+
+test('Node 24 Docker Buildx action preserves immutable GHCR push and provenance wiring', () => {
+  const publish = workflow.slice(workflow.indexOf('\n  publish:\n'));
+  assert.match(publish, /uses: docker\/build-push-action@v7/);
+  assert.doesNotMatch(publish, /docker\/build-push-action@v6/);
+  assert.match(publish, /id: admission/);
+  assert.match(publish, /needs: verify/);
+  assert.match(publish, /id: push\s*\n\s*uses: docker\/build-push-action@v7/);
+  assert.match(publish, /platforms: linux\/arm64,linux\/amd64/);
+  assert.match(publish, /push: true/);
+  assert.match(publish, /tags: \$\{\{ env\.IMAGE \}\}:staging-\$\{\{ github\.sha \}\}/);
+  assert.match(publish, /subject-digest: \$\{\{ steps\.push\.outputs\.digest \}\}/);
+  assert.match(publish, /push-to-registry: true/);
+  assert.match(publish, /if: steps\.admission\.outputs\.publish == 'true'[\s\S]+?uses: docker\/build-push-action@v7/);
+});
