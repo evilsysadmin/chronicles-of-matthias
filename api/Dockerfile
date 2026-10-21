@@ -13,6 +13,10 @@ COPY cmd/ ./cmd/
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/chronicles-api ./cmd/chronicles-api
 
 FROM scratch
+# Immutable source revision is published by /api/release and cannot be
+# inferred from a successful health check. The source workflow supplies it.
+ARG CHRONICLES_SOURCE_SHA
+ENV GIT_COMMIT_SHA=${CHRONICLES_SOURCE_SHA}
 COPY --from=build /out/chronicles-api /app/chronicles-api
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 USER 65532:65532

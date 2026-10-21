@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           go vet ./cmd/...
-          go test ./internal/chronicles/... ./internal/gamesapi/... ./cmd/...
+          go test ./internal/chronicles/... ./internal/gamesapi/... ./internal/release/... ./cmd/...
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
@@ -117,6 +117,8 @@ jobs:
           context: api
           platforms: linux/arm64,linux/amd64
           push: true
+          build-args: |
+            CHRONICLES_SOURCE_SHA=${{ github.sha }}
           tags: ${{ env.IMAGE }}:staging-${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
