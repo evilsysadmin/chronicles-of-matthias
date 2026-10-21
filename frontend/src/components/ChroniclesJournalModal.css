@@ -721,3 +721,27 @@
   scroll-margin-block: 18px;
   outline: 0;
 }
+
+
+/* A single unobtrusive way back to the exact quest after reading its source
+   receipt; no new floating panel, dashboard controls or invented history. */
+.chronicles-journal-modal__return-to-quest {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 11px;
+  padding: 7px 12px;
+  border: 1px solid #af8b5a;
+  border-radius: 3px;
+  background: rgba(252, 240, 210, .65);
+  color: #654323;
+  cursor: pointer;
+  font: 700 .88rem/1.3 Georgia, serif;
+}
+.chronicles-journal-modal__return-to-quest:hover {
+  background: #f8ebcc;
+}
+.chronicles-journal-modal__return-to-quest:focus-visible {
+  outline: 3px solid #a46d23;
+  outline-offset: 2px;
+}

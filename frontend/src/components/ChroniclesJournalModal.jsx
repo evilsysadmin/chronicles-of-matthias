@@ -16,6 +16,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const [openedQuestId, setOpenedQuestId] = useState(null);
   const [archiveExpanded, setArchiveExpanded] = useState(false);
   const [memoryJumpId, setMemoryJumpId] = useState(null);
+  const [returnToQuestId, setReturnToQuestId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
   // The book remembers the entry while changing chapters, but a later visit
@@ -26,6 +27,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       setOpenedQuestId(null);
       setArchiveExpanded(false);
       setMemoryJumpId(null);
+      setReturnToQuestId(null);
     }
   }, [open]);
 
@@ -51,6 +53,17 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     target.scrollIntoView({ block: 'center', behavior: 'auto' });
     target.focus({ preventScroll: true });
   }, [open, chapter, memoryJumpId]);
+
+  useEffect(() => {
+    if (!open || chapter !== 'quests' || !returnToQuestId) return;
+    const quest = Array.from(scrollRef.current?.querySelectorAll('[data-chronicles-quest-id]') || [])
+      .find((element) => element.getAttribute('data-chronicles-quest-id') === returnToQuestId);
+    if (quest) {
+      quest.scrollIntoView({ block: 'center', behavior: 'auto' });
+      quest.querySelector('.chronicles-journal-modal__quest-heading')?.focus({ preventScroll: true });
+    }
+    setReturnToQuestId(null);
+  }, [open, chapter, returnToQuestId]);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -260,6 +273,16 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                 <small>CAPÍTULO II</small>
                 <h3>Memorias del camino</h3>
                 <p>Lo que la compañía descubrió, contó y sobrevivió.</p>
+                {memoryJumpId && quests.some((quest) => quest.id === selectedId) && (
+                  <button type="button" className="chronicles-journal-modal__return-to-quest"
+                    data-chronicles-return-to-quest={selectedId}
+                    onClick={() => {
+                      setReturnToQuestId(selectedId);
+                      changeChapter('quests');
+                    }}>
+                    ← Volver al encargo
+                  </button>
+                )}
               </div>
               {entries.length ? (
                 <ol className="chronicles-journal-modal__folios">{entries.map((entry) => (

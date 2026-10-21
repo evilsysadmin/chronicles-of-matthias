@@ -60,9 +60,13 @@ try {
       assert.equal(await sourceFolio.evaluate((element) => document.activeElement === element), true,
         'Jumped-to original folio should receive keyboard/screen-reader focus');
       assert.equal(await sourceFolio.getAttribute('class'), 'is-jump-target');
-      await tabQuests.click();
+      const returnToQuest = dialog.locator('[data-chronicles-return-to-quest="banner-contract"]');
+      await returnToQuest.click();
       assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading')
+        .evaluate((element) => document.activeElement === element), true,
+        'Return bookmark must focus the actual quest heading');
       assert.equal(await sourceFolio.count(), 0, 'Hidden chapter should not retain focusable folio');
 
       assert.equal(await first.locator('[data-chronicles-quest-event="first-book-banner-found"]').count(), 0,
