@@ -111,7 +111,15 @@ func reinforceOverworld(m *O, areaCode string) {
 		foe.Set("y", best.y)
 		// Additional enemies should bring NEW tactics, not just more copies.
 		// Pick a native species with an unseen real AI signature when possible.
-		for _, species := range biomeFoes[areas[areaCode].biome] {
+		// Grasslands need a ranged third signature; this patrol-only species
+		// does NOT alter the existing biome generation or saved enemy slots.
+		biome := areas[areaCode].biome
+		candidates := biomeFoes[biome]
+		if biome == "plains" {
+			candidates = append(append([]species(nil), candidates...),
+				species{visual: "bandit-archer", name: "ballestero del camino"})
+		}
+		for _, species := range candidates {
 			ai := aiFor(species.visual)
 			if seenBehaviors[signature(ai)] {
 				continue
