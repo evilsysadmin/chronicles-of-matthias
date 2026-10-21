@@ -101,8 +101,25 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
+      // Exercise the real production guide components as siblings while
+      // React repeatedly alternates authored Swordhaven/road state and run IDs.
+      // Duplicate keyed overlays once left three superposed, hit-testable hosts.
+      await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
+      const allGuides = page.locator('[data-chronicles-first-steps], [data-chronicles-first-threat]');
+      for (let step = 0; step < 8; step += 1) {
+        const visibleGuide = step % 2 === 0
+          ? page.locator('[data-chronicles-first-steps]')
+          : page.locator('[data-chronicles-first-threat]');
+        await visibleGuide.waitFor({ state: 'visible', timeout: 10_000 });
+        assert.equal(await allGuides.count(), 1,
+          'Exactly one React-owned Matthias guide after update ' + step + ' at ' + width + 'px');
+        if (step === 3) await page.locator('[data-guide-new-run]').click();
+        await page.locator('[data-guide-switch]').click();
+      }
+      assert.equal(await allGuides.count(), 1, 'No ghost guide after 8 scene transitions');
+      await page.screenshot({ path: 'smoke-guide-reconciliation-' + width + '.png' });
       assert.deepEqual(errors, [], 'No browser errors allowed');
-      console.log('OK first-hour real sighting/payment ' + width + 'px');
+      console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {
       failures.push(width + ': ' + error.message);
       console.error('FAIL first-hour visual smoke', width, error);
