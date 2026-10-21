@@ -31,6 +31,16 @@ describe('Chronicles shared 1–4 hero hotkeys', () => {
     for (const key of ['0', '5', 'ArrowUp', 's']) expect(chroniclesPartyHotkeyMember(keyEvent(key), party)).toBeNull();
     expect(chroniclesPartyHotkeyMember(keyEvent('4'), party.slice(0, 2))).toBeNull();
   });
+  it('does not switch a hidden hero while the modal adventure menu or Q prompt owns focus', () => {
+    for (let key = 1; key <= 4; key += 1) {
+      const event = keyEvent(String(key));
+      expect(chroniclesPartyHotkeyMember(event, party, { menuOpen: true })).toBeNull();
+      expect(chroniclesPartyHotkeyMember(event, party, { menuOpen: false }))
+        .toBe(party[key - 1]);
+    }
+    expect(chroniclesPartyHotkeyMember(keyEvent('1'), party)).toBe(party[0]);
+  });
+
   it('preserves text fields, modifiers, consumed and repeated events', () => {
     for (const guard of ['defaultPrevented', 'repeat', 'isComposing', 'ctrlKey', 'altKey', 'metaKey', 'shiftKey']) {
       expect(chroniclesPartyHotkeyMember(keyEvent('4', { [guard]: true }), party)).toBeNull();
