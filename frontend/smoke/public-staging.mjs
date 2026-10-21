@@ -223,6 +223,18 @@ try {
         }).catch(() => {});
         throw new Error(`Multiple visible Matthias guides: ${visibleFirstSteps}`);
       }
+      // An Android task switch can drop fullscreen while retaining the
+      // player's earlier landscape preference. The real app offers a
+      // conscious portrait fallback. Exercise it if that dialog appears,
+      // instead of forcing clicks through an aria-modal overlay.
+      const relock = page.locator('[data-chronicles-relock="true"]');
+      if (await relock.isVisible()) {
+        assert.equal(viewport.width, 390,
+          'Only a phone viewport may request landscape recovery');
+        await relock.getByRole('button', { name: 'Seguir en vertical', exact: true }).click();
+        await relock.waitFor({ state: 'hidden', timeout: 8_000 });
+        console.log('CHRONICLES_PUBLIC_PORTRAIT_CONTINUE_OK');
+      }
       if (visibleFirstSteps === 1) {
         await firstSteps.getByRole('button', { name: 'Entendido' }).click();
       }
