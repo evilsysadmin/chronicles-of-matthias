@@ -166,7 +166,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -331,6 +331,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
+  // A modal must acquire focus when opened by pointer/touch as well as Tab.
+  // It must also reject stray focus on game HUD controls underneath it.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const menu = menuSummaryRef.current?.parentElement;
+    if (!menu?.open) return undefined;
+    const onFocus = (event) => { chroniclesRestoreAdventureMenuFocus(menu, event.target); };
+    document.addEventListener('focusin', onFocus);
+    chroniclesRestoreAdventureMenuFocus(menu, document.activeElement);
+    return () => document.removeEventListener('focusin', onFocus);
+  }, [menuOpen, confirmExitWithoutSaving]);
   const [areaTransition, setAreaTransition] = useState(null);
   const areaTransitionRef = useRef(null);
   const [audience, setAudience] = useState(null);
