@@ -61,6 +61,31 @@ jobs:
           fi
           runs="$(gh api -X GET repos/evilsysadmin/chronicles-of-matthias/actions/runs \
             -f head_sha="$sha" -f event=push -f per_page=100)"
+          # Distinguish genuine waiting-for-CI from an untrustworthy API
+          # response. The REST query is limited to one page of 100 runs:
+          # truncated, malformed or schema-invalid responses must fail closed.
+          if ! jq -e '
+            . as $p |
+            ($p | type == "object") and
+            ($p.total_count | type == "number") and
+            ($p.total_count >= 0 and $p.total_count <= 100 and
+              $p.total_count == ($p.workflow_runs | length)) and
+            ($p.workflow_runs | type == "array") and
+            ([$p.workflow_runs[]? |
+              (. | type == "object") and
+              (.id | type == "number") and
+              (.workflow_id | type == "number") and
+              (.head_sha | type == "string") and
+              (.event | type == "string") and
+              (.status | type == "string") and
+              (.repository.full_name | type == "string") and
+              (.conclusion == null or (.conclusion | type == "string"))
+            ] | all)
+          ' <<<"$runs" >/dev/null; then
+            echo '::error title=Chronicles CD cannot verify source CI::Malformed or truncated workflow-run response'
+            echo 'CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD' >&2
+            exit 66
+          fi
           # Only complete successful push workflows of this exact SHA matter.
           # Infra independently revalidates all three with stronger identities.
           if ! jq -e --arg sha "$sha" '
