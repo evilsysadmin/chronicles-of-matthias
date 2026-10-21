@@ -41,6 +41,21 @@ export function chroniclesPartyBark(previous, next) {
       'first-book-banner-paid');
   }
 
+  // Actual first enemy spoil, not a scripted tutorial grant. Tell the player
+  // how to use the sword only if the authored kill credited a NEW item.
+  const roadSword = 'bronze-sword';
+  if (previous.mapId === 'banner-road-first-book'
+    && next.mapId === previous.mapId
+    && Number(previous.bannerRoadDeserterHp || 0) > 0
+    && Number(next.bannerRoadDeserterHp || 0) <= 0
+    && next.bannerRoadDeserterDefeated === true
+    && Number(next.inventory?.[roadSword]?.quantity || 0)
+      > Number(previous.inventory?.[roadSword]?.quantity || 0)) {
+    return bark(next, 'rook',
+      'La espada de bronce del desertor está en la mochila. Abre la ficha de un héroe para equiparla antes de la siguiente salida.',
+      'first-book-deserter-loot');
+  }
+
   if (!previous.sigilAwake && next.sigilAwake) {
     return bark(next, 'bishop', 'Ese sello no estaba dormido. Sólo estaba esperando público.', 'sigil-awake');
   }
