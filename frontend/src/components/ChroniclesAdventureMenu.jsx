@@ -39,7 +39,7 @@ export default function ChroniclesAdventureMenu({
             </button>
             <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
             <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
-            <button type="button" className="chronicles-game-menu__save" onClick={onSave} disabled={saveBusy}>
+            <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave} disabled={saveBusy}>
               {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
             </button>
             <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
