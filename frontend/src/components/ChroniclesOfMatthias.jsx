@@ -1413,7 +1413,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const selectedCondition = chroniclesPartyCondition(selectedMember);
   const selectedRelic = chroniclesPartyRelic(state, selectedMember?.id);
   const selectedAttackStats = chroniclesPartyAttackStats(state, selectedMember?.id);
-  const tacticalTarget = chroniclesTargetAhead(state, selectedAttackStats.reach || 1);
+  // A foe can be visible several cells away while A only reaches the next
+  // cell. Keep the target dossier visible so an out-of-range attack is
+  // explained instead of silently resembling a broken button.
+  const meleeReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'melee').reach : 1;
+  const missileReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'missile').reach : 0;
+  const tacticalTarget = chroniclesTargetAhead(state, Math.max(4, selectedAttackStats.reach || 1));
   const sheetMember = sheetMemberId
     ? state.party.find((member) => member.id === sheetMemberId) || null
     : null;
@@ -1676,7 +1681,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
                 || state.shop || state.guild || expeditionOver)}
             />
-            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
+            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
+              meleeReach={meleeReach} missileReach={missileReach} />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
