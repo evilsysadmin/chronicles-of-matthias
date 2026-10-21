@@ -49,3 +49,14 @@ test('each viewport uses an independent real account and always cleans it up', (
   assert.ok(source.includes('public-staging-journey.mjs'), 'cross-device tests stay independent');
   assert.ok(source.includes('await ctx?.close()'));
 });
+
+test('first-steps public smoke selects only the visible guide and catches duplicate visible onboarding', () => {
+  assert.ok(source.includes("world.locator('[data-chronicles-first-steps]:visible')"));
+  assert.ok(source.includes('const visibleFirstSteps = await firstSteps.count();'));
+  assert.ok(source.includes('if (visibleFirstSteps > 1)'));
+  assert.ok(source.includes('chronicles-public-first-steps-duplicate-'));
+  assert.ok(source.includes('if (visibleFirstSteps === 1)'));
+  assert.ok(source.includes("firstSteps.getByRole('button', { name: 'Entendido' }).click()"));
+  assert.ok(!source.includes("world.locator('[data-chronicles-first-steps]');"),
+    'unscoped locator makes isVisible strict on retained hidden guides');
+});
