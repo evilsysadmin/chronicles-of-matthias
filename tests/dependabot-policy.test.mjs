@@ -23,3 +23,11 @@ test('Dependabot does not schedule frequent unlimited CI runs', () => {
   assert.doesNotMatch(config, /interval: (daily|live)/);
   assert.equal((config.match(/open-pull-requests-limit:/g) || []).length, 3);
 });
+
+test('React major upgrades are grouped together rather than raised independently', () => {
+  const frontend = config.split('  - package-ecosystem: npm\n')[1]?.split('  - package-ecosystem: gomod\n')[0];
+  assert.ok(frontend);
+  assert.match(frontend, /react-major:\s*\n\s+patterns:\s*\n\s+- react\s*\n\s+- react-dom\s*\n\s+update-types:\s*\n\s+- major/);
+  // Minor and patch upgrades remain in their existing safe-update group.
+  assert.match(frontend, /frontend-safe-updates:\s*\n\s+update-types:\s*\n\s+- minor\s*\n\s+- patch/);
+});
