@@ -96,7 +96,7 @@
   .chronicles-dm-overlay:hover .chronicles-dm-peek {
     opacity: 1;
     visibility: visible;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 
