@@ -46,6 +46,7 @@ try {
       const hero4Name = page.getByRole('textbox', { name: /Nombre del héroe 4:/ });
       await hero4Name.waitFor({ state: 'visible' });
       const beforeHero4Name = await hero4Name.inputValue();
+      await hero4Name.press('End');
       await hero4Name.press('1');
       assert.equal(await hero4Name.inputValue(), beforeHero4Name + '1');
       assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 4:/ }).count(), 1,
