@@ -45,6 +45,15 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 		spawn := point{start.Int("x"), start.Int("y")}
 		accessible := reachable(grid, spawn)
 		used := map[point]bool{}
+		originalGold := 0
+		for _, raw := range previous[:ordinary] {
+			for _, effect := range raw.(*O).Obj("onDefeat").Arr("effects") {
+				if e := effect.(*O); e.Str("type") == "grant-gold" {
+					originalGold += e.Int("amount")
+				}
+			}
+		}
+		addedGold := 0
 		for _, raw := range previous {
 			e := raw.(*O)
 			used[point{e.Int("x"), e.Int("y")}] = true
@@ -79,8 +88,32 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 			if e.Has("defeatedFlag") || e.Has("positionKey") {
 				t.Fatalf("%s: generic patrol must not duplicate a boss/quest receipt", code)
 			}
+			goldEffects := 0
+			for _, rawEffect := range e.Obj("onDefeat").Arr("effects") {
+				effect := rawEffect.(*O)
+				if effect.Str("type") != "grant-gold" {
+					t.Fatalf("%s: reinforced patrol %s has non-coin loot", code, e.Str("id"))
+				}
+				goldEffects++
+				addedGold += effect.Int("amount")
+				source := previous[(saltOf(code)+i)%ordinary].(*O)
+				sourceGold := source.Obj("onDefeat").Arr("effects")[0].(*O).Int("amount")
+				if effect.Int("amount") != max(1, sourceGold/2) {
+					t.Fatalf("%s: patrol %s drops %d gold instead of %d",
+						code, e.Str("id"), effect.Int("amount"), max(1, sourceGold/2))
+				}
+			}
+			if goldEffects != 1 {
+				t.Fatalf("%s: reinforced patrol %s lacks exactly one coin reward", code, e.Str("id"))
+			}
 			used[p] = true
 			newCount++
+		}
+		// The world feels busier without making equipment trivial to buy.
+		// Two baseline level-1 foes plus three patrols may add at most 75%
+		// of baseline coin supply; later areas have a stricter 50% ratio.
+		if originalGold <= 0 || addedGold*4 > originalGold*3 {
+			t.Fatalf("%s: patrol gold inflation: original=%d additional=%d", code, originalGold, addedGold)
 		}
 	}
 	if newCount < 100 {

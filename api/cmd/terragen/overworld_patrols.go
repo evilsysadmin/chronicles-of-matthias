@@ -112,6 +112,15 @@ func reinforceOverworld(m *O, areaCode string) {
 		foe.Set("hpKey", fmt.Sprintf("%sFoe%dHp", camelFlag(areaID), index))
 		foe.Set("x", best.x)
 		foe.Set("y", best.y)
+		// Patrol reinforcement adds encounters, not another full economy.
+		// Cut only the new ordinary patrol's coin reward in half. Original
+		// enemies, quest receipts, camp bosses and their rewards are unchanged.
+		for _, raw := range foe.Obj("onDefeat").Arr("effects") {
+			effect := raw.(*O)
+			if effect.Str("type") == "grant-gold" {
+				effect.Set("amount", max(1, effect.Int("amount")/2))
+			}
+		}
 		// Additional enemies should bring NEW tactics, not just more copies.
 		// Pick a native species with an unseen real AI signature when possible.
 		// Grasslands need a ranged third signature; this patrol-only species
