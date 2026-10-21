@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 
 const workflow = readFileSync('.github/workflows/signal-shadowops-infra.yml', 'utf8');
 
@@ -66,4 +69,56 @@ test('dispatch is a separate gated job and missing token fails visibly', () => {
   assert.ok(workflow.includes('State: dispatch sent.'));
   assert.ok(workflow.includes('This does not certify deployment'));
   assert.match(workflow, /permissions:\s+actions: read\s+contents: read/);
+});
+
+test('handoff rejects malformed GitHub main SHA instead of pretending it is obsolete', () => {
+  const start = workflow.indexOf('          set -euo pipefail',
+    workflow.indexOf('name: Require current protected source main with three green workflows'));
+  const end = workflow.indexOf('          runs="$(gh api -X GET', start);
+  assert.ok(start > 0 && end > start, 'extract the real handoff source freshness shell gate');
+  const script = workflow.slice(start, end).split('\n').map(
+    (line) => line.startsWith('          ') ? line.slice(10) : line,
+  ).join('\n');
+  assert.match(script, /\[\[ "\$head" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
+  assert.match(script, /CHRONICLES_SIGNAL_INVALID_MAIN_SHA/);
+
+  const folder = mkdtempSync(join(tmpdir(), 'chronicles-signal-'));
+  try {
+    const gh = join(folder, 'gh');
+    writeFileSync(gh, '#!/bin/sh\nif [ "$FAKE_GH_FAILURE" = 1 ]; then exit 4; fi\nprintf "%s\\n" "$FAKE_MAIN_SHA"\n');
+    chmodSync(gh, 0o755);
+    const summary = join(folder, 'summary');
+    const output = join(folder, 'output');
+    const run = (current, fail = false) => {
+      writeFileSync(summary, '');
+      writeFileSync(output, '');
+      const result = spawnSync('bash', ['-c', script], {
+        encoding: 'utf8',
+        timeout: 5000,
+        env: {
+          ...process.env,
+          PATH: folder + delimiter + process.env.PATH,
+          SOURCE_SHA: 'a'.repeat(40),
+          FAKE_MAIN_SHA: current,
+          FAKE_GH_FAILURE: fail ? '1' : '0',
+          GITHUB_STEP_SUMMARY: summary,
+          GITHUB_OUTPUT: output,
+        },
+      });
+      return { ...result, output: readFileSync(output, 'utf8') };
+    };
+    const current = run('a'.repeat(40));
+    assert.equal(current.status, 0, current.stderr);
+    assert.doesNotMatch(current.output, /ready=false/);
+    const stale = run('b'.repeat(40));
+    assert.equal(stale.status, 0, stale.stderr);
+    assert.match(stale.output, /ready=false/);
+    const malformed = run('not-a-sha');
+    assert.equal(malformed.status, 65, malformed.stderr);
+    assert.match(malformed.stderr, /CHRONICLES_SIGNAL_INVALID_MAIN_SHA/);
+    assert.doesNotMatch(malformed.output, /ready=false/);
+    assert.equal(run('a'.repeat(40), true).status, 4);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
 });
