@@ -34,7 +34,7 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 				t.Fatalf("%s: changed saved enemy at index %d", code, i)
 			}
 		}
-		rows := m.Arr("grid")
+		rows := parse(dump(m)).(*O).Arr("grid")
 		grid := make([][]byte, len(rows))
 		for y, raw := range rows {
 			grid[y] = []byte(raw.(string))
