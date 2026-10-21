@@ -38,7 +38,12 @@ function VolumeRow({ id, label, ariaLabel, icon, value, onChange, onRelease }) {
           onKeyUp={(event) => {
             if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') onRelease?.();
           }}
-          onKeyDown={(event) => event.stopPropagation()}
+          // Arrow/Home/End remain local to the volume control. Let Tab
+          // bubble so the surrounding adventure modal can keep focus inside
+          // instead of leaking onto the hidden game HUD.
+          onKeyDown={(event) => {
+            if (event.key !== 'Tab') event.stopPropagation();
+          }}
         />
       </div>
     </div>
