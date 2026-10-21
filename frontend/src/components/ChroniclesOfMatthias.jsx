@@ -155,6 +155,7 @@ import ChroniclesFirstSteps from './ChroniclesFirstSteps.jsx';
 import ChroniclesFirstThreatCue from './ChroniclesFirstThreatCue.jsx';
 import ChroniclesFirstAudienceCue from './ChroniclesFirstAudienceCue.jsx';
 import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
+import { chroniclesTacticalAttackReach } from '../chronicles/chroniclesTacticalAttackReach.js';
 import useChroniclesLandscape, {
   releaseChroniclesLandscape,
   requestChroniclesLandscapeOnEntry,
@@ -1416,8 +1417,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // A foe can be visible several cells away while A only reaches the next
   // cell. Keep the target dossier visible so an out-of-range attack is
   // explained instead of silently resembling a broken button.
-  const meleeReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'melee').reach : 1;
-  const missileReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'missile').reach : 0;
+  const { meleeReach, missileReach } = chroniclesTacticalAttackReach(state, selectedMember?.id);
   const tacticalTarget = chroniclesTargetAhead(state, Math.max(4, selectedAttackStats.reach || 1));
   const sheetMember = sheetMemberId
     ? state.party.find((member) => member.id === sheetMemberId) || null
