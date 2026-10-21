@@ -42,6 +42,20 @@ function Fixture() {
   const [campaign, setCampaign] = useState(state);
   return <>
     <button data-test-reopen type="button" onClick={() => setOpened(true)}>Abrir crónica</button>
+    <button data-test-reopen-followed type="button" onClick={() => {
+      setCampaign((current) => chroniclesReduce(current, { type: 'track-quest', questId: 'names-in-wood' }));
+      setOpened(true);
+    }}>Volver a la misión seguida</button>
+    <button data-test-another-expedition type="button" onClick={() => {
+      setCampaign({
+        ...source,
+        quests: {
+          'another-adventure': { id: 'another-adventure', status: 'active', order: 1,
+            title: 'Un nuevo encargo', objective: 'Aún no hay una pista geográfica confirmada.' },
+        },
+      });
+      setOpened(true);
+    }}>Otra expedición</button>
     <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
     <ChroniclesJournalModal open={opened} state={campaign}
       entries={chroniclesJournalEntries(campaign)}
