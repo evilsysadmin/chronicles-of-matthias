@@ -57,6 +57,10 @@ export function shouldRelockChroniclesOnTap({
   return Boolean(
     landscapeWanted()
     && win && doc && doc.visibilityState !== 'hidden'
+    // A successful orientation lock may take a frame to resize the viewport.
+    // Never overlay the new-game guide while our fullscreen is still active.
+    // This prompt is solely for when a task switch has *lost* fullscreen.
+    && !doc.fullscreenElement
     && shouldAutoRotateChroniclesOnEntry({ win })
     && !win.matchMedia(CHRONICLES_LANDSCAPE_QUERY).matches,
   );

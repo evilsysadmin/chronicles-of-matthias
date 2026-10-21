@@ -144,6 +144,11 @@ describe('Chronicles landscape after switching apps', () => {
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
     const entry = await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
     expect(entry.landscape).toBe(true);
+    // Mobile browsers may report orientation.lock() as successful before
+    // updating matchMedia. Do not display an intrusive relock on first entry
+    // while the browser is still fullscreen in a portrait-sized viewport.
+    expect(doc.fullscreenElement).toBeTruthy();
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
     // Back from another app: fullscreen is gone and the phone is upright.
     doc.fullscreenElement = null;
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(true);

@@ -159,6 +159,17 @@ try {
       // screens. A plain locator.isVisible() is strict and fails on duplicates.
       // Only the actual visible guide can receive input. Multiple visible
       // guides are a genuine UX regression and must not be silently ignored.
+      // Portrait mobile browsers can legitimately lose fullscreen after an
+      // orientation request. The relock dialog is modal: choose its explicit
+      // supported "Seguir en vertical" action rather than clicking through
+      // the overlay or letting the guide click hang for 30 seconds.
+      const relock = page.locator('[data-chronicles-relock]:visible');
+      if (viewport.width === 390 && await relock.count()) {
+        await relock.getByRole('button', { name: 'Seguir en vertical' }).click();
+        await relock.waitFor({ state: 'hidden', timeout: 10_000 });
+        console.log('CHRONICLES_PUBLIC_PORTRAIT_CHOICE_OK viewport=390');
+      }
+      assert.equal(await relock.count(), 0, 'Landscape relock must not obscure the first-steps guide');
       const firstSteps = world.locator('[data-chronicles-first-steps]:visible');
       const visibleFirstSteps = await firstSteps.count();
       if (visibleFirstSteps > 1) {
