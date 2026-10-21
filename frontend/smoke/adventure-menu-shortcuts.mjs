@@ -44,6 +44,10 @@ try {
       await page.keyboard.press('Shift+Tab');
       assert.equal(await lastControl.evaluate((node) => document.activeElement === node), true,
         'Shift+Tab from the first menu control must wrap to the last');
+      // Shift+Tab deliberately leaves focus in the final VOLUME slider.
+      // S there belongs to the input, not to Save; restore ordinary menu
+      // focus before checking save/quit action routing below.
+      await menu.getByRole('button', { name: 'Continuar' }).focus();
       const bounds = await menu.boundingBox();
       assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
         'Menu must fit viewport: ' + JSON.stringify(bounds));
