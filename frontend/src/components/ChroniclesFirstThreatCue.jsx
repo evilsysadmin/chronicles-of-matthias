@@ -57,13 +57,29 @@ export default function ChroniclesFirstThreatCue({
         Por fin alguien con peor juicio que nosotros».</p>
       <small>
         {sighting.inRangeShooterCount > 0
-          ? `Tienes ${sighting.inRangeShooterCount === sighting.shooterCount
-            ? `${sighting.inRangeShooterCount} ${sighting.inRangeShooterCount === 1 ? 'tirador listo' : 'tiradores listos'}`
-            : `${sighting.inRangeShooterCount} de ${sighting.shooterCount} tiradores a tiro`}: S dispara una salva antes del contacto.`
+          ? <>
+              { `Tienes ${sighting.inRangeShooterCount === sighting.shooterCount
+                ? `${sighting.inRangeShooterCount} ${sighting.inRangeShooterCount === 1 ? 'tirador listo' : 'tiradores listos'}`
+                : `${sighting.inRangeShooterCount} de ${sighting.shooterCount} tiradores a tiro`}:` }{' '}
+              <span className="chronicles-first-threat__keyboard-hint">S dispara una salva antes del contacto.</span>
+              <span className="chronicles-first-threat__touch-hint">Pulsa SALVA para disparar antes del contacto.</span>
+            </>
           : sighting.shooterCount > 0
-            ? 'Llevas armas de proyectiles, pero este enemigo está fuera de su alcance. Acércate antes de usar S.'
-            : 'No hay tiradores listos. Equipa armas de proyectiles para usar S con tu grupo.'}
-        {' '}A ataca cuerpo a cuerpo cuando el enemigo esté al alcance. En combate, sigue el orden de iniciativa.
+            ? <>
+                Llevas armas de proyectiles, pero este enemigo está fuera de su alcance. Acércate antes de usar{' '}
+                <span className="chronicles-first-threat__keyboard-hint">S.</span>
+                <span className="chronicles-first-threat__touch-hint">SALVA.</span>
+              </>
+            : <>
+                No hay tiradores listos. Equipa armas de proyectiles para usar{' '}
+                <span className="chronicles-first-threat__keyboard-hint">S</span>
+                <span className="chronicles-first-threat__touch-hint">SALVA</span>
+                {' '}con tu grupo.
+              </>}
+        {' '}
+        <span className="chronicles-first-threat__keyboard-hint">A ataca cuerpo a cuerpo cuando el enemigo esté al alcance.</span>
+        <span className="chronicles-first-threat__touch-hint">Usa ATACAR para el cuerpo a cuerpo cuando el enemigo esté al alcance.</span>
+        {' '}En combate, sigue el orden de iniciativa.
       </small>
       <button type="button" className="chronicles-first-threat__dismiss" onClick={dismiss}>Entendido</button>
     </aside>
