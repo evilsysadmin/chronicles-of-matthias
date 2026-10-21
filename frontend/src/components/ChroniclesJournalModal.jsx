@@ -14,6 +14,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const scrollRef = useRef(null);
   const [chapter, setChapter] = useState('quests');
   const [openedQuestId, setOpenedQuestId] = useState(null);
+  const [archiveExpanded, setArchiveExpanded] = useState(false);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
   // The book remembers the entry while changing chapters, but a later visit
@@ -22,6 +23,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     if (!open) {
       setChapter('quests');
       setOpenedQuestId(null);
+      setArchiveExpanded(false);
     }
   }, [open]);
 
@@ -41,6 +43,10 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
 
   const quests = chroniclesQuestLogEntries(state);
   const active = quests.filter((quest) => quest.status === 'active');
+  const completedCount = quests.filter((quest) => quest.status === 'completed').length;
+  // A company with nothing pending must still be able to read its old deeds.
+  const visibleQuests = archiveExpanded || active.length === 0
+    ? quests : quests.filter((quest) => quest.status !== 'completed');
   // A quest may disappear on world reload / another expedition. Never leave
   // the reader with every entry closed because an obsolete ID was retained.
   // '' is intentional: clicking the open heading collapses all entries.
@@ -131,9 +137,21 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                 <h3>Los asuntos pendientes</h3>
                 <p>Abre un encargo para leer la pista y la región donde buscar. Los lugares no revelados siguen siendo desconocidos.</p>
               </div>
+              {completedCount > 0 && active.length > 0 && (
+                <button type="button" className="chronicles-journal-modal__archive-toggle"
+                  aria-expanded={archiveExpanded} aria-controls="chronicles-journal-quest-pages"
+                  onClick={() => {
+                    if (archiveExpanded && quests.some((quest) => quest.status === 'completed' && quest.id === selectedId)) {
+                      setOpenedQuestId(null);
+                    }
+                    setArchiveExpanded((value) => !value);
+                  }}>
+                  {archiveExpanded ? 'Ocultar encargos resueltos' : `Ver encargos resueltos (${completedCount})`}
+                </button>
+              )}
               {quests.length ? (
-                <ol className="chronicles-journal-modal__quest-pages" aria-label="Encargos de la compañía">
-                  {quests.map((quest, index) => {
+                <ol id="chronicles-journal-quest-pages" className="chronicles-journal-modal__quest-pages" aria-label="Encargos de la compañía">
+                  {visibleQuests.map((quest, index) => {
                     const expanded = selectedId === quest.id;
                     const hint = chroniclesQuestRegionHint(quest, state);
                     const orientation = chroniclesQuestRegionContext(hint, state);
