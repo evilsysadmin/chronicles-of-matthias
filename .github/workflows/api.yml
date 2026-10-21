@@ -24,10 +24,10 @@ jobs:
           --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1})'"
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
@@ -58,7 +58,7 @@ jobs:
           api_pid=$!
           wait_for_http http://127.0.0.1:8090/api/health "$api_pid" "$RUNNER_TEMP/api.log" "Go API health"
           curl -fsS http://127.0.0.1:8090/api/health
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -73,7 +73,7 @@ jobs:
           npm run build
       # Share the same pinned Chromium binary revision as frontend CI.
       - name: Restore pinned Playwright Chromium browser
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-1.64.1
@@ -93,7 +93,7 @@ jobs:
         if: always()
         run: cat "$RUNNER_TEMP/api.log" || true
       # Keep PR review screenshots and failed-main evidence without archiving every green main build.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-api-e2e
@@ -115,7 +115,7 @@ jobs:
     env:
       IMAGE: ghcr.io/evilsysadmin/chronicles-api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
       - uses: docker/setup-qemu-action@v3
