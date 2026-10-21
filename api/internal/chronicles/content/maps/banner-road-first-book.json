@@ -166,6 +166,209 @@
         ]
       },
       "defeatedFlag": "bannerRoadCaptainDefeated"
+    },
+    {
+      "id": "banner-road-east-scout",
+      "visualType": "bandit-archer",
+      "name": "ballestero de Garrah",
+      "x": 16,
+      "y": 3,
+      "hpKey": "bannerRoadEastScoutHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a ballestero de Garrah con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bandit-archer",
+        "level": 1,
+        "attributes": {
+          "vigor": 0,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": []
+      }
+    },
+    {
+      "id": "banner-road-north-marauder",
+      "visualType": "road-bandit",
+      "name": "salteador de la calzada",
+      "x": 5,
+      "y": 3,
+      "hpKey": "bannerRoadNorthMarauderHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a salteador de la calzada con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "banner-road-west-deserter",
+      "visualType": "road-bandit",
+      "name": "desertor rezagado",
+      "x": 6,
+      "y": 11,
+      "hpKey": "bannerRoadWestDeserterHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a desertor rezagado con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "banner-road-crossroads-thug",
+      "visualType": "road-bandit",
+      "name": "matón del peaje",
+      "x": 13,
+      "y": 10,
+      "hpKey": "bannerRoadCrossroadsThugHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a matón del peaje con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "banner-road-east-rustler",
+      "visualType": "road-bandit",
+      "name": "saqueador de carretas",
+      "x": 18,
+      "y": 8,
+      "hpKey": "bannerRoadEastRustlerHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a saqueador de carretas con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
     }
   ],
   "triggers": [],

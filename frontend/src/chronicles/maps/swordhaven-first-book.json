@@ -149,6 +149,86 @@
         ]
       },
       "defeatedFlag": "swordhavenSouthFalseWatchDefeated"
+    },
+    {
+      "id": "swordhaven-old-quarter-pickpocket",
+      "visualType": "road-bandit",
+      "name": "carterista del barrio viejo",
+      "x": 2,
+      "y": 15,
+      "hpKey": "swordhavenOldQuarterPickpocketHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a carterista del barrio viejo con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "swordhaven-false-watch-recruit",
+      "visualType": "bandit-archer",
+      "name": "ballestero de la falsa ronda",
+      "x": 15,
+      "y": 15,
+      "hpKey": "swordhavenFalseWatchRecruitHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a ballestero de la falsa ronda con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bandit-archer",
+        "level": 1,
+        "attributes": {
+          "vigor": 0,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": []
+      }
     }
   ],
   "triggers": [],
