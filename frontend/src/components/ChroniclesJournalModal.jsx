@@ -169,7 +169,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                     return (
                       <li key={quest.id} className={`chronicles-journal-modal__quest-page${quest.status === 'completed' ? ' is-completed' : ''}`}
                         data-chronicles-quest-id={quest.id} data-chronicles-quest-status={quest.status}>
-                        <button type="button" aria-expanded={expanded} aria-controls={detailId}
+                        <button type="button" aria-expanded={expanded} aria-controls={expanded ? detailId : undefined}
                           className="chronicles-journal-modal__quest-heading"
                           onClick={() => setOpenedQuestId(expanded ? '' : quest.id)}>
                           <span className="chronicles-journal-modal__quest-number" aria-hidden="true">
