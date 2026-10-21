@@ -1,0 +1,55 @@
+import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+
+// GitHub workflow identity for .github/workflows/react-frontend.yml.
+// The branch ruleset currently cannot require its "build" job directly:
+// never let an unrelated GitHub Actions job named "build" satisfy the fallback.
+export const FRONTEND_WORKFLOW_ID = 386812503;
+
+export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
+  if (!/^[0-9a-f]{40}$/.test(sha ?? '')) throw new Error('Invalid source SHA');
+  if (!['push', 'pull_request'].includes(event)) throw new Error('Unexpected event');
+  if (repository !== 'evilsysadmin/chronicles-of-matthias') {
+    throw new Error('Unexpected repository');
+  }
+  if (!payload || !Number.isInteger(payload.total_count)
+      || payload.total_count < 0 || payload.total_count > 100
+      || !Array.isArray(payload.workflow_runs)) {
+    throw new Error('Invalid or truncated GitHub workflow-run response');
+  }
+
+  const matching = payload.workflow_runs.filter((run) =>
+    run.workflow_id === FRONTEND_WORKFLOW_ID
+    && run.head_sha === sha
+    && run.event === event
+    && run.repository?.full_name === repository
+    && (event !== 'push' || run.head_branch === 'main')
+    && Number.isSafeInteger(run.id) && run.id > 0
+  );
+  const latest = matching.reduce(
+    (candidate, run) => !candidate || run.id > candidate.id ? run : candidate,
+    null,
+  );
+  if (!latest || latest.status !== 'completed' || latest.conclusion !== 'success') {
+    throw new Error(
+      'Official Chronicles frontend workflow not green for exact source SHA '
+      + sha + ' (' + (latest?.status ?? 'not found')
+      + '/' + (latest?.conclusion ?? 'unknown') + ')',
+    );
+  }
+  return latest.id;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const [sha, event, repository] = process.argv.slice(2);
+    const id = verifyFrontendWorkflow(JSON.parse(readFileSync(0, 'utf8')), {
+      sha, event, repository,
+    });
+    console.log('FRONTEND_WORKFLOW_IDENTITY_GREEN sha=' + sha
+      + ' workflow_id=' + FRONTEND_WORKFLOW_ID + ' run_id=' + id);
+  } catch (error) {
+    console.error('::error title=Frontend workflow identity not verified::' + error.message);
+    process.exitCode = 1;
+  }
+}
