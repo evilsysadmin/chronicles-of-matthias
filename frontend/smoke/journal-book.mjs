@@ -128,9 +128,10 @@ try {
       const heading = dialog.locator('.chronicles-journal-modal__archive-heading');
       assert.equal(await heading.count(), 1);
       assert.match(await heading.innerText(), /Gestas concluidas/);
-      assert.equal(await heading.evaluate((element) =>
+      assert.equal(await heading.evaluate((element) => Boolean(
         element.compareDocumentPosition(document.querySelector('[data-chronicles-quest-id="road-bandits"]'))
-          & Node.DOCUMENT_POSITION_FOLLOWING), Node.DOCUMENT_POSITION_FOLLOWING);
+          & Node.DOCUMENT_POSITION_FOLLOWING)), true,
+        'The appendix title must precede its first archived contract');
 
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
