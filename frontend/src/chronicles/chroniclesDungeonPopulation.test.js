@@ -47,6 +47,10 @@ describe('Chronicles MM3 · populated dungeon corridors', () => {
       expect(occupied.has(key), id + '/' + enemy.id + ' must not overlap another encounter or POI').toBe(false);
       expect(enemy.optional, enemy.id).toBe(true);
       expect(enemy.activation, enemy.id).toBe('always');
+      // A copied archetype must never drag its old coordinate-bound patrol.
+      if (enemy.ai.movement === 'patrol-route') {
+        expect(enemy.ai.patrolRoute?.some((point) => point.x === enemy.x && point.y === enemy.y), enemy.id).toBe(true);
+      }
       expect(originalHpKeys.has(enemy.hpKey), enemy.id).toBe(false);
       expect(enemy.onDefeat?.effects?.some((effect) =>
         ['advance-quest', 'complete-quest', 'grant-item', 'set'].includes(effect.type)), enemy.id).toBeFalsy();
