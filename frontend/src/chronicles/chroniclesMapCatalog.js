@@ -467,6 +467,25 @@ export function chroniclesMapInitialEnemyState(mapId = DEFAULT_CHRONICLES_MAP_ID
   }, {});
 }
 
+// A saved in-tab session may predate enemies added to a town manifest.
+// The renderer previously showed those foes at max HP while the rules saw
+// absent HP keys as dead, producing visible but untargetable opponents.
+// Fill ONLY missing keys from the authoritative current map, preserving
+// existing wounds, kills, defeated flags and the slain-by-map ledger.
+export function chroniclesReconcileCurrentMapEnemyHp(state) {
+  if (!state?.mapId) return state;
+  const map = chroniclesMapForState(state);
+  if (!map?.enemies?.length) return state;
+  const initial = chroniclesMapInitialEnemyState(map.id, state);
+  const missing = (map.enemies || [])
+    .filter((enemy) => !Object.prototype.hasOwnProperty.call(state, enemy.hpKey));
+  if (!missing.length) return state;
+  return {
+    ...state,
+    ...Object.fromEntries(missing.map((enemy) => [enemy.hpKey, initial[enemy.hpKey]])),
+  };
+}
+
 function clearedEnemyState(map) {
   return (map?.enemies || []).reduce((state, enemy) => {
     state[enemy.hpKey] = 0;
