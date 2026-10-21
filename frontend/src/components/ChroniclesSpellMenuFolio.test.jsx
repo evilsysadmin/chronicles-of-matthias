@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { chroniclesSpellMenuKind } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -16,6 +16,23 @@ function render(state, member, props = {}) {
 }
 
 describe('Chronicles · CAST diegetic grimoire', () => {
+  it('switches C/I folio keys, and closes on the same page key', () => {
+    const pageKey = (key, tab, hasSpells = true, extra = {}) =>
+      chroniclesSpellMenuPageShortcut({ key, ...extra }, { tab, hasSpells });
+    expect(pageKey('i', 'spells')).toBe('items');
+    expect(pageKey('I', 'items')).toBe('close');
+    expect(pageKey('c', 'items')).toBe('spells');
+    expect(pageKey('C', 'spells')).toBe('close');
+    expect(pageKey('c', 'items', false)).toBe(null);
+    expect(pageKey('i', 'spells', true, { ctrlKey: true })).toBe(null);
+    expect(pageKey('i', 'spells', true, { shiftKey: true })).toBe(null);
+    expect(pageKey('i', 'spells', true, { repeat: true })).toBe(null);
+    expect(pageKey('c', 'items', true, { isComposing: true })).toBe(null);
+    expect(pageKey('i', 'spells', true, {
+      target: { closest: () => ({ tagName: 'INPUT' }) },
+    })).toBe(null);
+  });
+
   it('preserves real spell IDs, costs, tab semantics and dialog focus affordances', () => {
     const state = makeState();
     const member = caster(state);
@@ -28,6 +45,8 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('role="progressbar"');
     expect(html).toContain('data-chronicles-menu-tab-button="spells"');
     expect(html).toContain('data-chronicles-menu-tab-button="items"');
+    expect(html).toContain('aria-keyshortcuts="C"');
+    expect(html).toContain('aria-keyshortcuts="I"');
     expect(html).toContain('data-chronicles-cast="' + first.id + '"');
     expect(html).toContain(first.name);
     expect(html).toContain(first.cost + ' PH');
