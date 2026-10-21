@@ -118,7 +118,7 @@ function RealGuidesReconciliationFlow() {
       <ChroniclesFirstThreatCue
         key={`first-threat:${runId}`}
         state={activeState} runId={runId} target={firstSteps ? null : sighting.target}
-        shooterCount={sighting.shooters}
+
       />
     </>
   );
@@ -190,7 +190,7 @@ const stage = {
 let content;
 if (view === 'threat') {
   const { state, target, shooters } = discoverSighting();
-  content = <ChroniclesFirstThreatCue state={state} target={target} shooterCount={shooters}
+  content = <ChroniclesFirstThreatCue state={state} target={target}
     runId="qa-first-hour-threat" />;
   document.body.dataset.enemyId = target.enemy.id;
   document.body.dataset.realShooters = String(shooters);
