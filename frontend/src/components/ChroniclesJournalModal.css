@@ -745,3 +745,21 @@
   outline: 3px solid #a46d23;
   outline-offset: 2px;
 }
+
+
+/* The expanded archive is an appendix, not another interleaved task list. */
+.chronicles-journal-modal__archive-heading {
+  padding: 18px 10px 9px;
+  margin-top: 16px;
+  border-top: 2px double #ba9a69;
+  color: #64462a;
+}
+.chronicles-journal-modal__archive-heading h4 {
+  margin: 0 0 5px;
+  font: 700 1.12rem/1.25 Georgia, serif;
+  color: #58381e;
+}
+.chronicles-journal-modal__archive-heading p {
+  margin: 0;
+  font: italic .85rem/1.35 Georgia, serif;
+}
