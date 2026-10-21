@@ -180,8 +180,163 @@ try {
                 hidden: Boolean(p.hidden),
               });
             }
+            // React 18 attaches an opaque Fiber reference to managed hosts.
+            // Inspect only ownership and component *types*, never props,
+            // component keys, state, account names, or auth data.
+            const fiberProperty = Object.keys(node).find(key => key.startsWith('__reactFiber
+              rect: [box.x, box.y, box.width, box.height].map(n => Math.round(n)),
+              display: style.display, visibility: style.visibility,
+              opacity: style.opacity, position: style.position,
+              zIndex: style.zIndex, pointerEvents: style.pointerEvents,
+              hitWithinGuide: Boolean(hit && node.contains(hit)),
+              hitOwnGuide: Boolean(hit && hit.closest('[data-chronicles-first-steps]') === node),
+              ancestors,
+            };
+          };
+          return { worldRoots: roots.length, guideNodes: nodes.length,
+            candidates: nodes.slice(0, 8).map(describe) };
+        });
+        console.error('CHRONICLES_FIRST_STEPS_DOM_CENSUS', JSON.stringify(census));
+        await page.screenshot({
+          path: `chronicles-public-first-steps-duplicate-${viewport.width}.png`,
+        }).catch(() => {});
+        throw new Error(`Multiple visible Matthias guides: ${visibleFirstSteps}`);
+      }
+      if (visibleFirstSteps === 1) {
+        await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+      }
+      await page.screenshot({ path: `chronicles-public-world-${viewport.width}.png` });
+
+      async function verifyFolio(dialog, label) {
+        await dialog.waitFor({ state: 'visible', timeout: 12_000 });
+        const dimensions = await dialog.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          return {
+            width: innerWidth, height: innerHeight, left: rect.left,
+            top: rect.top, right: rect.right, bottom: rect.bottom,
+            scrollWidth: node.scrollWidth, clientWidth: node.clientWidth,
+          };
+        });
+        assert.ok(dimensions.left >= -1 && dimensions.right <= dimensions.width + 1
+          && dimensions.top >= -1 && dimensions.bottom <= dimensions.height + 1,
+          `${label} exceeds real game viewport: ${JSON.stringify(dimensions)}`);
+        assert.ok(dimensions.scrollWidth <= dimensions.clientWidth + 1,
+          `${label} requires horizontal scrolling`);
+        assert.ok(await canvas.isVisible(), '3D stage disappeared behind an overlay');
+        if (label === 'adventure') {
+          try {
+            await assertAdventureFolioInk(dialog, `${viewport.width}x${viewport.height}`);
+          } catch (error) {
+            // Only public CSS/DOM metadata, never auth tokens or player details.
+            const probe = await dialog.evaluate((root) => {
+              const selectors = [
+                '.chronicles-game-menu__actions > button',
+                '.chronicles-audio-controls label',
+                '.chronicles-game-menu__hint',
+              ];
+              const samples = selectors.map((selector) => {
+                const el = root.querySelector(selector);
+                const style = el && getComputedStyle(el);
+                return { selector, cssColor: style?.color,
+                  textFill: style?.getPropertyValue('-webkit-text-fill-color'),
+                  className: el?.className || '' };
+              });
+              const sheets = [...document.styleSheets].map((sheet) => {
+                try {
+                  return { href: sheet.href, count: sheet.cssRules.length,
+                    folioRules: [...sheet.cssRules].filter((rule) =>
+                      rule.selectorText?.includes('chronicles-game-menu__panel--folio'))
+                      .length };
+                } catch { return { href: sheet.href, inaccessible: true }; }
+              });
+              return { samples, sheets };
+            });
+            console.error('CHRONICLES_PUBLIC_ADVENTURE_STYLE_PROBE', JSON.stringify(probe));
+            throw error;
+          }
+        }
+        await page.screenshot({ path: `chronicles-public-${label}-${viewport.width}.png` });
+        console.log(`CHRONICLES_PUBLIC_FOLIO_OK name=${label} viewport=${viewport.width}`);
+      }
+
+      // Slot 2 of the canonical party is a caster. Use the same public
+      // keyboard shortcut and UI that an actual player sees.
+      await page.keyboard.press('2');
+      await page.keyboard.press('c');
+      const spellbook = page.locator('[data-chronicles-spell-menu]');
+      await verifyFolio(spellbook, 'cast');
+      assert.ok(await spellbook.locator('[data-chronicles-cast]').count() > 0,
+        'Expected real spells and costs for the selected caster');
+      await spellbook.getByRole('tab', { name: /Objetos/ }).click();
+      assert.equal(await spellbook.getAttribute('data-chronicles-menu-tab'), 'items');
+      await verifyFolio(spellbook, 'items');
+      await page.keyboard.press('Escape');
+      await spellbook.waitFor({ state: 'hidden', timeout: 8_000 });
+
+      // The pause menu must be the real in-game menu, not a fixture screenshot.
+      await world.locator('details.chronicles-game-menu > summary').click();
+      const adventure = world.locator('[data-chronicles-adventure-menu]');
+      await verifyFolio(adventure, 'adventure');
+      await adventure.getByRole('button', { name: 'Salir sin guardar' }).click();
+      await adventure.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor();
+      await adventure.getByRole('button', { name: 'Cancelar' }).click();
+      await adventure.getByRole('group', { name: 'Confirmar salida sin guardar' })
+        .waitFor({ state: 'hidden' });
+      await adventure.getByRole('button', { name: /Continuar/ }).click();
+      await adventure.waitFor({ state: 'hidden', timeout: 8_000 });
+      assert.deepEqual(errors, [], 'Browser errors after entering the real world and folios');
+
+      // Simulate an incoming newer build during an authenticated expedition.
+      await page.route('**/release.json*', route => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ release: published.release, build: 'b'.repeat(40) === expectedSha ? 'c'.repeat(40) : 'b'.repeat(40) }),
+      }));
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      const banner = page.getByRole('status').filter({ hasText: 'Nueva versión disponible' });
+      await banner.waitFor({ timeout: 15_000 });
+      assert.equal(await banner.getByRole('button', { name: 'Actualizar', exact: true }).count(), 0,
+        'Must never expose a mid-expedition reload button');
+      await banner.getByRole('button', { name: 'Después' }).click();
+      await banner.waitFor({ state: 'hidden' });
+      assert.equal(await page.getByRole('button', { name: 'Entrar', exact: true }).count(), 0,
+        'Update snooze must not log the player out');
+      await page.screenshot({ path: `chronicles-public-${viewport.width}.png`, fullPage: false });
+      console.log(`CHRONICLES_PUBLIC_BROWSER_OK viewport=${viewport.width}`);
+    } finally {
+      await ctx?.close();
+      if (token) {
+        const removed = await fetch(api + '/auth/delete-account', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ password }),
+        });
+        assert.ok(removed.ok, `Smoke account cleanup HTTP ${removed.status}`);
+      }
+    }
+  }
+} finally {
+  await browser?.close();
+}
+));
+            const fiber = fiberProperty ? node[fiberProperty] : null;
+            const fiberTypes = [];
+            let reactParentMatchesDom = false;
+            for (let f = fiber; f && fiberTypes.length < 12; f = f.return) {
+              const type = f.type;
+              const typeName = typeof type === 'string' ? type
+                : typeof type === 'function' ? (type.displayName || type.name || 'function') : null;
+              if (typeName) fiberTypes.push(typeName.slice(0, 90));
+              if (f !== fiber && f.stateNode === node.parentElement) {
+                reactParentMatchesDom = true;
+              }
+            }
             return {
               rootIndex: roots.indexOf(node.closest('[data-chronicles="true"]')),
+              reactFiberAttached: Boolean(fiber),
+              reactFiberHostMatches: Boolean(fiber && fiber.stateNode === node),
+              reactParentMatchesDom,
+              reactFiberTypes: fiberTypes,
+              domSiblingIndex: [...node.parentElement.children].indexOf(node),
               tag: node.tagName.toLowerCase(),
               rect: [box.x, box.y, box.width, box.height].map(n => Math.round(n)),
               display: style.display, visibility: style.visibility,
