@@ -28,7 +28,7 @@ import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficulty
 import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
+import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
@@ -917,7 +917,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           createChroniclesState(null, activeProgression.characterBuild, { rules: 'mm3' }),
           activeProgression,
         );
-        const restored = chroniclesApplyRunCheckpoint(progressed, world);
+        const restored = chroniclesReconcileCurrentMapEnemyHp(chroniclesApplyRunCheckpoint(progressed, world));
         // The run id seeds every MM3 die so F5 never rerolls a blow.
         let next = {
           ...chroniclesApplyArrival(chroniclesInitializeLostKingIntro(restored, {
@@ -937,7 +937,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // A reload resumes this tab's own copy, unless the server saw a newer save.
         const resumed = chroniclesLoadSessionResume(confirmedId, world.worldVersion);
         if (resumed) {
-          next = { ...resumed.state, runSeed: world.runId };
+          // Session snapshots from before a town gained new enemies can miss
+          // their HP keys. The rendering and targeting contracts must agree.
+          next = { ...chroniclesReconcileCurrentMapEnemyHp(resumed.state), runSeed: world.runId };
           if (resumed.progression) {
             progressionRef.current = resumed.progression;
             setProgression(resumed.progression);
