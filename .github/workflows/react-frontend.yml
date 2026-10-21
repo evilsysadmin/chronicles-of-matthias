@@ -77,14 +77,19 @@ jobs:
           node smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
           # First contact/payment: genuine road sightline and earned quest receipt, mobile + desktop.
           node smoke/first-hour-contact.mjs http://localhost:4174/smoke/first-hour-contact.html
+      # PR screenshots remain inspectable; failed main runs retain diagnostics.
+      # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-mount-smoke
           path: |
             frontend/smoke-*.png
+          compression-level: 0
           retention-days: 7
+      # Infra independently rebuilds pinned releases; this bundle is for PR inspection.
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request'
         with:
           name: chronicles-frontend-dist
           path: frontend/dist
