@@ -51,6 +51,8 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('data-chronicles-character-setup="editor"');
       expect(html).toContain('Forja tu compañía');
       expect(html).toContain('Identidad del aventurero');
+      expect(html).toContain('Cambiar retrato · 10 opciones');
+      expect(html).toContain('chronicles-character-setup__change-portrait');
       expect(html).toMatch(/aria-label="Nombre del héroe [1-4]: [^"]+"/);
       expect(html).not.toContain('aria-label="Nombre de bishop"');
       expect(html).toContain('data-editor-step="identity"');
@@ -67,6 +69,7 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('Raza');
       expect(html).toContain('Semiorco');
       expect(html).toContain('Alineamiento');
+      expect(html).toContain('El retrato elegido se guarda con el héroe.');
       expect(html).toContain('Tirar dados');
       expect((html.match(/data-class-id=/g) || []).length).toBe(10);
       expect(html).toMatch(/[0-9]+ de 10 profesiones disponibles para tus atributos\./);

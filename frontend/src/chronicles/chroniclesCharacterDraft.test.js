@@ -27,6 +27,7 @@ describe('Chronicles character draft', () => {
 
   it('restores one unconfirmed custom build across an F5-style reload', () => {
     const build = createSeededChroniclesCharacterBuild('vault-7', PARTY);
+    build.characters[2].portraitId = 'male-07';
 
     expect(saveChroniclesCharacterDraft({
       seed: 'vault-7',
@@ -35,6 +36,7 @@ describe('Chronicles character draft', () => {
       build,
     }, PARTY)).toBe(true);
 
+    expect(loadChroniclesCharacterDraft(PARTY)?.build.characters[2].portraitId).toBe('male-07');
     expect(loadChroniclesCharacterDraft(PARTY)).toEqual(expect.objectContaining({
       seed: 'vault-7',
       activeSlot: 'bishop',
