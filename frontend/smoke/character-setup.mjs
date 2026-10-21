@@ -58,8 +58,11 @@ try {
       await page.getByRole('button', { name: /Cambiar retrato/ }).click();
       const portraitDialog = page.getByRole('dialog', { name: /Retrato de/ });
       await portraitDialog.waitFor({ state: 'visible' });
+      await portraitDialog.locator('[data-portrait-id="male-03"]').focus();
       await page.keyboard.press('2');
       assert.equal(await portraitDialog.count(), 1, 'Party hotkey must not close the portrait gallery');
+      assert.equal(await portraitDialog.evaluate((dialog) => dialog.contains(document.activeElement)), true,
+        'Switching sex must keep keyboard focus inside the portrait dialog');
       assert.equal(await portraitDialog.locator('#chronicles-portrait-title').innerText(), `Retrato de ${secondName}`,
         'The gallery heading must reflect the edited name of hero 2');
       assert.equal(await portraitDialog.locator('button[data-portrait-id^="female-"]').count(), 10);

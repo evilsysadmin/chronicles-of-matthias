@@ -83,6 +83,7 @@ export default function ChroniclesCharacterSetup({
   const [editorStep, setEditorStep] = useState(() => recoveredDraft?.editorStep || 'identity');
   const editorTabsRef = useRef(null);
   const portraitOpenerRef = useRef(null);
+  const portraitCloseRef = useRef(null);
   const [portraitPickerOpen, setPortraitPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState(() => recoveredDraft?.activeSlot || 'matthias');
   const [draft, setDraft] = useState(() => (
@@ -200,11 +201,14 @@ export default function ChroniclesCharacterSetup({
       const hero = chroniclesPartyHotkeyMember(event, draft.characters);
       if (!hero) return;
       event.preventDefault();
+      // The focused portrait tile might disappear when switching sexes.
+      // Move focus to the stable dialog close control before updating its grid.
+      if (portraitPickerOpen) portraitCloseRef.current?.focus();
       setActiveSlot(hero.slotId);
     };
     window.addEventListener('keydown', onPartyHotkey);
     return () => window.removeEventListener('keydown', onPartyHotkey);
-  }, [editing, draft.characters]);
+  }, [editing, draft.characters, portraitPickerOpen]);
 
   const chooseRace = (raceId) => {
     if (!CHRONICLES_MM3_RACE_IDS.includes(raceId)) return;
@@ -374,7 +378,7 @@ export default function ChroniclesCharacterSetup({
                   <h3 id="chronicles-portrait-title" aria-live="polite">Retrato de {activeCharacter.name}</h3>
                   <p>Elige su apariencia. No cambia atributos, clase ni raza.</p>
                 </div>
-                <button type="button" className="ghost-btn" autoFocus onClick={closePortraitPicker}
+                <button type="button" className="ghost-btn" ref={portraitCloseRef} autoFocus onClick={closePortraitPicker}
                   aria-label="Cerrar selector de retratos">✕ Cerrar</button>
               </header>
               <div className="chronicles-character-setup__portrait-grid" aria-label="Retratos disponibles">
