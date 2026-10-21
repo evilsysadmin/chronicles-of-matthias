@@ -43,6 +43,11 @@ func reinforceOverworld(m *O, areaCode string) {
 		occupied[p] = true
 	}
 	salt := saltOf(areaCode)
+	seenBehaviors := map[string]bool{}
+	for _, raw := range current {
+		foe := raw.(*O)
+		seenBehaviors[signature(foe.Obj("ai"))] = true
+	}
 	distance := func(a, b point) int { return abs(a.x-b.x) + abs(a.y-b.y) }
 	for n := 0; n < target; n++ {
 		best, bestScore := point{}, -1
@@ -104,6 +109,21 @@ func reinforceOverworld(m *O, areaCode string) {
 		foe.Set("hpKey", fmt.Sprintf("%sFoe%dHp", camelFlag(areaID), index))
 		foe.Set("x", best.x)
 		foe.Set("y", best.y)
+		// Additional enemies should bring NEW tactics, not just more copies.
+		// Pick a native species with an unseen real AI signature when possible.
+		for _, species := range biomeFoes[areas[areaCode].biome] {
+			ai := aiFor(species.visual)
+			if seenBehaviors[signature(ai)] {
+				continue
+			}
+			foe.Set("visualType", species.visual)
+			foe.Set("name", species.name)
+			foe.Set("ai", ai)
+			foe.Set("agility", speedFor(species.visual, danger(areaCode)))
+			foe.Obj("onDefeat").Set("message", "{attacker} acaba con "+species.name+" usando {attack}.")
+			break
+		}
+		seenBehaviors[signature(foe.Obj("ai"))] = true
 		current = append(current, foe)
 		foePositions = append(foePositions, best)
 		occupied[best] = true
