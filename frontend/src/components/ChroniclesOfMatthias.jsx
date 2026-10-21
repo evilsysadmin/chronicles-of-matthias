@@ -1204,9 +1204,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (menuShortcut) {
         event.preventDefault();
         if (menuShortcut === 'save') void persistCheckpoint(stateRef.current, 'manual');
-        // Q starts the same explicit confirmation as "Salir sin guardar";
-        // a second Q can never commit data loss.
+        // Q opens an explicit exit prompt. Esc cancels the prompt first;
+        // a subsequent Esc closes the menu without modifying the run.
         if (menuShortcut === 'request-exit') setConfirmExitWithoutSaving(true);
+        if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
+        if (menuShortcut === 'close') {
+          setConfirmExitWithoutSaving(false);
+          setMenuOpen(false);
+        }
         return;
       }
       if (event.key === 'Tab') {
