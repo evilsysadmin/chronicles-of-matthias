@@ -200,10 +200,10 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
       },
       "onDefeat": {
         "message": "{attacker} derrota a araña del tronco hueco con {attack}.",
@@ -241,7 +241,7 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 4
@@ -272,42 +272,28 @@
     },
     {
       "id": "rookwood-shadow-weaver",
-      "visualType": "weaver-spider",
-      "name": "tejedora de las sombras",
+      "visualType": "troll",
+      "name": "trol joven del bosque",
       "x": 15,
       "y": 11,
       "hpKey": "rookwoodShadowWeaverHp",
-      "maxHp": 6,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} derrota a tejedora de las sombras con {attack}.",
+        "message": "{attacker} derrota a trol joven del bosque con {attack}.",
         "effects": [
           {
             "type": "grant-gold",
             "amount": 1
           }
-        ]
-      },
-      "enemyBuild": {
-        "version": 1,
-        "archetype": "weaver-spider",
-        "level": 1,
-        "attributes": {
-          "vigor": 1,
-          "power": 1,
-          "precision": 0,
-          "will": 0
-        },
-        "skills": [
-          "brutal-strike"
         ]
       }
     },
@@ -323,7 +309,7 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-roam",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 4
