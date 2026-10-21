@@ -41,6 +41,66 @@ function visibleRoadCells(scenePlan, center) {
   return out;
 }
 
+// Draw a handful of windowed timber fronts on existing blocked street walls.
+// The wall grid remains the ONLY collision source; these shallow details sit
+// entirely inside its solid cells. All frames and panes share two instanced
+// meshes, not dozens of per-house objects or lights.
+function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
+  const validZones = (Array.isArray(zones) ? zones : []).filter(zone =>
+    zone?.style === 'timber-windows'
+    && [zone.minX, zone.maxX, zone.minY, zone.maxY].every(Number.isInteger)
+    && zone.minX <= zone.maxX && zone.minY <= zone.maxY);
+  if (!validZones.length) return;
+  const directions = [
+    { dx: 0, dy: 1, yaw: 0 },
+    { dx: 1, dy: 0, yaw: Math.PI / 2 },
+    { dx: 0, dy: -1, yaw: Math.PI },
+    { dx: -1, dy: 0, yaw: -Math.PI / 2 },
+  ];
+  const facades = [];
+  for (const { x, y } of blocked) {
+    // Sparse shuttered windows read as a neighbourhood rather than a grid of
+    // identical glowing slots; every location is deterministic across reloads.
+    if ((x + y) % 2 !== 0) continue;
+    if (!validZones.some(zone =>
+      x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY)) continue;
+    for (const direction of directions) {
+      if (grid[y + direction.dy]?.[x + direction.dx] === '.') {
+        facades.push({ x, y, ...direction });
+      }
+    }
+  }
+  if (!facades.length) return;
+  const frames = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1.32, 0.84, 0.08),
+    material(0x78533b),
+    facades.length,
+  );
+  const panes = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.77, 0.52, 0.07),
+    material(0x34444b, { metalness: 0.07, roughness: 0.8 }),
+    facades.length,
+  );
+  const dummy = new THREE.Object3D();
+  facades.forEach(({ x, y, dx, dy, yaw }, index) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.y = yaw;
+    dummy.position.set(wx + dx * 1.79, 0.96, wz + dy * 1.79);
+    dummy.updateMatrix();
+    frames.setMatrixAt(index, dummy.matrix);
+    dummy.position.set(wx + dx * 1.86, 0.98, wz + dy * 1.86);
+    dummy.updateMatrix();
+    panes.setMatrixAt(index, dummy.matrix);
+  });
+  frames.instanceMatrix.needsUpdate = true;
+  panes.instanceMatrix.needsUpdate = true;
+  frames.name = 'chronicles-town-street-window-frames';
+  panes.name = 'chronicles-town-street-window-panes';
+  frames.castShadow = false;
+  panes.castShadow = false;
+  town.add(frames, panes);
+}
+
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
   const grid = scenePlan.grid || [];
   const width = Math.max(1, Number(scenePlan.width) || grid[0]?.length || 19);
@@ -168,6 +228,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       houseCells.add(x + ',' + y);
     });
     blocked = blocked.filter(({ x, y }) => !houseCells.has(x + ',' + y));
+    addSettlementStreetFacades(town, {
+      grid, blocked, center: sceneCenter,
+      zones: scenePlan.landscape?.facadeZones,
+    });
     // Trees stand outside the town wall so no walkable cell gains a blocker.
     TOWN_TREE_CELLS(width, height).forEach(([x, y], index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
