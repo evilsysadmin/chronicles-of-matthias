@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesQuestRecordedEvents } from './chroniclesQuestRecordedEvents.js';
+import { chroniclesQuestRecordedEvents, chroniclesQuestsForRecordedEvent } from './chroniclesQuestRecordedEvents.js';
 import questEventLinks from './campaign/quest-event-links.json';
 import swordhaven from './maps/swordhaven-first-book.json';
 import bannerRoad from './maps/banner-road-first-book.json';
@@ -48,6 +48,22 @@ describe('Chronicles quest history is made only from witnessed receipts', () => 
     ];
     expect(chroniclesQuestRecordedEvents({ id: 'banner-contract' }, events).map((event) => event.id))
       .toEqual(['first-book-contract-accepted']);
+  });
+
+  it('links saved memories only to actual quests in this expedition, never hidden future contracts', () => {
+    const known = [
+      { id: 'banner-contract', status: 'active', title: 'El estandarte perdido' },
+      { id: 'road-bandits', status: 'completed', title: 'Bandidos del Camino' },
+      { id: 'weaver-silk', status: 'locked', title: 'Unknown future quest' },
+    ];
+    expect(chroniclesQuestsForRecordedEvent('first-book-contract-accepted', known).map(q => q.id))
+      .toEqual(['banner-contract']);
+    expect(chroniclesQuestsForRecordedEvent('banner-road-captain-falls', known).map(q => q.id))
+      .toEqual(['road-bandits']);
+    expect(chroniclesQuestsForRecordedEvent('first-book-temple', known)).toEqual([]);
+    expect(chroniclesQuestsForRecordedEvent('first-footstep', known)).toEqual([]);
+    expect(chroniclesQuestsForRecordedEvent(null, known)).toEqual([]);
+    expect(chroniclesQuestsForRecordedEvent('first-book-contract-accepted', null)).toEqual([]);
   });
 
   it('links exclusively to authored world journal IDs and no speculative event descriptions', () => {
