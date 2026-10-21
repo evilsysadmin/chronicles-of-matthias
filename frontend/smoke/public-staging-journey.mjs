@@ -80,10 +80,17 @@ async function closeFirstSteps(page) {
 async function saveCheckpoint(page, label) {
   const menuButton = page.getByLabel('Abrir menú de Chronicles');
   await menuButton.click();
+  // Stable interaction hook: visible copy may include the shortcut hint.
+  const saveButton = page.locator('button[data-chronicles-menu-save]');
+  await saveButton.waitFor({ state: 'visible', timeout: 10_000 });
   const request = page.waitForResponse(response =>
-    isApi(response, 'PUT', /\/api\/chronicles\/runs\/[^/]+\/checkpoint$/, 200), { timeout: 25_000 });
-  await page.getByRole('button', { name: 'Guardar partida', exact: true }).click();
+    response.request().method() === 'PUT'
+    && /\/api\/chronicles\/runs\/[^/]+\/checkpoint$/.test(new URL(response.url()).pathname)
+    && response.url().startsWith(api), { timeout: 25_000 });
+  await saveButton.click();
   const response = await request;
+  assert.equal(response.status(), 200,
+    `Checkpoint save failed (HTTP ${response.status()}): ${(await response.text()).slice(0, 300)}`);
   const payload = response.request().postDataJSON();
   assert.ok(payload?.worldFlags && typeof payload.worldFlags === 'object',
     'The actual checkpoint must carry durable world flags');
