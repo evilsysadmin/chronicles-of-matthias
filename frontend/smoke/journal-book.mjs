@@ -155,6 +155,13 @@ try {
       assert.equal(await archive.count(), 0, 'An all-completed journal must not hide its entire list');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
+      await page.locator('[data-test-no-quests]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await dialog.getByRole('heading', { name: 'Páginas por escribir' }).waitFor();
+      assert.match(await tabQuests.innerText(), /Sin encargos/);
+      assert.equal(await dialog.locator('[data-chronicles-quest-id]').count(), 0);
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
       console.log('CHRONICLES_JOURNAL_BOOK_OK ' + width + 'x' + height);
     } catch (error) {
