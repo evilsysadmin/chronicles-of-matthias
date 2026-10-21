@@ -96,9 +96,12 @@ export default function ChroniclesNarratorOverlay({ message, children = null, op
 
   return (
     <>
-      {/* The desktop MM3 note stays as a passive band; the reader is opt-in. */}
-      <div className="chronicles-dm-band" role="status" aria-live="polite" data-visible={bandVisible ? 'true' : 'false'}
-        onClick={() => setBandVisible(false)}>{narration}</div>
+      {/* Announce a meaningful event without laying text across the game.
+          The full message is available by hovering/focusing the Crónica tab,
+          or opening its reader with a tap. */}
+      <span className="chronicles-dm-band" role="status" aria-live="polite" aria-atomic="true">
+        {bandVisible ? narration : ''}
+      </span>
       <div className="chronicles-dm-overlay">
         <button ref={triggerRef} type="button" className="chronicles-dm-trigger"
           aria-label="Crónica de expedición" aria-haspopup="dialog" aria-expanded={open}
@@ -107,6 +110,11 @@ export default function ChroniclesNarratorOverlay({ message, children = null, op
           <span>Crónica</span>
           <span className="chronicles-dm-chevron" aria-hidden="true">⌄</span>
         </button>
+        <div className="chronicles-dm-peek" role="tooltip" data-chronicles-narration-peek>
+          <span className="chronicles-dm-peek__title">Último acontecimiento</span>
+          <p>{narration}</p>
+          <small>Selecciona Crónica para leer más.</small>
+        </div>
       </div>
       {open && typeof document !== 'undefined' && createPortal(
         <div className="chronicles-dm-backdrop" onClick={(event) => {
