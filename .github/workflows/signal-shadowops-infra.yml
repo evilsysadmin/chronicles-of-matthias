@@ -45,6 +45,13 @@ jobs:
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 64
           printf '### Chronicles → ShadowOps staging handoff\n\nSource SHA: `%s`\n\n' "$sha" >> "$GITHUB_STEP_SUMMARY"
           head="$(gh api repos/evilsysadmin/chronicles-of-matthias/commits/main --jq .sha)"
+          # A malformed API response is not evidence that the source was
+          # superseded. Fail closed so an operator can see the real problem.
+          [[ "$head" =~ ^[0-9a-f]{40}$ ]] || {
+            echo '::error title=Chronicles CD cannot verify main::GitHub returned an invalid protected-main SHA'
+            echo 'CHRONICLES_SIGNAL_INVALID_MAIN_SHA' >&2
+            exit 65
+          }
           if [[ "$sha" != "$head" ]]; then
             echo "::notice title=Chronicles CD not dispatched (superseded)::The source commit was replaced by a newer main SHA."
             printf '**State: superseded.** Current main is `%s`. No Infra dispatch for this SHA.\n' "$head" >> "$GITHUB_STEP_SUMMARY"
