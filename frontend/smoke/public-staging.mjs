@@ -160,6 +160,33 @@ try {
       const firstSteps = world.locator('[data-chronicles-first-steps]:visible');
       const visibleFirstSteps = await firstSteps.count();
       if (visibleFirstSteps > 1) {
+        // Do not hide a true duplicate behind .first(): inspect the real
+        // deployed DOM to distinguish overlapping React mounts from locator
+        // scoping issues. Keep the release fail-closed until the cause is fixed.
+        const diagnostics = await page.evaluate(() => {
+          const summarize = (node) => {
+            const rect = node.getBoundingClientRect();
+            const styles = getComputedStyle(node);
+            return {
+              tag: node.tagName,
+              className: String(node.className || '').slice(0, 130),
+              text: (node.innerText || '').replace(/\\s+/g, ' ').slice(0, 120),
+              rect: [rect.x, rect.y, rect.width, rect.height].map((n) => Math.round(n)),
+              display: styles.display, visibility: styles.visibility, opacity: styles.opacity,
+              worldMap: node.closest('[data-chronicles="true"]')?.getAttribute('data-chronicles-map-id'),
+              parent: node.parentElement?.className || '',
+            };
+          };
+          return {
+            worlds: [...document.querySelectorAll('[data-chronicles="true"]')].map(summarize),
+            guides: [...document.querySelectorAll('[data-chronicles-first-steps]')].map(summarize),
+            firstThreats: document.querySelectorAll('[data-chronicles-first-threat]').length,
+            documentReadyState: document.readyState,
+          };
+        });
+        console.error('CHRONICLES_PUBLIC_MATTHIAS_GUIDE_DUPLICATES', JSON.stringify({
+          viewport: viewport.width, playwrightVisible: visibleFirstSteps, ...diagnostics,
+        }));
         await page.screenshot({
           path: `chronicles-public-first-steps-duplicate-${viewport.width}.png`,
         }).catch(() => {});
