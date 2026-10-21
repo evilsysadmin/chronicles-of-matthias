@@ -678,7 +678,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // Long remarks (why a door will not open) stay up long enough to read.
       partyBarkTimerRef.current = setTimeout(() => {
         setPartyBark((active) => active?.token === token ? null : active);
-      }, Math.max(2800, String(bark.text || '').length * 55));
+      }, Math.max(7500, String(bark.text || '').length * 65));
     }
 
     showHitSplats(current, next);
@@ -1645,7 +1645,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
             <ChroniclesPartyBark key={`party-bark:${partyBark?.token || 'none'}`} bark={partyBark}
-              onOpenEquipment={() => openMemberSheet('matthias', 'equipment')} />
+              onOpenEquipment={() => openMemberSheet('matthias', 'equipment')}
+              onReadingChange={(reading) => {
+                // Do not let an opt-in hover or focused equipment action vanish.
+                if (partyBarkTimerRef.current) clearTimeout(partyBarkTimerRef.current);
+                partyBarkTimerRef.current = null;
+                if (reading) return;
+                const token = partyBarkSequenceRef.current;
+                partyBarkTimerRef.current = setTimeout(() => {
+                  setPartyBark((active) => active?.token === token ? null : active);
+                }, 3000);
+              }} />
             <ChroniclesFirstAudienceCue
               state={state}
               contextualAction={contextualAction}
