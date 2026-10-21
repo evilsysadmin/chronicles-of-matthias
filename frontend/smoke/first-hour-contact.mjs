@@ -191,6 +191,31 @@ try {
         await status.waitFor({ state: 'hidden' });
       }
 
+      // Real Crónica → hero dossier, not a keyboard-only helper.
+      // Key modifiers must not open hidden world sheets or stack dialogs.
+      if (width === 390 || width === 1280) {
+        await page.goto(url + '?view=journal', { waitUntil: 'domcontentloaded' });
+        const journal = page.getByRole('dialog', { name: 'Crónica de expedición' });
+        await journal.waitFor({ state: 'visible' });
+        assert.match(await journal.locator('footer').innerText(), /1–4/);
+        await page.keyboard.press('Control+4');
+        await page.keyboard.press('5');
+        assert.equal(await journal.count(), 1, 'Modified/unassigned keys keep the journal open');
+        await page.keyboard.press('4');
+        await journal.waitFor({ state: 'hidden' });
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+        assert.equal(await page.getByRole('dialog').count(), 1,
+          'J → 4 must close the journal before opening Faust');
+        await page.keyboard.press('1');
+        await page.getByRole('dialog', { name: 'Matthias' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.getByRole('dialog').count(), 0);
+        await page.locator('[data-reopen-journal]').click();
+        await journal.waitFor({ state: 'visible' });
+        await page.keyboard.press('j');
+        await journal.waitFor({ state: 'hidden' });
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.

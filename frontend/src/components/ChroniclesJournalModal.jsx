@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeToClose } from '../useEscapeToClose.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import { chroniclesQuestRecordedEvents } from '../chronicles/chroniclesQuestRecordedEvents.js';
@@ -18,7 +19,7 @@ function revealWithinBook(viewport, target) {
 
 // One readable page at a time. The old side-by-side quest dashboard left half
 // the screen blank when an expedition had few folios.
-export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose, onTrack = null }) {
+export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose, onTrack = null, onOpenSheet = null }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
   const scrollRef = useRef(null);
@@ -161,6 +162,14 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
             return;
           }
           event.stopPropagation();
+          // The visible book owns the 1–4 shortcut: close it before opening
+          // a hero dossier. Never leak the key to the hidden world or actors.
+          const hero = onOpenSheet && chroniclesPartyHotkeyMember(event, state?.party);
+          if (hero) {
+            event.preventDefault();
+            onOpenSheet(hero.id);
+            return;
+          }
           if (event.key !== 'Tab') return;
           const focusable = Array.from(dialogRef.current?.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), [href], [tabindex]:not([tabindex="-1"])') || []);
           const first = focusable[0];
@@ -364,7 +373,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
             </section>
           )}
         </div>
-        <footer><span>LIBRO DE LA EXPEDICIÓN</span><span><kbd>J</kbd> / <kbd>Esc</kbd> para cerrar</span></footer>
+        <footer><span>LIBRO DE LA EXPEDICIÓN</span><span>{onOpenSheet && <>1–4 · fichas de héroes · </>}<kbd>J</kbd> / <kbd>Esc</kbd> para cerrar</span></footer>
       </section>
     </div>, document.body,
   );
