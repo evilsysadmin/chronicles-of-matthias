@@ -68,6 +68,9 @@ try {
       await audioInput.focus();
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1);
+      // The following keys exercise the menu guard, not the slider's native
+      // input handling. Move focus back into an ordinary menu button first.
+      await menu.getByRole('button', { name: 'Continuar' }).focus();
       // Fixture instrumentation lives behind the modal on small screens,
       // as background controls should. Trigger its DOM control without
       // pretending the player can click through a real modal overlay.
@@ -80,6 +83,7 @@ try {
       // as background controls should. Trigger its DOM control without
       // pretending the player can click through a real modal overlay.
       await page.locator('[data-shortcut-busy-toggle]').evaluate((button) => button.click());
+      await menu.getByRole('button', { name: 'Guardar partida · S' }).focus();
       await page.keyboard.press('S');
       assert.equal(await count(page, 'save'), 2);
       assert.equal(await count(page, 'discard'), 0);
