@@ -34,6 +34,16 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('Precio: menor primero');
   });
 
+  it('uses shaded art with distinct paint servers for each real armoury item', () => {
+    const html = render('first-book-armorer');
+    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+    expect(html).toContain('data-chronicles-shop-glyph="shield"');
+    expect(html).toContain('aria-label="Armadura"');
+    const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
+    expect(ids.length).toBeGreaterThan(10);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
     const html = render();
     expect(html).toContain('chronicles-shop__primary');

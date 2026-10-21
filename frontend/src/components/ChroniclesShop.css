@@ -293,12 +293,12 @@
   display: grid;
   place-items: center;
   border: 1px solid #786044;
-  background: radial-gradient(circle at 45% 30%, #453020, #19110c 75%);
+  background: radial-gradient(circle at 38% 22%, #59452e, #29211b 54%, #110f0c 95%);
   color: #d4ac6b;
 }
 
 .chronicles-shop__entry-icon { width: 49px; height: 49px; }
-.chronicles-shop__glyph { display: block; width: 72%; height: 72%; }
+.chronicles-shop__glyph { display: block; width: 80%; height: 80%; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .44)); }
 .chronicles-shop__entry-description { flex: 1; min-width: 0; display: grid; gap: 5px; }
 .chronicles-shop__entry-description strong {
   font: 600 clamp(13px, 1.1vw, 16px) Georgia, serif;
