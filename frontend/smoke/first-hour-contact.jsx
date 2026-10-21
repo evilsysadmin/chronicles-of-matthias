@@ -19,6 +19,8 @@ import ChroniclesFirstSteps from '../src/components/ChroniclesFirstSteps.jsx';
 import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue.jsx';
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
+import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
+import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
 import '../src/styles.css';
 // Match the actual first-person game CSS imports. The isolated fixture used
 // to exercise the real sheet without its base and MM3 styles, producing
@@ -27,6 +29,7 @@ import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesCharacterSheet.css';
 import '../src/components/ChroniclesMM3Chrome.css';
 import '../src/components/ChroniclesCharacterSheetMM3.css';
+import '../src/components/ChroniclesQuickStatus.css';
 
 // Find a real, unobstructed enemy directly in front of a traversable road
 // square. Coordinates are discovered from the versioned map, not fabricated.
@@ -150,6 +153,35 @@ function RealLootEquipmentFlow({ reorderParty = false }) {
   );
 }
 
+// Real quick-status folio and real hero sheet, under the same callbacks as
+// first-person Chronicles (the fixture does not invent party IDs or stats).
+function RealQuickStatusHotkeyFlow() {
+  const [state] = useState(() => createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }));
+  const [progression] = useState(createChroniclesProgression);
+  const [open, setOpen] = useState(true);
+  const [memberId, setMemberId] = useState(null);
+  const member = state.party.find((hero) => hero.id === memberId);
+  const openSheet = (heroId) => {
+    setOpen(false);
+    setMemberId(heroId);
+  };
+  return (
+    <>
+      <button type="button" data-reopen-quick-status onClick={() => { setMemberId(null); setOpen(true); }}>
+        Estado del grupo (G)
+      </button>
+      <ChroniclesQuickStatus open={open} rows={chroniclesQuickStatusRows(state)}
+        gold={chroniclesGoldBalance(state)}
+        onClose={() => setOpen(false)} onOpenSheet={openSheet} />
+      {member && <ChroniclesCharacterSheet state={state} progression={progression} member={member}
+        mode="first-person" onClose={() => setMemberId(null)}
+        onSelectMember={(id) => {
+          if (state.party.some((hero) => hero.id === id)) setMemberId(id);
+        }} />}
+    </>
+  );
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -168,6 +200,8 @@ if (view === 'threat') {
   document.body.dataset.earnedGold = String(gold);
 } else if (view === 'loot' || view === 'loot-reordered') {
   content = <RealLootEquipmentFlow reorderParty={view === 'loot-reordered'} />;
+} else if (view === 'quick-status') {
+  content = <RealQuickStatusHotkeyFlow />;
 } else if (view === 'guides') {
   content = <RealGuidesReconciliationFlow />;
 } else {
