@@ -99,13 +99,30 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   if (roadCells.length) {
     const roads = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL * 0.98, 0.045, CELL * 0.98), paver, roadCells.length);
     const dummy = new THREE.Object3D();
+    // Per-instance colour distinguishes districts without new geometry,
+    // materials, draw calls or independent floor/collision masks.
+    const roadTintZones = (Array.isArray(scenePlan.landscape?.roadTintZones)
+      ? scenePlan.landscape.roadTintZones : [])
+      .filter(zone => /^#[0-9a-f]{6}$/i.test(zone?.color || '')
+        && [zone.minX, zone.maxX, zone.minY, zone.maxY].every(Number.isInteger)
+        && zone.minX <= zone.maxX && zone.minY <= zone.maxY)
+      .map(zone => ({ ...zone, tint: new THREE.Color(zone.color) }));
+    const neutralTint = new THREE.Color(0xffffff);
     roadCells.forEach(({ x, y }, index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
+      if (roadTintZones.length) {
+        const district = roadTintZones.find(zone =>
+          x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY);
+        // Initialise every instance, including outside a zone: otherwise
+        // uncoloured slots in an InstancedBufferAttribute become black.
+        roads.setColorAt(index, district?.tint || neutralTint);
+      }
     });
     roads.instanceMatrix.needsUpdate = true;
+    if (roads.instanceColor) roads.instanceColor.needsUpdate = true;
     roads.name = 'chronicles-campaign-road';
     roads.receiveShadow = true;
     scene.add(roads);
