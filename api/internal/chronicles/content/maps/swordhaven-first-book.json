@@ -193,8 +193,8 @@
     },
     {
       "id": "swordhaven-false-watch-recruit",
-      "visualType": "road-bandit",
-      "name": "recluta de la ronda falsa",
+      "visualType": "bandit-archer",
+      "name": "ballestero de la falsa ronda",
       "x": 15,
       "y": 15,
       "hpKey": "swordhavenFalseWatchRecruitHp",
@@ -204,31 +204,17 @@
       "activation": "always",
       "ai": {
         "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} derrota a recluta de la ronda falsa con {attack}.",
+        "message": "{attacker} derrota a ballestero de la falsa ronda con {attack}.",
         "effects": [
           {
             "type": "grant-gold",
             "amount": 2
           }
-        ]
-      },
-      "enemyBuild": {
-        "version": 1,
-        "archetype": "road-bandit",
-        "level": 1,
-        "attributes": {
-          "vigor": 1,
-          "power": 0,
-          "precision": 0,
-          "will": 0
-        },
-        "skills": [
-          "brutal-strike"
         ]
       }
     }
