@@ -52,6 +52,7 @@ describe('ChroniclesCharacterSetup', () => {
       expect(html).toContain('Forja tu compañía');
       expect(html).toContain('Identidad del aventurero');
       expect(html).toContain('Cambiar retrato · 10 opciones');
+      expect(html).toContain('Personajes de la compañía · teclas 1 a 4');
       expect(html).toContain('chronicles-character-setup__change-portrait');
       expect(html).toMatch(/aria-label="Nombre del héroe [1-4]: [^"]+"/);
       expect(html).not.toContain('aria-label="Nombre de bishop"');
