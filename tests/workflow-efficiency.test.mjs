@@ -31,3 +31,13 @@ test('protected checks and exact-SHA admission prerequisites are intact', () => 
   assert.match(api, /name: api-e2e/);
   assert.match(api, /needs: verify/);
 });
+
+test('green main does not upload screenshots while PRs and failed main retain evidence', () => {
+  const keepEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && (github.event_name == 'pull_request' || failure()) }}";
+  for (const workflow of [frontend, api]) {
+    assert.ok(workflow.includes(keepEvidence));
+    assert.match(workflow, /compression-level: 0/);
+    assert.match(workflow, /retention-days: 7/);
+  }
+  assert.match(frontend, /if: github\.event_name == 'pull_request'\n        with:\n          name: chronicles-frontend-dist/);
+});
