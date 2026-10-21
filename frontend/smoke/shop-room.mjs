@@ -227,6 +227,14 @@ try {
             'The new illustration should render smoothly');
           assert(presentation.width >= width - 2 && presentation.width <= width + 2,
             'Odo illustration must fill the available room width: ' + JSON.stringify(presentation));
+          if (width === 1280) {
+            const title = await dialog.locator('.chronicles-shop__identity h2').evaluate((node) => ({
+              height: node.getBoundingClientRect().height,
+              lineHeight: Number.parseFloat(getComputedStyle(node).lineHeight),
+            }));
+            assert(title.height <= title.lineHeight * 1.25,
+              'Odo desktop heading steals a second line from the illustrated room: ' + JSON.stringify(title));
+          }
         }
         if (room === 'guild') {
           const presentation = await img.evaluate((node) => ({
