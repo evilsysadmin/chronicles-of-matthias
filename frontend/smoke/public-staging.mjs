@@ -226,6 +226,37 @@ try {
       }
       await page.screenshot({ path: `chronicles-public-world-${viewport.width}.png` });
 
+      // Real authenticated first-hour hero switching: inspect the first
+      // companion's sheet, change to slot 4 and return via the same keyboard
+      // bindings available in production. Don't assume a canonical name: a
+      // returning account may have a valid custom four-hero company.
+      const partyPortraits = world.locator('.chronicles-party-member');
+      assert.ok(await partyPortraits.count() >= 4, 'An expedition has four selectable heroes');
+      const firstHeroName = (await partyPortraits.nth(0).getAttribute('aria-label'))
+        ?.replace(/^Seleccionar /, '');
+      const fourthHeroName = (await partyPortraits.nth(3).getAttribute('aria-label'))
+        ?.replace(/^Seleccionar /, '');
+      assert.ok(firstHeroName && fourthHeroName, 'Missing hero names on actual party portraits');
+      await partyPortraits.first().click();
+      const heroFolio = page.locator('[role="dialog"][data-chronicles-folio="v2"]');
+      await heroFolio.waitFor({ state: 'visible', timeout: 12_000 });
+      await heroFolio.getByRole('button', { name: 'Equipo' }).click();
+      await page.keyboard.press('4');
+      await page.waitForFunction((name) => document.querySelector(
+        '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
+      )?.textContent?.trim() === name, fourthHeroName);
+      assert.equal(await heroFolio.count(), 1, 'The hero folio must remain open on shortcut 4');
+      assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, 'Shortcut 4 must preserve the equipment tab');
+      await page.keyboard.press('1');
+      await page.waitForFunction((name) => document.querySelector(
+        '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
+      )?.textContent?.trim() === name, firstHeroName);
+      assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, 'Shortcut 1 must preserve the equipment tab');
+      await heroFolio.getByRole('button', { name: 'Cerrar ficha' }).click();
+      await heroFolio.waitFor({ state: 'hidden', timeout: 8_000 });
+
       async function verifyFolio(dialog, label) {
         await dialog.waitFor({ state: 'visible', timeout: 12_000 });
         const dimensions = await dialog.evaluate((node) => {
