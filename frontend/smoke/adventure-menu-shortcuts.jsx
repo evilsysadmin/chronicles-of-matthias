@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
-import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -32,6 +32,18 @@ function MenuShortcutFixture() {
     document.querySelector('.chronicles-game-menu > summary')?.focus();
     setOpen((value) => !value);
   }, { contextMenu: false });
+
+  // Mirror the production focus boundary: a touch/open from an external
+  // control must enter the modal before Tab or S/Q can be interpreted.
+  useEffect(() => {
+    if (!open) return undefined;
+    const menu = document.querySelector('details.chronicles-game-menu');
+    if (!menu?.open) return undefined;
+    const onFocus = (event) => { chroniclesRestoreAdventureMenuFocus(menu, event.target); };
+    document.addEventListener('focusin', onFocus);
+    chroniclesRestoreAdventureMenuFocus(menu, document.activeElement);
+    return () => document.removeEventListener('focusin', onFocus);
+  }, [open, confirmExitWithoutSaving]);
 
   useEffect(() => {
     const keyDown = (event) => {
