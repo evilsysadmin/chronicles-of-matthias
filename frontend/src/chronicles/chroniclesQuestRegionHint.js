@@ -2,8 +2,8 @@
 // stages to quest-region-hints.json; no quest-ID-specific UI logic or save data.
 // Stages are matched in order. Missing or unrevealed places stay unknown.
 import questRegionHints from './campaign/quest-region-hints.json';
-import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { chroniclesRequirementsMet } from './chroniclesContentRuntime.js';
+import { chroniclesMapById, chroniclesMapForState } from './chroniclesMapCatalog.js';
+import { chroniclesQuestEntries, chroniclesRequirementsMet } from './chroniclesContentRuntime.js';
 
 function stageMatches(stage, quest, state) {
   if (Array.isArray(stage.when) && !chroniclesRequirementsMet(state, stage.when)) return false;
@@ -48,4 +48,30 @@ export function chroniclesQuestRegionContext(hint, state) {
     return { relation: 'same-region', text: 'Estás en esta región. Puede que aún debas encontrar el acceso adecuado.' };
   }
   return { relation: 'another-region', text: `Desde ${here}, tus notas apuntan a ${hint.region}.` };
+}
+
+/**
+ * The HUD must not imply an off-map objective is in front of the player.
+ * Match the quest that the reducer actually chose for its OBJETIVO line,
+ * then reuse only the location explicitly authored for that quest stage.
+ * A local tactical objective (enemy/trigger/gate), unknown quest or
+ * same-region destination must not acquire a fabricated travel hint.
+ */
+export function chroniclesHudQuestDestination(state, objective) {
+  if (!state?.mapId || !objective) return null;
+  const map = chroniclesMapForState(state);
+  const campaignArea = ['settlement', 'wilderness'].includes(map.regionKind)
+    || (map.regionKind === 'dungeon' && (map.exits || [])[0]?.requiresReturn === true);
+  if (!campaignArea) return null;
+
+  const active = chroniclesQuestEntries(state, 'active').filter((quest) => quest.objective);
+  const localQuestIds = new Set((map.interactables || []).flatMap((entry) =>
+    (entry.when || []).map((rule) => rule?.questId).filter(Boolean)));
+  const followed = active.find((quest) => quest.id === state.trackedQuestId)
+    || active.find((quest) => localQuestIds.has(quest.id)) || active[0];
+  if (!followed || followed.objective !== objective) return null;
+  const hint = chroniclesQuestRegionHint(followed, state);
+  const context = chroniclesQuestRegionContext(hint, state);
+  if (!hint || context?.relation !== 'another-region') return null;
+  return Object.freeze({ mapId: hint.mapId, region: hint.region });
 }

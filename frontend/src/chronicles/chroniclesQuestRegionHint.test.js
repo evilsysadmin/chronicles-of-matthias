@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from './chroniclesQuestRegionHint.js';
+import { chroniclesQuestRegionHint, chroniclesQuestRegionContext, chroniclesHudQuestDestination } from './chroniclesQuestRegionHint.js';
+import { createChroniclesState, chroniclesObjective } from '../chroniclesOfMatthias.js';
 import questRegionHints from './campaign/quest-region-hints.json';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
@@ -118,5 +119,82 @@ describe('authored first-book quest geography', () => {
     expect(chroniclesQuestRegionHint({ id: 'banner-contract', status: 'completed' }, {})).toBeNull();
     expect(chroniclesQuestRegionHint(active('an-unwritten-contract'), {})).toBeNull();
     expect(chroniclesQuestRegionHint(active('lost-king-prologue', 'Paso aún desconocido.'), {})).toBeNull();
+  });
+});
+
+describe('HUD location for quests outside the current map', () => {
+  const bannerObjective = 'Busca el estandarte cerca del mojón sin nombre.';
+  function stateWithQuest(mapId = 'swordhaven-first-book', extras = {}) {
+    return {
+      ...createChroniclesState(mapId),
+      quests: {
+        'banner-contract': {
+          id: 'banner-contract',
+          title: 'El estandarte perdido',
+          status: 'active',
+          order: 1,
+          objective: bannerObjective,
+        },
+      },
+      ...extras,
+    };
+  }
+
+  it('explains that the banner is on the Road, not in Swordhaven', () => {
+    const state = stateWithQuest();
+    const objective = chroniclesObjective(state);
+    expect(objective).toBe(bannerObjective);
+    expect(chroniclesHudQuestDestination(state, objective)).toEqual({
+      mapId: 'banner-road-first-book',
+      region: 'Camino de los Estandartes',
+    });
+    expect(state.mapId).toBe('swordhaven-first-book');
+    expect(state.turns).toBe(0);
+  });
+
+  it('does not add an off-map cue when already on the correct road', () => {
+    const state = stateWithQuest('banner-road-first-book');
+    expect(chroniclesHudQuestDestination(state, chroniclesObjective(state))).toBeNull();
+  });
+
+  it('changes target to the turn-in location only when the banner is actually found', () => {
+    const found = stateWithQuest('banner-road-first-book', { bannerFound: true });
+    expect(chroniclesHudQuestDestination(found, chroniclesObjective(found))).toEqual({
+      mapId: 'swordhaven-first-book', region: 'Swordhaven',
+    });
+    const atHome = stateWithQuest('swordhaven-first-book', { bannerFound: true });
+    expect(chroniclesHudQuestDestination(atHome, chroniclesObjective(atHome))).toBeNull();
+    const adjacentTownMap = stateWithQuest('swordhaven-square', { bannerFound: true });
+    expect(chroniclesHudQuestDestination(adjacentTownMap, chroniclesObjective(adjacentTownMap))).toBeNull();
+  });
+
+  it('never invents a destination for unrelated tactical messages, unknown or completed missions', () => {
+    const state = stateWithQuest();
+    expect(chroniclesHudQuestDestination(state, 'Derrota al ladrón')).toBeNull();
+    expect(chroniclesHudQuestDestination({
+      ...state, quests: {
+        unknown: { id: 'unknown', status: 'active', objective: 'Recoge algo sin ubicación.' },
+      },
+    }, 'Recoge algo sin ubicación.')).toBeNull();
+    expect(chroniclesHudQuestDestination({
+      ...state, quests: {
+        'banner-contract': { ...state.quests['banner-contract'], status: 'completed' },
+      },
+    }, bannerObjective)).toBeNull();
+  });
+
+  it('respects the reducer’s tracked quest selection instead of displaying a different mission', () => {
+    const state = stateWithQuest('swordhaven-first-book', {
+      trackedQuestId: 'names-in-wood',
+      quests: {
+        'banner-contract': { id: 'banner-contract', status: 'active', order: 0, objective: bannerObjective },
+        'names-in-wood': { id: 'names-in-wood', status: 'active', order: 1, objective: 'Busca las placas del bosque.' },
+      },
+    });
+    const objective = chroniclesObjective(state);
+    expect(objective).toBe('Busca las placas del bosque.');
+    expect(chroniclesHudQuestDestination(state, objective))
+      .toMatchObject({ mapId: 'rookwood-first-book', region: 'Rookwood' });
+    expect(chroniclesHudQuestDestination(state, bannerObjective)).toBeNull();
   });
 });

@@ -30,6 +30,7 @@ import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.j
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
+import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
 import { chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
@@ -1474,8 +1475,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
-  // Where the objective points, and the next exit on the way there.
-  const routeHint = chroniclesRouteHint(state, chroniclesObjectiveDestination(objective));
+  // The authored quest's region takes precedence when the objective text
+  // does not name its destination (e.g. the missing banner in Swordhaven).
+  const authoredDestination = chroniclesHudQuestDestination(state, objective);
+  const routeHint = chroniclesRouteHint(state, authoredDestination || chroniclesObjectiveDestination(objective));
+  const objectiveTravelNote = authoredDestination
+    ? `DESTINO · ${authoredDestination.region}${routeHint ? ` · ${routeHint.text}` : ''}`
+    : routeHint ? `→ ${routeHint.text}` : null;
   const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
@@ -1601,7 +1607,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   setChronicleModalOpen((open) => !open);
                 }}>
                 OBJETIVO <b>{objective}</b>
-                {routeHint && <small className="chronicles-route-hint" data-chronicles-route-hint>→ {routeHint.text}</small>}
+                {objectiveTravelNote && <small className="chronicles-route-hint" data-chronicles-route-hint
+                  data-chronicles-quest-destination={authoredDestination?.mapId || undefined}>{objectiveTravelNote}</small>}
                 <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
               </button>
             </span>
