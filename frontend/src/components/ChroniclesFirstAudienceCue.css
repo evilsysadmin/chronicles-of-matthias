@@ -49,3 +49,9 @@
   .chronicles-first-audience strong { font-size: 12px; }
   .chronicles-first-audience button { min-height: 40px; }
 }
+
+/* The entry button itself is the touch affordance. Do not advertise the
+   physical F key on screens where a player taps the action. */
+@media (max-width: 600px), (pointer: coarse) {
+  .chronicles-first-audience kbd { display: none; }
+}
