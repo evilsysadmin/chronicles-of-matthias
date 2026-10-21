@@ -83,6 +83,7 @@ export default function ChroniclesCharacterSetup({
   const [editorStep, setEditorStep] = useState(() => recoveredDraft?.editorStep || 'identity');
   const editorTabsRef = useRef(null);
   const portraitOpenerRef = useRef(null);
+  const portraitCloseRef = useRef(null);
   const [portraitPickerOpen, setPortraitPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState(() => recoveredDraft?.activeSlot || 'matthias');
   const [draft, setDraft] = useState(() => (
@@ -191,16 +192,19 @@ export default function ChroniclesCharacterSetup({
     patchCharacter(activeCharacter.slotId, { sex, portraitId });
   };
 
-  // Keep the current book tab when changing heroes; if a portrait chooser
-  // was open, dismiss it so the next selection is not attributed to the wrong hero.
+  // Keep the current book tab and portrait gallery open when changing heroes.
+  // The grid and its actions always read the newly active hero, so selecting
+  // a portrait after switching cannot accidentally edit the previous hero.
   useEffect(() => {
     if (!editing) return undefined;
     const onPartyHotkey = (event) => {
       const hero = chroniclesPartyHotkeyMember(event, draft.characters);
       if (!hero) return;
       event.preventDefault();
+      // The focused portrait tile might disappear when switching sexes.
+      // Move focus to the stable dialog close control before updating its grid.
+      if (portraitPickerOpen) portraitCloseRef.current?.focus();
       setActiveSlot(hero.slotId);
-      if (portraitPickerOpen) setPortraitPickerOpen(false);
     };
     window.addEventListener('keydown', onPartyHotkey);
     return () => window.removeEventListener('keydown', onPartyHotkey);
@@ -371,10 +375,10 @@ export default function ChroniclesCharacterSetup({
               <header className="chronicles-character-setup__portrait-dialog-head">
                 <div>
                   <span className="section-label">EL ROSTRO DEL AVENTURERO</span>
-                  <h3 id="chronicles-portrait-title">Retrato de {activeCharacter.name}</h3>
+                  <h3 id="chronicles-portrait-title" aria-live="polite">Retrato de {activeCharacter.name}</h3>
                   <p>Elige su apariencia. No cambia atributos, clase ni raza.</p>
                 </div>
-                <button type="button" className="ghost-btn" autoFocus onClick={closePortraitPicker}
+                <button type="button" className="ghost-btn" ref={portraitCloseRef} autoFocus onClick={closePortraitPicker}
                   aria-label="Cerrar selector de retratos">✕ Cerrar</button>
               </header>
               <div className="chronicles-character-setup__portrait-grid" aria-label="Retratos disponibles">
