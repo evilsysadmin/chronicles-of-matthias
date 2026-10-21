@@ -24,6 +24,19 @@ export function chroniclesSpellMenuKind(kind) {
   return SPELL_KINDS[kind] || { label: 'Objeto', glyph: '◇' };
 }
 
+// The page keys behave like the closed-world C/I controls: switch to the
+// requested folio, or close when pressing the already-open page's key.
+// Disabled for modifiers, autorepeat and editable descendants.
+export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) {
+  if (!event || event.defaultPrevented || event.repeat || event.isComposing
+    || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  if (event.target?.isContentEditable
+    || event.target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  const key = String(event.key || '').toLowerCase();
+  const next = key === 'i' ? 'items' : key === 'c' && hasSpells ? 'spells' : null;
+  return next ? next === tab ? 'close' : next : null;
+}
+
 // A single folio owns the focus while it is open. This component only
 // chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
@@ -65,6 +78,15 @@ export default function ChroniclesSpellMenu({
     if (hero) {
       event.preventDefault();
       onOpenSheet(hero.id);
+      return;
+    }
+    const pageAction = chroniclesSpellMenuPageShortcut(event, {
+      tab, hasSpells: spells.length > 0,
+    });
+    if (pageAction) {
+      event.preventDefault();
+      if (pageAction === 'close') onClose();
+      else setTab(pageAction);
       return;
     }
     if (event.key !== 'Tab') return;
@@ -125,13 +147,15 @@ export default function ChroniclesSpellMenu({
           <div className="chronicles-spell-menu__tabs" role="tablist" aria-label="Páginas del grimorio">
             <button id={spellsTabId} type="button" role="tab" aria-selected={tab === 'spells'}
               aria-controls={pageId} tabIndex={tab === 'spells' ? 0 : -1}
-              data-chronicles-menu-tab-button="spells" onClick={() => setTab('spells')}>
-              ✦ Hechizos <small>{spells.length}</small>
+              data-chronicles-menu-tab-button="spells" aria-keyshortcuts="C"
+              title="Hechizos (C)" onClick={() => setTab('spells')}>
+              ✦ Hechizos <small>{spells.length} · C</small>
             </button>
             <button id={itemsTabId} type="button" role="tab" aria-selected={tab === 'items'}
               aria-controls={pageId} tabIndex={tab === 'items' ? 0 : -1}
-              data-chronicles-menu-tab-button="items" onClick={() => setTab('items')}>
-              ◈ Objetos <small>{stock}</small>
+              data-chronicles-menu-tab-button="items" aria-keyshortcuts="I"
+              title="Objetos (I)" onClick={() => setTab('items')}>
+              ◈ Objetos <small>{stock} · I</small>
             </button>
           </div>
         )}

@@ -306,6 +306,32 @@ try {
         assert.equal(await page.locator('[data-chronicles-cast-test-actions]').getAttribute('data-chronicles-cast-test-actions'), '0');
       }
 
+      // The same C/I keys work *inside* the CAST folio, without leaking
+      // keyboard actions into the hidden world.
+      if (width === 390 || width === 1280) {
+        await gotoFixture(page, url + '?view=spell-menu');
+        const spellFolio = page.locator('[data-chronicles-spell-menu]');
+        await spellFolio.waitFor({ state: 'visible' });
+        assert.equal(await spellFolio.getAttribute('data-chronicles-menu-tab'), 'spells');
+        await page.keyboard.press('i');
+        assert.equal(await spellFolio.getAttribute('data-chronicles-menu-tab'), 'items');
+        await page.getByRole('dialog', { name: 'Mochila de viaje' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('c');
+        assert.equal(await spellFolio.getAttribute('data-chronicles-menu-tab'), 'spells');
+        await page.getByRole('dialog', { name: 'Grimorio de magia' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('Control+i');
+        assert.equal(await spellFolio.getAttribute('data-chronicles-menu-tab'), 'spells');
+        await page.keyboard.press('c');
+        await spellFolio.waitFor({ state: 'hidden' });
+        await page.locator('[data-reopen-cast]').click();
+        await spellFolio.waitFor({ state: 'visible' });
+        await page.keyboard.press('i');
+        await page.keyboard.press('i');
+        await spellFolio.waitFor({ state: 'hidden' });
+        assert.equal(await page.locator('[data-chronicles-cast-test-actions]').getAttribute('data-chronicles-cast-test-actions'), '0',
+          'Switching grimoire pages must never send a spell/item action');
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
