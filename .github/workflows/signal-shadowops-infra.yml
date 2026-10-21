@@ -1,9 +1,11 @@
 name: Signal ShadowOps Chronicles staging after green source CI
 on:
   workflow_run:
+    # Chronicles CI is already a fail-closed gate for frontend build/Chromium.
+    # Listening to CI and API is sufficient: whichever finishes last retries
+    # admission after both have completed, without an extra frontend event.
     workflows:
       - Chronicles CI
-      - Chronicles frontend
       - Chronicles API
     types: [completed]
     branches: [main]
