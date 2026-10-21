@@ -64,6 +64,22 @@ try {
       // Keyboard focus must land on the SAFE choice, never on the dangerous
       // "Sí, salir" button or on an element removed by the state transition.
       await page.waitForFunction(() => document.activeElement?.textContent?.trim() === 'Cancelar');
+      const dangerousChoice = menu.getByRole('button', { name: 'Sí, salir sin guardar' });
+      const safeChoice = menu.getByRole('button', { name: 'Cancelar' });
+      await page.keyboard.press('Tab');
+      assert.equal(await dangerousChoice.evaluate((node) => document.activeElement === node), true,
+        'Tab from Cancel must wrap to the other choice, not leave confirmation');
+      await page.keyboard.press('Tab');
+      assert.equal(await safeChoice.evaluate((node) => document.activeElement === node), true);
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await dangerousChoice.evaluate((node) => document.activeElement === node), true);
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await safeChoice.evaluate((node) => document.activeElement === node), true);
+      // Even accidental focus elsewhere in the menu cannot take Tab out of
+      // the active exit question.
+      await menu.getByRole('button', { name: 'Continuar' }).focus();
+      await page.keyboard.press('Tab');
+      assert.equal(await safeChoice.evaluate((node) => document.activeElement === node), true);
       assert.equal(await count(page, 'exit'), 1);
       await page.screenshot({ path: 'smoke-menu-shortcuts-confirm-' + width + '.png' });
       // Holding Q or pressing S while the confirmation is open cannot
