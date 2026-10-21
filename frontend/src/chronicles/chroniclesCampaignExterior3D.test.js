@@ -248,13 +248,14 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(grid[lamp.y + dy][lamp.x + dx]).toBe('.');
       glass.getMatrixAt(index, facadeMatrix);
       const lit = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
-      expect(lit.x).toBeCloseTo((lamp.x - center.x) * 4 + dx * 1.90);
-      expect(lit.z).toBeCloseTo((lamp.y - center.y) * 4 + dy * 1.90);
+      expect(lit.x).toBeCloseTo((lamp.x - center.x) * 4 + dx * 1.974);
+      expect(lit.z).toBeCloseTo((lamp.y - center.y) * 4 + dy * 1.974);
       expect(lit.y).toBeCloseTo(1.88);
     }
     // Lantern depth stays within the 4m solid cell, not the walkable street.
-    expect(1.90 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
-    expect(1.88 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
+    expect(1.974 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
+    expect(1.974 + glass.geometry.parameters.depth / 2).toBeGreaterThan(1.974 + 0.012 / 2); // Outside limewash surface.
+    expect(1.974 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
     // Four existing solid street-wall strips now read as shallow houses with
     // sloping roofs. One shared six-triangle geometry keeps the skyline cheap.
     const roofRuns = swordhavenFirstBook.landscape.roofRuns;
