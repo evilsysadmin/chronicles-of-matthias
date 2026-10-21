@@ -43,6 +43,28 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     };
   }, [open]);
 
+  // The tracked contract may be far below the first page when many quests
+  // are active. On a fresh visit reveal its heading within the book only:
+  // do not call scrollIntoView (which can scroll the underlying game) and do
+  // not steal keyboard focus from the close button.
+  useEffect(() => {
+    if (!open || !state?.trackedQuestId) return;
+    const trackedId = state.trackedQuestId;
+    if (!chroniclesQuestLogEntries(state).some(
+      (quest) => quest.id === trackedId && quest.status === 'active'
+    )) return;
+    const viewport = scrollRef.current;
+    const entry = Array.from(viewport?.querySelectorAll('[data-chronicles-quest-id]') || [])
+      .find((node) => node.getAttribute('data-chronicles-quest-id') === trackedId);
+    const heading = entry?.querySelector('.chronicles-journal-modal__quest-heading');
+    if (!viewport || !heading) return;
+    const bounds = viewport.getBoundingClientRect();
+    const row = heading.getBoundingClientRect();
+    const margin = 12;
+    if (row.bottom > bounds.bottom - margin) viewport.scrollTop += row.bottom - bounds.bottom + margin;
+    else if (row.top < bounds.top + margin) viewport.scrollTop += row.top - bounds.top - margin;
+  }, [open]);
+
   // Focus the actual saved folio only after React has mounted the Memories
   // chapter. Never synthesize an event or scroll the underlying game world.
   useEffect(() => {
