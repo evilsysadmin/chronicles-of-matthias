@@ -118,7 +118,11 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
             tabIndex={chapter === 'quests' ? 0 : -1}
             aria-controls={chapter === 'quests' ? 'chronicles-journal-panel-quests' : undefined} aria-selected={chapter === 'quests'}
             onClick={() => changeChapter('quests')}>
-            <span>Encargos</span><small>{active.length} {active.length === 1 ? 'pendiente' : 'pendientes'}</small>
+            <span>Encargos</span><small>{active.length > 0
+              ? `${active.length} ${active.length === 1 ? 'pendiente' : 'pendientes'}`
+              : completedCount > 0
+                ? `${completedCount} ${completedCount === 1 ? 'resuelto' : 'resueltos'}`
+                : 'Sin encargos'}</small>
           </button>
           <button type="button" role="tab" id="chronicles-journal-tab-memories"
             tabIndex={chapter === 'memories' ? 0 : -1}
@@ -134,8 +138,13 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
               aria-labelledby="chronicles-journal-tab-quests" className="chronicles-journal-modal__chapter">
               <div className="chronicles-journal-modal__chapter-head">
                 <small>CAPÍTULO I</small>
-                <h3>Los asuntos pendientes</h3>
-                <p>Abre un encargo para leer la pista y la región donde buscar. Los lugares no revelados siguen siendo desconocidos.</p>
+                <h3>{active.length > 0 ? 'Los asuntos pendientes'
+                  : completedCount > 0 ? 'Las gestas concluidas' : 'Páginas por escribir'}</h3>
+                <p>{active.length > 0
+                  ? 'Abre un encargo para leer la pista y la región donde buscar. Los lugares no revelados siguen siendo desconocidos.'
+                  : completedCount > 0
+                    ? 'Los encargos resueltos conservan los hechos que vivimos. Abre uno para releer su historia.'
+                    : 'Todavía no hay historias que contar. La próxima aventura comenzará una nueva página.'}</p>
               </div>
               {completedCount > 0 && active.length > 0 && (
                 <button type="button" className="chronicles-journal-modal__archive-toggle"
