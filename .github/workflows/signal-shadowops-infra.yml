@@ -132,6 +132,7 @@ jobs:
       SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Dispatch only the two dedicated staging CD workflows
+        id: dispatch
         shell: bash
         run: |
           set -euo pipefail
@@ -155,6 +156,36 @@ jobs:
             printf '**State: superseded before dispatch.** Current main is `%s`; no Infra workflow was requested.\n' "$current" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # A completed trusted dispatch already requested both workflows.
+          # This SHA-scoped artifact is written only after BOTH dispatches
+          # succeed; a partial failure remains retryable on the next signal.
+          receipt_name="chronicles-infra-dispatch-$SOURCE_SHA"
+          receipts="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api -X GET repos/evilsysadmin/chronicles-of-matthias/actions/artifacts -f name="$receipt_name" -f per_page=100)"
+          if ! jq -e '(.total_count | type == "number") and .total_count <= 100 and (.artifacts | type == "array")' <<<"$receipts" >/dev/null; then
+            echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
+            exit 66
+          fi
+          prior_ids="$(jq -r --arg name "$receipt_name" '
+            [.artifacts[] | select(.name == $name and .expired == false)
+              | .workflow_run.id | select(type == "number" and . > 0)] | unique[]
+          ' <<<"$receipts")" || {
+            echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
+            exit 66
+          }
+          while IFS= read -r prior_id; do
+            [[ "$prior_id" =~ ^[0-9]+$ ]] || continue
+            origin="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api "repos/evilsysadmin/chronicles-of-matthias/actions/runs/$prior_id")"
+            if jq -e --argjson id "$prior_id" '
+              .id == $id and .status == "completed" and .conclusion == "success"
+              and .path == ".github/workflows/signal-shadowops-infra.yml"
+              and .event == "workflow_run" and .head_branch == "main"
+              and .repository.full_name == "evilsysadmin/chronicles-of-matthias"
+            ' <<<"$origin" >/dev/null; then
+              echo "CHRONICLES_DISPATCH_ALREADY_SENT sha=$SOURCE_SHA"
+              printf '**State: previously dispatched.** Trusted completed handoff receipt for `%s`; no duplicate Infra request.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done <<<"$prior_ids"
           # Never pass the token, SHA or environment from an untrusted payload.
           GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-api-staging.yml \
             --repo evilsysadmin/shadowops-infra --ref main \
@@ -165,3 +196,13 @@ jobs:
             -f environment=staging -f source_sha="$SOURCE_SHA" -f only_if_new=true
           echo "::notice title=Chronicles staging dispatch sent::Requested API and Pages staging workflows in shadowops-infra for $SOURCE_SHA."
           printf '**State: dispatch sent.** Requested API and Pages staging for `%s`. This does not certify deployment; verify the downstream jobs and release receipt.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$SOURCE_SHA" > chronicles-dispatch-receipt.txt
+          echo 'sent=true' >> "$GITHUB_OUTPUT"
+      - name: Save successful staging dispatch receipt
+        if: steps.dispatch.outputs.sent == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicles-infra-dispatch-${{ github.event.workflow_run.head_sha }}
+          path: chronicles-dispatch-receipt.txt
+          retention-days: 30
+          if-no-files-found: error
