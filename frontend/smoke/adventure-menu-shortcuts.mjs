@@ -75,11 +75,13 @@ try {
       assert.equal(await dangerousChoice.evaluate((node) => document.activeElement === node), true);
       await page.keyboard.press('Shift+Tab');
       assert.equal(await safeChoice.evaluate((node) => document.activeElement === node), true);
-      // Even accidental focus elsewhere in the menu cannot take Tab out of
-      // the active exit question.
-      await menu.getByRole('button', { name: 'Continuar' }).focus();
-      await page.keyboard.press('Tab');
-      assert.equal(await safeChoice.evaluate((node) => document.activeElement === node), true);
+      // The decision must not expose unrelated Save/Continue/Mixer actions,
+      // whether by pointer, Tab, or a screen reader.
+      assert.equal(await menu.getByRole('button', { name: 'Continuar' }).count(), 0);
+      assert.equal(await menu.getByRole('button', { name: 'Guardar partida · S' }).count(), 0);
+      assert.equal(await menu.locator('input[type="range"]:visible').count(), 0);
+      assert.equal(await menu.getByRole('button', { name: 'Cerrar menú' }).isVisible(), false);
+      assert.equal(await menu.locator('[data-confirming-exit]').getAttribute('data-confirming-exit'), 'true');
       assert.equal(await count(page, 'exit'), 1);
       await page.screenshot({ path: 'smoke-menu-shortcuts-confirm-' + width + '.png' });
       // Holding Q or pressing S while the confirmation is open cannot
@@ -94,6 +96,9 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-confirm]').getAttribute('data-shortcut-confirm'), 'false');
       assert.equal(await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).count(), 0);
+      await menu.getByRole('button', { name: 'Continuar' }).waitFor({ state: 'visible' });
+      assert.equal(await menu.locator('input[type="range"]:visible').count() > 0, true,
+        'Cancelling restores the unchanged live audio controls');
       await page.waitForFunction(() =>
         document.activeElement?.textContent?.trim() === 'Salir sin guardar · Q');
       await page.keyboard.press('Escape');

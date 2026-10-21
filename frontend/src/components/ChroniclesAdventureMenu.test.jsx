@@ -16,6 +16,8 @@ describe('Chronicles adventure menu hotkey affordances', () => {
   it('shows the same S/Q labels as the shortcuts routed to the real handlers', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
     expect(html).toContain('Guardar partida · S');
+    expect(html).toContain('data-confirming-exit="false"');
+    expect(html).toContain('S · guardar · Q · salir · ESC · cerrar · TAB · navegar');
     expect(html).toContain('Salir sin guardar · Q');
     expect(html).toContain('S · guardar · Q · salir');
     expect(html).toContain('Guardar y salir');
@@ -28,6 +30,13 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('Sí, salir sin guardar');
     expect(html).toContain('Cancelar');
     expect(html).not.toContain('Salir sin guardar · Q');
+    expect(html).not.toContain('Guardar partida · S');
+    expect(html).not.toContain('Guardar y salir');
+    expect(html).not.toContain('>Continuar<');
+    expect(html).toContain('data-confirming-exit="true"');
+    expect(html).toContain('hidden=""');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('ESC · cancelar salida · TAB · elegir respuesta');
   });
 
   it('does not advertise a second save action while save is pending', () => {
