@@ -101,6 +101,71 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
   town.add(frames, panes);
 }
 
+// Sparse district landmarks on EXISTING wall cells. Shallow fixtures sit
+// wholly inside blocked 4m cells and cannot alter the walkable grid. Three
+// instanced meshes cover all sconces; emissive amber glass adds no point lights.
+function addSettlementWallLanterns(town, { grid, blocked, center, placements }) {
+  if (!Array.isArray(placements) || !placements.length) return;
+  const directions = {
+    north: { dx: 0, dy: -1, yaw: Math.PI },
+    east: { dx: 1, dy: 0, yaw: Math.PI / 2 },
+    south: { dx: 0, dy: 1, yaw: 0 },
+    west: { dx: -1, dy: 0, yaw: -Math.PI / 2 },
+  };
+  const blockedCells = new Set(blocked.map(({ x, y }) => x + ',' + y));
+  const seen = new Set();
+  const valid = [];
+  for (const placement of placements.slice(0, 12)) {
+    const { x, y, side } = placement || {};
+    const facing = directions[side];
+    const id = x + ',' + y + ',' + side;
+    if (!Number.isInteger(x) || !Number.isInteger(y) || !facing
+      || !blockedCells.has(x + ',' + y) || seen.has(id)
+      || grid[y + facing.dy]?.[x + facing.dx] !== '.') continue;
+    seen.add(id);
+    valid.push({ x, y, ...facing });
+  }
+  if (!valid.length) return;
+  const iron = material(0x514032, { metalness: 0.43, roughness: 0.53 });
+  const amber = material(0xf2b967, {
+    emissive: 0x98521b, emissiveIntensity: 0.7, roughness: 0.36,
+  });
+  const mounts = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.22, 0.95, 0.1), iron, valid.length,
+  );
+  const glass = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.38, 0.46, 0.12), amber, valid.length,
+  );
+  const caps = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.54, 0.1, 0.18), iron, valid.length,
+  );
+  const dummy = new THREE.Object3D();
+  valid.forEach(({ x, y, dx, dy, yaw }, i) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.y = yaw;
+    for (const [mesh, outward, height] of [
+      [mounts, 1.88, 1.68],
+      [glass, 1.90, 1.88],
+      [caps, 1.88, 2.14],
+    ]) {
+      dummy.position.set(wx + dx * outward, height, wz + dy * outward);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+  });
+  for (const [mesh, name] of [
+    [mounts, 'chronicles-town-wall-lantern-mounts'],
+    [glass, 'chronicles-town-wall-lantern-glass'],
+    [caps, 'chronicles-town-wall-lantern-caps'],
+  ]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.name = name;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    town.add(mesh);
+  }
+}
+
 export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarsePointer = false } = {}) {
   const grid = scenePlan.grid || [];
   const width = Math.max(1, Number(scenePlan.width) || grid[0]?.length || 19);
@@ -231,6 +296,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     addSettlementStreetFacades(town, {
       grid, blocked, center: sceneCenter,
       zones: scenePlan.landscape?.facadeZones,
+    });
+    addSettlementWallLanterns(town, {
+      grid, blocked, center: sceneCenter,
+      placements: scenePlan.landscape?.wallLanterns,
     });
     // Trees stand outside the town wall so no walkable cell gains a blocker.
     TOWN_TREE_CELLS(width, height).forEach(([x, y], index) => {

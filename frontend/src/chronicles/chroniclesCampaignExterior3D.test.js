@@ -147,6 +147,37 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(facadePos.z).toBeCloseTo((16 - center.y) * 4 + 1.972);
     expect(panePos.z).toBeCloseTo((16 - center.y) * 4 + 1.988);
     expect(panePos.z - (16 - center.y) * 4 + 0.007).toBeLessThan(2);
+    // Three recognisable landmarks mark the southern approaches and the
+    // inner crossing without placing props on traversable tiles.
+    const lamps = swordhavenFirstBook.landscape.wallLanterns;
+    expect(lamps).toEqual([
+      { x: 4, y: 14, side: 'east' },
+      { x: 14, y: 14, side: 'west' },
+      { x: 9, y: 20, side: 'west' },
+    ]);
+    const mounts = town.getObjectByName('chronicles-town-wall-lantern-mounts');
+    const glass = town.getObjectByName('chronicles-town-wall-lantern-glass');
+    const caps = town.getObjectByName('chronicles-town-wall-lantern-caps');
+    for (const mesh of [mounts, glass, caps]) {
+      expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
+      expect(mesh.count).toBe(3);
+      expect(mesh.castShadow).toBe(false);
+    }
+    expect(glass.material.emissive.getHex()).toBe(0x98521b);
+    const directions = { east: [1, 0], west: [-1, 0], north: [0, -1], south: [0, 1] };
+    for (const [index, lamp] of lamps.entries()) {
+      const [dx, dy] = directions[lamp.side];
+      expect(grid[lamp.y][lamp.x]).toBe('#');
+      expect(grid[lamp.y + dy][lamp.x + dx]).toBe('.');
+      glass.getMatrixAt(index, facadeMatrix);
+      const lit = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
+      expect(lit.x).toBeCloseTo((lamp.x - center.x) * 4 + dx * 1.90);
+      expect(lit.z).toBeCloseTo((lamp.y - center.y) * 4 + dy * 1.90);
+      expect(lit.y).toBeCloseTo(1.88);
+    }
+    // Lantern depth stays within the 4m solid cell, not the walkable street.
+    expect(1.90 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
+    expect(1.88 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }

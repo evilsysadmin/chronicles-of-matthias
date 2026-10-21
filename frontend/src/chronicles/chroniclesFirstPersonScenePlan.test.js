@@ -78,6 +78,11 @@ describe('Chronicles first-person runtime scene plan', () => {
     expect(plan.landscape.facadeZones).toContainEqual({
       minX: 1, maxX: 17, minY: 16, maxY: 20, style: 'timber-windows',
     });
+    expect(plan.landscape.wallLanterns).toEqual([
+      { x: 4, y: 14, side: 'east' },
+      { x: 14, y: 14, side: 'west' },
+      { x: 9, y: 20, side: 'west' },
+    ]);
     expect(chroniclesFirstPersonScenePlan({ mapId: 'crypt-eight-squares' }).landscape).toBeNull();
   });
 
