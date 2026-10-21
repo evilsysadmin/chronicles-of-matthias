@@ -147,6 +147,60 @@
           }
         ]
       }
+    },
+    {
+      "id": "archive-spider-north-ledge",
+      "visualType": "crypt-spider",
+      "name": "araña catalogadora",
+      "x": 1,
+      "y": 1,
+      "hpKey": "archiveSpiderNorthLedgeHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
+    },
+    {
+      "id": "archive-hound-back-stacks",
+      "visualType": "bone-hound",
+      "name": "sabueso de tinta",
+      "x": 9,
+      "y": 7,
+      "hpKey": "archiveHoundBackStacksHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      }
+    },
+    {
+      "id": "archive-spider-hidden-index",
+      "visualType": "crypt-spider",
+      "name": "araña catalogadora",
+      "x": 9,
+      "y": 4,
+      "hpKey": "archiveSpiderHiddenIndexHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
     }
   ],
   "triggers": [],
