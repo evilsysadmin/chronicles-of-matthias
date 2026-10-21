@@ -21,6 +21,7 @@ import {
   chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements,
 } from './chronicles/chroniclesDungeonLighting.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
+import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
 import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyFlightSample } from './chronicles/chroniclesVolleyMotion.js';
@@ -241,6 +242,12 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
     enemy.userData.chroniclesBaseYaw = enemy.rotation.y;
     enemy.userData.chroniclesBaseScale = enemy.scale.x;
     enemy.userData.chroniclesTargetPosition = new THREE.Vector3(enemyCell.x, 0, enemyCell.z);
+    const spriteHeight = enemy.userData.chroniclesBillboard?.sprite?.scale.y || 2.5;
+    const nameplate = buildChroniclesEnemyNameplate(enemyDefinition, spriteHeight);
+    if (nameplate) {
+      enemy.add(nameplate.sprite);
+      enemy.userData.chroniclesEnemyNameplate = nameplate;
+    }
     scene.add(enemy);
   });
 
@@ -793,6 +800,7 @@ export function createChroniclesOfMatthiasGame(host, {
       enemy.userData.chroniclesBaseYaw = chroniclesEnemyFacingYaw(currentCell, { x: state.x, y: state.y });
       if (reducedMotion) enemy.position.copy(target);
       enemy.visible = active && (hp > 0 || (!reducedMotion && deathStartedAt != null));
+      enemy.userData.chroniclesEnemyNameplate?.update(active ? hp : 0, enemyDefinition.maxHp);
       if (reducedMotion && enemy.userData.updateChroniclesSprite) {
         const adjacent = Math.abs(currentCell.x - state.x) + Math.abs(currentCell.y - state.y) <= 1;
         enemy.userData.updateChroniclesSprite(0, { menace: Boolean(adjacent || state.initiative) });
@@ -1084,6 +1092,9 @@ export function createChroniclesOfMatthiasGame(host, {
       document.removeEventListener('visibilitychange', onVisibility);
       renderer.domElement.removeEventListener('pointerup', onContentPointerUp);
       dungeon.materialArt?.userData.chroniclesArtCancel?.();
+      dungeon.enemyDefinitions.forEach((definition) => {
+        dungeon.enemies[definition.id]?.userData.chroniclesEnemyNameplate?.dispose();
+      });
       disposeScene(scene);
       renderer.dispose();
       renderer.forceContextLoss?.();
