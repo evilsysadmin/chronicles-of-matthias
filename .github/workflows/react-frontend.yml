@@ -67,6 +67,8 @@ jobs:
           node smoke/loader.mjs http://localhost:4174/smoke/loader.html
           # Real party editor: back/resume, F5 draft, commit and 360/390/430 + desktop.
           node smoke/character-setup.mjs http://localhost:4174/smoke/character-setup.html
+          # Catalog outage: readable local saves, disabled mutation, truthful empty state.
+          node smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:
