@@ -40,7 +40,7 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     }
     expect(seen.has('3,17')).toBe(true);
     expect(seen.has('15,21')).toBe(true);
-    for (const entry of [...town.interactables, ...town.exits]) {
+    for (const entry of [...town.interactables, ...town.treasures, ...town.exits]) {
       expect(seen.has(entry.x + ',' + entry.y), entry.id).toBe(true);
     }
   });
@@ -70,6 +70,27 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
       type: 'set', key: 'swordhavenSouthFalseWatchDefeated', value: true,
     });
     expect(falseWatch.onDefeat.journal.id).toBe('swordhaven-south-false-watch-falls');
+  });
+
+  it('rewards exploring the inner south alley exactly once, hiding the spent cache', () => {
+    const town = chroniclesMapById('swordhaven-first-book');
+    const cache = town.treasures.find((entry) => entry.id === 'swordhaven-south-forgotten-crate');
+    expect(cache).toMatchObject({ kind: 'pickup', visualType: 'chest', x: 9, y: 17 });
+    expect(town.grid[cache.y][cache.x]).toBe('.');
+    expect(cache.when).toEqual([{ key: 'swordhavenSouthCrateOpened', falsy: true }]);
+    expect(cache.action.journal.id).toBe('swordhaven-south-hidden-crate');
+    const before = at(9, 17);
+    expect(chroniclesContextualContentAction(before)?.id).toBe(cache.id);
+    const goldBefore = before.inventory?.['crown-gold']?.quantity || 0;
+    const potionsBefore = before.inventory?.['healing-potion']?.quantity || 0;
+    const collected = chroniclesReduce(before, 'interact');
+    expect(collected.swordhavenSouthCrateOpened).toBe(true);
+    expect(collected.inventory['crown-gold'].quantity).toBe(goldBefore + 4);
+    expect(collected.inventory['healing-potion'].quantity).toBe(potionsBefore + 1);
+    expect(chroniclesContextualContentAction(collected)?.id).not.toBe(cache.id);
+    const repeated = chroniclesReduce(collected, 'interact');
+    expect(repeated.inventory['crown-gold'].quantity).toBe(goldBefore + 4);
+    expect(repeated.inventory['healing-potion'].quantity).toBe(potionsBefore + 1);
   });
 
   it('never grants rewards when merely opening a dialogue; talk uses the campaign reducer', () => {
