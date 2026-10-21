@@ -149,6 +149,88 @@
         ]
       },
       "defeatedFlag": "swordhavenSouthFalseWatchDefeated"
+    },
+    {
+      "id": "swordhaven-old-quarter-pickpocket",
+      "visualType": "road-bandit",
+      "name": "carterista del barrio viejo",
+      "x": 2,
+      "y": 15,
+      "hpKey": "swordhavenOldQuarterPickpocketHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a carterista del barrio viejo con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "swordhaven-false-watch-recruit",
+      "visualType": "road-bandit",
+      "name": "recluta de la ronda falsa",
+      "x": 15,
+      "y": 15,
+      "hpKey": "swordhavenFalseWatchRecruitHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a recluta de la ronda falsa con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
     }
   ],
   "triggers": [],
