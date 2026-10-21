@@ -69,6 +69,8 @@ jobs:
           node smoke/character-setup.mjs http://localhost:4174/smoke/character-setup.html
           # Catalog outage: readable local saves, disabled mutation, truthful empty state.
           node smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
+          # First contact/payment: genuine road sightline and earned quest receipt, mobile + desktop.
+          node smoke/first-hour-contact.mjs http://localhost:4174/smoke/first-hour-contact.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:
