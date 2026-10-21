@@ -70,7 +70,11 @@ try {
         /Equipo/, 'Loot CTA must land directly in equipment');
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
-      assert.match(await sheet.locator('[data-slot="weapon"] strong').innerText(), /Espada de bronce/,
+      // The MM3 double-weapon summary is optional in the test fixture; the
+      // actual equipment-slot row is common to both character-sheet variants.
+      const wornMeleeWeapon = sheet.locator('.chronicles-character-sheet__gear-slot')
+        .filter({ hasText: 'Arma · A' }).locator('strong');
+      assert.match(await wornMeleeWeapon.innerText(), /Espada de bronce/,
         'The real equip action must update the active melee weapon');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
