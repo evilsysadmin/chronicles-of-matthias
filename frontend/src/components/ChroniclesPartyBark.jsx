@@ -17,7 +17,12 @@ export default function ChroniclesPartyBark({ bark, onOpenEquipment = null }) {
       <button type="button" className="chronicles-party-bark__trigger"
         aria-controls={detailsId} aria-expanded={expanded}
         aria-label={`Comentario de ${bark.speaker}. ${expanded ? 'Ocultar' : 'Leer'}`}
-        onClick={() => setExpanded((value) => !value)}
+        onClick={(event) => {
+          // Dismissing by tap must really collapse: :focus-within otherwise
+          // leaves the preview open on touch devices after aria-expanded=false.
+          if (expanded) event.currentTarget.blur();
+          setExpanded((value) => !value);
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Escape' && expanded) {
             event.preventDefault();
