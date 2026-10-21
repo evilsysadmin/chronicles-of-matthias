@@ -54,11 +54,21 @@ jobs:
           test -s frontend/dist/models/matthias-home-canonical.glb
       # Avoid Chromium CDN/DNS fetches on every PR and main SHA.
       # The cache key is intentionally exact-versioned; never restore a different browser revision.
+      # The npm lockfile decides the browser revision; no manual cache key edits.
+      - name: Resolve locked Playwright version for browser cache
+        id: playwright_version
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./node_modules/playwright/package.json').version")"
+          declared="$(node -p "require('./package.json').devDependencies.playwright")"
+          [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Restore pinned Playwright Chromium browser
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-1.64.1
+          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
       - name: Mount smoke — enter Chronicles and Tactics without crashing
         working-directory: frontend
         run: |
