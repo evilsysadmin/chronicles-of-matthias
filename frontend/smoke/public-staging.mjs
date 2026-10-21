@@ -240,7 +240,11 @@ try {
       await partyPortraits.first().click();
       const heroFolio = page.locator('[role="dialog"][data-chronicles-folio="v2"]');
       await heroFolio.waitFor({ state: 'visible', timeout: 12_000 });
-      await heroFolio.getByRole('button', { name: 'Equipo' }).click();
+      // The state folio also has a "Cambiar equipo ›" action. Scope this
+      // click to the actual tab and use an exact accessible name; a broad
+      // substring match throws Playwright strict-mode on live staging.
+      await heroFolio.locator('.chronicles-character-sheet__tabs')
+        .getByRole('button', { name: 'Equipo', exact: true }).click();
       await page.keyboard.press('4');
       await page.waitForFunction((name) => document.querySelector(
         '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
