@@ -169,8 +169,8 @@
     },
     {
       "id": "banner-road-east-scout",
-      "visualType": "road-bandit",
-      "name": "vigía de Garrah",
+      "visualType": "bandit-archer",
+      "name": "ballestero de Garrah",
       "x": 16,
       "y": 3,
       "hpKey": "bannerRoadEastScoutHp",
@@ -180,31 +180,17 @@
       "activation": "always",
       "ai": {
         "movement": "hold",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} derrota a vigía de Garrah con {attack}.",
+        "message": "{attacker} derrota a ballestero de Garrah con {attack}.",
         "effects": [
           {
             "type": "grant-gold",
             "amount": 2
           }
-        ]
-      },
-      "enemyBuild": {
-        "version": 1,
-        "archetype": "road-bandit",
-        "level": 1,
-        "attributes": {
-          "vigor": 1,
-          "power": 0,
-          "precision": 0,
-          "will": 0
-        },
-        "skills": [
-          "brutal-strike"
         ]
       }
     },
