@@ -21,6 +21,11 @@ try {
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       const menu = page.getByRole('dialog', { name: 'Menú de aventura' });
       await menu.waitFor({ state: 'visible', timeout: 20000 });
+      await page.waitForFunction(() =>
+        document.activeElement === document.querySelector('details.chronicles-game-menu > summary'));
+      assert.equal(await menu.isVisible(), true);
+      // Opening from a touch/external control must bring focus into the modal.
+
       // Modal keyboard navigation must wrap both ways instead of reaching
       // the playable world and its hidden controls behind the folio.
       const details = page.locator('details.chronicles-game-menu');
@@ -128,13 +133,15 @@ try {
       assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'knight',
         'After reopening menu, 1 must not silently replace Faust');
 
-      // Editing a field never steals S/Q. Focused audio range controls also
-      // keep their own native keyboard behaviour.
+      // When the menu is open, no background text input or HUD button may
+      // steal focus through Tab or programmatic navigation.
       const field = page.getByRole('textbox', { name: 'Campo de texto de prueba' });
       await field.focus();
-      await page.keyboard.type('sq');
+      await page.waitForFunction(() =>
+        document.activeElement === document.querySelector('details.chronicles-game-menu > summary'));
       assert.equal(await count(page, 'save'), 1);
       assert.equal(await count(page, 'exit'), 1);
+      // Inputs that actually belong to the menu still own their key presses.
       const audioInput = menu.locator('input[type="range"]').first();
       await audioInput.focus();
       await page.keyboard.press('s');

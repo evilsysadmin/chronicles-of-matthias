@@ -81,6 +81,23 @@ export function chroniclesContainAdventureMenuTab(event, menuDetails) {
   return false;
 }
 
+// A modal details surface must own focus even if it was opened by touch,
+// external scripting or a controller that did not focus the summary first.
+// Redirect stray focus to the safe exit Cancel action while Q's question is
+// up; otherwise return to the menu opener. This also prevents Tab starting
+// on a background HUD control, beyond the edge-only Tab wrapper above.
+export function chroniclesRestoreAdventureMenuFocus(menuDetails, focused) {
+  if (!menuDetails?.open || !focused || menuDetails.contains(focused)) return false;
+  const question = menuDetails.querySelector?.(
+    '[role="group"][aria-label="Confirmar salida sin guardar"]',
+  );
+  const safe = question?.querySelector('button:last-of-type')
+    || menuDetails.querySelector('summary');
+  if (!safe || safe === focused) return false;
+  safe.focus();
+  return true;
+}
+
 // The physical 1–4 keys identify these four heroes by stable IDs, not by
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);

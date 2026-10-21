@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -238,5 +238,49 @@ describe('Chronicles modal adventure-menu Tab containment', () => {
     menu.open = true;
     const notTab = event(false, 's');
     expect(chroniclesContainAdventureMenuTab(notTab, menu)).toBe(false);
+  });
+});
+
+
+describe('Chronicles adventure menu modal focus acquisition', () => {
+  const setup = (confirm = false) => {
+    const doc = { activeElement: null };
+    const control = () => ({
+      focus() { doc.activeElement = this; },
+    });
+    const summary = control();
+    const cancel = control();
+    const outside = control();
+    const question = confirm ? { querySelector: () => cancel } : null;
+    const details = {
+      open: true,
+      contains: (element) => element === summary || element === cancel,
+      querySelector: (selector) => selector === 'summary' ? summary : question,
+    };
+    return { doc, details, summary, cancel, outside };
+  };
+
+  it('focuses the menu opener after a mouse/touch open with background focus', () => {
+    const { doc, details, summary, outside } = setup();
+    outside.focus();
+    expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(true);
+    expect(doc.activeElement).toBe(summary);
+    expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(false);
+  });
+
+  it('returns stray background focus to Cancel while an unsafe exit is pending', () => {
+    const { doc, details, cancel, outside } = setup(true);
+    outside.focus();
+    expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(true);
+    expect(doc.activeElement).toBe(cancel);
+    expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(false);
+  });
+
+  it('does not seize focus when the menu has already closed', () => {
+    const { doc, details, outside } = setup();
+    details.open = false;
+    outside.focus();
+    expect(chroniclesRestoreAdventureMenuFocus(details, doc.activeElement)).toBe(false);
+    expect(doc.activeElement).toBe(outside);
   });
 });
