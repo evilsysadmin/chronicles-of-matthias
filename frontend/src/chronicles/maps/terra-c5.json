@@ -93,8 +93,8 @@
     },
     {
       "id": "terra-c5-foe-2",
-      "visualType": "sewer-rat",
-      "name": "rata de marisma",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
       "x": 2,
       "y": 10,
       "hpKey": "terra_c5Foe2Hp",
@@ -108,11 +108,11 @@
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con rata de marisma usando {attack}.",
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
@@ -123,8 +123,8 @@
     },
     {
       "id": "terra-c5-foe-3",
-      "visualType": "drowned",
-      "name": "ahogado",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
       "x": 18,
       "y": 2,
       "hpKey": "terra_c5Foe3Hp",
@@ -136,13 +136,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
+        "movement": "hold",
+        "attackReach": 2,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 3
+        "engageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con ahogado usando {attack}.",
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

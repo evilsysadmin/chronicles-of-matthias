@@ -123,8 +123,8 @@
     },
     {
       "id": "terra-c6-foe-3",
-      "visualType": "ghoul",
-      "name": "necrófago de la marisma",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
       "x": 18,
       "y": 4,
       "hpKey": "terra_c6Foe3Hp",
@@ -132,17 +132,17 @@
       "retaliation": 4,
       "toHit": 6,
       "armorClass": 3,
-      "agility": 4,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-chase",
+        "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
       },
       "onDefeat": {
-        "message": "{attacker} acaba con necrófago de la marisma usando {attack}.",
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

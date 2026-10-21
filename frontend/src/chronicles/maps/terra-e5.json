@@ -123,8 +123,8 @@
     },
     {
       "id": "terra-e5-foe-3",
-      "visualType": "salt-crab",
-      "name": "cangrejo de salitre",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
       "x": 18,
       "y": 2,
       "hpKey": "terra_e5Foe3Hp",
@@ -138,11 +138,11 @@
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 2
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "message": "{attacker} acaba con rata de marisma usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
