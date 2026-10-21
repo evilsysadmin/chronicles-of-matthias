@@ -759,6 +759,11 @@
   font: 700 1.12rem/1.25 Georgia, serif;
   color: #58381e;
 }
+.chronicles-journal-modal__archive-heading h4:focus {
+  outline: 2px solid #8f662f;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
 .chronicles-journal-modal__archive-heading p {
   margin: 0;
   font: italic .85rem/1.35 Georgia, serif;
