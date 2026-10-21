@@ -76,6 +76,7 @@ export default function ChroniclesCharacterSetup({
   );
   const [recoveredDraft, setRecoveredDraft] = useState(() => loadChroniclesCharacterDraft(CHRONICLES_PARTY));
   const [editing, setEditing] = useState(() => Boolean(recoveredDraft));
+  const [hasDraft, setHasDraft] = useState(() => Boolean(recoveredDraft));
   const [rollHistory, setRollHistory] = useState({});
   const [editorStep, setEditorStep] = useState(() => recoveredDraft?.editorStep || 'identity');
   const editorTabsRef = useRef(null);
@@ -109,12 +110,11 @@ export default function ChroniclesCharacterSetup({
   };
 
   const leaveEditor = () => {
-    clearRecovery();
+    // "Volver" is navigation, not discard. Keep character identities, rolls,
+    // choices and editor position both in memory and in the per-user draft.
+    saveChroniclesCharacterDraft({ activeSlot, editorStep, build: draft }, CHRONICLES_PARTY);
     setRecoveredDraft(null);
-    setDraft(customFrom(normalizedCurrent));
-    setActiveSlot('matthias');
-    setEditorStep('identity');
-    setRollHistory({});
+    setHasDraft(true);
     setEditing(false);
   };
 
@@ -127,11 +127,14 @@ export default function ChroniclesCharacterSetup({
   const validation = validateChroniclesCharacterBuild(draft);
 
   const beginCustom = () => {
+    if (!hasDraft) {
+      setDraft(customFrom(normalizedCurrent));
+      setActiveSlot('matthias');
+      setEditorStep('identity');
+      setRollHistory({});
+    }
     setRecoveredDraft(null);
-    setDraft(customFrom(normalizedCurrent));
-    setActiveSlot('matthias');
-    setEditorStep('identity');
-    setRollHistory({});
+    setHasDraft(true);
     setEditing(true);
   };
 
@@ -201,6 +204,12 @@ export default function ChroniclesCharacterSetup({
             <p>{hasCustom
               ? 'Tu compañía está lista. Puedes empezar la aventura o volver a personalizar a tus héroes.'
               : '¿Primera expedición? Este grupo ya está preparado para partir. Puedes entrar directamente o crear tus propios héroes.'}</p>
+            {hasDraft && (
+              <p className="chronicles-character-setup__recovered" role="status" data-testid="chronicles-character-draft-kept">
+                Tu borrador sigue guardado. «Continuar edición» retoma tus cuatro héroes sin perder nombres ni tiradas.
+                «Empezar con este grupo» utiliza el grupo preparado.
+              </p>
+            )}
           </header>
           <div className="chronicles-character-setup__hero-grid" aria-label="Personajes de la compañía">
             {previewCharacters.map((character) => (
@@ -243,7 +252,7 @@ export default function ChroniclesCharacterSetup({
                 </button>
               )}
               <button type="button" className="secondary-btn" onClick={beginCustom}>
-                {hasCustom ? 'Editar personajes' : 'Crear mis personajes'}
+                {hasDraft ? 'Continuar edición' : hasCustom ? 'Editar personajes' : 'Crear mis personajes'}
               </button>
             </div>
             {hasCustom && (
@@ -251,7 +260,7 @@ export default function ChroniclesCharacterSetup({
                 Volver al grupo canónico
               </button>
             )}
-            <button type="button" className="ghost-btn chronicles-character-setup__choice-exit" onClick={leaveSetup}>← Salir</button>
+            <button type="button" className="ghost-btn chronicles-character-setup__choice-exit" onClick={leaveSetup}>{hasDraft ? '← Salir y descartar borrador' : '← Salir'}</button>
           </div>
         </section>
       </div>
