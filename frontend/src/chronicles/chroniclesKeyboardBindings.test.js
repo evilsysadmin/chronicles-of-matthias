@@ -181,6 +181,38 @@ describe('Chronicles modal adventure-menu Tab containment', () => {
     expect(doc.activeElement).toBe(controls[2]);
   });
 
+  it('traps focus within the exit question instead of allowing Tab into the mixer', () => {
+    const { doc, controls, menu, event } = setup();
+    const [unsafe, cancel] = controls.slice(0, 2);
+    unsafe.textContent = 'Sí, salir sin guardar';
+    cancel.textContent = 'Cancelar';
+    const confirmation = { querySelectorAll: () => [unsafe, cancel] };
+    menu.querySelector = () => confirmation;
+
+    cancel.focus();
+    const next = event();
+    expect(chroniclesContainAdventureMenuTab(next, menu)).toBe(true);
+    expect(doc.activeElement).toBe(unsafe);
+    expect(next.prevented).toBe(true);
+
+    const back = event(true);
+    expect(chroniclesContainAdventureMenuTab(back, menu)).toBe(true);
+    expect(doc.activeElement).toBe(cancel);
+
+    // A stale focus left on a different menu control returns to Cancel.
+    controls[2].focus();
+    const stray = event();
+    expect(chroniclesContainAdventureMenuTab(stray, menu)).toBe(true);
+    expect(doc.activeElement).toBe(cancel);
+
+    // Once the confirmation closes, original full-menu focus order resumes.
+    menu.querySelector = () => null;
+    cancel.focus();
+    const fullMenu = event();
+    expect(chroniclesContainAdventureMenuTab(fullMenu, menu)).toBe(false);
+    expect(fullMenu.prevented).toBe(false);
+  });
+
   it('keeps native Tab order intact between controls and while menu is closed', () => {
     const { doc, controls, menu, event } = setup();
     controls[1].focus();
