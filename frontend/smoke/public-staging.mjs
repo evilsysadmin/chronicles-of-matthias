@@ -170,7 +170,7 @@ try {
             return {
               tag: node.tagName,
               className: String(node.className || '').slice(0, 130),
-              text: (node.innerText || '').replace(/\\s+/g, ' ').slice(0, 120),
+              text: (node.innerText || '').replace(/\s+/g, ' ').slice(0, 120),
               rect: [rect.x, rect.y, rect.width, rect.height].map((n) => Math.round(n)),
               display: styles.display, visibility: styles.visibility, opacity: styles.opacity,
               worldMap: node.closest('[data-chronicles="true"]')?.getAttribute('data-chronicles-map-id'),
