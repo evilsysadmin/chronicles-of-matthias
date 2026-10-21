@@ -27,3 +27,15 @@ test('Node 24 Docker Buildx action preserves immutable GHCR push and provenance 
   assert.match(publish, /push-to-registry: true/);
   assert.match(publish, /if: steps\.admission\.outputs\.publish == 'true'[\s\S]+?uses: docker\/build-push-action@v7/);
 });
+
+test('build provenance action uses Node 24 release and attests exact pushed digest', () => {
+  const publish = workflow.slice(workflow.indexOf('\n  publish:\n'));
+  assert.match(publish, /uses: actions\/attest-build-provenance@v4/);
+  assert.doesNotMatch(publish, /actions\/attest-build-provenance@v2/);
+  assert.match(publish, /id-token: write/);
+  assert.match(publish, /attestations: write/);
+  assert.match(publish, /if: steps\.admission\.outputs\.publish == 'true'\s*\n\s*uses: actions\/attest-build-provenance@v4/);
+  assert.match(publish, /subject-name: \$\{\{ env\.IMAGE \}\}/);
+  assert.match(publish, /subject-digest: \$\{\{ steps\.push\.outputs\.digest \}\}/);
+  assert.match(publish, /push-to-registry: true/);
+});
