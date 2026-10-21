@@ -155,6 +155,35 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(upperWindow.x).toBeCloseTo(facadePos.x);
     expect(upperWindow.z).toBeCloseTo(facadePos.z);
     expect(panePos.z - (16 - center.y) * 4 + 0.007).toBeLessThan(2);
+    // Every south-ward wall facing a walkable street gets timber framing,
+    // while the windows remain sparse. Two instanced meshes, not a batch
+    // per individual house or wall cell.
+    const beams = town.getObjectByName('chronicles-town-timber-storey-beams');
+    const uprights = town.getObjectByName('chronicles-town-timber-uprights');
+    expect(beams).toBeInstanceOf(THREE.InstancedMesh);
+    expect(uprights).toBeInstanceOf(THREE.InstancedMesh);
+    expect(beams.count).toBe(188);
+    expect(uprights.count).toBe(beams.count);
+    expect(beams.castShadow).toBe(false);
+    expect(uprights.castShadow).toBe(false);
+    expect(beams.geometry.parameters.depth).toBe(0.04);
+    const timberMatrix = new THREE.Matrix4();
+    beams.getMatrixAt(0, timberMatrix);
+    const lowerBeam = new THREE.Vector3().setFromMatrixPosition(timberMatrix);
+    beams.getMatrixAt(1, timberMatrix);
+    const upperBeam = new THREE.Vector3().setFromMatrixPosition(timberMatrix);
+    expect(lowerBeam.y).toBeCloseTo(3.25);
+    expect(upperBeam.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.21);
+    for (let i = 0; i < beams.count; i += 2) {
+      beams.getMatrixAt(i, timberMatrix);
+      const beamPosition = new THREE.Vector3().setFromMatrixPosition(timberMatrix);
+      const gx = Math.round(beamPosition.x / 4 + center.x);
+      const gy = Math.round(beamPosition.z / 4 + center.y);
+      expect(grid[gy]?.[gx]).toBe('#');
+      expect(gy).toBeGreaterThanOrEqual(16);
+      expect(gy).toBeLessThanOrEqual(20);
+    }
+
     // Three recognisable landmarks mark the southern approaches and the
     // inner crossing without placing props on traversable tiles.
     const lamps = swordhavenFirstBook.landscape.wallLanterns;
