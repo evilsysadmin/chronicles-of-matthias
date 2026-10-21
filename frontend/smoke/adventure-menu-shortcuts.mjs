@@ -38,9 +38,14 @@ try {
       const firstControl = page.locator('[data-menu-first-focus]');
       const lastControl = page.locator('[data-menu-last-focus]');
       await lastControl.focus();
+      const focusedBefore = await page.evaluate(() => document.activeElement?.outerHTML?.slice(0, 160));
       await page.keyboard.press('Tab');
       assert.equal(await firstControl.evaluate((node) => document.activeElement === node), true,
-        'Tab from the last menu control must wrap to the first (not game HUD)');
+        'Tab must wrap: ' + JSON.stringify({
+          focusedBefore,
+          trace: await page.locator('body').getAttribute('data-tab-trap-debug'),
+          focusedAfter: await page.evaluate(() => document.activeElement?.outerHTML?.slice(0, 160)),
+        }));
       await page.keyboard.press('Shift+Tab');
       assert.equal(await lastControl.evaluate((node) => document.activeElement === node), true,
         'Shift+Tab from the first menu control must wrap to the last');
