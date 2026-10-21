@@ -72,6 +72,7 @@ describe('Chronicles first-person runtime scene plan', () => {
     const map = chroniclesMapById('swordhaven-first-book');
     const plan = chroniclesFirstPersonScenePlan({ mapId: map.id });
     expect(plan.landscape).toEqual(map.landscape);
+    expect(plan.landscape.streetWallHeight).toBe(6.4);
     expect(plan.landscape.roadTintZones).toContainEqual({
       minX: 1, maxX: 17, minY: 15, maxY: 21, color: '#c7b19c',
     });
