@@ -87,12 +87,19 @@ function RealGuidesReconciliationFlow() {
   const activeState = firstSteps ? introState : sighting.state;
   return (
     <>
-      <button type="button" data-guide-switch onClick={() => setMode((value) => value === 'steps' ? 'threat' : 'steps')}>
-        Cambiar escena
-      </button>
-      <button type="button" data-guide-new-run onClick={() => setRun((value) => value + 1)}>
-        Nueva expedición
-      </button>
+      {/* CI controls deliberately sit above game overlays even at 360px. */}
+      <div data-guide-test-controls style={{
+        position: 'absolute', left: 0, top: 0, zIndex: 100,
+        display: 'flex', gap: 4, background: '#101522',
+      }}>
+        <button type="button" data-guide-switch
+          onClick={() => setMode((value) => value === 'steps' ? 'threat' : 'steps')}>
+          Cambiar escena
+        </button>
+        <button type="button" data-guide-new-run onClick={() => setRun((value) => value + 1)}>
+          Nueva expedición
+        </button>
+      </div>
       <ChroniclesFirstSteps
         key={`first-steps:${runId}`}
         state={activeState} runId={runId} open={firstSteps}
