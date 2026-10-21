@@ -55,6 +55,10 @@ try {
       assert.match(await menu.innerText(), /Salir sin guardar · Q/);
       assert.equal(await count(page, 'save'), 0);
       assert.equal(await count(page, 'exit'), 0);
+      // The 1–4 keys must not change the hero invisibly underneath the
+      // Save/Quit folio (the party remains Matthias).
+      await page.keyboard.press('4');
+      assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'matthias');
 
       // A real menu key calls the real action binding; no fake persisted save.
       await page.keyboard.press('s');
@@ -91,6 +95,9 @@ try {
       assert.equal(await count(page, 'exit'), 1);
       assert.equal(await count(page, 'save'), 1);
       assert.equal(await count(page, 'discard'), 0);
+      await page.keyboard.press('3');
+      assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'matthias',
+        'Q confirmation must not silently switch the selected hero');
 
       // Esc is safe: first cancels the dangerous prompt, second closes menu.
       await page.keyboard.press('Escape');
@@ -112,8 +119,14 @@ try {
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1,
         'S outside the menu must NOT invoke save (in-game S remains shooting)');
+      await page.keyboard.press('4');
+      assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'knight',
+        'Outside the menu 4 must still select Faust');
       await page.locator('[data-shortcut-reopen]').click();
       await menu.waitFor({ state: 'visible' });
+      await page.keyboard.press('1');
+      assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'knight',
+        'After reopening menu, 1 must not silently replace Faust');
 
       // Editing a field never steals S/Q. Focused audio range controls also
       // keep their own native keyboard behaviour.
