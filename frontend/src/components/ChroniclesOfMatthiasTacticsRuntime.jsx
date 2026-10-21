@@ -69,6 +69,7 @@ import {
 } from '../chronicles/chroniclesTacticsPresentation.js';
 import { useEscapeToClose } from '../useEscapeToClose.js';
 import ChroniclesTacticsPartyHud from './ChroniclesTacticsPartyHud.jsx';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesOfMatthiasTactics.css';
 import './ChroniclesOfMatthiasProgression.css';
 import './ChroniclesActionForecast.css';
@@ -565,19 +566,18 @@ export default function ChroniclesOfMatthiasTactics({
     let heldMovementKey = null;
 
     const onKeyDown = (event) => {
-      if (sheetOpen) return;
-      if (/^[1-4]$/.test(event.key)) {
-        if (event.repeat) return;
-        const member = stateRef.current.party[Number(event.key) - 1];
-        if (member) {
-          event.preventDefault();
-          const now = performance.now();
-          const previous = partyHotkeyRef.current;
-          const doubleTap = previous.key === event.key && now - previous.at <= 900;
-          partyHotkeyRef.current = doubleTap ? { key: '', at: 0 } : { key: event.key, at: now };
-          if (doubleTap) openMemberSheet(member.id);
-          else selectMember(member.id);
-        }
+      if (sheetOpen || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey
+        || event.target?.isContentEditable
+        || event.target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return;
+      const member = chroniclesPartyHotkeyMember(event, stateRef.current?.party);
+      if (member) {
+        event.preventDefault();
+        const now = performance.now();
+        const previous = partyHotkeyRef.current;
+        const doubleTap = previous.key === event.key && now - previous.at <= 900;
+        partyHotkeyRef.current = doubleTap ? { key: '', at: 0 } : { key: event.key, at: now };
+        if (doubleTap) openMemberSheet(member.id);
+        else selectMember(member.id);
         return;
       }
       if (event.key === ' ') {

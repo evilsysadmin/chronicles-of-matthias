@@ -164,7 +164,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -1161,14 +1161,39 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (!ready || !stateRef.current) return undefined;
     const onKeyDown = (event) => {
       const current = stateRef.current;
-      if (!current || audienceRef.current || event.defaultPrevented
+      if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
       // Let forms and modal dialogues own their keyboard events. Shift+Tab
       // always retains browser focus navigation; once inside the game menu,
       // plain Tab traverses its accessible controls rather than closing it.
       const target = event.target;
       if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-      if (chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
+      const hero = chroniclesPartyHotkeyMember(event, current.party);
+      if (hero) {
+        event.preventDefault();
+        // Inspecting a hero does not grant the right to act out of turn.
+        const actor = chroniclesCurrentInitiativeActor(current.initiative);
+        if (actor?.kind !== 'party' || actor.id === hero.id) {
+          selectedMemberIdRef.current = hero.id;
+          setSelectedMemberId(hero.id);
+        }
+        if (sheetMemberId) {
+          setSheetMemberId(hero.id);
+        } else {
+          const overlay = chronicleModalOpen || current.shop || current.guild || spellMenuOpen
+            || automapOpen || menuOpen || journalOpen || quickStatusOpen || audienceRef.current;
+          if (overlay) partyHotkeyRef.current = { key: '', at: 0 };
+          else {
+            const now = performance.now();
+            const previous = partyHotkeyRef.current;
+            const doubleTap = previous.key === event.key && now - previous.at <= 900;
+            partyHotkeyRef.current = doubleTap ? { key: '', at: 0 } : { key: event.key, at: now };
+            if (doubleTap) openMemberSheet(hero.id);
+          }
+        }
+        return;
+      }
+      if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       if (event.key === 'Tab') {
         if (event.shiftKey || target?.closest?.('.chronicles-game-menu')) return;
@@ -1210,23 +1235,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         return;
       }
       if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
-      if (/^[1-4]$/.test(event.key)) {
-        if (event.repeat) return;
-        const member = current.party[Number(event.key) - 1];
-        if (member) {
-          event.preventDefault();
-          const now = performance.now();
-          const previous = partyHotkeyRef.current;
-          const doubleTap = previous.key === event.key && now - previous.at <= 900;
-          partyHotkeyRef.current = doubleTap ? { key: '', at: 0 } : { key: event.key, at: now };
-          if (doubleTap) openMemberSheet(member.id);
-          else {
-            selectedMemberIdRef.current = member.id;
-            setSelectedMemberId(member.id);
-          }
-        }
-        return;
-      }
       if (event.key === 'f' || event.key === 'F') {
         if (chroniclesContextualContentAction(current)) {
           event.preventDefault();
@@ -1871,7 +1879,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
       {sheetMember && (
         <ChroniclesCharacterSheet
-          key={`${sheetMember.id}:${sheetInitialFolio}`}
+          key={sheetInitialFolio}
           state={state}
           progression={progression}
           member={sheetMember}
@@ -1880,8 +1888,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           onClose={() => setSheetMemberId(null)}
           onSelectMember={(memberId) => {
             if (!stateRef.current?.party.some((candidate) => candidate.id === memberId)) return;
-            selectedMemberIdRef.current = memberId;
-            setSelectedMemberId(memberId);
+            const actor = chroniclesCurrentInitiativeActor(stateRef.current?.initiative);
+            if (actor?.kind !== 'party' || actor.id === memberId) {
+              selectedMemberIdRef.current = memberId;
+              setSelectedMemberId(memberId);
+            }
+            // Browsing any companion never transfers initiative or action rights.
             setSheetMemberId(memberId);
           }}
           onAllocateAttribute={allocateAttribute}

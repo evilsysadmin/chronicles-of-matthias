@@ -14,6 +14,7 @@ import {
 } from '../chroniclesOfMatthiasTactics.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
 import './ChroniclesTacticsPartyHud.css';
 import './ChroniclesCharacterSheet.css';
@@ -110,6 +111,21 @@ export default function ChroniclesTacticsPartyHud({
     setSheetMemberId(null);
   };
 
+  // The sheet uses a portal: focus may remain on the button that opened it.
+  // Handle hotkeys at window level if the dialog itself did not consume them.
+  useEffect(() => {
+    if (!sheetMemberId) return undefined;
+    const onPartyHotkey = (event) => {
+      const hero = chroniclesPartyHotkeyMember(event, party);
+      if (!hero) return;
+      event.preventDefault();
+      onSelectMember?.(hero.id);
+      setSheetMemberId(hero.id);
+    };
+    window.addEventListener('keydown', onPartyHotkey);
+    return () => window.removeEventListener('keydown', onPartyHotkey);
+  }, [sheetMemberId, party, onSelectMember]);
+
   return (
     <>
       <aside className="chronicles-tactics__party chronicles-party-hud" aria-label="Compañía">
@@ -165,7 +181,7 @@ export default function ChroniclesTacticsPartyHud({
             </div>
           );
         })}
-        <small className="chronicles-party-hud__hint">Retrato · ficha de PJ</small>
+        <small className="chronicles-party-hud__hint">Retrato · ficha · 1–4 cambiar héroe</small>
 
         {hasAdventureState && (
           <details className="chronicles-party-hud__adventure">
@@ -213,6 +229,11 @@ export default function ChroniclesTacticsPartyHud({
           progression={progression}
           member={sheetMember}
           onClose={closeSheet}
+          onSelectMember={(memberId) => {
+            if (!party.some((hero) => hero.id === memberId)) return;
+            onSelectMember?.(memberId);
+            setSheetMemberId(memberId);
+          }}
           onAllocateAttribute={onAllocateAttribute}
           onLearnSkill={onLearnSkill}
         />

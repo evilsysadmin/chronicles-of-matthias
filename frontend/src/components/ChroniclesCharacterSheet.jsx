@@ -33,6 +33,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
@@ -151,12 +152,10 @@ export default function ChroniclesCharacterSheet({
       onClose?.();
       return;
     }
-    // The classic party portraits are also hotkeys; they must never move
-    // the squad while a character sheet is open.
-    if (!tacticsMode && /^[1-4]$/.test(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey
-      && !event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
-      const hero = state.party[Number(event.key) - 1];
-      if (!hero || !onSelectMember) return;
+    // Switch the displayed dossier, never the initiative actor. Tactics and
+    // first-person share this binding; text fields keep their own numbers.
+    const hero = chroniclesPartyHotkeyMember(event, state.party);
+    if (hero && onSelectMember) {
       event.preventDefault();
       event.stopPropagation();
       onSelectMember(hero.id);

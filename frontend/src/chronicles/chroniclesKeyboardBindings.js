@@ -14,3 +14,12 @@ export function chroniclesCombatKeyMode(key) {
   if (key === ' ') return 'auto';
   return null;
 }
+
+// Pure, shared event filter for the four party-selection hotkeys.
+export function chroniclesPartyHotkeyMember(event, party) {
+  if (!event || !/^[1-4]$/.test(event.key) || event.repeat || event.defaultPrevented
+    || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  const target = event.target;
+  if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  return Array.isArray(party) ? party[Number(event.key) - 1] || null : null;
+}

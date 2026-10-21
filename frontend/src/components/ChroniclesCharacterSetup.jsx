@@ -23,6 +23,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { CHRONICLES_PORTRAIT_GALLERY, chroniclesPortraitCompatibleWithSex } from '../chronicles/chroniclesPortraitCatalog.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import {
   clearChroniclesCharacterDraft,
   loadChroniclesCharacterDraft,
@@ -190,6 +191,21 @@ export default function ChroniclesCharacterSetup({
     patchCharacter(activeCharacter.slotId, { sex, portraitId });
   };
 
+  // Keep the current book tab when changing heroes; if a portrait chooser
+  // was open, dismiss it so the next selection is not attributed to the wrong hero.
+  useEffect(() => {
+    if (!editing) return undefined;
+    const onPartyHotkey = (event) => {
+      const hero = chroniclesPartyHotkeyMember(event, draft.characters);
+      if (!hero) return;
+      event.preventDefault();
+      setActiveSlot(hero.slotId);
+      if (portraitPickerOpen) setPortraitPickerOpen(false);
+    };
+    window.addEventListener('keydown', onPartyHotkey);
+    return () => window.removeEventListener('keydown', onPartyHotkey);
+  }, [editing, draft.characters, portraitPickerOpen]);
+
   const chooseRace = (raceId) => {
     if (!CHRONICLES_MM3_RACE_IDS.includes(raceId)) return;
     patchCharacter(activeCharacter.slotId, { raceId });
@@ -312,7 +328,7 @@ export default function ChroniclesCharacterSetup({
           <button type="button" className="ghost-btn" onClick={leaveEditor}>← Volver</button>
         </div>
 
-        <nav className="chronicles-character-setup__slots" aria-label="Personajes de la compañía">
+        <nav className="chronicles-character-setup__slots" aria-label="Personajes de la compañía · teclas 1 a 4">
           {draft.characters.map((character, index) => (
             <button
               type="button"
