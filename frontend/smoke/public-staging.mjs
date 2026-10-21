@@ -153,8 +153,19 @@ try {
       const frame = await canvas.boundingBox();
       assert.ok(frame && frame.width >= 100 && frame.height >= 80,
         'Actual Three.js viewport must be measurable');
-      const firstSteps = world.locator('[data-chronicles-first-steps]');
-      if (await firstSteps.isVisible()) {
+      // The game may retain inactive DOM while transitioning between
+      // screens. A plain locator.isVisible() is strict and fails on duplicates.
+      // Only the actual visible guide can receive input. Multiple visible
+      // guides are a genuine UX regression and must not be silently ignored.
+      const firstSteps = world.locator('[data-chronicles-first-steps]:visible');
+      const visibleFirstSteps = await firstSteps.count();
+      if (visibleFirstSteps > 1) {
+        await page.screenshot({
+          path: `chronicles-public-first-steps-duplicate-${viewport.width}.png`,
+        }).catch(() => {});
+        throw new Error(`Multiple visible Matthias guides: ${visibleFirstSteps}`);
+      }
+      if (visibleFirstSteps === 1) {
         await firstSteps.getByRole('button', { name: 'Entendido' }).click();
       }
       await page.screenshot({ path: `chronicles-public-world-${viewport.width}.png` });
