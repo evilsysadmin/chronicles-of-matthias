@@ -139,8 +139,39 @@ try {
       const archive = dialog.locator('.chronicles-journal-modal__archive-toggle');
       assert.equal(await archive.getAttribute('aria-expanded'), 'false');
       assert.match(await archive.innerText(), /Ver encargos resueltos \(1\)/);
+      // Simulate a long diary: the archived appendix is beneath the visible
+      // leaf. Activating the control must reveal the new section IN the book
+      // without scrolling the world or leaving keyboard focus off-screen.
+      const beforeArchiveWorldY = await page.evaluate(() => {
+        const leaf = document.querySelector('.chronicles-journal-modal__scroll');
+        leaf.style.maxHeight = '150px';
+        leaf.scrollTop = 0;
+        return window.scrollY;
+      });
       await archive.click();
       assert.equal(await archive.getAttribute('aria-expanded'), 'true');
+      const archiveJump = await dialog.locator('.chronicles-journal-modal__archive-heading h4').evaluate((target) => {
+        const leaf = document.querySelector('.chronicles-journal-modal__scroll');
+        const viewport = leaf.getBoundingClientRect();
+        const heading = target.getBoundingClientRect();
+        return {
+          focused: document.activeElement === target,
+          top: heading.top,
+          bottom: heading.bottom,
+          viewportTop: viewport.top,
+          viewportBottom: viewport.bottom,
+          bookScroll: leaf.scrollTop,
+          worldScroll: window.scrollY,
+        };
+      });
+      assert(archiveJump.focused, 'Expanded archive heading must receive keyboard focus');
+      assert(archiveJump.bookScroll > 0, 'The book should reveal an appendix beneath active quests');
+      assert(archiveJump.top >= archiveJump.viewportTop - 1
+        && archiveJump.bottom <= archiveJump.viewportBottom + 1,
+      'The archive heading must be visible inside the book: ' + JSON.stringify(archiveJump));
+      assert.equal(archiveJump.worldScroll, beforeArchiveWorldY,
+        'Opening the archive must not move the world behind the journal');
+      await page.evaluate(() => { document.querySelector('.chronicles-journal-modal__scroll').style.maxHeight = ''; });
       const questRows = await dialog.locator('[data-chronicles-quest-id]').evaluateAll(
         (nodes) => nodes.map((node) => node.getAttribute('data-chronicles-quest-id')));
       assert.deepEqual(questRows, ['banner-contract', 'names-in-wood', 'road-bandits'],
