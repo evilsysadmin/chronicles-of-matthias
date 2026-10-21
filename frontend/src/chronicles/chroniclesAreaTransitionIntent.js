@@ -60,6 +60,25 @@ function movementEntry(state, actionType, map) {
 }
 
 function interactionEntry(state, map) {
+  // F / Usar at a threshold retries the SAME crossing after «No».
+  // Explicitly prioritize the tile underfoot over nearby buildings/NPCs.
+  const at = (entry) => {
+    const position = chroniclesMapContentPosition(map, entry);
+    return position?.x === state.x && position?.y === state.y;
+  };
+  const trigger = (map.triggers || []).find((entry) => at(entry)
+    && chroniclesRequirementsMet(state, entry.when)
+    && destinationFor(entry.action?.effects));
+  if (trigger) return { entry: trigger, destinationId: destinationFor(trigger.action?.effects), atThreshold: true };
+  const exit = (map.exits || []).find((entry) => at(entry)
+    && chroniclesRequirementsMet(state, entry.requirements));
+  if (exit) return {
+    entry: exit,
+    destinationId: chroniclesIsOverworldTravelExit(map, exit)
+      ? destinationFor(exit.action?.effects) : null,
+    atThreshold: true,
+  };
+
   const contextual = chroniclesContextualContentAction(state);
   if (!contextual || contextual.locked) return null;
   if (contextual.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID) {
@@ -116,5 +135,7 @@ export function chroniclesAreaTransitionIntent(state, action) {
     title: destination ? areaTitle(destination) : areaTitle(map),
     question: invitation(map, destination),
     exitId: candidate.entry.id,
+    // Used by the UI to distinguish entering a threshold from crossing it.
+    atThreshold: candidate.atThreshold === true,
   };
 }
