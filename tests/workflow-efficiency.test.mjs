@@ -45,3 +45,11 @@ test('green main does not upload screenshots while PRs and failed main retain ev
   }
   assert.match(frontend, /if: github\.event_name == 'pull_request'\n        with:\n          name: chronicles-frontend-dist/);
 });
+
+test('API and frontend E2E install the same exact Playwright release', () => {
+  for (const workflow of [frontend, api]) {
+    assert.match(workflow, /npm install --no-save --no-audit --no-fund playwright@1\.64\.1(?:\r?\n|$)/);
+    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.doesNotMatch(workflow, /playwright@\^|playwright@~|playwright@1(?:\r?\n|$)/);
+  }
+});
