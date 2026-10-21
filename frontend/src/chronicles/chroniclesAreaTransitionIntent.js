@@ -79,17 +79,21 @@ function areaTitle(map) {
 
 function invitation(source, target) {
   const destination = areaTitle(target);
-  if (!target) return `¿Quieres salir de ${areaTitle(source)}?`;
-  if (target.regionKind === 'dungeon' && source.regionKind !== 'dungeon') {
+  // Legacy authored dungeons omit regionKind; the world catalog treats them
+  // as dungeons instead of a mysterious third kind of location.
+  const fromKind = source.regionKind || 'dungeon';
+  const toKind = target?.regionKind || 'dungeon';
+  if (!target) return `¿Quieres abandonar ${areaTitle(source)}?`;
+  if (toKind === 'dungeon' && fromKind !== 'dungeon') {
     return `¿Quieres entrar en ${destination}?`;
   }
-  if (source.regionKind === 'dungeon' && target.regionKind !== 'dungeon') {
+  if (fromKind === 'dungeon' && toKind !== 'dungeon') {
     return `¿Quieres salir hacia ${destination}?`;
   }
-  if (source.regionKind === 'settlement' && target.regionKind !== 'settlement') {
+  if (fromKind === 'settlement' && toKind !== 'settlement') {
     return `¿Quieres salir de ${areaTitle(source)} hacia ${destination}?`;
   }
-  if (target.regionKind === 'settlement' && source.regionKind !== 'settlement') {
+  if (toKind === 'settlement' && fromKind !== 'settlement') {
     return `¿Quieres entrar en ${destination}?`;
   }
   return `¿Quieres viajar a ${destination}?`;
