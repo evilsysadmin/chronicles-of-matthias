@@ -18,3 +18,15 @@ export function chroniclesQuestRecordedEvents(quest, journalEntries) {
   }
   return history;
 }
+
+
+// Reverse lookup for Memories: only offer a quest link when that contract
+// actually exists in the current campaign. A catalog association alone must
+// never reveal future or undiscovered quests.
+export function chroniclesQuestsForRecordedEvent(eventId, visibleQuests) {
+  if (typeof eventId !== 'string' || !Array.isArray(visibleQuests)) return [];
+  return visibleQuests.filter((quest) =>
+    (quest?.status === 'active' || quest?.status === 'completed')
+    && Array.isArray(questEventLinks[quest.id])
+    && questEventLinks[quest.id].includes(eventId));
+}

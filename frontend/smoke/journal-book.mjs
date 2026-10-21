@@ -183,11 +183,30 @@ try {
       await tabMemories.click();
       assert.equal(await tabMemories.getAttribute('aria-selected'), 'true');
       await dialog.getByText('Primera jornada').waitFor();
+      // A memory can navigate back to a known quest, including an archived
+      // contract. A generic folio must not offer invented related quests.
+      assert.equal(await dialog.locator('[data-chronicles-memo-id="first-footstep"] [data-chronicles-memory-quest]').count(), 0,
+        'Unrelated memory cannot reveal a fictional contract');
+      const captainMemory = dialog.locator('[data-chronicles-memo-id="banner-road-captain-falls"]');
+      await captainMemory.locator('[data-chronicles-memory-quest="road-bandits"]').click();
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await archive.getAttribute('aria-expanded'), 'true',
+        'A related completed contract must be unfolded before navigation');
+      const archivedHeading = completed.locator('.chronicles-journal-modal__quest-heading');
+      assert.equal(await archivedHeading.getAttribute('aria-expanded'), 'true');
+      assert.equal(await archivedHeading.evaluate((el) => document.activeElement === el), true,
+        'Memory-to-quest navigation should focus the actual archived heading');
+      await tabMemories.click();
+      const acceptedMemory = dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]');
+      await acceptedMemory.locator('[data-chronicles-memory-quest="banner-contract"]').click();
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      await tabMemories.click();
       await dialog.getByText('El viento sopló desde el bosque.').waitFor();
       await page.screenshot({ path: 'smoke-journal-memories-' + width + '.png' });
       await tabQuests.click();
-      assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
-        'Switching back must retain the reader’s selected entry');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
+        'Switching chapters must retain the last quest explicitly chosen from a memory');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.body.style.overflow), '',
