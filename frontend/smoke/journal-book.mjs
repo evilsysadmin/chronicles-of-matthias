@@ -44,6 +44,9 @@ try {
       assert.equal(await dialog.getByRole('tabpanel').count(), 1);
       const first = dialog.locator('[data-chronicles-quest-id="banner-contract"]');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      const firstHeading = first.locator('.chronicles-journal-modal__quest-heading');
+      assert.equal(await firstHeading.getAttribute('aria-controls') !== null, true,
+        'Only open quest heading can announce the mounted detail panel');
       assert.match(await first.innerText(), /Camino de los Estandartes/);
       assert.match(await first.innerText(), /mojón sin nombre/);
       await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"]').waitFor();
@@ -56,6 +59,8 @@ try {
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'false');
+      assert.equal(await firstHeading.getAttribute('aria-controls'), null,
+        'A closed quest must never reference an absent detail panel');
       assert.match(await second.innerText(), /Roble del Claro/);
       assert.equal(await second.locator('[data-chronicles-quest-event]').count(), 0,
         'Quest without journal receipts must not fabricate a history');
@@ -87,6 +92,8 @@ try {
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
       await completed.locator('.chronicles-journal-modal__quest-heading').click();
+      assert.equal(await completed.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-controls') !== null, true,
+        'Archived open quest must reference its visible history');
       await completed.locator('[data-chronicles-quest-event="banner-road-captain-falls"]').waitFor();
       assert.match(await completed.innerText(), /Cae Garrah/);
       await second.locator('.chronicles-journal-modal__quest-heading').click();
