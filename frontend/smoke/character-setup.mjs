@@ -54,6 +54,27 @@ try {
       await page.getByRole('button', { name: /Héroe 1 de 4:/ }).click();
       assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 1:/ }).inputValue(), firstName);
 
+      // Keep the same real portrait dialog open while 1–4 changes its owner.
+      await page.getByRole('button', { name: /Cambiar retrato/ }).click();
+      const portraitDialog = page.getByRole('dialog', { name: /Retrato de/ });
+      await portraitDialog.waitFor({ state: 'visible' });
+      await page.keyboard.press('2');
+      assert.equal(await portraitDialog.count(), 1, 'Party hotkey must not close the portrait gallery');
+      assert.match(await portraitDialog.locator('#chronicles-portrait-title').innerText(), /Hildegard/);
+      assert.equal(await portraitDialog.locator('button[data-portrait-id^="female-"]').count(), 10);
+      assert.equal(await portraitDialog.locator('button[data-portrait-id^="male-"]').count(), 0);
+      await page.keyboard.press('4');
+      assert.match(await portraitDialog.locator('#chronicles-portrait-title').innerText(), /Faust/);
+      assert.equal(await portraitDialog.locator('button[data-portrait-id^="male-"]').count(), 10);
+      assert.equal(await portraitDialog.locator('button[data-portrait-id^="female-"]').count(), 0);
+      await page.keyboard.press('2');
+      await portraitDialog.locator('[data-portrait-id="female-04"]').click();
+      await portraitDialog.waitFor({ state: 'hidden' });
+      const secondHero = page.getByRole('button', { name: /Héroe 2 de 4:/ });
+      assert.equal(await secondHero.getAttribute('aria-pressed'), 'true');
+      assert.match(await secondHero.locator('img').getAttribute('src'), /female-04/);
+      await page.getByRole('button', { name: /Héroe 1 de 4:/ }).click();
+
       if (width === 390) {
         await page.getByRole('tab', { name: /Atributos/ }).click();
         await page.keyboard.press('3');
@@ -68,6 +89,8 @@ try {
         assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 1:/ }).inputValue(), firstName);
         await page.getByRole('button', { name: /Héroe 2 de 4:/ }).click();
         assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 2:/ }).inputValue(), secondName);
+        assert.match(await page.getByRole('button', { name: /Héroe 2 de 4:/ }).locator('img').getAttribute('src'), /female-04/,
+          'Chosen portrait must be preserved after refresh');
         await page.getByRole('button', { name: 'Confirmar compañía' }).click();
         await page.waitForFunction(() => document.body.dataset.confirmedParty?.includes('Aziz el sabio'));
         await page.reload({ waitUntil: 'domcontentloaded' });
