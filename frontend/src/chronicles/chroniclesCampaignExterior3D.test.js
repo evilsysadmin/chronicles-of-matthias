@@ -164,7 +164,19 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(beams).toBeInstanceOf(THREE.InstancedMesh);
     expect(uprights).toBeInstanceOf(THREE.InstancedMesh);
     expect(beams.count).toBe(188);
-    expect(uprights.count).toBe(beams.count);
+    expect(uprights.count).toBe(beams.count + 38); // Perpendicular street corners.
+    // Reinforced external corners reuse the existing timber batch; no extra
+    // geometry draw calls and no timbers protrude into walkable tiles.
+    const cornerMatrix = new THREE.Matrix4();
+    uprights.getMatrixAt(beams.count, cornerMatrix);
+    const firstCorner = new THREE.Vector3().setFromMatrixPosition(cornerMatrix);
+    const cornerScale = new THREE.Vector3().setFromMatrixScale(cornerMatrix);
+    expect(firstCorner.x).toBeCloseTo((2 - center.x) * 4 - 1.93);
+    expect(firstCorner.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight / 2 - 0.04);
+    expect(firstCorner.z).toBeCloseTo((16 - center.y) * 4 + 1.93);
+    expect(cornerScale.z).toBeCloseTo(3.25);
+    expect(1.93 + 0.13 / 2).toBeLessThan(2);
+    expect(beams.count).toBe(188);
     // Warm plaster between the timbers makes the blocked cells read as
     // actual houses. Every open street-facing side shares ONE extra batch.
     const plaster = town.getObjectByName('chronicles-town-street-limewash-fronts');
