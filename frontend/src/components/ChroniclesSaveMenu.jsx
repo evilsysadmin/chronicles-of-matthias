@@ -45,6 +45,9 @@ export default function ChroniclesSaveMenu({
   const [draftName, setDraftName] = useState('');
   const [confirmForget, setConfirmForget] = useState(null);
   const resume = saves.find((save) => save.active) || saves[0] || null;
+  // Cached metadata is safe to read during an outage, but unsafe to edit or
+  // delete while the authoritative catalog is unresolved.
+  const catalogUnresolved = loading || Boolean(error);
   // Absence of a local result while syncing is not proof of a new player.
   const firstExpedition = !loading && !error && !resume;
 
@@ -90,7 +93,7 @@ export default function ChroniclesSaveMenu({
             data-chronicles-primary-action={resume ? 'continue' : 'new'}>
             {resume ? (
               <button type="button" className="is-primary is-resume"
-                disabled={loading || Boolean(error) || busyRunId !== null} onClick={() => onLoad(resume.id)}>
+                disabled={catalogUnresolved || busyRunId !== null} onClick={() => onLoad(resume.id)}>
                 <ExpeditionMenuIcon kind="compass" />
                 <span className="chronicles-save-menu__action-copy">
                   Continuar expedición <small>{resume.title} · {chroniclesSavedExpeditionArea(resume)}</small>
@@ -99,7 +102,7 @@ export default function ChroniclesSaveMenu({
               </button>
             ) : (
               <button type="button" className="is-primary is-campaign"
-                disabled={loading || Boolean(error) || busyRunId !== null}
+                disabled={catalogUnresolved || busyRunId !== null}
                 onClick={() => onNew('swordhaven-first-book')}>
                 <ExpeditionMenuIcon kind="compass" />
                 <span className="chronicles-save-menu__action-copy">Nueva expedición <small>El rey desaparecido · Elegir compañía y partir</small></span>
@@ -108,7 +111,7 @@ export default function ChroniclesSaveMenu({
             )}
             {resume && (
               <button type="button" className="is-campaign"
-                disabled={loading || Boolean(error) || busyRunId !== null}
+                disabled={catalogUnresolved || busyRunId !== null}
                 onClick={() => onNew('swordhaven-first-book')}>
                 <ExpeditionMenuIcon kind="scroll" />
                 <span className="chronicles-save-menu__action-copy">Nueva expedición <small>Otra campaña, sin borrar la anterior</small></span>
@@ -116,7 +119,7 @@ export default function ChroniclesSaveMenu({
               </button>
             )}
             {saves.length > 1 && (
-              <button type="button" disabled={loading || Boolean(error) || busyRunId !== null}
+              <button type="button" disabled={catalogUnresolved || busyRunId !== null}
                 onClick={() => openList('load')}>
                 <ExpeditionMenuIcon kind="folder" />
                 <span className="chronicles-save-menu__action-copy">Elegir otra expedición <small>{saves.length} partidas registradas</small></span>
@@ -126,7 +129,7 @@ export default function ChroniclesSaveMenu({
             <details className="chronicles-save-menu__more">
               <summary>Otras opciones</summary>
               <div className="chronicles-save-menu__more-actions">
-                <button type="button" disabled={loading || Boolean(error) || busyRunId !== null} onClick={() => onNew()}>
+                <button type="button" disabled={catalogUnresolved || busyRunId !== null} onClick={() => onNew()}>
                   <ExpeditionMenuIcon kind="scroll" />
                   <span className="chronicles-save-menu__action-copy">Otra aventura <small>Explorar un comienzo diferente</small></span>
                   <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
@@ -153,7 +156,11 @@ export default function ChroniclesSaveMenu({
               <button type="button" onClick={() => openList('home')}>← Volver</button>
             </div>
             {saves.length === 0 ? (
-              <p className="chronicles-save-menu__empty">{loading ? 'Buscando expediciones…' : 'Todavía no hay expediciones guardadas.'}</p>
+              <p className="chronicles-save-menu__empty" role={error ? 'status' : undefined}>
+                {loading ? 'Buscando expediciones…'
+                  : error ? 'No se pudo comprobar si hay partidas en el servidor. Vuelve y reintenta la sincronización.'
+                    : 'Todavía no hay expediciones guardadas.'}
+              </p>
             ) : (
               <ol className="chronicles-save-menu__list">
                 {saves.map((save) => (
@@ -168,12 +175,12 @@ export default function ChroniclesSaveMenu({
                       <button type="button" disabled={busyRunId !== null || loading || Boolean(error)} onClick={() => onLoad(save.id)}>Cargar</button>
                       {screen === 'manage' && (
                         <>
-                          <button type="button" onClick={() => {
+                          <button type="button" disabled={catalogUnresolved || busyRunId !== null} onClick={() => {
                             setEditing(save.id);
                             setDraftName(save.title);
                             setConfirmForget(null);
                           }}>Renombrar</button>
-                          <button type="button" disabled={busyRunId !== null} onClick={() => {
+                          <button type="button" disabled={catalogUnresolved || busyRunId !== null} onClick={() => {
                             setConfirmForget(save.id);
                             setEditing(null);
                           }}>Quitar</button>
@@ -187,7 +194,7 @@ export default function ChroniclesSaveMenu({
                       }}>
                         <label htmlFor={'chronicles-save-name-' + save.id}>Nombre de la expedición</label>
                         <input id={'chronicles-save-name-' + save.id} value={draftName} maxLength={56} onChange={(event) => setDraftName(event.target.value)} />
-                        <button type="submit" disabled={!draftName.trim()}>Guardar nombre</button>
+                        <button type="submit" disabled={catalogUnresolved || busyRunId !== null || !draftName.trim()}>Guardar nombre</button>
                         <button type="button" onClick={() => setEditing(null)}>Cancelar</button>
                       </form>
                     )}
@@ -196,7 +203,7 @@ export default function ChroniclesSaveMenu({
                         <p>{save.remote
                           ? 'Se borrará definitivamente esta expedición del servidor y de todos tus dispositivos. Esta acción no se puede deshacer. La progresión de personajes se conserva aparte.'
                           : 'Se quitará la partida pendiente de este dispositivo. No existe aún un guardado remoto confirmado.'}</p>
-                        <button type="button" disabled={busyRunId !== null} onClick={async () => {
+                        <button type="button" disabled={catalogUnresolved || busyRunId !== null} onClick={async () => {
                           try {
                             const completed = await (onDelete || onForget)?.(save.id, Boolean(save.remote));
                             if (completed !== false) setConfirmForget(null);
@@ -212,8 +219,9 @@ export default function ChroniclesSaveMenu({
               </ol>
             )}
             <p className="chronicles-save-menu__disclaimer">
-              Las partidas marcadas «Guardada en servidor» se sincronizan entre dispositivos al abrir este menú.
-              Los nombres personalizados se conservan en este dispositivo.
+              {catalogUnresolved
+                ? 'Se muestra el índice local: puede estar incompleto o desactualizado. Las acciones de partidas estarán disponibles después de sincronizar.'
+                : 'Las partidas marcadas «Guardada en servidor» se sincronizan entre dispositivos al abrir este menú. Los nombres personalizados se conservan en este dispositivo.'}
             </p>
           </div>
         )}
