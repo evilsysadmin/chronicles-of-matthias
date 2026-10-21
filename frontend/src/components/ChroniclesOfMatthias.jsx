@@ -542,14 +542,30 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (!acceptedTravel) {
       const intent = chroniclesAreaTransitionIntent(current, action);
       if (intent) {
-        areaTransitionRef.current = { action, sourceState: current };
+        const actionType = typeof action === 'string' ? action : action?.type;
+        const isStep = ['forward', 'backward', 'strafe-left', 'strafe-right'].includes(actionType);
+        // Occupy the exit tile BEFORE asking. «No» never rewinds the party.
+        // The actual area effects are deferred until «Sí».
+        const atThreshold = isStep
+          ? chroniclesReduce(current, { type: actionType, deferAreaTransition: true })
+          : current;
+        if (isStep && (atThreshold.mapId !== current.mapId
+          || (atThreshold.x === current.x && atThreshold.y === current.y))) return current;
+        const crossing = isStep || intent.atThreshold
+          ? { type: 'cross-area-threshold', exitId: intent.exitId }
+          : action;
+        areaTransitionRef.current = { action: crossing, sourceState: atThreshold };
+        if (atThreshold !== current) {
+          stateRef.current = atThreshold;
+          setState(atThreshold);
+        }
         setAreaTransition(intent);
         // Touch controls may be held; prevent their delayed repeat after Yes/No.
         const hold = touchHoldRef.current;
         if (hold.delayId !== null) window.clearTimeout(hold.delayId);
         if (hold.repeatId !== null) window.clearInterval(hold.repeatId);
         touchHoldRef.current = { delayId: null, repeatId: null };
-        return current;
+        return atThreshold;
       }
     }
 
@@ -822,6 +838,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const interactWithContext = useCallback(() => {
     const current = stateRef.current;
     if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
+    // Using an exit underfoot retries the same crossing, even if another
+    // NPC or building happens to be within interaction range.
+    if (chroniclesAreaTransitionIntent(current, 'interact')) {
+      dispatch('interact');
+      return;
+    }
     const dialogue = chroniclesNpcDialogueForState(current, chroniclesContextualContentAction(current));
     if (dialogue) {
       audienceRef.current = dialogue;
@@ -1308,7 +1330,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
       if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
       if (event.key === 'f' || event.key === 'F') {
-        if (chroniclesContextualContentAction(current)) {
+        if (chroniclesAreaTransitionIntent(current, 'interact') || chroniclesContextualContentAction(current)) {
           event.preventDefault();
           interactWithContext();
           return;
@@ -1502,6 +1524,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const activeQuests = chroniclesQuestLogEntries(state).filter((quest) => quest.status === 'active');
   const expeditionOver = state.phase === 'defeated' || state.phase === 'escaped';
   const contextualAction = chroniclesContextualContentAction(state);
+  const exitUnderfoot = chroniclesAreaTransitionIntent(state, 'interact')?.atThreshold === true;
   const npcAtPosition = chroniclesNpcDialogueForState(state, contextualAction);
   const activeInitiativeActor = chroniclesCurrentInitiativeActor(state.initiative);
   // In combat the hero whose turn it is casts; exploring, the selected one.
@@ -1887,14 +1910,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     aria-label={casterKnowsSpells ? `Hechizos y objetos de ${caster.name}` : `Objetos para ${caster.name}`}
                   >{casterKnowsSpells ? '✧' : '⚗'}<small>{casterKnowsSpells ? 'MAGIA' : 'OBJETOS'}</small></button>
                 )}
-                {(contextualAction || npcAtPosition) && (
+                {(exitUnderfoot || contextualAction || npcAtPosition) && (
                   <button
                     type="button"
                     className="is-contextual"
                     data-chronicles-touch-action="interact"
                     onClick={interactWithContext}
-                    aria-label={contextualAction?.label || `Hablar con ${npcAtPosition.name}`}
-                  >✦<small>{contextualAction?.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID ? 'VOLVER' : npcAtPosition ? 'ENTRAR' : 'USAR'}</small></button>
+                    aria-label={exitUnderfoot ? 'Usar salida de la región' : contextualAction?.label || `Hablar con ${npcAtPosition.name}`}
+                  >✦<small>{exitUnderfoot ? 'USAR' : contextualAction?.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID ? 'VOLVER' : npcAtPosition ? 'ENTRAR' : 'USAR'}</small></button>
                 )}
                 <button
                   type="button"
