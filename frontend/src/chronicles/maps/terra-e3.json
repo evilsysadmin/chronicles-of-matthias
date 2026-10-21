@@ -89,6 +89,95 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-e3-foe-2",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
+      "x": 18,
+      "y": 2,
+      "hpKey": "terra_e3Foe2Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 0,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e3-foe-3",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
+      "x": 2,
+      "y": 10,
+      "hpKey": "terra_e3Foe3Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-e3-foe-4",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
+      "x": 14,
+      "y": 5,
+      "hpKey": "terra_e3Foe4Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 0,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

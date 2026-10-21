@@ -90,6 +90,96 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-d2-foe-2",
+      "visualType": "road-bandit",
+      "name": "salteador",
+      "x": 18,
+      "y": 2,
+      "hpKey": "terra_d2Foe2Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salteador usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d2-foe-3",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
+      "x": 2,
+      "y": 10,
+      "hpKey": "terra_d2Foe3Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d2-foe-4",
+      "visualType": "road-bandit",
+      "name": "salteador",
+      "x": 14,
+      "y": 5,
+      "hpKey": "terra_d2Foe4Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salteador usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 6
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
