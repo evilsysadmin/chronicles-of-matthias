@@ -201,13 +201,14 @@ export default function ChroniclesCharacterSetup({
           <header className="chronicles-character-setup__choice-head">
             <span className="chronicles-character-setup__eyebrow">FORMAR COMPAÑÍA</span>
             <h2 id="chronicles-character-setup-title">Elige tus personajes</h2>
-            <p>{hasCustom
-              ? 'Tu compañía está lista. Puedes empezar la aventura o volver a personalizar a tus héroes.'
-              : '¿Primera expedición? Este grupo ya está preparado para partir. Puedes entrar directamente o crear tus propios héroes.'}</p>
+            <p>{hasDraft
+              ? 'Tu compañía está a medio forjar. Retoma el borrador o parte con el grupo preparado que ves abajo.'
+              : hasCustom
+                ? 'Tu compañía está lista. Puedes empezar la aventura o volver a personalizar a tus héroes.'
+                : '¿Primera expedición? Este grupo ya está preparado para partir. Puedes entrar directamente o crear tus propios héroes.'}</p>
             {hasDraft && (
               <p className="chronicles-character-setup__recovered" role="status" data-testid="chronicles-character-draft-kept">
-                Tu borrador sigue guardado. «Continuar edición» retoma tus cuatro héroes sin perder nombres ni tiradas.
-                «Empezar con este grupo» utiliza el grupo preparado.
+                Borrador conservado: retomar la edición mantiene nombres, tiradas y clases.
               </p>
             )}
           </header>
@@ -241,19 +242,31 @@ export default function ChroniclesCharacterSetup({
           )}
           <div className="chronicles-character-setup__choice-actions">
             <div className="chronicles-character-setup__choice-main-actions">
-              {hasCustom ? (
-                <button type="button" className="primary-btn" onClick={() => confirmBuild(normalizedCurrent)}>
-                  Continuar con mi compañía
-                </button>
+              {hasDraft ? (
+                <>
+                  <button type="button" className="primary-btn" onClick={beginCustom}>Continuar edición</button>
+                  <button type="button" className="secondary-btn"
+                    onClick={() => confirmBuild(hasCustom ? normalizedCurrent : createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY))}>
+                    {hasCustom ? 'Partir con mi compañía guardada' : 'Empezar con el grupo preparado'}
+                  </button>
+                </>
               ) : (
-                <button type="button" className="primary-btn"
-                  onClick={() => confirmBuild(createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY))}>
-                  Empezar con este grupo
-                </button>
+                <>
+                  {hasCustom ? (
+                    <button type="button" className="primary-btn" onClick={() => confirmBuild(normalizedCurrent)}>
+                      Continuar con mi compañía
+                    </button>
+                  ) : (
+                    <button type="button" className="primary-btn"
+                      onClick={() => confirmBuild(createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY))}>
+                      Empezar con este grupo
+                    </button>
+                  )}
+                  <button type="button" className="secondary-btn" onClick={beginCustom}>
+                    {hasCustom ? 'Editar personajes' : 'Crear mis personajes'}
+                  </button>
+                </>
               )}
-              <button type="button" className="secondary-btn" onClick={beginCustom}>
-                {hasDraft ? 'Continuar edición' : hasCustom ? 'Editar personajes' : 'Crear mis personajes'}
-              </button>
             </div>
             {hasCustom && (
               <button type="button" className="ghost-btn" onClick={() => confirmBuild(createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY))}>
