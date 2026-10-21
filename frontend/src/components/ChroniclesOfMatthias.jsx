@@ -28,7 +28,7 @@ import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficulty
 import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
+import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
@@ -917,7 +917,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           createChroniclesState(null, activeProgression.characterBuild, { rules: 'mm3' }),
           activeProgression,
         );
-        const restored = chroniclesApplyRunCheckpoint(progressed, world);
+        const restored = chroniclesReconcileCurrentMapEnemyHp(chroniclesApplyRunCheckpoint(progressed, world));
         // The run id seeds every MM3 die so F5 never rerolls a blow.
         let next = {
           ...chroniclesApplyArrival(chroniclesInitializeLostKingIntro(restored, {
@@ -937,7 +937,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // A reload resumes this tab's own copy, unless the server saw a newer save.
         const resumed = chroniclesLoadSessionResume(confirmedId, world.worldVersion);
         if (resumed) {
-          next = { ...resumed.state, runSeed: world.runId };
+          // Session snapshots from before a town gained new enemies can miss
+          // their HP keys. The rendering and targeting contracts must agree.
+          next = { ...chroniclesReconcileCurrentMapEnemyHp(resumed.state), runSeed: world.runId };
           if (resumed.progression) {
             progressionRef.current = resumed.progression;
             setProgression(resumed.progression);
@@ -1411,7 +1413,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const selectedCondition = chroniclesPartyCondition(selectedMember);
   const selectedRelic = chroniclesPartyRelic(state, selectedMember?.id);
   const selectedAttackStats = chroniclesPartyAttackStats(state, selectedMember?.id);
-  const tacticalTarget = chroniclesTargetAhead(state, selectedAttackStats.reach || 1);
+  // A foe can be visible several cells away while A only reaches the next
+  // cell. Keep the target dossier visible so an out-of-range attack is
+  // explained instead of silently resembling a broken button.
+  const meleeReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'melee').reach : 1;
+  const missileReach = selectedMember ? chroniclesPartyAttackStats(state, selectedMember.id, 'missile').reach : 0;
+  const tacticalTarget = chroniclesTargetAhead(state, Math.max(4, selectedAttackStats.reach || 1));
   const sheetMember = sheetMemberId
     ? state.party.find((member) => member.id === sheetMemberId) || null
     : null;
@@ -1674,7 +1681,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
                 || state.shop || state.guild || expeditionOver)}
             />
-            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
+            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
+              meleeReach={meleeReach} missileReach={missileReach} />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
