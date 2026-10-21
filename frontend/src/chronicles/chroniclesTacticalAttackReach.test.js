@@ -6,7 +6,7 @@ import { chroniclesTargetReachLabel } from '../components/ChroniclesTacticalMarg
 import { chroniclesTacticalAttackReach } from './chroniclesTacticalAttackReach.js';
 
 function partyWithOnlyRookSling() {
-  let state = createChroniclesState('banner-road-first-book');
+  let state = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
   for (const member of state.party) state = chroniclesUnequipItem(state, member.id, 'missile');
   state = chroniclesApplyContentEffects(state, [{
     type: 'grant-item', itemId: 'brass-sling', name: 'Honda de latón',
@@ -31,7 +31,7 @@ describe('Tactical margin uses real MM3 attack range', () => {
   });
 
   it('shows no S reach when all four heroes lack a usable projectile weapon', () => {
-    let state = createChroniclesState('banner-road-first-book');
+    let state = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
     for (const member of state.party) state = chroniclesUnequipItem(state, member.id, 'missile');
     expect(chroniclesTacticalAttackReach(state, 'rook').missileReach).toBe(0);
     expect(chroniclesTargetReachLabel({ distance: 2 },
