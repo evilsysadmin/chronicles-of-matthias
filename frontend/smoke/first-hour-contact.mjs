@@ -42,6 +42,12 @@ try {
       await page.goto(url + '?view=payment', { waitUntil: 'domcontentloaded' });
       const bark = page.locator('.chronicles-party-bark');
       await bark.waitFor({ state: 'visible', timeout: 20000 });
+      // The real bark has a short opacity-in animation. Capturing at the first
+      // DOM paint made desktop screenshots nearly invisible, unlike reduced-motion.
+      await page.waitForFunction(() => {
+        const node = document.querySelector('.chronicles-party-bark');
+        return node && Number(getComputedStyle(node).opacity) > 0.95;
+      }, null, { timeout: 5000 });
       const delta = Number(await page.locator('body').getAttribute('data-earned-gold'));
       assert.ok(delta > 0);
       assert.ok((await bark.innerText()).includes(delta + ' monedas de oro'),
