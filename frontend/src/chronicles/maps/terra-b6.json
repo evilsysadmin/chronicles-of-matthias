@@ -226,116 +226,12 @@
       }
     },
     {
-      "id": "terra-b6-foe-6",
-      "visualType": "ghoul",
-      "name": "el Comehuesos",
-      "x": 2,
-      "y": 5,
-      "hpKey": "terra_b6Foe6Hp",
-      "maxHp": 47,
-      "retaliation": 7,
-      "toHit": 9,
-      "armorClass": 6,
-      "agility": 7,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
-      },
-      "onDefeat": {
-        "message": "{attacker} derriba al Comehuesos con {attack}.",
-        "effects": [
-          {
-            "type": "set",
-            "key": "campB6LeaderDown",
-            "value": true
-          },
-          {
-            "type": "grant-gold",
-            "amount": 26
-          }
-        ],
-        "journal": {
-          "id": "terra-b6-camp",
-          "title": "Cae el Comehuesos",
-          "body": "En la playa de los naufragios algo desentierra a los ahogados antes de que el mar se los lleve. El Comehuesos es el más viejo y el más gordo. Ya no.",
-          "sigil": "†"
-        }
-      },
-      "defeatedFlag": "campB6LeaderDown",
-      "blockingMessage": "El Comehuesos no deja pasar a nadie sin pagar.",
-      "visualScale": 1.25
-    },
-    {
-      "id": "terra-b6-foe-7",
-      "visualType": "ghoul",
-      "name": "necrófago",
-      "x": 8,
-      "y": 9,
-      "hpKey": "terra_b6Foe7Hp",
-      "maxHp": 25,
-      "retaliation": 4,
-      "toHit": 7,
-      "armorClass": 4,
-      "agility": 5,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con necrófago usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-b6-foe-8",
-      "visualType": "ghoul",
-      "name": "necrófaga",
-      "x": 18,
-      "y": 9,
-      "hpKey": "terra_b6Foe8Hp",
-      "maxHp": 25,
-      "retaliation": 4,
-      "toHit": 7,
-      "armorClass": 4,
-      "agility": 5,
-      "optional": true,
-      "activation": "always",
-      "ai": {
-        "movement": "cardinal-chase",
-        "attackReach": 1,
-        "engagedMovement": "cardinal-chase",
-        "engageRange": 4
-      },
-      "onDefeat": {
-        "message": "{attacker} acaba con necrófaga usando {attack}.",
-        "effects": [
-          {
-            "type": "grant-gold",
-            "amount": 10
-          }
-        ]
-      }
-    },
-    {
-      "id": "terra-b6-foe-9",
+      "id": "terra-b6-foe-3",
       "visualType": "harpy",
       "name": "arpía del acantilado",
-      "x": 12,
+      "x": 2,
       "y": 5,
-      "hpKey": "terra_b6Foe9Hp",
+      "hpKey": "terra_b6Foe3Hp",
       "maxHp": 25,
       "retaliation": 4,
       "toHit": 7,
@@ -351,6 +247,66 @@
       },
       "onDefeat": {
         "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b6-foe-4",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 8,
+      "y": 9,
+      "hpKey": "terra_b6Foe4Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con náufrago ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b6-foe-5",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 18,
+      "y": 9,
+      "hpKey": "terra_b6Foe5Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
