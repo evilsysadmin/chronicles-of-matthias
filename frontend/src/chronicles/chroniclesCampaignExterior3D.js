@@ -114,6 +114,43 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   town.add(frames, panes);
 }
 
+// Warm limewash infill converts monolithic stone walls into house fronts.
+// Leave the masonry plinth and parapet visible; place the revoco strictly on
+// the SOLID side of the 4m tile boundary, between the existing window panes
+// and timber strips. All street-facing panels share one material/draw call.
+function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wallHeight }) {
+  if (wallHeight < 4) return;
+  const faces = settlementStreetFacingFaces({ grid, blocked, zones });
+  if (!faces.length) return;
+  const height = wallHeight - 0.52;
+  const panels = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(CELL * 0.935, height, 0.012),
+    material(0xffffff, { roughness: 0.97 }),
+    faces.length,
+  );
+  const dummy = new THREE.Object3D();
+  const lime = [
+    new THREE.Color('#d8c8ac'),
+    new THREE.Color('#c7b59c'),
+    new THREE.Color('#ddd0b8'),
+  ];
+  faces.forEach(({ x, y, dx, dy, yaw }, i) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.y = yaw;
+    dummy.position.set(wx + dx * 1.974, wallHeight / 2 + 0.03, wz + dy * 1.974);
+    dummy.updateMatrix();
+    panels.setMatrixAt(i, dummy.matrix);
+    // House-sized colour groups rather than a random patchwork per window.
+    panels.setColorAt(i, lime[(Math.floor(x / 3) + Math.floor(y / 2)) % lime.length]);
+  });
+  panels.instanceMatrix.needsUpdate = true;
+  panels.instanceColor.needsUpdate = true;
+  panels.name = 'chronicles-town-street-limewash-fronts';
+  panels.castShadow = false;
+  panels.receiveShadow = true;
+  town.add(panels);
+}
+
 // Low-cost half-timbered framing turns high masonry street blockers into
 // recognizable house fronts. Continuous storey beams and upright timbers sit
 // on the solid side of every authored street-facing wall. Two shared batches,
@@ -403,6 +440,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       houseCells.add(x + ',' + y);
     });
     blocked = blocked.filter(({ x, y }) => !houseCells.has(x + ',' + y));
+    addSettlementPlasterFrontages(town, {
+      grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
+      zones: scenePlan.landscape?.facadeZones,
+    });
     addSettlementStreetFacades(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
