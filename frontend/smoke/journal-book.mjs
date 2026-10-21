@@ -50,6 +50,21 @@ try {
       assert.match(await first.innerText(), /Camino de los Estandartes/);
       assert.match(await first.innerText(), /mojón sin nombre/);
       await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"]').waitFor();
+      // An actual recorded quest milestone is a direct link to its original
+      // folio. Preserve the selected quest when navigating back to Encargos.
+      await first.locator('[data-chronicles-quest-event="first-book-contract-accepted"] .chronicles-journal-modal__quest-event-link').click();
+      assert.equal(await tabMemories.getAttribute('aria-selected'), 'true');
+      const sourceFolio = dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]');
+      await sourceFolio.waitFor({ state: 'visible' });
+      assert.match(await sourceFolio.innerText(), /Encargo del alguacil/);
+      assert.equal(await sourceFolio.evaluate((element) => document.activeElement === element), true,
+        'Jumped-to original folio should receive keyboard/screen-reader focus');
+      assert.equal(await sourceFolio.getAttribute('class'), 'is-jump-target');
+      await tabQuests.click();
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      assert.equal(await sourceFolio.count(), 0, 'Hidden chapter should not retain focusable folio');
+
       assert.equal(await first.locator('[data-chronicles-quest-event="first-book-banner-found"]').count(), 0,
         'Unreached quest milestones must never be invented');
       assert.equal(await first.locator('[data-chronicles-quest-relation="another-region"]').count(), 1,
@@ -64,6 +79,8 @@ try {
       assert.match(await second.innerText(), /Roble del Claro/);
       assert.equal(await second.locator('[data-chronicles-quest-event]').count(), 0,
         'Quest without journal receipts must not fabricate a history');
+      assert.equal(await second.locator('.chronicles-journal-modal__quest-event-link').count(), 0,
+        'Unknown history must not offer a link to a non-existent memory');
       assert.match(await second.locator('[data-chronicles-quest-relation="another-region"]').innerText(),
         /Desde Swordhaven, tus notas apuntan a Rookwood/);
       // Reuse the true reducer's existing trackedQuestId contract. HUD and

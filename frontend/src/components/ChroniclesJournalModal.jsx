@@ -15,6 +15,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const [chapter, setChapter] = useState('quests');
   const [openedQuestId, setOpenedQuestId] = useState(null);
   const [archiveExpanded, setArchiveExpanded] = useState(false);
+  const [memoryJumpId, setMemoryJumpId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
   // The book remembers the entry while changing chapters, but a later visit
@@ -24,6 +25,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       setChapter('quests');
       setOpenedQuestId(null);
       setArchiveExpanded(false);
+      setMemoryJumpId(null);
     }
   }, [open]);
 
@@ -38,6 +40,17 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       if (previousFocus?.isConnected) previousFocus.focus?.();
     };
   }, [open]);
+
+  // Focus the actual saved folio only after React has mounted the Memories
+  // chapter. Never synthesize an event or scroll the underlying game world.
+  useEffect(() => {
+    if (!open || chapter !== 'memories' || !memoryJumpId) return;
+    const target = Array.from(scrollRef.current?.querySelectorAll('[data-chronicles-memo-id]') || [])
+      .find((element) => element.getAttribute('data-chronicles-memo-id') === memoryJumpId);
+    if (!target) return;
+    target.scrollIntoView({ block: 'center', behavior: 'auto' });
+    target.focus({ preventScroll: true });
+  }, [open, chapter, memoryJumpId]);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -56,8 +69,9 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     : openedQuestId && quests.some((quest) => quest.id === openedQuestId)
       ? openedQuestId : fallbackQuestId;
   const foliosCount = entries.length + narrations.length;
-  const changeChapter = (next) => {
+  const changeChapter = (next, eventId = null) => {
     setChapter(next);
+    setMemoryJumpId(eventId);
     // Each bookmark opens at its first line even after a long quest scroll.
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   };
@@ -197,7 +211,11 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                                 <h4>Lo que vivimos</h4>
                                 <ol>{recorded.map((event) => (
                                   <li key={event.id} data-chronicles-quest-event={event.id}>
-                                    <strong>{event.title}</strong>
+                                    <button type="button" className="chronicles-journal-modal__quest-event-link"
+                                      onClick={() => changeChapter('memories', event.id)}
+                                      aria-label={`Leer «${event.title}» en Memorias`}>
+                                      {event.title}
+                                    </button>
                                     <p>{event.body}</p>
                                   </li>
                                 ))}</ol>
@@ -245,7 +263,9 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
               </div>
               {entries.length ? (
                 <ol className="chronicles-journal-modal__folios">{entries.map((entry) => (
-                  <li key={entry.id}>
+                  <li key={entry.id} data-chronicles-memo-id={entry.id}
+                    className={memoryJumpId === entry.id ? 'is-jump-target' : undefined}
+                    tabIndex={memoryJumpId === entry.id ? -1 : undefined}>
                     <span className="chronicles-journal-modal__folio-sigil" aria-hidden="true">{entry.sigil}</span>
                     <div><strong>{entry.title}</strong><p>{entry.body}</p></div>
                   </li>

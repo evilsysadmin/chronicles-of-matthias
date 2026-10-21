@@ -686,3 +686,38 @@
   font: 700 .75rem/1.3 system-ui, sans-serif;
   letter-spacing: .015em;
 }
+
+
+/* An authored quest event points to the original journal receipt, not a
+   synthetic recap. The focused paper entry stays readable in both themes. */
+.chronicles-journal-modal__quest-event-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 6px;
+  margin: -4px -6px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #523313;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  font: 700 .94rem/1.35 Georgia, serif;
+}
+.chronicles-journal-modal__quest-event-link:hover {
+  background: rgba(255, 246, 219, .8);
+}
+.chronicles-journal-modal__quest-event-link:focus-visible {
+  outline: 3px solid #a26d21;
+  outline-offset: 2px;
+}
+.chronicles-journal-modal__chapter .chronicles-journal-modal__folios > li.is-jump-target {
+  padding-left: 13px;
+  border-left: 3px solid #9b6e34;
+  background: rgba(255, 244, 210, .65);
+  scroll-margin-block: 18px;
+  outline: 0;
+}
