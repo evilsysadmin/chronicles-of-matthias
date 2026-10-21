@@ -1629,7 +1629,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               }}>
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
-            <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark}
+            <ChroniclesPartyBark key={`party-bark:${partyBark?.token || 'none'}`} bark={partyBark}
               onOpenEquipment={() => openMemberSheet('matthias', 'equipment')} />
             <ChroniclesFirstAudienceCue
               state={state}
@@ -1641,7 +1641,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               onTalk={interactWithContext}
             />
             <ChroniclesFirstSteps
-              key={activeRunIdRef.current || 'no-run'}
+              key={`first-steps:${activeRunIdRef.current || 'no-run'}`}
               state={state}
               runId={activeRunIdRef.current}
               open={firstStepsOpen}
@@ -1657,7 +1657,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               }}
             />
             <ChroniclesFirstThreatCue
-              key={activeRunIdRef.current || 'no-run'}
+              key={`first-threat:${activeRunIdRef.current || 'no-run'}`}
               state={state}
               runId={activeRunIdRef.current}
               target={chroniclesEnemyTargetAhead(state, 4)}
@@ -1667,7 +1667,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || state.shop || state.guild || expeditionOver)}
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
-            <ChroniclesEnemyRetaliationFx key={retaliationCue?.token || 'none'} cue={retaliationCue} />
+            <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
             {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}
