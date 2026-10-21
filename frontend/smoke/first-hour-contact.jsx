@@ -25,6 +25,7 @@ import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
 import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx';
+import ChroniclesAutomap from '../src/components/ChroniclesAutomap.jsx';
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
 import { chroniclesCurrentInitiativeActor } from '../src/chronicles/chroniclesInitiative.js';
 import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
@@ -247,6 +248,35 @@ function RealSpellMenuHotkeyFlow({ enemyTurn = false }) {
   );
 }
 
+// Real area/Terra map and real dossier. Initiative stays owned by Aziz:
+// a map is for information, not an opportunity to move another hero.
+function RealAutomapHotkeyFlow() {
+  const [state] = useState(() => ({
+    ...createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
+    initiative: { version: 1, die: '1d8', round: 1, cursor: 0,
+      order: [{ kind: 'party', id: 'bishop' }] },
+  }));
+  const [progression] = useState(createChroniclesProgression);
+  const [open, setOpen] = useState(true);
+  const [memberId, setMemberId] = useState(null);
+  const actor = chroniclesCurrentInitiativeActor(state.initiative);
+  const member = state.party.find((hero) => hero.id === memberId);
+  return (
+    <div data-automap-actor={actor.id} data-automap-turns={state.turns}>
+      <button type="button" data-reopen-automap
+        onClick={() => { setMemberId(null); setOpen(true); }}>Abrir mapa (M)</button>
+      <ChroniclesAutomap open={open} state={state} visitedCells={[]}
+        onClose={() => setOpen(false)}
+        onOpenSheet={(id) => { setOpen(false); setMemberId(id); }} />
+      {member && <ChroniclesCharacterSheet state={state} progression={progression}
+        member={member} mode="first-person" onClose={() => setMemberId(null)}
+        onSelectMember={(id) => {
+          if (state.party.some((hero) => hero.id === id)) setMemberId(id);
+        }} />}
+    </div>
+  );
+}
+
 // Use the genuine First Book quest and the real map/NPC interaction
 // resolver. The fixture only observes a click; it does not award story flags.
 function actualMayorInvitation() {
@@ -284,6 +314,8 @@ if (view === 'threat') {
   content = <RealLootEquipmentFlow reorderParty={view === 'loot-reordered'} />;
 } else if (view === 'quick-status') {
   content = <RealQuickStatusHotkeyFlow />;
+} else if (view === 'automap') {
+  content = <RealAutomapHotkeyFlow />;
 } else if (view === 'journal') {
   content = <RealJournalHotkeyFlow />;
  } else if (view === 'spell-menu' || view === 'spell-menu-enemy') {

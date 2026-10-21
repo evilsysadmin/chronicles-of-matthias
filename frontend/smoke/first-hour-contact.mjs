@@ -332,6 +332,34 @@ try {
           'Switching grimoire pages must never send a spell/item action');
       }
 
+      // Real M/automap, including the Terra tab: numeric hotkeys must
+      // inspect a hero and leave initiative/turn count untouched.
+      if (width === 390 || width === 1280) {
+        await gotoFixture(page, url + '?view=automap');
+        const automap = page.getByRole('dialog', { name: 'Automapa de Chronicles' });
+        await automap.waitFor({ state: 'visible' });
+        assert.match(await automap.locator('footer').innerText(), /1–4/);
+        await page.getByRole('tab', { name: 'Terra' }).click();
+        await page.locator('[data-chronicles-worldmap="open"]').waitFor({ state: 'visible' });
+        await page.keyboard.press('Control+4');
+        await page.keyboard.press('5');
+        assert.equal(await automap.count(), 1, 'Invalid/modified keys leave the map open');
+        await page.keyboard.press('4');
+        await automap.waitFor({ state: 'hidden' });
+        await page.getByRole('dialog', { name: 'Faust' }).waitFor({ state: 'visible' });
+        assert.equal(await page.getByRole('dialog').count(), 1, 'M→4 cannot stack modal sheets');
+        assert.equal(await page.locator('[data-automap-actor]').getAttribute('data-automap-actor'), 'bishop');
+        assert.equal(await page.locator('[data-automap-turns]').getAttribute('data-automap-turns'), '0');
+        await page.keyboard.press('1');
+        await page.getByRole('dialog', { name: 'Matthias' }).waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.getByRole('dialog').count(), 0);
+        await page.locator('[data-reopen-automap]').click();
+        await automap.waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: 'Cerrar automapa' }).click();
+        await automap.waitFor({ state: 'hidden' });
+      }
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.

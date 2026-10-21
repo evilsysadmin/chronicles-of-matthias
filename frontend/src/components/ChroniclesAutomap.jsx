@@ -5,6 +5,7 @@ import {
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesDiscoveredPois } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -113,7 +114,10 @@ function FragmentRow({ index, row, children }) {
   );
 }
 
-export default function ChroniclesAutomap({ open, state, visitedCells, onClose, target = null, visitedMapIds = [], objective = '' }) {
+export default function ChroniclesAutomap({
+  open, state, visitedCells, onClose, onOpenSheet = null,
+  target = null, visitedMapIds = [], objective = '',
+}) {
   const closeRef = useRef(null);
   const [view, setView] = useState('area');
   const worldModel = useMemo(
@@ -153,6 +157,16 @@ export default function ChroniclesAutomap({ open, state, visitedCells, onClose, 
       role="dialog"
       aria-modal="true"
       aria-label="Automapa de Chronicles"
+      onKeyDown={(event) => {
+        // Inspecting a hero closes the map before opening the dossier.
+        // Consume this key inside the modal so it cannot also select a
+        // fighter or execute a double-tap in the hidden 3D world.
+        const hero = onOpenSheet && chroniclesPartyHotkeyMember(event, state.party);
+        if (!hero) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onOpenSheet(hero.id);
+      }}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClose?.();
       }}
@@ -233,7 +247,7 @@ export default function ChroniclesAutomap({ open, state, visitedCells, onClose, 
           <span><i className="is-party" aria-hidden="true">▲</i> grupo</span>
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
           <span>F forja · A armaduras · G gremio · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span><i className="is-target" aria-hidden="true">★</i> camino al objetivo · Solo lugares descubiertos · <kbd>M</kbd> cerrar</span>
+          <span><i className="is-target" aria-hidden="true">★</i> camino al objetivo · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>
