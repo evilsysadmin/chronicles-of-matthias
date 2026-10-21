@@ -120,6 +120,16 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
       isContentEditable: false, closest: () => ({ tagName: 'INPUT' }),
     } }), { menuOpen: true })).toBeNull();
     expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: true, saveBusy: true })).toBe('close');
+    const volumeTarget = { isContentEditable: false, closest: () => ({ tagName: 'INPUT' }) };
+    expect(chroniclesAdventureMenuShortcut(key({ target: volumeTarget }), { menuOpen: true }))
+      .toBe('close');
+    expect(chroniclesAdventureMenuShortcut(key({ target: volumeTarget }), {
+      menuOpen: true, confirmExitWithoutSaving: true,
+    })).toBe('cancel-exit');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('s', { target: volumeTarget }), { menuOpen: true }))
+      .toBeNull();
+    expect(chroniclesAdventureMenuShortcut(keyEvent('q', { target: volumeTarget }), { menuOpen: true }))
+      .toBeNull();
     expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true, confirmExitWithoutSaving: true }))
       .toBeNull();
   });
