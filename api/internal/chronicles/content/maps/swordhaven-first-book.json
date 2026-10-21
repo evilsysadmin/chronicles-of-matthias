@@ -917,7 +917,9 @@
           "body": "La guardia de Swordhaven advierte de ladrones en los callejones del barrio sur. Conviene explorar sus calles con cautela.",
           "sigil": "✦"
         }
-      }
+      },
+      "visualType": "signpost",
+      "visualFacing": 2
     }
   ],
   "treasures": [],

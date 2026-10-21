@@ -48,7 +48,7 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
   it('puts a one-time south-ward warning on reachable floor without hiding the main town services', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const clue = town.interactables.find((entry) => entry.id === 'swordhaven-south-watch-notice');
-    expect(clue).toMatchObject({ kind: 'lore', x: 15, y: 21 });
+    expect(clue).toMatchObject({ kind: 'lore', x: 15, y: 21, visualType: 'signpost', visualFacing: 2 });
     expect(town.grid[clue.y][clue.x]).toBe('.');
     expect(clue.when).toEqual([{ key: 'swordhavenSouthWatchNoticeRead', falsy: true }]);
     expect(clue.action.effects).toContainEqual({
