@@ -163,7 +163,7 @@ jobs:
       - name: Build and push linux/arm64 + linux/amd64
         if: steps.admission.outputs.publish == 'true'
         id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: api
           platforms: linux/arm64,linux/amd64
