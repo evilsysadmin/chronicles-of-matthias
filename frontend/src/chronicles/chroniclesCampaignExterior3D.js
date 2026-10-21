@@ -23,14 +23,18 @@ function gridToWorld(x, y, center) {
 function visibleRoadCells(scenePlan, center) {
   const saved = scenePlan?.landscape?.roadCells;
   if (Array.isArray(saved)) return saved.filter(p => p && Number.isInteger(p.x) && Number.isInteger(p.y));
-  // Initial candidate manifests intentionally preserve all passable tiles as
-  // '.'; until their roadway material mask is promoted from atlas JSON, only
-  // the clearly authored north/south and east/west main axes get visual paving.
+  // Swordhaven's new wards are winding streets, not two straight axes.
+  // Cobble every authored walkable cell with the SAME instanced road mesh:
+  // no independent obstacle mask and no extra draw calls per alley.
+  // Explicit landscape.roadCells above still takes precedence.
+  // Other maps keep their existing main-axis fallback.
+  const swordhavenStreets = scenePlan.mapId === 'swordhaven-first-book'
+    && scenePlan.regionKind === 'settlement';
   const out = [];
   (scenePlan.grid || []).forEach((row, y) => {
     [...row].forEach((tile, x) => {
       if (tile !== '#'
-        && (x === center.x || y === center.y)
+        && (swordhavenStreets || x === center.x || y === center.y)
       ) out.push({ x, y });
     });
   });
