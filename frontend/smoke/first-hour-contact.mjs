@@ -42,30 +42,36 @@ try {
 
       await page.goto(url + '?view=payment', { waitUntil: 'domcontentloaded' });
       const bark = page.locator('.chronicles-party-bark');
-      await bark.waitFor({ state: 'visible', timeout: 20000 });
-      // The real bark has a short opacity-in animation. Capturing at the first
-      // DOM paint made desktop screenshots nearly invisible, unlike reduced-motion.
-      await page.waitForFunction(() => {
-        const node = document.querySelector('.chronicles-party-bark');
-        return node && Number(getComputedStyle(node).opacity) > 0.95;
-      }, null, { timeout: 5000 });
+      const barkTab = bark.locator('.chronicles-party-bark__trigger');
+      const barkDetails = bark.locator('.chronicles-party-bark__details');
+      await barkTab.waitFor({ state: 'visible', timeout: 20000 });
       const delta = Number(await page.locator('body').getAttribute('data-earned-gold'));
       assert.ok(delta > 0);
-      assert.ok((await bark.innerText()).includes(delta + ' monedas de oro'),
-        'Visible gold must equal real state delta');
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
-        false);
+      assert.equal(await barkTab.getAttribute('aria-expanded'), 'false');
+      assert.equal(await barkDetails.isVisible(), false,
+        'A narrative event must not cover the first-person scene before opt-in');
       await page.screenshot({ path: 'smoke-first-payment-' + width + '.png' });
+      await barkTab.hover();
+      await barkDetails.waitFor({ state: 'visible' });
+      assert.ok((await barkDetails.innerText()).includes(delta + ' monedas de oro'),
+        'Opt-in narration must show the actual earned gold');
+      const bounds = await barkDetails.boundingBox();
+      assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
+        'Hover narration must stay inside the viewport: ' + JSON.stringify(bounds));
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
+      await page.screenshot({ path: 'smoke-first-payment-hover-' + width + '.png' });
 
       // A real authored drop opens the real character equipment folio.
       await page.goto(url + '?view=loot', { waitUntil: 'domcontentloaded' });
       const lootCue = page.locator('.chronicles-party-bark');
-      await lootCue.waitFor({ state: 'visible', timeout: 20000 });
-      await page.waitForFunction(() => {
-        const node = document.querySelector('.chronicles-party-bark');
-        return node && Number(getComputedStyle(node).opacity) > 0.95;
-      }, null, { timeout: 5000 });
+      const lootTab = lootCue.locator('.chronicles-party-bark__trigger');
+      await lootTab.waitFor({ state: 'visible', timeout: 20000 });
       const equipmentLink = page.getByRole('button', { name: 'Revisar equipo' });
+      assert.equal(await equipmentLink.isVisible(), false,
+        'The contextual CTA is hidden until the user opens the commentary');
+      await page.screenshot({ path: 'smoke-first-loot-collapsed-' + width + '.png' });
+      await lootTab.click();
+      assert.equal(await lootTab.getAttribute('aria-expanded'), 'true');
       await equipmentLink.waitFor({ state: 'visible' });
       await page.screenshot({ path: 'smoke-first-loot-' + width + '.png' });
       await equipmentLink.click();
