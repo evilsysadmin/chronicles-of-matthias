@@ -223,27 +223,50 @@ function explorationAction(entry, effects = entry?.action?.effects || []) {
   };
 }
 
-function enterTile(state, x, y) {
+function runAreaExit(state, exit) {
+  // Authored settlement gates travel, but legacy dungeon ends preserve
+  // their existing completion contract until explicitly migrated.
+  const route = chroniclesIsOverworldTravelExit(chroniclesMapForState(state), exit);
+  return chroniclesApplyContentAction(
+    state,
+    route ? exit.action : explorationAction(exit, [{ type: 'set', key: 'phase', value: 'escaped' }]),
+    { appendJournal },
+  );
+}
+
+function hasMapTransition(entry) {
+  return (entry?.action?.effects || []).some((effect) => effect.type === 'transition-map');
+}
+
+function enterTile(state, x, y, { deferAreaTransition = false } = {}) {
   let next = { ...state, x, y, turns: state.turns + 1 };
   const trigger = contentEntryAt(state, 'triggers', x, y);
-  if (trigger && chroniclesRequirementsMet(state, trigger.when)) {
+  if (trigger && chroniclesRequirementsMet(state, trigger.when)
+      && !(deferAreaTransition && hasMapTransition(trigger))) {
     next = chroniclesApplyContentAction(next, explorationAction(trigger), { appendJournal });
   }
 
   const exit = contentEntryAt(state, 'exits', x, y);
-  if (exit && chroniclesRequirementsMet(state, exit.requirements)) {
-    const currentMap = chroniclesMapForState(state);
-    // Authored settlement gates genuinely enter the next region. Keep the
-    // historical dungeon-end contract untouched, so legacy runs/checkpoints
-    // do not suddenly switch map or terminal behaviour.
-    const route = chroniclesIsOverworldTravelExit(currentMap, exit);
-    next = chroniclesApplyContentAction(
-      next,
-      route ? exit.action : explorationAction(exit, [{ type: 'set', key: 'phase', value: 'escaped' }]),
-      { appendJournal },
-    );
+  if (exit && chroniclesRequirementsMet(state, exit.requirements) && !deferAreaTransition) {
+    next = runAreaExit(next, exit);
   }
   return next;
+}
+
+// After declining a crossing the party occupies the threshold. Using it
+// later must resolve that *same* authored exit, never walk another cell,
+// repeat an on-entry trigger, or consume a second movement tick.
+function crossAreaThreshold(state, exitId) {
+  const trigger = contentEntryAt(state, 'triggers', state.x, state.y);
+  const exit = contentEntryAt(state, 'exits', state.x, state.y);
+  let crossed = state;
+  if (trigger?.id === exitId && hasMapTransition(trigger)
+      && chroniclesRequirementsMet(state, trigger.when)) {
+    crossed = chroniclesApplyContentAction(state, explorationAction(trigger), { appendJournal });
+  } else if (exit?.id === exitId && chroniclesRequirementsMet(state, exit.requirements)) {
+    crossed = runAreaExit(state, exit);
+  }
+  return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, crossed));
 }
 
 
@@ -1027,6 +1050,7 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
+  if (actionType === 'cross-area-threshold') return crossAreaThreshold(state, action.exitId);
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   // Lateral steps share the exact same collision, trigger and checkpoint path
@@ -1046,7 +1070,8 @@ export function chroniclesReduce(state, action) {
     if (entered) return entered;
   }
   if (blocker) return withMessage(state, blocker.message);
-  const moved = chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, enterTile(state, x, y)));
+  const moved = chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state,
+    enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true })));
   // In combat the heroes stand on their own cells around the camera. A step
   // moves the whole company: redeploy it around the new position instead of
   // leaving the heroes behind (enemies would walk into the camera's cell).
