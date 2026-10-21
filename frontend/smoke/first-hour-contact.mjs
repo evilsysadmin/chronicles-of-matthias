@@ -41,6 +41,8 @@ try {
         'Dismissal must survive refresh for the same run');
 
       await page.goto(url + '?view=payment', { waitUntil: 'domcontentloaded' });
+      // A pointer left on the previous tab must not pre-open a new narration.
+      await page.mouse.move(width - 6, 6);
       const bark = page.locator('.chronicles-party-bark');
       const barkTab = bark.locator('.chronicles-party-bark__trigger');
       const barkDetails = bark.locator('.chronicles-party-bark__details');
@@ -63,6 +65,8 @@ try {
 
       // A real authored drop opens the real character equipment folio.
       await page.goto(url + '?view=loot', { waitUntil: 'domcontentloaded' });
+      // A pointer left on the previous tab must not pre-open a new narration.
+      await page.mouse.move(width - 6, 6);
       const lootCue = page.locator('.chronicles-party-bark');
       const lootTab = lootCue.locator('.chronicles-party-bark__trigger');
       await lootTab.waitFor({ state: 'visible', timeout: 20000 });
