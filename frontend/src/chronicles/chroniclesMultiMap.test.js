@@ -51,7 +51,10 @@ describe('Chronicles multi-map campaign', () => {
     const archive = chroniclesMapById('blind-king-archive');
     expect(archive.title).toBe('Archivo del Rey Ciego');
     expect(archive.grid[0]).toHaveLength(11);
-    expect(archive.enemies).toHaveLength(5);
+    expect(archive.enemies).toHaveLength(8);
+    expect(archive.enemies.slice(0, 5).map((enemy) => enemy.id)).toEqual([
+      'ledger-warden', 'blind-archivist', 'ink-hound', 'catalogue-spider', 'archive-wisp',
+    ]);
     expect(archive.treasures.map((entry) => entry.id)).toEqual(expect.arrayContaining([
       'blind-index',
       'obsidian-index-cache',
