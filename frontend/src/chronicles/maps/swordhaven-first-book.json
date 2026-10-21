@@ -94,6 +94,61 @@
         ]
       },
       "defeatedFlag": "swordhavenSouthCutpurseDefeated"
+    },
+    {
+      "id": "swordhaven-south-false-watch",
+      "visualType": "road-bandit",
+      "name": "matón de la falsa ronda",
+      "explorationObjective": "Un matón que se hace pasar por la ronda nocturna cobra peajes en las callejas del este del barrio sur.",
+      "x": 15,
+      "y": 19,
+      "hpKey": "swordhavenSouthFalseWatchHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "blockingMessage": "«¡Alto! Inspección de la guardia. Cinco monedas por cabeza». Matthias observa que el uniforme parece una cortina robada.",
+      "onDefeat": {
+        "message": "{attacker} derrota al falso guardia con {attack}. En su bolsa aparecen cinco monedas cobradas a los vecinos.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "swordhavenSouthFalseWatchDefeated",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 5
+          }
+        ],
+        "journal": {
+          "id": "swordhaven-south-false-watch-falls",
+          "title": "Una ronda impostora menos",
+          "body": "La compañía desmantela el falso puesto de control en las callejas orientales del barrio sur de Swordhaven.",
+          "sigil": "†"
+        }
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      },
+      "defeatedFlag": "swordhavenSouthFalseWatchDefeated"
     }
   ],
   "triggers": [],
