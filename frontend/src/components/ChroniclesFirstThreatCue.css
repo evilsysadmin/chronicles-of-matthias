@@ -36,7 +36,7 @@
 .chronicles-first-threat__head button { min-width: 40px; font-size: 20px; }
 .chronicles-first-threat__dismiss { justify-self: end; }
 .chronicles-first-threat button:focus-visible { outline: 2px solid #f7d58d; outline-offset: 2px; }
-@media (max-width: 600px) {
+@media (max-width: 600px), (pointer: coarse) {
   .chronicles-first-threat__keyboard-hint { display: none; }
   .chronicles-first-threat__touch-hint { display: inline; }
 }
