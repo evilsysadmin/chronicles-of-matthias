@@ -15,6 +15,14 @@ describe('ChroniclesNarratorOverlay', () => {
     expect(html).not.toContain('class="chronicles-dm-dialog"');
     expect(html).toContain('Swordhaven: sol, calles empedradas y cinco puertas esperando viajeros.');
     expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('data-chronicles-narration-peek');
+    expect(html).toContain('role="tooltip"');
+    expect(html).toContain('Último acontecimiento');
+    // The full sentence is not a permanently visible banner: the reader
+    // opens on demand, while the small tooltip is CSS hover/focus only.
+    expect(html).toContain('class="chronicles-dm-band"');
+    expect(html).not.toContain('data-visible="true"');
+
   });
 
   it('keeps the chronicle trigger available even when movement is routine', () => {
