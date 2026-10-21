@@ -214,6 +214,29 @@ try {
       assert.equal(await dialog.locator('[data-chronicles-quest-id]').count(), 0);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
+
+      // An active expedition can contain many quest entries. Opening the book
+      // must reveal its far-down tracked contract without scrolling the world
+      // or stealing focus from the close affordance.
+      await page.locator('[data-test-long-journal]').click();
+      await dialog.waitFor({ state: 'visible' });
+      const followedHeading = dialog.locator('[data-chronicles-quest-id="names-in-wood"] .chronicles-journal-modal__quest-heading');
+      assert.equal(await followedHeading.getAttribute('aria-expanded'), 'true');
+      const followedGeometry = await followedHeading.evaluate((element) => {
+        const scroll = document.querySelector('.chronicles-journal-modal__scroll');
+        const viewport = scroll.getBoundingClientRect();
+        const row = element.getBoundingClientRect();
+        return {
+          scrollTop: scroll.scrollTop,
+          headingWithinBook: row.top >= viewport.top - 2 && row.bottom <= viewport.bottom + 2,
+          focusedClose: document.activeElement?.getAttribute('aria-label') === 'Cerrar Crónica',
+        };
+      });
+      assert(followedGeometry.scrollTop > 0, 'Distant tracked quest should scroll the book');
+      assert(followedGeometry.headingWithinBook, 'Tracked quest heading should be visible on first opening');
+      assert(followedGeometry.focusedClose, 'Opening must preserve keyboard focus on dialog close');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
       console.log('CHRONICLES_JOURNAL_BOOK_OK ' + width + 'x' + height);
     } catch (error) {
