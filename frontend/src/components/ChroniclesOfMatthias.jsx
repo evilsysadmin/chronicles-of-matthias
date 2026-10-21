@@ -152,6 +152,7 @@ import {
 } from '../chronicles/chroniclesNarrationLog.js';
 import ChroniclesPartyBark from './ChroniclesPartyBark.jsx';
 import ChroniclesFirstSteps from './ChroniclesFirstSteps.jsx';
+import ChroniclesFirstThreatCue from './ChroniclesFirstThreatCue.jsx';
 import ChroniclesFirstAudienceCue from './ChroniclesFirstAudienceCue.jsx';
 import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
 import useChroniclesLandscape, {
@@ -1651,6 +1652,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 setJournalOpen(false);
                 setChronicleModalOpen(true);
               }}
+            />
+            <ChroniclesFirstThreatCue
+              key={activeRunIdRef.current || 'no-run'}
+              state={state}
+              runId={activeRunIdRef.current}
+              target={chroniclesEnemyTargetAhead(state, 4)}
+              shooterCount={chroniclesOpeningVolleyShooters(state).length}
+              suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
+                || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
+                || state.shop || state.guild || expeditionOver)}
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)} />
             <ChroniclesEnemyRetaliationFx key={retaliationCue?.token || 'none'} cue={retaliationCue} />
