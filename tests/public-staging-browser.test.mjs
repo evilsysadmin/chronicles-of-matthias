@@ -60,3 +60,14 @@ test('first-steps public smoke selects only the visible guide and catches duplic
   assert.ok(!source.includes("world.locator('[data-chronicles-first-steps]');"),
     'unscoped locator makes isVisible strict on retained hidden guides');
 });
+
+test('duplicate visible guides emit structural census but never bypass release verification', () => {
+  assert.ok(source.includes('CHRONICLES_FIRST_STEPS_DOM_CENSUS'));
+  assert.ok(source.includes("document.querySelectorAll('[data-chronicles-first-steps]')"));
+  assert.ok(source.includes("document.querySelectorAll('[data-chronicles=\"true\"]')"));
+  assert.ok(source.includes('rootIndex: roots.indexOf'));
+  assert.ok(source.includes('hitOwnGuide'));
+  assert.ok(source.includes('throw new Error(`Multiple visible Matthias guides:'));
+  assert.ok(!source.includes('console.error(\'CHRONICLES_FIRST_STEPS_DOM_CENSUS\', JSON.stringify(nodes)'),
+    'do not dump user DOM or account details');
+});
