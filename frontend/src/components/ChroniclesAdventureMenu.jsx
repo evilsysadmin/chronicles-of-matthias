@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 
 // This is the same pause/menu surface shared with the real expedition.
@@ -7,6 +8,15 @@ export default function ChroniclesAdventureMenu({
   onSaveExit, onAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, saveNotice = '', saveBusy = false, isAdmin = false,
 }) {
+  const cancelExitRef = useRef(null);
+  const requestExitRef = useRef(null);
+  const wasConfirmingExitRef = useRef(false);
+  useEffect(() => {
+    if (confirmExitWithoutSaving) cancelExitRef.current?.focus();
+    else if (wasConfirmingExitRef.current) requestExitRef.current?.focus();
+    wasConfirmingExitRef.current = confirmExitWithoutSaving;
+  }, [confirmExitWithoutSaving]);
+
   return (
     <div className="chronicles-game-menu__panel chronicles-game-menu__panel--folio"
       role="dialog" aria-modal="true" aria-label="Menú de aventura" data-chronicles-adventure-menu>
@@ -37,12 +47,12 @@ export default function ChroniclesAdventureMenu({
               <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
             )}
             {!confirmExitWithoutSaving ? (
-              <button type="button" className="chronicles-game-menu__leave" onClick={onRequestExit}>Salir sin guardar · Q</button>
+              <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
             ) : (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
                 <small>Perderás lo jugado desde el último guardado o cambio de área.</small>
                 <button type="button" onClick={onDiscardExit}>Sí, salir sin guardar</button>
-                <button type="button" onClick={onCancelExit}>Cancelar</button>
+                <button type="button" ref={cancelExitRef} onClick={onCancelExit}>Cancelar</button>
               </div>
             )}
           </div>
