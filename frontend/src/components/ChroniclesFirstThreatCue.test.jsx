@@ -63,6 +63,10 @@ describe('Chronicles first true road encounter', () => {
     });
     expect(render(state)).toContain('1 de 2 tiradores a tiro');
     expect(render(state)).toContain('S dispara una salva');
+    expect(render(state)).toContain('chronicles-first-threat__keyboard-hint');
+    expect(render(state)).toContain('chronicles-first-threat__touch-hint');
+    expect(render(state)).toContain('Pulsa SALVA');
+    expect(render(state)).toContain('Usa ATACAR');
 
     const near = { ...actualSighting, distance: 2 };
     expect(chroniclesFirstThreatDetails(state, near).inRangeShooterCount).toBe(2);

@@ -48,6 +48,10 @@ describe('Chronicles · first Swordhaven steps', () => {
     expect(html).not.toContain('nos envía tras el Rey');
     expect(html).toContain('cuerpo a cuerpo');
     expect(html).toContain('Ver encargo');
+    expect(html).toContain('chronicles-first-steps__keyboard-hint');
+    expect(html).toContain('chronicles-first-steps__touch-hint');
+    expect(html).toContain('Toca el minimapa');
+    expect(html).toContain('flechas de pantalla');
     expect(html).toContain('Cerrar primeros pasos');
     expect(html).not.toContain('Has encontrado');
   });

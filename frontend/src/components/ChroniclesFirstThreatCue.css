@@ -22,6 +22,7 @@
 .chronicles-first-threat__head strong { font-size: 10px; letter-spacing: .075em; color: #e8bb76; }
 .chronicles-first-threat p { margin: 2px 0; }
 .chronicles-first-threat small { color: #d6c5a9; line-height: 1.4; }
+.chronicles-first-threat__touch-hint { display: none; }
 .chronicles-first-threat button {
   min-height: 40px;
   padding: 6px 9px;
@@ -35,6 +36,10 @@
 .chronicles-first-threat__head button { min-width: 40px; font-size: 20px; }
 .chronicles-first-threat__dismiss { justify-self: end; }
 .chronicles-first-threat button:focus-visible { outline: 2px solid #f7d58d; outline-offset: 2px; }
+@media (max-width: 600px), (pointer: coarse) {
+  .chronicles-first-threat__keyboard-hint { display: none; }
+  .chronicles-first-threat__touch-hint { display: inline; }
+}
 @media (max-width: 430px), (max-height: 480px) {
   .chronicles-first-threat {
     top: 5px; left: 5px;

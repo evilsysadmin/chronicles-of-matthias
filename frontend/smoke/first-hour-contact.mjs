@@ -47,7 +47,34 @@ try {
       assert.ok(info.left >= -1 && info.top >= -1
         && info.right <= width + 1 && info.bottom <= height + 1,
       JSON.stringify(info));
+      // Help must name the REAL input a player can see. A mobile screen
+      // without a physical keyboard must not show an S-only combat tip.
+      const touchHint = width <= 600;
+      const threatKeyboard = cue.locator('.chronicles-first-threat__keyboard-hint');
+      const threatTouch = cue.locator('.chronicles-first-threat__touch-hint');
+      assert.equal(await threatKeyboard.first().isVisible(), !touchHint,
+        'Keyboard combat hint visibility at ' + width);
+      assert.equal(await threatTouch.first().isVisible(), touchHint,
+        'Touch combat hint visibility at ' + width);
+      if (touchHint) {
+        assert.match(await cue.innerText(), /SALVA/);
+        assert.match(await cue.innerText(), /ATACAR/);
+      }
       await page.screenshot({ path: 'smoke-first-threat-' + width + '.png' });
+
+      await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
+      const steps = page.locator('[data-chronicles-first-steps]');
+      await steps.waitFor({ state: 'visible', timeout: 20000 });
+      assert.equal(await steps.locator('.chronicles-first-steps__touch-hint').isVisible(), touchHint,
+        'Touch movement hint visibility at ' + width);
+      assert.equal(await steps.locator('.chronicles-first-steps__keyboard-hint').isVisible(), !touchHint,
+        'Keyboard movement hint visibility at ' + width);
+      if (touchHint) {
+        assert.match(await steps.innerText(), /minimapa/);
+        assert.match(await steps.innerText(), /Crónica/);
+      }
+      await page.screenshot({ path: 'smoke-first-steps-' + width + '.png' });
+      await page.goto(url + '?view=threat', { waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: 'Entendido' }).click();
       assert.equal(await cue.count(), 0);
       await page.reload({ waitUntil: 'domcontentloaded' });

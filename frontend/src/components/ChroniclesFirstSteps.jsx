@@ -59,7 +59,12 @@ export default function ChroniclesFirstSteps({
         : story === 'prologue'
           ? 'La carta de la Dama nos envía tras el Rey. Empecemos por orientarnos en Swordhaven.'
           : 'Consulta el objetivo actual en la Crónica y oriéntate con el mapa.'}</p>
-      <small>Flechas: avanzar y girar · <kbd>M</kbd> mapa · <kbd>J</kbd> Crónica</small>
+      <small className="chronicles-first-steps__keyboard-hint">
+        Flechas: avanzar y girar · <kbd>M</kbd> mapa · <kbd>J</kbd> Crónica
+      </small>
+      <small className="chronicles-first-steps__touch-hint">
+        Usa las flechas de pantalla para moverte y girar. Toca el minimapa para ampliarlo y «Crónica» junto al objetivo para consultar el encargo.
+      </small>
       <details>
         <summary>¿Cómo se juega?</summary>
         <p><kbd>A</kbd> cuerpo a cuerpo · <kbd>S</kbd> disparar · <kbd>F</kbd> usar/recoger si hay una acción disponible. En móvil, usa los botones de la pantalla.</p>
