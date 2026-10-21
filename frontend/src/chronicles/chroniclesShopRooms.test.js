@@ -7,6 +7,7 @@ describe('Chronicles shop rooms', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const room = (id) => chroniclesShopRoom(town.interactables.find((entry) => entry.id === id))?.id;
     expect(room('first-book-armorer')).toBe('odo-forge');
+    expect(chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-armorer')).src).toContain('odo-armory.svg');
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
