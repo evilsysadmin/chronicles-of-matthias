@@ -25,6 +25,21 @@ try {
       assert.equal(await tabMemories.getAttribute('aria-selected'), 'false');
       assert.equal(await dialog.getByRole('tabpanel').count(), 1,
         'Journal should show one chapter at a time, not a two-panel dashboard');
+      // The book announces tab semantics, so readers should also get standard
+      // roving focus with arrows and Home/End, with a single normal Tab stop.
+      await tabQuests.focus();
+      await page.keyboard.press('ArrowRight');
+      assert.equal(await tabMemories.getAttribute('aria-selected'), 'true');
+      assert.equal(await tabMemories.evaluate((element) => document.activeElement === element), true);
+      assert.equal(await tabQuests.getAttribute('tabindex'), '-1');
+      await page.keyboard.press('ArrowRight');
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await tabQuests.evaluate((element) => document.activeElement === element), true);
+      await page.keyboard.press('End');
+      assert.equal(await tabMemories.getAttribute('aria-selected'), 'true');
+      await page.keyboard.press('Home');
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await dialog.getByRole('tabpanel').count(), 1);
       const first = dialog.locator('[data-chronicles-quest-id="banner-contract"]');
       assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.match(await first.innerText(), /Camino de los Estandartes/);
