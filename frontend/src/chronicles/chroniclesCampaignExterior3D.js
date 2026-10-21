@@ -72,12 +72,12 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
   }
   if (!facades.length) return;
   const frames = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.32, 0.84, 0.08),
+    new THREE.BoxGeometry(1.32, 0.84, 0.022),
     material(0x78533b),
     facades.length,
   );
   const panes = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.77, 0.52, 0.07),
+    new THREE.BoxGeometry(0.77, 0.52, 0.014),
     material(0x34444b, { metalness: 0.07, roughness: 0.8 }),
     facades.length,
   );
@@ -85,10 +85,10 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
   facades.forEach(({ x, y, dx, dy, yaw }, index) => {
     const [wx, wz] = gridToWorld(x, y, center);
     dummy.rotation.y = yaw;
-    dummy.position.set(wx + dx * 1.79, 0.96, wz + dy * 1.79);
+    dummy.position.set(wx + dx * 1.972, 0.96, wz + dy * 1.972);
     dummy.updateMatrix();
     frames.setMatrixAt(index, dummy.matrix);
-    dummy.position.set(wx + dx * 1.86, 0.98, wz + dy * 1.86);
+    dummy.position.set(wx + dx * 1.988, 0.98, wz + dy * 1.988);
     dummy.updateMatrix();
     panes.setMatrixAt(index, dummy.matrix);
   });
