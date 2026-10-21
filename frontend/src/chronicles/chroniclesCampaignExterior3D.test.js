@@ -58,6 +58,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const walls = scene.getObjectByName('chronicles-campaign-visible-blockers');
     expect(walls).toBeInstanceOf(THREE.InstancedMesh);
     expect(walls.count).toBe(demo.grid.join('').split('#').length - 1);
+    expect(walls.geometry.parameters.height).toBe(1.6); // Wilderness walls stay low.
     expect(scene.getObjectByName('chronicles-first-person-ceiling')).toBeUndefined();
     expect(built.sceneCenter).toEqual(demo.center);
     expect(built.contentProps.map(x => x.id)).toEqual(['exit-1', 'milestone-1']);
@@ -130,7 +131,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const panes = town.getObjectByName('chronicles-town-street-window-panes');
     expect(frames).toBeInstanceOf(THREE.InstancedMesh);
     expect(panes).toBeInstanceOf(THREE.InstancedMesh);
-    expect(frames.count).toBeGreaterThan(20);
+    expect(frames.count).toBeGreaterThan(80); // Two storeys, still two draw calls.
     expect(panes.count).toBe(frames.count);
     // The first window faces a real alley from an existing solid cell.
     // Its cladding must be in front of the 3.92m wall, but still inside the
@@ -146,6 +147,13 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(facadePos.x).toBeCloseTo((2 - center.x) * 4);
     expect(facadePos.z).toBeCloseTo((16 - center.y) * 4 + 1.972);
     expect(panePos.z).toBeCloseTo((16 - center.y) * 4 + 1.988);
+    expect(facadePos.y).toBeCloseTo(2.15);
+    expect(panePos.y).toBeCloseTo(2.17);
+    frames.getMatrixAt(1, facadeMatrix);
+    const upperWindow = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
+    expect(upperWindow.y).toBeCloseTo(4.45);
+    expect(upperWindow.x).toBeCloseTo(facadePos.x);
+    expect(upperWindow.z).toBeCloseTo(facadePos.z);
     expect(panePos.z - (16 - center.y) * 4 + 0.007).toBeLessThan(2);
     // Three recognisable landmarks mark the southern approaches and the
     // inner crossing without placing props on traversable tiles.
@@ -202,7 +210,7 @@ describe('Chronicles file-authored exterior renderer', () => {
       roofs.getMatrixAt(index, facadeMatrix);
       const roof = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
       expect(roof.x).toBeCloseTo((run.x + 1.5 - center.x) * 4);
-      expect(roof.y).toBeCloseTo(1.56);
+      expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
       expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
     }
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
@@ -263,6 +271,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     const blockers = scene.getObjectByName('chronicles-campaign-visible-blockers').count;
     expect(blockers).toBeGreaterThan(wall);
     expect(blockers).toBe(126);
+    const urbanWalls = scene.getObjectByName('chronicles-campaign-visible-blockers');
+    expect(swordhavenFirstBook.landscape.streetWallHeight).toBe(6.4);
+    expect(urbanWalls).toBeInstanceOf(THREE.InstancedMesh);
+    expect(urbanWalls.geometry.parameters.height).toBe(6.4);
+    urbanWalls.getMatrixAt(0, facadeMatrix);
+    const firstWallCenter = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
+    expect(firstWallCenter.y).toBeCloseTo(3.16);
+    // A 1.62m first-person camera must see full-height buildings,
+    // not the old 1.6m parapet with the sky filling half the view.
+    expect(urbanWalls.geometry.parameters.height).toBeGreaterThan(1.62 * 3);
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
   });
 

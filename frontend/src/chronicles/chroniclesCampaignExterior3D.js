@@ -45,7 +45,7 @@ function visibleRoadCells(scenePlan, center) {
 // The wall grid remains the ONLY collision source; these shallow details sit
 // entirely inside its solid cells. All frames and panes share two instanced
 // meshes, not dozens of per-house objects or lights.
-function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
+function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
   const validZones = (Array.isArray(zones) ? zones : []).filter(zone =>
     zone?.style === 'timber-windows'
     && [zone.minX, zone.maxX, zone.minY, zone.maxY].every(Number.isInteger)
@@ -71,26 +71,33 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones }) {
     }
   }
   if (!facades.length) return;
+  // Two levels on tall authored houses, with the original single window
+  // preserved for older settlements. Still just two instanced draw calls.
+  const storeys = wallHeight >= 4 ? [2.15, 4.45] : [0.96];
+  const count = facades.length * storeys.length;
   const frames = new THREE.InstancedMesh(
     new THREE.BoxGeometry(1.32, 0.84, 0.022),
     material(0x78533b),
-    facades.length,
+    count,
   );
   const panes = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.77, 0.52, 0.014),
     material(0x34444b, { metalness: 0.07, roughness: 0.8 }),
-    facades.length,
+    count,
   );
   const dummy = new THREE.Object3D();
-  facades.forEach(({ x, y, dx, dy, yaw }, index) => {
+  facades.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
     const [wx, wz] = gridToWorld(x, y, center);
     dummy.rotation.y = yaw;
-    dummy.position.set(wx + dx * 1.972, 0.96, wz + dy * 1.972);
-    dummy.updateMatrix();
-    frames.setMatrixAt(index, dummy.matrix);
-    dummy.position.set(wx + dx * 1.988, 0.98, wz + dy * 1.988);
-    dummy.updateMatrix();
-    panes.setMatrixAt(index, dummy.matrix);
+    storeys.forEach((windowY, storeyIndex) => {
+      const index = faceIndex * storeys.length + storeyIndex;
+      dummy.position.set(wx + dx * 1.972, windowY, wz + dy * 1.972);
+      dummy.updateMatrix();
+      frames.setMatrixAt(index, dummy.matrix);
+      dummy.position.set(wx + dx * 1.988, windowY + 0.02, wz + dy * 1.988);
+      dummy.updateMatrix();
+      panes.setMatrixAt(index, dummy.matrix);
+    });
   });
   frames.instanceMatrix.needsUpdate = true;
   panes.instanceMatrix.needsUpdate = true;
@@ -169,7 +176,7 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
 // Pitched roof silhouettes on authored four-cell solid wall runs. The six
 // triangles are shared by ONE instanced mesh, with no new collisions and no
 // per-house geometry/material churn. Saved party cells never change.
-function addSettlementRoofRuns(town, { grid, blocked, center, runs }) {
+function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6 }) {
   if (!Array.isArray(runs) || !runs.length) return;
   const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
   const seen = new Set();
@@ -205,7 +212,7 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs }) {
   const dummy = new THREE.Object3D();
   valid.forEach(({ x, y }, index) => {
     const [wx, wz] = gridToWorld(x + 1.5, y, center);
-    dummy.position.set(wx, 1.56, wz);
+    dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);
   });
@@ -228,6 +235,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // Authored towns (First Book Swordhaven) dress their interior blocks as the
   // same half-timbered houses as the legacy square; collision stays the grid.
   const settlement = scenePlan.regionKind === 'settlement';
+  const authoredWallHeight = scenePlan.landscape?.streetWallHeight;
+  const streetWallHeight = settlement && Number.isFinite(authoredWallHeight)
+    && authoredWallHeight >= 3.2 && authoredWallHeight <= 9.6 ? authoredWallHeight : 1.6;
   const village = settlement ? createSwordhavenMaterials() : null;
   const earth = material(biome?.ground ?? (forest ? 0xaebc9e : 0xffffff), { map: biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture() });
   const stone = village ? village.stone
@@ -344,7 +354,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     });
     blocked = blocked.filter(({ x, y }) => !houseCells.has(x + ',' + y));
     addSettlementStreetFacades(town, {
-      grid, blocked, center: sceneCenter,
+      grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
     });
     addSettlementWallLanterns(town, {
@@ -352,7 +362,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       placements: scenePlan.landscape?.wallLanterns,
     });
     addSettlementRoofRuns(town, {
-      grid, blocked, center: sceneCenter,
+      grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       runs: scenePlan.landscape?.roofRuns,
     });
     // Trees stand outside the town wall so no walkable cell gains a blocker.
@@ -374,11 +384,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   } else if (wilds) {
     // Blocked cells become scenery; collision is still the grid alone.
   } else if (blocked.length) {
-    const barrier = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL * 0.98, 1.6, CELL * 0.98), stone, blocked.length);
+    // Urban solids become full-height house walls, not knee-high embankments.
+    // One instanced batch still draws all non-house blockers.
+    const barrier = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL * 0.98, streetWallHeight, CELL * 0.98), stone, blocked.length);
     const dummy = new THREE.Object3D();
     blocked.forEach(({ x, y }, i) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
-      dummy.position.set(wx, 0.76, wz);
+      dummy.position.set(wx, streetWallHeight / 2 - 0.04, wz);
       dummy.updateMatrix();
       barrier.setMatrixAt(i, dummy.matrix);
     });
