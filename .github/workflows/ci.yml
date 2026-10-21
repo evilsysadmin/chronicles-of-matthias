@@ -43,6 +43,14 @@ jobs:
               --jq '[.check_runs[] | select(.name == "build" and .app.slug == "github-actions")] | if length == 0 then "pending" else (max_by(.id) | .status + ":" + (.conclusion // "")) end')"
             case "$result" in
               completed:success)
+                # A green check named "build" alone is not sufficient: another
+                # Actions workflow could use that name on the same commit.
+                # Require the official frontend workflow ID, same SHA/event,
+                # trusted repository and its latest completed green run.
+                runs="$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/runs" \
+                  -f head_sha="$HEAD_SHA" -f event="$GITHUB_EVENT_NAME" -f per_page=100)"
+                node scripts/require-frontend-workflow.mjs \
+                  "$HEAD_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_REPOSITORY" <<<"$runs"
                 echo "FRONTEND_BROWSER_REQUIRED_GREEN sha=$HEAD_SHA"
                 printf '\nFrontend Vitest/build/Chromium succeeded for `%s`.\n' "$HEAD_SHA" >> "$GITHUB_STEP_SUMMARY"
                 exit 0
