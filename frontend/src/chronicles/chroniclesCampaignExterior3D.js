@@ -159,12 +159,33 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   if (wallHeight < 4) return;
   const faces = settlementStreetFacingFaces({ grid, blocked, zones });
   if (!faces.length) return;
+  // Wherever two street-facing walls meet, reinforce their common corner.
+  // Reuse the upright InstancedMesh rather than creating a draw call per turn.
+  const byCell = new Map();
+  for (const face of faces) {
+    const key = face.x + ',' + face.y;
+    if (!byCell.has(key)) byCell.set(key, []);
+    byCell.get(key).push(face);
+  }
+  const cornerJoints = [];
+  for (const cellFaces of byCell.values()) {
+    for (let i = 0; i < cellFaces.length; i += 1) {
+      for (let j = i + 1; j < cellFaces.length; j += 1) {
+        const a = cellFaces[i];
+        const b = cellFaces[j];
+        if (a.dx * b.dx + a.dy * b.dy !== 0) continue;
+        cornerJoints.push({
+          x: a.x, y: a.y, dx: a.dx + b.dx, dy: a.dy + b.dy,
+        });
+      }
+    }
+  }
   const wood = material(0x66503a, { roughness: 0.93 });
   const beams = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
   );
   const posts = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood, faces.length * 2,
+    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood, faces.length * 2 + cornerJoints.length,
   );
   const dummy = new THREE.Object3D();
   faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
@@ -185,6 +206,16 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
       dummy.updateMatrix();
       posts.setMatrixAt(faceIndex * 2 + index, dummy.matrix);
     }
+  });
+  // Corner joints have a square cross-section and sit on the blocking
+  // cell side: their furthest edge remains at 1.995m of the 2m half-cell.
+  cornerJoints.forEach(({ x, y, dx, dy }, i) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(1, 1, 3.25); // 0.13m square corner timber.
+    dummy.position.set(wx + dx * 1.93, wallHeight / 2 - 0.04, wz + dy * 1.93);
+    dummy.updateMatrix();
+    posts.setMatrixAt(faces.length * 2 + i, dummy.matrix);
   });
   beams.instanceMatrix.needsUpdate = true;
   posts.instanceMatrix.needsUpdate = true;
