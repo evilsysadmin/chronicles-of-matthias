@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesContextualContentAction, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesTacticsInteractions, chroniclesTacticsUse } from '../chroniclesOfMatthiasTactics.js';
-import { chroniclesGoldBalance, chroniclesInventoryEntries } from './chroniclesContentRuntime.js';
+import { chroniclesApplyContentEffects, chroniclesGoldBalance, chroniclesInventoryEntries } from './chroniclesContentRuntime.js';
+import { chroniclesEquipItem, chroniclesEquippedItem } from './chroniclesEquipment.js';
 import {
   chroniclesMapById,
   chroniclesMapIds,
@@ -122,6 +123,65 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
     expect(chroniclesGoldBalance(state)).toBe(11);
     expect(state.inventory['road-rations'].quantity).toBe(1);
     expect(state.claimedRewards).toEqual(['swordhaven:banner-contract:v1']);
+  });
+
+  it('keeps first real spoils equipped and prevents reward farming across the second sortie after F5', () => {
+    let state = createChroniclesState('swordhaven-first-book');
+    state = chroniclesTacticsUse(walkTo(state, 11, 9), 'first-book-missing-board');
+    state = chroniclesTacticsUse(walkTo(state, 9, 1), 'to-first-book-banner-road');
+    const road = chroniclesMapById('banner-road-first-book');
+    const deserter = road.enemies.find((enemy) => enemy.id === 'banner-road-deserter');
+    expect(Number(state[deserter.hpKey])).toBeGreaterThan(0);
+
+    // Apply the versioned enemy's *actual* onDefeat effects to an enemy that
+    // has fallen; this tests loot/continuity, not fabricated combat rolls.
+    const slain = chroniclesApplyContentEffects({
+      ...state, [deserter.hpKey]: 0,
+    }, deserter.onDefeat.effects);
+    expect(slain.bannerRoadDeserterDefeated).toBe(true);
+    expect(slain.inventory['bronze-sword'].quantity).toBe(1);
+    state = chroniclesEquipItem(slain, 'matthias', 'bronze-sword');
+    expect(chroniclesEquippedItem(state, 'matthias', 'weapon')?.id).toBe('bronze-sword');
+
+    state = chroniclesTacticsUse(walkTo(state, 9, 5), 'first-book-lost-banner');
+    state = chroniclesTacticsUse(walkTo(state, 10, 1), 'to-first-book-swordhaven');
+    state = chroniclesTacticsUse(walkTo(state, 11, 9), 'first-book-banner-turn-in');
+    expect(chroniclesGoldBalance(state)).toBe(21); // 3 real bandit coins + 18 contract
+    state = chroniclesTacticsUse(walkTo(state, 15, 10), 'first-book-quartermaster');
+    const firstBalance = chroniclesGoldBalance(state);
+    expect(firstBalance).toBe(14);
+    expect(state.inventory['road-rations'].quantity).toBe(1);
+
+    const saved = chroniclesRunCheckpointPayload(state, 9);
+    const resumed = chroniclesApplyRunCheckpoint(createChroniclesState('swordhaven-first-book'), saved);
+    expect(chroniclesEquippedItem(resumed, 'matthias', 'weapon')?.id).toBe('bronze-sword');
+    expect(chroniclesGoldBalance(resumed)).toBe(firstBalance);
+    expect(resumed.inventory['road-rations'].quantity).toBe(1);
+    expect(resumed.claimedRewards).toEqual(['swordhaven:banner-contract:v1']);
+    expect(chroniclesTacticsInteractions(walkTo(resumed, 11, 9))
+      .some((entry) => entry.id === 'first-book-banner-turn-in')).toBe(false);
+
+    // The player returns to the same open world, not a fresh first expedition.
+    const second = chroniclesTacticsUse(walkTo(resumed, 9, 1), 'to-first-book-banner-road');
+    expect(second.mapId).toBe('banner-road-first-book');
+    expect(second[deserter.hpKey]).toBe(0);
+    expect(second.bannerRoadDeserterDefeated).toBe(true);
+    expect(chroniclesEquippedItem(second, 'matthias', 'weapon')?.id).toBe('bronze-sword');
+    expect(chroniclesTacticsInteractions(walkTo(second, 9, 5))
+      .some((entry) => entry.id === 'first-book-lost-banner')).toBe(false);
+    expect(chroniclesGoldBalance(second)).toBe(firstBalance);
+    expect(second.inventory['road-rations'].quantity).toBe(1);
+    expect(second.claimedRewards).toEqual(['swordhaven:banner-contract:v1']);
+
+    // A second checkpoint/restore must also be idempotent.
+    const secondSave = chroniclesRunCheckpointPayload(second, 10);
+    const secondResume = chroniclesApplyRunCheckpoint(
+      createChroniclesState('banner-road-first-book'), secondSave,
+    );
+    expect(secondResume[deserter.hpKey]).toBe(0);
+    expect(chroniclesEquippedItem(secondResume, 'matthias', 'weapon')?.id).toBe('bronze-sword');
+    expect(chroniclesGoldBalance(secondResume)).toBe(firstBalance);
+    expect(secondResume.claimedRewards).toEqual(['swordhaven:banner-contract:v1']);
   });
 
   it('recovers completed quest, spent gold, visited region and reward receipt after F5', () => {
