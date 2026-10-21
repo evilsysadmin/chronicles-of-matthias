@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
   actions: read
+# Preserve main push checks; only superseded pull-request runs may cancel.
+concurrency:
+  group: chronicles-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   # Protect main's existing required check also protects the Chromium smoke:
   # GitHub ruleset 25198769 currently requires repository-contract and api-e2e,
