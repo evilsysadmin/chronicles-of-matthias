@@ -1216,7 +1216,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // always retains browser focus navigation; once inside the game menu,
       // plain Tab traverses its accessible controls rather than closing it.
       const target = event.target;
-      if (target?.isContentEditable || target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      const isEditing = target?.isContentEditable
+        || target?.closest?.('input, textarea, select, [contenteditable="true"]');
+      // The open menu owns Escape even while a volume slider has focus;
+      // typing S/Q into an input must never invoke save/quit.
+      if (isEditing && !(menuOpen && event.key === 'Escape')) return;
       if (areaTransitionRef.current) {
         if (event.key !== 'Tab') event.preventDefault();
         if (event.repeat) return;
@@ -1263,6 +1267,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
         if (menuShortcut === 'close') {
           setConfirmExitWithoutSaving(false);
+          menuSummaryRef.current?.focus();
           setMenuOpen(false);
         }
         return;
@@ -1672,8 +1677,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span className="chronicles-menu-gem__hint" aria-hidden="true">MENÚ</span>
               </summary>
               <ChroniclesAdventureMenu
-                onClose={() => setMenuOpen(false)}
-                onContinue={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); }}
+                onClose={() => { menuSummaryRef.current?.focus(); setMenuOpen(false); }}
+                onContinue={() => {
+                  menuSummaryRef.current?.focus();
+                  setMenuOpen(false);
+                  setConfirmExitWithoutSaving(false);
+                }}
                 onJournal={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
