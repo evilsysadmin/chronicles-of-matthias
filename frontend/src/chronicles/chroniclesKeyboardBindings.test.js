@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesPartyHotkeyMember, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -39,5 +39,34 @@ describe('Chronicles shared 1–4 hero hotkeys', () => {
     for (const selector of ['input', 'textarea', 'select', '[contenteditable]', '[role="textbox"]']) {
       expect(chroniclesPartyHotkeyMember(keyEvent('4', { target: { closest: (query) => query.includes(selector) ? {} : null } }), party)).toBeNull();
     }
+  });
+});
+
+describe('Chronicles stable numerical party identity', () => {
+  const party = [
+    { id: 'knight', name: 'Faust' },
+    { id: 'bishop', name: 'Aziz' },
+    { id: 'matthias', name: 'Matthias' },
+    { id: 'rook', name: 'Hildegard' },
+  ];
+  const key = (number) => ({
+    key: String(number),
+    target: { isContentEditable: false, closest: () => null },
+  });
+  it('always maps 1–4 to Matthias, Hildegard, Aziz, Faust despite reordered arrays', () => {
+    expect(CHRONICLES_PARTY_SLOT_IDS).toEqual(['matthias', 'rook', 'bishop', 'knight']);
+    for (let n = 1; n <= 4; n++) {
+      expect(chroniclesPartyHotkeyMember(key(n), party)?.id).toBe(CHRONICLES_PARTY_SLOT_IDS[n - 1]);
+    }
+    const creator = party.map(({ id, ...hero }) => ({ ...hero, slotId: id }));
+    expect(chroniclesPartyHotkeyMember(key(4), creator)?.slotId).toBe('knight');
+  });
+  it('never substitutes another hero for a missing canonical slot', () => {
+    expect(chroniclesPartyHotkeyMember(key(4), party.filter((member) => member.id !== 'knight')))
+      .toBeNull();
+  });
+  it('preserves the positional contract for noncanonical test/temporary rosters', () => {
+    const custom = [{ id: 'alpha' }, { id: 'beta' }, { id: 'gamma' }, { id: 'delta' }];
+    expect(chroniclesPartyHotkeyMember(key(4), custom).id).toBe('delta');
   });
 });

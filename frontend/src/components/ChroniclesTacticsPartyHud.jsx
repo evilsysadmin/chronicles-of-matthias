@@ -14,13 +14,13 @@ import {
 } from '../chroniclesOfMatthiasTactics.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_PARTY_SLOT_IDS, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
 import './ChroniclesTacticsPartyHud.css';
 import './ChroniclesCharacterSheet.css';
 import './ChroniclesTacticsAdventureSummary.css';
 
-const PARTY_ORDER = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
+const PARTY_ORDER = CHRONICLES_PARTY_SLOT_IDS;
 
 function clampRatio(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
