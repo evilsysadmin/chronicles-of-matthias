@@ -48,7 +48,9 @@ func buildAll() map[string]*O {
 	drops := bossDrops()
 	manifests := map[string]*O{}
 	for _, code := range areaOrder {
-		manifests[mapID(code)] = buildArea(code, s.areas)
+		area := buildArea(code, s.areas)
+		reinforceOverworld(area, code)
+		manifests[mapID(code)] = area
 	}
 	for _, code := range townOrder {
 		manifests[towns[code].id] = buildTown(code, s.people[code])
