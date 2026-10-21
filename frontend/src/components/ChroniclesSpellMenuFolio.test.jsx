@@ -60,6 +60,31 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('4 unidades');
     expect(html).not.toContain('data-chronicles-cast=');
   });
+  it('keeps spell and item buttons disabled while an enemy is acting', () => {
+    const state = makeState();
+    const member = caster(state);
+    const enemyTurn = {
+      ...state,
+      initiative: { round: 1, cursor: 0, order: [{ kind: 'enemy', id: 'test-enemy' }] },
+      inventory: { 'healing-potion': { id: 'healing-potion', quantity: 1 } },
+    };
+    const html = render(enemyTurn, member, { onOpenSheet: () => {} });
+    expect(html).toContain('1–4 · FICHAS');
+    expect(html).toContain('Es el turno de otro combatiente');
+    expect(html).toMatch(/data-chronicles-cast="[^"]+"[^>]*disabled=""/);
+    const items = render(enemyTurn, member, { initialTab: 'items' });
+    expect(items).toMatch(/data-chronicles-use-item="healing-potion"[^>]*disabled=""/);
+  });
+  it('does not grant a non-active hero another party member’s turn', () => {
+    const state = makeState();
+    const member = caster(state);
+    const other = state.party.find((hero) => hero.id !== member.id);
+    const turn = { ...state, initiative: {
+      round: 1, cursor: 0, order: [{ kind: 'party', id: other.id }],
+    } };
+    expect(render(turn, member)).toMatch(/data-chronicles-cast="[^"]+"[^>]*disabled=""/);
+    expect(render(turn, other)).not.toContain('Es el turno de otro combatiente');
+  });
   it('labels attack, healing, utility and scroll types without adding gameplay', () => {
     expect(chroniclesSpellMenuKind('attack').label).toBe('Ataque');
     expect(chroniclesSpellMenuKind('heal').label).toBe('Curación');

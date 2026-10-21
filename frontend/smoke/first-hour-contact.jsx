@@ -25,6 +25,8 @@ import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
 import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx';
+import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
+import { chroniclesCurrentInitiativeActor } from '../src/chronicles/chroniclesInitiative.js';
 import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
 import '../src/styles.css';
 // Match the actual first-person game CSS imports. The isolated fixture used
@@ -213,6 +215,38 @@ function RealJournalHotkeyFlow() {
   );
 }
 
+// Real CAST with a fixed combat initiative actor. Opening another dossier
+// is inspection only; neither action requests nor the actor may change.
+function RealSpellMenuHotkeyFlow({ enemyTurn = false }) {
+  const [state] = useState(() => ({
+    ...createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
+    initiative: { version: 1, die: '1d8', round: 1, cursor: 0,
+      order: [{ kind: enemyTurn ? 'enemy' : 'party', id: enemyTurn ? 'test-enemy' : 'bishop' }] },
+  }));
+  const [progression] = useState(createChroniclesProgression);
+  const [open, setOpen] = useState(true);
+  const [memberId, setMemberId] = useState(null);
+  const [requestedActions, setRequestedActions] = useState(0);
+  const actor = chroniclesCurrentInitiativeActor(state.initiative);
+  const caster = state.party.find((hero) => hero.id === 'bishop');
+  const member = state.party.find((hero) => hero.id === memberId);
+  const inspect = (id) => { setOpen(false); setMemberId(id); };
+  return (
+    <div data-chronicles-cast-test-actor={actor.id} data-chronicles-cast-test-actions={requestedActions}>
+      <button type="button" data-reopen-cast onClick={() => { setMemberId(null); setOpen(true); }}>Abrir grimorio (C)</button>
+      {open && <ChroniclesSpellMenu state={state} member={caster} itemUser={enemyTurn ? null : caster}
+        onClose={() => setOpen(false)} onOpenSheet={inspect}
+        onCast={() => setRequestedActions((count) => count + 1)}
+        onUse={() => setRequestedActions((count) => count + 1)} />}
+      {member && <ChroniclesCharacterSheet state={state} progression={progression}
+        member={member} mode="first-person" onClose={() => setMemberId(null)}
+        onSelectMember={(id) => {
+          if (state.party.some((hero) => hero.id === id)) setMemberId(id);
+        }} />}
+    </div>
+  );
+}
+
 // Use the genuine First Book quest and the real map/NPC interaction
 // resolver. The fixture only observes a click; it does not award story flags.
 function actualMayorInvitation() {
@@ -252,6 +286,8 @@ if (view === 'threat') {
   content = <RealQuickStatusHotkeyFlow />;
 } else if (view === 'journal') {
   content = <RealJournalHotkeyFlow />;
+ } else if (view === 'spell-menu' || view === 'spell-menu-enemy') {
+  content = <RealSpellMenuHotkeyFlow enemyTurn={view === 'spell-menu-enemy'} />;
 } else if (view === 'guides') {
   content = <RealGuidesReconciliationFlow />;
 } else {

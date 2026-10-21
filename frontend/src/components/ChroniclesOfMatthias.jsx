@@ -1868,6 +1868,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           initialTab={spellMenuOpen === 'items' ? 'items' : 'spells'}
           itemUser={itemUser}
           onClose={() => setSpellMenuOpen(false)}
+          onOpenSheet={(memberId) => {
+            setSpellMenuOpen(false);
+            openMemberSheet(memberId);
+          }}
           onCast={(spellId) => {
             setSpellMenuOpen(false);
             dispatch({ type: 'cast', memberId: caster.id, spellId });
