@@ -184,9 +184,9 @@ try {
     }
   }
 
-  // The other merchant rooms need their own evidence. They intentionally use
-  // existing small authored PNGs: test their REAL fallback and layout; do not
-  // pass them off as the cinematic Brunna artwork.
+  // The other merchant rooms need their own evidence. Odo now has widescreen
+  // authored vector art; the guild still uses its existing small PNG.
+  // Test each REAL scene and its interactive layout.
   for (const room of ['odo', 'guild']) {
     for (const [width, height] of [[390, 844], [844, 390], [1280, 800]]) {
       const context = await browser.newContext({
@@ -212,19 +212,21 @@ try {
         }));
         assert(art.loaded, room + ': artwork did not decode at ' + width);
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
-        assert(art.src.includes(expected + '.png'), room + ': wrong artwork source');
+        assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : expected + '.png'), room + ': wrong artwork source');
         if (room === 'odo') {
           const presentation = await img.evaluate((node) => ({
             width: node.getBoundingClientRect().width,
             fit: getComputedStyle(node).objectFit,
             rendering: getComputedStyle(node).imageRendering,
           }));
-          assert.equal(presentation.fit, 'contain',
-            'Odo pixel room must not be blown up via object-fit: cover');
-          assert.equal(presentation.rendering, 'pixelated',
-            'Pixel-room should be deliberately crisp, not blurred and stretched');
-          assert(presentation.width >= 150 && presentation.width <= Math.min(410, width * .8),
-            'Odo art is offscreen or stretched to full viewport: ' + JSON.stringify(presentation));
+          assert(art.width >= 1500 && art.height >= 800,
+            'Odo room must use the authored widescreen illustration');
+          assert.equal(presentation.fit, 'cover',
+            'Odo room should fill the panoramic background, not appear as a pixel inset');
+          assert.notEqual(presentation.rendering, 'pixelated',
+            'The new illustration should render smoothly');
+          assert(presentation.width >= width - 2 && presentation.width <= width + 2,
+            'Odo illustration must fill the available room width: ' + JSON.stringify(presentation));
         }
         const geometry = await page.evaluate(() => {
           const bounds = (selector) => {
