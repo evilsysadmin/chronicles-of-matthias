@@ -487,6 +487,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [onExit]);
 
   useEscapeToClose(() => {
+    // The global Back/Escape dispatcher runs on document, BEFORE the
+    // first-person hotkey listener on window. It must honour the nested
+    // confirmation itself; relying on the window 'cancel-exit' shortcut
+    // would close the whole menu on the first Escape.
+    if (menuOpen && confirmExitWithoutSaving) {
+      setConfirmExitWithoutSaving(false);
+      return;
+    }
     if (audienceRef.current) {
       audienceRef.current = null;
       setAudience(null);
@@ -496,6 +504,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       setAutomapOpen(false);
       return;
     }
+    // Restore the visible gem as keyboard focus on either transition.
+    menuSummaryRef.current?.focus();
     setMenuOpen((open) => !open);
   }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
 

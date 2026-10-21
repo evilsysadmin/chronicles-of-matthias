@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesAdventureMenuFolio.css';
@@ -16,6 +17,20 @@ function MenuShortcutFixture() {
   const [saveRequests, setSaveRequests] = useState(0);
   const [exitRequests, setExitRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
+  const [globalEscapeCount, setGlobalEscapeCount] = useState(0);
+
+  // Mirrors the production back stack, which captures Escape on document
+  // before our window-level keyboard handler can see it. Earlier smoke
+  // fixtures omitted this hook and missed a real double-dismissal bug.
+  useEscapeToClose(() => {
+    setGlobalEscapeCount((count) => count + 1);
+    if (open && confirmExitWithoutSaving) {
+      setConfirmExitWithoutSaving(false);
+      return;
+    }
+    document.querySelector('.chronicles-game-menu > summary')?.focus();
+    setOpen((value) => !value);
+  }, { contextMenu: false });
 
   useEffect(() => {
     const keyDown = (event) => {
@@ -46,7 +61,8 @@ function MenuShortcutFixture() {
       background: '#101720', color: '#f2e4c8',
     }}
       data-shortcut-menu-open={String(open)}
-      data-shortcut-confirm={String(confirmExitWithoutSaving)}>
+      data-shortcut-confirm={String(confirmExitWithoutSaving)}
+      data-shortcut-global-esc={globalEscapeCount}>
       <div className="chronicles-stage" style={{ height: '100%', minHeight: 0 }}>
         <div style={{ position: 'absolute', left: 8, bottom: 8, zIndex: 1, display: 'grid', gap: 6 }}>
           <label>Campo de texto ajeno al menú

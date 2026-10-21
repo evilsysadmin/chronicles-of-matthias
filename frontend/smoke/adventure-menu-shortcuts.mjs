@@ -95,6 +95,10 @@ try {
       // Esc is safe: first cancels the dangerous prompt, second closes menu.
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-confirm]').getAttribute('data-shortcut-confirm'), 'false');
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'true',
+        'First Escape from Q confirmation must CANCEL only, not dismiss the adventure menu');
+      assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '1',
+        'The document-level back stack (not just window keydown) must process Escape');
       assert.equal(await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).count(), 0);
       await menu.getByRole('button', { name: 'Continuar' }).waitFor({ state: 'visible' });
       assert.equal(await menu.locator('input[type="range"]:visible').count() > 0, true,
@@ -103,6 +107,7 @@ try {
         document.activeElement?.textContent?.trim() === 'Salir sin guardar · Q');
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '2');
       assert.equal(await count(page, 'discard'), 0);
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1,
