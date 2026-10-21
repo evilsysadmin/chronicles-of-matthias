@@ -53,8 +53,10 @@ jobs:
           PORT: '8090'
         run: |
           set -euo pipefail
+          source frontend/smoke/wait-for-http.sh
           nohup "$RUNNER_TEMP/chronicles-api" > "$RUNNER_TEMP/api.log" 2>&1 &
-          for i in $(seq 1 40); do curl -fs http://127.0.0.1:8090/api/health >/dev/null && break; sleep 0.5; done
+          api_pid=$!
+          wait_for_http http://127.0.0.1:8090/api/health "$api_pid" "$RUNNER_TEMP/api.log" "Go API health"
           curl -fsS http://127.0.0.1:8090/api/health
       - uses: actions/setup-node@v4
         with:
