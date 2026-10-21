@@ -109,6 +109,21 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
   });
 
+  it('Esc cancels an unsafe-exit confirmation first, then closes only the open menu', () => {
+    const key = (patch = {}) => keyEvent('Escape', patch);
+    expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: true, confirmExitWithoutSaving: true }))
+      .toBe('cancel-exit');
+    expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: true })).toBe('close');
+    expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: false })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(key({ repeat: true }), { menuOpen: true })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(key({ target: {
+      isContentEditable: false, closest: () => ({ tagName: 'INPUT' }),
+    } }), { menuOpen: true })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: true, saveBusy: true })).toBe('close');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true, confirmExitWithoutSaving: true }))
+      .toBeNull();
+  });
+
   it('never saves twice, confirms exit by holding Q, or hijacks text and audio inputs', () => {
     const menuOpen = { menuOpen: true };
     for (const guard of ['repeat', 'defaultPrevented', 'isComposing', 'ctrlKey', 'altKey', 'metaKey']) {
