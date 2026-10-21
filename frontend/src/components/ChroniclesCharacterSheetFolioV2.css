@@ -393,15 +393,18 @@
 /* The character dossier is a room-sized interface, not a narrow popup.
    Keep a small safe-area gutter and let the inner folio own scrolling. */
 .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 {
-  width: calc(100vw - 16px);
-  max-width: none;
+  /* Never outgrow the backdrop's padded content box. Previously the
+     viewport-based width ignored that padding and overflowed at 1280px. */
+  width: min(calc(100vw - 16px), 100%);
+  min-width: 0;
+  max-width: 100%;
   height: calc(100dvh - 16px);
   max-height: none;
   box-sizing: border-box;
 }
 @media (max-width: 850px), (max-height: 580px) {
   .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 {
-    width: calc(100vw - 8px);
+    width: min(calc(100vw - 8px), 100%);
     height: calc(100dvh - 8px);
   }
 }

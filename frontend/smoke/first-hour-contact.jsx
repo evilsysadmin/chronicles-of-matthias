@@ -19,6 +19,13 @@ import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import '../src/styles.css';
+// Match the actual first-person game CSS imports. The isolated fixture used
+// to exercise the real sheet without its base and MM3 styles, producing
+// misleading screenshots despite successful equipment actions.
+import '../src/components/ChroniclesOfMatthias.css';
+import '../src/components/ChroniclesCharacterSheet.css';
+import '../src/components/ChroniclesMM3Chrome.css';
+import '../src/components/ChroniclesCharacterSheetMM3.css';
 
 // Find a real, unobstructed enemy directly in front of a traversable road
 // square. Coordinates are discovered from the versioned map, not fabricated.
