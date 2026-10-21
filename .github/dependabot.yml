@@ -11,6 +11,13 @@ updates:
       timezone: Europe/Madrid
     open-pull-requests-limit: 2
     groups:
+      # React and react-dom must advance major versions together.
+      react-major:
+        patterns:
+          - react
+          - react-dom
+        update-types:
+          - major
       frontend-safe-updates:
         update-types:
           - minor
