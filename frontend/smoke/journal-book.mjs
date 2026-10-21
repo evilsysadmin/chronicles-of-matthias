@@ -226,7 +226,12 @@ try {
         const scroll = document.querySelector('.chronicles-journal-modal__scroll');
         const viewport = scroll.getBoundingClientRect();
         const row = element.getBoundingClientRect();
+        const rows = Array.from(document.querySelectorAll('[data-chronicles-quest-id]'));
         return {
+          renderedQuestCount: rows.length,
+          followedPosition: rows.findIndex((node) => node.getAttribute('data-chronicles-quest-id') === 'names-in-wood'),
+          firstQuestId: rows[0]?.getAttribute('data-chronicles-quest-id'),
+          lastQuestId: rows[rows.length - 1]?.getAttribute('data-chronicles-quest-id'),
           scrollTop: scroll.scrollTop,
           scrollHeight: scroll.scrollHeight,
           clientHeight: scroll.clientHeight,
