@@ -351,6 +351,44 @@ try {
       assert.equal(await page.getByRole('button', { name: 'Entrar', exact: true }).count(), 0,
         'Update snooze must not log the player out');
       await page.screenshot({ path: `chronicles-public-${viewport.width}.png`, fullPage: false });
+
+      // The first hour is not complete if a player cannot find the expedition
+      // again. Exercise the REAL API-backed save, exit, browser reload and
+      // resume UI. Avoid inspecting or logging tokens, checkpoint payloads or
+      // user data; the only identity comparison uses accessible portrait labels.
+      await world.locator('details.chronicles-game-menu > summary').click();
+      const saveAndExitMenu = world.locator('[data-chronicles-adventure-menu]');
+      await saveAndExitMenu.waitFor({ state: 'visible', timeout: 8_000 });
+      await saveAndExitMenu.getByRole('button', { name: 'Guardar partida' }).click();
+      await saveAndExitMenu.getByRole('status').filter({
+        hasText: 'Partida guardada correctamente.',
+      }).waitFor({ state: 'visible', timeout: 30_000 });
+      await saveAndExitMenu.getByRole('button', { name: 'Guardar y salir' }).click();
+      const expeditionBook = page.locator('[data-chronicles-save-menu="home"]');
+      await expeditionBook.waitFor({ state: 'visible', timeout: 30_000 });
+      await expeditionBook.getByRole('button', { name: /Continuar expedición/ })
+        .waitFor({ state: 'visible', timeout: 30_000 });
+      await page.screenshot({
+        path: `chronicles-public-return-to-book-${viewport.width}.png`, fullPage: false,
+      });
+
+      // The book must still offer the same saved run after an actual F5,
+      // not merely retain a mounted React component in memory.
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      const recoveredBook = page.locator('[data-chronicles-save-menu="home"]');
+      await recoveredBook.waitFor({ state: 'visible', timeout: 45_000 });
+      await recoveredBook.getByRole('button', { name: /Continuar expedición/ })
+        .click({ timeout: 30_000 });
+      await world.waitFor({ state: 'visible', timeout: 90_000 });
+      await canvas.waitFor({ state: 'visible', timeout: 45_000 });
+      const resumedFirstName = (await world.locator('.chronicles-party-member').first()
+        .getAttribute('aria-label'))?.replace(/^Seleccionar /, '');
+      assert.equal(resumedFirstName, firstHeroName,
+        'The same lead hero must survive server save, exit, F5 and resume');
+      assert.deepEqual(errors, [], 'Browser errors during public save / exit / resume');
+      await page.screenshot({
+        path: `chronicles-public-resumed-${viewport.width}.png`, fullPage: false,
+      });
       console.log(`CHRONICLES_PUBLIC_BROWSER_OK viewport=${viewport.width}`);
     } finally {
       await ctx?.close();
