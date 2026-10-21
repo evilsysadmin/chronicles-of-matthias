@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
-import { chroniclesAdventureMenuShortcut } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesAdventureMenuFolio.css';
@@ -62,6 +62,7 @@ function MenuShortcutFixture() {
         </div>
         <div style={{ position: 'absolute', top: 4, right: 8, zIndex: 50, height: 44 }}>
           <details className="chronicles-game-menu" open={open}
+            onKeyDown={(event) => { chroniclesContainAdventureMenuTab(event, event.currentTarget); }}
             onToggle={(event) => {
               setOpen(event.currentTarget.open);
               if (!event.currentTarget.open) setConfirmExitWithoutSaving(false);
