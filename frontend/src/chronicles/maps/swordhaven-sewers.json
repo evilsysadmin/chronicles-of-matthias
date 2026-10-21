@@ -261,6 +261,168 @@
       },
       "visualScale": 0.9,
       "visualMotion": "grounded"
+    },
+    {
+      "id": "sewers-goblin-drain",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 23,
+      "y": 10,
+      "hpKey": "sewersGoblinDrainHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
+    },
+    {
+      "id": "sewers-spider-conduit",
+      "visualType": "crypt-spider",
+      "name": "araña de cloaca",
+      "x": 17,
+      "y": 12,
+      "hpKey": "sewersSpiderConduitHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
+    },
+    {
+      "id": "sewers-goblin-overflow",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 10,
+      "y": 7,
+      "hpKey": "sewersGoblinOverflowHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
+    },
+    {
+      "id": "sewers-goblin-upper-gallery",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 12,
+      "y": 1,
+      "hpKey": "sewersGoblinUpperGalleryHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
+    },
+    {
+      "id": "sewers-spider-west-channel",
+      "visualType": "crypt-spider",
+      "name": "araña de cloaca",
+      "x": 1,
+      "y": 12,
+      "hpKey": "sewersSpiderWestChannelHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
+    },
+    {
+      "id": "sewers-hound-sunken-bridge",
+      "visualType": "bone-hound",
+      "name": "sabueso del limo",
+      "x": 16,
+      "y": 17,
+      "hpKey": "sewersHoundSunkenBridgeHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      }
+    },
+    {
+      "id": "sewers-goblin-east-culvert",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 17,
+      "y": 2,
+      "hpKey": "sewersGoblinEastCulvertHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
+    },
+    {
+      "id": "sewers-goblin-bottom-shaft",
+      "visualType": "ash-goblin",
+      "name": "goblin de cloaca",
+      "x": 2,
+      "y": 17,
+      "hpKey": "sewersGoblinBottomShaftHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      }
+    },
+    {
+      "id": "sewers-spider-waterworks",
+      "visualType": "crypt-spider",
+      "name": "araña de cloaca",
+      "x": 12,
+      "y": 11,
+      "hpKey": "sewersSpiderWaterworksHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
     }
   ],
   "triggers": [],

@@ -27,13 +27,14 @@ describe('Chronicles Black Iron Foundry', () => {
     expect(foundry.version).toBe(3);
     expect(foundry.grid).toHaveLength(9);
     expect(foundry.grid[0]).toHaveLength(11);
-    expect(foundry.enemies.map((enemy) => enemy.id)).toEqual([
+    expect(foundry.enemies.slice(0, 5).map((enemy) => enemy.id)).toEqual([
       'iron-sentinel',
       'chain-hound',
       'slag-crawler',
       'ember-artificer',
       'scrap-goblin',
     ]);
+    expect(foundry.enemies).toHaveLength(8);
     expect(foundry.enemies.find((enemy) => enemy.id === 'scrap-goblin')?.optional).toBe(true);
     expect(foundry.traps.map((trap) => trap.id)).toEqual(['slag-vent-west', 'chain-plate-east']);
     expect(foundry.treasures.map((treasure) => treasure.id)).toEqual(['foreman-coffer', 'maintenance-locker']);

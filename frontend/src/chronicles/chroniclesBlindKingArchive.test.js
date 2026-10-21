@@ -23,7 +23,10 @@ describe('Chronicles Blind King Archive', () => {
     expect(archive.title).toBe('Archivo del Rey Ciego');
     expect(archive.grid).toHaveLength(9);
     expect(archive.grid[0]).toHaveLength(11);
-    expect(archive.enemies).toHaveLength(5);
+    expect(archive.enemies).toHaveLength(8);
+    expect(archive.enemies.slice(0, 5).map((enemy) => enemy.id)).toEqual([
+      'ledger-warden', 'blind-archivist', 'ink-hound', 'catalogue-spider', 'archive-wisp',
+    ]);
     expect(archive.enemies.find((enemy) => enemy.id === 'archive-wisp')?.optional).toBe(true);
 
     let state = chroniclesMapTransitionState(createChroniclesState(), 'menagerie-of-ash');

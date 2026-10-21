@@ -167,6 +167,60 @@
           }
         ]
       }
+    },
+    {
+      "id": "foundry-crawler-overhead",
+      "visualType": "crypt-spider",
+      "name": "reptante de escoria",
+      "x": 7,
+      "y": 1,
+      "hpKey": "foundryCrawlerOverheadHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
+    },
+    {
+      "id": "foundry-hound-eastern-drain",
+      "visualType": "bone-hound",
+      "name": "sabueso encadenado",
+      "x": 9,
+      "y": 6,
+      "hpKey": "foundryHoundEasternDrainHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      }
+    },
+    {
+      "id": "foundry-crawler-middle-platform",
+      "visualType": "crypt-spider",
+      "name": "reptante de escoria",
+      "x": 7,
+      "y": 4,
+      "hpKey": "foundryCrawlerMiddlePlatformHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      }
     }
   ],
   "triggers": [],
