@@ -256,18 +256,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(1.974 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
     expect(1.974 + glass.geometry.parameters.depth / 2).toBeGreaterThan(1.974 + 0.012 / 2); // Outside limewash surface.
     expect(1.974 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
-    // Four existing solid street-wall strips now read as shallow houses with
-    // sloping roofs. One shared six-triangle geometry keeps the skyline cheap.
+    // Street-wall runs of varying sizes now read as several houses instead of
+    // one flat-topped fortification. Roofs share a six-triangle base mesh.
     const roofRuns = swordhavenFirstBook.landscape.roofRuns;
     expect(roofRuns).toEqual([
       { x: 2, y: 16, width: 4 },
       { x: 13, y: 16, width: 4 },
       { x: 2, y: 20, width: 4 },
       { x: 13, y: 20, width: 4 },
+      { x: 7, y: 16, width: 5 },
+      { x: 4, y: 18, width: 2 },
+      { x: 13, y: 18, width: 2 },
     ]);
     const roofs = town.getObjectByName('chronicles-town-south-pitched-roofs');
     expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
-    expect(roofs.count).toBe(4);
+    expect(roofs.count).toBe(7);
     expect(roofs.castShadow).toBe(false);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
@@ -275,11 +278,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(roofs.geometry.boundingBox.max.x).toBeLessThan(8);
     expect(roofs.geometry.boundingBox.max.z).toBeLessThan(2);
     for (const [index, run] of roofRuns.entries()) {
-      expect(grid[run.y].slice(run.x, run.x + run.width)).toBe('####');
+      expect(grid[run.y].slice(run.x, run.x + run.width)).toBe('#'.repeat(run.width));
       expect(grid[run.y - 1].slice(run.x, run.x + run.width)).toContain('.');
       roofs.getMatrixAt(index, facadeMatrix);
       const roof = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
-      expect(roof.x).toBeCloseTo((run.x + 1.5 - center.x) * 4);
+      expect(roof.x).toBeCloseTo((run.x + (run.width - 1) / 2 - center.x) * 4);
+      const scale = new THREE.Vector3().setFromMatrixScale(facadeMatrix);
+      const actualRoofLength = (4 * 4 - 0.16) * scale.x;
+      expect(actualRoofLength).toBeCloseTo(run.width * 4 - 0.16);
+      expect(scale.y).toBeCloseTo(1);
+      expect(scale.z).toBeCloseTo(1);
       expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
       expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
     }
@@ -352,6 +360,38 @@ describe('Chronicles file-authored exterior renderer', () => {
     // not the old 1.6m parapet with the sky filling half the view.
     expect(urbanWalls.geometry.parameters.height).toBeGreaterThan(1.62 * 3);
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
+  });
+
+  it('rejects overlapping or non-solid roof runs rather than creating floating houses', () => {
+    const grid = [
+      '########',
+      '#......#',
+      '#.####.#',
+      '#......#',
+      '########',
+    ];
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer: true,
+      scenePlan: {
+        mapId: 'test-settlement', regionKind: 'settlement',
+        grid, width: 8, height: 5, center: { x: 3.5, y: 2 }, content: [],
+        landscape: {
+          streetWallHeight: 6.4,
+          roofRuns: [
+            { x: 2, y: 2, width: 4 },
+            { x: 2, y: 2, width: 4 }, // duplicate
+            { x: 3, y: 2, width: 3 }, // overlaps the accepted roof
+            { x: 0, y: 2, width: 2 }, // would cover walkable floor
+            { x: 2, y: 2, width: 7 }, // unsupported span
+          ],
+        },
+      },
+    });
+    const roofs = scene.getObjectByName('chronicles-town-south-pitched-roofs');
+    expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(roofs.count).toBe(1);
+    expect(scene.getObjectByName('chronicles-campaign-visible-blockers').geometry.parameters.height).toBe(6.4);
   });
 
   it('builds the Rookwood forest with pixel-art bark and foliage', () => {
