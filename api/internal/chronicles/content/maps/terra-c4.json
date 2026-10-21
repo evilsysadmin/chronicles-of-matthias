@@ -90,6 +90,96 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-c4-foe-2",
+      "visualType": "road-bandit",
+      "name": "salteador",
+      "x": 18,
+      "y": 2,
+      "hpKey": "terra_c4Foe2Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salteador usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c4-foe-3",
+      "visualType": "ash-goblin",
+      "name": "goblin",
+      "x": 2,
+      "y": 10,
+      "hpKey": "terra_c4Foe3Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c4-foe-4",
+      "visualType": "road-bandit",
+      "name": "salteador",
+      "x": 16,
+      "y": 7,
+      "hpKey": "terra_c4Foe4Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salteador usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

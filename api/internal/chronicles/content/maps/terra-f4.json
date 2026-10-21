@@ -255,6 +255,139 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-f4-foe-6",
+      "visualType": "stone-golem",
+      "name": "el Gólem de la Cantera",
+      "x": 8,
+      "y": 9,
+      "hpKey": "terra_f4Foe6Hp",
+      "maxHp": 47,
+      "retaliation": 7,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba al Gólem de la Cantera con {attack}.",
+        "effects": [
+          {
+            "type": "set",
+            "key": "campF4LeaderDown",
+            "value": true
+          },
+          {
+            "type": "grant-gold",
+            "amount": 26
+          }
+        ],
+        "journal": {
+          "id": "terra-f4-camp",
+          "title": "Cae el Gólem de la Cantera",
+          "body": "Los goblins de la ceniza despertaron al gólem de la cantera vieja y lo adoran como a un rey. Un rey que aplasta todo lo que se acerca. Ya no.",
+          "sigil": "†"
+        }
+      },
+      "defeatedFlag": "campF4LeaderDown",
+      "blockingMessage": "El Gólem de la Cantera no deja pasar a nadie sin pagar.",
+      "visualScale": 1.15
+    },
+    {
+      "id": "terra-f4-foe-7",
+      "visualType": "ash-goblin",
+      "name": "goblin cantero",
+      "x": 18,
+      "y": 9,
+      "hpKey": "terra_f4Foe7Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin cantero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f4-foe-8",
+      "visualType": "ash-goblin",
+      "name": "goblin del martillo",
+      "x": 2,
+      "y": 2,
+      "hpKey": "terra_f4Foe8Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin del martillo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f4-foe-9",
+      "visualType": "ash-salamander",
+      "name": "salamandra de ceniza",
+      "x": 4,
+      "y": 6,
+      "hpKey": "terra_f4Foe9Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
