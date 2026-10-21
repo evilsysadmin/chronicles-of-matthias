@@ -73,14 +73,23 @@ try {
       await followSecond.click();
       assert.equal(await followed.textContent(), 'names-in-wood');
       assert.equal(await followSecond.getAttribute('aria-pressed'), 'true');
+      assert.equal(await second.locator('[data-chronicles-followed-quest="names-in-wood"]').count(), 1,
+        'Followed quest must be identifiable without opening its checkout details');
+      assert.equal(await dialog.locator('[data-chronicles-followed-quest]').count(), 1,
+        'Only one quest can carry the current followed bookmark');
       await first.locator('.chronicles-journal-modal__quest-heading').click();
       const followFirst = first.locator('[data-chronicles-track-quest="banner-contract"]');
       await followFirst.click();
       assert.equal(await followed.textContent(), 'banner-contract');
       assert.equal(await followFirst.getAttribute('aria-pressed'), 'true');
+      assert.equal(await first.locator('[data-chronicles-followed-quest="banner-contract"]').count(), 1);
+      assert.equal(await second.locator('[data-chronicles-followed-quest]').count(), 0,
+        'Changing followed quest must remove the former mark');
       await followFirst.click();
       assert.equal(await followed.textContent(), 'automatico');
       assert.equal(await followFirst.getAttribute('aria-pressed'), 'false');
+      assert.equal(await dialog.locator('[data-chronicles-followed-quest]').count(), 0,
+        'Automatic tracking must not leave a stale followed mark');
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       const completed = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
       assert.equal(await completed.count(), 0, 'Archived quests should not clutter an active expedition');

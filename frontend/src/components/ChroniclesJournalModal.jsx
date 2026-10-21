@@ -179,6 +179,10 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                             <small>{quest.main ? 'Hilo principal' : 'Encargo secundario'}
                               {quest.status === 'completed' ? ' · Resuelto' : ''}</small>
                             <strong>{quest.title}</strong>
+                            {quest.status === 'active' && state?.trackedQuestId === quest.id && (
+                              <span className="chronicles-journal-modal__followed-mark"
+                                data-chronicles-followed-quest={quest.id}>✦ En seguimiento</span>
+                            )}
                             {hint && <em>⌖ {hint.region}</em>}
                           </span>
                           <span aria-hidden="true" className="chronicles-journal-modal__quest-chevron">{expanded ? '−' : '+'}</span>
