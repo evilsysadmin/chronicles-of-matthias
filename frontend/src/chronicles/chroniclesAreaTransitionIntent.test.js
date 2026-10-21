@@ -29,7 +29,7 @@ describe('MM3 area travel confirmations', () => {
     const intent = chroniclesAreaTransitionIntent(unlocked, 'forward');
     expect(intent?.exitId).toBe('black-gate');
     expect(intent?.destinationId).toBeNull(); // Legacy dungeon exit completes the adventure.
-    expect(intent?.question).toContain('¿Quieres salir de Cripta de las Ocho Casillas?');
+    expect(intent?.question).toContain('¿Quieres abandonar Cripta de las Ocho Casillas?');
   });
 
   it('handles interacting with a reciprocal dungeon portal', () => {
