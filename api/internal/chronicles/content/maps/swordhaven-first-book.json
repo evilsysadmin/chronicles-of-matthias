@@ -1008,6 +1008,15 @@
         "maxY": 21,
         "color": "#c7b19c"
       }
+    ],
+    "facadeZones": [
+      {
+        "minX": 1,
+        "maxX": 17,
+        "minY": 16,
+        "maxY": 20,
+        "style": "timber-windows"
+      }
     ]
   }
 }
