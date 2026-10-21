@@ -28,6 +28,9 @@ try {
       await choice.waitFor();
       assert.equal(await page.getByTestId('chronicles-character-draft-kept').count(), 1);
       assert.equal(await page.getByRole('button', { name: 'Continuar edición' }).count(), 1);
+      assert.equal(await page.locator('.chronicles-character-setup__choice-main-actions .primary-btn').innerText(),
+        'Continuar edición', 'Resume must be the primary action with an unfinished draft');
+      assert.equal(await page.getByRole('button', { name: 'Empezar con el grupo preparado' }).count(), 1);
       assert.equal(await page.getByRole('button', { name: '← Salir y descartar borrador' }).count(), 1);
       await page.screenshot({ path: 'smoke-character-return-' + width + '.png' });
 
