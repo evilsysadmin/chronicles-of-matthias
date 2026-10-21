@@ -100,6 +100,16 @@ try {
       await audioInput.focus();
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1);
+      await page.keyboard.press('q');
+      assert.equal(await count(page, 'exit'), 1);
+      // Esc must still dismiss the adventure menu FROM the volume slider;
+      // the opener stays focused and the player can reopen with Enter.
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      const opener = page.locator('.chronicles-game-menu > summary');
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), true);
+      await page.keyboard.press('Enter');
+      await menu.waitFor({ state: 'visible' });
       // The following keys exercise the menu guard, not the slider's native
       // input handling. Move focus back into an ordinary menu button first.
       await menu.getByRole('button', { name: 'Continuar' }).focus();
