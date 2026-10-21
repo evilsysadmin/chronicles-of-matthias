@@ -194,7 +194,7 @@ describe('HUD location for quests outside the current map', () => {
     const objective = chroniclesObjective(state);
     expect(objective).toBe('Busca las placas del bosque.');
     expect(chroniclesHudQuestDestination(state, objective))
-      .toMatchObject({ mapId: 'rookwood-first-book', region: 'Bosque de Rookwood' });
+      .toMatchObject({ mapId: 'rookwood-first-book', region: 'Rookwood' });
     expect(chroniclesHudQuestDestination(state, bannerObjective)).toBeNull();
   });
 });
