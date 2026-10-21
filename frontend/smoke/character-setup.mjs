@@ -60,7 +60,8 @@ try {
       await portraitDialog.waitFor({ state: 'visible' });
       await page.keyboard.press('2');
       assert.equal(await portraitDialog.count(), 1, 'Party hotkey must not close the portrait gallery');
-      assert.match(await portraitDialog.locator('#chronicles-portrait-title').innerText(), /Hildegard/);
+      assert.equal(await portraitDialog.locator('#chronicles-portrait-title').innerText(), `Retrato de ${secondName}`,
+        'The gallery heading must reflect the edited name of hero 2');
       assert.equal(await portraitDialog.locator('button[data-portrait-id^="female-"]').count(), 10);
       assert.equal(await portraitDialog.locator('button[data-portrait-id^="male-"]').count(), 0);
       await page.keyboard.press('4');
