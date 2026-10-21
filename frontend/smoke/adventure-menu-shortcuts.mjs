@@ -34,6 +34,9 @@ try {
       assert.equal(await count(page, 'save'), 1);
       await page.keyboard.press('q');
       await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor({ state: 'visible' });
+      // Keyboard focus must land on the SAFE choice, never on the dangerous
+      // "Sí, salir" button or on an element removed by the state transition.
+      await page.waitForFunction(() => document.activeElement?.textContent?.trim() === 'Cancelar');
       assert.equal(await count(page, 'exit'), 1);
       await page.screenshot({ path: 'smoke-menu-shortcuts-confirm-' + width + '.png' });
       // Holding Q or pressing S while the confirmation is open cannot
@@ -48,6 +51,8 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-confirm]').getAttribute('data-shortcut-confirm'), 'false');
       assert.equal(await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).count(), 0);
+      await page.waitForFunction(() =>
+        document.activeElement?.textContent?.trim() === 'Salir sin guardar · Q');
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       assert.equal(await count(page, 'discard'), 0);
