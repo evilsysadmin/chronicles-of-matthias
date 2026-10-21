@@ -834,6 +834,35 @@
           "sigil": "♛"
         }
       }
+    },
+    {
+      "id": "swordhaven-south-watch-notice",
+      "kind": "lore",
+      "x": 15,
+      "y": 21,
+      "label": "Examinar aviso de la guardia del barrio sur",
+      "when": [
+        {
+          "key": "swordhavenSouthWatchNoticeRead",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "swordhavenSouthWatchNoticeRead",
+            "value": true
+          }
+        ],
+        "message": "Un aviso arrugado advierte de robos en los callejones del sur. La guardia recomienda viajar acompañado; Matthias señala que llegamos un poco tarde para tan brillante consejo.",
+        "journal": {
+          "id": "swordhaven-south-watch-notice-read",
+          "title": "Aviso del barrio sur",
+          "body": "La guardia de Swordhaven advierte de ladrones en los callejones del barrio sur. Conviene explorar sus calles con cautela.",
+          "sigil": "✦"
+        }
+      }
     }
   ],
   "treasures": [],

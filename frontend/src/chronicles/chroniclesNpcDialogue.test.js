@@ -45,6 +45,18 @@ describe('Chronicles NPC dialogue · MM3 audience', () => {
     }
   });
 
+  it('puts a one-time south-ward warning on reachable floor without hiding the main town services', () => {
+    const town = chroniclesMapById('swordhaven-first-book');
+    const clue = town.interactables.find((entry) => entry.id === 'swordhaven-south-watch-notice');
+    expect(clue).toMatchObject({ kind: 'lore', x: 15, y: 21 });
+    expect(town.grid[clue.y][clue.x]).toBe('.');
+    expect(clue.when).toEqual([{ key: 'swordhavenSouthWatchNoticeRead', falsy: true }]);
+    expect(clue.action.effects).toContainEqual({
+      type: 'set', key: 'swordhavenSouthWatchNoticeRead', value: true,
+    });
+    expect(clue.action.journal.id).toBe('swordhaven-south-watch-notice-read');
+  });
+
   it('never grants rewards when merely opening a dialogue; talk uses the campaign reducer', () => {
     const before = at(11, 10);
     const audience = chroniclesNpcDialogueForState(before, chroniclesContextualContentAction(before));
