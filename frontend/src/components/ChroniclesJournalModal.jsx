@@ -4,7 +4,7 @@ import { useEscapeToClose } from '../useEscapeToClose.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesQuestRegionHint, chroniclesQuestRegionContext } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
-import { chroniclesQuestRecordedEvents } from '../chronicles/chroniclesQuestRecordedEvents.js';
+import { chroniclesQuestRecordedEvents, chroniclesQuestsForRecordedEvent } from '../chronicles/chroniclesQuestRecordedEvents.js';
 import './ChroniclesJournalModal.css';
 
 // Never invoke Element.scrollIntoView() from this portal: that API may also
@@ -362,7 +362,22 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                     className={memoryJumpId === entry.id ? 'is-jump-target' : undefined}
                     tabIndex={memoryJumpId === entry.id ? -1 : undefined}>
                     <span className="chronicles-journal-modal__folio-sigil" aria-hidden="true">{entry.sigil}</span>
-                    <div><strong>{entry.title}</strong><p>{entry.body}</p></div>
+                    <div>
+                      <strong>{entry.title}</strong><p>{entry.body}</p>
+                      {chroniclesQuestsForRecordedEvent(entry.id, quests).map((quest) => (
+                        <button key={quest.id} type="button"
+                          className="chronicles-journal-modal__memory-quest-link"
+                          data-chronicles-memory-quest={quest.id}
+                          onClick={() => {
+                            setOpenedQuestId(quest.id);
+                            if (quest.status === 'completed' && active.length > 0) setArchiveExpanded(true);
+                            setReturnToQuestId(quest.id);
+                            changeChapter('quests');
+                          }}>
+                          ↗ Abrir encargo: {quest.title}
+                        </button>
+                      ))}
+                    </div>
                   </li>
                 ))}</ol>
               ) : <p className="chronicles-journal-modal__empty">Todavía no se han escrito folios de expedición.</p>}
