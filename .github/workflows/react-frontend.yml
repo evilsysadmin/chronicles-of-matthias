@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -55,7 +55,7 @@ jobs:
       # Avoid Chromium CDN/DNS fetches on every PR and main SHA.
       # The cache key is intentionally exact-versioned; never restore a different browser revision.
       - name: Restore pinned Playwright Chromium browser
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-1.64.1
@@ -94,7 +94,7 @@ jobs:
           node smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-mount-smoke
@@ -103,7 +103,7 @@ jobs:
           compression-level: 0
           retention-days: 7
       # Infra independently rebuilds pinned releases; this bundle is for PR inspection.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: github.event_name == 'pull_request'
         with:
           name: chronicles-frontend-dist
