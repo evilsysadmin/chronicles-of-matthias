@@ -172,8 +172,8 @@
     },
     {
       "id": "terra-e2-foe-3",
-      "visualType": "harpy",
-      "name": "arpía del brezal",
+      "visualType": "bandit-archer",
+      "name": "ballestero de las colinas",
       "x": 12,
       "y": 5,
       "hpKey": "terra_e2Foe3Hp",
@@ -181,17 +181,17 @@
       "retaliation": 4,
       "toHit": 6,
       "armorClass": 3,
-      "agility": 5,
+      "agility": 4,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
-        "attackReach": 1,
-        "engagedMovement": "knight-chase",
-        "engageRange": 4
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con arpía del brezal usando {attack}.",
+        "message": "{attacker} acaba con ballestero de las colinas usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

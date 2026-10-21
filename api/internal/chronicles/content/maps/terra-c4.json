@@ -94,7 +94,7 @@
     {
       "id": "terra-c4-foe-2",
       "visualType": "bandit-archer",
-      "name": "ballestero del camino",
+      "name": "ballestero",
       "x": 18,
       "y": 2,
       "hpKey": "terra_c4Foe2Hp",
@@ -112,7 +112,7 @@
         "disengageRange": 1
       },
       "onDefeat": {
-        "message": "{attacker} acaba con ballestero del camino usando {attack}.",
+        "message": "{attacker} acaba con ballestero usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
