@@ -45,8 +45,16 @@ describe('Chronicles declarative map catalog', () => {
     expect(chroniclesReconcileCurrentMapEnemyHp(defeated)[bandit.hpKey]).toBe(0);
     const slain = { mapId: map.id, slainEnemies: { [map.id]: [1] } };
     expect(chroniclesReconcileCurrentMapEnemyHp(slain)[watch.hpKey]).toBe(0);
+    // A pre-density save can know the original two HP keys but not later
+    // authored enemies. Fill ONLY the missing ones, preserving exact wounds.
     const wounded = { mapId: map.id, [bandit.hpKey]: 1, [watch.hpKey]: 0 };
-    expect(chroniclesReconcileCurrentMapEnemyHp(wounded)).toBe(wounded);
+    const reconciled = chroniclesReconcileCurrentMapEnemyHp(wounded);
+    expect(reconciled).toMatchObject({ [bandit.hpKey]: 1, [watch.hpKey]: 0 });
+    map.enemies.slice(2).forEach((enemy) => {
+      expect(reconciled[enemy.hpKey]).toBe(enemy.maxHp);
+    });
+    // Once the save has every keyed enemy, normalization is idempotent.
+    expect(chroniclesReconcileCurrentMapEnemyHp(reconciled)).toBe(reconciled);
     expect(chroniclesReconcileCurrentMapEnemyHp({ mapId: 'swordhaven-square' }))
       .toEqual({ mapId: 'swordhaven-square' });
   });
