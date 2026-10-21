@@ -146,6 +146,211 @@
           "brutal-strike"
         ]
       }
+    },
+    {
+      "id": "rookwood-bramble-hound",
+      "visualType": "bone-hound",
+      "name": "sabueso de las zarzas",
+      "x": 4,
+      "y": 4,
+      "hpKey": "rookwoodBrambleHoundHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a sabueso de las zarzas con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bone-hound",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-hollow-spider",
+      "visualType": "weaver-spider",
+      "name": "araña del tronco hueco",
+      "x": 9,
+      "y": 5,
+      "hpKey": "rookwoodHollowSpiderHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a araña del tronco hueco con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "weaver-spider",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-trail-hound",
+      "visualType": "bone-hound",
+      "name": "lobo del sendero",
+      "x": 12,
+      "y": 8,
+      "hpKey": "rookwoodTrailHoundHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a lobo del sendero con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bone-hound",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-shadow-weaver",
+      "visualType": "weaver-spider",
+      "name": "tejedora de las sombras",
+      "x": 15,
+      "y": 11,
+      "hpKey": "rookwoodShadowWeaverHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a tejedora de las sombras con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "weaver-spider",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-tangle-hound",
+      "visualType": "bone-hound",
+      "name": "sabueso del sotobosque",
+      "x": 8,
+      "y": 10,
+      "hpKey": "rookwoodTangleHoundHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derrota a sabueso del sotobosque con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 2
+          }
+        ]
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bone-hound",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
     }
   ],
   "triggers": [],
