@@ -309,6 +309,18 @@ try {
           }
           assert.equal(await scene.evaluate((element) => getComputedStyle(element).pointerEvents), 'none',
             'Guild art must never intercept the membership button');
+          const seal = await dialog.locator('.chronicles-guild__membership').evaluate((node) => ({
+            image: getComputedStyle(node, '::after').backgroundImage,
+            pointer: getComputedStyle(node, '::after').pointerEvents,
+            display: getComputedStyle(node, '::after').display,
+          }));
+          assert.equal(seal.pointer, 'none', 'The guild seal must not intercept join controls');
+          if (width >= 901 && height >= 700) {
+            assert.notEqual(seal.image, 'none', 'The desktop guild seal is missing');
+            assert.notEqual(seal.display, 'none', 'Desktop guild seal should be visible');
+          } else {
+            assert.equal(seal.display, 'none', 'Compact guild must prioritize spells over decoration');
+          }
         }
         await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
         if (room === 'odo') {

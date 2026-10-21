@@ -237,6 +237,25 @@
   cursor: not-allowed;
 }
 
+/* Emblem of the Three Forces: a small, static, diegetic engraving filling
+   unused desktop space. Decorative only — never another membership control. */
+.chronicles-guild__membership::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  width: min(84%, 320px);
+  aspect-ratio: 1;
+  background: url('../assets/chronicles/ui/shops/guild-three-forces-seal.svg') center / contain no-repeat;
+  opacity: .27;
+  pointer-events: none;
+}
+
+@media (max-width: 900px), (max-height: 650px) {
+  .chronicles-guild__membership::after { display: none; }
+}
+
 .chronicles-guild__membership {
   grid-area: membership;
   display: flex;
