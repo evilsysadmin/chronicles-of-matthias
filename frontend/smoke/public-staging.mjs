@@ -160,6 +160,42 @@ try {
       const firstSteps = world.locator('[data-chronicles-first-steps]:visible');
       const visibleFirstSteps = await firstSteps.count();
       if (visibleFirstSteps > 1) {
+        // Playwright's :visible checks geometry, not whether an element is
+        // occluded. Diagnose every candidate before changing game behavior.
+        // Deliberately emit structural metadata only: no user/account text.
+        const census = await page.evaluate(() => {
+          const roots = [...document.querySelectorAll('[data-chronicles="true"]')];
+          const nodes = [...document.querySelectorAll('[data-chronicles-first-steps]')];
+          const describe = (node) => {
+            const box = node.getBoundingClientRect();
+            const style = getComputedStyle(node);
+            const x = Math.max(0, Math.min(innerWidth - 1, box.left + box.width / 2));
+            const y = Math.max(0, Math.min(innerHeight - 1, box.top + box.height / 2));
+            const hit = document.elementFromPoint(x, y);
+            const ancestors = [];
+            for (let p = node.parentElement; p && ancestors.length < 6; p = p.parentElement) {
+              ancestors.push({
+                tag: p.tagName.toLowerCase(),
+                cls: typeof p.className === 'string' ? p.className.slice(0, 100) : '',
+                hidden: Boolean(p.hidden),
+              });
+            }
+            return {
+              rootIndex: roots.indexOf(node.closest('[data-chronicles="true"]')),
+              tag: node.tagName.toLowerCase(),
+              rect: [box.x, box.y, box.width, box.height].map(n => Math.round(n)),
+              display: style.display, visibility: style.visibility,
+              opacity: style.opacity, position: style.position,
+              zIndex: style.zIndex, pointerEvents: style.pointerEvents,
+              hitWithinGuide: Boolean(hit && node.contains(hit)),
+              hitOwnGuide: Boolean(hit && hit.closest('[data-chronicles-first-steps]') === node),
+              ancestors,
+            };
+          };
+          return { worldRoots: roots.length, guideNodes: nodes.length,
+            candidates: nodes.slice(0, 8).map(describe) };
+        });
+        console.error('CHRONICLES_FIRST_STEPS_DOM_CENSUS', JSON.stringify(census));
         await page.screenshot({
           path: `chronicles-public-first-steps-duplicate-${viewport.width}.png`,
         }).catch(() => {});
