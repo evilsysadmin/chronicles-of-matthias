@@ -8,9 +8,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Only superseded PR revisions are cancelled. Keep exact-SHA main API
+# verification running even during rapid merges; staging admits only latest main.
 concurrency:
-  group: chronicles-api-${{ github.ref }}
-  cancel-in-progress: true
+  group: chronicles-api-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
     name: api-e2e
