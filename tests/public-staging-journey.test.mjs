@@ -10,9 +10,13 @@ test('real public source and API; no fake Chronicles backend', () => {
     "CHRONICLES_SOURCE_SHA",
     "CHRONICLES_STAGING_INVITE_CODE",
     "isApi(response, 'POST', /\\/api\\/chronicles\\/runs$/, 201)",
-    "isApi(response, 'PUT', /\\/api\\/chronicles\\/runs\\/[^/]+\\/checkpoint$/, 200)",
+    'assert.equal(response.status(), 200',
     "isApi(response, 'GET', /\\/api\\/chronicles\\/runs\\/[^/]+\\/bootstrap$/, 200)",
   ]) assert.ok(source.includes(expected), expected);
+  assert.ok(source.includes("page.locator('button[data-chronicles-menu-save]')"));
+  assert.ok(source.includes("response.request().method() === 'PUT'"));
+  const menu = readFileSync('frontend/src/components/ChroniclesAdventureMenu.jsx', 'utf8');
+  assert.ok(menu.includes('data-chronicles-menu-save'));
   assert.doesNotMatch(source, /page\.route\([^)]*chronicles-api-staging/);
 });
 test('create a character, move and save, then restore on a clean mobile and desktop context', () => {
