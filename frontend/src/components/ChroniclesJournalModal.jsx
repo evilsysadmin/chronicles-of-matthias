@@ -73,7 +73,8 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       reveal();
       secondFrame = requestAnimationFrame(reveal);
     });
-    document.fonts?.ready?.then(reveal).catch(() => {});
+    const fontsReady = document.fonts?.ready;
+    if (fontsReady) fontsReady.then(reveal, () => {});
     return () => {
       stillOpen = false;
       cancelAnimationFrame(firstFrame);
