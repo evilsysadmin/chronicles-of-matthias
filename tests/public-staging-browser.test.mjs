@@ -71,3 +71,14 @@ test('duplicate visible guides emit structural census but never bypass release v
   assert.ok(!source.includes('console.error(\'CHRONICLES_FIRST_STEPS_DOM_CENSUS\', JSON.stringify(nodes)'),
     'do not dump user DOM or account details');
 });
+
+test('duplicate guides distinguish React-owned and orphan DOM nodes without logging props', () => {
+  for (const marker of ['__reactFiber$', 'reactFiberAttached', 'reactFiberHostMatches',
+    'reactParentMatchesDom', 'reactFiberTypes', 'domSiblingIndex']) {
+    assert.ok(source.includes(marker), marker);
+  }
+  assert.ok(source.includes('if (visibleFirstSteps > 1)'),
+    'real overlapping guides must still fail the staging release');
+  assert.ok(!source.includes('JSON.stringify(fiber)'),
+    'never serialize component props, local state or tokens');
+});

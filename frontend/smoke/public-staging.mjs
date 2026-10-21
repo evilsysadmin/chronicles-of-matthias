@@ -180,8 +180,28 @@ try {
                 hidden: Boolean(p.hidden),
               });
             }
+            // Inspect only React's host ownership and component type names;
+            // never emit keys, props, session state or account data.
+            const fiberProperty = Object.keys(node).find(key => key.startsWith('__reactFiber$'));
+            const fiber = fiberProperty ? node[fiberProperty] : null;
+            const fiberTypes = [];
+            let reactParentMatchesDom = false;
+            for (let f = fiber; f && fiberTypes.length < 12; f = f.return) {
+              const type = f.type;
+              const name = typeof type === 'string' ? type
+                : typeof type === 'function' ? (type.displayName || type.name || 'function') : null;
+              if (name) fiberTypes.push(name.slice(0, 90));
+              if (f !== fiber && f.stateNode === node.parentElement) {
+                reactParentMatchesDom = true;
+              }
+            }
             return {
               rootIndex: roots.indexOf(node.closest('[data-chronicles="true"]')),
+              reactFiberAttached: Boolean(fiber),
+              reactFiberHostMatches: Boolean(fiber && fiber.stateNode === node),
+              reactParentMatchesDom,
+              reactFiberTypes: fiberTypes,
+              domSiblingIndex: [...node.parentElement.children].indexOf(node),
               tag: node.tagName.toLowerCase(),
               rect: [box.x, box.y, box.width, box.height].map(n => Math.round(n)),
               display: style.display, visibility: style.visibility,
