@@ -23,12 +23,12 @@ export function chroniclesAdventureMenuShortcut(event, {
 } = {}) {
   if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
     || event.ctrlKey || event.altKey || event.metaKey) return null;
+  // Escape is a dialogue-level dismissal even with a range/text control
+  // focused. Every other shortcut remains owned by focused form controls.
+  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit' : 'close';
   const target = event.target;
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
-  // Esc cancels a dangerous exit prompt first. Only the second Esc closes
-  // the menu, so a keyboard dismissal cannot accidentally abandon a run.
-  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit' : 'close';
   if (saveBusy || confirmExitWithoutSaving) return null;
   if (event.key === 's' || event.key === 'S') return 'save';
   if (event.key === 'q' || event.key === 'Q') return 'request-exit';
