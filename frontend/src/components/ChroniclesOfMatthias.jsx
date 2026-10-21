@@ -2038,6 +2038,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         visitedMapIds={Object.keys(automapVisitedByMap)}
         visitedCells={automapVisitedByMap[state.mapId] || []}
         onClose={() => setAutomapOpen(false)}
+        onOpenSheet={(memberId) => openMemberSheet(memberId)}
       />
     </div>
   );
