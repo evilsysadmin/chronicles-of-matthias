@@ -56,6 +56,16 @@ function Fixture() {
       });
       setOpened(true);
     }}>Otra expedición</button>
+    <button data-test-only-completed type="button" onClick={() => {
+      setCampaign({
+        ...source,
+        quests: {
+          'road-bandits': { id: 'road-bandits', status: 'completed', order: 1,
+            title: 'Bandidos del Camino', objective: 'El camino está limpio.' },
+        },
+      });
+      setOpened(true);
+    }}>Compañía sin encargos pendientes</button>
     <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
     <ChroniclesJournalModal open={opened} state={campaign}
       entries={chroniclesJournalEntries(campaign)}
