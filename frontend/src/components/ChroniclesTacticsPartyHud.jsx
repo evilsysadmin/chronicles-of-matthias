@@ -138,7 +138,7 @@ export default function ChroniclesTacticsPartyHud({
                 title={`Ficha de ${member.name}`}
               >
                 <span className="chronicles-party-hud__portrait-frame" aria-hidden="true">
-                  <img src={chroniclesPartyPortraitUrl(member.id)} alt="" />
+                  <img src={chroniclesPartyPortraitUrl(member)} alt="" />
                   {damageCue?.targetId === member.id ? (
                     <span
                       key={damageCue.token}
