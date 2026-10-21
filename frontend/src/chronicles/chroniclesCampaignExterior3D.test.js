@@ -51,7 +51,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     const scene = new THREE.Scene();
     const built = buildChroniclesCampaignExterior(scene, { scenePlan: demo, coarsePointer: true });
     expect(scene.getObjectByName('chronicles-campaign-terrain')).toBeTruthy();
-    expect(scene.getObjectByName('chronicles-campaign-road')).toBeTruthy();
+    const road = scene.getObjectByName('chronicles-campaign-road');
+    expect(road).toBeInstanceOf(THREE.InstancedMesh);
+    // Wilderness still paves the cardinal axes, not the whole walkable field.
+    expect(road.count).toBe(4);
     const walls = scene.getObjectByName('chronicles-campaign-visible-blockers');
     expect(walls).toBeInstanceOf(THREE.InstancedMesh);
     expect(walls.count).toBe(demo.grid.join('').split('#').length - 1);
@@ -92,6 +95,19 @@ describe('Chronicles file-authored exterior renderer', () => {
     const town = scene.getObjectByName('chronicles-campaign-town');
     const names = town.children.map(child => child.name).filter(name => name.startsWith('swordhaven-building-'));
     expect(names).toHaveLength(10);
+    const paved = scene.getObjectByName('chronicles-campaign-road');
+    expect(paved).toBeInstanceOf(THREE.InstancedMesh);
+    expect(paved.count).toBe([...grid.join('')].filter(cell => cell === '.').length);
+    // Row-major instances really reach the off-axis alleys in the south.
+    const alley = { x: 3, y: 17 };
+    const alleyIndex = grid.slice(0, alley.y).reduce((sum, row) =>
+      sum + [...row].filter(tile => tile === '.').length, 0)
+      + [...grid[alley.y].slice(0, alley.x)].filter(tile => tile === '.').length;
+    const alleyMatrix = new THREE.Matrix4();
+    paved.getMatrixAt(alleyIndex, alleyMatrix);
+    const alleyPosition = new THREE.Vector3().setFromMatrixPosition(alleyMatrix);
+    expect(alleyPosition.x).toBeCloseTo((alley.x - center.x) * 4);
+    expect(alleyPosition.z).toBeCloseTo((alley.y - center.y) * 4);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
