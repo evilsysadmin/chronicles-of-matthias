@@ -43,6 +43,45 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     };
   }, [open]);
 
+  // The tracked contract may be many pages below the current book leaf.
+  // Align its heading within the *internal* scroll area without stealing
+  // focus or scrolling the underlying 3D world. Typography can settle a
+  // frame later, so recheck after paint and after the fonts become ready.
+  useEffect(() => {
+    if (!open || !state?.trackedQuestId) return;
+    const trackedId = state.trackedQuestId;
+    if (!chroniclesQuestLogEntries(state).some(
+      (quest) => quest.id === trackedId && quest.status === 'active'
+    )) return;
+    let stillOpen = true;
+    let secondFrame = 0;
+    const reveal = () => {
+      if (!stillOpen) return;
+      const viewport = scrollRef.current;
+      const entry = Array.from(viewport?.querySelectorAll('[data-chronicles-quest-id]') || [])
+        .find((node) => node.getAttribute('data-chronicles-quest-id') === trackedId);
+      const heading = entry?.querySelector('.chronicles-journal-modal__quest-heading');
+      if (!viewport || !heading) return;
+      const bounds = viewport.getBoundingClientRect();
+      const row = heading.getBoundingClientRect();
+      const margin = 20;
+      if (row.bottom > bounds.bottom - margin) viewport.scrollTop += row.bottom - bounds.bottom + margin;
+      else if (row.top < bounds.top + margin) viewport.scrollTop += row.top - bounds.top - margin;
+    };
+    reveal();
+    const firstFrame = requestAnimationFrame(() => {
+      reveal();
+      secondFrame = requestAnimationFrame(reveal);
+    });
+    const fontsReady = document.fonts?.ready;
+    if (fontsReady) fontsReady.then(reveal, () => {});
+    return () => {
+      stillOpen = false;
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [open]);
+
   // Focus the actual saved folio only after React has mounted the Memories
   // chapter. Never synthesize an event or scroll the underlying game world.
   useEffect(() => {

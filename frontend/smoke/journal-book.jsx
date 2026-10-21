@@ -72,6 +72,20 @@ function Fixture() {
       setCampaign({ ...source, quests: {} });
       setOpened(true);
     }}>Compañía sin encargos</button>
+    <button data-test-long-journal type="button" onClick={() => {
+      const quests = Object.fromEntries(Array.from({ length: 24 }, (_, index) => [
+        'regional-chore-' + index,
+        { id: 'regional-chore-' + index, order: index + 1, status: 'active',
+          title: 'Recado del camino ' + (index + 1),
+          objective: 'Un recado pendiente de la compañía.' },
+      ]));
+      // The canonical quest log sorts ascending order. Put the tracked row last.
+      quests['names-in-wood'] = { id: 'names-in-wood', order: 100, status: 'active',
+        title: 'Los nombres del bosque', objective: 'Visita el Roble del Claro.' };
+      const nextCampaign = { ...source, quests };
+      setCampaign(chroniclesReduce(nextCampaign, { type: 'track-quest', questId: 'names-in-wood' }));
+      setOpened(true);
+    }}>Muchas misiones seguidas</button>
     <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
     <ChroniclesJournalModal open={opened} state={campaign}
       entries={chroniclesJournalEntries(campaign)}
