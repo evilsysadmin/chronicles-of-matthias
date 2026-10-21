@@ -23,6 +23,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
   const scrollRef = useRef(null);
+  const archiveRevealRequestedRef = useRef(false);
   const [chapter, setChapter] = useState('quests');
   const [openedQuestId, setOpenedQuestId] = useState(null);
   const [archiveExpanded, setArchiveExpanded] = useState(false);
@@ -37,6 +38,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       setChapter('quests');
       setOpenedQuestId(null);
       setArchiveExpanded(false);
+      archiveRevealRequestedRef.current = false;
       setMemoryJumpId(null);
       setReturnToQuestId(null);
     }
@@ -92,6 +94,18 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       cancelAnimationFrame(secondFrame);
     };
   }, [open]);
+
+  // An archive opened by the reader can sit below many active contracts.
+  // Reveal its heading within the leaf and announce the new section with
+  // keyboard focus. Do not jump when Memories opens an archived quest itself.
+  useEffect(() => {
+    if (!open || chapter !== 'quests' || !archiveExpanded || !archiveRevealRequestedRef.current) return;
+    archiveRevealRequestedRef.current = false;
+    const heading = scrollRef.current?.querySelector('.chronicles-journal-modal__archive-heading h4');
+    if (!heading) return;
+    revealWithinBook(scrollRef.current, heading);
+    heading.focus({ preventScroll: true });
+  }, [open, chapter, archiveExpanded]);
 
   // Focus the actual saved folio only after React has mounted the Memories
   // chapter. Never synthesize an event or scroll the underlying game world.
@@ -240,6 +254,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                 <button type="button" className="chronicles-journal-modal__archive-toggle"
                   aria-expanded={archiveExpanded} aria-controls="chronicles-journal-quest-pages"
                   onClick={() => {
+                    archiveRevealRequestedRef.current = !archiveExpanded;
                     if (archiveExpanded && quests.some((quest) => quest.status === 'completed' && quest.id === selectedId)) {
                       setOpenedQuestId(null);
                     }
@@ -261,7 +276,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                         {archiveExpanded && active.length > 0 && quest.status === 'completed'
                           && index === unfinished.length && (
                           <li className="chronicles-journal-modal__archive-heading" role="presentation">
-                            <h4>Gestas concluidas</h4>
+                            <h4 tabIndex={-1}>Gestas concluidas</h4>
                             <p>Las páginas resueltas conservan su historia.</p>
                           </li>
                         )}
