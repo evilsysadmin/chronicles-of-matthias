@@ -1,3 +1,5 @@
+import { chroniclesGoldBalance } from './chronicles/chroniclesContentRuntime.js';
+
 function speakerFromParty(state, preferredId) {
   const party = Array.isArray(state?.party) ? state.party : [];
   const preferred = party.find((member) => member.id === preferredId && member.hp > 0);
@@ -21,6 +23,22 @@ export function chroniclesPartyBark(previous, next) {
   if (fallen) {
     const preferred = fallen.id === 'matthias' ? 'rook' : 'matthias';
     return bark(next, preferred, `${fallen.name} ha caído. Seguimos vivos primero; la épica ya rellenará el informe.`, `down:${fallen.id}`);
+  }
+
+  // The First Book's banner contract is paid exactly once by the authored
+  // action. A newly recorded receipt (not a guessed quest status or location)
+  // makes a useful first reward moment without changing the economy.
+  const firstBannerReceipt = 'swordhaven:banner-contract:v1';
+  if (next.mapId === 'swordhaven-first-book'
+    && next.quests?.['banner-contract']?.status === 'completed'
+    && next.claimedRewards?.includes(firstBannerReceipt)
+    && !previous.claimedRewards?.includes(firstBannerReceipt)) {
+    const paid = chroniclesGoldBalance(next) - chroniclesGoldBalance(previous);
+    return bark(next, 'matthias',
+      paid > 0
+        ? `El contrato ha pagado ${paid} monedas de oro. La intendencia de Swordhaven puede equiparnos para la próxima salida.`
+        : 'Contrato entregado. Antes de regresar al camino, revisemos el equipo en la intendencia de Swordhaven.',
+      'first-book-banner-paid');
   }
 
   if (!previous.sigilAwake && next.sigilAwake) {
