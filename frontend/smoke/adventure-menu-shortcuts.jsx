@@ -62,7 +62,18 @@ function MenuShortcutFixture() {
         </div>
         <div style={{ position: 'absolute', top: 4, right: 8, zIndex: 50, height: 44 }}>
           <details className="chronicles-game-menu" open={open}
-            onKeyDown={(event) => { chroniclesContainAdventureMenuTab(event, event.currentTarget); }}
+            onKeyDown={(event) => {
+              if (event.key === 'Tab') {
+                const activeBefore = document.activeElement;
+                const trapped = chroniclesContainAdventureMenuTab(event, event.currentTarget);
+                document.body.dataset.tabTrapDebug = JSON.stringify({
+                  trapped, shift: event.shiftKey, menuOpen: event.currentTarget.open,
+                  target: event.target?.outerHTML?.slice(0, 140),
+                  before: activeBefore?.outerHTML?.slice(0, 140),
+                  after: document.activeElement?.outerHTML?.slice(0, 140),
+                });
+              }
+            }}
             onToggle={(event) => {
               setOpen(event.currentTarget.open);
               if (!event.currentTarget.open) setConfirmExitWithoutSaving(false);
