@@ -102,6 +102,7 @@ jobs:
     timeout-minutes: 5
     env:
       INFRA_ACTIONS_TOKEN: ${{ secrets.SHADOWOPS_INFRA_ACTIONS_TOKEN }}
+      SOURCE_READ_TOKEN: ${{ github.token }}
       SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Dispatch only the two dedicated staging CD workflows
@@ -113,6 +114,20 @@ jobs:
             echo '::error title=Chronicles CD dispatch not sent::SHADOWOPS_INFRA_ACTIONS_TOKEN is missing; hourly Infra polls remain active.'
             echo '**State: dispatch failed.** Token missing. Hourly Infra reconciliation remains available.' >> "$GITHUB_STEP_SUMMARY"
             exit 1
+          fi
+          # Source CI may have gone green before this dispatch job was queued,
+          # while a newer protected-main commit arrived meanwhile. Check
+          # freshness again immediately before spending the Infra token.
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          current="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api repos/evilsysadmin/chronicles-of-matthias/commits/main --jq .sha)"
+          [[ "$current" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'CHRONICLES_DISPATCH_INVALID_MAIN_SHA' >&2
+            exit 65
+          }
+          if [[ "$SOURCE_SHA" != "$current" ]]; then
+            echo "::notice title=Chronicles staging dispatch superseded::Skipped obsolete $SOURCE_SHA; current main is $current"
+            printf '**State: superseded before dispatch.** Current main is `%s`; no Infra workflow was requested.\n' "$current" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
           # Never pass the token, SHA or environment from an untrusted payload.
           GH_TOKEN="$INFRA_ACTIONS_TOKEN" gh workflow run chronicles-api-staging.yml \
