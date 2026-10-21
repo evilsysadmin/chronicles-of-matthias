@@ -92,6 +92,29 @@ try {
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.body.style.overflow), '',
         'Closing journal must restore scrolling');
+
+      // A new visit must open the followed quest instead of the old chapter
+      // or the previous manually expanded row.
+      await page.locator('[data-test-reopen-followed]').click();
+      await dialog.waitFor({ state: 'visible' });
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
+        'A fresh journal visit should open the actually followed quest');
+      assert.equal(await first.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'false');
+      await tabMemories.click();
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+
+      // The portal remains mounted across runs. Old quest selection must
+      // never leave the next expedition with a mysteriously blank folio.
+      await page.locator('[data-test-another-expedition]').click();
+      await dialog.waitFor({ state: 'visible' });
+      assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
+      const nextQuest = dialog.locator('[data-chronicles-quest-id="another-adventure"]');
+      assert.equal(await nextQuest.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
+      assert.equal(await first.count(), 0, 'Old expedition quests must not remain visible');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
       console.log('CHRONICLES_JOURNAL_BOOK_OK ' + width + 'x' + height);
     } catch (error) {
