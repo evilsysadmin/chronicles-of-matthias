@@ -156,6 +156,21 @@ describe('Chronicles landscape after switching apps', () => {
     expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
   });
 
+  it('never asks to recover fullscreen that the browser refused on entry', async () => {
+    const { win, doc, screenApi } = setup();
+    await releaseChroniclesLandscape({ doc, screenApi });
+    doc.documentElement.requestFullscreen = vi.fn(async () => {
+      throw new Error('fullscreen not allowed');
+    });
+    const result = await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
+    // Some embedded browser engines allow a landscape lock even without
+    // fullscreen; this must not create an immediate return-to-landscape modal.
+    expect(result).toEqual({ requested: true, fullscreen: false, landscape: true });
+    expect(doc.fullscreenElement).toBeNull();
+    expect(shouldRelockChroniclesOnTap({ win, doc })).toBe(false);
+    await releaseChroniclesLandscape({ doc, screenApi });
+  });
+
   it('does nothing while hidden or already in landscape', async () => {
     const { win, doc, screenApi, rotate } = setup();
     await requestChroniclesLandscapeOnEntry({ win, doc, screenApi });
