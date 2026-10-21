@@ -66,6 +66,10 @@ function Fixture() {
       });
       setOpened(true);
     }}>Compañía sin encargos pendientes</button>
+    <button data-test-no-quests type="button" onClick={() => {
+      setCampaign({ ...source, quests: {} });
+      setOpened(true);
+    }}>Compañía sin encargos</button>
     <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
     <ChroniclesJournalModal open={opened} state={campaign}
       entries={chroniclesJournalEntries(campaign)}

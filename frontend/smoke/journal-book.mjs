@@ -23,6 +23,8 @@ try {
       const tabMemories = dialog.getByRole('tab', { name: /Memorias/ });
       assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
       assert.equal(await tabMemories.getAttribute('aria-selected'), 'false');
+      await dialog.getByRole('heading', { name: 'Los asuntos pendientes' }).waitFor();
+      assert.match(await tabQuests.innerText(), /2 pendientes/);
       assert.equal(await dialog.getByRole('tabpanel').count(), 1,
         'Journal should show one chapter at a time, not a two-panel dashboard');
       // The book announces tab semantics, so readers should also get standard
@@ -146,8 +148,18 @@ try {
       const oldDeeds = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
       assert.equal(await oldDeeds.count(), 1,
         'When no active quests exist, completed contracts must stay accessible');
+      await dialog.getByRole('heading', { name: 'Las gestas concluidas' }).waitFor();
+      assert.match(await tabQuests.innerText(), /1 resuelto/);
+      assert.match(await dialog.getByRole('tabpanel').innerText(), /conservan los hechos que vivimos/);
       assert.equal(await oldDeeds.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await archive.count(), 0, 'An all-completed journal must not hide its entire list');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      await page.locator('[data-test-no-quests]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await dialog.getByRole('heading', { name: 'Páginas por escribir' }).waitFor();
+      assert.match(await tabQuests.innerText(), /Sin encargos/);
+      assert.equal(await dialog.locator('[data-chronicles-quest-id]').count(), 0);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
