@@ -75,6 +75,9 @@ describe('Chronicles first-person runtime scene plan', () => {
     expect(plan.landscape.roadTintZones).toContainEqual({
       minX: 1, maxX: 17, minY: 15, maxY: 21, color: '#c7b19c',
     });
+    expect(plan.landscape.facadeZones).toContainEqual({
+      minX: 1, maxX: 17, minY: 16, maxY: 20, style: 'timber-windows',
+    });
     expect(chroniclesFirstPersonScenePlan({ mapId: 'crypt-eight-squares' }).landscape).toBeNull();
   });
 
