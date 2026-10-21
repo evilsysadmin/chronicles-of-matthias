@@ -22,6 +22,7 @@ import {
   chroniclesMM3UnmetRequirements,
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
+import { CHRONICLES_PORTRAIT_GALLERY, chroniclesPortraitCompatibleWithSex } from '../chronicles/chroniclesPortraitCatalog.js';
 import {
   clearChroniclesCharacterDraft,
   loadChroniclesCharacterDraft,
@@ -80,6 +81,8 @@ export default function ChroniclesCharacterSetup({
   const [rollHistory, setRollHistory] = useState({});
   const [editorStep, setEditorStep] = useState(() => recoveredDraft?.editorStep || 'identity');
   const editorTabsRef = useRef(null);
+  const portraitOpenerRef = useRef(null);
+  const [portraitPickerOpen, setPortraitPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState(() => recoveredDraft?.activeSlot || 'matthias');
   const [draft, setDraft] = useState(() => (
     recoveredDraft?.build ? customFrom(recoveredDraft.build) : customFrom(normalizedCurrent)
@@ -124,6 +127,8 @@ export default function ChroniclesCharacterSetup({
   const racialProfile = CHRONICLES_MM3_RACES[activeCharacter.raceId] || CHRONICLES_MM3_RACES.human;
   const spellPoints = chroniclesMM3MaxSpellPoints(activeCharacter.classId, activeCharacter.stats, activeCharacter.raceId);
   const activeIndex = draft.characters.findIndex((character) => character.slotId === activeCharacter.slotId);
+  const availablePortraits = CHRONICLES_PORTRAIT_GALLERY.filter(({ sex }) => activeCharacter.sex === 'unspecified' || sex === activeCharacter.sex);
+  const originalPortraitAvailable = chroniclesPortraitCompatibleWithSex(activeCharacter.slotId, activeCharacter.sex);
   const validation = validateChroniclesCharacterBuild(draft);
 
   const beginCustom = () => {
@@ -173,6 +178,18 @@ export default function ChroniclesCharacterSetup({
     }
   };
 
+  const closePortraitPicker = () => {
+    setPortraitPickerOpen(false);
+    portraitOpenerRef.current?.focus();
+  };
+
+  const chooseSex = (sex) => {
+    if (!Object.hasOwn(CHRONICLES_MM3_SEXES, sex)) return;
+    const portraitId = chroniclesPortraitCompatibleWithSex(activeCharacter.portraitId, sex)
+      ? activeCharacter.portraitId : `${sex === 'female' ? 'female' : 'male'}-01`;
+    patchCharacter(activeCharacter.slotId, { sex, portraitId });
+  };
+
   const chooseRace = (raceId) => {
     if (!CHRONICLES_MM3_RACE_IDS.includes(raceId)) return;
     patchCharacter(activeCharacter.slotId, { raceId });
@@ -215,7 +232,7 @@ export default function ChroniclesCharacterSetup({
           <div className="chronicles-character-setup__hero-grid" aria-label="Personajes de la compañía">
             {previewCharacters.map((character) => (
               <article className="chronicles-character-setup__hero" key={character.slotId}>
-                <img src={chroniclesPartyPortraitUrl(character.slotId)} alt={`Retrato canónico de ${character.name}`} draggable="false" />
+                <img src={chroniclesPartyPortraitUrl(character)} alt={`Retrato de ${character.name}`} draggable="false" />
                 <div className="chronicles-character-setup__hero-plaque">
                   <strong>{character.name}</strong>
                   <span>{CHRONICLES_MM3_CLASSES[character.classId]?.label || 'Aventurero'}</span>
@@ -308,13 +325,71 @@ export default function ChroniclesCharacterSetup({
               aria-pressed={character.slotId === activeCharacter.slotId}
               aria-label={`Héroe ${index + 1} de ${draft.characters.length}: ${character.name}, ${CHRONICLES_MM3_CLASSES[character.classId]?.label || 'Aventurero'}`}
             >
-              <img src={chroniclesPartyPortraitUrl(character.slotId)} alt="" aria-hidden="true" />
+              <img src={chroniclesPartyPortraitUrl(character)} alt="" aria-hidden="true" />
               <span>{index + 1} · {CHRONICLES_MM3_CLASSES[character.classId]?.label}</span>
               <strong>{character.name}</strong>
             </button>
           ))}
         </nav>
 
+        {portraitPickerOpen && (
+          <div className="chronicles-character-setup__portrait-overlay"
+            onMouseDown={(event) => { if (event.target === event.currentTarget) closePortraitPicker(); }}>
+            <section role="dialog" aria-modal="true" aria-labelledby="chronicles-portrait-title"
+              className="chronicles-character-setup__portrait-dialog"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  closePortraitPicker();
+                }
+                if (event.key !== 'Tab') return;
+                const buttons = Array.from(event.currentTarget.querySelectorAll('button:not(:disabled)'));
+                if (event.shiftKey && document.activeElement === buttons[0]) {
+                  event.preventDefault();
+                  buttons[buttons.length - 1]?.focus();
+                } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
+                  event.preventDefault();
+                  buttons[0]?.focus();
+                }
+              }}>
+              <header className="chronicles-character-setup__portrait-dialog-head">
+                <div>
+                  <span className="section-label">EL ROSTRO DEL AVENTURERO</span>
+                  <h3 id="chronicles-portrait-title">Retrato de {activeCharacter.name}</h3>
+                  <p>Elige su apariencia. No cambia atributos, clase ni raza.</p>
+                </div>
+                <button type="button" className="ghost-btn" autoFocus onClick={closePortraitPicker}
+                  aria-label="Cerrar selector de retratos">✕ Cerrar</button>
+              </header>
+              <div className="chronicles-character-setup__portrait-grid" aria-label="Retratos disponibles">
+                {originalPortraitAvailable && (
+                  <button type="button"
+                    className={activeCharacter.portraitId === activeCharacter.slotId ? 'is-selected' : ''}
+                    aria-pressed={activeCharacter.portraitId === activeCharacter.slotId}
+                    onClick={() => {
+                      patchCharacter(activeCharacter.slotId, { portraitId: activeCharacter.slotId });
+                      closePortraitPicker();
+                    }}>
+                    <img src={chroniclesPartyPortraitUrl(activeCharacter.slotId)} alt="" />
+                    <span>Original</span>
+                  </button>
+                )}
+                {availablePortraits.map(({ id, label }) => (
+                  <button type="button" key={id} data-portrait-id={id}
+                    className={activeCharacter.portraitId === id ? 'is-selected' : ''}
+                    aria-pressed={activeCharacter.portraitId === id}
+                    onClick={() => {
+                      patchCharacter(activeCharacter.slotId, { portraitId: id });
+                      closePortraitPicker();
+                    }}>
+                    <img src={chroniclesPartyPortraitUrl({ portraitId: id })} alt="" loading="lazy" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
         <nav className="chronicles-character-setup__editor-tabs" aria-label="Etapas del personaje" role="tablist" ref={editorTabsRef}>
           {[
             { id: 'identity', label: 'Identidad', next: '1' },
@@ -351,12 +426,14 @@ export default function ChroniclesCharacterSetup({
             className="chronicles-character-setup__identity" aria-label="Identidad del aventurero">
             <div className="chronicles-character-setup__portrait-preview">
               <img
-                src={chroniclesPartyPortraitUrl(activeCharacter.slotId)}
-                alt={`Retrato canónico de ${activeCharacter.name}`}
+                src={chroniclesPartyPortraitUrl(activeCharacter)}
+                alt={`Retrato de ${activeCharacter.name}`}
                 draggable="false"
               />
               <span>HÉROE {activeIndex + 1} / {draft.characters.length}</span>
             </div>
+            <button ref={portraitOpenerRef} type="button" className="chronicles-character-setup__change-portrait"
+              onClick={() => setPortraitPickerOpen(true)}>Cambiar retrato · {availablePortraits.length} opciones</button>
             <span>IDENTIDAD · {CHRONICLES_MM3_CLASSES[activeCharacter.classId]?.label}</span>
             <label>
               Nombre
@@ -378,7 +455,7 @@ export default function ChroniclesCharacterSetup({
               </label>
               <label>
                 Sexo
-                <select value={activeCharacter.sex} onChange={(event) => patchCharacter(activeCharacter.slotId, { sex: event.target.value })}>
+                <select value={activeCharacter.sex} onChange={(event) => chooseSex(event.target.value)}>
                   {Object.entries(CHRONICLES_MM3_SEXES).map(([id, label]) => (
                     <option value={id} key={id}>{label}</option>
                   ))}
@@ -396,7 +473,7 @@ export default function ChroniclesCharacterSetup({
             <div className="chronicles-character-setup__race-effect" aria-live="polite">
               <strong>{racialProfile.label} · Origen</strong>
               <p>{racialProfile.description}</p>
-              <small>Los retratos son canónicos. Sexo y alineamiento son narrativos; las resistencias raciales aún no están implementadas.</small>
+              <small>El retrato elegido se guarda con el héroe. Sexo y alineamiento son narrativos; las resistencias raciales aún no están implementadas.</small>
             </div>
             <dl className="chronicles-character-setup__derived" aria-label={`Valores de combate de ${activeCharacter.name}`}>
               <div><dt>Vida</dt><dd>{derived.maxHp}</dd></div>

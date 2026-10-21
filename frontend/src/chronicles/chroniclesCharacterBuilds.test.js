@@ -91,6 +91,26 @@ describe('Chronicles character builds · MM3 company', () => {
     expect(normalizeChroniclesCharacterBuild(legacy, CHRONICLES_PARTY).characters[0].raceId).toBe('human');
   });
 
+  it('keeps portrait picks through the build, runtime and old save normalization', () => {
+    const selected = customBuild({
+      rook: { portraitId: 'female-09' },
+      bishop: { portraitId: 'male-04' },
+    });
+    const normalized = normalizeChroniclesCharacterBuild(selected, CHRONICLES_PARTY);
+    expect(normalized.characters[1].portraitId).toBe('female-09');
+    expect(normalized.characters[2].portraitId).toBe('male-04');
+    const runtime = resolveChroniclesCharacterParty(CHRONICLES_PARTY, selected, { rules: 'mm3' });
+    expect(runtime[1].portraitId).toBe('female-09');
+    expect(runtime[2].characterBuild.portraitId).toBe('male-04');
+    expect(validateChroniclesCharacterBuild(customBuild({ rook: { portraitId: 'missing' } })).valid).toBe(false);
+    expect(normalizeChroniclesCharacterBuild(customBuild({ rook: { portraitId: 'missing' } }), CHRONICLES_PARTY).characters[1].portraitId)
+      .toBe('rook');
+    const legacy = customBuild();
+    legacy.characters.forEach((hero) => { delete hero.portraitId; });
+    expect(validateChroniclesCharacterBuild(legacy).valid).toBe(true);
+    expect(normalizeChroniclesCharacterBuild(legacy, CHRONICLES_PARTY).characters[0].portraitId).toBe('matthias');
+  });
+
   it('drops v1 point-buy builds and corrupt data to the canonical company', () => {
     const v1 = {
       version: 1,

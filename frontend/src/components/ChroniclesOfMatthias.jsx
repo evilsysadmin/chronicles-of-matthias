@@ -1460,7 +1460,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
                   <img
                     className="chronicles-party-thumbnail"
-                    src={chroniclesPartyPortraitUrl(member.id)}
+                    src={chroniclesPartyPortraitUrl(member)}
                     alt=""
                     draggable="false"
                     data-chronicles-party-thumbnail={member.id}
@@ -1808,7 +1808,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         <div className="chronicles-party-preview" data-condition={selectedCondition} data-relic={selectedRelic || undefined}>
           <img
             className="chronicles-party-preview-image"
-            src={chroniclesPartyPortraitUrl(selectedMember.id)}
+            src={chroniclesPartyPortraitUrl(selectedMember)}
             alt={`Retrato de ${selectedMember.name}`}
             data-chronicles-party-renderer="authored"
             data-member-id={selectedMember.id}

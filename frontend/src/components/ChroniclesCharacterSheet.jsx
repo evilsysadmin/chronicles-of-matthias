@@ -183,7 +183,7 @@ export default function ChroniclesCharacterSheet({
         <div className="chronicles-character-sheet__scroll">
         <header className="chronicles-character-sheet__head">
           <div className="chronicles-character-sheet__portrait">
-            <img src={chroniclesPartyPortraitUrl(member.id)} alt={`Retrato de ${member.name}`} draggable="false" />
+            <img src={chroniclesPartyPortraitUrl(member)} alt={`Retrato de ${member.name}`} draggable="false" />
           </div>
           <div className="chronicles-character-sheet__identity">
             <span>EXPEDIENTE DE CAMPAÑA</span>
@@ -547,7 +547,7 @@ export default function ChroniclesCharacterSheet({
                 onClick={() => onSelectMember?.(hero.id)}
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{index + 1}</span>
-                <img src={chroniclesPartyPortraitUrl(hero.id)} alt="" draggable="false" />
+                <img src={chroniclesPartyPortraitUrl(hero)} alt="" draggable="false" />
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
                 <span className="chronicles-character-sheet__party-hp">{hero.hp}/{hero.maxHp} PV</span>
                 <span className="chronicles-character-sheet__party-gear" aria-label={chroniclesWornGear(state, hero.id).map((slot) => `${slot.label}: ${slot.name}`).join(', ')}>

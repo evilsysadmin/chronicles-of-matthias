@@ -1,10 +1,11 @@
 // Party creation, Might and Magic III style (build v2).
 //
-// Each of the four heroes keeps their portrait and slot, but freely picks one
+// Each hero has a persistent portrait and slot, and freely picks one
 // of the ten MM3 classes and carries seven rolled stats (3-18). Old v1
 // point-buy builds are not migrated: Chronicles saves may break (decision
 // 2026-10-10), so anything that is not a valid v2 build becomes the
 // canonical company. Tactics shares this company through the same party.
+import { chroniclesNormalizePortraitId, chroniclesPortraitKnown } from './chroniclesPortraitCatalog.js';
 import {
   CHRONICLES_MM3_CLASS_IDS,
   CHRONICLES_MM3_RACE_IDS,
@@ -73,6 +74,7 @@ function canonicalCharacter(slotId, partyTemplates) {
   const canonical = CHRONICLES_CANONICAL_CHARACTERS[slotId];
   return {
     slotId,
+    portraitId: slotId,
     classId: canonical.classId,
     name: template?.name || fallbackName(slotId),
     stats: { ...canonical.stats },
@@ -159,6 +161,7 @@ function normalizeCharacter(slotId, raw, partyTemplates) {
     slotId,
     classId,
     name: cleanName(source.name, canonical.name),
+    portraitId: chroniclesNormalizePortraitId(source.portraitId, slotId),
     stats,
     raceId: normalizedChoice(source.raceId, Object.fromEntries(CHRONICLES_MM3_RACE_IDS.map((id) => [id, true])), canonical.raceId),
     sex: normalizedChoice(source.sex, CHRONICLES_MM3_SEXES, canonical.sex),
@@ -225,6 +228,7 @@ export function validateChroniclesCharacterBuild(raw) {
     if (character.raceId != null && !CHRONICLES_MM3_RACE_IDS.includes(character.raceId)) errors.push(`Raza desconocida para ${name || slotId}`);
     if (character.sex != null && !Object.hasOwn(CHRONICLES_MM3_SEXES, character.sex)) errors.push(`Sexo desconocido para ${name || slotId}`);
     if (character.alignment != null && !Object.hasOwn(CHRONICLES_MM3_ALIGNMENTS, character.alignment)) errors.push(`Alineamiento desconocido para ${name || slotId}`);
+    if (character.portraitId != null && !chroniclesPortraitKnown(character.portraitId)) errors.push(`Retrato desconocido para ${name || slotId}`);
 
     const stats = normalizeChroniclesMM3Stats(character.stats);
     const exact = stats && CHRONICLES_MM3_STATS.every((key) => stats[key] === character.stats?.[key]);
@@ -272,6 +276,7 @@ export function resolveChroniclesCharacterParty(partyTemplates, rawBuild, { rule
     return {
       ...template,
       name: character.name,
+      portraitId: character.portraitId,
       maxHp: mm3 ? derived.maxHp : Math.max(1, Number(template.maxHp || 1)),
       damage: Math.max(1, Number(template.damage || 1) + (mm3 ? derived.damageBonus : 0)),
       reach: Math.max(1, Number(template.reach || 1)),
@@ -290,6 +295,7 @@ export function resolveChroniclesCharacterParty(partyTemplates, rawBuild, { rule
         version: normalized.version,
         mode: normalized.mode,
         slotId: template.id,
+        portraitId: character.portraitId,
         classId: character.classId,
         raceId: character.raceId,
         sex: character.sex,
