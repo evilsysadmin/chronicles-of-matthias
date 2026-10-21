@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 )
 
 // reinforceOverworld adds modest, deterministic, ordinary patrols to the
@@ -14,13 +13,17 @@ func reinforceOverworld(m *O, areaCode string) {
 	areaID := mapID(areaCode)
 	current := m.Arr("enemies")
 	var ordinary []*O
-	for _, entry := range current {
+	// Only the original 0..N-1 common foes precede authored quests and
+	// camps. Some camp leaders also use the ID prefix -foe-20, and must NEVER
+	// be cloned: they carry unique rewards and defeat flags.
+	for i, entry := range current {
 		enemy := entry.(*O)
-		if strings.HasPrefix(enemy.Str("id"), areaID+"-foe-") {
-			ordinary = append(ordinary, enemy)
+		if enemy.Str("id") != fmt.Sprintf("%s-foe-%d", areaID, i) {
+			break
 		}
+		ordinary = append(ordinary, enemy)
 	}
-	if len(ordinary) == 0 {
+	if len(ordinary) < 2 || len(ordinary) > 4 {
 		panic(areaID + ": missing ordinary enemies for patrol reinforcement")
 	}
 	target := 3
