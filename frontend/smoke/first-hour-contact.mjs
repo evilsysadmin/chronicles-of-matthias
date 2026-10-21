@@ -101,6 +101,36 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
+      // Actual rendered sheet, not just the pure keyboard helper:
+      // 4 switches Matthias → Faust without closing the equipment folio.
+      await page.keyboard.press('4');
+      const faustSheet = page.getByRole('dialog', { name: 'Faust' });
+      await faustSheet.waitFor({ state: 'visible' });
+      assert.match(await faustSheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, 'Party hotkey must retain the active equipment folio');
+      assert.equal(await page.getByRole('dialog').count(), 1,
+        'Switching character must not stack or duplicate modal sheets');
+
+      // A numeric search term belongs to the input, not to hero selection.
+      const backpackSearch = faustSheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
+      await backpackSearch.fill('');
+      await backpackSearch.press('1');
+      assert.equal(await backpackSearch.inputValue(), '1');
+      assert.equal(await page.getByRole('dialog', { name: 'Faust' }).count(), 1,
+        'Typing 1 into backpack search must not open Matthias');
+      await backpackSearch.fill('');
+
+      // Switching back restores the same real equipped weapon and folio.
+      await page.locator('.chronicles-character-sheet__tabs .is-active').focus();
+      await page.keyboard.press('1');
+      const restoredSheet = page.getByRole('dialog', { name: 'Matthias' });
+      await restoredSheet.waitFor({ state: 'visible' });
+      assert.match(await restoredSheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, 'Returning to Matthias must keep equipment folio');
+      assert.match(await restoredSheet.locator('.chronicles-character-sheet__gear-slot')
+        .filter({ hasText: 'Arma · A' }).locator('strong').innerText(), /Espada de bronce/,
+      'Inspecting Faust must never equip/unequip Matthias');
+
       // Exercise the real production guide components as siblings while
       // React repeatedly alternates authored Swordhaven/road state and run IDs.
       // Duplicate keyed overlays once left three superposed, hit-testable hosts.
