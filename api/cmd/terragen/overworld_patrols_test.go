@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -83,5 +85,37 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 	}
 	if newCount < 100 {
 		t.Fatalf("expected a meaningful Terra-wide density increase, got %d", newCount)
+	}
+}
+
+func TestGeneratedOverworldBytesMatchCommittedFiles(t *testing.T) {
+	// The public generator's -check gate diagnoses which files are stale,
+	// while this contract pinpoints the exact first inconsistent field.
+	maps := buildAll()
+	root := repoRoot()
+	for _, code := range areaOrder {
+		mapID := mapID(code)
+		m := maps[mapID]
+		contractSpanish(m)
+		want := dump(m) + "\n"
+		got, err := os.ReadFile(filepath.Join(root, frontendMaps, mapID+".json"))
+		if err != nil {
+			t.Fatalf("%s: %v", code, err)
+		}
+		if want == string(got) {
+			continue
+		}
+		i := 0
+		for i < len(want) && i < len(got) && want[i] == got[i] {
+			i++
+		}
+		from := i - 65
+		if from < 0 { from = 0 }
+		until := i + 100
+		if until > len(want) { until = len(want) }
+		gotUntil := i + 100
+		if gotUntil > len(got) { gotUntil = len(got) }
+		t.Errorf("%s: mismatch at byte %d (generated=%d, committed=%d)\ngenerated: %q\ncommitted: %q",
+			code, i, len(want), len(got), want[from:until], got[from:gotUntil])
 	}
 }
