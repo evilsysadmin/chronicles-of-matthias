@@ -68,12 +68,18 @@ try {
       await audioInput.focus();
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1);
-      await page.locator('[data-shortcut-busy-toggle]').click();
+      // Fixture instrumentation lives behind the modal on small screens,
+      // as background controls should. Trigger its DOM control without
+      // pretending the player can click through a real modal overlay.
+      await page.locator('[data-shortcut-busy-toggle]').evaluate((button) => button.click());
       await page.keyboard.press('s');
       await page.keyboard.press('q');
       assert.equal(await count(page, 'save'), 1, 'Save busy must block duplicate saves');
       assert.equal(await count(page, 'exit'), 1, 'Save busy must block exits');
-      await page.locator('[data-shortcut-busy-toggle]').click();
+      // Fixture instrumentation lives behind the modal on small screens,
+      // as background controls should. Trigger its DOM control without
+      // pretending the player can click through a real modal overlay.
+      await page.locator('[data-shortcut-busy-toggle]').evaluate((button) => button.click());
       await page.keyboard.press('S');
       assert.equal(await count(page, 'save'), 2);
       assert.equal(await count(page, 'discard'), 0);
