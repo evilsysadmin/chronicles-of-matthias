@@ -9,6 +9,52 @@
     'foot foot foot';
 }
 
+/* Alchemical blue/teal practical light rather than the generic warm merchant
+   vignette. The mage's desk remains visible between the functional panes. */
+.chronicles-guild::before {
+  background:
+    linear-gradient(90deg, rgba(4, 13, 20, .53), rgba(7, 18, 29, .06) 36%, rgba(7, 18, 29, .04) 65%, rgba(4, 12, 20, .49)),
+    linear-gradient(0deg, rgba(4, 12, 19, .66), transparent 29%, rgba(4, 12, 19, .29));
+}
+
+.chronicles-guild .chronicles-shop__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 24% 27% at 50% 70%, rgba(110, 228, 200, .25), transparent 86%),
+    radial-gradient(ellipse 17% 20% at 65% 41%, rgba(142, 190, 232, .14), transparent 88%),
+    radial-gradient(ellipse 10% 25% at 70% 48%, rgba(255, 198, 104, .12), transparent 90%);
+  opacity: .8;
+  animation: chronicles-guild-arcane-light 11s ease-in-out infinite alternate;
+}
+
+@keyframes chronicles-guild-arcane-light {
+  from { opacity: .69; }
+  to { opacity: .9; }
+}
+
+@media (min-width: 901px) {
+  .chronicles-guild .chronicles-shop__identity h2 {
+    font-size: clamp(24px, 2.35vw, 31px);
+    line-height: 1.08;
+  }
+}
+
+@media (max-width: 900px) {
+  .chronicles-guild .chronicles-shop__scene::after {
+    background: radial-gradient(ellipse 30% 39% at 50% 66%, rgba(100, 220, 205, .20), transparent 87%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-guild .chronicles-shop__scene::after {
+    animation: none;
+    opacity: .8;
+  }
+}
+
 .chronicles-guild .chronicles-shop__scene {
   pointer-events: none; /* Artwork must never intercept membership controls. */
   background: #0d1b28;

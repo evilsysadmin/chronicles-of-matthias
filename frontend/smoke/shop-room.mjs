@@ -192,7 +192,7 @@ try {
       const context = await browser.newContext({
         viewport: { width, height }, isMobile: width <= 844,
         hasTouch: width <= 844, deviceScaleFactor: 1,
-        reducedMotion: room === 'odo' && width === 390 ? 'reduce' : 'no-preference',
+        reducedMotion: width === 390 ? 'reduce' : 'no-preference',
       });
       const page = await context.newPage();
       const errors = [];
@@ -253,6 +253,17 @@ try {
           }
         }
         if (room === 'guild') {
+          const lighting = await scene.evaluate((node) => ({
+            pointer: getComputedStyle(node, '::after').pointerEvents,
+            light: getComputedStyle(node, '::after').backgroundImage,
+            animation: getComputedStyle(node, '::after').animationName,
+            opacity: Number.parseFloat(getComputedStyle(node, '::after').opacity),
+          }));
+          assert.equal(lighting.pointer, 'none', 'Guild ambience must never block the real join button');
+          assert.match(lighting.light, /radial-gradient/, 'Guild room has no authored light bounce');
+          assert(lighting.opacity > 0 && lighting.opacity <= 1);
+          if (width === 390) assert.equal(lighting.animation, 'none',
+            'Guild must respect reduced-motion');
           const presentation = await img.evaluate((node) => ({
             width: node.getBoundingClientRect().width,
             fit: getComputedStyle(node).objectFit,
