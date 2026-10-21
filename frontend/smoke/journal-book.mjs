@@ -76,6 +76,12 @@ try {
       assert.equal(await followFirst.getAttribute('aria-pressed'), 'false');
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       const completed = dialog.locator('[data-chronicles-quest-id="road-bandits"]');
+      assert.equal(await completed.count(), 0, 'Archived quests should not clutter an active expedition');
+      const archive = dialog.locator('.chronicles-journal-modal__archive-toggle');
+      assert.equal(await archive.getAttribute('aria-expanded'), 'false');
+      assert.match(await archive.innerText(), /Ver encargos resueltos \(1\)/);
+      await archive.click();
+      assert.equal(await archive.getAttribute('aria-expanded'), 'true');
       assert.match(await completed.innerText(), /Resuelto/);
       assert.doesNotMatch(await completed.innerText(), /PISTA DEL LUGAR/);
       await completed.locator('.chronicles-journal-modal__quest-heading').click();
@@ -84,6 +90,11 @@ try {
       await second.locator('.chronicles-journal-modal__quest-heading').click();
       assert.equal(await completed.locator('[data-chronicles-track-quest]').count(), 0,
         'A completed contract cannot be followed');
+      await archive.click();
+      assert.equal(await archive.getAttribute('aria-expanded'), 'false');
+      assert.equal(await completed.count(), 0, 'Folded archive must remove completed rows again');
+      assert.equal(await second.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true',
+        'Folding the archive should restore the current active quest');
       await page.screenshot({ path: 'smoke-journal-quests-' + width + '.png' });
       const size = await page.evaluate(() => {
         const rect = document.querySelector('.chronicles-journal-modal').getBoundingClientRect();
