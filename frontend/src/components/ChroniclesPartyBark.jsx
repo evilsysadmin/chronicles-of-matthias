@@ -1,16 +1,27 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import './ChroniclesPartyBark.css';
 
 // Keep dialogue close to the edge of the 3D view. Hover/focus reveals it
 // without a click; touch opens it with a real button instead of fake hover.
-export default function ChroniclesPartyBark({ bark, onOpenEquipment = null }) {
+export default function ChroniclesPartyBark({ bark, onOpenEquipment = null, onReadingChange = null }) {
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
+  const readingRef = useRef({ hover: false, focus: false });
+  const notifyReading = () => onReadingChange?.(readingRef.current.hover || readingRef.current.focus);
   if (!bark?.text) return null;
 
   return (
     <aside className="chronicles-party-bark" data-speaker={bark.speakerId}
-      data-expanded={expanded ? 'true' : 'false'}>
+      data-expanded={expanded ? 'true' : 'false'}
+      onMouseEnter={() => { readingRef.current.hover = true; notifyReading(); }}
+      onMouseLeave={() => { readingRef.current.hover = false; notifyReading(); }}
+      onFocus={() => { readingRef.current.focus = true; notifyReading(); }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          readingRef.current.focus = false;
+          notifyReading();
+        }
+      }}>
       <span className="chronicles-party-bark__announcement" role="status" aria-live="polite" aria-atomic="true">
         {bark.speaker}: {bark.text}
       </span>
