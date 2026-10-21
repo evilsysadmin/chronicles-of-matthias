@@ -74,11 +74,21 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run build
       # Share the same pinned Chromium binary revision as frontend CI.
+      # Share cache only when the installed npm-locked Playwright version matches.
+      - name: Resolve locked Playwright version for browser cache
+        id: playwright_version
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./node_modules/playwright/package.json').version")"
+          declared="$(node -p "require('./package.json').devDependencies.playwright")"
+          [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Restore pinned Playwright Chromium browser
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-1.64.1
+          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
       - name: Full-game E2E — register, new campaign, save, fresh login, resume
         working-directory: frontend
         run: |

@@ -74,15 +74,23 @@ test('Go API health readiness shares the bounded liveness and log-aware probe', 
   assert.match(api, /curl -fsS http:\/\/127\.0\.0\.1:8090\/api\/health/);
 });
 
-test('Chromium download cache is identical and exact-versioned for both browser suites', () => {
-  const expectedKey = 'chronicles-playwright-' + String.fromCharCode(36) + '{{ runner.os }}-' + String.fromCharCode(36) + '{{ runner.arch }}-1.64.1';
+test('Chromium cache key comes from installed npm-locked Playwright in both E2Es', () => {
+  const dollar = String.fromCharCode(36);
+  const expectedKey = 'chronicles-playwright-' + dollar + '{{ runner.os }}-' + dollar + '{{ runner.arch }}-' + dollar + '{{ steps.playwright_version.outputs.version }}';
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /uses: actions\/cache@v5/);
     assert.match(workflow, /path: ~\/\.cache\/ms-playwright/);
     assert.ok(workflow.includes('key: ' + expectedKey));
-    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.match(workflow, /id: playwright_version/);
+    assert.match(workflow, /node -p "require\('\.\/node_modules\/playwright\/package\.json'\)\.version"/);
+    assert.match(workflow, /node -p "require\('\.\/package\.json'\)\.devDependencies\.playwright"/);
+    assert.match(workflow, /\[\[ "\$version" == "\$declared" \]\]/);
     assert.match(workflow, /npx playwright install --with-deps chromium/);
     assert.doesNotMatch(workflow, /restore-keys:/);
+    const npmInstall = workflow.indexOf('npm ci --ignore-scripts');
+    const keyDerivation = workflow.indexOf('Resolve locked Playwright version for browser cache');
+    const cache = workflow.indexOf('Restore pinned Playwright Chromium browser');
+    assert.ok(npmInstall >= 0 && keyDerivation > npmInstall && cache > keyDerivation);
   }
 });
 
