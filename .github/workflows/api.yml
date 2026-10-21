@@ -8,9 +8,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# Only superseded PR revisions are cancelled. Keep exact-SHA main API
+# verification running even during rapid merges; staging admits only latest main.
 concurrency:
-  group: chronicles-api-${{ github.ref }}
-  cancel-in-progress: true
+  group: chronicles-api-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
     name: api-e2e
@@ -115,17 +117,42 @@ jobs:
     env:
       IMAGE: ghcr.io/evilsysadmin/chronicles-api
     steps:
+      # Older commits still complete their E2E verification, but should not
+      # consume expensive multi-architecture publish work after main advances.
+      # The API workflow remains green for a superseded SHA; source and Infra
+      # admission independently require that SHA to still be current main.
+      - name: Require current main SHA before Docker publication
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$current" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          if [[ "$GITHUB_SHA" != "$current" ]]; then
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo "::notice title=Skip obsolete API image::Source SHA $GITHUB_SHA superseded by main $current"
+            echo "API image skipped: $GITHUB_SHA is no longer main ($current)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v5
+        if: steps.admission.outputs.publish == 'true'
         with:
           persist-credentials: false
       - uses: docker/setup-qemu-action@v3
+        if: steps.admission.outputs.publish == 'true'
       - uses: docker/setup-buildx-action@v3
+        if: steps.admission.outputs.publish == 'true'
       - uses: docker/login-action@v3
+        if: steps.admission.outputs.publish == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push linux/arm64 + linux/amd64
+        if: steps.admission.outputs.publish == 'true'
         id: push
         uses: docker/build-push-action@v6
         with:
@@ -139,10 +166,12 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=https://github.com/evilsysadmin/chronicles-of-matthias
       - name: Attest build provenance
+        if: steps.admission.outputs.publish == 'true'
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
       - name: Record digest
+        if: steps.admission.outputs.publish == 'true'
         run: echo "IMAGE=${IMAGE}@${{ steps.push.outputs.digest }} (staging-${GITHUB_SHA})" | tee -a "$GITHUB_STEP_SUMMARY"

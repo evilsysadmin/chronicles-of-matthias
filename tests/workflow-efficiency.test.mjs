@@ -86,3 +86,25 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
     assert.match(workflow, /actions\/upload-artifact@v5/);
   }
 });
+
+test('API main SHA verification does not cancel when newer main commits arrive', () => {
+  const expectedCancellation = 'cancel-in-progress: ' + String.fromCharCode(36) + "{{ github.event_name == 'pull_request' }}";
+  assert.match(api, /group: chronicles-api-[^\n]+\|\| github\.run_id \}\}/);
+  assert.match(api, /github\.event_name == 'pull_request' && github\.event\.pull_request\.number/);
+  assert.ok(api.includes(expectedCancellation));
+  assert.doesNotMatch(api, /group: chronicles-api-\$\{\{ github\.ref \}\}/);
+});
+
+test('obsolete API images cannot publish or attest without exact-SHA main admission', () => {
+  const job = api.slice(api.indexOf('\n  publish:\n'));
+  assert.match(job, /needs: verify/);
+  assert.match(job, /Require current main SHA before Docker publication/);
+  assert.match(job, /gh api "repos\/\$GITHUB_REPOSITORY\/commits\/main" --jq \.sha/);
+  assert.match(job, /\[\[ "\$GITHUB_SHA" != "\$current" \]\]/);
+  assert.match(job, /publish=false/);
+  assert.match(job, /publish=true/);
+  const gated = (job.match(/^\s+if: steps\.admission\.outputs\.publish == 'true'$/gm) || []).length;
+  assert.equal(gated, 7, 'all checkout, QEMU, Buildx, login, build, provenance and summary steps must be gated');
+  assert.match(job, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
+  assert.match(job, /push-to-registry: true/);
+});
