@@ -34,7 +34,9 @@ export default function ChroniclesAdventureMenu({
         <section className="chronicles-game-menu__folio-section" aria-label="Acciones de expedición">
           <span className="chronicles-game-menu__section-kicker">EXPEDICIÓN</span>
           <div className="chronicles-game-menu__actions">
-            <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
+            {!confirmExitWithoutSaving && (
+              <>
+                <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
               <span aria-hidden="true">▶</span> Continuar
             </button>
             <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
@@ -46,9 +48,10 @@ export default function ChroniclesAdventureMenu({
             {isAdmin && (
               <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
             )}
-            {!confirmExitWithoutSaving ? (
-              <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
-            ) : (
+                <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
+              </>
+            )}
+            {confirmExitWithoutSaving && (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
                 <small>Perderás lo jugado desde el último guardado o cambio de área.</small>
                 <button type="button" onClick={onDiscardExit}>Sí, salir sin guardar</button>
@@ -57,13 +60,19 @@ export default function ChroniclesAdventureMenu({
             )}
           </div>
         </section>
-        <section className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido">
+        <section className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido"
+          hidden={confirmExitWithoutSaving} inert={confirmExitWithoutSaving ? '' : undefined}
+          aria-hidden={confirmExitWithoutSaving ? 'true' : undefined}>
           <span className="chronicles-game-menu__section-kicker">AMBIENTE</span>
           <ChroniclesAudioControls id="chronicles-audio-options"
             hint="First Verse en el libro de expediciones; Second Verse durante la aventura." />
         </section>
       </div>
-      <small className="chronicles-game-menu__hint">S · guardar · Q · salir · ESC · cerrar · TAB · navegar</small>
+      <small className="chronicles-game-menu__hint">
+        {confirmExitWithoutSaving
+          ? 'ESC · cancelar salida · TAB · elegir respuesta'
+          : 'S · guardar · Q · salir · ESC · cerrar · TAB · navegar'}
+      </small>
     </div>
   );
 }
