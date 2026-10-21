@@ -311,7 +311,7 @@
         "effects": [
           {
             "type": "grant-gold",
-            "amount": 8
+            "amount": 4
           }
         ]
       }
@@ -341,7 +341,7 @@
         "effects": [
           {
             "type": "grant-gold",
-            "amount": 8
+            "amount": 4
           }
         ]
       }
@@ -371,7 +371,7 @@
         "effects": [
           {
             "type": "grant-gold",
-            "amount": 8
+            "amount": 4
           }
         ]
       }
