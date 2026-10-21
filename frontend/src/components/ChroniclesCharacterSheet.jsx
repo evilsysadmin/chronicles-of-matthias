@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import {
@@ -106,6 +106,23 @@ export default function ChroniclesCharacterSheet({
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
+
+  // A modal may lose DOM focus after an equipment action rerenders its buttons.
+  // Keep 1–4 working while the sheet is open, even if focus falls to <body>.
+  // Events from inside the sheet are already handled (and stopped) below;
+  // editable targets and other consumed events are excluded by the shared guard.
+  useEffect(() => {
+    if (!state?.party || !member || !onSelectMember) return undefined;
+    const onWindowPartyKey = (event) => {
+      const hero = chroniclesPartyHotkeyMember(event, state.party);
+      if (!hero) return;
+      event.preventDefault();
+      onSelectMember(hero.id);
+    };
+    window.addEventListener('keydown', onWindowPartyKey);
+    return () => window.removeEventListener('keydown', onWindowPartyKey);
+  }, [state?.party, member, onSelectMember]);
+
   if (!state || !progression || !member) return null;
 
   const profile = chroniclesTacticsEffectiveProfile(state, member.id);

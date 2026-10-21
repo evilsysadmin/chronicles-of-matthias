@@ -41,7 +41,28 @@ try {
       await page.getByRole('button', { name: /Héroe 1 de 4:/ }).click();
       assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 1:/ }).inputValue(), firstName);
 
+      // 1–4 navigate the real creator without dropping edits or changing tabs.
+      await page.keyboard.press('4');
+      const hero4Name = page.getByRole('textbox', { name: /Nombre del héroe 4:/ });
+      await hero4Name.waitFor({ state: 'visible' });
+      const beforeHero4Name = await hero4Name.inputValue();
+      await hero4Name.press('End');
+      await hero4Name.press('1');
+      assert.equal(await hero4Name.inputValue(), beforeHero4Name + '1');
+      assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 4:/ }).count(), 1,
+        'Typing digits in a character name must not trigger party navigation');
+      await page.getByRole('button', { name: /Héroe 1 de 4:/ }).click();
+      assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 1:/ }).inputValue(), firstName);
+
       if (width === 390) {
+        await page.getByRole('tab', { name: /Atributos/ }).click();
+        await page.keyboard.press('3');
+        assert.equal(await page.locator('[data-editor-step="stats"]').count(), 1,
+          'Switching heroes must not reset the current creator tab');
+        assert.equal(await page.getByRole('button', { name: /Héroe 3 de 4:/ }).getAttribute('aria-pressed'), 'true');
+        await page.getByRole('tab', { name: /Identidad/ }).click();
+        await page.keyboard.press('1');
+
         await page.reload({ waitUntil: 'domcontentloaded' });
         await resumed.waitFor();
         assert.equal(await page.getByRole('textbox', { name: /Nombre del héroe 1:/ }).inputValue(), firstName);
