@@ -90,6 +90,15 @@ try {
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
         'Character sheet must fit vertically: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
+      // Numeric input receives digits while the loot is still in the backpack.
+      // Equipping its only item correctly removes the search controls afterward.
+      const backpackSearch = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
+      await backpackSearch.fill('');
+      await backpackSearch.press('1');
+      assert.equal(await backpackSearch.inputValue(), '1');
+      assert.equal(await page.getByRole('dialog', { name: 'Matthias' }).count(), 1,
+        'Typing 1 inside backpack search must not switch hero');
+      await backpackSearch.fill('');
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The MM3 double-weapon summary is optional in the test fixture; the
@@ -110,15 +119,6 @@ try {
         /Equipo/, 'Party hotkey must retain the active equipment folio');
       assert.equal(await page.getByRole('dialog').count(), 1,
         'Switching character must not stack or duplicate modal sheets');
-
-      // A numeric search term belongs to the input, not to hero selection.
-      const backpackSearch = faustSheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
-      await backpackSearch.fill('');
-      await backpackSearch.press('1');
-      assert.equal(await backpackSearch.inputValue(), '1');
-      assert.equal(await page.getByRole('dialog', { name: 'Faust' }).count(), 1,
-        'Typing 1 into backpack search must not open Matthias');
-      await backpackSearch.fill('');
 
       // Switching back restores the same real equipped weapon and folio.
       await page.locator('.chronicles-character-sheet__tabs .is-active').focus();
