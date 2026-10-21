@@ -68,4 +68,14 @@ describe('Chronicles first-person runtime scene plan', () => {
     ]));
   });
 
+  it('passes Swordhaven district styling through to the real first-person renderer', () => {
+    const map = chroniclesMapById('swordhaven-first-book');
+    const plan = chroniclesFirstPersonScenePlan({ mapId: map.id });
+    expect(plan.landscape).toEqual(map.landscape);
+    expect(plan.landscape.roadTintZones).toContainEqual({
+      minX: 1, maxX: 17, minY: 15, maxY: 21, color: '#c7b19c',
+    });
+    expect(chroniclesFirstPersonScenePlan({ mapId: 'crypt-eight-squares' }).landscape).toBeNull();
+  });
+
 });

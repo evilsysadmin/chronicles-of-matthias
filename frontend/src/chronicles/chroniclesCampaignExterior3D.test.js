@@ -90,7 +90,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     const scene = new THREE.Scene();
     buildChroniclesCampaignExterior(scene, {
       coarsePointer: true,
-      scenePlan: { mapId: 'swordhaven-first-book', regionKind: 'settlement', width, height, center, grid, content },
+      scenePlan: { mapId: 'swordhaven-first-book', regionKind: 'settlement', width, height, center, grid, content, landscape: swordhavenFirstBook.landscape },
     });
     const town = scene.getObjectByName('chronicles-campaign-town');
     const names = town.children.map(child => child.name).filter(name => name.startsWith('swordhaven-building-'));
@@ -108,6 +108,22 @@ describe('Chronicles file-authored exterior renderer', () => {
     const alleyPosition = new THREE.Vector3().setFromMatrixPosition(alleyMatrix);
     expect(alleyPosition.x).toBeCloseTo((alley.x - center.x) * 4);
     expect(alleyPosition.z).toBeCloseTo((alley.y - center.y) * 4);
+    const alleyTint = new THREE.Color();
+    const squareTint = new THREE.Color();
+    paved.getColorAt(alleyIndex, alleyTint);
+    const square = { x: 9, y: 7 };
+    const squareIndex = grid.slice(0, square.y).reduce((sum, row) =>
+      sum + [...row].filter(tile => tile === '.').length, 0)
+      + [...grid[square.y].slice(0, square.x)].filter(tile => tile === '.').length;
+    paved.getColorAt(squareIndex, squareTint);
+    const expectedDistrictTint = new THREE.Color('#c7b19c');
+    expect(alleyTint.r).toBeCloseTo(expectedDistrictTint.r);
+    expect(alleyTint.g).toBeCloseTo(expectedDistrictTint.g);
+    expect(alleyTint.b).toBeCloseTo(expectedDistrictTint.b);
+    expect(squareTint.r).toBeCloseTo(1);
+    expect(squareTint.g).toBeCloseTo(1);
+    expect(squareTint.b).toBeCloseTo(1);
+    expect(paved.instanceColor).toBeTruthy();
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
