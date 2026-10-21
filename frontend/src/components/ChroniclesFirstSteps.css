@@ -54,7 +54,7 @@
 .chronicles-first-steps__actions { margin-top: 9px; justify-content: flex-end; flex-wrap: wrap; }
 .chronicles-first-steps button:focus-visible,
 .chronicles-first-steps summary:focus-visible { outline: 2px solid #f7d58d; outline-offset: 2px; }
-@media (max-width: 600px) {
+@media (max-width: 600px), (pointer: coarse) {
   .chronicles-first-steps__keyboard-hint { display: none; }
   .chronicles-first-steps__touch-hint { display: block; }
 }
