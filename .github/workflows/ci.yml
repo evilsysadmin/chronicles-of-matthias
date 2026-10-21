@@ -6,9 +6,9 @@ on:
 permissions:
   contents: read
   actions: read
-# Preserve main push checks; only superseded pull-request runs may cancel.
+# PR revisions share a group; each main push uses a unique run ID so it never queues behind an unrelated SHA.
 concurrency:
-  group: chronicles-ci-${{ github.event.pull_request.number || github.ref }}
+  group: chronicles-ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   # Protect main's existing required check also protects the Chromium smoke:

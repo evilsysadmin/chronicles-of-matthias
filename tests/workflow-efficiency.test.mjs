@@ -11,6 +11,10 @@ test('stale PR runs may cancel without cancelling required main checks', () => {
   const prOnly = 'cancel-in-progress: ' + String.fromCharCode(36) + "{{ github.event_name == 'pull_request' }}";
   for (const workflow of [ci, frontend]) {
     assert.match(workflow, /concurrency:\s*\n  group: chronicles-/);
+    // Main pushes must not inherit one long-lived concurrency group per ref.
+    assert.match(workflow, /group: chronicles-[^\n]+\|\| github\.run_id \}\}/);
+    assert.match(workflow, /github\.event_name == 'pull_request' && github\.event\.pull_request\.number/);
+    assert.doesNotMatch(workflow, /github\.event\.pull_request\.number \|\| github\.ref/);
     assert.ok(workflow.includes(prOnly));
     assert.match(workflow, /push:\s*\n    branches: \[main\]/);
     assert.match(workflow, /pull_request:/);
