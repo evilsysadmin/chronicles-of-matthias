@@ -45,31 +45,37 @@ function visibleRoadCells(scenePlan, center) {
 // The wall grid remains the ONLY collision source; these shallow details sit
 // entirely inside its solid cells. All frames and panes share two instanced
 // meshes, not dozens of per-house objects or lights.
-function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
+// Street-front decoration shares one deterministic face list so windows and
+// timber framing cannot drift onto solid interiors or invent colliders.
+function settlementStreetFacingFaces({ grid, blocked, zones }) {
   const validZones = (Array.isArray(zones) ? zones : []).filter(zone =>
     zone?.style === 'timber-windows'
     && [zone.minX, zone.maxX, zone.minY, zone.maxY].every(Number.isInteger)
     && zone.minX <= zone.maxX && zone.minY <= zone.maxY);
-  if (!validZones.length) return;
+  if (!validZones.length) return [];
   const directions = [
     { dx: 0, dy: 1, yaw: 0 },
     { dx: 1, dy: 0, yaw: Math.PI / 2 },
     { dx: 0, dy: -1, yaw: Math.PI },
     { dx: -1, dy: 0, yaw: -Math.PI / 2 },
   ];
-  const facades = [];
+  const faces = [];
   for (const { x, y } of blocked) {
-    // Sparse shuttered windows read as a neighbourhood rather than a grid of
-    // identical glowing slots; every location is deterministic across reloads.
-    if ((x + y) % 2 !== 0) continue;
     if (!validZones.some(zone =>
       x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY)) continue;
     for (const direction of directions) {
       if (grid[y + direction.dy]?.[x + direction.dx] === '.') {
-        facades.push({ x, y, ...direction });
+        faces.push({ x, y, ...direction });
       }
     }
   }
+  return faces;
+}
+
+function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
+  // Windows alternate along the block; timber beams cover every street edge.
+  const facades = settlementStreetFacingFaces({ grid, blocked, zones })
+    .filter(({ x, y }) => (x + y) % 2 === 0);
   if (!facades.length) return;
   // Two levels on tall authored houses, with the original single window
   // preserved for older settlements. Still just two instanced draw calls.
@@ -106,6 +112,50 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   frames.castShadow = false;
   panes.castShadow = false;
   town.add(frames, panes);
+}
+
+// Low-cost half-timbered framing turns high masonry street blockers into
+// recognizable house fronts. Continuous storey beams and upright timbers sit
+// on the solid side of every authored street-facing wall. Two shared batches,
+// never a mesh per facade, and no geometry touches the walkable floor.
+function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wallHeight }) {
+  if (wallHeight < 4) return;
+  const faces = settlementStreetFacingFaces({ grid, blocked, zones });
+  if (!faces.length) return;
+  const wood = material(0x66503a, { roughness: 0.93 });
+  const beams = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
+  );
+  const posts = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood, faces.length * 2,
+  );
+  const dummy = new THREE.Object3D();
+  faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.y = yaw;
+    for (const [band, elevation] of [3.25, wallHeight - 0.21].entries()) {
+      dummy.position.set(wx + dx * 1.973, elevation, wz + dy * 1.973);
+      dummy.updateMatrix();
+      beams.setMatrixAt(faceIndex * 2 + band, dummy.matrix);
+    }
+    for (const [index, side] of [-1, 1].entries()) {
+      const sideways = 1.70 * side;
+      dummy.position.set(
+        wx + dx * 1.973 + Math.cos(yaw) * sideways,
+        wallHeight / 2 - 0.04,
+        wz + dy * 1.973 - Math.sin(yaw) * sideways,
+      );
+      dummy.updateMatrix();
+      posts.setMatrixAt(faceIndex * 2 + index, dummy.matrix);
+    }
+  });
+  beams.instanceMatrix.needsUpdate = true;
+  posts.instanceMatrix.needsUpdate = true;
+  beams.name = 'chronicles-town-timber-storey-beams';
+  posts.name = 'chronicles-town-timber-uprights';
+  beams.castShadow = false;
+  posts.castShadow = false;
+  town.add(beams, posts);
 }
 
 // Sparse district landmarks on EXISTING wall cells. Shallow fixtures sit
@@ -354,6 +404,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     });
     blocked = blocked.filter(({ x, y }) => !houseCells.has(x + ',' + y));
     addSettlementStreetFacades(town, {
+      grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
+      zones: scenePlan.landscape?.facadeZones,
+    });
+    addSettlementTimberFrontages(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
     });
