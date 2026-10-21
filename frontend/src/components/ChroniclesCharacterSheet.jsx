@@ -93,6 +93,7 @@ export default function ChroniclesCharacterSheet({
   progression,
   member,
   mode = 'tactics',
+  initialFolio = 'record',
   onClose,
   onAllocateAttribute = null,
   onLearnSkill = null,
@@ -100,7 +101,7 @@ export default function ChroniclesCharacterSheet({
   onSelectMember = null,
 }) {
   // Navigation belongs to the sheet, not the durable campaign state.
-  const [activeFolio, setActiveFolio] = useState('record');
+  const [activeFolio, setActiveFolio] = useState(() => initialFolio === 'equipment' ? 'equipment' : 'record');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');

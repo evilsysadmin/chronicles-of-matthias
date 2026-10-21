@@ -274,6 +274,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [state, setState] = useState(null);
   const [selectedMemberId, setSelectedMemberId] = useState('matthias');
   const [sheetMemberId, setSheetMemberId] = useState(null);
+  const [sheetInitialFolio, setSheetInitialFolio] = useState('record');
   const selectedMemberIdRef = useRef(selectedMemberId);
   const partyHotkeyRef = useRef({ key: '', at: 0 });
   const [rendererError, setRendererError] = useState('');
@@ -842,7 +843,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     applyLiveProgression(result.progression);
   }, [applyLiveProgression]);
 
-  const openMemberSheet = useCallback((memberId) => {
+  const openMemberSheet = useCallback((memberId, initialFolio = 'record') => {
     clearTouchHold();
     setAutomapOpen(false);
     setMenuOpen(false);
@@ -851,6 +852,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       selectedMemberIdRef.current = memberId;
       setSelectedMemberId(memberId);
     }
+    setSheetInitialFolio(initialFolio === 'equipment' ? 'equipment' : 'record');
     setSheetMemberId(memberId);
   }, [clearTouchHold]);
 
@@ -1627,7 +1629,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               }}>
               {activeQuests.length > 0 && <ChroniclesQuestLog state={state} onTrack={(questId) => dispatch({ type: 'track-quest', questId })} />}
             </ChroniclesNarratorOverlay>
-            <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark} />
+            <ChroniclesPartyBark key={partyBark?.token || 'none'} bark={partyBark}
+              onOpenEquipment={() => openMemberSheet('matthias', 'equipment')} />
             <ChroniclesFirstAudienceCue
               state={state}
               contextualAction={contextualAction}
@@ -1868,10 +1871,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
       {sheetMember && (
         <ChroniclesCharacterSheet
+          key={`${sheetMember.id}:${sheetInitialFolio}`}
           state={state}
           progression={progression}
           member={sheetMember}
           mode="first-person"
+          initialFolio={sheetInitialFolio}
           onClose={() => setSheetMemberId(null)}
           onSelectMember={(memberId) => {
             if (!stateRef.current?.party.some((candidate) => candidate.id === memberId)) return;

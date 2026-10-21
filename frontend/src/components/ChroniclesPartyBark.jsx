@@ -1,6 +1,6 @@
 import './ChroniclesPartyBark.css';
 
-export default function ChroniclesPartyBark({ bark }) {
+export default function ChroniclesPartyBark({ bark, onOpenEquipment = null }) {
   if (!bark?.text) return null;
 
   return (
@@ -9,6 +9,10 @@ export default function ChroniclesPartyBark({ bark }) {
       <div>
         <strong>{bark.speaker}</strong>
         <p>{bark.text}</p>
+        {bark.event === 'first-book-deserter-loot' && typeof onOpenEquipment === 'function' && (
+          <button type="button" className="chronicles-party-bark__action"
+            onClick={onOpenEquipment}>Revisar equipo</button>
+        )}
       </div>
     </aside>
   );

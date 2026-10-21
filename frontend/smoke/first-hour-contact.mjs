@@ -55,6 +55,34 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false);
       await page.screenshot({ path: 'smoke-first-payment-' + width + '.png' });
+
+      // A real authored drop opens the real character equipment folio.
+      await page.goto(url + '?view=loot', { waitUntil: 'domcontentloaded' });
+      const lootCue = page.locator('.chronicles-party-bark');
+      await lootCue.waitFor({ state: 'visible', timeout: 20000 });
+      await page.waitForFunction(() => {
+        const node = document.querySelector('.chronicles-party-bark');
+        return node && Number(getComputedStyle(node).opacity) > 0.95;
+      }, null, { timeout: 5000 });
+      const equipmentLink = page.getByRole('button', { name: 'Revisar equipo' });
+      await equipmentLink.waitFor({ state: 'visible' });
+      await page.screenshot({ path: 'smoke-first-loot-' + width + '.png' });
+      await equipmentLink.click();
+      const sheet = page.getByRole('dialog', { name: 'Matthias' });
+      await sheet.waitFor({ state: 'visible' });
+      assert.match(await sheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
+        /Equipo/, 'Loot CTA must land directly in equipment');
+      await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
+      await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
+      // The MM3 double-weapon summary is optional in the test fixture; the
+      // actual equipment-slot row is common to both character-sheet variants.
+      const wornMeleeWeapon = sheet.locator('.chronicles-character-sheet__gear-slot')
+        .filter({ hasText: 'Arma · A' }).locator('strong');
+      assert.match(await wornMeleeWeapon.innerText(), /Espada de bronce/,
+        'The real equip action must update the active melee weapon');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+        false, 'Loot equipment sheet must not cause horizontal overflow');
+      await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment ' + width + 'px');
     } catch (error) {

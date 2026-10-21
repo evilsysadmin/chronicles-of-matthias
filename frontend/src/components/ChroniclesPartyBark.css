@@ -94,3 +94,24 @@
 @media (prefers-reduced-motion: reduce) {
   .chronicles-party-bark { animation: none; }
 }
+
+/* Only the contextual loot action receives pointer input; the transient
+   narration remains click-through so it never blocks 3D controls. */
+.chronicles-party-bark__action {
+  pointer-events: auto;
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid rgba(230, 181, 100, .68);
+  border-radius: 3px;
+  background: rgba(65, 42, 21, .98);
+  color: #f4dfb9;
+  cursor: pointer;
+  font: 700 .73rem/1.2 Georgia, serif;
+}
+.chronicles-party-bark__action:focus-visible {
+  outline: 2px solid #f7d58d;
+  outline-offset: 2px;
+}
