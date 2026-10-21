@@ -58,12 +58,17 @@ jobs:
           set -euo pipefail
           npm install --no-save --no-audit --no-fund playwright@1.64.1
           npx playwright install --with-deps chromium
-          npx vite preview --port 4173 --strictPort &
-          until curl -fs -o /dev/null http://localhost:4173/; do sleep 0.5; done
+          source smoke/wait-for-http.sh
+          # Include process liveness and logs in startup failure diagnostics.
+          npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "${preview_pid:-}" "${dev_pid:-}" 2>/dev/null || true' EXIT
+          wait_for_http http://localhost:4173/ "$preview_pid" "$RUNNER_TEMP/chronicles-preview.log" "Vite preview"
           node smoke/mount.mjs http://localhost:4173/
           # Real menu components, independent of staging SSO or an account.
-          npx vite --port 4174 --strictPort &
-          until curl -fs -o /dev/null http://localhost:4174/smoke/folio-mobile.html; do sleep 0.5; done
+          npx vite --port 4174 --strictPort > "$RUNNER_TEMP/chronicles-dev.log" 2>&1 &
+          dev_pid=$!
+          wait_for_http http://localhost:4174/smoke/folio-mobile.html "$dev_pid" "$RUNNER_TEMP/chronicles-dev.log" "Vite smoke fixtures"
           node smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
           node smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
