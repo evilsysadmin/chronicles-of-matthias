@@ -6,9 +6,10 @@ const url = process.argv[2] || 'http://localhost:4174/smoke/first-hour-contact.h
 const browser = await chromium.launch();
 const failures = [];
 try {
-  for (const width of [360, 390, 430, 1280]) {
+  for (const width of [360, 390, 430, 800, 1280]) {
+    const height = width === 800 ? 440 : width === 1280 ? 800 : 844;
     const context = await browser.newContext({
-      viewport: { width, height: width === 1280 ? 800 : 844 },
+      viewport: { width, height },
       reducedMotion: width === 390 ? 'reduce' : 'no-preference',
     });
     const page = await context.newPage();
@@ -30,7 +31,7 @@ try {
       });
       assert.equal(info.overflowing, false);
       assert.ok(info.left >= -1 && info.top >= -1
-        && info.right <= width + 1 && info.bottom <= (width === 1280 ? 800 : 844) + 1,
+        && info.right <= width + 1 && info.bottom <= height + 1,
       JSON.stringify(info));
       await page.screenshot({ path: 'smoke-first-threat-' + width + '.png' });
       await page.getByRole('button', { name: 'Entendido' }).click();
@@ -77,7 +78,7 @@ try {
         return {
           backdropPosition: getComputedStyle(node.parentElement).position,
           scrollDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__scroll')).display,
-          left: rect.left, right: rect.right,
+          left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
         };
       });
       assert.equal(skin.backdropPosition, 'fixed',
@@ -86,6 +87,8 @@ try {
         'The real folio uses a single flowing column on mobile, two on desktop');
       assert.ok(skin.left >= -1 && skin.right <= width + 1,
         'Character sheet must fit horizontally: ' + JSON.stringify(skin));
+      assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
+        'Character sheet must fit vertically: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
