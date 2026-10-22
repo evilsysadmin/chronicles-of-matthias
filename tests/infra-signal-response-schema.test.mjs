@@ -23,6 +23,7 @@ const greenRuns = () => ids.map((workflow_id, index) => ({
   id: 100 + index,
   workflow_id,
   head_sha: sha,
+  updated_at: `2026-10-22T11:00:0${index}Z`,
   event: 'push',
   head_branch: 'main',
   repository: { full_name: 'evilsysadmin/chronicles-of-matthias' },
@@ -34,7 +35,7 @@ const response = (runs = greenRuns()) => ({
   workflow_runs: runs,
 });
 
-function check(payload) {
+function check(payload, triggerRunId = '102') {
   const folder = mkdtempSync(join(tmpdir(), 'chronicles-signal-schema-'));
   try {
     const gh = join(folder, 'gh');
@@ -59,6 +60,7 @@ function check(payload) {
         PATH: folder + delimiter + process.env.PATH,
         GH_TOKEN: 'source-token',
         SOURCE_SHA: sha,
+        SOURCE_WORKFLOW_RUN_ID: triggerRunId,
         FAKE_MAIN_SHA: sha,
         FAKE_RUNS: typeof payload === 'string' ? payload : JSON.stringify(payload),
         GITHUB_OUTPUT: output,
@@ -82,6 +84,44 @@ test('exact three trusted green workflows authorize source dispatch', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.output, /^ready=true$/m);
   assert.match(result.summary, /State: source CI green/);
+});
+
+test('only the final trusted CI completion may own a staging dispatch', () => {
+  const completed = response();
+  const last = check(completed, '102');
+  assert.equal(last.status, 0, last.stderr);
+  assert.match(last.output, /^ready=true$/m);
+
+  for (const earlier of ['100', '101']) {
+    const result = check(completed, earlier);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.output, /^ready=false$/m);
+    assert.match(result.summary, /another source CI run owns dispatch/);
+  }
+
+  // Completion order is not the same as workflow ID or run creation order.
+  const reordered = greenRuns();
+  reordered[0].updated_at = '2026-10-22T11:05:00Z';
+  reordered[2].updated_at = '2026-10-22T11:03:00Z';
+  assert.match(check(response(reordered), '100').output, /^ready=true$/m);
+  assert.match(check(response(reordered), '102').output, /^ready=false$/m);
+
+  // Timestamp ties fall back to immutable run ID, not array order.
+  reordered.forEach((item) => { item.updated_at = '2026-10-22T11:00:00Z'; });
+  assert.match(check(response(reordered.reverse()), '102').output, /^ready=true$/m);
+});
+
+test('invalid trigger run and missing trustworthy completion time fail closed', () => {
+  const invalid = check(response(), 'invalid');
+  assert.equal(invalid.status, 67, invalid.stderr);
+  assert.doesNotMatch(invalid.output, /ready=true/);
+
+  const missingTimestamp = response(greenRuns().map((item, i) =>
+    i === 0 ? { ...item, updated_at: null } : item));
+  const bad = check(missingTimestamp);
+  assert.equal(bad.status, 66, bad.stderr);
+  assert.match(bad.stderr, /CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD/);
+  assert.doesNotMatch(bad.output, /ready=true/);
 });
 
 test('valid incomplete source CI is waiting, not an API error', () => {
