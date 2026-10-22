@@ -166,7 +166,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -520,8 +520,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     else if (action === 'close-journal') setJournalOpen(false);
     else if (action === 'close-quick-status') setQuickStatusOpen(false);
     else {
-      // Restore the visible gem on either menu transition.
-      menuSummaryRef.current?.focus();
+      // Focus the gem only when opening. Blurring when closing prevents a
+      // stale keyboard outline around an inactive menu (Tab -> Esc).
+      if (menuOpen) chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+      else menuSummaryRef.current?.focus();
       setMenuOpen((open) => !open);
     }
   }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
@@ -1317,7 +1319,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
         if (menuShortcut === 'close') {
           setConfirmExitWithoutSaving(false);
-          menuSummaryRef.current?.focus();
+          chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
           setMenuOpen(false);
         }
         return;
@@ -1724,6 +1726,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   setAutomapOpen(false);
                   setJournalOpen(false);
                 } else {
+                  // Also handle native <summary> dismissal and pointer close.
+                  chroniclesReleaseAdventureMenuFocus(event.currentTarget);
                   setConfirmExitWithoutSaving(false);
                 }
               }}
@@ -1732,9 +1736,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span className="chronicles-menu-gem__hint" aria-hidden="true">MENÚ</span>
               </summary>
               <ChroniclesAdventureMenu
-                onClose={() => { menuSummaryRef.current?.focus(); setMenuOpen(false); }}
+                onClose={() => {
+                  chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+                  setMenuOpen(false);
+                }}
                 onContinue={() => {
-                  menuSummaryRef.current?.focus();
+                  chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
                   setMenuOpen(false);
                   setConfirmExitWithoutSaving(false);
                 }}
