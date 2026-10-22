@@ -161,7 +161,26 @@ jobs:
           # succeed; a partial failure remains retryable on the next signal.
           receipt_name="chronicles-infra-dispatch-$SOURCE_SHA"
           receipts="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api -X GET repos/evilsysadmin/chronicles-of-matthias/actions/artifacts -f name="$receipt_name" -f per_page=100)"
-          if ! jq -e '(.total_count | type == "number") and .total_count <= 100 and (.artifacts | type == "array")' <<<"$receipts" >/dev/null; then
+          # An incomplete artifact page cannot prove that no successful
+          # dispatch receipt exists. Never duplicate staging requests based
+          # on a truncated or malformed GitHub artifact response.
+          if ! jq -e --arg name "$receipt_name" '
+            . as $p |
+            ($p | type == "object") and
+            ($p.total_count | type == "number") and
+            ($p.total_count >= 0 and $p.total_count <= 100) and
+            ($p.artifacts | type == "array") and
+            ($p.total_count == ($p.artifacts | length)) and
+            ([$p.artifacts[]? |
+              (. | type == "object") and
+              (.name | type == "string") and
+              (.expired | type == "boolean") and
+              (if .name == $name then
+                (.workflow_run.id | type == "number") and
+                (.workflow_run.id > 0)
+              else true end)
+            ] | all)
+          ' <<<"$receipts" >/dev/null; then
             echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
             exit 66
           fi
