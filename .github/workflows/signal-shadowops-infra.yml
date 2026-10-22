@@ -174,11 +174,13 @@ jobs:
             ([$p.artifacts[]? |
               (. | type == "object") and
               (.name | type == "string") and
+              # A response with an unrelated name is NOT proof of absence:
+              # the server may have ignored the name filter or truncated
+              # earlier results, concealing our prior successful receipt.
+              (.name == $name) and
               (.expired | type == "boolean") and
-              (if .name == $name then
-                (.workflow_run.id | type == "number") and
-                (.workflow_run.id > 0)
-              else true end)
+              (.workflow_run.id | type == "number") and
+              (.workflow_run.id > 0)
             ] | all)
           ' <<<"$receipts" >/dev/null; then
             echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
