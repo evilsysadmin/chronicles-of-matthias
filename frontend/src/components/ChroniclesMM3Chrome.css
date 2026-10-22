@@ -1540,3 +1540,49 @@
     border: 0;
   }
 }
+
+/* MM3 '¿A quién?': a small speech plaque attached to the caster portrait,
+   not a blocking second spell dialog. Keypresses 1–4 or portrait taps decide. */
+.chronicles .chronicles-party:has(.chronicles-spell-target-question) {
+  overflow: visible;
+}
+.chronicles .chronicles-party-member:has(.chronicles-spell-target-question) {
+  position: relative;
+  z-index: 8;
+}
+.chronicles .chronicles-party-member .chronicles-spell-target-question {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(280px, 75vw);
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 9px 12px;
+  border: 3px double #efc479;
+  background: #231b26;
+  color: #fff1ca;
+  text-align: center;
+  font-family: var(--mm3-pixel-font);
+  font-size: clamp(1.2rem, 1.6vw, 1.55rem);
+  line-height: 1.05;
+  pointer-events: none;
+  box-shadow: 0 5px 16px #000b, inset 0 0 0 1px #84572b;
+}
+.chronicles .chronicles-party-member .chronicles-spell-target-question::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: calc(50% - 7px);
+  border: 7px solid transparent;
+  border-top-color: #efc479;
+}
+.chronicles .chronicles-spell-target-question strong { color: #ffe6a9; font-weight: 700; }
+.chronicles .chronicles-spell-target-question small { color: #e1d8c4; font-size: .82em; }
+.chronicles .chronicles-spell-target-question .is-warning { color: #ffb6a9; }
+.chronicles .chronicles-party-member:focus-visible:has(.chronicles-spell-target-question) {
+  outline: 2px solid #f9de9a;
+}
