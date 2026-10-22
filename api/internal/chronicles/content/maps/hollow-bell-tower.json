@@ -155,6 +155,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "tower-lower-hound",
+      "visualType": "bone-hound",
+      "visualScale": 1,
+      "visualMotion": "grounded",
+      "name": "sabueso de la galería baja",
+      "x": 1,
+      "y": 9,
+      "hpKey": "towerLowerHoundHp",
+      "maxHp": 7,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "optional": true
+    },
+    {
+      "id": "tower-mechanism-spider",
+      "visualType": "crypt-spider",
+      "visualScale": 0.98,
+      "visualMotion": "skitter",
+      "name": "araña de los engranajes",
+      "x": 7,
+      "y": 5,
+      "hpKey": "towerMechanismSpiderHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "optional": true
+    },
+    {
+      "id": "tower-south-bishop",
+      "visualType": "spectral-bishop",
+      "visualScale": 1,
+      "visualMotion": "hover",
+      "name": "centinela espectral del anillo",
+      "x": 9,
+      "y": 9,
+      "hpKey": "towerSouthBishopHp",
+      "maxHp": 7,
+      "retaliation": 2,
+      "retaliationReach": 3,
+      "activation": "always",
+      "optional": true,
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      }
     }
   ],
   "triggers": [],
