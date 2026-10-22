@@ -89,7 +89,9 @@ try {
             'Healing targets overflow the grimoire: ' + JSON.stringify(fit));
           await page.screenshot({ path: `smoke-folio-healing-targets-${width}.png` });
           await wounded.click();
-          await page.getByRole('status').first().waitFor();
+          await page.waitForFunction(() =>
+            document.querySelector('[data-test-result]')?.textContent?.trim()
+              === 'cast:first-aid:matthias');
           assert.equal((await page.locator('[data-test-result]').textContent()).trim(),
             'cast:first-aid:matthias');
         }
