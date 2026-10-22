@@ -87,6 +87,34 @@ describe('MM3 map symbol legends', () => {
     expect(emptyTile).toContain('r="0.46"');
   });
 
+  it('keeps the party arrow visible when the next route tile is the current tile', () => {
+    const partyState = createChroniclesState('crypt-eight-squares');
+    const here = { x: partyState.x, y: partyState.y };
+    const full = renderToStaticMarkup(
+      <ChroniclesAutomap open state={partyState} onClose={() => {}}
+        visitedCells={[]} target={here} />,
+    );
+    expect(full).toContain('data-chronicles-route-overlap="party"');
+    expect(full).toContain('class="chronicles-automap__target is-corner-badge"');
+    expect(full).toContain('class="chronicles-automap__party-marker"');
+    expect(full).toContain('r="0.21"');
+
+    const mini = renderToStaticMarkup(
+      <ChroniclesMinimap state={partyState} visitedCells={[]} target={here} />,
+    );
+    expect(mini).toContain('data-chronicles-route-overlap="party"');
+    expect(mini).toContain('class="chronicles-minimap__target is-corner-badge"');
+    expect(mini).toContain('class="chronicles-minimap__party"');
+    expect(mini).toContain('r="0.21"');
+
+    const distant = renderToStaticMarkup(
+      <ChroniclesMinimap state={partyState} visitedCells={[]}
+        target={{ x: partyState.x + 12, y: partyState.y }} />,
+    );
+    expect(distant).toContain('data-chronicles-route-target="edge"');
+    expect(distant).not.toContain('data-chronicles-route-overlap=');
+  });
+
   it('labels guild and objective contextually on the local minimap', () => {
     const known = renderToStaticMarkup(
       <ChroniclesMinimap
