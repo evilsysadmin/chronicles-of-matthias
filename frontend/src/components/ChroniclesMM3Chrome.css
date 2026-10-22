@@ -1541,6 +1541,12 @@
   }
 }
 
+/* A pending spell only accepts portraits or 1–4; moving/attacking through
+   the touch controls while the question is open must not consume a turn. */
+.chronicles[data-chronicles-targeting] .chronicles-stage-wrap {
+  pointer-events: none;
+}
+
 /* MM3 '¿A quién?': a small speech plaque attached to the caster portrait,
    not a blocking second spell dialog. Keypresses 1–4 or portrait taps decide. */
 .chronicles .chronicles-party:has(.chronicles-spell-target-question) {
