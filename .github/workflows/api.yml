@@ -33,6 +33,19 @@ jobs:
         with:
           go-version: '1.27.3'
           cache-dependency-path: api/go.sum
+      # TEMPORARY BOOTSTRAP: generate authentic Go module resolution on CI.
+      # Remove before merging; commit the generated go.mod/go.sum instead.
+      - name: Bootstrap corrected Go image decoder dependencies (temporary)
+        working-directory: api
+        run: |
+          set -euo pipefail
+          go get golang.org/x/image@v0.45.0
+          go mod tidy
+          go mod verify
+          for file in go.mod go.sum; do
+            base64 -w0 "$file" | fold -w 2400 | awk -v file="$file" '{ printf "CHRONICLES_GOLOCK %s %d %s\\n", file, NR-1, $0 }'
+            printf 'CHRONICLES_GOLOCKEND %s %s\\n' "$file" "$(base64 -w0 "$file" | wc -c)"
+          done
       - name: Build and vet (amd64 + arm64)
         working-directory: api
         run: |
