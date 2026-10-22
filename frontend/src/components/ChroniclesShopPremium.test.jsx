@@ -93,12 +93,32 @@ describe('Chronicles premium shop UI', () => {
     expect(shieldArt).toBeTruthy();
     expect(cuirassArt).toBeTruthy();
     expect(shieldArt).not.toBe(cuirassArt);
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-shield'])).toBeNull();
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-ring'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-shield'])).toBeTruthy();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-ring'])).toBeTruthy();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-scale'])).toBeNull();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="wooden-shield"');
     expect(html).toContain('data-chronicles-shop-art="leather-leather"');
     expect(html).toContain('data-chronicles-shop-glyph="shield"');
+  });
+
+  it('adds distinct brass shield and ringmail portraits without painting unrelated materials', () => {
+    const shield = CHRONICLES_EQUIPMENT['brass-shield'];
+    const ringmail = CHRONICLES_EQUIPMENT['brass-ring'];
+    expect(shield.slot).toBe('shield');
+    expect(ringmail.slot).toBe('armor');
+    expect(shield.materialId).toBe('brass');
+    expect(ringmail.materialId).toBe('brass');
+    expect(shield.baseItemId).toBe('shield');
+    expect(ringmail.baseItemId).toBe('ring');
+    expect(chroniclesShopItemArt(shield)).toBeTruthy();
+    expect(chroniclesShopItemArt(ringmail)).toBeTruthy();
+    expect(chroniclesShopItemArt(shield)).not.toBe(chroniclesShopItemArt(ringmail));
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-scale'])).toBeNull();
+    const html = render('first-book-armorer');
+    expect(html).toContain('data-chronicles-shop-art="brass-shield"');
+    expect(html).toContain('data-chronicles-shop-art="brass-ring"');
+    expect(html).toContain('data-chronicles-shop-glyph="armor"');
   });
 
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
