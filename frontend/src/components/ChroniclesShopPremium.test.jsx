@@ -61,6 +61,26 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('data-chronicles-shop-glyph="weapon"');
   });
 
+  it('adds material-specific 2D close-up art for dagger and bronze sword only', () => {
+    const dagger = CHRONICLES_EQUIPMENT['brass-dagger'];
+    const sword = CHRONICLES_EQUIPMENT['bronze-sword'];
+    expect(dagger.materialId).toBe('brass');
+    expect(sword.materialId).toBe('bronze');
+    expect(dagger.baseItemId).toBe('dagger');
+    expect(sword.baseItemId).toBe('sword');
+    const dagArt = chroniclesShopItemArt(dagger);
+    const swordArt = chroniclesShopItemArt(sword);
+    expect(dagArt).toBeTruthy();
+    expect(swordArt).toBeTruthy();
+    expect(dagArt).not.toBe(swordArt);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['steel-sword'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['iron-dagger'])).toBeNull();
+    const html = render();
+    expect(html).toContain('data-chronicles-shop-art="brass-dagger"');
+    expect(html).toContain('data-chronicles-shop-art="wooden-longbow"');
+    expect(html).toContain('class="chronicles-shop__item-sprite"');
+  });
+
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
     const html = render();
     expect(html).toContain('chronicles-shop__primary');

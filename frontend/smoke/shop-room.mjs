@@ -130,9 +130,17 @@ try {
         const node = document.querySelector('[data-chronicles-shop-item="wooden-longbow"] img');
         return node?.complete && node.naturalWidth >= 512 && node.naturalHeight >= 512;
       });
-      assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-dagger"] svg')
-        .getAttribute('aria-label'), 'Arma',
-      'Unpainted items must keep their real accessible fallback glyph');
+      const paintedDagger = dialog.locator('[data-chronicles-shop-item="brass-dagger"] img[data-chronicles-shop-art="brass-dagger"]');
+      await paintedDagger.waitFor({ state: 'visible' });
+      assert.equal(await paintedDagger.getAttribute('alt'), 'Daga de latón',
+        'Dagger must use the correct material-specific accessible portrait');
+      await page.waitForFunction(() => {
+        const image = document.querySelector('[data-chronicles-shop-item="brass-dagger"] img');
+        return image?.complete && image.naturalWidth >= 512 && image.naturalHeight >= 512;
+      });
+      const missingArt = dialog.locator('[data-chronicles-shop-item="brass-mace"] svg');
+      assert.equal(await missingArt.getAttribute('aria-label'), 'Arma',
+        'Unpainted weapons must retain the accessible fallback glyph');
       const spriteGeometry = await dialog.evaluate((root) => {
         const portrait = root.querySelector('.chronicles-shop__item-portrait');
         const sprite = portrait?.querySelector('img[data-chronicles-shop-art="wooden-longbow"]');
