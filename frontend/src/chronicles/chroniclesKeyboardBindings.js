@@ -10,8 +10,7 @@ export const CHRONICLES_DIRECTION_KEYS = Object.freeze({
 export function chroniclesCombatKeyMode(key) {
   if (key === 'a' || key === 'A') return 'melee';
   if (key === 's' || key === 'S') return 'missile';
-  // Optional historical auto-attack alias; not a movement binding.
-  if (key === ' ') return 'auto';
+  // Space is deliberately unbound: A is the only melee hotkey.
   return null;
 }
 
