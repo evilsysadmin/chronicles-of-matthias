@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import {
+  chroniclesSpellTargetHotkey,
   chroniclesMemberMaxSp,
   chroniclesMemberSp,
   chroniclesMemberSpells,
@@ -40,6 +41,40 @@ describe('Chronicles · MM3 magic', () => {
     expect(chroniclesMemberMaxSp(state, { ...cleric, mm3: { ...cleric.mm3, raceId: 'gnome' } })).toBe(6);
     expect(chroniclesMemberMaxSp(state, { ...cleric, mm3: { ...cleric.mm3, raceId: 'elf' } })).toBe(5);
     expect(chroniclesMemberMaxSp(state, { ...archer, mm3: { ...archer.mm3, raceId: 'elf' } })).toBe(3);
+  });
+
+  it('routes 1–4 to party order only during unmodified discrete target selection', () => {
+    const state = town();
+    for (const [index, hero] of state.party.entries()) {
+      expect(chroniclesSpellTargetHotkey({ key: String(index + 1) }, state.party)).toBe(hero.id);
+    }
+    for (const event of [
+      { key: '0' }, { key: '5' }, { key: 'a' }, { key: 'Escape' },
+      { key: '1', repeat: true }, { key: '2', shiftKey: true },
+      { key: '3', ctrlKey: true }, { key: '4', metaKey: true },
+      { key: '1', altKey: true }, { key: '2', isComposing: true },
+    ]) expect(chroniclesSpellTargetHotkey(event, state.party)).toBeNull();
+    expect(chroniclesSpellTargetHotkey({ key: '4' }, state.party.slice(0, 3))).toBeNull();
+  });
+
+  it('selects a real hero without spending HP, SP or turn until the cast is confirmed', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+    )) };
+    const turnBefore = state.turns;
+    const spBefore = chroniclesMemberSp(state, member(state, 'bishop'));
+    const targetId = chroniclesSpellTargetHotkey({ key: '1' }, state.party);
+    expect(targetId).toBe('matthias');
+    // Asking the question is presentation-only. The reducer is called once,
+    // after the chosen living, wounded member has been validated.
+    expect(state.turns).toBe(turnBefore);
+    expect(chroniclesMemberSp(state, member(state, 'bishop'))).toBe(spBefore);
+    const healed = chroniclesReduce(state, { type: 'cast', memberId: 'bishop',
+      spellId: 'first-aid', targetId });
+    expect(member(healed, 'matthias').hp).toBe(9);
+    expect(healed.turns).toBe(turnBefore + 1);
+    expect(chroniclesMemberSp(healed, member(healed, 'bishop'))).toBe(spBefore - 1);
   });
 
   it('heals the most wounded ally with First Aid and the inn restores spell points', () => {
