@@ -514,6 +514,11 @@ export function chroniclesMapTransitionState(state, mapId) {
     partyPositions: {},
     enemyPositions: {},
     enemyTurnEvents: [],
+    // Sightings and patrol cadence are local to the visited region.
+    // Carrying the previous map's clock/memory across doors retains stale
+    // ghost sightings and can change the new region's first roaming steps.
+    enemyAwareness: {},
+    explorationEnemySteps: 0,
   };
 }
 
