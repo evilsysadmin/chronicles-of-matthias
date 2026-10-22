@@ -460,6 +460,10 @@ func buildThrone() *O {
 		knight("knight-east", "Dama Ysolde, juramentada", "templeKnightYsoldeDown", point{12, 7}),
 		authoredFoe(id, foeSpec{key: "acolyte-west", visual: "silent-acolyte", name: "un acólito del Silencio", pos: point{3, 9}, hp: 18, retaliation: 3, ai: acolyteAI(), gold: 10}),
 		authoredFoe(id, foeSpec{key: "acolyte-east", visual: "silent-acolyte", name: "una acólita del Silencio", pos: point{15, 9}, hp: 18, retaliation: 3, ai: acolyteAI(), gold: 10}),
+		// Low-health optional flank sentries; the original five and all endings stay untouched.
+		// Append so older slain-enemy indices still identify Varren and his retinue.
+		authoredFoe(id, foeSpec{key: "spider-west", visual: "crypt-spider", name: "una araña de los pilares", pos: point{2, 7}, hp: 11, retaliation: 2, ai: aiFor("crypt-spider"), gold: 4}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "hound-east", visual: "bone-hound", name: "un sabueso del flanco este", pos: point{16, 7}, hp: 12, retaliation: 2, ai: aiFor("bone-hound"), gold: 4}).With("optional", true),
 	}
 	exits := A{stairs("throne-up", point{9, 11}, "Subir a la Cripta de los Juramentos", CryptID, "crypt-down", nil, "", "")}
 	return dungeonManifest(id, "Trono Bajo la Piedra", "Trono", throneGrid, obj("x", 9, "y", 11, "direction", 0),

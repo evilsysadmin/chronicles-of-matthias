@@ -99,10 +99,35 @@ function throughTheCrypt({ freeKnights }) {
   expect(state.inventory['throne-key']).toBeTruthy();
   state = use(state, 'crypt-down', down);
   expect(state.mapId).toBe('templo-corona-trono');
+  // The two optional flankers must never replace either oathbound knight
+  // or add extra conditions to confronting Varren and choosing an ending.
+  expect(state.temploCoronaTronoSpiderWestHp).toBeGreaterThan(0);
+  expect(state.temploCoronaTronoHoundEastHp).toBeGreaterThan(0);
   return state;
 }
 
 describe('El rey desaparecido · acto V', () => {
+  it('keeps Varren and two oathbound knights as the only flagged Throne enemies', () => {
+    const throne = chroniclesMapById('templo-corona-trono');
+    expect(throne.enemies.map((enemy) => enemy.id)).toEqual([
+      'templo-corona-trono-varren',
+      'templo-corona-trono-knight-west',
+      'templo-corona-trono-knight-east',
+      'templo-corona-trono-acolyte-west',
+      'templo-corona-trono-acolyte-east',
+      'templo-corona-trono-spider-west',
+      'templo-corona-trono-hound-east',
+    ]);
+    expect(throne.enemies.filter((enemy) => enemy.defeatedFlag).map((enemy) => enemy.id))
+      .toEqual(['templo-corona-trono-varren', 'templo-corona-trono-knight-west', 'templo-corona-trono-knight-east']);
+    for (const enemy of throne.enemies.slice(5)) {
+      expect(enemy.optional).toBe(true);
+      expect(enemy.onDefeat.effects).toEqual([{ type: 'grant-gold', amount: 4 }]);
+    }
+    expect(throne.interactables.filter((entry) => entry.id.startsWith('throne-oath-')).map((entry) => entry.id))
+      .toEqual(['throne-oath-restore', 'throne-oath-break']);
+  });
+
   it('adds only ordinary Temple atrium combatants without changing the three crowns or Herald', () => {
     const atrium = chroniclesMapById('templo-corona-atrio');
     expect(atrium.enemies.map((enemy) => enemy.id)).toEqual([
