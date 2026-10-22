@@ -3,6 +3,7 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
+import { chroniclesDiscoveredPois } from '../chronicles/chroniclesAutomapPoi.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -29,50 +30,25 @@ function inWindow(position, state, radiusX, radiusY = radiusX) {
   );
 }
 
+// Use the same authored, deduplicated, discovery-gated POIs as the full M map.
+// Only their presentation and seven-tile viewport are different.
 function discoveredLocalMarkers(map, state, revealed, radiusX, radiusY) {
-  const groups = [
-    ['exit', map?.exits || []],
-    ['treasure', map?.treasures || []],
-    ['interactable', map?.interactables || []],
-  ];
-
-  return groups.flatMap(([kind, entries]) => entries.flatMap((entry) => {
-    const position = chroniclesMapContentPosition(map, entry);
-    if (!inWindow(position, state, radiusX, radiusY)) return [];
-    if (!revealed.has(chroniclesAutomapCellKey(position.x, position.y))) return [];
-    return [{ kind, entry, position }];
-  }));
+  return chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition)
+    .filter((marker) => inWindow(marker.position, state, radiusX, radiusY));
 }
 
 function Marker({ marker }) {
   const { x, y } = marker.position;
-  if (marker.kind === 'exit') {
-    return (
-      <rect
-        className="chronicles-minimap__marker is-exit"
-        x={x + .27}
-        y={y + .27}
-        width=".46"
-        height=".46"
-        rx=".08"
-      />
-    );
-  }
-  if (marker.kind === 'treasure') {
-    return (
-      <path
-        className="chronicles-minimap__marker is-treasure"
-        d={`M ${x + .5} ${y + .27} L ${x + .73} ${y + .5} L ${x + .5} ${y + .73} L ${x + .27} ${y + .5} Z`}
-      />
-    );
-  }
   return (
-    <circle
-      className="chronicles-minimap__marker is-interactable"
-      cx={x + .5}
-      cy={y + .5}
-      r=".17"
-    />
+    <g className={`chronicles-minimap__poi is-${marker.category}`}
+      data-chronicles-poi={marker.category}
+      data-chronicles-poi-id={marker.id}
+      aria-label={marker.label}
+      pointerEvents="none">
+      <title>{marker.label}</title>
+      <rect x={x + .08} y={y + .08} width=".84" height=".84" rx=".12" />
+      <text x={x + .5} y={y + .54} textAnchor="middle" dominantBaseline="middle">{marker.glyph}</text>
+    </g>
   );
 }
 
@@ -155,7 +131,7 @@ export default function ChroniclesMinimap({
   const cx = state.x + .5;
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
-  const markers = discoveredLocalMarkers(map, state, discovered, radiusX, radiusY);
+  const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
 
   return (
     <button
@@ -200,7 +176,7 @@ export default function ChroniclesMinimap({
         }))}
         {markers.map((marker) => (
           <Marker
-            key={`${marker.kind}:${marker.entry?.id || `${marker.position.x}:${marker.position.y}`}`}
+            key={marker.id}
             marker={marker}
           />
         ))}
