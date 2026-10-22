@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesFeedbackMailbox from './ChroniclesFeedbackMailbox.jsx';
 
@@ -8,8 +8,8 @@ export default function ChroniclesAdventureMenu({
   onClose, onContinue, onJournal, onQuickStatus, onSave,
   onSaveExit, onAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, saveNotice = '', saveBusy = false, isAdmin = false,
+  feedbackOpen = false, onFeedbackOpenChange,
 }) {
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const feedbackButtonRef = useRef(null);
   const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
@@ -61,12 +61,12 @@ export default function ChroniclesAdventureMenu({
               <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
             )}
             <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
-              onClick={() => setFeedbackOpen(true)}>✉ Buzón de feedback</button>
+              onClick={() => onFeedbackOpenChange?.(true)}>✉ Buzón de feedback</button>
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
               </>
             )}
             {!confirmExitWithoutSaving && feedbackOpen && (
-              <ChroniclesFeedbackMailbox onBack={() => setFeedbackOpen(false)} />
+              <ChroniclesFeedbackMailbox onBack={() => onFeedbackOpenChange?.(false)} />
             )}
             {confirmExitWithoutSaving && (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
