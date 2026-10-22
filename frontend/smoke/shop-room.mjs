@@ -97,6 +97,24 @@ try {
             `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
         }
       }
+      if (width === 1280 && height === 800) {
+        const ledger = await dialog.locator('.chronicles-shop__catalog').evaluate((catalog) => {
+          const list = catalog.querySelector('.chronicles-shop__list');
+          const rows = [...list.querySelectorAll('[data-chronicles-shop-item]')];
+          const last = rows.at(-1)?.getBoundingClientRect();
+          const rect = list.getBoundingClientRect();
+          return { rows: rows.length, clientHeight: list.clientHeight,
+            scrollHeight: list.scrollHeight, lastBottom: last?.bottom, visibleBottom: rect.bottom,
+            rowHeight: rows[0]?.getBoundingClientRect().height };
+        });
+        assert.equal(ledger.rows, 11, 'Brunna baseline must retain its complete eleven-item catalogue');
+        assert(ledger.scrollHeight <= ledger.clientHeight + 2,
+          'All eleven merchant items should fit at 1280x800 without scrolling: ' + JSON.stringify(ledger));
+        assert(ledger.lastBottom <= ledger.visibleBottom + 1,
+          'The final merchandise item is clipped: ' + JSON.stringify(ledger));
+        assert(ledger.rowHeight >= 35,
+          'The dense layout must keep usable desktop row targets: ' + JSON.stringify(ledger));
+      }
       await page.screenshot({ path: `smoke-shop-${width}.png` });
       if (width === 390 || width === 1280) {
         await captureArtworkOnly(page, 'smoke-shop-art-only-brunna-' + width + '.png');
