@@ -18,11 +18,14 @@ const MINIMAP_ACCESSIBLE_BASE = 'Minimapa local. Abrir automapa completo';
 
 // The minimap is one focusable button: describe only POIs already shown by
 // its discovery-gated local viewport. Keep speech brief in crowded towns.
-export function chroniclesMinimapAccessibleLabel(markers) {
-  if (!Array.isArray(markers) || markers.length === 0) return MINIMAP_ACCESSIBLE_BASE;
+export function chroniclesMinimapAccessibleLabel(markers, target = null) {
+  const route = target ? '★: rumbo al objetivo. ' : '';
+  if (!Array.isArray(markers) || markers.length === 0) {
+    return route ? `Minimapa local. ${route}Abrir automapa completo` : MINIMAP_ACCESSIBLE_BASE;
+  }
   const first = markers.slice(0, 3).map((marker) => `${marker.glyph}: ${marker.label}`);
   const remaining = markers.length - first.length;
-  return `Minimapa local. Lugares descubiertos: ${first.join('; ')}${remaining ? `; y ${remaining} más` : ''}. Abrir automapa completo`;
+  return `Minimapa local. Lugares descubiertos: ${first.join('; ')}${remaining ? `; y ${remaining} más` : ''}. ${route}Abrir automapa completo`;
 }
 
 
@@ -145,13 +148,14 @@ export default function ChroniclesMinimap({
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
   const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
+  const guildVisible = markers.some((marker) => marker.category === 'guild');
 
   return (
     <button
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label={chroniclesMinimapAccessibleLabel(markers)}
+      aria-label={chroniclesMinimapAccessibleLabel(markers, target)}
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
@@ -202,6 +206,12 @@ export default function ChroniclesMinimap({
           <path d={`M ${cx} ${cy - .38} L ${cx + .28} ${cy + .26} L ${cx} ${cy + .12} L ${cx - .28} ${cy + .26} Z`} />
         </g>
       </svg>
+      {(guildVisible || target) && (
+        <span className="chronicles-minimap__legend" aria-hidden="true">
+          {guildVisible && <span className="is-guild"><b>G</b> gremio</span>}
+          {target && <span className="is-target"><b>★</b> objetivo</span>}
+        </span>
+      )}
       <span className="chronicles-minimap__expand" aria-hidden="true">⌖</span>
     </button>
   );

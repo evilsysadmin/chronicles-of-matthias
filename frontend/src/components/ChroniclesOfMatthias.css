@@ -799,6 +799,15 @@
 .chronicles-automap__panel footer i { font-style: normal; }
 .chronicles-automap__panel footer i.is-party { color: #f4dba8; }
 .chronicles-automap__panel footer i.is-exit { color: #e4c894; }
+.chronicles-automap__panel footer .chronicles-automap__legend-guild { color: #ead6b7; }
+.chronicles-automap__legend-guild i {
+  padding: 1px 4px;
+  border: 1px solid #c6b1f1;
+  border-radius: 3px;
+  background: #241c29;
+  color: #ead9ff;
+  font-weight: 800;
+}
 .chronicles-automap__panel footer kbd {
   padding: 1px 4px;
   border: 1px solid #554735;
@@ -849,7 +858,8 @@
 }
 
 .chronicles-minimap__title,
-.chronicles-minimap__expand {
+.chronicles-minimap__expand,
+.chronicles-minimap__legend {
   position: absolute;
   z-index: 2;
   pointer-events: none;
@@ -868,10 +878,37 @@
 
 .chronicles-minimap__expand {
   right: 7px;
-  bottom: 5px;
+  top: 5px;
   color: rgba(232, 198, 139, .72);
   font-size: .8rem;
 }
+
+/* Contextual, touch-readable key: do not clutter the map with undiscovered POIs. */
+.chronicles-minimap__legend {
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 4px;
+  font-size: .5rem;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px #000;
+}
+.chronicles-minimap__legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 3px;
+  border: 1px solid rgba(216, 175, 108, .43);
+  border-radius: 3px;
+  background: rgba(9, 8, 7, .9);
+  white-space: nowrap;
+}
+.chronicles-minimap__legend .is-guild b { color: #d8c0ff; }
+.chronicles-minimap__legend .is-target b { color: #ffd36a; }
 
 .chronicles-minimap__cell {
   vector-effect: non-scaling-stroke;
