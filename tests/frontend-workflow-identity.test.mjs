@@ -107,6 +107,31 @@ test('a truncated GitHub response cannot hide a newer failed Chromium run', () =
   );
 });
 
+test('rejects malformed workflow records instead of overlooking a newer failed run', () => {
+  const oldGreen = run({ id: 42 });
+  const badRecords = [
+    null,
+    { ...run({ id: 43, conclusion: 'failure' }), id: '43' },
+    { ...run({ id: 43, conclusion: 'failure' }), id: 0 },
+    { ...run({ id: 43, conclusion: 'failure' }), workflow_id: '386812503' },
+    { ...run({ id: 43, conclusion: 'failure' }), head_sha: null },
+    { ...run({ id: 43, conclusion: 'failure' }), event: null },
+    { ...run({ id: 43, conclusion: 'failure' }), status: null },
+    { ...run({ id: 43, conclusion: 'failure' }), conclusion: { result: 'failure' } },
+    { ...run({ id: 43, conclusion: 'failure' }), repository: null },
+  ];
+  for (const bad of badRecords) {
+    assert.throws(() => verifyFrontendWorkflow(response(oldGreen, bad), opts),
+      /Invalid GitHub workflow-run record/,
+      JSON.stringify(bad));
+  }
+  assert.throws(() => verifyFrontendWorkflow(
+    response(oldGreen, run({ id: 43, conclusion: 'failure' })), opts),
+    /not green/,
+  );
+  assert.equal(verifyFrontendWorkflow(response(oldGreen), opts), 42);
+});
+
 test('command line invocation verifies JSON stdin and fails closed', () => {
   const script = fileURLToPath(new URL('../scripts/require-frontend-workflow.mjs', import.meta.url));
   const call = (data) => spawnSync(process.execPath,
@@ -123,6 +148,11 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   }));
   assert.equal(truncated.status, 1);
   assert.match(truncated.stderr, /Invalid or truncated/);
+  const malformedRecord = call(JSON.stringify(response(
+    run({ id: 10 }), { ...run({ id: 11 }), id: '11', conclusion: 'failure' },
+  )));
+  assert.equal(malformedRecord.status, 1);
+  assert.match(malformedRecord.stderr, /Invalid GitHub workflow-run record/);
 });
 
 test('required repository-contract validates frontend check and workflow identity', () => {
