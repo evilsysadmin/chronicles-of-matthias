@@ -71,6 +71,15 @@ function throughTheCrypt({ freeKnights }) {
   for (const crown of ['temple-crown-iron', 'temple-crown-salt', 'temple-crown-ash']) {
     state = use(state, crown, position('templo-corona-atrio', 'treasures', crown));
   }
+  // Optional reinforcements must neither block the three-crown seal nor
+  // implicitly require combat before entering the Crypt.
+  for (const key of [
+    'temploCoronaAtrioHoundWestHp',
+    'temploCoronaAtrioAcolyteEastwardHp',
+    'temploCoronaAtrioWispNorthHp',
+  ]) {
+    expect(state[key], key).toBeGreaterThan(0);
+  }
   state = use(state, 'temple-atrium-seal', seal);
   expect(state.templeAtriumSealOpen).toBe(true);
   expect(state.inventory).not.toHaveProperty('temple-crown-iron');
@@ -94,6 +103,30 @@ function throughTheCrypt({ freeKnights }) {
 }
 
 describe('El rey desaparecido · acto V', () => {
+  it('adds only ordinary Temple atrium combatants without changing the three crowns or Herald', () => {
+    const atrium = chroniclesMapById('templo-corona-atrio');
+    expect(atrium.enemies.map((enemy) => enemy.id)).toEqual([
+      'templo-corona-atrio-acolyte-west',
+      'templo-corona-atrio-acolyte-east',
+      'templo-corona-atrio-hound',
+      'templo-corona-atrio-wisp',
+      'templo-corona-atrio-herald',
+      'templo-corona-atrio-hound-west',
+      'templo-corona-atrio-acolyte-eastward',
+      'templo-corona-atrio-wisp-north',
+    ]);
+    expect(atrium.treasures.filter((entry) => entry.id.startsWith('temple-crown-')).map((entry) => entry.id))
+      .toEqual(['temple-crown-iron', 'temple-crown-salt', 'temple-crown-ash']);
+    expect(atrium.enemies.filter((enemy) => enemy.defeatedFlag).map((enemy) => enemy.id))
+      .toEqual(['templo-corona-atrio-herald']);
+    for (const enemy of atrium.enemies.slice(5)) {
+      expect(enemy.optional).toBe(true);
+      expect(enemy.onDefeat.effects).toEqual([{ type: 'grant-gold', amount: 4 }]);
+    }
+    expect(atrium.exits.find((exit) => exit.id === 'temple-atrium-down')?.requirements)
+      .toContainEqual(expect.objectContaining({ key: 'templeAtriumSealOpen', truthy: true }));
+  });
+
   it('opens the temple only after the Dama has spoken', () => {
     const f6 = chroniclesMapById('terra-f6');
     const gate = f6.exits.find((entry) => entry.id === 'f6-to-temple');

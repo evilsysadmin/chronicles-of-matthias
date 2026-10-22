@@ -186,6 +186,95 @@
       "defeatedFlag": "templeHeraldDefeated",
       "blockingMessage": "El Heraldo del Silencio no deja pasar a nadie con nombre.",
       "visualScale": 1.12
+    },
+    {
+      "id": "templo-corona-atrio-hound-west",
+      "visualType": "bone-hound",
+      "name": "un sabueso del ala oeste",
+      "x": 5,
+      "y": 8,
+      "hpKey": "temploCoronaAtrioHoundWestHp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 9,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un sabueso del ala oeste con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
+    },
+    {
+      "id": "templo-corona-atrio-acolyte-eastward",
+      "visualType": "silent-acolyte",
+      "name": "un vigilante del ala este",
+      "x": 13,
+      "y": 8,
+      "hpKey": "temploCoronaAtrioAcolyteEastwardHp",
+      "maxHp": 15,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un vigilante del ala este con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
+    },
+    {
+      "id": "templo-corona-atrio-wisp-north",
+      "visualType": "ember-wisp",
+      "name": "una vela del friso norte",
+      "x": 5,
+      "y": 1,
+      "hpKey": "temploCoronaAtrioWispNorthHp",
+      "maxHp": 11,
+      "retaliation": 3,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una vela del friso norte con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
     }
   ],
   "triggers": [],
