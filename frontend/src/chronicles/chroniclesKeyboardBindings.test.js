@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -285,6 +285,51 @@ describe('Chronicles adventure menu modal focus acquisition', () => {
   });
 });
 
+
+describe('Chronicles closed adventure-menu focus', () => {
+  const fixture = () => {
+    const doc = { activeElement: null };
+    const element = () => ({
+      focus() { doc.activeElement = this; },
+      blur() { if (doc.activeElement === this) doc.activeElement = null; },
+    });
+    const summary = element();
+    const menuButton = element();
+    const outside = element();
+    const menu = {
+      ownerDocument: doc,
+      contains: (target) => target === summary || target === menuButton,
+    };
+    return { doc, summary, menuButton, outside, menu };
+  };
+
+  it('releases the focused sapphire after Tab opens the menu and Esc closes it', () => {
+    const { doc, menu, summary } = fixture();
+    summary.focus();
+    expect(doc.activeElement).toBe(summary);
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(true);
+    expect(doc.activeElement).toBeNull();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(false);
+    // The next Tab can still reach the opener and render its focus ring.
+    summary.focus();
+    expect(doc.activeElement).toBe(summary);
+  });
+
+  it('releases focus from menu actions or audio controls after dismissal', () => {
+    const { doc, menu, menuButton } = fixture();
+    menuButton.focus();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(true);
+    expect(doc.activeElement).toBeNull();
+  });
+
+  it('never blurs an unrelated focused HUD control', () => {
+    const { doc, menu, outside } = fixture();
+    outside.focus();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(false);
+    expect(doc.activeElement).toBe(outside);
+    expect(chroniclesReleaseAdventureMenuFocus(null)).toBe(false);
+  });
+});
 
 describe('Chronicles adventure-menu modal pointer guard', () => {
   const eventFor = (inside) => ({
