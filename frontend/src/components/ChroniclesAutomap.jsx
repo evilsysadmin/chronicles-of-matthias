@@ -246,8 +246,9 @@ export default function ChroniclesAutomap({
         <footer>
           <span><i className="is-party" aria-hidden="true">▲</i> grupo</span>
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
-          <span>F forja · A armaduras · G gremio · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span><i className="is-target" aria-hidden="true">★</i> camino al objetivo · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
+          <span className="chronicles-automap__legend-guild"><i aria-hidden="true">G</i> gremio</span>
+          <span>F forja · A armaduras · P posada · C comercio · T templo · H ayuntamiento</span>
+          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>
