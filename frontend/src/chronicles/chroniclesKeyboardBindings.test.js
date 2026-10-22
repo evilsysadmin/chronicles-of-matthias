@@ -326,6 +326,24 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
     expect(chroniclesFirstPersonEscapeAction({ spellMenuOpen: false })).toBe('toggle-menu');
   });
 
+  it('closes a merchant, guild or character dossier without opening a menu behind it', () => {
+    expect(chroniclesFirstPersonEscapeAction({ shopOpen: true })).toBe('close-shop');
+    expect(chroniclesFirstPersonEscapeAction({ guildOpen: true })).toBe('close-guild');
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true })).toBe('close-sheet');
+    // The dossier can overlay a shop counter. Closing it must not close the
+    // underlying shop or accidentally display another adventure-menu layer.
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true, shopOpen: true }))
+      .toBe('close-sheet');
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true, guildOpen: true }))
+      .toBe('close-sheet');
+    expect(chroniclesFirstPersonEscapeAction({ shopOpen: true, spellMenuOpen: 'items' }))
+      .toBe('close-shop');
+    expect(chroniclesFirstPersonEscapeAction({ guildOpen: true, spellMenuOpen: 'spells' }))
+      .toBe('close-guild');
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: false, shopOpen: false, guildOpen: false }))
+      .toBe('toggle-menu');
+  });
+
   it('closes a visible admin/dialogue/map overlay before allowing the game menu to open', () => {
     expect(chroniclesFirstPersonEscapeAction({ adminOpen: true })).toBe('close-admin');
     expect(chroniclesFirstPersonEscapeAction({ audienceOpen: true })).toBe('close-audience');
