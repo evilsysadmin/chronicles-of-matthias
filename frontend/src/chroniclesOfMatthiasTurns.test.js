@@ -33,6 +33,29 @@ describe('Chronicles alternating creature turns', () => {
     expect(next.party.find((member) => member.id === 'matthias')?.hp).toBe(6);
   });
 
+  it('recomputes pursuit targets for each distinct encounter state, not each BFS tile', () => {
+    const pawn = enemy('corrupted-pawn');
+    const start = createChroniclesState();
+    expect(chroniclesChooseEnemyStep(start, pawn)).toEqual({ x: 2, y: 5 });
+
+    // Moving the only living combatant to the opposite side of the corridor
+    // must change the very next pursuit step; no cross-call memoization.
+    const relocated = {
+      ...start,
+      phase: 'combat',
+      x: 5,
+      y: 5,
+      party: start.party.map((member) => ({
+        ...member,
+        hp: member.id === 'matthias' ? member.hp : 0,
+      })),
+      partyPositions: { matthias: { x: 5, y: 5 } },
+    };
+    expect(chroniclesChooseEnemyStep(relocated, pawn)).toEqual({ x: 4, y: 5 });
+    expect(chroniclesChooseEnemyStep(start, pawn)).toEqual({ x: 2, y: 5 });
+    expect(relocated.partyPositions.matthias).toEqual({ x: 5, y: 5 });
+  });
+
   it('applies an ordinary enemy hit without moving the party or its tactical tiles', () => {
     const pawn = enemy('corrupted-pawn');
     const base = createChroniclesState();
