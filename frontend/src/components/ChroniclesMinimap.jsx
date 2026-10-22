@@ -73,15 +73,17 @@ function Marker({ marker }) {
 function TargetMarker({ target, state, radiusX, radiusY, overlapsPoi = false }) {
   const dx = target.x - state.x;
   const dy = target.y - state.y;
+  const overlapsParty = target.x === state.x && target.y === state.y;
+  const cornerBadge = overlapsPoi || overlapsParty;
   if (Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY) {
     return (
-      <g className={`chronicles-minimap__target${overlapsPoi ? ' is-poi-overlap' : ''}`}
+      <g className={`chronicles-minimap__target${cornerBadge ? ' is-corner-badge' : ''}`}
         data-chronicles-route-target="in-view"
-        data-chronicles-route-overlap={overlapsPoi ? 'poi' : undefined}>
-        <circle cx={target.x + (overlapsPoi ? .78 : .5)}
-          cy={target.y + (overlapsPoi ? .78 : .5)} r={overlapsPoi ? .21 : .42} />
-        <text x={target.x + (overlapsPoi ? .78 : .5)}
-          y={target.y + (overlapsPoi ? .81 : .56)}
+        data-chronicles-route-overlap={overlapsPoi ? 'poi' : (overlapsParty ? 'party' : undefined)}>
+        <circle cx={target.x + (cornerBadge ? .78 : .5)}
+          cy={target.y + (cornerBadge ? .78 : .5)} r={cornerBadge ? .21 : .42} />
+        <text x={target.x + (cornerBadge ? .78 : .5)}
+          y={target.y + (cornerBadge ? .81 : .56)}
           textAnchor="middle" dominantBaseline="middle">★</text>
       </g>
     );

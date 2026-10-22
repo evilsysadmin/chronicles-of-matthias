@@ -139,6 +139,8 @@ export default function ChroniclesAutomap({
   const viewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
   const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition), [map, revealed]);
   const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
+  const targetOverParty = Boolean(target && target.x === state?.x && target.y === state?.y);
+  const targetCornerBadge = targetOverPoi || targetOverParty;
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -227,15 +229,15 @@ export default function ChroniclesAutomap({
               />
             ))}
             {target && (
-              <g className={`chronicles-automap__target${targetOverPoi ? ' is-poi-overlap' : ''}`}
+              <g className={`chronicles-automap__target${targetCornerBadge ? ' is-corner-badge' : ''}`}
                 data-chronicles-route-target
-                data-chronicles-route-overlap={targetOverPoi ? 'poi' : undefined}
+                data-chronicles-route-overlap={targetOverPoi ? 'poi' : (targetOverParty ? 'party' : undefined)}
                 aria-label={routeLabel ? `Siguiente salida hacia el objetivo: ${routeLabel}` : 'Siguiente paso hacia el objetivo'}>
                 {routeLabel && <title>{`Siguiente salida: ${routeLabel}`}</title>}
-                <circle cx={target.x + (targetOverPoi ? 0.78 : 0.5)}
-                  cy={target.y + (targetOverPoi ? 0.78 : 0.5)} r={targetOverPoi ? 0.21 : 0.46} />
-                <text x={target.x + (targetOverPoi ? 0.78 : 0.5)}
-                  y={target.y + (targetOverPoi ? 0.81 : 0.55)}
+                <circle cx={target.x + (targetCornerBadge ? 0.78 : 0.5)}
+                  cy={target.y + (targetCornerBadge ? 0.78 : 0.5)} r={targetCornerBadge ? 0.21 : 0.46} />
+                <text x={target.x + (targetCornerBadge ? 0.78 : 0.5)}
+                  y={target.y + (targetCornerBadge ? 0.81 : 0.55)}
                   textAnchor="middle" dominantBaseline="middle">★</text>
               </g>
             )}

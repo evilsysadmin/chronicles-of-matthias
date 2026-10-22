@@ -1745,16 +1745,16 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 }
 .chronicles-automap__target text,
 .chronicles-minimap__target text { fill: #ffd36a; font-size: .52px; }
-/* If ★ shares a discovered POI tile, draw a smaller corner medallion
-   instead of hiding the F/A/G/exit glyph in the center of its shield. */
-.chronicles-automap__target.is-poi-overlap circle,
-.chronicles-minimap__target.is-poi-overlap circle {
+/* If ★ shares a tile with a POI or the party arrow, show a corner
+   medallion instead of hiding the POI letter or ▲ facing direction. */
+.chronicles-automap__target.is-corner-badge circle,
+.chronicles-minimap__target.is-corner-badge circle {
   fill: #3d2a13;
   stroke: #ffd36a;
   stroke-width: .075;
 }
-.chronicles-automap__target.is-poi-overlap text,
-.chronicles-minimap__target.is-poi-overlap text {
+.chronicles-automap__target.is-corner-badge text,
+.chronicles-minimap__target.is-corner-badge text {
   fill: #ffe6a3;
   font-size: .32px;
 }
