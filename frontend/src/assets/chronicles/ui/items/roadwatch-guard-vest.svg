@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+  <linearGradient id="hide" x1=".05" y1=".04" x2=".92" y2="1"><stop stop-color="#e6bc8a"/><stop offset=".25" stop-color="#a2734e"/><stop offset=".52" stop-color="#50382b"/><stop offset=".81" stop-color="#8c5b3a"/><stop offset="1" stop-color="#302720"/></linearGradient>
+  <linearGradient id="reinforce" x1=".05" y1="0" x2="1" y2="1"><stop stop-color="#c89563"/><stop offset=".26" stop-color="#825335"/><stop offset=".66" stop-color="#382c27"/><stop offset="1" stop-color="#a3704b"/></linearGradient>
+  <linearGradient id="saddle" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#ddaa7b"/><stop offset=".35" stop-color="#7a5035"/><stop offset=".7" stop-color="#3a2b25"/><stop offset="1" stop-color="#bd875c"/></linearGradient>
+  <linearGradient id="bronze" x1=".03" y1="0" x2=".97" y2="1"><stop stop-color="#fff1c3"/><stop offset=".22" stop-color="#d8b16d"/><stop offset=".58" stop-color="#89623e"/><stop offset="1" stop-color="#dbc089"/></linearGradient>
+  <linearGradient id="undercloth" x1="0" y1=".1" x2="1" y2=".9"><stop stop-color="#c5b09b"/><stop offset=".37" stop-color="#827468"/><stop offset=".8" stop-color="#443d36"/><stop offset="1" stop-color="#afa08c"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="170%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/><feOffset in="b" dx="7" dy="11" result="o"/><feComponentTransfer in="o" result="a"><feFuncA type="linear" slope=".39"/></feComponentTransfer><feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="rotate(-5 256 256)" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+  <!-- Worn road-guard vest: short sleeves, reinforced chest and heraldic tabard. -->
+  <path d="M177 83Q209 105 253 112Q303 102 339 84L378 115Q425 142 449 206L414 250L358 221L363 441Q257 469 149 439L154 221L101 252L63 207Q90 145 129 115Z" fill="url(#undercloth)" stroke="#3a322d" stroke-width="7"/>
+  <path d="M177 87L147 115 125 182 160 205 180 166ZM340 87L371 114 391 184 354 203 331 164Z" fill="url(#saddle)" stroke="#4a3428" stroke-width="4"/>
+  <path d="M147 116Q105 153 96 214L112 236 156 207M367 119Q401 150 415 215L401 232 355 206" fill="none" stroke="#edc8a0" stroke-width="3" opacity=".56"/>
+  <path d="M207 120L186 132Q160 169 158 239L151 429Q254 467 360 429L355 239Q352 170 327 129L302 118Q269 145 254 147Q221 143 207 120Z" fill="url(#hide)" stroke="#3c2b24" stroke-width="6"/>
+  <path d="M205 119Q224 152 255 165Q286 154 304 119L322 130Q298 184 257 201Q213 177 187 132Z" fill="url(#reinforce)" stroke="#3a2d28" stroke-width="4"/>
+  <path d="M205 124Q231 163 255 172Q280 162 306 122" fill="none" stroke="#f0c698" stroke-width="2.7" opacity=".68"/>
+  <path d="M183 163Q214 191 247 197L246 410Q198 405 163 426L161 226Z" fill="url(#reinforce)" opacity=".65" stroke="#463226" stroke-width="3"/>
+  <path d="M327 163Q300 189 265 198L267 408Q321 410 349 425L355 227Z" fill="url(#reinforce)" opacity=".61" stroke="#463226" stroke-width="3"/>
+  <path d="M255 205L253 430" stroke="#261f1d" stroke-width="5"/>
+  <path d="M261 205L259 429" stroke="#ecc496" stroke-width="2" opacity=".66"/>
+  <path d="M187 213Q215 226 238 222M273 224Q299 227 324 209M179 372Q215 382 240 374M277 376Q310 381 337 370" fill="none" stroke="#d6ab77" stroke-width="2.9" opacity=".48"/>
+  <!-- Worn leather guards, gussets and seams -->
+  <path d="M176 148Q151 242 162 430M338 149Q354 244 350 431" fill="none" stroke="#dcb08a" stroke-width="4" opacity=".5"/>
+  <path d="M190 174L190 397M325 176L325 393" stroke="#302823" stroke-width="3" fill="none" opacity=".63"/>
+  <path d="M182 177l7 7M332 179l-7 7" stroke="#f2c89b" stroke-width="2.3" opacity=".7"/>
+<path d="M182 196l7 7M332 198l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 215l7 7M332 217l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 234l7 7M332 236l-7 7" stroke="#f2c89b" stroke-width="2.3" opacity=".7"/>
+<path d="M182 253l7 7M332 255l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 272l7 7M332 274l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 291l7 7M332 293l-7 7" stroke="#f2c89b" stroke-width="2.3" opacity=".7"/>
+<path d="M182 310l7 7M332 312l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 329l7 7M332 331l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+<path d="M182 348l7 7M332 350l-7 7" stroke="#f2c89b" stroke-width="2.3" opacity=".7"/>
+<path d="M182 367l7 7M332 369l-7 7" stroke="#d2a374" stroke-width="2.3" opacity=".48"/>
+  <path d="M167 297Q250 316 346 291L348 328Q254 348 165 330Z" fill="url(#saddle)" stroke="#3e2c24" stroke-width="4"/>
+  <path d="M172 305Q256 332 343 302" fill="none" stroke="#f3cf9a" stroke-width="2.2" opacity=".56"/>
+  <path d="M176 424Q253 454 341 425" fill="none" stroke="#f3d3a1" stroke-width="3" opacity=".59"/>
+  <path d="M202 310L211 350Q255 362 302 349L308 311" fill="none" stroke="#2d2622" stroke-width="2.2" opacity=".45"/>
+  <rect x="236" y="295" width="42" height="40" rx="3" fill="url(#bronze)" stroke="#57402d" stroke-width="3"/>
+  <rect x="243" y="301" width="27" height="27" rx="2" fill="#4d362b" stroke="#f0cd92" stroke-width="2.6"/>
+  <path d="M255 309v12h19" fill="none" stroke="#d6ad75" stroke-width="3"/>
+  <!-- Small roadwatch chevron, stamped into leather, never a floating UI badge -->
+  <path d="M225 233L256 219 289 233 282 270 256 286 230 270Z" fill="url(#saddle)" stroke="url(#bronze)" stroke-width="3.2"/>
+  <path d="M238 242L257 261 275 241M239 252L257 271 275 252" stroke="#efc887" stroke-width="5.3" fill="none" opacity=".85"/>
+  <path d="M256 229V245" stroke="#f3d7a9" stroke-width="2.4" opacity=".61"/>
+  <path d="M225 233L256 219 289 233" fill="none" stroke="#fff3c6" stroke-width="1.7" opacity=".55"/>
+  <circle cx="148" cy="135" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="146.9" cy="133.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="366" cy="139" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="364.9" cy="137.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="163" cy="237" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="161.9" cy="235.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="348" cy="240" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="346.9" cy="238.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="166" cy="400" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="164.9" cy="398.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="346" cy="401" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="344.9" cy="399.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="194" cy="285" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="192.9" cy="283.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+<circle cx="318" cy="286" r="4.3" fill="url(#bronze)" stroke="#43332b" stroke-width="1.4"/><circle cx="316.9" cy="284.8" r="1.1" fill="#ffebbd" opacity=".8"/>
+  <path d="M209 153L190 193M302 157L323 190M178 396L197 407M321 408L339 392" fill="none" stroke="#f4c89a" stroke-width="2.3" opacity=".43"/>
+</g>
+</svg>
