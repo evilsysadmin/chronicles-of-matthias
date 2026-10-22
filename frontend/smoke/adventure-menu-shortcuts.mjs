@@ -59,6 +59,23 @@ try {
         'Menu must fit viewport: ' + JSON.stringify(bounds));
       assert.match(await menu.innerText(), /Guardar partida · S/);
       assert.match(await menu.innerText(), /Salir sin guardar · Q/);
+      // The feedback folio must remain keyboard/touch usable at 360/390/430px,
+      // without spilling outside the viewport or triggering Save/Exit.
+      await menu.getByRole('button', { name: /Buzón de feedback/ }).click();
+      const mailbox = menu.locator('[data-chronicles-feedback-mailbox]');
+      await mailbox.waitFor({ state: 'visible' });
+      const feedbackBounds = await mailbox.boundingBox();
+      assert.ok(feedbackBounds && feedbackBounds.x >= -1
+        && feedbackBounds.x + feedbackBounds.width <= width + 1,
+        'Feedback mailbox must fit viewport: ' + JSON.stringify(feedbackBounds));
+      const feedbackText = mailbox.getByLabel('Tu mensaje');
+      await feedbackText.fill('Un bug en la taberna del pueblo.');
+      assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.');
+      await page.keyboard.press('Escape');
+      await mailbox.waitFor({ state: 'detached' });
+      assert.equal(await menu.isVisible(), true, 'ESC from mailbox returns to menu');
+      assert.equal(await count(page, 'save'), 0);
+      assert.equal(await count(page, 'exit'), 0);
       assert.equal(await count(page, 'save'), 0);
       assert.equal(await count(page, 'exit'), 0);
       // Even a mouse/touch click on a game HUD button behind this aria-modal
@@ -194,13 +211,6 @@ try {
       // Save-busy is internal fixture state: a blocked background button
       // must never be used to change it while the modal owns pointer input.
       await page.evaluate(() => window.__chroniclesMenuFixture.setSaveBusy(true));
-      // Wait for React to commit the busy state before sending keyboard input.
-      // Without this barrier a fast desktop runner can dispatch S against
-      // the previous render, incorrectly counting a second save.
-      await page.waitForFunction(() => {
-        const save = document.querySelector('[data-chronicles-menu-save]');
-        return save?.disabled === true;
-      });
       await page.keyboard.press('s');
       await page.keyboard.press('q');
       assert.equal(await count(page, 'save'), 1, 'Save busy must block duplicate saves');

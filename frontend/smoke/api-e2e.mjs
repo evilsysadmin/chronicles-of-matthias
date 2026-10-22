@@ -71,6 +71,21 @@ try {
     && feedback.messages.some((entry) => entry.id === feedback.id && entry.category === 'idea'),
     'feedback must be readable by its owner from the Chronicles API');
 
+  // Real user-facing mailbox: send through the menu and then read the
+  // server's persisted message. ESC must return to the menu, not exit play.
+  await adventure.getByRole('button', { name: /Buzón de feedback/ }).click();
+  const mailbox = adventure.locator('[data-chronicles-feedback-mailbox]');
+  await mailbox.waitFor({ state: 'visible' });
+  await mailbox.getByLabel('Tu mensaje').fill('Un monstruo aparece detrás de un muro invisible.');
+  await mailbox.getByRole('button', { name: 'Enviar mensaje' }).click();
+  await mailbox.getByRole('status').getByText('Mensaje enviado.', { exact: false }).waitFor();
+  await mailbox.getByRole('button', { name: 'Consultar mis mensajes' }).click();
+  await mailbox.getByText('Un monstruo aparece detrás de un muro invisible.').waitFor();
+  await mailbox.getByLabel('Tu mensaje').focus();
+  await page.keyboard.press('Escape');
+  await adventure.getByRole('button', { name: 'Guardar partida · S' }).waitFor();
+  expect(await adventure.isVisible(), 'returning from feedback should keep adventure menu open');
+
   await page.getByRole('button', { name: 'Guardar partida' }).click();
   await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15000 });
   await page.screenshot({ path: 'api-e2e-saved.png' });

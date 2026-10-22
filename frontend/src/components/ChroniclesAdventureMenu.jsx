@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
+import ChroniclesFeedbackMailbox from './ChroniclesFeedbackMailbox.jsx';
 
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
@@ -8,6 +9,9 @@ export default function ChroniclesAdventureMenu({
   onSaveExit, onAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, saveNotice = '', saveBusy = false, isAdmin = false,
 }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const feedbackButtonRef = useRef(null);
+  const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
   const requestExitRef = useRef(null);
   const wasConfirmingExitRef = useRef(false);
@@ -16,6 +20,10 @@ export default function ChroniclesAdventureMenu({
     else if (wasConfirmingExitRef.current) requestExitRef.current?.focus();
     wasConfirmingExitRef.current = confirmExitWithoutSaving;
   }, [confirmExitWithoutSaving]);
+  useEffect(() => {
+    if (previousFeedbackOpenRef.current && !feedbackOpen) feedbackButtonRef.current?.focus();
+    previousFeedbackOpenRef.current = feedbackOpen;
+  }, [feedbackOpen]);
 
   return (
     <div className="chronicles-game-menu__panel chronicles-game-menu__panel--folio"
@@ -33,11 +41,12 @@ export default function ChroniclesAdventureMenu({
       </div>
       {saveNotice && <small className="chronicles-game-menu__notice" role="status">{saveNotice}</small>}
       <div className="chronicles-game-menu__folio-columns"
-        data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}>
-        <section className="chronicles-game-menu__folio-section" aria-label="Acciones de expedición">
-          <span className="chronicles-game-menu__section-kicker">EXPEDICIÓN</span>
+        data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
+        data-feedback-open={feedbackOpen ? 'true' : 'false'}>
+        <section className="chronicles-game-menu__folio-section" aria-label={feedbackOpen ? 'Buzón de feedback' : 'Acciones de expedición'}>
+          <span className="chronicles-game-menu__section-kicker">{feedbackOpen ? 'MENSAJERÍA' : 'EXPEDICIÓN'}</span>
           <div className="chronicles-game-menu__actions">
-            {!confirmExitWithoutSaving && (
+            {!confirmExitWithoutSaving && !feedbackOpen && (
               <>
                 <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
               <span aria-hidden="true">▶</span> Continuar
@@ -51,8 +60,13 @@ export default function ChroniclesAdventureMenu({
             {isAdmin && (
               <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
             )}
+            <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
+              onClick={() => setFeedbackOpen(true)}>✉ Buzón de feedback</button>
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
               </>
+            )}
+            {!confirmExitWithoutSaving && feedbackOpen && (
+              <ChroniclesFeedbackMailbox onBack={() => setFeedbackOpen(false)} />
             )}
             {confirmExitWithoutSaving && (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
@@ -64,8 +78,9 @@ export default function ChroniclesAdventureMenu({
           </div>
         </section>
         <section className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido"
-          hidden={confirmExitWithoutSaving} inert={confirmExitWithoutSaving ? '' : undefined}
-          aria-hidden={confirmExitWithoutSaving ? 'true' : undefined}>
+          hidden={confirmExitWithoutSaving || feedbackOpen}
+          inert={confirmExitWithoutSaving || feedbackOpen ? '' : undefined}
+          aria-hidden={confirmExitWithoutSaving || feedbackOpen ? 'true' : undefined}>
           <span className="chronicles-game-menu__section-kicker">AMBIENTE</span>
           <ChroniclesAudioControls id="chronicles-audio-options"
             hint="First Verse en el libro de expediciones; Second Verse durante la aventura." />
@@ -74,6 +89,7 @@ export default function ChroniclesAdventureMenu({
       <small className="chronicles-game-menu__hint">
         {confirmExitWithoutSaving
           ? 'ESC · cancelar salida · TAB · elegir respuesta'
+          : feedbackOpen ? 'ESC · volver al menú · TAB · navegar'
           : 'S · guardar · Q · salir · ESC · cerrar · TAB · navegar'}
       </small>
     </div>
