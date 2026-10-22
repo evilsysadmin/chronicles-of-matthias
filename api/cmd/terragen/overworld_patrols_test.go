@@ -62,7 +62,7 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 		for i, raw := range after[len(previous):] {
 			e := raw.(*O)
 			p := point{e.Int("x"), e.Int("y")}
-			if !accessible[p] || used[p] || manhattan(p, spawn) < 4 {
+			if !accessible[p] || used[p] || manhattan(p, spawn) < patrolStartClearance {
 				t.Fatalf("%s: extra patrol %d on spawn, occupied or unreachable tile %v", code, i, p)
 			}
 			if e.Str("id") != fmt.Sprintf("%s-foe-%d", mapID(code), ordinary+i) {
@@ -73,8 +73,8 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 			}
 			for _, rawExit := range m.Arr("exits") {
 				gate := rawExit.(*O)
-				if manhattan(p, point{gate.Int("x"), gate.Int("y")}) < 3 {
-					t.Fatalf("%s: patrol blocks exit %s", code, gate.Str("id"))
+				if manhattan(p, point{gate.Int("x"), gate.Int("y")}) < patrolGateClearance {
+					t.Fatalf("%s: patrol %s within immediate arrival threat radius of exit %s", code, e.Str("id"), gate.Str("id"))
 				}
 			}
 			for _, kind := range []string{"interactables", "treasures"} {
