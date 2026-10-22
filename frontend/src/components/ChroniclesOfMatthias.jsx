@@ -1957,6 +1957,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <ChroniclesMinimap
             state={state}
             target={routeHint?.position || null}
+            routeLabel={routeHint?.text || ''}
             visitedCells={automapVisitedByMap[state.mapId] || []}
             hidden={automapOpen || expeditionOver}
             onExpand={() => {
@@ -2178,6 +2179,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         open={automapOpen}
         state={state}
         target={routeHint?.position || null}
+        routeLabel={routeHint?.text || ''}
         objective={objective}
         visitedMapIds={Object.keys(automapVisitedByMap)}
         visitedCells={automapVisitedByMap[state.mapId] || []}
