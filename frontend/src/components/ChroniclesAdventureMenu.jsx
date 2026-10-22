@@ -10,8 +10,10 @@ export default function ChroniclesAdventureMenu({
   confirmExitWithoutSaving = false, saveNotice = '', saveBusy = false, isAdmin = false,
   feedbackOpen = false, onFeedbackOpenChange,
 }) {
-  // Keep an unsent message when Escape/Back moves to the parent folio.
+  // Keep both unsent fields across Escape/Back; a re-entry must not silently
+  // turn an idea or UX report into the default bug category.
   const [feedbackDraft, setFeedbackDraft] = useState('');
+  const [feedbackCategory, setFeedbackCategory] = useState('bug');
   const feedbackButtonRef = useRef(null);
   const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
@@ -69,6 +71,7 @@ export default function ChroniclesAdventureMenu({
             )}
             {!confirmExitWithoutSaving && feedbackOpen && (
               <ChroniclesFeedbackMailbox draft={feedbackDraft} onDraftChange={setFeedbackDraft}
+                draftCategory={feedbackCategory} onCategoryChange={setFeedbackCategory}
                 onBack={() => onFeedbackOpenChange?.(false)} />
             )}
             {confirmExitWithoutSaving && (

@@ -11,8 +11,12 @@ function characterCount(message) { return [...message].length; }
 // A page inside the existing adventure folio, not a second stacked modal.
 // The expedition continues unchanged; no automatic game state, logs, location
 // or screenshots are transmitted.
-export default function ChroniclesFeedbackMailbox({ onBack, draft, onDraftChange }) {
-  const [category, setCategory] = useState('bug');
+export default function ChroniclesFeedbackMailbox({
+  onBack, draft, onDraftChange, draftCategory, onCategoryChange,
+}) {
+  const [localCategory, setLocalCategory] = useState('bug');
+  const category = draftCategory === undefined ? localCategory : draftCategory;
+  const setCategory = onCategoryChange || setLocalCategory;
   // A parent can retain the draft when this nested page unmounts on Back.
   // Standalone usage still works through the local fallback.
   const [localMessage, setLocalMessage] = useState('');

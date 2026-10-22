@@ -69,6 +69,9 @@ try {
         && feedbackBounds.x + feedbackBounds.width <= width + 1,
         'Feedback mailbox must fit viewport: ' + JSON.stringify(feedbackBounds));
       const feedbackText = mailbox.getByLabel('Tu mensaje');
+      const feedbackCategory = mailbox.getByLabel('¿Sobre qué quieres escribir?');
+      await feedbackCategory.selectOption('idea');
+      assert.equal(await feedbackCategory.inputValue(), 'idea');
       await feedbackText.fill('Un bug en la taberna del pueblo.');
       assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.');
       // The feedback page owns ALL its keys, even with a button or the
@@ -97,6 +100,8 @@ try {
       await mailbox.waitFor({ state: 'visible' });
       assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.',
         'Unsent feedback draft must survive a nested Back and re-entry');
+      assert.equal(await feedbackCategory.inputValue(), 'idea',
+        'Unsent feedback category must survive a nested Back; no silent bug reclassification');
 
       // Escape from the text field must follow the same one-level Back path.
       await feedbackText.focus();
