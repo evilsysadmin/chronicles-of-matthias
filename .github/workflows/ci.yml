@@ -16,7 +16,9 @@ jobs:
   # but omits frontend "build". This required job must not turn green first.
   repository-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 24
+    # Must outlive the independently required 30-minute frontend smoke, plus
+    # the time needed for GitHub Actions to finalize its official workflow.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
         with:
@@ -40,7 +42,8 @@ jobs:
           # GitHub can briefly omit an official workflow run even once its
           # exact-SHA build check succeeded. Retry the absence only inside
           # this bounded green-check branch; never admit without official ID.
-          for attempt in $(seq 1 114); do
+          # Up to 36 minutes, longer than the frontend's 30-minute deadline.
+          for attempt in $(seq 1 216); do
             result="$(gh api -X GET "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs" \
               -f check_name=build -f per_page=100 \
               --jq '[.check_runs[] | select(.name == "build" and .app.slug == "github-actions")] | if length == 0 then "pending" else (max_by(.id) | .status + ":" + (.conclusion // "")) end')"
@@ -67,7 +70,7 @@ jobs:
                     exit "$identity_rc"
                   fi
                   if (( attempt % 12 == 1 )); then
-                    echo "Awaiting official frontend workflow completion for $HEAD_SHA (poll $attempt/114)"
+                    echo "Awaiting official frontend workflow completion for $HEAD_SHA (poll $attempt/216)"
                   fi
                 fi
                 ;;
@@ -77,7 +80,7 @@ jobs:
                 ;;
               pending|queued:|in_progress:|requested:|waiting:)
                 if (( attempt % 12 == 1 )); then
-                  echo "Awaiting frontend build/Chromium for $HEAD_SHA ($result, poll $attempt/114)"
+                  echo "Awaiting frontend build/Chromium for $HEAD_SHA ($result, poll $attempt/216)"
                 fi
                 ;;
               *)
