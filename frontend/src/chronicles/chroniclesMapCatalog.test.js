@@ -4,6 +4,7 @@ import {
   chroniclesMapById,
   chroniclesMapIds,
   chroniclesMapInitialEnemyState,
+  chroniclesMapTransitionState,
   chroniclesReconcileCurrentMapEnemyHp,
   chroniclesMapRenderPlan,
   chroniclesMapTileAt,
@@ -12,6 +13,38 @@ import {
 } from './chroniclesMapCatalog.js';
 
 describe('Chronicles declarative map catalog', () => {
+  it('resets only region-local patrol awareness when crossing a door, preserving real losses', async () => {
+    const { createChroniclesState } = await import('../chroniclesOfMatthias.js');
+    const road = chroniclesMapById('banner-road-first-book');
+    const fallen = road.enemies[0];
+    const previous = {
+      ...createChroniclesState(road.id),
+      [fallen.hpKey]: 0,
+      x: 9, y: 7,
+      explorationEnemySteps: 37,
+      enemyAwareness: {
+        [fallen.id]: { mapId: road.id, x: 9, y: 7, phase: 'explore', tick: 12 },
+      },
+      enemyPositions: { [fallen.id]: { x: 8, y: 7 } },
+      round: 11,
+    };
+
+    const arrived = chroniclesMapTransitionState(previous, 'rookwood-first-book');
+    expect(arrived.mapId).toBe('rookwood-first-book');
+    expect(arrived.explorationEnemySteps).toBe(0);
+    expect(arrived.enemyAwareness).toEqual({});
+    expect(arrived.enemyPositions).toEqual({});
+    expect(arrived.round).toBe(previous.round);
+    expect(arrived.slainEnemies[road.id]).toContain(0);
+    // No mutation of the saved source, no resurrection on re-entry.
+    expect(previous.explorationEnemySteps).toBe(37);
+    expect(previous.enemyAwareness[fallen.id].tick).toBe(12);
+    const returned = chroniclesMapTransitionState(arrived, road.id);
+    expect(returned[fallen.hpKey]).toBe(0);
+    expect(returned.explorationEnemySteps).toBe(0);
+    expect(returned.enemyAwareness).toEqual({});
+  });
+
   it('makes newly-authored Swordhaven enemies attackable after resuming a pre-enemy session', async () => {
     const { createChroniclesState, chroniclesEnemyTargetAhead, chroniclesReduce } =
       await import('../chroniclesOfMatthias.js');
