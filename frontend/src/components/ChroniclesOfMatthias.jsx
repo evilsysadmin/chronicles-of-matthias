@@ -2035,9 +2035,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             setSpellMenuOpen(false);
             openMemberSheet(memberId);
           }}
-          onCast={(spellId) => {
+          onCast={(spellId, targetId = null) => {
             setSpellMenuOpen(false);
-            dispatch({ type: 'cast', memberId: caster.id, spellId });
+            dispatch({ type: 'cast', memberId: caster.id, spellId, ...(targetId ? { targetId } : {}) });
           }}
           onUse={(itemId) => {
             setSpellMenuOpen(false);

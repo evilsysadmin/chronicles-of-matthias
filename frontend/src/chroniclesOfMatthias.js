@@ -36,6 +36,7 @@ import {
   chroniclesMemberKnowsSpell,
   chroniclesMemberSp,
   chroniclesMemberMaxSp,
+  chroniclesHealTargetStatus,
   chroniclesMostWoundedAlly,
   chroniclesParalysisTurns,
   chroniclesSpellDamage,
@@ -763,7 +764,7 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   return state;
 }
 
-function resolveCast(state, memberId, spellId) {
+function resolveCast(state, memberId, spellId, targetId = null) {
   // A refused cast costs no turn: MM3 simply tells you why.
   const refuse = (message) => ({ ...state, message });
   const caster = partyMember(state, memberId);
@@ -821,8 +822,23 @@ function resolveCast(state, memberId, spellId) {
     };
   }
   if (spell.kind === 'heal') {
-    const patient = chroniclesMostWoundedAlly(state);
-    if (!patient) return refuse(`${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    const patient = targetId
+      ? state.party.find((member) => member.id === targetId)
+      : chroniclesMostWoundedAlly(state); // backward-compatible auto targeting
+    if (targetId && !patient) return refuse(`No existe ese compañero: no se ha lanzado ${spell.name}.`);
+    const eligibility = chroniclesHealTargetStatus(patient);
+    if (eligibility === 'fallen' && patient) {
+      return refuse(`${patient.name} está caído con 0 PV. ${spell.name} cura heridas, pero no resucita. Usa un Elixir de retorno desde Objetos.`);
+    }
+    if (eligibility === 'healthy') {
+      return refuse(`${patient.name} ya tiene todos sus PV. ${spell.name} no se ha consumido.`);
+    }
+    if (!patient) {
+      const fallen = state.party.some((member) => member.hp <= 0);
+      return refuse(fallen
+        ? `No hay compañeros en pie que necesiten curación. Los caídos a 0 PV necesitan un Elixir de retorno desde Objetos.`
+        : `${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    }
     const healed = Math.min(patient.maxHp, patient.hp + spell.amount);
     return {
       ...chroniclesSpendSp(state, caster.id, spell.cost),
@@ -1047,7 +1063,7 @@ export function chroniclesReduce(state, action) {
     const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
     return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode);
   }
-  if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
+  if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId, action.targetId || null);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
   if (actionType === 'cross-area-threshold') return crossAreaThreshold(state, action.exitId);
