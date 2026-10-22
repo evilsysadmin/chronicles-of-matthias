@@ -408,6 +408,67 @@
       "defeatedFlag": "torre_de_los_nombresBossDefeated",
       "blockingMessage": "El Escriba sin Nombre cierra el paso.",
       "visualScale": 1.35
+    },
+    {
+      "id": "torre-de-los-nombres-foe-13",
+      "visualType": "ice-wraith",
+      "name": "nombre olvidado",
+      "x": 15,
+      "y": 2,
+      "hpKey": "torre_de_los_nombresFoe13Hp",
+      "maxHp": 37,
+      "retaliation": 6,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con nombre olvidado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 16
+          }
+        ]
+      }
+    },
+    {
+      "id": "torre-de-los-nombres-foe-14",
+      "visualType": "stone-golem",
+      "name": "gólem del archivo",
+      "x": 23,
+      "y": 13,
+      "hpKey": "torre_de_los_nombresFoe14Hp",
+      "maxHp": 37,
+      "retaliation": 6,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con gólem del archivo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 16
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
