@@ -107,7 +107,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
-import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesSpellTargetQuestion } from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
@@ -123,7 +123,7 @@ import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.j
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
 import {
-  CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
+  CHRONICLES_SPELLS, chroniclesHealTargetStatus, chroniclesSpellTargetHotkey, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 import ChroniclesCombatRoster, { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
@@ -329,6 +329,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [automapOpen, setAutomapOpen] = useState(false);
   // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
   const [spellMenuOpen, setSpellMenuOpen] = useState(false);
+  // MM3's short-lived, no-cost question sits above the caster's portrait.
+  const [pendingSpellTarget, setPendingSpellTarget] = useState(null);
+  const [spellTargetNotice, setSpellTargetNotice] = useState('');
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
@@ -526,7 +529,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       else menuSummaryRef.current?.focus();
       setMenuOpen((open) => !open);
     }
-  }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
+  }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) || Boolean(pendingSpellTarget) });
 
   const confirmCharacterBuild = useCallback((build) => {
     void requestChroniclesLandscapeOnEntry();
@@ -1258,6 +1261,32 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     });
   }, [exitChronicles]);
 
+  const chooseSpellTarget = useCallback((targetId) => {
+    const pending = pendingSpellTarget;
+    const current = stateRef.current;
+    if (!pending || !current) return;
+    const spell = CHRONICLES_SPELLS[pending.spellId];
+    const caster = current.party.find((hero) => hero.id === pending.memberId);
+    const target = current.party.find((hero) => hero.id === targetId);
+    const actor = chroniclesCurrentInitiativeActor(current.initiative);
+    if (!spell || spell.kind !== 'heal' || spell.everyone || !caster || caster.hp <= 0
+      || (actor && (actor.kind !== 'party' || actor.id !== caster.id))) {
+      setPendingSpellTarget(null);
+      setSpellTargetNotice('');
+      return;
+    }
+    const status = chroniclesHealTargetStatus(target);
+    if (status !== 'wounded') {
+      setSpellTargetNotice(status === 'fallen'
+        ? 'A 0 PV necesita resurrección, no curación.'
+        : 'Ese compañero ya tiene todos sus PV.');
+      return;
+    }
+    setPendingSpellTarget(null);
+    setSpellTargetNotice('');
+    dispatch({ type: 'cast', memberId: caster.id, spellId: spell.id, targetId: target.id });
+  }, [dispatch, pendingSpellTarget]);
+
   useEffect(() => {
     if (!ready || !stateRef.current) return undefined;
     const onKeyDown = (event) => {
@@ -1278,6 +1307,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (event.repeat) return;
         if (event.key === 'Escape' || event.key === 'n' || event.key === 'N') cancelAreaTravel();
         else if (event.key === 'Enter' || event.key === 'y' || event.key === 'Y' || event.key === 's' || event.key === 'S') acceptAreaTravel();
+        return;
+      }
+      // Target selection owns 1–4 *before* the normal party/sheet shortcuts.
+      // No dispatch, spell points or initiative turn until a legal target.
+      if (pendingSpellTarget) {
+        const targetId = chroniclesSpellTargetHotkey(event, current.party);
+        if (event.key === 'Escape' || targetId) {
+          event.preventDefault();
+          if (event.repeat) return;
+          if (event.key === 'Escape') {
+            setPendingSpellTarget(null);
+            setSpellTargetNotice('');
+          } else chooseSpellTarget(targetId);
+        } else if (event.key !== 'Tab') event.preventDefault();
         return;
       }
       const hero = chroniclesPartyHotkeyMember(event, current.party, { menuOpen });
@@ -1401,7 +1444,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
     confirmExitWithoutSaving, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet,
-    persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen]);
+    persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
+    pendingSpellTarget, chooseSpellTarget]);
 
   const startFreshGame = (entryMapId = null) => {
     setFirstStepsOpen(false);
@@ -1578,6 +1622,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       ref={gameRootRef}
       className="chronicles"
       data-chronicles="true"
+      data-chronicles-targeting={pendingSpellTarget ? pendingSpellTarget.spellId : undefined}
       data-chronicles-map-id={state.mapId}
       data-chronicles-turns={state.turns}
       data-chronicles-phase={state.phase}
@@ -1601,10 +1646,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 type="button"
                 key={member.id}
                 className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''}`}
-                onClick={() => openMemberSheet(member.id)}
+                onClick={() => pendingSpellTarget ? chooseSpellTarget(member.id) : openMemberSheet(member.id)}
                 disabled={expeditionOver}
-                aria-label={`Seleccionar ${member.name}`}
-                title={`${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: ficha`}
+                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}`}
+                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
@@ -1636,6 +1681,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     </i>
                   )}
                 </b>
+                {pendingSpellTarget?.memberId === member.id && (
+                  <ChroniclesSpellTargetQuestion spellId={pendingSpellTarget.spellId}
+                    notice={spellTargetNotice} />
+                )}
               </button>
             );
           })}
@@ -2034,6 +2083,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           onOpenSheet={(memberId) => {
             setSpellMenuOpen(false);
             openMemberSheet(memberId);
+          }}
+          onRequestTarget={(spellId) => {
+            setSpellMenuOpen(false);
+            setPendingSpellTarget({ spellId, memberId: caster.id });
+            setSpellTargetNotice('');
           }}
           onCast={(spellId, targetId = null) => {
             setSpellMenuOpen(false);

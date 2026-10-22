@@ -39,6 +39,18 @@ export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) 
   return next ? next === tab ? 'close' : next : null;
 }
 
+// Brief MM3 speech plaque over the caster portrait, not another modal.
+export function ChroniclesSpellTargetQuestion({ spellId, notice = '' }) {
+  return (
+    <span className="chronicles-spell-target-question"
+      data-chronicles-spell-target-question={spellId} role="status">
+      <strong>¿A quién?</strong>
+      <small>1–4 · elige compañero · Esc cancela</small>
+      {notice && <small className="is-warning">{notice}</small>}
+    </span>
+  );
+}
+
 // Explicit target list, including the *reason* a fallen or healthy hero cannot
 // be healed. Disabled entries are still readable; no spell points are spent.
 export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
@@ -126,7 +138,7 @@ export function ChroniclesReviveTargetPicker({ state, item, onSelect, onBack }) 
 // chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
   state, member, itemUser = member, onCast, onUse = () => {}, onClose,
-  onOpenSheet = null, initialTab = 'spells',
+  onOpenSheet = null, onRequestTarget = null, initialTab = 'spells',
 }) {
   const spells = chroniclesMemberSpells(state, member);
   const items = chroniclesCarriedConsumables(state);
@@ -276,7 +288,8 @@ export default function ChroniclesSpellMenu({
                       disabled={!affordable} onClick={() => {
                         setHealNotice('');
                         if (spell.kind === 'heal' && !spell.everyone) {
-                          setHealSpellId(spell.id);
+                          if (onRequestTarget) onRequestTarget(spell.id);
+                          else setHealSpellId(spell.id);
                         } else if (spell.kind === 'heal'
                           && !state.party.some((target) => target.hp > 0 && target.hp < target.maxHp)) {
                           setHealNotice(state.party.some((target) => target.hp <= 0)
