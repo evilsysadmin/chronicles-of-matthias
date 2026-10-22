@@ -22,6 +22,23 @@ export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
     throw new Error('Invalid or truncated GitHub workflow-run response');
   }
 
+  // Reject malformed entries even when an older well-formed official
+  // workflow is green. Otherwise, a newer failed run with an invalid ID
+  // could be silently excluded from the latest-run comparison.
+  const validRun = (run) =>
+    run !== null && typeof run === 'object' && !Array.isArray(run)
+    && Number.isSafeInteger(run.id) && run.id > 0
+    && Number.isSafeInteger(run.workflow_id) && run.workflow_id > 0
+    && typeof run.head_sha === 'string'
+    && /^[0-9a-f]{40}$/.test(run.head_sha)
+    && typeof run.event === 'string'
+    && typeof run.status === 'string'
+    && (run.conclusion === null || typeof run.conclusion === 'string')
+    && typeof run.repository?.full_name === 'string';
+  if (!payload.workflow_runs.every(validRun)) {
+    throw new Error('Invalid GitHub workflow-run record');
+  }
+
   const matching = payload.workflow_runs.filter((run) =>
     run.workflow_id === FRONTEND_WORKFLOW_ID
     && run.head_sha === sha
