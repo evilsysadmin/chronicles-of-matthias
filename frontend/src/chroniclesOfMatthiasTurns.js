@@ -145,8 +145,10 @@ function chooseCardinalStep(state, enemy, from) {
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
 
-  while (queue.length) {
-    const current = queue.shift();
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
     if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position)) {
       return current.firstStep;
     }
@@ -204,8 +206,10 @@ function choosePatrolRouteStep(state, enemy, from) {
   const routeCells = new Set(route.map(positionKey));
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
-  while (queue.length) {
-    const current = queue.shift();
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
     if (current.firstStep && routeCells.has(positionKey(current.position))) return current.firstStep;
     for (const direction of CHRONICLES_DIRECTIONS) {
       const position = {
@@ -374,8 +378,10 @@ function chooseStepTowardSighting(state, enemy, from, target, knight = false) {
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
   const goalDistance = canOccupy(state, enemy, target) ? 0 : 1;
-  while (queue.length) {
-    const current = queue.shift();
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
     if (current.firstStep && distance(current.position, target) <= goalDistance) return current.firstStep;
     for (const step of CHRONICLES_DIRECTIONS) {
       const point = { x: current.position.x + step.dx, y: current.position.y + step.dy };
