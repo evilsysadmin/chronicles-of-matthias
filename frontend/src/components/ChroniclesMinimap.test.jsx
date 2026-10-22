@@ -33,7 +33,7 @@ describe('ChroniclesMinimap', () => {
     expect(forgeOnly).toContain('data-chronicles-poi="smith"');
     expect(forgeOnly).toContain('data-chronicles-poi-id="first-book-weaponsmith"');
     expect(forgeOnly).toContain('Forja de Brunna');
-    expect(forgeOnly).toMatch(/data-chronicles-poi="smith"[\\s\\S]*?<text[^>]*>F<\\/text>/);
+    expect(forgeOnly).toMatch(/data-chronicles-poi="smith"[\s\S]*?<text[^>]*>F<\/text>/);
     expect(forgeOnly).not.toContain('data-chronicles-poi="armorer"');
 
     const both = renderToStaticMarkup(
@@ -41,7 +41,7 @@ describe('ChroniclesMinimap', () => {
     );
     expect(both).toContain('data-chronicles-poi="armorer"');
     expect(both).toContain('data-chronicles-poi-id="first-book-armorer"');
-    expect(both).toMatch(/data-chronicles-poi="armorer"[\\s\\S]*?<text[^>]*>A<\\/text>/);
+    expect(both).toMatch(/data-chronicles-poi="armorer"[\s\S]*?<text[^>]*>A<\/text>/);
     expect(both).not.toContain('data-chronicles-poi="guild"');
   });
 
