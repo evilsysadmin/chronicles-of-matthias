@@ -1655,7 +1655,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             <span>
               <button type="button" className="chronicles-objective-trigger" data-chronicles-objective
                 aria-haspopup="dialog" aria-expanded={chronicleModalOpen}
-                title="Abrir la Crónica: misiones y narración (J)"
+                title={`Objetivo: ${objective}${objectiveTravelNote ? `\n${objectiveTravelNote}` : ''}\nAbrir la Crónica (J)`}
                 onClick={() => {
                   clearTouchHold();
                   setJournalOpen(false);
@@ -1663,7 +1663,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   setAutomapOpen(false);
                   setChronicleModalOpen((open) => !open);
                 }}>
-                OBJETIVO <b>{objective}</b>
+                <small className="chronicles-objective-trigger__label">OBJETIVO</small> <b>{objective}</b>
                 {objectiveTravelNote && <small className="chronicles-route-hint" data-chronicles-route-hint
                   data-chronicles-quest-destination={authoredDestination?.mapId || undefined}>{objectiveTravelNote}</small>}
                 <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
