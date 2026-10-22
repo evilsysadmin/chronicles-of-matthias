@@ -76,8 +76,6 @@ try {
       assert.equal(await menu.isVisible(), true, 'ESC from mailbox returns to menu');
       assert.equal(await count(page, 'save'), 0);
       assert.equal(await count(page, 'exit'), 0);
-      assert.equal(await count(page, 'save'), 0);
-      assert.equal(await count(page, 'exit'), 0);
       // Even a mouse/touch click on a game HUD button behind this aria-modal
       // menu must not trigger gameplay. Check the real React capture handlers.
       const blocked = await page.evaluate(() => {
