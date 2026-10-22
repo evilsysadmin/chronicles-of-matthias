@@ -325,6 +325,10 @@
 /* One source of truth for navigation emphasis. Hover/focus are secondary;
    the selected folio's aria-pressed state owns the persistent highlight. */
 @media (min-width: 851px) and (min-height: 581px) {
+  /* No overlapping color fades: tab identity updates atomically with the folio. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button {
+    transition: none;
+  }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button[aria-pressed='false'] {
     border: 1px solid #b48d58;
     background: #f8e7c1;
