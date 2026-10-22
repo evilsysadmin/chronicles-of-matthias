@@ -138,7 +138,7 @@ try {
         const image = document.querySelector('[data-chronicles-shop-item="brass-dagger"] img');
         return image?.complete && image.naturalWidth >= 512 && image.naturalHeight >= 512;
       });
-      const missingArt = dialog.locator('[data-chronicles-shop-item="brass-mace"] svg');
+      const missingArt = dialog.locator('[data-chronicles-shop-item="wooden-staff"] svg');
       assert.equal(await missingArt.getAttribute('aria-label'), 'Arma',
         'Unpainted weapons must retain the accessible fallback glyph');
       const spriteGeometry = await dialog.evaluate((root) => {
