@@ -367,7 +367,7 @@ export default function ChroniclesCharacterSheet({
             <div><span>EQUIPO Y OBJETOS</span><small>Equipo personal y botín de la expedición</small></div>
             <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
           </div>
-          <div className="chronicles-character-sheet__loadout">
+          <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
             <article className={relic ? 'has-relic' : ''}>
               <span>Reliquia vinculada</span>
               <b>{relic?.name || 'Ninguna'}</b>
