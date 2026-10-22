@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, ChroniclesSpellTargetQuestion, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -65,6 +65,20 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     )) };
     expect(render(down, down.party.find((hero) => hero.id === member.id))).toContain('disabled=""');
   });
+  it('shows an MM3 ¿A quién? question with 1–4 and Escape before any cast', () => {
+    const html = renderToStaticMarkup(createElement(ChroniclesSpellTargetQuestion, {
+      spellId: 'first-aid',
+    }));
+    expect(html).toContain('data-chronicles-spell-target-question="first-aid"');
+    expect(html).toContain('role="status"');
+    expect(html).toContain('¿A quién?');
+    expect(html).toContain('1–4 · elige compañero');
+    expect(html).toContain('Esc cancela');
+    expect(renderToStaticMarkup(createElement(ChroniclesSpellTargetQuestion, {
+      spellId: 'first-aid', notice: 'A 0 PV necesita resurrección, no curación.',
+    }))).toContain('A 0 PV necesita resurrección');
+  });
+
   it('exposes explicit healing targets and explains why a fallen companion cannot be healed', () => {
     const original = makeState();
     const state = { ...original, party: original.party.map((hero) => (
