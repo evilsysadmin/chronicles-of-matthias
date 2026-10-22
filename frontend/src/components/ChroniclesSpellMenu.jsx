@@ -113,7 +113,7 @@ export function ChroniclesReviveTargetPicker({ state, item, onSelect, onBack }) 
 // chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
   state, member, itemUser = member, onCast, onUse = () => {}, onClose,
-  onOpenSheet = null, initialTab = 'spells',
+  onOpenSheet = null, onRequestTarget = null, initialTab = 'spells',
 }) {
   const spells = chroniclesMemberSpells(state, member);
   const items = chroniclesCarriedConsumables(state);
@@ -258,7 +258,8 @@ export default function ChroniclesSpellMenu({
                       disabled={!affordable} onClick={() => {
                         setHealNotice('');
                         if (spell.kind === 'heal' && !spell.everyone) {
-                          setHealSpellId(spell.id);
+                          if (onRequestTarget) onRequestTarget(spell.id);
+                          else setHealSpellId(spell.id);
                         } else if (spell.kind === 'heal'
                           && !state.party.some((target) => target.hp > 0 && target.hp < target.maxHp)) {
                           setHealNotice(state.party.some((target) => target.hp <= 0)
