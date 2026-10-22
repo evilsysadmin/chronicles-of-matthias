@@ -9,6 +9,7 @@ const SECTORS = [
   { id: 'iron-foundry', minimum: 8, original: 5, added: 3 },
   { id: 'templo-corona-cripta', minimum: 8, original: 5, added: 3 },
   { id: 'echo-cistern', minimum: 8, original: 5, added: 3 },
+  { id: 'chain-basilica', minimum: 8, original: 5, added: 3 },
 ];
 
 function reachableCells(map) {
@@ -70,6 +71,7 @@ describe('Chronicles MM3 · populated dungeon corridors', () => {
       'iron-foundry': 'iron-sentinel',
       'templo-corona-cripta': 'templo-corona-cripta-spider',
       'echo-cistern': 'cistern-warden',
+      'chain-basilica': 'iron-deacon',
     }[id]);
   });
 
