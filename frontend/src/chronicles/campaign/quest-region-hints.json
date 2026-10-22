@@ -192,5 +192,30 @@
       "mapId": "terra-c2",
       "clue": "Busca a la Arpía Coronada en las Colinas de la Corona (C2)."
     }
+  ],
+  "lost-names": [
+    {
+      "when": [
+        {
+          "key": "torre_de_los_nombresBossDefeated",
+          "truthy": true
+        }
+      ],
+      "mapId": "vigilia-del-norte",
+      "clue": "Regresa a Vigilia del Norte (C1) y entrega el Libro de los Nombres a Osric."
+    },
+    {
+      "when": [
+        {
+          "itemId": "book-of-names"
+        }
+      ],
+      "mapId": "vigilia-del-norte",
+      "clue": "Lleva el Libro de los Nombres al archivero Osric, en Vigilia del Norte (C1)."
+    },
+    {
+      "mapId": "torre-de-los-nombres",
+      "clue": "Busca al Escriba sin Nombre en la Torre de los Nombres (A1)."
+    }
   ]
 }
