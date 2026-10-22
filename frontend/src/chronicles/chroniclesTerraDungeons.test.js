@@ -81,7 +81,8 @@ describe('Chronicles · Terra dungeons have something inside', () => {
         expect.objectContaining({ type: 'grant-gold' }),
       ]);
       expect(enemy.onDefeat.effects.filter((effect) => effect.type !== 'grant-gold')).toEqual([]);
-      const speciesTemplate = originals.find((old) => old.id === `${id}-foe-${index + 3}`);
+      const speciesSlot = id === 'torre-de-los-nombres' ? index + 1 : index + 3;
+      const speciesTemplate = originals.find((old) => old.id === `${id}-foe-${speciesSlot}`);
       expect(enemy.visualType, enemy.id).toBe(speciesTemplate.visualType);
       expect(enemy.ai, enemy.id).toEqual(speciesTemplate.ai);
       occupied.add(key(enemy));
