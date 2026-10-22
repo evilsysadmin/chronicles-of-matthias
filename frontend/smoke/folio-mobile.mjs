@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['healing'] : ['cast', 'items', 'adventure', 'healing']) {
+    for (const view of width === 1280 ? ['healing', 'revive'] : ['cast', 'items', 'adventure', 'healing', 'revive']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -94,6 +94,29 @@ try {
               === 'cast:first-aid:matthias');
           assert.equal((await page.locator('[data-test-result]').textContent()).trim(),
             'cast:first-aid:matthias');
+        }
+        if (view === 'revive') {
+          await dialog.locator('[data-chronicles-use-item="revive-draught"]').click();
+          const picker = dialog.locator('[data-chronicles-revive-picker="revive-draught"]');
+          await picker.waitFor({ state: 'visible' });
+          const fallen = picker.locator('[data-chronicles-revive-target="rook"]');
+          const living = picker.locator('[data-chronicles-revive-target="matthias"]');
+          assert.equal(await fallen.isEnabled(), true, '0 PV ally must be eligible for revival');
+          assert.equal(await living.isDisabled(), true, 'living ally cannot consume revival elixir');
+          assert.equal(await page.locator('[data-test-result]').textContent(), '',
+            'Opening the revive picker must not consume an elixir');
+          const fit = await picker.evaluate((node) => ({
+            width: node.scrollWidth, clientWidth: node.clientWidth,
+          }));
+          assert(fit.width <= fit.clientWidth + 2,
+            'Revive picker overflows: ' + JSON.stringify(fit));
+          await page.screenshot({ path: `smoke-folio-revive-targets-${width}.png` });
+          await fallen.click();
+          await page.waitForFunction(() =>
+            document.querySelector('[data-test-result]')?.textContent?.trim()
+              === 'use:revive-draught:rook');
+          assert.equal((await page.locator('[data-test-result]').textContent()).trim(),
+            'use:revive-draught:rook');
         }
         if(view === 'adventure') {
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();

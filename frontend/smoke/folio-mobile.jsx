@@ -32,6 +32,14 @@ const healingState = {
   )),
 };
 
+const reviveState = {
+  ...healingState,
+  inventory: {
+    ...healingState.inventory,
+    'revive-draught': { id: 'revive-draught', quantity: 1 },
+  },
+};
+
 function Fixture() {
   const [dismissed, setDismissed] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
@@ -59,10 +67,10 @@ function Fixture() {
         </details>
       ) : (
         <ChroniclesSpellMenu
-          state={view === 'healing' ? healingState : stockedState} member={caster} itemUser={caster}
-          initialTab={view === 'items' ? 'items' : 'spells'}
+          state={view === 'revive' ? reviveState : view === 'healing' ? healingState : stockedState} member={caster} itemUser={caster}
+          initialTab={view === 'items' || view === 'revive' ? 'items' : 'spells'}
           onCast={(id, targetId) => setLastAction('cast:' + id + (targetId ? ':' + targetId : ''))}
-          onUse={(id) => setLastAction('use:' + id)}
+          onUse={(id, targetId) => setLastAction('use:' + id + (targetId ? ':' + targetId : ''))}
           onClose={() => setDismissed(true)}
         />
       ))}
