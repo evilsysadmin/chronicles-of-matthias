@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
-import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -36,7 +36,8 @@ function MenuShortcutFixture() {
       setConfirmExitWithoutSaving(false);
       return;
     }
-    document.querySelector('.chronicles-game-menu > summary')?.focus();
+    if (open) chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
+    else document.querySelector('.chronicles-game-menu > summary')?.focus();
     setOpen((value) => !value);
   }, { contextMenu: false });
 
@@ -66,6 +67,17 @@ function MenuShortcutFixture() {
       const action = chroniclesAdventureMenuShortcut(event, {
         menuOpen: open, saveBusy, confirmExitWithoutSaving,
       });
+      // Match the first-person view: outside the modal, Tab opens the menu;
+      // after Esc releases focus, the next Tab must still be usable.
+      if (!action && event.key === 'Tab' && !open && !event.shiftKey
+        && !event.target?.closest?.('.chronicles-game-menu')) {
+        event.preventDefault();
+        if (!event.repeat) {
+          setOpen(true);
+          document.querySelector('.chronicles-game-menu > summary')?.focus();
+        }
+        return;
+      }
       if (!action) return;
       event.preventDefault();
       if (action === 'save') setSaveRequests((n) => n + 1);
@@ -75,7 +87,7 @@ function MenuShortcutFixture() {
       }
       if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
       if (action === 'close') {
-        document.querySelector('.chronicles-game-menu > summary')?.focus();
+        chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
         setConfirmExitWithoutSaving(false);
         setOpen(false);
       }
@@ -118,16 +130,19 @@ function MenuShortcutFixture() {
             onKeyDown={(event) => { chroniclesContainAdventureMenuTab(event, event.currentTarget); }}
             onToggle={(event) => {
               setOpen(event.currentTarget.open);
-              if (!event.currentTarget.open) setConfirmExitWithoutSaving(false);
+              if (!event.currentTarget.open) {
+                chroniclesReleaseAdventureMenuFocus(event.currentTarget);
+                setConfirmExitWithoutSaving(false);
+              }
             }}>
             <summary aria-label="Abrir o cerrar menú de aventura">MENÚ</summary>
             <ChroniclesAdventureMenu
               onClose={() => {
-                document.querySelector('.chronicles-game-menu > summary')?.focus();
+                chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
                 setOpen(false);
               }}
               onContinue={() => {
-                document.querySelector('.chronicles-game-menu > summary')?.focus();
+                chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
                 setOpen(false);
               }}
               onJournal={() => setOpen(false)}
