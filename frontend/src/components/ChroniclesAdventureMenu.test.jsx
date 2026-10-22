@@ -51,6 +51,18 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(exitPrompt).not.toContain('data-chronicles-menu-feedback');
   });
 
+  it('shows nested feedback without exposing parent actions or shortcut hints', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      feedbackOpen onFeedbackOpenChange={() => {}} />);
+    expect(html).toContain('data-feedback-open="true"');
+    expect(html).toContain('MENSAJERÍA');
+    expect(html).toContain('ESC · volver al menú · TAB · navegar');
+    expect(html).not.toContain('Guardar partida · S');
+    expect(html).not.toContain('Salir sin guardar · Q');
+    expect(html).not.toContain('data-chronicles-menu-feedback');
+    expect(html).toContain('aria-hidden="true"');
+  });
+
   it('does not advertise a second save action while save is pending', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} saveBusy />);
     expect(html).toContain('Guardando…');

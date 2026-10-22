@@ -311,6 +311,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [state?.message]);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Parent owns the nested folio so global Escape/Back uses the same state.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [firstStepsOpen, setFirstStepsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -506,13 +508,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // Escape handler. Dismiss the topmost visible panel without opening the
     // adventure menu underneath. The same priority applies to browser Back.
     const action = chroniclesFirstPersonEscapeAction({
-      menuOpen, confirmExitWithoutSaving, spellMenuOpen, adminOpen,
+      menuOpen, confirmExitWithoutSaving, feedbackOpen, spellMenuOpen, adminOpen,
       sheetOpen: Boolean(sheetMemberId),
       shopOpen: Boolean(stateRef.current?.shop),
       guildOpen: Boolean(stateRef.current?.guild),
       audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+    else if (action === 'back-feedback') setFeedbackOpen(false);
     else if (action === 'close-sheet') setSheetMemberId(null);
     else if (action === 'close-shop') dispatch({ type: 'shop-close' });
     else if (action === 'close-guild') dispatch({ type: 'guild-close' });
@@ -1352,8 +1355,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
         menuOpen, saveBusy, confirmExitWithoutSaving,
-        subpageOpen: Boolean(menuSummaryRef.current?.parentElement
-          ?.querySelector('[data-chronicles-feedback-mailbox]')),
+        subpageOpen: feedbackOpen,
       });
       if (menuShortcut) {
         event.preventDefault();
@@ -1362,6 +1364,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // a subsequent Esc closes the menu without modifying the run.
         if (menuShortcut === 'request-exit') setConfirmExitWithoutSaving(true);
         if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
+        if (menuShortcut === 'back-feedback') setFeedbackOpen(false);
         if (menuShortcut === 'close') {
           setConfirmExitWithoutSaving(false);
           chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
@@ -1380,6 +1383,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         menuSummaryRef.current?.focus();
         return;
       }
+      // The mailbox is a page of the modal, not a game context. J/G/M (and
+      // every other world shortcut) must not switch views under its draft.
+      if (menuOpen && feedbackOpen) return;
       if (event.key === 'j' || event.key === 'J') {
         event.preventDefault();
         if (event.repeat) return;
@@ -1445,7 +1451,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
-    confirmExitWithoutSaving, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet,
+    confirmExitWithoutSaving, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget]);
 
@@ -1786,6 +1792,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   // Also handle native <summary> dismissal and pointer close.
                   chroniclesReleaseAdventureMenuFocus(event.currentTarget);
                   setConfirmExitWithoutSaving(false);
+                  setFeedbackOpen(false);
                 }
               }}
             >
@@ -1793,6 +1800,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span className="chronicles-menu-gem__hint" aria-hidden="true">MENÚ</span>
               </summary>
               <ChroniclesAdventureMenu
+                feedbackOpen={feedbackOpen} onFeedbackOpenChange={setFeedbackOpen}
                 onClose={() => {
                   chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
                   setMenuOpen(false);

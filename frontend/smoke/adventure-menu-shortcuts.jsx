@@ -13,9 +13,13 @@ import '../src/components/ChroniclesAdventureMenuFolio.css';
 function MenuShortcutFixture() {
   const [open, setOpen] = useState(true);
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveRequests, setSaveRequests] = useState(0);
   const [exitRequests, setExitRequests] = useState(0);
+  const [journalRequests, setJournalRequests] = useState(0);
+  const [statusRequests, setStatusRequests] = useState(0);
+  const [mapRequests, setMapRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
   const [backgroundActions, setBackgroundActions] = useState(0);
   // Only this CI fixture offers direct state setters for controls that become
@@ -34,6 +38,10 @@ function MenuShortcutFixture() {
     setGlobalEscapeCount((count) => count + 1);
     if (open && confirmExitWithoutSaving) {
       setConfirmExitWithoutSaving(false);
+      return;
+    }
+    if (open && feedbackOpen) {
+      setFeedbackOpen(false);
       return;
     }
     if (open) chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
@@ -66,9 +74,7 @@ function MenuShortcutFixture() {
       }
       const action = chroniclesAdventureMenuShortcut(event, {
         menuOpen: open, saveBusy, confirmExitWithoutSaving,
-        subpageOpen: Boolean(document.querySelector(
-          'details.chronicles-game-menu [data-chronicles-feedback-mailbox]',
-        )),
+        subpageOpen: feedbackOpen,
       });
       // Match the first-person view: outside the modal, Tab opens the menu;
       // after Esc releases focus, the next Tab must still be usable.
@@ -81,7 +87,23 @@ function MenuShortcutFixture() {
         }
         return;
       }
-      if (!action) return;
+      if (!action) {
+        // Mirror the real J/G/M world-level handlers: never route them from
+        // any control of the nested feedback page or its outer gem.
+        if (open && feedbackOpen) return;
+        if (event.target?.closest?.('input, textarea, select')) return;
+        if (event.key === 'j' || event.key === 'J') {
+          setJournalRequests((n) => n + 1);
+          setOpen(false);
+        } else if (event.key === 'g' || event.key === 'G') {
+          setStatusRequests((n) => n + 1);
+          setOpen(false);
+        } else if (event.key === 'm' || event.key === 'M') {
+          setMapRequests((n) => n + 1);
+          setOpen(false);
+        }
+        return;
+      }
       event.preventDefault();
       if (action === 'save') setSaveRequests((n) => n + 1);
       if (action === 'request-exit') {
@@ -89,6 +111,7 @@ function MenuShortcutFixture() {
         setConfirmExitWithoutSaving(true);
       }
       if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+      if (action === 'back-feedback') setFeedbackOpen(false);
       if (action === 'close') {
         chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
         setConfirmExitWithoutSaving(false);
@@ -97,7 +120,7 @@ function MenuShortcutFixture() {
     };
     window.addEventListener('keydown', keyDown);
     return () => window.removeEventListener('keydown', keyDown);
-  }, [open, saveBusy, confirmExitWithoutSaving]);
+  }, [open, saveBusy, confirmExitWithoutSaving, feedbackOpen]);
 
   return (
     <main className="chronicles" style={{
@@ -108,6 +131,7 @@ function MenuShortcutFixture() {
       data-shortcut-confirm={String(confirmExitWithoutSaving)}
       data-shortcut-hero={selectedHero}
       data-shortcut-global-esc={globalEscapeCount}
+      data-shortcut-feedback-open={String(feedbackOpen)}
       onPointerDownCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}
       onClickCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}
       onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, open); }}>
@@ -126,6 +150,9 @@ function MenuShortcutFixture() {
           </button>
           <output data-shortcut-save-requests>{saveRequests}</output>
           <output data-shortcut-exit-requests>{exitRequests}</output>
+          <output data-shortcut-journal-requests>{journalRequests}</output>
+          <output data-shortcut-status-requests>{statusRequests}</output>
+          <output data-shortcut-map-requests>{mapRequests}</output>
           <output data-shortcut-discard-requests>{discardRequests}</output>
         </div>
         <div style={{ position: 'absolute', top: 4, right: 8, zIndex: 50, height: 44 }}>
@@ -136,10 +163,12 @@ function MenuShortcutFixture() {
               if (!event.currentTarget.open) {
                 chroniclesReleaseAdventureMenuFocus(event.currentTarget);
                 setConfirmExitWithoutSaving(false);
+                setFeedbackOpen(false);
               }
             }}>
             <summary aria-label="Abrir o cerrar menú de aventura">MENÚ</summary>
             <ChroniclesAdventureMenu
+              feedbackOpen={feedbackOpen} onFeedbackOpenChange={setFeedbackOpen}
               onClose={() => {
                 chroniclesReleaseAdventureMenuFocus(document.querySelector('details.chronicles-game-menu'));
                 setOpen(false);

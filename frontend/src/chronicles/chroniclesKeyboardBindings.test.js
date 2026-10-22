@@ -129,8 +129,11 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     // The parent menu regains its shortcuts after the nested page closes.
     expect(chroniclesAdventureMenuShortcut(keyEvent('s'), { menuOpen: true })).toBe('save');
     expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true })).toBe('request-exit');
-    // Escape retains its existing topmost-overlay handling.
-    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), subpage)).toBe('close');
+    // Escape first returns to the parent menu without closing the expedition.
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), subpage)).toBe('back-feedback');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), {
+      ...subpage, confirmExitWithoutSaving: true,
+    })).toBe('cancel-exit');
   });
 
   it('Esc cancels an unsafe-exit confirmation first, then closes only the open menu', () => {
@@ -411,11 +414,17 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
     expect(chroniclesFirstPersonEscapeAction({ quickStatusOpen: true })).toBe('close-quick-status');
     expect(chroniclesFirstPersonEscapeAction({})).toBe('toggle-menu');
     expect(chroniclesFirstPersonEscapeAction({ menuOpen: true })).toBe('toggle-menu');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: true, feedbackOpen: true }))
+      .toBe('back-feedback');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: true, feedbackOpen: true, journalOpen: true }))
+      .toBe('back-feedback');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: false, feedbackOpen: true }))
+      .toBe('toggle-menu');
   });
 
   it('cancels the pending dangerous Q confirmation before any other navigation', () => {
     expect(chroniclesFirstPersonEscapeAction({
-      menuOpen: true, confirmExitWithoutSaving: true, spellMenuOpen: 'items',
+      menuOpen: true, confirmExitWithoutSaving: true, feedbackOpen: true, spellMenuOpen: 'items',
     })).toBe('cancel-exit');
     expect(chroniclesFirstPersonEscapeAction({
       menuOpen: true, confirmExitWithoutSaving: true,
