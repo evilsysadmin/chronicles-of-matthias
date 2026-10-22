@@ -81,6 +81,26 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('class="chronicles-shop__item-sprite"');
   });
 
+  it('shows Odo wood shield and leather cuirass portraits using canonical material IDs', () => {
+    const shield = CHRONICLES_EQUIPMENT['wooden-shield'];
+    const cuirass = CHRONICLES_EQUIPMENT['leather-leather'];
+    expect(shield.slot).toBe('shield');
+    expect(shield.materialId).toBe('wooden');
+    expect(cuirass.slot).toBe('armor');
+    expect(cuirass.materialId).toBe('leather');
+    const shieldArt = chroniclesShopItemArt(shield);
+    const cuirassArt = chroniclesShopItemArt(cuirass);
+    expect(shieldArt).toBeTruthy();
+    expect(cuirassArt).toBeTruthy();
+    expect(shieldArt).not.toBe(cuirassArt);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-shield'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-ring'])).toBeNull();
+    const html = render('first-book-armorer');
+    expect(html).toContain('data-chronicles-shop-art="wooden-shield"');
+    expect(html).toContain('data-chronicles-shop-art="leather-leather"');
+    expect(html).toContain('data-chronicles-shop-glyph="shield"');
+  });
+
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
     const html = render();
     expect(html).toContain('chronicles-shop__primary');
