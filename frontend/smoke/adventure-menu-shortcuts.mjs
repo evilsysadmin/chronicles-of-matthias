@@ -71,23 +71,41 @@ try {
       const feedbackText = mailbox.getByLabel('Tu mensaje');
       await feedbackText.fill('Un bug en la taberna del pueblo.');
       assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.');
-      // Focus a non-input action and the parent summary: neither S nor Q
-      // may leak through to Save/Exit while the mailbox page owns the folio.
-      await mailbox.getByRole('button', { name: 'Consultar mis mensajes' }).focus();
-      await page.keyboard.press('s');
-      await page.keyboard.press('q');
-      await page.locator('.chronicles-game-menu > summary').focus();
-      await page.keyboard.press('s');
-      await page.keyboard.press('q');
-      assert.equal(await count(page, 'save'), 0, 'S in feedback must not save');
-      assert.equal(await count(page, 'exit'), 0, 'Q in feedback must not request exit');
-      assert.equal(await mailbox.isVisible(), true, 'Feedback page must remain open after S/Q');
+      // The feedback page owns ALL its keys, even with a button or the
+      // outside gem focused. J/G/M cannot switch world views underneath it.
+      for (const focused of [
+        mailbox.getByRole('button', { name: 'Consultar mis mensajes' }), opener,
+      ]) {
+        await focused.focus();
+        for (const key of ['s', 'q', 'j', 'g', 'm']) await page.keyboard.press(key);
+      }
+      for (const kind of ['save', 'exit', 'journal', 'status', 'map']) {
+        assert.equal(await count(page, kind), 0, kind + ' must stay blocked inside feedback');
+      }
+      assert.equal(await mailbox.isVisible(), true);
+      assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.');
+
+      // Global Escape/Back from the outer summary first returns to the
+      // parent folio. It must not close the entire adventure menu.
+      await opener.focus();
+      await page.keyboard.press('Escape');
+      await mailbox.waitFor({ state: 'detached' });
+      assert.equal(await menu.isVisible(), true, 'First Esc returns only to parent menu');
+      await page.waitForFunction(() =>
+        document.activeElement?.hasAttribute('data-chronicles-menu-feedback'));
+      await menu.getByRole('button', { name: /Buzón de feedback/ }).click();
+      await mailbox.waitFor({ state: 'visible' });
+      assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.',
+        'Unsent feedback draft must survive a nested Back and re-entry');
+
+      // Escape from the text field must follow the same one-level Back path.
       await feedbackText.focus();
       await page.keyboard.press('Escape');
       await mailbox.waitFor({ state: 'detached' });
-      assert.equal(await menu.isVisible(), true, 'ESC from mailbox returns to menu');
-      assert.equal(await count(page, 'save'), 0);
-      assert.equal(await count(page, 'exit'), 0);
+      assert.equal(await menu.isVisible(), true);
+      for (const kind of ['save', 'exit', 'journal', 'status', 'map']) {
+        assert.equal(await count(page, kind), 0);
+      }
       // Even a mouse/touch click on a game HUD button behind this aria-modal
       // menu must not trigger gameplay. Check the real React capture handlers.
       const blocked = await page.evaluate(() => {
@@ -255,6 +273,9 @@ try {
       await menu.getByRole('button', { name: 'Continuar' }).click();
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       assert.equal(await opener.evaluate((node) => document.activeElement === node), false);
+      await page.keyboard.press('j');
+      assert.equal(await count(page, 'journal'), 1,
+        'J must work again after leaving the adventure folio');
       assert.deepEqual(errors, []);
       console.log('OK adventure menu shortcuts ' + width + 'px');
     } catch (error) {
