@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesFeedbackMailbox from './ChroniclesFeedbackMailbox.jsx';
 
@@ -10,6 +10,8 @@ export default function ChroniclesAdventureMenu({
   confirmExitWithoutSaving = false, saveNotice = '', saveBusy = false, isAdmin = false,
   feedbackOpen = false, onFeedbackOpenChange,
 }) {
+  // Keep an unsent message when Escape/Back moves to the parent folio.
+  const [feedbackDraft, setFeedbackDraft] = useState('');
   const feedbackButtonRef = useRef(null);
   const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
@@ -66,7 +68,8 @@ export default function ChroniclesAdventureMenu({
               </>
             )}
             {!confirmExitWithoutSaving && feedbackOpen && (
-              <ChroniclesFeedbackMailbox onBack={() => onFeedbackOpenChange?.(false)} />
+              <ChroniclesFeedbackMailbox draft={feedbackDraft} onDraftChange={setFeedbackDraft}
+                onBack={() => onFeedbackOpenChange?.(false)} />
             )}
             {confirmExitWithoutSaving && (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar salida sin guardar">
