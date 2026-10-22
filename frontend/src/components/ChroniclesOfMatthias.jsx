@@ -107,7 +107,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
-import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesSpellTargetQuestion } from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
@@ -1681,13 +1681,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   )}
                 </b>
                 {pendingSpellTarget?.memberId === member.id && (
-                  <span className="chronicles-spell-target-question"
-                    data-chronicles-spell-target-question={pendingSpellTarget.spellId}
-                    role="status">
-                    <strong>¿A quién?</strong>
-                    <small>1–4 · elige compañero · Esc cancela</small>
-                    {spellTargetNotice && <small className="is-warning">{spellTargetNotice}</small>}
-                  </span>
+                  <ChroniclesSpellTargetQuestion spellId={pendingSpellTarget.spellId}
+                    notice={spellTargetNotice} />
                 )}
               </button>
             );
