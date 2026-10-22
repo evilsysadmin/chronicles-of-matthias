@@ -73,7 +73,7 @@ function ShopItemVisual({ item }) {
     <img className="chronicles-shop__item-sprite" src={artwork}
       alt={item.name} data-chronicles-shop-art={item.id}
       width="512" height="512" draggable="false" decoding="async" />
-  ) : <ShopItemVisual item={item} />;
+  ) : <ShopItemGlyph item={item} />;
 }
 
 function ShopItemGlyph({ item }) {
