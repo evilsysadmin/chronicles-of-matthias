@@ -8,6 +8,23 @@ const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [144
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = 0;
 
+// Capture the true room composition without React panels for art direction.
+// Temporary QA stylesheet is always removed before asserting interactions.
+async function captureArtworkOnly(page, filename) {
+  const mask = await page.addStyleTag({ content: `
+    .chronicles-shop__head, .chronicles-shop__tabs, .chronicles-shop__market,
+    .chronicles-shop__foot, .chronicles-guild__membership, .chronicles-guild__spells,
+    .chronicles-shop__art-space, .chronicles-guild__art-space { visibility: hidden !important; }
+    .chronicles-shop::before, .chronicles-shop::after { display: none !important; }
+  ` });
+  try {
+    await page.screenshot({ path: filename });
+  } finally {
+    await mask.evaluate((node) => node.remove());
+  }
+}
+
+
 try {
   for (const [width, height] of views) {
     const mobile = width <= 844;
@@ -81,6 +98,9 @@ try {
         }
       }
       await page.screenshot({ path: `smoke-shop-${width}.png` });
+      if (width === 390 || width === 1280) {
+        await captureArtworkOnly(page, 'smoke-shop-art-only-brunna-' + width + '.png');
+      }
 
       // Longbows are real missile weapons, never generic potion-like items.
       const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
@@ -323,6 +343,9 @@ try {
           }
         }
         await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
+        if (width === 390 || width === 1280) {
+          await captureArtworkOnly(page, 'smoke-shop-art-only-' + room + '-' + width + '.png');
+        }
         if (room === 'odo') {
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
