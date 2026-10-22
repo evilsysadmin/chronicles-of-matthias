@@ -39,7 +39,7 @@ describe('Chronicles premium shop UI', () => {
   it('uses shaded art with distinct paint servers for each real armoury item', () => {
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-glyph="armor"');
-    expect(html).toContain('data-chronicles-shop-glyph="shield"');
+    expect(html).toContain('data-chronicles-shop-art="brass-shield"');
     expect(html).toContain('aria-label="Armadura"');
     const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
     expect(ids.length).toBeGreaterThan(10);
@@ -99,7 +99,8 @@ describe('Chronicles premium shop UI', () => {
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="wooden-shield"');
     expect(html).toContain('data-chronicles-shop-art="leather-leather"');
-    expect(html).toContain('data-chronicles-shop-glyph="shield"');
+    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+    expect(html).not.toContain('data-chronicles-shop-glyph="shield"');
   });
 
   it('adds distinct brass shield and ringmail portraits without painting unrelated materials', () => {
