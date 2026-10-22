@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4174/smoke/character-sheet-desktop.html';
 const browser = await chromium.launch();
 const failures = [];
+let exercisedScrollableDossier = false;
 
 async function assertParchmentSurface(locator, label) {
   const bg = await locator.evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -113,6 +114,25 @@ try {
       await assertParchmentSurface(skillCard, 'Training skill card');
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-training-' + width + '.png' });
 
+      // A long Training page must not make the next dossier section open mid-scroll.
+      // Exercise this only when the real fixture has a scrollable region.
+      const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
+      const availableScroll = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
+      if (availableScroll > 120) {
+        exercisedScrollableDossier = true;
+        await scrollArea.evaluate((node) => { node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight); });
+        const before = await scrollArea.evaluate((node) => node.scrollTop);
+        assert.ok(before > 60, 'Fixture must actually scroll before testing reset');
+        // Native click avoids Playwright scrolling the sticky menu on our behalf.
+        await nav.getByRole('button', { name: /Equipo/ }).evaluate((node) => node.click());
+        await page.waitForFunction(() => document.querySelector(
+          '.chronicles-character-sheet__tabs button[aria-pressed="true"]'
+        )?.textContent?.includes('Equipo'));
+        assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
+          'Changing to Equipment must return the desktop dossier to its beginning');
+        await nav.getByRole('button', { name: /Mejoras/ }).click();
+      }
+
       await nav.getByRole('button', { name: /Estado/ }).click();
       await sheet.getByRole('button', { name: 'Ver ficha de Aziz' }).click();
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Aziz');
@@ -126,3 +146,4 @@ try {
   }
 } finally { await browser.close(); }
 if (failures.length) throw new Error(failures.join('\n'));
+assert.ok(exercisedScrollableDossier, 'At least one desktop fixture must exercise long-page scroll restoration');
