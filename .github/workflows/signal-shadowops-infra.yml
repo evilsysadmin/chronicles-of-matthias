@@ -196,6 +196,25 @@ jobs:
           while IFS= read -r prior_id; do
             [[ "$prior_id" =~ ^[0-9]+$ ]] || continue
             origin="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api "repos/evilsysadmin/chronicles-of-matthias/actions/runs/$prior_id")"
+            # A malformed origin response is NOT evidence that the existing
+            # receipt was untrusted. Without a trustworthy origin we cannot
+            # conclude that another pair of staging dispatches is safe.
+            if ! jq -e '
+              (. | type == "object") and
+              (.id | type == "number") and (.id > 0) and
+              (.workflow_id | type == "number") and (.workflow_id > 0) and
+              (.head_sha | type == "string") and
+              (.head_sha | test("^[0-9a-f]{40}$")) and
+              (.path | type == "string") and
+              (.event | type == "string") and
+              (.head_branch | type == "string") and
+              (.status | type == "string") and
+              (.conclusion == null or (.conclusion | type == "string")) and
+              (.repository.full_name | type == "string")
+            ' <<<"$origin" >/dev/null; then
+              echo 'CHRONICLES_DISPATCH_ORIGIN_INCONCLUSIVE' >&2
+              exit 67
+            fi
             # The receipt's name is not enough: prove it originated from
             # our exact workflow, for this exact source SHA. A receipt from
             # a different revision may not suppress a new staging dispatch.
