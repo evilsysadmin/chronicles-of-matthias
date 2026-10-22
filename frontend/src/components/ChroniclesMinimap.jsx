@@ -18,8 +18,8 @@ const MINIMAP_ACCESSIBLE_BASE = 'Minimapa local. Abrir automapa completo';
 
 // The minimap is one focusable button: describe only POIs already shown by
 // its discovery-gated local viewport. Keep speech brief in crowded towns.
-export function chroniclesMinimapAccessibleLabel(markers, target = null) {
-  const route = target ? '★: rumbo al objetivo. ' : '';
+export function chroniclesMinimapAccessibleLabel(markers, target = null, routeLabel = '') {
+  const route = target ? `★: rumbo al objetivo${routeLabel ? `, siguiente salida: ${routeLabel}` : ''}. ` : '';
   if (!Array.isArray(markers) || markers.length === 0) {
     return route ? `Minimapa local. ${route}Abrir automapa completo` : MINIMAP_ACCESSIBLE_BASE;
   }
@@ -103,6 +103,7 @@ export default function ChroniclesMinimap({
   radius = CHRONICLES_MINIMAP_RADIUS,
   onExpand,
   target = null,
+  routeLabel = '',
 }) {
   const map = chroniclesMapForState(state);
   const svgRef = useRef(null);
@@ -155,7 +156,7 @@ export default function ChroniclesMinimap({
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label={chroniclesMinimapAccessibleLabel(markers, target)}
+      aria-label={chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
@@ -209,7 +210,7 @@ export default function ChroniclesMinimap({
       {(guildVisible || target) && (
         <span className="chronicles-minimap__legend" aria-hidden="true">
           {guildVisible && <span className="is-guild"><b>G</b> gremio</span>}
-          {target && <span className="is-target"><b>★</b> objetivo</span>}
+          {target && <span className="is-target" title={routeLabel ? `Siguiente salida: ${routeLabel}` : undefined}><b>★</b> objetivo</span>}
         </span>
       )}
       <span className="chronicles-minimap__expand" aria-hidden="true">⌖</span>
