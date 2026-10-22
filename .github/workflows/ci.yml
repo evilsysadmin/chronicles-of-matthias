@@ -37,10 +37,9 @@ jobs:
           # check from the independent frontend workflow for this immutable SHA.
           # A red, cancelled or missing browser job must NEVER yield a green
           # repository-contract, including during GitHub auto-merge evaluation.
-          # The Actions runs listing may momentarily lose a previously seen
-          # official run while GitHub finalizes it. A verified pending lookup
-          # enables a bounded retry of that absence, never a green admission.
-          observed_official_pending=false
+          # GitHub can briefly omit an official workflow run even once its
+          # exact-SHA build check succeeded. Retry the absence only inside
+          # this bounded green-check branch; never admit without official ID.
           for attempt in $(seq 1 114); do
             result="$(gh api -X GET "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs" \
               -f check_name=build -f per_page=100 \
@@ -53,24 +52,20 @@ jobs:
                 # trusted repository and its latest completed green run.
                 runs="$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/runs" \
                   -f head_sha="$HEAD_SHA" -f event="$GITHUB_EVENT_NAME" -f per_page=100)"
-                identity_args=("$HEAD_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_REPOSITORY")
-                if [[ "$observed_official_pending" == true ]]; then
-                  identity_args+=(--previously-observed-official)
-                fi
-                if node scripts/require-frontend-workflow.mjs "${identity_args[@]}" <<<"$runs"; then
+                if node scripts/require-frontend-workflow.mjs \
+                  "$HEAD_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_REPOSITORY" \
+                  --retry-missing-official <<<"$runs"; then
                   echo "FRONTEND_BROWSER_REQUIRED_GREEN sha=$HEAD_SHA"
                   printf '\nFrontend Vitest/build/Chromium succeeded for `%s`.\n' "$HEAD_SHA" >> "$GITHUB_STEP_SUMMARY"
                   exit 0
                 else
                   identity_rc=$?
-                  # Retry the official pending state (75), and transient absence
-                  # ONLY after the same official workflow was observed pending.
-                  # An unseen, foreign, failed, cancelled, malformed or truncated
-                  # workflow can never satisfy the exact-SHA identity gate.
+                  # Retry valid pending or temporarily absent official runs.
+                  # Failed, cancelled, malformed or truncated results remain
+                  # terminal; no missing/foreign workflow can yield success.
                   if (( identity_rc != 75 )); then
                     exit "$identity_rc"
                   fi
-                  observed_official_pending=true
                   if (( attempt % 12 == 1 )); then
                     echo "Awaiting official frontend workflow completion for $HEAD_SHA (poll $attempt/114)"
                   fi
