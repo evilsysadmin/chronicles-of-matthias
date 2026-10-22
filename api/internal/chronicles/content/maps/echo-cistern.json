@@ -156,6 +156,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "cistern-sluice-hound",
+      "visualType": "bone-hound",
+      "visualScale": 0.98,
+      "visualMotion": "grounded",
+      "name": "sabueso de la esclusa",
+      "x": 5,
+      "y": 4,
+      "hpKey": "cisternSluiceHoundHp",
+      "maxHp": 7,
+      "retaliation": 2,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "optional": true
+    },
+    {
+      "id": "cistern-wall-spider",
+      "visualType": "crypt-spider",
+      "visualScale": 0.96,
+      "visualMotion": "skitter",
+      "name": "araña del muro húmedo",
+      "x": 11,
+      "y": 5,
+      "hpKey": "cisternWallSpiderHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "optional": true
+    },
+    {
+      "id": "cistern-lower-bishop",
+      "visualType": "spectral-bishop",
+      "visualScale": 1,
+      "visualMotion": "hover",
+      "name": "obispo de la sal",
+      "x": 10,
+      "y": 8,
+      "hpKey": "cisternLowerBishopHp",
+      "maxHp": 7,
+      "retaliation": 2,
+      "retaliationReach": 3,
+      "activation": "always",
+      "optional": true,
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true
+      }
     }
   ],
   "triggers": [],

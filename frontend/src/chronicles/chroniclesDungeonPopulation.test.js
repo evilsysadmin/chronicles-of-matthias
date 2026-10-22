@@ -8,6 +8,7 @@ const SECTORS = [
   { id: 'blind-king-archive', minimum: 8, original: 5, added: 3 },
   { id: 'iron-foundry', minimum: 8, original: 5, added: 3 },
   { id: 'templo-corona-cripta', minimum: 8, original: 5, added: 3 },
+  { id: 'echo-cistern', minimum: 8, original: 5, added: 3 },
 ];
 
 function reachableCells(map) {
@@ -47,6 +48,7 @@ describe('Chronicles MM3 · populated dungeon corridors', () => {
       expect(reachable.has(key), id + '/' + enemy.id + ' must be reachable').toBe(true);
       expect(occupied.has(key), id + '/' + enemy.id + ' must not overlap another encounter or POI').toBe(false);
       expect(enemy.optional, enemy.id).toBe(true);
+      expect(enemy.defeatedFlag, enemy.id + ' must not carry quest kill flags').toBeUndefined();
       expect(enemy.activation, enemy.id).toBe('always');
       // A copied archetype must never drag its old coordinate-bound patrol.
       if (enemy.ai.movement === 'patrol-route') {
@@ -67,6 +69,7 @@ describe('Chronicles MM3 · populated dungeon corridors', () => {
       'blind-king-archive': 'ledger-warden',
       'iron-foundry': 'iron-sentinel',
       'templo-corona-cripta': 'templo-corona-cripta-spider',
+      'echo-cistern': 'cistern-warden',
     }[id]);
   });
 
