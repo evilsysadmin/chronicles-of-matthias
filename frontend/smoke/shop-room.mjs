@@ -298,9 +298,22 @@ try {
             assert(picture.loaded && picture.width >= 512 && picture.height >= 512,
               id + ': Odo premium sprite failed to decode ' + JSON.stringify(picture));
           }
-          assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-ring"] svg')
+          for (const [id, alt] of [
+            ['brass-shield', 'Escudo de latón'],
+            ['brass-ring', 'Cota de anillas de latón'],
+          ]) {
+            const node = dialog.locator('[data-chronicles-shop-item="' + id + '"] img[data-chronicles-shop-art="' + id + '"]');
+            await node.waitFor({ state: 'visible' });
+            assert.equal(await node.getAttribute('alt'), alt);
+            const picture = await node.evaluate((img) => ({
+              width: img.naturalWidth, height: img.naturalHeight, loaded: img.complete,
+            }));
+            assert(picture.loaded && picture.width >= 512 && picture.height >= 512,
+              id + ': premium brass sprite failed to decode ' + JSON.stringify(picture));
+          }
+          assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-scale"] svg')
             .getAttribute('aria-label'), 'Armadura',
-            'Unpainted brass ring armour retains the actual accessible SVG fallback');
+            'Unpainted scale armour must keep its accessible SVG fallback');
           // Verify the real room receives non-interactive light. One mobile
           // scenario exercises the reduced-motion fallback, not just CSS text.
           const light = await scene.evaluate((node) => ({
