@@ -127,6 +127,50 @@ describe('Chronicles alternating creature turns', () => {
     expect(next.enemyTurnEvents[0]).toMatchObject({ type: 'move', enemyId: 'scavenger-knight' });
   });
 
+  it('lets a displaced patrol guard walk back onto its authored route through walls correctly', () => {
+    const jailer = enemy('gate-jailer');
+    const base = createChroniclesState();
+    const offRoute = {
+      ...base,
+      // Jailer was lured out into the corridor, then lost sight of the party.
+      x: 5,
+      y: 5,
+      enemyPositions: { 'gate-jailer': { x: 1, y: 3 } },
+    };
+    // Route includes 1,1; the only safe return from 1,3 starts up the corridor.
+    expect(chroniclesChooseEnemyStep(offRoute, jailer)).toEqual({ x: 1, y: 2 });
+    const nearer = {
+      ...offRoute,
+      enemyPositions: { 'gate-jailer': { x: 1, y: 2 } },
+    };
+    expect(chroniclesChooseEnemyStep(nearer, jailer)).toEqual({ x: 1, y: 1 });
+
+    // Once the guard has rejoined, the normal authored route resumes.
+    const onRoute = {
+      ...offRoute,
+      enemyPositions: { 'gate-jailer': { x: 1, y: 1 } },
+    };
+    expect(chroniclesChooseEnemyStep(onRoute, jailer)).toEqual({ x: 2, y: 1 });
+  });
+
+  it('holds position rather than teleporting when all authored route cells are walls', () => {
+    const jailer = enemy('gate-jailer');
+    const state = {
+      ...createChroniclesState(),
+      x: 5,
+      y: 5,
+      enemyPositions: { 'gate-jailer': { x: 1, y: 3 } },
+    };
+    const blockedRoute = {
+      ...jailer,
+      ai: {
+        ...jailer.ai,
+        patrolRoute: [{ x: 0, y: 0 }, { x: 0, y: 1 }],
+      },
+    };
+    expect(chroniclesChooseEnemyStep(state, blockedRoute)).toBeNull();
+  });
+
   it('selects movement from enemy AI data rather than hardcoded enemy ids', () => {
     const state = createChroniclesState();
     const basePawn = enemy('corrupted-pawn');
