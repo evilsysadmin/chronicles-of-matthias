@@ -85,6 +85,8 @@ jobs:
           npx vite --port 4174 --strictPort > "$RUNNER_TEMP/chronicles-dev.log" 2>&1 &
           dev_pid=$!
           wait_for_http http://localhost:4174/smoke/folio-mobile.html "$dev_pid" "$RUNNER_TEMP/chronicles-dev.log" "Vite smoke fixtures"
+          # Fail fast on the actual MM3 desktop dossier before the full fixture battery.
+          node smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
           node smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
           node smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
