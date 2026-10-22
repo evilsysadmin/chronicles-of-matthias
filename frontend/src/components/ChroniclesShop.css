@@ -723,6 +723,84 @@
   }
 }
 
+/* High-resolution merchant ledger. The default desktop rows were sized for
+   two items in view, requiring 5+ unnecessary scroll gestures for 11 offers.
+   Use the vertical space for stock; leave phone/short-landscape touch layout
+   untouched. The catalogue still scrolls normally for genuinely long lists. */
+@media (min-width: 1101px) and (min-height: 700px) {
+  .chronicles-shop:not(.chronicles-guild) {
+    padding: 10px 16px;
+    gap: 7px;
+  }
+
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__identity {
+    padding: 5px 12px;
+  }
+
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__identity > span { font-size: 10px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__identity h2 {
+    margin: 1px 0 3px;
+    font-size: clamp(23px, 2.05vw, 28px);
+    line-height: 1.07;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__identity p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__tabs button {
+    min-height: 36px;
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__catalog { padding: 8px 9px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__filters {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .85fr) minmax(0, .85fr);
+    gap: 5px;
+    margin-bottom: 4px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__filters label:first-child {
+    grid-column: auto;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__filters label { gap: 3px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__filters label > span { font-size: 10px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__filters :is(input, select) {
+    min-height: 34px;
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__catalog-title {
+    font-size: 16px;
+    padding: 2px 3px 6px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__catalog-title span { font-size: 11px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__list li { margin-bottom: 1px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry {
+    min-height: 39px;
+    gap: 6px;
+    padding: 2px 6px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-description { gap: 1px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-description strong {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-description small { font-size: 10px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-price { font-size: 12px; }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__foot {
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+}
+
 /* Odo's authored armory illustration replaces the old 128x144 pixel inset.
    Keep the illustrated keeper centered in the open aisle between commerce panes. */
 .chronicles-shop__scene[data-chronicles-shop-room='odo-forge'] {
