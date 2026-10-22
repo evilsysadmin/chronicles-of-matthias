@@ -726,6 +726,12 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   }
   const target = chroniclesConsumableTarget(state, item, targetId);
   if (!target) {
+    if (targetId && item.kind === 'revive') {
+      const chosen = state.party.find((hero) => hero.id === targetId);
+      return refuse(chosen
+        ? `${chosen.name} sigue en pie. El Elixir de retorno solo reanima a compañeros con 0 PV.`
+        : 'No existe ese compañero. No se ha consumido el Elixir de retorno.');
+    }
     return refuse({
       heal: `${user.name} destapa ${item.name}, pero nadie de la compañía está herido.`,
       mana: `${user.name} mira ${item.name}: nadie necesita recuperar puntos de hechizo.`,

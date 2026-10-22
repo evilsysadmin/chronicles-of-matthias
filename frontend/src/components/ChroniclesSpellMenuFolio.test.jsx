@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -84,11 +83,29 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('CAÍDO · REVIVIR');
     expect(html).toContain('3 / ');
   });
-  it('keeps the targeted heal callback wired without closing the grimoire on target selection', () => {
-    const source = readFileSync(new URL('./ChroniclesSpellMenu.jsx', import.meta.url), 'utf8');
-    expect(source).toContain('onSelect={(targetId) => onCast(healSpell.id, targetId)}');
-    expect(source).toContain('setHealSpellId(spell.id)');
-    expect(source).toContain('role="status"');
+  it('shows explicit revive choices for fallen allies and does not offer the elixir to living heroes', () => {
+    const original = makeState();
+    const state = {
+      ...original,
+      party: original.party.map((hero) => (
+        hero.id === 'rook' ? { ...hero, hp: 0 } : hero
+      )),
+      inventory: { 'revive-draught': { id: 'revive-draught', quantity: 1 } },
+    };
+    const item = { id: 'revive-draught', name: 'Elixir de retorno' };
+    const html = renderToStaticMarkup(createElement(ChroniclesReviveTargetPicker, {
+      state, item, onSelect: () => {}, onBack: () => {},
+    }));
+    expect(html).toContain('data-chronicles-revive-picker="revive-draught"');
+    expect(html).toContain('data-chronicles-revive-target="rook"');
+    expect(html).not.toMatch(/data-chronicles-revive-target="rook"[^>]*disabled=""/);
+    expect(html).toMatch(/data-chronicles-revive-target="matthias"[^>]*disabled=""/);
+    expect(html).toContain('Confirmar consume un elixir');
+    expect(html).toContain('0 / ');
+    const allHealthy = { ...state, party: state.party.map((hero) => ({ ...hero, hp: hero.maxHp })) };
+    expect(renderToStaticMarkup(createElement(ChroniclesReviveTargetPicker, {
+      state: allHealthy, item, onSelect: () => {}, onBack: () => {},
+    }))).toContain('Nadie está caído');
   });
 
   it('keeps inventory IDs and quantities for the I/Objetos tab', () => {

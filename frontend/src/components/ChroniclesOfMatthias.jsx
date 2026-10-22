@@ -2039,9 +2039,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             setSpellMenuOpen(false);
             dispatch({ type: 'cast', memberId: caster.id, spellId, ...(targetId ? { targetId } : {}) });
           }}
-          onUse={(itemId) => {
+          onUse={(itemId, targetId = null) => {
             setSpellMenuOpen(false);
-            if (itemUser) dispatch({ type: 'use-item', memberId: itemUser.id, itemId });
+            if (itemUser) dispatch({
+              type: 'use-item', memberId: itemUser.id, itemId,
+              ...(targetId ? { targetId } : {}),
+            });
           }}
         />
       )}
