@@ -39,6 +39,18 @@ export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) 
   return next ? next === tab ? 'close' : next : null;
 }
 
+// Brief MM3 speech plaque over the caster portrait, not another modal.
+export function ChroniclesSpellTargetQuestion({ spellId, notice = '' }) {
+  return (
+    <span className="chronicles-spell-target-question"
+      data-chronicles-spell-target-question={spellId} role="status">
+      <strong>¿A quién?</strong>
+      <small>1–4 · elige compañero · Esc cancela</small>
+      {notice && <small className="is-warning">{notice}</small>}
+    </span>
+  );
+}
+
 // Explicit target list, including the *reason* a fallen or healthy hero cannot
 // be healed. Disabled entries are still readable; no spell points are spent.
 export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack }) {
