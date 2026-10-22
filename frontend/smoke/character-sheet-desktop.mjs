@@ -115,6 +115,19 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Hechizos');
+      const casterShortcut = sheet.getByRole('button', { name: /Ver hechizos de/ });
+      await casterShortcut.waitFor({ state: 'visible' });
+      await casterShortcut.click();
+      const spellbook = sheet.locator('[data-chronicles-spellbook]');
+      await spellbook.waitFor({ state: 'visible' });
+      assert.notEqual(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
+        'The shortcut must open a real spellcaster, never create spells for Matthias');
+      assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true',
+        'Switching hero should preserve the spellbook section');
+      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-caster-' + width + '.png' });
+      await sheet.getByRole('button', { name: 'Ver ficha de Matthias' }).click();
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias');
+      await sheet.getByText('Este personaje no practica ninguna escuela de magia.').waitFor({ state: 'visible' });
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-' + width + '.png' });
 
       await nav.getByRole('button', { name: /Mejoras/ }).click();

@@ -147,6 +147,9 @@ export default function ChroniclesCharacterSheet({
   const effectiveAgility = chroniclesPartyInitiativeAgility(state, member);
   const mm3 = !tacticsMode && member.mm3 ? member.mm3 : null;
   const className = mm3?.classLabel || profile.className;
+  const spellcastingCompanion = !tacticsMode && onSelectMember
+    ? state.party?.find((companion) => companion.id !== member.id && chroniclesMemberSchool(companion))
+    : null;
   const relic = relicDetails(state, member.id);
   const inventory = chroniclesInventoryEntries(state).filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
   const gold = chroniclesGoldBalance(state);
@@ -358,6 +361,12 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__section chronicles-character-sheet__no-spells">
             <span>✧</span>
             <p>Este personaje no practica ninguna escuela de magia.</p>
+            {spellcastingCompanion && (
+              <button type="button" className="chronicles-character-sheet__spell-companion"
+                onClick={() => onSelectMember(spellcastingCompanion.id)}>
+                Ver hechizos de {spellcastingCompanion.name} <span aria-hidden="true">›</span>
+              </button>
+            )}
           </div>
         )}
 
