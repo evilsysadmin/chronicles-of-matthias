@@ -881,7 +881,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     dispatch('interact');
   }, [dispatch]);
 
-  // mode: 'auto' (botón y espacio), 'melee' (A · atacar), 'missile' (S · disparar).
+  // mode: 'auto' (botón táctil), 'melee' (A · atacar), 'missile' (S · disparar).
   const attackWithSelected = useCallback((mode = 'auto') => {
     const current = stateRef.current;
     if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
@@ -1370,7 +1370,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         }
       }
       // MM3: directional arrows navigate; A attacks, S shoots.
-      // Space stays an optional auto-attack alias.
+      // Space is intentionally unbound; it must never dispatch an attack.
       const combatMode = chroniclesCombatKeyMode(event.key);
       if (combatMode) {
         event.preventDefault();
@@ -1990,7 +1990,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span><kbd>A</kbd> atacar</span>
                 <span><kbd>S</kbd> disparar</span>
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>
-                <span><kbd>ESPACIO</kbd> ataque automático</span>
                 <span><kbd>F</kbd> usar/recoger</span>
                 <span><kbd>C</kbd> hechizos</span>
                 <span><kbd>I</kbd> objetos</span>
