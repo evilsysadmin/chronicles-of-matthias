@@ -26,6 +26,30 @@ describe('MM3 map symbol legends', () => {
     expect(html).toContain('Solo lugares descubiertos');
   });
 
+  it('uses only the real next exit clue for the objective star, never an invented guild destination', () => {
+    const label = 'Camino de los estandartes · por el norte';
+    const full = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} visitedCells={[]}
+        onClose={() => {}} target={target} routeLabel={label} />,
+    );
+    expect(full).toContain('Siguiente salida hacia el objetivo: Camino de los estandartes');
+    expect(full).toContain('salida: <b class="chronicles-automap__route-label"');
+    expect(full).toContain('Camino de los estandartes · por el norte');
+
+    const small = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} visitedCells={[]} target={target} routeLabel={label} />,
+    );
+    expect(small).toContain('siguiente salida: Camino de los estandartes');
+    expect(small).toContain('title="Siguiente salida: Camino de los estandartes');
+
+    // Without an active route, stale strings must not suggest a destination.
+    const none = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} visitedCells={[]} routeLabel={label} />,
+    );
+    expect(none).not.toContain('Camino de los estandartes');
+    expect(none).not.toContain('★: rumbo al objetivo');
+  });
+
   it('labels guild and objective contextually on the local minimap', () => {
     const known = renderToStaticMarkup(
       <ChroniclesMinimap

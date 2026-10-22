@@ -808,6 +808,16 @@
   color: #ead9ff;
   font-weight: 800;
 }
+.chronicles-automap__route-label {
+  display: inline-block;
+  max-width: min(36ch, 42vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  color: #e7cf9d;
+  font-weight: 600;
+}
 .chronicles-automap__panel footer kbd {
   padding: 1px 4px;
   border: 1px solid #554735;
