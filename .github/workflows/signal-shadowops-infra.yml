@@ -36,6 +36,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+      SOURCE_WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
     steps:
       - name: Require current protected source main with three green workflows
         id: admit
@@ -79,6 +80,7 @@ jobs:
               (.workflow_id | if type == "number" then (. > 0 and . == floor) else false end) and
               (.head_sha | if type == "string" then test("^[0-9a-f]{40}$") else false end) and
               (.head_branch | type == "string") and
+              (.updated_at | if type == "string" then test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T") else false end) and
               (.event | type == "string") and
               (.status | type == "string") and
               (.repository.full_name | type == "string") and
@@ -120,8 +122,32 @@ jobs:
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # Source workflows all trigger the handoff, but only the one
+          # completing last owns its dispatch. Keep SHA receipt de-duplication
+          # as an independent guard against repeated delivery of that event.
+          [[ "$SOURCE_WORKFLOW_RUN_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo 'CHRONICLES_SIGNAL_INVALID_TRIGGER_RUN' >&2
+            exit 67
+          }
+          owner="$(jq -er --arg sha "$sha" '
+            . as $payload |
+            [385763056,386812503,387132683] |
+            [ .[] | . as $wid |
+              [$payload.workflow_runs[] | select(
+                .workflow_id == $wid and .head_sha == $sha and
+                .event == "push" and .head_branch == "main" and
+                .repository.full_name == "evilsysadmin/chronicles-of-matthias"
+              )] | max_by(.id)
+            ] | max_by([.updated_at, .id]) | .id
+          ' <<<"$runs")"
+          if [[ "$owner" != "$SOURCE_WORKFLOW_RUN_ID" ]]; then
+            echo "::notice title=Chronicles staging signal not owner::Run $SOURCE_WORKFLOW_RUN_ID is not the final trusted source CI run ($owner); no duplicate Infra dispatch."
+            printf '**State: another source CI run owns dispatch.** Final run: %s. Triggering run: %s. No Infra request.\n' "$owner" "$SOURCE_WORKFLOW_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
-          echo '**State: source CI green.** Eligible for dispatch; see the separate dispatch job for delivery result.' >> "$GITHUB_STEP_SUMMARY"
+          echo '**State: source CI green; final completion owns dispatch.** Eligible for dispatch; see the separate dispatch job for delivery result.' >> "$GITHUB_STEP_SUMMARY"
 
   dispatch:
     name: Send staging API + Pages dispatch to Infra
