@@ -4,7 +4,7 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
-import { chroniclesDiscoveredPois } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import {
   chroniclesAutomapCellKey,
@@ -138,6 +138,7 @@ export default function ChroniclesAutomap({
   );
   const viewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
   const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition), [map, revealed]);
+  const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -226,11 +227,16 @@ export default function ChroniclesAutomap({
               />
             ))}
             {target && (
-              <g className="chronicles-automap__target" data-chronicles-route-target
+              <g className={`chronicles-automap__target${targetOverPoi ? ' is-poi-overlap' : ''}`}
+                data-chronicles-route-target
+                data-chronicles-route-overlap={targetOverPoi ? 'poi' : undefined}
                 aria-label={routeLabel ? `Siguiente salida hacia el objetivo: ${routeLabel}` : 'Siguiente paso hacia el objetivo'}>
                 {routeLabel && <title>{`Siguiente salida: ${routeLabel}`}</title>}
-                <circle cx={target.x + 0.5} cy={target.y + 0.5} r="0.46" />
-                <text x={target.x + 0.5} y={target.y + 0.55} textAnchor="middle" dominantBaseline="middle">★</text>
+                <circle cx={target.x + (targetOverPoi ? 0.78 : 0.5)}
+                  cy={target.y + (targetOverPoi ? 0.78 : 0.5)} r={targetOverPoi ? 0.21 : 0.46} />
+                <text x={target.x + (targetOverPoi ? 0.78 : 0.5)}
+                  y={target.y + (targetOverPoi ? 0.81 : 0.55)}
+                  textAnchor="middle" dominantBaseline="middle">★</text>
               </g>
             )}
             <g
