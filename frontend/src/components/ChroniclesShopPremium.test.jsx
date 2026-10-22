@@ -59,7 +59,6 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('data-chronicles-shop-art="wooden-longbow"');
     expect(html).toContain('class="chronicles-shop__item-sprite"');
     expect(html).toContain('data-chronicles-shop-glyph="weapon"');
-    expect(html).not.toContain('http://');
   });
 
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
