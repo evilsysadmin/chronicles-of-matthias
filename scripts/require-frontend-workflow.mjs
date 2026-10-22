@@ -6,6 +6,17 @@ import { pathToFileURL } from 'node:url';
 // never let an unrelated GitHub Actions job named "build" satisfy the fallback.
 export const FRONTEND_WORKFLOW_ID = 386812503;
 
+// The browser job can already be green while the parent Actions workflow
+// remains in progress (e.g. post-job cache/artifact cleanup). Retry this
+// *temporary* state; never authorize main until the official run is complete.
+export class FrontendWorkflowPendingError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'FrontendWorkflowPendingError';
+  }
+}
+
+
 export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
   if (!/^[0-9a-f]{40}$/.test(sha ?? '')) throw new Error('Invalid source SHA');
   if (!['push', 'pull_request'].includes(event)) throw new Error('Unexpected event');
@@ -51,6 +62,12 @@ export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
     (candidate, run) => !candidate || run.id > candidate.id ? run : candidate,
     null,
   );
+  if (latest && ['queued', 'in_progress', 'requested', 'waiting', 'pending'].includes(latest.status)) {
+    throw new FrontendWorkflowPendingError(
+      'Official Chronicles frontend workflow not green yet for exact source SHA '
+      + sha + ' (' + latest.status + '/' + (latest.conclusion ?? 'unknown') + ')',
+    );
+  }
   if (!latest || latest.status !== 'completed' || latest.conclusion !== 'success') {
     throw new Error(
       'Official Chronicles frontend workflow not green for exact source SHA '
@@ -70,7 +87,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log('FRONTEND_WORKFLOW_IDENTITY_GREEN sha=' + sha
       + ' workflow_id=' + FRONTEND_WORKFLOW_ID + ' run_id=' + id);
   } catch (error) {
-    console.error('::error title=Frontend workflow identity not verified::' + error.message);
-    process.exitCode = 1;
+    if (error instanceof FrontendWorkflowPendingError) {
+      console.error('::notice title=Frontend workflow still completing::' + error.message);
+      process.exitCode = 75; // EX_TEMPFAIL: host poller retries within existing bounded deadline.
+    } else {
+      console.error('::error title=Frontend workflow identity not verified::' + error.message);
+      process.exitCode = 1;
+    }
   }
 }
