@@ -147,7 +147,7 @@ jobs:
             exit 0
           fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
-          echo '**State: source CI green; final completion owns dispatch.** Eligible for dispatch; see the separate dispatch job for delivery result.' >> "$GITHUB_STEP_SUMMARY"
+          echo '**State: source CI green.** Final completion owns dispatch; eligible for dispatch; see the separate dispatch job for delivery result.' >> "$GITHUB_STEP_SUMMARY"
 
   dispatch:
     name: Send staging API + Pages dispatch to Infra
