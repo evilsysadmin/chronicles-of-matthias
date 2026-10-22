@@ -116,7 +116,7 @@ function FragmentRow({ index, row, children }) {
 
 export default function ChroniclesAutomap({
   open, state, visitedCells, onClose, onOpenSheet = null,
-  target = null, visitedMapIds = [], objective = '',
+  target = null, routeLabel = '', visitedMapIds = [], objective = '',
 }) {
   const closeRef = useRef(null);
   const [view, setView] = useState('area');
@@ -226,7 +226,9 @@ export default function ChroniclesAutomap({
               />
             ))}
             {target && (
-              <g className="chronicles-automap__target" data-chronicles-route-target aria-label="Siguiente paso hacia el objetivo">
+              <g className="chronicles-automap__target" data-chronicles-route-target
+                aria-label={routeLabel ? `Siguiente salida hacia el objetivo: ${routeLabel}` : 'Siguiente paso hacia el objetivo'}>
+                {routeLabel && <title>{`Siguiente salida: ${routeLabel}`}</title>}
                 <circle cx={target.x + 0.5} cy={target.y + 0.5} r="0.46" />
                 <text x={target.x + 0.5} y={target.y + 0.55} textAnchor="middle" dominantBaseline="middle">★</text>
               </g>
@@ -248,7 +250,7 @@ export default function ChroniclesAutomap({
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
           <span className="chronicles-automap__legend-guild"><i aria-hidden="true">G</i> gremio</span>
           <span>F forja · A armaduras · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
+          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo{target && routeLabel && <> · salida: <b className="chronicles-automap__route-label" title={routeLabel}>{routeLabel}</b></>} · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>
