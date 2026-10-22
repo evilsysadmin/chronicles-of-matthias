@@ -35,6 +35,32 @@ export function chroniclesAdventureMenuShortcut(event, {
   return null;
 }
 
+// The global Back/Escape stack dispatches at document level BEFORE a
+// spell/objects folio's window handler. The most visible first-person layer
+// must be dismissed first; never open the adventure menu behind another
+// active modal just because that modal owns a separate keydown listener.
+export function chroniclesFirstPersonEscapeAction({
+  menuOpen = false,
+  confirmExitWithoutSaving = false,
+  spellMenuOpen = false,
+  adminOpen = false,
+  audienceOpen = false,
+  automapOpen = false,
+  journalOpen = false,
+  quickStatusOpen = false,
+} = {}) {
+  if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
+  if (spellMenuOpen) return 'close-spell';
+  if (adminOpen) return 'close-admin';
+  if (audienceOpen) return 'close-audience';
+  if (automapOpen) return 'close-automap';
+  // The journal and quick-status overlay normally own a newer Back entry;
+  // these guards also cover the short React mount/unmount transition.
+  if (journalOpen) return 'close-journal';
+  if (quickStatusOpen) return 'close-quick-status';
+  return 'toggle-menu';
+}
+
 // The adventure menu advertises itself as a modal dialogue. Keep keyboard
 // focus within its own native <details> while open: otherwise Tab can escape
 // behind the overlay and accidentally operate the game HUD. Native Tab order

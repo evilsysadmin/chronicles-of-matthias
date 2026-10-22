@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('only four direction arrows move/turn the party', () => {
@@ -313,5 +313,40 @@ describe('Chronicles adventure-menu modal pointer guard', () => {
     expect(chroniclesBlockAdventureMenuBackgroundEvent(event, false)).toBe(false);
     expect(event.prevented).toBe(false);
     expect(event.stopped).toBe(false);
+  });
+});
+
+
+describe('Chronicles global Escape / browser Back overlay priority', () => {
+  it('dismisses Magia/Objetos first and never toggles the adventure menu behind the folio', () => {
+    expect(chroniclesFirstPersonEscapeAction({ spellMenuOpen: 'spells' })).toBe('close-spell');
+    expect(chroniclesFirstPersonEscapeAction({ spellMenuOpen: 'items' })).toBe('close-spell');
+    expect(chroniclesFirstPersonEscapeAction({ spellMenuOpen: 'items', automapOpen: true }))
+      .toBe('close-spell');
+    expect(chroniclesFirstPersonEscapeAction({ spellMenuOpen: false })).toBe('toggle-menu');
+  });
+
+  it('closes a visible admin/dialogue/map overlay before allowing the game menu to open', () => {
+    expect(chroniclesFirstPersonEscapeAction({ adminOpen: true })).toBe('close-admin');
+    expect(chroniclesFirstPersonEscapeAction({ audienceOpen: true })).toBe('close-audience');
+    expect(chroniclesFirstPersonEscapeAction({ automapOpen: true })).toBe('close-automap');
+    expect(chroniclesFirstPersonEscapeAction({ journalOpen: true })).toBe('close-journal');
+    expect(chroniclesFirstPersonEscapeAction({ quickStatusOpen: true })).toBe('close-quick-status');
+    expect(chroniclesFirstPersonEscapeAction({})).toBe('toggle-menu');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: true })).toBe('toggle-menu');
+  });
+
+  it('cancels the pending dangerous Q confirmation before any other navigation', () => {
+    expect(chroniclesFirstPersonEscapeAction({
+      menuOpen: true, confirmExitWithoutSaving: true, spellMenuOpen: 'items',
+    })).toBe('cancel-exit');
+    expect(chroniclesFirstPersonEscapeAction({
+      menuOpen: true, confirmExitWithoutSaving: true,
+    })).toBe('cancel-exit');
+    // An obsolete confirmation flag with an already closed menu must never
+    // trigger a second exit confirmation or resurrect the game menu.
+    expect(chroniclesFirstPersonEscapeAction({
+      menuOpen: false, confirmExitWithoutSaving: true, adminOpen: true,
+    })).toBe('close-admin');
   });
 });
