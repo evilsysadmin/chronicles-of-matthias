@@ -24,6 +24,7 @@ const SHA = 'a'.repeat(40);
 const receiptName = (sha = SHA) => 'chronicles-infra-dispatch-' + sha;
 const acceptedRun = () => ({
   id: 123, status: 'completed', conclusion: 'success',
+  workflow_id: 389939241, head_sha: SHA,
   path: '.github/workflows/signal-shadowops-infra.yml',
   event: 'workflow_run', head_branch: 'main',
   repository: { full_name: 'evilsysadmin/chronicles-of-matthias' },
@@ -157,13 +158,30 @@ test('failed prior workflow and partial Pages dispatch can retry', () => {
   assert.doesNotMatch(partial.output, /sent=true/);
 });
 
-test('foreign workflow receipt never suppresses a fresh deployment request', () => {
-  const foreign = simulate({
-    receipts: receiptList(),
-    priorRun: { ...acceptedRun(), path: '.github/workflows/ci.yml' },
-  });
-  assert.equal(foreign.status, 0, foreign.stderr);
-  assert.equal(foreign.calls.length, 2);
+test('untrusted or different-SHA receipt cannot suppress the current staging dispatch', () => {
+  const changes = [
+    { path: '.github/workflows/ci.yml' },
+    { workflow_id: 386812503 },
+    { head_sha: 'b'.repeat(40) },
+    { head_sha: 'not-a-git-sha' },
+    { repository: { full_name: 'someone/untrusted' } },
+    { status: 'in_progress', conclusion: null },
+  ];
+  for (const changed of changes) {
+    const result = simulate({
+      receipts: receiptList(),
+      priorRun: { ...acceptedRun(), ...changed },
+    });
+    assert.equal(result.status, 0, JSON.stringify(changed) + ': ' + result.stderr);
+    assert.equal(result.calls.length, 2, JSON.stringify(changed));
+    assert.match(result.output, /sent=true/);
+  }
+});
+
+test('trusted dispatch receipt requires exact workflow identity and source SHA', () => {
+  assert.match(script, /\.workflow_id == 389939241/);
+  assert.match(script, /\.head_sha == \$sha/);
+  assert.match(script, /--arg sha "\$SOURCE_SHA"/);
 });
 
 test('unreadable, truncated and malformed receipt listings fail closed', () => {
