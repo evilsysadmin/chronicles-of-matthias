@@ -43,6 +43,9 @@ export function chroniclesFirstPersonEscapeAction({
   menuOpen = false,
   confirmExitWithoutSaving = false,
   spellMenuOpen = false,
+  sheetOpen = false,
+  shopOpen = false,
+  guildOpen = false,
   adminOpen = false,
   audienceOpen = false,
   automapOpen = false,
@@ -50,6 +53,11 @@ export function chroniclesFirstPersonEscapeAction({
   quickStatusOpen = false,
 } = {}) {
   if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
+  // The character dossier can sit on top of a merchant/guild. Dismiss its
+  // own topmost layer first, rather than closing the shop behind it.
+  if (sheetOpen) return 'close-sheet';
+  if (shopOpen) return 'close-shop';
+  if (guildOpen) return 'close-guild';
   if (spellMenuOpen) return 'close-spell';
   if (adminOpen) return 'close-admin';
   if (audienceOpen) return 'close-audience';
