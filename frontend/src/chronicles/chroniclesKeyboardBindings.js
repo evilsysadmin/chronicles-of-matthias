@@ -132,6 +132,17 @@ export function chroniclesRestoreAdventureMenuFocus(menuDetails, focused) {
   return true;
 }
 
+// Once the adventure menu CLOSES, keyboard focus should return to the
+// expedition (document/body), not remain painted on the closed sapphire
+// summary. Do not blur background controls or alter focus while opening.
+// The next Tab is still caught by the game's normal menu shortcut.
+export function chroniclesReleaseAdventureMenuFocus(menuDetails) {
+  const active = menuDetails?.ownerDocument?.activeElement;
+  if (!active || !menuDetails.contains(active) || typeof active.blur !== 'function') return false;
+  active.blur();
+  return true;
+}
+
 // The adventure menu declares aria-modal. Background game controls must
 // therefore not react to taps/clicks while it is open. Capture at the root,
 // but let every control inside the actual menu behave natively.
