@@ -43,7 +43,7 @@ export default function ChroniclesAdventureMenu({
       <div className="chronicles-game-menu__folio-columns"
         data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
         data-feedback-open={feedbackOpen ? 'true' : 'false'}>
-        <section className="chronicles-game-menu__folio-section" aria-label="Acciones de expedición">
+        <section className="chronicles-game-menu__folio-section" aria-label={feedbackOpen ? 'Buzón de feedback' : 'Acciones de expedición'}>
           <span className="chronicles-game-menu__section-kicker">{feedbackOpen ? 'MENSAJERÍA' : 'EXPEDICIÓN'}</span>
           <div className="chronicles-game-menu__actions">
             {!confirmExitWithoutSaving && !feedbackOpen && (
@@ -89,6 +89,7 @@ export default function ChroniclesAdventureMenu({
       <small className="chronicles-game-menu__hint">
         {confirmExitWithoutSaving
           ? 'ESC · cancelar salida · TAB · elegir respuesta'
+          : feedbackOpen ? 'ESC · volver al menú · TAB · navegar'
           : 'S · guardar · Q · salir · ESC · cerrar · TAB · navegar'}
       </small>
     </div>
