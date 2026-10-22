@@ -321,3 +321,30 @@
     outline-offset: 2px;
   }
 }
+
+/* One source of truth for navigation emphasis. Hover/focus are secondary;
+   the selected folio's aria-pressed state owns the persistent highlight. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button[aria-pressed='false'] {
+    border: 1px solid #b48d58;
+    background: #f8e7c1;
+    color: #3d2a18;
+    box-shadow: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button[aria-pressed='true'] {
+    border: 2px solid #623913;
+    background: #976322;
+    color: #fff9e9;
+    box-shadow: inset 4px 0 0 #fff0bf;
+    font-weight: 700;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button[aria-pressed='true'] > span { color: #fff6dc; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button:hover[aria-pressed='false'] {
+    background: #fff4d9;
+    color: #32200f;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button:hover[aria-pressed='true'] {
+    background: #976322;
+    color: #fff9e9;
+  }
+}
