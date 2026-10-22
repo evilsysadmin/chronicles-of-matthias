@@ -12,9 +12,13 @@ export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
   if (repository !== 'evilsysadmin/chronicles-of-matthias') {
     throw new Error('Unexpected repository');
   }
+  // The REST query is a single page (per_page=100). An incomplete page
+  // can hide a newer failed/cancelled official Chromium run. Never accept
+  // an older green attempt without proving we received the full result set.
   if (!payload || !Number.isInteger(payload.total_count)
       || payload.total_count < 0 || payload.total_count > 100
-      || !Array.isArray(payload.workflow_runs)) {
+      || !Array.isArray(payload.workflow_runs)
+      || payload.total_count !== payload.workflow_runs.length) {
     throw new Error('Invalid or truncated GitHub workflow-run response');
   }
 
