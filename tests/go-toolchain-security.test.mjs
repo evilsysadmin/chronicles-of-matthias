@@ -10,8 +10,10 @@ const parseVersion = (version) => version.split('.').map(Number);
 const atLeast = (actual, minimum) => {
   const a = parseVersion(actual);
   const b = parseVersion(minimum);
-  return a.find((n, i) => n !== b[i]) === undefined
-    || a.find((n, i) => n !== b[i]) > b[a.findIndex((n, i) => n !== b[i])];
+  for (let i = 0; i < 3; i += 1) {
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return true;
 };
 
 function verifyToolchainPins(docker, ci, module) {
