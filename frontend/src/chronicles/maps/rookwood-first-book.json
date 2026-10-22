@@ -349,6 +349,132 @@
           "brutal-strike"
         ]
       }
+    },
+    {
+      "id": "rookwood-north-ditch-hound",
+      "visualType": "bone-hound",
+      "name": "sabueso de la zanja norte",
+      "x": 1,
+      "y": 1,
+      "hpKey": "rookwoodNorthDitchHoundHp",
+      "maxHp": 5,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bone-hound",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-south-root-weaver",
+      "visualType": "weaver-spider",
+      "name": "tejedora de las raíces del sur",
+      "x": 6,
+      "y": 12,
+      "hpKey": "rookwoodSouthRootWeaverHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "weaver-spider",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "rookwood-east-troll",
+      "visualType": "troll",
+      "name": "trol joven de las ruinas",
+      "x": 13,
+      "y": 3,
+      "hpKey": "rookwoodEastTrollHp",
+      "maxHp": 8,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "troll",
+        "level": 1,
+        "attributes": {
+          "vigor": 0,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": []
+      }
+    },
+    {
+      "id": "rookwood-north-plaque-spider",
+      "visualType": "weaver-spider",
+      "name": "araña del roble del norte",
+      "x": 19,
+      "y": 2,
+      "hpKey": "rookwoodNorthPlaqueSpiderHp",
+      "maxHp": 6,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "weaver-spider",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 1,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
     }
   ],
   "triggers": [],

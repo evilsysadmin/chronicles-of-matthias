@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesContextualContentAction, chroniclesObjective, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesTacticsInteractions, chroniclesTacticsUse } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesGoldBalance, chroniclesInventoryEntries, chroniclesQuestEntries } from './chroniclesContentRuntime.js';
-import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 const QUEST = 'names-in-wood';
@@ -75,6 +75,10 @@ describe('Chronicles first book · Rookwood side quest «Los nombres del bosque�
     state = interact(state);
     expect(state.quests[QUEST].status).toBe('completed');
     expect(chroniclesGoldBalance(state)).toBe(15);
+    for (const key of ['rookwoodNorthDitchHoundHp', 'rookwoodSouthRootWeaverHp',
+      'rookwoodEastTrollHp', 'rookwoodNorthPlaqueSpiderHp']) {
+      expect(state[key], key + ' must not gate plaque redemption').toBeGreaterThan(0);
+    }
     expect(state.inventory).not.toHaveProperty(PLAQUE);
     expect(state.claimedRewards).toEqual(['rookwood:names-in-wood:v1']);
 
@@ -105,5 +109,94 @@ describe('Chronicles first book · Rookwood side quest «Los nombres del bosque�
     expect(chroniclesGoldBalance(restored)).toBe(15);
     const again = chroniclesTacticsUse({ ...restored, x: 16, y: 5 }, 'rookwood-name-oak');
     expect(chroniclesGoldBalance(again)).toBe(15);
+  });
+
+  it('populates the remote forest without occupying quest plaques, gates or arrival squares', () => {
+    const wood = chroniclesMapById('rookwood-first-book');
+    const originals = [
+      'rookwood-hollow-hound', 'rookwood-weaver', 'rookwood-bramble-hound',
+      'rookwood-hollow-spider', 'rookwood-trail-hound',
+      'rookwood-shadow-weaver', 'rookwood-tangle-hound',
+    ];
+    const added = [
+      ['rookwood-north-ditch-hound', 1, 1, 'rookwood-bramble-hound'],
+      ['rookwood-south-root-weaver', 6, 12, 'rookwood-hollow-spider'],
+      ['rookwood-east-troll', 13, 3, 'rookwood-shadow-weaver'],
+      ['rookwood-north-plaque-spider', 19, 2, 'rookwood-hollow-spider'],
+    ];
+    expect(wood.enemies.map((enemy) => enemy.id)).toEqual([
+      ...originals, ...added.map(([id]) => id),
+    ]);
+    expect(new Set(wood.enemies.map((enemy) => enemy.id)).size).toBe(11);
+    expect(new Set(wood.enemies.map((enemy) => enemy.hpKey)).size).toBe(11);
+    const taken = new Set([
+      wood.partyStart, ...wood.enemies.slice(0, originals.length),
+      ...['triggers', 'interactables', 'treasures', 'traps', 'exits']
+        .flatMap((group) => wood[group] || []),
+    ].filter((entry) => Number.isInteger(entry.x) && Number.isInteger(entry.y))
+      .map(({ x, y }) => `${x},${y}`));
+    const reached = new Set([`${wood.partyStart.x},${wood.partyStart.y}`]);
+    const queue = [wood.partyStart];
+    for (const { x, y } of queue) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const key = `${nx},${ny}`;
+        if (wood.grid[ny]?.[nx] && wood.grid[ny][nx] !== '#' && !reached.has(key)) {
+          reached.add(key);
+          queue.push({ x: nx, y: ny });
+        }
+      }
+    }
+    const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    for (const [id, x, y, sourceId] of added) {
+      const enemy = wood.enemies.find((entry) => entry.id === id);
+      const source = wood.enemies.find((entry) => entry.id === sourceId);
+      const position = `${x},${y}`;
+      expect(enemy, id).toMatchObject({
+        x, y, optional: true, activation: 'always',
+        visualType: source.visualType,
+      });
+      expect(enemy.ai).toEqual(source.ai);
+      expect(enemy.enemyBuild.archetype).toBe(source.enemyBuild.archetype);
+      expect(enemy.onDefeat?.effects || [], id).toEqual([]);
+      expect(enemy.defeatedFlag, id).toBeUndefined();
+      expect(wood.grid[y][x]).toBe('.');
+      expect(reached.has(position), id).toBe(true);
+      expect(taken.has(position), id).toBe(false);
+      expect(distance(enemy, wood.partyStart), id).toBeGreaterThanOrEqual(5);
+      expect(wood.exits.filter((gate) => Number.isInteger(gate.x) && Number.isInteger(gate.y))
+        .every((gate) => distance(enemy, gate) >= 4), id).toBe(true);
+      taken.add(position);
+    }
+    const storyDrops = wood.enemies.filter((enemy) => enemy.onDefeat?.effects?.some(
+      (effect) => effect.type === 'grant-item' && ['weaver-silk', 'bronze-mace'].includes(effect.itemId),
+    )).map((enemy) => enemy.id);
+    expect(storyDrops).toEqual(['rookwood-hollow-hound', 'rookwood-weaver']);
+  });
+
+  it('preserves slain forest reinforcements when leaving Rookwood or reloading a checkpoint', () => {
+    const wood = chroniclesMapById('rookwood-first-book');
+    for (const foe of wood.enemies.slice(7)) {
+      const entered = chroniclesMapTransitionState(
+        createChroniclesState('banner-road-first-book', null, { rules: 'mm3' }),
+        wood.id,
+      );
+      expect(entered[foe.hpKey], foe.id).toBeGreaterThan(0);
+      const departed = chroniclesMapTransitionState(
+        { ...entered, [foe.hpKey]: 0 }, 'banner-road-first-book',
+      );
+      const returned = chroniclesMapTransitionState(departed, wood.id);
+      expect(returned[foe.hpKey], foe.id).toBe(0);
+      expect(returned.rookwoodHoundHp).toBeGreaterThan(0);
+      const checkpoint = chroniclesRunCheckpointPayload(departed, 1);
+      const restored = chroniclesApplyRunCheckpoint(
+        createChroniclesState('banner-road-first-book', null, { rules: 'mm3' }),
+        { ...checkpoint, worldVersion: 1 },
+      );
+      const afterLoad = chroniclesMapTransitionState(restored, wood.id);
+      expect(afterLoad[foe.hpKey], foe.id).toBe(0);
+      expect(afterLoad.rookwoodHoundHp).toBeGreaterThan(0);
+    }
   });
 });
