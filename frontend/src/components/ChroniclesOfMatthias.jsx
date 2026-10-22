@@ -1665,15 +1665,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
                   ))}
                 </span>
-                {pendingSpellTarget?.memberId === member.id && (
-                  <span className="chronicles-spell-target-question"
-                    data-chronicles-spell-target-question={pendingSpellTarget.spellId}
-                    role="status">
-                    <strong>¿A quién?</strong>
-                    <small>1–4 · elige compañero · Esc cancela</small>
-                    {spellTargetNotice && <small className="is-warning">{spellTargetNotice}</small>}
-                  </span>
-                )}
                 <span><strong>{index + 1}. {member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level} · {member.row === 'front' ? 'FRENTE' : 'RETAGUARDIA'}</small></span>
                 <span className="chronicles-party-bars" aria-hidden="true" data-band={chroniclesHealthBand(member.hp, member.maxHp)}>
                   <i className="is-hp" style={{ '--fill': member.maxHp ? Math.max(0, member.hp) / member.maxHp : 0 }} />
@@ -1689,6 +1680,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     </i>
                   )}
                 </b>
+                {pendingSpellTarget?.memberId === member.id && (
+                  <span className="chronicles-spell-target-question"
+                    data-chronicles-spell-target-question={pendingSpellTarget.spellId}
+                    role="status">
+                    <strong>¿A quién?</strong>
+                    <small>1–4 · elige compañero · Esc cancela</small>
+                    {spellTargetNotice && <small className="is-warning">{spellTargetNotice}</small>}
+                  </span>
+                )}
               </button>
             );
           })}
