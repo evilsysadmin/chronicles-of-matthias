@@ -58,9 +58,8 @@ describe('ChroniclesMinimap', () => {
       ['mayor', 'H'], ['exit', '↗'],
     ]) {
       expect(html, category).toContain(`data-chronicles-poi="${category}"`);
-      expect(html, category).toMatch(
-        new RegExp(`data-chronicles-poi="${category}"[\\\\s\\\\S]*?<text[^>]*>${glyph}</text>`),
-      );
+      const poiMarkup = html.split(`data-chronicles-poi="${category}"`)[1]?.split('</g>')[0] || '';
+      expect(poiMarkup, category).toContain(`>${glyph}</text>`);
     }
     // Multiple authored interactions at a single temple tile must deduplicate.
     expect((html.match(/data-chronicles-poi-id="first-book-temple"/g) || []).length).toBe(1);
