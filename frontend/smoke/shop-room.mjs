@@ -311,9 +311,22 @@ try {
             assert(picture.loaded && picture.width >= 512 && picture.height >= 512,
               id + ': premium brass sprite failed to decode ' + JSON.stringify(picture));
           }
-          assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-scale"] svg')
+          for (const [id, alt] of [
+            ['brass-scale', 'Cota de escamas de latón'],
+            ['leather-padded', 'Gambesón de cuero'],
+          ]) {
+            const node = dialog.locator('[data-chronicles-shop-item="' + id + '"] img[data-chronicles-shop-art="' + id + '"]');
+            await node.waitFor({ state: 'visible' });
+            assert.equal(await node.getAttribute('alt'), alt);
+            const size = await node.evaluate((img) => ({
+              w: img.naturalWidth, h: img.naturalHeight, complete: img.complete,
+            }));
+            assert(size.complete && size.w >= 512 && size.h >= 512,
+              id + ': dedicated 2D armour portrait failed to decode ' + JSON.stringify(size));
+          }
+          assert.equal(await dialog.locator('[data-chronicles-shop-item="roadwatch-vest"] svg')
             .getAttribute('aria-label'), 'Armadura',
-            'Unpainted scale armour must keep its accessible SVG fallback');
+            'Guard leather vest must keep its accessible SVG fallback');
           // Verify the real room receives non-interactive light. One mobile
           // scenario exercises the reduced-motion fallback, not just CSS text.
           const light = await scene.evaluate((node) => ({

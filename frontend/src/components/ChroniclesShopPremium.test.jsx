@@ -42,7 +42,10 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('data-chronicles-shop-art="brass-shield"');
     expect(html).toContain('aria-label="Armadura"');
     const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
-    expect(ids.length).toBeGreaterThan(10);
+    // Odo now has six bespoke portraits; only the guard vest still uses
+    // the generic SVG. Its paint servers must remain unique and intact.
+    expect((html.match(/data-chronicles-shop-glyph="armor"/g) || []).length).toBe(1);
+    expect(ids.length).toBeGreaterThanOrEqual(5);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -95,7 +98,7 @@ describe('Chronicles premium shop UI', () => {
     expect(shieldArt).not.toBe(cuirassArt);
     expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-shield'])).toBeTruthy();
     expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-ring'])).toBeTruthy();
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-scale'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="wooden-shield"');
     expect(html).toContain('data-chronicles-shop-art="leather-leather"');
@@ -115,10 +118,31 @@ describe('Chronicles premium shop UI', () => {
     expect(chroniclesShopItemArt(shield)).toBeTruthy();
     expect(chroniclesShopItemArt(ringmail)).toBeTruthy();
     expect(chroniclesShopItemArt(shield)).not.toBe(chroniclesShopItemArt(ringmail));
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-scale'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="brass-shield"');
     expect(html).toContain('data-chronicles-shop-art="brass-ring"');
+    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+  });
+
+  it('uses different 2D material treatments for padded leather and brass scales', () => {
+    const scales = CHRONICLES_EQUIPMENT['brass-scale'];
+    const gambeson = CHRONICLES_EQUIPMENT['leather-padded'];
+    expect(scales.slot).toBe('armor');
+    expect(gambeson.slot).toBe('armor');
+    expect(scales.materialId).toBe('brass');
+    expect(gambeson.materialId).toBe('leather');
+    expect(scales.baseItemId).toBe('scale');
+    expect(gambeson.baseItemId).toBe('padded');
+    const scaleArt = chroniclesShopItemArt(scales);
+    const paddingArt = chroniclesShopItemArt(gambeson);
+    expect(scaleArt).toBeTruthy();
+    expect(paddingArt).toBeTruthy();
+    expect(scaleArt).not.toBe(paddingArt);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
+    const html = render('first-book-armorer');
+    expect(html).toContain('data-chronicles-shop-art="brass-scale"');
+    expect(html).toContain('data-chronicles-shop-art="leather-padded"');
     expect(html).toContain('data-chronicles-shop-glyph="armor"');
   });
 

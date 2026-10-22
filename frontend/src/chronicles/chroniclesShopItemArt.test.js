@@ -13,6 +13,8 @@ const portraits = Object.freeze({
   'leather-leather': 'leather-cuirass.svg',
   'brass-shield': 'brass-shield.svg',
   'brass-ring': 'brass-ringmail.svg',
+  'brass-scale': 'brass-scalemail.svg',
+  'leather-padded': 'leather-gambeson.svg',
 });
 
 describe('Authored 2D merchant portraits', () => {

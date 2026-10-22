@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="bronze" x1="0" y1="0" x2=".95" y2="1"><stop stop-color="#f1d8a4"/><stop offset=".23" stop-color="#bb945c"/><stop offset=".55" stop-color="#76522f"/><stop offset=".79" stop-color="#e6be83"/><stop offset="1" stop-color="#4a362b"/></linearGradient>
+<linearGradient id="gold" x1=".08" y1="0" x2=".9" y2="1"><stop stop-color="#fff7d6"/><stop offset=".26" stop-color="#e9bf77"/><stop offset=".57" stop-color="#9a6738"/><stop offset="1" stop-color="#d0a567"/></linearGradient>
+<linearGradient id="leather" x1="0" y1="0" x2=".95" y2="1"><stop stop-color="#d1ac7e"/><stop offset=".33" stop-color="#76523b"/><stop offset=".72" stop-color="#322823"/><stop offset="1" stop-color="#a87951"/></linearGradient>
+<linearGradient id="iron" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#e3ddba"/><stop offset=".31" stop-color="#87918a"/><stop offset=".7" stop-color="#3b443f"/><stop offset="1" stop-color="#b4a47d"/></linearGradient>
+<filter id="shadow" x="-30%" y="-30%" width="170%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/><feOffset in="b" dx="7" dy="11" result="o"/><feComponentTransfer in="o" result="a"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="breast"><path d="M179 157Q250 184 332 157L338 431Q260 462 165 429Z"/></clipPath>
+</defs>
+<g transform="rotate(-6 256 256)" stroke-linejoin="round" stroke-linecap="round" filter="url(#shadow)">
+<path d="M191 73L138 103Q91 136 75 208L101 255L157 244L162 430Q258 476 354 430L357 245L404 258L438 207Q421 136 375 105L324 72Q292 114 256 121Q213 108 191 73Z" fill="url(#leather)" stroke="#2a2623" stroke-width="7"/>
+<path d="M188 82Q213 137 252 151Q297 136 328 81L354 117L339 189Q257 215 172 188L160 115Z" fill="url(#bronze)" stroke="#564232" stroke-width="4"/>
+<path d="M191 91Q223 145 257 161Q294 143 327 91" stroke="#ffedc2" stroke-width="3" fill="none" opacity=".75"/>
+<path d="M148 124Q104 168 101 227L149 236Q163 193 177 160ZM366 127Q409 169 411 231L361 240Q354 184 334 158Z" fill="url(#bronze)" stroke="#46382c" stroke-width="4"/>
+<path d="M117 157Q122 189 113 219M396 158Q392 186 397 214" stroke="#fff0b5" stroke-width="3" fill="none" opacity=".63"/>
+<path d="M179 157Q250 184 332 157L338 431Q260 462 165 429Z" fill="#4d3b2c" stroke="#392c25" stroke-width="5"/>
+<g clip-path="url(#breast)"><path d="M166.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M187.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M334.0 175q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 178q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M176.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M197.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M239.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M260.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M281.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M302.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M323.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M344.5 196q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 199q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M292.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 217q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 220q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M176.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M197.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M239.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M260.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M281.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M302.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M323.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M344.5 238q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 241q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M250.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 259q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 262q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M176.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M197.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M239.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M260.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M281.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M302.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M323.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M344.5 280q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 283q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M208.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 301q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 304q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M176.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M197.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M239.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M260.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M281.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M302.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M323.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M344.5 322q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 325q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M313.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 343q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 346q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M176.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M197.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M239.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M260.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M281.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M302.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M323.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M344.5 364q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 367q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M229.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M271.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 385q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 388q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M176.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M180.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M197.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M201.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M218.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M222.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M239.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M243.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M260.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M264.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M281.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M285.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M302.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M306.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M323.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M327.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M344.5 406q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M348.5 409q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M166.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M170.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M187.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M191.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M208.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#gold)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M212.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".86"/>
+<path d="M229.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M233.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M250.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M254.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M271.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M275.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M292.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M296.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M313.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M317.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/>
+<path d="M334.0 427q11 -4 21 0l-1 15q-10 13-19 0Z" fill="url(#bronze)" stroke="#43362d" stroke-width="1.7" opacity=".91"/><path d="M338.0 430q7 -1 13 0" fill="none" stroke="#ffebba" stroke-width="1.2" opacity=".5"/></g>
+<path d="M167 196Q245 220 336 200M165 292Q259 320 341 290M167 394Q253 418 338 398" stroke="#2c2b29" stroke-width="3" fill="none" opacity=".35"/>
+<path d="M163 427Q251 467 344 427" stroke="url(#gold)" stroke-width="8" fill="none"/>
+<path d="M167 182L164 426M341 179L344 427" stroke="url(#iron)" stroke-width="6" fill="none" opacity=".73"/>
+<path d="M192 170Q253 191 321 171" stroke="#ffebb6" stroke-width="3" fill="none" opacity=".61"/>
+<circle cx="167" cy="186" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="166" cy="185" r=".9" fill="#fff7d9"/>
+<circle cx="341" cy="187" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="340" cy="186" r=".9" fill="#fff7d9"/>
+<circle cx="165" cy="284" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="164" cy="283" r=".9" fill="#fff7d9"/>
+<circle cx="341" cy="284" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="340" cy="283" r=".9" fill="#fff7d9"/>
+<circle cx="167" cy="398" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="166" cy="397" r=".9" fill="#fff7d9"/>
+<circle cx="342" cy="398" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="341" cy="397" r=".9" fill="#fff7d9"/>
+<circle cx="117" cy="221" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="116" cy="220" r=".9" fill="#fff7d9"/>
+<circle cx="400" cy="221" r="4.3" fill="url(#gold)" stroke="#543b29" stroke-width="1.7"/><circle cx="399" cy="220" r=".9" fill="#fff7d9"/>
+<path d="M176 160Q154 251 164 410M335 160Q358 254 340 411" stroke="#f6d49a" stroke-width="2.5" fill="none" opacity=".35"/>
+</g>
+</svg>
