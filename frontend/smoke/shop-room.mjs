@@ -105,7 +105,31 @@ try {
       // Longbows are real missile weapons, never generic potion-like items.
       const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
       assert.match(await longbow.innerText(), /Armas a distancia/);
-      assert.equal(await longbow.locator('svg').getAttribute('aria-label'), 'Arma a distancia');
+      const paintedLongbow = longbow.locator('img[data-chronicles-shop-art="wooden-longbow"]');
+      await paintedLongbow.waitFor({ state: 'visible' });
+      assert.equal(await paintedLongbow.getAttribute('alt'), 'Arco largo de madera');
+      await page.waitForFunction(() => {
+        const node = document.querySelector('[data-chronicles-shop-item="wooden-longbow"] img');
+        return node?.complete && node.naturalWidth >= 512 && node.naturalHeight >= 512;
+      });
+      assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-dagger"] svg')
+        .getAttribute('aria-label'), 'Arma',
+      'Unpainted items must keep their real accessible fallback glyph');
+      const spriteGeometry = await dialog.evaluate((root) => {
+        const portrait = root.querySelector('.chronicles-shop__item-portrait');
+        const sprite = portrait?.querySelector('img[data-chronicles-shop-art="wooden-longbow"]');
+        if (!portrait || !sprite) return null;
+        const p = portrait.getBoundingClientRect();
+        const s = sprite.getBoundingClientRect();
+        return { parent: { left:p.left, right:p.right, top:p.top, bottom:p.bottom },
+          image: { left:s.left, right:s.right, top:s.top, bottom:s.bottom } };
+      });
+      assert(spriteGeometry, 'Selected longbow must display its own detailed sprite');
+      assert(spriteGeometry.image.left >= spriteGeometry.parent.left - 1
+        && spriteGeometry.image.right <= spriteGeometry.parent.right + 1
+        && spriteGeometry.image.top >= spriteGeometry.parent.top - 1
+        && spriteGeometry.image.bottom <= spriteGeometry.parent.bottom + 1,
+        'Weapon portrait must stay inside its own panel: ' + JSON.stringify(spriteGeometry));
 
       // Filtering, sorting and selection must only alter presentation.
       const catalog = dialog.locator('.chronicles-shop__catalog');

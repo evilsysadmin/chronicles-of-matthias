@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import ChroniclesShop from './ChroniclesShop.jsx';
+import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
+import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 
 function render(shopId = 'first-book-weaponsmith', inventory = null) {
   const state = {
@@ -42,6 +44,21 @@ describe('Chronicles premium shop UI', () => {
     const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
     expect(ids.length).toBeGreaterThan(10);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('uses per-item standalone 2D art for the first real weapons, preserving fallback glyphs', () => {
+    const bow = chroniclesShopItemArt(CHRONICLES_EQUIPMENT['wooden-longbow']);
+    const crossbow = chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-crossbow']);
+    // Vite can inline small SVGs as data: URIs or emit a local .svg URL.
+    expect(bow).toMatch(/^(?:data:image\/svg\+xml|\/[^\\s]+\.svg|\.\/[^\\s]+\.svg)/);
+    expect(crossbow).toMatch(/^(?:data:image\/svg\+xml|\/[^\\s]+\.svg|\.\/[^\\s]+\.svg)/);
+    expect(bow).not.toBe(crossbow);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['steel-longbow'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['wooden-staff'])).toBeNull();
+    const html = render('first-book-weaponsmith');
+    expect(html).toContain('data-chronicles-shop-art="wooden-longbow"');
+    expect(html).toContain('class="chronicles-shop__item-sprite"');
+    expect(html).toContain('data-chronicles-shop-glyph="weapon"');
   });
 
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {

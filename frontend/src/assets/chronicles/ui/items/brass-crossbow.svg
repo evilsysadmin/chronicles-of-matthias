@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="stock" x1=".1" y1="0" x2="1" y2="1"><stop stop-color="#e6be87"/><stop offset=".2" stop-color="#93572d"/><stop offset=".5" stop-color="#3d2620"/><stop offset=".78" stop-color="#ba814d"/><stop offset="1" stop-color="#39241c"/></linearGradient>
+<linearGradient id="iron" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#e2e5d4"/><stop offset=".28" stop-color="#75808a"/><stop offset=".54" stop-color="#293b48"/><stop offset=".73" stop-color="#c8c7ad"/><stop offset="1" stop-color="#25313d"/></linearGradient>
+<linearGradient id="brass" x1=".15" y1="0" x2=".9" y2="1"><stop stop-color="#fff1be"/><stop offset=".28" stop-color="#d4a866"/><stop offset=".62" stop-color="#785331"/><stop offset="1" stop-color="#e6b473"/></linearGradient>
+<linearGradient id="leather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c9935e"/><stop offset=".47" stop-color="#704730"/><stop offset="1" stop-color="#241d20"/></linearGradient>
+<filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/><feOffset in="b" dy="9" result="c"/><feComponentTransfer in="c" result="a"><feFuncA type="linear" slope=".37"/></feComponentTransfer><feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="rotate(-30 256 256)" filter="url(#shadow)" stroke-linejoin="round" stroke-linecap="round">
+<path d="M60 157Q126 103 218 170Q255 186 294 169Q384 102 453 158L436 184Q353 159 294 188Q252 201 216 186Q150 158 81 185Z" fill="url(#iron)" stroke="#172532" stroke-width="5"/>
+<path d="M69 160Q144 128 221 181M291 180Q366 123 447 159" fill="none" stroke="#f5e8c4" stroke-width="3" opacity=".76"/>
+<path d="M78 168L251 251L441 168" fill="none" stroke="#211c22" stroke-width="4"/>
+<path d="M80 165L252 246L441 165" fill="none" stroke="#e5d6b4" stroke-width="1.8"/>
+<path d="M224 181L214 403 235 462 275 474 300 405 285 181Z" fill="url(#stock)" stroke="#2d2421" stroke-width="6"/>
+<path d="M241 190L231 399 243 454M267 188L277 396 257 461" fill="none" stroke="#f6c88c" stroke-width="3" opacity=".62"/>
+<path d="M248 198L252 399M256 199L254 399" fill="none" stroke="#311f1d" stroke-width="3" opacity=".65"/>
+<path d="M227 185L287 186 282 217 225 219Z" fill="url(#iron)" stroke="#1c2932" stroke-width="4"/>
+<path d="M226 188L287 188" stroke="#fff0b6" stroke-width="2" opacity=".86"/>
+<path d="M235 224L269 224 278 268 226 266Z" fill="url(#brass)" stroke="#513d2b" stroke-width="3"/>
+<path d="M234 234h37m-36 13h39m-39 12h41" stroke="#412e29" stroke-width="2" opacity=".55"/>
+<path d="M229 295L277 295 279 324 227 324Z" fill="url(#leather)" stroke="#2e2420" stroke-width="3"/>
+<path d="M229 300l50 9m-50 1 50 10m-50 1 51 10" stroke="#d4a573" stroke-width="3" opacity=".72"/>
+<path d="M227 339h55v15h-55Z M227 372h57v15h-57Z" fill="url(#brass)" stroke="#513c2b" stroke-width="3"/>
+<path d="M240 389L237 421M269 389L265 421" stroke="#271e21" stroke-width="3"/>
+<path d="M228 415L281 418 270 446 244 444Z" fill="url(#iron)" stroke="#29333b" stroke-width="3"/>
+<path d="M250 428q8 7 12 0" fill="none" stroke="#fee3a0" stroke-width="2"/>
+<path d="M219 178V140L239 128 277 128 295 141V178" fill="none" stroke="url(#brass)" stroke-width="8"/>
+<path d="M251 123L251 371" stroke="#eff1da" stroke-width="3"/>
+<path d="M251 120l-9 13h18Z" fill="url(#iron)" stroke="#28333c" stroke-width="2"/>
+<path d="M225 218l-14 11m82-10 12 13" stroke="#d4b17e" stroke-width="3"/>
+<circle cx="236" cy="196" r="4" fill="#fff2bc"/><circle cx="271" cy="196" r="4" fill="#fff2bc"/>
+<circle cx="243" cy="345" r="3" fill="#f7cf8e"/><circle cx="270" cy="380" r="3" fill="#f7cf8e"/>
+</g>
+</svg>

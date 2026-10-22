@@ -299,6 +299,36 @@
 
 .chronicles-shop__entry-icon { width: 49px; height: 49px; }
 .chronicles-shop__glyph { display: block; width: 80%; height: 80%; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .44)); }
+/* Item sprites are standalone 2D artwork, not an enlarged 64px glyph. */
+.chronicles-shop__item-sprite {
+  display: block;
+  width: min(95%, 440px);
+  height: 94%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 8px 9px rgba(0, 0, 0, .38));
+}
+.chronicles-shop__entry-icon .chronicles-shop__item-sprite {
+  width: 98%;
+  height: 98%;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .45));
+}
+/* The selected object's artwork cannot grow the grid cell or paint over
+   item descriptions, comparison, or checkout controls at any viewport. */
+.chronicles-shop__item-portrait {
+  position: relative;
+  overflow: hidden;
+}
+.chronicles-shop__item-portrait .chronicles-shop__item-sprite {
+  position: absolute;
+  inset: 4% 4%;
+  width: 92%;
+  height: 92%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
 .chronicles-shop__entry-description { flex: 1; min-width: 0; display: grid; gap: 5px; }
 .chronicles-shop__entry-description strong {
   font: 600 clamp(13px, 1.1vw, 16px) Georgia, serif;

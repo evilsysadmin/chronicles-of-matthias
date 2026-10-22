@@ -10,6 +10,7 @@ import {
   chroniclesShopStock,
 } from '../chronicles/chroniclesShops.js';
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
+import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 import { SHOP_SLOT_LABELS, SHOP_SORTS, chroniclesShopCategories, chroniclesShopSelectedOffer, chroniclesShopVisibleOffers } from '../chronicles/chroniclesShopCatalog.js';
 import './ChroniclesShop.css';
 
@@ -64,6 +65,15 @@ function ShopComparison({ state, item }) {
 // Who in the company could actually use it: MM3 class rules, same as the sheet.
 function users(state, item) {
   return (state.party || []).filter((member) => chroniclesMemberCanEquip(member, item));
+}
+
+function ShopItemVisual({ item }) {
+  const artwork = chroniclesShopItemArt(item);
+  return artwork ? (
+    <img className="chronicles-shop__item-sprite" src={artwork}
+      alt={item.name} data-chronicles-shop-art={item.id}
+      width="512" height="512" draggable="false" decoding="async" />
+  ) : <ShopItemGlyph item={item} />;
 }
 
 function ShopItemGlyph({ item }) {
@@ -346,7 +356,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   <button type="button" className="chronicles-shop__entry"
                     aria-pressed={selectedItem?.id === item.id}
                     onClick={() => pickItem(item.id)}>
-                    <span className="chronicles-shop__entry-icon"><ShopItemGlyph item={item} /></span>
+                    <span className="chronicles-shop__entry-icon"><ShopItemVisual item={item} /></span>
                     <span className="chronicles-shop__entry-description">
                       <strong>{item.name}</strong>
                       <small>{SHOP_SLOT_LABELS[item.slot] || 'Otros'}{tab === 'sell' ? ' · ×' + quantity : quantity ? ' · tienes ' + quantity : ''}</small>
@@ -370,7 +380,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                 <div className="chronicles-shop__detail-top">
                   <small>{SLOT_LABEL[selectedItem.slot] || 'Objeto'}</small>
                   <h3>{selectedItem.name}</h3>
-                  <div className="chronicles-shop__item-portrait"><ShopItemGlyph item={selectedItem} /></div>
+                  <div className="chronicles-shop__item-portrait"><ShopItemVisual item={selectedItem} /></div>
                   <p>{selectedItem.description}</p>
                   <div className="chronicles-shop__eligibility">
                     {selectedItem.slot === 'consumable'
