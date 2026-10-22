@@ -208,6 +208,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "templo-corona-trono-spider-west",
+      "visualType": "crypt-spider",
+      "name": "una araña de los pilares",
+      "x": 2,
+      "y": 7,
+      "hpKey": "temploCoronaTronoSpiderWestHp",
+      "maxHp": 11,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una araña de los pilares con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
+    },
+    {
+      "id": "templo-corona-trono-hound-east",
+      "visualType": "bone-hound",
+      "name": "un sabueso del flanco este",
+      "x": 16,
+      "y": 7,
+      "hpKey": "temploCoronaTronoHoundEastHp",
+      "maxHp": 12,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 9,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un sabueso del flanco este con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
     }
   ],
   "triggers": [],
