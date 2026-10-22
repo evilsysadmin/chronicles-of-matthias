@@ -1622,6 +1622,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       ref={gameRootRef}
       className="chronicles"
       data-chronicles="true"
+      data-chronicles-targeting={pendingSpellTarget ? pendingSpellTarget.spellId : undefined}
       data-chronicles-map-id={state.mapId}
       data-chronicles-turns={state.turns}
       data-chronicles-phase={state.phase}
