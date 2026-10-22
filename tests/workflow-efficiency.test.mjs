@@ -21,6 +21,17 @@ test('stale PR runs may cancel without cancelling required main checks', () => {
   }
 });
 
+test('required frontend and contract time budgets cover cached-browser E2E completion', () => {
+  // Keep the source CI fail-closed, but avoid cancelling a passing browser
+  // run immediately before its final artifact and checkout cleanup.
+  assert.match(frontend, /timeout-minutes: 30/);
+  assert.match(ci, /timeout-minutes: 40/);
+  assert.match(ci, /for attempt in \$\(seq 1 216\)/);
+  assert.match(ci, /sleep 10/);
+  assert.match(ci, /completed:success\)/);
+  assert.match(ci, /--retry-missing-official/);
+});
+
 test('both frontend-installing workflows use npm cache keyed to lockfile', () => {
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /cache: 'npm'\s*\n          cache-dependency-path: frontend\/package-lock\.json/);
