@@ -9,6 +9,14 @@ import (
 // touch map topology, quest foes, unique drops, or old enemy array indices:
 // older saved expeditions retain their slainEnemies indices and wounds.
 // New HP keys are reconciled on map entry by Chronicles' existing save path.
+// A fresh travel arrival materializes directly on an exit tile. Creatures
+// can move and attack in the same enemy turn (including range-3 archers),
+// so neither the start nor any authored gate may open in immediate range.
+const (
+	patrolStartClearance = 7
+	patrolGateClearance = 6
+)
+
 func reinforceOverworld(m *O, areaCode string) {
 	areaID := mapID(areaCode)
 	current := m.Arr("enemies")
@@ -58,13 +66,13 @@ func reinforceOverworld(m *O, areaCode string) {
 			row := rows[y].(string)
 			for x := 2; x < len(row)-2; x++ {
 				candidate := point{x, y}
-				if row[x] != '.' || occupied[candidate] || distance(candidate, spawn) < 4 {
+				if row[x] != '.' || occupied[candidate] || distance(candidate, spawn) < patrolStartClearance {
 					continue
 				}
 				nearGate := false
 				for _, raw := range exits {
 					e := raw.(*O)
-					if distance(candidate, point{e.Int("x"), e.Int("y")}) < 3 {
+					if distance(candidate, point{e.Int("x"), e.Int("y")}) < patrolGateClearance {
 						nearGate = true
 						break
 					}
