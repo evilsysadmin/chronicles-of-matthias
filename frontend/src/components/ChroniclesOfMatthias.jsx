@@ -166,7 +166,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -498,26 +498,25 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [onExit]);
 
   useEscapeToClose(() => {
-    // The global Back/Escape dispatcher runs on document, BEFORE the
-    // first-person hotkey listener on window. It must honour the nested
-    // confirmation itself; relying on the window 'cancel-exit' shortcut
-    // would close the whole menu on the first Escape.
-    if (menuOpen && confirmExitWithoutSaving) {
-      setConfirmExitWithoutSaving(false);
-      return;
+    // The document Back handler runs BEFORE the spell/objects folio's window
+    // Escape handler. Dismiss the topmost visible panel without opening the
+    // adventure menu underneath. The same priority applies to browser Back.
+    const action = chroniclesFirstPersonEscapeAction({
+      menuOpen, confirmExitWithoutSaving, spellMenuOpen, adminOpen,
+      audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
+    });
+    if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+    else if (action === 'close-spell') setSpellMenuOpen(false);
+    else if (action === 'close-admin') setAdminOpen(false);
+    else if (action === 'close-audience') { audienceRef.current = null; setAudience(null); }
+    else if (action === 'close-automap') setAutomapOpen(false);
+    else if (action === 'close-journal') setJournalOpen(false);
+    else if (action === 'close-quick-status') setQuickStatusOpen(false);
+    else {
+      // Restore the visible gem on either menu transition.
+      menuSummaryRef.current?.focus();
+      setMenuOpen((open) => !open);
     }
-    if (audienceRef.current) {
-      audienceRef.current = null;
-      setAudience(null);
-      return;
-    }
-    if (automapOpen) {
-      setAutomapOpen(false);
-      return;
-    }
-    // Restore the visible gem as keyboard focus on either transition.
-    menuSummaryRef.current?.focus();
-    setMenuOpen((open) => !open);
   }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
 
   const confirmCharacterBuild = useCallback((build) => {
