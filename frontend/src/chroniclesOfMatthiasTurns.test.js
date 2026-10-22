@@ -164,6 +164,7 @@ describe('Chronicles alternating creature turns', () => {
       enemyPositions: { 'gate-jailer': { x: 1, y: 3 } },
     };
     const savedPositions = JSON.stringify(offRoute.enemyPositions);
+    const initialPositions = JSON.stringify(initial.enemyPositions);
     for (let attempt = 0; attempt < 3; attempt += 1) {
       // These paths may contain many queued tiles: their first step and
       // direction tie-break must not depend on queue implementation.
@@ -171,7 +172,7 @@ describe('Chronicles alternating creature turns', () => {
       expect(chroniclesChooseEnemyStep(offRoute, jailer)).toEqual({ x: 1, y: 2 });
     }
     expect(JSON.stringify(offRoute.enemyPositions)).toBe(savedPositions);
-    expect(initial.enemyPositions).toEqual({});
+    expect(JSON.stringify(initial.enemyPositions)).toBe(initialPositions);
   });
 
   it('holds position rather than teleporting when all authored route cells are walls', () => {
