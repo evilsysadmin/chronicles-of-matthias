@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="brassBlade" x1=".04" y1="0" x2=".98" y2=".88">
+  <stop stop-color="#fff0c1"/><stop offset=".14" stop-color="#e2bb77"/><stop offset=".30" stop-color="#9c6338"/>
+  <stop offset=".48" stop-color="#f7dba0"/><stop offset=".55" stop-color="#7b4a2e"/><stop offset=".78" stop-color="#c98b47"/><stop offset="1" stop-color="#3f3029"/>
+ </linearGradient>
+ <linearGradient id="darkSteel" x1="0" y1=".16" x2="1" y2="1">
+  <stop stop-color="#d5c9aa"/><stop offset=".3" stop-color="#5c6463"/><stop offset=".66" stop-color="#273039"/><stop offset="1" stop-color="#9aa09b"/>
+ </linearGradient>
+ <linearGradient id="grip" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c09568"/><stop offset=".23" stop-color="#71452f"/><stop offset=".7" stop-color="#2f2625"/><stop offset="1" stop-color="#a46b4a"/></linearGradient>
+ <linearGradient id="guard" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff2c0"/><stop offset=".31" stop-color="#cfa05f"/><stop offset=".61" stop-color="#76502f"/><stop offset="1" stop-color="#e3b66e"/></linearGradient>
+ <filter id="shadow" x="-35%" y="-30%" width="170%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/><feOffset dy="11" dx="6" in="b" result="o"/><feComponentTransfer in="o" result="a"><feFuncA type="linear" slope=".40"/></feComponentTransfer><feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="rotate(39 256 256)" stroke-linejoin="round" stroke-linecap="round" filter="url(#shadow)">
+ <!-- broad triangular dagger blade, not a sword scaled down -->
+ <path d="M257 29 282 99 284 303 255 339 227 303 231 99Z" fill="url(#brassBlade)" stroke="#45362b" stroke-width="5"/>
+ <path d="M257 35 255 336 239 301 242 102Z" fill="#f5ddaa" opacity=".27"/>
+ <path d="M257 40 257 322" fill="none" stroke="#fff0cb" stroke-width="3" opacity=".75"/>
+ <path d="M257 57 271 111 273 297 257 318" fill="none" stroke="#633e2a" stroke-width="2.8" opacity=".68"/>
+ <path d="M240 134 251 140M260 167l11-4M242 236l8 5M265 265l7-5" stroke="#ffdc99" stroke-width="2" opacity=".53"/>
+ <!-- etched ogee engraving and hammer scars -->
+ <path d="M250 102Q243 130 251 150Q261 159 264 188Q252 191 249 215" fill="none" stroke="#644329" stroke-width="2.2" opacity=".51"/>
+ <path d="M257 120Q252 151 259 168" fill="none" stroke="#fff1bb" stroke-width="1.1" opacity=".68"/>
+ <path d="M219 321Q232 307 242 311H271Q284 307 294 321L288 337Q271 332 259 340Q242 329 224 337Z" fill="url(#guard)" stroke="#4d382a" stroke-width="4"/>
+ <path d="M221 325Q240 323 255 329Q272 324 293 324" fill="none" stroke="#fff1be" stroke-width="3.3" opacity=".86"/>
+ <path d="M218 321 207 307 204 323 222 337M294 321 306 307 310 323 290 337" fill="url(#darkSteel)" stroke="#3f322c" stroke-width="3"/>
+ <circle cx="220" cy="325" r="4" fill="#f4c780" stroke="#493726" stroke-width="1.4"/>
+ <circle cx="291" cy="325" r="4" fill="#f4c780" stroke="#493726" stroke-width="1.4"/>
+ <path d="M245 338 267 338 269 441Q259 456 244 441Z" fill="url(#grip)" stroke="#2d2522" stroke-width="4"/>
+ <path d="M243 348 270 366M242 362 271 380M243 377 271 394M242 391 270 408M243 405 269 421M245 421 267 434" fill="none" stroke="#d0a170" stroke-width="6" opacity=".78"/>
+ <path d="M244 352 270 370M244 382 269 399M246 409 267 425" fill="none" stroke="#3e2d29" stroke-width="2.1" opacity=".86"/>
+ <path d="M244 439Q255 452 269 438L279 455Q260 479 234 455Z" fill="url(#guard)" stroke="#4d3328" stroke-width="4"/>
+ <path d="M238 457Q256 473 275 455" fill="none" stroke="#ffebb4" stroke-width="2.8" opacity=".8"/>
+ <path d="M254 445v18" stroke="#5b3f30" stroke-width="2.1" opacity=".62"/>
+</g>
+</svg>

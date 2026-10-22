@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="blade" x1="0" y1=".02" x2=".93" y2=".96">
+  <stop stop-color="#f6d39c"/><stop offset=".19" stop-color="#cc8b45"/><stop offset=".34" stop-color="#754326"/>
+  <stop offset=".48" stop-color="#ffdfaa"/><stop offset=".59" stop-color="#a76432"/><stop offset=".82" stop-color="#6f3d2a"/><stop offset="1" stop-color="#d6a66d"/>
+ </linearGradient>
+ <linearGradient id="edge" x1="0" y1="0" x2="1" y2=".9"><stop stop-color="#fff4d1"/><stop offset=".28" stop-color="#d1ac79"/><stop offset=".65" stop-color="#71503b"/><stop offset="1" stop-color="#f1bc78"/></linearGradient>
+ <linearGradient id="hilt" x1=".1" y1=".0" x2=".9" y2="1"><stop stop-color="#fff0b5"/><stop offset=".32" stop-color="#c49152"/><stop offset=".67" stop-color="#614026"/><stop offset="1" stop-color="#e7bc7a"/></linearGradient>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#bb8555"/><stop offset=".35" stop-color="#57392b"/><stop offset=".76" stop-color="#2b2524"/><stop offset="1" stop-color="#b67a4c"/></linearGradient>
+ <filter id="drop" x="-35%" y="-20%" width="170%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="7" result="b"/><feOffset in="b" dx="6" dy="9" result="o"/><feComponentTransfer in="o" result="f"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feMerge><feMergeNode in="f"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="rotate(38 256 256)" stroke-linecap="round" stroke-linejoin="round" filter="url(#drop)">
+ <!-- wide leaf-burnished bronze blade, not stainless steel -->
+ <path d="M255 17 277 93 277 325 256 355 235 325 235 93Z" fill="url(#blade)" stroke="#4c3126" stroke-width="5"/>
+ <path d="M256 24 255 348 239 324V93Z" fill="#ffe4a9" opacity=".29"/>
+ <path d="M256 25V344" stroke="#fff0c6" stroke-width="3.3" opacity=".79"/>
+ <path d="M256 32 268 95V320l-12 20" fill="none" stroke="#6f412b" stroke-width="3" opacity=".71"/>
+ <path d="M243 109Q256 99 269 109M242 119Q256 112 270 119" fill="none" stroke="#6b492c" stroke-width="2" opacity=".57"/>
+ <path d="M244 142l7 9m17 29-8 12m-18 41 9 8m16 35-7 6" stroke="#ffe2ae" stroke-width="1.8" opacity=".58"/>
+ <path d="M248 170Q240 200 250 212T250 261" fill="none" stroke="#613c2a" stroke-width="1.8" opacity=".52"/>
+ <!-- swept guard, riveted copper-bronze fittings -->
+ <path d="M224 336Q242 331 252 343Q272 334 291 337L296 358Q274 354 257 364Q236 355 220 359Z" fill="url(#hilt)" stroke="#49362b" stroke-width="4.3"/>
+ <path d="M221 339Q209 337 193 319Q202 352 218 365L231 361M290 338Q303 337 319 319Q311 350 297 365L283 360" fill="url(#hilt)" stroke="#62402b" stroke-width="4"/>
+ <path d="M206 336q9 17 18 19m64 0q11-5 18-18M228 341q28 5 58 0" fill="none" stroke="#ffe3a0" stroke-width="2.9" opacity=".8"/>
+ <circle cx="222" cy="351" r="4" fill="#f5c986" stroke="#5a3d2b" stroke-width="1.5"/>
+ <circle cx="292" cy="351" r="4" fill="#f5c986" stroke="#5a3d2b" stroke-width="1.5"/>
+ <path d="M246 362 268 362 268 438Q256 446 246 438Z" fill="url(#leather)" stroke="#392c28" stroke-width="4"/>
+ <path d="M245 369 270 383M246 382l24 15m-24-1 24 15m-23-1 23 15m-23-1 19 11" stroke="#cc9c6b" stroke-width="5.1" opacity=".8"/>
+ <path d="M250 371l17 11m-18 18 17 11m-17 16 14 8" fill="none" stroke="#2e2421" stroke-width="2.4" opacity=".84"/>
+ <path d="M245 437 268 438l11 15-10 17h-24l-10-17Z" fill="url(#hilt)" stroke="#49332a" stroke-width="4"/>
+ <circle cx="256" cy="456" r="8" fill="#84512f" stroke="#f3cd87" stroke-width="2"/>
+ <circle cx="256" cy="456" r="3.6" fill="#fce1a7"/>
+ <path d="M243 469q14 9 26 0" stroke="#f4d295" stroke-width="2" fill="none" opacity=".77"/>
+</g>
+</svg>
