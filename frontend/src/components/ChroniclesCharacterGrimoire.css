@@ -1,0 +1,119 @@
+/* MM3-inspired operational spellbook, read-only: no invented CAST actions. */
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire {
+  border: 2px solid #986a37;
+  background: #ecd2a4;
+  color: #332112;
+  box-shadow: inset 0 0 0 3px #f8e6c4;
+  min-width: 0;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__toolbar {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 10px; padding: 11px 13px;
+  border-bottom: 2px solid #a67842; background: #d4ac74;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__toolbar > div:first-child {
+  display: grid; gap: 4px;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__toolbar b {
+  font: 700 1.05rem/1.15 var(--mm3-pixel-font, monospace);
+  letter-spacing: .06em;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__toolbar small { color: #624324; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__filter {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__filter button {
+  min-height: 38px; padding: 6px 9px; cursor: pointer;
+  border: 1px solid #977348; background: #f1dfbc; color: #402714;
+  font: inherit;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__filter button[aria-pressed='true'] {
+  border-color: #64391a; background: #8a5628; color: #fff5df;
+  box-shadow: inset 3px 0 0 #f5c778;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__body {
+  display: grid; grid-template-columns: minmax(205px, 1.05fr) minmax(0, .95fr);
+  align-items: stretch; min-width: 0;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__catalog {
+  min-width: 0; border-right: 2px solid #af8454;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list {
+  display: grid; align-content: start; gap: 2px; padding: 8px;
+  max-height: min(40vh, 330px); overflow-y: auto; scrollbar-gutter: stable;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list button {
+  display: grid; grid-template-columns: 35px minmax(0, 1fr) auto;
+  align-items: center; gap: 7px; width: 100%; min-height: 50px;
+  padding: 6px 8px; border: 1px solid #b89666; background: #f6e5c3;
+  color: #382817; text-align: left; cursor: pointer; font: inherit;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list button:hover { background: #fff1d4; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list button.is-selected {
+  border-color: #794518; background: #aa7336; color: #fff9e9;
+  box-shadow: inset 4px 0 0 #ffe39a;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__glyph {
+  display: grid; place-items: center; width: 32px; height: 32px;
+  background: #77431c; border: 1px solid #d3ae78; color: #ffe6bb; font-size: 1.25rem;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__entry { min-width: 0; display: grid; gap: 3px; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__entry b {
+  font-size: 1rem; overflow-wrap: anywhere; line-height: 1.12;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__entry small {
+  font-size: .78rem; opacity: .87;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__cost {
+  font: 700 .93rem/1 var(--mm3-pixel-font, monospace); white-space: nowrap;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail {
+  min-width: 0; padding: 13px 15px; background: #f8e7c6;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail-head {
+  display: flex; align-items: center; gap: 11px; padding-bottom: 9px; border-bottom: 1px solid #b99562;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail-head > span {
+  font-size: 1.8rem; color: #895326;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail-head small { color: #77502d; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail h4 {
+  margin: 4px 0 0; font: 700 1.26rem/1.18 var(--mm3-pixel-font, monospace); color: #382213;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail p {
+  margin: 11px 0; line-height: 1.42; color: #48321c;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail dl { margin: 0; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail dl div {
+  display: flex; justify-content: space-between; gap: 9px; padding: 5px 0;
+  border-bottom: 1px dashed #d0b185; font-size: .91rem;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail dt { color: #785330; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail dd { margin: 0; text-align: right; font-weight: 700; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__availability {
+  margin-top: 12px; padding: 8px 10px; display: flex;
+  flex-wrap: wrap; justify-content: space-between; gap: 5px;
+  border: 1px solid #6a9062; background: #e0efd5; color: #2d5e29; font-size: .91rem;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__availability[data-can-afford='false'] {
+  border-color: #aa705c; background: #f1ddce; color: #8a3622;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__availability small { color: inherit; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__empty { padding: 12px; color: #63472a; }
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__hint {
+  margin: 0; padding: 8px 13px; border-top: 2px solid #b68e58;
+  background: #dec294; color: #654123; font-size: .86rem; line-height: 1.35;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire button:focus-visible {
+  outline: 3px solid #54310d; outline-offset: -3px;
+}
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__body { grid-template-columns: minmax(0, 1fr); }
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__catalog { border-right: 0; border-bottom: 2px solid #ae8352; }
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list { max-height: 180px; }
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__detail { padding: 10px; }
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__toolbar { padding: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire button { scroll-behavior: auto; transition: none; }
+}

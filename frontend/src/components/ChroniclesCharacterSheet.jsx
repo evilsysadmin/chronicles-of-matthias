@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
+import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
   chroniclesGoldBalance,
@@ -345,15 +346,13 @@ export default function ChroniclesCharacterSheet({
               </div>
               <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)} PH</b>
             </div>
-            <div className="chronicles-character-sheet__loadout">
-              {chroniclesMemberSpells(state, member).map((spell) => (
-                <article key={spell.id}>
-                  <span>{spell.cost} PH</span>
-                  <b>{spell.name}</b>
-                  <small>{spell.description}</small>
-                </article>
-              ))}
-            </div>
+            <ChroniclesCharacterGrimoire
+              key={member.id}
+              spells={chroniclesMemberSpells(state, member)}
+              availableSp={chroniclesMemberSp(state, member)}
+              maxSp={chroniclesMemberMaxSp(state, member)}
+              schoolLabel={CHRONICLES_SPELL_SCHOOLS[chroniclesMemberSchool(member)].label}
+            />
           </div>
         )}
 
