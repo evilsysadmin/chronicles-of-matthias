@@ -323,6 +323,21 @@ try {
           }
         }
         await page.screenshot({ path: `smoke-shop-${room}-${width}.png` });
+        // QA-only art plate: same camera but without React UI, for honest review.
+        if (width === 390 || width === 1280) {
+          const artOnlyStyle = await page.addStyleTag({ content: `
+            .chronicles-shop__head, .chronicles-shop__tabs,
+            .chronicles-shop__market, .chronicles-shop__foot,
+            .chronicles-guild__membership, .chronicles-guild__spells,
+            .chronicles-shop__art-space, .chronicles-guild__art-space { visibility: hidden !important; }
+            .chronicles-shop::before, .chronicles-shop::after { display: none !important; }
+          ` });
+          try {
+            await page.screenshot({ path: 'smoke-shop-art-only-' + room + '-' + width + '.png' });
+          } finally {
+            await artOnlyStyle.evaluate((node) => node.remove());
+          }
+        }
         if (room === 'odo') {
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
