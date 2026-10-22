@@ -97,32 +97,32 @@ test('unfinished official workflow is retryable, never a green admission', () =>
   );
 });
 
-test('retries a transient missing official run only after an earlier verified pending observation', () => {
+test('retries missing official runs only when the same-SHA green-build caller explicitly permits polling', () => {
   const empty = response();
   const foreignOnly = response(run({ workflow_id: 999 }));
-  // Initial absence is a real failure, never an excuse to trust a foreign build.
+  // Without the explicit green-build caller flag, absence is a terminal error.
   for (const payload of [empty, foreignOnly]) {
     assert.throws(
       () => verifyFrontendWorkflow(payload, opts),
       (error) => !(error instanceof FrontendWorkflowPendingError) && /not green/.test(error.message),
     );
     assert.throws(
-      () => verifyFrontendWorkflow(payload, { ...opts, previouslyObservedOfficial: true }),
+      () => verifyFrontendWorkflow(payload, { ...opts, allowMissingRetry: true }),
       (error) => error instanceof FrontendWorkflowPendingError
-        && /temporarily absent/.test(error.message),
+        && /not yet visible/.test(error.message),
     );
   }
   // The retry flag cannot turn absence or a completed RED run into success.
   assert.throws(() => verifyFrontendWorkflow(
     response(run({ conclusion: 'failure' })),
-    { ...opts, previouslyObservedOfficial: true },
+    { ...opts, allowMissingRetry: true },
   ), (error) => !(error instanceof FrontendWorkflowPendingError));
   assert.throws(() => verifyFrontendWorkflow(
     { total_count: 2, workflow_runs: [run()] },
-    { ...opts, previouslyObservedOfficial: true },
+    { ...opts, allowMissingRetry: true },
   ), /Invalid or truncated/);
   assert.equal(verifyFrontendWorkflow(response(run()), {
-    ...opts, previouslyObservedOfficial: true,
+    ...opts, allowMissingRetry: true,
   }), 42);
 });
 
@@ -216,16 +216,16 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   assert.doesNotMatch(finishing.stdout, /FRONTEND_WORKFLOW_IDENTITY_GREEN/);
   const missingInitially = call(JSON.stringify(response()));
   assert.equal(missingInitially.status, 1);
-  const temporarilyMissing = call(JSON.stringify(response()), '--previously-observed-official');
+  const temporarilyMissing = call(JSON.stringify(response()), '--retry-missing-official');
   assert.equal(temporarilyMissing.status, 75);
   assert.match(temporarilyMissing.stderr, /still completing/);
   assert.doesNotMatch(temporarilyMissing.stdout, /FRONTEND_WORKFLOW_IDENTITY_GREEN/);
   const malformedDuringRetry = call(JSON.stringify({ total_count: 2, workflow_runs: [run()] }),
-    '--previously-observed-official');
+    '--retry-missing-official');
   assert.equal(malformedDuringRetry.status, 1);
   const unknownFlag = call(JSON.stringify(response(run())), '--unexpected');
   assert.equal(unknownFlag.status, 1);
-  const completedAfterRetry = call(JSON.stringify(response(run())), '--previously-observed-official');
+  const completedAfterRetry = call(JSON.stringify(response(run())), '--retry-missing-official');
   assert.equal(completedAfterRetry.status, 0);
   const failed = call(JSON.stringify(response(run({ conclusion: 'cancelled' }))));
   assert.equal(failed.status, 1);
@@ -242,8 +242,8 @@ test('required repository-contract validates frontend check and workflow identit
   assert.match(ci, /if node scripts\/require-frontend-workflow\.mjs/);
   assert.match(ci, /identity_rc=\$\?/);
   assert.match(ci, /identity_rc != 75/);
-  assert.match(ci, /observed_official_pending=false/);
-  assert.match(ci, /identity_args\+=\(--previously-observed-official\)/);
+  assert.match(ci, /--retry-missing-official/);
+  assert.doesNotMatch(ci, /observed_official_pending=true/);
   assert.match(ci, /exit "\$identity_rc"/);
   assert.match(ci, /"\\?\$HEAD_SHA" "\\?\$GITHUB_EVENT_NAME"/);
   assert.match(ci, /FRONTEND_BROWSER_REQUIRED_GREEN/);
