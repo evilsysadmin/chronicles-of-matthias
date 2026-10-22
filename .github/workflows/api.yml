@@ -44,6 +44,16 @@ jobs:
           go run ./cmd/terragen -check
           CGO_ENABLED=0 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /dev/null ./cmd/chronicles-api
+      # Govulncheck queries the official Go vulnerability database and uses
+      # source call graphs to report reachable vulnerable functions, including
+      # issues in the Go toolchain. Fail the required api-e2e gate when found.
+      - name: Go vulnerability scan (reachable source paths)
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" ./...
       - name: Run the API against a real MongoDB
         env:
           MONGO_URL: mongodb://127.0.0.1:27017
