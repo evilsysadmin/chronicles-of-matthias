@@ -71,6 +71,18 @@ try {
       const feedbackText = mailbox.getByLabel('Tu mensaje');
       await feedbackText.fill('Un bug en la taberna del pueblo.');
       assert.equal(await feedbackText.inputValue(), 'Un bug en la taberna del pueblo.');
+      // Focus a non-input action and the parent summary: neither S nor Q
+      // may leak through to Save/Exit while the mailbox page owns the folio.
+      await mailbox.getByRole('button', { name: 'Consultar mis mensajes' }).focus();
+      await page.keyboard.press('s');
+      await page.keyboard.press('q');
+      await page.locator('.chronicles-game-menu > summary').focus();
+      await page.keyboard.press('s');
+      await page.keyboard.press('q');
+      assert.equal(await count(page, 'save'), 0, 'S in feedback must not save');
+      assert.equal(await count(page, 'exit'), 0, 'Q in feedback must not request exit');
+      assert.equal(await mailbox.isVisible(), true, 'Feedback page must remain open after S/Q');
+      await feedbackText.focus();
       await page.keyboard.press('Escape');
       await mailbox.waitFor({ state: 'detached' });
       assert.equal(await menu.isVisible(), true, 'ESC from mailbox returns to menu');

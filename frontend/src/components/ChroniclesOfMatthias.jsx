@@ -1309,6 +1309,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
         menuOpen, saveBusy, confirmExitWithoutSaving,
+        subpageOpen: Boolean(menuSummaryRef.current?.parentElement
+          ?.querySelector('[data-chronicles-feedback-mailbox]')),
       });
       if (menuShortcut) {
         event.preventDefault();
