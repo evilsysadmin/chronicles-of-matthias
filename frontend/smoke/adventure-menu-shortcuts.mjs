@@ -29,6 +29,7 @@ try {
       // Modal keyboard navigation must wrap both ways instead of reaching
       // the playable world and its hidden controls behind the folio.
       const details = page.locator('details.chronicles-game-menu');
+      const opener = page.locator('.chronicles-game-menu > summary');
       await details.evaluate((root) => {
         const visible = Array.from(root.querySelectorAll(
           'summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
@@ -133,6 +134,20 @@ try {
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '2');
       assert.equal(await count(page, 'discard'), 0);
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), false,
+        'Esc must RELEASE focus from the closed sapphire, not leave a stale keyboard outline');
+      assert.equal(await opener.evaluate((node) => node.matches(':focus-visible')), false,
+        'The closed menu gem must not retain its yellow focus-visible ring');
+
+      // Full keyboard round-trip: first Tab opens the menu again, another
+      // Escape closes it and returns focus to the expedition.
+      await page.keyboard.press('Tab');
+      await menu.waitFor({ state: 'visible' });
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), true,
+        'Tab must re-open and focus the menu after Esc released the gem');
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), false);
       // Once the modal closes, the same background button must work normally.
       await page.locator('[data-shortcut-background-action]').dispatchEvent('click');
       assert.equal(Number(await page.locator('[data-shortcut-background-actions]').innerText()), 1);
@@ -163,14 +178,16 @@ try {
       assert.equal(await count(page, 'save'), 1);
       await page.keyboard.press('q');
       assert.equal(await count(page, 'exit'), 1);
-      // Esc must still dismiss the adventure menu FROM the volume slider;
-      // the opener stays focused and the player can reopen with Enter.
+      // Escape from a volume slider must also release its focus, while the
+      // next Tab must still reopen the menu from the expedition.
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
-      const opener = page.locator('.chronicles-game-menu > summary');
-      assert.equal(await opener.evaluate((node) => document.activeElement === node), true);
-      await page.keyboard.press('Enter');
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), false);
+      assert.equal(await details.evaluate((node) => node.contains(document.activeElement)), false,
+        'No hidden menu input may retain keyboard focus after closing');
+      await page.keyboard.press('Tab');
       await menu.waitFor({ state: 'visible' });
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), true);
       // The following keys exercise the menu guard, not the slider's native
       // input handling. Move focus back into an ordinary menu button first.
       await menu.getByRole('button', { name: 'Continuar' }).focus();
@@ -200,6 +217,11 @@ try {
         false, 'Menu must not cause horizontal scrolling');
 
       await page.screenshot({ path: 'smoke-menu-shortcuts-open-' + width + '.png' });
+      // Native Continue click is another dismissal path: it must not leave
+      // the closed menu summary focused after React handles the action.
+      await menu.getByRole('button', { name: 'Continuar' }).click();
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      assert.equal(await opener.evaluate((node) => document.activeElement === node), false);
       assert.deepEqual(errors, []);
       console.log('OK adventure menu shortcuts ' + width + 'px');
     } catch (error) {
