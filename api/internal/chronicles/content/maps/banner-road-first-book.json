@@ -369,6 +369,132 @@
           "brutal-strike"
         ]
       }
+    },
+    {
+      "id": "banner-road-northwest-raider",
+      "visualType": "road-bandit",
+      "name": "merodeador del linde noroeste",
+      "x": 1,
+      "y": 2,
+      "hpKey": "bannerRoadNorthwestRaiderHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "banner-road-west-roadwatch",
+      "visualType": "road-bandit",
+      "name": "desertor de la cuneta oeste",
+      "x": 5,
+      "y": 8,
+      "hpKey": "bannerRoadWestRoadwatchHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
+    },
+    {
+      "id": "banner-road-far-east-crossbow",
+      "visualType": "bandit-archer",
+      "name": "ballestero del risco oriental",
+      "x": 19,
+      "y": 1,
+      "hpKey": "bannerRoadFarEastCrossbowHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "bandit-archer",
+        "level": 1,
+        "attributes": {
+          "vigor": 0,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": []
+      }
+    },
+    {
+      "id": "banner-road-southeast-looter",
+      "visualType": "road-bandit",
+      "name": "saqueador de las carretas del sur",
+      "x": 16,
+      "y": 13,
+      "hpKey": "bannerRoadSoutheastLooterHp",
+      "maxHp": 4,
+      "retaliation": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "enemyBuild": {
+        "version": 1,
+        "archetype": "road-bandit",
+        "level": 1,
+        "attributes": {
+          "vigor": 1,
+          "power": 0,
+          "precision": 0,
+          "will": 0
+        },
+        "skills": [
+          "brutal-strike"
+        ]
+      }
     }
   ],
   "triggers": [],
