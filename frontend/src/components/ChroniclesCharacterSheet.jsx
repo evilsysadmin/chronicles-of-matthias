@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
+import './ChroniclesCharacterSheetArchive.css';
 import {
   CHRONICLES_GOLD_ITEM_ID,
   chroniclesGoldBalance,
@@ -229,6 +230,7 @@ export default function ChroniclesCharacterSheet({
           <small>{xpWindow.maxLevel ? 'Veterano al máximo' : `${xpWindow.remaining} XP para el siguiente nivel`}</small>
         </div>
 
+        <div className="chronicles-character-sheet__folio-layout">
         {!tacticsMode && (
           <nav className="chronicles-character-sheet__tabs" aria-label="Apartados de la ficha">
             {[
@@ -246,6 +248,7 @@ export default function ChroniclesCharacterSheet({
           </nav>
         )}
 
+        <div className="chronicles-character-sheet__folio-content">
         <div className="chronicles-character-sheet__vitals"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>HP</span><b>{member.hp}/{member.maxHp}</b></div>
@@ -552,6 +555,8 @@ export default function ChroniclesCharacterSheet({
           <span>{member.attackName || profile.attackName} · daño {damage} · alcance {reach}</span>
           <span>Esc · cerrar</span>
         </footer>
+        </div>{/* folio-content */}
+        </div>{/* folio-layout */}
         </div>
         {!tacticsMode && (
           <nav className="chronicles-character-sheet__party-dock" aria-label="Seleccionar personaje de la compañía">

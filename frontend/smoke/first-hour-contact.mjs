@@ -144,13 +144,20 @@ try {
         return {
           backdropPosition: getComputedStyle(node.parentElement).position,
           scrollDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__scroll')).display,
+          contentDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__folio-content')).display,
+          menuLeft: node.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect().left,
+          contentRight: node.querySelector('.chronicles-character-sheet__folio-content').getBoundingClientRect().right,
           left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
         };
       });
       assert.equal(skin.backdropPosition, 'fixed',
         'The real game character-sheet overlay must be viewport-fixed');
-      assert.equal(skin.scrollDisplay, width <= 850 ? 'block' : 'grid',
-        'The real folio uses a single flowing column on mobile, two on desktop');
+      assert.equal(skin.scrollDisplay, 'block',
+        'The folio scroll viewport remains a single bounded region');
+      assert.equal(skin.contentDisplay, width <= 850 ? 'contents' : 'grid',
+        'The real content keeps a flowing mobile page and two-column desktop dossier');
+      if (width > 850) assert.ok(skin.menuLeft >= skin.contentRight - 2,
+        'Desktop navigation must remain to the right of the content: ' + JSON.stringify(skin));
       assert.ok(skin.left >= -1 && skin.right <= width + 1,
         'Character sheet must fit horizontally: ' + JSON.stringify(skin));
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
