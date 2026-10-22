@@ -200,6 +200,10 @@ try {
         const save = document.querySelector('[data-chronicles-menu-save]');
         return save?.disabled && save.textContent?.includes('Guardando');
       });
+      // The busy state must be observable, not merely a pending setState.
+      const busySave = menu.locator('[data-chronicles-menu-save]');
+      assert.equal(await busySave.isDisabled(), true,
+        'React must commit the disabled busy save button before keyboard guards');
       await page.keyboard.press('s');
       await page.keyboard.press('q');
       assert.equal(await count(page, 'save'), 1, 'Save busy must block duplicate saves');
