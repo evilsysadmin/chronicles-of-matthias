@@ -6,6 +6,8 @@ import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMap
 import { chroniclesRunCheckpointPayload, chroniclesApplyRunCheckpoint } from './chroniclesRunCheckpoint.js';
 
 const DUNGEONS = ['salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria', 'tumulos-primer-pacto', 'cienaga-negra'];
+// These four additional expedition maps share the same canonical Go generator.
+const LARGE_DUNGEONS = [...DUNGEONS, 'cripta-del-obispo', 'faro-roto', 'guarida-del-dragon', 'torre-de-los-nombres'];
 
 describe('Chronicles · Terra dungeons have something inside', () => {
   it.each(DUNGEONS)('%s: a note, a font, three traps, a chest, an elite and a boss in a sizeable maze', (id) => {
@@ -36,7 +38,7 @@ describe('Chronicles · Terra dungeons have something inside', () => {
     expect(chroniclesTacticsInteractions(opened).some((entry) => entry.id === cache.id)).toBe(false);
   });
 
-  it.each(DUNGEONS)('%s: two spaced ordinary reinforcements preserve old foes, items and trapped corridors', (id) => {
+  it.each(LARGE_DUNGEONS)('%s: two spaced ordinary reinforcements preserve old foes, items and trapped corridors', (id) => {
     const map = chroniclesMapById(id);
     const expectedBefore = [0, 1, 2, 3, 10, 4, 11, 5, 12, 8, 9]
       .map((index) => `${id}-foe-${index}`);
@@ -91,7 +93,7 @@ describe('Chronicles · Terra dungeons have something inside', () => {
     expect(map.interactables).toHaveLength(2);
   });
 
-  it.each(DUNGEONS)('%s: added foes do not resurrect after leaving or loading a prior checkpoint', (id) => {
+  it.each(LARGE_DUNGEONS)('%s: added foes do not resurrect after leaving or loading a prior checkpoint', (id) => {
     const map = chroniclesMapById(id);
     for (const enemy of map.enemies.slice(11)) {
       const fresh = chroniclesMapTransitionState(
