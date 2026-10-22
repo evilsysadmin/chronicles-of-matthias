@@ -196,6 +196,14 @@ export function chroniclesHealTargetStatus(member) {
   return member.hp >= member.maxHp ? 'healthy' : 'wounded';
 }
 
+// Selection is keyboard-first, with an exact 1–4 mapping to the visible
+// party order. It never acts for modifiers/repeats or without a member.
+export function chroniclesSpellTargetHotkey(event, party) {
+  if (!event || event.repeat || event.isComposing || event.ctrlKey || event.altKey
+    || event.metaKey || event.shiftKey || !/^[1-4]$/.test(String(event.key))) return null;
+  return Array.isArray(party) ? party[Number(event.key) - 1]?.id || null : null;
+}
+
 // The ally a healing spell should land on: lowest HP share among the living.
 export function chroniclesMostWoundedAlly(state) {
   return (state.party || [])
