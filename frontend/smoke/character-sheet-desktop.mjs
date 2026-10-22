@@ -123,8 +123,11 @@ try {
         await scrollArea.evaluate((node) => { node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight); });
         const before = await scrollArea.evaluate((node) => node.scrollTop);
         assert.ok(before > 60, 'Fixture must actually scroll before testing reset');
-        await nav.getByRole('button', { name: /Equipo/ }).click();
-        assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
+        // Native click avoids Playwright scrolling the sticky menu on our behalf.
+        await nav.getByRole('button', { name: /Equipo/ }).evaluate((node) => node.click());
+        await page.waitForFunction(() => document.querySelector(
+          '.chronicles-character-sheet__tabs button[aria-pressed="true"]'
+        )?.textContent?.includes('Equipo'));
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
           'Changing to Equipment must return the desktop dossier to its beginning');
         await nav.getByRole('button', { name: /Mejoras/ }).click();
@@ -142,5 +145,5 @@ try {
     } finally { await ctx.close(); }
   }
 } finally { await browser.close(); }
-assert.ok(exercisedScrollableDossier, 'At least one desktop fixture must exercise long-page scroll restoration');
 if (failures.length) throw new Error(failures.join('\n'));
+assert.ok(exercisedScrollableDossier, 'At least one desktop fixture must exercise long-page scroll restoration');
