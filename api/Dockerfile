@@ -1,7 +1,7 @@
 # Chronicles of Matthias API. Build context: api/ (the vendored Chess Studio
 # module + our command). Cross-compiles on the runner for each target arch;
 # OCI A1 staging is linux/arm64.
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23 AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
