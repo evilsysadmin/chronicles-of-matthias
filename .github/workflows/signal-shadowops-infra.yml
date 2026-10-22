@@ -224,7 +224,7 @@ jobs:
           echo 'sent=true' >> "$GITHUB_OUTPUT"
       - name: Save successful staging dispatch receipt
         if: steps.dispatch.outputs.sent == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chronicles-infra-dispatch-${{ github.event.workflow_run.head_sha }}
           path: chronicles-dispatch-receipt.txt

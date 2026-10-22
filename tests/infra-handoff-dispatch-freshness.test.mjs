@@ -243,7 +243,10 @@ test('invalid source SHA or missing infra token never dispatches', () => {
 test('only a complete successful dispatch may upload its SHA receipt', () => {
   assert.match(source, /id: dispatch/);
   assert.match(source, /if: steps\.dispatch\.outputs\.sent == 'true'/);
-  assert.match(source, /uses: actions\/upload-artifact@v4/);
+  assert.match(source, /uses: actions\/upload-artifact@v5/);
+  assert.doesNotMatch(source, /actions\/upload-artifact@v4/);
+  assert.match(source, /if: steps\.dispatch\.outputs\.sent == 'true'/);
+  assert.match(source, /retention-days: 30/);
   assert.match(source, /name: chronicles-infra-dispatch-\$\{\{ github\.event\.workflow_run\.head_sha \}\}/);
   assert.match(source, /if-no-files-found: error/);
 });
