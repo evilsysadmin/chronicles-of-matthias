@@ -9,6 +9,8 @@ import woodenShield from '../assets/chronicles/ui/items/wooden-shield.svg';
 import leatherCuirass from '../assets/chronicles/ui/items/leather-cuirass.svg';
 import brassShield from '../assets/chronicles/ui/items/brass-shield.svg';
 import brassRingmail from '../assets/chronicles/ui/items/brass-ringmail.svg';
+import brassScalemail from '../assets/chronicles/ui/items/brass-scalemail.svg';
+import leatherGambeson from '../assets/chronicles/ui/items/leather-gambeson.svg';
 
 export const CHRONICLES_SHOP_ITEM_ART = Object.freeze({
   'wooden-longbow': woodenLongbow,
@@ -19,6 +21,8 @@ export const CHRONICLES_SHOP_ITEM_ART = Object.freeze({
   'leather-leather': leatherCuirass,
   'brass-shield': brassShield,
   'brass-ring': brassRingmail,
+  'brass-scale': brassScalemail,
+  'leather-padded': leatherGambeson,
 });
 
 export function chroniclesShopItemArt(item) {
