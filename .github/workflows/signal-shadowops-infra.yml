@@ -73,9 +73,12 @@ jobs:
             ($p.workflow_runs | type == "array") and
             ([$p.workflow_runs[]? |
               (. | type == "object") and
-              (.id | type == "number") and
-              (.workflow_id | type == "number") and
-              (.head_sha | type == "string") and
+              # A malformed newer run ID must not be silently outranked by
+              # an older green run when max_by(.id) selects the latest one.
+              (.id | if type == "number" then (. > 0 and . == floor) else false end) and
+              (.workflow_id | if type == "number" then (. > 0 and . == floor) else false end) and
+              (.head_sha | if type == "string" then test("^[0-9a-f]{40}$") else false end) and
+              (.head_branch | type == "string") and
               (.event | type == "string") and
               (.status | type == "string") and
               (.repository.full_name | type == "string") and
