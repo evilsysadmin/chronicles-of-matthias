@@ -51,6 +51,19 @@ export function ChroniclesSpellTargetQuestion({ spellId, notice = '' }) {
   );
 }
 
+// On touch devices Escape may not exist. This lives next to (never inside)
+// the party portrait buttons, preserving valid HTML and click semantics.
+export function ChroniclesSpellTargetCancel({ onCancel }) {
+  return (
+    <button type="button" className="chronicles-spell-target-cancel"
+      data-chronicles-spell-target-cancel
+      aria-label="Cancelar selección de destinatario del hechizo"
+      onClick={onCancel}>
+      ✕ <span>Cancelar</span>
+    </button>
+  );
+}
+
 // Explicit target list, including the *reason* a fallen or healthy hero cannot
 // be healed. Disabled entries are still readable; no spell points are spent.
 export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
