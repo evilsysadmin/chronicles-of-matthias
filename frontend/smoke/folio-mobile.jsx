@@ -22,6 +22,15 @@ const stockedState = {
   },
 };
 const view = new URLSearchParams(location.search).get('view') || 'cast';
+// Real first-book actors: one knocked out at 0 PV, one living wounded target.
+// No mock spell implementation; this exercises the production grimoire.
+const healingState = {
+  ...stockedState,
+  party: stockedState.party.map((hero) => (
+    hero.id === 'rook' ? { ...hero, hp: 0 }
+      : hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+  )),
+};
 
 function Fixture() {
   const [dismissed, setDismissed] = useState(false);
@@ -50,9 +59,9 @@ function Fixture() {
         </details>
       ) : (
         <ChroniclesSpellMenu
-          state={stockedState} member={caster} itemUser={caster}
+          state={view === 'healing' ? healingState : stockedState} member={caster} itemUser={caster}
           initialTab={view === 'items' ? 'items' : 'spells'}
-          onCast={(id) => setLastAction('cast:' + id)}
+          onCast={(id, targetId) => setLastAction('cast:' + id + (targetId ? ':' + targetId : ''))}
           onUse={(id) => setLastAction('use:' + id)}
           onClose={() => setDismissed(true)}
         />

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -65,6 +66,31 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     )) };
     expect(render(down, down.party.find((hero) => hero.id === member.id))).toContain('disabled=""');
   });
+  it('exposes explicit healing targets and explains why a fallen companion cannot be healed', () => {
+    const original = makeState();
+    const state = { ...original, party: original.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 0 }
+        : hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+    )) };
+    const spell = chroniclesMemberSpells(state, caster(state)).find((entry) => entry.id === 'first-aid');
+    const html = renderToStaticMarkup(createElement(ChroniclesHealTargetPicker, {
+      state, spell, onSelect: () => {}, onBack: () => {},
+    }));
+    expect(html).toContain('data-chronicles-heal-target="rook"');
+    expect(html).toContain('data-chronicles-heal-target="matthias"');
+    expect(html).toMatch(/data-chronicles-heal-target="rook"[^>]*disabled=""/);
+    expect(html).not.toMatch(/data-chronicles-heal-target="matthias"[^>]*disabled=""/);
+    expect(html).toContain('Elixir de retorno');
+    expect(html).toContain('CAÍDO · REVIVIR');
+    expect(html).toContain('3 / ');
+  });
+  it('keeps the targeted heal callback wired without closing the grimoire on target selection', () => {
+    const source = readFileSync(new URL('./ChroniclesSpellMenu.jsx', import.meta.url), 'utf8');
+    expect(source).toContain('onSelect={(targetId) => onCast(healSpell.id, targetId)}');
+    expect(source).toContain('setHealSpellId(spell.id)');
+    expect(source).toContain('role="status"');
+  });
+
   it('keeps inventory IDs and quantities for the I/Objetos tab', () => {
     const state = makeState();
     const stocked = { ...state, inventory: {

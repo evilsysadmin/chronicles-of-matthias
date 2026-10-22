@@ -189,6 +189,13 @@ export function chroniclesLearnSpell(state, memberId, spellId) {
   return { ...state, spellbook: { ...state.spellbook, [memberId]: [...known, spellId] } };
 }
 
+// Share the exact heal-target legality between the grimoire and reducer.
+// Zero PV is incapacitation, not an ordinary wound: healing never revives.
+export function chroniclesHealTargetStatus(member) {
+  if (!member || member.hp <= 0) return 'fallen';
+  return member.hp >= member.maxHp ? 'healthy' : 'wounded';
+}
+
 // The ally a healing spell should land on: lowest HP share among the living.
 export function chroniclesMostWoundedAlly(state) {
   return (state.party || [])

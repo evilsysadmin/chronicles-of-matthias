@@ -12,8 +12,8 @@ const browser = await chromium.launch({
 let failures = 0;
 
 try {
-  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390]]) {
-    for (const view of ['cast', 'items', 'adventure']) {
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
+    for (const view of width === 1280 ? ['healing'] : ['cast', 'items', 'adventure', 'healing']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -70,6 +70,30 @@ try {
             `CAST→items viewport escape ${width}x${height}: ${JSON.stringify(changed)}`);
           await page.keyboard.press('Escape');
           await dialog.waitFor({ state: 'hidden' });
+        }
+        if (view === 'healing') {
+          await dialog.locator('[data-chronicles-cast="first-aid"]').click();
+          const picker = dialog.locator('[data-chronicles-heal-picker="first-aid"]');
+          await picker.waitFor({ state: 'visible' });
+          const fallen = picker.locator('[data-chronicles-heal-target="rook"]');
+          const wounded = picker.locator('[data-chronicles-heal-target="matthias"]');
+          assert.equal(await fallen.isDisabled(), true, '0 PV must not be curable');
+          assert.equal(await wounded.isEnabled(), true, 'Living wounded ally must be a valid target');
+          assert.match(await picker.innerText(), /Elixir de retorno/);
+          assert.equal(await page.locator('[data-test-result]').textContent(), '',
+            'Choosing a spell alone must not spend a turn or cast');
+          const fit = await picker.evaluate((node) => ({
+            width: node.scrollWidth, clientWidth: node.clientWidth,
+          }));
+          assert(fit.width <= fit.clientWidth + 2,
+            'Healing targets overflow the grimoire: ' + JSON.stringify(fit));
+          await page.screenshot({ path: `smoke-folio-healing-targets-${width}.png` });
+          await wounded.click();
+          await page.waitForFunction(() =>
+            document.querySelector('[data-test-result]')?.textContent?.trim()
+              === 'cast:first-aid:matthias');
+          assert.equal((await page.locator('[data-test-result]').textContent()).trim(),
+            'cast:first-aid:matthias');
         }
         if(view === 'adventure') {
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();

@@ -61,6 +61,49 @@ describe('Chronicles · MM3 magic', () => {
     expect(tavern.spellPoints).toBeUndefined();
   });
 
+  it('targets a chosen wounded ally, not merely the automatically most wounded one', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 1 }
+        : hero.id === 'matthias' ? { ...hero, hp: 4 } : hero
+    )) };
+    const targeted = chroniclesReduce(state, {
+      type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'matthias',
+    });
+    expect(member(targeted, 'matthias').hp).toBe(10);
+    expect(member(targeted, 'rook').hp).toBe(1);
+    expect(targeted.turns).toBe(state.turns + 1);
+    expect(chroniclesMemberSp(targeted, member(targeted, 'bishop'))).toBe(4);
+    expect(targeted.message).toMatch(/Primeros auxilios sobre Matthias/);
+    const legacy = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'first-aid' });
+    expect(member(legacy, 'rook').hp).toBe(7);
+  });
+
+  it('explains that healing cannot revive a fallen target and spends neither SP nor turn', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 0 }
+        : hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+    )) };
+    for (const targetId of ['rook', 'nonexistent']) {
+      const result = chroniclesReduce(state, {
+        type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId,
+      });
+      expect(result.party).toEqual(state.party);
+      expect(result.turns).toBe(state.turns);
+      expect(chroniclesMemberSp(result, member(result, 'bishop'))).toBe(5);
+      expect(result.message).toMatch(targetId === 'rook' ? /0 PV.*Elixir de retorno/ : /No existe/);
+    }
+    const allStandingFull = { ...state, party: state.party.map((hero) => (
+      hero.hp > 0 ? { ...hero, hp: hero.maxHp } : hero
+    )) };
+    const noWounds = chroniclesReduce(allStandingFull, {
+      type: 'cast', memberId: 'bishop', spellId: 'first-aid',
+    });
+    expect(noWounds.message).toMatch(/0 PV.*Elixir de retorno/);
+    expect(noWounds.turns).toBe(allStandingFull.turns);
+  });
+
   it('sells membership and spells at the guild, only to casters of the matching force', () => {
     let state = { ...town(40), x: 15, y: 4 };
     state = chroniclesReduce(state, 'interact');
