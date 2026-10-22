@@ -50,6 +50,43 @@ describe('MM3 map symbol legends', () => {
     expect(none).not.toContain('★: rumbo al objetivo');
   });
 
+  it('preserves the discovered guild G when ★ targets the same map cell', () => {
+    const sameTile = { x: 15, y: 4 };
+    const full = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} onClose={() => {}}
+        visitedCells={['15:4']} target={sameTile} />,
+    );
+    expect(full).toContain('data-chronicles-poi="guild"');
+    expect(full).toContain('>G</text>');
+    expect(full).toContain('data-chronicles-route-overlap="poi"');
+    expect(full).toContain('r="0.21"');
+
+    const small = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} radius={7}
+        visitedCells={['15:4']} target={sameTile} />,
+    );
+    expect(small).toContain('data-chronicles-poi="guild"');
+    expect(small).toContain('>G</text>');
+    expect(small).toContain('data-chronicles-route-overlap="poi"');
+    expect(small).toContain('r="0.21"');
+
+    // Unknown guilds must not trigger the overlapping POI presentation.
+    const unknown = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} radius={7} visitedCells={[]} target={sameTile} />,
+    );
+    expect(unknown).not.toContain('data-chronicles-poi="guild"');
+    expect(unknown).not.toContain('data-chronicles-route-overlap="poi"');
+    expect(unknown).toContain('r="0.42"');
+
+    // Standard route markers retain the larger central star when no POI overlaps.
+    const emptyTile = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} onClose={() => {}}
+        visitedCells={[]} target={{ x: state.x + 1, y: state.y }} />,
+    );
+    expect(emptyTile).not.toContain('data-chronicles-route-overlap="poi"');
+    expect(emptyTile).toContain('r="0.46"');
+  });
+
   it('labels guild and objective contextually on the local minimap', () => {
     const known = renderToStaticMarkup(
       <ChroniclesMinimap
