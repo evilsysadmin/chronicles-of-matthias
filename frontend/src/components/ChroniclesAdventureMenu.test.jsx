@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 vi.mock('./ChroniclesAudioControls.jsx', () => ({ default: () => null }));
+vi.mock('./ChroniclesFeedbackMailbox.jsx', () => ({ default: () => null }));
 import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 
 describe('Chronicles adventure menu hotkey affordances', () => {
@@ -37,6 +38,17 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('hidden=""');
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain('ESC · cancelar salida · TAB · elegir respuesta');
+  });
+
+  it('exposes the feedback mailbox without hijacking game keyboard shortcuts', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
+    expect(html).toContain('data-chronicles-menu-feedback');
+    expect(html).toContain('Buzón de feedback');
+    expect(html).toContain('data-feedback-open="false"');
+    expect(html).toContain('S · guardar · Q · salir');
+    const exitPrompt = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      confirmExitWithoutSaving />);
+    expect(exitPrompt).not.toContain('data-chronicles-menu-feedback');
   });
 
   it('does not advertise a second save action while save is pending', () => {

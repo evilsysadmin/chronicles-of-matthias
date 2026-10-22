@@ -87,6 +87,17 @@
   min-width: 0;
   gap: 0;
 }
+.chronicles .chronicles-game-menu__folio-columns[data-feedback-open="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.chronicles .chronicles-game-menu__folio-columns[data-feedback-open="true"]
+.chronicles-game-menu__folio-section {
+  padding: 12px;
+}
+.chronicles .chronicles-game-menu__folio-columns[data-feedback-open="true"]
+.chronicles-game-menu__actions {
+  display: block;
+}
 /* Confirmation is one focused decision, not an extra menu row competing with
    Save/Continue and audio. The [hidden] override matters because our themed
    CSS explicitly sets the folio sections to display:grid. */
