@@ -403,6 +403,65 @@
       },
       "defeatedFlag": "cienaga_negraBossDefeated",
       "blockingMessage": "La Bruja del Cieno cierra el paso."
+    },
+    {
+      "id": "cienaga-negra-foe-13",
+      "visualType": "ember-wisp",
+      "name": "fuego fatuo",
+      "x": 15,
+      "y": 8,
+      "hpKey": "cienaga_negraFoe13Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con fuego fatuo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "cienaga-negra-foe-14",
+      "visualType": "sewer-rat",
+      "name": "rata de salina",
+      "x": 19,
+      "y": 2,
+      "hpKey": "cienaga_negraFoe14Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de salina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 12
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

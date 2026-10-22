@@ -403,6 +403,65 @@
       },
       "defeatedFlag": "cueva_contrabandistasBossDefeated",
       "blockingMessage": "Mano Negra, jefa de contrabandistas cierra el paso."
+    },
+    {
+      "id": "cueva-contrabandistas-foe-13",
+      "visualType": "ember-wisp",
+      "name": "farol encantado",
+      "x": 4,
+      "y": 15,
+      "hpKey": "cueva_contrabandistasFoe13Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con farol encantado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "cueva-contrabandistas-foe-14",
+      "visualType": "skeleton",
+      "name": "contrabandista ahorcado",
+      "x": 8,
+      "y": 9,
+      "hpKey": "cueva_contrabandistasFoe14Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista ahorcado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
