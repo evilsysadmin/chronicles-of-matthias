@@ -375,6 +375,10 @@ func buildCrypt() *O {
 				adv("Tienes la llave del Trono. Baja y detén al Canciller Varren.")},
 			blocking: "El Carcelero del Silencio cierra el paso con su cuerpo de hierro.",
 			journal:  journal("crypt-jailer", "Cae el Carcelero", "Del cinturón del Carcelero cuelga la Llave del Trono.", "†")}),
+		// Modest optional patrols in empty wings; never duplicate the Jailer or its key.
+		authoredFoe(id, foeSpec{key: "spider-west", visual: "crypt-spider", name: "una araña de nicho", pos: point{3, 7}, hp: 14, retaliation: 2, ai: aiFor("crypt-spider"), gold: 4}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "acolyte-east", visual: "silent-acolyte", name: "un acólito errante", pos: point{13, 5}, hp: 16, retaliation: 3, ai: acolyteAI(), gold: 5}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "hound-south", visual: "bone-hound", name: "un lobo de cripta", pos: point{7, 9}, hp: 15, retaliation: 2, ai: aiFor("bone-hound"), gold: 4}).With("optional", true),
 	}
 	traps := A{
 		trap("crypt-plate-centre", point{9, 7}, "chain-plate", "Losa de los juramentos", 4, "Una losa grabada con un juramento se hunde. Las cadenas del techo caen sobre la compañía: cuatro puntos de daño."),

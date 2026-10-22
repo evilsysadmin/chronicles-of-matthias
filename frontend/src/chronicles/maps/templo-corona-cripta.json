@@ -202,6 +202,96 @@
       "defeatedFlag": "templeJailerDefeated",
       "blockingMessage": "El Carcelero del Silencio cierra el paso con su cuerpo de hierro.",
       "visualScale": 1.14
+    },
+    {
+      "id": "templo-corona-cripta-spider-west",
+      "visualType": "crypt-spider",
+      "name": "una araña de nicho",
+      "x": 3,
+      "y": 7,
+      "hpKey": "temploCoronaCriptaSpiderWestHp",
+      "maxHp": 14,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a una araña de nicho con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
+    },
+    {
+      "id": "templo-corona-cripta-acolyte-east",
+      "visualType": "silent-acolyte",
+      "name": "un acólito errante",
+      "x": 13,
+      "y": 5,
+      "hpKey": "temploCoronaCriptaAcolyteEastHp",
+      "maxHp": 16,
+      "retaliation": 3,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un acólito errante con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 5
+          }
+        ]
+      },
+      "optional": true
+    },
+    {
+      "id": "templo-corona-cripta-hound-south",
+      "visualType": "bone-hound",
+      "name": "un lobo de cripta",
+      "x": 7,
+      "y": 9,
+      "hpKey": "temploCoronaCriptaHoundSouthHp",
+      "maxHp": 15,
+      "retaliation": 2,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 9,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} derriba a un lobo de cripta con {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 4
+          }
+        ]
+      },
+      "optional": true
     }
   ],
   "triggers": [],

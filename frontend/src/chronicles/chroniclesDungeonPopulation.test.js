@@ -7,6 +7,7 @@ const SECTORS = [
   { id: 'swordhaven-sewers', minimum: 19, original: 10, added: 9 },
   { id: 'blind-king-archive', minimum: 8, original: 5, added: 3 },
   { id: 'iron-foundry', minimum: 8, original: 5, added: 3 },
+  { id: 'templo-corona-cripta', minimum: 8, original: 5, added: 3 },
 ];
 
 function reachableCells(map) {
@@ -65,6 +66,7 @@ describe('Chronicles MM3 · populated dungeon corridors', () => {
       'swordhaven-sewers': 'sewers-goblin-west',
       'blind-king-archive': 'ledger-warden',
       'iron-foundry': 'iron-sentinel',
+      'templo-corona-cripta': 'templo-corona-cripta-spider',
     }[id]);
   });
 
