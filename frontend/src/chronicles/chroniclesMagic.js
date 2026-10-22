@@ -33,7 +33,7 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'first-aid': spell({
     id: 'first-aid', name: 'Primeros auxilios', schools: ['esoterica', 'gaiam'], cost: 1, price: 8,
     kind: 'heal', amount: 6,
-    description: 'Cura 6 PV al compañero más herido. Sirve en combate y fuera de él.',
+    description: 'Cura 6 PV al compañero herido que elijas. Sirve en combate y fuera de él.',
   }),
   'flying-fist': spell({
     id: 'flying-fist', name: 'Puño volador', schools: ['esoterica'], cost: 2, price: 12,
@@ -74,7 +74,7 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'heal-wounds': spell({
     id: 'heal-wounds', name: 'Curar heridas', schools: ['esoterica', 'gaiam'], cost: 3, price: 25,
     kind: 'heal', amount: 15,
-    description: 'Cura 15 PV al compañero más herido.',
+    description: 'Cura 15 PV al compañero herido que elijas.',
   }),
   // Master spells, sold by the guilds of Terra's third wave: the first ones
   // that shape a whole fight instead of a single blow.
