@@ -72,6 +72,27 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   await page.goto(base + hash, { waitUntil: 'networkidle' });
   await page.waitForTimeout(6000);
   const rootLength = (await page.innerHTML('#root')).length;
+  // Where the authenticated MM3 HUD is present, the objective is a
+  // one-line navigational hint, not a tall message hiding the stage.
+  // The full quest text must stay accessible via title/Crónica.
+  if (label === 'Chronicles') {
+    const objective = await page.evaluate(() => {
+      const button = document.querySelector('[data-chronicles-objective]');
+      if (!button || !button.getClientRects().length) return null;
+      const content = button.querySelector('b');
+      return {
+        panelHeight: button.parentElement.getBoundingClientRect().height,
+        textOverflow: getComputedStyle(content).textOverflow,
+        whiteSpace: getComputedStyle(content).whiteSpace,
+        fullText: content.textContent.trim(),
+        title: button.title,
+      };
+    });
+    if (objective && (objective.panelHeight > 48 || objective.textOverflow !== 'ellipsis'
+      || objective.whiteSpace !== 'nowrap' || !objective.title.includes(objective.fullText))) {
+      throw new Error('Desktop objective must be compact, readable via Crónica: ' + JSON.stringify(objective));
+    }
+  }
   const slug = label.toLowerCase();
   await page.screenshot({ path: `smoke-${slug}.png` });
   const ok = errors.length === 0 && rootLength > 500;
