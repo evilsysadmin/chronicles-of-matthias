@@ -175,6 +175,7 @@ import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
 import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 import { chroniclesAreaTransitionIntent } from '../chronicles/chroniclesAreaTransitionIntent.js';
+import { chroniclesBindAreaTravelFocus } from '../chronicles/chroniclesAreaTransitionFocus.js';
 import './ChroniclesAreaTransition.css';
 import './ChroniclesAdventureMenuFolio.css';
 
@@ -780,8 +781,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [areaTransition, state, cancelAreaTravel]);
 
   useEffect(() => {
-    if (!areaTransition) return;
-    document.querySelector('[data-chronicles-area-transition] [data-area-transition-cancel]')?.focus();
+    if (!areaTransition) return undefined;
+    const dialog = document.querySelector('[data-chronicles-area-transition] [role="dialog"]');
+    return chroniclesBindAreaTravelFocus(dialog, document);
   }, [areaTransition]);
 
   const clearTouchHold = useCallback(() => {
