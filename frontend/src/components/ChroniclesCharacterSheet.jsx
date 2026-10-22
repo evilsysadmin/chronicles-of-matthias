@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
@@ -107,6 +107,7 @@ export default function ChroniclesCharacterSheet({
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
+  const folioScrollRef = useRef(null);
 
   // A modal may lose DOM focus after an equipment action rerenders its buttons.
   // Keep 1–4 working while the sheet is open, even if focus falls to <body>.
@@ -163,6 +164,16 @@ export default function ChroniclesCharacterSheet({
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
+  const selectFolio = (folio) => {
+    setActiveFolio(folio);
+    // A new desktop dossier section starts at the top; otherwise a long
+    // backpack/training scroll can leave the next page opening halfway down.
+    // Deliberately preserve the existing mobile and Tactics scroll behavior.
+    if (!tacticsMode && window.matchMedia('(min-width: 851px) and (min-height: 581px)').matches) {
+      if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
+    }
+  };
+
   const closeOnEscape = (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -197,7 +208,7 @@ export default function ChroniclesCharacterSheet({
         onKeyDown={closeOnEscape}
       >
         {/* The frame (and its corner gems) stays put; only the contents scroll. */}
-        <div className="chronicles-character-sheet__scroll">
+        <div className="chronicles-character-sheet__scroll" ref={folioScrollRef}>
         <header className="chronicles-character-sheet__head">
           <div className="chronicles-character-sheet__portrait">
             <img src={chroniclesPartyPortraitUrl(member)} alt={`Retrato de ${member.name}`} draggable="false" />
@@ -242,7 +253,7 @@ export default function ChroniclesCharacterSheet({
               <button type="button" key={tab.id}
                 className={activeFolio === tab.id ? 'is-active' : ''}
                 aria-pressed={activeFolio === tab.id}
-                onClick={() => setActiveFolio(tab.id)}
+                onClick={() => selectFolio(tab.id)}
               ><span aria-hidden="true">{tab.symbol}</span>{tab.label}</button>
             ))}
           </nav>
@@ -266,7 +277,7 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__worn" hidden={activeFolio !== 'record'} data-chronicles-worn-gear={member.id}>
             <div className="chronicles-character-sheet__section-head">
               <div><span>EQUIPO PUESTO</span><small>{member.hp > 0 ? 'Operativo' : 'Fuera de combate'} · {className}</small></div>
-              <button type="button" className="chronicles-character-sheet__worn-change" onClick={() => setActiveFolio('equipment')}>Cambiar equipo ›</button>
+              <button type="button" className="chronicles-character-sheet__worn-change" onClick={() => selectFolio('equipment')}>Cambiar equipo ›</button>
             </div>
             <ul>
               {chroniclesWornGear(state, member.id).map((slot) => (
