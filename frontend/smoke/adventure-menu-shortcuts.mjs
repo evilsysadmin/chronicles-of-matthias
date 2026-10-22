@@ -162,13 +162,16 @@ try {
       assert.equal(await page.locator('[data-shortcut-hero]').getAttribute('data-shortcut-hero'), 'matthias',
         'Q confirmation must not silently switch the selected hero');
 
+      // Compare the global Back count relative to the new subpage Back probe.
+      // Every document-level Escape must add exactly one, never zero or two.
+      const backBeforeConfirm = Number(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'));
       // Esc is safe: first cancels the dangerous prompt, second closes menu.
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-confirm]').getAttribute('data-shortcut-confirm'), 'false');
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'true',
         'First Escape from Q confirmation must CANCEL only, not dismiss the adventure menu');
-      assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '1',
-        'The document-level back stack (not just window keydown) must process Escape');
+      assert.equal(Number(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')), backBeforeConfirm + 1,
+        'The document-level back stack (not just window keydown) must process Escape exactly once');
       assert.equal(await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).count(), 0);
       await menu.getByRole('button', { name: 'Continuar' }).waitFor({ state: 'visible' });
       assert.equal(await menu.locator('input[type="range"]:visible').count() > 0, true,
@@ -177,7 +180,7 @@ try {
         document.activeElement?.textContent?.trim() === 'Salir sin guardar · Q');
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
-      assert.equal(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc'), '2');
+      assert.equal(Number(await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')), backBeforeConfirm + 2);
       assert.equal(await count(page, 'discard'), 0);
       assert.equal(await opener.evaluate((node) => document.activeElement === node), false,
         'Esc must RELEASE focus from the closed sapphire, not leave a stale keyboard outline');
