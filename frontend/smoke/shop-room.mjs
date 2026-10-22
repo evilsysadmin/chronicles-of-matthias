@@ -285,6 +285,22 @@ try {
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
         assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong artwork source');
         if (room === 'odo') {
+          for (const [id, alt] of [
+            ['wooden-shield', 'Escudo de madera'],
+            ['leather-leather', 'Coraza de cuero'],
+          ]) {
+            const node = dialog.locator('[data-chronicles-shop-item="' + id + '"] img[data-chronicles-shop-art="' + id + '"]');
+            await node.waitFor({ state: 'visible' });
+            assert.equal(await node.getAttribute('alt'), alt);
+            const picture = await node.evaluate((img) => ({
+              width: img.naturalWidth, height: img.naturalHeight, loaded: img.complete,
+            }));
+            assert(picture.loaded && picture.width >= 512 && picture.height >= 512,
+              id + ': Odo premium sprite failed to decode ' + JSON.stringify(picture));
+          }
+          assert.equal(await dialog.locator('[data-chronicles-shop-item="brass-ring"] svg')
+            .getAttribute('aria-label'), 'Armadura',
+            'Unpainted brass ring armour retains the actual accessible SVG fallback');
           // Verify the real room receives non-interactive light. One mobile
           // scenario exercises the reduced-motion fallback, not just CSS text.
           const light = await scene.evaluate((node) => ({

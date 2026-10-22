@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<linearGradient id="hide" x1=".06" y1="0" x2=".94" y2="1"><stop stop-color="#e5b886"/><stop offset=".23" stop-color="#8c5737"/><stop offset=".48" stop-color="#513424"/><stop offset=".71" stop-color="#a66a42"/><stop offset="1" stop-color="#30221c"/></linearGradient>
+<linearGradient id="panel" x1=".08" y1="0" x2="1" y2=".93"><stop stop-color="#bd8b57"/><stop offset=".27" stop-color="#70472e"/><stop offset=".57" stop-color="#352921"/><stop offset=".76" stop-color="#95633e"/><stop offset="1" stop-color="#483126"/></linearGradient>
+<linearGradient id="belt" x1="0" y1=".1" x2="1" y2="1"><stop stop-color="#d1a175"/><stop offset=".36" stop-color="#60402e"/><stop offset=".7" stop-color="#2d2520"/><stop offset="1" stop-color="#a87655"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2=".94" y2=".9"><stop stop-color="#ffefc0"/><stop offset=".2" stop-color="#ceac6e"/><stop offset=".48" stop-color="#785737"/><stop offset=".78" stop-color="#d6b37d"/><stop offset="1" stop-color="#5e4b36"/></linearGradient>
+<filter id="shadow" x="-30%" y="-25%" width="170%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="9" result="b"/><feOffset in="b" dx="6" dy="11" result="o"/><feComponentTransfer in="o" result="a"><feFuncA type="linear" slope=".4"/></feComponentTransfer><feMerge><feMergeNode in="a"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g transform="rotate(7 256 256)" stroke-linejoin="round" stroke-linecap="round" filter="url(#shadow)">
+<!-- separate shoulder construction and articulated torso, no steel plate -->
+<path d="M166 83 119 107 70 188 89 262 149 276 175 229 181 440Q246 471 330 444L340 228 365 276 422 263 442 189 395 107 348 82 305 117 213 118Z" fill="url(#hide)" stroke="#31251f" stroke-width="8"/>
+<path d="M165 87Q124 122 97 192L95 249 136 254 169 198ZM347 87Q388 116 412 191L417 248 371 255 342 198Z" fill="url(#panel)" stroke="#392a24" stroke-width="4"/>
+<path d="M109 161Q132 135 154 134M357 131Q382 143 400 169" fill="none" stroke="#e9bd86" stroke-width="4" opacity=".6"/>
+<path d="M215 121Q258 166 302 120L327 151 337 422Q266 442 180 420L181 156Z" fill="url(#panel)" stroke="#2c211e" stroke-width="5"/>
+<path d="M214 123Q255 158 304 124L292 185Q255 200 225 181Z" fill="#36251f" stroke="#d0a071" stroke-width="5"/>
+<path d="M225 137Q257 158 294 140" fill="none" stroke="#f8d6a1" stroke-width="2.3" opacity=".7"/>
+<path d="M205 178Q250 201 307 181M201 226Q256 243 316 227M191 312Q262 328 328 312" fill="none" stroke="#d4a273" stroke-width="3.1" opacity=".52"/>
+<path d="M256 196V420" fill="none" stroke="#281d1b" stroke-width="6"/>
+<path d="M260 197v219" fill="none" stroke="#f0bf85" stroke-width="2" opacity=".65"/>
+<path d="M185 163Q194 238 185 314T195 426M325 165Q317 241 331 323L321 431" fill="none" stroke="#e7b47a" stroke-width="2.6" opacity=".43"/>
+<path d="M180 282Q253 301 337 277L339 310Q268 327 179 309Z" fill="url(#belt)" stroke="#2c211f" stroke-width="4"/>
+<path d="M188 288Q264 304 331 284" fill="none" stroke="#efc18b" stroke-width="2.7" opacity=".53"/>
+<rect x="239" y="281" width="38" height="37" rx="3" fill="url(#metal)" stroke="#4b3528" stroke-width="3"/>
+<rect x="246" y="287" width="24" height="24" rx="2" fill="#3b2c25" stroke="#f1cf95" stroke-width="3.2"/>
+<path d="M257 293v12h17" stroke="#e8bd78" stroke-width="3" fill="none"/>
+<path d="M192 356Q264 373 322 354M196 392Q259 407 318 391" stroke="#b78d65" stroke-width="3" fill="none" opacity=".54"/>
+<!-- embroidered seams, faded tooling and rivets -->
+<path d="M201 171l7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M205 173l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 185l-7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M301 187l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 199l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 201l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 213l-7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M301 215l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 227l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 229l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 241l-7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M301 243l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 255l7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M205 257l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 269l-7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M301 271l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 283l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 285l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 297l-7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M301 299l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 311l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 313l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 325l-7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M301 327l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 339l7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M205 341l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 353l-7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M301 355l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 367l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 369l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M305 381l-7 8" stroke="#f3c18e" stroke-width="2.2" opacity=".65"/><path d="M301 383l-3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<path d="M201 395l7 8" stroke="#c29669" stroke-width="2.2" opacity=".65"/><path d="M205 397l3 5" stroke="#382921" stroke-width="1.1" opacity=".8"/>
+<circle cx="143" cy="137" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="142" cy="136" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="120" cy="203" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="119" cy="202" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="144" cy="242" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="143" cy="241" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="365" cy="139" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="364" cy="138" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="389" cy="204" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="388" cy="203" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="366" cy="241" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="365" cy="240" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="202" cy="291" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="201" cy="290" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="310" cy="292" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="309" cy="291" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="202" cy="415" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="201" cy="414" r=".8" fill="#fff3cc" opacity=".8"/>
+<circle cx="312" cy="413" r="3.7" fill="url(#metal)" stroke="#51382b" stroke-width="1.5"/><circle cx="311" cy="412" r=".8" fill="#fff3cc" opacity=".8"/>
+<path d="M220 216q-11 33 1 57m67-47q13 30 1 56M231 355q30 11 51 1" fill="none" stroke="#2a241f" stroke-width="2.5" opacity=".35"/>
+<path d="M120 187q-4 27 6 41M391 183q3 20-7 41" stroke="#ffdda7" stroke-width="2.6" opacity=".45"/>
+</g>
+</svg>
