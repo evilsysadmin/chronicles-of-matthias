@@ -194,9 +194,35 @@ function choosePatrolRouteStep(state, enemy, from) {
   const route = enemy.ai?.patrolRoute || [];
   if (route.length < 2) return null;
   const currentIndex = route.findIndex((point) => sameCell(point, from));
-  if (currentIndex < 0) return null;
-  const next = route[(currentIndex + 1) % route.length];
-  return canOccupy(state, enemy, next) ? { x: next.x, y: next.y } : null;
+  if (currentIndex >= 0) {
+    const next = route[(currentIndex + 1) % route.length];
+    return canOccupy(state, enemy, next) ? { x: next.x, y: next.y } : null;
+  }
+  // An alerted patrol can chase off its authored circuit. When the sighting
+  // expires, rejoin the nearest reachable route tile rather than standing
+  // motionless forever. BFS respects walls, companions and other enemies.
+  const routeCells = new Set(route.map(positionKey));
+  const queue = [{ position: from, firstStep: null }];
+  const visited = new Set([positionKey(from)]);
+  while (queue.length) {
+    const current = queue.shift();
+    if (current.firstStep && routeCells.has(positionKey(current.position))) return current.firstStep;
+    for (const direction of CHRONICLES_DIRECTIONS) {
+      const position = {
+        x: current.position.x + direction.dx,
+        y: current.position.y + direction.dy,
+      };
+      const key = positionKey(position);
+      if (visited.has(key) || !canOccupy(state, enemy, position)) continue;
+      visited.add(key);
+      queue.push({
+        position,
+        firstStep: current.firstStep || position,
+      });
+    }
+  }
+  // No valid path back: do not step into a wall or invent a teleport.
+  return null;
 }
 
 function roamingDirectionOffset(state, enemy) {
