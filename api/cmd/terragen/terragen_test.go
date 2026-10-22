@@ -104,6 +104,18 @@ func TestEveryRegisteredDungeonKeepsOriginalEncountersAndSpacedReinforcements(t 
 				seenIDs[wantID], seenHPKeys[wantHP] = true, true
 
 				if i >= len(originalSlots) {
+					// A themed bestiary may have four species instead of five.
+					// Follow the generator's actual rotation rather than assuming
+					// every maze shares the first dungeon's creature roster.
+					species := dungeonFoes[dungeons[code].theme]
+					if len(species) == 0 {
+						t.Fatalf("%s has an empty native bestiary", id)
+					}
+					wantSpecies := species[wantSlots[i]%len(species)]
+					if enemy.Str("visualType") != wantSpecies.visual || enemy.Str("name") != wantSpecies.name {
+						t.Fatalf("new foe %s is %s/%s; expected native bestiary %s/%s",
+							wantID, enemy.Str("visualType"), enemy.Str("name"), wantSpecies.visual, wantSpecies.name)
+					}
 					if _, canReach := reachable[pos]; !canReach {
 						t.Fatalf("new foe %s is unreachable at %v", wantID, pos)
 					}
