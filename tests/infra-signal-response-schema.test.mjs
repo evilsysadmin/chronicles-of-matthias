@@ -101,6 +101,20 @@ test('schema errors and truncation fail visibly instead of appearing pending', (
       i === 2 ? { ...run, workflow_id: 'wrong' } : run) },
     { ...response(), workflow_runs: greenRuns().map((run, i) =>
       i === 1 ? { ...run, repository: null } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, id: -1 } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, id: 0 } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, id: 103.5 } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, workflow_id: -386812503 } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, workflow_id: 386812503.25 } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, head_sha: 'not-a-git-sha' } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, head_branch: null } : run) },
     'invalid-json',
   ];
   for (const payload of samples) {
@@ -109,6 +123,16 @@ test('schema errors and truncation fail visibly instead of appearing pending', (
     assert.match(result.stderr, /CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD/);
     assert.doesNotMatch(result.output, /ready=/);
   }
+});
+
+test('malformed newest official run cannot be ignored in favour of older success', () => {
+  const olderGreen = greenRuns();
+  const badNewer = { ...olderGreen[1], id: 0, conclusion: 'failure' };
+  const payload = response([...olderGreen, badNewer]);
+  const result = check(payload);
+  assert.equal(result.status, 66, result.stderr);
+  assert.match(result.stderr, /CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD/);
+  assert.doesNotMatch(result.output, /ready=true|ready=false/);
 });
 
 test('real handoff enforces schema before interpreting any missing checks', () => {
