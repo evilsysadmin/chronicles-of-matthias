@@ -29,10 +29,16 @@ describe('Chronicles Echo Cistern', () => {
       'east-drain-spider',
       'echo-bishop',
       'brine-wisp',
+      'cistern-sluice-hound',
+      'cistern-wall-spider',
+      'cistern-lower-bishop',
     ]);
     expect(cistern.enemies.filter((enemy) => enemy.optional).map((enemy) => enemy.id)).toEqual([
       'echo-bishop',
       'brine-wisp',
+      'cistern-sluice-hound',
+      'cistern-wall-spider',
+      'cistern-lower-bishop',
     ]);
     expect(cistern.interactables.filter((entry) => entry.kind === 'lever').map((entry) => entry.id)).toEqual([
       'west-sluice-wheel',
