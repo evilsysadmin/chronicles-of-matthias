@@ -14,6 +14,31 @@ async function assertParchmentSurface(locator, label) {
   assert.ok(r >= 170 && g >= 150 && b >= 105,
     label + ' must remain a light reading surface rather than legacy dark chrome: ' + bg);
 }
+async function assertNavigationHighlight(nav, expected) {
+  const buttons = await nav.locator('button').evaluateAll((nodes) => nodes.map((node) => {
+    const channels = (getComputedStyle(node).backgroundColor.match(/[0-9]+/g) || [])
+      .slice(0, 3).map(Number);
+    return {
+      name: node.textContent.trim(),
+      selected: node.getAttribute('aria-pressed') === 'true',
+      activeClass: node.classList.contains('is-active'),
+      brightness: channels.length === 3
+        ? channels[0] * .299 + channels[1] * .587 + channels[2] * .114
+        : null,
+    };
+  }));
+  const selected = buttons.filter((button) => button.selected);
+  assert.equal(selected.length, 1, 'Exactly one selected folio: ' + JSON.stringify(buttons));
+  assert.match(selected[0].name, new RegExp(expected));
+  assert.equal(selected[0].activeClass, true, 'The visual selected class must match aria-pressed');
+  for (const other of buttons.filter((button) => !button.selected)) {
+    assert.equal(other.activeClass, false, 'A previous folio must not remain visually active');
+    assert.ok(other.brightness != null && selected[0].brightness != null
+      && other.brightness - selected[0].brightness > 30,
+    'Selected tab must be visually darker than inactive tabs: ' + JSON.stringify(buttons));
+  }
+}
+
 try {
   for (const [width, height] of [[1024,768],[1280,800],[1440,900]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
@@ -57,9 +82,13 @@ try {
       assert.deepEqual(overflowingStats, [], 'No MM3 attribute label may overlap its value');
       assert.equal(await nav.getByRole('button').count(), 4);
       assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true');
+      await page.mouse.move(10, 10);
+      await assertNavigationHighlight(nav, 'Estado');
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
+      await page.mouse.move(10, 10);
+      await assertNavigationHighlight(nav, 'Equipo');
       assert.equal(await sheet.getByText('Mochila de expedición').count(), 1);
       const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
@@ -68,10 +97,14 @@ try {
 
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
+      await page.mouse.move(10, 10);
+      await assertNavigationHighlight(nav, 'Hechizos');
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-' + width + '.png' });
 
       await nav.getByRole('button', { name: /Mejoras/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).getAttribute('aria-pressed'), 'true');
+      await page.mouse.move(10, 10);
+      await assertNavigationHighlight(nav, 'Mejoras');
       const attributeCard = sheet.locator('.chronicles-character-sheet__attribute-grid > button').first();
       const skillCard = sheet.locator('.chronicles-character-sheet__skill-grid > button').first();
       await attributeCard.waitFor({ state: 'visible' });
