@@ -259,6 +259,33 @@ func buildDungeon(code string, bossDrop *O, quests map[string]*areaQuests) *O {
 		}
 	}
 
+	// Two additional optional enemies in quiet stretches of the large maze.
+	// Run this AFTER the original foes, elite, boss and traps have claimed their
+	// positions: their coordinates, saved slainEnemies indices, quest keys,
+	// trap locations and unique rewards must remain stable for old campaigns.
+	// Select non-overlapping cells at least three Manhattan tiles from any foe.
+	for _, slot := range []struct{ id, at int }{{13, 5}, {14, 9}} {
+		for _, pos := range ordered[len(ordered)*slot.at/16:] {
+			if taken[pos] {
+				continue
+			}
+			nearEnemy := false
+			for _, enemy := range enemies {
+				if abs(enemy.Int("x")-pos.x)+abs(enemy.Int("y")-pos.y) < 3 {
+					nearEnemy = true
+					break
+				}
+			}
+			if nearEnemy {
+				continue
+			}
+			sp := foes[slot.id%len(foes)]
+			enemies = append(enemies, foe(d.id, slot.id, level, sp.visual, sp.name, pos, false, nil))
+			taken[pos] = true
+			break
+		}
+	}
+
 	rows := make([]string, len(grid))
 	for i, r := range grid {
 		rows[i] = string(r)
