@@ -123,7 +123,7 @@ import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.j
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
 import {
-  CHRONICLES_SPELLS, chroniclesHealTargetStatus, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
+  CHRONICLES_SPELLS, chroniclesHealTargetStatus, chroniclesSpellTargetHotkey, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 import ChroniclesCombatRoster, { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
@@ -1312,16 +1312,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // Target selection owns 1–4 *before* the normal party/sheet shortcuts.
       // No dispatch, spell points or initiative turn until a legal target.
       if (pendingSpellTarget) {
-        if (event.key === 'Escape' || /^[1-4]$/.test(event.key)) {
+        const targetId = chroniclesSpellTargetHotkey(event, current.party);
+        if (event.key === 'Escape' || targetId) {
           event.preventDefault();
           if (event.repeat) return;
           if (event.key === 'Escape') {
             setPendingSpellTarget(null);
             setSpellTargetNotice('');
-          } else {
-            const targetId = current.party[Number(event.key) - 1]?.id;
-            if (targetId) chooseSpellTarget(targetId);
-          }
+          } else chooseSpellTarget(targetId);
         } else if (event.key !== 'Tab') event.preventDefault();
         return;
       }
