@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, ChroniclesSpellTargetQuestion, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, ChroniclesSpellTargetCancel, ChroniclesSpellTargetQuestion, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -77,6 +77,17 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(renderToStaticMarkup(createElement(ChroniclesSpellTargetQuestion, {
       spellId: 'first-aid', notice: 'A 0 PV necesita resurrección, no curación.',
     }))).toContain('A 0 PV necesita resurrección');
+  });
+
+  it('renders touch cancellation as a separate accessible action, not a nested portrait button', () => {
+    const markup = renderToStaticMarkup(createElement(ChroniclesSpellTargetCancel, {
+      onCancel: () => {},
+    }));
+    expect(markup).toContain('type="button"');
+    expect(markup).toContain('data-chronicles-spell-target-cancel="true"');
+    expect(markup).toContain('aria-label="Cancelar selección de destinatario del hechizo"');
+    expect(markup).toContain('Cancelar');
+    expect(markup).not.toContain('chronicles-party-member');
   });
 
   it('exposes explicit healing targets and explains why a fallen companion cannot be healed', () => {

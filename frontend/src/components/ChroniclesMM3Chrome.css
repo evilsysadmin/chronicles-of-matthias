@@ -1547,6 +1547,39 @@
   pointer-events: none;
 }
 
+/* Explicit cancellation is a sibling to the four hero buttons, not a
+   nested button inside the caster's speech bubble. Stay touch-friendly. */
+.chronicles .chronicles-party .chronicles-spell-target-cancel {
+  position: absolute;
+  z-index: 15;
+  top: 4px;
+  right: 4px;
+  width: auto;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 2px solid #e7bb6a;
+  border-radius: 0;
+  background: #2d2130;
+  color: #ffe5ac;
+  font: 700 1.15rem/1 var(--mm3-pixel-font);
+  cursor: pointer;
+  box-shadow: 0 5px 14px #0009;
+}
+.chronicles .chronicles-party .chronicles-spell-target-cancel:hover,
+.chronicles .chronicles-party .chronicles-spell-target-cancel:focus-visible {
+  background: #45334a;
+  outline: 2px solid #ffe5ac;
+  outline-offset: 2px;
+}
+/* On wide MM3 layouts the portrait strip touches the bottom of the view.
+   Position the cancel tab just above that strip, beside the speech plaque. */
+@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
+  .chronicles .chronicles-party .chronicles-spell-target-cancel {
+    top: -46px;
+    right: 4px;
+  }
+}
+
 /* MM3 '¿A quién?': a small speech plaque attached to the caster portrait,
    not a blocking second spell dialog. Keypresses 1–4 or portrait taps decide. */
 .chronicles .chronicles-party:has(.chronicles-spell-target-question) {

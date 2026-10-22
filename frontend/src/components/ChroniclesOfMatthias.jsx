@@ -107,7 +107,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
-import ChroniclesSpellMenu, { ChroniclesSpellTargetQuestion } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesSpellTargetCancel, ChroniclesSpellTargetQuestion } from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
@@ -1690,6 +1690,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               </button>
             );
           })}
+          {pendingSpellTarget && (
+            <ChroniclesSpellTargetCancel onCancel={() => {
+              setPendingSpellTarget(null);
+              setSpellTargetNotice('');
+            }} />
+          )}
           {/* MM3 keeps two places beside the company for hired hands. */}
           {[1, 2].map((slot) => (
             <div key={`hireling-${slot}`} className="chronicles-party-hireling" data-chronicles-hireling-slot={slot}
