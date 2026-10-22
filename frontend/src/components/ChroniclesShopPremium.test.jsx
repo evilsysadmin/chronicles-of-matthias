@@ -42,7 +42,10 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('data-chronicles-shop-art="brass-shield"');
     expect(html).toContain('aria-label="Armadura"');
     const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
-    expect(ids.length).toBeGreaterThan(10);
+    // Odo now has six bespoke portraits; only the guard vest still uses
+    // the generic SVG. Its paint servers must remain unique and intact.
+    expect((html.match(/data-chronicles-shop-glyph="armor"/g) || []).length).toBe(1);
+    expect(ids.length).toBeGreaterThanOrEqual(5);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
