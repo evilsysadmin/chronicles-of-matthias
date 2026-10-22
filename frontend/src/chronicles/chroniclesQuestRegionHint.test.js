@@ -82,6 +82,49 @@ describe('authored first-book quest geography', () => {
       { molinoviejoWindPact: false }).mapId).toBe('terra-b2');
   });
 
+  it('points Osric\'s Lost Names hunt to the real Tower, then back to Vigilia after a proven victory', () => {
+    const quest = active('lost-names', 'Sube a la Torre de los Nombres (A1), derrota al Escriba y trae su libro a Osric (C1).');
+    expect(chroniclesQuestRegionHint(quest, {})).toMatchObject({
+      mapId: 'torre-de-los-nombres', region: 'Torre de los Nombres', kind: 'Mazmorra',
+    });
+    expect(chroniclesQuestRegionHint(quest, { osricTowerStarted: true }).mapId)
+      .toBe('torre-de-los-nombres');
+    // The actual boss sets this flag and awards this item in the authored map.
+    for (const state of [
+      { torre_de_los_nombresBossDefeated: true },
+      { inventory: { 'book-of-names': { quantity: 1 } } },
+    ]) {
+      expect(chroniclesQuestRegionHint(quest, state)).toMatchObject({
+        mapId: 'vigilia-del-norte', region: 'Vigilia del Norte', kind: 'Pueblo',
+      });
+    }
+    expect(chroniclesQuestRegionHint({
+      ...quest, status: 'completed',
+    }, { torre_de_los_nombresBossDefeated: true })).toBeNull();
+    // An unaccepted quest or unrelated destination must stay unknown.
+    expect(chroniclesQuestRegionHint(active('missing-lost-names'), {})).toBeNull();
+  });
+
+  it('shows Osric\'s authored destination in HUD only while tracking that real quest', () => {
+    const objective = 'Sube a la Torre de los Nombres (A1), derrota al Escriba y trae su libro a Osric (C1).';
+    const quest = { id: 'lost-names', title: 'Los nombres perdidos', status: 'active', objective, order: 1 };
+    const state = {
+      ...createChroniclesState('vigilia-del-norte'),
+      trackedQuestId: 'lost-names',
+      quests: { 'lost-names': quest },
+    };
+    expect(chroniclesHudQuestDestination(state, objective)).toEqual({
+      mapId: 'torre-de-los-nombres', region: 'Torre de los Nombres',
+    });
+    expect(chroniclesHudQuestDestination(state, 'Una orden de combate sin geografía')).toBeNull();
+    const returned = { ...state, mapId: 'terra-a1', torre_de_los_nombresBossDefeated: true };
+    expect(chroniclesHudQuestDestination(returned, objective)).toEqual({
+      mapId: 'vigilia-del-norte', region: 'Vigilia del Norte',
+    });
+    expect(chroniclesHudQuestDestination({ ...returned, mapId: 'vigilia-del-norte' }, objective))
+      .toBeNull();
+  });
+
   it('validates all authored clues and map references without embedding coordinates', () => {
     for (const [questId, stages] of Object.entries(questRegionHints)) {
       expect(questId.length).toBeGreaterThan(0);
