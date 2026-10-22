@@ -184,8 +184,16 @@ try {
       // Save-busy is internal fixture state: a blocked background button
       // must never be used to change it while the modal owns pointer input.
       await page.evaluate(() => window.__chroniclesMenuFixture.setSaveBusy(false));
+      // React state setters are asynchronous: wait until the real menu button
+      // reflects the completed save before testing keyboard re-entry.
+      await page.waitForFunction(() => {
+        const save = document.querySelector('[data-chronicles-menu-save]');
+        return save && !save.disabled && save.textContent?.includes('Guardar partida · S');
+      });
       await menu.getByRole('button', { name: 'Guardar partida · S' }).focus();
       await page.keyboard.press('S');
+      await page.waitForFunction(() =>
+        Number(document.querySelector('[data-shortcut-save-requests]')?.textContent) === 2);
       assert.equal(await count(page, 'save'), 2);
       assert.equal(await count(page, 'discard'), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
