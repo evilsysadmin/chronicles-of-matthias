@@ -94,7 +94,22 @@ try {
       const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
       await assertParchmentSurface(meleeCard, 'Equipment weapon card');
-      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
+      // Empty relics must not waste half the equipment dossier width.
+      const emptyRelicLayout = await sheet.locator('.chronicles-character-sheet__loadout.is-relic-empty')
+        .evaluate((node) => {
+          const relicCard = node.querySelector(':scope > article:first-child').getBoundingClientRect();
+          const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
+          return { relicHeight: relicCard.height, relicWidth: relicCard.width,
+            equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
+            equipmentTop: equipmentCard.top };
+        });
+      assert.ok(emptyRelicLayout.relicHeight <= 85,
+        'A missing relic should occupy a compact row: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(emptyRelicLayout.equipmentWidth >= emptyRelicLayout.relicWidth - 2,
+        'Equipped weapons and armour should regain the full usable width: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.relicBottom - 2,
+        'Full-width equipment should appear below the compact empty relic');
+      await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
