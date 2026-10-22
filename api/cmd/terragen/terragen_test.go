@@ -63,10 +63,13 @@ func TestEveryRegisteredDungeonKeepsOriginalEncountersAndSpacedReinforcements(t 
 	for _, code := range dungeonOrder {
 		id := dungeons[code].id
 		t.Run(id, func(t *testing.T) {
-			m := manifests[id]
-			if m == nil {
+			raw := manifests[id]
+			if raw == nil {
 				t.Fatalf("registered dungeon %s has no generated manifest", id)
 			}
+			// The authored grid is []string in memory and JSON array on disk.
+			// Validate the serialized contract that the frontend/API actually load.
+			m := parseObj(dump(raw))
 			enemies := m.Arr("enemies")
 			if len(enemies) != len(wantSlots) {
 				t.Fatalf("expected 11 saved foes + 2 optional reinforcements, got %d", len(enemies))
