@@ -219,6 +219,11 @@ test('unreadable, truncated and malformed receipt listings fail closed', () => {
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: 'no', workflow_run: { id: 123 } }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: '123' } }] },
+    // A fractional origin used to pass numeric schema checks, then be
+    // silently dropped by the integer-only shell loop, causing two dispatches.
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: 123.5 } }] },
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: 0 } }] },
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: -42 } }] },
     { total_count: 1, artifacts: [{ expired: false, workflow_run: { id: 123 } }] },
     // If the server ignores the name filter, its first page cannot prove
     // that an exact-SHA receipt is absent from a later result page.
@@ -238,6 +243,8 @@ test('unreadable, truncated and malformed receipt listings fail closed', () => {
 test('receipt listing must be complete and name-filtered before consulting prior runs or dispatching', () => {
   assert.match(script, /\$p\.total_count == \(\$p\.artifacts \| length\)/);
   assert.match(script, /\.name == \$name/);
+  assert.match(script, /\.workflow_run\.id \|/);
+  assert.match(script, /\. > 0 and \. == floor/);
   assert.match(script, /\$p\.total_count >= 0 and \$p\.total_count <= 100/);
   const validation = script.indexOf('CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE');
   const apiDispatch = script.indexOf('gh workflow run chronicles-api-staging.yml');
