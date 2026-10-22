@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import ChroniclesShop from './ChroniclesShop.jsx';
+import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
+import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 
 function render(shopId = 'first-book-weaponsmith', inventory = null) {
   const state = {
@@ -42,6 +44,18 @@ describe('Chronicles premium shop UI', () => {
     const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
     expect(ids.length).toBeGreaterThan(10);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('uses per-item standalone 2D art for the first real weapons, preserving fallback glyphs', () => {
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['wooden-longbow'])).toMatch(/wooden-longbow\.svg/);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-crossbow'])).toMatch(/brass-crossbow\.svg/);
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['steel-longbow'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['wooden-staff'])).toBeNull();
+    const html = render('first-book-weaponsmith');
+    expect(html).toContain('data-chronicles-shop-art="wooden-longbow"');
+    expect(html).toContain('class="chronicles-shop__item-sprite"');
+    expect(html).toContain('data-chronicles-shop-glyph="weapon"');
+    expect(html).not.toContain('data:image');
   });
 
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {
