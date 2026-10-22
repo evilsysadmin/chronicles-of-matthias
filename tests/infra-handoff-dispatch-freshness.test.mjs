@@ -163,7 +163,6 @@ test('untrusted or different-SHA receipt cannot suppress the current staging dis
     { path: '.github/workflows/ci.yml' },
     { workflow_id: 386812503 },
     { head_sha: 'b'.repeat(40) },
-    { head_sha: 'not-a-git-sha' },
     { repository: { full_name: 'someone/untrusted' } },
     { status: 'in_progress', conclusion: null },
   ];
@@ -175,6 +174,28 @@ test('untrusted or different-SHA receipt cannot suppress the current staging dis
     assert.equal(result.status, 0, JSON.stringify(changed) + ': ' + result.stderr);
     assert.equal(result.calls.length, 2, JSON.stringify(changed));
     assert.match(result.output, /sent=true/);
+  }
+});
+
+test('malformed receipt origin responses fail closed instead of triggering another dispatch', () => {
+  const badOrigins = [
+    { ...acceptedRun(), id: '123' },
+    { ...acceptedRun(), workflow_id: '389939241' },
+    { ...acceptedRun(), head_sha: 'not-a-git-sha' },
+    { ...acceptedRun(), head_sha: null },
+    { ...acceptedRun(), path: null },
+    { ...acceptedRun(), repository: null },
+    { ...acceptedRun(), event: null },
+    { ...acceptedRun(), status: null },
+    { ...acceptedRun(), conclusion: { value: 'success' } },
+    'not-an-object',
+  ];
+  for (const priorRun of badOrigins) {
+    const result = simulate({ receipts: receiptList(), priorRun });
+    assert.equal(result.status, 67, JSON.stringify(priorRun) + ': ' + result.stderr);
+    assert.deepEqual(result.calls, [], 'Malformed receipt origin may conceal previous dispatch');
+    assert.match(result.stderr, /CHRONICLES_DISPATCH_ORIGIN_INCONCLUSIVE/);
+    assert.doesNotMatch(result.output, /sent=true/);
   }
 });
 
