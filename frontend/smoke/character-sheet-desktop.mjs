@@ -5,6 +5,15 @@ import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4174/smoke/character-sheet-desktop.html';
 const browser = await chromium.launch();
 const failures = [];
+
+async function assertParchmentSurface(locator, label) {
+  const bg = await locator.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const rgb = bg.match(/^rgba?[(]([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+)/);
+  assert.ok(rgb, label + ' must expose an opaque background: ' + bg);
+  const [, r, g, b] = rgb.map(Number);
+  assert.ok(r >= 170 && g >= 150 && b >= 105,
+    label + ' must remain a light reading surface rather than legacy dark chrome: ' + bg);
+}
 try {
   for (const [width, height] of [[1024,768],[1280,800],[1440,900]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
@@ -52,8 +61,25 @@ try {
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       assert.equal(await sheet.getByText('Mochila de expedición').count(), 1);
+      const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
+      await meleeCard.waitFor({ state: 'visible' });
+      await assertParchmentSurface(meleeCard, 'Equipment weapon card');
+      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
+
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
+      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-' + width + '.png' });
+
+      await nav.getByRole('button', { name: /Mejoras/ }).click();
+      assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).getAttribute('aria-pressed'), 'true');
+      const attributeCard = sheet.locator('.chronicles-character-sheet__attribute-grid > button').first();
+      const skillCard = sheet.locator('.chronicles-character-sheet__skill-grid > button').first();
+      await attributeCard.waitFor({ state: 'visible' });
+      await skillCard.waitFor({ state: 'visible' });
+      await assertParchmentSurface(attributeCard, 'Training attribute card');
+      await assertParchmentSurface(skillCard, 'Training skill card');
+      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-training-' + width + '.png' });
+
       await nav.getByRole('button', { name: /Estado/ }).click();
       await sheet.getByRole('button', { name: 'Ver ficha de Aziz' }).click();
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Aziz');
