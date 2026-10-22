@@ -9,6 +9,7 @@ import {
   chroniclesQuestEntries,
 } from './chroniclesContentRuntime.js';
 import { chroniclesContentVisualStateById } from './chroniclesContentVisualState.js';
+import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 import {
   chroniclesMapById,
   chroniclesMapIds,
@@ -29,6 +30,9 @@ describe('Chronicles Hollow Bell Tower', () => {
       'east-bell-spider',
       'bell-archivist',
       'toll-wisp',
+      'tower-lower-hound',
+      'tower-mechanism-spider',
+      'tower-south-bishop',
     ]);
     expect(tower.interactables.filter((entry) => entry.kind === 'lever').map((entry) => entry.id)).toEqual([
       'west-bell-brake',
@@ -37,6 +41,9 @@ describe('Chronicles Hollow Bell Tower', () => {
     expect(tower.enemies.filter((enemy) => enemy.optional).map((enemy) => enemy.id)).toEqual([
       'bell-archivist',
       'toll-wisp',
+      'tower-lower-hound',
+      'tower-mechanism-spider',
+      'tower-south-bishop',
     ]);
   });
 
@@ -102,6 +109,11 @@ describe('Chronicles Hollow Bell Tower', () => {
       objective: 'Lleva el Badajo Maestro hasta la compuerta superior.',
     });
 
+    // Extra patrols must not gate the Badajo or the exit: the original
+    // two brakes + Campanero remain the only mandatory encounters.
+    for (const key of ['towerLowerHoundHp', 'towerMechanismSpiderHp', 'towerSouthBishopHp']) {
+      expect(state[key], key).toBeGreaterThan(0);
+    }
     state = { ...state, x: 8, y: 1 };
     const cistern = chroniclesTacticsUse(state, 'tower-upper-gate');
 
@@ -143,5 +155,76 @@ describe('Chronicles Hollow Bell Tower', () => {
     expect(state.westBrakeSet).toBe(false);
     expect(state.eastBrakeSet).toBe(false);
     expect(state.masterClapperClaimed).toBe(false);
+  });
+
+  it('places three optional ordinary foes in reachable empty passages without duplicating rewards', () => {
+    const tower = chroniclesMapById('hollow-bell-tower');
+    const extra = tower.enemies.slice(5);
+    expect(extra.map((enemy) => enemy.id)).toEqual([
+      'tower-lower-hound', 'tower-mechanism-spider', 'tower-south-bishop',
+    ]);
+    expect(new Set(tower.enemies.map((enemy) => enemy.id)).size).toBe(8);
+    expect(new Set(tower.enemies.map((enemy) => enemy.hpKey)).size).toBe(8);
+    const reserved = new Set([tower.partyStart, ...tower.enemies.slice(0, 5),
+      ...['interactables', 'treasures', 'traps', 'triggers', 'exits']
+        .flatMap((kind) => tower[kind] || [])]
+      .filter((entry) => Number.isInteger(entry.x) && Number.isInteger(entry.y))
+      .map((entry) => `${entry.x},${entry.y}`));
+    const reached = new Set([`${tower.partyStart.x},${tower.partyStart.y}`]);
+    const queue = [tower.partyStart];
+    for (const { x, y } of queue) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nextX = x + dx;
+        const nextY = y + dy;
+        const key = `${nextX},${nextY}`;
+        if (!reached.has(key) && tower.grid[nextY]?.[nextX] && tower.grid[nextY][nextX] !== '#') {
+          reached.add(key);
+          queue.push({ x: nextX, y: nextY });
+        }
+      }
+    }
+    const originalById = new Map(tower.enemies.slice(0, 5).map((enemy) => [enemy.id, enemy]));
+    for (const [i, enemy] of extra.entries()) {
+      const cell = `${enemy.x},${enemy.y}`;
+      expect(tower.grid[enemy.y][enemy.x], enemy.id).toBe('.');
+      expect(reached.has(cell), enemy.id).toBe(true);
+      expect(reserved.has(cell), enemy.id).toBe(false);
+      expect(Math.abs(enemy.x - tower.partyStart.x) + Math.abs(enemy.y - tower.partyStart.y))
+        .toBeGreaterThanOrEqual(5);
+      expect(enemy.optional).toBe(true);
+      expect(enemy.activation).toBe('always');
+      expect(enemy.onDefeat?.effects || []).toEqual([]);
+      expect(enemy.defeatedFlag).toBeUndefined();
+      expect(enemy.ai).toEqual(originalById.get(
+        ['west-chain-hound', 'east-bell-spider', 'bell-archivist'][i],
+      ).ai);
+      reserved.add(cell);
+    }
+  });
+
+  it('keeps each new foe dead across area travel and checkpoint recovery', () => {
+    const tower = chroniclesMapById('hollow-bell-tower');
+    const original = tower.enemies.slice(0, 5);
+    const additional = tower.enemies.slice(5);
+    for (const foe of additional) {
+      const entered = chroniclesMapTransitionState(
+        createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
+        'hollow-bell-tower',
+      );
+      expect(entered[foe.hpKey], foe.id).toBeGreaterThan(0);
+      const fallen = { ...entered, [foe.hpKey]: 0 };
+      const away = chroniclesMapTransitionState(fallen, 'swordhaven-first-book');
+      const returned = chroniclesMapTransitionState(away, 'hollow-bell-tower');
+      expect(returned[foe.hpKey], foe.id).toBe(0);
+      expect(returned[original[0].hpKey]).toBeGreaterThan(0);
+      const checkpoint = chroniclesRunCheckpointPayload(away, 1);
+      const restored = chroniclesApplyRunCheckpoint(
+        createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
+        { ...checkpoint, worldVersion: 1 },
+      );
+      const afterLoad = chroniclesMapTransitionState(restored, 'hollow-bell-tower');
+      expect(afterLoad[foe.hpKey], foe.id).toBe(0);
+      expect(afterLoad[original[0].hpKey]).toBeGreaterThan(0);
+    }
   });
 });
