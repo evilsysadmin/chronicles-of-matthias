@@ -26,7 +26,8 @@ export function chroniclesAdventureMenuShortcut(event, {
     || event.ctrlKey || event.altKey || event.metaKey) return null;
   // Escape is a dialogue-level dismissal even with a range/text control
   // focused. Every other shortcut remains owned by focused form controls.
-  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit' : 'close';
+  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit'
+    : subpageOpen ? 'back-feedback' : 'close';
   // Pages within the adventure folio own their own keyboard interactions.
   // Do not save or request a dangerous exit from feedback navigation buttons
   // or the still-focusable outer summary while the feedback page is visible.
@@ -47,6 +48,7 @@ export function chroniclesAdventureMenuShortcut(event, {
 export function chroniclesFirstPersonEscapeAction({
   menuOpen = false,
   confirmExitWithoutSaving = false,
+  feedbackOpen = false,
   spellMenuOpen = false,
   sheetOpen = false,
   shopOpen = false,
@@ -58,6 +60,9 @@ export function chroniclesFirstPersonEscapeAction({
   quickStatusOpen = false,
 } = {}) {
   if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
+  // Escape and browser Back must first leave the nested feedback page, even
+  // when the outer summary (rather than the textarea) owns keyboard focus.
+  if (menuOpen && feedbackOpen) return 'back-feedback';
   // The character dossier can sit on top of a merchant/guild. Dismiss its
   // own topmost layer first, rather than closing the shop behind it.
   if (sheetOpen) return 'close-sheet';
