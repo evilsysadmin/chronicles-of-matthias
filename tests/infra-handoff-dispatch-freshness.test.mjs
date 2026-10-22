@@ -199,6 +199,11 @@ test('unreadable, truncated and malformed receipt listings fail closed', () => {
     { total_count: 1, artifacts: [{ name: receiptName(), expired: 'no', workflow_run: { id: 123 } }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: '123' } }] },
     { total_count: 1, artifacts: [{ expired: false, workflow_run: { id: 123 } }] },
+    // If the server ignores the name filter, its first page cannot prove
+    // that an exact-SHA receipt is absent from a later result page.
+    { total_count: 1, artifacts: [{
+      name: receiptName('b'.repeat(40)), expired: false, workflow_run: { id: 123 },
+    }] },
   ];
   for (const receipts of variants) {
     const result = simulate({ receipts });
@@ -209,12 +214,30 @@ test('unreadable, truncated and malformed receipt listings fail closed', () => {
   }
 });
 
-test('receipt listing must be complete before consulting prior runs or dispatching', () => {
+test('receipt listing must be complete and name-filtered before consulting prior runs or dispatching', () => {
   assert.match(script, /\$p\.total_count == \(\$p\.artifacts \| length\)/);
+  assert.match(script, /\.name == \$name/);
   assert.match(script, /\$p\.total_count >= 0 and \$p\.total_count <= 100/);
   const validation = script.indexOf('CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE');
   const apiDispatch = script.indexOf('gh workflow run chronicles-api-staging.yml');
   assert.ok(validation >= 0 && apiDispatch > validation);
+});
+
+test('expired exact-SHA receipt permits a new dispatch; foreign name does not', () => {
+  const expired = simulate({
+    receipts: { total_count: 1, artifacts: [{
+      name: receiptName(), expired: true, workflow_run: { id: 123 },
+    }] },
+  });
+  assert.equal(expired.status, 0, expired.stderr);
+  assert.equal(expired.calls.length, 2);
+
+  const other = simulate({ receipts: { total_count: 1, artifacts: [{
+    name: receiptName('c'.repeat(40)), expired: false, workflow_run: { id: 123 },
+  }] } });
+  assert.equal(other.status, 66, other.stderr);
+  assert.deepEqual(other.calls, []);
+  assert.match(other.stderr, /CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE/);
 });
 
 test('superseded SHA and GitHub main verification failure never dispatch', () => {
