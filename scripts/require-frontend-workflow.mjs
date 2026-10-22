@@ -18,7 +18,7 @@ export class FrontendWorkflowPendingError extends Error {
 
 
 export function verifyFrontendWorkflow(payload, {
-  sha, event, repository, previouslyObservedOfficial = false,
+  sha, event, repository, allowMissingRetry = false,
 }) {
   if (!/^[0-9a-f]{40}$/.test(sha ?? '')) throw new Error('Invalid source SHA');
   if (!['push', 'pull_request'].includes(event)) throw new Error('Unexpected event');
@@ -70,13 +70,14 @@ export function verifyFrontendWorkflow(payload, {
       + sha + ' (' + latest.status + '/' + (latest.conclusion ?? 'unknown') + ')',
     );
   }
-  // GitHub's runs collection can briefly omit an official run already seen
-  // as pending on an earlier poll, while the successful build job completes.
-  // Retry ONLY after a previous same-SHA official observation; do not grant
-  // green on absence, errors, foreign runs or malformed/untrusted responses.
-  if (!latest && previouslyObservedOfficial) {
+  // GitHub may expose a successful Actions build check before listing its
+  // parent workflow run (or temporarily omit that run during finalization).
+  // Only the bounded caller that already checked a green same-SHA build may
+  // retry absence. Never authorize on absence, a foreign workflow or a bad
+  // API response; the official completed/success identity remains mandatory.
+  if (!latest && allowMissingRetry) {
     throw new FrontendWorkflowPendingError(
-      'Previously observed official frontend workflow temporarily absent for source SHA ' + sha,
+      'Official frontend workflow not yet visible for source SHA ' + sha,
     );
   }
   if (!latest || latest.status !== 'completed' || latest.conclusion !== 'success') {
@@ -92,12 +93,12 @@ export function verifyFrontendWorkflow(payload, {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const [sha, event, repository, observationFlag, ...extraArgs] = process.argv.slice(2);
-    if (extraArgs.length || (observationFlag && observationFlag !== '--previously-observed-official')) {
+    if (extraArgs.length || (observationFlag && observationFlag !== '--retry-missing-official')) {
       throw new Error('Unexpected workflow verification arguments');
     }
     const id = verifyFrontendWorkflow(JSON.parse(readFileSync(0, 'utf8')), {
       sha, event, repository,
-      previouslyObservedOfficial: observationFlag === '--previously-observed-official',
+      allowMissingRetry: observationFlag === '--retry-missing-official',
     });
     console.log('FRONTEND_WORKFLOW_IDENTITY_GREEN sha=' + sha
       + ' workflow_id=' + FRONTEND_WORKFLOW_ID + ' run_id=' + id);
