@@ -8,7 +8,7 @@ const failures = [];
 
 async function assertParchmentSurface(locator, label) {
   const bg = await locator.evaluate((element) => getComputedStyle(element).backgroundColor);
-  const rgb = bg.match(/^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+  const rgb = bg.match(/^rgba?[(]([0-9]+),[ ]*([0-9]+),[ ]*([0-9]+)/);
   assert.ok(rgb, label + ' must expose an opaque background: ' + bg);
   const [, r, g, b] = rgb.map(Number);
   assert.ok(r >= 170 && g >= 150 && b >= 105,
