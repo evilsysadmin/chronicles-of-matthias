@@ -35,8 +35,14 @@ describe('Chronicles alternating creature turns', () => {
 
   it('recomputes pursuit targets for each distinct encounter state, not each BFS tile', () => {
     const pawn = enemy('corrupted-pawn');
+    // Force the authored chase policy so this checks the BFS itself, not the
+    // pawn's normal roam-until-adjacent engagement threshold.
+    const pursuer = {
+      ...pawn,
+      ai: { ...pawn.ai, movement: 'cardinal-chase', engagedMovement: undefined },
+    };
     const start = createChroniclesState();
-    expect(chroniclesChooseEnemyStep(start, pawn)).toEqual({ x: 2, y: 5 });
+    expect(chroniclesChooseEnemyStep(start, pursuer)).toEqual({ x: 2, y: 5 });
 
     // Moving the only living combatant to the opposite side of the corridor
     // must change the very next pursuit step; no cross-call memoization.
@@ -51,8 +57,8 @@ describe('Chronicles alternating creature turns', () => {
       })),
       partyPositions: { matthias: { x: 5, y: 5 } },
     };
-    expect(chroniclesChooseEnemyStep(relocated, pawn)).toEqual({ x: 4, y: 5 });
-    expect(chroniclesChooseEnemyStep(start, pawn)).toEqual({ x: 2, y: 5 });
+    expect(chroniclesChooseEnemyStep(relocated, pursuer)).toEqual({ x: 4, y: 5 });
+    expect(chroniclesChooseEnemyStep(start, pursuer)).toEqual({ x: 2, y: 5 });
     expect(relocated.partyPositions.matthias).toEqual({ x: 5, y: 5 });
   });
 
