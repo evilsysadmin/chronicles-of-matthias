@@ -171,8 +171,9 @@ for (const viewport of [
         scrollWidth: document.documentElement.scrollWidth,
       };
     });
-    const clearView = geometry.blur === 'none'
-      && (Number(geometry.scrim.match(/([\\d.]+)\\)\\s*$/)?.[1]) || 1) <= .25;
+    const scrimOpacity = geometry.scrim.startsWith('rgba(')
+      ? Number(geometry.scrim.split(',').at(-1).replace(')', '').trim()) : 1;
+    const clearView = geometry.blur === 'none' && scrimOpacity <= .25;
     const compact = geometry.card.width <= 480 && geometry.card.height <= 240
       && geometry.card.left >= 0 && geometry.card.right <= viewport.width
       && geometry.card.top >= 0 && geometry.card.bottom <= viewport.height
