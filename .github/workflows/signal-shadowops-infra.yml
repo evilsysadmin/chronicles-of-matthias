@@ -194,8 +194,13 @@ jobs:
           while IFS= read -r prior_id; do
             [[ "$prior_id" =~ ^[0-9]+$ ]] || continue
             origin="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api "repos/evilsysadmin/chronicles-of-matthias/actions/runs/$prior_id")"
-            if jq -e --argjson id "$prior_id" '
+            # The receipt's name is not enough: prove it originated from
+            # our exact workflow, for this exact source SHA. A receipt from
+            # a different revision may not suppress a new staging dispatch.
+            if jq -e --argjson id "$prior_id" --arg sha "$SOURCE_SHA" '
               .id == $id and .status == "completed" and .conclusion == "success"
+              and .workflow_id == 389939241
+              and .head_sha == $sha
               and .path == ".github/workflows/signal-shadowops-infra.yml"
               and .event == "workflow_run" and .head_branch == "main"
               and .repository.full_name == "evilsysadmin/chronicles-of-matthias"
