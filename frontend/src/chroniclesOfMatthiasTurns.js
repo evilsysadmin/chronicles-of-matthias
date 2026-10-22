@@ -128,9 +128,10 @@ function positionKey(position) {
   return `${position.x}:${position.y}`;
 }
 
-function canAttackAnyPartyFrom(state, enemy, position) {
-  return livingPartyTargetsWithPositions(state)
-    .some(({ position: partyPosition }) => enemyCanAttackCell(state, enemy, position, partyPosition));
+function canAttackAnyPartyFrom(state, enemy, position, targets) {
+  return targets.some(({ position: partyPosition }) => (
+    enemyCanAttackCell(state, enemy, position, partyPosition)
+  ));
 }
 
 function chooseGreedyCardinalStep(state, enemy, from) {
@@ -142,6 +143,9 @@ function chooseGreedyCardinalStep(state, enemy, from) {
 }
 
 function chooseCardinalStep(state, enemy, from) {
+  // The party cannot move during this one enemy decision. Resolve its living
+  // formation once, rather than rebuilding it for every tile visited by BFS.
+  const targets = livingPartyTargetsWithPositions(state);
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
 
@@ -149,7 +153,7 @@ function chooseCardinalStep(state, enemy, from) {
   // moving the remaining queue on every expanded tile.
   for (let head = 0; head < queue.length; head += 1) {
     const current = queue[head];
-    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position)) {
+    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position, targets)) {
       return current.firstStep;
     }
 
