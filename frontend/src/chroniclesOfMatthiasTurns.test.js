@@ -153,6 +153,27 @@ describe('Chronicles alternating creature turns', () => {
     expect(chroniclesChooseEnemyStep(onRoute, jailer)).toEqual({ x: 2, y: 1 });
   });
 
+  it('keeps BFS chase and patrol-return choices stable without mutating saved positions', () => {
+    const pawn = enemy('corrupted-pawn');
+    const initial = createChroniclesState();
+    const jailer = enemy('gate-jailer');
+    const offRoute = {
+      ...initial,
+      x: 5,
+      y: 5,
+      enemyPositions: { 'gate-jailer': { x: 1, y: 3 } },
+    };
+    const savedPositions = JSON.stringify(offRoute.enemyPositions);
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      // These paths may contain many queued tiles: their first step and
+      // direction tie-break must not depend on queue implementation.
+      expect(chroniclesChooseEnemyStep(initial, pawn)).toEqual({ x: 2, y: 5 });
+      expect(chroniclesChooseEnemyStep(offRoute, jailer)).toEqual({ x: 1, y: 2 });
+    }
+    expect(JSON.stringify(offRoute.enemyPositions)).toBe(savedPositions);
+    expect(initial.enemyPositions).toEqual({});
+  });
+
   it('holds position rather than teleporting when all authored route cells are walls', () => {
     const jailer = enemy('gate-jailer');
     const state = {
