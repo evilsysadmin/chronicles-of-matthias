@@ -49,6 +49,28 @@ try {
   // still inside required API/Mongo E2E, not just the isolated folio fixture.
   await page.screenshot({ path: 'api-e2e-adventure.png' });
   await assertAdventureFolioInk(adventure, 'real-game-1280x800');
+  // Prove that the independent Chronicles API actually persists player
+  // feedback in Mongo with this authenticated account, not Chess Studio.
+  const feedback = await page.evaluate(async (origin) => {
+    const token = localStorage.getItem('chess-study-auth-token');
+    if (!token) return { error: 'authenticated token missing' };
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+    const sent = await fetch(`${origin}/api/feedback`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ category: 'idea', message: 'Mejorar la iluminación de la taberna', context: 'Chronicles · menú de aventura' }),
+    });
+    const body = await sent.json();
+    const mine = await fetch(`${origin}/api/feedback/mine`, { headers });
+    const myBody = await mine.json();
+    return { sentStatus: sent.status, id: body?.feedback?.id,
+      mineStatus: mine.status, messages: myBody?.feedback };
+  }, apiOrigin);
+  expect(feedback.sentStatus === 201 && Boolean(feedback.id),
+    'authenticated feedback submission must persist in Chronicles');
+  expect(feedback.mineStatus === 200 && Array.isArray(feedback.messages)
+    && feedback.messages.some((entry) => entry.id === feedback.id && entry.category === 'idea'),
+    'feedback must be readable by its owner from the Chronicles API');
+
   await page.getByRole('button', { name: 'Guardar partida' }).click();
   await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15000 });
   await page.screenshot({ path: 'api-e2e-saved.png' });
@@ -70,6 +92,8 @@ try {
   for (const want of [
     'POST /api/auth/register 201',
     'POST /api/chronicles/runs 201',
+    'POST /api/feedback 201',
+    'GET /api/feedback/mine 200',
     'PUT /api/chronicles/runs/:id/checkpoint 200',
     'POST /api/auth/login 200',
     'GET /api/chronicles/runs/:id/bootstrap 200',
