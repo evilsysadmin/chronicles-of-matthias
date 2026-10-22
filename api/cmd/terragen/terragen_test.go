@@ -101,7 +101,7 @@ func TestEveryRegisteredDungeonKeepsOriginalEncountersAndSpacedReinforcements(t 
 				seenIDs[wantID], seenHPKeys[wantHP] = true, true
 
 				if i >= len(originalSlots) {
-					if !reachable[pos] && !(pos == start) {
+					if _, canReach := reachable[pos]; !canReach {
 						t.Fatalf("new foe %s is unreachable at %v", wantID, pos)
 					}
 					if occupied[pos] {
