@@ -119,6 +119,20 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
   });
 
+  it('never interprets S or Q as adventure actions while a nested folio page owns the menu', () => {
+    const subpage = { menuOpen: true, subpageOpen: true };
+    for (const key of ['s', 'S', 'q', 'Q']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), subpage)).toBeNull();
+      const buttonTarget = { isContentEditable: false, closest: () => null };
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key, { target: buttonTarget }), subpage)).toBeNull();
+    }
+    // The parent menu regains its shortcuts after the nested page closes.
+    expect(chroniclesAdventureMenuShortcut(keyEvent('s'), { menuOpen: true })).toBe('save');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true })).toBe('request-exit');
+    // Escape retains its existing topmost-overlay handling.
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), subpage)).toBe('close');
+  });
+
   it('Esc cancels an unsafe-exit confirmation first, then closes only the open menu', () => {
     const key = (patch = {}) => keyEvent('Escape', patch);
     expect(chroniclesAdventureMenuShortcut(key(), { menuOpen: true, confirmExitWithoutSaving: true }))

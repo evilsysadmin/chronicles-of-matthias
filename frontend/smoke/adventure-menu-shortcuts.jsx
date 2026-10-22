@@ -66,6 +66,9 @@ function MenuShortcutFixture() {
       }
       const action = chroniclesAdventureMenuShortcut(event, {
         menuOpen: open, saveBusy, confirmExitWithoutSaving,
+        subpageOpen: Boolean(document.querySelector(
+          'details.chronicles-game-menu [data-chronicles-feedback-mailbox]',
+        )),
       });
       // Match the first-person view: outside the modal, Tab opens the menu;
       // after Esc releases focus, the next Tab must still be usable.

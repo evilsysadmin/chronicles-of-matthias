@@ -20,12 +20,17 @@ export function chroniclesCombatKeyMode(key) {
 // Do not steal keys from text fields or repeated/composed browser events.
 export function chroniclesAdventureMenuShortcut(event, {
   menuOpen = false, saveBusy = false, confirmExitWithoutSaving = false,
+  subpageOpen = false,
 } = {}) {
   if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
     || event.ctrlKey || event.altKey || event.metaKey) return null;
   // Escape is a dialogue-level dismissal even with a range/text control
   // focused. Every other shortcut remains owned by focused form controls.
   if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit' : 'close';
+  // Pages within the adventure folio own their own keyboard interactions.
+  // Do not save or request a dangerous exit from feedback navigation buttons
+  // or the still-focusable outer summary while the feedback page is visible.
+  if (subpageOpen) return null;
   const target = event.target;
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
