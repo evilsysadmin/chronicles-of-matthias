@@ -84,7 +84,7 @@ describe('Chronicles · CAST diegetic grimoire', () => {
       onCancel: () => {},
     }));
     expect(markup).toContain('type="button"');
-    expect(markup).toContain('data-chronicles-spell-target-cancel=""');
+    expect(markup).toContain('data-chronicles-spell-target-cancel="true"');
     expect(markup).toContain('aria-label="Cancelar selección de destinatario del hechizo"');
     expect(markup).toContain('Cancelar');
     expect(markup).not.toContain('chronicles-party-member');
