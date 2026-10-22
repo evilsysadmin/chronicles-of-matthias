@@ -8,7 +8,7 @@ import {
   chroniclesHealTargetStatus,
   CHRONICLES_SPELLS,
 } from '../chronicles/chroniclesMagic.js';
-import { chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
+import { chroniclesCarriedConsumables, chroniclesConsumableCount } from '../chronicles/chroniclesConsumables.js';
 import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 
@@ -41,7 +41,8 @@ export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) 
 
 // Explicit target list, including the *reason* a fallen or healthy hero cannot
 // be healed. Disabled entries are still readable; no spell points are spent.
-export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack }) {
+export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
+  const elixirCount = chroniclesConsumableCount(state, 'revive-draught');
   return (
     <div className="chronicles-spell-menu__heal-picker" data-chronicles-heal-picker={spell.id}>
       <button type="button" className="chronicles-spell-menu__heal-back" onClick={onBack}>
@@ -69,8 +70,20 @@ export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack }) {
       </ul>
       {(state?.party || []).some((target) => target.hp <= 0) && (
         <p role="status" className="chronicles-spell-menu__heal-warning">
-          A 0 PV no se puede curar con este hechizo. Para levantar a un caído necesitas
-          un Elixir de retorno desde Objetos.
+          A 0 PV no se puede curar con este hechizo.
+          {elixirCount > 0 ? (
+            <>
+              {' '}Llevas {elixirCount} {elixirCount === 1 ? 'Elixir de retorno' : 'Elixires de retorno'}.
+              {onOpenRevive && (
+                <button type="button" className="chronicles-spell-menu__heal-back"
+                  data-chronicles-open-revive onClick={onOpenRevive}>
+                  Ir a Objetos y elegir a quién reanimar →
+                </button>
+              )}
+            </>
+          ) : (
+            <> No llevas ningún Elixir de retorno. Necesitas conseguir uno para reanimar al caído.</>
+          )}
         </p>
       )}
     </div>
@@ -245,7 +258,12 @@ export default function ChroniclesSpellMenu({
           {tab === 'spells' && healSpell ? (
             <ChroniclesHealTargetPicker state={state} spell={healSpell}
               onBack={() => setHealSpellId(null)}
-              onSelect={(targetId) => onCast(healSpell.id, targetId)} />
+              onSelect={(targetId) => onCast(healSpell.id, targetId)}
+              onOpenRevive={canAct && itemUser?.hp > 0 ? () => {
+                setHealSpellId(null);
+                setTab('items');
+                setReviveItemId('revive-draught');
+              } : null} />
           ) : tab === 'spells' ? (
             <ul className="chronicles-spell-menu__entries">
               {spells.map((spell, index) => {

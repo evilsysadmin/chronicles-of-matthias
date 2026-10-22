@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['healing', 'revive'] : ['cast', 'items', 'adventure', 'healing', 'revive']) {
+    for (const view of width === 1280 ? ['healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -117,6 +117,23 @@ try {
               === 'use:revive-draught:rook');
           assert.equal((await page.locator('[data-test-result]').textContent()).trim(),
             'use:revive-draught:rook');
+        }
+        if (view === 'rescue') {
+          await dialog.locator('[data-chronicles-cast="first-aid"]').click();
+          const healPicker = dialog.locator('[data-chronicles-heal-picker="first-aid"]');
+          await healPicker.waitFor({ state: 'visible' });
+          assert.match(await healPicker.innerText(), /Llevas 1 Elixir de retorno/);
+          await healPicker.locator('[data-chronicles-open-revive]').click();
+          const revivePicker = dialog.locator('[data-chronicles-revive-picker="revive-draught"]');
+          await revivePicker.waitFor({ state: 'visible' });
+          assert.equal(await dialog.getAttribute('data-chronicles-menu-tab'), 'items');
+          assert.equal(await page.locator('[data-test-result]').textContent(), '',
+            'Switching from healing to revival cannot spend items or turn');
+          await page.screenshot({ path: `smoke-folio-healing-to-revive-${width}.png` });
+          await revivePicker.locator('[data-chronicles-revive-target="rook"]').click();
+          await page.waitForFunction(() =>
+            document.querySelector('[data-test-result]')?.textContent?.trim()
+              === 'use:revive-draught:rook');
         }
         if(view === 'adventure') {
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();

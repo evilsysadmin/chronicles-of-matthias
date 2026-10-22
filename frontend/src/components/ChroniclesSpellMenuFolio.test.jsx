@@ -79,10 +79,35 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('data-chronicles-heal-target="matthias"');
     expect(html).toMatch(/data-chronicles-heal-target="rook"[^>]*disabled=""/);
     expect(html).not.toMatch(/data-chronicles-heal-target="matthias"[^>]*disabled=""/);
-    expect(html).toContain('Elixir de retorno');
+    expect(html).toContain('No llevas ningún Elixir de retorno');
+    expect(html).not.toContain('data-chronicles-open-revive');
     expect(html).toContain('CAÍDO · REVIVIR');
     expect(html).toContain('3 / ');
   });
+  it('offers a direct revival route only when the party actually carries an elixir', () => {
+    const base = makeState();
+    const party = base.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 0 } : hero
+    ));
+    const state = {
+      ...base,
+      party,
+      inventory: { 'revive-draught': { id: 'revive-draught', quantity: 1 } },
+    };
+    const spell = chroniclesMemberSpells(state, caster(state)).find((entry) => entry.id === 'first-aid');
+    const html = renderToStaticMarkup(createElement(ChroniclesHealTargetPicker, {
+      state, spell, onSelect: () => {}, onBack: () => {}, onOpenRevive: () => {},
+    }));
+    expect(html).toContain('data-chronicles-open-revive');
+    expect(html).toContain('Llevas 1 Elixir de retorno');
+    const empty = renderToStaticMarkup(createElement(ChroniclesHealTargetPicker, {
+      state: { ...state, inventory: {} }, spell,
+      onSelect: () => {}, onBack: () => {}, onOpenRevive: () => {},
+    }));
+    expect(empty).toContain('No llevas ningún Elixir de retorno');
+    expect(empty).not.toContain('data-chronicles-open-revive');
+  });
+
   it('shows explicit revive choices for fallen allies and does not offer the elixir to living heroes', () => {
     const original = makeState();
     const state = {

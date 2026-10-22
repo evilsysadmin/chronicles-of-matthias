@@ -67,7 +67,7 @@ function Fixture() {
         </details>
       ) : (
         <ChroniclesSpellMenu
-          state={view === 'revive' ? reviveState : view === 'healing' ? healingState : stockedState} member={caster} itemUser={caster}
+          state={view === 'revive' || view === 'rescue' ? reviveState : view === 'healing' ? healingState : stockedState} member={caster} itemUser={caster}
           initialTab={view === 'items' || view === 'revive' ? 'items' : 'spells'}
           onCast={(id, targetId) => setLastAction('cast:' + id + (targetId ? ':' + targetId : ''))}
           onUse={(id, targetId) => setLastAction('use:' + id + (targetId ? ':' + targetId : ''))}
