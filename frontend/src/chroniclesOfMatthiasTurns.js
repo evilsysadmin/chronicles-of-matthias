@@ -201,9 +201,12 @@ function choosePatrolRouteStep(state, enemy, from) {
 
 function roamingDirectionOffset(state, enemy) {
   const salt = [...String(enemy.id || '')].reduce((total, char) => total + char.charCodeAt(0), 0);
-  // Keep one patrol heading for a few rounds rather than selecting a new
-  // direction every single turn (the old zombie-like jitter).
-  return (Math.floor(Math.max(0, Number(state.round || 0)) / 4) + salt) % CHRONICLES_DIRECTIONS.length;
+  // Keep a heading for four real steps, then vary it. Exploration does not
+  // advance the combat round, so using round alone froze all world patrols.
+  const tick = state.phase === 'explore' && !state.initiative
+    ? state.explorationEnemySteps
+    : state.round;
+  return (Math.floor(Math.max(0, Number(tick || 0)) / 4) + salt) % CHRONICLES_DIRECTIONS.length;
 }
 
 function chooseRoamingCardinalStep(state, enemy, from) {
