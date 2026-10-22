@@ -166,13 +166,37 @@ test('foreign workflow receipt never suppresses a fresh deployment request', () 
   assert.equal(foreign.calls.length, 2);
 });
 
-test('unreadable or malformed receipt listing fails closed', () => {
+test('unreadable, truncated and malformed receipt listings fail closed', () => {
   const unreadable = simulate({ receiptApiFails: true });
   assert.equal(unreadable.status, 15, unreadable.stderr);
   assert.deepEqual(unreadable.calls, []);
-  const malformed = simulate({ receipts: { total_count: 'broken', artifacts: [] } });
-  assert.equal(malformed.status, 66, malformed.stderr);
-  assert.deepEqual(malformed.calls, []);
+
+  const variants = [
+    { total_count: 'broken', artifacts: [] },
+    { total_count: 1, artifacts: [] }, // Missing receipt may be on another page.
+    { total_count: 101, artifacts: [] }, // A one-page 100-item query is insufficient.
+    { total_count: -1, artifacts: [] },
+    { total_count: 0, artifacts: 'wrong-type' },
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: false }] },
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: 'no', workflow_run: { id: 123 } }] },
+    { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: '123' } }] },
+    { total_count: 1, artifacts: [{ expired: false, workflow_run: { id: 123 } }] },
+  ];
+  for (const receipts of variants) {
+    const result = simulate({ receipts });
+    assert.equal(result.status, 66, JSON.stringify(receipts) + ': ' + result.stderr);
+    assert.deepEqual(result.calls, [], 'Inconclusive receipts cannot authorize staging dispatch');
+    assert.match(result.stderr, /CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE/);
+    assert.doesNotMatch(result.output, /sent=true/);
+  }
+});
+
+test('receipt listing must be complete before consulting prior runs or dispatching', () => {
+  assert.match(script, /\$p\.total_count == \(\$p\.artifacts \| length\)/);
+  assert.match(script, /\$p\.total_count >= 0 and \$p\.total_count <= 100/);
+  const validation = script.indexOf('CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE');
+  const apiDispatch = script.indexOf('gh workflow run chronicles-api-staging.yml');
+  assert.ok(validation >= 0 && apiDispatch > validation);
 });
 
 test('superseded SHA and GitHub main verification failure never dispatch', () => {
