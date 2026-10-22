@@ -209,6 +209,12 @@ try {
       // Save-busy is internal fixture state: a blocked background button
       // must never be used to change it while the modal owns pointer input.
       await page.evaluate(() => window.__chroniclesMenuFixture.setSaveBusy(true));
+      // A React state setter is not a commit barrier. Do not assert the
+      // keyboard guard before the menu actually renders its busy state.
+      await page.waitForFunction(() => {
+        const save = document.querySelector('[data-chronicles-menu-save]');
+        return save?.disabled && save.textContent?.includes('Guardando…');
+      });
       await page.keyboard.press('s');
       await page.keyboard.press('q');
       assert.equal(await count(page, 'save'), 1, 'Save busy must block duplicate saves');
