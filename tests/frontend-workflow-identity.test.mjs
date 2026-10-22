@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  FRONTEND_WORKFLOW_ID, verifyFrontendWorkflow,
+  FRONTEND_WORKFLOW_ID, FrontendWorkflowPendingError, verifyFrontendWorkflow,
 } from '../scripts/require-frontend-workflow.mjs';
 
 const SHA = 'a'.repeat(40);
@@ -69,6 +69,32 @@ test('rejects latest frontend rerun when pending, cancelled, or failed', () => {
       response(run({ id: 10 }), run({ id: 11, ...revised })), opts,
     ), /not green/);
   }
+});
+
+test('unfinished official workflow is retryable, never a green admission', () => {
+  for (const status of ['queued', 'in_progress', 'requested', 'waiting', 'pending']) {
+    assert.throws(
+      () => verifyFrontendWorkflow(response(
+        run({ id: 10 }), run({ id: 11, status, conclusion: null }),
+      ), opts),
+      (error) => error instanceof FrontendWorkflowPendingError
+        && error.message.includes(status),
+      status,
+    );
+  }
+  for (const conclusion of ['failure', 'cancelled', 'timed_out', 'action_required']) {
+    assert.throws(
+      () => verifyFrontendWorkflow(response(
+        run({ id: 10 }), run({ id: 11, status: 'completed', conclusion }),
+      ), opts),
+      (error) => !(error instanceof FrontendWorkflowPendingError) && /not green/.test(error.message),
+      conclusion,
+    );
+  }
+  assert.throws(
+    () => verifyFrontendWorkflow(response(run({ workflow_id: 99 })), opts),
+    (error) => !(error instanceof FrontendWorkflowPendingError),
+  );
 });
 
 test('rejects truncated, malformed and excessive workflow-run data', () => {
@@ -153,6 +179,15 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   )));
   assert.equal(malformedRecord.status, 1);
   assert.match(malformedRecord.stderr, /Invalid GitHub workflow-run record/);
+  const finishing = call(JSON.stringify(response(
+    run({ id: 10 }), run({ id: 11, status: 'in_progress', conclusion: null }),
+  )));
+  assert.equal(finishing.status, 75);
+  assert.match(finishing.stderr, /Frontend workflow still completing/);
+  assert.doesNotMatch(finishing.stdout, /FRONTEND_WORKFLOW_IDENTITY_GREEN/);
+  const failed = call(JSON.stringify(response(run({ conclusion: 'cancelled' }))));
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /Frontend workflow identity not verified/);
 });
 
 test('required repository-contract validates frontend check and workflow identity', () => {
@@ -162,6 +197,10 @@ test('required repository-contract validates frontend check and workflow identit
   assert.match(ci, /actions\/runs"/);
   assert.match(ci, /-f head_sha="\$HEAD_SHA" -f event="\$GITHUB_EVENT_NAME"/);
   assert.match(ci, /node scripts\/require-frontend-workflow\.mjs/);
+  assert.match(ci, /if node scripts\/require-frontend-workflow\.mjs/);
+  assert.match(ci, /identity_rc=\$\?/);
+  assert.match(ci, /identity_rc != 75/);
+  assert.match(ci, /exit "\$identity_rc"/);
   assert.match(ci, /"\\?\$HEAD_SHA" "\\?\$GITHUB_EVENT_NAME"/);
   assert.match(ci, /FRONTEND_BROWSER_REQUIRED_GREEN/);
 });
