@@ -503,9 +503,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // adventure menu underneath. The same priority applies to browser Back.
     const action = chroniclesFirstPersonEscapeAction({
       menuOpen, confirmExitWithoutSaving, spellMenuOpen, adminOpen,
+      sheetOpen: Boolean(sheetMemberId),
+      shopOpen: Boolean(stateRef.current?.shop),
+      guildOpen: Boolean(stateRef.current?.guild),
       audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+    else if (action === 'close-sheet') setSheetMemberId(null);
+    else if (action === 'close-shop') dispatch({ type: 'shop-close' });
+    else if (action === 'close-guild') dispatch({ type: 'guild-close' });
     else if (action === 'close-spell') setSpellMenuOpen(false);
     else if (action === 'close-admin') setAdminOpen(false);
     else if (action === 'close-audience') { audienceRef.current = null; setAudience(null); }
