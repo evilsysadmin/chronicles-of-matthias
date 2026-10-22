@@ -130,5 +130,73 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   await ctx.close();
 }
 
+// The real transition presentation must not look like a full-screen
+// interrupting cinematic. Test its authored CSS at desktop, portrait phone
+// and narrow landscape sizes (the real game checks reducer and focus logic).
+for (const viewport of [
+  { width: 1280, height: 800 },
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+]) {
+  const ctx = await browser.newContext({ viewport });
+  const page = await ctx.newPage();
+  try {
+    await page.setContent(`
+      <div class="chronicles-area-transition" data-chronicles-area-transition>
+        <section class="chronicles-area-transition__card" role="dialog" aria-modal="true">
+          <div class="chronicles-area-transition__eyebrow">UN NUEVO UMBRAL</div>
+          <h2>¿Quieres salir de Swordhaven hacia Camino de los Estandartes?</h2>
+          <p>La compañía espera tu decisión.</p>
+          <div class="chronicles-area-transition__actions">
+            <button data-area-transition-cancel>No · Esc</button>
+            <button class="is-primary" data-area-transition-accept>Sí · Enter</button>
+          </div>
+        </section>
+      </div>
+    `);
+    await page.addStyleTag({ path: 'src/components/ChroniclesAreaTransition.css' });
+    const geometry = await page.evaluate(() => {
+      const overlay = document.querySelector('[data-chronicles-area-transition]');
+      const card = overlay.querySelector('[role="dialog"]');
+      const buttons = [...card.querySelectorAll('button')];
+      const rect = (element) => {
+        const { left, top, bottom, right, width, height } = element.getBoundingClientRect();
+        return { left, top, bottom, right, width, height };
+      };
+      return {
+        card: rect(card),
+        buttons: buttons.map(rect),
+        blur: getComputedStyle(overlay).backdropFilter,
+        scrim: getComputedStyle(overlay).backgroundColor,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    const scrimOpacity = geometry.scrim.startsWith('rgba(')
+      ? Number(geometry.scrim.split(',').at(-1).replace(')', '').trim()) : 1;
+    const clearView = geometry.blur === 'none' && scrimOpacity <= .25;
+    const compact = geometry.card.width <= 480 && geometry.card.height <= 240
+      && geometry.card.left >= 0 && geometry.card.right <= viewport.width
+      && geometry.card.top >= 0 && geometry.card.bottom <= viewport.height
+      && geometry.scrollWidth <= viewport.width
+      && geometry.buttons.every((button) => button.height >= 44 && button.width >= 80);
+    if (!clearView || !compact ||
+      (viewport.width >= 1025 && geometry.card.bottom >= viewport.height - 65)) {
+      throw new Error('Travel confirmation obscures viewport: ' + JSON.stringify(geometry));
+    }
+    await page.locator('[data-area-transition-cancel]').focus();
+    await page.keyboard.press('Tab');
+    if (!(await page.locator('[data-area-transition-accept]').evaluate((button) => button === document.activeElement))) {
+      throw new Error('Travel confirmation buttons are not keyboard reachable');
+    }
+    await page.screenshot({ path: 'smoke-travel-confirm-' + viewport.width + '.png' });
+    console.log('OK   Compact travel choice: ' + viewport.width + 'x' + viewport.height);
+  } catch (error) {
+    failed = true;
+    console.log('FAIL Compact travel choice:', viewport.width, error.message);
+  } finally {
+    await ctx.close();
+  }
+}
+
 await browser.close();
 process.exit(failed ? 1 : 0);
