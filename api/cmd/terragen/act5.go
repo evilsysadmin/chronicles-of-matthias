@@ -306,6 +306,11 @@ func buildAtrium() *O {
 		authoredFoe(id, foeSpec{key: "herald", visual: "spectral-bishop", name: "el Heraldo del Silencio", pos: point{9, 3}, hp: 36, retaliation: 4, ai: casterAI(),
 			flag: "templeHeraldDefeated", gold: 30, scale: 1.12, blocking: "El Heraldo del Silencio no deja pasar a nadie con nombre.",
 			journal: journal("temple-herald", "Cae el Heraldo", "El Heraldo guardaba el sello del Atrio. Llevaba la marca de Varren en el sello de su anillo.", "†")}),
+		// Optional skirmishes in empty wings; three crowns, Heraldo, seal and exits stay untouched.
+		// Append after the five originals to preserve slain-enemy indices in existing saves.
+		authoredFoe(id, foeSpec{key: "hound-west", visual: "bone-hound", name: "un sabueso del ala oeste", pos: point{5, 8}, hp: 14, retaliation: 2, ai: aiFor("bone-hound"), gold: 4}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "acolyte-east", visual: "silent-acolyte", name: "un vigilante del ala este", pos: point{13, 8}, hp: 15, retaliation: 2, ai: acolyteAI(), gold: 4}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "wisp-north", visual: "ember-wisp", name: "una vela del friso norte", pos: point{5, 1}, hp: 11, retaliation: 3, ai: aiFor("ember-wisp"), gold: 4}).With("optional", true),
 	}
 	traps := A{
 		trap("temple-plate-west", point{7, 5}, "chain-plate", "Losa de las cadenas", 3, "Una losa cede y dos cadenas barren el pasillo. Tres puntos de daño por cabeza."),
