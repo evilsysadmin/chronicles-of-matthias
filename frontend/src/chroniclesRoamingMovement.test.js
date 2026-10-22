@@ -16,7 +16,7 @@ function rawRoamingEnemy() {
 }
 
 describe('Chronicles cardinal-roam enemy AI', () => {
-  it('moves independently of the party using a deterministic turn rotation', () => {
+  it('varies direction every four exploration steps, independently of combat rounds', () => {
     const enemy = rawRoamingEnemy();
     const base = {
       ...createChroniclesState('menagerie-of-ash'),
@@ -26,10 +26,13 @@ describe('Chronicles cardinal-roam enemy AI', () => {
     };
 
     expect(enemy.ai.movement).toBe('cardinal-roam');
-    expect(chroniclesChooseEnemyStep({ ...base, round: 0 }, enemy)).toEqual({ x: 2, y: 3 });
-    expect(chroniclesChooseEnemyStep({ ...base, round: 1 }, enemy)).toEqual({ x: 2, y: 3 });
-    expect(chroniclesChooseEnemyStep({ ...base, round: 4 }, enemy)).toEqual({ x: 3, y: 2 });
-    expect(chroniclesChooseEnemyStep({ ...base, round: 0 }, enemy)).toEqual({ x: 2, y: 3 });
+    expect(chroniclesChooseEnemyStep({ ...base, explorationEnemySteps: 0 }, enemy)).toEqual({ x: 2, y: 3 });
+    expect(chroniclesChooseEnemyStep({ ...base, explorationEnemySteps: 3 }, enemy)).toEqual({ x: 2, y: 3 });
+    expect(chroniclesChooseEnemyStep({ ...base, explorationEnemySteps: 4 }, enemy)).toEqual({ x: 3, y: 2 });
+    // A saved expedition may retain a high combat-round counter. It must not
+    // freeze or accelerate its ambient roaming after combat ends.
+    expect(chroniclesChooseEnemyStep({ ...base, round: 999, explorationEnemySteps: 0 }, enemy))
+      .toEqual({ x: 2, y: 3 });
   });
 
   it('keeps unalerted patrols near their spawn instead of wandering across the map', () => {
