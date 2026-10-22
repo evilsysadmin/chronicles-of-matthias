@@ -309,7 +309,7 @@ func buildAtrium() *O {
 		// Optional skirmishes in empty wings; three crowns, Heraldo, seal and exits stay untouched.
 		// Append after the five originals to preserve slain-enemy indices in existing saves.
 		authoredFoe(id, foeSpec{key: "hound-west", visual: "bone-hound", name: "un sabueso del ala oeste", pos: point{5, 8}, hp: 14, retaliation: 2, ai: aiFor("bone-hound"), gold: 4}).With("optional", true),
-		authoredFoe(id, foeSpec{key: "acolyte-east", visual: "silent-acolyte", name: "un vigilante del ala este", pos: point{13, 8}, hp: 15, retaliation: 2, ai: acolyteAI(), gold: 4}).With("optional", true),
+		authoredFoe(id, foeSpec{key: "acolyte-eastward", visual: "silent-acolyte", name: "un vigilante del ala este", pos: point{13, 8}, hp: 15, retaliation: 2, ai: acolyteAI(), gold: 4}).With("optional", true),
 		authoredFoe(id, foeSpec{key: "wisp-north", visual: "ember-wisp", name: "una vela del friso norte", pos: point{5, 1}, hp: 11, retaliation: 3, ai: aiFor("ember-wisp"), gold: 4}).With("optional", true),
 	}
 	traps := A{
