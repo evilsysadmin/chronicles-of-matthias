@@ -3,7 +3,7 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
-import { chroniclesDiscoveredPois } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -70,14 +70,19 @@ function Marker({ marker }) {
 
 // The next step towards the objective: a star when it is in view, or an
 // arrow on the rim of the minimap pointing the way when it is not.
-function TargetMarker({ target, state, radiusX, radiusY }) {
+function TargetMarker({ target, state, radiusX, radiusY, overlapsPoi = false }) {
   const dx = target.x - state.x;
   const dy = target.y - state.y;
   if (Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY) {
     return (
-      <g className="chronicles-minimap__target" data-chronicles-route-target="in-view">
-        <circle cx={target.x + .5} cy={target.y + .5} r=".42" />
-        <text x={target.x + .5} y={target.y + .56} textAnchor="middle" dominantBaseline="middle">★</text>
+      <g className={`chronicles-minimap__target${overlapsPoi ? ' is-poi-overlap' : ''}`}
+        data-chronicles-route-target="in-view"
+        data-chronicles-route-overlap={overlapsPoi ? 'poi' : undefined}>
+        <circle cx={target.x + (overlapsPoi ? .78 : .5)}
+          cy={target.y + (overlapsPoi ? .78 : .5)} r={overlapsPoi ? .21 : .42} />
+        <text x={target.x + (overlapsPoi ? .78 : .5)}
+          y={target.y + (overlapsPoi ? .81 : .56)}
+          textAnchor="middle" dominantBaseline="middle">★</text>
       </g>
     );
   }
@@ -198,7 +203,8 @@ export default function ChroniclesMinimap({
             marker={marker}
           />
         ))}
-        {target && <TargetMarker target={target} state={state} radiusX={radiusX} radiusY={radiusY} />}
+        {target && <TargetMarker target={target} state={state} radiusX={radiusX} radiusY={radiusY}
+          overlapsPoi={chroniclesRouteTargetOverlapsPoi(target, markers)} />}
         <g
           className="chronicles-minimap__party"
           transform={`rotate(${facing} ${cx} ${cy})`}

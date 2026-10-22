@@ -41,6 +41,14 @@ export function chroniclesPoiCategory(kind, entry) {
   return null;
 }
 
+// Route stars share a tile with an authored service/exit only after that POI
+// has been discovered. Both maps use this to preserve the central POI glyph.
+export function chroniclesRouteTargetOverlapsPoi(target, markers) {
+  if (!target || !Array.isArray(markers)) return false;
+  return markers.some((marker) =>
+    marker.position?.x === target.x && marker.position?.y === target.y);
+}
+
 export function chroniclesDiscoveredPois(map, revealed, positionFor) {
   if (!map || !revealed || typeof positionFor !== 'function') return [];
   const candidates = [
