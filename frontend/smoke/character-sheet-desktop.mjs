@@ -120,6 +120,22 @@ try {
       await casterShortcut.click();
       const spellbook = sheet.locator('[data-chronicles-spellbook]');
       await spellbook.waitFor({ state: 'visible' });
+      const grimoire = spellbook.locator('[data-chronicles-grimoire]');
+      await grimoire.waitFor({ state: 'visible' });
+      const spellRows = grimoire.locator('[data-grimoire-spell]');
+      const actualCount = await spellRows.count();
+      assert.ok(actualCount >= 1, 'The real caster must have learned spells');
+      assert.equal(await spellRows.first().getAttribute('aria-pressed'), 'true');
+      assert.match(await grimoire.getByRole('region', { name: 'Detalle del hechizo seleccionado' }).innerText(), /PH/);
+      await grimoire.getByRole('button', { name: 'Ataque' }).click();
+      assert.ok((await spellRows.count()) <= actualCount, 'Filtering cannot invent spellbook entries');
+      await grimoire.getByRole('button', { name: 'Todos' }).click();
+      assert.equal(await spellRows.count(), actualCount);
+      await spellRows.first().focus();
+      await page.keyboard.press('ArrowDown');
+      assert.equal(await spellRows.nth(actualCount === 1 ? 0 : 1).getAttribute('aria-pressed'), 'true',
+        'ArrowDown moves spellbook selection without casting');
+      await grimoire.getByRole('button', { name: 'Todos' }).focus();
       assert.notEqual(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
         'The shortcut must open a real spellcaster, never create spells for Matthias');
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true',
