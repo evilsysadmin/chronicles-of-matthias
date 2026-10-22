@@ -76,10 +76,35 @@ test('rejects truncated, malformed and excessive workflow-run data', () => {
     {}, { total_count: 101, workflow_runs: [] },
     { total_count: 0, workflow_runs: 'wrong' },
     { total_count: null, workflow_runs: [] },
+    // A hidden newer failed frontend run must never be concealed by a
+    // truncated page containing only an older green run.
+    { total_count: 2, workflow_runs: [run({ id: 10 })] },
+    { total_count: 0, workflow_runs: [run()] },
   ]) assert.throws(() => verifyFrontendWorkflow(payload, opts), /Invalid/);
   assert.throws(() => verifyFrontendWorkflow(response(run()), {
     ...opts, sha: 'nonsense',
   }), /Invalid source/);
+});
+
+test('a truncated GitHub response cannot hide a newer failed Chromium run', () => {
+  const oldGreen = run({ id: 20 });
+  const newerFailed = run({ id: 21, status: 'completed', conclusion: 'failure' });
+  assert.throws(
+    () => verifyFrontendWorkflow({
+      total_count: 2,
+      workflow_runs: [oldGreen],
+    }, opts),
+    /Invalid or truncated/,
+  );
+  assert.throws(
+    () => verifyFrontendWorkflow(response(oldGreen, newerFailed), opts),
+    /not green/,
+  );
+  assert.equal(
+    verifyFrontendWorkflow(response(oldGreen), opts),
+    20,
+    'a truly complete successful page remains accepted',
+  );
 });
 
 test('command line invocation verifies JSON stdin and fails closed', () => {
@@ -93,6 +118,11 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   const bad = call(JSON.stringify(response(run({ workflow_id: 1 }))));
   assert.equal(bad.status, 1);
   assert.match(bad.stderr, /Frontend workflow identity not verified/);
+  const truncated = call(JSON.stringify({
+    total_count: 2, workflow_runs: [run({ id: 10 })],
+  }));
+  assert.equal(truncated.status, 1);
+  assert.match(truncated.stderr, /Invalid or truncated/);
 });
 
 test('required repository-contract validates frontend check and workflow identity', () => {
