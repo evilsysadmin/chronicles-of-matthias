@@ -14,6 +14,19 @@ import {
 
 export const CHRONICLES_MINIMAP_RADIUS = 3;
 
+const MINIMAP_ACCESSIBLE_BASE = 'Minimapa local. Abrir automapa completo';
+
+// The minimap is one focusable button: describe only POIs already shown by
+// its discovery-gated local viewport. Keep speech brief in crowded towns.
+export function chroniclesMinimapAccessibleLabel(markers) {
+  if (!Array.isArray(markers) || markers.length === 0) return MINIMAP_ACCESSIBLE_BASE;
+  const first = markers.slice(0, 3).map((marker) => `${marker.glyph}: ${marker.label}`);
+  const remaining = markers.length - first.length;
+  return `Minimapa local. Lugares descubiertos: ${first.join('; ')}${remaining ? `; y ${remaining} más` : ''}. Abrir automapa completo`;
+}
+
+
+
 // Rows stay at 2·radius+1; columns grow with the frame's width so the known
 // map fills the whole black area instead of a square in the middle of it.
 export function chroniclesMinimapRadiusX(radius, aspect) {
@@ -138,7 +151,7 @@ export default function ChroniclesMinimap({
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label="Minimapa local. Abrir automapa completo"
+      aria-label={chroniclesMinimapAccessibleLabel(markers)}
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
