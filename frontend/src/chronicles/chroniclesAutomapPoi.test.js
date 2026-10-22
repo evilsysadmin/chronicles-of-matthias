@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesPoiCategory, chroniclesDiscoveredPois } from './chroniclesAutomapPoi.js';
+import { chroniclesPoiCategory, chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from './chroniclesAutomapPoi.js';
 
 describe('Chronicles explored POIs', () => {
   const positionFor = (_, entry) => ({ x: entry.x, y: entry.y });
@@ -22,6 +22,15 @@ describe('Chronicles explored POIs', () => {
     expect(chroniclesPoiCategory('interactable', map.interactables[1])).toBe('mayor');
     expect(chroniclesPoiCategory('interactable', map.interactables[3])).toBe(null);
   });
+  it('detects only exact, discovered POI tile overlaps for the route star', () => {
+    const markers = chroniclesDiscoveredPois(map, new Set(['7:4']), positionFor);
+    expect(chroniclesRouteTargetOverlapsPoi({ x: 7, y: 4 }, markers)).toBe(true);
+    expect(chroniclesRouteTargetOverlapsPoi({ x: 11, y: 10 }, markers)).toBe(false);
+    expect(chroniclesRouteTargetOverlapsPoi({ x: 7, y: 5 }, markers)).toBe(false);
+    expect(chroniclesRouteTargetOverlapsPoi(null, markers)).toBe(false);
+    expect(chroniclesRouteTargetOverlapsPoi({ x: 7, y: 4 }, [])).toBe(false);
+  });
+
   it('shows nothing before discovery and deduplicates quest at the mayor', () => {
     expect(chroniclesDiscoveredPois(map, new Set(), positionFor)).toEqual([]);
     const revealed = new Set(['13:13', '7:4', '11:10', '7:5']);
