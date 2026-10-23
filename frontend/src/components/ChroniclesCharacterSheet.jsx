@@ -227,11 +227,11 @@ export default function ChroniclesCharacterSheet({
             <p>{className} · Nivel {progress.level}{mm3 ? '' : ` · ${profile.weaponName}`}</p>
             {!tacticsMode && (
               <div className="chronicles-character-sheet__quick" aria-label="Recursos actuales">
-                <span>PV <b>{member.hp}/{member.maxHp}</b></span>
+                <span data-resource="health">PV <b>{member.hp}/{member.maxHp}</b></span>
                 {chroniclesMemberSchool(member) && (
-                  <span>PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
+                  <span data-resource="magic">PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
                 )}
-                <span>ORO <b>{gold}</b></span>
+                <span data-resource="gold">ORO <b>{gold}</b></span>
               </div>
             )}
           </div>

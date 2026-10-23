@@ -15,6 +15,26 @@ async function assertParchmentSurface(locator, label) {
   assert.ok(r >= 170 && g >= 150 && b >= 105,
     label + ' must remain a light reading surface rather than legacy dark chrome: ' + bg);
 }
+async function assertResourceContrast(sheet, resource) {
+  const chip = sheet.locator(`.chronicles-character-sheet__quick [data-resource="${resource}"]`);
+  assert.equal(await chip.count(), 1, 'Expected a real ' + resource + ' resource badge');
+  const ratio = await chip.evaluate((node) => {
+    const rgb = (value) => (value.match(/[0-9.]+/g) || []).slice(0, 3).map(Number);
+    const linear = (channel) => {
+      const c = channel / 255;
+      return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+    };
+    const luminance = (value) => {
+      const [r, g, b] = rgb(value).map(linear);
+      return r * .2126 + g * .7152 + b * .0722;
+    };
+    const ink = luminance(getComputedStyle(node.querySelector('b')).color);
+    const paper = luminance(getComputedStyle(node).backgroundColor);
+    return (Math.max(ink, paper) + .05) / (Math.min(ink, paper) + .05);
+  });
+  assert.ok(ratio >= 4.5, resource + ' badge must be readable on parchment; measured contrast=' + ratio.toFixed(2));
+}
+
 async function assertNavigationHighlight(nav, expected) {
   const buttons = await nav.locator('button').evaluateAll((nodes) => nodes.map((node) => {
     const channels = (getComputedStyle(node).backgroundColor.match(/[0-9]+/g) || [])
@@ -105,6 +125,7 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Estado');
+      await assertResourceContrast(sheet, 'gold');
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
@@ -170,6 +191,8 @@ try {
       await spellbook.waitFor({ state: 'visible' });
       const grimoire = spellbook.locator('[data-chronicles-grimoire]');
       await grimoire.waitFor({ state: 'visible' });
+      await assertResourceContrast(sheet, 'magic');
+      await assertResourceContrast(sheet, 'gold');
       const spellRows = grimoire.locator('[data-grimoire-spell]');
       const actualCount = await spellRows.count();
       assert.ok(actualCount >= 1, 'The real caster must have learned spells');
