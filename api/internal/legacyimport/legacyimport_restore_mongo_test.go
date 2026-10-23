@@ -2,7 +2,10 @@ package legacyimport
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -13,7 +16,17 @@ import (
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesprogression"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesrun"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamesapi"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 )
+
+// Both users exist in this synthetic API account registry. Their signed,
+// different session tokens must never cross each other's saved runs.
+type restoreTestAccounts struct{}
+
+func (restoreTestAccounts) AuthState(_ context.Context, username string) (bool, int64, error) {
+	return username == "archived-player" || username == "different-player", 0, nil
+}
 
 // A real two-database migration drill against disposable CI Mongo only.
 // Proves imported checkpoints remain readable and mutable through the
@@ -96,6 +109,68 @@ func TestImportedLegacyRunCanBeResumedByItsOwner(t *testing.T) {
 	foreignList, err := gameStore.ListActive(ctx, "different-player", 10)
 	if err != nil || len(foreignList) != 0 {
 		t.Fatalf("foreign player can list imported save: %v", err)
+	}
+
+	// Exercise the real authenticated HTTP route, not just raw Mongo owner
+	// filters. Two valid signed sessions must see different results.
+	const jwtSecret = "synthetic-tests-only-auth-secret"
+	api, err := gamesapi.NewChroniclesRuns(gamesapi.ChroniclesRunsConfig{
+		Config: gamesapi.Config{
+			Accounts: restoreTestAccounts{},
+			JWTSecret: jwtSecret,
+		},
+		Runs: gameStore,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	getToken := func(username string) string {
+		t.Helper()
+		token, err := sessionauth.Sign(username, 0, []byte(jwtSecret), time.Now())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return token
+	}
+	call := func(path, token string) (int, map[string]any) {
+		t.Helper()
+		request := httptest.NewRequest(http.MethodGet, path, nil)
+		if token != "" {
+			request.Header.Set("Authorization", "Bearer "+token)
+		}
+		recorder := httptest.NewRecorder()
+		api.ServeHTTP(recorder, request)
+		reply := map[string]any{}
+		if err := json.Unmarshal(recorder.Body.Bytes(), &reply); err != nil {
+			t.Fatalf("invalid API JSON (HTTP %d): %v", recorder.Code, err)
+		}
+		return recorder.Code, reply
+	}
+	path := "/api/chronicles/runs/synthetic-legacy-save"
+	ownerToken := getToken("archived-player")
+	foreignToken := getToken("different-player")
+	if status, _ := call(path, ""); status != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated archived save HTTP=%d", status)
+	}
+	if status, _ := call(path, foreignToken); status != http.StatusNotFound {
+		t.Fatalf("cross-account archived save HTTP=%d", status)
+	}
+	if status, reply := call(path, ownerToken); status != http.StatusOK ||
+		reply["runId"] != "synthetic-legacy-save" || reply["currentMapId"] != "synthetic-map" {
+		t.Fatalf("authenticated owner cannot resume imported save: HTTP=%d", status)
+	}
+	for _, tc := range []struct {
+		token string
+		want  int
+	}{
+		{ownerToken, 1},
+		{foreignToken, 0},
+	} {
+		status, reply := call("/api/chronicles/runs", tc.token)
+		runs, ok := reply["runs"].([]any)
+		if status != http.StatusOK || !ok || len(runs) != tc.want {
+			t.Fatalf("authenticated owner-scoped list returned HTTP=%d, want %d saves", status, tc.want)
+		}
 	}
 
 	// A true recovery must also allow a checkpoint, not only read raw JSON.
