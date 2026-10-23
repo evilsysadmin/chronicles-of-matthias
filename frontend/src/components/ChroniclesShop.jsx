@@ -97,6 +97,17 @@ function users(state, item) {
   return (state.party || []).filter((member) => chroniclesMemberCanEquip(member, item));
 }
 
+// Cloud image faults (offline, blocked CDN, 404) must never leave the room
+// black or broken. Only one fallback attempt, avoiding recursive error loops.
+function ShopRoomArtwork({ room }) {
+  const [src, setSrc] = useState(room.src);
+  useEffect(() => { setSrc(room.src); }, [room.src]);
+  return <img src={src} alt={room.alt} draggable="false" decoding="async"
+    onError={() => {
+      if (room.fallbackSrc && src !== room.fallbackSrc) setSrc(room.fallbackSrc);
+    }} />;
+}
+
 function ShopItemVisual({ item }) {
   const artwork = chroniclesShopItemArt(item);
   return artwork ? (
@@ -351,7 +362,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
       >
         {room && (
           <figure className="chronicles-shop__scene" data-chronicles-shop-room={room.id}>
-            <img src={room.src} alt={room.alt} draggable="false" />
+            <ShopRoomArtwork key={room.id} room={room} />
           </figure>
         )}
         <header className="chronicles-shop__head">

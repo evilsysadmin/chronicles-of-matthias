@@ -43,6 +43,8 @@ describe('Chronicles premium shop UI', () => {
     const potion = render('first-book-apothecary');
     expect(armor).toContain('data-chronicles-shop="first-book-armorer"');
     expect(armor).toContain('Coracería de Odo');
+    expect(armor).toContain('data-chronicles-shop-room="odo-forge"');
+    expect(armor).toContain('odo-armory.svg');
     expect(armor).toContain('pasa el ratón o enfoca');
     expect(potion).toContain('data-chronicles-shop="first-book-apothecary"');
     expect(potion).toContain('Poción de curación');
