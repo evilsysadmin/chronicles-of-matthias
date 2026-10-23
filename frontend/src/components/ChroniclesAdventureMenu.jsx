@@ -108,7 +108,7 @@ export default function ChroniclesAdventureMenu({
         {confirmExitWithoutSaving
           ? 'ESC · cancelar salida · TAB · elegir respuesta'
           : feedbackOpen ? 'ESC · volver al menú · TAB · navegar'
-          : 'S · guardar · Q · salir · ESC · cerrar · TAB · navegar'}
+          : 'S · guardar · Q · salir · TAB en la gema · cerrar · TAB en controles · navegar'}
       </small>
     </div>
   );

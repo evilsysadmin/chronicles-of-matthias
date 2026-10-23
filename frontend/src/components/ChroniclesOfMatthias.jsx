@@ -167,7 +167,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -1293,9 +1293,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
-      // Let forms and modal dialogues own their keyboard events. Shift+Tab
-      // always retains browser focus navigation; once inside the game menu,
-      // plain Tab traverses its accessible controls rather than closing it.
+      // Form fields retain keyboard input. Shift+Tab navigates normally.
+      // Plain Tab on the focused menu gem toggles it; inside folio controls,
+      // native Tab still navigates and cannot discard a draft or save.
       const target = event.target;
       const isEditing = target?.isContentEditable
         || target?.closest?.('input, textarea, select, [contenteditable="true"]');
@@ -1376,6 +1376,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         return;
       }
       if (event.key === 'Tab') {
+        // The gem retains the fast Tab open/close toggle. Once a player moves
+        // focus into the folio, native Tab traversal is essential for keyboard
+        // access; never close while a confirmation or feedback form is open.
+        if (chroniclesAdventureTabClosesMenu(event, menuSummaryRef.current, {
+          menuOpen, confirmExitWithoutSaving, feedbackOpen,
+        })) {
+          event.preventDefault();
+          chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+          setMenuOpen(false);
+          return;
+        }
         if (event.shiftKey || target?.closest?.('.chronicles-game-menu')) return;
         event.preventDefault();
         if (event.repeat) return;

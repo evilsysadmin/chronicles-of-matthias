@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
@@ -444,5 +444,26 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
     expect(chroniclesFirstPersonEscapeAction({
       menuOpen: false, confirmExitWithoutSaving: true, adminOpen: true,
     })).toBe('close-admin');
+  });
+});
+
+describe('Chronicles TAB toggle on the menu gem', () => {
+  const gem = { tagName: 'SUMMARY' };
+  const button = { tagName: 'BUTTON' };
+  const event = (target = gem, patch = {}) => ({ key: 'Tab', target, ...patch });
+  it('TAB on the focused gem closes the already-open menu, without shift or repeat', () => {
+    expect(chroniclesAdventureTabClosesMenu(event(), gem, { menuOpen: true })).toBe(true);
+    expect(chroniclesAdventureTabClosesMenu(event(), gem)).toBe(false);
+    expect(chroniclesAdventureTabClosesMenu(event(button), gem, { menuOpen: true })).toBe(false);
+    for (const guard of ['shiftKey', 'repeat', 'ctrlKey', 'altKey', 'metaKey', 'defaultPrevented']) {
+      expect(chroniclesAdventureTabClosesMenu(event(gem, { [guard]: true }), gem,
+        { menuOpen: true })).toBe(false);
+    }
+  });
+  it('never dismisses a confirmation or feedback draft with TAB', () => {
+    for (const active of [{ confirmExitWithoutSaving: true }, { feedbackOpen: true }]) {
+      expect(chroniclesAdventureTabClosesMenu(event(), gem,
+        { menuOpen: true, ...active })).toBe(false);
+    }
   });
 });
