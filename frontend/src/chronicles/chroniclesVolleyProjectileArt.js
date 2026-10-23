@@ -151,11 +151,19 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
   // up with a turn completed immediately before firing.
   (worldScene || camera).add(group);
 
-  function anchorLaunchPose() {
+  function anchorLaunchPose(logicalYaw = null) {
     if (!worldScene) return;
     camera.updateWorldMatrix(true, false);
     camera.getWorldPosition(group.position);
     camera.getWorldQuaternion(group.quaternion);
+    // Camera yaw eases toward the party's actual facing. A shot made just
+    // after turning must follow the logical facing, not the old eased yaw.
+    if (Number.isFinite(logicalYaw)) {
+      const correction = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0), logicalYaw - camera.rotation.y,
+      );
+      group.quaternion.premultiply(correction);
+    }
   }
 
   function setFamilies(families) {
