@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
+import ChroniclesFirstSteps from '../src/components/ChroniclesFirstSteps.jsx';
 import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
@@ -21,6 +22,7 @@ function MenuShortcutFixture() {
   const [journalRequests, setJournalRequests] = useState(0);
   const [statusRequests, setStatusRequests] = useState(0);
   const [partyStatusOpen, setPartyStatusOpen] = useState(false);
+  const [firstStepsOpen, setFirstStepsOpen] = useState(false);
   const [mapRequests, setMapRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
   const [backgroundActions, setBackgroundActions] = useState(0);
@@ -157,6 +159,9 @@ function MenuShortcutFixture() {
           <button type="button" data-status-test-open onClick={() => setPartyStatusOpen(true)}>
             Abrir estado de grupo de prueba
           </button>
+          <button type="button" data-first-steps-test-open onClick={() => setFirstStepsOpen(true)}>
+            Abrir primeros pasos de prueba
+          </button>
           <output data-shortcut-map-requests>{mapRequests}</output>
           <output data-shortcut-discard-requests>{discardRequests}</output>
         </div>
@@ -198,6 +203,8 @@ function MenuShortcutFixture() {
             />
           </details>
         </div>
+        <ChroniclesFirstSteps state={null} runId="smoke-first-steps-escape"
+          open={firstStepsOpen} suspended onClose={() => setFirstStepsOpen(false)} />
         <ChroniclesQuickStatus
           open={partyStatusOpen}
           rows={[{
