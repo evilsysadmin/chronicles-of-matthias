@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
 const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'snowMound', 'ember']);
@@ -53,6 +53,50 @@ describe('Terra scenery', () => {
     const clutter = instanceCells(group, center).filter(({ part }) => CLUTTER.has(part));
     // Clutter is jittered inside its own cell, never onto the road cells.
     expect(clutter.filter(({ x, y }) => onRoad.has(`${x},${y}`)).length).toBeLessThan(clutter.length * 0.2);
+  });
+
+  it('smooths jagged boulders at full quality while keeping an inexpensive mobile mesh', () => {
+    const full = chroniclesOrganicRockGeometry();
+    const coarse = chroniclesOrganicRockGeometry({ coarsePointer: true });
+    const triangles = (geometry) => geometry.index
+      ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
+    expect(triangles(full)).toBe(80);
+    expect(triangles(coarse)).toBe(20);
+    expect(full.getAttribute('position').count).toBeLessThan(300);
+    const unique = new Set();
+    const points = full.getAttribute('position');
+    for (let i = 0; i < points.count; i += 1) {
+      const values = [points.getX(i), points.getY(i), points.getZ(i)];
+      values.forEach((v) => expect(Number.isFinite(v)).toBe(true));
+      unique.add(values.map((v) => v.toFixed(5)).join(','));
+    }
+    expect(unique.size).toBeGreaterThan(15);
+    const twin = chroniclesOrganicRockGeometry();
+    expect([...twin.getAttribute('position').array]).toEqual([...points.array]);
+    const oldRadius = new THREE.IcosahedronGeometry(1, 1).getAttribute('position');
+    expect([...points.array]).not.toEqual([...oldRadius.array]);
+    full.dispose();
+    coarse.dispose();
+    twin.dispose();
+  });
+
+  it('keeps one instanced draw per scenery part even with better silhouettes', () => {
+    const map = chroniclesMapById('terra-e2');
+    const args = { grid: map.grid, center: { x: 10, y: 7 }, biome: 'hills', scenery: map.scenery };
+    const detailed = buildTerraScenery(args);
+    const compact = buildTerraScenery({ ...args, coarsePointer: true });
+    const boulders = detailed.getObjectByName('chronicles-terra-boulder');
+    const cheapBoulders = compact.getObjectByName('chronicles-terra-boulder');
+    expect(boulders).toBeInstanceOf(THREE.InstancedMesh);
+    expect(cheapBoulders).toBeInstanceOf(THREE.InstancedMesh);
+    expect(boulders.count).toBe(cheapBoulders.count);
+    expect(boulders.geometry.getAttribute('position').count).toBeGreaterThan(
+      cheapBoulders.geometry.getAttribute('position').count,
+    );
+    expect(boulders.material.flatShading).toBe(false);
+    expect(cheapBoulders.material.flatShading).toBe(true);
+    expect(detailed.children.map((m) => m.name)).toEqual(compact.children.map((m) => m.name));
+    expect(detailed.children.every((m) => m.isInstancedMesh)).toBe(true);
   });
 
   it('is deterministic', () => {
