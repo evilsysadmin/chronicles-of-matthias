@@ -40,7 +40,7 @@ test('both frontend-installing workflows use npm cache keyed to lockfile', () =>
 });
 
 test('new direct frontend check context is stable while the required bridge stays fail-closed', () => {
-  assert.ok(frontend.includes('    name: frontend-vitest-build-chromium\\n'));
+  assert.ok(frontend.includes('    name: frontend-vitest-build-chromium'));
   assert.ok(ci.includes('check_name=frontend-vitest-build-chromium'));
   assert.ok(ci.includes('Require real frontend Vitest, build and Chromium smoke'));
   assert.ok(ci.includes('node scripts/require-frontend-workflow.mjs'));
