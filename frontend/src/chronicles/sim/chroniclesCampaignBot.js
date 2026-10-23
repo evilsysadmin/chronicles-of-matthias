@@ -731,6 +731,9 @@ export class ChroniclesCampaignBot {
     this.walkTo(position);
     while (this.state.initiative) this.fight();
     this.walkTo(position);
+    // The real town doorway can open a room automatically while walking in.
+    // Do not interact again just to dismiss/reopen that same inn.
+    if (this.state.inn?.id === id) return;
     const before = fingerprint(this.state);
     this.act('interact');
     if (fingerprint(this.state) === before) {
@@ -758,6 +761,10 @@ export class ChroniclesCampaignBot {
       if (!service) throw new BotError(`no healer reachable from ${this.state.mapId}`);
       while (this.state.initiative) this.fight();
       this.interact(service.mapId, service.entry.id);
+      if (this.state.inn?.id === service.entry.id) {
+        this.act({ type: 'inn-rest' });
+        this.act({ type: 'inn-close' });
+      }
       this.rests += 1;
       this.restGold += serviceCost(service.entry);
       if (anyDead && this.state.party.every((member) => member.hp > 0)) this.revives += 1;
@@ -766,6 +773,10 @@ export class ChroniclesCampaignBot {
         const inn = this.nearestService('restore-spell-points');
         if (inn) {
           this.interact(inn.mapId, inn.entry.id);
+          if (this.state.inn?.id === inn.entry.id) {
+            this.act({ type: 'inn-rest' });
+            this.act({ type: 'inn-close' });
+          }
           this.restGold += serviceCost(inn.entry);
         }
       }

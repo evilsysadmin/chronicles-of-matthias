@@ -92,8 +92,12 @@ describe('Chronicles · MM3 magic', () => {
     expect(unknown.message).toMatch(/no conoce/);
     // Resting at the tavern refills the book.
     const tavern = chroniclesReduce({ ...state, x: 7, y: 10 }, 'interact');
-    expect(chroniclesMemberSp(tavern, member(tavern, 'bishop'))).toBe(5);
-    expect(tavern.spellPoints).toBeUndefined();
+    expect(tavern.inn?.id).toBe('first-book-healer');
+    // Opening is free and does not magically restore PH; resting is explicit.
+    expect(chroniclesMemberSp(tavern, member(tavern, 'bishop'))).toBe(4);
+    const rested = chroniclesReduce(tavern, { type: 'inn-rest' });
+    expect(chroniclesMemberSp(rested, member(rested, 'bishop'))).toBe(5);
+    expect(rested.spellPoints).toBeUndefined();
   });
 
   it('targets a chosen wounded ally, not merely the automatically most wounded one', () => {

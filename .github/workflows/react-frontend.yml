@@ -95,6 +95,8 @@ jobs:
           node smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
           node smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
+          # Real Swordhaven tavern: independent rest/food/rumor transactions and ESC.
+          node smoke/inn-room.mjs http://localhost:4174/smoke/inn-room.html
           # Real expedition journal: truthful region hints, chapter navigation and mobile layout.
           node smoke/journal-book.mjs http://localhost:4174/smoke/journal-book.html
           # Screenshot the actual React/Suspense loader at desktop and mobile widths.

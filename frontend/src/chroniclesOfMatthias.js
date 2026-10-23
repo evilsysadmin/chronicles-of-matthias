@@ -29,6 +29,7 @@ import {
 import {
   chroniclesCloseGuild, chroniclesGuildJoin, chroniclesGuildLearn, chroniclesOpenGuild,
 } from './chronicles/chroniclesGuild.js';
+import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
   CHRONICLES_SPELLS,
@@ -314,6 +315,11 @@ export function chroniclesContextualContentAction(state) {
   if (!interaction) return null;
   const definition = chroniclesContentDefinition(map, interaction.id);
   if (!definition?.action) return null;
+  // Visiting the tavern is free: its authored gold requirement belongs to REST.
+  if (chroniclesIsInn(definition)) return {
+    id: interaction.id, kind: 'service',
+    label: `Entrar en ${chroniclesInnName(definition)}`, locked: false,
+  };
   return {
     id: interaction.id,
     kind: interaction.kind,
@@ -339,6 +345,8 @@ function resolveContextualContentAction(state) {
   }
   const map = chroniclesMapForState(state);
   const definition = chroniclesContentDefinition(map, contextual.id);
+  // An inn is a real room to enter, not an automatic paid rest action.
+  if (chroniclesIsInn(definition)) return chroniclesOpenInn(state, definition);
   // A merchant with a stock list opens its counter instead of a scripted trade.
   if (definition?.shop && Array.isArray(definition.shop.stock)) return chroniclesOpenShop(state, definition);
   if (definition?.guild && Array.isArray(definition.guild.spells)) return chroniclesOpenGuild(state, definition);
@@ -1047,6 +1055,10 @@ export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
+  if (actionType === 'inn-close') return chroniclesCloseInn(state);
+  if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
+  if (actionType === 'inn-buy-food') return chroniclesInnBuyFood(state, chroniclesMapForState(state));
+  if (actionType === 'inn-rumor') return chroniclesInnHearRumor(state, chroniclesMapForState(state));
   if (actionType === 'shop-buy') return chroniclesShopBuy(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-sell') return chroniclesShopSell(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-close') return chroniclesCloseShop(state);
@@ -1057,8 +1069,8 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'guild-close') return chroniclesCloseGuild(state);
   if (actionType === 'track-quest') return chroniclesTrackQuest(state, action.questId);
   // Any other action (moving, turning, fighting) walks away from the counter.
-  if ((state.shop || state.guild) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
-    return chroniclesReduce(chroniclesCloseGuild(chroniclesCloseShop(state)), action);
+  if ((state.shop || state.guild || state.inn) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
+    return chroniclesReduce(chroniclesCloseInn(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
   }
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
