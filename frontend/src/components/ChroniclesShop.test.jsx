@@ -22,7 +22,7 @@ describe('Chronicles shop fullscreen experience', () => {
     expect(html).toContain('role="tablist"');
     expect(html).toContain('Comprar');
     expect(html).toContain('Bastón de madera');
-    expect(html).toContain('pasa el ratón o enfoca un objeto para comparar tu equipo');
+    expect(html).toContain('pasa el ratón o enfoca un objeto para ver sus efectos y compatibilidad');
     expect(html).not.toContain('chronicles-shop__compare-toggle');
     expect(html).not.toContain('chronicles-shop__comparison-grid');
   });
