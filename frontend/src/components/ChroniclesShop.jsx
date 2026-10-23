@@ -58,7 +58,14 @@ function ShopGearPeek({ state, item }) {
           Armadura (CA) dificulta los impactos; en MM3 no resta daño si el golpe acierta.
         </small>
       )}
-      <small className="chronicles-shop__gear-peek-note">Solo vista previa · comprar no equipa</small>
+      {comparisons.some((comparison) => comparison.stats.some(
+        (stat) => stat.key === 'toHit' && stat.delta < 0,
+      )) && (
+        <small className="chronicles-shop__gear-peek-note">
+          Acierto −1 es respecto a lo que lleva: puede significar perder un bono anterior, no una penalización del objeto.
+        </small>
+      )}
+      <small className="chronicles-shop__gear-peek-note">Cambios respecto al equipo actual · comprar no equipa</small>
     </aside>
   );
 }
