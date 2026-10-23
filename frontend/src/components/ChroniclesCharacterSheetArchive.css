@@ -488,3 +488,50 @@
     box-sizing: border-box;
   }
 }
+
+/* Wide equipment dossier: two predictable filter columns and a full-width
+   search below them. Reclaims vertical space without hiding any inventory
+   categories, changing controls, or shrinking accessible hit targets. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-tools {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    margin: 8px 0 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-filters button {
+    width: 100%;
+    min-height: 44px;
+    padding: 6px 8px;
+    font-size: .82rem;
+    line-height: 1.18;
+    white-space: normal;
+    text-align: left;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    font-size: .82rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-search input {
+    min-height: 44px;
+    padding: 7px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__backpack-count {
+    display: block;
+    line-height: 1.25;
+  }
+}
