@@ -376,6 +376,30 @@ try {
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
           'Changing to Equipment must return the desktop dossier to its beginning');
         await nav.getByRole('button', { name: /Mejoras/ }).click();
+
+        // A hero switch is not a folio change: the React modal remains mounted.
+        // Force scroll again and use a native dock click, avoiding Playwright
+        // autoscroll so only the production hero-change effect can reset it.
+        await scrollArea.evaluate((node) => {
+          node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight);
+        });
+        assert.ok(await scrollArea.evaluate((node) => node.scrollTop) > 60,
+          'Training must really be scrolled before switching the viewed hero');
+        await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' })
+          .evaluate((node) => node.click());
+        await page.waitForFunction(() => document.querySelector(
+          '#chronicles-character-sheet-title'
+        )?.textContent === 'Hildegard');
+        assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
+          'A new hero must not inherit the previous hero desktop folio offset');
+        assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).getAttribute('aria-pressed'), 'true',
+          'Switching heroes must preserve the chosen folio');
+        await sheet.getByRole('button', { name: 'Ver ficha de Matthias' })
+          .evaluate((node) => node.click());
+        await page.waitForFunction(() => document.querySelector(
+          '#chronicles-character-sheet-title'
+        )?.textContent === 'Matthias');
+        assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2);
       }
 
       await nav.getByRole('button', { name: /Estado/ }).click();
