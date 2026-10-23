@@ -27,7 +27,7 @@ const (
 	runsCollection    = "chronicles_runs"
 	profileCollection = "profile"
 	progressionKey    = "chess-study-chronicles-progression-v1"
-	maxRuns           = 200
+	runBatchSize      = 200 // network batches, never a per-owner document limit
 )
 
 var ErrUnavailable = errors.New("legacy import storage unavailable")
@@ -67,6 +67,7 @@ type RunTarget interface {
 
 // Result reports what happened; Progression is "imported", "kept" or "none".
 type Result struct {
+	RunsFound    int    `json:"runsFound"`
 	RunsImported int    `json:"runsImported"`
 	RunsKept     int    `json:"runsKept"`
 	Progression  string `json:"progression"`
@@ -78,6 +79,7 @@ func Import(ctx context.Context, src Source, runs RunTarget, progression chronic
 	if err != nil {
 		return Result{}, fail("read-legacy-runs", err)
 	}
+	result.RunsFound = len(legacyRuns)
 	for _, run := range legacyRuns {
 		inserted, err := runs.InsertIfAbsent(ctx, run)
 		if err != nil {
@@ -148,18 +150,46 @@ func NewMongoSource(db *mongo.Database, timeout time.Duration) *MongoSource {
 	return &MongoSource{db: db, timeout: timeout}
 }
 
-func (s *MongoSource) Runs(ctx context.Context, owner string) ([]bson.D, error) {
-	ctx, cancel := context.WithTimeout(ctx, s.timeout)
-	defer cancel()
-	cursor, err := s.db.Collection(runsCollection).Find(ctx, bson.D{{Key: "owner", Value: owner}}, options.Find().SetLimit(maxRuns))
-	if err != nil {
+// runCursor keeps the read loop independently testable. Mongo fetches bounded
+// network batches, but the importer must scan EVERY run owned by the player.
+type runCursor interface {
+	Next(context.Context) bool
+	Decode(any) error
+	Err() error
+}
+
+func readRunCursor(ctx context.Context, cursor runCursor) ([]bson.D, error) {
+	rows := make([]bson.D, 0)
+	for cursor.Next(ctx) {
+		var row bson.D
+		if err := cursor.Decode(&row); err != nil {
+			return nil, err // Never report a partial source scan as complete.
+		}
+		rows = append(rows, row)
+	}
+	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
-	var rows []bson.D
-	if err := cursor.All(ctx, &rows); err != nil {
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	return rows, nil
+}
+
+func (s *MongoSource) Runs(ctx context.Context, owner string) ([]bson.D, error) {
+	ctx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	// BatchSize is not Limit: the cursor continues until the owner's entire
+	// archive has been read. Deterministic ordering helps operational audits.
+	cursor, err := s.db.Collection(runsCollection).Find(
+		ctx, bson.D{{Key: "owner", Value: owner}},
+		options.Find().SetBatchSize(runBatchSize).SetSort(bson.D{{Key: "_id", Value: 1}}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	return readRunCursor(ctx, cursor)
 }
 
 func (s *MongoSource) Progression(ctx context.Context, owner string) (string, error) {

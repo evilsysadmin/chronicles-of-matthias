@@ -2,6 +2,8 @@ package legacyimport
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -40,7 +42,7 @@ func TestImportCopiesRunsOnceAndProgression(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result != (Result{RunsImported: 1, RunsKept: 1, Progression: "imported"}) {
+	if result != (Result{RunsFound: 2, RunsImported: 1, RunsKept: 1, Progression: "imported"}) {
 		t.Fatalf("result %+v", result)
 	}
 	stored, _ := progression.Get(context.Background(), "ana")
@@ -49,7 +51,7 @@ func TestImportCopiesRunsOnceAndProgression(t *testing.T) {
 	}
 	// Running it again changes nothing.
 	again, _ := Import(context.Background(), src, target, progression, "ana", time.Now())
-	if again != (Result{RunsKept: 2, Progression: "kept"}) {
+	if again != (Result{RunsFound: 2, RunsKept: 2, Progression: "kept"}) {
 		t.Fatalf("again %+v", again)
 	}
 }
@@ -93,5 +95,95 @@ func TestImportNamesTheFailingStage(t *testing.T) {
 	_, err = Import(context.Background(), failingSource{context.DeadlineExceeded}, fakeRuns{}, chroniclesprogression.NewMemory(), "ana", time.Now())
 	if err == nil || err.Error() != "legacy import failed at read-legacy-runs: timeout" {
 		t.Fatalf("err %v", err)
+	}
+}
+
+ 
+// A batch of 200 is not a hard owner limit: consume 201+ cursor records.
+type fakeCursor struct {
+	rows       []bson.D
+	index      int
+	failAfter  int // -1 = no failure
+	readErr    error
+	decodeAt   int // 1-based; zero = no failure
+}
+
+func (f *fakeCursor) Next(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		f.readErr = ctx.Err()
+		return false
+	}
+	if f.failAfter >= 0 && f.index == f.failAfter {
+		return false
+	}
+	if f.index >= len(f.rows) {
+		return false
+	}
+	f.index++
+	return true
+}
+
+func (f *fakeCursor) Decode(dst any) error {
+	if f.decodeAt == f.index {
+		return errors.New("decode unavailable")
+	}
+	*dst.(*bson.D) = f.rows[f.index-1]
+	return nil
+}
+
+func (f *fakeCursor) Err() error { return f.readErr }
+
+func TestReadRunCursorNeverTruncatesAtBatchSize(t *testing.T) {
+	for _, size := range []int{0, 1, 200, 201, 431} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			rows := make([]bson.D, 0, size)
+			for n := 0; n < size; n++ {
+				rows = append(rows, run(fmt.Sprintf("legacy-%d", n)))
+			}
+			read, err := readRunCursor(context.Background(), &fakeCursor{rows: rows, failAfter: -1})
+			if err != nil || len(read) != size {
+				t.Fatalf("read %d of %d: %v", len(read), size, err)
+			}
+			target := fakeRuns{}
+			result, err := Import(
+				context.Background(), fakeSource{runs: read}, target,
+				chroniclesprogression.NewMemory(), "ana", time.Now(),
+			)
+			if err != nil || result.RunsFound != size || result.RunsImported != size || len(target) != size {
+				t.Fatalf("migration %+v for %d: %v", result, size, err)
+			}
+			repeated, err := Import(
+				context.Background(), fakeSource{runs: read}, target,
+				chroniclesprogression.NewMemory(), "ana", time.Now(),
+			)
+			if err != nil || repeated.RunsFound != size || repeated.RunsKept != size || repeated.RunsImported != 0 {
+				t.Fatalf("idempotent replay %+v for %d: %v", repeated, size, err)
+			}
+		})
+	}
+}
+
+func TestReadRunCursorFailsClosedOnPartialRead(t *testing.T) {
+	rows := make([]bson.D, 205)
+	for i := range rows {
+		rows[i] = run(fmt.Sprintf("legacy-%d", i))
+	}
+	read, err := readRunCursor(context.Background(), &fakeCursor{
+		rows: rows, failAfter: 200, readErr: errors.New("cursor unavailable"),
+	})
+	if err == nil || read != nil {
+		t.Fatalf("incomplete read reported as complete: %d rows, %v", len(read), err)
+	}
+	read, err = readRunCursor(context.Background(), &fakeCursor{
+		rows: rows, failAfter: -1, decodeAt: 201,
+	})
+	if err == nil || read != nil {
+		t.Fatalf("decode failure reported as complete: %d rows, %v", len(read), err)
+	}
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	read, err = readRunCursor(cancelled, &fakeCursor{rows: rows, failAfter: -1})
+	if !errors.Is(err, context.Canceled) || read != nil {
+		t.Fatalf("cancelled read reported as complete: %d rows, %v", len(read), err)
 	}
 }
