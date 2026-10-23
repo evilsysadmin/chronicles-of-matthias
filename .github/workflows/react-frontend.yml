@@ -119,7 +119,7 @@ jobs:
           node smoke/run-timed.mjs smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-mount-smoke
@@ -128,7 +128,7 @@ jobs:
           compression-level: 0
           retention-days: 7
       # Infra independently rebuilds pinned releases; this bundle is for PR inspection.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: github.event_name == 'pull_request'
         with:
           name: chronicles-frontend-dist
