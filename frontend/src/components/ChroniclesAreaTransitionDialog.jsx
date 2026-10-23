@@ -53,10 +53,10 @@ export default function ChroniclesAreaTransitionDialog({ question, onAccept, onC
         <h2 id="chronicles-area-transition-title">{question}</h2>
         <div className="chronicles-area-transition__actions">
           <button ref={cancelRef} type="button" data-area-transition-cancel onClick={onCancel}>
-            No · Esc
+            No
           </button>
-          <button ref={acceptRef} type="button" className="is-primary" data-area-transition-accept onClick={onAccept}>
-            Sí · Enter
+          <button ref={acceptRef} type="button" data-area-transition-accept onClick={onAccept}>
+            Sí
           </button>
         </div>
         <p id="chronicles-area-transition-hint">← / → elegir · Enter confirmar · Esc cancelar</p>
