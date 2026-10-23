@@ -12,11 +12,17 @@
     grid-column: 1 / -1;
     min-width: 0;
   }
+  /* The list is the primary action: do not make players scroll past an
+     entire search/filter panel before the first inventory row appears. */
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
-  .chronicles-character-sheet__backpack > span:first-child,
+  .chronicles-character-sheet__backpack > span:first-child {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__backpack-tools {
-    grid-column: 1 / -1;
+    grid-column: 2;
+    grid-row: 2;
   }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__backpack > span:first-child {
@@ -26,9 +32,14 @@
   }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__backpack-tools {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, .8fr);
-    align-items: end; column-gap: 12px; row-gap: 6px;
-    padding: 9px 11px; border: 1px solid #b88e58; background: #f6e4c1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid #b88e58;
+    background: #f6e4c1;
   }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__backpack-filters { align-self: center; }
@@ -37,8 +48,8 @@
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__inventory {
     display: grid; grid-template-columns: minmax(0, 1fr);
-    grid-column: 1; grid-row: 3;
-    gap: 3px; padding: 6px; max-height: 300px; min-height: 145px;
+    grid-column: 1; grid-row: 2 / span 2;
+    gap: 3px; padding: 6px; max-height: 300px; min-height: 180px;
     overflow-y: auto; align-content: start; scrollbar-gutter: stable;
     border: 2px solid #b48b58; background: #ecd2a6;
   }
@@ -72,7 +83,7 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
-    grid-column: 2; grid-row: 3 / span 2; align-self: start;
+    grid-column: 2; grid-row: 3; align-self: start;
     margin: 0; min-width: 0; min-height: 145px;
     border: 2px solid #b48b58; background: #f8e9c9; color: #3b2918;
   }
