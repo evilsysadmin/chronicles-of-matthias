@@ -110,6 +110,8 @@ jobs:
           # Real adventure menu + production S/Q/Esc resolver: save intent,
           # safe exit confirmation, editable controls and mobile/desktop fit.
           node smoke/adventure-menu-shortcuts.mjs http://localhost:4174/smoke/adventure-menu-shortcuts.html
+          # Confirm transitions using ←/→ and Enter on the actual focus selection.
+          node smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
           # from reproducible fixed cameras, both mobile and desktop.
           node smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
