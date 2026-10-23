@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
 import './ChroniclesCharacterEquipmentMM3.css';
+import './ChroniclesCharacterDeskCompact.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -344,11 +345,11 @@ export default function ChroniclesCharacterSheet({
         {/* The frame (and its corner gems) stays put; only the contents scroll. */}
         <div className="chronicles-character-sheet__scroll" ref={folioScrollRef}>
         <header className="chronicles-character-sheet__head">
-          <div className="chronicles-character-sheet__portrait">
+          {tacticsMode && <div className="chronicles-character-sheet__portrait">
             <img src={chroniclesPartyPortraitUrl(member)} alt={`Retrato de ${member.name}`} draggable="false" />
-          </div>
+          </div>}
           <div className="chronicles-character-sheet__identity">
-            <span>EXPEDIENTE DE CAMPAÑA</span>
+            {tacticsMode && <span>EXPEDIENTE DE CAMPAÑA</span>}
             <h3 id="chronicles-character-sheet-title">{member.name}</h3>
             <p>{className} · Nivel {progress.level}{mm3 ? '' : ` · ${profile.weaponName}`}</p>
             {!tacticsMode && (
@@ -366,8 +367,8 @@ export default function ChroniclesCharacterSheet({
 
         <div className="chronicles-character-sheet__progression">
           <div className="chronicles-character-sheet__xp-copy">
-            <span>PROGRESIÓN</span>
-            <b>{xp.label}</b>
+            {tacticsMode && <span>PROGRESIÓN</span>}
+            <b>{tacticsMode ? xp.label : `${progress.xp}/${xpWindow.maxLevel ? 'MAX' : xpWindow.next} XP`}</b>
           </div>
           <div className="chronicles-character-sheet__xp-track" aria-label={xp.label}>
             <i style={{ width: `${xp.ratio * 100}%` }} />
