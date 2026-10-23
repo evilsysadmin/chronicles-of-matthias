@@ -161,7 +161,7 @@ jobs:
         working-directory: frontend
         run: |
           set -euo pipefail
-          npx playwright install --with-deps chromium
+          bash smoke/ensure-chromium.sh
           source smoke/wait-for-http.sh
           npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-api-preview.log" 2>&1 &
           preview_pid=$!
