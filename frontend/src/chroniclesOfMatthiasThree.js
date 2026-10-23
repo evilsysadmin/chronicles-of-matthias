@@ -692,7 +692,7 @@ export function createChroniclesOfMatthiasGame(host, {
   camera.rotation.order = 'YXZ';
   scene.add(camera);
   const combatFx = createCombatFx(camera);
-  const volleyFx = createChroniclesVolleyProjectileArt(THREE, camera);
+  const volleyFx = createChroniclesVolleyProjectileArt(THREE, camera, scene);
 
   // Every authored outdoor region uses the campaign exterior, except the
   // legacy Swordhaven square, which keeps its own historic builder.
@@ -885,6 +885,7 @@ export function createChroniclesOfMatthiasGame(host, {
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
     volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
+    if (volleyFxCount > 0) volleyFx.anchorLaunchPose();
     volleyLaunchPose = volleyFxCount > 0 && latestState
       ? { x: latestState.x, y: latestState.y, direction: latestState.direction }
       : null;
