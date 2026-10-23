@@ -241,6 +241,35 @@ try {
       assert.ok(desk[0] && desk[1] && desk[0].x + desk[0].width <= desk[1].x + 2,
         'Desktop MM3 inventory list must stand to the left of contextual details');
       await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
+      // Reusing the same scrollable inventory node must not preserve a stale
+      // scroll offset after a filter/search change (especially with a narrow
+      // inspector rail). Force a small visible list to exercise real scrolling.
+      const filters = equipment.getByRole('group', { name: 'Filtrar objetos por ranura' });
+      const search = equipment.getByRole('searchbox', { name: 'Buscar en la mochila' });
+      await inv.evaluate((node) => {
+        node.style.minHeight = '0px';
+        node.style.maxHeight = '55px';
+        node.scrollTop = node.scrollHeight;
+      });
+      assert.ok(await inv.evaluate((node) => node.scrollTop) > 0,
+        'Fixture must genuinely scroll before exercising a filter change');
+      await filters.getByRole('button', { name: /Escudos/ }).click();
+      assert.ok(await rows.count() >= 1, 'The real inventory includes a shield');
+      assert.equal(await inv.evaluate((node) => node.scrollTop), 0,
+        'Changing backpack category must reset stale list scroll');
+      await filters.getByRole('button', { name: /Todos/ }).click();
+      await inv.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+      assert.ok(await inv.evaluate((node) => node.scrollTop) > 0);
+      await search.fill('bronce');
+      assert.ok(await rows.count() >= 1, 'Real equipment includes bronze items');
+      assert.equal(await inv.evaluate((node) => node.scrollTop), 0,
+        'Searching backpack must reset the scroll to the first matching object');
+      await search.clear();
+      await inv.evaluate((node) => {
+        node.style.removeProperty('min-height');
+        node.style.removeProperty('max-height');
+      });
+
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
