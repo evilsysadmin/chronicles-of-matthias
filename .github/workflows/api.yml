@@ -176,7 +176,7 @@ jobs:
         if: always()
         run: cat "$RUNNER_TEMP/api.log" || true
       # Keep PR review screenshots and failed-main evidence without archiving every green main build.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-api-e2e
