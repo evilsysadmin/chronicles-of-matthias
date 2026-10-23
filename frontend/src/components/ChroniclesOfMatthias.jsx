@@ -1425,7 +1425,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           return;
         }
       }
-      // MM3: directional arrows navigate; A attacks, S shoots.
+      // MM3: arrows navigate, Q/E strafe; A attacks, S shoots.
+      // The adventure menu consumes Q before directional keys while visible.
       // Space is intentionally unbound; it must never dispatch an attack.
       const combatMode = chroniclesCombatKeyMode(event.key);
       if (combatMode) {
@@ -1989,7 +1990,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   aria-label={touchVolley.available
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
-                  title="Flechas · mover/girar · A · atacar · S · disparar"
+                  title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar · S · disparar"
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
                     ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
@@ -2037,6 +2038,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span><kbd>↑</kbd> avanzar</span>
                 <span><kbd>↓</kbd> retroceder</span>
                 <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
+                <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                 <span><kbd>A</kbd> atacar</span>
                 <span><kbd>S</kbd> disparar</span>
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>

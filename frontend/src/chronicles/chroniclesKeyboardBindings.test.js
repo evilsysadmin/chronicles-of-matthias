@@ -2,16 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
-  it('only four direction arrows move/turn the party', () => {
+  it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
     expect(CHRONICLES_DIRECTION_KEYS).toEqual({
       ArrowUp: 'forward',
       ArrowDown: 'backward',
       ArrowLeft: 'turn-left',
       ArrowRight: 'turn-right',
+      q: 'strafe-left',
+      Q: 'strafe-left',
+      e: 'strafe-right',
+      E: 'strafe-right',
     });
-    expect(Object.keys(CHRONICLES_DIRECTION_KEYS)).toHaveLength(4);
+    expect(Object.keys(CHRONICLES_DIRECTION_KEYS)).toHaveLength(8);
     expect(CHRONICLES_DIRECTION_KEYS.a).toBeUndefined();
     expect(CHRONICLES_DIRECTION_KEYS.s).toBeUndefined();
+    expect(CHRONICLES_DIRECTION_KEYS[' ']).toBeUndefined();
   });
   it('only A attacks in melee and S shoots; Space never triggers combat', () => {
     for (const key of ['a', 'A']) expect(chroniclesCombatKeyMode(key)).toBe('melee');
@@ -117,6 +122,9 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     }
     expect(chroniclesAdventureMenuShortcut(keyEvent('a'), { menuOpen: true })).toBeNull();
     expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
+    expect(CHRONICLES_DIRECTION_KEYS.q).toBe('strafe-left');
+    expect(CHRONICLES_DIRECTION_KEYS.e).toBe('strafe-right');
+    // The live key handler checks the adventure menu before directional movement.
   });
 
   it('never interprets S or Q as adventure actions while a nested folio page owns the menu', () => {
