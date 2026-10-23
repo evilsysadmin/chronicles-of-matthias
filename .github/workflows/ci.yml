@@ -46,7 +46,7 @@ jobs:
           for attempt in $(seq 1 216); do
             result="$(gh api -X GET "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs" \
               -f check_name=frontend-vitest-build-chromium -f per_page=100 \
-              --jq '[.check_runs[] | select(.name == "build" and .app.slug == "github-actions")] | if length == 0 then "pending" else (max_by(.id) | .status + ":" + (.conclusion // "")) end')"
+              --jq '[.check_runs[] | select(.name == "frontend-vitest-build-chromium" and .app.slug == "github-actions")] | if length == 0 then "pending" else (max_by(.id) | .status + ":" + (.conclusion // "")) end')"
             case "$result" in
               completed:success)
                 # A green check named "frontend-vitest-build-chromium" alone is not sufficient: another
