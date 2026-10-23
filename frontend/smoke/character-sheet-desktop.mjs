@@ -140,8 +140,11 @@ try {
         .evaluate((node) => {
           const relicCard = node.querySelector(':scope > .chronicles-character-sheet__relic').getBoundingClientRect();
           const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
-          const backpack = node.querySelector(':scope > .chronicles-character-sheet__backpack').getBoundingClientRect();
-          return { relicHeight: relicCard.height, relicWidth: relicCard.width,
+          const packNode = node.querySelector(':scope > .chronicles-character-sheet__backpack');
+          const backpack = packNode.getBoundingClientRect();
+          const columns = getComputedStyle(node).gridTemplateColumns;
+          const packGridArea = getComputedStyle(packNode).gridArea;
+          return { columns, packGridArea, relicHeight: relicCard.height, relicWidth: relicCard.width,
             equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
             equipmentTop: equipmentCard.top, equipmentLeft: equipmentCard.left,
             backpackLeft: backpack.left, backpackRight: backpack.right,
