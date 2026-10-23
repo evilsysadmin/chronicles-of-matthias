@@ -5,18 +5,22 @@ export const CHRONICLES_VOLLEY_MAX_DURATION = 0.78;
 // The authored grid is also the 3D town's collision mask: '#' is a real
 // solid house, facade, wall, tree or dungeon block. Shoot from the centre of
 // the party's tile toward its facing wall and stop just before its near face.
-// A 4 m tile starts 2 m ahead; the 8 cm inset prevents z-fighting with doors.
-export function chroniclesVolleyObstacleDistance(grid, origin, facing, cellSize = 4) {
+// A 4 m tile starts 2 m ahead. Inset by 8 cm for flat dungeon walls,
+// or more for three-dimensional shop doors and projecting settlement facades.
+export function chroniclesVolleyObstacleDistance(grid, origin, facing, cellSize = 4, facadeInset = 0.08) {
   if (!Array.isArray(grid) || !Number.isInteger(origin?.x) || !Number.isInteger(origin?.y)
     || !Number.isInteger(facing?.dx) || !Number.isInteger(facing?.dy)
     || Math.abs(facing.dx) + Math.abs(facing.dy) !== 1
     || !Number.isFinite(cellSize) || cellSize <= 0) return Infinity;
+  const clearance = Number.isFinite(facadeInset) && facadeInset >= 0
+    ? Math.min(facadeInset, cellSize / 2)
+    : 0.08;
   for (let distance = 1; distance <= 4; distance += 1) {
     const x = origin.x + facing.dx * distance;
     const y = origin.y + facing.dy * distance;
     const tile = grid[y]?.[x];
     if (tile === '#' || tile === undefined) {
-      return Math.max(0, (distance - 0.5) * cellSize - 0.08);
+      return Math.max(0, (distance - 0.5) * cellSize - clearance);
     }
   }
   return Infinity;

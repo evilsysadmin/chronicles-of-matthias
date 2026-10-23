@@ -43,6 +43,15 @@ describe('Chronicles · polished projectile flight', () => {
     expect(grid[3][2]).toBe('#');
     const distance = chroniclesVolleyObstacleDistance(grid, { x: 1, y: 3 }, { dx: 1, dy: 0 });
     expect(distance).toBeCloseTo(1.92);
+    // Inn/shop door leaves and their stone jambs protrude into the street.
+    // A flat-wall stop distance would allow the projectile into that relief.
+    const facade = chroniclesVolleyObstacleDistance(
+      grid, { x: 1, y: 3 }, { dx: 1, dy: 0 }, 4, 0.55,
+    );
+    expect(facade).toBeCloseTo(1.45);
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'bow', facade)).not.toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'bow', facade)).toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'bow', distance)).not.toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0, 'bow', distance)).not.toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow', distance)).toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'crossbow', distance)).toBeNull();
@@ -56,6 +65,10 @@ describe('Chronicles · polished projectile flight', () => {
     expect(chroniclesVolleyObstacleDistance(grid, {x: 5,y: 2}, {dx: 1,dy: 0})).toBeCloseTo(1.92);
     expect(chroniclesVolleyObstacleDistance(grid, {x: 1,y: 2}, {dx: 1,dy: 1})).toBe(Infinity);
     expect(chroniclesVolleyObstacleDistance(null, null, null)).toBe(Infinity);
+    // Malformed or excessive clearance must not move the impact behind
+    // the player or create a false hit through a solid wall.
+    expect(chroniclesVolleyObstacleDistance(grid, {x:5,y:2}, {dx:1,dy:0}, 4, Number.NaN)).toBeCloseTo(1.92);
+    expect(chroniclesVolleyObstacleDistance(grid, {x:5,y:2}, {dx:1,dy:0}, 4, 100)).toBe(0);
     const mid = chroniclesVolleyFlightSample(1, 0, 0.3, 'bow');
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow')).toEqual(mid);
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow', Infinity)).toEqual(mid);

@@ -882,6 +882,10 @@ export function createChroniclesOfMatthiasGame(host, {
       scenePlan?.grid,
       latestState && { x: latestState.x, y: latestState.y },
       CHRONICLES_DIRECTIONS[latestState?.direction],
+      CELL,
+      // The 3D inn/shop doors project as much as ~0.44 m toward the street
+      // from the solid tile boundary. Stop before the wood and stone frames.
+      scenePlan?.regionKind === 'settlement' ? 0.55 : 0.08,
     );
     volleyFxStartedAt = clock.getElapsedTime();
     volleyFx.group.visible = volleyFxCount > 0;
