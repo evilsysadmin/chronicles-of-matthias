@@ -127,7 +127,8 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
   assert.doesNotMatch(api, /docker\/(?:setup-buildx-action|login-action)@v3/);
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /actions\/cache@v5/);
-    assert.match(workflow, /actions\/upload-artifact@v5/);
+    assert.match(workflow, /actions\/upload-artifact@v7/);
+    assert.doesNotMatch(workflow, /actions\/upload-artifact@v[3456]/);
   }
 });
 
