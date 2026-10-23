@@ -29,7 +29,6 @@ import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.j
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
-import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
@@ -1605,7 +1604,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const objectiveTravelNote = authoredDestination
     ? `DESTINO · ${authoredDestination.region}${routeHint ? ` · ${routeHint.text}` : ''}`
     : routeHint ? `→ ${routeHint.text}` : null;
-  const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
   const touchVolley = chroniclesTouchVolleyOpportunity(state);
@@ -1725,7 +1723,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
         <main className="chronicles-stage-wrap">
           <div className="chronicles-statusbar" aria-live="polite">
-            <span>{locationHud.kind} <b>{locationHud.value}</b></span>
+            {/* Preserve objective nth-child selectors without retaining a large location panel. */}
+            <span className="chronicles-statusbar__retired-location" hidden aria-hidden="true" />
             {/* Preserve child indexing for the objective/active MM3 HUD selectors. */}
             <span className="chronicles-statusbar__retired-bearing" hidden aria-hidden="true" />
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
