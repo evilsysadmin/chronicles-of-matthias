@@ -4,8 +4,13 @@
 import assert from 'node:assert/strict';
 
 export async function assertAdventureFolioInk(dialog, viewport) {
+  // The compact folio nests related actions and hides audio until requested.
+  // Open the live disclosure so computed-colour sampling covers its controls too.
+  const sound = dialog.getByRole('button', { name: /Sonido/ });
+  const hasSound = await sound.count() > 0;
+  if (hasSound) await sound.click();
   const samples = await dialog.locator([
-    '.chronicles-game-menu__actions > button:not(.chronicles-game-menu__continue)',
+    '.chronicles-game-menu__actions button:not(.chronicles-game-menu__continue)',
     '.chronicles-audio-controls :is(label,legend,small,output)',
     '.chronicles-audio-row__slider button',
     '.chronicles-game-menu__hint',
@@ -33,4 +38,5 @@ export async function assertAdventureFolioInk(dialog, viewport) {
   const unreadable = samples.filter(({ luminance }) => luminance < 0.35);
   assert.deepEqual(unreadable, [],
     `Adventure slate labels have dark/illegible ink at ${viewport}: ${JSON.stringify(samples)}`);
+  if (hasSound) await sound.click();
 }
