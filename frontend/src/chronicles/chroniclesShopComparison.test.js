@@ -63,6 +63,16 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.equipment.matthias).toEqual(before);
   });
 
+  it('reflects the actual dagger precision vs axe damage and polearm reach', () => {
+    const current = { ...initial(), equipment: { matthias: { weapon: 'brass-dagger' } } };
+    const axe = memberPreview(current, 'matthias', 'brass-axe');
+    const spear = memberPreview(current, 'matthias', 'wooden-spear');
+    expect(metric(axe, 'toHit').delta).toBeLessThan(0);
+    expect(metric(axe, 'damage').delta).toBeGreaterThan(0);
+    expect(metric(spear, 'reach').delta).toBe(1);
+    expect(current.equipment.matthias.weapon).toBe('brass-dagger');
+  });
+
   it('warns about shields displaced by two-handed weapons and includes defensive losses', () => {
     const state = {
       ...initial(),
