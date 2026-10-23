@@ -381,46 +381,6 @@ export default function ChroniclesCharacterSheet({
             <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
           </div>
           <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
-            <article className={relic ? 'has-relic' : ''}>
-              <span>Reliquia vinculada</span>
-              <b>{relic?.name || 'Ninguna'}</b>
-              <small>{relic?.description || 'Este personaje no lleva una reliquia vinculada.'}</small>
-            </article>
-            {!tacticsMode && <article className="chronicles-character-sheet__equipment">
-              <span>Armas y armaduras equipadas</span>
-              {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
-                {[
-                  { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
-                  { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
-                ].map(({ slot, label, stats }) => (
-                  <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
-                    <b>{label}</b>
-                    <strong>{chroniclesEquippedItem(state, member.id, slot)?.name || 'Sin equipar'}</strong>
-                    <small>{stats.reach > 0
-                      ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
-                      : 'Sin arma de proyectiles · no puede disparar'}</small>
-                  </div>
-                ))}
-              </div>}
-              {CHRONICLES_EQUIPMENT_SLOTS.map((slot) => {
-                const worn = chroniclesEquippedItem(state, member.id, slot);
-                return (
-                  <div className="chronicles-character-sheet__gear-slot" key={slot}>
-                    <small>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
-                    <strong>{worn?.name || 'Sin equipar'}</strong>
-                    {worn && <button type="button" disabled={!canChangeEquipment}
-                      onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
-                      Guardar en mochila
-                    </button>}
-                  </div>
-                );
-              })}
-              <small>
-                {mm3
-                  ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
-                  : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
-              </small>
-            </article>}
             <article className="chronicles-character-sheet__backpack">
               <span>Mochila de expedición</span>
               {!tacticsMode && inventory.length > 0 && (
@@ -515,6 +475,47 @@ export default function ChroniclesCharacterSheet({
                 </aside>
               )}
             </article>
+
+            <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
+              <span>Reliquia vinculada</span>
+              <b>{relic?.name || 'Ninguna'}</b>
+              <small>{relic?.description || 'Este personaje no lleva una reliquia vinculada.'}</small>
+            </article>
+            {!tacticsMode && <article className="chronicles-character-sheet__equipment">
+              <span>Armas y armaduras equipadas</span>
+              {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
+                {[
+                  { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
+                  { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
+                ].map(({ slot, label, stats }) => (
+                  <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
+                    <b>{label}</b>
+                    <strong>{chroniclesEquippedItem(state, member.id, slot)?.name || 'Sin equipar'}</strong>
+                    <small>{stats.reach > 0
+                      ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                      : 'Sin arma de proyectiles · no puede disparar'}</small>
+                  </div>
+                ))}
+              </div>}
+              {CHRONICLES_EQUIPMENT_SLOTS.map((slot) => {
+                const worn = chroniclesEquippedItem(state, member.id, slot);
+                return (
+                  <div className="chronicles-character-sheet__gear-slot" key={slot}>
+                    <small>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
+                    <strong>{worn?.name || 'Sin equipar'}</strong>
+                    {worn && <button type="button" disabled={!canChangeEquipment}
+                      onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
+                      Guardar en mochila
+                    </button>}
+                  </div>
+                );
+              })}
+              <small>
+                {mm3
+                  ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
+                  : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
+              </small>
+            </article>}
           </div>
         </div>
 
