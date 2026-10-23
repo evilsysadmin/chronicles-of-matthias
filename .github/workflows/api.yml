@@ -54,6 +54,8 @@ jobs:
           set -euo pipefail
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           "$(go env GOPATH)/bin/govulncheck" ./...
+          # OCI A1 runs linux/arm64: source build tags may select different code.
+          GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...
       - name: Run the API against a real MongoDB
         env:
           MONGO_URL: mongodb://127.0.0.1:27017
