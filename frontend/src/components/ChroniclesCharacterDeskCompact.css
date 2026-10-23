@@ -34,9 +34,9 @@
   margin: 0 0 0 auto;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
-  border: 0;
-  padding: 0;
-  background: transparent;
+  border: 1px solid #ab8453;
+  padding: 2px 5px;
+  background: #f8e6bd;
   box-shadow: none;
   font-size: .78rem;
   line-height: 1.25;
