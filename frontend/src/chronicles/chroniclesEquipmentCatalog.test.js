@@ -29,7 +29,7 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(CHRONICLES_EQUIPMENT['ivory-plate']).toBeUndefined();
     expect(CHRONICLES_EQUIPMENT['steel-sword'].name).toBe('Espada de acero');
     // The authored First Book gear keeps its ids for saves and shops.
-    expect(CHRONICLES_EQUIPMENT['roadwatch-sabre'].attackDamageBonus).toBe(2);
+    expect(CHRONICLES_EQUIPMENT['roadwatch-sabre'].attackDamageBonus).toBe(3);
   });
 
   it('orders materials as in MM3: bronze < iron < steel in damage, armour and price', () => {
@@ -75,6 +75,55 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(CHRONICLES_EQUIPMENT['leather-leather'].price).toBe(3);
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].armorClassBonus).toBe(3);
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].price).toBe(9);
+  });
+
+  it('keeps cheap arms distinct against actual Swordhaven bandits instead of price-only clones', async () => {
+    const { chroniclesMM3EnemyArmorClass, chroniclesMM3AttackHits } = await import('./chroniclesMM3Rules.js');
+    const { chroniclesMapById } = await import('./chroniclesMapCatalog.js');
+    const bandit = chroniclesMapById('swordhaven-first-book').enemies.find((e) => e.id === 'swordhaven-south-cutpurse');
+    // The authored map starts at 4 HP, but the resolved enemy build adds +1 vigor.
+    expect(bandit.maxHp).toBe(5);
+    const ac = chroniclesMM3EnemyArmorClass(bandit);
+    const attacks = (id) => {
+      const equipped = chroniclesEquipItem(mm3Company(id), 'matthias', id);
+      const stats = chroniclesPartyAttackStats(equipped, 'matthias');
+      const hits = Array.from({ length: 20 }, (_, i) =>
+        chroniclesMM3AttackHits(i + 1, stats.toHit, ac)).filter(Boolean).length;
+      return { stats, hitPercent: hits * 5, turnsOnHit: Math.ceil(bandit.maxHp / Math.max(1, stats.damage)) };
+    };
+    const dagger = attacks('brass-dagger');
+    const mace = attacks('brass-mace');
+    const sword = attacks('brass-sword');
+    const axe = attacks('brass-axe');
+    expect(dagger.stats.toHit).toBeGreaterThan(sword.stats.toHit);
+    expect(sword.stats.toHit).toBeGreaterThan(mace.stats.toHit);
+    expect(axe.stats.damage).toBeGreaterThan(sword.stats.damage);
+    expect(axe.stats.toHit).toBeLessThan(mace.stats.toHit);
+    expect(dagger.hitPercent).toBeGreaterThan(axe.hitPercent);
+    expect(axe.turnsOnHit).toBeLessThanOrEqual(dagger.turnsOnHit);
+    // The sword should not be a strictly better mace for the SAME price.
+    expect(CHRONICLES_EQUIPMENT['brass-dagger'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-mace'].price);
+    expect(CHRONICLES_EQUIPMENT['brass-mace'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-sword'].price);
+    // A spear gives actual two-tile melee reach at the cost of its shield hand.
+    const spear = attacks('wooden-spear');
+    const staff = attacks('wooden-staff');
+    expect(spear.stats.reach).toBe(2);
+    expect(staff.stats.reach).toBe(2);
+    expect(CHRONICLES_EQUIPMENT['wooden-spear'].twoHanded).toBe(true);
+  });
+
+  it('trades ranged weapon range/damage/accuracy rather than cloning bows', () => {
+    const bow = CHRONICLES_EQUIPMENT['wooden-bow'];
+    const longbow = CHRONICLES_EQUIPMENT['wooden-longbow'];
+    const crossbow = CHRONICLES_EQUIPMENT['brass-crossbow'];
+    const sling = CHRONICLES_EQUIPMENT['wooden-sling'];
+    expect(longbow.reach).toBeGreaterThan(bow.reach);
+    expect(bow.attackDamageBonus).toBeGreaterThan(longbow.attackDamageBonus);
+    expect(crossbow.toHitBonus).toBeGreaterThan(bow.toHitBonus);
+    expect(crossbow.attackDamageBonus).toBeGreaterThan(longbow.attackDamageBonus);
+    expect(sling.toHitBonus).toBeGreaterThan(bow.toHitBonus);
+    expect(sling.reach).toBeLessThan(bow.reach);
+    expect(sling.price).toBeLessThan(crossbow.price);
   });
 
   it('gates armour by class tier and shields by class and a free hand', () => {

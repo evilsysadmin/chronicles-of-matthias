@@ -36,7 +36,9 @@ function authoredEquipment(spec) {
     damageReduction: spec.baseDamageReduction,
     // A shield's bulk or agility changes real attack accuracy. Armor itself
     // has no hidden offensive modifier; this is shared by melee and missiles.
-    toHitBonus: weapon ? material.toHit : Number(spec.shieldToHitBonus || 0),
+    toHitBonus: weapon
+      ? material.toHit + Number(spec.baseToHitBonus || 0)
+      : Number(spec.shieldToHitBonus || 0),
     // MM armor class: the armor type's own AC plus its material.
     armorClassBonus: !weapon ? Math.max(0, Number(spec.baseArmorClass || 0) + material.armorClass) : 0,
     price: Math.max(1, Math.round(spec.basePrice * material.valueMultiplier)),
@@ -53,13 +55,16 @@ const LEGACY_ALL = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
 // MM3-style base items. Prices are scaled to this world's purses (a side
 // quest pays 8–18 oro); the material multiplier does the rest, so steel is
 // an aspiration and bronze is what a fresh company can afford.
+// The starter bandit has ~4 HP and d20 enemy AC; one bonus damage can be
+// an entire attack round. Each family therefore trades precision, damage,
+ // reach, off-hand safety and cost using EXISTING combat stats only.
 const BASE_WEAPONS = Object.freeze({
-  dagger: { name: 'Daga', family: 'dagger', basePrice: 2, baseDamageBonus: 1, allowed: LEGACY_ALL },
-  staff: { name: 'Bastón', family: 'staff', basePrice: 3, baseDamageBonus: 1, twoHanded: true, allowed: LEGACY_ALL },
-  mace: { name: 'Maza', family: 'mace', basePrice: 5, baseDamageBonus: 1, allowed: LEGACY_ALL },
-  spear: { name: 'Lanza', family: 'spear', basePrice: 5, baseDamageBonus: 2, twoHanded: true, allowed: LEGACY_MARTIAL },
-  sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 1, allowed: LEGACY_MARTIAL },
-  axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 2, allowed: LEGACY_MARTIAL },
+  dagger: { name: 'Daga', family: 'dagger', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, allowed: LEGACY_ALL },
+  staff: { name: 'Bastón', family: 'staff', basePrice: 3, baseDamageBonus: 1, baseToHitBonus: 1, reach: 2, twoHanded: true, allowed: LEGACY_ALL },
+  mace: { name: 'Maza', family: 'mace', basePrice: 4, baseDamageBonus: 2, allowed: LEGACY_ALL },
+  spear: { name: 'Lanza', family: 'spear', basePrice: 5, baseDamageBonus: 2, reach: 2, twoHanded: true, allowed: LEGACY_MARTIAL },
+  sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 2, baseToHitBonus: 1, allowed: LEGACY_MARTIAL },
+  axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 3, baseToHitBonus: -1, allowed: LEGACY_MARTIAL },
   bow: { name: 'Arco corto', family: 'bow', basePrice: 8, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: LEGACY_ALL },
   // Ranged arms of Terra's third wave: the long bow reaches farthest, the
   // crossbow hits harder, the sling is a one-hand option for slingers who
@@ -67,9 +72,9 @@ const BASE_WEAPONS = Object.freeze({
   // steel crossbow hits like a steel axe, a long bow like a sword, and both
   // take the shield hand (campaign bot, 2026-10: at axe+2 every hero
   // carried a crossbow).
-  longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 1, twoHanded: true, reach: 4, allowed: ['knight'] },
-  crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 2, twoHanded: true, reach: 3, allowed: ['knight'] },
-  sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, reach: 2, allowed: LEGACY_ALL },
+  longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 2, twoHanded: true, reach: 4, allowed: ['knight'] },
+  crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: ['knight'] },
+  sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, reach: 2, allowed: LEGACY_ALL },
 });
 
 // First Book defensive choices: CA prevents an MM3 hit (5 percentage
@@ -131,14 +136,16 @@ function weaponItem(baseId, materialId) {
   const slot = CHRONICLES_MISSILE_FAMILIES.includes(base.family) ? 'missile' : 'weapon';
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
   const damage = base.baseDamageBonus + Math.round(material.damage / 2);
+  const toHit = material.toHit + Number(base.baseToHitBonus || 0);
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot,
     baseItemId: baseId, materialId, basePrice: base.basePrice,
     baseDamageBonus: base.baseDamageBonus, baseDamageReduction: 0, materialDamageScale: 0.5,
+    baseToHitBonus: Number(base.baseToHitBonus || 0),
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
-    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
+    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(toHit)}, daño ${signed(damage)}.`,
   });
 }
 
@@ -177,10 +184,10 @@ function catalog() {
     'roadwatch-sabre': authoredEquipment({
       id: 'roadwatch-sabre', name: 'Sable de hierro de la guardia', slot: 'weapon',
       baseItemId: 'sabre', materialId: 'iron', basePrice: 6,
-      baseDamageBonus: 0, baseDamageReduction: 0,
+      baseDamageBonus: 1, baseDamageReduction: 0,
       weaponFamily: 'sword',
       allowedMembers: LEGACY_FRONT,
-      description: 'Espada de hierro · +1 acierto, +2 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
+      description: 'Espada de hierro · +1 acierto, +3 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
     }),
     'roadwatch-vest': authoredEquipment({
       id: 'roadwatch-vest', name: 'Jubón de cuero de guardia', slot: 'armor',

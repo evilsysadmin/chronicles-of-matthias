@@ -38,7 +38,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     });
     expect(CHRONICLES_EQUIPMENT['roadwatch-sabre']).toMatchObject({
       materialId: 'iron', slot: 'weapon', toHitBonus: 1,
-      attackDamageBonus: 2, price: 12,
+      attackDamageBonus: 3, price: 12,
     });
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest']).toMatchObject({
       materialId: 'leather', slot: 'armor', armorType: 'leather', armorClassBonus: 3,
@@ -67,7 +67,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     });
     expect(equipped.inventory).not.toHaveProperty('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(equipped, 'matthias').damage).toBe(
-      chroniclesPartyAttackStats(initial, 'matthias').damage + 2,
+      chroniclesPartyAttackStats(initial, 'matthias').damage + 3,
     );
     expect(chroniclesPartyAttackStats(equipped, 'rook').damage).toBe(
       chroniclesPartyAttackStats(initial, 'rook').damage,
@@ -78,7 +78,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     );
     expect(chroniclesEquippedItem(recovered, 'matthias', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(recovered, 'matthias').damage).toBe(
-      chroniclesPartyAttackStats(initial, 'matthias').damage + 2,
+      chroniclesPartyAttackStats(initial, 'matthias').damage + 3,
     );
     expect(recovered.inventory).not.toHaveProperty('roadwatch-sabre');
     const unarmed = chroniclesUnequipItem(recovered, 'matthias', 'weapon');
