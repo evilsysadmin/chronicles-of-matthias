@@ -73,7 +73,7 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(next.displacedShield?.id).toBe('iron-shield');
     expect(metric(next, 'armorClass').before).toBe(chroniclesPartyArmorClass(state, 'matthias'));
     expect(metric(next, 'armorClass').delta).toBeLessThan(0);
-    expect(metric(next, 'damageReduction').delta).toBeLessThan(0);
+    expect(metric(next, 'damageReduction')).toBeUndefined();
     expect(state.equipment.matthias.shield).toBe('iron-shield');
   });
 
@@ -87,14 +87,30 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(next.stats).toEqual([]);
   });
 
-  it('shows real armor and damage reduction deltas, including when the slot is empty', () => {
+  it('shows only hit avoidance (CA) in MM3: damage reduction does not mitigate a landed blow', () => {
     const state = initial();
     const next = memberPreview(state, 'matthias', 'leather-padded');
     expect(next.current).toBeNull();
     expect(next.eligible).toBe(true);
-    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass', 'damageReduction']);
+    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass']);
+    expect(metric(next, 'armorClass').label).toBe('Armadura (CA)');
     expect(metric(next, 'armorClass').delta).toBe(item('leather-padded').armorClassBonus);
-    expect(metric(next, 'damageReduction').delta).toBe(item('leather-padded').damageReduction);
+    expect(metric(next, 'damageReduction')).toBeUndefined();
+  });
+
+  it('retains damage mitigation comparisons only in the legacy combat rules', () => {
+    const state = { ...initial(), combatRules: 'legacy' };
+    const armor = memberPreview(state, 'matthias', 'leather-padded');
+    expect(armor.stats.map((stat) => stat.key)).toEqual(['armorClass', 'damageReduction']);
+    expect(metric(armor, 'damageReduction').label).toBe('Reducción de daño');
+    expect(metric(armor, 'damageReduction').delta).toBe(item('leather-padded').damageReduction);
+
+    const shieldState = {
+      ...state,
+      equipment: { matthias: { weapon: 'bronze-sword', shield: 'iron-shield' } },
+    };
+    const twoHanded = memberPreview(shieldState, 'matthias', 'wooden-staff');
+    expect(metric(twoHanded, 'damageReduction').delta).toBeLessThan(0);
   });
 
   it('handles already equipped, fallen and malformed previews without side effects', () => {
