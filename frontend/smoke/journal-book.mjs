@@ -341,6 +341,57 @@ try {
       assert(followedGeometry.focusedClose, 'Opening must preserve keyboard focus on dialog close');
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
+      // A well-travelled company may have dozens of genuine folios. The book
+      // previews only the newest ones, without losing historical quest links.
+      await page.locator('[data-test-long-memories]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await tabMemories.click();
+      const olderFolios = dialog.locator('[data-chronicles-older-folios]');
+      const olderVoices = dialog.locator('[data-chronicles-older-voices]');
+      const memoryList = dialog.locator('[data-chronicles-memo-id]');
+      const voiceList = dialog.locator('[data-chronicles-narration-log] li');
+      assert.equal(await memoryList.count(), 8, 'Initial memory leaf must contain only eight recent folios');
+      assert.equal(await voiceList.count(), 8, 'Initial memory leaf must not grow into a narration dashboard');
+      assert.equal(await dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]').count(), 0,
+        'Old quest receipt is initially folded, not discarded');
+      assert.equal(await dialog.locator('[data-chronicles-memo-id="journal-test-21"]').count(), 1,
+        'The newest folio remains visible');
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'false');
+      await olderFolios.click();
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'true');
+      assert((await memoryList.count()) >= 24, 'Expanding must restore the original complete chronicle');
+      await olderFolios.click();
+      assert.equal(await memoryList.count(), 8, 'Reader can fold old folios back away');
+      await olderVoices.click();
+      assert.equal(await voiceList.count(), 24, 'Narrations must remain fully accessible');
+      await olderVoices.click();
+      assert.equal(await voiceList.count(), 8, 'Reader can fold old narration back away');
+
+      await tabQuests.click();
+      await dialog.locator('[data-chronicles-quest-id="banner-contract"] ' +
+        '[data-chronicles-quest-event="first-book-contract-accepted"] ' +
+        '.chronicles-journal-modal__quest-event-link').click();
+      const historicFolio = dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]');
+      await historicFolio.waitFor({ state: 'visible' });
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'true',
+        'Quest-to-memory jump must unfold a historic entry that is outside the preview');
+      assert.equal(await historicFolio.evaluate((node) => document.activeElement === node), true,
+        'Historic jump focuses the authentic saved folio');
+      assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden',
+        'Historic memory jumps cannot scroll the underlying world');
+
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      await page.locator('[data-test-reopen]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await tabMemories.click();
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'false',
+        'A new journal visit must collapse historical folios');
+      assert.equal(await olderVoices.getAttribute('aria-expanded'), 'false',
+        'A new visit must collapse old voices');
+      assert.equal(await memoryList.count(), 8);
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');
       console.log('CHRONICLES_JOURNAL_BOOK_OK ' + width + 'x' + height);
     } catch (error) {
