@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyFlightSample, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chroniclesVolleyMotion.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, CHRONICLES_VOLLEY_NOSE_REACH, chroniclesVolleyFlightSample, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chroniclesVolleyMotion.js';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 
@@ -49,9 +49,17 @@ describe('Chronicles · polished projectile flight', () => {
       grid, { x: 1, y: 3 }, { dx: 1, dy: 0 }, 4, 0.55,
     );
     expect(facade).toBeCloseTo(1.45);
-    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'bow', facade)).not.toBeNull();
-    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'bow', facade)).toBeNull();
-    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'bow', distance)).not.toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.01, 'bow', facade)).not.toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'bow', facade)).toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'bow', distance)).not.toBeNull();
+    // Centre alone is not enough: the steel nose reaches the solid before
+    // the sampled root would, even with the original flat-wall clearance.
+    const nearingWall = chroniclesVolleyFlightSample(1, 0, 0.07, 'bow');
+    expect(-nearingWall.z).toBeLessThan(distance);
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'bow', distance)).toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'crossbow', facade)).toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.05, 'sling', facade)).not.toBeNull();
+    expect(chroniclesVolleyVisibleFlight(1, 0, 0.07, 'sling', facade)).toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0, 'bow', distance)).not.toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow', distance)).toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'crossbow', distance)).toBeNull();
@@ -69,6 +77,9 @@ describe('Chronicles · polished projectile flight', () => {
     // the player or create a false hit through a solid wall.
     expect(chroniclesVolleyObstacleDistance(grid, {x:5,y:2}, {dx:1,dy:0}, 4, Number.NaN)).toBeCloseTo(1.92);
     expect(chroniclesVolleyObstacleDistance(grid, {x:5,y:2}, {dx:1,dy:0}, 4, 100)).toBe(0);
+    expect(CHRONICLES_VOLLEY_NOSE_REACH.bow).toBeGreaterThan(CHRONICLES_VOLLEY_NOSE_REACH.crossbow);
+    expect(CHRONICLES_VOLLEY_NOSE_REACH.crossbow).toBeGreaterThan(CHRONICLES_VOLLEY_NOSE_REACH.sling);
+    // No collider => preserve the exact historical smooth flight sample.
     const mid = chroniclesVolleyFlightSample(1, 0, 0.3, 'bow');
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow')).toEqual(mid);
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'bow', Infinity)).toEqual(mid);
