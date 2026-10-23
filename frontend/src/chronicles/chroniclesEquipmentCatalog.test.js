@@ -4,6 +4,7 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import {
   CHRONICLES_EQUIPMENT,
   CHRONICLES_EQUIPMENT_SLOTS,
+  CHRONICLES_ARMOR_MATERIAL_AC,
   CHRONICLES_SHIELD_PROFILES,
   chroniclesEquipItem,
   chroniclesEquippedItem,
@@ -124,6 +125,73 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(sling.toHitBonus).toBeGreaterThan(bow.toHitBonus);
     expect(sling.reach).toBeLessThan(bow.reach);
     expect(sling.price).toBeLessThan(crossbow.price);
+  });
+
+
+  it('no longer sells bronze armor that is strictly worse than cheaper brass armor', () => {
+    const family = ['padded', 'leather', 'scale', 'ring', 'chain', 'splint', 'plate'];
+    const metals = ['brass', 'bronze', 'iron', 'silver', 'steel'];
+    expect(metals.map((m) => CHRONICLES_ARMOR_MATERIAL_AC[m])).toEqual([0, 1, 2, 3, 5]);
+    for (const type of family) {
+      for (let i = 1; i < metals.length; i += 1) {
+        const cheaper = CHRONICLES_EQUIPMENT[`${metals[i - 1]}-${type}`];
+        const upgraded = CHRONICLES_EQUIPMENT[`${metals[i]}-${type}`];
+        if (!cheaper || !upgraded) continue;
+        expect(upgraded.price, upgraded.id).toBeGreaterThan(cheaper.price);
+        expect(upgraded.armorClassBonus, upgraded.id).toBeGreaterThan(cheaper.armorClassBonus);
+        expect(upgraded.description, upgraded.id).toContain(`armadura +${upgraded.armorClassBonus}`);
+      }
+    }
+    // Protect source MM3 material metadata: this is a world-specific armor
+    // catalog fix, not a global change to bronze weapon damage or shield AC.
+    expect(CHRONICLES_EQUIPMENT['bronze-scale'].armorClassBonus).toBe(4);
+    expect(CHRONICLES_EQUIPMENT['brass-scale'].armorClassBonus).toBe(3);
+    expect(CHRONICLES_EQUIPMENT['iron-scale'].armorClassBonus).toBe(5);
+    expect(CHRONICLES_EQUIPMENT['steel-scale'].armorClassBonus).toBe(8);
+  });
+
+  it('checks armor choices against actual first-book and late enemy d20 attacks', async () => {
+    const { chroniclesMM3AttackHits, chroniclesMM3EnemyToHit } = await import('./chroniclesMM3Rules.js');
+    const { chroniclesMapById } = await import('./chroniclesMapCatalog.js');
+    const scenarios = [
+      ['swordhaven-first-book', 'swordhaven-south-cutpurse'],
+      ['banner-road-first-book', 'banner-road-bandit-captain'],
+      ['swordhaven-sewers', 'sewers-hound'],
+      ['templo-corona-cripta', 'templo-corona-cripta-jailer'],
+      ['guarida-del-dragon', 'guarida-del-dragon-foe-0'],
+    ];
+    const foes = scenarios.map(([mapId, enemyId]) => {
+      const enemy = chroniclesMapById(mapId).enemies.find((entry) => entry.id === enemyId);
+      expect(enemy, enemyId).toBeTruthy();
+      return enemy;
+    });
+    const rate = (enemy, ac) => Array.from({ length: 20 }, (_, roll) =>
+      chroniclesMM3AttackHits(roll + 1, chroniclesMM3EnemyToHit(enemy), ac))
+      .filter(Boolean).length;
+
+    const inventory = mm3Company('brass-scale', 'bronze-scale', 'iron-scale', 'steel-plate', 'steel-shield');
+    const brass = chroniclesEquipItem(inventory, 'matthias', 'brass-scale');
+    const bronze = chroniclesEquipItem(inventory, 'matthias', 'bronze-scale');
+    const iron = chroniclesEquipItem(inventory, 'matthias', 'iron-scale');
+    const plated = chroniclesEquipItem(
+      chroniclesEquipItem(inventory, 'matthias', 'steel-plate'), 'matthias', 'steel-shield');
+    const ac = (state) => chroniclesPartyArmorClass(state, 'matthias');
+    expect([ac(brass), ac(bronze), ac(iron)]).toEqual([
+      ac(inventory) + 3, ac(inventory) + 4, ac(inventory) + 5,
+    ]);
+    expect(ac(plated)).toBeGreaterThan(ac(iron));
+    for (const enemy of foes) {
+      // Better expensive armor really reduces hits; d20 natural-20 still
+      // connects so an armored veteran cannot be literally untouchable.
+      const rates = [inventory, brass, bronze, iron, plated].map((state) => rate(enemy, ac(state)));
+      expect(rates.every((hits) => hits >= 1 && hits <= 19), enemy.id).toBe(true);
+      expect(rates.slice(1).every((hits, index) => hits <= rates[index]), enemy.id).toBe(true);
+    }
+    // Endgame enemies must still be able to land more than natural 20
+    // against a hypothetical fully armored *level-one* frontliner.
+    for (const enemy of foes.slice(-2)) {
+      expect(rate(enemy, ac(plated)), enemy.id).toBeGreaterThan(1);
+    }
   });
 
   it('gates armour by class tier and shields by class and a free hand', () => {

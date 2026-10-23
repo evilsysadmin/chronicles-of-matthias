@@ -92,6 +92,20 @@ export const CHRONICLES_SHIELD_PROFILES = Object.freeze({
   steel: Object.freeze({ armorClass: 4, toHit: -1 }), // maximum guard, heavy
 });
 
+// Campaign AC progression: MM3's literal bronze material modifier (-1)
+// made bronze armor *more expensive and strictly weaker* than brass armor
+// of the same type. Keep canonical CHRONICLES_ITEM_MATERIALS unchanged for
+// non-armor consumers; the RPG uses an authored, monotone protection ladder.
+// This does NOT change shield (separate profiles) or weapon material bonuses.
+export const CHRONICLES_ARMOR_MATERIAL_AC = Object.freeze({
+  leather: 0,
+  brass: 0,
+  bronze: 1,
+  iron: 2,
+  silver: 3,
+  steel: 5,
+});
+
 const BASE_ARMORS = Object.freeze({
   padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, allowed: LEGACY_ALL },
   leather: { name: 'Coraza', armorType: 'leather', basePrice: 12, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
@@ -152,13 +166,19 @@ function weaponItem(baseId, materialId) {
 function armorItem(baseId, materialId) {
   const base = BASE_ARMORS[baseId];
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
+  const protection = CHRONICLES_ARMOR_MATERIAL_AC[materialId];
+  if (!Number.isInteger(protection)) throw new Error(`Unknown armor material: ${materialId}`);
+  const armorClass = base.baseArmorClass + protection;
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot: 'armor',
     baseItemId: baseId, materialId, basePrice: base.basePrice,
     baseDamageBonus: 0, baseDamageReduction: base.baseDamageReduction,
-    armorType: base.armorType, baseArmorClass: base.baseArmorClass,
+    // authoredEquipment adds the literal material AC; cancel that literal
+    // only for body armor, replacing it with the progression value above.
+    armorType: base.armorType,
+    baseArmorClass: armorClass - material.armorClass,
     allowedMembers: base.allowed,
-    description: `${base.name} · armadura +${Math.max(0, base.baseArmorClass + material.armorClass)}.`,
+    description: `${base.name} · armadura +${armorClass}.`,
   });
 }
 
