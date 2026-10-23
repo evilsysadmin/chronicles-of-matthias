@@ -196,6 +196,12 @@ try {
       const inv = equipment.locator('.chronicles-character-sheet__inventory');
       const rows = inv.locator('[data-inventory-item]');
       assert.ok(await rows.count() >= 3, 'Reward grants must populate the actual backpack');
+      if (width === 1280) {
+        const labelWidth = await rows.first().locator('span').evaluate(
+          (node) => node.getBoundingClientRect().width);
+        assert.ok(labelWidth >= 120,
+          '1280px inventory labels must have enough width for words, not letters: ' + labelWidth);
+      }
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');

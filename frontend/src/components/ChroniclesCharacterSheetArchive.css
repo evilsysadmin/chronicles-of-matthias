@@ -489,3 +489,13 @@
   }
 }
 
+/* Between 1200 and 1399px the inventory also contains a two-rail
+   item list and inspector. Give the backpack more of the outer split so
+   actual equipment names wrap at word boundaries, not letter by letter.
+   At >=1400px the previously verified balanced distribution remains. */
+@media (min-width: 1200px) and (max-width: 1399px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  }
+}
