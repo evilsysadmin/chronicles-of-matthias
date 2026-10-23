@@ -333,3 +333,98 @@
   color: #bdb2a0 !important;
   -webkit-text-fill-color: #bdb2a0 !important;
 }
+
+/* Compact pause folio: reveal audio on demand instead of giving it half of
+   the screen. Preserve 44px targets, scroll containment and keyboard cues. */
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio {
+  width: min(560px, calc(100vw - 20px));
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
+  grid-template-columns: 42px minmax(0, 1fr) 44px;
+  padding: 9px 12px;
+  gap: 9px;
+}
+.chronicles .chronicles-game-menu__crest { width: 40px; height: 40px; font-size: 1.5rem; }
+.chronicles .chronicles-game-menu__folio-columns {
+  grid-template-columns: minmax(0, 1fr);
+}
+.chronicles .chronicles-game-menu__folio-section { padding: 12px 15px; gap: 8px; }
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions { gap: 7px; }
+.chronicles .chronicles-game-menu__action-pair,
+.chronicles .chronicles-game-menu__utility-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  min-width: 0;
+}
+.chronicles .chronicles-game-menu__utility-row {
+  padding-top: 6px;
+  border-top: 1px solid #5d5141;
+}
+.chronicles .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 10px;
+  border: 2px solid #756951;
+  background: #303843;
+  color: #f2e2c3 !important;
+  -webkit-text-fill-color: #f2e2c3 !important;
+  text-shadow: none;
+  font: 400 1.15rem/1.1 var(--mm3-pixel-font);
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button:hover:not(:disabled),
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button:focus-visible {
+  border-color: #efcf90;
+  background: #455365;
+  outline: 2px solid #f2d393;
+  outline-offset: 1px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button:disabled { opacity: .55; cursor: not-allowed; }
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions .chronicles-game-menu__action-pair
+  > :is(.chronicles-game-menu__save, .chronicles-game-menu__save-exit) {
+  border-left: 4px solid #c9ab6e;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__continue {
+  min-height: 48px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__leave {
+  justify-self: end;
+  width: auto;
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 10px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-sound {
+  border-left: 0;
+  border-top: 1px solid #68553c;
+  padding-top: 10px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-controls {
+  gap: 6px; padding: 8px 12px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__notice { padding: 6px 12px; }
+@media (max-width: 620px) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+    .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+  ) > button { padding-inline: 7px; font-size: 1.04rem; }
+  .chronicles .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading { padding: 5px 10px; }
+  .chronicles .chronicles-game-menu__folio-section { padding: 8px 12px; }
+}
