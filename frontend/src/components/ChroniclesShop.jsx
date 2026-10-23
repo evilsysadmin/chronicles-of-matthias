@@ -50,6 +50,14 @@ function ShopGearPeek({ state, item }) {
           </div>
         );
       })}
+      {state?.combatRules === 'mm3' && (
+        item.slot === 'armor' || item.slot === 'shield'
+          || (item.slot === 'weapon' && item.twoHanded)
+      ) && (
+        <small className="chronicles-shop__gear-peek-note">
+          Armadura (CA) dificulta los impactos; en MM3 no resta daño si el golpe acierta.
+        </small>
+      )}
       <small className="chronicles-shop__gear-peek-note">Solo vista previa · comprar no equipa</small>
     </aside>
   );

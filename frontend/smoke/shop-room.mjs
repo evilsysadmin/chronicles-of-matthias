@@ -496,7 +496,10 @@ try {
           await note.waitFor({ state: 'visible' });
           assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
             'Every Odo armor/shield needs its actual four-hero equip comparison');
-          assert.match(await note.innerText(), /Armadura|Reducción|No puede equiparlo|Sin cambios/);
+          assert.match(await note.innerText(), /Armadura|No puede equiparlo|Sin cambios/);
+          assert.match(await note.innerText(), /en MM3 no resta daño si el golpe acierta/);
+          assert.doesNotMatch(await note.innerText(), /Reducción de daño [+-]\d/,
+            'MM3 must not advertise damage mitigation that its combat code never applies');
           assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
