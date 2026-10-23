@@ -20,7 +20,7 @@ export function chroniclesVolleyProjectileKinds(state, shooterIds) {
 
 // Scene-persistent, low-poly geometry (no image downloads or per-frame meshes).
 // Silhouettes are intentionally exaggerated just enough to read at speed.
-export function createChroniclesVolleyProjectileArt(THREE, camera) {
+export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = null) {
   const group = new THREE.Group();
   group.name = 'chronicles-party-projectile-volley';
   group.visible = false;
@@ -146,7 +146,17 @@ export function createChroniclesVolleyProjectileArt(THREE, camera) {
     group.add(root);
     return root;
   });
-  camera.add(group);
+  // The scene-mounted variant freezes the launch transform. Keeping this
+  // group on the camera would bend an arrow whenever camera yaw easing catches
+  // up with a turn completed immediately before firing.
+  (worldScene || camera).add(group);
+
+  function anchorLaunchPose() {
+    if (!worldScene) return;
+    camera.updateWorldMatrix(true, false);
+    camera.getWorldPosition(group.position);
+    camera.getWorldQuaternion(group.quaternion);
+  }
 
   function setFamilies(families) {
     const valid = (Array.isArray(families) ? families : [])
@@ -165,5 +175,5 @@ export function createChroniclesVolleyProjectileArt(THREE, camera) {
     return valid.length;
   }
 
-  return { group, projectiles, setFamilies };
+  return { group, projectiles, setFamilies, anchorLaunchPose };
 }
