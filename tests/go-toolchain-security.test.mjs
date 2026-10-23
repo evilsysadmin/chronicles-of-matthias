@@ -241,7 +241,7 @@ function verifyGoModuleTidyDiff(ci) {
   const pin = job.indexOf("          go-version: '1.27.3'");
   assert.ok(pin >= 0 && gate > pin && build > gate,
     'a fail-closed, read-only go mod tidy -diff must run before API compile and scans');
-  assert.doesNotMatch(job.slice(gate, build), /continue-on-error:|(?:\|\|\s*(?:true|:))|go mod tidy -e/,
+  assert.doesNotMatch(job.slice(gate, build), /continue-on-error:|if:\s*false|(?:\|\|\s*(?:true|:))|go mod tidy -e/,
     'module integrity may not be suppressed');
 }
 
