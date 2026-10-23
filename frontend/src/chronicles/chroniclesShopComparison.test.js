@@ -93,13 +93,14 @@ describe('Chronicles shop · preview equipment against party', () => {
       equipment: { matthias: { weapon: 'brass-sword', shield: 'wooden-shield' } },
     };
     const brass = memberPreview(state, 'matthias', 'brass-shield');
-    expect(brass.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(brass.stats.map((stat) => stat.key)).toEqual(['armorClass']);
     expect(metric(brass, 'armorClass').delta).toBe(1);
-    expect(metric(brass, 'toHit').delta).toBe(-1);
-    expect(metric(brass, 'toHit').label).toBe('Acierto');
+    expect(metric(brass, 'toHit')).toBeUndefined();
     const bronze = memberPreview(state, 'matthias', 'bronze-shield');
-    expect(bronze.stats.map((stat) => stat.key)).toEqual(['armorClass']);
+    expect(bronze.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
     expect(metric(bronze, 'armorClass').delta).toBe(1);
+    expect(metric(bronze, 'toHit').delta).toBe(1);
+    expect(metric(bronze, 'toHit').label).toBe('Acierto');
     expect(state.equipment.matthias.shield).toBe('wooden-shield');
   });
 
@@ -124,6 +125,16 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(metric(next, 'armorClass').label).toBe('Armadura (CA)');
     expect(metric(next, 'armorClass').delta).toBe(item('leather-padded').armorClassBonus);
     expect(metric(next, 'damageReduction')).toBeUndefined();
+  });
+
+  it('distinguishes loss of an existing gambeson bonus from an item malus', () => {
+    const state = { ...initial(), equipment: { matthias: { armor: 'leather-padded' } } };
+    const cuirass = memberPreview(state, 'matthias', 'leather-leather');
+    expect(item('leather-leather').toHitBonus).toBe(0); // no malus on cuirass
+    expect(item('leather-padded').toHitBonus).toBe(1);
+    expect(metric(cuirass, 'armorClass').delta).toBe(1);
+    expect(metric(cuirass, 'toHit').delta).toBe(-1); // losing the OLD +1
+    expect(state.equipment.matthias.armor).toBe('leather-padded');
   });
 
   it('gives Odo a real CA-versus-precision choice without changing gold or gear', () => {

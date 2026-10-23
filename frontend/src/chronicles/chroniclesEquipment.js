@@ -80,17 +80,18 @@ const BASE_WEAPONS = Object.freeze({
 
 // First Book defensive choices: CA prevents an MM3 hit (5 percentage
 // points per AC in the unsaturated d20 window); it does NOT subtract damage.
-// Higher guard can compromise accuracy. These are authored GAME profiles,
-// not purported original MM3 material statistics. The tiers also prevent
-// bronze (-1 material AC) from yielding the absurd 0-CA bought shield.
+// Every paid shield upgrade must earn its price in defense or aim. The old
+// brass +1 CA / -1 aim vs wood was a trap at low level; more costly iron/steel
+// repeated it. These authored profiles are NOT literal MM3 material stats.
+// Ivory is a deliberate agile sidegrade (less guard than iron, more aim).
 export const CHRONICLES_SHIELD_PROFILES = Object.freeze({
-  wooden: Object.freeze({ armorClass: 1, toHit: 0 }), // cheap, light
-  brass: Object.freeze({ armorClass: 2, toHit: -1 }), // heavier starter guard
-  bronze: Object.freeze({ armorClass: 2, toHit: 0 }), // same guard, better handling
-  iron: Object.freeze({ armorClass: 3, toHit: -1 }), // heavy guard
-  ivory: Object.freeze({ armorClass: 2, toHit: 1 }), // nimble, rare
-  silver: Object.freeze({ armorClass: 3, toHit: 1 }), // premium, nimble
-  steel: Object.freeze({ armorClass: 4, toHit: -1 }), // maximum guard, heavy
+  wooden: Object.freeze({ armorClass: 1, toHit: 0 }), // budget protection
+  brass: Object.freeze({ armorClass: 2, toHit: 0 }), // +1 CA without an aim tax
+  bronze: Object.freeze({ armorClass: 2, toHit: 1 }), // better handling
+  iron: Object.freeze({ armorClass: 3, toHit: 1 }), // stronger physical guard
+  ivory: Object.freeze({ armorClass: 2, toHit: 2 }), // precision sidegrade
+  silver: Object.freeze({ armorClass: 3, toHit: 2 }), // precision and guard
+  steel: Object.freeze({ armorClass: 4, toHit: 2 }), // expensive top-tier guard
 });
 
 // Campaign AC progression: MM3's literal bronze material modifier (-1)
