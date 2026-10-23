@@ -21,7 +21,7 @@ test('multi-arch Go cross-compilation needs no target-architecture emulator', ()
 
   const publish = workflow.slice(workflow.indexOf('\n  publish:\n'));
   assert.match(publish, /platforms: linux\/arm64,linux\/amd64/);
-  assert.match(publish, /uses: docker\/setup-buildx-action@v3/);
+  assert.match(publish, /uses: docker\/setup-buildx-action@v4/);
   assert.doesNotMatch(publish, /setup-qemu-action|binfmt|--platform=linux\/arm64\s+run/i);
   assert.match(publish, /needs: verify/);
   assert.match(publish, /push-to-registry: true/);

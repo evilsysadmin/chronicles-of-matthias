@@ -121,6 +121,10 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
     assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
   }
   assert.match(api, /actions\/setup-go@v6/);
+  // Docker publish actions must use their Node 24 native majors.
+  assert.match(api, /uses: docker\/setup-buildx-action@v4/);
+  assert.match(api, /uses: docker\/login-action@v4/);
+  assert.doesNotMatch(api, /docker\/(?:setup-buildx-action|login-action)@v3/);
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /actions\/cache@v5/);
     assert.match(workflow, /actions\/upload-artifact@v5/);
