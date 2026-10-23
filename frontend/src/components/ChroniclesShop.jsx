@@ -16,49 +16,42 @@ import './ChroniclesShop.css';
 
 const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
 
-function ShopComparison({ state, item }) {
+// Read-only merchant advice, shown at the stock item instead of the
+// purchase panel. Uses the exact existing combat-preview calculations.
+function ShopGearPeek({ state, item }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
   return (
-    <section className="chronicles-shop__comparison" aria-label={`Comparar ${item.name} con el equipo de la compañía`}>
-      <div className="chronicles-shop__comparison-head">
-        <strong>Antes → después de equipar</strong>
-        <span>Vista previa · comprar no equipa</span>
-      </div>
-      <div className="chronicles-shop__comparison-grid">
-        {comparisons.map((comparison) => (
+    <aside className="chronicles-shop__gear-peek"
+      id={`chronicles-shop-peek-${item.id}`}
+      aria-label={`Quién puede equipar ${item.name} y cambio de estadísticas`}>
+      <strong className="chronicles-shop__gear-peek-title">Si lo equipas…</strong>
+      {comparisons.map((comparison) => {
+        const deltas = comparison.stats.filter((stat) => stat.delta !== 0);
+        return (
           <div key={comparison.memberId}
-            className={`chronicles-shop__comparison-hero${comparison.eligible ? '' : ' is-incompatible'}`}>
-            <strong>{comparison.name}</strong>
-            <span className="chronicles-shop__comparison-equipped">
-              {comparison.current ? `Lleva: ${comparison.current.name}` : `Sin ${SLOT_LABEL[item.slot].toLowerCase()}`}
-            </span>
-            {!comparison.eligible ? (
-              <span className="chronicles-shop__comparison-restriction">{comparison.reason}</span>
-            ) : comparison.alreadyEquipped ? (
-              <span className="chronicles-shop__comparison-neutral">Ya lo lleva equipado</span>
-            ) : (
-              <>
-                <div className="chronicles-shop__comparison-stats">
-                  {comparison.stats.map((stat) => (
+            className={`chronicles-shop__gear-peek-member${comparison.eligible ? '' : ' is-incompatible'}`}>
+            <span className="chronicles-shop__gear-peek-name">{comparison.name}</span>
+            <span className="chronicles-shop__gear-peek-values">
+              {!comparison.eligible ? (comparison.reason || 'No puede equiparlo')
+                : comparison.alreadyEquipped ? 'Ya lo lleva'
+                  : deltas.length ? deltas.map((stat) => (
                     <span key={stat.key}
-                      className={`chronicles-shop__comparison-stat is-${stat.delta > 0 ? 'better' : stat.delta < 0 ? 'worse' : 'equal'}`}
+                      className={`chronicles-shop__gear-peek-delta is-${stat.delta > 0 ? 'better' : 'worse'}`}
                       aria-label={`${stat.label}: ${stat.before} a ${stat.after}`}>
-                      {stat.label} {stat.before}→{stat.after}
-                      <b>({stat.delta > 0 ? '+' : ''}{stat.delta})</b>
+                      {stat.label} {stat.delta > 0 ? '+' : ''}{stat.delta}
                     </span>
-                  ))}
-                </div>
-                {comparison.displacedShield && (
-                  <span className="chronicles-shop__comparison-warning">
-                    Dos manos: guarda {comparison.displacedShield.name}
-                  </span>
-                )}
-              </>
+                  )) : 'Sin cambios'}
+            </span>
+            {comparison.displacedShield && (
+              <small className="chronicles-shop__gear-peek-warning">
+                Deja el escudo: {comparison.displacedShield.name}
+              </small>
             )}
           </div>
-        ))}
-      </div>
-    </section>
+        );
+      })}
+      <small className="chronicles-shop__gear-peek-note">Solo vista previa · comprar no equipa</small>
+    </aside>
   );
 }
 
@@ -194,7 +187,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('name');
   const [selectedId, setSelectedId] = useState(null);
-  const [compare, setCompare] = useState(false);
+  const [previewId, setPreviewId] = useState(null);
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const detailsRef = useRef(null);
@@ -271,12 +264,12 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
     setCategory('all');
     setQuery('');
     setSelectedId(null);
-    setCompare(false);
+    setPreviewId(null);
   };
 
   const pickItem = (id) => {
     setSelectedId(id);
-    setCompare(false);
+    setPreviewId(id);
     // On phones the detail follows the catalogue, without trapping the user.
     if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 900px)').matches) {
       requestAnimationFrame(() => detailsRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' }));
@@ -332,7 +325,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
               </label>
               <label>
                 <span>Tipo</span>
-                <select value={category} onChange={(e) => { setCategory(e.target.value); setCompare(false); }}>
+                <select value={category} onChange={(e) => { setCategory(e.target.value); setPreviewId(null); }}>
                   <option value="all">Todos</option>
                   {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
@@ -348,13 +341,21 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
               <strong>{tab === 'buy' ? 'Mercancías' : 'Tu mochila'}</strong>
               <span>{offers.length} de {allOffers.length}</span>
             </div>
-            <ul className="chronicles-shop__list" aria-label="Selecciona un artículo para inspeccionarlo">
+            <ul className="chronicles-shop__list" aria-label="Mercancías: pasa el ratón o enfoca un objeto para comparar tu equipo">
               {offers.map(({ item, price, quantity }) => (
                 <li key={item.id} data-chronicles-shop-item={tab === 'buy' ? item.id : undefined}
                   data-chronicles-shop-sell={tab === 'sell' ? item.id : undefined}
-                  className={selectedItem?.id === item.id ? 'is-selected' : ''}>
+                  className={selectedItem?.id === item.id ? 'is-selected' : ''}
+                  onMouseEnter={() => setPreviewId(item.id)}
+                  onMouseLeave={() => setPreviewId(null)}
+                  onFocus={() => setPreviewId(item.id)}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) setPreviewId(null);
+                  }}>
                   <button type="button" className="chronicles-shop__entry"
                     aria-pressed={selectedItem?.id === item.id}
+                    aria-describedby={previewId === item.id && tab === 'buy' && item.slot !== 'consumable'
+                      ? `chronicles-shop-peek-${item.id}` : undefined}
                     onClick={() => pickItem(item.id)}>
                     <span className="chronicles-shop__entry-icon"><ShopItemVisual item={item} /></span>
                     <span className="chronicles-shop__entry-description">
@@ -363,6 +364,9 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     </span>
                     <span className="chronicles-shop__entry-price">{price} <small>oro</small></span>
                   </button>
+                  {tab === 'buy' && item.slot !== 'consumable' && previewId === item.id && (
+                    <ShopGearPeek state={state} item={item} />
+                  )}
                 </li>
               ))}
               {offers.length === 0 && (
@@ -391,20 +395,6 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   </div>
                   {tab === 'sell' && <p className="chronicles-shop__owned">Disponible en mochila: ×{selected.quantity}</p>}
                 </div>
-                {tab === 'buy' && selectedItem.slot !== 'consumable' && (
-                  <div className="chronicles-shop__compare-region">
-                    <button type="button" className="chronicles-shop__compare-toggle"
-                      aria-expanded={compare} aria-controls="chronicles-shop-compare-selected"
-                      onClick={() => setCompare((value) => !value)}>
-                      {compare ? 'Ocultar comparación −' : 'Comparar con mi equipo +'}
-                    </button>
-                    {compare && (
-                      <div id="chronicles-shop-compare-selected">
-                        <ShopComparison state={state} item={selectedItem} />
-                      </div>
-                    )}
-                  </div>
-                )}
                 <div className="chronicles-shop__checkout">
                   <div className="chronicles-shop__checkout-price">
                     <span>{tab === 'buy' ? 'Precio' : 'Recibirás'}</span>
