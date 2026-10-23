@@ -45,7 +45,13 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
     const fx = createChroniclesVolleyProjectileArt(THREE, camera, scene);
     expect(fx.group.parent).toBe(scene);
     expect(fx.setFamilies(['bow', 'crossbow'])).toBe(2);
-    fx.anchorLaunchPose();
+    // Party has already turned west, but camera easing still points east.
+    const logicalYaw = -Math.PI / 4;
+    fx.anchorLaunchPose(logicalYaw);
+    expect(fx.group.getWorldQuaternion(new THREE.Quaternion())
+      .angleTo(new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0), logicalYaw,
+      ))).toBeLessThan(0.000001);
     fx.projectiles[0].position.set(0, -0.33, -1.4);
     scene.updateMatrixWorld(true);
     const fixed = fx.projectiles[0].getWorldPosition(new THREE.Vector3());
@@ -61,8 +67,12 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
       .toBeLessThan(0.000001);
 
     // A second legitimate salvo updates the anchor to the new camera pose.
-    fx.anchorLaunchPose();
+    fx.anchorLaunchPose(Math.PI / 2);
     scene.updateMatrixWorld(true);
+    expect(fx.group.getWorldQuaternion(new THREE.Quaternion())
+      .angleTo(new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0), Math.PI / 2,
+      ))).toBeLessThan(0.000001);
     expect(fx.projectiles[0].getWorldPosition(new THREE.Vector3()).distanceTo(fixed))
       .toBeGreaterThan(1);
     expect(fx.group.getWorldQuaternion(new THREE.Quaternion()).angleTo(launchOrientation))
