@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
@@ -111,6 +111,20 @@ export default function ChroniclesCharacterSheet({
   const [backpackSearch, setBackpackSearch] = useState('');
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
+  const previousViewedMemberIdRef = useRef(member?.id);
+
+  // The modal stays mounted when the player switches heroes. Without this,
+  // the next hero can inherit the previous hero's mid-page scroll position.
+  // Keep the chosen folio; only its viewport should start afresh on desktop.
+  useLayoutEffect(() => {
+    const nextId = member?.id;
+    if (previousViewedMemberIdRef.current === nextId) return;
+    previousViewedMemberIdRef.current = nextId;
+    if (!nextId || mode === 'tactics' || typeof window === 'undefined'
+      || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
+    if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
+    if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
+  }, [member?.id, mode]);
 
   // A modal may lose DOM focus after an equipment action rerenders its buttons.
   // Keep 1–4 working while the sheet is open, even if focus falls to <body>.
