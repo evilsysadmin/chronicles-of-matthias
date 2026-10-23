@@ -13,7 +13,7 @@ concurrency:
 jobs:
   # Protect main's existing required check also protects the Chromium smoke:
   # GitHub ruleset 25198769 currently requires repository-contract and api-e2e,
-  # but omits frontend "build". This required job must not turn green first.
+  # but omits frontend "frontend-vitest-build-chromium". This required job must not turn green first.
   repository-contract:
     runs-on: ubuntu-latest
     # Must outlive the independently required 30-minute frontend smoke, plus
@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 64
-          # Avoid duplicated Vite/Chromium work. Poll the actual Actions "build"
+          # Avoid duplicated Vite/Chromium work. Poll the actual Actions "frontend-vitest-build-chromium"
           # check from the independent frontend workflow for this immutable SHA.
           # A red, cancelled or missing browser job must NEVER yield a green
           # repository-contract, including during GitHub auto-merge evaluation.
@@ -45,11 +45,11 @@ jobs:
           # Up to 36 minutes, longer than the frontend's 30-minute deadline.
           for attempt in $(seq 1 216); do
             result="$(gh api -X GET "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/check-runs" \
-              -f check_name=build -f per_page=100 \
+              -f check_name=frontend-vitest-build-chromium -f per_page=100 \
               --jq '[.check_runs[] | select(.name == "build" and .app.slug == "github-actions")] | if length == 0 then "pending" else (max_by(.id) | .status + ":" + (.conclusion // "")) end')"
             case "$result" in
               completed:success)
-                # A green check named "build" alone is not sufficient: another
+                # A green check named "frontend-vitest-build-chromium" alone is not sufficient: another
                 # Actions workflow could use that name on the same commit.
                 # Require the official frontend workflow ID, same SHA/event,
                 # trusted repository and its latest completed green run.
