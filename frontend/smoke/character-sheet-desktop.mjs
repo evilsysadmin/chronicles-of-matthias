@@ -90,7 +90,13 @@ try {
         'Right nav must stay to the right of the content: ' + JSON.stringify(metrics));
       assert(metrics.menuWidth >= 140 && metrics.contentWidth >= 550,
         'Nav must stay narrow while readable content gets main width');
-      assert(metrics.headerHeight < 150, 'Desktop identity header must be compact: ' + metrics.headerHeight + 'px');
+      assert(metrics.headerHeight <= 82, 'MM3 identity must be a compact strip, not a portrait cover: ' + metrics.headerHeight + 'px');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__head .chronicles-character-sheet__portrait').count(), 0,
+        'Do not duplicate the permanent party-dock portrait');
+      const xpHeight = await sheet.locator('.chronicles-character-sheet__progression')
+        .evaluate((node) => node.getBoundingClientRect().height);
+      assert(xpHeight <= 36, 'XP cannot steal workbench height: ' + xpHeight);
+      assert.equal(await sheet.locator('.chronicles-character-sheet__party-dock img').count(), 4);
       assert(metrics.dockTop > metrics.top && metrics.dockBottom <= metrics.bottom + 2,
         'Party dock must remain visible and contained: ' + JSON.stringify(metrics));
       assert(metrics.documentWidth <= width + 1 && metrics.left >= -1 && metrics.right <= width + 1,
@@ -452,6 +458,57 @@ try {
     } catch (error) {
       failures.push(width + ': ' + error.message);
       console.error('CHRONICLES_CHARACTER_DESKTOP_FAIL', width, error);
+    } finally { await ctx.close(); }
+  }
+  // Exercise the production sheet on touch devices too. The compact identity
+  // is only successful if the party dock, tabs and equipment remain usable.
+  for (const [width, height] of [[360,780],[390,844],[430,932],[844,390]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      await page.goto(url, { waitUntil: 'load' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      await sheet.waitFor({ state: 'visible' });
+      const geometry = await sheet.evaluate((node) => {
+        const head = node.querySelector('.chronicles-character-sheet__head').getBoundingClientRect();
+        const dock = node.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
+        return {
+          headerHeight: head.height,
+          dockBottom: dock.bottom,
+          dialogBottom: node.getBoundingClientRect().bottom,
+          docWidth: document.documentElement.scrollWidth,
+          portraitCount: node.querySelectorAll('.chronicles-character-sheet__head img').length,
+        };
+      });
+      assert(geometry.headerHeight <= (height <= 480 ? 85 : 100),
+        'Compact touch identity must leave room for content: ' + JSON.stringify(geometry));
+      assert.equal(geometry.portraitCount, 0);
+      assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
+      assert(geometry.dockBottom <= geometry.dialogBottom + 2,
+        'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
+      const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
+      const equipmentTab = nav.getByRole('button', { name: /Equipo/ });
+      await equipmentTab.click();
+      await sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]').first()
+        .waitFor({ state: 'visible' });
+      assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
+        >= (height <= 480 ? 34 : 44), 'Touch equipment tab must remain usable');
+      await nav.getByRole('button', { name: /Hechizos/ }).click();
+      await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
+      assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true',
+        'Changing party member must retain chosen folio on touch devices');
+      await nav.getByRole('button', { name: /Equipo/ }).click();
+      assert(await sheet.locator('[data-chronicles-equipment-folio]').isVisible());
+      await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
+      assert.deepEqual(errors, []);
+      console.log('CHRONICLES_CHARACTER_COMPACT_MOBILE_OK ' + width + 'x' + height);
+    } catch (error) {
+      failures.push(width + ': ' + error.message);
+      console.error('CHRONICLES_CHARACTER_COMPACT_MOBILE_FAIL', width, error);
     } finally { await ctx.close(); }
   }
 } finally { await browser.close(); }
