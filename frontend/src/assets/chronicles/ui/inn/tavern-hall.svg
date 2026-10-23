@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img">
+<defs>
+ <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#171521"/><stop offset=".46" stop-color="#493028"/><stop offset="1" stop-color="#20151a"/></linearGradient>
+ <linearGradient id="oak" x2=".1" y2="0" y2="1"><stop stop-color="#a46b37"/><stop offset=".46" stop-color="#59341d"/><stop offset="1" stop-color="#271914"/></linearGradient>
+ <radialGradient id="fire"><stop stop-color="#ffe9a8"/><stop offset=".26" stop-color="#ffb348"/><stop offset=".65" stop-color="#9d3e15" stop-opacity=".78"/><stop offset="1" stop-color="#5b210e" stop-opacity="0"/></radialGradient>
+ <radialGradient id="lamp"><stop stop-color="#fff1b0" stop-opacity=".78"/><stop offset=".35" stop-color="#d89736" stop-opacity=".26"/><stop offset="1" stop-color="#b9661b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="floor" x2=".3" y2="1"><stop stop-color="#5b3929"/><stop offset="1" stop-color="#100e14"/></linearGradient>
+ <pattern id="grain" width="72" height="35" patternUnits="userSpaceOnUse"><path d="M0 17h72 M12 3q23 5 52 0" stroke="#c59b6b" stroke-width="1" opacity=".12"/></pattern>
+</defs>
+<rect width="1600" height="900" fill="url(#wall)"/>
+<path d="M0 0h1600v170H0z" fill="#1b151a"/><path d="M0 130L800 -20 1600 130" stroke="#684227" stroke-width="42" fill="none"/><path d="M0 130L800 -20 1600 130" stroke="#a27040" stroke-width="3" fill="none" opacity=".5"/>
+<g opacity=".9"><path d="M116 0v730M1484 0v730M450 0v570M1170 0v570" stroke="#2a1b18" stroke-width="82"/><path d="M116 0v730M1484 0v730M450 0v570M1170 0v570" stroke="#84522c" stroke-width="9" opacity=".62"/></g>
+<path d="M0 550h1600v350H0z" fill="url(#floor)"/><path d="M0 550h1600v350H0z" fill="url(#grain)"/>
+<path d="M0 550h1600" stroke="#ae7641" stroke-width="22"/>
+<!-- warm stone hearth -->
+<path d="M558 240h484v337H558z" fill="#342724" stroke="#9c7553" stroke-width="25"/>
+<path d="M641 348q160 -130 318 0v220H641z" fill="#150d12" stroke="#81583b" stroke-width="18"/>
+<ellipse cx="800" cy="520" rx="200" ry="190" fill="url(#fire)"/>
+<path d="M715 546q-20 -82 22 -134 11 65 40 44 20 -52 46 -94 25 53 18 101 34 -20 40 -61 68 82 0 154Z" fill="#f5a53c"/><path d="M756 548q-9 -48 23 -91 8 48 36 10 34 54 12 81z" fill="#fff3b1"/>
+<path d="M666 572h268" stroke="#5f3822" stroke-width="27"/><path d="M677 557l249 16" stroke="#bf7440" stroke-width="7"/>
+<!-- back wall heraldry -->
+<path d="M710 92h180v200l-90 56-90-56z" fill="#661f22" stroke="#c8a269" stroke-width="7"/><path d="M800 140l13 46 44 2-36 29 11 49-32-32-34 32 10-49-35-29 44-2z" fill="#c49a58"/>
+<!-- shelf left -->
+<path d="M178 300h257M178 440h257" stroke="#9d6b3e" stroke-width="18"/>
+<g fill="#473525" stroke="#a47c50" stroke-width="3"><path d="M220 245h30v53h-30zM274 253h27v45h-27zM322 224h24v74h-24zM366 253h38v45h-38zM229 385h32v50h-32zM283 372h43v63h-43zM350 384h31v51h-31z"/></g>
+<g fill="#b77a3b" opacity=".75"><ellipse cx="232" cy="246" rx="17" ry="5"/><ellipse cx="287" cy="254" rx="14" ry="5"/><ellipse cx="333" cy="226" rx="13" ry="4"/><ellipse cx="384" cy="255" rx="20" ry="5"/></g>
+<!-- right window -->
+<path d="M1232 243q128 -131 263 0v270h-263z" fill="#181c26" stroke="#9b6e47" stroke-width="26"/><path d="M1259 260q103 -106 211 0v215h-211z" fill="#384454"/><path d="M1365 172v304M1259 352h211" stroke="#9e7045" stroke-width="15"/><path d="M1259 260q103 -106 211 0" fill="none" stroke="#ac835b" stroke-width="9"/><circle cx="1404" cy="266" r="36" fill="#d2d8bd" opacity=".6"/>
+<!-- hanging lanterns -->
+<g><path d="M303 0v180M1097 0v180" stroke="#322723" stroke-width="10"/><ellipse cx="303" cy="236" rx="165" ry="165" fill="url(#lamp)"/><ellipse cx="1097" cy="236" rx="165" ry="165" fill="url(#lamp)"/><path d="M269 184h68v85h-68zM1063 184h68v85h-68z" fill="#d7ad6b" stroke="#35231d" stroke-width="12"/><path d="M280 198h45v57h-45zM1074 198h45v57h-45z" fill="#ffd28b"/><path d="M272 270h62M1065 270h62" stroke="#543c26" stroke-width="12"/></g>
+<!-- room tables and chair silhouettes -->
+<g fill="url(#oak)" stroke="#191318" stroke-width="11"><ellipse cx="250" cy="673" rx="225" ry="57"/><path d="M45 669l20 235h39l30-184M358 720l26 184h36l12-217"/><ellipse cx="1360" cy="685" rx="248" ry="61"/><path d="M1175 708l25 196h47l21-176M1472 727l45 177h39l-15-212"/></g>
+<!-- actual service counter, visual anchor -->
+<path d="M435 636h734l75 264H365z" fill="url(#oak)" stroke="#150f14" stroke-width="19"/>
+<path d="M428 627h745l-28 68H447z" fill="#b7844e" stroke="#56351f" stroke-width="9"/>
+<path d="M403 748h797" stroke="#b78650" stroke-width="8" opacity=".6"/>
+<!-- bottles, breads and cup silhouettes on bar -->
+<g stroke="#201918" stroke-width="5"><path d="M527 580h28v54h-28z" fill="#799076"/><path d="M525 562h33v14h-33z" fill="#a99461"/><path d="M579 585h32v49h-32z" fill="#a6763a"/><path d="M581 569h28v20h-28z" fill="#d4ad66"/><path d="M999 600h56v27q-24 29-56 0z" fill="#b19c77"/><ellipse cx="1034" cy="593" rx="45" ry="14" fill="#ead3a3"/><path d="M1091 595h55v38h-55z" fill="#9d5631"/><path d="M1108 579h21v17h-21z" fill="#e3ac61"/></g>
+<path d="M0 870h1600" stroke="#c79b62" stroke-width="4" opacity=".3"/>
+</svg>
