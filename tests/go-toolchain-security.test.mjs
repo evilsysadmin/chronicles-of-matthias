@@ -176,7 +176,7 @@ function assertReleaseBuilderCacheIntegrity(docker) {
     'Docker must pin the bundled Go compiler before accessing dependencies');
   assert.ok(download > 0 && download < source && source < build,
     'Docker must download and verify cached dependencies before compiling source');
-  assert.doesNotMatch(builder, /\\|\\|\\s*(?:true|:)(?:\\s|$)/,
+  assert.doesNotMatch(builder, /\|\|\s*(?:true|:)(?:\s|$)/,
     'Go cache integrity check cannot ignore failures');
 }
 
