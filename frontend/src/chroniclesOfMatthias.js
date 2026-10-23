@@ -407,12 +407,15 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
 }
 
 // MM armor class: Speed bonus + worn armor (type + material).
-export function chroniclesPartyArmorClass(state, memberId) {
+// During a two-handed ranged attack, the shield cannot parry an immediate
+// counterstrike. Outside that action it still protects its owner.
+export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = {}) {
   const member = partyMember(state, memberId);
   if (!member) return 0;
   // Escudo de fe holds only while the fight it was cast in lasts.
   const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
-  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0) + chroniclesEquipmentBonuses(state, memberId).armorClassBonus + ward);
+  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward);
 }
 
 export function chroniclesUsesMM3Combat(state) {
@@ -421,9 +424,12 @@ export function chroniclesUsesMM3Combat(state) {
 
 // One enemy swing at one hero under MM rules: d20 + enemy to-hit vs 10 + AC.
 // Armor no longer subtracts damage here; it makes the blow miss.
-export function chroniclesMM3EnemySwing(state, enemy, targetId, salt = 'enemy') {
+export function chroniclesMM3EnemySwing(state, enemy, targetId, salt = 'enemy', defenseMode = 'melee') {
   const roll = chroniclesMM3Roll(state, salt, enemy.id, targetId);
-  const hit = chroniclesMM3AttackHits(roll, chroniclesMM3EnemyToHit(enemy), chroniclesPartyArmorClass(state, targetId));
+  const hit = chroniclesMM3AttackHits(
+    roll, chroniclesMM3EnemyToHit(enemy),
+    chroniclesPartyArmorClass(state, targetId, { mode: defenseMode }),
+  );
   return { roll, hit, damage: hit ? Math.max(1, Number(enemy.retaliation || 1)) : 0 };
 }
 
@@ -657,7 +663,10 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const targetId = retaliationTargetId(state, attacker);
   const previousTarget = state.party.find((member) => member.id === targetId);
   const swing = chroniclesUsesMM3Combat(state) && targetId
-    ? chroniclesMM3EnemySwing(state, enemy, targetId, 'retaliation')
+    ? chroniclesMM3EnemySwing(
+      state, enemy, targetId, 'retaliation',
+      mode === 'missile' && targetId === attacker.id ? 'missile' : 'melee',
+    )
     : null;
   const retaliationDamage = (member) => (swing
     ? swing.damage

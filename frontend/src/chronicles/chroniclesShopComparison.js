@@ -17,7 +17,9 @@ const STAT_LABELS = Object.freeze({
 });
 
 function combatMetrics(state, memberId) {
-  const attack = chroniclesPartyAttackStats(state, memberId);
+  // Never show the longest of melee + projectile reach while previewing a
+  // sword/polearm; a melee attack uses its own actual reach.
+  const attack = chroniclesPartyAttackStats(state, memberId, 'melee');
   return {
     toHit: Number(attack.toHit || 0),
     damage: Number(attack.damage || 0),
