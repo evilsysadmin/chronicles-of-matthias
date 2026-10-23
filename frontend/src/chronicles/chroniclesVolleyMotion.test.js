@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_VOLLEY_MAX_DURATION, CHRONICLES_VOLLEY_NOSE_REACH, chroniclesVolleyFlightSample, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chroniclesVolleyMotion.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, CHRONICLES_VOLLEY_NOSE_REACH, chroniclesVolleyFlightSample, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chroniclesVolleyMotion.js';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 
@@ -65,6 +65,19 @@ describe('Chronicles · polished projectile flight', () => {
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'crossbow', distance)).toBeNull();
     expect(chroniclesVolleyVisibleFlight(1, 0, 0.3, 'sling', distance)).toBeNull();
     expect(chroniclesVolleyObstacleDistance(grid, { x: 1, y: 3 }, { dx: 0, dy: 1 })).toBe(Infinity);
+  });
+
+  it('never lets an already-fired projectile follow a later turn or movement', () => {
+    const launch = { x: 7, y: 18, direction: 0 };
+    expect(chroniclesVolleyMatchesLaunchPose(launch, { ...launch, turns: 4 })).toBe(true);
+    expect(chroniclesVolleyMatchesLaunchPose(launch, { ...launch, direction: 1 })).toBe(false);
+    expect(chroniclesVolleyMatchesLaunchPose(launch, { ...launch, x: 8 })).toBe(false);
+    expect(chroniclesVolleyMatchesLaunchPose(launch, { ...launch, y: 17 })).toBe(false);
+    expect(chroniclesVolleyMatchesLaunchPose(null, launch)).toBe(false);
+    expect(chroniclesVolleyMatchesLaunchPose(launch, null)).toBe(false);
+    expect(chroniclesVolleyMatchesLaunchPose({ ...launch, direction: NaN }, launch)).toBe(false);
+    // A new independent shot can still launch from the new, legal pose.
+    expect(chroniclesVolleyMatchesLaunchPose({ ...launch, direction: 1 }, { ...launch, direction: 1 })).toBe(true);
   });
 
   it('keeps unobstructed arrows and rejects invalid rays conservatively', () => {

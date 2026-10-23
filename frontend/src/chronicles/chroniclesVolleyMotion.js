@@ -17,6 +17,17 @@ export const CHRONICLES_VOLLEY_NOSE_REACH = Object.freeze({
 // the party's tile toward its facing wall and stop just before its near face.
 // A 4 m tile starts 2 m ahead. Inset by 8 cm for flat dungeon walls,
 // or more for three-dimensional shop doors and projecting settlement facades.
+// Volley sprites are mounted in camera-local space to give each real shooter
+// a readable first-person shot. A later turn/move must not rotate or drag
+// those already-launched sprites through nearby solid walls.
+export function chroniclesVolleyMatchesLaunchPose(launchPose, state) {
+  if (!launchPose || !state) return false;
+  return Number.isInteger(launchPose.x) && Number.isInteger(launchPose.y)
+    && Number.isInteger(launchPose.direction)
+    && state.x === launchPose.x && state.y === launchPose.y
+    && state.direction === launchPose.direction;
+}
+
 export function chroniclesVolleyObstacleDistance(grid, origin, facing, cellSize = 4, facadeInset = 0.08) {
   if (!Array.isArray(grid) || !Number.isInteger(origin?.x) || !Number.isInteger(origin?.y)
     || !Number.isInteger(facing?.dx) || !Number.isInteger(facing?.dy)
