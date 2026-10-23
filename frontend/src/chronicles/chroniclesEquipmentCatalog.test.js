@@ -81,7 +81,8 @@ describe('Chronicles · MM3 equipment catalog', () => {
     const { chroniclesMM3EnemyArmorClass, chroniclesMM3AttackHits } = await import('./chroniclesMM3Rules.js');
     const { chroniclesMapById } = await import('./chroniclesMapCatalog.js');
     const bandit = chroniclesMapById('swordhaven-first-book').enemies.find((e) => e.id === 'swordhaven-south-cutpurse');
-    expect(bandit.maxHp).toBe(4);
+    // The authored map starts at 4 HP, but the resolved enemy build adds +1 vigor.
+    expect(bandit.maxHp).toBe(5);
     const ac = chroniclesMM3EnemyArmorClass(bandit);
     const attacks = (id) => {
       const equipped = chroniclesEquipItem(mm3Company(id), 'matthias', id);
