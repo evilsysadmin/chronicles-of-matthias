@@ -107,7 +107,12 @@ describe('Chronicles · MM3 equipment catalog', () => {
     const { chroniclesMM3EnemyToHit, chroniclesMM3AttackHits } = await import('./chroniclesMM3Rules.js');
     const enemy = chroniclesMapById('swordhaven-first-book').enemies.find((e) => e.id === 'swordhaven-south-cutpurse');
     const toHit = chroniclesMM3EnemyToHit(enemy);
-    const initial = mm3Company('wooden-shield', 'brass-shield', 'bronze-shield');
+    // Equip a weapon first so the one-point accuracy penalty is observable
+    // above the engine's minimum to-hit floor at character level 1.
+    const initial = chroniclesEquipItem(
+      mm3Company('wooden-shield', 'brass-shield', 'bronze-shield', 'bronze-sword'),
+      'matthias', 'bronze-sword',
+    );
     const wooden = chroniclesEquipItem(initial, 'matthias', 'wooden-shield');
     const brass = chroniclesEquipItem(initial, 'matthias', 'brass-shield');
     const bronze = chroniclesEquipItem(initial, 'matthias', 'bronze-shield');
