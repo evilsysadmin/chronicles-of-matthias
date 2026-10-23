@@ -889,7 +889,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // mode: 'auto' (botón táctil), 'melee' (A · atacar), 'missile' (S · disparar).
   const attackWithSelected = useCallback((mode = 'auto') => {
     const current = stateRef.current;
-    if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
+    if (!current || current.phase === 'defeated' || current.phase === 'escaped'
+      || (mode === 'melee' && !current.initiative)) return;
     const initiativeActor = chroniclesCurrentInitiativeActor(current.initiative);
     if (initiativeActor?.kind === 'enemy') return;
     const memberId = initiativeActor?.kind === 'party'
@@ -1436,10 +1437,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           return;
         }
       }
-      // MM3: arrows navigate, Q/E strafe; A attacks, S shoots.
+      // MM3: arrows navigate, Q/E strafe; A attacks only in combat, S shoots anywhere.
       // The adventure menu consumes Q before directional keys while visible.
       // Space is intentionally unbound; it must never dispatch an attack.
-      const combatMode = chroniclesCombatKeyMode(event.key);
+      const combatMode = chroniclesCombatKeyMode(event.key, { inCombat: Boolean(current.initiative) });
       if (combatMode) {
         event.preventDefault();
         if (event.repeat) return;
@@ -2000,7 +2001,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   aria-label={touchVolley.available
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
-                  title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar · S · disparar"
+                  title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar"
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
                     ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (

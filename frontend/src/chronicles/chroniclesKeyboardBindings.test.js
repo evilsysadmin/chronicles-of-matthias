@@ -18,12 +18,20 @@ describe('Chronicles MM3 · keyboard movement and attack contract', () => {
     expect(CHRONICLES_DIRECTION_KEYS.s).toBeUndefined();
     expect(CHRONICLES_DIRECTION_KEYS[' ']).toBeUndefined();
   });
-  it('only A attacks in melee and S shoots; Space never triggers combat', () => {
-    for (const key of ['a', 'A']) expect(chroniclesCombatKeyMode(key)).toBe('melee');
-    for (const key of ['s', 'S']) expect(chroniclesCombatKeyMode(key)).toBe('missile');
+  it('A only attacks in combat; S shoots in exploration and combat; Space remains unbound', () => {
+    for (const key of ['a', 'A']) {
+      expect(chroniclesCombatKeyMode(key), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: false }), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('melee');
+    }
+    for (const key of ['s', 'S']) {
+      expect(chroniclesCombatKeyMode(key), key).toBe('missile');
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('missile');
+    }
     for (const key of [' ', 'Space', 'Spacebar', 'w', 'W', 'd', 'D', 'q', 'Q', 'e', 'E',
       ...Object.keys(CHRONICLES_DIRECTION_KEYS)]) {
       expect(chroniclesCombatKeyMode(key), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBeNull();
     }
   });
 });
