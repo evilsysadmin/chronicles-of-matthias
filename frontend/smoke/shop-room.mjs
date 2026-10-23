@@ -490,7 +490,9 @@ try {
           const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
           if (width > 900) await vest.locator('button').hover();
           else await vest.locator('button').click();
-          const note = vest.locator('.chronicles-shop__gear-peek');
+          const note = width >= 1180 && height >= 540
+            ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+            : vest.locator('.chronicles-shop__gear-peek');
           await note.waitFor({ state: 'visible' });
           assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
             'Every Odo armor/shield needs its actual four-hero equip comparison');
@@ -554,7 +556,10 @@ try {
       const potion = dialog.locator('[data-chronicles-shop-item="healing-potion"]');
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
-      const note = potion.locator('.chronicles-shop__consumable-peek');
+      const peekInAisle = width >= 1180 && height >= 540;
+      const note = peekInAisle
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+        : potion.locator('.chronicles-shop__consumable-peek');
       await note.waitFor({ state: 'visible' });
       assert.match(await note.innerText(), /15 PV/);
       assert.match(await note.innerText(), /Toda la compañía/);
@@ -563,8 +568,11 @@ try {
       const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
       if (mobile) await scroll.locator('button').click();
       else await scroll.locator('button').hover();
-      await scroll.locator('.chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
-      assert.match(await scroll.locator('.chronicles-shop__consumable-peek').innerText(),
+      const scrollNote = peekInAisle
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+        : scroll.locator('.chronicles-shop__consumable-peek');
+      await scrollNote.waitFor({ state: 'visible' });
+      assert.match(await scrollNote.innerText(),
         /14 de daño · alcance 3/);
       assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
       await page.screenshot({ path: `smoke-shop-apothecary-peek-${width}.png` });
