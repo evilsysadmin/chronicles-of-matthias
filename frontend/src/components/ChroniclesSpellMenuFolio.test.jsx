@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../chronicles/chroniclesMagic.js';
-import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, ChroniclesSpellTargetCancel, ChroniclesSpellTargetQuestion, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesHealTargetPicker, ChroniclesReviveTargetPicker, ChroniclesSpellTargetBanner, ChroniclesSpellTargetCancel, ChroniclesSpellTargetQuestion, chroniclesSpellMenuKind, chroniclesSpellMenuPageShortcut } from './ChroniclesSpellMenu.jsx';
 
 const makeState = () => createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
 function caster(state) {
@@ -77,6 +77,18 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(renderToStaticMarkup(createElement(ChroniclesSpellTargetQuestion, {
       spellId: 'first-aid', notice: 'A 0 PV necesita resurrección, no curación.',
     }))).toContain('A 0 PV necesita resurrección');
+  });
+
+  it('places the target question and accessible Cancel together outside every portrait button', () => {
+    const html = renderToStaticMarkup(createElement(ChroniclesSpellTargetBanner, {
+      spellId: 'first-aid', notice: 'Selecciona un compañero herido', onCancel: () => {},
+    }));
+    expect(html).toContain('data-chronicles-spell-target-banner="first-aid"');
+    expect(html).toContain('data-chronicles-spell-target-question="first-aid"');
+    expect(html).toContain('data-chronicles-spell-target-cancel="true"');
+    expect(html).toContain('Selecciona un compañero herido');
+    expect(html).not.toContain('chronicles-party-member');
+    expect(html.indexOf('chronicles-spell-target-question')).toBeLessThan(html.indexOf('chronicles-spell-target-cancel'));
   });
 
   it('renders touch cancellation as a separate accessible action, not a nested portrait button', () => {

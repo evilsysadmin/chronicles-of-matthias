@@ -1547,81 +1547,77 @@
   pointer-events: none;
 }
 
-/* Explicit cancellation is a sibling to the four hero buttons, not a
-   nested button inside the caster's speech bubble. Stay touch-friendly. */
+/* One genuine row immediately above the portraits, not a tooltip
+   projected from the caster. The sapphire belongs to the view row and cannot
+   overlap this strip as its height becomes part of the party layout. */
+.chronicles .chronicles-party .chronicles-spell-target-banner {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 16;
+  justify-self: center;
+  align-self: center;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 5px 8px;
+  border: 2px solid #efc479;
+  background: #231b26;
+  box-shadow: 0 5px 16px #000b, inset 0 0 0 1px #84572b;
+  pointer-events: auto;
+}
+.chronicles .chronicles-spell-target-question {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px 12px;
+  color: #fff1ca;
+  font: clamp(1.05rem, 1.45vw, 1.35rem)/1.05 var(--mm3-pixel-font);
+  text-align: center;
+}
+.chronicles .chronicles-spell-target-question strong { color: #ffe6a9; font-weight: 700; }
+.chronicles .chronicles-spell-target-question small { color: #e1d8c4; font-size: .88em; }
+.chronicles .chronicles-spell-target-question .is-warning { color: #ffb6a9; }
 .chronicles .chronicles-party .chronicles-spell-target-cancel {
-  position: absolute;
-  z-index: 15;
-  top: 4px;
-  right: 4px;
-  width: auto;
-  min-height: 38px;
-  padding: 6px 12px;
-  border: 2px solid #e7bb6a;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 4px 11px;
+  border: 1px solid #e7bb6a;
   border-radius: 0;
-  background: #2d2130;
+  background: #45334a;
   color: #ffe5ac;
-  font: 700 1.15rem/1 var(--mm3-pixel-font);
+  font: 1.06rem/1 var(--mm3-pixel-font);
   cursor: pointer;
-  box-shadow: 0 5px 14px #0009;
 }
 .chronicles .chronicles-party .chronicles-spell-target-cancel:hover,
 .chronicles .chronicles-party .chronicles-spell-target-cancel:focus-visible {
-  background: #45334a;
+  background: #644667;
   outline: 2px solid #ffe5ac;
   outline-offset: 2px;
 }
-/* On wide MM3 layouts the portrait strip touches the bottom of the view.
-   Position the cancel tab just above that strip, beside the speech plaque. */
-@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
-  .chronicles .chronicles-party .chronicles-spell-target-cancel {
-    top: -46px;
-    right: 4px;
+.chronicles[data-chronicles-targeting] .chronicles-party-member.is-spell-target-valid {
+  border-color: #ffe4a0 #94751e #94751e #ffe4a0;
+  box-shadow: 0 0 0 2px rgba(245, 211, 113, .65);
+}
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-party .chronicles-spell-target-banner {
+    width: 100%;
+    gap: 3px;
+    padding: 3px 5px;
   }
-}
-
-/* MM3 '¿A quién?': a small speech plaque attached to the caster portrait,
-   not a blocking second spell dialog. Keypresses 1–4 or portrait taps decide. */
-.chronicles .chronicles-party:has(.chronicles-spell-target-question) {
-  overflow: visible;
-}
-.chronicles .chronicles-party-member:has(.chronicles-spell-target-question) {
-  position: relative;
-  z-index: 8;
-}
-.chronicles .chronicles-party-member .chronicles-spell-target-question {
-  position: absolute;
-  z-index: 10;
-  left: 50%;
-  bottom: calc(100% + 9px);
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: min(280px, 75vw);
-  display: grid;
-  justify-items: center;
-  gap: 3px;
-  padding: 9px 12px;
-  border: 3px double #efc479;
-  background: #231b26;
-  color: #fff1ca;
-  text-align: center;
-  font-family: var(--mm3-pixel-font);
-  font-size: clamp(1.2rem, 1.6vw, 1.55rem);
-  line-height: 1.05;
-  pointer-events: none;
-  box-shadow: 0 5px 16px #000b, inset 0 0 0 1px #84572b;
-}
-.chronicles .chronicles-party-member .chronicles-spell-target-question::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: calc(50% - 7px);
-  border: 7px solid transparent;
-  border-top-color: #efc479;
-}
-.chronicles .chronicles-spell-target-question strong { color: #ffe6a9; font-weight: 700; }
-.chronicles .chronicles-spell-target-question small { color: #e1d8c4; font-size: .82em; }
-.chronicles .chronicles-spell-target-question .is-warning { color: #ffb6a9; }
-.chronicles .chronicles-party-member:focus-visible:has(.chronicles-spell-target-question) {
-  outline: 2px solid #f9de9a;
+  .chronicles .chronicles-spell-target-question {
+    gap: 2px 6px;
+    font-size: .88rem;
+  }
+  .chronicles .chronicles-spell-target-cancel {
+    min-height: 28px;
+    font-size: .82rem;
+  }
 }

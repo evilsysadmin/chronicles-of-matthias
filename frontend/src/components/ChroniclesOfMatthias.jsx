@@ -107,7 +107,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
-import ChroniclesSpellMenu, { ChroniclesSpellTargetCancel, ChroniclesSpellTargetQuestion } from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesSpellTargetBanner } from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
@@ -1648,12 +1648,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       <div className="chronicles-shell">
         <aside className="chronicles-party" aria-label="Grupo de Matthias">
           <span className="chronicles-panel-kicker">GRUPO · 1–4 SELECCIONAR · DOBLE FICHA</span>
+          {pendingSpellTarget && (
+            <ChroniclesSpellTargetBanner spellId={pendingSpellTarget.spellId}
+              notice={spellTargetNotice} onCancel={() => {
+                setPendingSpellTarget(null);
+                setSpellTargetNotice('');
+              }} />
+          )}
           {state.party.map((member, index) => {
             return (
               <button
                 type="button"
                 key={member.id}
-                className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''}`}
+                className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''} ${pendingSpellTarget && chroniclesHealTargetStatus(member) === 'wounded' ? 'is-spell-target-valid' : ''}`}
                 onClick={() => pendingSpellTarget ? chooseSpellTarget(member.id) : openMemberSheet(member.id)}
                 disabled={expeditionOver}
                 aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}`}
@@ -1689,19 +1696,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     </i>
                   )}
                 </b>
-                {pendingSpellTarget?.memberId === member.id && (
-                  <ChroniclesSpellTargetQuestion spellId={pendingSpellTarget.spellId}
-                    notice={spellTargetNotice} />
-                )}
               </button>
             );
           })}
-          {pendingSpellTarget && (
-            <ChroniclesSpellTargetCancel onCancel={() => {
-              setPendingSpellTarget(null);
-              setSpellTargetNotice('');
-            }} />
-          )}
           {/* MM3 keeps two places beside the company for hired hands. */}
           {[1, 2].map((slot) => (
             <div key={`hireling-${slot}`} className="chronicles-party-hireling" data-chronicles-hireling-slot={slot}

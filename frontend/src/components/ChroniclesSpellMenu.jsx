@@ -64,6 +64,17 @@ export function ChroniclesSpellTargetCancel({ onCancel }) {
   );
 }
 
+// One dedicated strip above the portraits. The question and Cancel are
+// siblings of the hero buttons, never descendants of a portrait button.
+export function ChroniclesSpellTargetBanner({ spellId, notice = '', onCancel }) {
+  return (
+    <div className="chronicles-spell-target-banner" data-chronicles-spell-target-banner={spellId}>
+      <ChroniclesSpellTargetQuestion spellId={spellId} notice={notice} />
+      <ChroniclesSpellTargetCancel onCancel={onCancel} />
+    </div>
+  );
+}
+
 // Explicit target list, including the *reason* a fallen or healthy hero cannot
 // be healed. Disabled entries are still readable; no spell points are spent.
 export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
