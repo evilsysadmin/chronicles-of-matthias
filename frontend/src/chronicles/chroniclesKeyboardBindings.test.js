@@ -389,6 +389,8 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
   });
 
   it('closes a merchant, guild or character dossier without opening a menu behind it', () => {
+    expect(chroniclesFirstPersonEscapeAction({ innOpen: true })).toBe('close-inn');
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true, innOpen: true })).toBe('close-sheet');
     expect(chroniclesFirstPersonEscapeAction({ shopOpen: true })).toBe('close-shop');
     expect(chroniclesFirstPersonEscapeAction({ guildOpen: true })).toBe('close-guild');
     expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true })).toBe('close-sheet');
