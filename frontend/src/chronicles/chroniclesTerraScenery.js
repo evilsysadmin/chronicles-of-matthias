@@ -33,21 +33,52 @@ function texture(kind, repeatX = 1, repeatY = 1) {
 
 const lit = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0.02, ...opts });
 
+// Keep the world-grid and every instance transform untouched. A small, shared
+// vertex displacement breaks the 20-face icosahedron silhouette without adding
+// draw calls or forcing a dense terrain mesh. The analytic displacement is
+// position-derived, so duplicated UV-seam vertices move together.
+export function chroniclesOrganicRockGeometry({ coarsePointer = false } = {}) {
+  const geometry = new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1);
+  if (coarsePointer) return geometry;
+  const positions = geometry.getAttribute('position');
+  const normals = geometry.getAttribute('normal');
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    const waviness = 0.085 * Math.sin(x * 5.3 + z * 2.1)
+      + 0.055 * Math.cos(z * 6.1 - y * 3.7)
+      + 0.035 * Math.sin(y * 8.0 + x * 4.2);
+    const radius = 1 + waviness;
+    positions.setXYZ(i, x * radius, y * radius * 0.93, z * radius);
+    // Smooth broadly rounded rock faces; pixel-textured albedo still supplies
+    // the tiny cracks and weathering without showing triangular facets.
+    normals.setXYZ(i, x, y * 0.93, z);
+  }
+  positions.needsUpdate = true;
+  normals.needsUpdate = true;
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
-function partCatalog() {
+function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
+  const roundedRock = (color, opts = {}) => lit(color, {
+    map: texture('rock'), flatShading: coarsePointer, ...opts,
+  });
   return {
-    boulder: () => [new THREE.IcosahedronGeometry(1, 0), rock(0xd8d2c4)],
-    boulderDark: () => [new THREE.IcosahedronGeometry(1, 0), rock(0x8a857c)],
-    boulderSnow: () => [new THREE.IcosahedronGeometry(1, 0), lit(0xf2f6fa, { map: texture('snow'), flatShading: true })],
+    boulder: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0xd8d2c4)],
+    boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
+    boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
     crag: () => [new THREE.ConeGeometry(0.9, 3, 5), rock(0xc8c0b0)],
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
-    emberRock: () => [new THREE.IcosahedronGeometry(1, 0), lit(0x5a4a44, { map: texture('rock'), flatShading: true, emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
+    emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    crown: () => [new THREE.IcosahedronGeometry(1, 1), lit(0xd8e6c8, { map: texture('leaves', 3, 3), flatShading: true })],
-    bush: () => [new THREE.IcosahedronGeometry(1, 0), lit(0xb8cca8, { map: texture('leaves', 2, 2), flatShading: true })],
-    pine: () => [new THREE.ConeGeometry(1, 1, 8), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
-    pineSnow: () => [new THREE.ConeGeometry(1, 1, 8), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
+    crown: () => [new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1), lit(0xd8e6c8, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
+    bush: () => [new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1), lit(0xb8cca8, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
+    pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
+    pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
     reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
     pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, 14), lit(0x1c2a26, { roughness: 0.18, metalness: 0.1 })],
@@ -284,7 +315,7 @@ export function buildTerraScenery({ grid = [], center, biome, scenery = [], coar
     }
   }
 
-  const catalog = partCatalog();
+  const catalog = partCatalog(coarsePointer);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
