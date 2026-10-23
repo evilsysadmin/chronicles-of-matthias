@@ -18,6 +18,10 @@ jobs:
     name: api-e2e
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # Covers go vet/test/run, govulncheck install/scans, and Go builds alike.
+    # A module toolchain directive must never download or switch the compiler.
+    env:
+      GOTOOLCHAIN: local
     services:
       mongodb:
         image: mongo:7
