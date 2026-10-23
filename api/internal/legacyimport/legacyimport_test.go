@@ -223,3 +223,28 @@ func TestImportRejectsForeignAndAmbiguousSourceBeforeAnyWrite(t *testing.T) {
 		t.Fatalf("duplicate source ID produced partial import: %+v, %v", result, err)
 	}
 }
+
+
+func TestValidateDistinctSourceAndTargetDatabases(t *testing.T) {
+	for _, tc := range []struct {
+		source, target string
+		valid          bool
+	}{
+		{"chess_study_staging", "chronicles_staging", true},
+		{"chess_study_staging", "chess_study_staging", false},
+		{" chess_study_staging ", "chess_study_staging", false},
+		{"", "chronicles_staging", false},
+		{"chess_study_staging", "", false},
+		{"chess_study_staging", "chess_study", false},
+		{"chess_study", "chronicles_staging", false},
+		{"other_legacy_db", "chronicles_staging", false},
+	} {
+		err := ValidateDistinctDatabases(tc.source, tc.target)
+		if tc.valid && err != nil {
+			t.Fatalf("valid distinct source and target rejected: %v", err)
+		}
+		if !tc.valid && (err == nil || err.Error() != "legacy import failed at validate-source: invalid") {
+			t.Fatalf("unsafe source/target configuration accepted: %v", err)
+		}
+	}
+}

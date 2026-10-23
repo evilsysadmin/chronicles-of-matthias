@@ -56,6 +56,22 @@ func fail(stage string, err error) error {
 	return &Error{Stage: stage, Reason: reason}
 }
 
+// ValidateDistinctDatabases prevents an operator import from treating the
+// target game's own database as an archive. Otherwise every existing target
+// run could be reported as successfully "kept" despite no real migration.
+// This validation happens only upon the staging-only import operation, not
+// during API startup, and never exposes credentials or Mongo connection URIs.
+func ValidateDistinctDatabases(source, target string) error {
+	from, to := strings.TrimSpace(source), strings.TrimSpace(target)
+	// The staging-only importer may read Chess Studio staging but must never
+	// write into either Chess Studio environment, even if accidentally
+	// configured as the independent game's target database.
+	if from != SourceDatabase || to == "" || to == SourceDatabase || to == "chess_study" {
+		return &Error{Stage: "validate-source", Reason: "invalid"}
+	}
+	return nil
+}
+
 // Source reads the legacy data.
 type Source interface {
 	Runs(ctx context.Context, owner string) ([]bson.D, error)
