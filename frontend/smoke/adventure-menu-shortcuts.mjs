@@ -26,8 +26,9 @@ try {
       assert.equal(await menu.isVisible(), true);
       // Opening from a touch/external control must bring focus into the modal.
 
-      // Modal keyboard navigation must wrap both ways instead of reaching
-      // the playable world and its hidden controls behind the folio.
+      // Plain Tab now closes the ordinary adventure folio. Shift+Tab still
+      // traverses its actions, while nested confirmation/feedback keep
+      // native Tab traversal instead of accidentally dismissing the modal.
       const details = page.locator('details.chronicles-game-menu');
       const opener = page.locator('.chronicles-game-menu > summary');
       await details.evaluate((root) => {
@@ -45,11 +46,16 @@ try {
       const lastControl = page.locator('[data-menu-last-focus]');
       await lastControl.focus();
       await page.keyboard.press('Tab');
-      assert.equal(await firstControl.evaluate((node) => document.activeElement === node), true,
-        'Tab from the last menu control must wrap to the first, not the game HUD');
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false',
+        'Tab from an open ordinary folio must close it, without saving or acting in the game');
+      await page.keyboard.press('Tab');
+      await menu.waitFor({ state: 'visible' });
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'true',
+        'The very next Tab reopens the folio');
+      await firstControl.focus();
       await page.keyboard.press('Shift+Tab');
       assert.equal(await lastControl.evaluate((node) => document.activeElement === node), true,
-        'Shift+Tab from the first menu control must wrap to the last');
+        'Shift+Tab from first menu control must wrap safely to the last');
       // Leave the last menu control and restore ordinary action focus before
       // testing the in-game save/quit keyboard routing below.
       await menu.getByRole('button', { name: 'Continuar' }).focus();

@@ -39,6 +39,7 @@ export function chroniclesAdventureMenuShortcut(event, {
   const target = event.target;
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  if (event.key === 'Tab' && !event.shiftKey && !confirmExitWithoutSaving) return 'close';
   if (saveBusy || confirmExitWithoutSaving) return null;
   if (event.key === 's' || event.key === 'S') return 'save';
   if (event.key === 'q' || event.key === 'Q') return 'request-exit';
@@ -98,6 +99,14 @@ export function chroniclesContainAdventureMenuTab(event, menuDetails) {
   const confirmation = menuDetails.querySelector?.(
     '[role="group"][aria-label="Confirmar salida sin guardar"]',
   );
+  // The ordinary folio uses Tab as a second toggle key. Nested feedback
+  // and unsafe-exit confirmation still own native Tab navigation; so do
+  // focused audio sliders and other form controls for accessibility.
+  const mailbox = menuDetails.querySelector?.('[data-chronicles-feedback-mailbox]');
+  const focusTarget = menuDetails.ownerDocument?.activeElement;
+  const editing = focusTarget?.isContentEditable
+    || focusTarget?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]');
+  if (!confirmation && !mailbox && !event.shiftKey && !editing) return false;
   const scope = confirmation || menuDetails;
   const controls = Array.from(scope.querySelectorAll(
     'summary, button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',

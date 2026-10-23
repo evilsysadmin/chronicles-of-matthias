@@ -1293,9 +1293,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
-      // Let forms and modal dialogues own their keyboard events. Shift+Tab
-      // always retains browser focus navigation; once inside the game menu,
-      // plain Tab traverses its accessible controls rather than closing it.
+      // The expedition folio toggles with plain Tab in either direction.
+      // Shift+Tab and nested forms/confirmation preserve native focus travel.
       const target = event.target;
       const isEditing = target?.isContentEditable
         || target?.closest?.('input, textarea, select, [contenteditable="true"]');

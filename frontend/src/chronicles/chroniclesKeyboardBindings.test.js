@@ -121,6 +121,11 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
       expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: false })).toBeNull();
     }
     expect(chroniclesAdventureMenuShortcut(keyEvent('a'), { menuOpen: true })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Tab'), { menuOpen: true })).toBe('close');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Tab'), { menuOpen: false })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Tab', { shiftKey: true }), { menuOpen: true })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Tab'), { menuOpen: true, subpageOpen: true })).toBeNull();
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Tab'), { menuOpen: true, confirmExitWithoutSaving: true })).toBeNull();
     expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
     expect(CHRONICLES_DIRECTION_KEYS.q).toBe('strafe-left');
     expect(CHRONICLES_DIRECTION_KEYS.e).toBe('strafe-right');
@@ -203,13 +208,13 @@ describe('Chronicles modal adventure-menu Tab containment', () => {
     return { doc, controls, menu, event };
   };
 
-  it('wraps forwards from the final control to the opener and back with Shift+Tab', () => {
+  it('lets plain Tab reach the game toggle, but Shift+Tab wraps keyboard focus safely', () => {
     const { doc, controls, menu, event } = setup();
     controls[2].focus();
-    const forwards = event();
-    expect(chroniclesContainAdventureMenuTab(forwards, menu)).toBe(true);
-    expect(forwards.prevented).toBe(true);
-    expect(doc.activeElement).toBe(controls[0]);
+    const close = event();
+    expect(chroniclesContainAdventureMenuTab(close, menu)).toBe(false);
+    expect(close.prevented).toBe(false);
+    controls[0].focus();
     const backwards = event(true);
     expect(chroniclesContainAdventureMenuTab(backwards, menu)).toBe(true);
     expect(backwards.prevented).toBe(true);
@@ -240,7 +245,7 @@ describe('Chronicles modal adventure-menu Tab containment', () => {
     expect(chroniclesContainAdventureMenuTab(stray, menu)).toBe(true);
     expect(doc.activeElement).toBe(cancel);
 
-    // Once the confirmation closes, original full-menu focus order resumes.
+    // Once the confirmation closes, plain Tab returns to toggling.
     menu.querySelector = () => null;
     cancel.focus();
     const fullMenu = event();

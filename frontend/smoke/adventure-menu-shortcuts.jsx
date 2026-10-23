@@ -80,8 +80,8 @@ function MenuShortcutFixture() {
         menuOpen: open, saveBusy, confirmExitWithoutSaving,
         subpageOpen: feedbackOpen,
       });
-      // Match the first-person view: outside the modal, Tab opens the menu;
-      // after Esc releases focus, the next Tab must still be usable.
+      // Match the first-person view: Tab opens the menu when closed and
+      // closes the ordinary folio; forms and nested confirmations keep Tab.
       if (!action && event.key === 'Tab' && !open && !event.shiftKey
         && !event.target?.closest?.('.chronicles-game-menu')) {
         event.preventDefault();
