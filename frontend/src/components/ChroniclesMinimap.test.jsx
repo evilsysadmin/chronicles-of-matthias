@@ -76,7 +76,7 @@ describe('ChroniclesMinimap', () => {
       return html.match(/<button[^>]*aria-label="([^"]*)"/)?.[1] || '';
     };
 
-    expect(label([])).toMatch(/^Minimapa local\. Abrir automapa completo\. Coordenadas: X\d+ Y\d+$/);
+    expect(label([])).toMatch(/^Minimapa local\. Abrir automapa completo\. Ubicación: SWORDHAVEN\. Coordenadas: X\d+ Y\d+$/);
     expect(label(['7:4'])).toContain('F: Forja de Brunna');
     expect(label(['7:4'])).not.toContain('Coracería de Odo');
     expect(label(['7:4', '11:4'])).toContain('A: Coracería de Odo');
