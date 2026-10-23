@@ -125,7 +125,9 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
   const height = wallHeight - 0.52;
   const panels = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.935, height, 0.012),
-    material(0xffffff, { roughness: 0.97 }),
+    // Authored limewash still varies by house via instanceColor. Reuse the
+    // existing cached plaster grain instead of leaving a flat colour polygon.
+    material(0xffffff, { map: swordhavenSurfaceTexture('stucco'), roughness: 0.97 }),
     faces.length,
   );
   const dummy = new THREE.Object3D();
@@ -323,10 +325,17 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   ]);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  // UVs follow the roof slope instead of projecting a flat roof-colour
+  // triangle. Preserve all six vertices and 18 indices for old mobile budgets.
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute([
+    0, 0, 1, 0, 0, 1, 1, 1, 0, 0.5, 1, 0.5,
+  ], 2));
   geometry.setIndex([0, 1, 5, 0, 5, 4, 4, 5, 3, 4, 3, 2, 0, 4, 2, 1, 3, 5]);
   geometry.computeVertexNormals();
   const roofs = new THREE.InstancedMesh(
-    geometry, material(0x775343, { side: THREE.DoubleSide, roughness: 0.95 }), valid.length,
+    geometry, material(0xb88d75, {
+      map: swordhavenSurfaceTexture('roof'), side: THREE.DoubleSide, roughness: 0.95,
+    }), valid.length,
   );
   const dummy = new THREE.Object3D();
   valid.forEach(({ x, y, width }, index) => {
