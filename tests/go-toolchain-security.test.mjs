@@ -165,3 +165,35 @@ test('Docker OpenPGP guard cannot be removed, narrowed, or bypassed', () => {
     assert.throws(() => assertsProductionOpenPGPExclusion(changed));
   }
 });
+
+function assertReleaseBuilderCacheIntegrity(docker) {
+  const builder = docker.split('\nFROM scratch')[0];
+  const toolchain = builder.indexOf('\nENV GOTOOLCHAIN=local\n');
+  const download = builder.indexOf('RUN go mod download && go mod verify');
+  const source = builder.indexOf('COPY internal/');
+  const build = builder.indexOf('go build -trimpath');
+  assert.ok(toolchain > 0 && toolchain < download,
+    'Docker must pin the bundled Go compiler before accessing dependencies');
+  assert.ok(download > 0 && download < source && source < build,
+    'Docker must download and verify cached dependencies before compiling source');
+  assert.doesNotMatch(builder, /\|\|\s*(?:true|:)(?:\s|$)/,
+    'Go cache integrity check cannot ignore failures');
+}
+
+test('release Docker builder fixes local toolchain and checks module-cache integrity', () => {
+  assertReleaseBuilderCacheIntegrity(dockerfile);
+});
+
+test('release Docker module checks reject missing, skipped, or reordered verification', () => {
+  for (const mutation of [
+    (d) => d.replace('ENV GOTOOLCHAIN=local', 'ENV GOTOOLCHAIN=auto'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod verify && go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && go mod verify || true'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && echo verified'),
+  ]) {
+    const altered = mutation(dockerfile);
+    assert.notEqual(altered, dockerfile, 'mutation must change the actual Dockerfile');
+    assert.throws(() => assertReleaseBuilderCacheIntegrity(altered));
+  }
+});
