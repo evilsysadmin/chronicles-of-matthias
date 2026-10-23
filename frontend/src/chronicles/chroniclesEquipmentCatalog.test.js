@@ -100,6 +100,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(axe.stats.toHit).toBeLessThan(mace.stats.toHit);
     expect(dagger.hitPercent).toBeGreaterThan(axe.hitPercent);
     expect(axe.turnsOnHit).toBeLessThanOrEqual(dagger.turnsOnHit);
+    // The sword should not be a strictly better mace for the SAME price.
+    expect(CHRONICLES_EQUIPMENT['brass-dagger'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-mace'].price);
+    expect(CHRONICLES_EQUIPMENT['brass-mace'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-sword'].price);
     // A spear gives actual two-tile melee reach at the cost of its shield hand.
     const spear = attacks('wooden-spear');
     const staff = attacks('wooden-staff');
