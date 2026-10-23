@@ -36,6 +36,39 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
     expect(chroniclesVolleyProjectileKinds(state, null)).toEqual([]);
   });
 
+  it('locks physical projectiles to the firing camera transform, never its later easing yaw', () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    scene.add(camera);
+    camera.position.set(3, 1.62, 8);
+    camera.rotation.y = Math.PI / 3;
+    const fx = createChroniclesVolleyProjectileArt(THREE, camera, scene);
+    expect(fx.group.parent).toBe(scene);
+    expect(fx.setFamilies(['bow', 'crossbow'])).toBe(2);
+    fx.anchorLaunchPose();
+    fx.projectiles[0].position.set(0, -0.33, -1.4);
+    scene.updateMatrixWorld(true);
+    const fixed = fx.projectiles[0].getWorldPosition(new THREE.Vector3());
+    const launchOrientation = fx.group.getWorldQuaternion(new THREE.Quaternion());
+
+    // A camera rotation after the shot must not bend an already launched arrow.
+    camera.rotation.y = -Math.PI / 2;
+    camera.position.set(11, 1.62, 3);
+    scene.updateMatrixWorld(true);
+    const after = fx.projectiles[0].getWorldPosition(new THREE.Vector3());
+    expect(after.distanceTo(fixed)).toBeLessThan(0.000001);
+    expect(fx.group.getWorldQuaternion(new THREE.Quaternion()).angleTo(launchOrientation))
+      .toBeLessThan(0.000001);
+
+    // A second legitimate salvo updates the anchor to the new camera pose.
+    fx.anchorLaunchPose();
+    scene.updateMatrixWorld(true);
+    expect(fx.projectiles[0].getWorldPosition(new THREE.Vector3()).distanceTo(fixed))
+      .toBeGreaterThan(1);
+    expect(fx.group.getWorldQuaternion(new THREE.Quaternion()).angleTo(launchOrientation))
+      .toBeGreaterThan(0.1);
+  });
+
   it('switches between three genuinely distinct geometry families and clears old visual state', () => {
     const camera = new THREE.Group();
     const fx = createChroniclesVolleyProjectileArt(THREE, camera);
