@@ -51,7 +51,7 @@ test('new direct frontend check context is stable while the required bridge stay
 test('protected checks and exact-SHA admission prerequisites are intact', () => {
   assert.match(ci, /repository-contract:/);
   assert.match(ci, /Require real frontend Vitest, build and Chromium smoke/);
-  assert.match(frontend, /node smoke\/first-hour-contact\.mjs/);
+  assert.match(frontend, /node smoke\/run-timed\.mjs smoke\/first-hour-contact\.mjs/);
   assert.match(api, /name: api-e2e/);
   assert.match(api, /needs: verify/);
 });
