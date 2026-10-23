@@ -135,6 +135,21 @@ try {
       const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
       await assertParchmentSurface(meleeCard, 'Equipment weapon card');
+      // Weapons A/S appear exactly once: no repeated gear slots below.
+      // Their real unequip controls live inside the matching weapon cards.
+      const weaponCards = sheet.locator('.chronicles-character-sheet__weapon-card');
+      assert.equal(await weaponCards.count(), 2);
+      assert.deepEqual(await sheet.locator(
+        '.chronicles-character-sheet__equipment .chronicles-character-sheet__gear-slot > small'
+      ).allInnerTexts(), ['Armadura', 'Escudo'],
+      'MM3 keeps only armour and shield as separate slots');
+      for (const slot of ['weapon', 'missile']) {
+        const card = sheet.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
+        const hasItem = (await card.locator('strong').innerText()) !== 'Sin equipar';
+        assert.equal(await card.getByRole('button', { name: 'Guardar en mochila' }).count(),
+          hasItem ? 1 : 0,
+          'An equipped ' + slot + ' must have one and only one real unequip action');
+      }
       // Empty relics must not waste half the equipment dossier width.
       const emptyRelicLayout = await sheet.locator('.chronicles-character-sheet__loadout.is-relic-empty')
         .evaluate((node) => {

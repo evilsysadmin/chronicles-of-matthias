@@ -492,17 +492,27 @@ export default function ChroniclesCharacterSheet({
                 {[
                   { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
                   { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
-                ].map(({ slot, label, stats }) => (
-                  <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
-                    <b>{label}</b>
-                    <strong>{chroniclesEquippedItem(state, member.id, slot)?.name || 'Sin equipar'}</strong>
-                    <small>{stats.reach > 0
-                      ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
-                      : 'Sin arma de proyectiles · no puede disparar'}</small>
-                  </div>
-                ))}
+                ].map(({ slot, label, stats }) => {
+                  const worn = chroniclesEquippedItem(state, member.id, slot);
+                  return (
+                    <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
+                      <b>{label}</b>
+                      <strong>{worn?.name || 'Sin equipar'}</strong>
+                      <small>{stats.reach > 0
+                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                        : 'Sin arma de proyectiles · no puede disparar'}</small>
+                      {worn && <button type="button" disabled={!canChangeEquipment}
+                        onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
+                        Guardar en mochila
+                      </button>}
+                    </div>
+                  );
+                })}
               </div>}
-              {CHRONICLES_EQUIPMENT_SLOTS.map((slot) => {
+              {/* In MM3, A/S already include the same unequip action above.
+                  Do not render duplicate weapon slots below the weapon cards. */}
+              {CHRONICLES_EQUIPMENT_SLOTS.filter((slot) => !mm3
+                || (slot !== 'weapon' && slot !== 'missile')).map((slot) => {
                 const worn = chroniclesEquippedItem(state, member.id, slot);
                 return (
                   <div className="chronicles-character-sheet__gear-slot" key={slot}>
