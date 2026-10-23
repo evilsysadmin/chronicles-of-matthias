@@ -82,6 +82,20 @@ jobs:
           }
           verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64
           verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64
+      # GO-2026-5932 has no fixed x/crypto version; only the legacy OpenPGP
+      # subpackages are unsafe. Fail before release if they enter either graph.
+      - name: Reject unsafe legacy OpenPGP imports
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          for arch in amd64 arm64; do
+            deps="$(CGO_ENABLED=0 GOOS=linux GOARCH="$arch" GOTOOLCHAIN=local go list -deps ./cmd/chronicles-api)"
+            if grep -Eq '^golang[.]org/x/crypto/openpgp(/|$)' <<< "$deps"; then
+              echo "::error::GO-2026-5932 unsafe OpenPGP import in linux/$arch API"
+              exit 1
+            fi
+          done
       # Govulncheck queries the official Go vulnerability database and uses
       # source call graphs to report reachable vulnerable functions, including
       # issues in the Go toolchain. Fail the required api-e2e gate when found.
