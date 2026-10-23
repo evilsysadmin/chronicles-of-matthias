@@ -176,10 +176,13 @@ describe('Swordhaven town entrances remain reachable in first person', () => {
     expect(npc.choices.map((choice) => choice.kind)).toEqual(['say', 'say', 'leave']);
   });
 
-  it('preserves locked inn pricing and never opens a distant or wrong-facing counter', () => {
+  it('lets players enter the inn for free, but only from the proper door', () => {
     const before = at(7, 9, 2);
-    expect(chroniclesContextualContentAction(before)).toMatchObject({ id: 'first-book-healer', locked: true });
-    expect(chroniclesReduce(before, 'interact').message).toMatch(/crédito|oro|monedas/i);
+    expect(chroniclesContextualContentAction(before)).toMatchObject({ id: 'first-book-healer', locked: false });
+    const entered = chroniclesReduce(before, 'interact');
+    expect(entered.inn?.id).toBe('first-book-healer');
+    expect(entered.inventory).toEqual(before.inventory);
+    expect(chroniclesReduce(entered, { type: 'inn-rest' }).message).toMatch(/cuesta|oro/i);
     expect(chroniclesContextualContentAction(at(7, 8, 2))).toBeNull();
     expect(chroniclesContextualContentAction(at(11, 5, 1))).toBeNull();
   });
