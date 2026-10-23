@@ -57,7 +57,7 @@ test('green main does not upload screenshots while PRs and failed main retain ev
   assert.match(frontend, /if: github\.event_name == 'pull_request'\n        with:\n          name: chronicles-frontend-dist/);
 });
 
-test('API and frontend E2E use npm-ci locked exact Playwright, never ad hoc npm install', () => {
+test('API and frontend E2E use npm-ci locked exact Playwright with tested Chromium host readiness', () => {
   const pkg = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
   const lock = JSON.parse(readFileSync(new URL('../frontend/package-lock.json', import.meta.url), 'utf8'));
   const version = '1.64.1';
@@ -71,7 +71,7 @@ test('API and frontend E2E use npm-ci locked exact Playwright, never ad hoc npm 
   }
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund/);
-    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
     assert.doesNotMatch(workflow, /npm install --no-save|npm install --package-lock-only|playwright@\^|playwright@~/);
     assert.doesNotMatch(workflow, /CHRONICLES_LOCKCHUNK|Bootstrap exact Playwright lockfile/);
   }
@@ -96,7 +96,7 @@ test('Chromium cache key comes from installed npm-locked Playwright in both E2Es
     assert.match(workflow, /node -p "require\('\.\/node_modules\/playwright\/package\.json'\)\.version"/);
     assert.match(workflow, /node -p "require\('\.\/package\.json'\)\.devDependencies\.playwright"/);
     assert.match(workflow, /\[\[ "\$version" == "\$declared" \]\]/);
-    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
     assert.doesNotMatch(workflow, /restore-keys:/);
     const npmInstall = workflow.indexOf('npm ci --ignore-scripts');
     const keyDerivation = workflow.indexOf('Resolve locked Playwright version for browser cache');
@@ -138,4 +138,21 @@ test('obsolete API images cannot publish or attest without exact-SHA main admiss
   assert.equal(gated, 7, 'all checkout, QEMU, Buildx, login, build, provenance and summary steps must be gated');
   assert.match(job, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
   assert.match(job, /push-to-registry: true/);
+});
+
+
+test('a single shared browser bootstrap checks real host readiness before apt fallback', () => {
+  const script = readFileSync(new URL('../frontend/smoke/ensure-chromium.sh', import.meta.url), 'utf8');
+  const probe = readFileSync(new URL('../frontend/smoke/chromium-host-probe.mjs', import.meta.url), 'utf8');
+  assert.match(script, /npx playwright install chromium/);
+  assert.match(script, /node smoke\/chromium-host-probe\.mjs/);
+  assert.match(script, /42\)/);
+  assert.match(script, /npx playwright install-deps chromium/);
+  assert.doesNotMatch(script, /install --with-deps chromium/);
+  assert.match(probe, /chromium\.launch\(/);
+  assert.match(probe, /Missing libraries:/);
+  assert.match(probe, /process\.exitCode = missingHostDeps \? 42 : 1/);
+  for (const workflow of [frontend, api]) {
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
+  }
 });

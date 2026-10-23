@@ -76,7 +76,7 @@ jobs:
         working-directory: frontend
         run: |
           set -euo pipefail
-          npx playwright install --with-deps chromium
+          bash smoke/ensure-chromium.sh
           source smoke/wait-for-http.sh
           # Include process liveness and logs in startup failure diagnostics.
           npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-preview.log" 2>&1 &
