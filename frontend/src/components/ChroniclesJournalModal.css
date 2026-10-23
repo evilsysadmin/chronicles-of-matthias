@@ -796,6 +796,7 @@
 /* Fieldbook V3 — smaller, text-first travel notebook instead of a dashboard.
    Preserve a single internal scroll and every quest/memory link. */
 .chronicles-journal-modal {
+  box-sizing: border-box;
   width: min(704px, 100%);
   max-height: min(80dvh, 700px);
   border-width: 1px;
@@ -829,6 +830,7 @@
 }
 .chronicles-journal-modal__chapters button[aria-selected='true'] small { color: #dfc39b; }
 .chronicles-journal-modal__chapter {
+  box-sizing: border-box;
   width: min(624px, 100%); min-height: 0; padding: 17px 24px 26px;
 }
 .chronicles-journal-modal__chapter-head { margin-bottom: 6px; padding-bottom: 10px; }
