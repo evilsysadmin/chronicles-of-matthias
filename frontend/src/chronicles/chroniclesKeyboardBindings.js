@@ -11,8 +11,9 @@ export const CHRONICLES_DIRECTION_KEYS = Object.freeze({
   E: 'strafe-right',
 });
 
-export function chroniclesCombatKeyMode(key) {
-  if (key === 'a' || key === 'A') return 'melee';
+export function chroniclesCombatKeyMode(key, { inCombat = false } = {}) {
+  // Exploration is not a melee turn: A must not spend a turn or trigger attack FX.
+  if (key === 'a' || key === 'A') return inCombat ? 'melee' : null;
   if (key === 's' || key === 'S') return 'missile';
   // Space is intentionally not a combat shortcut. Only A performs melee;
   // S remains the explicit ranged/volley command.
