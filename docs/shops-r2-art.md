@@ -1,45 +1,55 @@
-# Chronicles merchant assets on existing Chess Studio R2
+# Odo premium · GitHub Actions → Cloudflare R2 → Chronicles
 
-Source of truth: approved local art **odo-premium-composite.webp**, 1748×899,
-200250 bytes, SHA-256 `79e0b13fc2ee2ffbc8f8aa7a1f569cb4c5776935fcb428bafc09a6820aea43e1`.
-The asset is NOT added to Git. Never replace it with an AI mock, nor bake
-the shop's functional buy/sell UI into the art.
+The **approved** `odo-premium-composite.webp` is 1748×899, exactly **200250 bytes**, SHA-256
+`79e0b13fc2ee2ffbc8f8aa7a1f569cb4c5776935fcb428bafc09a6820aea43e1`.
+No image generation or baked purchase UI. Keep the original WebP out of Git history.
 
-The CDN is shared with Chess Studio/Pawn Slug and Star Adventures:
-`https://assets.chess-studio.shadowops.dpdns.org` (bucket: `chess-studio-assets`).
-Chess Studio R2 GC protects `chronicles/shops/` (PR #6111).
+## Ownership and automatic pipeline
 
-## Phase A — publish after validating the approved file
+We use the already-operational `chess-studio-assets` Cloudflare R2 bucket and CDN
+`https://assets.chess-studio.shadowops.dpdns.org`. Chess Studio owns the
+[Odo publication workflow](https://github.com/evilsysadmin/chess-studio/blob/main/.github/workflows/chronicles-odo-r2-publish.yml)
+(merged in PR #6118) and its secrets; `chronicles/shops/` is protected by
+the existing R2 retention policy (Chess Studio PR #6111).
 
-From a Chess Studio checkout with its existing authorized Cloudflare secrets:
+**One-time source-asset handoff:** create a draft GitHub Release in **Chess Studio**
+tagged `chronicles-odo-r2-79e0b13fc2ee2ffb`, attach the exact approved
+`odo-premium-composite.webp` file, and then **Publish release**. The pipeline
+also offers `workflow_dispatch` for reruns using that fixed release tag.
+There is no manual R2 upload and no local publisher command.
 
-```bash
-sha256sum /path/to/odo-premium-composite.webp
-# Must match the full SHA above.
-python3 -S scripts/r2_asset_publish.py publish /path/to/odo-premium-composite.webp \
-  --logical-id chronicles.shop.odo --prefix chronicles/shops/odo \
-  --manifest /path/to/chronicles-of-matthias/frontend/src/assets/r2-assets-manifest.json \
-  --dry-run
-python3 -S scripts/r2_asset_publish.py publish /path/to/odo-premium-composite.webp \
-  --logical-id chronicles.shop.odo --prefix chronicles/shops/odo \
-  --manifest /path/to/chronicles-of-matthias/frontend/src/assets/r2-assets-manifest.json
-```
+GitHub Actions then, without further intervention:
 
-**Required live gate:** fetch public HTTPS bytes at the emitted immutable URL;
-confirm HTTP 200, `Content-Type: image/webp`, 200250 bytes, and SHA-256
-matching the approved original. A successful publisher printout alone does
-not prove public CDN correctness. Do not merge a manifest pointing to a
-missing or corrupted object.
+1. Rejects any other release tag or asset bytes. Rechecks SHA-256, byte length and
+   WebP header before using Cloudflare credentials.
+2. Downloads a fresh Chronicles `main` checkout, uses the **existing Chess Studio**
+   raw-PUT R2 publisher with a custom Chronicles manifest and immutable SHA16 key:
+   `chronicles/shops/odo/odo-premium-composite-79e0b13fc2ee2ffb.webp`.
+3. Downloads the **public HTTPS** object and validates content-type, exact
+   size, no redirect and full SHA-256, with bounded propagation retries.
+4. Checks that the R2 manifest still contains every unrelated entry unchanged
+   (including Chronicles music), and opens a narrowly scoped
+   **manifest-only PR** in `evilsysadmin/chronicles-of-matthias`.
+5. Leaves that PR open for Chronicles CI and real mobile/desktop visual
+   acceptance. No automatic art promotion into production.
 
-## Phase B — activate by Git manifest commit
+The cross-repository PR step uses the Chess Studio secret
+`CHRONICLES_MANIFEST_PR_TOKEN`, or the existing `CI_PR_BOT_PAT` **only if**
+its permissions already cover Chronicles Contents + Pull requests write.
+Missing/insufficient permissions must **fail closed**, not impersonate a
+successful deployment or leak secrets to the frontend.
 
-Publisher adds the verified entry to this repository's
-`frontend/src/assets/r2-assets-manifest.json`. Commit ONLY the small JSON
-change. `chroniclesShopArtUrl('chronicles.shop.odo')` refuses unrecorded,
-mutable, non-HTTPS, different-family and mismatched SHA references. Runtime
-automatically uses verified entry once merged/deployed. Odo's old SVG remains
-as browser load-failure fallback, while Brunna and guild are unchanged.
+## Runtime safety and release
 
-Verify game snapshots of Odo at desktop and mobile, and staging's exact
-release SHA, before calling the release complete. Related issues:
-Chronicles #166 and shadowops-infra #249.
+`chroniclesShopArtUrl('chronicles.shop.odo')` uses only a verified, immutable
+pin from `frontend/src/assets/r2-assets-manifest.json`. Until the PR is
+merged/deployed, **Odo stays on his local SVG**. On a failed CDN image load,
+the UI automatically falls back to that same SVG. Brunna, guild and all
+existing music/GLBs are unchanged.
+
+Final acceptance requires real screenshots of Odo in desktop and mobile,
+Chronicles CI, and staging's actual deployed source SHA. An uploaded release
+asset, green publishing workflow or proposed manifest PR is **not** proof that
+Odo is live.
+
+Tracked in Chronicles #166 and shadowops-infra #249.
