@@ -19,6 +19,25 @@ try {
       await page.goto(baseUrl, { waitUntil: 'networkidle' });
       const dialog = page.getByRole('dialog', { name: /Crónica de expedición/ });
       await dialog.waitFor({ state: 'visible' });
+      // A narrow readable travel book, not a 940px administrative panel.
+      // Mobile/short landscape retain enough room and their existing scroll.
+      const folioFrame = await dialog.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        const header = node.querySelector('.chronicles-journal-modal__header').getBoundingClientRect();
+        const tabs = node.querySelector('.chronicles-journal-modal__chapters button');
+        const chapter = node.querySelector('.chronicles-journal-modal__chapter');
+        return { width: box.width, height: box.height, headerHeight: header.height,
+          tabBackground: getComputedStyle(tabs).backgroundColor,
+          chapterWidth: chapter?.getBoundingClientRect().width };
+      });
+      if (width >= 1025) {
+        assert(folioFrame.width <= 705, 'Fieldbook should not span like a dashboard');
+        assert(folioFrame.height <= Math.min(height * .81, 701), 'Fieldbook should not monopolize the desktop');
+        assert(folioFrame.headerHeight <= 80, 'Journal masthead should stay restrained');
+        assert(folioFrame.chapterWidth <= 625, 'Journal prose should keep a readable measure');
+      }
+      assert.equal(folioFrame.tabBackground, 'rgba(0, 0, 0, 0)',
+        'Chapter bookmarks should not look like filled dashboard cards');
       const tabQuests = dialog.getByRole('tab', { name: /Encargos/ });
       const tabMemories = dialog.getByRole('tab', { name: /Memorias/ });
       assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
