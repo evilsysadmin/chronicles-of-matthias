@@ -5,8 +5,8 @@ import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 
-const render = (rules, folio = 'equipment') => {
-  const state = createChroniclesState('swordhaven-first-book', null, { rules });
+const render = (rules, folio = 'equipment', stateOverrides = {}) => {
+  const state = { ...createChroniclesState('swordhaven-first-book', null, { rules }), ...stateOverrides };
   return renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
     state, progression: createChroniclesProgression(), member: state.party[0],
     mode: 'chronicles', initialFolio: folio, onClose: () => {},
@@ -22,6 +22,31 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toContain('dificulta impactos, no resta daño');
     expect(html).not.toMatch(/CA \+\d+ · reducción \d+/);
     expect(html).not.toContain('mitigación');
+  });
+
+  it('shows one consistent two-handed missile warning in the backpack and equipped ranged slot', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: {
+        'wooden-bow': { id: 'wooden-bow', quantity: 1, name: 'Arco corto de madera' },
+      },
+      equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow', shield: 'brass-shield' } },
+    });
+    expect(html).toContain('data-chronicles-equipment-handling');
+    expect(html).toContain('data-chronicles-worn-handling');
+    expect(html).toContain('Disparo a dos manos');
+    expect(html).toContain('no aporta armadura ni acierto');
+    expect(html).toContain('represalia inmediata');
+  });
+
+  it('keeps the shield benefit explanation for one-handed slings', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: {
+        'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' },
+      },
+      equipment: { matthias: { missile: 'brass-sling', shield: 'brass-shield' } },
+    });
+    expect(html).toContain('Disparo a una mano');
+    expect(html).toContain('mantiene las ventajas del escudo');
   });
 
   it('retains the distinct legacy damage reduction summary', () => {
