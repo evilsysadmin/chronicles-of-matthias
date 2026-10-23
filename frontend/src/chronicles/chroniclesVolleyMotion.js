@@ -2,6 +2,16 @@
 // Shooter stagger stays subtle but lets the player read separate projectiles.
 export const CHRONICLES_VOLLEY_MAX_DURATION = 0.78;
 
+// Leading visual extent measured from the camera-space projectile root:
+// bow cone is 0.425 + 0.07 m ahead, crossbow 0.268 + 0.08 m, and sling
+// stone ~0.12 m. Include a slight raster/pitch tolerance, then apply the
+// sampled scale. Collision concerns the leading tip, not the root centre.
+export const CHRONICLES_VOLLEY_NOSE_REACH = Object.freeze({
+  bow: 0.52,
+  crossbow: 0.37,
+  sling: 0.14,
+});
+
 // The authored grid is also the 3D town's collision mask: '#' is a real
 // solid house, facade, wall, tree or dungeon block. Shoot from the centre of
 // the party's tile toward its facing wall and stop just before its near face.
@@ -32,7 +42,9 @@ export function chroniclesVolleyObstacleDistance(grid, origin, facing, cellSize 
 export function chroniclesVolleyVisibleFlight(count, index, elapsed, kind = 'bow', stopDistance = Infinity) {
   const flight = chroniclesVolleyFlightSample(count, index, elapsed, kind);
   if (!flight) return null;
-  return Number.isFinite(stopDistance) && -flight.z >= stopDistance ? null : flight;
+  const noseReach = CHRONICLES_VOLLEY_NOSE_REACH[kind] ?? CHRONICLES_VOLLEY_NOSE_REACH.bow;
+  const leadingDistance = -flight.z + noseReach * flight.scale;
+  return Number.isFinite(stopDistance) && leadingDistance >= stopDistance ? null : flight;
 }
 
 export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow') {
