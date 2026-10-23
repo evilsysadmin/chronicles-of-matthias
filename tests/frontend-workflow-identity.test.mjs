@@ -237,12 +237,12 @@ test('required repository-contract validates frontend check and workflow identit
   assert.match(ci, /check_name=frontend-vitest-build-chromium/);
   // Both the REST query AND the jq result filter must use the same context.
   // The old query=renamed/filter=build mismatch silently polled for 36 minutes.
-  const requested = ci.match(/-f check_name=([a-z][\\w-]+) -f per_page=100/);
-  const filtered = ci.match(/select\\(\\.name == "([^"]+)" and \\.app\\.slug == "github-actions"\\)/);
+  const requested = ci.match(/-f check_name=([a-z][\w-]+) -f per_page=100/);
+  const filtered = ci.match(/select\(\.name == "([^"]+)" and \.app\.slug == "github-actions"\)/);
   assert.ok(requested && filtered, 'check query and strict jq filter are required');
   assert.equal(requested[1], 'frontend-vitest-build-chromium');
   assert.equal(filtered[1], requested[1], 'REST request and jq selection must match');
-  assert.doesNotMatch(ci, /select\\(\\.name == "build"/);
+  assert.doesNotMatch(ci, /select\(\.name == "build"/);
   assert.doesNotMatch(ci, /check_name=build(?:\s|$)/);
   assert.match(ci, /completed:success\)/);
   assert.match(ci, /actions\/runs"/);
