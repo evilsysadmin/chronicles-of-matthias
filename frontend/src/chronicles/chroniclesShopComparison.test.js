@@ -63,6 +63,25 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.equipment.matthias).toEqual(before);
   });
 
+  it('shows honest melee reach when a bow is also equipped, and real shield tradeoffs for ranged arms', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow', shield: 'bronze-shield' } },
+    };
+    const spear = memberPreview(state, 'matthias', 'wooden-spear');
+    expect(metric(spear, 'reach').delta).toBe(1);
+    expect(metric(spear, 'reach').before).toBe(1);
+    expect(metric(spear, 'reach').after).toBe(2);
+    const bow = memberPreview(state, 'matthias', 'wooden-longbow');
+    expect(metric(bow, 'toHit').after)
+      .toBe(item('wooden-longbow').toHitBonus);
+    const sling = memberPreview(state, 'matthias', 'brass-sling');
+    expect(metric(sling, 'toHit').after)
+      .toBe(item('brass-sling').toHitBonus + item('bronze-shield').toHitBonus);
+    expect(state.equipment.matthias.shield).toBe('bronze-shield');
+    expect(state.equipment.matthias.missile).toBe('wooden-bow');
+  });
+
   it('reflects the actual dagger precision vs axe damage and polearm reach', () => {
     const current = { ...initial(), equipment: { matthias: { weapon: 'brass-dagger' } } };
     const axe = memberPreview(current, 'matthias', 'brass-axe');

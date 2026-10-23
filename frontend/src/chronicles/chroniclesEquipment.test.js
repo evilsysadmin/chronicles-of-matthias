@@ -3,6 +3,7 @@ import {
   chroniclesContextualContentAction,
   chroniclesPartyArmorClass,
   chroniclesPartyAttackStats,
+  chroniclesMM3EnemySwing,
   chroniclesReduce,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
@@ -137,6 +138,45 @@ describe('Chronicles First Book · real purchased gear', () => {
     const removed = chroniclesUnequipItem(reloaded, 'matthias', 'armor');
     expect(removed.inventory['roadwatch-vest'].quantity).toBe(1);
     expect(chroniclesEquipmentBonuses(removed, 'matthias').damageReduction).toBe(0);
+  });
+
+  it('does not let a two-handed bow borrow a shield to hit or parry during its shot', () => {
+    const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const bare = {
+      ...initial, equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
+    };
+    const shielded = {
+      ...bare, equipment: { matthias: { ...bare.equipment.matthias, shield: 'bronze-shield' } },
+    };
+    const shield = CHRONICLES_EQUIPMENT['bronze-shield'];
+    expect(chroniclesPartyAttackStats(shielded, 'matthias', 'melee').toHit)
+      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'melee').toHit + shield.toHitBonus);
+    expect(chroniclesPartyArmorClass(shielded, 'matthias'))
+      .toBe(chroniclesPartyArmorClass(bare, 'matthias') + shield.armorClassBonus);
+    expect(chroniclesPartyAttackStats(shielded, 'matthias', 'missile').toHit)
+      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'missile').toHit);
+    expect(chroniclesPartyArmorClass(shielded, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(bare, 'matthias'));
+    const foe = { id: 'test-bow-retaliation', toHit: 8, retaliation: 2 };
+    const swing = chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation', 'missile');
+    expect(swing.hit).toBe(chroniclesMM3EnemySwing(bare, foe, 'matthias', 'retaliation').hit);
+    expect(chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation').roll).toBe(swing.roll);
+
+    const sling = {
+      ...shielded, equipment: { matthias: { ...shielded.equipment.matthias, missile: 'brass-sling' } },
+    };
+    const slingBare = {
+      ...sling, equipment: { matthias: { weapon: 'brass-sword', missile: 'brass-sling' } },
+    };
+    expect(chroniclesPartyAttackStats(sling, 'matthias', 'missile').toHit)
+      .toBe(chroniclesPartyAttackStats(slingBare, 'matthias', 'missile').toHit + shield.toHitBonus);
+    expect(chroniclesPartyArmorClass(sling, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(sling, 'matthias'));
+
+    // Legacy mode must preserve its historical shield calculation.
+    const legacy = { ...shielded, combatRules: 'legacy' };
+    expect(chroniclesEquipmentBonuses(legacy, 'matthias', { mode: 'missile' }).toHitBonus)
+      .toBe(chroniclesEquipmentBonuses(shielded, 'matthias', { mode: 'missile' }).toHitBonus + shield.toHitBonus);
   });
 
   it('lets MM3 classes, not hero names, decide gear and turns armor into real AC', () => {
