@@ -455,6 +455,7 @@
 @media (min-width: 1200px) and (min-height: 581px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout {
     grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    grid-template-areas: "relic relic" "backpack equipped";
     align-items: start;
     gap: 10px;
   }
@@ -462,21 +463,25 @@
   .chronicles-character-sheet__loadout > .chronicles-character-sheet__relic,
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__relic {
-    grid-column: 1 / -1;
-    grid-row: 1;
+    grid-area: relic;
+    min-width: 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__loadout > .chronicles-character-sheet__backpack {
-    grid-column: 1;
-    grid-row: 2;
+    grid-area: backpack;
+    width: auto;
+    max-width: 100%;
     min-width: 0;
+    box-sizing: border-box;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__loadout > .chronicles-character-sheet__equipment,
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__equipment {
-    grid-column: 2;
-    grid-row: 2;
+    grid-area: equipped;
+    width: auto;
+    max-width: 100%;
     min-width: 0;
+    box-sizing: border-box;
   }
 }
