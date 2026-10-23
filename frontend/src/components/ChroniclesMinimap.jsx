@@ -157,16 +157,17 @@ export default function ChroniclesMinimap({
   const facing = chroniclesAutomapFacingDegrees(state.direction);
   const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
   const guildVisible = markers.some((marker) => marker.category === 'guild');
+  const coordinates = chroniclesMapCoordinatesLabel(map, state) || 'LOCAL';
 
   return (
     <button
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label={chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}
+      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Coordenadas: ${coordinates}`}
       onClick={onExpand}
     >
-      <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
+      <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
       <svg
         ref={svgRef}
         viewBox={`${minX} ${minY} ${width} ${height}`}
