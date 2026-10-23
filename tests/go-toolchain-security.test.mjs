@@ -229,3 +229,37 @@ test('API Go toolchain policy rejects removal, auto-switching or per-step-only e
     assert.throws(() => assertFullApiJobUsesLocalGo(changed));
   }
 });
+
+
+function verifyGoModuleTidyDiff(ci) {
+  const start = ci.indexOf('\n  verify:\n');
+  const end = ci.indexOf('\n  publish:\n', start);
+  assert.ok(start >= 0 && end > start, 'required API verify job exists');
+  const job = ci.slice(start, end);
+  const gate = job.indexOf('      - name: Check Go module graph (read-only)\n        working-directory: api\n        run: go mod tidy -diff\n');
+  const build = job.indexOf('      - name: Build and vet (amd64 + arm64)\n');
+  const pin = job.indexOf("          go-version: '1.27.3'");
+  assert.ok(pin >= 0 && gate > pin && build > gate,
+    'a fail-closed, read-only go mod tidy -diff must run before API compile and scans');
+  assert.doesNotMatch(job.slice(gate, build), /continue-on-error:|if:\s*false|(?:\|\|\s*(?:true|:))|go mod tidy -e/,
+    'module integrity may not be suppressed');
+}
+
+test('API CI checks canonical go.mod/go.sum without mutating the checkout', () => {
+  verifyGoModuleTidyDiff(workflow);
+});
+
+test('API module consistency gate cannot be dropped, weakened or reordered', () => {
+  for (const modify of [
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -e -diff'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -diff || true'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: echo clean'),
+    (c) => c.replace('      - name: Check Go module graph (read-only)\n', '      - name: Check Go module graph (read-only)\n        continue-on-error: true\n'),
+    (c) => c.replace('run: go mod tidy -diff\n', 'run: go mod tidy -diff\n        if: false\n'),
+  ]) {
+    const altered = modify(workflow);
+    assert.notEqual(altered, workflow, 'mutation must change workflow');
+    assert.throws(() => verifyGoModuleTidyDiff(altered));
+  }
+});
