@@ -33,7 +33,16 @@ export default function ChroniclesAreaTransitionDialog({ question, onAccept, onC
     const decision = chroniclesAreaTravelKeyDecision(
       event.key, document.activeElement === acceptRef.current ? 'accept' : 'cancel',
     );
-    if (!decision) return;
+    if (!decision) {
+      // The doorway is a true modal: gameplay hotkeys (notably S to shoot)
+      // and vertical movement may not leak to the expedition behind it.
+      // Preserve ordinary browser/assistive Tab and modified shortcuts.
+      if (['ArrowUp', 'ArrowDown', 's', 'S', 'a', 'A'].includes(event.key)) {
+        event.preventDefault();
+      }
+      event.stopPropagation();
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     if (event.repeat) return;
