@@ -37,6 +37,11 @@ jobs:
         with:
           go-version: '1.27.3'
           cache-dependency-path: api/go.sum
+      # Canonical module graph/checksums must match all source and test imports.
+      # -diff checks without editing the checkout and fails on go.mod/go.sum drift.
+      - name: Check Go module graph (read-only)
+        working-directory: api
+        run: go mod tidy -diff
       - name: Build and vet (amd64 + arm64)
         working-directory: api
         env:
