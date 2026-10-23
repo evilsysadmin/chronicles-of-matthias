@@ -61,7 +61,7 @@ const LEGACY_ALL = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
 const BASE_WEAPONS = Object.freeze({
   dagger: { name: 'Daga', family: 'dagger', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, allowed: LEGACY_ALL },
   staff: { name: 'Bastón', family: 'staff', basePrice: 3, baseDamageBonus: 1, baseToHitBonus: 1, reach: 2, twoHanded: true, allowed: LEGACY_ALL },
-  mace: { name: 'Maza', family: 'mace', basePrice: 5, baseDamageBonus: 2, allowed: LEGACY_ALL },
+  mace: { name: 'Maza', family: 'mace', basePrice: 4, baseDamageBonus: 2, allowed: LEGACY_ALL },
   spear: { name: 'Lanza', family: 'spear', basePrice: 5, baseDamageBonus: 2, reach: 2, twoHanded: true, allowed: LEGACY_MARTIAL },
   sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 2, baseToHitBonus: 1, allowed: LEGACY_MARTIAL },
   axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 3, baseToHitBonus: -1, allowed: LEGACY_MARTIAL },
