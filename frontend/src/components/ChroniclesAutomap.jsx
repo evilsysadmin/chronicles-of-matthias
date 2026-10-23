@@ -9,6 +9,7 @@ import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBin
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
+  chroniclesAutomapRouteEdge,
   chroniclesAutomapRevealedCells,
   chroniclesMapCoordinatesLabel,
 } from '../chronicles/chroniclesAutomap.js';
@@ -141,6 +142,7 @@ export default function ChroniclesAutomap({
   const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
   const targetOverParty = Boolean(target && target.x === state?.x && target.y === state?.y);
   const targetCornerBadge = targetOverPoi || targetOverParty;
+  const routeEdge = chroniclesAutomapRouteEdge(viewport, state, target);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -228,9 +230,17 @@ export default function ChroniclesAutomap({
                 marker={marker}
               />
             ))}
-            {target && (
+            {target && (routeEdge ? (
+              <g className="chronicles-automap__target is-offscreen"
+                data-chronicles-route-target="edge"
+                aria-label={routeLabel ? `Siguiente salida fuera de la vista: ${routeLabel}` : 'Dirección al objetivo fuera de la vista'}>
+                <title>{routeLabel ? `Siguiente salida: ${routeLabel} (fuera de la vista)` : 'Objetivo fuera de la vista'}</title>
+                <path transform={`rotate(${routeEdge.angle} ${routeEdge.x} ${routeEdge.y})`}
+                  d={`M ${routeEdge.x + .30} ${routeEdge.y} L ${routeEdge.x - .20} ${routeEdge.y - .25} L ${routeEdge.x - .08} ${routeEdge.y} L ${routeEdge.x - .20} ${routeEdge.y + .25} Z`} />
+              </g>
+            ) : (
               <g className={`chronicles-automap__target${targetCornerBadge ? ' is-corner-badge' : ''}`}
-                data-chronicles-route-target
+                data-chronicles-route-target="in-view"
                 data-chronicles-route-overlap={targetOverPoi ? 'poi' : (targetOverParty ? 'party' : undefined)}
                 aria-label={routeLabel ? `Siguiente salida hacia el objetivo: ${routeLabel}` : 'Siguiente paso hacia el objetivo'}>
                 {routeLabel && <title>{`Siguiente salida: ${routeLabel}`}</title>}
@@ -240,7 +250,7 @@ export default function ChroniclesAutomap({
                   y={target.y + (targetCornerBadge ? 0.81 : 0.55)}
                   textAnchor="middle" dominantBaseline="middle">★</text>
               </g>
-            )}
+            ))}
             <g
               className="chronicles-automap__party-marker"
               data-chronicles-map-facing={state.direction}

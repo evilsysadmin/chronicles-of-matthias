@@ -115,6 +115,36 @@ describe('MM3 map symbol legends', () => {
     expect(distant).not.toContain('data-chronicles-route-overlap=');
   });
 
+  it('shows a directional edge marker when the full automap cannot fit the next exit', () => {
+    // Swordhaven's authored northern exit lies beyond a newly explored map.
+    const far = { x: 9, y: 1 };
+    const html = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} onClose={() => {}}
+        visitedCells={[]} target={far} routeLabel="Camino de los estandartes · por el norte" />,
+    );
+    expect(html).toContain('data-chronicles-route-target="edge"');
+    expect(html).toContain('class="chronicles-automap__target is-offscreen"');
+    expect(html).toContain('Siguiente salida fuera de la vista: Camino de los estandartes');
+    expect(html).not.toContain('data-chronicles-route-target="in-view"');
+    expect(html).not.toContain('r="0.46"');
+    // The map is NOT extended with invented known tiles or the unseen exit.
+    expect(html).toContain('viewBox="');
+    expect(html).not.toContain('data-chronicles-poi-id="to-first-book-banner-road"');
+
+    const near = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} onClose={() => {}}
+        visitedCells={[]} target={{ x: state.x + 1, y: state.y }} />,
+    );
+    expect(near).toContain('data-chronicles-route-target="in-view"');
+    expect(near).not.toContain('data-chronicles-route-target="edge"');
+
+    const noRoute = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} onClose={() => {}}
+        visitedCells={[]} />,
+    );
+    expect(noRoute).not.toContain('data-chronicles-route-target=');
+  });
+
   it('labels guild and objective contextually on the local minimap', () => {
     const known = renderToStaticMarkup(
       <ChroniclesMinimap

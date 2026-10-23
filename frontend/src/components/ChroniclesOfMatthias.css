@@ -1758,6 +1758,7 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   fill: #ffe6a3;
   font-size: .32px;
 }
+.chronicles-automap__target.is-offscreen path,
 .chronicles-minimap__target.is-offscreen path { fill: #ffd36a; stroke: rgba(40, 26, 8, .9); stroke-width: .05; }
 .chronicles-minimap__target,
 .chronicles-automap__target { animation: chronicles-target-pulse 1.8s ease-in-out infinite; }
