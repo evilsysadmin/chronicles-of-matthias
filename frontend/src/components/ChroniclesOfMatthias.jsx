@@ -176,8 +176,9 @@ import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
 import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 import { chroniclesAreaTransitionIntent } from '../chronicles/chroniclesAreaTransitionIntent.js';
-import { chroniclesBindAreaTravelFocus } from '../chronicles/chroniclesAreaTransitionFocus.js';
-import './ChroniclesAreaTransition.css';
+import { chroniclesAreaTravelKeyDecision } from '../chronicles/chroniclesAreaTransitionFocus.js';
+import ChroniclesAreaTransitionDialog from './ChroniclesAreaTransitionDialog.jsx';
+
 import './ChroniclesAdventureMenuFolio.css';
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
@@ -790,12 +791,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     }
   }, [areaTransition, state, cancelAreaTravel]);
 
-  useEffect(() => {
-    if (!areaTransition) return undefined;
-    const dialog = document.querySelector('[data-chronicles-area-transition] [role="dialog"]');
-    return chroniclesBindAreaTravelFocus(dialog, document);
-  }, [areaTransition]);
-
   const clearTouchHold = useCallback(() => {
     const active = touchHoldRef.current;
     if (active.delayId !== null) window.clearTimeout(active.delayId);
@@ -1308,10 +1303,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // typing S/Q into an input must never invoke save/quit.
       if (isEditing && !(menuOpen && event.key === 'Escape')) return;
       if (areaTransitionRef.current) {
-        if (event.key !== 'Tab') event.preventDefault();
+        if (event.key === 'Tab') return;
+        event.preventDefault();
         if (event.repeat) return;
-        if (event.key === 'Escape' || event.key === 'n' || event.key === 'N') cancelAreaTravel();
-        else if (event.key === 'Enter' || event.key === 'y' || event.key === 'Y' || event.key === 's' || event.key === 'S') acceptAreaTravel();
+        const selected = document.activeElement?.matches?.('[data-area-transition-accept]')
+          ? 'accept' : 'cancel';
+        const decision = chroniclesAreaTravelKeyDecision(event.key, selected);
+        if (decision === 'focus-cancel') document.querySelector('[data-area-transition-cancel]')?.focus();
+        else if (decision === 'focus-accept') document.querySelector('[data-area-transition-accept]')?.focus();
+        else if (decision === 'cancel') cancelAreaTravel();
+        else if (decision === 'accept') acceptAreaTravel();
         return;
       }
       // Target selection owns 1–4 *before* the normal party/sheet shortcuts.
@@ -1844,34 +1845,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               <ChroniclesHitSplat key={splat.token} impact={splat} className="is-enemy"
                 style={all.length > 1 ? { left: `${50 + (index - (all.length - 1) / 2) * 14}%` } : null} />
             ))}
-            {areaTransition && typeof document !== 'undefined' && createPortal(
-              <div className="chronicles-area-transition" data-chronicles-area-transition
-                role="presentation">
-                <section className="chronicles-area-transition__card" role="dialog" aria-modal="true"
-                  aria-labelledby="chronicles-area-transition-title"
-                  aria-describedby="chronicles-area-transition-hint"
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Tab') return;
-                    const buttons = event.currentTarget.querySelectorAll('button:not([disabled])');
-                    if (buttons.length !== 2) return;
-                    if (event.shiftKey && document.activeElement === buttons[0]) {
-                      event.preventDefault();
-                      buttons[1].focus();
-                    } else if (!event.shiftKey && document.activeElement === buttons[1]) {
-                      event.preventDefault();
-                      buttons[0].focus();
-                    }
-                  }}>
-                  <div className="chronicles-area-transition__eyebrow">UN NUEVO UMBRAL</div>
-                  <h2 id="chronicles-area-transition-title">{areaTransition.question}</h2>
-                  <p id="chronicles-area-transition-hint">La compañía espera tu decisión.</p>
-                  <div className="chronicles-area-transition__actions">
-                    <button type="button" data-area-transition-cancel onClick={cancelAreaTravel}>No · Esc</button>
-                    <button type="button" className="is-primary" data-area-transition-accept onClick={acceptAreaTravel}>Sí · Enter</button>
-                  </div>
-                </section>
-              </div>, document.body,
-            )}
+            {areaTransition && <ChroniclesAreaTransitionDialog
+              question={areaTransition.question}
+              onCancel={cancelAreaTravel}
+              onAccept={acceptAreaTravel}
+            />}
             <ChroniclesInitiativeRail initiative={state.initiative} />
             <ChroniclesNarratorOverlay message={state.message} open={chronicleModalOpen}
               onOpenChange={(next) => {
