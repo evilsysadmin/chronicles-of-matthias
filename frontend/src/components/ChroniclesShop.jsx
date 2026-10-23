@@ -55,6 +55,35 @@ function ShopGearPeek({ state, item }) {
   );
 }
 
+// Potion and scroll merchants share the same exploratory UI, but a
+// consumable has an *effect*, never a fake equipment-stat delta.
+function ShopConsumablePeek({ item }) {
+  const effect = item.kind === 'heal' ? `Cura hasta ${item.amount} PV`
+    : item.kind === 'mana' ? `Recupera hasta ${item.amount} PH`
+      : item.kind === 'revive' ? 'Reanima a un compañero caído'
+        : item.kind === 'scroll' && item.spell
+          ? `${item.spell.damage} de daño · alcance ${item.spell.reach}`
+          : item.description;
+  return (
+    <aside className="chronicles-shop__gear-peek chronicles-shop__consumable-peek"
+      id={`chronicles-shop-peek-${item.id}`}
+      aria-label={`Efecto de ${item.name}`}>
+      <strong className="chronicles-shop__gear-peek-title">Al usarlo…</strong>
+      <div className="chronicles-shop__gear-peek-member">
+        <span className="chronicles-shop__gear-peek-name">Efecto</span>
+        <span className="chronicles-shop__gear-peek-values">{effect}</span>
+      </div>
+      <div className="chronicles-shop__gear-peek-member">
+        <span className="chronicles-shop__gear-peek-name">Uso</span>
+        <span className="chronicles-shop__gear-peek-values">
+          Toda la compañía · un solo uso · no se equipa
+        </span>
+      </div>
+      <small className="chronicles-shop__gear-peek-note">Vista previa · se usa desde OBJETOS</small>
+    </aside>
+  );
+}
+
 // Who in the company could actually use it: MM3 class rules, same as the sheet.
 function users(state, item) {
   return (state.party || []).filter((member) => chroniclesMemberCanEquip(member, item));
@@ -347,7 +376,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
               <strong>{tab === 'buy' ? 'Mercancías' : 'Tu mochila'}</strong>
               <span>{offers.length} de {allOffers.length}</span>
             </div>
-            <ul className="chronicles-shop__list" aria-label="Mercancías: pasa el ratón o enfoca un objeto para comparar tu equipo">
+            <ul className="chronicles-shop__list" aria-label="Mercancías: pasa el ratón o enfoca un objeto para ver sus efectos y compatibilidad">
               {offers.map(({ item, price, quantity }) => (
                 <li key={item.id} data-chronicles-shop-item={tab === 'buy' ? item.id : undefined}
                   data-chronicles-shop-sell={tab === 'sell' ? item.id : undefined}
@@ -360,7 +389,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   }}>
                   <button type="button" className="chronicles-shop__entry"
                     aria-pressed={selectedItem?.id === item.id}
-                    aria-describedby={visiblePreviewId === item.id && tab === 'buy' && item.slot !== 'consumable'
+                    aria-describedby={visiblePreviewId === item.id && tab === 'buy'
                       ? `chronicles-shop-peek-${item.id}` : undefined}
                     onClick={() => pickItem(item.id)}>
                     <span className="chronicles-shop__entry-icon"><ShopItemVisual item={item} /></span>
@@ -370,8 +399,10 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     </span>
                     <span className="chronicles-shop__entry-price">{price} <small>oro</small></span>
                   </button>
-                  {tab === 'buy' && item.slot !== 'consumable' && visiblePreviewId === item.id && (
-                    <ShopGearPeek state={state} item={item} />
+                  {tab === 'buy' && visiblePreviewId === item.id && (
+                    item.slot === 'consumable'
+                      ? <ShopConsumablePeek item={item} />
+                      : <ShopGearPeek state={state} item={item} />
                   )}
                 </li>
               ))}
