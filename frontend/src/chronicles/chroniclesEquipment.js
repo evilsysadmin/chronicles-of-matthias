@@ -38,7 +38,8 @@ function authoredEquipment(spec) {
     // has no hidden offensive modifier; this is shared by melee and missiles.
     toHitBonus: weapon
       ? material.toHit + Number(spec.baseToHitBonus || 0)
-      : Number(spec.shieldToHitBonus || 0),
+      : spec.slot === 'shield' ? Number(spec.shieldToHitBonus || 0)
+        : spec.slot === 'armor' ? Number(spec.armorToHitBonus || 0) : 0,
     // MM armor class: the armor type's own AC plus its material.
     armorClassBonus: !weapon ? Math.max(0, Number(spec.baseArmorClass || 0) + material.armorClass) : 0,
     price: Math.max(1, Math.round(spec.basePrice * material.valueMultiplier)),
@@ -107,7 +108,9 @@ export const CHRONICLES_ARMOR_MATERIAL_AC = Object.freeze({
 });
 
 const BASE_ARMORS = Object.freeze({
-  padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, allowed: LEGACY_ALL },
+  // Lighter cloth armor trades 1 CA for +1 precision against leather.
+  // This is a real bonus to the existing hit formula, not fictitious speed.
+  padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, baseToHitBonus: 1, allowed: LEGACY_ALL },
   leather: { name: 'Coraza', armorType: 'leather', basePrice: 12, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
   scale: { name: 'Cota de escamas', armorType: 'scale', basePrice: 14, baseArmorClass: 3, baseDamageReduction: 1, allowed: LEGACY_FRONT },
   ring: { name: 'Cota de anillas', armorType: 'ring', basePrice: 18, baseArmorClass: 4, baseDamageReduction: 2, allowed: LEGACY_FRONT },
@@ -177,8 +180,9 @@ function armorItem(baseId, materialId) {
     // only for body armor, replacing it with the progression value above.
     armorType: base.armorType,
     baseArmorClass: armorClass - material.armorClass,
+    armorToHitBonus: Number(base.baseToHitBonus || 0),
     allowedMembers: base.allowed,
-    description: `${base.name} · armadura +${armorClass}.`,
+    description: `${base.name} · armadura +${armorClass}${base.baseToHitBonus ? `, acierto +${base.baseToHitBonus}` : ''}.`,
   });
 }
 
@@ -214,8 +218,9 @@ function catalog() {
       baseItemId: 'vest', materialId: 'leather', basePrice: 36,
       baseDamageBonus: 0, baseDamageReduction: 1,
       armorType: 'leather', baseArmorClass: 3,
+      armorToHitBonus: 1,
       allowedMembers: LEGACY_ALL,
-      description: 'Jubón reforzado de la guardia · +3 armadura. Cualquier clase salvo Hechicero.',
+      description: 'Jubón reforzado de la guardia · +3 armadura, +1 acierto. Más precisión que la cota de escamas.',
     }),
   };
   for (const baseId of Object.keys(BASE_WEAPONS)) {

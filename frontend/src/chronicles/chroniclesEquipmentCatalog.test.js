@@ -76,6 +76,37 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(CHRONICLES_EQUIPMENT['leather-leather'].price).toBe(3);
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].armorClassBonus).toBe(3);
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].price).toBe(9);
+    expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].toHitBonus).toBe(1);
+    expect(CHRONICLES_EQUIPMENT['leather-padded'].toHitBonus).toBe(1);
+    expect(CHRONICLES_EQUIPMENT['leather-leather'].toHitBonus).toBe(0);
+    expect(CHRONICLES_EQUIPMENT['brass-ring'].toHitBonus).toBe(0);
+  });
+
+  it('checks cloth versus leather/metal accuracy against an actual late opponent', async () => {
+    const { chroniclesMapById } = await import('./chroniclesMapCatalog.js');
+    const { chroniclesMM3AttackHits, chroniclesMM3EnemyArmorClass } = await import('./chroniclesMM3Rules.js');
+    const enemy = chroniclesMapById('templo-corona-cripta').enemies
+      .find((entry) => entry.id === 'templo-corona-cripta-jailer');
+    const equipped = chroniclesEquipItem(mm3Company('brass-sword', 'leather-padded', 'leather-leather', 'brass-scale', 'roadwatch-vest'),
+      'matthias', 'brass-sword');
+    const cloth = chroniclesEquipItem(equipped, 'matthias', 'leather-padded');
+    const leather = chroniclesEquipItem(equipped, 'matthias', 'leather-leather');
+    const scale = chroniclesEquipItem(equipped, 'matthias', 'brass-scale');
+    const vest = chroniclesEquipItem(equipped, 'matthias', 'roadwatch-vest');
+    const chance = (state) => {
+      const aim = chroniclesPartyAttackStats(state, 'matthias').toHit;
+      const armorClass = chroniclesMM3EnemyArmorClass(enemy);
+      return Array.from({ length: 20 }, (_, i) =>
+        chroniclesMM3AttackHits(i + 1, aim, armorClass)).filter(Boolean).length;
+    };
+    expect(chance(cloth) - chance(leather)).toBe(1);
+    expect(chance(vest) - chance(scale)).toBe(1);
+    expect(chroniclesPartyArmorClass(leather, 'matthias'))
+      .toBe(chroniclesPartyArmorClass(cloth, 'matthias') + 1);
+    expect(chroniclesPartyArmorClass(vest, 'matthias'))
+      .toBe(chroniclesPartyArmorClass(scale, 'matthias'));
+    expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].price)
+      .toBeGreaterThan(CHRONICLES_EQUIPMENT['brass-scale'].price);
   });
 
   it('keeps cheap arms distinct against actual Swordhaven bandits instead of price-only clones', async () => {

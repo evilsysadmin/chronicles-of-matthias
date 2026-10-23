@@ -118,10 +118,28 @@ describe('Chronicles shop · preview equipment against party', () => {
     const next = memberPreview(state, 'matthias', 'leather-padded');
     expect(next.current).toBeNull();
     expect(next.eligible).toBe(true);
-    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass']);
+    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(next, 'toHit').label).toBe('Acierto');
+    expect(metric(next, 'toHit').delta).toBe(1);
     expect(metric(next, 'armorClass').label).toBe('Armadura (CA)');
     expect(metric(next, 'armorClass').delta).toBe(item('leather-padded').armorClassBonus);
     expect(metric(next, 'damageReduction')).toBeUndefined();
+  });
+
+  it('gives Odo a real CA-versus-precision choice without changing gold or gear', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', armor: 'brass-scale' } },
+    };
+    const vest = memberPreview(state, 'matthias', 'roadwatch-vest');
+    expect(vest.eligible).toBe(true);
+    expect(vest.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(vest, 'armorClass').delta).toBe(0);
+    expect(metric(vest, 'toHit').delta).toBe(1);
+    const ring = memberPreview(state, 'matthias', 'brass-ring');
+    expect(metric(ring, 'armorClass').delta).toBe(1);
+    expect(metric(ring, 'toHit')).toBeUndefined();
+    expect(state.equipment.matthias.armor).toBe('brass-scale');
   });
 
   it('retains damage mitigation comparisons only in the legacy combat rules', () => {
