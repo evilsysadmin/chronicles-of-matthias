@@ -39,6 +39,15 @@ test('both frontend-installing workflows use npm cache keyed to lockfile', () =>
   }
 });
 
+test('new direct frontend check context is stable but the old required bridge remains fail-closed', () => {
+  assert.match(frontend, /build:\\n    #[^\\n]*\\n    name: frontend-vitest-build-chromium\\n/);
+  assert.match(ci, /check_name=frontend-vitest-build-chromium/);
+  assert.match(ci, /Require real frontend Vitest, build and Chromium smoke/);
+  assert.match(ci, /node scripts\\/require-frontend-workflow\\.mjs/);
+  assert.match(ci, /for attempt in \\$\\(seq 1 216\\)/);
+  assert.doesNotMatch(ci, /check_name=build(?:\\s|$)/);
+});
+
 test('protected checks and exact-SHA admission prerequisites are intact', () => {
   assert.match(ci, /repository-contract:/);
   assert.match(ci, /Require real frontend Vitest, build and Chromium smoke/);
