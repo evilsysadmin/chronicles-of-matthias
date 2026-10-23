@@ -448,3 +448,35 @@
     color: #513718;
   }
 }
+
+/* Wide desktop: inventory and currently equipped gear belong in the same
+   glance, not two consecutive full-width panels. Keep the relic above both.
+   Narrow desktop, Tactics and mobile intentionally retain their layout. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    align-items: start;
+    gap: 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout > .chronicles-character-sheet__relic,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__relic {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout > .chronicles-character-sheet__backpack {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout > .chronicles-character-sheet__equipment,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__equipment {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+  }
+}
