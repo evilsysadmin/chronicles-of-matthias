@@ -200,6 +200,9 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	opsImport := gamesapi.NewOpsImport(gamesapi.OpsImportConfig{
 		Secret: []byte(jwtSecret), Environment: environment, Accounts: accountstore.New(db, timeout),
 		Import: func(ctx context.Context, username string) (any, error) {
+			if err := legacyimport.ValidateDistinctDatabases(legacyDB.Name(), db.Name()); err != nil {
+				return nil, err
+			}
 			return legacyimport.Import(ctx, legacyimport.NewMongoSource(legacyDB, 20*time.Second),
 				legacyimport.NewMongoRuns(db, timeout), chroniclesprogression.NewMongo(db, timeout), username, time.Now())
 		},
