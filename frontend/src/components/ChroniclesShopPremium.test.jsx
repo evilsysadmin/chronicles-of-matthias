@@ -31,9 +31,28 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('Bastón de madera');
     expect(html).toContain('Armas a distancia');
     expect(html).toContain('aria-label="Arma a distancia"');
-    expect(html).toContain('Comparar con mi equipo');
+    expect(html).toContain('pasa el ratón o enfoca un objeto para ver sus efectos y compatibilidad');
+    expect(html).not.toContain('chronicles-shop__compare-toggle');
+    expect(html).not.toContain('chronicles-shop__comparison-grid');
     expect(html).toContain('type="search"');
     expect(html).toContain('Precio: menor primero');
+  });
+
+  it('uses the same progressive comparison layout in Odo and the apothecary', () => {
+    const armor = render('first-book-armorer');
+    const potion = render('first-book-apothecary');
+    expect(armor).toContain('data-chronicles-shop="first-book-armorer"');
+    expect(armor).toContain('Coracería de Odo');
+    expect(armor).toContain('pasa el ratón o enfoca');
+    expect(potion).toContain('data-chronicles-shop="first-book-apothecary"');
+    expect(potion).toContain('Poción de curación');
+    expect(potion).toContain('Pergamino de llamas');
+    expect(potion).toContain('pasa el ratón o enfoca');
+    for (const html of [armor, potion]) {
+      expect(html).toContain('chronicles-shop__detail');
+      expect(html).not.toContain('chronicles-shop__compare-toggle');
+      expect(html).not.toContain('chronicles-shop__comparison-grid');
+    }
   });
 
   it('uses shaded art with distinct paint servers for each real armoury item', () => {

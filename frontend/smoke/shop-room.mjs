@@ -78,6 +78,12 @@ try {
       assert(boxes.dialog.left >= -1 && boxes.dialog.right <= width + 1
         && boxes.dialog.top >= -1 && boxes.dialog.bottom <= height + 1,
       `Fullscreen shop escapes viewport at ${width}px: ${JSON.stringify(boxes)}`);
+      if (width >= 1280 && height >= 700) {
+        assert(boxes.detail.width <= width * .29,
+          'A compact purchase receipt should not eclipse Brunna: ' + JSON.stringify(boxes));
+        assert(boxes.detail.top >= height * .30,
+          'The receipt should sit lower than Brunna’s face: ' + JSON.stringify(boxes));
+      }
       assert(boxes.catalog.width > 240 && boxes.detail.width > 240,
         `Unusable shop panels at ${width}px: ${JSON.stringify(boxes)}`);
       if (width > 900) {
@@ -178,13 +184,29 @@ try {
       await dagger.locator('button').click();
       const detail = dialog.locator('.chronicles-shop__detail');
       await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
-      const compare = detail.getByRole('button', { name: /Comparar con mi equipo/ });
-      await compare.click();
-      await detail.locator('.chronicles-shop__comparison-hero').first().waitFor();
-      if ([390, 1280].includes(width)) {
-        await page.screenshot({ path: `smoke-shop-compare-${width}.png` });
+      // The exact same combat comparison is now discoverable on stock
+      // hover/focus, without creating a second dashboard over the merchant.
+      if (width > 900) await dagger.locator('button').hover();
+      const peek = dagger.locator('.chronicles-shop__gear-peek');
+      await peek.waitFor({ state: 'visible' });
+      assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
+        'Hover/focus/tap must show the real comparison for all four companions');
+      assert.match(await peek.innerText(), /Matthias/);
+      assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      assert.equal(await detail.locator('.chronicles-shop__compare-toggle').count(), 0,
+        'Comparison must no longer produce a dashboard inside the purchase receipt');
+      if (width > 900) {
+        // Keyboard focus is equivalent to hover; leaving the row dismisses it.
+        await dagger.locator('button').focus();
+        await peek.waitFor({ state: 'visible' });
+        await catalog.getByLabel('Orden').focus();
+        await peek.waitFor({ state: 'hidden' });
       }
-      await detail.getByRole('button', { name: /Ocultar comparación/ }).click();
+      if ([390, 1280].includes(width)) {
+        await dagger.locator('button').focus();
+        await peek.waitFor({ state: 'visible' });
+        await page.screenshot({ path: `smoke-shop-gear-peek-${width}.png` });
+      }
 
       // Buy and sell through the real reducer (not fake onAction state).
       const before = Number((await dialog.locator('.chronicles-shop__purse').getAttribute('aria-label')).match(/\d+/)?.[0]);
@@ -446,6 +468,15 @@ try {
           await captureArtworkOnly(page, 'smoke-shop-art-only-' + room + '-' + width + '.png');
         }
         if (room === 'odo') {
+          const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
+          if (width > 900) await vest.locator('button').hover();
+          else await vest.locator('button').click();
+          const note = vest.locator('.chronicles-shop__gear-peek');
+          await note.waitFor({ state: 'visible' });
+          assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
+            'Every Odo armor/shield needs its actual four-hero equip comparison');
+          assert.match(await note.innerText(), /Armadura|Reducción|No puede equiparlo|Sin cambios/);
+          assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
         } else {
@@ -483,6 +514,52 @@ try {
       } finally {
         await context.close();
       }
+    }
+  }
+
+  // The apothecary is a merchant too, but its stock is consumable; never show
+  // made-up equipment deltas for a potion or scroll. Test real authored items.
+  for (const [width, height] of [[390, 844], [1280, 800]]) {
+    const mobile = width <= 900;
+    const context = await browser.newContext({
+      viewport: { width, height }, isMobile: mobile, hasTouch: mobile,
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(url + '?room=apothecary', { waitUntil: 'networkidle' });
+      const dialog = page.getByRole('dialog');
+      await dialog.waitFor({ state: 'visible' });
+      assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
+      assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 3,
+        'Apothecary must keep all three authored offers');
+      const potion = dialog.locator('[data-chronicles-shop-item="healing-potion"]');
+      if (mobile) await potion.locator('button').click();
+      else await potion.locator('button').hover();
+      const note = potion.locator('.chronicles-shop__consumable-peek');
+      await note.waitFor({ state: 'visible' });
+      assert.match(await note.innerText(), /15 PV/);
+      assert.match(await note.innerText(), /Toda la compañía/);
+      assert.equal(await note.locator('.chronicles-shop__gear-peek-delta').count(), 0,
+        'Potions do not equip and cannot invent combat-stat differences');
+      const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
+      if (mobile) await scroll.locator('button').click();
+      else await scroll.locator('button').hover();
+      await scroll.locator('.chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
+      assert.match(await scroll.locator('.chronicles-shop__consumable-peek').innerText(),
+        /14 de daño · alcance 3/);
+      assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
+      await page.screenshot({ path: `smoke-shop-apothecary-peek-${width}.png` });
+      await dialog.getByRole('tab', { name: /Vender/ }).click();
+      await dialog.getByRole('tab', { name: 'Comprar' }).click();
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      console.log(`CHRONICLES_SHOP_APOTHECARY_PREVIEW_OK ${width}x${height}`);
+    } catch (error) {
+      failed++;
+      console.error(`CHRONICLES_SHOP_APOTHECARY_FAIL ${width}x${height}: ${error.stack || error}`);
+      await page.screenshot({ path: `smoke-shop-FAIL-apothecary-${width}.png` }).catch(() => {});
+    } finally {
+      await context.close();
     }
   }
 } finally {
