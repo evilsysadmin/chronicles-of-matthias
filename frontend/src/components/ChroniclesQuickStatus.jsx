@@ -21,8 +21,16 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="chronicles-quick-status" role="dialog" aria-modal="true" aria-labelledby="chronicles-quick-status-title"
         onKeyDown={(event) => {
+          // A React modal stops key bubbling before the document Back handler
+          // can see it. Handle Escape locally, just like the Journal/dossier,
+          // so one press closes only this topmost layer (never the game menu).
+          if (event.key === 'Escape' || event.key === 'g' || event.key === 'G') {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+            return;
+          }
           event.stopPropagation();
-          if (event.key === 'g' || event.key === 'G') { event.preventDefault(); onClose(); return; }
           // Directly open the matching dossier from G, including during
           // initiative: inspecting a member never transfers their turn.
           const hero = chroniclesPartyHotkeyMember(event, rows);
