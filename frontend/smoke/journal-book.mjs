@@ -43,7 +43,8 @@ try {
       assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
       assert.equal(await tabMemories.getAttribute('aria-selected'), 'false');
       await dialog.getByRole('heading', { name: 'Los asuntos pendientes' }).waitFor();
-      assert.match(await tabQuests.innerText(), /2 pendientes/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /Encargos · 2 pendientes/);
+      assert.equal(await tabQuests.innerText(), 'Encargos', 'No visible KPI badges in chapter tabs');
       assert.equal(await dialog.getByRole('tabpanel').count(), 1,
         'Journal should show one chapter at a time, not a two-panel dashboard');
       // The book announces tab semantics, so readers should also get standard
