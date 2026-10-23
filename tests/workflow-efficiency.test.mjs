@@ -144,7 +144,7 @@ test('obsolete API images cannot publish or attest without exact-SHA main admiss
   assert.match(job, /publish=false/);
   assert.match(job, /publish=true/);
   const gated = (job.match(/^\s+if: steps\.admission\.outputs\.publish == 'true'$/gm) || []).length;
-  assert.equal(gated, 7, 'all checkout, QEMU, Buildx, login, build, provenance and summary steps must be gated');
+  assert.equal(gated, 6, 'checkout, Buildx, login, build, provenance and summary must stay gated');
   assert.match(job, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
   assert.match(job, /push-to-registry: true/);
 });
