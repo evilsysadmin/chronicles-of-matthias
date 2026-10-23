@@ -253,6 +253,12 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const offers = chroniclesShopVisibleOffers(allOffers, { category, query, sort });
   const selected = chroniclesShopSelectedOffer(offers, selectedId);
   const selectedItem = selected?.item;
+  // Touch pointers may synthesize mouseleave immediately after a tap.
+  // On a touch-first device the peek belongs to the explicitly selected
+  // merchandise instead of transient hover events. Do not show it on load.
+  const touchPeek = typeof window !== 'undefined'
+    && window.matchMedia?.('(hover: none)').matches;
+  const visiblePreviewId = touchPeek ? selectedId : previewId;
   const eligible = selectedItem && selectedItem.slot !== 'consumable' ? users(state, selectedItem) : [];
   const affordable = selected && gold >= selected.price;
   // The reducer refuses sales above its hard 9,999 gold purse cap. Explain
@@ -354,7 +360,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   }}>
                   <button type="button" className="chronicles-shop__entry"
                     aria-pressed={selectedItem?.id === item.id}
-                    aria-describedby={previewId === item.id && tab === 'buy' && item.slot !== 'consumable'
+                    aria-describedby={visiblePreviewId === item.id && tab === 'buy' && item.slot !== 'consumable'
                       ? `chronicles-shop-peek-${item.id}` : undefined}
                     onClick={() => pickItem(item.id)}>
                     <span className="chronicles-shop__entry-icon"><ShopItemVisual item={item} /></span>
@@ -364,7 +370,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     </span>
                     <span className="chronicles-shop__entry-price">{price} <small>oro</small></span>
                   </button>
-                  {tab === 'buy' && item.slot !== 'consumable' && previewId === item.id && (
+                  {tab === 'buy' && item.slot !== 'consumable' && visiblePreviewId === item.id && (
                     <ShopGearPeek state={state} item={item} />
                   )}
                 </li>
