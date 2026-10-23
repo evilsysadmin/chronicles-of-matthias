@@ -633,3 +633,25 @@
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section { padding: 6px 12px; }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions { gap: 2px; }
 }
+
+/* Keep actual volume percentages at the far edge of the audio card.
+   The label and value must not run together at desktop or phone widths. */
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-row,
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-row__label {
+  width: 100%;
+  min-width: 0;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-row__label {
+  display: flex;
+  justify-content: space-between;
+  column-gap: 12px;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-row__label label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-audio-row__label output {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-left: auto;
+}
