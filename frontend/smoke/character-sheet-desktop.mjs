@@ -144,7 +144,7 @@ try {
       ).allInnerTexts(), ['Armadura', 'Escudo'],
       'MM3 keeps only armour and shield as separate slots');
       for (const slot of ['weapon', 'missile']) {
-        const card = weaponCards.locator('[data-slot="' + slot + '"]');
+        const card = sheet.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
         const hasItem = (await card.locator('strong').innerText()) !== 'Sin equipar';
         assert.equal(await card.getByRole('button', { name: 'Guardar en mochila' }).count(),
           hasItem ? 1 : 0,
