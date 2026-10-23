@@ -44,8 +44,341 @@ jobs:
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
-          CGO_ENABLED=0 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /dev/null ./cmd/chronicles-api
+          # Standard-library fixes (including GO-2026-6809) are baked into
+          # binaries. Check the real toolchain and both compiled architectures.
+          export GOTOOLCHAIN=local
+          build_go="$(go env GOVERSION)"
+          [[ "$build_go" == 'go1.27.3' ]] || {
+            echo "::error::Unpatched or unexpected Go compiler: $build_go"
+            exit 1
+          }
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64" ./cmd/chronicles-api
+          verify_binary_build() {
+            local binary="$1" arch="$2" reported metadata
+            reported="$(go version "$binary")"
+            [[ "$reported" == "$binary: $build_go" ]] || {
+              echo "::error::Unexpected $arch Go binary version: $reported"
+              return 1
+            }
+            metadata="$(go version -m "$binary")"
+            grep -Fqx 
+      # Govulncheck queries the official Go vulnerability database and uses
+      # source call graphs to report reachable vulnerable functions, including
+      # issues in the Go toolchain. Fail the required api-e2e gate when found.
+      - name: Go vulnerability scan (reachable source paths)
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" ./...
+          # OCI A1 runs linux/arm64: source build tags may select different code.
+          GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...
+      - name: Run the API against a real MongoDB
+        env:
+          MONGO_URL: mongodb://127.0.0.1:27017
+          MONGO_DB_NAME: chronicles_ci
+          JWT_SECRET: ci-only-jwt-secret-not-for-deploys
+          INVITE_CODE: CIINVITE
+          CORS_ORIGINS: http://localhost:4173
+          ENVIRONMENT: ci
+          PORT: '8090'
+        run: |
+          set -euo pipefail
+          source frontend/smoke/wait-for-http.sh
+          nohup "$RUNNER_TEMP/chronicles-api" > "$RUNNER_TEMP/api.log" 2>&1 &
+          api_pid=$!
+          wait_for_http http://127.0.0.1:8090/api/health "$api_pid" "$RUNNER_TEMP/api.log" "Go API health"
+          curl -fsS http://127.0.0.1:8090/api/health
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the game against the local API
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://127.0.0.1:8090/api
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+      # Share the same pinned Chromium binary revision as frontend CI.
+      # Share cache only when the installed npm-locked Playwright version matches.
+      - name: Resolve locked Playwright version for browser cache
+        id: playwright_version
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./node_modules/playwright/package.json').version")"
+          declared="$(node -p "require('./package.json').devDependencies.playwright")"
+          [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Restore pinned Playwright Chromium browser
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
+      - name: Full-game E2E — register, new campaign, save, fresh login, resume
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          npx playwright install --with-deps chromium
+          source smoke/wait-for-http.sh
+          npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-api-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "${preview_pid:-}" 2>/dev/null || true' EXIT
+          wait_for_http http://localhost:4173/ "$preview_pid" "$RUNNER_TEMP/chronicles-api-preview.log" "API E2E Vite preview"
+          node smoke/api-e2e.mjs http://localhost:4173/ http://127.0.0.1:8090 CIINVITE
+      - name: API log
+        if: always()
+        run: cat "$RUNNER_TEMP/api.log" || true
+      # Keep PR review screenshots and failed-main evidence without archiving every green main build.
+      - uses: actions/upload-artifact@v5
+        if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
+        with:
+          name: chronicles-api-e2e
+          path: frontend/api-e2e-*.png
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish SHA-pinned multi-arch image
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/evilsysadmin/chronicles-api
+    steps:
+      # Older commits still complete their E2E verification, but should not
+      # consume expensive multi-architecture publish work after main advances.
+      # The API workflow remains green for a superseded SHA; source and Infra
+      # admission independently require that SHA to still be current main.
+      - name: Require current main SHA before Docker publication
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$current" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          if [[ "$GITHUB_SHA" != "$current" ]]; then
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo "::notice title=Skip obsolete API image::Source SHA $GITHUB_SHA superseded by main $current"
+            echo "API image skipped: $GITHUB_SHA is no longer main ($current)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.admission.outputs.publish == 'true'
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+        if: steps.admission.outputs.publish == 'true'
+      - uses: docker/setup-buildx-action@v3
+        if: steps.admission.outputs.publish == 'true'
+      - uses: docker/login-action@v3
+        if: steps.admission.outputs.publish == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push linux/arm64 + linux/amd64
+        if: steps.admission.outputs.publish == 'true'
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: api
+          platforms: linux/arm64,linux/amd64
+          push: true
+          build-args: |
+            CHRONICLES_SOURCE_SHA=${{ github.sha }}
+          tags: ${{ env.IMAGE }}:staging-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/evilsysadmin/chronicles-of-matthias
+      - name: Attest build provenance
+        if: steps.admission.outputs.publish == 'true'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Record digest
+        if: steps.admission.outputs.publish == 'true'
+        run: echo "IMAGE=${IMAGE}@${{ steps.push.outputs.digest }} (staging-${GITHUB_SHA})" | tee -a "$GITHUB_STEP_SUMMARY"
+\tbuild\tGOOS=linux' <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOOS"
+              return 1
+            }
+            grep -Fqx 
+      # Govulncheck queries the official Go vulnerability database and uses
+      # source call graphs to report reachable vulnerable functions, including
+      # issues in the Go toolchain. Fail the required api-e2e gate when found.
+      - name: Go vulnerability scan (reachable source paths)
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$(go env GOPATH)/bin/govulncheck" ./...
+          # OCI A1 runs linux/arm64: source build tags may select different code.
+          GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...
+      - name: Run the API against a real MongoDB
+        env:
+          MONGO_URL: mongodb://127.0.0.1:27017
+          MONGO_DB_NAME: chronicles_ci
+          JWT_SECRET: ci-only-jwt-secret-not-for-deploys
+          INVITE_CODE: CIINVITE
+          CORS_ORIGINS: http://localhost:4173
+          ENVIRONMENT: ci
+          PORT: '8090'
+        run: |
+          set -euo pipefail
+          source frontend/smoke/wait-for-http.sh
+          nohup "$RUNNER_TEMP/chronicles-api" > "$RUNNER_TEMP/api.log" 2>&1 &
+          api_pid=$!
+          wait_for_http http://127.0.0.1:8090/api/health "$api_pid" "$RUNNER_TEMP/api.log" "Go API health"
+          curl -fsS http://127.0.0.1:8090/api/health
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the game against the local API
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://127.0.0.1:8090/api
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+      # Share the same pinned Chromium binary revision as frontend CI.
+      # Share cache only when the installed npm-locked Playwright version matches.
+      - name: Resolve locked Playwright version for browser cache
+        id: playwright_version
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./node_modules/playwright/package.json').version")"
+          declared="$(node -p "require('./package.json').devDependencies.playwright")"
+          [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Restore pinned Playwright Chromium browser
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
+      - name: Full-game E2E — register, new campaign, save, fresh login, resume
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          npx playwright install --with-deps chromium
+          source smoke/wait-for-http.sh
+          npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-api-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "${preview_pid:-}" 2>/dev/null || true' EXIT
+          wait_for_http http://localhost:4173/ "$preview_pid" "$RUNNER_TEMP/chronicles-api-preview.log" "API E2E Vite preview"
+          node smoke/api-e2e.mjs http://localhost:4173/ http://127.0.0.1:8090 CIINVITE
+      - name: API log
+        if: always()
+        run: cat "$RUNNER_TEMP/api.log" || true
+      # Keep PR review screenshots and failed-main evidence without archiving every green main build.
+      - uses: actions/upload-artifact@v5
+        if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
+        with:
+          name: chronicles-api-e2e
+          path: frontend/api-e2e-*.png
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish SHA-pinned multi-arch image
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'evilsysadmin/chronicles-of-matthias'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/evilsysadmin/chronicles-api
+    steps:
+      # Older commits still complete their E2E verification, but should not
+      # consume expensive multi-architecture publish work after main advances.
+      # The API workflow remains green for a superseded SHA; source and Infra
+      # admission independently require that SHA to still be current main.
+      - name: Require current main SHA before Docker publication
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$current" =~ ^[0-9a-f]{40}$ ]] || exit 64
+          if [[ "$GITHUB_SHA" != "$current" ]]; then
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo "::notice title=Skip obsolete API image::Source SHA $GITHUB_SHA superseded by main $current"
+            echo "API image skipped: $GITHUB_SHA is no longer main ($current)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.admission.outputs.publish == 'true'
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@v3
+        if: steps.admission.outputs.publish == 'true'
+      - uses: docker/setup-buildx-action@v3
+        if: steps.admission.outputs.publish == 'true'
+      - uses: docker/login-action@v3
+        if: steps.admission.outputs.publish == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push linux/arm64 + linux/amd64
+        if: steps.admission.outputs.publish == 'true'
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: api
+          platforms: linux/arm64,linux/amd64
+          push: true
+          build-args: |
+            CHRONICLES_SOURCE_SHA=${{ github.sha }}
+          tags: ${{ env.IMAGE }}:staging-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/evilsysadmin/chronicles-of-matthias
+      - name: Attest build provenance
+        if: steps.admission.outputs.publish == 'true'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Record digest
+        if: steps.admission.outputs.publish == 'true'
+        run: echo "IMAGE=${IMAGE}@${{ steps.push.outputs.digest }} (staging-${GITHUB_SHA})" | tee -a "$GITHUB_STEP_SUMMARY"
+\tbuild\tGOARCH='"$arch" <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOARCH"
+              return 1
+            }
+          }
+          verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64
+          verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64
       # Govulncheck queries the official Go vulnerability database and uses
       # source call graphs to report reachable vulnerable functions, including
       # issues in the Go toolchain. Fail the required api-e2e gate when found.
