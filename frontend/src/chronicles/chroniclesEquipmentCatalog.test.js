@@ -10,6 +10,8 @@ import {
   chroniclesEquippedItem,
 } from './chroniclesEquipment.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
+import { CHRONICLES_MM3_CLASS_IDS } from './chroniclesMM3Rules.js';
+import { chroniclesMemberCanEquip } from './chroniclesEquipment.js';
 
 function mm3Company(...itemIds) {
   const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
@@ -236,6 +238,73 @@ describe('Chronicles · MM3 equipment catalog', () => {
     for (const enemy of foes.slice(-2)) {
       expect(rate(enemy, ac(plated)), enemy.id).toBeGreaterThan(1);
     }
+  });
+
+  it('audits ALL equipable catalog items for strictly dominated purchases in every eligible MM3 class', () => {
+    // A more expensive item must never be worse for *every* class who can
+    // wear it. An alternative must cost no more, be obtainable at the same
+    // or an earlier material tier, and be at least as good on all stats that
+    // actually matter in MM3. Do not count legacy damage reduction or
+    // imagined agility/status effects; two-handed melee is a real cost.
+    const items = Object.values(CHRONICLES_EQUIPMENT)
+      .filter((entry) => ['weapon', 'missile', 'armor', 'shield'].includes(entry.slot));
+    const classCanWear = (classId, entry) => chroniclesMemberCanEquip(
+      { id: 'audit', mm3: { classId } }, entry,
+    );
+    const dominates = (better, worse) => {
+      if (better.id === worse.id || better.slot !== worse.slot
+        || better.price > worse.price || better.tier > worse.tier
+        || better.toHitBonus < worse.toHitBonus) return false;
+      const defense = better.slot === 'armor' || better.slot === 'shield';
+      if (defense) {
+        if (better.armorClassBonus < worse.armorClassBonus) return false;
+        return better.price < worse.price || better.armorClassBonus > worse.armorClassBonus
+          || better.toHitBonus > worse.toHitBonus;
+      }
+      if (better.attackDamageBonus < worse.attackDamageBonus
+        || Number(better.reach || 1) < Number(worse.reach || 1)
+        || (better.twoHanded && !worse.twoHanded)) return false;
+      return better.price < worse.price || better.attackDamageBonus > worse.attackDamageBonus
+        || better.toHitBonus > worse.toHitBonus
+        || Number(better.reach || 1) > Number(worse.reach || 1)
+        || (!better.twoHanded && worse.twoHanded);
+    };
+    const failures = [];
+    for (const item of items) {
+      const eligibleClasses = CHRONICLES_MM3_CLASS_IDS.filter((classId) => classCanWear(classId, item));
+      expect(eligibleClasses.length, item.id).toBeGreaterThan(0);
+      const perClass = eligibleClasses.map((classId) => ({
+        classId,
+        alternatives: items.filter((candidate) => classCanWear(classId, candidate)
+          && dominates(candidate, item)).map((candidate) => candidate.id),
+      }));
+      if (perClass.every(({ alternatives }) => alternatives.length)) {
+        failures.push({ item: item.id, price: item.price, dominatedBy:
+          [...new Set(perClass.flatMap(({ alternatives }) => alternatives))] });
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it('gives ivory daggers/staves, silver daggers, stone slings and bronze leather a real niche', () => {
+    for (const family of ['dagger', 'staff']) {
+      const ivory = CHRONICLES_EQUIPMENT[`ivory-${family}`];
+      const iron = CHRONICLES_EQUIPMENT[`iron-${family}`];
+      expect(ivory.attackDamageBonus).toBe(iron.attackDamageBonus);
+      expect(ivory.toHitBonus).toBeGreaterThan(iron.toHitBonus);
+      expect(ivory.price).toBeGreaterThan(iron.price);
+    }
+    expect(CHRONICLES_EQUIPMENT['silver-dagger'].price)
+      .toBeGreaterThan(CHRONICLES_EQUIPMENT['iron-sword'].price);
+    expect(CHRONICLES_EQUIPMENT['wooden-sling'].attackDamageBonus)
+      .toBeGreaterThan(CHRONICLES_EQUIPMENT['brass-sling'].attackDamageBonus);
+    expect(CHRONICLES_EQUIPMENT['wooden-sling'].toHitBonus)
+      .toBeLessThan(CHRONICLES_EQUIPMENT['brass-sling'].toHitBonus);
+    expect(CHRONICLES_EQUIPMENT['bronze-leather'].price).toBe(8);
+    expect(CHRONICLES_EQUIPMENT['bronze-leather'].price)
+      .toBeLessThan(CHRONICLES_EQUIPMENT['roadwatch-vest'].price);
+    expect(CHRONICLES_EQUIPMENT['roadwatch-sabre'].toHitBonus)
+      .toBe(CHRONICLES_EQUIPMENT['iron-sword'].toHitBonus);
   });
 
   it('gates armour by class tier and shields by class and a free hand', () => {
