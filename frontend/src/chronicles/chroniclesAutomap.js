@@ -113,6 +113,38 @@ export function chroniclesAutomapFacingDegrees(direction) {
 }
 
 
+// Keep the ★ navigation hint visible when its known route step lies outside
+// the explored-only automap viewport. Never extend/reveal map geometry for it.
+// The arrow stays inside the SVG viewBox, inset enough to avoid being clipped.
+export function chroniclesAutomapRouteEdge(viewport, state, target) {
+  const values = [viewport?.x, viewport?.y, viewport?.width, viewport?.height,
+    state?.x, state?.y, target?.x, target?.y];
+  if (!values.every(Number.isFinite) || viewport.width <= 1.1 || viewport.height <= 1.1) return null;
+  const inset = 0.55;
+  const left = viewport.x + inset;
+  const top = viewport.y + inset;
+  const right = viewport.x + viewport.width - inset;
+  const bottom = viewport.y + viewport.height - inset;
+  const sx = state.x + 0.5;
+  const sy = state.y + 0.5;
+  const tx = target.x + 0.5;
+  const ty = target.y + 0.5;
+  // The party must actually be inside the viewport: no invented ray origin.
+  if (sx < left || sx > right || sy < top || sy > bottom) return null;
+  if (tx >= left && tx <= right && ty >= top && ty <= bottom) return null;
+  const dx = tx - sx;
+  const dy = ty - sy;
+  const atX = dx > 0 ? (right - sx) / dx : dx < 0 ? (left - sx) / dx : Infinity;
+  const atY = dy > 0 ? (bottom - sy) / dy : dy < 0 ? (top - sy) / dy : Infinity;
+  const fraction = Math.min(atX, atY);
+  if (!Number.isFinite(fraction) || fraction <= 0 || fraction >= 1) return null;
+  return {
+    x: sx + dx * fraction,
+    y: sy + dy * fraction,
+    angle: Math.atan2(dy, dx) * 180 / Math.PI,
+  };
+}
+
 function automapStorageKey(runId) {
   const safeRunId = typeof runId === 'string' ? runId.trim() : '';
   return safeRunId ? `${AUTOMAP_STORAGE_PREFIX}${safeRunId}` : '';
