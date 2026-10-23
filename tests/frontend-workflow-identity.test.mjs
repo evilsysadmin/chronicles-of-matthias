@@ -232,28 +232,14 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   assert.match(failed.stderr, /Frontend workflow identity not verified/);
 });
 
-test('required repository-contract validates frontend check and workflow identity', () => {
+test('standalone repository-contract cannot replace independent browser-required ruleset', () => {
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(ci, /check_name=frontend-vitest-build-chromium/);
-  // Both the REST query AND the jq result filter must use the same context.
-  // The old query=renamed/filter=build mismatch silently polled for 36 minutes.
-  const requested = ci.match(/-f check_name=([a-z][\w-]+) -f per_page=100/);
-  const filtered = ci.match(/select\(\.name == "([^"]+)" and \.app\.slug == "github-actions"\)/);
-  assert.ok(requested && filtered, 'check query and strict jq filter are required');
-  assert.equal(requested[1], 'frontend-vitest-build-chromium');
-  assert.equal(filtered[1], requested[1], 'REST request and jq selection must match');
-  assert.doesNotMatch(ci, /select\(\.name == "build"/);
-  assert.doesNotMatch(ci, /check_name=build(?:\s|$)/);
-  assert.match(ci, /completed:success\)/);
-  assert.match(ci, /actions\/runs"/);
-  assert.match(ci, /-f head_sha="\$HEAD_SHA" -f event="\$GITHUB_EVENT_NAME"/);
-  assert.match(ci, /node scripts\/require-frontend-workflow\.mjs/);
-  assert.match(ci, /if node scripts\/require-frontend-workflow\.mjs/);
-  assert.match(ci, /identity_rc=\$\?/);
-  assert.match(ci, /identity_rc != 75/);
-  assert.match(ci, /--retry-missing-official/);
-  assert.doesNotMatch(ci, /observed_official_pending=true/);
-  assert.match(ci, /exit "\$identity_rc"/);
-  assert.match(ci, /"\\?\$HEAD_SHA" "\\?\$GITHUB_EVENT_NAME"/);
-  assert.match(ci, /FRONTEND_BROWSER_REQUIRED_GREEN/);
+  const frontend = readFileSync(new URL('../.github/workflows/react-frontend.yml', import.meta.url), 'utf8');
+  assert.match(ci, /repository-contract:/);
+  assert.match(ci, /timeout-minutes: 10/);
+  assert.match(ci, /- run: npm test/);
+  assert.match(ci, /DO NOT MERGE before required-status-check ruleset 25198769/);
+  assert.doesNotMatch(ci, /for attempt in|check_name=|require-frontend-workflow\.mjs/);
+  assert.match(frontend, /name: frontend-vitest-build-chromium/);
+  assert.match(frontend, /node smoke\/first-hour-contact\.mjs/);
 });
