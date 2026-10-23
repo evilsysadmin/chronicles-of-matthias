@@ -3,10 +3,17 @@
 // Las llamadas a la API devolverán 401 (token falso): eso es esperado.
 // Uso: node smoke/mount.mjs [baseUrl]   (por defecto http://localhost:4173/)
 import { chromium } from 'playwright';
+import { performance } from 'node:perf_hooks';
 
 const base = process.argv[2] || 'http://localhost:4173/';
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = false;
+
+// Diagnostics only: preserve existing late-error window and visual assertions.
+function phaseDone(label, phase, started) {
+  const seconds = ((performance.now() - started) / 1000).toFixed(2);
+  console.log(`CHRONICLES_MOUNT_PHASE label=${label} phase=${phase} seconds=${seconds}`);
+}
 
 // Freeze the *entrypoint* JavaScript, not the DOM, to exercise the HTML shell
 // users see with a cold cache or slow network. No simulated login and no
@@ -60,6 +67,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 
 }
 
 for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
+  const totalStarted = performance.now();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   await ctx.addInitScript(() => {
     localStorage.setItem('chess-study-auth-token', 'smoke.invalid.token');
@@ -69,8 +77,14 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // Con sesión, la raíz entra directa al juego (sin vestíbulo).
+  const navigationStarted = performance.now();
   await page.goto(base + hash, { waitUntil: 'networkidle' });
+  phaseDone(label, 'navigation', navigationStarted);
+  // Keep the six-second late-exception observation window unchanged.
+  const lateErrorsStarted = performance.now();
   await page.waitForTimeout(6000);
+  phaseDone(label, 'late-errors', lateErrorsStarted);
+  const assertionStarted = performance.now();
   const rootLength = (await page.innerHTML('#root')).length;
   // Where the authenticated MM3 HUD is present, the objective is a
   // one-line navigational hint, not a tall message hiding the stage.
@@ -93,12 +107,16 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
       throw new Error('Desktop objective must be compact, readable via Crónica: ' + JSON.stringify(objective));
     }
   }
+  phaseDone(label, 'assertions', assertionStarted);
   const slug = label.toLowerCase();
+  const screenshotStarted = performance.now();
   await page.screenshot({ path: `smoke-${slug}.png` });
+  phaseDone(label, 'screenshot', screenshotStarted);
   const ok = errors.length === 0 && rootLength > 500;
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${label}: root=${rootLength} errors=${JSON.stringify(errors)}`);
   if (!ok) failed = true;
   await ctx.close();
+  phaseDone(label, 'total', totalStarted);
 }
 
 
