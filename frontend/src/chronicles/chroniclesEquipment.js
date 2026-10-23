@@ -152,13 +152,20 @@ function weaponItem(baseId, materialId) {
   const base = BASE_WEAPONS[baseId];
   const slot = CHRONICLES_MISSILE_FAMILIES.includes(base.family) ? 'missile' : 'weapon';
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
-  const damage = base.baseDamageBonus + Math.round(material.damage / 2);
-  const toHit = material.toHit + Number(base.baseToHitBonus || 0);
+  // Prevent universally dominated gear: ivory carving buys precision, a
+  // stone sling trades damage for accuracy, silver dagger costs more than
+  // an iron sword at the same damage, but retains its superior finesse.
+  const damageBase = base.baseDamageBonus
+    + (baseId === 'sling' && materialId === 'wooden' ? 1 : 0);
+  const aimBase = Number(base.baseToHitBonus || 0) + (materialId === 'ivory' ? 1 : 0);
+  const damage = damageBase + Math.round(material.damage / 2);
+  const toHit = material.toHit + aimBase;
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot,
-    baseItemId: baseId, materialId, basePrice: base.basePrice,
-    baseDamageBonus: base.baseDamageBonus, baseDamageReduction: 0, materialDamageScale: 0.5,
-    baseToHitBonus: Number(base.baseToHitBonus || 0),
+    baseItemId: baseId, materialId,
+    basePrice: base.basePrice + (baseId === 'dagger' && materialId === 'silver' ? 1 : 0),
+    baseDamageBonus: damageBase, baseDamageReduction: 0, materialDamageScale: 0.5,
+    baseToHitBonus: aimBase,
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
@@ -174,7 +181,10 @@ function armorItem(baseId, materialId) {
   const armorClass = base.baseArmorClass + protection;
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot: 'armor',
-    baseItemId: baseId, materialId, basePrice: base.basePrice,
+    baseItemId: baseId, materialId,
+    // The material multiplier rounded bronze leather to 9g, where Odo's
+    // 9g guard vest had the same CA and strictly more aim for every class.
+    basePrice: base.basePrice - (baseId === 'leather' && materialId === 'bronze' ? 1 : 0),
     baseDamageBonus: 0, baseDamageReduction: base.baseDamageReduction,
     // authoredEquipment adds the literal material AC; cancel that literal
     // only for body armor, replacing it with the progression value above.
@@ -209,9 +219,10 @@ function catalog() {
       id: 'roadwatch-sabre', name: 'Sable de hierro de la guardia', slot: 'weapon',
       baseItemId: 'sabre', materialId: 'iron', basePrice: 6,
       baseDamageBonus: 1, baseDamageReduction: 0,
+      baseToHitBonus: 1,
       weaponFamily: 'sword',
       allowedMembers: LEGACY_FRONT,
-      description: 'Espada de hierro · +1 acierto, +3 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
+      description: 'Espada de hierro de la guardia · +2 acierto, +3 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
     }),
     'roadwatch-vest': authoredEquipment({
       id: 'roadwatch-vest', name: 'Jubón de cuero de guardia', slot: 'armor',
