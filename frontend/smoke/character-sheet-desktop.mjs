@@ -205,6 +205,33 @@ try {
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
+      // Read actual mechanics before descriptive prose, without changing DOM
+      // source order (including screen-reader reading and interactive focus).
+      const statPriority = await detail.evaluate((node) => {
+        const description = node.querySelector(':scope > p');
+        const stats = node.querySelector(':scope > dl');
+        const damageLabel = [...stats.querySelectorAll('dt')]
+          .find((element) => element.textContent.trim() === 'Daño adicional');
+        const dock = document.querySelector('.chronicles-character-sheet__party-dock');
+        return {
+          statsTop: stats.getBoundingClientRect().top,
+          descriptionTop: description.getBoundingClientRect().top,
+          damageBottom: damageLabel?.parentElement.getBoundingClientRect().bottom,
+          dockTop: dock.getBoundingClientRect().top,
+          domDescriptionFirst: [...node.children].indexOf(description) < [...node.children].indexOf(stats),
+        };
+      });
+      assert.equal(statPriority.domDescriptionFirst, true,
+        'Accessible document order must be unchanged: ' + JSON.stringify(statPriority));
+      if (width >= 1200) {
+        assert.ok(statPriority.statsTop < statPriority.descriptionTop,
+          'Desktop equipment mechanics should precede flavour text visually: ' + JSON.stringify(statPriority));
+        assert.ok(statPriority.damageBottom < statPriority.dockTop - 12,
+          'Real damage bonus should be legible without scrolling beneath the party dock: ' + JSON.stringify(statPriority));
+      } else {
+        assert.ok(statPriority.descriptionTop < statPriority.statsTop,
+          '1024px equipment detail should preserve its current visual order');
+      }
       // Opening Equipment must show the inventory list immediately. On wide
       // desktop the selected item's details take priority over optional filters;
       // narrow desktop retains its existing filter-first arrangement.
