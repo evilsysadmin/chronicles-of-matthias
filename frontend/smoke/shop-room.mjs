@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const url = process.argv[2] || 'http://localhost:4174/smoke/shop-room.html';
-const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [1440, 900]];
+// Preserve the real 1909×900 staging screenshot layout as an explicit
+// contract: all eleven items should fit in a single glance on wide desktop.
+const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [1440, 900], [1740, 864], [1909, 900]];
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = 0;
 
@@ -97,19 +99,24 @@ try {
             `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
         }
       }
-      if (width === 1280 && height === 800) {
+      if (width >= 1280 && height >= 800) {
         const ledger = await dialog.locator('.chronicles-shop__catalog').evaluate((catalog) => {
           const list = catalog.querySelector('.chronicles-shop__list');
           const rows = [...list.querySelectorAll('[data-chronicles-shop-item]')];
           const last = rows.at(-1)?.getBoundingClientRect();
           const rect = list.getBoundingClientRect();
+          const filters = catalog.querySelector('.chronicles-shop__filters');
+          const filterRows = [...filters.children].map((label) => label.getBoundingClientRect());
           return { rows: rows.length, clientHeight: list.clientHeight,
             scrollHeight: list.scrollHeight, lastBottom: last?.bottom, visibleBottom: rect.bottom,
-            rowHeight: rows[0]?.getBoundingClientRect().height };
+            rowHeight: rows[0]?.getBoundingClientRect().height,
+            filtersInOneRow: filterRows.length === 3 && filterRows.every((r) => Math.abs(r.top - filterRows[0].top) <= 2) };
         });
         assert.equal(ledger.rows, 11, 'Brunna baseline must retain its complete eleven-item catalogue');
+        assert(ledger.filtersInOneRow,
+          'Desktop shop still uses the obsolete two-row filters at ' + width + 'x' + height + ': ' + JSON.stringify(ledger));
         assert(ledger.scrollHeight <= ledger.clientHeight + 2,
-          'All eleven merchant items should fit at 1280x800 without scrolling: ' + JSON.stringify(ledger));
+          'All eleven merchant items should fit without scrolling at ' + width + 'x' + height + ': ' + JSON.stringify(ledger));
         assert(ledger.lastBottom <= ledger.visibleBottom + 1,
           'The final merchandise item is clipped: ' + JSON.stringify(ledger));
         assert(ledger.rowHeight >= 35,
