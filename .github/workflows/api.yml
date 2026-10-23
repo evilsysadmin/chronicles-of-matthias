@@ -48,8 +48,17 @@ jobs:
           # binaries. Check the real toolchain and both compiled architectures.
           export GOTOOLCHAIN=local
           build_go="$(go env GOVERSION)"
-          [[ "$build_go" == 'go1.27.3' ]] || {
-            echo "::error::Unpatched or unexpected Go compiler: $build_go"
+          # Reject prereleases and anything older than the patched Go 1.27.3.
+          # CI and Docker must still pin the same exact patch version.
+          [[ "$build_go" =~ ^go([1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+            echo "::error::Malformed or prerelease Go compiler: $build_go"
+            exit 1
+          }
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          (( major > 1 || (major == 1 && (minor > 27 || (minor == 27 && patch >= 3))) )) || {
+            echo "::error::Go compiler below patched security floor: $build_go"
             exit 1
           }
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
