@@ -17,6 +17,9 @@ function revealWithinBook(viewport, target) {
   viewport.scrollTop += (targetBounds.top + targetBounds.bottom - pageBounds.top - pageBounds.bottom) / 2;
 }
 
+const RECENT_FOLIOS = 8;
+const RECENT_VOICES = 8;
+
 // One readable page at a time. The old side-by-side quest dashboard left half
 // the screen blank when an expedition had few folios.
 export default function ChroniclesJournalModal({ open, state, entries = [], narrations = [], onClose, onTrack = null, onOpenSheet = null }) {
@@ -28,6 +31,8 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
   const [openedQuestId, setOpenedQuestId] = useState(null);
   const [archiveExpanded, setArchiveExpanded] = useState(false);
   const [memoryJumpId, setMemoryJumpId] = useState(null);
+  const [olderFoliosExpanded, setOlderFoliosExpanded] = useState(false);
+  const [voicesExpanded, setVoicesExpanded] = useState(false);
   const [returnToQuestId, setReturnToQuestId] = useState(null);
   useEscapeToClose(onClose, { disabled: !open, contextMenu: false });
 
@@ -40,6 +45,8 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       setArchiveExpanded(false);
       archiveRevealRequestedRef.current = false;
       setMemoryJumpId(null);
+      setOlderFoliosExpanded(false);
+      setVoicesExpanded(false);
       setReturnToQuestId(null);
     }
   }, [open]);
@@ -116,7 +123,7 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     if (!target) return;
     revealWithinBook(scrollRef.current, target);
     target.focus({ preventScroll: true });
-  }, [open, chapter, memoryJumpId]);
+  }, [open, chapter, memoryJumpId, olderFoliosExpanded]);
 
   useEffect(() => {
     if (!open || chapter !== 'quests' || !returnToQuestId) return;
@@ -158,7 +165,17 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
       ? `${completedCount} ${completedCount === 1 ? 'resuelto' : 'resueltos'}`
       : 'Sin encargos';
   const memoryTabCount = `${foliosCount} ${foliosCount === 1 ? 'anotación' : 'anotaciones'}`;
+  const olderFoliosCount = Math.max(0, entries.length - RECENT_FOLIOS);
+  const olderVoicesCount = Math.max(0, narrations.length - RECENT_VOICES);
+  // Keep the authored chronological ordering; expose the latest folios first.
+  const visibleEntries = olderFoliosExpanded ? entries : entries.slice(-RECENT_FOLIOS);
+  const visibleVoices = voicesExpanded ? narrations : narrations.slice(0, RECENT_VOICES);
   const changeChapter = (next, eventId = null) => {
+    // A quest can link to an older folio outside the short preview. Expand
+    // before the chapter mounts so the original focus/scroll contract holds.
+    if (next === 'memories' && eventId && entries.slice(0, -RECENT_FOLIOS).some((entry) => entry.id === eventId)) {
+      setOlderFoliosExpanded(true);
+    }
     setChapter(next);
     setMemoryJumpId(eventId);
     // Each bookmark opens at its first line even after a long quest scroll.
@@ -376,8 +393,20 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                   </button>
                 )}
               </div>
+              {olderFoliosCount > 0 && (
+                <button type="button" className="chronicles-journal-modal__memory-toggle"
+                  data-chronicles-older-folios
+                  aria-expanded={olderFoliosExpanded} aria-controls="chronicles-journal-folios"
+                  onClick={() => {
+                    if (olderFoliosExpanded) setMemoryJumpId(null);
+                    setOlderFoliosExpanded((value) => !value);
+                  }}>
+                  {olderFoliosExpanded ? 'Mostrar solo los últimos folios'
+                    : `Leer folios anteriores (${olderFoliosCount})`}
+                </button>
+              )}
               {entries.length ? (
-                <ol className="chronicles-journal-modal__folios">{entries.map((entry) => (
+                <ol id="chronicles-journal-folios" className="chronicles-journal-modal__folios">{visibleEntries.map((entry) => (
                   <li key={entry.id} data-chronicles-memo-id={entry.id}
                     className={memoryJumpId === entry.id ? 'is-jump-target' : undefined}
                     tabIndex={memoryJumpId === entry.id ? -1 : undefined}>
@@ -402,9 +431,18 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
                 ))}</ol>
               ) : <p className="chronicles-journal-modal__empty">Todavía no se han escrito folios de expedición.</p>}
               <h4>Voces del viaje</h4>
-              {narrations.length ? <ol className="chronicles-journal-modal__diary" data-chronicles-narration-log>{narrations.map((entry) => (
+              {narrations.length ? <ol id="chronicles-journal-voices" className="chronicles-journal-modal__diary" data-chronicles-narration-log>{visibleVoices.map((entry) => (
                 <li key={`${entry.at}-${entry.text}`}>{entry.text}</li>
               ))}</ol> : <p className="chronicles-journal-modal__empty">Lo que cuente la crónica durante el viaje quedará aquí.</p>}
+              {olderVoicesCount > 0 && (
+                <button type="button" className="chronicles-journal-modal__memory-toggle"
+                  data-chronicles-older-voices aria-expanded={voicesExpanded}
+                  aria-controls="chronicles-journal-voices"
+                  onClick={() => setVoicesExpanded((value) => !value)}>
+                  {voicesExpanded ? 'Mostrar solo las últimas voces'
+                    : `Leer voces anteriores (${olderVoicesCount})`}
+                </button>
+              )}
             </section>
           )}
         </div>
