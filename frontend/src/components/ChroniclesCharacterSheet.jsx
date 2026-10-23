@@ -533,7 +533,7 @@ export default function ChroniclesCharacterSheet({
                           {chroniclesShopHandlingNote(worn, state?.combatRules)}
                         </small>
                       )}
-                      {worn && <button type="button" disabled={!canChangeEquipment}>
+                      {worn && <button type="button" disabled={!canChangeEquipment}
                         onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
                         Guardar en mochila
                       </button>}
