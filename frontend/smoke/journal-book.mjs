@@ -31,7 +31,7 @@ try {
           chapterWidth: chapter?.getBoundingClientRect().width };
       });
       if (width >= 1025) {
-        assert(folioFrame.width <= 705, 'Fieldbook should not span like a dashboard');
+        assert(folioFrame.width <= 705, 'Fieldbook should not span like a dashboard: ' + JSON.stringify(folioFrame));
         assert(folioFrame.height <= Math.min(height * .81, 701), 'Fieldbook should not monopolize the desktop');
         assert(folioFrame.headerHeight <= 80, 'Journal masthead should stay restrained');
         assert(folioFrame.chapterWidth <= 625, 'Journal prose should keep a readable measure');
