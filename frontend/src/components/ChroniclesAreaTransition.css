@@ -54,19 +54,11 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-.chronicles-area-transition__actions button.is-primary {
-  border-color: #d3b575;
-  background: #775d33;
-  color: #fff2d8;
-}
-.chronicles-area-transition__actions button:hover {
-  filter: brightness(1.16);
-}
-/* Selection follows DOM focus; the primary gold CTA must not appear
-   selected while No has keyboard focus. */
-.chronicles-area-transition__actions:has(button:focus) button {
-  background: #292b29;
-  border-color: #86765b;
+/* Neither action is intrinsically primary: Enter confirms the focused one.
+   A single gold focus surface is the only selected state on keyboard,
+   pointer, and touch, so No and Yes cannot look selected simultaneously. */
+.chronicles-area-transition__actions button:hover:not(:focus) {
+  filter: brightness(1.12);
 }
 .chronicles-area-transition__actions button:focus {
   background: #876332;
