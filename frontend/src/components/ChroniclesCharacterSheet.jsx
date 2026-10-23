@@ -420,7 +420,7 @@ export default function ChroniclesCharacterSheet({
               ))}
             </ul>
             <small className="chronicles-character-sheet__worn-total">
-              Total del equipo: daño +{gearBonus.attackDamageBonus} · acierto {signed(gearBonus.toHitBonus)} · CA +{gearBonus.armorClassBonus}
+              Equipo A: daño +{gearBonus.attackDamageBonus} · acierto {signed(gearBonus.toHitBonus)} · CA +{gearBonus.armorClassBonus}. El disparo S usa sus propios bonos.
             </small>
           </div>
         )}
@@ -548,7 +548,7 @@ export default function ChroniclesCharacterSheet({
               })}
               <small>
                 {mm3
-                  ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
+                  ? `CA del equipo +${gearBonus.armorClassBonus}: dificulta impactos, no resta daño. A y S calculan daño y acierto por separado.`
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
             </article>}
