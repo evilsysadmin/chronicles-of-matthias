@@ -26,6 +26,8 @@ function hasRequiredGoVulnerabilityScan(source) {
     && /^\s*go install golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.9\.0\s*$/m.test(step)
     && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
     && /^\s*GOOS=linux GOARCH=arm64 "\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
+    && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" -mode=binary "\$RUNNER_TEMP\/chronicles-api"\s*$/m.test(step)
+    && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" -mode=binary "\$RUNNER_TEMP\/chronicles-api-arm64"\s*$/m.test(step)
     && !/^\s*(?:if:|continue-on-error:)/m.test(step)
     && !/\|\|\s*(?:true|:)(?:\s|$)/m.test(step);
 }
@@ -58,4 +60,15 @@ test('the scanner contract rejects missing or downgraded ARM64 coverage', () => 
     'GOOS=linux GOARCH=amd64 "$(go env GOPATH)/bin/govulncheck" ./...')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64,
     arm64 + ' || true')), false);
+});
+
+test('required CI rejects missing, suppressed or replaced binary vulnerability scans', () => {
+  const amd64 = '"$(go env GOPATH)/bin/govulncheck" -mode=binary "$RUNNER_TEMP/chronicles-api"';
+  const arm64 = '"$(go env GOPATH)/bin/govulncheck" -mode=binary "$RUNNER_TEMP/chronicles-api-arm64"';
+  assert.ok(workflow.includes(amd64) && workflow.includes(arm64));
+  for (const command of [amd64, arm64]) {
+    assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(command, 'echo skipped')), false);
+    assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(command, command + ' || true')), false);
+  }
+  assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace('-mode=binary', '-mode=source')), false);
 });
