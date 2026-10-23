@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesMemberCanEquip } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
+import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import {
   chroniclesShopSellable,
@@ -20,6 +21,7 @@ const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', 
 // purchase panel. Uses the exact existing combat-preview calculations.
 function ShopGearPeek({ state, item }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
+  const handlingNote = chroniclesShopHandlingNote(item, state?.combatRules);
   return (
     <aside className="chronicles-shop__gear-peek"
       id={`chronicles-shop-peek-${item.id}`}
@@ -50,6 +52,9 @@ function ShopGearPeek({ state, item }) {
           </div>
         );
       })}
+      {handlingNote && (
+        <small className="chronicles-shop__gear-peek-note">{handlingNote}</small>
+      )}
       {state?.combatRules === 'mm3' && (
         item.slot === 'armor' || item.slot === 'shield'
           || (item.slot === 'weapon' && item.twoHanded)
@@ -473,6 +478,11 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   <h3>{selectedItem.name}</h3>
                   <div className="chronicles-shop__item-portrait"><ShopItemVisual item={selectedItem} /></div>
                   <p>{selectedItem.description}</p>
+                  {chroniclesShopHandlingNote(selectedItem, state?.combatRules) && (
+                    <small className="chronicles-shop__handling-note" data-chronicles-shop-handling>
+                      {chroniclesShopHandlingNote(selectedItem, state?.combatRules)}
+                    </small>
+                  )}
                   <div className="chronicles-shop__eligibility">
                     {selectedItem.slot === 'consumable'
                       ? 'Para toda la compañía · tienes ' + selected.quantity
