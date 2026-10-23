@@ -1848,3 +1848,36 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   font: inherit;
   cursor: pointer;
 }
+
+
+/* RUMBO moved to the minimap: keep the original statusbar child slots stable
+   for the long-standing MM3 objective and responsive selectors. */
+.chronicles-statusbar > .chronicles-statusbar__retired-bearing { display: none !important; }
+
+/* Coordinates belong to the map, in a quiet bottom caption below the tiles.
+   Still one keyboard/touch button and one ResizeObserver-driven SVG. */
+.chronicles-minimap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 16px;
+}
+.chronicles-minimap svg { grid-column: 1; grid-row: 1; min-height: 0; }
+.chronicles-minimap__title {
+  position: static;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 1px 3px;
+  border-radius: 0;
+  background: transparent;
+  color: #e2c597;
+  font-size: .59rem;
+  line-height: 1.25;
+  letter-spacing: .07em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chronicles-minimap__legend { bottom: 21px; }
