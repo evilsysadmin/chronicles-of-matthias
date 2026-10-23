@@ -79,3 +79,67 @@ func TestMongoSourceReadsEveryOwnerRunBeyondNetworkBatch(t *testing.T) {
 		t.Fatalf("non-idempotent replay: result=%+v err=%v", repeated, err)
 	}
 }
+
+ 
+func TestMongoTargetCannotSilentlyKeepAnotherOwnersRun(t *testing.T) {
+	uri := os.Getenv("LEGACY_IMPORT_TEST_MONGO_URI")
+	if uri == "" {
+		t.Skip("ephemeral CI MongoDB not configured")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Disconnect(context.Background())
+	db := client.Database(fmt.Sprintf("chronicles_legacy_owner_guard_%d", time.Now().UnixNano()))
+	defer db.Drop(context.Background())
+	col := db.Collection(runsCollection)
+	if _, err := col.InsertOne(ctx, bson.D{
+		{Key: "_id", Value: "shared-id"},
+		{Key: "owner", Value: "other-user"},
+		{Key: "inventory", Value: bson.D{{Key: "gold", Value: 99}}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	target := NewMongoRuns(db, 10*time.Second)
+	// "Kept" is valid only for the SAME owner. Otherwise the unique _id
+	// constraint must refuse the upsert, and the other user's save survives.
+	_, err = target.InsertIfAbsent(ctx, bson.D{
+		{Key: "_id", Value: "shared-id"},
+		{Key: "owner", Value: "ana"},
+		{Key: "inventory", Value: bson.D{{Key: "gold", Value: 0}}},
+	})
+	if err == nil || !mongo.IsDuplicateKeyError(err) {
+		t.Fatalf("owner collision must raise duplicate key, got %v", err)
+	}
+	var existing bson.M
+	if err := col.FindOne(ctx, bson.D{{Key: "_id", Value: "shared-id"}}).Decode(&existing); err != nil {
+		t.Fatal(err)
+	}
+	if existing["owner"] != "other-user" {
+		t.Fatal("collision modified another player's owner")
+	}
+	newRun := bson.D{{Key: "_id", Value: "fresh-id"}, {Key: "owner", Value: "ana"}, {Key: "inventory", Value: bson.D{{Key: "gold", Value: 2}}}}
+	inserted, err := target.InsertIfAbsent(ctx, newRun)
+	if err != nil || !inserted {
+		t.Fatalf("new owner record not inserted: %v, %v", inserted, err)
+	}
+	inserted, err = target.InsertIfAbsent(ctx, bson.D{
+		{Key: "_id", Value: "fresh-id"},
+		{Key: "owner", Value: "ana"},
+		{Key: "inventory", Value: bson.D{{Key: "gold", Value: 444}}},
+	})
+	if err != nil || inserted {
+		t.Fatalf("same-owner replay must keep existing document: %v, %v", inserted, err)
+	}
+	var saved bson.Raw
+	if err := col.FindOne(ctx, bson.D{{Key: "_id", Value: "fresh-id"}}).Decode(&saved); err != nil {
+		t.Fatal(err)
+	}
+	gold := saved.Lookup("inventory", "gold")
+	if gold.Type != bson.TypeInt32 || gold.Int32() != 2 {
+		t.Fatal("same-owner replay changed the original inventory")
+	}
+}
