@@ -22,6 +22,13 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('Salir sin guardar · Q');
     expect(html).toContain('S · guardar · Q · salir');
     expect(html).toContain('Guardar y salir');
+    expect(html).toContain('chronicles-game-menu__action-pair');
+    expect(html).toContain('chronicles-game-menu__utility-row');
+    expect(html).toContain('aria-controls="chronicles-menu-sound"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('id="chronicles-menu-sound"');
+    expect(html).toContain('hidden=""');
+    expect(html).toContain('aria-hidden="true"');
   });
 
   it('Q still requires explicit confirmation before discarding the run', () => {

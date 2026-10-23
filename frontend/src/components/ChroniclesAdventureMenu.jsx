@@ -14,6 +14,7 @@ export default function ChroniclesAdventureMenu({
   // turn an idea or UX report into the default bug category.
   const [feedbackDraft, setFeedbackDraft] = useState('');
   const [feedbackCategory, setFeedbackCategory] = useState('bug');
+  const [soundOpen, setSoundOpen] = useState(false);
   const feedbackButtonRef = useRef(null);
   const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
@@ -38,7 +39,6 @@ export default function ChroniclesAdventureMenu({
         <div className="chronicles-game-menu__heading-copy">
           <small>CHRONICLES OF MATTHIAS · PAUSA</small>
           <strong>MENÚ DE AVENTURA</strong>
-          <span>La compañía aguarda tus órdenes.</span>
         </div>
         <button type="button" className="chronicles-game-menu__close" aria-label="Cerrar menú"
           hidden={confirmExitWithoutSaving} onClick={onClose}>×</button>
@@ -55,17 +55,26 @@ export default function ChroniclesAdventureMenu({
                 <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
               <span aria-hidden="true">▶</span> Continuar
             </button>
-            <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
-            <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
-            <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave} disabled={saveBusy}>
-              {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
-            </button>
-            <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
-            {isAdmin && (
-              <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
-            )}
-            <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
-              onClick={() => onFeedbackOpenChange?.(true)}>✉ Buzón de feedback</button>
+            <div className="chronicles-game-menu__action-pair">
+              <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
+              <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
+            </div>
+            <div className="chronicles-game-menu__action-pair">
+              <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave} disabled={saveBusy}>
+                {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
+              </button>
+              <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
+            </div>
+            <div className="chronicles-game-menu__utility-row">
+              <button type="button" aria-expanded={soundOpen}
+                aria-controls="chronicles-menu-sound"
+                onClick={() => setSoundOpen((value) => !value)}>♫ Sonido {soundOpen ? '▴' : '▾'}</button>
+              <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
+                onClick={() => onFeedbackOpenChange?.(true)}>✉ Buzón de feedback</button>
+              {isAdmin && (
+                <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
+              )}
+            </div>
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
               </>
             )}
@@ -83,10 +92,11 @@ export default function ChroniclesAdventureMenu({
             )}
           </div>
         </section>
-        <section className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido"
-          hidden={confirmExitWithoutSaving || feedbackOpen}
-          inert={confirmExitWithoutSaving || feedbackOpen ? '' : undefined}
-          aria-hidden={confirmExitWithoutSaving || feedbackOpen ? 'true' : undefined}>
+        <section id="chronicles-menu-sound"
+          className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido"
+          hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen}
+          inert={!soundOpen || confirmExitWithoutSaving || feedbackOpen ? '' : undefined}
+          aria-hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen ? 'true' : undefined}>
           <span className="chronicles-game-menu__section-kicker">AMBIENTE</span>
           <ChroniclesAudioControls id="chronicles-audio-options"
             hint="First Verse en el libro de expediciones; Second Verse durante la aventura." />
