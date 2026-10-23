@@ -58,7 +58,13 @@ try {
         const undersized = buttons.filter((button) => button.height < 39 || button.width < 38);
         assert.deepEqual(undersized, [], `${view} ${width} touch target too small`);
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
-        if (view === 'adventure') await assertAdventureFolioInk(dialog, `${width}x${height}`);
+        if (view === 'adventure') {
+          await assertAdventureFolioInk(dialog, `${width}x${height}`);
+          // Expanded sound scrolls a short landscape folio. Reset before
+          // saving the canonical open-menu screenshot so it depicts the
+          // initial cover/header rather than the last scrolled menu row.
+          await dialog.evaluate((element) => { element.scrollTop = 0; });
+        }
         await page.screenshot({ path: `smoke-folio-${view}-${width}.png` });
         if(view === 'cast') {
           await dialog.getByRole('tab', { name: /Objetos/ }).click();

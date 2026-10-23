@@ -71,7 +71,8 @@ export default function ChroniclesAdventureMenu({
                 aria-controls="chronicles-menu-sound"
                 onClick={() => setSoundOpen((value) => !value)}>♫ Sonido {soundOpen ? '▴' : '▾'}</button>
               <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
-                onClick={() => onFeedbackOpenChange?.(true)}>✉ Buzón de feedback</button>
+                aria-label="Buzón de feedback"
+                onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
               {isAdmin && (
                 <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
               )}

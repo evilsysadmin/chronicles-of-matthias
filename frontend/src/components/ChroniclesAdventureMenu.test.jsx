@@ -24,6 +24,8 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('Guardar y salir');
     expect(html).toContain('CHRONICLES OF MATTHIAS · FOLIO DE PAUSA');
     expect(html).toContain('chronicles-game-menu__heading-legend');
+    expect(html).toContain('✉ Feedback');
+    expect(html).toContain('aria-label="Buzón de feedback"');
     expect(html).toContain('chronicles-game-menu__action-pair');
     expect(html).toContain('chronicles-game-menu__utility-row');
     expect(html).toContain('aria-controls="chronicles-menu-sound"');

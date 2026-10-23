@@ -573,6 +573,7 @@
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row > button {
   border-bottom: 0;
+  white-space: nowrap;
   font: 400 .94rem/1.1 var(--mm3-pixel-font);
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__leave {
