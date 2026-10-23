@@ -78,7 +78,27 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   page.on('pageerror', (e) => errors.push(e.message));
   // Con sesión, la raíz entra directa al juego (sin vestíbulo).
   const navigationStarted = performance.now();
-  await page.goto(base + hash, { waitUntil: 'networkidle' });
+  if (label === 'Chronicles') {
+    // The landing screen makes background/failed sync calls that can keep the
+    // network non-idle well after the actual book is rendered. Verify *real*
+    // React/menu readiness instead of a network quiet period.
+    await page.goto(base + hash, { waitUntil: 'load' });
+    const book = page.locator('[data-chronicles-save-menu]');
+    await book.waitFor({ state: 'visible', timeout: 20_000 });
+    await page.waitForFunction(() => {
+      const menu = document.querySelector('[data-chronicles-save-menu]');
+      if (!menu || !menu.querySelector('[data-chronicles-primary-action]')) return false;
+      // The initial remote catalog must either succeed or expose its real
+      // recovery error. Never call a still-loading skeleton "ready".
+      if (menu.querySelector('.chronicles-save-menu__sync[role="status"]')) return false;
+      const visibleImages = [...document.images].filter((image) => image.getClientRects().length);
+      return document.fonts.status === 'loaded'
+        && visibleImages.every((image) => image.complete && image.naturalWidth > 0);
+    }, undefined, { timeout: 20_000 });
+  } else {
+    // Tactics was already ready in ~1 second; keep its old strict path.
+    await page.goto(base + hash, { waitUntil: 'networkidle' });
+  }
   phaseDone(label, 'navigation', navigationStarted);
   // Keep the six-second late-exception observation window unchanged.
   const lateErrorsStarted = performance.now();
