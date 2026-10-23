@@ -1852,14 +1852,15 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 
 /* RUMBO moved to the minimap: keep the original statusbar child slots stable
    for the long-standing MM3 objective and responsive selectors. */
-.chronicles-statusbar > .chronicles-statusbar__retired-bearing { display: none !important; }
+.chronicles-statusbar > .chronicles-statusbar__retired-bearing,
+.chronicles-statusbar > .chronicles-statusbar__retired-location { display: none !important; }
 
 /* Coordinates belong to the map, in a quiet bottom caption below the tiles.
    Still one keyboard/touch button and one ResizeObserver-driven SVG. */
 .chronicles-minimap {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 16px;
+  grid-template-rows: minmax(0, 1fr) 16px 18px;
 }
 .chronicles-minimap svg { grid-column: 1; grid-row: 1; min-height: 0; }
 .chronicles-minimap__title {
@@ -1880,4 +1881,25 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.chronicles-minimap__legend { bottom: 21px; }
+.chronicles-minimap__location {
+  position: static;
+  z-index: 2;
+  pointer-events: none;
+  grid-column: 1;
+  grid-row: 3;
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: #e2c597;
+  font: 600 .62rem/1.25 Georgia, serif;
+  letter-spacing: .045em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: none;
+}
+.chronicles-minimap__legend { bottom: 37px; }
