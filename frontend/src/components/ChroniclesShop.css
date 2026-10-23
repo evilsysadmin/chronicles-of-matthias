@@ -723,11 +723,10 @@
   }
 }
 
-/* High-resolution merchant ledger. The default desktop rows were sized for
-   two items in view, requiring 5+ unnecessary scroll gestures for 11 offers.
-   Use the vertical space for stock; leave phone/short-landscape touch layout
-   untouched. The catalogue still scrolls normally for genuinely long lists. */
-@media (min-width: 1101px) and (min-height: 700px) {
+/* Desktop merchant ledger: visible stock takes priority over oversized
+   filters/rows even in 901–1100px wide desktop windows and shorter laptops.
+   Preserve the independent phone and short-landscape touch layouts. */
+@media (min-width: 901px) and (min-height: 540px) {
   .chronicles-shop:not(.chronicles-guild) {
     padding: 10px 16px;
     gap: 7px;
@@ -798,6 +797,43 @@
   .chronicles-shop:not(.chronicles-guild) .chronicles-shop__foot {
     padding: 5px 9px;
     font-size: 10px;
+  }
+}
+
+/* Wide desktop catalog: two honest, selectable columns show all eleven
+   Brunna offers without scrolling while preserving the open aisle and tender.
+   Use the *existing* live offers, never a paginated or duplicated stock. */
+@media (min-width: 1450px) and (min-height: 540px) {
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 3px 5px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__list li {
+    min-width: 0;
+    margin: 0;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry {
+    min-height: 44px;
+    height: 100%;
+    gap: 5px;
+    padding: 3px 5px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-icon {
+    width: 29px;
+    height: 29px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-description strong {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-description small {
+    font-size: 9px;
+  }
+  .chronicles-shop:not(.chronicles-guild) .chronicles-shop__entry-price {
+    font-size: 11px;
+    padding: 2px 0;
   }
 }
 
