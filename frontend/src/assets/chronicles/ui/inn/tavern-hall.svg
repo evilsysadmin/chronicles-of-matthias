@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img">
 <defs>
  <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#171521"/><stop offset=".46" stop-color="#493028"/><stop offset="1" stop-color="#20151a"/></linearGradient>
- <linearGradient id="oak" x2=".1" y2="0" y2="1"><stop stop-color="#a46b37"/><stop offset=".46" stop-color="#59341d"/><stop offset="1" stop-color="#271914"/></linearGradient>
+ <linearGradient id="oak" x1="0" y1="0" x2=".1" y2="1"><stop stop-color="#a46b37"/><stop offset=".46" stop-color="#59341d"/><stop offset="1" stop-color="#271914"/></linearGradient>
  <radialGradient id="fire"><stop stop-color="#ffe9a8"/><stop offset=".26" stop-color="#ffb348"/><stop offset=".65" stop-color="#9d3e15" stop-opacity=".78"/><stop offset="1" stop-color="#5b210e" stop-opacity="0"/></radialGradient>
  <radialGradient id="lamp"><stop stop-color="#fff1b0" stop-opacity=".78"/><stop offset=".35" stop-color="#d89736" stop-opacity=".26"/><stop offset="1" stop-color="#b9661b" stop-opacity="0"/></radialGradient>
  <linearGradient id="floor" x2=".3" y2="1"><stop stop-color="#5b3929"/><stop offset="1" stop-color="#100e14"/></linearGradient>
