@@ -151,6 +151,13 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
     : openedQuestId && quests.some((quest) => quest.id === openedQuestId)
       ? openedQuestId : fallbackQuestId;
   const foliosCount = entries.length + narrations.length;
+  // Keep progress available to screen readers without dashboard-like tab badges.
+  const questTabCount = active.length > 0
+    ? `${active.length} ${active.length === 1 ? 'pendiente' : 'pendientes'}`
+    : completedCount > 0
+      ? `${completedCount} ${completedCount === 1 ? 'resuelto' : 'resueltos'}`
+      : 'Sin encargos';
+  const memoryTabCount = `${foliosCount} ${foliosCount === 1 ? 'anotación' : 'anotaciones'}`;
   const changeChapter = (next, eventId = null) => {
     setChapter(next);
     setMemoryJumpId(eventId);
@@ -219,20 +226,18 @@ export default function ChroniclesJournalModal({ open, state, entries = [], narr
             dialogRef.current?.querySelector('#chronicles-journal-tab-' + next)?.focus();
           }}>
           <button type="button" role="tab" id="chronicles-journal-tab-quests"
+            aria-label={`Encargos · ${questTabCount}`}
             tabIndex={chapter === 'quests' ? 0 : -1}
             aria-controls={chapter === 'quests' ? 'chronicles-journal-panel-quests' : undefined} aria-selected={chapter === 'quests'}
             onClick={() => changeChapter('quests')}>
-            <span>Encargos</span><small>{active.length > 0
-              ? `${active.length} ${active.length === 1 ? 'pendiente' : 'pendientes'}`
-              : completedCount > 0
-                ? `${completedCount} ${completedCount === 1 ? 'resuelto' : 'resueltos'}`
-                : 'Sin encargos'}</small>
+            <span>Encargos</span>
           </button>
           <button type="button" role="tab" id="chronicles-journal-tab-memories"
+            aria-label={`Memorias · ${memoryTabCount}`}
             tabIndex={chapter === 'memories' ? 0 : -1}
             aria-controls={chapter === 'memories' ? 'chronicles-journal-panel-memories' : undefined} aria-selected={chapter === 'memories'}
             onClick={() => changeChapter('memories')}>
-            <span>Memorias</span><small>{foliosCount} {foliosCount === 1 ? 'anotación' : 'anotaciones'}</small>
+            <span>Memorias</span>
           </button>
         </nav>
 
