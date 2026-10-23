@@ -9,7 +9,7 @@ function Fixture() {
   const [leaked, setLeaked] = useState(0);
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (['ArrowLeft','ArrowRight','Enter','Escape'].includes(event.key)) {
+      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','Escape','s','S','a','A'].includes(event.key)) {
         setLeaked((count) => count + 1);
       }
     };

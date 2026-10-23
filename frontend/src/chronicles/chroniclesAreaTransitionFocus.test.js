@@ -40,7 +40,10 @@ describe('MM3 travel choice keyboard focus', () => {
     expect(chroniclesAreaTravelKeyDecision('Escape', 'accept')).toBe('cancel');
     expect(chroniclesAreaTravelKeyDecision('n')).toBe('cancel');
     expect(chroniclesAreaTravelKeyDecision('Y')).toBe('accept');
-    expect(chroniclesAreaTravelKeyDecision('S')).toBe('accept');
+    expect(chroniclesAreaTravelKeyDecision('S')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('s')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('a')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('ArrowDown')).toBeNull();
     expect(chroniclesAreaTravelKeyDecision('Tab')).toBeNull();
     expect(chroniclesAreaTravelKeyDecision('ArrowUp')).toBeNull();
     expect(chroniclesAreaTravelKeyDecision('Control+Enter')).toBeNull();

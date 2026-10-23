@@ -20,12 +20,13 @@ export function chroniclesBindAreaTravelFocus(dialog, doc) {
 }
 
 // A highlighted travel choice is focus, not an independent state variable.
-// Keep arrows, Enter, Escape and legacy explicit Y/N keys deterministic.
+// Keep arrows, Enter, Escape and explicit Y/N keys deterministic.
+// S must never mean Yes: it is the expedition's ranged-attack hotkey.
 export function chroniclesAreaTravelKeyDecision(key, focusedChoice = 'cancel') {
   if (key === 'ArrowLeft') return 'focus-cancel';
   if (key === 'ArrowRight') return 'focus-accept';
   if (key === 'Enter') return focusedChoice === 'accept' ? 'accept' : 'cancel';
   if (key === 'Escape' || key === 'n' || key === 'N') return 'cancel';
-  if (key === 'y' || key === 'Y' || key === 's' || key === 'S') return 'accept';
+  if (key === 'y' || key === 'Y') return 'accept';
   return null;
 }

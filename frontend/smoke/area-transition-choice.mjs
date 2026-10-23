@@ -31,6 +31,16 @@ try {
         rect.y >= -1 && rect.y + rect.height <= height+1, 'Modal must fit screen at '+width);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth+1), false);
 
+      // S is the game's shoot hotkey, never a secret Yes/enter-area alias.
+      // Neither ranged/melee nor vertical movement reaches the world while
+      // this confirmation owns focus.
+      for (const key of ['s', 'S', 'a', 'ArrowUp', 'ArrowDown']) {
+        await page.keyboard.press(key);
+        assert.equal(await dialog.isVisible(), true, key + ' must not accept or dismiss travel');
+        assert.equal(await focused(cancel), true, key + ' must preserve safe No selection');
+      }
+      assert.equal(await page.locator('[data-travel-leaked]').innerText(), '0',
+        'Combat/movement keys must not reach the underlying expedition');
       await page.keyboard.press('Enter');
       await dialog.waitFor({ state:'hidden' });
       assert.equal(await decision.innerText(), 'no', 'Enter on the default No must cancel');
@@ -46,9 +56,13 @@ try {
       assert.notEqual(await background(cancel), await background(accept),
         'Gold selection must return to No on left-arrow');
       await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('s');
+      assert.equal(await dialog.isVisible(), true,
+        'Shoot S must never enter the selected destination even when Yes is focused');
+      assert.equal(await focused(accept), true, 'S must not change the selected option');
       await page.keyboard.press('Enter');
       await dialog.waitFor({ state:'hidden' });
-      assert.equal(await decision.innerText(), 'yes', 'Enter on selected Yes must confirm');
+      assert.equal(await decision.innerText(), 'yes', 'Only Enter on selected Yes confirms');
 
       await reopen.click();
       await dialog.waitFor({ state:'visible' });
