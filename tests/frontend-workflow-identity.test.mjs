@@ -234,7 +234,8 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
 
 test('required repository-contract validates frontend check and workflow identity', () => {
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(ci, /check_name=build/);
+  assert.match(ci, /check_name=frontend-vitest-build-chromium/);
+  assert.doesNotMatch(ci, /check_name=build(?:\s|$)/);
   assert.match(ci, /completed:success\)/);
   assert.match(ci, /actions\/runs"/);
   assert.match(ci, /-f head_sha="\$HEAD_SHA" -f event="\$GITHUB_EVENT_NAME"/);
