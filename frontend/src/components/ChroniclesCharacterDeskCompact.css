@@ -1,0 +1,153 @@
+/* MM3 workbench: the party dock already carries all portraits. Reclaim the
+   duplicate cover area for inventory, item details and the selected chapter.
+   This intentionally does not affect the Tactics character sheet. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 10px;
+  padding: 7px 14px;
+  align-items: center;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 13px;
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+  margin: 0;
+  font-size: clamp(1.22rem, 1.6vw, 1.62rem);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
+  margin: 0;
+  font-size: .84rem;
+  line-height: 1.2;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 0 auto;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: .78rem;
+  line-height: 1.25;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head > button {
+  align-self: center;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression {
+  grid-template-columns: auto minmax(72px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 13px;
+  min-height: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-copy {
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression b,
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression small {
+  font-size: .72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-track {
+  height: 6px;
+  min-width: 0;
+}
+/* On wide screens, shorten the scrollable inventory instead of growing the
+   whole page. Filters and inspect/equip actions remain individually available. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__section-head {
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+    max-height: clamp(170px, 26dvh, 250px);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card {
+    gap: 4px;
+    padding: 8px;
+    margin: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__dual-weapons {
+    gap: 7px;
+    margin: 7px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__gear-slot {
+    padding-block: 6px;
+  }
+}
+/* Phones retain a readable two-line identity. The content can scroll, while
+   equipment actions stay touch-sized and the hero switcher remains anchored. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    min-height: 0;
+    gap: 5px;
+    padding: 5px 9px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
+    gap: 2px 8px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+    font-size: 1.17rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
+    font-size: .75rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
+    font-size: .74rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression {
+    grid-template-columns: auto minmax(40px, 1fr);
+    padding: 3px 9px;
+    gap: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression > small {
+    display: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-track {
+    height: 5px;
+  }
+}
+@media (max-width: 410px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 38px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+    font-size: 1.12rem;
+  }
+}
+@media (max-height: 480px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    min-height: 0;
+    padding: 3px 7px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+    flex-basis: auto;
+    margin-left: auto;
+  }
+}
