@@ -291,7 +291,7 @@ try {
       assert.equal(await oldDeeds.count(), 1,
         'When no active quests exist, completed contracts must stay accessible');
       await dialog.getByRole('heading', { name: 'Las gestas concluidas' }).waitFor();
-      assert.match(await tabQuests.innerText(), /1 resuelto/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /1 resuelto/);
       assert.match(await dialog.getByRole('tabpanel').innerText(), /conservan los hechos que vivimos/);
       assert.equal(await oldDeeds.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await archive.count(), 0, 'An all-completed journal must not hide its entire list');
@@ -300,7 +300,7 @@ try {
       await page.locator('[data-test-no-quests]').click();
       await dialog.waitFor({ state: 'visible' });
       await dialog.getByRole('heading', { name: 'Páginas por escribir' }).waitFor();
-      assert.match(await tabQuests.innerText(), /Sin encargos/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /Sin encargos/);
       assert.equal(await dialog.locator('[data-chronicles-quest-id]').count(), 0);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
