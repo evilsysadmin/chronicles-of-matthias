@@ -24,6 +24,17 @@ function verifyToolchainPins(docker, ci, module) {
   assert.doesNotMatch(ci, /^\s*go-version-file:/m, 'Go module minimum is not a substitute for patched CI toolchain');
   assert.equal(pinnedCi[0][1], image[1], 'Docker and CI must compile with the same Go patch release');
   assert.ok(atLeast(image[1], '1.27.3'), 'security floor: Go 1.27.3 or newer required');
+  const inside = docker.match(/^ARG EXPECTED_GO_VERSION=(\d+\.\d+\.\d+)$/m);
+  assert.ok(inside, 'production Docker builder must declare expected patch release');
+  assert.equal(inside[1], image[1], 'builder/compiler assertion must match the Docker Go patch tag');
+  assert.ok(docker.includes('test "$(GOTOOLCHAIN=local go env GOVERSION)" = "go${EXPECTED_GO_VERSION}"'),
+    'builder must reject a compiler different from the patched Docker tag');
+  assert.ok(docker.includes('test "$(go version /out/chronicles-api)" = "/out/chronicles-api: go${EXPECTED_GO_VERSION}"'),
+    'production binary must embed the selected patched Go compiler');
+  assert.ok(docker.includes("go version -m /out/chronicles-api | grep -Fqx \"$(printf '\\tbuild\\tGOOS=%s' \"$TARGETOS\")\""),
+    'actual Docker binary must match target OS');
+  assert.ok(docker.includes("go version -m /out/chronicles-api | grep -Fqx \"$(printf '\\tbuild\\tGOARCH=%s' \"$TARGETARCH\")\""),
+    'actual Docker binary must match target architecture');
   const minimum = module.match(/^go\s+(\d+\.\d+(?:\.\d+)?)\s*$/m);
   assert.ok(minimum, 'api/go.mod must declare the minimum Go release');
   const minVersion = minimum[1].split('.').length === 2 ? `${minimum[1]}.0` : minimum[1];
@@ -55,7 +66,7 @@ test('security contract rejects CI patch drift, floating tags and unpatched 1.27
 
 test('security contract allows deliberate matching future Go point-release upgrades', () => {
   verifyToolchainPins(
-    dockerfile.replace('golang:1.27.3-alpine3.23', 'golang:1.27.4-alpine3.23'),
+    dockerfile.replace('golang:1.27.3-alpine3.23', 'golang:1.27.4-alpine3.23').replace('EXPECTED_GO_VERSION=1.27.3', 'EXPECTED_GO_VERSION=1.27.4'),
     workflow.replace("go-version: '1.27.3'", "go-version: '1.27.4'"),
     goMod,
   );
@@ -99,4 +110,21 @@ test('binary-provenance gate rejects missing platform or compiler checks', () =>
   assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('patch >= 3', 'patch >= 2')), false);
   assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('major > 1 || (major == 1', 'major >= 1 || (major == 1')), false);
   assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('build_go" =~ ^go(', 'build_go" == go1.27.3 || go(')), false);
+});
+
+test('production Docker attestation fails closed on compiler, target or proof removal', () => {
+  for (const [missing, label] of [
+    ['ARG EXPECTED_GO_VERSION=1.27.3', 'expected patch'],
+    ['GOTOOLCHAIN=local go env GOVERSION', 'local toolchain'],
+    ['go version /out/chronicles-api', 'binary version'],
+    ["printf '\\tbuild\\tGOOS=%s'", 'binary operating system'],
+    ["printf '\\tbuild\\tGOARCH=%s'", 'binary architecture'],
+  ]) {
+    assert.ok(dockerfile.includes(missing), label);
+    assert.throws(() => verifyToolchainPins(dockerfile.replace(missing, ''), workflow, goMod), undefined, label);
+  }
+  assert.throws(
+    () => verifyToolchainPins(dockerfile.replace('EXPECTED_GO_VERSION=1.27.3', 'EXPECTED_GO_VERSION=1.27.2'), workflow, goMod),
+    /match the Docker Go patch tag/,
+  );
 });
