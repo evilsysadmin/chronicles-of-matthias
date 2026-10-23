@@ -76,6 +76,16 @@ describe('Chronicles · MM3 shops', () => {
     expect(chroniclesGoldBalance(sold)).toBe(9999 - CHRONICLES_EQUIPMENT['brass-dagger'].price + salePrice);
   });
 
+  it('refuses replayed purchases from the neighboring tile or with the party facing away', () => {
+    const open = atForge(30);
+    const nextStreetSquare = { ...open, x: 7, y: 5, direction: 0 };
+    const lookingAway = { ...open, direction: 2 };
+    for (const invalid of [nextStreetSquare, lookingAway]) {
+      expect(chroniclesReduce(invalid, { type: 'shop-buy', itemId: 'brass-dagger' })).toBe(invalid);
+      expect(chroniclesReduce(invalid, { type: 'shop-sell', itemId: 'brass-dagger' })).toBe(invalid);
+    }
+  });
+
   it('closes the counter when the party walks away, and only trades at the merchant', () => {
     const open = atForge(30);
     const walked = chroniclesReduce(open, 'turn-left');
