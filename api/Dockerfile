@@ -5,12 +5,15 @@ FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23 AS build
 ARG TARGETOS
 ARG TARGETARCH
 ARG EXPECTED_GO_VERSION=1.27.3
+# Refuse implicit compiler switches during downloads and final compilation.
+ENV GOTOOLCHAIN=local
 WORKDIR /src
 # Pin validation happens inside the actual builder, not only on the CI runner.
 RUN test "$(GOTOOLCHAIN=local go env GOVERSION)" = "go${EXPECTED_GO_VERSION}"
 RUN apk add --no-cache ca-certificates
 COPY go.mod go.sum ./
-RUN go mod download
+# Go already checks go.sum; also catch post-download module-cache modification.
+RUN go mod download && go mod verify
 COPY internal/ ./internal/
 COPY cmd/ ./cmd/
 # GO-2026-5932 has no patched x/crypto/openpgp release. Inspect the
