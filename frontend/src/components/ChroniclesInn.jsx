@@ -58,7 +58,7 @@ export default function ChroniclesInn({ state, onAction, onClose }) {
         <img className="chronicles-inn__scene" src={scene}
           alt="Interior de taberna medieval con vigas, chimenea encendida, mesas y mostrador de roble" draggable="false" />
         <header className="chronicles-inn__heading">
-          <div><small>TABERNA · SWORDHAVEN</small>
+          <div><small>{entry.id === 'first-book-healer' ? 'TABERNA · SWORDHAVEN' : 'POSADA · TERRA'}</small>
             <h2>{chroniclesInnName(entry)}</h2>
             <p>«Pasa, viajero. Aquí el fuego no pregunta de dónde vienes».</p>
           </div>
