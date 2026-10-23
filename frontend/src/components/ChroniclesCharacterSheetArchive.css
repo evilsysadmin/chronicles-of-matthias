@@ -434,3 +434,17 @@
     line-height: 1.18;
   }
 }
+
+/* Old MM3 chrome colored the second resource as if it were always magic.
+   A noncaster's second resource is GOLD; on pale parchment that inherited
+   pastel blue had almost no contrast. Use the resource's identity instead. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__quick > span[data-resource='magic'] b {
+    color: #285383;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__quick > span[data-resource='gold'] b {
+    color: #513718;
+  }
+}
