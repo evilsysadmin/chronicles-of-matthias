@@ -4,6 +4,7 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import {
   CHRONICLES_EQUIPMENT,
   CHRONICLES_EQUIPMENT_SLOTS,
+  CHRONICLES_SHIELD_PROFILES,
   chroniclesEquipItem,
   chroniclesEquippedItem,
 } from './chroniclesEquipment.js';
@@ -57,6 +58,25 @@ describe('Chronicles · MM3 equipment catalog', () => {
     expect(CHRONICLES_EQUIPMENT['steel-plate'].price).toBeGreaterThan(300);
   });
 
+  it('balances real starter shields against first-book enemy attacks without overbuffing them', () => {
+    const expected = {
+      wooden: [1, 0, 2], brass: [2, -1, 4], bronze: [2, 0, 6],
+      iron: [3, -1, 16], ivory: [2, 1, 24], silver: [3, 1, 40],
+      steel: [4, -1, 80],
+    };
+    for (const [material, [armorClass, toHit, price]] of Object.entries(expected)) {
+      const shield = CHRONICLES_EQUIPMENT[`${material}-shield`];
+      expect(CHRONICLES_SHIELD_PROFILES[material]).toEqual({ armorClass, toHit });
+      expect([shield.armorClassBonus, shield.toHitBonus, shield.price]).toEqual([armorClass, toHit, price]);
+      expect(shield.description).toContain(`armadura +${armorClass}`);
+      if (toHit) expect(shield.description).toContain(`acierto ${toHit > 0 ? '+' : ''}${toHit}`);
+    }
+    expect(CHRONICLES_EQUIPMENT['leather-padded'].price).toBe(2);
+    expect(CHRONICLES_EQUIPMENT['leather-leather'].price).toBe(3);
+    expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].armorClassBonus).toBe(3);
+    expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].price).toBe(9);
+  });
+
   it('gates armour by class tier and shields by class and a free hand', () => {
     // Canonical company: matthias Caballero, rook Paladín, bishop Clérigo, knight Arquero.
     let state = mm3Company('steel-plate', 'iron-shield', 'iron-shield', 'iron-staff');
@@ -80,6 +100,28 @@ describe('Chronicles · MM3 equipment catalog', () => {
     const refused = chroniclesEquipItem(state, 'matthias', 'iron-shield');
     expect(chroniclesEquippedItem(refused, 'matthias', 'shield')).toBeNull();
     expect(refused.message).toMatch(/mano libre/);
+  });
+
+  it('makes shield defensive/offensive tradeoffs effective against real early enemies', async () => {
+    const { chroniclesMapById } = await import('./chroniclesMapCatalog.js');
+    const { chroniclesMM3EnemyToHit, chroniclesMM3AttackHits } = await import('./chroniclesMM3Rules.js');
+    const enemy = chroniclesMapById('swordhaven-first-book').enemies.find((e) => e.id === 'swordhaven-south-cutpurse');
+    const toHit = chroniclesMM3EnemyToHit(enemy);
+    const initial = mm3Company('wooden-shield', 'brass-shield', 'bronze-shield');
+    const wooden = chroniclesEquipItem(initial, 'matthias', 'wooden-shield');
+    const brass = chroniclesEquipItem(initial, 'matthias', 'brass-shield');
+    const bronze = chroniclesEquipItem(initial, 'matthias', 'bronze-shield');
+    const baseAC = chroniclesPartyArmorClass(initial, 'matthias');
+    for (const [state, ac, accuracy] of [[wooden, 1, 0], [brass, 2, -1], [bronze, 2, 0]]) {
+      expect(chroniclesPartyArmorClass(state, 'matthias')).toBe(baseAC + ac);
+      expect(chroniclesPartyAttackStats(state, 'matthias').toHit).toBe(
+        chroniclesPartyAttackStats(initial, 'matthias').toHit + accuracy);
+    }
+    const hitRate = (armorClass) => Array.from({ length: 20 }, (_, roll) =>
+      chroniclesMM3AttackHits(roll + 1, toHit, armorClass)).filter(Boolean).length;
+    expect(hitRate(baseAC) - hitRate(baseAC + 1)).toBe(1);
+    expect(hitRate(baseAC + 1) - hitRate(baseAC + 2)).toBe(1);
+    // No extra damage reduction is granted under MM3; price buys dodge/aim.
   });
 
   it('turns material into real to-hit and damage, and survives a checkpoint with class rules', () => {

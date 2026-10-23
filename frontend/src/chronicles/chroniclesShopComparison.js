@@ -80,7 +80,9 @@ export function chroniclesShopEquipmentComparisons(state, item) {
     const defenses = chroniclesUsesMM3Combat(state) ? ['armorClass'] : ['armorClass', 'damageReduction'];
     const keys = item.slot === 'weapon'
       ? ['toHit', 'damage', 'reach', ...(displacedShield ? defenses : [])]
-      : item.slot === 'missile' ? ['toHit', 'damage', 'reach'] : defenses;
+      : item.slot === 'missile' ? ['toHit', 'damage', 'reach']
+        : item.slot === 'shield' ? [...defenses, ...(after.toHit !== before.toHit ? ['toHit'] : [])]
+          : defenses;
 
     return {
       memberId: member.id,
