@@ -25,13 +25,14 @@ function hasRequiredGoVulnerabilityScan(source) {
     && /^\s*set -euo pipefail\s*$/m.test(step)
     && /^\s*go install golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.9\.0\s*$/m.test(step)
     && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
+    && /^\s*GOOS=linux GOARCH=arm64 "\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
     && !/^\s*(?:if:|continue-on-error:)/m.test(step)
     && !/\|\|\s*(?:true|:)(?:\s|$)/m.test(step);
 }
 
 test('required Go API CI runs a pinned, fail-closed reachable vulnerability scan', () => {
   assert.ok(hasRequiredGoVulnerabilityScan(workflow),
-    'api-e2e must run pinned govulncheck ./... unconditionally and fail on findings');
+    'api-e2e must scan both native and linux/arm64 Go source unconditionally and fail on findings');
 });
 
 test('the scanner contract rejects suppression, removal and non-pinned tools', () => {
@@ -47,4 +48,14 @@ test('the scanner contract rejects suppression, removal and non-pinned tools', (
     '"$(go env GOPATH)/bin/govulncheck" ./... || true')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(
     '"$(go env GOPATH)/bin/govulncheck" ./...', 'echo skipped')), false);
+});
+
+test('the scanner contract rejects missing or downgraded ARM64 coverage', () => {
+  const arm64 = 'GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...';
+  assert.ok(workflow.includes(arm64), 'the required arm64 command must be present');
+  assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64, '')), false);
+  assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64,
+    'GOOS=linux GOARCH=amd64 "$(go env GOPATH)/bin/govulncheck" ./...')), false);
+  assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64,
+    arm64 + ' || true')), false);
 });
