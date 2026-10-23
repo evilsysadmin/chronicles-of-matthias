@@ -10,6 +10,18 @@ const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [144
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = 0;
 
+// Wait for the actual React dialog, fonts and visible artwork instead of
+// paying Playwright's 500ms network-idle quiet window on every merchant scene.
+async function gotoReadyShop(page, target) {
+  await page.goto(target, { waitUntil: 'load' });
+  await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 20_000 });
+  await page.waitForFunction(() => {
+    const images = [...document.images].filter((img) => img.getClientRects().length);
+    return document.fonts.status === 'loaded'
+      && images.every((img) => img.complete && img.naturalWidth > 0);
+  }, undefined, { timeout: 20_000 });
+}
+
 // Capture the true room composition without React panels for art direction.
 // Temporary QA stylesheet is always removed before asserting interactions.
 async function captureArtworkOnly(page, filename) {
@@ -38,7 +50,7 @@ try {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      await page.goto(url, { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url);
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible', timeout: 20_000 });
       const image = page.locator('.chronicles-shop__scene img');
@@ -266,7 +278,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await context.newPage();
     try {
-      await page.goto(url + '?gold-cap=1', { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url + '?gold-cap=1');
       const dialog = page.getByRole('dialog');
       await dialog.waitFor();
       await dialog.getByRole('tab', { name: /Vender/ }).click();
@@ -316,7 +328,7 @@ try {
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       try {
-        await page.goto(url + '?room=' + room, { waitUntil: 'networkidle' });
+        await gotoReadyShop(page, url + '?room=' + room);
         const dialog = page.getByRole('dialog');
         await dialog.waitFor({ state: 'visible' });
         const scene = dialog.locator('.chronicles-shop__scene');
@@ -550,7 +562,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      await page.goto(url + '?room=apothecary', { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url + '?room=apothecary');
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible' });
       assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
