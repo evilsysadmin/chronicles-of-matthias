@@ -190,3 +190,19 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button { order: 5; }
 }
+
+/* The same real MM3 hand-use explanation as Odo's shop, without a new card. */
+.chronicles-character-sheet__handling-note {
+  display: block;
+  margin: 4px 0 7px;
+  padding-left: 8px;
+  border-left: 2px solid #ab7544;
+  color: #73502b;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.chronicles-character-sheet__weapon-card .chronicles-character-sheet__handling-note {
+  margin-top: 2px;
+  font-size: 11px;
+}

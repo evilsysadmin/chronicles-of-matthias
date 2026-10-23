@@ -38,6 +38,7 @@ import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactic
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
+import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
@@ -286,6 +287,11 @@ export default function ChroniclesCharacterSheet({
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <strong>{selectedInventoryItem.name}</strong>
                   <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  {!tacticsMode && selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
+                    <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
+                      {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
+                    </small>
+                  )}
                   <dl>
                     <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
                     {selectedEquipment && <>
@@ -522,7 +528,12 @@ export default function ChroniclesCharacterSheet({
                       <small>{stats.reach > 0
                         ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
                         : 'Sin arma de proyectiles · no puede disparar'}</small>
-                      {worn && <button type="button" disabled={!canChangeEquipment}
+                      {slot === 'missile' && worn && chroniclesShopHandlingNote(worn, state?.combatRules) && (
+                        <small className="chronicles-character-sheet__handling-note" data-chronicles-worn-handling>
+                          {chroniclesShopHandlingNote(worn, state?.combatRules)}
+                        </small>
+                      )}
+                      {worn && <button type="button" disabled={!canChangeEquipment>
                         onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
                         Guardar en mochila
                       </button>}
