@@ -24,7 +24,7 @@ import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './
 import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
-import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -744,6 +744,7 @@ export function createChroniclesOfMatthiasGame(host, {
   let volleyFxStartedAt = -1;
   let volleyFxCount = 0;
   let volleyObstacleDistance = Infinity;
+  let volleyLaunchPose = null;
   const enemyHitStartedAt = new Map();
   const enemyAttackStartedAt = new Map();
   const enemyDeathStartedAt = new Map();
@@ -813,6 +814,14 @@ export function createChroniclesOfMatthiasGame(host, {
       });
     });
     latestState = state;
+    if (volleyFxCount > 0 && !chroniclesVolleyMatchesLaunchPose(volleyLaunchPose, state)) {
+      // The projectile mesh is a camera child. Cancel a stale visual instead
+      // of swinging its trajectory with a later movement/turn action.
+      volleyFxCount = 0;
+      volleyFxStartedAt = -1;
+      volleyLaunchPose = null;
+      volleyFx.group.visible = false;
+    }
     (dungeon.spectralChapel.userData.chroniclesGlowMaterials || []).forEach((glow) => {
       glow.emissiveIntensity = state.sigilAwake ? 1.25 : 0.18;
     });
@@ -876,6 +885,9 @@ export function createChroniclesOfMatthiasGame(host, {
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
     volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
+    volleyLaunchPose = volleyFxCount > 0 && latestState
+      ? { x: latestState.x, y: latestState.y, direction: latestState.direction }
+      : null;
     // Snapshot the wall in front of the party at shot time. Generated house
     // facades and shop doors share scenePlan.grid's solid '#' cells.
     volleyObstacleDistance = chroniclesVolleyObstacleDistance(
