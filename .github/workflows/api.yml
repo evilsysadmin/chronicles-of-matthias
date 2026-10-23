@@ -35,10 +35,12 @@ jobs:
           cache-dependency-path: api/go.sum
       - name: Build and vet (amd64 + arm64)
         working-directory: api
+        env:
+          LEGACY_IMPORT_TEST_MONGO_URI: mongodb://127.0.0.1:27017
         run: |
           set -euo pipefail
           go vet ./cmd/...
-          go test ./internal/chronicles/... ./internal/gamesapi/... ./internal/release/... ./cmd/...
+          go test ./internal/chronicles/... ./internal/legacyimport/... ./internal/gamesapi/... ./internal/release/... ./cmd/...
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
