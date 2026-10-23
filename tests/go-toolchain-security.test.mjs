@@ -197,3 +197,35 @@ test('release Docker module checks reject missing, skipped, or reordered verific
     assert.throws(() => assertReleaseBuilderCacheIntegrity(altered));
   }
 });
+
+function assertFullApiJobUsesLocalGo(ci) {
+  const verify = ci.indexOf('\n  verify:\n');
+  const publish = ci.indexOf('\n  publish:\n', verify);
+  assert.ok(verify >= 0 && publish > verify, 'mandatory API verify job must exist');
+  const job = ci.slice(verify, publish);
+  const beforeSteps = job.split('\n    steps:\n')[0];
+  assert.match(beforeSteps, /\n    env:\n      GOTOOLCHAIN: local\n/,
+    'every Go operation in the required API job must inherit GOTOOLCHAIN=local');
+  const steps = job.slice(beforeSteps.length);
+  for (const op of ['go vet ./cmd/...', 'go test ./internal/chronicles/', 'go run ./cmd/terragen -check',
+    'go install golang.org/x/vuln/cmd/govulncheck@v1.9.0',
+    'go list -deps ./cmd/chronicles-api', 'go build -o "$RUNNER_TEMP/chronicles-api"']) {
+    assert.ok(steps.includes(op), `required Go operation missing from job: ${op}`);
+  }
+}
+
+test('all API CI commands share the patched local Go toolchain across steps', () => {
+  assertFullApiJobUsesLocalGo(workflow);
+});
+
+test('API Go toolchain policy rejects removal, auto-switching or per-step-only exports', () => {
+  const livePolicy = '    env:\n      GOTOOLCHAIN: local\n';
+  assert.ok(workflow.includes(livePolicy));
+  for (const changed of [
+    workflow.replace(livePolicy, ''),
+    workflow.replace(livePolicy, '    env:\n      GOTOOLCHAIN: auto\n'),
+    workflow.replace(livePolicy, '      - name: Build and vet (amd64 + arm64)\n        env:\n          GOTOOLCHAIN: local\n'),
+  ]) {
+    assert.throws(() => assertFullApiJobUsesLocalGo(changed));
+  }
+});
