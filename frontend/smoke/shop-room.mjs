@@ -187,12 +187,31 @@ try {
       // The exact same combat comparison is now discoverable on stock
       // hover/focus, without creating a second dashboard over the merchant.
       if (width > 900) await dagger.locator('button').hover();
-      const peek = dagger.locator('.chronicles-shop__gear-peek');
+      const peek = width >= 1180 && height >= 540
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+        : dagger.locator('.chronicles-shop__gear-peek');
       await peek.waitFor({ state: 'visible' });
       assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
         'Hover/focus/tap must show the real comparison for all four companions');
       assert.match(await peek.innerText(), /Matthias/);
       assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      if (width >= 1180 && height >= 540) {
+        const position = await peek.evaluate((el) => {
+          const rect = (node) => {
+            const r = node.getBoundingClientRect();
+            return { left: r.left, right: r.right, width: r.width };
+          };
+          const market = el.closest('.chronicles-shop__market');
+          return { peek: rect(el), catalog: rect(market.querySelector('.chronicles-shop__catalog')),
+            detail: rect(market.querySelector('.chronicles-shop__detail')) };
+        });
+        assert(position.peek.left >= position.catalog.right + 2
+          && position.peek.right <= position.detail.left - 2
+          && position.peek.width >= 180,
+          'Preview must be readable to the RIGHT of the clipped catalogue: ' + JSON.stringify(position));
+        assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
+          'Wide hover must never expand or reflow the stock ledger');
+      }
       assert.equal(await detail.locator('.chronicles-shop__compare-toggle').count(), 0,
         'Comparison must no longer produce a dashboard inside the purchase receipt');
       if (width > 900) {
@@ -471,7 +490,9 @@ try {
           const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
           if (width > 900) await vest.locator('button').hover();
           else await vest.locator('button').click();
-          const note = vest.locator('.chronicles-shop__gear-peek');
+          const note = width >= 1180 && height >= 540
+            ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+            : vest.locator('.chronicles-shop__gear-peek');
           await note.waitFor({ state: 'visible' });
           assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
             'Every Odo armor/shield needs its actual four-hero equip comparison');
@@ -535,7 +556,10 @@ try {
       const potion = dialog.locator('[data-chronicles-shop-item="healing-potion"]');
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
-      const note = potion.locator('.chronicles-shop__consumable-peek');
+      const peekInAisle = width >= 1180 && height >= 540;
+      const note = peekInAisle
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+        : potion.locator('.chronicles-shop__consumable-peek');
       await note.waitFor({ state: 'visible' });
       assert.match(await note.innerText(), /15 PV/);
       assert.match(await note.innerText(), /Toda la compañía/);
@@ -544,8 +568,11 @@ try {
       const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
       if (mobile) await scroll.locator('button').click();
       else await scroll.locator('button').hover();
-      await scroll.locator('.chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
-      assert.match(await scroll.locator('.chronicles-shop__consumable-peek').innerText(),
+      const scrollNote = peekInAisle
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+        : scroll.locator('.chronicles-shop__consumable-peek');
+      await scrollNote.waitFor({ state: 'visible' });
+      assert.match(await scrollNote.innerText(),
         /14 de daño · alcance 3/);
       assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
       await page.screenshot({ path: `smoke-shop-apothecary-peek-${width}.png` });
