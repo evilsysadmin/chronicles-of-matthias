@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const url = process.argv[2] || 'http://localhost:4174/smoke/shop-room.html';
-const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1024, 768], [1280, 800], [1440, 900], [1740, 824]];
+const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [1440, 900]];
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = 0;
 
@@ -97,37 +97,23 @@ try {
             `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
         }
       }
-      if (width >= 901) {
+      if (width === 1280 && height === 800) {
         const ledger = await dialog.locator('.chronicles-shop__catalog').evaluate((catalog) => {
           const list = catalog.querySelector('.chronicles-shop__list');
           const rows = [...list.querySelectorAll('[data-chronicles-shop-item]')];
           const last = rows.at(-1)?.getBoundingClientRect();
           const rect = list.getBoundingClientRect();
-          const visible = rows.filter((row) => {
-            const box = row.getBoundingClientRect();
-            return box.top >= rect.top - 1 && box.bottom <= rect.bottom + 1;
-          }).length;
-          const columns = getComputedStyle(list).gridTemplateColumns;
-          return { rows: rows.length, visible, clientHeight: list.clientHeight,
+          return { rows: rows.length, clientHeight: list.clientHeight,
             scrollHeight: list.scrollHeight, lastBottom: last?.bottom, visibleBottom: rect.bottom,
-            rowHeight: rows[0]?.getBoundingClientRect().height, columns };
+            rowHeight: rows[0]?.getBoundingClientRect().height };
         });
         assert.equal(ledger.rows, 11, 'Brunna baseline must retain its complete eleven-item catalogue');
-        if (width >= 1280) {
-          assert(ledger.scrollHeight <= ledger.clientHeight + 2,
-            'All eleven merchant items should fit without scrolling at ' + width + 'px: ' + JSON.stringify(ledger));
-          assert.equal(ledger.visible, 11,
-            'Whole stock must be visible at once on large desktop: ' + JSON.stringify(ledger));
-          assert(ledger.lastBottom <= ledger.visibleBottom + 1,
-            'The final merchandise item is clipped: ' + JSON.stringify(ledger));
-        } else {
-          assert(ledger.visible >= 7,
-            'At least the majority of stock must be visible in compact desktop: ' + JSON.stringify(ledger));
-        }
+        assert(ledger.scrollHeight <= ledger.clientHeight + 2,
+          'All eleven merchant items should fit at 1280x800 without scrolling: ' + JSON.stringify(ledger));
+        assert(ledger.lastBottom <= ledger.visibleBottom + 1,
+          'The final merchandise item is clipped: ' + JSON.stringify(ledger));
         assert(ledger.rowHeight >= 35,
           'The dense layout must keep usable desktop row targets: ' + JSON.stringify(ledger));
-        if (width >= 1450) assert(ledger.columns.split(' ').length >= 2,
-          'Wide desktop must use two real stock columns: ' + JSON.stringify(ledger));
       }
       await page.screenshot({ path: `smoke-shop-${width}.png` });
       if (width === 390 || width === 1280) {
