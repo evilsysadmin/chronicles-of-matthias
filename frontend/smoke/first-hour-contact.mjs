@@ -393,6 +393,8 @@ try {
         const parent = node.closest('[data-chronicles-minimap]');
         const svg = parent.querySelector('svg');
         const caption = node.getBoundingClientRect();
+        const location = parent.querySelector('[data-chronicles-location]');
+        const locationBounds = location.getBoundingClientRect();
         const frame = parent.getBoundingClientRect();
         return {
           color: getComputedStyle(node).color,
@@ -401,12 +403,23 @@ try {
           centered: Math.abs((caption.left + caption.right) / 2 -
             (frame.left + frame.right) / 2) <= 3,
           belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
+          location: location.textContent.trim(),
+          locationColor: getComputedStyle(location).color,
+          locationCentered: Math.abs((locationBounds.left + locationBounds.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          locationBelowCoordinates: locationBounds.top >= caption.bottom - 2,
+          locationWithinFrame: locationBounds.bottom <= frame.bottom + 1,
         };
       });
       const sandstone = width >= 1025 || (width >= 801 && height >= 601);
       assert.equal(position.color, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
         'Coords need dark ink on sandstone and pale ink on dark compact minimap: ' + JSON.stringify(position));
       if (sandstone) assert.equal(position.shadow, 'none', 'Dark coordinates must not have a light halo');
+      assert.equal(position.locationColor, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Location must contrast with the actual minimap backing: ' + JSON.stringify(position));
+      assert.equal(position.location, 'UBICACIÓN · SWORDHAVEN');
+      assert(position.locationCentered && position.locationBelowCoordinates && position.locationWithinFrame,
+        'Location should stay centered below coordinates within the minimap frame: ' + JSON.stringify(position));
       assert.match(position.label, /^X\d+ Y\d+$/);
       assert(position.centered && position.belowTiles,
         'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));

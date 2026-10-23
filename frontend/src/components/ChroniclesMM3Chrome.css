@@ -1632,7 +1632,8 @@
    caption needs dark ink there; keep the lighter caption on the dark,
    compact minimap background for mobile and short landscape. */
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
-  .chronicles .chronicles-minimap__title {
+  .chronicles .chronicles-minimap__title,
+  .chronicles .chronicles-minimap__location {
     color: #24160d;
     text-shadow: none;
   }
