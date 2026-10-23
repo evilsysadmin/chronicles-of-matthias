@@ -385,6 +385,34 @@ try {
       }
       assert.equal(await allGuides.count(), 1, 'No ghost guide after 8 scene transitions');
       await page.screenshot({ path: 'smoke-guide-reconciliation-' + width + '.png' });
+      // Check the real computed ink/geometry, not a CSS source-text matcher.
+      await gotoFixture(page, url + '?view=minimap-ink');
+      const coord = page.locator('[data-chronicles-coordinates]');
+      await coord.waitFor({ state: 'visible' });
+      const position = await coord.evaluate((node) => {
+        const parent = node.closest('[data-chronicles-minimap]');
+        const svg = parent.querySelector('svg');
+        const caption = node.getBoundingClientRect();
+        const frame = parent.getBoundingClientRect();
+        return {
+          color: getComputedStyle(node).color,
+          shadow: getComputedStyle(node).textShadow,
+          label: node.textContent.trim(),
+          centered: Math.abs((caption.left + caption.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
+        };
+      });
+      const sandstone = width >= 1025 || (width >= 801 && height >= 601);
+      assert.equal(position.color, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Coords need dark ink on sandstone and pale ink on dark compact minimap: ' + JSON.stringify(position));
+      if (sandstone) assert.equal(position.shadow, 'none', 'Dark coordinates must not have a light halo');
+      assert.match(position.label, /^X\d+ Y\d+$/);
+      assert(position.centered && position.belowTiles,
+        'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));
+      if (width === 1280 || width === 390) {
+        await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
+      }
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {
