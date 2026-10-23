@@ -292,6 +292,9 @@ export function chroniclesContextualContentAction(state) {
   if (!explorationCellBlocker(state, front.x, front.y)) {
     const definition = (map?.interactables || []).find((entry) => {
       if (!FIRST_PERSON_ADJACENT_INTERACTION_KINDS.has(entry.kind)) return false;
+      // A shop has a marked door: approaching the next street square must
+      // not activate it through a wall. Leave other NPC/quest reach intact.
+      if (entry.shop && String(entry.visualType || '').startsWith('building-')) return false;
       if (!chroniclesRequirementsMet(state, entry.when)) return false;
       const position = chroniclesMapContentPosition(map, entry);
       return position?.x === front.x && position?.y === front.y;
@@ -956,9 +959,12 @@ function renderedTownHouseAt(map, cell) {
   return renderedTownHouses.get(map).find(({ block }) => block.cells.some(({ x, y }) => x === cell.x && y === cell.y)) || null;
 }
 
-// Standing anywhere along the facade that carries the door (and facing in)
-// counts as walking through that door, as in MM3: the counter opens.
-function onDoorFacade(state, { block, door }) {
+// Shop doors are an exact authored street cell, not the full facade.
+// Non-shop dialogue buildings retain their established entrance geometry.
+function onDoorFacade(state, { block, door, entries }) {
+  if (entries.some((entry) => entry.shop)) {
+    return state.x === door.x && state.y === door.y;
+  }
   const horizontal = door.y === block.minY - 1 || door.y === block.maxY + 1;
   return horizontal
     ? state.y === door.y && state.x >= block.minX && state.x <= block.maxX

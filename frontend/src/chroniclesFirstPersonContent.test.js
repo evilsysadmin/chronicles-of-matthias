@@ -131,8 +131,12 @@ describe('Chronicles first-person authored content', () => {
 describe('Swordhaven town entrances remain reachable in first person', () => {
   const at = (x, y, direction) => ({ ...createChroniclesState('swordhaven-first-book'), x, y, direction });
 
-  it('opens the weaponsmith from the street even with the sealed letter on the current tile; buys from that counter', () => {
-    const before = at(7, 5, 0);
+  it('requires stepping onto the weaponsmith entrance even with a sealed letter nearby', () => {
+    const street = at(7, 5, 0);
+    expect(chroniclesContextualContentAction(street)?.id).not.toBe('first-book-weaponsmith');
+    expect(chroniclesReduce(street, 'interact').shop).toBeUndefined();
+    const before = chroniclesReduce(street, 'forward');
+    expect([before.x, before.y]).toEqual([7, 4]);
     expect(chroniclesContextualContentAction(before)?.id).toBe('first-book-weaponsmith');
     const counter = chroniclesReduce(before, 'interact');
     expect(counter.shop?.id).toBe('first-book-weaponsmith');
@@ -142,7 +146,10 @@ describe('Swordhaven town entrances remain reachable in first person', () => {
   });
 
   it('opens the armorer and guild when directly facing their entrance; guild membership works from the same tile', () => {
-    const armorer = at(11, 5, 0);
+    const armorerStreet = at(11, 5, 0);
+    expect(chroniclesContextualContentAction(armorerStreet)?.id).not.toBe('first-book-armorer');
+    const armorer = chroniclesReduce(armorerStreet, 'forward');
+    expect([armorer.x, armorer.y]).toEqual([11, 4]);
     expect(chroniclesContextualContentAction(armorer)?.id).toBe('first-book-armorer');
     expect(chroniclesReduce(armorer, 'interact').shop?.id).toBe('first-book-armorer');
     const guild = at(15, 5, 0);
