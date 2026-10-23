@@ -172,6 +172,13 @@ export default function ChroniclesCharacterSheet({
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
+  // Filtering/searching invalidates the old list position. Without resetting
+  // the nested scroll, the first matching object can stay outside the viewport.
+  // Tactics has no backpack filters and is unaffected.
+  const resetBackpackScroll = () => {
+    if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
+  };
+
   const selectFolio = (folio) => {
     setActiveFolio(folio);
     // A new desktop dossier section starts at the top; otherwise a long
@@ -211,7 +218,7 @@ export default function ChroniclesCharacterSheet({
                       .map(({ id, label }) => (
                         <button type="button" key={id}
                           aria-pressed={backpackFilter === id}
-                          onClick={() => { setBackpackFilter(id); setSelectedItemId(null); }}>
+                          onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedItemId(null); }}>
                           {label} <small>{backpackCounts[id]}</small>
                         </button>
                       ))}
@@ -220,7 +227,7 @@ export default function ChroniclesCharacterSheet({
                     Buscar en la mochila
                     <input type="search" value={backpackSearch}
                       placeholder="Nombre, material u objeto…"
-                      onChange={(event) => { setBackpackSearch(event.target.value); setSelectedItemId(null); }}
+                      onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedItemId(null); }}
                     />
                   </label>
                   <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
