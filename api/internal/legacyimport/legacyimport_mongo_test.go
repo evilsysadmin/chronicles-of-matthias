@@ -134,12 +134,12 @@ func TestMongoTargetCannotSilentlyKeepAnotherOwnersRun(t *testing.T) {
 	if err != nil || inserted {
 		t.Fatalf("same-owner replay must keep existing document: %v, %v", inserted, err)
 	}
-	var saved bson.M
+	var saved bson.Raw
 	if err := col.FindOne(ctx, bson.D{{Key: "_id", Value: "fresh-id"}}).Decode(&saved); err != nil {
 		t.Fatal(err)
 	}
-	inventory, ok := saved["inventory"].(bson.M)
-	if !ok || inventory["gold"] != int32(2) {
-		t.Fatalf("re-import should not alter initial inventory: %v", saved["inventory"])
+	gold := saved.Lookup("inventory", "gold")
+	if gold.Type != bson.TypeInt32 || gold.Int32() != 2 {
+		t.Fatal("same-owner replay changed the original inventory")
 	}
 }
