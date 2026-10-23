@@ -468,6 +468,15 @@ try {
           await captureArtworkOnly(page, 'smoke-shop-art-only-' + room + '-' + width + '.png');
         }
         if (room === 'odo') {
+          const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
+          if (width > 900) await vest.locator('button').hover();
+          else await vest.locator('button').click();
+          const note = vest.locator('.chronicles-shop__gear-peek');
+          await note.waitFor({ state: 'visible' });
+          assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
+            'Every Odo armor/shield needs its actual four-hero equip comparison');
+          assert.match(await note.innerText(), /Armadura|Reducción|No puede equiparlo|Sin cambios/);
+          assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
           await dialog.getByRole('tab', { name: /Vender/ }).click();
           await dialog.getByRole('tab', { name: 'Comprar' }).click();
         } else {
@@ -505,6 +514,52 @@ try {
       } finally {
         await context.close();
       }
+    }
+  }
+
+  // The apothecary is a merchant too, but its stock is consumable; never show
+  // made-up equipment deltas for a potion or scroll. Test real authored items.
+  for (const [width, height] of [[390, 844], [1280, 800]]) {
+    const mobile = width <= 900;
+    const context = await browser.newContext({
+      viewport: { width, height }, isMobile: mobile, hasTouch: mobile,
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(url + '?room=apothecary', { waitUntil: 'networkidle' });
+      const dialog = page.getByRole('dialog');
+      await dialog.waitFor({ state: 'visible' });
+      assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
+      assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 3,
+        'Apothecary must keep all three authored offers');
+      const potion = dialog.locator('[data-chronicles-shop-item="healing-potion"]');
+      if (mobile) await potion.locator('button').click();
+      else await potion.locator('button').hover();
+      const note = potion.locator('.chronicles-shop__consumable-peek');
+      await note.waitFor({ state: 'visible' });
+      assert.match(await note.innerText(), /15 PV/);
+      assert.match(await note.innerText(), /Toda la compañía/);
+      assert.equal(await note.locator('.chronicles-shop__gear-peek-delta').count(), 0,
+        'Potions do not equip and cannot invent combat-stat differences');
+      const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
+      if (mobile) await scroll.locator('button').click();
+      else await scroll.locator('button').hover();
+      await scroll.locator('.chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
+      assert.match(await scroll.locator('.chronicles-shop__consumable-peek').innerText(),
+        /14 de daño · alcance 3/);
+      assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
+      await page.screenshot({ path: `smoke-shop-apothecary-peek-${width}.png` });
+      await dialog.getByRole('tab', { name: /Vender/ }).click();
+      await dialog.getByRole('tab', { name: 'Comprar' }).click();
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      console.log(`CHRONICLES_SHOP_APOTHECARY_PREVIEW_OK ${width}x${height}`);
+    } catch (error) {
+      failed++;
+      console.error(`CHRONICLES_SHOP_APOTHECARY_FAIL ${width}x${height}: ${error.stack || error}`);
+      await page.screenshot({ path: `smoke-shop-FAIL-apothecary-${width}.png` }).catch(() => {});
+    } finally {
+      await context.close();
     }
   }
 } finally {
