@@ -4,6 +4,7 @@ import {
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -158,16 +159,19 @@ export default function ChroniclesMinimap({
   const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
   const guildVisible = markers.some((marker) => marker.category === 'guild');
   const coordinates = chroniclesMapCoordinatesLabel(map, state) || 'LOCAL';
+  const region = chroniclesRegionHudLocation(map);
+  const locationText = region.kind.startsWith('ÁREA ') ? `${region.kind} · ${region.value}` : region.value;
 
   return (
     <button
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Coordenadas: ${coordinates}`}
+      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Ubicación: ${locationText}. Coordenadas: ${coordinates}`}
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
+      <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>UBICACIÓN · {locationText}</span>
       <svg
         ref={svgRef}
         viewBox={`${minX} ${minY} ${width} ${height}`}
