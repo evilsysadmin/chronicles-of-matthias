@@ -205,8 +205,9 @@ try {
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
-      // Opening Equipment must expose the first actionable inventory row
-      // immediately: filters/search and inspector sit alongside it, not above.
+      // Opening Equipment must show the inventory list immediately. On wide
+      // desktop the selected item's details take priority over optional filters;
+      // narrow desktop retains its existing filter-first arrangement.
       const aboveFold = await equipment.evaluate((node) => {
         const rect = (selector) => node.querySelector(selector).getBoundingClientRect();
         const list = rect('.chronicles-character-sheet__inventory');
@@ -216,17 +217,24 @@ try {
         const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
         return { listTop: list.top, listRight: list.right, firstTop: firstItem.top,
           firstBottom: firstItem.bottom, toolsTop: tools.top, toolsRight: tools.right,
-          toolsBottom: tools.bottom, inspectorTop: inspector.top, inspectorLeft: inspector.left,
-          dockTop: dock.top };
+          toolsBottom: tools.bottom, inspectorTop: inspector.top, inspectorBottom: inspector.bottom,
+          inspectorLeft: inspector.left, dockTop: dock.top };
       });
-      assert.ok(aboveFold.firstTop <= aboveFold.toolsTop + 25,
-        'First inventory row must start beside filters, not after them: ' + JSON.stringify(aboveFold));
+      assert.ok(aboveFold.firstTop <= Math.min(aboveFold.toolsTop, aboveFold.inspectorTop) + 25,
+        'First inventory row must start beside the right rail, not after it: ' + JSON.stringify(aboveFold));
       assert.ok(aboveFold.firstBottom < aboveFold.dockTop - 8,
         'First inventory row must be visible above the persistent party dock: ' + JSON.stringify(aboveFold));
       assert.ok(aboveFold.listRight <= aboveFold.inspectorLeft + 2,
         'Inventory list must remain left of the filter/inspector rail: ' + JSON.stringify(aboveFold));
-      assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
-        'Item detail must follow controls within the right rail: ' + JSON.stringify(aboveFold));
+      if (width >= 1200) {
+        assert.ok(aboveFold.inspectorTop < aboveFold.dockTop - 100,
+          'Selected item details must begin visibly above the persistent party dock: ' + JSON.stringify(aboveFold));
+        assert.ok(aboveFold.toolsTop >= aboveFold.inspectorBottom - 3,
+          'Optional filters should follow, not obscure, the selected item details: ' + JSON.stringify(aboveFold));
+      } else {
+        assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
+          'At 1024px the validated filter-first layout must remain intact: ' + JSON.stringify(aboveFold));
+      }
       if (width >= 1200) {
         const filters = await equipment.locator('.chronicles-character-sheet__backpack-filters')
           .evaluate((group) => {
