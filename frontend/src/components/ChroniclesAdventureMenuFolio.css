@@ -428,3 +428,207 @@
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading { padding: 5px 10px; }
   .chronicles .chronicles-game-menu__folio-section { padding: 8px 12px; }
 }
+
+/* Illustrated field journal — a pause screen, not a tiled admin dashboard.
+   Uses the already-authored, lightweight Chronicles expedition study (AVIF).
+   Art is purely decorative; all controls remain native keyboard/touch targets. */
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio {
+  width: min(510px, calc(100vw - 20px));
+  border: 1px solid #b99a68;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #24231f, #161d23 72%);
+  box-shadow: 0 0 0 4px #141315, 0 22px 75px #000d, inset 0 0 0 1px #80613d7d;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
+  position: relative;
+  min-height: 124px;
+  grid-template-columns: 42px minmax(0, 1fr) 44px;
+  align-items: start;
+  padding: 15px 16px 14px;
+  border-bottom: 1px solid #b19460;
+  background:
+    linear-gradient(90deg, #151b20fa 0%, #181e22ea 43%, #1e1f20a3 75%, #191c20aa 100%),
+    url('../assets/chronicles/expedition-study-desktop-v2.avif') 62% 47% / cover no-repeat,
+    #1b2127;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading::after {
+  content: '';
+  position: absolute;
+  inset: auto 17px 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, #dbba78aa 18%, #dcb57755 78%, transparent);
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__crest {
+  width: 39px;
+  height: 39px;
+  border: 1px solid #b89b64;
+  border-radius: 50%;
+  background: radial-gradient(circle at 37% 30%, #62543c, #24242b 82%);
+  box-shadow: 0 0 0 3px #141924bb, inset 0 1px 2px #f5dc9433;
+  font-size: 1.44rem;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy {
+  align-self: center;
+  max-width: 330px;
+  gap: 6px;
+  text-shadow: 0 2px 8px #000e;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy small {
+  font: 400 .87rem/1.1 var(--mm3-pixel-font);
+  letter-spacing: .16em;
+  color: #d5b981;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy strong {
+  font: 700 clamp(1.5rem, 3.2vw, 1.85rem)/1.05 Georgia, 'Times New Roman', serif;
+  letter-spacing: .035em;
+  color: #f7e8c7;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-legend {
+  color: #d9c4a2;
+  font: italic .87rem/1.3 Georgia, serif;
+  max-width: 240px;
+}
+.chronicles .chronicles-game-menu__panel--folio button.chronicles-game-menu__close {
+  border: 1px solid #a99064;
+  border-radius: 4px;
+  background: #212326d9;
+  color: #f2e6cb;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section {
+  padding: 13px 20px 10px;
+  gap: 8px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 37px, #beae7425 38px, transparent 39px),
+    linear-gradient(130deg, #252827, #1a2025 80%);
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__section-kicker {
+  color: #c1ab83;
+  letter-spacing: .21em;
+  font: 400 .9rem/1.2 var(--mm3-pixel-font);
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions {
+  gap: 4px;
+}
+.chronicles .chronicles-game-menu__action-pair {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__continue {
+  min-height: 51px;
+  margin: 0 0 7px;
+  border: 1px solid #e5c586;
+  border-radius: 4px;
+  background: linear-gradient(100deg, #d6b37a, #a4773d);
+  color: #1c1714 !important;
+  -webkit-text-fill-color: #1c1714 !important;
+  font: 700 1.24rem/1.1 Georgia, serif;
+  letter-spacing: .015em;
+  box-shadow: 0 4px 12px #0006, inset 0 1px #fbe5b48c;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button {
+  min-height: 44px;
+  padding: 8px 10px 8px 13px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid #ad9d794f;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #f2e2c3 !important;
+  -webkit-text-fill-color: #f2e2c3 !important;
+  font: 400 1.05rem/1.1 Georgia, serif;
+  letter-spacing: .012em;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions
+.chronicles-game-menu__action-pair > :is(.chronicles-game-menu__save, .chronicles-game-menu__save-exit) {
+  border-left: 0;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions
+.chronicles-game-menu__action-pair > button::before {
+  content: '✦';
+  display: inline-block;
+  width: 20px;
+  color: #c8a572;
+  font: 400 .88rem Georgia, serif;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button:hover:not(:disabled),
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions :is(
+  .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row
+) > button:focus-visible {
+  border-color: #c8ac776e;
+  background: #c4a16b20;
+  outline: 2px solid #e6bf78;
+  outline-offset: 0;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row,
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding-top: 6px;
+  border-top: 1px solid #c0a4744a;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row > button {
+  border-bottom: 0;
+  font: 400 .94rem/1.1 var(--mm3-pixel-font);
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__leave {
+  justify-self: start;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 1px;
+  padding: 9px 12px;
+  border: 0;
+  border-top: 1px solid #a27c735c;
+  border-radius: 0;
+  background: transparent;
+  color: #dbaba3 !important;
+  -webkit-text-fill-color: #dbaba3 !important;
+  font: 400 .91rem/1 Georgia, serif;
+  text-align: left;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__hint {
+  padding: 9px 18px;
+  border-top: 1px solid #a4865866;
+  background: #171b1e;
+  color: #dac6a5 !important;
+  -webkit-text-fill-color: #dac6a5 !important;
+  font: 400 .94rem/1.15 var(--mm3-pixel-font);
+  text-align: center;
+}
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-sound {
+  border-left: 0;
+  border-top: 1px solid #ac8a5d;
+  background: #1e2528;
+}
+@media (max-width: 620px) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
+    min-height: 100px;
+    padding: 10px 11px;
+    gap: 8px;
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy strong {
+    font-size: 1.42rem;
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-legend {
+    font-size: .77rem;
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section {
+    padding: 9px 11px;
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
+    min-height: 69px;
+    padding: 6px 10px;
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-legend { display: none; }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section { padding: 6px 12px; }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions { gap: 2px; }
+}
