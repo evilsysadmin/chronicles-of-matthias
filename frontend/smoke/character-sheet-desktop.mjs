@@ -111,6 +111,34 @@ try {
         'Full-width equipment should appear below the compact empty relic');
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
+      // MM3 inventory desk with real catalog items from the campaign reducer.
+      const equipment = sheet.locator('[data-chronicles-equipment-folio]');
+      const inv = equipment.locator('.chronicles-character-sheet__inventory');
+      const rows = inv.locator('[data-inventory-item]');
+      assert.ok(await rows.count() >= 3, 'Reward grants must populate the actual backpack');
+      assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
+      const detail = equipment.locator('.chronicles-character-sheet__item-details');
+      assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
+      const firstName = await rows.first().locator('span').innerText();
+      assert.ok((await detail.innerText()).includes(firstName));
+      await rows.nth(1).click();
+      assert.equal(await rows.nth(1).getAttribute('aria-pressed'), 'true');
+      const secondName = await rows.nth(1).locator('span').innerText();
+      assert.ok((await detail.innerText()).includes(secondName));
+      await rows.nth(1).focus();
+      await page.keyboard.press('Home');
+      assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
+      await page.keyboard.press('End');
+      assert.equal(await rows.last().getAttribute('aria-pressed'), 'true');
+      await page.keyboard.press('ArrowDown');
+      assert.equal(await rows.first().getAttribute('aria-pressed'), 'true',
+        'ArrowDown must wrap the filtered backpack without altering stock');
+      assert.equal(await equipment.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
+        'Read-only smoke fixture cannot equip without a real game action callback');
+      const desk = await Promise.all([inv.boundingBox(), detail.boundingBox()]);
+      assert.ok(desk[0] && desk[1] && desk[0].x + desk[0].width <= desk[1].x + 2,
+        'Desktop MM3 inventory list must stand to the left of contextual details');
+      await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
