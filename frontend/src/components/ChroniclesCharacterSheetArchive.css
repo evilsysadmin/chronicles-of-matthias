@@ -469,6 +469,9 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__loadout > .chronicles-character-sheet__backpack {
     grid-area: backpack;
+    /* The older inventory-first folio assigns the first article a
+       full-width column span. Override only that inherited end line. */
+    grid-column: 1 / 2 !important;
     width: auto;
     max-width: 100%;
     min-width: 0;
