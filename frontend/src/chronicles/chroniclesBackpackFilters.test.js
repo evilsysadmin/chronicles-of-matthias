@@ -3,6 +3,7 @@ import {
   CHRONICLES_BACKPACK_FILTERS,
   chroniclesBackpackCategory,
   chroniclesBackpackCounts,
+  chroniclesBackpackMoveSelection,
   chroniclesFilterBackpack,
 } from './chroniclesBackpackFilters.js';
 
@@ -45,6 +46,24 @@ describe('Chronicles MM3 · explorador de mochila (#134)', () => {
       .toEqual(['iron-chain']);
     expect(chroniclesFilterBackpack(stock, 'missile', 'espada')).toEqual([]);
     expect(chroniclesFilterBackpack(stock, 'all', '   ')).toEqual(stock);
+  });
+
+  it('moves only the selected item through actual filtered stock without mutating it', () => {
+    const filtered = chroniclesFilterBackpack(stock, 'all', 'hierro');
+    const copy = JSON.stringify(stock);
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[0].id, 'ArrowDown'))
+      .toBe(filtered[1].id);
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[1].id, 'ArrowDown'))
+      .toBe(filtered[0].id);
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[0].id, 'ArrowUp'))
+      .toBe(filtered[1].id);
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[0].id, 'End'))
+      .toBe(filtered[1].id);
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[1].id, 'Home'))
+      .toBe(filtered[0].id);
+    expect(chroniclesBackpackMoveSelection([], null, 'ArrowDown')).toBeNull();
+    expect(chroniclesBackpackMoveSelection(filtered, filtered[0].id, 's')).toBeNull();
+    expect(JSON.stringify(stock)).toBe(copy);
   });
 
   it('handles an empty backpack without exceptions or synthetic objects', () => {

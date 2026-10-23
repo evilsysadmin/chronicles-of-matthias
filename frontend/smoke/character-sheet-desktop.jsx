@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createChroniclesState } from '../src/chroniclesOfMatthias.js';
+import { chroniclesApplyContentEffects } from '../src/chronicles/chroniclesContentRuntime.js';
+import { CHRONICLES_EQUIPMENT } from '../src/chronicles/chroniclesEquipment.js';
 import { createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
 import '../src/styles.css';
@@ -9,7 +11,18 @@ import '../src/components/ChroniclesOfMatthias.css';
 import '../src/components/ChroniclesCharacterSheet.css';
 import '../src/components/ChroniclesCharacterSheetMM3.css';
 
-const state = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+// Populate the real first-book campaign via the real reward reducer with
+// catalog objects, so the interactive equipment desk is exercised in Chromium.
+const state = chroniclesApplyContentEffects(
+  createChroniclesState('banner-road-first-book', null, { rules: 'mm3' }),
+  ['bronze-sword', 'wooden-bow', 'iron-shield'].map((itemId) => ({
+    type: 'grant-item',
+    itemId,
+    name: CHRONICLES_EQUIPMENT[itemId].name,
+    description: CHRONICLES_EQUIPMENT[itemId].description,
+    quantity: 1,
+  })),
+);
 const progression = createChroniclesProgression();
 
 function Fixture() {

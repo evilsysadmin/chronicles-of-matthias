@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
+import './ChroniclesCharacterEquipmentMM3.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -37,7 +38,7 @@ import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactic
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
-import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
+import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -108,6 +109,7 @@ export default function ChroniclesCharacterSheet({
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
+  const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
 
   // A modal may lose DOM focus after an equipment action rerenders its buttons.
@@ -156,7 +158,9 @@ export default function ChroniclesCharacterSheet({
   const gold = chroniclesGoldBalance(state);
   const backpackCounts = chroniclesBackpackCounts(inventory);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
-  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId);
+  // The first visible item is a safe preview; selection never equips it.
+  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId)
+    || (!tacticsMode ? visibleBackpack[0] : null);
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
@@ -370,6 +374,7 @@ export default function ChroniclesCharacterSheet({
         )}
 
         <div className="chronicles-character-sheet__section"
+          data-chronicles-equipment-folio={!tacticsMode ? member.id : undefined}
           hidden={!tacticsMode && activeFolio !== 'equipment'}>
           <div className="chronicles-character-sheet__section-head">
             <div><span>EQUIPO Y OBJETOS</span><small>Equipo personal y botín de la expedición</small></div>
@@ -444,14 +449,29 @@ export default function ChroniclesCharacterSheet({
               )}
               {inventory.length ? (
                 visibleBackpack.length ? (
-                  <div className="chronicles-character-sheet__inventory">
+                  <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
+                    role="group" aria-label="Objetos de la mochila">
                     {visibleBackpack.map((item) => (
-                      <button type="button" key={item.id}
+                      <button type="button" key={item.id} data-inventory-item={item.id}
                         className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
                         aria-pressed={selectedInventoryItem?.id === item.id}
                         onClick={() => setSelectedItemId(item.id)}
+                        onKeyDown={(event) => {
+                          if (tacticsMode) return;
+                          const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
+                          if (!nextId) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setSelectedItemId(nextId);
+                          const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
+                          inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
+                        }}
                       >
-                        {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ''}
+                        {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
+                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⛨', other: '◆' }[chroniclesBackpackCategory(item)]}
+                        </i>}
+                        <span>{item.name}</span>
+                        {item.quantity > 1 && <small>×{item.quantity}</small>}
                       </button>
                     ))}
                   </div>
@@ -459,6 +479,7 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>Sin objetos recuperados en esta expedición.</small>
               )}
+              {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <strong>{selectedInventoryItem.name}</strong>
