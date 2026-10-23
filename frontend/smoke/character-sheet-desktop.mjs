@@ -81,6 +81,26 @@ try {
         .evaluateAll((labels) => labels.filter((node) => node.scrollWidth > node.clientWidth + 1)
           .map((node) => node.textContent.trim()));
       assert.deepEqual(overflowingStats, [], 'No MM3 attribute label may overlap its value');
+      if (width === 1024) {
+        const statsDensity = await sheet.locator('.chronicles-character-sheet__mm3-stats')
+          .evaluate((grid) => {
+            const rows = [...grid.querySelectorAll('[data-stat]')];
+            const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
+            const collisions = rows.flatMap((row) => {
+              const title = row.querySelector('span').getBoundingClientRect();
+              const number = row.querySelector('b').getBoundingClientRect();
+              return title.right > number.left + 1
+                ? [{ key: row.dataset.stat, titleRight: title.right, numberLeft: number.left }]
+                : [];
+            });
+            return { columns: columns.length, rows: rows.length, collisions };
+          });
+        assert.equal(statsDensity.columns, 2,
+          '1024px desktop should show a compact two-column MM3 attribute sheet');
+        assert.ok(statsDensity.rows >= 7, 'All real MM3 attributes must remain on the sheet');
+        assert.deepEqual(statsDensity.collisions, [],
+          'Attribute labels must not collide with numerical values: ' + JSON.stringify(statsDensity));
+      }
       assert.equal(await nav.getByRole('button').count(), 4);
       assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);

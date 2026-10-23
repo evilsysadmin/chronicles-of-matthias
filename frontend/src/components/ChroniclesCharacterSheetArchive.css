@@ -402,3 +402,35 @@
     outline-offset: 2px;
   }
 }
+
+/* At 1024-wide desktop, a single column hides most MM3 attributes below
+   the fold. Keep two readable columns with restrained ink and balanced rows.
+   Under 1000 px retain the previously validated one-column safe fallback. */
+@media (min-width: 1000px) and (max-width: 1199px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 59px;
+    padding: 5px 1px 6px;
+    column-gap: 4px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats span {
+    font-size: .88rem;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats b {
+    font-size: 1.18rem;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats em {
+    font-size: .76rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__mm3-stats small {
+    font-size: .79rem;
+    line-height: 1.18;
+  }
+}
