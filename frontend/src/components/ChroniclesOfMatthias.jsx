@@ -105,6 +105,7 @@ import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
+import ChroniclesInn from './ChroniclesInn.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu, { ChroniclesSpellTargetBanner } from './ChroniclesSpellMenu.jsx';
@@ -511,12 +512,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       menuOpen, confirmExitWithoutSaving, feedbackOpen, spellMenuOpen, adminOpen,
       sheetOpen: Boolean(sheetMemberId),
       shopOpen: Boolean(stateRef.current?.shop),
-      guildOpen: Boolean(stateRef.current?.guild),
+      guildOpen: Boolean(stateRef.current?.guild), innOpen: Boolean(stateRef.current?.inn),
       audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
     else if (action === 'back-feedback') setFeedbackOpen(false);
     else if (action === 'close-sheet') setSheetMemberId(null);
+    else if (action === 'close-inn') dispatch({ type: 'inn-close' });
     else if (action === 'close-shop') dispatch({ type: 'shop-close' });
     else if (action === 'close-guild') dispatch({ type: 'guild-close' });
     else if (action === 'close-spell') setSpellMenuOpen(false);
@@ -1338,7 +1340,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (sheetMemberId) {
           setSheetMemberId(hero.id);
         } else {
-          const overlay = chronicleModalOpen || current.shop || current.guild || spellMenuOpen
+          const overlay = chronicleModalOpen || current.shop || current.guild || current.inn || spellMenuOpen
             || automapOpen || menuOpen || journalOpen || quickStatusOpen || audienceRef.current;
           if (overlay) partyHotkeyRef.current = { key: '', at: 0 };
           else {
@@ -1351,7 +1353,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         }
         return;
       }
-      if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
+      if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.inn || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
         menuOpen, saveBusy, confirmExitWithoutSaving,
@@ -1901,7 +1903,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               npc={npcAtPosition}
               suspended={Boolean(audience || chronicleModalOpen || menuOpen || journalOpen
                 || quickStatusOpen || automapOpen || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || expeditionOver)}
+                || state.shop || state.guild || state.inn || expeditionOver)}
               onTalk={interactWithContext}
             />
             <ChroniclesFirstSteps
@@ -1911,7 +1913,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               open={firstStepsOpen}
               suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || state.initiative || expeditionOver)}
+                || state.shop || state.guild || state.inn || state.initiative || expeditionOver)}
               onClose={() => setFirstStepsOpen(false)}
               onOpenJournal={() => {
                 setMenuOpen(false);
@@ -1927,7 +1929,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               target={chroniclesEnemyTargetAhead(state, 4)}
               suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || expeditionOver)}
+                || state.shop || state.guild || state.inn || expeditionOver)}
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
               meleeReach={meleeReach} missileReach={missileReach} />
@@ -2087,7 +2089,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         </div>
       </div>
 
-      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && (
+      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && !state.inn && (
         <ChroniclesSpellMenu
           state={state}
           member={caster}
@@ -2123,6 +2125,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           onAction={dispatch}
           onClose={() => dispatch({ type: 'guild-close' })}
         />
+      )}
+
+      {state.inn && !sheetMember && (
+        <ChroniclesInn state={state} onAction={dispatch}
+          onClose={() => dispatch({ type: 'inn-close' })} />
       )}
 
       {state.shop && !sheetMember && (
