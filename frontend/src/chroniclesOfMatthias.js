@@ -8,7 +8,6 @@ import {
   chroniclesRuntimeEntryMapId,
 } from './chronicles/chroniclesMapCatalog.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chronicles/chroniclesSettlementLayout.js';
-import { chroniclesTownCounterInReach } from './chronicles/chroniclesTownCounterReach.js';
 import { chroniclesAdminReduce } from './chronicles/chroniclesAdmin.js';
 import {
   chroniclesApplyContentAction,
@@ -289,17 +288,13 @@ export function chroniclesContextualContentAction(state) {
   // In towns the street square outside a building is the authored entrance.
   // Facing its doorway must take priority over unrelated content underfoot,
   // such as Swordhaven's sealed letter directly opposite the weaponsmith.
-  // An authored building is usable only from its own door cell while
-  // looking into the façade, never from an adjacent street tile or sideways.
-  const underfootDefinition = chroniclesContentDefinition(map, interaction?.id);
-  if (String(underfootDefinition?.visualType || '').startsWith('building-')
-    && !chroniclesTownCounterInReach(state, underfootDefinition, map)) interaction = null;
   const front = chroniclesFrontCell(state);
   if (!explorationCellBlocker(state, front.x, front.y)) {
     const definition = (map?.interactables || []).find((entry) => {
       if (!FIRST_PERSON_ADJACENT_INTERACTION_KINDS.has(entry.kind)) return false;
-      // A door is not a ranged interaction: reach it first.
-      if (String(entry.visualType || '').startsWith('building-')) return false;
+      // A shop has a marked door: approaching the next street square must
+      // not activate it through a wall. Leave other NPC/quest reach intact.
+      if (entry.shop && String(entry.visualType || '').startsWith('building-')) return false;
       if (!chroniclesRequirementsMet(state, entry.when)) return false;
       const position = chroniclesMapContentPosition(map, entry);
       return position?.x === front.x && position?.y === front.y;
@@ -964,10 +959,16 @@ function renderedTownHouseAt(map, cell) {
   return renderedTownHouses.get(map).find(({ block }) => block.cells.some(({ x, y }) => x === cell.x && y === cell.y)) || null;
 }
 
-// A visible façade is not a giant invisible door. Only the marked entrance
-// tile immediately facing this solid house is a valid way in.
-function onDoorFacade(state, { door }) {
-  return state.x === door.x && state.y === door.y;
+// Shop doors are an exact authored street cell, not the full facade.
+// Non-shop dialogue buildings retain their established entrance geometry.
+function onDoorFacade(state, { block, door, entries }) {
+  if (entries.some((entry) => entry.shop)) {
+    return state.x === door.x && state.y === door.y;
+  }
+  const horizontal = door.y === block.minY - 1 || door.y === block.maxY + 1;
+  return horizontal
+    ? state.y === door.y && state.x >= block.minX && state.x <= block.maxX
+    : state.x === door.x && state.y >= block.minY && state.y <= block.maxY;
 }
 
 function enterBuildingAt(state, entryCell, label) {
@@ -990,8 +991,8 @@ function pointToDoor(state, door, name) {
   return withMessage(state, `Es la pared de ${name}. La puerta da a otra calle: rodea el edificio.`);
 }
 
-// The state standing on the EXACT door of the town house the party is walking
-// into from its door façade (null otherwise). The UI uses it to open an
+// The state standing on the door of the town house the party is walking
+// into from its door facade (null otherwise). The UI uses it to open an
 // NPC audience exactly as if the party were at the door.
 export function chroniclesBuildingEntryState(state) {
   if (!state || state.phase !== 'explore' || state.initiative) return null;

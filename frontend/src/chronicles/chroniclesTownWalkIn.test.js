@@ -9,8 +9,8 @@ import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettle
 
 // MM3 towns: you enter a building by walking into its door. The rules use the
 // same layout the renderer draws, so for every styled house:
-// - stepping into it from ANY cell of its door facade enters it (a shop or
-//   guild opens its counter);
+// - shops enter only from the single marked door, not the whole facade;
+//   non-shop town buildings retain their existing dialogue entrances;
 // - stepping into any other wall never opens a counter — let alone a
 //   neighbour's — and points you to the door instead.
 
@@ -67,12 +67,16 @@ describe('walking into town buildings', () => {
       const counter = entries.find((entry) => entry.shop || entry.guild);
       const name = `${map.id}: ${entries[0].id}`;
 
-      it(`${name} — every cell of its door facade enters it`, () => {
+      it(`${name} — shop doors do not extend across the entire facade`, () => {
         const facade = approaches(map, block).filter((cell) => onDoorFacade(block, door, cell));
         expect(facade.length).toBeGreaterThan(0);
         for (const cell of facade) {
           const after = walkInto(map, cell);
-          if (counter) {
+          if (counter?.shop && (cell.x !== door.x || cell.y !== door.y)) {
+            expect(after.shop || after.guild).toBeFalsy();
+            expect({ x: after.x, y: after.y }).toEqual({ x: cell.x, y: cell.y });
+            expect(after.message || '').toMatch(/puerta|pared/i);
+          } else if (counter) {
             expect(after.shop?.id || after.guild?.id, `from (${cell.x},${cell.y})`).toBe(counter.id);
             expect({ x: after.x, y: after.y }).toEqual(door);
           } else {
@@ -98,12 +102,18 @@ describe('Swordhaven shops a player reported', () => {
   const map = chroniclesMapById('swordhaven-first-book');
   for (const [id, x, y] of [
     ['first-book-guild', 14, 4], ['first-book-guild', 15, 4], ['first-book-guild', 16, 4],
-    ['first-book-weaponsmith', 6, 4], ['first-book-weaponsmith', 8, 4],
-    ['first-book-armorer', 10, 4], ['first-book-armorer', 12, 4],
+    ['first-book-weaponsmith', 6, 4], ['first-book-weaponsmith', 7, 4], ['first-book-weaponsmith', 8, 4],
+    ['first-book-armorer', 10, 4], ['first-book-armorer', 11, 4], ['first-book-armorer', 12, 4],
   ]) {
-    it(`${id} opens when walking north into its facade from (${x},${y})`, () => {
+    it(`${id} walking north from (${x},${y}) respects the shop door`, () => {
       const after = walkInto(map, { x, y, direction: directionTo(0, -1) });
-      expect(after.shop?.id || after.guild?.id).toBe(id);
+      const isShop = id !== 'first-book-guild';
+      if (isShop && x !== (id === 'first-book-weaponsmith' ? 7 : 11)) {
+        expect(after.shop?.id).toBeUndefined();
+        expect([after.x, after.y]).toEqual([x, y]);
+      } else {
+        expect(after.shop?.id || after.guild?.id).toBe(id);
+      }
     });
   }
 

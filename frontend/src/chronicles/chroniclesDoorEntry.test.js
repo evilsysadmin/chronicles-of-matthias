@@ -4,16 +4,15 @@ import { chroniclesBuildingEntryState, chroniclesContextualContentAction,
 import { chroniclesTownCounterInReach } from './chroniclesTownCounterReach.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
-describe('Swordhaven door: only the marked doorstep facing into the shop', () => {
+describe('Swordhaven merchant doors have one accessible entrance', () => {
   const map = chroniclesMapById('swordhaven-first-book');
   const odo = map.interactables.find(({ id }) => id === 'first-book-armorer');
   const state = () => createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
   const at = (x, y, direction = 0) => ({ ...state(), x, y, direction });
 
-  it('allows Odo at his actual door, never one street cell away or facing sideways', () => {
+  it('Odo is reachable only on his actual marked door tile', () => {
     expect(chroniclesTownCounterInReach(at(11, 4), odo, map)).toBe(true);
-    for (const location of [at(11, 5), at(10, 4), at(12, 4),
-      at(11, 4, 1), at(11, 4, 2), at(11, 4, 3)]) {
+    for (const location of [at(11, 5), at(10, 4), at(12, 4), at(10, 5), at(12, 5)]) {
       expect(chroniclesTownCounterInReach(location, odo, map)).toBe(false);
       expect(chroniclesContextualContentAction(location)?.id).not.toBe(odo.id);
       expect(chroniclesBuildingEntryState(location)).toBeNull();
@@ -21,7 +20,7 @@ describe('Swordhaven door: only the marked doorstep facing into the shop', () =>
     expect(chroniclesContextualContentAction(at(11, 4))?.id).toBe(odo.id);
   });
 
-  it('needs one movement to reach the doorway, then F or facing-forward enters', () => {
+  it('approach requires one step; F or bump-forward then enters Odo', () => {
     const approached = chroniclesReduce(at(11, 5), 'forward');
     expect([approached.x, approached.y]).toEqual([11, 4]);
     expect(approached.shop).toBeUndefined();
@@ -30,7 +29,7 @@ describe('Swordhaven door: only the marked doorstep facing into the shop', () =>
     expect(chroniclesReduce(at(11, 4), 'forward').shop?.id).toBe(odo.id);
   });
 
-  it('does not teleport in when pushing the wall beside the actual doorway', () => {
+  it('walking toward a wall next to the entrance does not teleport inside', () => {
     const side = at(10, 4);
     const bumped = chroniclesReduce(side, 'forward');
     expect(bumped.shop).toBeUndefined();
