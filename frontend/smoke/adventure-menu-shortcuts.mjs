@@ -281,6 +281,35 @@ try {
       await menu.getByRole('button', { name: 'Continuar' }).click();
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       assert.equal(await opener.evaluate((node) => document.activeElement === node), false);
+      // The actual group-status dialog consumes bubbling at its React root.
+      // Both Escape and G must dismiss only the active modal, even when a
+      // hero row owns focus. The parent Back handler must NOT open MENU.
+      const groupOpener = page.locator('[data-status-test-open]');
+      const group = page.getByRole('dialog', { name: 'ESTADO DEL GRUPO' });
+      const globalBeforeStatus = Number(
+        await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')
+      );
+      await groupOpener.click();
+      await group.waitFor({ state: 'visible' });
+      await group.getByRole('button', { name: 'Cerrar estado del grupo' }).focus();
+      await page.keyboard.press('Escape');
+      await group.waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false',
+        'Escape must not open the adventure menu behind party status');
+      assert.equal(Number(
+        await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')
+      ), globalBeforeStatus, 'Only the top modal may consume the Escape event');
+      await groupOpener.click();
+      await group.waitFor({ state: 'visible' });
+      await group.getByRole('row', { name: /Matthias/ }).focus();
+      await page.keyboard.press('Escape');
+      await group.waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      await groupOpener.click();
+      await group.waitFor({ state: 'visible' });
+      await page.keyboard.press('g');
+      await group.waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
       await page.keyboard.press('j');
       assert.equal(await count(page, 'journal'), 1,
         'J must work again after leaving the adventure folio');

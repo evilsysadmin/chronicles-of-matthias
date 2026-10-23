@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
+import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
 import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
@@ -19,6 +20,7 @@ function MenuShortcutFixture() {
   const [exitRequests, setExitRequests] = useState(0);
   const [journalRequests, setJournalRequests] = useState(0);
   const [statusRequests, setStatusRequests] = useState(0);
+  const [partyStatusOpen, setPartyStatusOpen] = useState(false);
   const [mapRequests, setMapRequests] = useState(0);
   const [discardRequests, setDiscardRequests] = useState(0);
   const [backgroundActions, setBackgroundActions] = useState(0);
@@ -152,6 +154,9 @@ function MenuShortcutFixture() {
           <output data-shortcut-exit-requests>{exitRequests}</output>
           <output data-shortcut-journal-requests>{journalRequests}</output>
           <output data-shortcut-status-requests>{statusRequests}</output>
+          <button type="button" data-status-test-open onClick={() => setPartyStatusOpen(true)}>
+            Abrir estado de grupo de prueba
+          </button>
           <output data-shortcut-map-requests>{mapRequests}</output>
           <output data-shortcut-discard-requests>{discardRequests}</output>
         </div>
@@ -193,6 +198,18 @@ function MenuShortcutFixture() {
             />
           </details>
         </div>
+        <ChroniclesQuickStatus
+          open={partyStatusOpen}
+          rows={[{
+            id: 'matthias', slot: 1, name: 'Matthias', classLabel: 'Caballero',
+            level: 8, hp: 11, maxHp: 11, sp: 0, maxSp: null,
+            armorClass: 3, weapon: 'Espada de bronce',
+            condition: 'healthy', conditionLabel: 'Bien',
+          }]}
+          gold={35}
+          onClose={() => setPartyStatusOpen(false)}
+          onOpenSheet={() => setPartyStatusOpen(false)}
+        />
       </div>
     </main>
   );
