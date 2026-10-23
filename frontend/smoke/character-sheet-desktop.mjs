@@ -61,7 +61,7 @@ async function assertNavigationHighlight(nav, expected) {
 }
 
 try {
-  for (const [width, height] of [[1024,768],[1280,800],[1440,900]]) {
+  for (const [width, height] of [[1024,768],[1280,800],[1440,900],[1760,870]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     const errors = [];
@@ -167,6 +167,28 @@ try {
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
+      // Opening Equipment must expose the first actionable inventory row
+      // immediately: filters/search and inspector sit alongside it, not above.
+      const aboveFold = await equipment.evaluate((node) => {
+        const rect = (selector) => node.querySelector(selector).getBoundingClientRect();
+        const list = rect('.chronicles-character-sheet__inventory');
+        const firstItem = rect('[data-inventory-item]');
+        const tools = rect('.chronicles-character-sheet__backpack-tools');
+        const inspector = rect('.chronicles-character-sheet__item-details');
+        const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
+        return { listTop: list.top, listRight: list.right, firstTop: firstItem.top,
+          firstBottom: firstItem.bottom, toolsTop: tools.top, toolsRight: tools.right,
+          toolsBottom: tools.bottom, inspectorTop: inspector.top, inspectorLeft: inspector.left,
+          dockTop: dock.top };
+      });
+      assert.ok(aboveFold.firstTop <= aboveFold.toolsTop + 25,
+        'First inventory row must start beside filters, not after them: ' + JSON.stringify(aboveFold));
+      assert.ok(aboveFold.firstBottom < aboveFold.dockTop - 8,
+        'First inventory row must be visible above the persistent party dock: ' + JSON.stringify(aboveFold));
+      assert.ok(aboveFold.listRight <= aboveFold.inspectorLeft + 2,
+        'Inventory list must remain left of the filter/inspector rail: ' + JSON.stringify(aboveFold));
+      assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
+        'Item detail must follow controls within the right rail: ' + JSON.stringify(aboveFold));
       const firstName = await rows.first().locator('span').innerText();
       assert.ok((await detail.innerText()).includes(firstName));
       await rows.nth(1).click();
