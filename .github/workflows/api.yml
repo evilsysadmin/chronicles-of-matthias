@@ -44,8 +44,35 @@ jobs:
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
-          CGO_ENABLED=0 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /dev/null ./cmd/chronicles-api
+          # Standard-library fixes (including GO-2026-6809) are baked into
+          # binaries. Check the real toolchain and both compiled architectures.
+          export GOTOOLCHAIN=local
+          build_go="$(go env GOVERSION)"
+          [[ "$build_go" == 'go1.27.3' ]] || {
+            echo "::error::Unpatched or unexpected Go compiler: $build_go"
+            exit 1
+          }
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64" ./cmd/chronicles-api
+          verify_binary_build() {
+            local binary="$1" arch="$2" reported metadata
+            reported="$(go version "$binary")"
+            [[ "$reported" == "$binary: $build_go" ]] || {
+              echo "::error::Unexpected $arch Go binary version: $reported"
+              return 1
+            }
+            metadata="$(go version -m "$binary")"
+            grep -Fqx $'\tbuild\tGOOS=linux' <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOOS"
+              return 1
+            }
+            grep -Fqx $'\tbuild\tGOARCH='"$arch" <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOARCH"
+              return 1
+            }
+          }
+          verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64
+          verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64
       # Govulncheck queries the official Go vulnerability database and uses
       # source call graphs to report reachable vulnerable functions, including
       # issues in the Go toolchain. Fail the required api-e2e gate when found.

@@ -60,3 +60,38 @@ test('security contract allows deliberate matching future Go point-release upgra
     goMod,
   );
 });
+
+function verifiesBothCompiledGoBinaries(source) {
+  const start = source.indexOf('      - name: Build and vet (amd64 + arm64)');
+  const end = source.indexOf('      - name: Go vulnerability scan (reachable source paths)');
+  if (start < 0 || end <= start) return false;
+  const step = source.slice(start, end);
+  return step.includes('export GOTOOLCHAIN=local')
+    && step.includes('[[ "$build_go" == \'go1.27.3\' ]]')
+    && step.includes('GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api"')
+    && step.includes('GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64"')
+    && step.includes('[[ "$reported" == "$binary: $build_go" ]]')
+    && step.includes('go version -m "$binary"')
+    && step.includes("grep -Fqx $'\\tbuild\\tGOOS=linux'")
+    && step.includes("grep -Fqx $'\\tbuild\\tGOARCH='")
+    && step.includes('verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64')
+    && step.includes('verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64')
+    && !step.includes('|| true');
+}
+
+test('required API build inspects patched Go stdlib and binary metadata for both architectures', () => {
+  assert.ok(verifiesBothCompiledGoBinaries(workflow));
+});
+
+test('binary-provenance gate rejects missing platform or compiler checks', () => {
+  for (const removed of [
+    'export GOTOOLCHAIN=local',
+    'go version -m "$binary"',
+    'verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64',
+    'verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64',
+    "grep -Fqx $'\\tbuild\\tGOARCH='",
+  ]) {
+    assert.equal(verifiesBothCompiledGoBinaries(workflow.replace(removed, '')), false, removed);
+  }
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('go1.27.3', 'go1.27.2')), false);
+});
