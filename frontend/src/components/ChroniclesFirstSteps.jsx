@@ -49,7 +49,18 @@ export default function ChroniclesFirstSteps({
 
   return (
     <aside className="chronicles-first-steps" data-chronicles-first-steps aria-label="Primeros pasos con Matthias"
-      onKeyDown={(event) => event.stopPropagation()}>
+      onKeyDown={(event) => {
+        // This guidance panel consumes bubbling before the document Back
+        // stack sees the event. Escape therefore needs a local dismissal,
+        // just like the company-status and journal windows.
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          close();
+          return;
+        }
+        event.stopPropagation();
+      }}>
       <div className="chronicles-first-steps__heading">
         <strong>MATTHIAS · PRIMEROS PASOS</strong>
         <button type="button" aria-label="Cerrar primeros pasos" onClick={close}>×</button>

@@ -310,6 +310,23 @@ try {
       await page.keyboard.press('g');
       await group.waitFor({ state: 'hidden' });
       assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false');
+      // This optional guidance window also owns its own keydown events.
+      // Escape must close it instead of disappearing into stopped bubbling.
+      const hintOpener = page.locator('[data-first-steps-test-open]');
+      const hint = page.getByRole('complementary', { name: 'Primeros pasos con Matthias' });
+      await hintOpener.click();
+      await hint.waitFor({ state: 'visible' });
+      await hint.getByRole('button', { name: 'Cerrar primeros pasos' }).focus();
+      const beforeHintEscape = Number(
+        await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')
+      );
+      await page.keyboard.press('Escape');
+      await hint.waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('[data-shortcut-menu-open]').getAttribute('data-shortcut-menu-open'), 'false',
+        'ESC closing the help overlay must not resurrect the adventure menu');
+      assert.equal(Number(
+        await page.locator('[data-shortcut-global-esc]').getAttribute('data-shortcut-global-esc')
+      ), beforeHintEscape, 'Only the focused help window may handle its Escape');
       await page.keyboard.press('j');
       assert.equal(await count(page, 'journal'), 1,
         'J must work again after leaving the adventure folio');
