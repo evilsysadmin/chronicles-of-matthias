@@ -199,6 +199,105 @@ export default function ChroniclesCharacterSheet({
     }
   };
 
+  // One real inventory subtree; only its reading order changes by mode.
+  // Tactics retains its original relic-first layout and keyboard order.
+  const backpackPanel = (
+            <article className="chronicles-character-sheet__backpack">
+              <span>Mochila de expedición</span>
+              {!tacticsMode && inventory.length > 0 && (
+                <div className="chronicles-character-sheet__backpack-tools">
+                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
+                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
+                      .map(({ id, label }) => (
+                        <button type="button" key={id}
+                          aria-pressed={backpackFilter === id}
+                          onClick={() => { setBackpackFilter(id); setSelectedItemId(null); }}>
+                          {label} <small>{backpackCounts[id]}</small>
+                        </button>
+                      ))}
+                  </div>
+                  <label className="chronicles-character-sheet__backpack-search">
+                    Buscar en la mochila
+                    <input type="search" value={backpackSearch}
+                      placeholder="Nombre, material u objeto…"
+                      onChange={(event) => { setBackpackSearch(event.target.value); setSelectedItemId(null); }}
+                    />
+                  </label>
+                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
+                    {visibleBackpack.length} de {inventory.length} tipos de objeto
+                  </small>
+                </div>
+              )}
+              {inventory.length ? (
+                visibleBackpack.length ? (
+                  <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
+                    role="group" aria-label="Objetos de la mochila">
+                    {visibleBackpack.map((item) => (
+                      <button type="button" key={item.id} data-inventory-item={item.id}
+                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
+                        aria-pressed={selectedInventoryItem?.id === item.id}
+                        onClick={() => setSelectedItemId(item.id)}
+                        onKeyDown={(event) => {
+                          if (tacticsMode) return;
+                          const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
+                          if (!nextId) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setSelectedItemId(nextId);
+                          const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
+                          inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
+                        }}
+                      >
+                        {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
+                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⛨', other: '◆' }[chroniclesBackpackCategory(item)]}
+                        </i>}
+                        <span>{item.name}</span>
+                        {item.quantity > 1 && <small>×{item.quantity}</small>}
+                      </button>
+                    ))}
+                  </div>
+                ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
+              ) : (
+                <small>Sin objetos recuperados en esta expedición.</small>
+              )}
+              {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
+              {!tacticsMode && selectedInventoryItem && (
+                <aside className="chronicles-character-sheet__item-details" aria-live="polite">
+                  <strong>{selectedInventoryItem.name}</strong>
+                  <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  <dl>
+                    <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
+                    {selectedEquipment && <>
+                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
+                      <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
+                      <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
+                      <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
+                      <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
+                      <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                    </>}
+                  </dl>
+                  {selectedEquipment && <>
+                    <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
+                    {weaponSwap ? (
+                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
+                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
+                        <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
+                        <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
+                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
+                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
+                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
+                      </div>
+                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
+                    <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
+                      onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
+                      Equipar {selectedEquipment.name}
+                    </button>
+                  </>}
+                </aside>
+              )}
+            </article>
+  );
+
   const sheet = (
     <div
       className="chronicles-character-sheet__backdrop"
@@ -381,7 +480,8 @@ export default function ChroniclesCharacterSheet({
             <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
           </div>
           <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
-            <article className={relic ? 'has-relic' : ''}>
+            {!tacticsMode && backpackPanel}
+            <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
               <span>Reliquia vinculada</span>
               <b>{relic?.name || 'Ninguna'}</b>
               <small>{relic?.description || 'Este personaje no lleva una reliquia vinculada.'}</small>
@@ -421,100 +521,7 @@ export default function ChroniclesCharacterSheet({
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
             </article>}
-            <article className="chronicles-character-sheet__backpack">
-              <span>Mochila de expedición</span>
-              {!tacticsMode && inventory.length > 0 && (
-                <div className="chronicles-character-sheet__backpack-tools">
-                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
-                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
-                      .map(({ id, label }) => (
-                        <button type="button" key={id}
-                          aria-pressed={backpackFilter === id}
-                          onClick={() => { setBackpackFilter(id); setSelectedItemId(null); }}>
-                          {label} <small>{backpackCounts[id]}</small>
-                        </button>
-                      ))}
-                  </div>
-                  <label className="chronicles-character-sheet__backpack-search">
-                    Buscar en la mochila
-                    <input type="search" value={backpackSearch}
-                      placeholder="Nombre, material u objeto…"
-                      onChange={(event) => { setBackpackSearch(event.target.value); setSelectedItemId(null); }}
-                    />
-                  </label>
-                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
-                    {visibleBackpack.length} de {inventory.length} tipos de objeto
-                  </small>
-                </div>
-              )}
-              {inventory.length ? (
-                visibleBackpack.length ? (
-                  <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
-                    role="group" aria-label="Objetos de la mochila">
-                    {visibleBackpack.map((item) => (
-                      <button type="button" key={item.id} data-inventory-item={item.id}
-                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
-                        aria-pressed={selectedInventoryItem?.id === item.id}
-                        onClick={() => setSelectedItemId(item.id)}
-                        onKeyDown={(event) => {
-                          if (tacticsMode) return;
-                          const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
-                          if (!nextId) return;
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setSelectedItemId(nextId);
-                          const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
-                          inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
-                        }}
-                      >
-                        {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
-                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⛨', other: '◆' }[chroniclesBackpackCategory(item)]}
-                        </i>}
-                        <span>{item.name}</span>
-                        {item.quantity > 1 && <small>×{item.quantity}</small>}
-                      </button>
-                    ))}
-                  </div>
-                ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
-              ) : (
-                <small>Sin objetos recuperados en esta expedición.</small>
-              )}
-              {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
-              {!tacticsMode && selectedInventoryItem && (
-                <aside className="chronicles-character-sheet__item-details" aria-live="polite">
-                  <strong>{selectedInventoryItem.name}</strong>
-                  <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
-                  <dl>
-                    <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
-                    {selectedEquipment && <>
-                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
-                      <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
-                      <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
-                      <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
-                      <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
-                      <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
-                    </>}
-                  </dl>
-                  {selectedEquipment && <>
-                    <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
-                    {weaponSwap ? (
-                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
-                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
-                        <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
-                        <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
-                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
-                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
-                      </div>
-                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
-                    <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
-                      onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
-                      Equipar {selectedEquipment.name}
-                    </button>
-                  </>}
-                </aside>
-              )}
-            </article>
+            {tacticsMode && backpackPanel}
           </div>
         </div>
 

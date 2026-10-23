@@ -138,12 +138,19 @@ try {
       // Empty relics must not waste half the equipment dossier width.
       const emptyRelicLayout = await sheet.locator('.chronicles-character-sheet__loadout.is-relic-empty')
         .evaluate((node) => {
-          const relicCard = node.querySelector(':scope > article:first-child').getBoundingClientRect();
+          const relicCard = node.querySelector(':scope > .chronicles-character-sheet__relic').getBoundingClientRect();
           const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
           return { relicHeight: relicCard.height, relicWidth: relicCard.width,
             equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
             equipmentTop: equipmentCard.top };
         });
+      // The MM3 inventory is now the FIRST readable/actionable chapter,
+      // above the secondary equipped-gear summary and the compact relic.
+      const firstEquipmentArticle = await sheet.locator(
+        '[data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > article'
+      ).first().getAttribute('class');
+      assert.ok(firstEquipmentArticle.includes('chronicles-character-sheet__backpack'),
+        'Equipment should open on the playable inventory rather than the empty relic');
       assert.ok(emptyRelicLayout.relicHeight <= 85,
         'A missing relic should occupy a compact row: ' + JSON.stringify(emptyRelicLayout));
       assert.ok(emptyRelicLayout.equipmentWidth >= emptyRelicLayout.relicWidth - 2,
