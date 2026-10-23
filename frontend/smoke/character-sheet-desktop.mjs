@@ -140,9 +140,12 @@ try {
         .evaluate((node) => {
           const relicCard = node.querySelector(':scope > .chronicles-character-sheet__relic').getBoundingClientRect();
           const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
+          const backpack = node.querySelector(':scope > .chronicles-character-sheet__backpack').getBoundingClientRect();
           return { relicHeight: relicCard.height, relicWidth: relicCard.width,
             equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
-            equipmentTop: equipmentCard.top };
+            equipmentTop: equipmentCard.top, equipmentLeft: equipmentCard.left,
+            backpackLeft: backpack.left, backpackRight: backpack.right,
+            backpackTop: backpack.top, backpackWidth: backpack.width };
         });
       // The MM3 inventory is now the FIRST readable/actionable chapter,
       // above the secondary equipped-gear summary and the compact relic.
@@ -153,10 +156,21 @@ try {
         'Equipment should open on the playable inventory rather than the empty relic');
       assert.ok(emptyRelicLayout.relicHeight <= 85,
         'A missing relic should occupy a compact row: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(emptyRelicLayout.equipmentWidth >= emptyRelicLayout.relicWidth - 2,
-        'Equipped weapons and armour should regain the full usable width: ' + JSON.stringify(emptyRelicLayout));
       assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.relicBottom - 2,
-        'Full-width equipment should appear below the compact empty relic');
+        'Equipped gear should appear below the compact empty relic');
+      if (width >= 1200) {
+        assert.ok(emptyRelicLayout.backpackWidth >= 230 && emptyRelicLayout.equipmentWidth >= 290,
+          'Both inventory and equipped gear must have usable widths: ' + JSON.stringify(emptyRelicLayout));
+        assert.ok(emptyRelicLayout.backpackRight <= emptyRelicLayout.equipmentLeft + 2,
+          'On wide desktop, inventory must be left of the equipped-gear panel: ' + JSON.stringify(emptyRelicLayout));
+        assert.ok(Math.abs(emptyRelicLayout.backpackTop - emptyRelicLayout.equipmentTop) <= 2,
+          'Both primary Equipment panels must start on the same row: ' + JSON.stringify(emptyRelicLayout));
+        assert.ok(emptyRelicLayout.backpackTop >= emptyRelicLayout.relicBottom - 2,
+          'The compact relic should remain above both equipment panels');
+      } else {
+        assert.ok(emptyRelicLayout.equipmentWidth >= emptyRelicLayout.relicWidth - 2,
+          'At 1024 the existing safe full-width equipment layout must remain unchanged');
+      }
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
