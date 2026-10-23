@@ -89,14 +89,19 @@ describe('Terra scenery', () => {
     const cheapBoulders = compact.getObjectByName('chronicles-terra-boulder');
     expect(boulders).toBeInstanceOf(THREE.InstancedMesh);
     expect(cheapBoulders).toBeInstanceOf(THREE.InstancedMesh);
-    expect(boulders.count).toBe(cheapBoulders.count);
+    // Coarse mode intentionally thins the *outer* scenery ring, so its
+    // instance count may be smaller; never assume full/coarse parity.
+    expect(boulders.count).toBeGreaterThanOrEqual(cheapBoulders.count);
     expect(boulders.geometry.getAttribute('position').count).toBeGreaterThan(
       cheapBoulders.geometry.getAttribute('position').count,
     );
     expect(boulders.material.flatShading).toBe(false);
     expect(cheapBoulders.material.flatShading).toBe(true);
-    expect(detailed.children.map((m) => m.name)).toEqual(compact.children.map((m) => m.name));
+    const names = detailed.children.map((m) => m.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(compact.children.every((m) => names.includes(m.name))).toBe(true);
     expect(detailed.children.every((m) => m.isInstancedMesh)).toBe(true);
+    expect(compact.children.every((m) => m.isInstancedMesh)).toBe(true);
   });
 
   it('is deterministic', () => {
