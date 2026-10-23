@@ -46,13 +46,12 @@ try {
       await lastControl.focus();
       await page.keyboard.press('Tab');
       assert.equal(await firstControl.evaluate((node) => document.activeElement === node), true,
-        'Tab from last volume slider must wrap to the first menu control, not the game HUD');
+        'Tab from the last menu control must wrap to the first, not the game HUD');
       await page.keyboard.press('Shift+Tab');
       assert.equal(await lastControl.evaluate((node) => document.activeElement === node), true,
         'Shift+Tab from the first menu control must wrap to the last');
-      // Shift+Tab deliberately leaves focus in the final VOLUME slider.
-      // S there belongs to the input, not to Save; restore ordinary menu
-      // focus before checking save/quit action routing below.
+      // Leave the last menu control and restore ordinary action focus before
+      // testing the in-game save/quit keyboard routing below.
       await menu.getByRole('button', { name: 'Continuar' }).focus();
       const bounds = await menu.boundingBox();
       assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
@@ -179,8 +178,10 @@ try {
         'The document-level back stack (not just window keydown) must process Escape exactly once');
       assert.equal(await menu.getByRole('group', { name: 'Confirmar salida sin guardar' }).count(), 0);
       await menu.getByRole('button', { name: 'Continuar' }).waitFor({ state: 'visible' });
-      assert.equal(await menu.locator('input[type="range"]:visible').count() > 0, true,
-        'Cancelling restores the unchanged live audio controls');
+      assert.equal(await menu.locator('input[type="range"]:visible').count(), 0,
+        'Cancelling must restore the compact menu with optional audio collapsed');
+      assert.equal(await menu.getByRole('button', { name: /Sonido/ }).getAttribute('aria-expanded'),
+        'false', 'Audio disclosure stays collapsed unless explicitly opened');
       await page.waitForFunction(() =>
         document.activeElement?.textContent?.trim() === 'Salir sin guardar · Q');
       await page.keyboard.press('Escape');
@@ -225,7 +226,10 @@ try {
       assert.equal(await count(page, 'save'), 1);
       assert.equal(await count(page, 'exit'), 1);
       // Inputs that actually belong to the menu still own their key presses.
-      const audioInput = menu.locator('input[type="range"]').first();
+      // Sound is intentionally collapsed by default: disclose it via the
+      // accessible toggle before probing native slider key ownership.
+      await menu.getByRole('button', { name: /Sonido/ }).click();
+      const audioInput = menu.locator('input[type="range"]:visible').first();
       await audioInput.focus();
       await page.keyboard.press('s');
       assert.equal(await count(page, 'save'), 1);
