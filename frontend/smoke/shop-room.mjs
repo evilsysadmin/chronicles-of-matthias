@@ -78,6 +78,12 @@ try {
       assert(boxes.dialog.left >= -1 && boxes.dialog.right <= width + 1
         && boxes.dialog.top >= -1 && boxes.dialog.bottom <= height + 1,
       `Fullscreen shop escapes viewport at ${width}px: ${JSON.stringify(boxes)}`);
+      if (width >= 1280 && height >= 700) {
+        assert(boxes.detail.width <= width * .29,
+          'A compact purchase receipt should not eclipse Brunna: ' + JSON.stringify(boxes));
+        assert(boxes.detail.top >= height * .30,
+          'The receipt should sit lower than Brunna’s face: ' + JSON.stringify(boxes));
+      }
       assert(boxes.catalog.width > 240 && boxes.detail.width > 240,
         `Unusable shop panels at ${width}px: ${JSON.stringify(boxes)}`);
       if (width > 900) {
@@ -178,13 +184,29 @@ try {
       await dagger.locator('button').click();
       const detail = dialog.locator('.chronicles-shop__detail');
       await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
-      const compare = detail.getByRole('button', { name: /Comparar con mi equipo/ });
-      await compare.click();
-      await detail.locator('.chronicles-shop__comparison-hero').first().waitFor();
-      if ([390, 1280].includes(width)) {
-        await page.screenshot({ path: `smoke-shop-compare-${width}.png` });
+      // The exact same combat comparison is now discoverable on stock
+      // hover/focus, without creating a second dashboard over the merchant.
+      if (width > 900) await dagger.locator('button').hover();
+      const peek = dagger.locator('.chronicles-shop__gear-peek');
+      await peek.waitFor({ state: 'visible' });
+      assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
+        'Hover/focus/tap must show the real comparison for all four companions');
+      assert.match(await peek.innerText(), /Matthias/);
+      assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      assert.equal(await detail.locator('.chronicles-shop__compare-toggle').count(), 0,
+        'Comparison must no longer produce a dashboard inside the purchase receipt');
+      if (width > 900) {
+        // Keyboard focus is equivalent to hover; leaving the row dismisses it.
+        await dagger.locator('button').focus();
+        await peek.waitFor({ state: 'visible' });
+        await catalog.getByLabel('Orden').focus();
+        await peek.waitFor({ state: 'hidden' });
       }
-      await detail.getByRole('button', { name: /Ocultar comparación/ }).click();
+      if ([390, 1280].includes(width)) {
+        await dagger.locator('button').focus();
+        await peek.waitFor({ state: 'visible' });
+        await page.screenshot({ path: `smoke-shop-gear-peek-${width}.png` });
+      }
 
       // Buy and sell through the real reducer (not fake onAction state).
       const before = Number((await dialog.locator('.chronicles-shop__purse').getAttribute('aria-label')).match(/\d+/)?.[0]);
