@@ -187,12 +187,31 @@ try {
       // The exact same combat comparison is now discoverable on stock
       // hover/focus, without creating a second dashboard over the merchant.
       if (width > 900) await dagger.locator('button').hover();
-      const peek = dagger.locator('.chronicles-shop__gear-peek');
+      const peek = width >= 1180 && height >= 540
+        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+        : dagger.locator('.chronicles-shop__gear-peek');
       await peek.waitFor({ state: 'visible' });
       assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
         'Hover/focus/tap must show the real comparison for all four companions');
       assert.match(await peek.innerText(), /Matthias/);
       assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      if (width >= 1180 && height >= 540) {
+        const position = await peek.evaluate((el) => {
+          const rect = (node) => {
+            const r = node.getBoundingClientRect();
+            return { left: r.left, right: r.right, width: r.width };
+          };
+          const market = el.closest('.chronicles-shop__market');
+          return { peek: rect(el), catalog: rect(market.querySelector('.chronicles-shop__catalog')),
+            detail: rect(market.querySelector('.chronicles-shop__detail')) };
+        });
+        assert(position.peek.left >= position.catalog.right + 2
+          && position.peek.right <= position.detail.left - 2
+          && position.peek.width >= 180,
+          'Preview must be readable to the RIGHT of the clipped catalogue: ' + JSON.stringify(position));
+        assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
+          'Wide hover must never expand or reflow the stock ledger');
+      }
       assert.equal(await detail.locator('.chronicles-shop__compare-toggle').count(), 0,
         'Comparison must no longer produce a dashboard inside the purchase receipt');
       if (width > 900) {

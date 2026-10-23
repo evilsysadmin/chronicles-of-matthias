@@ -217,11 +217,26 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const [sort, setSort] = useState('name');
   const [selectedId, setSelectedId] = useState(null);
   const [previewId, setPreviewId] = useState(null);
+  // Wide merchants have a true aisle for a readable hover card. On phones
+  // and cramped desktops, keep the accessible preview below its item.
+  const [peekInAisle, setPeekInAisle] = useState(() => (
+    typeof window !== 'undefined'
+    && Boolean(window.matchMedia?.('(min-width: 1180px) and (min-height: 540px)').matches)
+  ));
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const detailsRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const media = window.matchMedia('(min-width: 1180px) and (min-height: 540px)');
+    const sync = () => setPeekInAisle(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
   const map = chroniclesMapForState(state);
   const entry = (map?.interactables || []).find((item) => item.id === state.shop?.id);
 
@@ -288,6 +303,8 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const touchPeek = typeof window !== 'undefined'
     && window.matchMedia?.('(hover: none)').matches;
   const visiblePreviewId = touchPeek ? selectedId : previewId;
+  const previewItem = tab === 'buy'
+    ? offers.find(({ item }) => item.id === visiblePreviewId)?.item : null;
   const eligible = selectedItem && selectedItem.slot !== 'consumable' ? users(state, selectedItem) : [];
   const affordable = selected && gold >= selected.price;
   // The reducer refuses sales above its hard 9,999 gold purse cap. Explain
@@ -399,7 +416,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     </span>
                     <span className="chronicles-shop__entry-price">{price} <small>oro</small></span>
                   </button>
-                  {tab === 'buy' && visiblePreviewId === item.id && (
+                  {tab === 'buy' && !peekInAisle && visiblePreviewId === item.id && (
                     item.slot === 'consumable'
                       ? <ShopConsumablePeek item={item} />
                       : <ShopGearPeek state={state} item={item} />
@@ -415,6 +432,13 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
               )}
             </ul>
           </section>
+          {peekInAisle && previewItem && (
+            <div className="chronicles-shop__peek-stage" data-chronicles-shop-peek-stage>
+              {previewItem.slot === 'consumable'
+                ? <ShopConsumablePeek item={previewItem} />
+                : <ShopGearPeek state={state} item={previewItem} />}
+            </div>
+          )}
           <section ref={detailsRef} className="chronicles-shop__detail" aria-label="Detalle del artículo">
             {selected ? (
               <>

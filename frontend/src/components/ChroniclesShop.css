@@ -938,3 +938,40 @@
     object-position: 53% 43%;
   }
 }
+
+/* Desktop inspection floats in the real aisle, to the RIGHT of the stock.
+   The stock list scroll clips its children, so a positioned child tooltip
+   cannot achieve this reliably. The single preview DOM node lives beside
+   the catalog inside the market grid instead. */
+.chronicles-shop__peek-stage {
+  grid-column: 2;
+  min-width: 0;
+  width: min(100%, 360px);
+  max-height: 100%;
+  align-self: start;
+  justify-self: end;
+  overflow-y: auto;
+  z-index: 3;
+  pointer-events: none;
+  scrollbar-width: thin;
+  scrollbar-color: #ac8653 #201810;
+}
+.chronicles-shop__peek-stage .chronicles-shop__gear-peek {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #b48b57;
+  border-inline-start: 3px solid #f0c883;
+  background: linear-gradient(125deg, rgba(53, 34, 22, .98), rgba(21, 17, 15, .98));
+  box-shadow: 0 14px 35px #000a;
+  font-size: 12px;
+  line-height: 1.32;
+}
+.chronicles-shop__peek-stage .chronicles-shop__gear-peek-title { font-size: 15px; }
+.chronicles-shop__peek-stage .chronicles-shop__gear-peek-member {
+  grid-template-columns: minmax(70px, .34fr) minmax(0, 1fr);
+  gap: 4px 8px;
+  padding: 5px 0;
+}
+@media (max-width: 1179px), (max-height: 539px) {
+  .chronicles-shop__peek-stage { display: none; }
+}
