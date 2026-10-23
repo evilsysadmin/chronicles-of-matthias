@@ -296,7 +296,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
     state = chroniclesEquipItem(state, 'rook', 'steel-sword');
     state = chroniclesEquipItem(state, 'rook', 'bronze-shield');
     const after = chroniclesPartyAttackStats(state, 'rook');
-    expect(after.toHit).toBe(before.toHit + CHRONICLES_EQUIPMENT['steel-sword'].toHitBonus);
+    expect(after.toHit).toBe(before.toHit
+      + CHRONICLES_EQUIPMENT['steel-sword'].toHitBonus
+      + CHRONICLES_EQUIPMENT['bronze-shield'].toHitBonus);
     expect(after.damage).toBe(before.damage + CHRONICLES_EQUIPMENT['steel-sword'].attackDamageBonus);
 
     const restored = chroniclesApplyRunCheckpoint(
