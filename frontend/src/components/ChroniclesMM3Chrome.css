@@ -1621,3 +1621,8 @@
     font-size: .82rem;
   }
 }
+
+
+/* MM3 desktop previously hid the coordinate title; present it as the same
+   discrete bottom caption used by the mobile minimap, never over the tiles. */
+.chronicles .chronicles-minimap__title { display: block; }

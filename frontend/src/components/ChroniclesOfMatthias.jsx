@@ -95,7 +95,6 @@ import {
 } from '../chroniclesOfMatthiasProgression.js';
 import {
   chroniclesAutomapMarkSeen,
-  chroniclesMapCoordinatesLabel,
   clearChroniclesAutomapVisited,
   loadChroniclesAutomapVisited,
   saveChroniclesAutomapVisited,
@@ -1598,7 +1597,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     );
   }
 
-  const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
   // The authored quest's region takes precedence when the objective text
   // does not name its destination (e.g. the missing banner in Swordhaven).
@@ -1728,7 +1726,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         <main className="chronicles-stage-wrap">
           <div className="chronicles-statusbar" aria-live="polite">
             <span>{locationHud.kind} <b>{locationHud.value}</b></span>
-            <span>RUMBO <b>{direction.label} · {chroniclesMapCoordinatesLabel(chroniclesMapForState(state), state)}</b></span>
+            {/* Preserve child indexing for the objective/active MM3 HUD selectors. */}
+            <span className="chronicles-statusbar__retired-bearing" hidden aria-hidden="true" />
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
             {/* The objective is the Crónica's cover: tapping it opens the
                 quest log and the narration behind that one line. */}
