@@ -53,11 +53,11 @@ test('the scanner contract rejects suppression, removal and non-pinned tools', (
 });
 
 test('the scanner contract rejects missing or downgraded ARM64 coverage', () => {
-  const arm64 = 'GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" -show verbose ./...';
+  const arm64 = 'GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...';
   assert.ok(workflow.includes(arm64), 'the required arm64 command must be present');
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64, '')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64,
-    'GOOS=linux GOARCH=amd64 "$(go env GOPATH)/bin/govulncheck" -show verbose ./...')), false);
+    'GOOS=linux GOARCH=amd64 "$(go env GOPATH)/bin/govulncheck" ./...')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(arm64,
     arm64 + ' || true')), false);
 });
