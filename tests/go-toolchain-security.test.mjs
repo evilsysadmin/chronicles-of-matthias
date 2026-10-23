@@ -128,3 +128,40 @@ test('production Docker attestation fails closed on compiler, target or proof re
     /match the Docker Go patch tag/,
   );
 });
+
+// Docker independently resolves the application graph; the CI runner's
+// OpenPGP check is not sufficient for the executable shipped in an image.
+function assertsProductionOpenPGPExclusion(docker) {
+  const buildIndex = docker.indexOf('RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build');
+  const guardIndex = docker.indexOf('GO-2026-5932 has no patched x/crypto/openpgp release');
+  assert.ok(guardIndex >= 0 && guardIndex < buildIndex, 'Docker OpenPGP guard must precede the actual build');
+  for (const required of [
+    'RUN set -eu;',
+    'CGO_ENABLED=0 GOTOOLCHAIN=local GOOS="$TARGETOS" GOARCH="$TARGETARCH" go list -deps ./cmd/chronicles-api',
+    "grep -Eq '^golang[.]org/x/crypto/openpgp(/|$)'",
+    'GO-2026-5932: forbidden legacy OpenPGP import',
+    'exit 1;',
+  ]) {
+    assert.ok(docker.includes(required), `missing production OpenPGP check: ${required}`);
+  }
+  assert.doesNotMatch(docker, /\|\|\s*(?:true|:)(?:\s|$)/, 'release Docker build must fail closed');
+}
+
+test('release Docker builder excludes unsafe OpenPGP imports in both target graphs', () => {
+  assertsProductionOpenPGPExclusion(dockerfile);
+});
+
+test('Docker OpenPGP guard cannot be removed, narrowed, or bypassed', () => {
+  for (const mutation of [
+    (d) => d.replace('GO-2026-5932 has no patched x/crypto/openpgp release', ''),
+    (d) => d.replace('GOOS="$TARGETOS" GOARCH="$TARGETARCH" go list', 'GOOS=linux GOARCH=amd64 go list'),
+    (d) => d.replace('openpgp(/|$)', 'ssh(/|$)'),
+    (d) => d.replace('go list -deps ./cmd/chronicles-api', 'echo skipped'),
+    (d) => d.replace('exit 1;', 'exit 0;'),
+    (d) => d.replace('exit 1;', 'exit 1 || true;'),
+  ]) {
+    const changed = mutation(dockerfile);
+    assert.notEqual(changed, dockerfile, 'mutation must alter the fixture');
+    assert.throws(() => assertsProductionOpenPGPExclusion(changed));
+  }
+});
