@@ -22,9 +22,17 @@ try {
       const errors = [];
       page.on('pageerror', (err) => errors.push(err.message));
       try {
-        await page.goto(base + '?view=' + view, { waitUntil: 'networkidle' });
+        // 27 fixture navigations previously paid Playwright's 500ms networkidle
+        // quiet window even after the actual dialog was rendered. Wait for
+        // load + the real dialog + paint resources, never a speculative sleep.
+        await page.goto(base + '?view=' + view, { waitUntil: 'load' });
         const dialog = page.getByRole('dialog');
         await dialog.waitFor({ state: 'visible', timeout: 20_000 });
+        await page.waitForFunction(() => {
+          const visible = [...document.images].filter((img) => img.getClientRects().length);
+          return document.fonts.status === 'loaded'
+            && visible.every((img) => img.complete && img.naturalWidth > 0);
+        }, undefined, { timeout: 15_000 });
         const details = await page.evaluate(() => {
           const d = document.querySelector('[role="dialog"]');
           const content = d.querySelector('.chronicles-spell-menu__pages')
