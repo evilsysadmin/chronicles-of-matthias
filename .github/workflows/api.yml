@@ -236,6 +236,11 @@ jobs:
           context: api
           platforms: linux/arm64,linux/amd64
           push: true
+          # Cache only the expensive multi-arch build layers, never the release
+          # admission or provenance. A transient cache exporter outage must
+          # not block publication of a successfully built/attested image.
+          cache-from: type=gha,scope=chronicles-api-buildkit-v1
+          cache-to: type=gha,mode=max,scope=chronicles-api-buildkit-v1,ignore-error=true
           build-args: |
             CHRONICLES_SOURCE_SHA=${{ github.sha }}
           tags: ${{ env.IMAGE }}:staging-${{ github.sha }}

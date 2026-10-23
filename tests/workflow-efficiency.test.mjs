@@ -156,3 +156,14 @@ test('a single shared browser bootstrap checks real host readiness before apt fa
     assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
   }
 });
+
+test('main-only API image publication uses a non-blocking multi-arch BuildKit cache', () => {
+  const publish = api.slice(api.indexOf('\n  publish:\n'));
+  assert.match(publish, /needs: verify/);
+  assert.match(publish, /if: github\.event_name != 'pull_request'/);
+  assert.match(publish, /cache-from: type=gha,scope=chronicles-api-buildkit-v1/);
+  assert.match(publish, /cache-to: type=gha,mode=max,scope=chronicles-api-buildkit-v1,ignore-error=true/);
+  assert.doesNotMatch(api.slice(0, api.indexOf('\n  publish:\n')), /cache-to: type=gha/);
+  assert.match(publish, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
+  assert.match(publish, /push-to-registry: true/);
+});
