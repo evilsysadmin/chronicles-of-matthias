@@ -61,9 +61,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
 
   it('balances real starter shields against first-book enemy attacks without overbuffing them', () => {
     const expected = {
-      wooden: [1, 0, 2], brass: [2, -1, 4], bronze: [2, 0, 6],
-      iron: [3, -1, 16], ivory: [2, 1, 24], silver: [3, 1, 40],
-      steel: [4, -1, 80],
+      wooden: [1, 0, 2], brass: [2, 0, 4], bronze: [2, 1, 6],
+      iron: [3, 1, 16], ivory: [2, 2, 24], silver: [3, 2, 40],
+      steel: [4, 2, 80],
     };
     for (const [material, [armorClass, toHit, price]] of Object.entries(expected)) {
       const shield = CHRONICLES_EQUIPMENT[`${material}-shield`];
@@ -72,6 +72,19 @@ describe('Chronicles · MM3 equipment catalog', () => {
       expect(shield.description).toContain(`armadura +${armorClass}`);
       if (toHit) expect(shield.description).toContain(`acierto ${toHit > 0 ? '+' : ''}${toHit}`);
     }
+    const shields = ['wooden', 'brass', 'bronze', 'iron', 'silver', 'steel']
+      .map((material) => CHRONICLES_EQUIPMENT[`${material}-shield`]);
+    for (let i = 1; i < shields.length; i += 1) {
+      expect(shields[i].price, shields[i].id).toBeGreaterThan(shields[i - 1].price);
+      expect(shields[i].armorClassBonus, shields[i].id).toBeGreaterThanOrEqual(shields[i - 1].armorClassBonus);
+      expect(shields[i].toHitBonus, shields[i].id).toBeGreaterThanOrEqual(shields[i - 1].toHitBonus);
+      expect(shields[i].armorClassBonus > shields[i - 1].armorClassBonus
+        || shields[i].toHitBonus > shields[i - 1].toHitBonus, shields[i].id).toBe(true);
+    }
+    const ivory = CHRONICLES_EQUIPMENT['ivory-shield'];
+    const iron = CHRONICLES_EQUIPMENT['iron-shield'];
+    expect(ivory.armorClassBonus).toBeLessThan(iron.armorClassBonus);
+    expect(ivory.toHitBonus).toBeGreaterThan(iron.toHitBonus);
     expect(CHRONICLES_EQUIPMENT['leather-padded'].price).toBe(2);
     expect(CHRONICLES_EQUIPMENT['leather-leather'].price).toBe(3);
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest'].armorClassBonus).toBe(3);
@@ -265,7 +278,7 @@ describe('Chronicles · MM3 equipment catalog', () => {
     const brass = chroniclesEquipItem(initial, 'matthias', 'brass-shield');
     const bronze = chroniclesEquipItem(initial, 'matthias', 'bronze-shield');
     const baseAC = chroniclesPartyArmorClass(initial, 'matthias');
-    for (const [state, ac, accuracy] of [[wooden, 1, 0], [brass, 2, -1], [bronze, 2, 0]]) {
+    for (const [state, ac, accuracy] of [[wooden, 1, 0], [brass, 2, 0], [bronze, 2, 1]]) {
       expect(chroniclesPartyArmorClass(state, 'matthias')).toBe(baseAC + ac);
       expect(chroniclesPartyAttackStats(state, 'matthias').toHit).toBe(
         chroniclesPartyAttackStats(initial, 'matthias').toHit + accuracy);
@@ -283,7 +296,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
     state = chroniclesEquipItem(state, 'rook', 'steel-sword');
     state = chroniclesEquipItem(state, 'rook', 'bronze-shield');
     const after = chroniclesPartyAttackStats(state, 'rook');
-    expect(after.toHit).toBe(before.toHit + CHRONICLES_EQUIPMENT['steel-sword'].toHitBonus);
+    expect(after.toHit).toBe(before.toHit
+      + CHRONICLES_EQUIPMENT['steel-sword'].toHitBonus
+      + CHRONICLES_EQUIPMENT['bronze-shield'].toHitBonus);
     expect(after.damage).toBe(before.damage + CHRONICLES_EQUIPMENT['steel-sword'].attackDamageBonus);
 
     const restored = chroniclesApplyRunCheckpoint(
