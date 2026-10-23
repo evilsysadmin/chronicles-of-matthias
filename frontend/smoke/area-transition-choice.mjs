@@ -19,6 +19,11 @@ try {
       const focused = (item) => item.evaluate((node) => document.activeElement === node);
       await dialog.waitFor({ state:'visible' });
       assert.equal(await focused(cancel), true, 'No must be selected by default');
+      assert.equal(await cancel.innerText(), 'No', 'Choices must not imply Enter always means Yes');
+      assert.equal(await accept.innerText(), 'Sí', 'Keyboard guidance belongs in the shared hint');
+      const background = (item) => item.evaluate((node) => getComputedStyle(node).backgroundColor);
+      assert.notEqual(await background(cancel), await background(accept),
+        'Safe No must be the only visibly selected action at first paint');
       assert.equal(await dialog.getByText(/UMBRAL/i).count(), 0, 'Obsolete eyebrow must be gone');
       assert.match(await dialog.innerText(), /← \/ → elegir.*Enter confirmar/);
       const rect = await dialog.boundingBox();
@@ -34,8 +39,12 @@ try {
       await dialog.waitFor({ state:'visible' });
       await page.keyboard.press('ArrowRight');
       assert.equal(await focused(accept), true, 'Right selects Yes');
+      assert.notEqual(await background(accept), await background(cancel),
+        'Gold selection must follow right-arrow focus to Yes');
       await page.keyboard.press('ArrowLeft');
       assert.equal(await focused(cancel), true, 'Left selects No');
+      assert.notEqual(await background(cancel), await background(accept),
+        'Gold selection must return to No on left-arrow');
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Enter');
       await dialog.waitFor({ state:'hidden' });
