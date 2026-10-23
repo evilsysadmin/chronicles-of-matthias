@@ -885,7 +885,7 @@ export function createChroniclesOfMatthiasGame(host, {
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
     volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
-    if (volleyFxCount > 0) volleyFx.anchorLaunchPose();
+    if (volleyFxCount > 0) volleyFx.anchorLaunchPose(desiredYaw);
     volleyLaunchPose = volleyFxCount > 0 && latestState
       ? { x: latestState.x, y: latestState.y, direction: latestState.direction }
       : null;
