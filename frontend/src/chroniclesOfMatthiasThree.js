@@ -24,7 +24,7 @@ import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './
 import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
-import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyFlightSample } from './chronicles/chroniclesVolleyMotion.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -743,6 +743,7 @@ export function createChroniclesOfMatthiasGame(host, {
   let attackFxConfig = ATTACK_FX.matthias;
   let volleyFxStartedAt = -1;
   let volleyFxCount = 0;
+  let volleyObstacleDistance = Infinity;
   const enemyHitStartedAt = new Map();
   const enemyAttackStartedAt = new Map();
   const enemyDeathStartedAt = new Map();
@@ -875,6 +876,13 @@ export function createChroniclesOfMatthiasGame(host, {
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
     volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
+    // Snapshot the wall in front of the party at shot time. Generated house
+    // facades and shop doors share scenePlan.grid's solid '#' cells.
+    volleyObstacleDistance = chroniclesVolleyObstacleDistance(
+      scenePlan?.grid,
+      latestState && { x: latestState.x, y: latestState.y },
+      CHRONICLES_DIRECTIONS[latestState?.direction],
+    );
     volleyFxStartedAt = clock.getElapsedTime();
     volleyFx.group.visible = volleyFxCount > 0;
   }
@@ -1021,8 +1029,9 @@ export function createChroniclesOfMatthiasGame(host, {
       volleyFx.group.visible = volleyVisible;
       if (volleyVisible) {
         volleyFx.projectiles.forEach((projectile, index) => {
-          const flight = chroniclesVolleyFlightSample(
+          const flight = chroniclesVolleyVisibleFlight(
             volleyFxCount, index, volleyElapsed, projectile.userData.volleyKind,
+            volleyObstacleDistance,
           );
           projectile.visible = Boolean(flight);
           if (!flight) return;

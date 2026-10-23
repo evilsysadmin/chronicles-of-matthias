@@ -2,6 +2,35 @@
 // Shooter stagger stays subtle but lets the player read separate projectiles.
 export const CHRONICLES_VOLLEY_MAX_DURATION = 0.78;
 
+// The authored grid is also the 3D town's collision mask: '#' is a real
+// solid house, facade, wall, tree or dungeon block. Shoot from the centre of
+// the party's tile toward its facing wall and stop just before its near face.
+// A 4 m tile starts 2 m ahead; the 8 cm inset prevents z-fighting with doors.
+export function chroniclesVolleyObstacleDistance(grid, origin, facing, cellSize = 4) {
+  if (!Array.isArray(grid) || !Number.isInteger(origin?.x) || !Number.isInteger(origin?.y)
+    || !Number.isInteger(facing?.dx) || !Number.isInteger(facing?.dy)
+    || Math.abs(facing.dx) + Math.abs(facing.dy) !== 1
+    || !Number.isFinite(cellSize) || cellSize <= 0) return Infinity;
+  for (let distance = 1; distance <= 4; distance += 1) {
+    const x = origin.x + facing.dx * distance;
+    const y = origin.y + facing.dy * distance;
+    const tile = grid[y]?.[x];
+    if (tile === '#' || tile === undefined) {
+      return Math.max(0, (distance - 0.5) * cellSize - 0.08);
+    }
+  }
+  return Infinity;
+}
+
+// The flight is sampled in camera-local space. The same shot is never moved
+// through a solid building facade after it reaches the front of that wall.
+// Null means the pooled arrow is hidden, not that a hit/damage was created.
+export function chroniclesVolleyVisibleFlight(count, index, elapsed, kind = 'bow', stopDistance = Infinity) {
+  const flight = chroniclesVolleyFlightSample(count, index, elapsed, kind);
+  if (!flight) return null;
+  return Number.isFinite(stopDistance) && -flight.z >= stopDistance ? null : flight;
+}
+
 export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow') {
   const total = Math.max(0, Math.min(6, Math.floor(Number(count) || 0)));
   if (!Number.isInteger(index) || index < 0 || index >= total || !Number.isFinite(elapsed)) return null;
