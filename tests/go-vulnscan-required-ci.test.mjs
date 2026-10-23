@@ -24,7 +24,7 @@ function hasRequiredGoVulnerabilityScan(source) {
     && /^\s*run: \|\s*$/m.test(step)
     && /^\s*set -euo pipefail\s*$/m.test(step)
     && /^\s*go install golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.9\.0\s*$/m.test(step)
-    && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
+    && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" -show verbose \.\/\.\.\.\s*$/m.test(step)
     && /^\s*GOOS=linux GOARCH=arm64 "\$\(go env GOPATH\)\/bin\/govulncheck" \.\/\.\.\.\s*$/m.test(step)
     && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" -mode=binary "\$RUNNER_TEMP\/chronicles-api"\s*$/m.test(step)
     && /^\s*"\$\(go env GOPATH\)\/bin\/govulncheck" -mode=binary "\$RUNNER_TEMP\/chronicles-api-arm64"\s*$/m.test(step)
@@ -46,10 +46,10 @@ test('the scanner contract rejects suppression, removal and non-pinned tools', (
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(
     'govulncheck@v1.9.0', 'govulncheck@latest')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(
-    '"$(go env GOPATH)/bin/govulncheck" ./...',
-    '"$(go env GOPATH)/bin/govulncheck" ./... || true')), false);
+    '"$(go env GOPATH)/bin/govulncheck" -show verbose ./...',
+    '"$(go env GOPATH)/bin/govulncheck" -show verbose ./... || true')), false);
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(
-    '"$(go env GOPATH)/bin/govulncheck" ./...', 'echo skipped')), false);
+    '"$(go env GOPATH)/bin/govulncheck" -show verbose ./...', 'echo skipped')), false);
 });
 
 test('the scanner contract rejects missing or downgraded ARM64 coverage', () => {
@@ -71,4 +71,8 @@ test('required CI rejects missing, suppressed or replaced binary vulnerability s
     assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace(command, command + ' || true')), false);
   }
   assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace('-mode=binary', '-mode=source')), false);
+});
+
+test('verbose required module findings cannot be hidden', () => {
+  assert.equal(hasRequiredGoVulnerabilityScan(workflow.replace('-show verbose', '')), false);
 });
