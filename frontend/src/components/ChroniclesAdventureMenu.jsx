@@ -37,8 +37,9 @@ export default function ChroniclesAdventureMenu({
       <div className="chronicles-game-menu__heading">
         <div className="chronicles-game-menu__crest" aria-hidden="true">♜</div>
         <div className="chronicles-game-menu__heading-copy">
-          <small>CHRONICLES OF MATTHIAS · PAUSA</small>
+          <small>CHRONICLES OF MATTHIAS · FOLIO DE PAUSA</small>
           <strong>MENÚ DE AVENTURA</strong>
+          <span className="chronicles-game-menu__heading-legend">La compañía descansa. El camino sigue ahí fuera.</span>
         </div>
         <button type="button" className="chronicles-game-menu__close" aria-label="Cerrar menú"
           hidden={confirmExitWithoutSaving} onClick={onClose}>×</button>
@@ -70,7 +71,8 @@ export default function ChroniclesAdventureMenu({
                 aria-controls="chronicles-menu-sound"
                 onClick={() => setSoundOpen((value) => !value)}>♫ Sonido {soundOpen ? '▴' : '▾'}</button>
               <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
-                onClick={() => onFeedbackOpenChange?.(true)}>✉ Buzón de feedback</button>
+                aria-label="Buzón de feedback"
+                onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
               {isAdmin && (
                 <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
               )}
