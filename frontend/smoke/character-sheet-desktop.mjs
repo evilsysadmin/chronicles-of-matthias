@@ -258,6 +258,10 @@ try {
       const actualCount = await spellRows.count();
       assert.ok(actualCount >= 1, 'The real caster must have learned spells');
       assert.equal(await spellRows.first().getAttribute('aria-pressed'), 'true');
+      assert.deepEqual(await spellRows.evaluateAll((nodes) =>
+        nodes.map((node) => node.tabIndex)),
+        Array.from({ length: actualCount }, (_, index) => index === 0 ? 0 : -1),
+        'Exactly one spell should be reachable by Tab, with arrows navigating the rest');
       assert.match(await grimoire.getByRole('region', { name: 'Detalle del hechizo seleccionado' }).innerText(), /PH/);
       await grimoire.getByRole('button', { name: 'Ataque' }).click();
       assert.ok((await spellRows.count()) <= actualCount, 'Filtering cannot invent spellbook entries');
@@ -265,8 +269,23 @@ try {
       assert.equal(await spellRows.count(), actualCount);
       await spellRows.first().focus();
       await page.keyboard.press('ArrowDown');
-      assert.equal(await spellRows.nth(actualCount === 1 ? 0 : 1).getAttribute('aria-pressed'), 'true',
+      const nextIndex = actualCount === 1 ? 0 : 1;
+      assert.equal(await spellRows.nth(nextIndex).getAttribute('aria-pressed'), 'true',
         'ArrowDown moves spellbook selection without casting');
+      assert.equal(await spellRows.nth(nextIndex).getAttribute('tabindex'), '0');
+      assert.equal(await spellRows.nth(nextIndex).evaluate(
+        (node) => document.activeElement === node), true,
+        'Keyboard selection must move real focus, not just highlight');
+      assert.equal(await spellRows.evaluateAll((nodes) =>
+        nodes.filter((node) => node.tabIndex === 0).length), 1);
+      await page.keyboard.press('Home');
+      assert.equal(await spellRows.first().getAttribute('aria-pressed'), 'true',
+        'Home selects the first known spell without casting');
+      await spellRows.first().focus();
+      await page.keyboard.press('Tab');
+      assert.equal(await spellRows.evaluateAll((nodes) =>
+        nodes.includes(document.activeElement)), false,
+        'Tab must leave the grimoire instead of walking every spell');
       await grimoire.getByRole('button', { name: 'Todos' }).focus();
       assert.notEqual(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
         'The shortcut must open a real spellcaster, never create spells for Matthias');

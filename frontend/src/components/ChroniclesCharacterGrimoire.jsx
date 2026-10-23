@@ -26,6 +26,18 @@ const typeMark = (spell) => ({
   other: '◇',
 })[spellType(spell)];
 
+// Arrow/Home/End operate on the currently visible spells only; no casts or
+// hidden-filter entries are ever selected.
+export function chroniclesGrimoireNextSelection(shown, selectedId, key) {
+  if (!shown.length || !['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(key)) return null;
+  if (key === 'Home') return shown[0].id;
+  if (key === 'End') return shown[shown.length - 1].id;
+  const current = shown.findIndex((spell) => spell.id === selectedId);
+  const start = current < 0 ? 0 : current;
+  const delta = key === 'ArrowDown' ? 1 : -1;
+  return shown[(start + delta + shown.length) % shown.length].id;
+}
+
 export default function ChroniclesCharacterGrimoire({ spells = [], availableSp = 0, maxSp = 0, schoolLabel = '' }) {
   const [filter, setFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
@@ -34,16 +46,13 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
   const selected = shown.find((spell) => spell.id === selectedId) || shown[0] || null;
 
   const chooseByKeyboard = (event, id) => {
-    if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+    const nextId = chroniclesGrimoireNextSelection(shown, id, event.key);
+    if (!nextId) return;
     event.preventDefault();
-    const currentIndex = shown.findIndex((spell) => spell.id === id);
-    const index = event.key === 'Home' ? 0 : event.key === 'End' ? shown.length - 1
-      : (currentIndex + (event.key === 'ArrowDown' ? 1 : -1) + shown.length) % shown.length;
-    const next = shown[index];
-    if (!next) return;
-    setSelectedId(next.id);
-    const buttons = listRef.current?.querySelectorAll('[data-grimoire-spell]');
-    buttons?.[index]?.focus();
+    event.stopPropagation(); // Do not accidentally trigger movement behind the dossier.
+    setSelectedId(nextId);
+    const index = shown.findIndex((spell) => spell.id === nextId);
+    listRef.current?.querySelectorAll('[data-grimoire-spell]')?.[index]?.focus();
   };
 
   return (
@@ -66,6 +75,7 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
             <div className="chronicles-sheet-grimoire__list" ref={listRef}>
               {shown.map((spell, index) => (
                 <button type="button" key={spell.id} data-grimoire-spell={spell.id}
+                  tabIndex={spell.id === selected?.id ? 0 : -1}
                   aria-pressed={spell.id === selected?.id}
                   className={spell.id === selected?.id ? 'is-selected' : ''}
                   onClick={() => setSelectedId(spell.id)}
@@ -111,7 +121,7 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
           ) : <p>Elige un tipo de hechizo para consultar sus detalles.</p>}
         </section>
       </div>
-      <p className="chronicles-sheet-grimoire__hint">↑ ↓ Seleccionar · Consulta del grimorio. Para lanzar hechizos, vuelve a la aventura y abre Magia (C).</p>
+      <p className="chronicles-sheet-grimoire__hint">Tab · entrar/salir de la lista · ↑ ↓ / Inicio / Fin · seleccionar · Para lanzar hechizos, vuelve a la aventura y abre Magia (C).</p>
     </div>
   );
 }
