@@ -116,14 +116,15 @@ describe('MM3 map symbol legends', () => {
   });
 
   it('shows a directional edge marker when the full automap cannot fit the next exit', () => {
-    const far = { x: state.x + 12, y: state.y };
+    // Swordhaven's authored northern exit lies beyond a newly explored map.
+    const far = { x: 9, y: 1 };
     const html = renderToStaticMarkup(
       <ChroniclesAutomap open state={state} onClose={() => {}}
-        visitedCells={[]} target={far} routeLabel="Salida hacia el este" />,
+        visitedCells={[]} target={far} routeLabel="Camino de los estandartes · por el norte" />,
     );
     expect(html).toContain('data-chronicles-route-target="edge"');
     expect(html).toContain('class="chronicles-automap__target is-offscreen"');
-    expect(html).toContain('Siguiente salida fuera de la vista: Salida hacia el este');
+    expect(html).toContain('Siguiente salida fuera de la vista: Camino de los estandartes');
     expect(html).not.toContain('data-chronicles-route-target="in-view"');
     expect(html).not.toContain('r="0.46"');
     // The map is NOT extended with invented known tiles or the unseen exit.
