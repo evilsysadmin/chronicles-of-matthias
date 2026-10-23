@@ -41,7 +41,7 @@ describe('Chronicles First Book · real purchased gear', () => {
       attackDamageBonus: 2, price: 12,
     });
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest']).toMatchObject({
-      materialId: 'leather', slot: 'armor', armorType: 'leather', armorClassBonus: 2,
+      materialId: 'leather', slot: 'armor', armorType: 'leather', armorClassBonus: 3,
       damageReduction: 1, price: 9,
     });
   });
@@ -154,8 +154,8 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(chroniclesEquippedItem(archer, 'knight', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(archer, 'knight').toHit)
       .toBe(chroniclesPartyAttackStats(stocked, 'knight').toHit + 1);
-    // Leather armor adds 2 to the wearer's armor class.
+    // Guard-reinforced leather now adds 3 to the wearer's armor class.
     const worn = chroniclesEquipItem(stocked, 'matthias', 'roadwatch-vest');
-    expect(chroniclesPartyArmorClass(worn, 'matthias')).toBe(chroniclesPartyArmorClass(stocked, 'matthias') + 2);
+    expect(chroniclesPartyArmorClass(worn, 'matthias')).toBe(chroniclesPartyArmorClass(stocked, 'matthias') + 3);
   });
 });

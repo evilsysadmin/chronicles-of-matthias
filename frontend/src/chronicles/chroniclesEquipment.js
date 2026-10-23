@@ -34,7 +34,9 @@ function authoredEquipment(spec) {
     // Existing First Book mitigation is an interim, deterministic defense
     // effect. MM3's material armorClass remains explicit for proper AC later.
     damageReduction: spec.baseDamageReduction,
-    toHitBonus: weapon ? material.toHit : 0,
+    // A shield's bulk or agility changes real attack accuracy. Armor itself
+    // has no hidden offensive modifier; this is shared by melee and missiles.
+    toHitBonus: weapon ? material.toHit : Number(spec.shieldToHitBonus || 0),
     // MM armor class: the armor type's own AC plus its material.
     armorClassBonus: !weapon ? Math.max(0, Number(spec.baseArmorClass || 0) + material.armorClass) : 0,
     price: Math.max(1, Math.round(spec.basePrice * material.valueMultiplier)),
@@ -70,9 +72,24 @@ const BASE_WEAPONS = Object.freeze({
   sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, reach: 2, allowed: LEGACY_ALL },
 });
 
+// First Book defensive choices: CA prevents an MM3 hit (5 percentage
+// points per AC in the unsaturated d20 window); it does NOT subtract damage.
+// Higher guard can compromise accuracy. These are authored GAME profiles,
+// not purported original MM3 material statistics. The tiers also prevent
+// bronze (-1 material AC) from yielding the absurd 0-CA bought shield.
+export const CHRONICLES_SHIELD_PROFILES = Object.freeze({
+  wooden: Object.freeze({ armorClass: 1, toHit: 0 }), // cheap, light
+  brass: Object.freeze({ armorClass: 2, toHit: -1 }), // heavier starter guard
+  bronze: Object.freeze({ armorClass: 2, toHit: 0 }), // same guard, better handling
+  iron: Object.freeze({ armorClass: 3, toHit: -1 }), // heavy guard
+  ivory: Object.freeze({ armorClass: 2, toHit: 1 }), // nimble, rare
+  silver: Object.freeze({ armorClass: 3, toHit: 1 }), // premium, nimble
+  steel: Object.freeze({ armorClass: 4, toHit: -1 }), // maximum guard, heavy
+});
+
 const BASE_ARMORS = Object.freeze({
   padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, allowed: LEGACY_ALL },
-  leather: { name: 'Coraza', armorType: 'leather', basePrice: 9, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
+  leather: { name: 'Coraza', armorType: 'leather', basePrice: 12, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
   scale: { name: 'Cota de escamas', armorType: 'scale', basePrice: 14, baseArmorClass: 3, baseDamageReduction: 1, allowed: LEGACY_FRONT },
   ring: { name: 'Cota de anillas', armorType: 'ring', basePrice: 18, baseArmorClass: 4, baseDamageReduction: 2, allowed: LEGACY_FRONT },
   chain: { name: 'Cota de malla', armorType: 'chain', basePrice: 24, baseArmorClass: 5, baseDamageReduction: 2, allowed: LEGACY_FRONT },
@@ -139,14 +156,18 @@ function armorItem(baseId, materialId) {
 }
 
 function shieldItem(materialId) {
-  const material = CHRONICLES_ITEM_MATERIALS[materialId];
+  const profile = CHRONICLES_SHIELD_PROFILES[materialId];
+  if (!profile) throw new Error(`Unknown shield profile: ${materialId}`);
   return authoredEquipment({
     id: `${materialId}-shield`, name: `Escudo de ${materialName(materialId)}`, slot: 'shield',
     baseItemId: 'shield', materialId, basePrice: 8,
     baseDamageBonus: 0, baseDamageReduction: 1,
-    baseArmorClass: 1,
+    // authoredEquipment adds the material AC: offset it to preserve the
+    // tested actual CA on each shield, independent of item material quirks.
+    baseArmorClass: profile.armorClass - CHRONICLES_ITEM_MATERIALS[materialId].armorClass,
+    shieldToHitBonus: profile.toHit,
     allowedMembers: LEGACY_FRONT,
-    description: `Escudo · armadura +${Math.max(0, 1 + material.armorClass)}. Sólo clases con escudo y una mano libre.`,
+    description: `Escudo · armadura +${profile.armorClass}${profile.toHit ? `, acierto ${signed(profile.toHit)}` : ''}. Sólo clases con escudo y una mano libre.`,
   });
 }
 
@@ -165,9 +186,9 @@ function catalog() {
       id: 'roadwatch-vest', name: 'Jubón de cuero de guardia', slot: 'armor',
       baseItemId: 'vest', materialId: 'leather', basePrice: 36,
       baseDamageBonus: 0, baseDamageReduction: 1,
-      armorType: 'leather', baseArmorClass: 2,
+      armorType: 'leather', baseArmorClass: 3,
       allowedMembers: LEGACY_ALL,
-      description: 'Armadura de cuero · +2 armadura. Cualquier clase salvo Hechicero.',
+      description: 'Jubón reforzado de la guardia · +3 armadura. Cualquier clase salvo Hechicero.',
     }),
   };
   for (const baseId of Object.keys(BASE_WEAPONS)) {

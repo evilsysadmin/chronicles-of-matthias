@@ -77,6 +77,22 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.equipment.matthias.shield).toBe('iron-shield');
   });
 
+  it('shows both CA and actual accuracy tradeoffs for starter shields', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', shield: 'wooden-shield' } },
+    };
+    const brass = memberPreview(state, 'matthias', 'brass-shield');
+    expect(brass.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(brass, 'armorClass').delta).toBe(1);
+    expect(metric(brass, 'toHit').delta).toBe(-1);
+    expect(metric(brass, 'toHit').label).toBe('Acierto');
+    const bronze = memberPreview(state, 'matthias', 'bronze-shield');
+    expect(bronze.stats.map((stat) => stat.key)).toEqual(['armorClass']);
+    expect(metric(bronze, 'armorClass').delta).toBe(1);
+    expect(state.equipment.matthias.shield).toBe('wooden-shield');
+  });
+
   it('blocks the shield comparison while wielding two hands, as the equip action does', () => {
     const state = {
       ...initial(), equipment: { matthias: { weapon: 'wooden-staff' } },
