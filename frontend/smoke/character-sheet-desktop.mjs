@@ -221,6 +221,27 @@ try {
         'Inventory list must remain left of the filter/inspector rail: ' + JSON.stringify(aboveFold));
       assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
         'Item detail must follow controls within the right rail: ' + JSON.stringify(aboveFold));
+      if (width >= 1200) {
+        const filters = await equipment.locator('.chronicles-character-sheet__backpack-filters')
+          .evaluate((group) => {
+            const buttons = [...group.querySelectorAll('button')];
+            const boxes = buttons.map((button) => button.getBoundingClientRect());
+            const rows = new Set(boxes.map((rect) => Math.round(rect.top))).size;
+            const search = group.closest('.chronicles-character-sheet__backpack-tools')
+              .querySelector('.chronicles-character-sheet__backpack-search').getBoundingClientRect();
+            return { buttons: buttons.length,
+              columns: getComputedStyle(group).gridTemplateColumns.split(' ').filter(Boolean).length,
+              rows, minimumHeight: Math.min(...boxes.map((box) => box.height)),
+              groupBottom: group.getBoundingClientRect().bottom, searchTop: search.top };
+          });
+        assert.equal(filters.columns, 2, 'Wide desktop filters must show two real columns');
+        assert.ok(filters.buttons >= 3 && filters.rows <= Math.ceil(filters.buttons / 2),
+          'All inventory categories must fit a compact filter grid: ' + JSON.stringify(filters));
+        assert.ok(filters.minimumHeight >= 44,
+          'Compact filter chips must still provide 44px hit targets: ' + JSON.stringify(filters));
+        assert.ok(filters.searchTop >= filters.groupBottom - 2,
+          'Search must follow, not overlap, the filters: ' + JSON.stringify(filters));
+      }
       const firstName = await rows.first().locator('span').innerText();
       assert.ok((await detail.innerText()).includes(firstName));
       await rows.nth(1).click();

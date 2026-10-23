@@ -107,3 +107,42 @@
 @media (prefers-reduced-motion: reduce) {
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] button { scroll-behavior: auto; transition: none; }
 }
+
+/* Wide desktop: inventory remains the left action rail, while the filter
+   palette in the right inspector rail uses two tidy columns. Preserve 44px
+   targets and all real categories; mobile/narrow desktop stay unchanged. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools {
+    gap: 7px;
+    padding: 8px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-self: stretch;
+    gap: 5px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-filters button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 5px 7px;
+    font-size: .80rem;
+    line-height: 1.17;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-search {
+    gap: 4px;
+    font-size: .82rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-count {
+    line-height: 1.25;
+  }
+}
