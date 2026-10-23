@@ -18,7 +18,7 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
     expect(html).toContain('Guardar partida · S');
     expect(html).toContain('data-confirming-exit="false"');
-    expect(html).toContain('S · guardar · Q · salir · ESC · cerrar · TAB · navegar');
+    expect(html).toContain('S · guardar · Q · salir · TAB en la gema · cerrar · TAB en controles · navegar');
     expect(html).toContain('Salir sin guardar · Q');
     expect(html).toContain('S · guardar · Q · salir');
     expect(html).toContain('Guardar y salir');
