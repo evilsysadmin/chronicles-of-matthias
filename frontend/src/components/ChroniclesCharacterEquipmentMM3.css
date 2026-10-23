@@ -161,3 +161,32 @@
     grid-row: 3;
   }
 }
+
+/* On wide desktops the selected item's actual mechanics must be readable
+   before its flavour text. This reorders only visual, noninteractive blocks;
+   the accessible DOM, actions, focus order and mobile presentation stay put. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
+    display: flex;
+    flex-direction: column;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > strong { order: 0; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > dl {
+    order: 1;
+    margin: 6px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > p {
+    order: 2;
+    margin: 7px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > small { order: 3; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__swap-preview { order: 4; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button { order: 5; }
+}
