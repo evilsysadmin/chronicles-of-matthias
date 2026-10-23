@@ -42,6 +42,7 @@ const state = {
 function Fixture() {
   const [opened, setOpened] = useState(true);
   const [campaign, setCampaign] = useState(state);
+  const [longVoices, setLongVoices] = useState(false);
   return <>
     <button data-test-reopen type="button" onClick={() => setOpened(true)}>Abrir crónica</button>
     <button data-test-reopen-followed type="button" onClick={() => {
@@ -72,6 +73,20 @@ function Fixture() {
       setCampaign({ ...source, quests: {} });
       setOpened(true);
     }}>Compañía sin encargos</button>
+    <button data-test-long-memories type="button" onClick={() => {
+      // Artificial history only inside this CI fixture. The genuine authored
+      // contract receipt starts near the beginning of a 25+ folio expedition.
+      setCampaign({ ...state, journal: [
+        ...state.journal,
+        ...Array.from({ length: 22 }, (_, index) => ({
+          id: 'journal-test-' + index, sigil: '✥',
+          title: 'Nota del camino ' + (index + 1),
+          body: 'La expedición conserva otra nota de su travesía.',
+        })),
+      ] });
+      setLongVoices(true);
+      setOpened(true);
+    }}>Muchas memorias</button>
     <button data-test-long-journal type="button" onClick={() => {
       const quests = Object.fromEntries(Array.from({ length: 24 }, (_, index) => [
         'regional-chore-' + index,
@@ -89,7 +104,9 @@ function Fixture() {
     <output data-test-tracked-quest hidden>{campaign.trackedQuestId || 'automatico'}</output>
     <ChroniclesJournalModal open={opened} state={campaign}
       entries={chroniclesJournalEntries(campaign)}
-      narrations={[{ at: 1, text: 'El viento sopló desde el bosque.' }]}
+      narrations={longVoices
+        ? Array.from({ length: 24 }, (_, index) => ({ at: index + 1, text: 'Voz del camino ' + (index + 1) }))
+        : [{ at: 1, text: 'El viento sopló desde el bosque.' }]}
       onTrack={(questId) => setCampaign((current) => chroniclesReduce(current, { type: 'track-quest', questId }))}
       onClose={() => setOpened(false)} />
   </>;

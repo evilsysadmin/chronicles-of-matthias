@@ -893,3 +893,30 @@
   .chronicles-journal-modal__header { padding-block: 5px; }
   .chronicles-journal-modal__chapter { padding-block: 9px 16px; }
 }
+
+
+/* Memories are a chronicle, not an analytics feed: show recent folios by
+   default and tuck the rest behind unobtrusive book-footnote links. */
+.chronicles-journal-modal__memory-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  max-width: 100%;
+  margin: 5px 0 11px;
+  padding: 5px 2px;
+  border: 0;
+  border-bottom: 1px dotted #977548;
+  background: transparent;
+  color: #5d391c;
+  font: 700 .8rem/1.35 Georgia, serif;
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles-journal-modal__memory-toggle:hover {
+  color: #32200f;
+  border-bottom-color: currentColor;
+}
+.chronicles-journal-modal__memory-toggle:focus-visible {
+  outline: 3px solid #a46d23;
+  outline-offset: 2px;
+}
