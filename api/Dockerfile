@@ -4,13 +4,20 @@
 FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23 AS build
 ARG TARGETOS
 ARG TARGETARCH
+ARG EXPECTED_GO_VERSION=1.27.3
 WORKDIR /src
+# Pin validation happens inside the actual builder, not only on the CI runner.
+RUN test "$(GOTOOLCHAIN=local go env GOVERSION)" = "go${EXPECTED_GO_VERSION}"
 RUN apk add --no-cache ca-certificates
 COPY go.mod go.sum ./
 RUN go mod download
 COPY internal/ ./internal/
 COPY cmd/ ./cmd/
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/chronicles-api ./cmd/chronicles-api
+RUN set -eu; \
+    test "$(go version /out/chronicles-api)" = "/out/chronicles-api: go${EXPECTED_GO_VERSION}"; \
+    go version -m /out/chronicles-api | grep -Fqx "$(printf '\tbuild\tGOOS=%s' "$TARGETOS")"; \
+    go version -m /out/chronicles-api | grep -Fqx "$(printf '\tbuild\tGOARCH=%s' "$TARGETARCH")"
 
 FROM scratch
 # Immutable source revision is published by /api/release and cannot be
