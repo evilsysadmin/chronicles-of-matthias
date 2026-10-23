@@ -187,3 +187,39 @@ func TestReadRunCursorFailsClosedOnPartialRead(t *testing.T) {
 		t.Fatalf("cancelled read reported as complete: %d rows, %v", len(read), err)
 	}
 }
+
+ 
+func TestImportRejectsForeignAndAmbiguousSourceBeforeAnyWrite(t *testing.T) {
+	tests := []struct {
+		name string
+		bad  bson.D
+	}{
+		{"foreign-owner", run("foreign")},
+		{"missing-owner", bson.D{{Key: "_id", Value: "missing"}}},
+		{"missing-id", bson.D{{Key: "owner", Value: "ana"}}},
+		{"invalid-id", bson.D{{Key: "_id", Value: 7}, {Key: "owner", Value: "ana"}}},
+		{"duplicate-owner-field", bson.D{{Key: "_id", Value: "duplicate-owner"}, {Key: "owner", Value: "ana"}, {Key: "owner", Value: "ana"}}},
+		{"duplicate-id-field", bson.D{{Key: "_id", Value: "dupe"}, {Key: "_id", Value: "dupe"}, {Key: "owner", Value: "ana"}}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			target := fakeRuns{}
+			source := fakeSource{runs: []bson.D{run("valid"), tc.bad}}
+			if tc.name == "foreign-owner" {
+				source.runs[1] = bson.D{{Key: "_id", Value: "foreign"}, {Key: "owner", Value: "another-user"}}
+			}
+			result, err := Import(context.Background(), source, target, chroniclesprogression.NewMemory(), "ana", time.Now())
+			if err == nil || err.Error() != "legacy import failed at validate-legacy-runs: invalid" ||
+				len(target) != 0 || result.RunsImported != 0 {
+				t.Fatalf("malformed source produced partial import: %+v, %v", result, err)
+			}
+		})
+	}
+	target := fakeRuns{}
+	result, err := Import(context.Background(), fakeSource{
+		runs: []bson.D{run("duplicated"), run("duplicated")},
+	}, target, chroniclesprogression.NewMemory(), "ana", time.Now())
+	if err == nil || len(target) != 0 || result.RunsImported != 0 {
+		t.Fatalf("duplicate source ID produced partial import: %+v, %v", result, err)
+	}
+}
