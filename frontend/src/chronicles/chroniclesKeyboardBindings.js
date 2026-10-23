@@ -19,6 +19,17 @@ export function chroniclesCombatKeyMode(key) {
   return null;
 }
 
+// Only plain Tab on the active menu GEM acts as the reverse toggle. Tab inside
+// buttons/forms keeps native keyboard navigation; Shift+Tab stays untouched.
+export function chroniclesAdventureTabClosesMenu(event, summary, {
+  menuOpen = false, confirmExitWithoutSaving = false, feedbackOpen = false,
+} = {}) {
+  return Boolean(menuOpen && !confirmExitWithoutSaving && !feedbackOpen
+    && event?.key === 'Tab' && !event.shiftKey && !event.repeat
+    && !event.defaultPrevented && !event.ctrlKey && !event.altKey && !event.metaKey
+    && event.target === summary);
+}
+
 // Adventure-menu shortcuts have their own scope: S must continue to shoot
 // outside the pause menu, while Q requests (never confirms) an unsafe exit.
 // Do not steal keys from text fields or repeated/composed browser events.
