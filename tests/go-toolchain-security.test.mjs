@@ -67,7 +67,10 @@ function verifiesBothCompiledGoBinaries(source) {
   if (start < 0 || end <= start) return false;
   const step = source.slice(start, end);
   return step.includes('export GOTOOLCHAIN=local')
-    && step.includes('[[ "$build_go" == \'go1.27.3\' ]]')
+    && step.includes('build_go" =~ ^go(')
+    && step.includes('patch >= 3')
+    && step.includes('major > 1 || (major == 1')
+    && step.includes('go version -m "$binary"')
     && step.includes('GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api"')
     && step.includes('GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64"')
     && step.includes('[[ "$reported" == "$binary: $build_go" ]]')
@@ -93,5 +96,7 @@ test('binary-provenance gate rejects missing platform or compiler checks', () =>
   ]) {
     assert.equal(verifiesBothCompiledGoBinaries(workflow.replace(removed, '')), false, removed);
   }
-  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('go1.27.3', 'go1.27.2')), false);
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('patch >= 3', 'patch >= 2')), false);
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('major > 1 || (major == 1', 'major >= 1 || (major == 1')), false);
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('build_go" =~ ^go(', 'build_go" == go1.27.3 || go(')), false);
 });
