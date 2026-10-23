@@ -146,3 +146,18 @@
     line-height: 1.25;
   }
 }
+
+/* The chosen item's details are the consequence of selecting a row. Keep
+   that information in the first visible inspector slot on wide desktop;
+   optional filtering stays immediately below it, in the same scrollable
+   dossier. The inventory itself remains the left-side primary control. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
+    grid-row: 2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools {
+    grid-row: 3;
+  }
+}
