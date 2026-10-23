@@ -356,7 +356,7 @@
 /* A missing relic is useful information, not a half-page empty card.
    Keep the full relic panel if the hero actually owns one. Desktop only. */
 @media (min-width: 851px) and (min-height: 581px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout.is-relic-empty > article:first-child {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__relic {
     grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
@@ -365,7 +365,7 @@
     min-height: 0;
     padding: 8px 12px;
   }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout.is-relic-empty > article:first-child > b {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__relic > b {
     margin-top: 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__loadout.is-relic-empty > .chronicles-character-sheet__equipment {
