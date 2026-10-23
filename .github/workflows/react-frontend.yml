@@ -13,6 +13,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   build:
+    # Stable, globally distinctive check for an eventual required ruleset entry.
+    name: frontend-vitest-build-chromium
     runs-on: ubuntu-24.04
     # Chromium system dependency installation may consume most of 15 minutes
     # even with an exact-version browser cache. Keep the full smoke and upload
