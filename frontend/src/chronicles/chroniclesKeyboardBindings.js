@@ -1,10 +1,14 @@
 // First-person control contract shared with regression tests:
-// directional arrows move/turn; A and S never move the party.
+// arrows move/turn; Q/E strafe; A and S never move the party.
 export const CHRONICLES_DIRECTION_KEYS = Object.freeze({
   ArrowUp: 'forward',
   ArrowDown: 'backward',
   ArrowLeft: 'turn-left',
   ArrowRight: 'turn-right',
+  q: 'strafe-left',
+  Q: 'strafe-left',
+  e: 'strafe-right',
+  E: 'strafe-right',
 });
 
 export function chroniclesCombatKeyMode(key) {

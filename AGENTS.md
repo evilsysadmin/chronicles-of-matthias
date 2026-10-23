@@ -87,7 +87,9 @@
   progresión real, salvas colectivas antes de contacto y combate por turnos
   al entrar en contacto. No romper el modo Tactics al mejorar MM3.
 - **Controles de teclado vigentes**: flechas ↑/↓ avanzan/retroceden;
-  ←/→ giran; **A** ataca cuerpo a cuerpo; **S** dispara con el grupo
+  ←/→ giran; **Q/E** hacen strafe lateral izquierda/derecha sin girar;
+  en el menú de aventura **Q** abre la confirmación de salida sin guardar;
+  **A** ataca cuerpo a cuerpo; **S** dispara con el grupo
   fuera del combate y con el héroe activo en iniciativa. **Espacio NO ataca**
   ni tiene alias de ataque automático en primera persona; no recuperarlo.
   El botón táctil de ataque automático permanece disponible por separado.
