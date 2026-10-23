@@ -235,7 +235,9 @@ func TestValidateDistinctSourceAndTargetDatabases(t *testing.T) {
 		{" chess_study_staging ", "chess_study_staging", false},
 		{"", "chronicles_staging", false},
 		{"chess_study_staging", "", false},
-		{"chess_study_staging", "chess_study", true},
+		{"chess_study_staging", "chess_study", false},
+		{"chess_study", "chronicles_staging", false},
+		{"other_legacy_db", "chronicles_staging", false},
 	} {
 		err := ValidateDistinctDatabases(tc.source, tc.target)
 		if tc.valid && err != nil {
