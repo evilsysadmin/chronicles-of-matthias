@@ -77,6 +77,26 @@ export function chroniclesDifficultyBand({
 }
 
 
+// The Go API always returns these seven integer fields in a difficulty band.
+// Corrupt legacy snapshots must not override a safe local recomputation.
+const REQUIRED_DIFFICULTY_FIELDS = [
+  'partyLevel', 'depth', 'targetLevel', 'minLevel', 'maxLevel',
+  'depthPressure', 'progressionPressure',
+];
+
+function isUsableDifficultySnapshot(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!REQUIRED_DIFFICULTY_FIELDS.every((field) => Number.isSafeInteger(value[field]))) return false;
+  return value.partyLevel >= 1 && value.partyLevel <= CHRONICLES_MAX_LEVEL
+    && value.depth >= 0 && value.depth <= 99
+    && value.targetLevel >= 1 && value.targetLevel <= CHRONICLES_MAX_LEVEL
+    && value.minLevel >= 1 && value.minLevel <= value.targetLevel
+    && value.maxLevel >= value.targetLevel && value.maxLevel <= CHRONICLES_MAX_LEVEL
+    && value.depthPressure >= 0 && value.depthPressure <= DEPTH_PRESSURE_CAP
+    && value.progressionPressure >= 0
+    && value.progressionPressure <= Math.floor((CHRONICLES_MAX_LEVEL - 1) / 2);
+}
+
 export function chroniclesResolvedDifficultyBand(
   authoritativeRun,
   mapId,
@@ -86,6 +106,6 @@ export function chroniclesResolvedDifficultyBand(
   // Do not let its shape crash the local difficulty fallback.
   const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
   const authoritative = areas.find((area) => area?.mapId === mapId)?.difficulty;
-  if (authoritative && typeof authoritative === 'object') return authoritative;
+  if (isUsableDifficultySnapshot(authoritative)) return authoritative;
   return chroniclesDifficultyBand(fallback);
 }
