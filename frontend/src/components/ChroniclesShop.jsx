@@ -17,11 +17,11 @@ const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', 
 
 // Preview-only, never mutates equipment. Each hero gets an explicit row:
 // grouped names hid differing baselines and made an improvement hard to judge.
-export function ShopCompactGearPeek({ state, item }) {
+export function ShopCompactGearPeek({ state, item, id }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
   return (
     <aside className="chronicles-shop__gear-peek chronicles-shop__gear-peek--compact"
-      id={`chronicles-shop-peek-${item.id}`}
+      id={id}
       data-chronicles-shop-party-comparison
       aria-label={`Quién puede equipar ${item.name} y qué cambia por personaje`}>
       <strong className="chronicles-shop__gear-peek-title">Al equiparlo · por personaje</strong>
@@ -58,7 +58,7 @@ export function ShopCompactGearPeek({ state, item }) {
 
 // The aisle and the selected article use the same truthful per-hero data.
 function ShopGearPeek(props) {
-  return <ShopCompactGearPeek {...props} />;
+  return <ShopCompactGearPeek {...props} id={`chronicles-shop-peek-${props.item.id}`} />;
 }
 
 // Potion and scroll merchants share the same exploratory UI, but a
