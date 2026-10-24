@@ -78,9 +78,10 @@ export function chroniclesResolvedDifficultyBand(
   mapId,
   fallback = {},
 ) {
-  const authoritative = authoritativeRun?.areas
-    ?.find((area) => area?.mapId === mapId)
-    ?.difficulty;
+  // A malformed legacy save may contain a non-array `areas` value.
+  // Do not let its shape crash the local difficulty fallback.
+  const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
+  const authoritative = areas.find((area) => area?.mapId === mapId)?.difficulty;
   if (authoritative && typeof authoritative === 'object') return authoritative;
   return chroniclesDifficultyBand(fallback);
 }
