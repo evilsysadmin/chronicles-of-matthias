@@ -35,6 +35,17 @@ try {
       // Capture the header BEFORE scrolling through real transactions; the
       // post-action screenshot below records the full purchase/rumor flow.
       await page.screenshot({ path:'smoke-inn-header-'+width+'.png' });
+      // The secondary return action sits in the scrollable footer. On touch
+      // screens it must remain thumb-sized and inside the viewport.
+      if (width <= 844) {
+        const returnButton = room.getByRole('button', { name: 'Volver a la calle · ESC' });
+        await returnButton.scrollIntoViewIfNeeded();
+        const back = await returnButton.boundingBox();
+        assert.ok(back && back.width >= 44 && back.height >= 44 &&
+          back.x >= -1 && back.x + back.width <= width + 1,
+          'Inn footer return target must be thumb-sized and visible: '+JSON.stringify(back));
+        await page.screenshot({ path:'smoke-inn-footer-'+width+'.png' });
+      }
       const gold = async () => Number(await page.locator('[data-inn-gold]').innerText());
       const qty = async () => Number(await page.locator('[data-inn-food-count]').innerText());
       const purse = await gold(), foodBefore = await qty();
