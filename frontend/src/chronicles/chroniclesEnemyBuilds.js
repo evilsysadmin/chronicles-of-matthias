@@ -42,6 +42,11 @@ function nonNegativeInteger(value, fallback = 0) {
   return Math.max(0, Math.floor(number));
 }
 
+function finiteNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
 export function chroniclesEnemyFallbackAgility(enemy) {
   const movement = enemy?.ai?.movement || 'cardinal-chase';
   if (movement === 'knight-chase') return 4;
@@ -148,10 +153,10 @@ export function chroniclesEnemyBuildModifiers(build) {
 
 
 function legacySkillIds(enemy) {
-  const reach = Math.max(1, Number(enemy?.retaliationReach ?? enemy?.ai?.attackReach ?? 1));
-  const damage = Math.max(0, Number(enemy?.retaliation || 0));
+  const reach = Math.max(1, finiteNumber(enemy?.retaliationReach ?? enemy?.ai?.attackReach ?? 1, 1));
+  const damage = Math.max(0, finiteNumber(enemy?.retaliation || 0, 0));
   const engageRange = Number(enemy?.ai?.engageRange);
-  const maxHp = Math.max(1, Number(enemy?.maxHp || 1));
+  const maxHp = Math.max(1, finiteNumber(enemy?.maxHp || 1, 1));
 
   if (reach >= 2) return ['spectral-geometry'];
   if (Number.isFinite(engageRange) && engageRange >= 3) return ['hunter-instinct'];
@@ -161,9 +166,9 @@ function legacySkillIds(enemy) {
 }
 
 export function deriveLegacyChroniclesEnemyBuild(enemy) {
-  const rawMaxHp = Math.max(1, Number(enemy?.maxHp || 1));
-  const rawDamage = Math.max(0, Number(enemy?.retaliation || 0));
-  const rawReach = Math.max(1, Number(enemy?.retaliationReach ?? enemy?.ai?.attackReach ?? 1));
+  const rawMaxHp = Math.max(1, finiteNumber(enemy?.maxHp || 1, 1));
+  const rawDamage = Math.max(0, finiteNumber(enemy?.retaliation || 0, 0));
+  const rawReach = Math.max(1, finiteNumber(enemy?.retaliationReach ?? enemy?.ai?.attackReach ?? 1, 1));
   const rawEngageRange = Number(enemy?.ai?.engageRange);
   const skills = legacySkillIds(enemy);
 
