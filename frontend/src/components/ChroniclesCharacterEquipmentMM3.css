@@ -308,3 +308,41 @@
   padding: 7px;
   margin: 0;
 }
+
+/* One explicit way to redistribute old all-on-Matthias saves without
+   silently rewriting the user's chosen ownership. No extra toolbar row. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__backpack-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__share-loot {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 9px;
+  border: 1px solid #966f3c;
+  border-radius: 2px;
+  color: #322116;
+  background: #e4c28b;
+  font: 700 .81rem/1.2 var(--mm3-pixel-font, monospace);
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__share-loot:hover {
+  background: #f3d9a5;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__share-loot:focus-visible {
+  outline: 3px solid #58310d;
+  outline-offset: 2px;
+}
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__share-loot {
+    min-height: 44px;
+  }
+}
