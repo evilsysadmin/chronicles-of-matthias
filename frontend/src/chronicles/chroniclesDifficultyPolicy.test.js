@@ -71,14 +71,14 @@ describe('Chronicles difficulty/progression policy', () => {
     const authoritative = Object.freeze({
       partyLevel: 4,
       depth: 2,
-      targetLevel: 5,
-      minLevel: 4,
-      maxLevel: 5,
+      targetLevel: 3,
+      minLevel: 2,
+      maxLevel: 4,
       depthPressure: 1,
       progressionPressure: 1,
       authoredLevel: 3,
-      requestedDelta: 2,
-      appliedDelta: 2,
+      requestedDelta: 0,
+      appliedDelta: 0,
     });
     const run = {
       areas: [
@@ -153,6 +153,25 @@ describe('Chronicles difficulty/progression policy', () => {
     const run = { areas: [{ mapId: 'crypt', difficulty }] };
     expect(chroniclesResolvedDifficultyBand(run, 'crypt', fallback))
       .toEqual(chroniclesDifficultyBand(fallback));
+  });
+
+  it.each([
+    ['depth pressure', { depthPressure: 0 }],
+    ['progression pressure', { progressionPressure: 2 }],
+    ['target level', { targetLevel: 4, minLevel: 3 }],
+    ['minimum level', { minLevel: 3 }],
+    ['maximum level', { maxLevel: 3 }],
+  ])('rejects a saved band with inconsistent %s despite valid numeric ranges', (_label, overrides) => {
+    // Go computes all seven fields from partyLevel=4 and depth=2.
+    const valid = {
+      partyLevel: 4, depth: 2, targetLevel: 3, minLevel: 2,
+      maxLevel: 4, depthPressure: 1, progressionPressure: 1,
+    };
+    const fallback = { progression: leveledParty(2), depth: 0 };
+    expect(chroniclesResolvedDifficultyBand(
+      { areas: [{ mapId: 'crypt', difficulty: { ...valid, ...overrides } }] },
+      'crypt', fallback,
+    )).toEqual(chroniclesDifficultyBand(fallback));
   });
 
   it('does not count settlement and wilderness stops as dungeon levels', () => {
