@@ -13,7 +13,7 @@ import '../src/components/ChroniclesCharacterSheetMM3.css';
 
 // Populate the real first-book campaign via the real reward reducer with
 // catalog objects, so the interactive equipment desk is exercised in Chromium.
-const state = chroniclesApplyContentEffects(
+const stocked = chroniclesApplyContentEffects(
   createChroniclesState('banner-road-first-book', null, { rules: 'mm3' }),
   ['bronze-sword', 'wooden-bow', 'iron-shield'].map((itemId) => ({
     type: 'grant-item',
@@ -23,6 +23,14 @@ const state = chroniclesApplyContentEffects(
     quantity: 1,
   })),
 );
+// Legacy all-on-Matthias layout is deliberate in this visual fixture: verify
+// its three visible inventory rows and the non-destructive reparto control.
+const state = {
+  ...stocked,
+  bagOwners: {
+    matthias: Object.fromEntries(['bronze-sword', 'wooden-bow', 'iron-shield'].map((id) => [id, 1])),
+  },
+};
 const progression = createChroniclesProgression();
 
 function Fixture() {

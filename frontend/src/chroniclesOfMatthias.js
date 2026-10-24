@@ -8,7 +8,7 @@ import {
   chroniclesRuntimeEntryMapId,
 } from './chronicles/chroniclesMapCatalog.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chronicles/chroniclesSettlementLayout.js';
-import { chroniclesTransferBagItem } from './chronicles/chroniclesPersonalBags.js';
+import { chroniclesTransferBagItem, chroniclesSharePartyLoot } from './chronicles/chroniclesPersonalBags.js';
 import { chroniclesAdminReduce } from './chronicles/chroniclesAdmin.js';
 import {
   chroniclesApplyContentAction,
@@ -1087,6 +1087,7 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'transfer-item') {
     return chroniclesTransferBagItem(state, action.memberId, action.toMemberId, action.itemId, action.quantity ?? 1);
   }
+  if (actionType === 'share-party-loot') return chroniclesSharePartyLoot(state);
   // Any other action (moving, turning, fighting) walks away from the counter.
   if ((state.shop || state.guild || state.inn) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
     return chroniclesReduce(chroniclesCloseInn(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
