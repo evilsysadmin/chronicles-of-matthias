@@ -187,6 +187,9 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
+  // Preserve the original turn boundary before leashed enemies are pruned.
+  const orderBeforeLeash = state.initiative.order;
+  const cursorBeforeLeash = Math.min(orderBeforeLeash.length - 1, nonNegativeInteger(state.initiative.cursor));
   const enemyById = new Map((Array.isArray(enemies) ? enemies : []).map((enemy) => [enemy.id, enemy]));
   const lost = state.initiative.order.filter((actor) => (
     actor.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
@@ -229,17 +232,21 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
     Math.min(originalOrder.length - 1, nonNegativeInteger(state.initiative.cursor)),
   );
   let nextActor = null;
-  let wrapped = false;
   for (let offset = 1; offset <= originalOrder.length; offset += 1) {
     const rawIndex = currentCursor + offset;
     const index = rawIndex % originalOrder.length;
     const candidate = originalOrder[index];
     if (!actorIsAlive(state, enemyById, candidate)) continue;
     nextActor = candidate;
-    wrapped = rawIndex >= originalOrder.length;
     break;
   }
   if (!nextActor) return { ...state, initiative: null };
+  // A removed first actor can make the shortened list wrap without ending the
+  // original round. Count a new round only across the original turn boundary.
+  const nextOriginalIndex = orderBeforeLeash.findIndex((actor) => (
+    actor.kind === nextActor.kind && actor.id === nextActor.id
+  ));
+  const wrapped = nextOriginalIndex <= cursorBeforeLeash;
 
   const nextCursor = livingOrder.findIndex((actor) => (
     actor.kind === nextActor.kind && actor.id === nextActor.id
