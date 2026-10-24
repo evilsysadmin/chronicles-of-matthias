@@ -63,6 +63,26 @@ describe('Chronicles initiative', () => {
     expect(initiative.order[1].initiative).toBe(7);
   });
 
+  it('ignores corrupt MM3 speed while preserving valid slow penalties and initiative order', () => {
+    const party = [
+      { id: 'matthias', hp: 7, agility: 4, mm3: { bonuses: { speed: 'broken' } } },
+      { id: 'rook', hp: 7, agility: 5, mm3: { bonuses: { speed: Infinity } } },
+      { id: 'bishop', hp: 7, agility: 6, mm3: { bonuses: { speed: -4 } } },
+    ];
+    const state = { party, rpgModifiers: { matthias: { initiativeBonus: 3 } } };
+
+    expect(chroniclesPartyInitiativeAgility(state, party[0])).toBe(7);
+    expect(chroniclesPartyInitiativeAgility(state, party[1])).toBe(5);
+    expect(chroniclesPartyInitiativeAgility(state, party[2])).toBe(2);
+
+    const rolled = chroniclesRollInitiative(state, [], { random: () => 0 });
+    expect(rolled.order.map(({ id, agility, initiative }) => [id, agility, initiative])).toEqual([
+      ['matthias', 7, 8],
+      ['rook', 5, 6],
+      ['bishop', 2, 3],
+    ]);
+  });
+
   it('adds progression AGI exactly once to the resolved party stat and advances by rounds', () => {
     const state = {
       party: [{ id: 'matthias', hp: 7, agility: 4 }],
