@@ -5,6 +5,7 @@
 // not merely the name. Canonical values follow the MM3 materials tables.
 // Ivory is an authored-world extension, not an original MM3 material row.
 import { CHRONICLES_MM3_ARMOR_TIERS, chroniclesMM3Class } from './chroniclesMM3Rules.js';
+import { chroniclesBagQuantity, chroniclesBagAfterEquipment } from './chroniclesPersonalBags.js';
 
 export const CHRONICLES_ITEM_MATERIALS = Object.freeze({
   // Starter junk. Wood and brass sit below bronze as in MM3's ladder; their
@@ -355,6 +356,9 @@ export function chroniclesEquipItem(state, memberId, itemId) {
   const inventory = stock(state);
   const count = inventoryQuantity(inventory, item.id);
   if (count < 1 || equippedId(state, memberId, item.slot) === item.id) return state;
+  // Individual MM3 backpacks: a companion cannot equip a sword someone
+  // else is carrying until it has been explicitly handed over.
+  if (state.combatRules === 'mm3' && chroniclesBagQuantity(state, memberId, item.id) < 1) return state;
   state = { ...state, equipment: { ...state.equipment, [memberId]: chroniclesNormalizeMemberEquipment(state.equipment?.[memberId]) } };
   // A shield needs a free hand: no shield beside a two-handed weapon.
   if (item.slot === 'shield' && chroniclesEquippedItem(state, memberId, 'weapon')?.twoHanded) {
@@ -375,6 +379,11 @@ export function chroniclesEquipItem(state, memberId, itemId) {
   return {
     ...state,
     inventory: nextInventory,
+    ...(state.combatRules === 'mm3' ? {
+      bagOwners: chroniclesBagAfterEquipment(
+        state, memberId, item.id, [existing, displacedShield].filter(Boolean), nextInventory,
+      ),
+    } : {}),
     equipment: { ...state.equipment, [memberId]: memberEquipment },
     message: `${member.name} equipa ${item.name}. ${item.description}`
       + (displacedShield ? ` ${displacedShield.name} vuelve a la mochila.` : ''),
@@ -392,6 +401,9 @@ export function chroniclesUnequipItem(state, memberId, slot) {
   delete currentEquipment[slot];
   return {
     ...state, inventory,
+    ...(state.combatRules === 'mm3' ? {
+      bagOwners: chroniclesBagAfterEquipment(state, memberId, null, [item], inventory),
+    } : {}),
     equipment: { ...state.equipment, [memberId]: currentEquipment },
     message: `${member.name} guarda ${item.name} en la mochila.`,
   };

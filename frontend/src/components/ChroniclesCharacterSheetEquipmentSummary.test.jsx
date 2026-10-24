@@ -5,10 +5,10 @@ import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 
-const render = (rules, folio = 'equipment', stateOverrides = {}) => {
+const render = (rules, folio = 'equipment', stateOverrides = {}, memberId = null) => {
   const state = { ...createChroniclesState('swordhaven-first-book', null, { rules }), ...stateOverrides };
   return renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
-    state, progression: createChroniclesProgression(), member: state.party[0],
+    state, progression: createChroniclesProgression(), member: state.party.find((hero) => hero.id === memberId) || state.party[0],
     mode: 'chronicles', initialFolio: folio, onClose: () => {},
   }));
 };
@@ -47,6 +47,24 @@ describe('Chronicles character sheet combat summary', () => {
     });
     expect(html).toContain('Disparo a una mano');
     expect(html).toContain('mantiene las ventajas del escudo');
+  });
+
+  it('shows each hero only their carried stock and provides a transfer control', () => {
+    const inventory = {
+      'brass-sword': { id: 'brass-sword', name: 'Espada de latón', quantity: 1 },
+      'brass-shield': { id: 'brass-shield', name: 'Escudo de latón', quantity: 1 },
+    };
+    const ownership = { matthias: { 'brass-shield': 1 }, rook: { 'brass-sword': 1 } };
+    const matthias = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'matthias');
+    const hildegard = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'rook');
+    expect(matthias).toContain('Mochila de Matthias');
+    expect(matthias).toContain('data-inventory-item="brass-shield"');
+    expect(matthias).not.toContain('data-inventory-item="brass-sword"');
+    expect(hildegard).toContain('Mochila de Hildegard');
+    expect(hildegard).toContain('data-inventory-item="brass-sword"');
+    expect(hildegard).not.toContain('data-inventory-item="brass-shield"');
+    expect(hildegard).toContain('Pasar objeto');
+    expect(hildegard).toContain('Compañero que recibirá el objeto');
   });
 
   it('retains the distinct legacy damage reduction summary', () => {

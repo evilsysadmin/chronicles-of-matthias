@@ -40,6 +40,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
+import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
@@ -109,6 +110,7 @@ export default function ChroniclesCharacterSheet({
   // Navigation belongs to the sheet, not the durable campaign state.
   const [activeFolio, setActiveFolio] = useState(() => initialFolio === 'equipment' ? 'equipment' : 'record');
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [transferTargetId, setTransferTargetId] = useState('');
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
   const inventoryListRef = useRef(null);
@@ -170,7 +172,12 @@ export default function ChroniclesCharacterSheet({
     ? state.party?.find((companion) => companion.id !== member.id && chroniclesMemberSchool(companion))
     : null;
   const relic = relicDetails(state, member.id);
-  const inventory = chroniclesInventoryEntries(state).filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
+  const inventory = (tacticsMode
+    ? chroniclesInventoryEntries(state)
+    : chroniclesBagInventoryEntries(state, member.id))
+    .filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
+  const recipients = (state.party || []).filter((hero) => hero.id !== member.id);
+  const transferRecipientId = recipients.find((hero) => hero.id === transferTargetId)?.id || recipients[0]?.id || '';
   const gold = chroniclesGoldBalance(state);
   const backpackCounts = chroniclesBackpackCounts(inventory);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
@@ -226,7 +233,7 @@ export default function ChroniclesCharacterSheet({
   // Tactics retains its original relic-first layout and keyboard order.
   const backpackPanel = (
             <article className="chronicles-character-sheet__backpack">
-              <span>Mochila de expedición</span>
+              <span>{tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}</span>
               {!tacticsMode && inventory.length > 0 && (
                 <div className="chronicles-character-sheet__backpack-tools">
                   <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
@@ -282,7 +289,7 @@ export default function ChroniclesCharacterSheet({
                   </div>
                 ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
               ) : (
-                <small>Sin objetos recuperados en esta expedición.</small>
+                <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
               )}
               {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
               {!tacticsMode && selectedInventoryItem && (
@@ -322,6 +329,22 @@ export default function ChroniclesCharacterSheet({
                       Equipar {selectedEquipment.name}
                     </button>
                   </>}
+                  {recipients.length > 0 && (
+                    <div className="chronicles-character-sheet__bag-transfer" aria-label="Transferir objeto entre compañeros">
+                      <label>Entregar 1 a
+                        <select aria-label="Compañero que recibirá el objeto"
+                          value={transferRecipientId} onChange={(event) => setTransferTargetId(event.target.value)}>
+                          {recipients.map((hero) => <option key={hero.id} value={hero.id}>{hero.name}</option>)}
+                        </select>
+                      </label>
+                      <button type="button" disabled={!canChangeEquipment || !transferRecipientId}
+                        onClick={() => onEquipmentAction?.({
+                          type: 'transfer-item', toMemberId: transferRecipientId, itemId: selectedInventoryItem.id,
+                        })}>
+                        Pasar objeto
+                      </button>
+                    </div>
+                  )}
                 </aside>
               )}
             </article>

@@ -636,7 +636,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (actionType === 'equip-item' || actionType === 'unequip-item'
       || actionType === 'shop-buy' || actionType === 'shop-sell' || actionType === 'shop-close'
       || actionType === 'guild-join' || actionType === 'guild-learn' || actionType === 'guild-close'
-      || actionType === 'track-quest') {
+      || actionType === 'track-quest' || actionType === 'transfer-item') {
       const updated = chroniclesReduce(current, action);
       if (updated !== current) {
         stateRef.current = updated;
