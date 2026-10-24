@@ -214,6 +214,13 @@ try {
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
       const equipment = sheet.locator('[data-chronicles-equipment-folio]');
+      const shareLoot = equipment.getByRole('button', { name: 'Repartir botín' });
+      assert.equal(await shareLoot.isVisible(), true,
+        'Legacy all-in-one backpacks must expose a deliberate redistribution action');
+      if (width === 1280) {
+        assert.equal(await shareLoot.getAttribute('title'),
+          'Distribuye las existencias sin equipar entre las mochilas del grupo');
+      }
       const inv = equipment.locator('.chronicles-character-sheet__inventory');
       const rows = inv.locator('[data-inventory-item]');
       assert.ok(await rows.count() >= 3, 'Reward grants must populate the actual backpack');
