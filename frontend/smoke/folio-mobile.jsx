@@ -74,7 +74,7 @@ function Fixture() {
               <span>ACTIVO <b>Matthias</b></span>
               <span>
                 <button type="button" className="chronicles-objective-trigger"
-                  data-chronicles-objective title={`Objetivo: ${objective}\\n${route}\\nAbrir la Crónica (J)`}>
+                  data-chronicles-objective title={`Objetivo: ${objective}\n${route}\nAbrir la Crónica (J)`}>
                   <small className="chronicles-objective-trigger__label">OBJETIVO</small>
                   <b>{objective}</b>
                   <small className="chronicles-route-hint">{route}</small>
