@@ -122,6 +122,38 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(chroniclesRunDepth(run, 'missing')).toBe(0);
   });
 
+  it('ignores malformed legacy route stops when measuring dungeon depth', () => {
+    const run = {
+      currentMapId: 'crypt',
+      areas: [
+        { mapId: 'entrance' },
+        null,
+        {},
+        { mapId: 'gallery' },
+        'invalid-area',
+        { mapId: 'crypt' },
+      ],
+    };
+    expect(chroniclesRunDepth(run)).toBe(2);
+    expect(chroniclesRunDepth({ areas: [null, {}] })).toBe(0);
+  });
+
+  it('ignores malformed typed route stops without counting towns as floors', () => {
+    const run = {
+      currentMapId: 'crypt',
+      areas: [
+        { mapId: 'village', regionKind: 'settlement' },
+        null,
+        {},
+        { mapId: 'entry', regionKind: 'dungeon' },
+        42,
+        { mapId: 'crypt', regionKind: 'dungeon' },
+      ],
+    };
+    expect(chroniclesRunDepth(run)).toBe(1);
+    expect(chroniclesRunDepth(run, 'entry')).toBe(0);
+  });
+
   it('derives run depth from the authoritative route order', () => {
     const run = {
       currentMapId: 'archive',

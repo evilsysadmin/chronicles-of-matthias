@@ -30,14 +30,18 @@ export function chroniclesDeployedPartyLevel(progression, deployedMemberIds = HE
 export function chroniclesRunDepth(authoritativeRun, mapId = null) {
   const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
   const currentMapId = mapId || authoritativeRun?.currentMapId;
+  if (typeof currentMapId !== 'string' || !currentMapId) return 0;
   const index = areas.findIndex((area) => area?.mapId === currentMapId);
   if (index < 0) return 0;
-  // Old runs store only dungeon maps and continue using their route index.
+  // Malformed legacy route entries must not count as dungeon floors.
+  // Valid old routes still use their ordered dungeon stops as before.
+  const visited = areas.slice(0, index + 1).filter((area) =>
+    typeof area?.mapId === 'string' && area.mapId.length > 0);
   // When an overworld is authored, village and road stops do not add dungeon
   // floors or artificial combat pressure to the first real dungeon.
   const hasRegionKinds = areas.some((area) => area?.regionKind || area?.map?.regionKind);
-  if (!hasRegionKinds) return index;
-  const dungeonVisits = areas.slice(0, index + 1).filter((area) =>
+  if (!hasRegionKinds) return Math.max(0, visited.length - 1);
+  const dungeonVisits = visited.filter((area) =>
     (area?.regionKind || area?.map?.regionKind || 'dungeon') === 'dungeon').length;
   return Math.max(0, dungeonVisits - 1);
 }
