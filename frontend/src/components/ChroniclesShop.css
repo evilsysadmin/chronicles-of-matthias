@@ -1307,9 +1307,11 @@
 
 /* One merchant row per hero. The source comparison includes real before/after
    values, so a shared percentage or grouped-name summary cannot hide losses. */
-.chronicles-shop__mobile-preview.is-always-visible {
-  display: block;
-  margin: 5px 0 2px;
+@media (max-width: 900px) {
+  .chronicles-shop__mobile-preview.is-always-visible {
+    display: block;
+    margin: 5px 0 2px;
+  }
 }
 .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member {
   display: grid;
