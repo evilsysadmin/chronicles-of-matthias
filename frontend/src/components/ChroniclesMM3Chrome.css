@@ -909,7 +909,9 @@
      HP and SP on the same dark stone as every other hero. */
   .chronicles .chronicles-party-member,
   .chronicles .chronicles-party-hireling {
-    --face: clamp(48px, 8vh, 76px);
+    /* The exploration party HUD keeps its original readable portrait scale.
+       Character-sheet compression must never shrink these faces. */
+    --face: clamp(84px, 16.5vh, 170px);
     --face-w: min(calc(var(--face) * .78), 44%);
     position: relative;
     flex: none;
