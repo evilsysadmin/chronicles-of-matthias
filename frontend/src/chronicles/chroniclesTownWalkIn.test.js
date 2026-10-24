@@ -124,12 +124,13 @@ describe('Swordhaven shops a player reported', () => {
 });
 
 describe('UI audience entry state', () => {
-  it('maps a facade cell to the door cell, and nothing elsewhere', async () => {
+  it('only recognizes the authored door square, not the rest of the facade', async () => {
     const { chroniclesBuildingEntryState } = await import('../chroniclesOfMatthias.js');
     const base = { ...createChroniclesState('swordhaven-first-book'), phase: 'explore', initiative: null };
-    // Ayuntamiento (Aldric) door is (11,10); facade x 10..12 seen from row 10 facing south.
-    const side = chroniclesBuildingEntryState({ ...base, x: 10, y: 10, direction: directionTo(0, 1) });
-    expect(side && { x: side.x, y: side.y }).toEqual({ x: 11, y: 10 });
+    // Ayuntamiento (Aldric) door is (11,10), facing the wall to the south.
+    const door = chroniclesBuildingEntryState({ ...base, x: 11, y: 10, direction: directionTo(0, 1) });
+    expect(door && { x: door.x, y: door.y }).toEqual({ x: 11, y: 10 });
+    expect(chroniclesBuildingEntryState({ ...base, x: 10, y: 10, direction: directionTo(0, 1) })).toBeNull();
     expect(chroniclesBuildingEntryState({ ...base, x: 9, y: 7, direction: directionTo(0, -1) })).toBeNull();
   });
 });
