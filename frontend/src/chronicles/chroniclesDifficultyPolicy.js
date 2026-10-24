@@ -16,7 +16,10 @@ function boundedInteger(value, min, max, fallback = min) {
 
 export function chroniclesDeployedPartyLevel(progression, deployedMemberIds = HERO_IDS) {
   const current = normalizeChroniclesProgression(progression);
-  const levels = [...new Set(deployedMemberIds)]
+  // Legacy or malformed saved deployment data must not crash difficulty setup.
+  // The default roster is the only safe fallback for a non-array value.
+  const memberIds = Array.isArray(deployedMemberIds) ? deployedMemberIds : HERO_IDS;
+  const levels = [...new Set(memberIds)]
     .filter((memberId) => HERO_IDS.includes(memberId))
     .map((memberId) => chroniclesHeroProgress(current, memberId).level);
   if (!levels.length) return 1;

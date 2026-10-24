@@ -33,6 +33,20 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(chroniclesDeployedPartyLevel(progression, ['rook', 'bishop', 'knight'])).toBe(1);
   });
 
+  it('falls back to the default party for malformed saved deployment lists', () => {
+    let progression = createChroniclesProgression();
+    progression = grantChroniclesXp(progression, 'matthias', 600, 'legacy-roster-veteran').progression;
+
+    // The default four-hero roster averages level 6 with three level-1 allies.
+    expect(chroniclesDeployedPartyLevel(progression)).toBe(2);
+    expect(chroniclesDeployedPartyLevel(progression, null)).toBe(2);
+    expect(chroniclesDeployedPartyLevel(progression, 'matthias')).toBe(2);
+    expect(chroniclesDeployedPartyLevel(progression, { 0: 'matthias' })).toBe(2);
+    // A valid explicit empty deployment retains its existing level-1 fallback.
+    expect(chroniclesDeployedPartyLevel(progression, [])).toBe(1);
+    expect(chroniclesDeployedPartyLevel(progression, ['matthias', 'matthias'])).toBe(6);
+  });
+
   it('raises threat with depth without mirroring player levels one-for-one', () => {
     const progression = leveledParty(6);
     const shallow = chroniclesDifficultyBand({ progression, depth: 0 });
