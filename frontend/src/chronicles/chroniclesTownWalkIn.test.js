@@ -9,8 +9,7 @@ import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettle
 
 // MM3 towns: you enter a building by walking into its door. The rules use the
 // same layout the renderer draws, so for every styled house:
-// - shops enter only from the single marked door, not the whole facade;
-//   non-shop town buildings retain their existing dialogue entrances;
+// - every house enters only from its single marked door, never its facade;
 // - stepping into any other wall never opens a counter — let alone a
 //   neighbour's — and points you to the door instead.
 
@@ -72,7 +71,7 @@ describe('walking into town buildings', () => {
         expect(facade.length).toBeGreaterThan(0);
         for (const cell of facade) {
           const after = walkInto(map, cell);
-          if (counter?.shop && (cell.x !== door.x || cell.y !== door.y)) {
+          if (cell.x !== door.x || cell.y !== door.y) {
             expect(after.shop || after.guild).toBeFalsy();
             expect({ x: after.x, y: after.y }).toEqual({ x: cell.x, y: cell.y });
             expect(after.message || '').toMatch(/puerta|pared/i);

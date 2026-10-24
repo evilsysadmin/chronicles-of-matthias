@@ -8,6 +8,7 @@ import {
   chroniclesRuntimeEntryMapId,
 } from './chronicles/chroniclesMapCatalog.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chronicles/chroniclesSettlementLayout.js';
+import { chroniclesTownBuildingAtDoor } from './chronicles/chroniclesTownCounterReach.js';
 import { chroniclesAdminReduce } from './chronicles/chroniclesAdmin.js';
 import {
   chroniclesApplyContentAction,
@@ -292,9 +293,11 @@ export function chroniclesContextualContentAction(state) {
   if (!explorationCellBlocker(state, front.x, front.y)) {
     const definition = (map?.interactables || []).find((entry) => {
       if (!FIRST_PERSON_ADJACENT_INTERACTION_KINDS.has(entry.kind)) return false;
-      // A shop has a marked door: approaching the next street square must
-      // not activate it through a wall. Leave other NPC/quest reach intact.
-      if (entry.shop && String(entry.visualType || '').startsWith('building-')) return false;
+      // Houses must be reached at their actual door, not one tile before.
+      // Town shrines likewise act underfoot, not from the preceding street.
+      if (entry.shop || entry.guild || chroniclesIsInn(entry)
+        || String(entry.visualType || '').startsWith('building-')
+        || (map.regionKind === 'settlement' && entry.visualType === 'shrine')) return false;
       if (!chroniclesRequirementsMet(state, entry.when)) return false;
       const position = chroniclesMapContentPosition(map, entry);
       return position?.x === front.x && position?.y === front.y;
@@ -317,6 +320,8 @@ export function chroniclesContextualContentAction(state) {
 
   if (!interaction) return null;
   const definition = chroniclesContentDefinition(map, interaction.id);
+  if (String(definition?.visualType || '').startsWith('building-')
+    && !chroniclesTownBuildingAtDoor(state, definition, map)) return null;
   if (!definition?.action) return null;
   // Visiting the tavern is free: its authored gold requirement belongs to REST.
   if (chroniclesIsInn(definition)) return {
@@ -968,16 +973,9 @@ function renderedTownHouseAt(map, cell) {
   return renderedTownHouses.get(map).find(({ block }) => block.cells.some(({ x, y }) => x === cell.x && y === cell.y)) || null;
 }
 
-// Shop doors are an exact authored street cell, not the full facade.
-// Non-shop dialogue buildings retain their established entrance geometry.
-function onDoorFacade(state, { block, door, entries }) {
-  if (entries.some((entry) => entry.shop)) {
-    return state.x === door.x && state.y === door.y;
-  }
-  const horizontal = door.y === block.minY - 1 || door.y === block.maxY + 1;
-  return horizontal
-    ? state.y === door.y && state.x >= block.minX && state.x <= block.maxX
-    : state.x === door.x && state.y >= block.minY && state.y <= block.maxY;
+// Every house has one real doorway. The rest of the facade remains a wall.
+function onDoorFacade(state, { door }) {
+  return state.x === door.x && state.y === door.y;
 }
 
 function enterBuildingAt(state, entryCell, label) {
