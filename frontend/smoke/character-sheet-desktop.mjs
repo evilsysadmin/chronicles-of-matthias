@@ -214,13 +214,10 @@ try {
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
       const equipment = sheet.locator('[data-chronicles-equipment-folio]');
-      const shareLoot = equipment.getByRole('button', { name: 'Repartir botín' });
-      assert.equal(await shareLoot.isVisible(), true,
-        'Legacy all-in-one backpacks must expose a deliberate redistribution action');
-      if (width === 1280) {
-        assert.equal(await shareLoot.getAttribute('title'),
-          'Distribuye las existencias sin equipar entre las mochilas del grupo');
-      }
+      assert.equal(await equipment.locator('.chronicles-character-sheet__bag-transfer').count(), 0,
+        'Manual handoff must not duplicate the 1–4 party dock with a recipient form');
+      assert.equal(await equipment.getByRole('button', { name: 'Repartir botín' }).count(), 0,
+        'Players move chosen items manually instead of using automatic redistribution');
       const inv = equipment.locator('.chronicles-character-sheet__inventory');
       const rows = inv.locator('[data-inventory-item]');
       assert.ok(await rows.count() >= 3, 'Reward grants must populate the actual backpack');
@@ -254,7 +251,8 @@ try {
       assert.equal(await rows.first().getAttribute('title'),
         await rows.first().locator('span').innerText(),
         'An ellipsized item keeps its full name available on hover');
-      assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
+      assert.equal(await rows.first().getAttribute('aria-pressed'), 'false',
+        'Initial first-item preview does not silently select an item for transfer');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
       if (width >= 1200) {
@@ -519,6 +517,100 @@ try {
       console.error('CHRONICLES_CHARACTER_DESKTOP_FAIL', width, error);
     } finally { await ctx.close(); }
   }
+  // MM3's 1–4 handoff on a real mounted React sheet + actual campaign
+  // reducer: preview != selection, keyboard and touch transfer exactly one
+  // item, no switching heroes by accident, no inventory multiplication.
+  for (const [width, height] of [[1280,800],[390,844]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: width < 500, hasTouch: width < 500, deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      await page.goto(url + '?interactive=1', { waitUntil: 'networkidle' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      const heading = sheet.locator('#chronicles-character-sheet-title');
+      const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
+      const dock = sheet.getByRole('navigation', { name: 'Seleccionar personaje de la compañía' });
+      await sheet.waitFor({ state: 'visible' });
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Hildegard',
+        'When no item is explicitly selected, 1–4 still navigate characters');
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      await nav.getByRole('button', { name: /Equipo/ }).click();
+      const bag = sheet.locator('.chronicles-character-sheet__inventory');
+      const sword = bag.locator('[data-inventory-item="bronze-sword"]');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.getAttribute('aria-pressed'), 'false',
+        'A preview alone must not make 2 a transfer command');
+      await sword.click();
+      assert.equal(await sword.getAttribute('aria-pressed'), 'true');
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
+      const hint = sheet.locator('.chronicles-character-sheet__inventory-hint');
+      assert.match(await hint.innerText(), /Pulsa 1–4/);
+      // Pressed key 2 consumes the selection for one handoff, not a hero switch.
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Matthias', 'Giving an item does not open the recipient sheet');
+      assert.equal(await sword.count(), 0, 'Exactly one sword leaves Matthias bag');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').count(), 1);
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Hildegard', 'After handoff, number keys navigate again');
+      const recipientBag = sheet.locator('.chronicles-character-sheet__inventory');
+      const receivedSword = recipientBag.locator('[data-inventory-item="bronze-sword"]');
+      await receivedSword.waitFor({ state: 'visible' });
+      assert.equal(await receivedSword.count(), 1, 'Sword arrives intact in Hildegard bag');
+      await receivedSword.click();
+      // A tap/click on slot 1 is the other supported transfer path.
+      await dock.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
+      assert.equal(await heading.innerText(), 'Hildegard');
+      assert.equal(await receivedSword.count(), 0);
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1,
+        'The same sword returns without duplication');
+      // Numbers typed in a search field must never cause a transfer.
+      await bag.locator('[data-inventory-item="bronze-sword"]').click();
+      const search = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
+      await search.focus();
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Matthias');
+      await search.clear();
+      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1);
+      assert.deepEqual(errors, [], 'No React or handler errors during item transfers');
+      await page.screenshot({ path: `smoke-mm3-manual-handoff-${width}.png` });
+      console.log(`MM3_MANUAL_HANDOFF_OK ${width}x${height}`);
+    } catch (error) {
+      failures.push(`handoff ${width}: ${error.message}`);
+      console.error('MM3_MANUAL_HANDOFF_FAIL', width, error);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Transfers must be blocked during combat, even after explicit selection.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(url + '?interactive=1&combat=1', { waitUntil: 'networkidle' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
+        .getByRole('button', { name: /Equipo/ }).click();
+      const sword = sheet.locator('[data-inventory-item="bronze-sword"]');
+      await sword.click();
+      await page.keyboard.press('2');
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias');
+      assert.equal(await sword.count(), 1, 'A combat-time transfer is not allowed');
+      console.log('MM3_MANUAL_HANDOFF_COMBAT_GUARD_OK');
+    } catch (error) {
+      failures.push('handoff combat guard: ' + error.message);
+    } finally {
+      await ctx.close();
+    }
+  }
+
   // Exercise the production sheet on touch devices too. The compact identity
   // is only successful if the party dock, tabs and equipment remain usable.
   for (const [width, height] of [[360,780],[390,844],[430,932],[844,390]]) {
