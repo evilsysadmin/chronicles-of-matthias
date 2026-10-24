@@ -144,7 +144,10 @@ export const CHRONICLES_COMBAT_LEASH = 2;
 // the fight. Without this, an enemy stuck behind walls kept combat going
 // forever while the party walked off.
 export function chroniclesEnemyLostParty(state, enemy) {
-  if (!enemy || !Number.isFinite(Number(enemy.ai?.engageRange))) return false;
+  // Legacy null/blank ranges mean "not configured", not a zero-tile leash.
+  const rawRange = enemy?.ai?.engageRange;
+  const range = Number(rawRange);
+  if (rawRange == null || !Number.isFinite(range) || range < 1) return false;
   const partyPosition = { x: state.x, y: state.y };
   const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
   return manhattanDistance(partyPosition, enemyPosition) > enemyEngagementRange(enemy) + CHRONICLES_COMBAT_LEASH
