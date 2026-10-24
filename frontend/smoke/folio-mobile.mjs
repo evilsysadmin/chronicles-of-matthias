@@ -176,6 +176,8 @@ try {
     const page = await ctx.newPage();
     try {
       await page.goto(base + '?view=objective-hud', { waitUntil: 'load' });
+      await page.locator('[data-chronicles-objective]').waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
       const geometry = await page.evaluate(() => {
         const objective = document.querySelector('[data-chronicles-objective]');
         const route = objective?.querySelector('.chronicles-route-hint');
