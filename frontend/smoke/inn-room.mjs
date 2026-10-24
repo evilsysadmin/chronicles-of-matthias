@@ -32,6 +32,9 @@ try {
         assert.equal(await heading.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), true,
           'Inn heading must not overflow horizontally');
       }
+      // Capture the header BEFORE scrolling through real transactions; the
+      // post-action screenshot below records the full purchase/rumor flow.
+      await page.screenshot({ path:'smoke-inn-header-'+width+'.png' });
       const gold = async () => Number(await page.locator('[data-inn-gold]').innerText());
       const qty = async () => Number(await page.locator('[data-inn-food-count]').innerText());
       const purse = await gold(), foodBefore = await qty();
