@@ -1,7 +1,7 @@
 // Production character sheet and actual first-book MM3 state; no fake character data.
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createChroniclesState } from '../src/chroniclesOfMatthias.js';
+import { createChroniclesState, chroniclesReduce } from '../src/chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from '../src/chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_EQUIPMENT } from '../src/chronicles/chroniclesEquipment.js';
 import { createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
@@ -23,8 +23,8 @@ const stocked = chroniclesApplyContentEffects(
     quantity: 1,
   })),
 );
-// Legacy all-on-Matthias layout is deliberate in this visual fixture: verify
-// its three visible inventory rows and the non-destructive reparto control.
+// Legacy all-on-Matthias layout is deliberate: the manual 1–4 handoff
+// must move objects without changing equipment or creating extra copies.
 const state = {
   ...stocked,
   bagOwners: {
@@ -34,14 +34,21 @@ const state = {
 const progression = createChroniclesProgression();
 
 function Fixture() {
+  // The default screenshot fixture stays read-only; interactive=1 exercises
+  // the same actual reducer used by the game, not a fake transfer callback.
+  const interactive = new URLSearchParams(window.location.search).has('interactive');
+  const combat = new URLSearchParams(window.location.search).has('combat');
+  const [campaign, setCampaign] = useState(() => combat ? { ...state, phase: 'combat' } : state);
   const [selected, setSelected] = useState(state.party[0].id);
   const [open, setOpen] = useState(true);
-  const hero = state.party.find((member) => member.id === selected);
+  const hero = campaign.party.find((member) => member.id === selected);
   return (
     <div className="chronicles">
-      {open && <ChroniclesCharacterSheet state={state} progression={progression}
+      {open && <ChroniclesCharacterSheet state={campaign} progression={progression}
         member={hero} mode="mm3" onClose={() => setOpen(false)}
-        onSelectMember={setSelected} />}
+        onSelectMember={setSelected}
+        onEquipmentAction={interactive ? (action) => setCampaign((previous) =>
+          chroniclesReduce(previous, { ...action, memberId: selected })) : null} />}
     </div>
   );
 }
