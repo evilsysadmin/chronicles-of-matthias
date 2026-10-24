@@ -4,6 +4,7 @@ import {
   chroniclesAdvanceInitiative,
   chroniclesCurrentInitiativeActor,
   chroniclesEnemyInitiativeAgility,
+  chroniclesEngagedEnemies,
   chroniclesPartyInitiativeAgility,
   chroniclesRollInitiative,
   chroniclesStartInitiativeCombat,
@@ -317,6 +318,18 @@ describe('Chronicles combat engagement and leash', () => {
   const tobias = { id: 'tobias', name: 'Tobías', hpKey: 'tobiasHp', x: 9, y: 17, ai: { engageRange: 2, attackReach: 1 } };
   const party = [{ id: 'matthias', name: 'Matthias', hp: 8, agility: 3 }];
   const base = { mapId: 'swordhaven-sewers', party, tobiasHp: 5, rpgModifiers: {}, phase: 'explore' };
+
+  it('bounds invalid legacy attack reach while preserving valid engage distance', () => {
+    // Sewer corridor has clear sightline between x=9 and x=11 on row 17.
+    const state = { ...base, x: 11, y: 17 };
+    const invalidReach = { ...tobias, ai: { engageRange: 2, attackReach: 'invalid' } };
+    expect(chroniclesEngagedEnemies(state, [invalidReach]).map((enemy) => enemy.id)).toEqual(['tobias']);
+
+    // Infinity in an old save must not turn a melee creature into a map-wide trigger.
+    const unlimited = { ...tobias, ai: { attackReach: Infinity } };
+    expect(chroniclesEngagedEnemies(state, [unlimited])).toEqual([]);
+    expect(chroniclesEngagedEnemies({ ...state, x: 10 }, [unlimited]).map((enemy) => enemy.id)).toEqual(['tobias']);
+  });
 
   it('does not start a fight through a wall', () => {
     const state = { ...base, x: 7, y: 17 };
