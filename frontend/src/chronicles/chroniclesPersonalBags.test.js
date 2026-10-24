@@ -123,8 +123,11 @@ describe('MM3 personal backpacks', () => {
     const total = Object.values(owners).reduce((sum, bag) => sum + (bag['brass-sword'] || 0), 0);
     expect(total).toBe(consumed.inventory['brass-sword'].quantity);
     const earned = chroniclesApplyContentEffects(given, [{ type: 'grant-item', itemId: 'brass-sword', name: 'Espada', quantity: 1 }]);
-    expect(chroniclesBagQuantity(earned, 'matthias', 'brass-sword')).toBe(2);
+    // Existing transfers stay put. The new unowned copy goes to a less
+    // stocked companion, never back into Matthias's already populated bag.
+    expect(chroniclesBagQuantity(earned, 'matthias', 'brass-sword')).toBe(1);
     expect(chroniclesBagQuantity(earned, 'rook', 'brass-sword')).toBe(1);
+    expect(chroniclesBagQuantity(earned, 'bishop', 'brass-sword')).toBe(1);
   });
 
   it('round-trips personal ownership in server flags, legacy saves default safely', () => {
