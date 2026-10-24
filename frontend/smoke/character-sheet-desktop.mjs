@@ -574,6 +574,45 @@ try {
         'Changing party member must retain chosen folio on touch devices');
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert(await sheet.locator('[data-chronicles-equipment-folio]').isVisible());
+      // Hildegard's longer name exposed a real 844x390 overlap with the close
+      // button. Check actual painted rectangles, not only document overflow.
+      const identity = await sheet.evaluate((node) => {
+        const head = node.querySelector('.chronicles-character-sheet__head');
+        const wrapper = head.querySelector('.chronicles-character-sheet__identity');
+        const rect = (element) => {
+          const box = element.getBoundingClientRect();
+          return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+        };
+        const title = wrapper.querySelector('h3');
+        const description = wrapper.querySelector('p');
+        const resources = wrapper.querySelector('.chronicles-character-sheet__quick');
+        return {
+          head: rect(head), wrapper: rect(wrapper), title: rect(title),
+          description: rect(description), resources: rect(resources),
+          close: rect(head.querySelector('button')),
+          overflow: wrapper.scrollWidth - wrapper.clientWidth,
+          titleText: title.textContent.trim(),
+          classText: description.textContent.trim(),
+          columns: getComputedStyle(wrapper).gridTemplateColumns,
+        };
+      });
+      assert.equal(identity.titleText, 'Hildegard', 'Fixture must check the longer hero name');
+      assert.match(identity.classText, /Nivel/, 'Class and level must remain readable');
+      assert.ok(identity.overflow <= 1,
+        'Identity must not overflow its reserved column: ' + JSON.stringify(identity));
+      for (const key of ['title', 'description', 'resources']) {
+        assert.ok(identity[key].right <= identity.close.left - 3,
+          key + ' must not collide with close button: ' + JSON.stringify(identity));
+        assert.ok(identity[key].bottom <= identity.head.bottom + 1,
+          key + ' must remain inside the header: ' + JSON.stringify(identity));
+      }
+      if (height <= 480) {
+        assert.ok(identity.title.right <= identity.description.left + 1
+          || identity.title.bottom <= identity.description.top + 1,
+        'Landscape hero name and class must not collide: ' + JSON.stringify(identity));
+        assert.ok(identity.resources.top >= Math.max(identity.title.bottom, identity.description.bottom) - 1,
+          'Landscape resource chips must sit below identity text: ' + JSON.stringify(identity));
+      }
       await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
       assert.deepEqual(errors, []);
       console.log('CHRONICLES_CHARACTER_COMPACT_MOBILE_OK ' + width + 'x' + height);
