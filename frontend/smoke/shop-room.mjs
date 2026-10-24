@@ -349,6 +349,10 @@ try {
       // Use the actual longbow from Brunna: it is restricted to its real class.
       if ([390, 844, 1280].includes(width)) {
         const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
+        if (portraitPhone) {
+          await detail.getByRole('button', { name: '← Volver a mercancías' }).click();
+          await catalog.waitFor({ state: 'visible' });
+        }
         if (width <= 900) await longbow.locator('button').click();
         else {
           await longbow.locator('button').click();
