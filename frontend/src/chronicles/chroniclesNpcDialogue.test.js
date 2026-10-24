@@ -3,13 +3,7 @@ import { chroniclesContextualContentAction, chroniclesReduce, createChroniclesSt
 import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
-const at = (x, y) => {
-  const state = createChroniclesState('swordhaven-first-book');
-  const map = chroniclesMapById(state.mapId);
-  const facing = [[0, -1], [1, 0], [0, 1], [-1, 0]]
-    .findIndex(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '#');
-  return { ...state, x, y, direction: facing >= 0 ? facing : state.direction };
-};
+const at = (x, y) => ({ ...createChroniclesState('swordhaven-first-book'), x, y });
 
 describe('Chronicles NPC dialogue · MM3 audience', () => {
   it('opens the mayor at authored internal (11,10), HUD (11,4), with numbered topics and one real quest action', () => {

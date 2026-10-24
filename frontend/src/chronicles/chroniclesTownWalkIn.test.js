@@ -9,7 +9,8 @@ import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettle
 
 // MM3 towns: you enter a building by walking into its door. The rules use the
 // same layout the renderer draws, so for every styled house:
-// - every house enters only from its single marked door, never its facade;
+// - shops enter only from the single marked door, not the whole facade;
+//   non-shop town buildings retain their existing dialogue entrances;
 // - stepping into any other wall never opens a counter — let alone a
 //   neighbour's — and points you to the door instead.
 
@@ -71,7 +72,7 @@ describe('walking into town buildings', () => {
         expect(facade.length).toBeGreaterThan(0);
         for (const cell of facade) {
           const after = walkInto(map, cell);
-          if (cell.x !== door.x || cell.y !== door.y) {
+          if (counter?.shop && (cell.x !== door.x || cell.y !== door.y)) {
             expect(after.shop || after.guild).toBeFalsy();
             expect({ x: after.x, y: after.y }).toEqual({ x: cell.x, y: cell.y });
             expect(after.message || '').toMatch(/puerta|pared/i);
@@ -124,13 +125,12 @@ describe('Swordhaven shops a player reported', () => {
 });
 
 describe('UI audience entry state', () => {
-  it('only recognizes the authored door square, not the rest of the facade', async () => {
+  it('maps a facade cell to the door cell, and nothing elsewhere', async () => {
     const { chroniclesBuildingEntryState } = await import('../chroniclesOfMatthias.js');
     const base = { ...createChroniclesState('swordhaven-first-book'), phase: 'explore', initiative: null };
-    // Ayuntamiento (Aldric) door is (11,10), facing the wall to the south.
-    const door = chroniclesBuildingEntryState({ ...base, x: 11, y: 10, direction: directionTo(0, 1) });
-    expect(door && { x: door.x, y: door.y }).toEqual({ x: 11, y: 10 });
-    expect(chroniclesBuildingEntryState({ ...base, x: 10, y: 10, direction: directionTo(0, 1) })).toBeNull();
+    // Ayuntamiento (Aldric) door is (11,10); facade x 10..12 seen from row 10 facing south.
+    const side = chroniclesBuildingEntryState({ ...base, x: 10, y: 10, direction: directionTo(0, 1) });
+    expect(side && { x: side.x, y: side.y }).toEqual({ x: 11, y: 10 });
     expect(chroniclesBuildingEntryState({ ...base, x: 9, y: 7, direction: directionTo(0, -1) })).toBeNull();
   });
 });

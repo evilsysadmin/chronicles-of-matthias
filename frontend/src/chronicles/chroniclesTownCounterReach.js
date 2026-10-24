@@ -8,24 +8,18 @@ const DIRECTIONS = Object.freeze([
   Object.freeze({ dx: -1, dy: 0 }),
 ]);
 
-// The marked, walkable entrance square is the only place where a town house
-// can be entered or used; merely seeing its facade is not sufficient.
-export function chroniclesTownBuildingAtDoor(state, entry, map) {
-  if (!state || !entry || !map
-    || !String(entry.visualType || '').startsWith('building-')
-    || entry.x !== state.x || entry.y !== state.y) return false;
-  const facing = DIRECTIONS[state.direction];
-  return Boolean(facing && map.grid?.[state.y + facing.dy]?.[state.x + facing.dx] === '#');
-}
-
 export function chroniclesTownCounterInReach(state, entry, map) {
   if (!state || !entry || !map || !Number.isInteger(entry.x) || !Number.isInteger(entry.y)) return false;
-  // Buildings (shops, guilds, inns and audiences) share the same door
-  // contract, including trade actions from an already open dialog.
-  if (String(entry.visualType || '').startsWith('building-')) {
-    return chroniclesTownBuildingAtDoor(state, entry, map);
+  // Stores have one physical entrance: do not open or trade from the street
+  // tile behind it. Other counters retain their existing proximity rules.
+  if (entry.shop) {
+    if (entry.x !== state.x || entry.y !== state.y) return false;
+    if (!String(entry.visualType || '').startsWith('building-')) return true;
+    const facing = DIRECTIONS[state.direction];
+    // The front wall is the shop's physical facade. Sideways or backwards
+    // facing does not grant trade rights to a stale open dialog.
+    return Boolean(facing && map.grid?.[state.y + facing.dy]?.[state.x + facing.dx] === '#');
   }
-  if (entry.shop) return entry.x === state.x && entry.y === state.y;
   if (entry.x === state.x && entry.y === state.y) return true;
   const direction = DIRECTIONS[state.direction];
   const tile = map.grid?.[entry.y]?.[entry.x];
