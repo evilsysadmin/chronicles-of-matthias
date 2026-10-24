@@ -97,6 +97,35 @@ test('unfinished official workflow is retryable, never a green admission', () =>
   );
 });
 
+test('retries missing official runs only when the same-SHA green-build caller explicitly permits polling', () => {
+  const empty = response();
+  const foreignOnly = response(run({ workflow_id: 999 }));
+  // Without the explicit green-build caller flag, absence is a terminal error.
+  for (const payload of [empty, foreignOnly]) {
+    assert.throws(
+      () => verifyFrontendWorkflow(payload, opts),
+      (error) => !(error instanceof FrontendWorkflowPendingError) && /not green/.test(error.message),
+    );
+    assert.throws(
+      () => verifyFrontendWorkflow(payload, { ...opts, allowMissingRetry: true }),
+      (error) => error instanceof FrontendWorkflowPendingError
+        && /not yet visible/.test(error.message),
+    );
+  }
+  // The retry flag cannot turn absence or a completed RED run into success.
+  assert.throws(() => verifyFrontendWorkflow(
+    response(run({ conclusion: 'failure' })),
+    { ...opts, allowMissingRetry: true },
+  ), (error) => !(error instanceof FrontendWorkflowPendingError));
+  assert.throws(() => verifyFrontendWorkflow(
+    { total_count: 2, workflow_runs: [run()] },
+    { ...opts, allowMissingRetry: true },
+  ), /Invalid or truncated/);
+  assert.equal(verifyFrontendWorkflow(response(run()), {
+    ...opts, allowMissingRetry: true,
+  }), 42);
+});
+
 test('rejects truncated, malformed and excessive workflow-run data', () => {
   for (const payload of [
     {}, { total_count: 101, workflow_runs: [] },
@@ -160,8 +189,8 @@ test('rejects malformed workflow records instead of overlooking a newer failed r
 
 test('command line invocation verifies JSON stdin and fails closed', () => {
   const script = fileURLToPath(new URL('../scripts/require-frontend-workflow.mjs', import.meta.url));
-  const call = (data) => spawnSync(process.execPath,
-    [script, SHA, 'pull_request', REPO],
+  const call = (data, ...args) => spawnSync(process.execPath,
+    [script, SHA, 'pull_request', REPO, ...args],
     { encoding: 'utf8', input: data, timeout: 5000 });
   const ok = call(JSON.stringify(response(run())));
   assert.equal(ok.status, 0, ok.stderr);
@@ -185,6 +214,19 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
   assert.equal(finishing.status, 75);
   assert.match(finishing.stderr, /Frontend workflow still completing/);
   assert.doesNotMatch(finishing.stdout, /FRONTEND_WORKFLOW_IDENTITY_GREEN/);
+  const missingInitially = call(JSON.stringify(response()));
+  assert.equal(missingInitially.status, 1);
+  const temporarilyMissing = call(JSON.stringify(response()), '--retry-missing-official');
+  assert.equal(temporarilyMissing.status, 75);
+  assert.match(temporarilyMissing.stderr, /still completing/);
+  assert.doesNotMatch(temporarilyMissing.stdout, /FRONTEND_WORKFLOW_IDENTITY_GREEN/);
+  const malformedDuringRetry = call(JSON.stringify({ total_count: 2, workflow_runs: [run()] }),
+    '--retry-missing-official');
+  assert.equal(malformedDuringRetry.status, 1);
+  const unknownFlag = call(JSON.stringify(response(run())), '--unexpected');
+  assert.equal(unknownFlag.status, 1);
+  const completedAfterRetry = call(JSON.stringify(response(run())), '--retry-missing-official');
+  assert.equal(completedAfterRetry.status, 0);
   const failed = call(JSON.stringify(response(run({ conclusion: 'cancelled' }))));
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /Frontend workflow identity not verified/);
@@ -192,7 +234,16 @@ test('command line invocation verifies JSON stdin and fails closed', () => {
 
 test('required repository-contract validates frontend check and workflow identity', () => {
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  assert.match(ci, /check_name=build/);
+  assert.match(ci, /check_name=frontend-vitest-build-chromium/);
+  // Both the REST query AND the jq result filter must use the same context.
+  // The old query=renamed/filter=build mismatch silently polled for 36 minutes.
+  const requested = ci.match(/-f check_name=([a-z][\w-]+) -f per_page=100/);
+  const filtered = ci.match(/select\(\.name == "([^"]+)" and \.app\.slug == "github-actions"\)/);
+  assert.ok(requested && filtered, 'check query and strict jq filter are required');
+  assert.equal(requested[1], 'frontend-vitest-build-chromium');
+  assert.equal(filtered[1], requested[1], 'REST request and jq selection must match');
+  assert.doesNotMatch(ci, /select\(\.name == "build"/);
+  assert.doesNotMatch(ci, /check_name=build(?:\s|$)/);
   assert.match(ci, /completed:success\)/);
   assert.match(ci, /actions\/runs"/);
   assert.match(ci, /-f head_sha="\$HEAD_SHA" -f event="\$GITHUB_EVENT_NAME"/);
@@ -200,6 +251,8 @@ test('required repository-contract validates frontend check and workflow identit
   assert.match(ci, /if node scripts\/require-frontend-workflow\.mjs/);
   assert.match(ci, /identity_rc=\$\?/);
   assert.match(ci, /identity_rc != 75/);
+  assert.match(ci, /--retry-missing-official/);
+  assert.doesNotMatch(ci, /observed_official_pending=true/);
   assert.match(ci, /exit "\$identity_rc"/);
   assert.match(ci, /"\\?\$HEAD_SHA" "\\?\$GITHUB_EVENT_NAME"/);
   assert.match(ci, /FRONTEND_BROWSER_REQUIRED_GREEN/);

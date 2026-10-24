@@ -144,13 +144,20 @@ try {
         return {
           backdropPosition: getComputedStyle(node.parentElement).position,
           scrollDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__scroll')).display,
+          contentDisplay: getComputedStyle(node.querySelector('.chronicles-character-sheet__folio-content')).display,
+          menuLeft: node.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect().left,
+          contentRight: node.querySelector('.chronicles-character-sheet__folio-content').getBoundingClientRect().right,
           left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
         };
       });
       assert.equal(skin.backdropPosition, 'fixed',
         'The real game character-sheet overlay must be viewport-fixed');
-      assert.equal(skin.scrollDisplay, width <= 850 ? 'block' : 'grid',
-        'The real folio uses a single flowing column on mobile, two on desktop');
+      assert.equal(skin.scrollDisplay, 'block',
+        'The folio scroll viewport remains a single bounded region');
+      assert.equal(skin.contentDisplay, width <= 850 ? 'contents' : 'grid',
+        'The real content keeps a flowing mobile page and two-column desktop dossier');
+      if (width > 850) assert.ok(skin.menuLeft >= skin.contentRight - 2,
+        'Desktop navigation must remain to the right of the content: ' + JSON.stringify(skin));
       assert.ok(skin.left >= -1 && skin.right <= width + 1,
         'Character sheet must fit horizontally: ' + JSON.stringify(skin));
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
@@ -378,6 +385,47 @@ try {
       }
       assert.equal(await allGuides.count(), 1, 'No ghost guide after 8 scene transitions');
       await page.screenshot({ path: 'smoke-guide-reconciliation-' + width + '.png' });
+      // Check the real computed ink/geometry, not a CSS source-text matcher.
+      await gotoFixture(page, url + '?view=minimap-ink');
+      const coord = page.locator('[data-chronicles-coordinates]');
+      await coord.waitFor({ state: 'visible' });
+      const position = await coord.evaluate((node) => {
+        const parent = node.closest('[data-chronicles-minimap]');
+        const svg = parent.querySelector('svg');
+        const caption = node.getBoundingClientRect();
+        const location = parent.querySelector('[data-chronicles-location]');
+        const locationBounds = location.getBoundingClientRect();
+        const frame = parent.getBoundingClientRect();
+        return {
+          color: getComputedStyle(node).color,
+          shadow: getComputedStyle(node).textShadow,
+          label: node.textContent.trim(),
+          centered: Math.abs((caption.left + caption.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
+          location: location.textContent.trim(),
+          locationColor: getComputedStyle(location).color,
+          locationCentered: Math.abs((locationBounds.left + locationBounds.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          locationBelowCoordinates: locationBounds.top >= caption.bottom - 2,
+          locationWithinFrame: locationBounds.bottom <= frame.bottom + 1,
+        };
+      });
+      const sandstone = width >= 1025 || (width >= 801 && height >= 601);
+      assert.equal(position.color, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Coords need dark ink on sandstone and pale ink on dark compact minimap: ' + JSON.stringify(position));
+      if (sandstone) assert.equal(position.shadow, 'none', 'Dark coordinates must not have a light halo');
+      assert.equal(position.locationColor, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Location must contrast with the actual minimap backing: ' + JSON.stringify(position));
+      assert.equal(position.location, 'UBICACIÓN · SWORDHAVEN');
+      assert(position.locationCentered && position.locationBelowCoordinates && position.locationWithinFrame,
+        'Location should stay centered below coordinates within the minimap frame: ' + JSON.stringify(position));
+      assert.match(position.label, /^X\d+ Y\d+$/);
+      assert(position.centered && position.belowTiles,
+        'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));
+      if (width === 1280 || width === 390) {
+        await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
+      }
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {

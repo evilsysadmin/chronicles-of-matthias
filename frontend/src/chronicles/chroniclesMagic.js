@@ -33,7 +33,7 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'first-aid': spell({
     id: 'first-aid', name: 'Primeros auxilios', schools: ['esoterica', 'gaiam'], cost: 1, price: 8,
     kind: 'heal', amount: 6,
-    description: 'Cura 6 PV al compañero más herido. Sirve en combate y fuera de él.',
+    description: 'Cura 6 PV al compañero herido que elijas. Sirve en combate y fuera de él.',
   }),
   'flying-fist': spell({
     id: 'flying-fist', name: 'Puño volador', schools: ['esoterica'], cost: 2, price: 12,
@@ -74,7 +74,7 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'heal-wounds': spell({
     id: 'heal-wounds', name: 'Curar heridas', schools: ['esoterica', 'gaiam'], cost: 3, price: 25,
     kind: 'heal', amount: 15,
-    description: 'Cura 15 PV al compañero más herido.',
+    description: 'Cura 15 PV al compañero herido que elijas.',
   }),
   // Master spells, sold by the guilds of Terra's third wave: the first ones
   // that shape a whole fight instead of a single blow.
@@ -187,6 +187,21 @@ export function chroniclesLearnSpell(state, memberId, spellId) {
   }
   const known = chroniclesMemberSpells(state, member).map((entry) => entry.id);
   return { ...state, spellbook: { ...state.spellbook, [memberId]: [...known, spellId] } };
+}
+
+// Share the exact heal-target legality between the grimoire and reducer.
+// Zero PV is incapacitation, not an ordinary wound: healing never revives.
+export function chroniclesHealTargetStatus(member) {
+  if (!member || member.hp <= 0) return 'fallen';
+  return member.hp >= member.maxHp ? 'healthy' : 'wounded';
+}
+
+// Selection is keyboard-first, with an exact 1–4 mapping to the visible
+// party order. It never acts for modifiers/repeats or without a member.
+export function chroniclesSpellTargetHotkey(event, party) {
+  if (!event || event.repeat || event.isComposing || event.ctrlKey || event.altKey
+    || event.metaKey || event.shiftKey || !/^[1-4]$/.test(String(event.key))) return null;
+  return Array.isArray(party) ? party[Number(event.key) - 1]?.id || null : null;
 }
 
 // The ally a healing spell should land on: lowest HP share among the living.

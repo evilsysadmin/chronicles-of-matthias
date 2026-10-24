@@ -128,9 +128,10 @@ function positionKey(position) {
   return `${position.x}:${position.y}`;
 }
 
-function canAttackAnyPartyFrom(state, enemy, position) {
-  return livingPartyTargetsWithPositions(state)
-    .some(({ position: partyPosition }) => enemyCanAttackCell(state, enemy, position, partyPosition));
+function canAttackAnyPartyFrom(state, enemy, position, targets) {
+  return targets.some(({ position: partyPosition }) => (
+    enemyCanAttackCell(state, enemy, position, partyPosition)
+  ));
 }
 
 function chooseGreedyCardinalStep(state, enemy, from) {
@@ -142,12 +143,17 @@ function chooseGreedyCardinalStep(state, enemy, from) {
 }
 
 function chooseCardinalStep(state, enemy, from) {
+  // Snapshot living party targets once per enemy decision, not on every BFS tile.
+  // No cache survives this call: the next turn sees deaths and formation changes.
+  const targets = livingPartyTargetsWithPositions(state);
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
 
-  while (queue.length) {
-    const current = queue.shift();
-    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position)) {
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
+    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position, targets)) {
       return current.firstStep;
     }
 
@@ -204,8 +210,10 @@ function choosePatrolRouteStep(state, enemy, from) {
   const routeCells = new Set(route.map(positionKey));
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
-  while (queue.length) {
-    const current = queue.shift();
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
     if (current.firstStep && routeCells.has(positionKey(current.position))) return current.firstStep;
     for (const direction of CHRONICLES_DIRECTIONS) {
       const position = {
@@ -374,8 +382,10 @@ function chooseStepTowardSighting(state, enemy, from, target, knight = false) {
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
   const goalDistance = canOccupy(state, enemy, target) ? 0 : 1;
-  while (queue.length) {
-    const current = queue.shift();
+  // Indexed FIFO: identical BFS visitation and tie order without
+  // moving the remaining queue on every expanded tile.
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
     if (current.firstStep && distance(current.position, target) <= goalDistance) return current.firstStep;
     for (const step of CHRONICLES_DIRECTIONS) {
       const point = { x: current.position.x + step.dx, y: current.position.y + step.dy };

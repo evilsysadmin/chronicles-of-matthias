@@ -408,6 +408,66 @@
       "defeatedFlag": "torre_de_los_nombresBossDefeated",
       "blockingMessage": "El Escriba sin Nombre cierra el paso.",
       "visualScale": 1.35
+    },
+    {
+      "id": "torre-de-los-nombres-foe-13",
+      "visualType": "ghoul",
+      "name": "lector devorado",
+      "x": 15,
+      "y": 2,
+      "hpKey": "torre_de_los_nombresFoe13Hp",
+      "maxHp": 37,
+      "retaliation": 6,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 8,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lector devorado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 16
+          }
+        ]
+      }
+    },
+    {
+      "id": "torre-de-los-nombres-foe-14",
+      "visualType": "silent-acolyte",
+      "name": "copista del Silencio",
+      "x": 23,
+      "y": 13,
+      "hpKey": "torre_de_los_nombresFoe14Hp",
+      "maxHp": 37,
+      "retaliation": 6,
+      "toHit": 10,
+      "armorClass": 7,
+      "agility": 7,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con copista del Silencio usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 16
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

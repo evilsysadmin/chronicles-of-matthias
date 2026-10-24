@@ -791,3 +791,132 @@
   outline: 3px solid #a16c25;
   outline-offset: 2px;
 }
+
+
+/* Fieldbook V3 — smaller, text-first travel notebook instead of a dashboard.
+   Preserve a single internal scroll and every quest/memory link. */
+.chronicles-journal-modal {
+  box-sizing: border-box;
+  width: min(704px, 100%);
+  max-height: min(80dvh, 700px);
+  border-width: 1px;
+  border-radius: 5px;
+  box-shadow: 0 0 0 4px #21160d, 0 0 0 5px #74502b, 0 20px 65px #000c;
+}
+.chronicles-journal-modal__header { gap: 10px; padding: 10px 16px; }
+.chronicles-journal-modal__crest {
+  width: 32px; height: 32px; font-size: 1.15rem;
+  box-shadow: inset 0 0 0 2px #29190e;
+}
+.chronicles-journal-modal__heading small { font-size: .62rem; }
+.chronicles-journal-modal__heading h2 { font-size: clamp(1.16rem, 2vw, 1.43rem); }
+.chronicles-journal-modal__heading p { display: none; }
+.chronicles-journal-modal__header button {
+  align-self: center; width: 38px; height: 38px; border-width: 1px; font-size: 1.6rem;
+}
+.chronicles-journal-modal__chapters {
+  gap: 16px; padding: 4px 18px 0; border-bottom-width: 1px;
+}
+.chronicles-journal-modal__chapters button {
+  min-width: 0; min-height: 38px; padding: 7px 4px 8px;
+  border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+  background: transparent; color: #dbc29d; box-shadow: none;
+  font: 700 .94rem/1.15 Georgia, serif;
+}
+.chronicles-journal-modal__chapters button small { font-size: .56rem; }
+.chronicles-journal-modal__chapters button[aria-selected='true'] {
+  background: transparent; color: #ffe4b9; border: 0;
+  border-bottom: 2px solid #d9b572; box-shadow: none;
+}
+.chronicles-journal-modal__chapters button[aria-selected='true'] small { color: #dfc39b; }
+.chronicles-journal-modal__chapter {
+  box-sizing: border-box;
+  width: min(624px, 100%); min-height: 0; padding: 17px 24px 26px;
+}
+.chronicles-journal-modal__chapter-head { margin-bottom: 6px; padding-bottom: 10px; }
+.chronicles-journal-modal__chapter-head small { font-size: .58rem; }
+.chronicles-journal-modal__chapter-head h3 {
+  margin: 2px 0 4px; font-size: clamp(1.13rem, 2vw, 1.42rem);
+}
+.chronicles-journal-modal__chapter-head p { font-size: .82rem; line-height: 1.4; }
+.chronicles-journal-modal__quest-heading {
+  grid-template-columns: 25px minmax(0, 1fr) 20px;
+  min-height: 58px; gap: 8px; padding: 9px 4px;
+}
+.chronicles-journal-modal__quest-number {
+  width: 24px; height: 24px; border: 0; border-right: 1px solid #bb9868;
+  border-radius: 0; font-size: .64rem;
+}
+.chronicles-journal-modal__quest-heading-copy { gap: 2px; }
+.chronicles-journal-modal__quest-heading-copy small { font-size: .59rem; }
+.chronicles-journal-modal__quest-heading-copy strong { font-size: 1.02rem; }
+.chronicles-journal-modal__quest-heading-copy em { font-size: .73rem; }
+.chronicles-journal-modal__quest-chevron { font-size: 1.12rem; }
+.chronicles-journal-modal__quest-detail {
+  padding: 0 12px 15px 37px; font-size: .88rem; line-height: 1.48;
+}
+.chronicles-journal-modal__quest-story { font-size: .89rem; }
+.chronicles-journal-modal__quest-hint {
+  margin-top: 8px; padding: 8px 0 8px 12px;
+  border-left-width: 2px; background: transparent;
+}
+.chronicles-journal-modal__quest-hint strong { margin: 4px 0; font-size: 1.02rem; }
+.chronicles-journal-modal__quest-history { margin: 10px 0 13px; }
+.chronicles-journal-modal__track-row { margin-top: 9px; padding-top: 8px; }
+.chronicles-journal-modal__track { min-height: 38px; padding: 7px 10px; font-size: .83rem; }
+.chronicles-journal-modal__archive-toggle {
+  min-height: 40px; margin: 3px 0 6px; padding: 7px 8px;
+  border: 0; border-bottom: 1px dashed #ab8c61;
+  background: transparent; font-size: .81rem;
+}
+.chronicles-journal-modal__chapter .chronicles-journal-modal__folios > li {
+  gap: 9px; padding: 10px 2px;
+}
+.chronicles-journal-modal__folios > li strong { font-size: .95rem; }
+.chronicles-journal-modal__folios > li p { margin-top: 4px; font-size: .84rem; }
+.chronicles-journal-modal footer { padding: 7px 15px; font-size: .77rem; }
+@media (max-width: 720px) {
+  .chronicles-journal-modal { max-height: calc(100dvh - 16px); }
+  .chronicles-journal-modal__chapter { padding: 14px 14px 22px; }
+  .chronicles-journal-modal__chapters { padding-inline: 12px; }
+  .chronicles-journal-modal__chapters button {
+    flex: 0 1 auto; min-height: 40px; padding: 8px 6px;
+  }
+}
+@media (max-width: 420px) {
+  .chronicles-journal-modal__header { padding: 8px 11px; }
+  .chronicles-journal-modal__chapter { padding-inline: 11px; }
+  .chronicles-journal-modal__quest-detail { padding-left: 30px; }
+}
+@media (max-height: 480px) {
+  .chronicles-journal-modal { max-height: calc(100dvh - 12px); }
+  .chronicles-journal-modal__header { padding-block: 5px; }
+  .chronicles-journal-modal__chapter { padding-block: 9px 16px; }
+}
+
+
+/* Memories are a chronicle, not an analytics feed: show recent folios by
+   default and tuck the rest behind unobtrusive book-footnote links. */
+.chronicles-journal-modal__memory-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  max-width: 100%;
+  margin: 5px 0 11px;
+  padding: 5px 2px;
+  border: 0;
+  border-bottom: 1px dotted #977548;
+  background: transparent;
+  color: #5d391c;
+  font: 700 .8rem/1.35 Georgia, serif;
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles-journal-modal__memory-toggle:hover {
+  color: #32200f;
+  border-bottom-color: currentColor;
+}
+.chronicles-journal-modal__memory-toggle:focus-visible {
+  outline: 3px solid #a46d23;
+  outline-offset: 2px;
+}

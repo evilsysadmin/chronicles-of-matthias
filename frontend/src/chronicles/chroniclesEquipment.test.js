@@ -3,6 +3,7 @@ import {
   chroniclesContextualContentAction,
   chroniclesPartyArmorClass,
   chroniclesPartyAttackStats,
+  chroniclesMM3EnemySwing,
   chroniclesReduce,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
@@ -37,11 +38,11 @@ describe('Chronicles First Book · real purchased gear', () => {
       extension: true, armorClass: 1,
     });
     expect(CHRONICLES_EQUIPMENT['roadwatch-sabre']).toMatchObject({
-      materialId: 'iron', slot: 'weapon', toHitBonus: 1,
-      attackDamageBonus: 2, price: 12,
+      materialId: 'iron', slot: 'weapon', toHitBonus: 2,
+      attackDamageBonus: 3, price: 12,
     });
     expect(CHRONICLES_EQUIPMENT['roadwatch-vest']).toMatchObject({
-      materialId: 'leather', slot: 'armor', armorType: 'leather', armorClassBonus: 2,
+      materialId: 'leather', slot: 'armor', armorType: 'leather', armorClassBonus: 3,
       damageReduction: 1, price: 9,
     });
   });
@@ -67,7 +68,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     });
     expect(equipped.inventory).not.toHaveProperty('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(equipped, 'matthias').damage).toBe(
-      chroniclesPartyAttackStats(initial, 'matthias').damage + 2,
+      chroniclesPartyAttackStats(initial, 'matthias').damage + 3,
     );
     expect(chroniclesPartyAttackStats(equipped, 'rook').damage).toBe(
       chroniclesPartyAttackStats(initial, 'rook').damage,
@@ -78,7 +79,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     );
     expect(chroniclesEquippedItem(recovered, 'matthias', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(recovered, 'matthias').damage).toBe(
-      chroniclesPartyAttackStats(initial, 'matthias').damage + 2,
+      chroniclesPartyAttackStats(initial, 'matthias').damage + 3,
     );
     expect(recovered.inventory).not.toHaveProperty('roadwatch-sabre');
     const unarmed = chroniclesUnequipItem(recovered, 'matthias', 'weapon');
@@ -139,6 +140,45 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(chroniclesEquipmentBonuses(removed, 'matthias').damageReduction).toBe(0);
   });
 
+  it('does not let a two-handed bow borrow a shield to hit or parry during its shot', () => {
+    const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const bare = {
+      ...initial, equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
+    };
+    const shielded = {
+      ...bare, equipment: { matthias: { ...bare.equipment.matthias, shield: 'bronze-shield' } },
+    };
+    const shield = CHRONICLES_EQUIPMENT['bronze-shield'];
+    expect(chroniclesPartyAttackStats(shielded, 'matthias', 'melee').toHit)
+      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'melee').toHit + shield.toHitBonus);
+    expect(chroniclesPartyArmorClass(shielded, 'matthias'))
+      .toBe(chroniclesPartyArmorClass(bare, 'matthias') + shield.armorClassBonus);
+    expect(chroniclesPartyAttackStats(shielded, 'matthias', 'missile').toHit)
+      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'missile').toHit);
+    expect(chroniclesPartyArmorClass(shielded, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(bare, 'matthias'));
+    const foe = { id: 'test-bow-retaliation', toHit: 8, retaliation: 2 };
+    const swing = chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation', 'missile');
+    expect(swing.hit).toBe(chroniclesMM3EnemySwing(bare, foe, 'matthias', 'retaliation').hit);
+    expect(chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation').roll).toBe(swing.roll);
+
+    const sling = {
+      ...shielded, equipment: { matthias: { ...shielded.equipment.matthias, missile: 'brass-sling' } },
+    };
+    const slingBare = {
+      ...sling, equipment: { matthias: { weapon: 'brass-sword', missile: 'brass-sling' } },
+    };
+    expect(chroniclesPartyAttackStats(sling, 'matthias', 'missile').toHit)
+      .toBe(chroniclesPartyAttackStats(slingBare, 'matthias', 'missile').toHit + shield.toHitBonus);
+    expect(chroniclesPartyArmorClass(sling, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(sling, 'matthias'));
+
+    // Legacy mode must preserve its historical shield calculation.
+    const legacy = { ...shielded, combatRules: 'legacy' };
+    expect(chroniclesEquipmentBonuses(legacy, 'matthias', { mode: 'missile' }).toHitBonus)
+      .toBe(chroniclesEquipmentBonuses(shielded, 'matthias', { mode: 'missile' }).toHitBonus + shield.toHitBonus);
+  });
+
   it('lets MM3 classes, not hero names, decide gear and turns armor into real AC', () => {
     const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     const stocked = chroniclesApplyContentEffects(initial, [
@@ -153,9 +193,9 @@ describe('Chronicles First Book · real purchased gear', () => {
     const archer = chroniclesEquipItem(stocked, 'knight', 'roadwatch-sabre');
     expect(chroniclesEquippedItem(archer, 'knight', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(archer, 'knight').toHit)
-      .toBe(chroniclesPartyAttackStats(stocked, 'knight').toHit + 1);
-    // Leather armor adds 2 to the wearer's armor class.
+      .toBe(chroniclesPartyAttackStats(stocked, 'knight').toHit + CHRONICLES_EQUIPMENT['roadwatch-sabre'].toHitBonus);
+    // Guard-reinforced leather now adds 3 to the wearer's armor class.
     const worn = chroniclesEquipItem(stocked, 'matthias', 'roadwatch-vest');
-    expect(chroniclesPartyArmorClass(worn, 'matthias')).toBe(chroniclesPartyArmorClass(stocked, 'matthias') + 2);
+    expect(chroniclesPartyArmorClass(worn, 'matthias')).toBe(chroniclesPartyArmorClass(stocked, 'matthias') + 3);
   });
 });

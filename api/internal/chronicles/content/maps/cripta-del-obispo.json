@@ -403,6 +403,66 @@
       "defeatedFlag": "cripta_del_obispoBossDefeated",
       "blockingMessage": "El Obispo Hueco cierra el paso.",
       "visualScale": 1.3
+    },
+    {
+      "id": "cripta-del-obispo-foe-13",
+      "visualType": "ice-wraith",
+      "name": "alma en pena",
+      "x": 5,
+      "y": 7,
+      "hpKey": "cripta_del_obispoFoe13Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con alma en pena usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "cripta-del-obispo-foe-14",
+      "visualType": "ember-wisp",
+      "name": "cirio fatuo",
+      "x": 3,
+      "y": 12,
+      "hpKey": "cripta_del_obispoFoe14Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cirio fatuo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

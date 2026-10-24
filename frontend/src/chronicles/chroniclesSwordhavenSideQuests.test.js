@@ -98,11 +98,12 @@ describe('Chronicles · Swordhaven doors', () => {
     expect(state.y).toBe(4);
   });
 
-  it('walking into the facade beside the door also enters the shop (MM3)', () => {
+  it('walking into the facade BESIDE the marked shop door no longer teleports inside', () => {
     for (const x of [6, 8]) {
       const entered = chroniclesReduce({ ...town(), x, y: 4, direction: 0 }, 'forward');
-      expect(entered.shop?.id).toBe('first-book-weaponsmith');
-      expect({ x: entered.x, y: entered.y }).toEqual({ x: 7, y: 4 });
+      expect(entered.shop?.id).toBeUndefined();
+      expect({ x: entered.x, y: entered.y }).toEqual({ x, y: 4 });
+      expect(entered.message).toMatch(/puerta|pared/i);
     }
   });
 

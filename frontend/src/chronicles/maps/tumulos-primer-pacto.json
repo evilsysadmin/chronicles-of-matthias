@@ -403,6 +403,67 @@
       },
       "defeatedFlag": "tumulos_primer_pactoBossDefeated",
       "blockingMessage": "El Guardián del Túmulo cierra el paso."
+    },
+    {
+      "id": "tumulos-primer-pacto-foe-13",
+      "visualType": "crypt-spider",
+      "name": "araña de túmulo",
+      "x": 20,
+      "y": 15,
+      "hpKey": "tumulos_primer_pactoFoe13Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña de túmulo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "tumulos-primer-pacto-foe-14",
+      "visualType": "ice-wraith",
+      "name": "espectro del túmulo",
+      "x": 11,
+      "y": 1,
+      "hpKey": "tumulos_primer_pactoFoe14Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con espectro del túmulo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

@@ -401,6 +401,65 @@
       },
       "defeatedFlag": "minas_de_escoriaBossDefeated",
       "blockingMessage": "El Capataz de Escoria cierra el paso."
+    },
+    {
+      "id": "minas-de-escoria-foe-13",
+      "visualType": "crypt-spider",
+      "name": "araña de galería",
+      "x": 17,
+      "y": 7,
+      "hpKey": "minas_de_escoriaFoe13Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña de galería usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "minas-de-escoria-foe-14",
+      "visualType": "ash-salamander",
+      "name": "salamandra de la forja",
+      "x": 7,
+      "y": 6,
+      "hpKey": "minas_de_escoriaFoe14Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de la forja usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 8
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

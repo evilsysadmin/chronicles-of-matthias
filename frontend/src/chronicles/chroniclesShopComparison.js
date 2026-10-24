@@ -1,7 +1,7 @@
 // Shop inspection is read-only: evaluate a hypothetical gear loadout against
 // the exact same combat calculators used by the character sheet and battles.
 // No inventory, gold, equipment or checkpoint changes occur here.
-import { chroniclesPartyArmorClass, chroniclesPartyAttackStats } from '../chroniclesOfMatthias.js';
+import { chroniclesPartyArmorClass, chroniclesPartyAttackStats, chroniclesUsesMM3Combat } from '../chroniclesOfMatthias.js';
 import {
   chroniclesEquippedItem,
   chroniclesEquipmentBonuses,
@@ -12,12 +12,14 @@ const STAT_LABELS = Object.freeze({
   toHit: 'Acierto',
   damage: 'Daño',
   reach: 'Alcance',
-  armorClass: 'Armadura',
-  damageReduction: 'Reducción',
+  armorClass: 'Armadura (CA)',
+  damageReduction: 'Reducción de daño',
 });
 
 function combatMetrics(state, memberId) {
-  const attack = chroniclesPartyAttackStats(state, memberId);
+  // Never show the longest of melee + projectile reach while previewing a
+  // sword/polearm; a melee attack uses its own actual reach.
+  const attack = chroniclesPartyAttackStats(state, memberId, 'melee');
   return {
     toHit: Number(attack.toHit || 0),
     damage: Number(attack.damage || 0),
@@ -74,9 +76,18 @@ export function chroniclesShopEquipmentComparisons(state, item) {
     const nextState = previewEquipped(state, member.id, item, displacedShield);
     const before = item.slot === 'missile' ? missileEquipmentMetrics(state, member.id) : combatMetrics(state, member.id);
     const after = item.slot === 'missile' ? missileEquipmentMetrics(nextState, member.id) : combatMetrics(nextState, member.id);
+    // MM3 uses armor class to prevent a hit, not passive subtraction once
+    // struck. Damage reduction is a legacy combat rule: never show a fake
+    // reduction loss in a modern MM3 merchant comparison.
+    const defenses = chroniclesUsesMM3Combat(state) ? ['armorClass'] : ['armorClass', 'damageReduction'];
     const keys = item.slot === 'weapon'
-      ? ['toHit', 'damage', 'reach', ...(displacedShield ? ['armorClass', 'damageReduction'] : [])]
-      : item.slot === 'missile' ? ['toHit', 'damage', 'reach'] : ['armorClass', 'damageReduction'];
+      ? ['toHit', 'damage', 'reach', ...(displacedShield ? defenses : [])]
+      : item.slot === 'missile' ? ['toHit', 'damage', 'reach']
+        : item.slot === 'shield' ? [...defenses, ...(after.toHit !== before.toHit ? ['toHit'] : [])]
+          : item.slot === 'armor' ? [
+              ...defenses,
+              ...(chroniclesUsesMM3Combat(state) && after.toHit !== before.toHit ? ['toHit'] : []),
+            ] : defenses;
 
     return {
       memberId: member.id,

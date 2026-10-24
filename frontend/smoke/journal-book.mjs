@@ -19,12 +19,32 @@ try {
       await page.goto(baseUrl, { waitUntil: 'networkidle' });
       const dialog = page.getByRole('dialog', { name: /Crónica de expedición/ });
       await dialog.waitFor({ state: 'visible' });
+      // A narrow readable travel book, not a 940px administrative panel.
+      // Mobile/short landscape retain enough room and their existing scroll.
+      const folioFrame = await dialog.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        const header = node.querySelector('.chronicles-journal-modal__header').getBoundingClientRect();
+        const tabs = node.querySelector('.chronicles-journal-modal__chapters button');
+        const chapter = node.querySelector('.chronicles-journal-modal__chapter');
+        return { width: box.width, height: box.height, headerHeight: header.height,
+          tabBackground: getComputedStyle(tabs).backgroundColor,
+          chapterWidth: chapter?.getBoundingClientRect().width };
+      });
+      if (width >= 1025) {
+        assert(folioFrame.width <= 705, 'Fieldbook should not span like a dashboard: ' + JSON.stringify(folioFrame));
+        assert(folioFrame.height <= Math.min(height * .81, 701), 'Fieldbook should not monopolize the desktop');
+        assert(folioFrame.headerHeight <= 80, 'Journal masthead should stay restrained');
+        assert(folioFrame.chapterWidth <= 625, 'Journal prose should keep a readable measure');
+      }
+      assert.equal(folioFrame.tabBackground, 'rgba(0, 0, 0, 0)',
+        'Chapter bookmarks should not look like filled dashboard cards');
       const tabQuests = dialog.getByRole('tab', { name: /Encargos/ });
       const tabMemories = dialog.getByRole('tab', { name: /Memorias/ });
       assert.equal(await tabQuests.getAttribute('aria-selected'), 'true');
       assert.equal(await tabMemories.getAttribute('aria-selected'), 'false');
       await dialog.getByRole('heading', { name: 'Los asuntos pendientes' }).waitFor();
-      assert.match(await tabQuests.innerText(), /2 pendientes/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /Encargos · 2 pendientes/);
+      assert.equal(await tabQuests.innerText(), 'Encargos', 'No visible KPI badges in chapter tabs');
       assert.equal(await dialog.getByRole('tabpanel').count(), 1,
         'Journal should show one chapter at a time, not a two-panel dashboard');
       // The book announces tab semantics, so readers should also get standard
@@ -271,7 +291,7 @@ try {
       assert.equal(await oldDeeds.count(), 1,
         'When no active quests exist, completed contracts must stay accessible');
       await dialog.getByRole('heading', { name: 'Las gestas concluidas' }).waitFor();
-      assert.match(await tabQuests.innerText(), /1 resuelto/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /1 resuelto/);
       assert.match(await dialog.getByRole('tabpanel').innerText(), /conservan los hechos que vivimos/);
       assert.equal(await oldDeeds.locator('.chronicles-journal-modal__quest-heading').getAttribute('aria-expanded'), 'true');
       assert.equal(await archive.count(), 0, 'An all-completed journal must not hide its entire list');
@@ -280,7 +300,7 @@ try {
       await page.locator('[data-test-no-quests]').click();
       await dialog.waitFor({ state: 'visible' });
       await dialog.getByRole('heading', { name: 'Páginas por escribir' }).waitFor();
-      assert.match(await tabQuests.innerText(), /Sin encargos/);
+      assert.match(await tabQuests.getAttribute('aria-label'), /Sin encargos/);
       assert.equal(await dialog.locator('[data-chronicles-quest-id]').count(), 0);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
@@ -319,6 +339,57 @@ try {
       assert(followedGeometry.scrollTop > 0, 'Distant tracked quest should scroll the book: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.headingWithinBook, 'Tracked quest heading should be visible on first opening: ' + JSON.stringify(followedGeometry));
       assert(followedGeometry.focusedClose, 'Opening must preserve keyboard focus on dialog close');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      // A well-travelled company may have dozens of genuine folios. The book
+      // previews only the newest ones, without losing historical quest links.
+      await page.locator('[data-test-long-memories]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await tabMemories.click();
+      const olderFolios = dialog.locator('[data-chronicles-older-folios]');
+      const olderVoices = dialog.locator('[data-chronicles-older-voices]');
+      const memoryList = dialog.locator('[data-chronicles-memo-id]');
+      const voiceList = dialog.locator('[data-chronicles-narration-log] li');
+      assert.equal(await memoryList.count(), 8, 'Initial memory leaf must contain only eight recent folios');
+      assert.equal(await voiceList.count(), 8, 'Initial memory leaf must not grow into a narration dashboard');
+      assert.equal(await dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]').count(), 0,
+        'Old quest receipt is initially folded, not discarded');
+      assert.equal(await dialog.locator('[data-chronicles-memo-id="journal-test-21"]').count(), 1,
+        'The newest folio remains visible');
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'false');
+      await olderFolios.click();
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'true');
+      assert((await memoryList.count()) >= 24, 'Expanding must restore the original complete chronicle');
+      await olderFolios.click();
+      assert.equal(await memoryList.count(), 8, 'Reader can fold old folios back away');
+      await olderVoices.click();
+      assert.equal(await voiceList.count(), 24, 'Narrations must remain fully accessible');
+      await olderVoices.click();
+      assert.equal(await voiceList.count(), 8, 'Reader can fold old narration back away');
+
+      await tabQuests.click();
+      await dialog.locator('[data-chronicles-quest-id="banner-contract"] ' +
+        '[data-chronicles-quest-event="first-book-contract-accepted"] ' +
+        '.chronicles-journal-modal__quest-event-link').click();
+      const historicFolio = dialog.locator('[data-chronicles-memo-id="first-book-contract-accepted"]');
+      await historicFolio.waitFor({ state: 'visible' });
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'true',
+        'Quest-to-memory jump must unfold a historic entry that is outside the preview');
+      assert.equal(await historicFolio.evaluate((node) => document.activeElement === node), true,
+        'Historic jump focuses the authentic saved folio');
+      assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden',
+        'Historic memory jumps cannot scroll the underlying world');
+
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'hidden' });
+      await page.locator('[data-test-reopen]').click();
+      await dialog.waitFor({ state: 'visible' });
+      await tabMemories.click();
+      assert.equal(await olderFolios.getAttribute('aria-expanded'), 'false',
+        'A new journal visit must collapse historical folios');
+      assert.equal(await olderVoices.getAttribute('aria-expanded'), 'false',
+        'A new visit must collapse old voices');
+      assert.equal(await memoryList.count(), 8);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
       assert.deepEqual(errors, [], 'Browser errors while reading journal');

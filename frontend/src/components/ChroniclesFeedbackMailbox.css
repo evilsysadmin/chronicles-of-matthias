@@ -1,0 +1,137 @@
+/* One contained page of the adventure folio. Uses the existing walnut,
+   slate and brass palette rather than a separate admin-style overlay. */
+.chronicles .chronicles-feedback-mailbox {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: clamp(14px, 3vw, 24px);
+  color: #f4e4c9;
+}
+.chronicles .chronicles-feedback-mailbox__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #d7b782;
+  font-size: 1.75rem;
+}
+.chronicles .chronicles-feedback-mailbox h3 {
+  margin: 0;
+  color: #fff0d1;
+  font: 400 clamp(1.4rem, 3vw, 1.9rem)/1.2 var(--mm3-pixel-font);
+}
+.chronicles .chronicles-feedback-mailbox p {
+  margin: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.chronicles .chronicles-feedback-mailbox__privacy {
+  font-size: .85rem;
+  color: #d2c4ad;
+}
+.chronicles .chronicles-feedback-mailbox__form {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chronicles .chronicles-feedback-mailbox__form label {
+  color: #f2d8a8;
+  font-weight: 700;
+}
+.chronicles .chronicles-feedback-mailbox__form :is(select, textarea) {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 2px solid #9e8057;
+  border-radius: 3px;
+  background: #151c25;
+  color: #fff0d1;
+  -webkit-text-fill-color: #fff0d1;
+  font: 400 1rem/1.4 system-ui, sans-serif;
+  padding: 10px 12px;
+}
+.chronicles .chronicles-feedback-mailbox__form textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+.chronicles .chronicles-feedback-mailbox__form textarea::placeholder {
+  color: #c0b3a0;
+  -webkit-text-fill-color: #c0b3a0;
+}
+.chronicles .chronicles-feedback-mailbox__form small {
+  color: #d7c6a9;
+  text-align: right;
+}
+.chronicles .chronicles-feedback-mailbox button {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 2px solid #9e8057;
+  border-radius: 3px;
+  background: #303843;
+  color: #fff0d1;
+  -webkit-text-fill-color: #fff0d1;
+  font: 600 .95rem/1.25 system-ui, sans-serif;
+  cursor: pointer;
+}
+.chronicles .chronicles-feedback-mailbox button:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+.chronicles .chronicles-feedback-mailbox button:focus-visible,
+.chronicles .chronicles-feedback-mailbox :is(select, textarea):focus-visible {
+  outline: 3px solid #f5cb7b;
+  outline-offset: 3px;
+}
+.chronicles .chronicles-feedback-mailbox__send {
+  background: #967441 !important;
+  color: #18140f !important;
+  -webkit-text-fill-color: #18140f !important;
+}
+.chronicles .chronicles-feedback-mailbox__success,
+.chronicles .chronicles-feedback-mailbox__error {
+  padding: 10px 12px;
+  border-left: 3px solid #d6b477;
+  background: #20372d;
+}
+.chronicles .chronicles-feedback-mailbox__error {
+  background: #4d2525;
+  border-left-color: #edbcb2;
+}
+.chronicles .chronicles-feedback-mailbox__history {
+  display: grid;
+  gap: 10px;
+  max-height: min(30dvh, 260px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.chronicles .chronicles-feedback-mailbox__entry {
+  min-width: 0;
+  padding: 9px;
+  background: #202936;
+  border: 1px solid #6f644b;
+}
+.chronicles .chronicles-feedback-mailbox__entry header {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.chronicles .chronicles-feedback-mailbox__entry small { color: #dfc692; }
+.chronicles .chronicles-feedback-mailbox__entry blockquote {
+  margin: 7px 0 0;
+  padding: 8px;
+  border-left: 3px solid #d9b879;
+  background: #253a39;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 540px), (orientation: landscape) and (max-height: 490px) {
+  .chronicles .chronicles-feedback-mailbox { padding: 10px 12px; gap: 8px; }
+  .chronicles .chronicles-feedback-mailbox__form textarea { min-height: 80px; }
+  .chronicles .chronicles-feedback-mailbox__history { max-height: 32dvh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles .chronicles-feedback-mailbox * { animation: none; transition: none; }
+}

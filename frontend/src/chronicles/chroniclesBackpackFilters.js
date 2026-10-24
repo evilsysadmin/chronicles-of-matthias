@@ -14,6 +14,18 @@ export function chroniclesBackpackCategory(item) {
   return CHRONICLES_EQUIPMENT[item?.id]?.slot || 'other';
 }
 
+// Roving selection in the MM3 backpack, pure and independent of stock updates.
+export function chroniclesBackpackMoveSelection(items, selectedId, key) {
+  if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(key)
+    || !Array.isArray(items) || !items.length) return null;
+  const selected = items.findIndex((item) => item.id === selectedId);
+  if (key === 'Home') return items[0].id;
+  if (key === 'End') return items[items.length - 1].id;
+  const base = selected < 0 ? 0 : selected;
+  const delta = key === 'ArrowDown' ? 1 : -1;
+  return items[(base + delta + items.length) % items.length].id;
+}
+
 export function chroniclesBackpackCounts(items) {
   const counts = Object.fromEntries(CHRONICLES_BACKPACK_FILTERS.map(({ id }) => [id, 0]));
   for (const item of Array.isArray(items) ? items : []) {

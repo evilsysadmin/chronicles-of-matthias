@@ -4,11 +4,12 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
-import { chroniclesDiscoveredPois } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
+  chroniclesAutomapRouteEdge,
   chroniclesAutomapRevealedCells,
   chroniclesMapCoordinatesLabel,
 } from '../chronicles/chroniclesAutomap.js';
@@ -116,7 +117,7 @@ function FragmentRow({ index, row, children }) {
 
 export default function ChroniclesAutomap({
   open, state, visitedCells, onClose, onOpenSheet = null,
-  target = null, visitedMapIds = [], objective = '',
+  target = null, routeLabel = '', visitedMapIds = [], objective = '',
 }) {
   const closeRef = useRef(null);
   const [view, setView] = useState('area');
@@ -138,6 +139,10 @@ export default function ChroniclesAutomap({
   );
   const viewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
   const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition), [map, revealed]);
+  const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
+  const targetOverParty = Boolean(target && target.x === state?.x && target.y === state?.y);
+  const targetCornerBadge = targetOverPoi || targetOverParty;
+  const routeEdge = chroniclesAutomapRouteEdge(viewport, state, target);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -225,12 +230,27 @@ export default function ChroniclesAutomap({
                 marker={marker}
               />
             ))}
-            {target && (
-              <g className="chronicles-automap__target" data-chronicles-route-target aria-label="Siguiente paso hacia el objetivo">
-                <circle cx={target.x + 0.5} cy={target.y + 0.5} r="0.46" />
-                <text x={target.x + 0.5} y={target.y + 0.55} textAnchor="middle" dominantBaseline="middle">★</text>
+            {target && (routeEdge ? (
+              <g className="chronicles-automap__target is-offscreen"
+                data-chronicles-route-target="edge"
+                aria-label={routeLabel ? `Siguiente salida fuera de la vista: ${routeLabel}` : 'Dirección al objetivo fuera de la vista'}>
+                <title>{routeLabel ? `Siguiente salida: ${routeLabel} (fuera de la vista)` : 'Objetivo fuera de la vista'}</title>
+                <path transform={`rotate(${routeEdge.angle} ${routeEdge.x} ${routeEdge.y})`}
+                  d={`M ${routeEdge.x + .30} ${routeEdge.y} L ${routeEdge.x - .20} ${routeEdge.y - .25} L ${routeEdge.x - .08} ${routeEdge.y} L ${routeEdge.x - .20} ${routeEdge.y + .25} Z`} />
               </g>
-            )}
+            ) : (
+              <g className={`chronicles-automap__target${targetCornerBadge ? ' is-corner-badge' : ''}`}
+                data-chronicles-route-target="in-view"
+                data-chronicles-route-overlap={targetOverPoi ? 'poi' : (targetOverParty ? 'party' : undefined)}
+                aria-label={routeLabel ? `Siguiente salida hacia el objetivo: ${routeLabel}` : 'Siguiente paso hacia el objetivo'}>
+                {routeLabel && <title>{`Siguiente salida: ${routeLabel}`}</title>}
+                <circle cx={target.x + (targetCornerBadge ? 0.78 : 0.5)}
+                  cy={target.y + (targetCornerBadge ? 0.78 : 0.5)} r={targetCornerBadge ? 0.21 : 0.46} />
+                <text x={target.x + (targetCornerBadge ? 0.78 : 0.5)}
+                  y={target.y + (targetCornerBadge ? 0.81 : 0.55)}
+                  textAnchor="middle" dominantBaseline="middle">★</text>
+              </g>
+            ))}
             <g
               className="chronicles-automap__party-marker"
               data-chronicles-map-facing={state.direction}
@@ -246,8 +266,9 @@ export default function ChroniclesAutomap({
         <footer>
           <span><i className="is-party" aria-hidden="true">▲</i> grupo</span>
           <span><i className="is-exit" aria-hidden="true">↗</i> salida · ↓ mazmorra</span>
-          <span>F forja · A armaduras · G gremio · P posada · C comercio · T templo · H ayuntamiento</span>
-          <span><i className="is-target" aria-hidden="true">★</i> camino al objetivo · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
+          <span className="chronicles-automap__legend-guild"><i aria-hidden="true">G</i> gremio</span>
+          <span>F forja · A armaduras · P posada · C comercio · T templo · H ayuntamiento</span>
+          <span><i className="is-target" aria-hidden="true">★</i> rumbo al objetivo{target && routeLabel && <> · salida: <b className="chronicles-automap__route-label" title={routeLabel}>{routeLabel}</b></>} · Solo lugares descubiertos · {onOpenSheet && <><kbd>1–4</kbd> fichas · </>}<kbd>M</kbd> cerrar</span>
         </footer>
       </section>
     </div>

@@ -219,8 +219,7 @@ test('unreadable, truncated and malformed receipt listings fail closed', () => {
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: 'no', workflow_run: { id: 123 } }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: '123' } }] },
-    // A fractional origin used to pass numeric schema checks, then be
-    // silently dropped by the integer-only shell loop, causing two dispatches.
+    // A fractional origin must fail closed rather than disappear in the integer-only shell loop.
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: 123.5 } }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: 0 } }] },
     { total_count: 1, artifacts: [{ name: receiptName(), expired: false, workflow_run: { id: -42 } }] },

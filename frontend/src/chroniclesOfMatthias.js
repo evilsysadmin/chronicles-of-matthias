@@ -29,6 +29,7 @@ import {
 import {
   chroniclesCloseGuild, chroniclesGuildJoin, chroniclesGuildLearn, chroniclesOpenGuild,
 } from './chronicles/chroniclesGuild.js';
+import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
   CHRONICLES_SPELLS,
@@ -36,6 +37,7 @@ import {
   chroniclesMemberKnowsSpell,
   chroniclesMemberSp,
   chroniclesMemberMaxSp,
+  chroniclesHealTargetStatus,
   chroniclesMostWoundedAlly,
   chroniclesParalysisTurns,
   chroniclesSpellDamage,
@@ -290,6 +292,9 @@ export function chroniclesContextualContentAction(state) {
   if (!explorationCellBlocker(state, front.x, front.y)) {
     const definition = (map?.interactables || []).find((entry) => {
       if (!FIRST_PERSON_ADJACENT_INTERACTION_KINDS.has(entry.kind)) return false;
+      // A shop has a marked door: approaching the next street square must
+      // not activate it through a wall. Leave other NPC/quest reach intact.
+      if (entry.shop && String(entry.visualType || '').startsWith('building-')) return false;
       if (!chroniclesRequirementsMet(state, entry.when)) return false;
       const position = chroniclesMapContentPosition(map, entry);
       return position?.x === front.x && position?.y === front.y;
@@ -313,6 +318,11 @@ export function chroniclesContextualContentAction(state) {
   if (!interaction) return null;
   const definition = chroniclesContentDefinition(map, interaction.id);
   if (!definition?.action) return null;
+  // Visiting the tavern is free: its authored gold requirement belongs to REST.
+  if (chroniclesIsInn(definition)) return {
+    id: interaction.id, kind: 'service',
+    label: `Entrar en ${chroniclesInnName(definition)}`, locked: false,
+  };
   return {
     id: interaction.id,
     kind: interaction.kind,
@@ -338,6 +348,8 @@ function resolveContextualContentAction(state) {
   }
   const map = chroniclesMapForState(state);
   const definition = chroniclesContentDefinition(map, contextual.id);
+  // An inn is a real room to enter, not an automatic paid rest action.
+  if (chroniclesIsInn(definition)) return chroniclesOpenInn(state, definition);
   // A merchant with a stock list opens its counter instead of a scripted trade.
   if (definition?.shop && Array.isArray(definition.shop.stock)) return chroniclesOpenShop(state, definition);
   if (definition?.guild && Array.isArray(definition.guild.spells)) return chroniclesOpenGuild(state, definition);
@@ -395,12 +407,15 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
 }
 
 // MM armor class: Speed bonus + worn armor (type + material).
-export function chroniclesPartyArmorClass(state, memberId) {
+// During a two-handed ranged attack, the shield cannot parry an immediate
+// counterstrike. Outside that action it still protects its owner.
+export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = {}) {
   const member = partyMember(state, memberId);
   if (!member) return 0;
   // Escudo de fe holds only while the fight it was cast in lasts.
   const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
-  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0) + chroniclesEquipmentBonuses(state, memberId).armorClassBonus + ward);
+  return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward);
 }
 
 export function chroniclesUsesMM3Combat(state) {
@@ -409,9 +424,12 @@ export function chroniclesUsesMM3Combat(state) {
 
 // One enemy swing at one hero under MM rules: d20 + enemy to-hit vs 10 + AC.
 // Armor no longer subtracts damage here; it makes the blow miss.
-export function chroniclesMM3EnemySwing(state, enemy, targetId, salt = 'enemy') {
+export function chroniclesMM3EnemySwing(state, enemy, targetId, salt = 'enemy', defenseMode = 'melee') {
   const roll = chroniclesMM3Roll(state, salt, enemy.id, targetId);
-  const hit = chroniclesMM3AttackHits(roll, chroniclesMM3EnemyToHit(enemy), chroniclesPartyArmorClass(state, targetId));
+  const hit = chroniclesMM3AttackHits(
+    roll, chroniclesMM3EnemyToHit(enemy),
+    chroniclesPartyArmorClass(state, targetId, { mode: defenseMode }),
+  );
   return { roll, hit, damage: hit ? Math.max(1, Number(enemy.retaliation || 1)) : 0 };
 }
 
@@ -645,7 +663,10 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const targetId = retaliationTargetId(state, attacker);
   const previousTarget = state.party.find((member) => member.id === targetId);
   const swing = chroniclesUsesMM3Combat(state) && targetId
-    ? chroniclesMM3EnemySwing(state, enemy, targetId, 'retaliation')
+    ? chroniclesMM3EnemySwing(
+      state, enemy, targetId, 'retaliation',
+      mode === 'missile' && targetId === attacker.id ? 'missile' : 'melee',
+    )
     : null;
   const retaliationDamage = (member) => (swing
     ? swing.damage
@@ -725,6 +746,12 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   }
   const target = chroniclesConsumableTarget(state, item, targetId);
   if (!target) {
+    if (targetId && item.kind === 'revive') {
+      const chosen = state.party.find((hero) => hero.id === targetId);
+      return refuse(chosen
+        ? `${chosen.name} sigue en pie. El Elixir de retorno solo reanima a compañeros con 0 PV.`
+        : 'No existe ese compañero. No se ha consumido el Elixir de retorno.');
+    }
     return refuse({
       heal: `${user.name} destapa ${item.name}, pero nadie de la compañía está herido.`,
       mana: `${user.name} mira ${item.name}: nadie necesita recuperar puntos de hechizo.`,
@@ -763,7 +790,7 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   return state;
 }
 
-function resolveCast(state, memberId, spellId) {
+function resolveCast(state, memberId, spellId, targetId = null) {
   // A refused cast costs no turn: MM3 simply tells you why.
   const refuse = (message) => ({ ...state, message });
   const caster = partyMember(state, memberId);
@@ -821,8 +848,23 @@ function resolveCast(state, memberId, spellId) {
     };
   }
   if (spell.kind === 'heal') {
-    const patient = chroniclesMostWoundedAlly(state);
-    if (!patient) return refuse(`${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    const patient = targetId
+      ? state.party.find((member) => member.id === targetId)
+      : chroniclesMostWoundedAlly(state); // backward-compatible auto targeting
+    if (targetId && !patient) return refuse(`No existe ese compañero: no se ha lanzado ${spell.name}.`);
+    const eligibility = chroniclesHealTargetStatus(patient);
+    if (eligibility === 'fallen' && patient) {
+      return refuse(`${patient.name} está caído con 0 PV. ${spell.name} cura heridas, pero no resucita. Usa un Elixir de retorno desde Objetos.`);
+    }
+    if (eligibility === 'healthy') {
+      return refuse(`${patient.name} ya tiene todos sus PV. ${spell.name} no se ha consumido.`);
+    }
+    if (!patient) {
+      const fallen = state.party.some((member) => member.hp <= 0);
+      return refuse(fallen
+        ? `No hay compañeros en pie que necesiten curación. Los caídos a 0 PV necesitan un Elixir de retorno desde Objetos.`
+        : `${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    }
     const healed = Math.min(patient.maxHp, patient.hp + spell.amount);
     return {
       ...chroniclesSpendSp(state, caster.id, spell.cost),
@@ -926,9 +968,12 @@ function renderedTownHouseAt(map, cell) {
   return renderedTownHouses.get(map).find(({ block }) => block.cells.some(({ x, y }) => x === cell.x && y === cell.y)) || null;
 }
 
-// Standing anywhere along the facade that carries the door (and facing in)
-// counts as walking through that door, as in MM3: the counter opens.
-function onDoorFacade(state, { block, door }) {
+// Shop doors are an exact authored street cell, not the full facade.
+// Non-shop dialogue buildings retain their established entrance geometry.
+function onDoorFacade(state, { block, door, entries }) {
+  if (entries.some((entry) => entry.shop)) {
+    return state.x === door.x && state.y === door.y;
+  }
   const horizontal = door.y === block.minY - 1 || door.y === block.maxY + 1;
   return horizontal
     ? state.y === door.y && state.x >= block.minX && state.x <= block.maxX
@@ -1025,6 +1070,10 @@ export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
+  if (actionType === 'inn-close') return chroniclesCloseInn(state);
+  if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
+  if (actionType === 'inn-buy-food') return chroniclesInnBuyFood(state, chroniclesMapForState(state));
+  if (actionType === 'inn-rumor') return chroniclesInnHearRumor(state, chroniclesMapForState(state));
   if (actionType === 'shop-buy') return chroniclesShopBuy(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-sell') return chroniclesShopSell(state, chroniclesMapForState(state), action.itemId);
   if (actionType === 'shop-close') return chroniclesCloseShop(state);
@@ -1035,8 +1084,8 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'guild-close') return chroniclesCloseGuild(state);
   if (actionType === 'track-quest') return chroniclesTrackQuest(state, action.questId);
   // Any other action (moving, turning, fighting) walks away from the counter.
-  if ((state.shop || state.guild) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
-    return chroniclesReduce(chroniclesCloseGuild(chroniclesCloseShop(state)), action);
+  if ((state.shop || state.guild || state.inn) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
+    return chroniclesReduce(chroniclesCloseInn(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
   }
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
@@ -1047,7 +1096,7 @@ export function chroniclesReduce(state, action) {
     const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
     return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode);
   }
-  if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId);
+  if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId, action.targetId || null);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
   if (actionType === 'cross-area-threshold') return crossAreaThreshold(state, action.exitId);

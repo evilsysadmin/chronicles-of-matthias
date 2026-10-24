@@ -63,6 +63,35 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.equipment.matthias).toEqual(before);
   });
 
+  it('shows honest melee reach when a bow is also equipped, and real shield tradeoffs for ranged arms', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow', shield: 'bronze-shield' } },
+    };
+    const spear = memberPreview(state, 'matthias', 'wooden-spear');
+    expect(metric(spear, 'reach').delta).toBe(1);
+    expect(metric(spear, 'reach').before).toBe(1);
+    expect(metric(spear, 'reach').after).toBe(2);
+    const bow = memberPreview(state, 'matthias', 'wooden-longbow');
+    expect(metric(bow, 'toHit').after)
+      .toBe(item('wooden-longbow').toHitBonus);
+    const sling = memberPreview(state, 'matthias', 'brass-sling');
+    expect(metric(sling, 'toHit').after)
+      .toBe(item('brass-sling').toHitBonus + item('bronze-shield').toHitBonus);
+    expect(state.equipment.matthias.shield).toBe('bronze-shield');
+    expect(state.equipment.matthias.missile).toBe('wooden-bow');
+  });
+
+  it('reflects the actual dagger precision vs axe damage and polearm reach', () => {
+    const current = { ...initial(), equipment: { matthias: { weapon: 'brass-dagger' } } };
+    const axe = memberPreview(current, 'matthias', 'brass-axe');
+    const spear = memberPreview(current, 'matthias', 'wooden-spear');
+    expect(metric(axe, 'toHit').delta).toBeLessThan(0);
+    expect(metric(axe, 'damage').delta).toBeGreaterThan(0);
+    expect(metric(spear, 'reach').delta).toBe(1);
+    expect(current.equipment.matthias.weapon).toBe('brass-dagger');
+  });
+
   it('warns about shields displaced by two-handed weapons and includes defensive losses', () => {
     const state = {
       ...initial(),
@@ -73,8 +102,25 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(next.displacedShield?.id).toBe('iron-shield');
     expect(metric(next, 'armorClass').before).toBe(chroniclesPartyArmorClass(state, 'matthias'));
     expect(metric(next, 'armorClass').delta).toBeLessThan(0);
-    expect(metric(next, 'damageReduction').delta).toBeLessThan(0);
+    expect(metric(next, 'damageReduction')).toBeUndefined();
     expect(state.equipment.matthias.shield).toBe('iron-shield');
+  });
+
+  it('shows both CA and actual accuracy tradeoffs for starter shields', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', shield: 'wooden-shield' } },
+    };
+    const brass = memberPreview(state, 'matthias', 'brass-shield');
+    expect(brass.stats.map((stat) => stat.key)).toEqual(['armorClass']);
+    expect(metric(brass, 'armorClass').delta).toBe(1);
+    expect(metric(brass, 'toHit')).toBeUndefined();
+    const bronze = memberPreview(state, 'matthias', 'bronze-shield');
+    expect(bronze.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(bronze, 'armorClass').delta).toBe(1);
+    expect(metric(bronze, 'toHit').delta).toBe(1);
+    expect(metric(bronze, 'toHit').label).toBe('Acierto');
+    expect(state.equipment.matthias.shield).toBe('wooden-shield');
   });
 
   it('blocks the shield comparison while wielding two hands, as the equip action does', () => {
@@ -87,14 +133,58 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(next.stats).toEqual([]);
   });
 
-  it('shows real armor and damage reduction deltas, including when the slot is empty', () => {
+  it('shows only hit avoidance (CA) in MM3: damage reduction does not mitigate a landed blow', () => {
     const state = initial();
     const next = memberPreview(state, 'matthias', 'leather-padded');
     expect(next.current).toBeNull();
     expect(next.eligible).toBe(true);
-    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass', 'damageReduction']);
+    expect(next.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(next, 'toHit').label).toBe('Acierto');
+    expect(metric(next, 'toHit').delta).toBe(1);
+    expect(metric(next, 'armorClass').label).toBe('Armadura (CA)');
     expect(metric(next, 'armorClass').delta).toBe(item('leather-padded').armorClassBonus);
-    expect(metric(next, 'damageReduction').delta).toBe(item('leather-padded').damageReduction);
+    expect(metric(next, 'damageReduction')).toBeUndefined();
+  });
+
+  it('distinguishes loss of an existing gambeson bonus from an item malus', () => {
+    const state = { ...initial(), equipment: { matthias: { armor: 'leather-padded' } } };
+    const cuirass = memberPreview(state, 'matthias', 'leather-leather');
+    expect(item('leather-leather').toHitBonus).toBe(0); // no malus on cuirass
+    expect(item('leather-padded').toHitBonus).toBe(1);
+    expect(metric(cuirass, 'armorClass').delta).toBe(1);
+    expect(metric(cuirass, 'toHit').delta).toBe(-1); // losing the OLD +1
+    expect(state.equipment.matthias.armor).toBe('leather-padded');
+  });
+
+  it('gives Odo a real CA-versus-precision choice without changing gold or gear', () => {
+    const state = {
+      ...initial(),
+      equipment: { matthias: { weapon: 'brass-sword', armor: 'brass-scale' } },
+    };
+    const vest = memberPreview(state, 'matthias', 'roadwatch-vest');
+    expect(vest.eligible).toBe(true);
+    expect(vest.stats.map((stat) => stat.key)).toEqual(['armorClass', 'toHit']);
+    expect(metric(vest, 'armorClass').delta).toBe(0);
+    expect(metric(vest, 'toHit').delta).toBe(1);
+    const ring = memberPreview(state, 'matthias', 'brass-ring');
+    expect(metric(ring, 'armorClass').delta).toBe(1);
+    expect(metric(ring, 'toHit')).toBeUndefined();
+    expect(state.equipment.matthias.armor).toBe('brass-scale');
+  });
+
+  it('retains damage mitigation comparisons only in the legacy combat rules', () => {
+    const state = { ...initial(), combatRules: 'legacy' };
+    const armor = memberPreview(state, 'matthias', 'leather-padded');
+    expect(armor.stats.map((stat) => stat.key)).toEqual(['armorClass', 'damageReduction']);
+    expect(metric(armor, 'damageReduction').label).toBe('Reducción de daño');
+    expect(metric(armor, 'damageReduction').delta).toBe(item('leather-padded').damageReduction);
+
+    const shieldState = {
+      ...state,
+      equipment: { matthias: { weapon: 'bronze-sword', shield: 'iron-shield' } },
+    };
+    const twoHanded = memberPreview(shieldState, 'matthias', 'wooden-staff');
+    expect(metric(twoHanded, 'damageReduction').delta).toBeLessThan(0);
   });
 
   it('handles already equipped, fallen and malformed previews without side effects', () => {

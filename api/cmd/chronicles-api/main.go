@@ -200,6 +200,9 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	opsImport := gamesapi.NewOpsImport(gamesapi.OpsImportConfig{
 		Secret: []byte(jwtSecret), Environment: environment, Accounts: accountstore.New(db, timeout),
 		Import: func(ctx context.Context, username string) (any, error) {
+			if err := legacyimport.ValidateDistinctDatabases(legacyDB.Name(), db.Name()); err != nil {
+				return nil, err
+			}
 			return legacyimport.Import(ctx, legacyimport.NewMongoSource(legacyDB, 20*time.Second),
 				legacyimport.NewMongoRuns(db, timeout), chroniclesprogression.NewMongo(db, timeout), username, time.Now())
 		},
@@ -218,6 +221,23 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return nil, fmt.Errorf("chronicles progression: %w", err)
 	}
 
+	// Reuse native authenticated feedback validation and rate limits. Both
+	// player and admin inboxes persist ONLY in Chronicles' own Mongo DB;
+	// userdata.Purge already removes the "feedback" collection for an account.
+	feedbackStore := newChroniclesFeedbackStore(db, timeout)
+	feedback, err := gamesapi.NewFeedback(gamesapi.FeedbackConfig{
+		Config: base(), Feedback: feedbackStore,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("feedback: %w", err)
+	}
+	adminFeedback, err := gamesapi.NewAdminFeedback(gamesapi.AdminFeedbackConfig{
+		Config: base(), Feedback: feedbackStore, AdminUsernames: adminUsernames(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("admin feedback: %w", err)
+	}
+
 	ok2 := func(f func(*http.Request) (string, bool)) func(*http.Request) bool {
 		return func(r *http.Request) bool { _, ok := f(r); return ok }
 	}
@@ -226,6 +246,8 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"session", session, ok2(gamesapi.SessionRoute)},
 		{"account", account, ok2(gamesapi.AccountRoute)},
 		{"recovery", recovery, ok2(gamesapi.RecoveryRoute)},
+		{"feedback", feedback, func(r *http.Request) bool { _, _, ok := gamesapi.FeedbackRoute(r); return ok }},
+		{"admin-feedback", adminFeedback, ok2(gamesapi.AdminFeedbackRoute)},
 		{"runs", runs, func(r *http.Request) bool { _, _, ok := gamesapi.ChroniclesRunsRoute(r); return ok }},
 		{"progression", progression, gamesapi.ChroniclesProgressionRoute},
 		{"system", system, ok2(gamesapi.SystemRoute)},

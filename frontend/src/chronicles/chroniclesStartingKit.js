@@ -19,6 +19,11 @@ export const CHRONICLES_STARTER_WEAPON_BY_CLASS = Object.freeze({
   ranger: 'bronze-sword',
 });
 
+// Standard newcomers start in leather. The sorcerer is the sole MM3 class
+// whose armor ceiling is padded; never silently equip illegal leather.
+export const CHRONICLES_STARTER_ARMOR_ID = 'leather-leather';
+export const CHRONICLES_STARTER_PADDED_ARMOR_ID = 'leather-padded';
+
 // MM3 heroes carry a missile weapon beside the melee one (S · disparar).
 export const CHRONICLES_STARTER_MISSILE_BY_CLASS = Object.freeze({
   archer: 'wooden-bow',
@@ -37,6 +42,11 @@ export function chroniclesApplyStartingKit(state, run) {
 
   const equipment = {};
   for (const member of state.party) {
+    const leather = CHRONICLES_EQUIPMENT[CHRONICLES_STARTER_ARMOR_ID];
+    const padded = CHRONICLES_EQUIPMENT[CHRONICLES_STARTER_PADDED_ARMOR_ID];
+    const armor = chroniclesMemberCanEquip(member, leather) ? leather
+      : chroniclesMemberCanEquip(member, padded) ? padded : null;
+    if (armor) equipment[member.id] = { ...equipment[member.id], armor: armor.id };
     for (const [slot, table] of [['weapon', CHRONICLES_STARTER_WEAPON_BY_CLASS], ['missile', CHRONICLES_STARTER_MISSILE_BY_CLASS]]) {
       const item = CHRONICLES_EQUIPMENT[table[member.mm3?.classId]];
       if (!item || item.slot !== slot || !chroniclesMemberCanEquip(member, item)) continue;

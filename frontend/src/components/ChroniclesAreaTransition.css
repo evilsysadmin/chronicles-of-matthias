@@ -26,29 +26,17 @@
   box-shadow: 0 6px 25px rgba(0, 0, 0, .65);
   border-radius: 7px;
 }
-.chronicles-area-transition__eyebrow {
-  font: 700 .61rem/1.3 system-ui, sans-serif;
-  letter-spacing: .16em;
-  color: #c5ae80;
-}
 .chronicles-area-transition__card h2 {
-  margin: 5px 0 12px;
+  margin: 0 0 12px;
   font: 600 clamp(1.02rem, 2.3vw, 1.25rem)/1.3 Georgia, serif;
   color: #fff0ce;
   text-wrap: balance;
 }
-/* The button names already explain the choice; retain its help for assistive
-   technology instead of spending a third visible line on filler text. */
+/* Short keyboard legend replaces the meaningless threshold eyebrow. */
 .chronicles-area-transition__card p {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+  margin: 11px 0 0;
+  color: #cbbba0;
+  font: 500 .72rem/1.35 system-ui, sans-serif;
 }
 .chronicles-area-transition__actions {
   display: grid;
@@ -66,15 +54,17 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-.chronicles-area-transition__actions button.is-primary {
-  border-color: #d3b575;
-  background: #775d33;
-  color: #fff2d8;
+/* Neither action is intrinsically primary: Enter confirms the focused one.
+   A single gold focus surface is the only selected state on keyboard,
+   pointer, and touch, so No and Yes cannot look selected simultaneously. */
+.chronicles-area-transition__actions button:hover:not(:focus) {
+  filter: brightness(1.12);
 }
-.chronicles-area-transition__actions button:hover {
-  filter: brightness(1.16);
-}
-.chronicles-area-transition__actions button:focus-visible {
+.chronicles-area-transition__actions button:focus {
+  background: #876332;
+  border-color: #ffe0a0;
+  color: #fff7df;
+  box-shadow: inset 0 0 0 2px #f7d79a;
   outline: 3px solid #efce87;
   outline-offset: 2px;
 }

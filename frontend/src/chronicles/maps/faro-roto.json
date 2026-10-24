@@ -404,6 +404,65 @@
       "defeatedFlag": "faro_rotoBossDefeated",
       "blockingMessage": "La Farera Ahogada cierra el paso.",
       "visualScale": 1.2
+    },
+    {
+      "id": "faro-roto-foe-13",
+      "visualType": "ember-wisp",
+      "name": "farol encantado",
+      "x": 16,
+      "y": 1,
+      "hpKey": "faro_rotoFoe13Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con farol encantado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "faro-roto-foe-14",
+      "visualType": "skeleton",
+      "name": "contrabandista ahorcado",
+      "x": 14,
+      "y": 11,
+      "hpKey": "faro_rotoFoe14Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con contrabandista ahorcado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

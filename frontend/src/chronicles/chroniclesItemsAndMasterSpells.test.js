@@ -60,6 +60,32 @@ describe('Chronicles · potions, scrolls and the botica', () => {
     expect(empty.turns).toBe(state.turns);
   });
 
+  it('lets the player choose which fallen ally receives an elixir, refusing invalid targets without spending it', () => {
+    const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    let state = grant(base, 'revive-draught', 2);
+    state = wound(wound(state, 'rook', 0), 'knight', 0);
+    const refused = chroniclesReduce(state, {
+      type: 'use-item', memberId: 'matthias', itemId: 'revive-draught', targetId: 'matthias',
+    });
+    expect(refused.turns).toBe(state.turns);
+    expect(refused.inventory['revive-draught'].quantity).toBe(2);
+    expect(refused.message).toMatch(/sigue en pie/);
+
+    const next = chroniclesReduce(state, {
+      type: 'use-item', memberId: 'matthias', itemId: 'revive-draught', targetId: 'rook',
+    });
+    expect(member(next, 'rook').hp).toBe(Math.ceil(member(state, 'rook').maxHp / 3));
+    expect(member(next, 'knight').hp).toBe(0);
+    expect(next.inventory['revive-draught'].quantity).toBe(1);
+    expect(next.turns).toBe(state.turns + 1);
+    const ghost = chroniclesReduce(state, {
+      type: 'use-item', memberId: 'matthias', itemId: 'revive-draught', targetId: 'ghost',
+    });
+    expect(ghost.inventory['revive-draught'].quantity).toBe(2);
+    expect(ghost.turns).toBe(state.turns);
+    expect(ghost.message).toMatch(/No existe/);
+  });
+
   it('reads a scroll at its own reach without spell points', () => {
     let state = grant(road(), 'fire-scroll');
     state = chroniclesReduce(state, { type: 'use-item', memberId: 'matthias', itemId: 'fire-scroll' });

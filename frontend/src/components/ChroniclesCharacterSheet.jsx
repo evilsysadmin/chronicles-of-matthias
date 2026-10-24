@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './ChroniclesCharacterSheetFolioV2.css';
+import './ChroniclesCharacterSheetArchive.css';
+import './ChroniclesCharacterEquipmentMM3.css';
+import './ChroniclesCharacterDeskCompact.css';
+import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
   chroniclesGoldBalance,
@@ -35,7 +39,8 @@ import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactic
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
-import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
+import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
+import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -106,6 +111,22 @@ export default function ChroniclesCharacterSheet({
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
+  const inventoryListRef = useRef(null);
+  const folioScrollRef = useRef(null);
+  const previousViewedMemberIdRef = useRef(member?.id);
+
+  // The modal stays mounted when the player switches heroes. Without this,
+  // the next hero can inherit the previous hero's mid-page scroll position.
+  // Keep the chosen folio; only its viewport should start afresh on desktop.
+  useLayoutEffect(() => {
+    const nextId = member?.id;
+    if (previousViewedMemberIdRef.current === nextId) return;
+    previousViewedMemberIdRef.current = nextId;
+    if (!nextId || mode === 'tactics' || typeof window === 'undefined'
+      || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
+    if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
+    if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
+  }, [member?.id, mode]);
 
   // A modal may lose DOM focus after an equipment action rerenders its buttons.
   // Keep 1–4 working while the sheet is open, even if focus falls to <body>.
@@ -145,12 +166,17 @@ export default function ChroniclesCharacterSheet({
   const effectiveAgility = chroniclesPartyInitiativeAgility(state, member);
   const mm3 = !tacticsMode && member.mm3 ? member.mm3 : null;
   const className = mm3?.classLabel || profile.className;
+  const spellcastingCompanion = !tacticsMode && onSelectMember
+    ? state.party?.find((companion) => companion.id !== member.id && chroniclesMemberSchool(companion))
+    : null;
   const relic = relicDetails(state, member.id);
   const inventory = chroniclesInventoryEntries(state).filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
   const gold = chroniclesGoldBalance(state);
   const backpackCounts = chroniclesBackpackCounts(inventory);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
-  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId);
+  // The first visible item is a safe preview; selection never equips it.
+  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId)
+    || (!tacticsMode ? visibleBackpack[0] : null);
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
@@ -161,6 +187,23 @@ export default function ChroniclesCharacterSheet({
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
+
+  // Filtering/searching invalidates the old list position. Without resetting
+  // the nested scroll, the first matching object can stay outside the viewport.
+  // Tactics has no backpack filters and is unaffected.
+  const resetBackpackScroll = () => {
+    if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
+  };
+
+  const selectFolio = (folio) => {
+    setActiveFolio(folio);
+    // A new desktop dossier section starts at the top; otherwise a long
+    // backpack/training scroll can leave the next page opening halfway down.
+    // Deliberately preserve the existing mobile and Tactics scroll behavior.
+    if (!tacticsMode && window.matchMedia('(min-width: 851px) and (min-height: 581px)').matches) {
+      if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
+    }
+  };
 
   const closeOnEscape = (event) => {
     if (event.key === 'Escape') {
@@ -179,6 +222,110 @@ export default function ChroniclesCharacterSheet({
     }
   };
 
+  // One real inventory subtree; only its reading order changes by mode.
+  // Tactics retains its original relic-first layout and keyboard order.
+  const backpackPanel = (
+            <article className="chronicles-character-sheet__backpack">
+              <span>Mochila de expedición</span>
+              {!tacticsMode && inventory.length > 0 && (
+                <div className="chronicles-character-sheet__backpack-tools">
+                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
+                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
+                      .map(({ id, label }) => (
+                        <button type="button" key={id}
+                          aria-pressed={backpackFilter === id}
+                          onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedItemId(null); }}>
+                          {label} <small>{backpackCounts[id]}</small>
+                        </button>
+                      ))}
+                  </div>
+                  <label className="chronicles-character-sheet__backpack-search">
+                    Buscar en la mochila
+                    <input type="search" value={backpackSearch}
+                      placeholder="Nombre, material u objeto…"
+                      onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedItemId(null); }}
+                    />
+                  </label>
+                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
+                    {visibleBackpack.length} de {inventory.length} tipos de objeto
+                  </small>
+                </div>
+              )}
+              {inventory.length ? (
+                visibleBackpack.length ? (
+                  <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
+                    role="group" aria-label="Objetos de la mochila">
+                    {visibleBackpack.map((item) => (
+                      <button type="button" key={item.id} data-inventory-item={item.id}
+                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
+                        aria-pressed={selectedInventoryItem?.id === item.id}
+                        onClick={() => setSelectedItemId(item.id)}
+                        onKeyDown={(event) => {
+                          if (tacticsMode) return;
+                          const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
+                          if (!nextId) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setSelectedItemId(nextId);
+                          const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
+                          inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
+                        }}
+                      >
+                        {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
+                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⛨', other: '◆' }[chroniclesBackpackCategory(item)]}
+                        </i>}
+                        <span>{item.name}</span>
+                        {item.quantity > 1 && <small>×{item.quantity}</small>}
+                      </button>
+                    ))}
+                  </div>
+                ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
+              ) : (
+                <small>Sin objetos recuperados en esta expedición.</small>
+              )}
+              {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
+              {!tacticsMode && selectedInventoryItem && (
+                <aside className="chronicles-character-sheet__item-details" aria-live="polite">
+                  <strong>{selectedInventoryItem.name}</strong>
+                  <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  {!tacticsMode && selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
+                    <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
+                      {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
+                    </small>
+                  )}
+                  <dl>
+                    <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
+                    {selectedEquipment && <>
+                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
+                      <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
+                      <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
+                      <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
+                      <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
+                      <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                    </>}
+                  </dl>
+                  {selectedEquipment && <>
+                    <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
+                    {weaponSwap ? (
+                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
+                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
+                        <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
+                        <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
+                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
+                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
+                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
+                      </div>
+                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
+                    <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
+                      onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
+                      Equipar {selectedEquipment.name}
+                    </button>
+                  </>}
+                </aside>
+              )}
+            </article>
+  );
+
   const sheet = (
     <div
       className="chronicles-character-sheet__backdrop"
@@ -196,22 +343,22 @@ export default function ChroniclesCharacterSheet({
         onKeyDown={closeOnEscape}
       >
         {/* The frame (and its corner gems) stays put; only the contents scroll. */}
-        <div className="chronicles-character-sheet__scroll">
+        <div className="chronicles-character-sheet__scroll" ref={folioScrollRef}>
         <header className="chronicles-character-sheet__head">
-          <div className="chronicles-character-sheet__portrait">
+          {tacticsMode && <div className="chronicles-character-sheet__portrait">
             <img src={chroniclesPartyPortraitUrl(member)} alt={`Retrato de ${member.name}`} draggable="false" />
-          </div>
+          </div>}
           <div className="chronicles-character-sheet__identity">
-            <span>EXPEDIENTE DE CAMPAÑA</span>
+            {tacticsMode && <span>EXPEDIENTE DE CAMPAÑA</span>}
             <h3 id="chronicles-character-sheet-title">{member.name}</h3>
             <p>{className} · Nivel {progress.level}{mm3 ? '' : ` · ${profile.weaponName}`}</p>
             {!tacticsMode && (
               <div className="chronicles-character-sheet__quick" aria-label="Recursos actuales">
-                <span>PV <b>{member.hp}/{member.maxHp}</b></span>
+                <span data-resource="health">PV <b>{member.hp}/{member.maxHp}</b></span>
                 {chroniclesMemberSchool(member) && (
-                  <span>PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
+                  <span data-resource="magic">PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
                 )}
-                <span>ORO <b>{gold}</b></span>
+                <span data-resource="gold">ORO <b>{gold}</b></span>
               </div>
             )}
           </div>
@@ -220,8 +367,8 @@ export default function ChroniclesCharacterSheet({
 
         <div className="chronicles-character-sheet__progression">
           <div className="chronicles-character-sheet__xp-copy">
-            <span>PROGRESIÓN</span>
-            <b>{xp.label}</b>
+            {tacticsMode && <span>PROGRESIÓN</span>}
+            <b>{tacticsMode ? xp.label : `${progress.xp}/${xpWindow.maxLevel ? 'MAX' : xpWindow.next} XP`}</b>
           </div>
           <div className="chronicles-character-sheet__xp-track" aria-label={xp.label}>
             <i style={{ width: `${xp.ratio * 100}%` }} />
@@ -229,6 +376,7 @@ export default function ChroniclesCharacterSheet({
           <small>{xpWindow.maxLevel ? 'Veterano al máximo' : `${xpWindow.remaining} XP para el siguiente nivel`}</small>
         </div>
 
+        <div className="chronicles-character-sheet__folio-layout">
         {!tacticsMode && (
           <nav className="chronicles-character-sheet__tabs" aria-label="Apartados de la ficha">
             {[
@@ -240,12 +388,13 @@ export default function ChroniclesCharacterSheet({
               <button type="button" key={tab.id}
                 className={activeFolio === tab.id ? 'is-active' : ''}
                 aria-pressed={activeFolio === tab.id}
-                onClick={() => setActiveFolio(tab.id)}
+                onClick={() => selectFolio(tab.id)}
               ><span aria-hidden="true">{tab.symbol}</span>{tab.label}</button>
             ))}
           </nav>
         )}
 
+        <div className="chronicles-character-sheet__folio-content">
         <div className="chronicles-character-sheet__vitals"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>HP</span><b>{member.hp}/{member.maxHp}</b></div>
@@ -263,7 +412,7 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__worn" hidden={activeFolio !== 'record'} data-chronicles-worn-gear={member.id}>
             <div className="chronicles-character-sheet__section-head">
               <div><span>EQUIPO PUESTO</span><small>{member.hp > 0 ? 'Operativo' : 'Fuera de combate'} · {className}</small></div>
-              <button type="button" className="chronicles-character-sheet__worn-change" onClick={() => setActiveFolio('equipment')}>Cambiar equipo ›</button>
+              <button type="button" className="chronicles-character-sheet__worn-change" onClick={() => selectFolio('equipment')}>Cambiar equipo ›</button>
             </div>
             <ul>
               {chroniclesWornGear(state, member.id).map((slot) => (
@@ -278,7 +427,7 @@ export default function ChroniclesCharacterSheet({
               ))}
             </ul>
             <small className="chronicles-character-sheet__worn-total">
-              Total del equipo: daño +{gearBonus.attackDamageBonus} · acierto {signed(gearBonus.toHitBonus)} · CA +{gearBonus.armorClassBonus}
+              Equipo A: daño +{gearBonus.attackDamageBonus} · acierto {signed(gearBonus.toHitBonus)} · CA +{gearBonus.armorClassBonus}. El disparo S usa sus propios bonos.
             </small>
           </div>
         )}
@@ -328,15 +477,13 @@ export default function ChroniclesCharacterSheet({
               </div>
               <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)} PH</b>
             </div>
-            <div className="chronicles-character-sheet__loadout">
-              {chroniclesMemberSpells(state, member).map((spell) => (
-                <article key={spell.id}>
-                  <span>{spell.cost} PH</span>
-                  <b>{spell.name}</b>
-                  <small>{spell.description}</small>
-                </article>
-              ))}
-            </div>
+            <ChroniclesCharacterGrimoire
+              key={member.id}
+              spells={chroniclesMemberSpells(state, member)}
+              availableSp={chroniclesMemberSp(state, member)}
+              maxSp={chroniclesMemberMaxSp(state, member)}
+              schoolLabel={CHRONICLES_SPELL_SCHOOLS[chroniclesMemberSchool(member)].label}
+            />
           </div>
         )}
 
@@ -344,17 +491,25 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__section chronicles-character-sheet__no-spells">
             <span>✧</span>
             <p>Este personaje no practica ninguna escuela de magia.</p>
+            {spellcastingCompanion && (
+              <button type="button" className="chronicles-character-sheet__spell-companion"
+                onClick={() => onSelectMember(spellcastingCompanion.id)}>
+                Ver hechizos de {spellcastingCompanion.name} <span aria-hidden="true">›</span>
+              </button>
+            )}
           </div>
         )}
 
         <div className="chronicles-character-sheet__section"
+          data-chronicles-equipment-folio={!tacticsMode ? member.id : undefined}
           hidden={!tacticsMode && activeFolio !== 'equipment'}>
           <div className="chronicles-character-sheet__section-head">
             <div><span>EQUIPO Y OBJETOS</span><small>Equipo personal y botín de la expedición</small></div>
             <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
           </div>
-          <div className="chronicles-character-sheet__loadout">
-            <article className={relic ? 'has-relic' : ''}>
+          <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
+            {!tacticsMode && backpackPanel}
+            <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
               <span>Reliquia vinculada</span>
               <b>{relic?.name || 'Ninguna'}</b>
               <small>{relic?.description || 'Este personaje no lleva una reliquia vinculada.'}</small>
@@ -365,17 +520,32 @@ export default function ChroniclesCharacterSheet({
                 {[
                   { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
                   { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
-                ].map(({ slot, label, stats }) => (
-                  <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
-                    <b>{label}</b>
-                    <strong>{chroniclesEquippedItem(state, member.id, slot)?.name || 'Sin equipar'}</strong>
-                    <small>{stats.reach > 0
-                      ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
-                      : 'Sin arma de proyectiles · no puede disparar'}</small>
-                  </div>
-                ))}
+                ].map(({ slot, label, stats }) => {
+                  const worn = chroniclesEquippedItem(state, member.id, slot);
+                  return (
+                    <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
+                      <b>{label}</b>
+                      <strong>{worn?.name || 'Sin equipar'}</strong>
+                      <small>{stats.reach > 0
+                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                        : 'Sin arma de proyectiles · no puede disparar'}</small>
+                      {slot === 'missile' && worn && chroniclesShopHandlingNote(worn, state?.combatRules) && (
+                        <small className="chronicles-character-sheet__handling-note" data-chronicles-worn-handling>
+                          {chroniclesShopHandlingNote(worn, state?.combatRules)}
+                        </small>
+                      )}
+                      {worn && <button type="button" disabled={!canChangeEquipment}
+                        onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
+                        Guardar en mochila
+                      </button>}
+                    </div>
+                  );
+                })}
               </div>}
-              {CHRONICLES_EQUIPMENT_SLOTS.map((slot) => {
+              {/* In MM3, A/S already include the same unequip action above.
+                  Do not render duplicate weapon slots below the weapon cards. */}
+              {CHRONICLES_EQUIPMENT_SLOTS.filter((slot) => !mm3
+                || (slot !== 'weapon' && slot !== 'missile')).map((slot) => {
                 const worn = chroniclesEquippedItem(state, member.id, slot);
                 return (
                   <div className="chronicles-character-sheet__gear-slot" key={slot}>
@@ -390,88 +560,11 @@ export default function ChroniclesCharacterSheet({
               })}
               <small>
                 {mm3
-                  ? `CA +${gearBonus.armorClassBonus} · reducción ${gearBonus.damageReduction}. Daño y acierto se calculan por separado para A y S.`
+                  ? `CA del equipo +${gearBonus.armorClassBonus}: dificulta impactos, no resta daño. A y S calculan daño y acierto por separado.`
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
             </article>}
-            <article className="chronicles-character-sheet__backpack">
-              <span>Mochila de expedición</span>
-              {!tacticsMode && inventory.length > 0 && (
-                <div className="chronicles-character-sheet__backpack-tools">
-                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
-                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
-                      .map(({ id, label }) => (
-                        <button type="button" key={id}
-                          aria-pressed={backpackFilter === id}
-                          onClick={() => { setBackpackFilter(id); setSelectedItemId(null); }}>
-                          {label} <small>{backpackCounts[id]}</small>
-                        </button>
-                      ))}
-                  </div>
-                  <label className="chronicles-character-sheet__backpack-search">
-                    Buscar en la mochila
-                    <input type="search" value={backpackSearch}
-                      placeholder="Nombre, material u objeto…"
-                      onChange={(event) => { setBackpackSearch(event.target.value); setSelectedItemId(null); }}
-                    />
-                  </label>
-                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
-                    {visibleBackpack.length} de {inventory.length} tipos de objeto
-                  </small>
-                </div>
-              )}
-              {inventory.length ? (
-                visibleBackpack.length ? (
-                  <div className="chronicles-character-sheet__inventory">
-                    {visibleBackpack.map((item) => (
-                      <button type="button" key={item.id}
-                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
-                        aria-pressed={selectedInventoryItem?.id === item.id}
-                        onClick={() => setSelectedItemId(item.id)}
-                      >
-                        {item.name}{item.quantity > 1 ? ` ×${item.quantity}` : ''}
-                      </button>
-                    ))}
-                  </div>
-                ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
-              ) : (
-                <small>Sin objetos recuperados en esta expedición.</small>
-              )}
-              {!tacticsMode && selectedInventoryItem && (
-                <aside className="chronicles-character-sheet__item-details" aria-live="polite">
-                  <strong>{selectedInventoryItem.name}</strong>
-                  <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
-                  <dl>
-                    <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
-                    {selectedEquipment && <>
-                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
-                      <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
-                      <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
-                      <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
-                      <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
-                      <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
-                    </>}
-                  </dl>
-                  {selectedEquipment && <>
-                    <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
-                    {weaponSwap ? (
-                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
-                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
-                        <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
-                        <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
-                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
-                        <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
-                      </div>
-                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
-                    <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
-                      onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
-                      Equipar {selectedEquipment.name}
-                    </button>
-                  </>}
-                </aside>
-              )}
-            </article>
+            {tacticsMode && backpackPanel}
           </div>
         </div>
 
@@ -552,6 +645,8 @@ export default function ChroniclesCharacterSheet({
           <span>{member.attackName || profile.attackName} · daño {damage} · alcance {reach}</span>
           <span>Esc · cerrar</span>
         </footer>
+        </div>{/* folio-content */}
+        </div>{/* folio-layout */}
         </div>
         {!tacticsMode && (
           <nav className="chronicles-character-sheet__party-dock" aria-label="Seleccionar personaje de la compañía">

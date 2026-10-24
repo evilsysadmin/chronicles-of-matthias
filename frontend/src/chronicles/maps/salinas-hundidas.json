@@ -403,6 +403,65 @@
       },
       "defeatedFlag": "salinas_hundidasBossDefeated",
       "blockingMessage": "El Capitán Ahogado cierra el paso."
+    },
+    {
+      "id": "salinas-hundidas-foe-13",
+      "visualType": "ember-wisp",
+      "name": "fuego fatuo",
+      "x": 16,
+      "y": 13,
+      "hpKey": "salinas_hundidasFoe13Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con fuego fatuo usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "salinas-hundidas-foe-14",
+      "visualType": "sewer-rat",
+      "name": "rata de salina",
+      "x": 20,
+      "y": 15,
+      "hpKey": "salinas_hundidasFoe14Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de salina usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 10
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

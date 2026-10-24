@@ -402,6 +402,65 @@
       "defeatedFlag": "guarida_del_dragonBossDefeated",
       "blockingMessage": "El Dragón de Ceniza cierra el paso.",
       "visualScale": 2.7
+    },
+    {
+      "id": "guarida-del-dragon-foe-13",
+      "visualType": "crypt-spider",
+      "name": "araña de galería",
+      "x": 19,
+      "y": 11,
+      "hpKey": "guarida_del_dragonFoe13Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña de galería usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
+    },
+    {
+      "id": "guarida-del-dragon-foe-14",
+      "visualType": "ash-salamander",
+      "name": "salamandra de la forja",
+      "x": 12,
+      "y": 15,
+      "hpKey": "guarida_del_dragonFoe14Hp",
+      "maxHp": 33,
+      "retaliation": 6,
+      "toHit": 9,
+      "armorClass": 6,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con salamandra de la forja usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 14
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

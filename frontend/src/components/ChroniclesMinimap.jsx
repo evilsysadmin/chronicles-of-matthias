@@ -3,6 +3,8 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
+import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -12,6 +14,22 @@ import {
 } from '../chronicles/chroniclesAutomap.js';
 
 export const CHRONICLES_MINIMAP_RADIUS = 3;
+
+const MINIMAP_ACCESSIBLE_BASE = 'Minimapa local. Abrir automapa completo';
+
+// The minimap is one focusable button: describe only POIs already shown by
+// its discovery-gated local viewport. Keep speech brief in crowded towns.
+export function chroniclesMinimapAccessibleLabel(markers, target = null, routeLabel = '') {
+  const route = target ? `★: rumbo al objetivo${routeLabel ? `, siguiente salida: ${routeLabel}` : ''}. ` : '';
+  if (!Array.isArray(markers) || markers.length === 0) {
+    return route ? `Minimapa local. ${route}Abrir automapa completo` : MINIMAP_ACCESSIBLE_BASE;
+  }
+  const first = markers.slice(0, 3).map((marker) => `${marker.glyph}: ${marker.label}`);
+  const remaining = markers.length - first.length;
+  return `Minimapa local. Lugares descubiertos: ${first.join('; ')}${remaining ? `; y ${remaining} más` : ''}. ${route}Abrir automapa completo`;
+}
+
+
 
 // Rows stay at 2·radius+1; columns grow with the frame's width so the known
 // map fills the whole black area instead of a square in the middle of it.
@@ -29,63 +47,45 @@ function inWindow(position, state, radiusX, radiusY = radiusX) {
   );
 }
 
+// Use the same authored, deduplicated, discovery-gated POIs as the full M map.
+// Only their presentation and seven-tile viewport are different.
 function discoveredLocalMarkers(map, state, revealed, radiusX, radiusY) {
-  const groups = [
-    ['exit', map?.exits || []],
-    ['treasure', map?.treasures || []],
-    ['interactable', map?.interactables || []],
-  ];
-
-  return groups.flatMap(([kind, entries]) => entries.flatMap((entry) => {
-    const position = chroniclesMapContentPosition(map, entry);
-    if (!inWindow(position, state, radiusX, radiusY)) return [];
-    if (!revealed.has(chroniclesAutomapCellKey(position.x, position.y))) return [];
-    return [{ kind, entry, position }];
-  }));
+  return chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition)
+    .filter((marker) => inWindow(marker.position, state, radiusX, radiusY));
 }
 
 function Marker({ marker }) {
   const { x, y } = marker.position;
-  if (marker.kind === 'exit') {
-    return (
-      <rect
-        className="chronicles-minimap__marker is-exit"
-        x={x + .27}
-        y={y + .27}
-        width=".46"
-        height=".46"
-        rx=".08"
-      />
-    );
-  }
-  if (marker.kind === 'treasure') {
-    return (
-      <path
-        className="chronicles-minimap__marker is-treasure"
-        d={`M ${x + .5} ${y + .27} L ${x + .73} ${y + .5} L ${x + .5} ${y + .73} L ${x + .27} ${y + .5} Z`}
-      />
-    );
-  }
   return (
-    <circle
-      className="chronicles-minimap__marker is-interactable"
-      cx={x + .5}
-      cy={y + .5}
-      r=".17"
-    />
+    <g className={`chronicles-minimap__poi is-${marker.category}`}
+      data-chronicles-poi={marker.category}
+      data-chronicles-poi-id={marker.id}
+      aria-label={marker.label}
+      pointerEvents="none">
+      <title>{marker.label}</title>
+      <rect x={x + .08} y={y + .08} width=".84" height=".84" rx=".12" />
+      <text x={x + .5} y={y + .54} textAnchor="middle" dominantBaseline="middle">{marker.glyph}</text>
+    </g>
   );
 }
 
 // The next step towards the objective: a star when it is in view, or an
 // arrow on the rim of the minimap pointing the way when it is not.
-function TargetMarker({ target, state, radiusX, radiusY }) {
+function TargetMarker({ target, state, radiusX, radiusY, overlapsPoi = false }) {
   const dx = target.x - state.x;
   const dy = target.y - state.y;
+  const overlapsParty = target.x === state.x && target.y === state.y;
+  const cornerBadge = overlapsPoi || overlapsParty;
   if (Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY) {
     return (
-      <g className="chronicles-minimap__target" data-chronicles-route-target="in-view">
-        <circle cx={target.x + .5} cy={target.y + .5} r=".42" />
-        <text x={target.x + .5} y={target.y + .56} textAnchor="middle" dominantBaseline="middle">★</text>
+      <g className={`chronicles-minimap__target${cornerBadge ? ' is-corner-badge' : ''}`}
+        data-chronicles-route-target="in-view"
+        data-chronicles-route-overlap={overlapsPoi ? 'poi' : (overlapsParty ? 'party' : undefined)}>
+        <circle cx={target.x + (cornerBadge ? .78 : .5)}
+          cy={target.y + (cornerBadge ? .78 : .5)} r={cornerBadge ? .21 : .42} />
+        <text x={target.x + (cornerBadge ? .78 : .5)}
+          y={target.y + (cornerBadge ? .81 : .56)}
+          textAnchor="middle" dominantBaseline="middle">★</text>
       </g>
     );
   }
@@ -111,6 +111,7 @@ export default function ChroniclesMinimap({
   radius = CHRONICLES_MINIMAP_RADIUS,
   onExpand,
   target = null,
+  routeLabel = '',
 }) {
   const map = chroniclesMapForState(state);
   const svgRef = useRef(null);
@@ -155,17 +156,22 @@ export default function ChroniclesMinimap({
   const cx = state.x + .5;
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
-  const markers = discoveredLocalMarkers(map, state, discovered, radiusX, radiusY);
+  const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
+  const guildVisible = markers.some((marker) => marker.category === 'guild');
+  const coordinates = chroniclesMapCoordinatesLabel(map, state) || 'LOCAL';
+  const region = chroniclesRegionHudLocation(map);
+  const locationText = region.kind.startsWith('ÁREA ') ? `${region.kind} · ${region.value}` : region.value;
 
   return (
     <button
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label="Minimapa local. Abrir automapa completo"
+      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Ubicación: ${locationText}. Coordenadas: ${coordinates}`}
       onClick={onExpand}
     >
-      <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{chroniclesMapCoordinatesLabel(map, state) || 'LOCAL'}</span>
+      <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
+      <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>UBICACIÓN · {locationText}</span>
       <svg
         ref={svgRef}
         viewBox={`${minX} ${minY} ${width} ${height}`}
@@ -200,11 +206,12 @@ export default function ChroniclesMinimap({
         }))}
         {markers.map((marker) => (
           <Marker
-            key={`${marker.kind}:${marker.entry?.id || `${marker.position.x}:${marker.position.y}`}`}
+            key={marker.id}
             marker={marker}
           />
         ))}
-        {target && <TargetMarker target={target} state={state} radiusX={radiusX} radiusY={radiusY} />}
+        {target && <TargetMarker target={target} state={state} radiusX={radiusX} radiusY={radiusY}
+          overlapsPoi={chroniclesRouteTargetOverlapsPoi(target, markers)} />}
         <g
           className="chronicles-minimap__party"
           transform={`rotate(${facing} ${cx} ${cy})`}
@@ -213,6 +220,12 @@ export default function ChroniclesMinimap({
           <path d={`M ${cx} ${cy - .38} L ${cx + .28} ${cy + .26} L ${cx} ${cy + .12} L ${cx - .28} ${cy + .26} Z`} />
         </g>
       </svg>
+      {(guildVisible || target) && (
+        <span className="chronicles-minimap__legend" aria-hidden="true">
+          {guildVisible && <span className="is-guild"><b>G</b> gremio</span>}
+          {target && <span className="is-target" title={routeLabel ? `Siguiente salida: ${routeLabel}` : undefined}><b>★</b> objetivo</span>}
+        </span>
+      )}
       <span className="chronicles-minimap__expand" aria-hidden="true">⌖</span>
     </button>
   );

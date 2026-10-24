@@ -1,24 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
-  it('only four direction arrows move/turn the party', () => {
+  it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
     expect(CHRONICLES_DIRECTION_KEYS).toEqual({
       ArrowUp: 'forward',
       ArrowDown: 'backward',
       ArrowLeft: 'turn-left',
       ArrowRight: 'turn-right',
+      q: 'strafe-left',
+      Q: 'strafe-left',
+      e: 'strafe-right',
+      E: 'strafe-right',
     });
-    expect(Object.keys(CHRONICLES_DIRECTION_KEYS)).toHaveLength(4);
+    expect(Object.keys(CHRONICLES_DIRECTION_KEYS)).toHaveLength(8);
     expect(CHRONICLES_DIRECTION_KEYS.a).toBeUndefined();
     expect(CHRONICLES_DIRECTION_KEYS.s).toBeUndefined();
+    expect(CHRONICLES_DIRECTION_KEYS[' ']).toBeUndefined();
   });
-  it('A attacks in melee, S shoots, and Space retains optional auto attack', () => {
-    for (const key of ['a', 'A']) expect(chroniclesCombatKeyMode(key)).toBe('melee');
-    for (const key of ['s', 'S']) expect(chroniclesCombatKeyMode(key)).toBe('missile');
-    expect(chroniclesCombatKeyMode(' ')).toBe('auto');
-    for (const key of ['w', 'W', 'd', 'D', 'q', 'Q', 'e', 'E', ...Object.keys(CHRONICLES_DIRECTION_KEYS)]) {
-      expect(chroniclesCombatKeyMode(key)).toBeNull();
+  it('A only attacks in combat; S shoots in exploration and combat; Space remains unbound', () => {
+    for (const key of ['a', 'A']) {
+      expect(chroniclesCombatKeyMode(key), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: false }), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('melee');
+    }
+    for (const key of ['s', 'S']) {
+      expect(chroniclesCombatKeyMode(key), key).toBe('missile');
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('missile');
+    }
+    for (const key of [' ', 'Space', 'Spacebar', 'w', 'W', 'd', 'D', 'q', 'Q', 'e', 'E',
+      ...Object.keys(CHRONICLES_DIRECTION_KEYS)]) {
+      expect(chroniclesCombatKeyMode(key), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBeNull();
     }
   });
 });
@@ -117,6 +130,26 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     }
     expect(chroniclesAdventureMenuShortcut(keyEvent('a'), { menuOpen: true })).toBeNull();
     expect(chroniclesCombatKeyMode('s')).toBe('missile'); // Exploration shooting stays intact.
+    expect(CHRONICLES_DIRECTION_KEYS.q).toBe('strafe-left');
+    expect(CHRONICLES_DIRECTION_KEYS.e).toBe('strafe-right');
+    // The live key handler checks the adventure menu before directional movement.
+  });
+
+  it('never interprets S or Q as adventure actions while a nested folio page owns the menu', () => {
+    const subpage = { menuOpen: true, subpageOpen: true };
+    for (const key of ['s', 'S', 'q', 'Q']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), subpage)).toBeNull();
+      const buttonTarget = { isContentEditable: false, closest: () => null };
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key, { target: buttonTarget }), subpage)).toBeNull();
+    }
+    // The parent menu regains its shortcuts after the nested page closes.
+    expect(chroniclesAdventureMenuShortcut(keyEvent('s'), { menuOpen: true })).toBe('save');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true })).toBe('request-exit');
+    // Escape first returns to the parent menu without closing the expedition.
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), subpage)).toBe('back-feedback');
+    expect(chroniclesAdventureMenuShortcut(keyEvent('Escape'), {
+      ...subpage, confirmExitWithoutSaving: true,
+    })).toBe('cancel-exit');
   });
 
   it('Esc cancels an unsafe-exit confirmation first, then closes only the open menu', () => {
@@ -286,6 +319,51 @@ describe('Chronicles adventure menu modal focus acquisition', () => {
 });
 
 
+describe('Chronicles closed adventure-menu focus', () => {
+  const fixture = () => {
+    const doc = { activeElement: null };
+    const element = () => ({
+      focus() { doc.activeElement = this; },
+      blur() { if (doc.activeElement === this) doc.activeElement = null; },
+    });
+    const summary = element();
+    const menuButton = element();
+    const outside = element();
+    const menu = {
+      ownerDocument: doc,
+      contains: (target) => target === summary || target === menuButton,
+    };
+    return { doc, summary, menuButton, outside, menu };
+  };
+
+  it('releases the focused sapphire after Tab opens the menu and Esc closes it', () => {
+    const { doc, menu, summary } = fixture();
+    summary.focus();
+    expect(doc.activeElement).toBe(summary);
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(true);
+    expect(doc.activeElement).toBeNull();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(false);
+    // The next Tab can still reach the opener and render its focus ring.
+    summary.focus();
+    expect(doc.activeElement).toBe(summary);
+  });
+
+  it('releases focus from menu actions or audio controls after dismissal', () => {
+    const { doc, menu, menuButton } = fixture();
+    menuButton.focus();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(true);
+    expect(doc.activeElement).toBeNull();
+  });
+
+  it('never blurs an unrelated focused HUD control', () => {
+    const { doc, menu, outside } = fixture();
+    outside.focus();
+    expect(chroniclesReleaseAdventureMenuFocus(menu)).toBe(false);
+    expect(doc.activeElement).toBe(outside);
+    expect(chroniclesReleaseAdventureMenuFocus(null)).toBe(false);
+  });
+});
+
 describe('Chronicles adventure-menu modal pointer guard', () => {
   const eventFor = (inside) => ({
     target: { closest: (selector) => inside && selector === '.chronicles-game-menu' ? {} : null },
@@ -327,6 +405,8 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
   });
 
   it('closes a merchant, guild or character dossier without opening a menu behind it', () => {
+    expect(chroniclesFirstPersonEscapeAction({ innOpen: true })).toBe('close-inn');
+    expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true, innOpen: true })).toBe('close-sheet');
     expect(chroniclesFirstPersonEscapeAction({ shopOpen: true })).toBe('close-shop');
     expect(chroniclesFirstPersonEscapeAction({ guildOpen: true })).toBe('close-guild');
     expect(chroniclesFirstPersonEscapeAction({ sheetOpen: true })).toBe('close-sheet');
@@ -352,11 +432,17 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
     expect(chroniclesFirstPersonEscapeAction({ quickStatusOpen: true })).toBe('close-quick-status');
     expect(chroniclesFirstPersonEscapeAction({})).toBe('toggle-menu');
     expect(chroniclesFirstPersonEscapeAction({ menuOpen: true })).toBe('toggle-menu');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: true, feedbackOpen: true }))
+      .toBe('back-feedback');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: true, feedbackOpen: true, journalOpen: true }))
+      .toBe('back-feedback');
+    expect(chroniclesFirstPersonEscapeAction({ menuOpen: false, feedbackOpen: true }))
+      .toBe('toggle-menu');
   });
 
   it('cancels the pending dangerous Q confirmation before any other navigation', () => {
     expect(chroniclesFirstPersonEscapeAction({
-      menuOpen: true, confirmExitWithoutSaving: true, spellMenuOpen: 'items',
+      menuOpen: true, confirmExitWithoutSaving: true, feedbackOpen: true, spellMenuOpen: 'items',
     })).toBe('cancel-exit');
     expect(chroniclesFirstPersonEscapeAction({
       menuOpen: true, confirmExitWithoutSaving: true,
@@ -366,5 +452,26 @@ describe('Chronicles global Escape / browser Back overlay priority', () => {
     expect(chroniclesFirstPersonEscapeAction({
       menuOpen: false, confirmExitWithoutSaving: true, adminOpen: true,
     })).toBe('close-admin');
+  });
+});
+
+describe('Chronicles TAB toggle on the menu gem', () => {
+  const gem = { tagName: 'SUMMARY' };
+  const button = { tagName: 'BUTTON' };
+  const event = (target = gem, patch = {}) => ({ key: 'Tab', target, ...patch });
+  it('TAB on the focused gem closes the already-open menu, without shift or repeat', () => {
+    expect(chroniclesAdventureTabClosesMenu(event(), gem, { menuOpen: true })).toBe(true);
+    expect(chroniclesAdventureTabClosesMenu(event(), gem)).toBe(false);
+    expect(chroniclesAdventureTabClosesMenu(event(button), gem, { menuOpen: true })).toBe(false);
+    for (const guard of ['shiftKey', 'repeat', 'ctrlKey', 'altKey', 'metaKey', 'defaultPrevented']) {
+      expect(chroniclesAdventureTabClosesMenu(event(gem, { [guard]: true }), gem,
+        { menuOpen: true })).toBe(false);
+    }
+  });
+  it('never dismisses a confirmation or feedback draft with TAB', () => {
+    for (const active of [{ confirmExitWithoutSaving: true }, { feedbackOpen: true }]) {
+      expect(chroniclesAdventureTabClosesMenu(event(), gem,
+        { menuOpen: true, ...active })).toBe(false);
+    }
   });
 });

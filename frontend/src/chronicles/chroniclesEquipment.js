@@ -34,7 +34,12 @@ function authoredEquipment(spec) {
     // Existing First Book mitigation is an interim, deterministic defense
     // effect. MM3's material armorClass remains explicit for proper AC later.
     damageReduction: spec.baseDamageReduction,
-    toHitBonus: weapon ? material.toHit : 0,
+    // A shield's bulk or agility changes real attack accuracy. Armor itself
+    // has no hidden offensive modifier; this is shared by melee and missiles.
+    toHitBonus: weapon
+      ? material.toHit + Number(spec.baseToHitBonus || 0)
+      : spec.slot === 'shield' ? Number(spec.shieldToHitBonus || 0)
+        : spec.slot === 'armor' ? Number(spec.armorToHitBonus || 0) : 0,
     // MM armor class: the armor type's own AC plus its material.
     armorClassBonus: !weapon ? Math.max(0, Number(spec.baseArmorClass || 0) + material.armorClass) : 0,
     price: Math.max(1, Math.round(spec.basePrice * material.valueMultiplier)),
@@ -51,13 +56,16 @@ const LEGACY_ALL = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
 // MM3-style base items. Prices are scaled to this world's purses (a side
 // quest pays 8–18 oro); the material multiplier does the rest, so steel is
 // an aspiration and bronze is what a fresh company can afford.
+// The starter bandit has ~4 HP and d20 enemy AC; one bonus damage can be
+// an entire attack round. Each family therefore trades precision, damage,
+ // reach, off-hand safety and cost using EXISTING combat stats only.
 const BASE_WEAPONS = Object.freeze({
-  dagger: { name: 'Daga', family: 'dagger', basePrice: 2, baseDamageBonus: 1, allowed: LEGACY_ALL },
-  staff: { name: 'Bastón', family: 'staff', basePrice: 3, baseDamageBonus: 1, twoHanded: true, allowed: LEGACY_ALL },
-  mace: { name: 'Maza', family: 'mace', basePrice: 5, baseDamageBonus: 1, allowed: LEGACY_ALL },
-  spear: { name: 'Lanza', family: 'spear', basePrice: 5, baseDamageBonus: 2, twoHanded: true, allowed: LEGACY_MARTIAL },
-  sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 1, allowed: LEGACY_MARTIAL },
-  axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 2, allowed: LEGACY_MARTIAL },
+  dagger: { name: 'Daga', family: 'dagger', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, allowed: LEGACY_ALL },
+  staff: { name: 'Bastón', family: 'staff', basePrice: 3, baseDamageBonus: 1, baseToHitBonus: 1, reach: 2, twoHanded: true, allowed: LEGACY_ALL },
+  mace: { name: 'Maza', family: 'mace', basePrice: 4, baseDamageBonus: 2, allowed: LEGACY_ALL },
+  spear: { name: 'Lanza', family: 'spear', basePrice: 5, baseDamageBonus: 2, reach: 2, twoHanded: true, allowed: LEGACY_MARTIAL },
+  sword: { name: 'Espada', family: 'sword', basePrice: 6, baseDamageBonus: 2, baseToHitBonus: 1, allowed: LEGACY_MARTIAL },
+  axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 3, baseToHitBonus: -1, allowed: LEGACY_MARTIAL },
   bow: { name: 'Arco corto', family: 'bow', basePrice: 8, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: LEGACY_ALL },
   // Ranged arms of Terra's third wave: the long bow reaches farthest, the
   // crossbow hits harder, the sling is a one-hand option for slingers who
@@ -65,14 +73,46 @@ const BASE_WEAPONS = Object.freeze({
   // steel crossbow hits like a steel axe, a long bow like a sword, and both
   // take the shield hand (campaign bot, 2026-10: at axe+2 every hero
   // carried a crossbow).
-  longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 1, twoHanded: true, reach: 4, allowed: ['knight'] },
-  crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 2, twoHanded: true, reach: 3, allowed: ['knight'] },
-  sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, reach: 2, allowed: LEGACY_ALL },
+  longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 2, twoHanded: true, reach: 4, allowed: ['knight'] },
+  crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: ['knight'] },
+  sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, reach: 2, allowed: LEGACY_ALL },
+});
+
+// First Book defensive choices: CA prevents an MM3 hit (5 percentage
+// points per AC in the unsaturated d20 window); it does NOT subtract damage.
+// Every paid shield upgrade must earn its price in defense or aim. The old
+// brass +1 CA / -1 aim vs wood was a trap at low level; more costly iron/steel
+// repeated it. These authored profiles are NOT literal MM3 material stats.
+// Ivory is a deliberate agile sidegrade (less guard than iron, more aim).
+export const CHRONICLES_SHIELD_PROFILES = Object.freeze({
+  wooden: Object.freeze({ armorClass: 1, toHit: 0 }), // budget protection
+  brass: Object.freeze({ armorClass: 2, toHit: 0 }), // +1 CA without an aim tax
+  bronze: Object.freeze({ armorClass: 2, toHit: 1 }), // better handling
+  iron: Object.freeze({ armorClass: 3, toHit: 1 }), // stronger physical guard
+  ivory: Object.freeze({ armorClass: 2, toHit: 2 }), // precision sidegrade
+  silver: Object.freeze({ armorClass: 3, toHit: 2 }), // precision and guard
+  steel: Object.freeze({ armorClass: 4, toHit: 2 }), // expensive top-tier guard
+});
+
+// Campaign AC progression: MM3's literal bronze material modifier (-1)
+// made bronze armor *more expensive and strictly weaker* than brass armor
+// of the same type. Keep canonical CHRONICLES_ITEM_MATERIALS unchanged for
+// non-armor consumers; the RPG uses an authored, monotone protection ladder.
+// This does NOT change shield (separate profiles) or weapon material bonuses.
+export const CHRONICLES_ARMOR_MATERIAL_AC = Object.freeze({
+  leather: 0,
+  brass: 0,
+  bronze: 1,
+  iron: 2,
+  silver: 3,
+  steel: 5,
 });
 
 const BASE_ARMORS = Object.freeze({
-  padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, allowed: LEGACY_ALL },
-  leather: { name: 'Coraza', armorType: 'leather', basePrice: 9, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
+  // Lighter cloth armor trades 1 CA for +1 precision against leather.
+  // This is a real bonus to the existing hit formula, not fictitious speed.
+  padded: { name: 'Gambesón', armorType: 'padded', basePrice: 6, baseArmorClass: 1, baseDamageReduction: 1, baseToHitBonus: 1, allowed: LEGACY_ALL },
+  leather: { name: 'Coraza', armorType: 'leather', basePrice: 12, baseArmorClass: 2, baseDamageReduction: 1, allowed: LEGACY_ALL },
   scale: { name: 'Cota de escamas', armorType: 'scale', basePrice: 14, baseArmorClass: 3, baseDamageReduction: 1, allowed: LEGACY_FRONT },
   ring: { name: 'Cota de anillas', armorType: 'ring', basePrice: 18, baseArmorClass: 4, baseDamageReduction: 2, allowed: LEGACY_FRONT },
   chain: { name: 'Cota de malla', armorType: 'chain', basePrice: 24, baseArmorClass: 5, baseDamageReduction: 2, allowed: LEGACY_FRONT },
@@ -104,49 +144,72 @@ function signed(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
-// MM3 carries two weapons: one for the melee (A · atacar) and a missile
-// weapon for shooting (S · disparar). Bows, crossbows and slings go in the
-// missile slot and never take the shield hand.
+// MM3 carries one melee and one missile slot. Two-handed bows/crossbows
+// remain equipped alongside a shield, but shield bonuses are suspended
+// while firing; slings use one hand and preserve the shield's benefits.
 export const CHRONICLES_MISSILE_FAMILIES = Object.freeze(['bow', 'crossbow', 'sling']);
 
 function weaponItem(baseId, materialId) {
   const base = BASE_WEAPONS[baseId];
   const slot = CHRONICLES_MISSILE_FAMILIES.includes(base.family) ? 'missile' : 'weapon';
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
-  const damage = base.baseDamageBonus + Math.round(material.damage / 2);
+  // Prevent universally dominated gear: ivory carving buys precision, a
+  // stone sling trades damage for accuracy, silver dagger costs more than
+  // an iron sword at the same damage, but retains its superior finesse.
+  const damageBase = base.baseDamageBonus
+    + (baseId === 'sling' && materialId === 'wooden' ? 1 : 0);
+  const aimBase = Number(base.baseToHitBonus || 0) + (materialId === 'ivory' ? 1 : 0);
+  const damage = damageBase + Math.round(material.damage / 2);
+  const toHit = material.toHit + aimBase;
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot,
-    baseItemId: baseId, materialId, basePrice: base.basePrice,
-    baseDamageBonus: base.baseDamageBonus, baseDamageReduction: 0, materialDamageScale: 0.5,
+    baseItemId: baseId, materialId,
+    basePrice: base.basePrice + (baseId === 'dagger' && materialId === 'silver' ? 1 : 0),
+    baseDamageBonus: damageBase, baseDamageReduction: 0, materialDamageScale: 0.5,
+    baseToHitBonus: aimBase,
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
-    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(material.toHit)}, daño ${signed(damage)}.`,
+    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(toHit)}, daño ${signed(damage)}.`,
   });
 }
 
 function armorItem(baseId, materialId) {
   const base = BASE_ARMORS[baseId];
   const material = CHRONICLES_ITEM_MATERIALS[materialId];
+  const protection = CHRONICLES_ARMOR_MATERIAL_AC[materialId];
+  if (!Number.isInteger(protection)) throw new Error(`Unknown armor material: ${materialId}`);
+  const armorClass = base.baseArmorClass + protection;
   return authoredEquipment({
     id: `${materialId}-${baseId}`, name: `${base.name} de ${materialName(materialId)}`, slot: 'armor',
-    baseItemId: baseId, materialId, basePrice: base.basePrice,
+    baseItemId: baseId, materialId,
+    // The material multiplier rounded bronze leather to 9g, where Odo's
+    // 9g guard vest had the same CA and strictly more aim for every class.
+    basePrice: base.basePrice - (baseId === 'leather' && materialId === 'bronze' ? 1 : 0),
     baseDamageBonus: 0, baseDamageReduction: base.baseDamageReduction,
-    armorType: base.armorType, baseArmorClass: base.baseArmorClass,
+    // authoredEquipment adds the literal material AC; cancel that literal
+    // only for body armor, replacing it with the progression value above.
+    armorType: base.armorType,
+    baseArmorClass: armorClass - material.armorClass,
+    armorToHitBonus: Number(base.baseToHitBonus || 0),
     allowedMembers: base.allowed,
-    description: `${base.name} · armadura +${Math.max(0, base.baseArmorClass + material.armorClass)}.`,
+    description: `${base.name} · armadura +${armorClass}${base.baseToHitBonus ? `, acierto +${base.baseToHitBonus}` : ''}.`,
   });
 }
 
 function shieldItem(materialId) {
-  const material = CHRONICLES_ITEM_MATERIALS[materialId];
+  const profile = CHRONICLES_SHIELD_PROFILES[materialId];
+  if (!profile) throw new Error(`Unknown shield profile: ${materialId}`);
   return authoredEquipment({
     id: `${materialId}-shield`, name: `Escudo de ${materialName(materialId)}`, slot: 'shield',
     baseItemId: 'shield', materialId, basePrice: 8,
     baseDamageBonus: 0, baseDamageReduction: 1,
-    baseArmorClass: 1,
+    // authoredEquipment adds the material AC: offset it to preserve the
+    // tested actual CA on each shield, independent of item material quirks.
+    baseArmorClass: profile.armorClass - CHRONICLES_ITEM_MATERIALS[materialId].armorClass,
+    shieldToHitBonus: profile.toHit,
     allowedMembers: LEGACY_FRONT,
-    description: `Escudo · armadura +${Math.max(0, 1 + material.armorClass)}. Sólo clases con escudo y una mano libre.`,
+    description: `Escudo · armadura +${profile.armorClass}${profile.toHit ? `, acierto ${signed(profile.toHit)}` : ''}. Sólo clases con escudo y una mano libre.`,
   });
 }
 
@@ -156,18 +219,20 @@ function catalog() {
     'roadwatch-sabre': authoredEquipment({
       id: 'roadwatch-sabre', name: 'Sable de hierro de la guardia', slot: 'weapon',
       baseItemId: 'sabre', materialId: 'iron', basePrice: 6,
-      baseDamageBonus: 0, baseDamageReduction: 0,
+      baseDamageBonus: 1, baseDamageReduction: 0,
+      baseToHitBonus: 1,
       weaponFamily: 'sword',
       allowedMembers: LEGACY_FRONT,
-      description: 'Espada de hierro · +1 acierto, +2 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
+      description: 'Espada de hierro de la guardia · +2 acierto, +3 daño. Caballero, Paladín, Arquero, Ladrón o Ninja.',
     }),
     'roadwatch-vest': authoredEquipment({
       id: 'roadwatch-vest', name: 'Jubón de cuero de guardia', slot: 'armor',
       baseItemId: 'vest', materialId: 'leather', basePrice: 36,
       baseDamageBonus: 0, baseDamageReduction: 1,
-      armorType: 'leather', baseArmorClass: 2,
+      armorType: 'leather', baseArmorClass: 3,
+      armorToHitBonus: 1,
       allowedMembers: LEGACY_ALL,
-      description: 'Armadura de cuero · +2 armadura. Cualquier clase salvo Hechicero.',
+      description: 'Jubón reforzado de la guardia · +3 armadura, +1 acierto. Más precisión que la cota de escamas.',
     }),
   };
   for (const baseId of Object.keys(BASE_WEAPONS)) {
@@ -237,11 +302,15 @@ export function chroniclesEquippedItem(state, memberId, slot) {
   return CHRONICLES_EQUIPMENT[equippedId(state, memberId, slot)] || null;
 }
 
-// Attack bonuses come from the weapon in use (melee by default, or the
-// missile weapon when shooting); defence from armour and shield.
+// Attack bonuses use the weapon in hand. A two-handed bow/crossbow cannot
+// borrow a shield's accuracy *during the shot* in MM3. The shield stays
+// equipped for melee/guard, so old saves and player loadouts stay intact.
+// A one-handed sling retains the shield bonus; legacy combat is unchanged.
 export function chroniclesEquipmentBonuses(state, memberId, { mode = 'melee' } = {}) {
   const attackSlot = mode === 'missile' ? 'missile' : 'weapon';
-  const items = [attackSlot, 'armor', 'shield']
+  const missile = mode === 'missile' ? chroniclesEquippedItem(state, memberId, 'missile') : null;
+  const shieldBusy = state?.combatRules === 'mm3' && Boolean(missile?.twoHanded);
+  const items = [attackSlot, 'armor', ...(shieldBusy ? [] : ['shield'])]
     .map((slot) => chroniclesEquippedItem(state, memberId, slot))
     .filter(Boolean);
   return {

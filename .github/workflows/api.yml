@@ -18,6 +18,10 @@ jobs:
     name: api-e2e
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # Covers go vet/test/run, govulncheck install/scans, and Go builds alike.
+    # A module toolchain directive must never download or switch the compiler.
+    env:
+      GOTOOLCHAIN: local
     services:
       mongodb:
         image: mongo:7
@@ -33,17 +37,74 @@ jobs:
         with:
           go-version: '1.27.3'
           cache-dependency-path: api/go.sum
+      # Canonical module graph/checksums must match all source and test imports.
+      # -diff checks without editing the checkout and fails on go.mod/go.sum drift.
+      - name: Check Go module graph (read-only)
+        working-directory: api
+        run: go mod tidy -diff
       - name: Build and vet (amd64 + arm64)
         working-directory: api
+        env:
+          LEGACY_IMPORT_TEST_MONGO_URI: mongodb://127.0.0.1:27017
         run: |
           set -euo pipefail
           go vet ./cmd/...
-          go test ./internal/chronicles/... ./internal/gamesapi/... ./internal/release/... ./cmd/...
+          go test ./internal/chronicles/... ./internal/legacyimport/... ./internal/gamesapi/... ./internal/release/... ./cmd/...
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
-          CGO_ENABLED=0 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /dev/null ./cmd/chronicles-api
+          # Standard-library fixes (including GO-2026-6809) are baked into
+          # binaries. Check the real toolchain and both compiled architectures.
+          export GOTOOLCHAIN=local
+          build_go="$(go env GOVERSION)"
+          # Reject prereleases and anything older than the patched Go 1.27.3.
+          # CI and Docker must still pin the same exact patch version.
+          [[ "$build_go" =~ ^go([1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
+            echo "::error::Malformed or prerelease Go compiler: $build_go"
+            exit 1
+          }
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          (( major > 1 || (major == 1 && (minor > 27 || (minor == 27 && patch >= 3))) )) || {
+            echo "::error::Go compiler below patched security floor: $build_go"
+            exit 1
+          }
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api" ./cmd/chronicles-api
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64" ./cmd/chronicles-api
+          verify_binary_build() {
+            local binary="$1" arch="$2" reported metadata
+            reported="$(go version "$binary")"
+            [[ "$reported" == "$binary: $build_go" ]] || {
+              echo "::error::Unexpected $arch Go binary version: $reported"
+              return 1
+            }
+            metadata="$(go version -m "$binary")"
+            grep -Fqx $'\tbuild\tGOOS=linux' <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOOS"
+              return 1
+            }
+            grep -Fqx $'\tbuild\tGOARCH='"$arch" <<< "$metadata" || {
+              echo "::error::Unexpected $arch binary GOARCH"
+              return 1
+            }
+          }
+          verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64
+          verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64
+      # GO-2026-5932 has no fixed x/crypto version; only the legacy OpenPGP
+      # subpackages are unsafe. Fail before release if they enter either graph.
+      - name: Reject unsafe legacy OpenPGP imports
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          for arch in amd64 arm64; do
+            deps="$(CGO_ENABLED=0 GOOS=linux GOARCH="$arch" GOTOOLCHAIN=local go list -deps ./cmd/chronicles-api)"
+            if grep -Eq '^golang[.]org/x/crypto/openpgp(/|$)' <<< "$deps"; then
+              echo "::error::GO-2026-5932 unsafe OpenPGP import in linux/$arch API"
+              exit 1
+            fi
+          done
       # Govulncheck queries the official Go vulnerability database and uses
       # source call graphs to report reachable vulnerable functions, including
       # issues in the Go toolchain. Fail the required api-e2e gate when found.
@@ -53,7 +114,13 @@ jobs:
         run: |
           set -euo pipefail
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
-          "$(go env GOPATH)/bin/govulncheck" ./...
+          "$(go env GOPATH)/bin/govulncheck" -show verbose ./...
+          # OCI A1 runs linux/arm64: source build tags may select different code.
+          GOOS=linux GOARCH=arm64 "$(go env GOPATH)/bin/govulncheck" ./...
+          # Inspect the binaries actually produced for both deployment targets.
+          # Binary scanning is complementary to the call-graph source scan.
+          "$(go env GOPATH)/bin/govulncheck" -mode=binary "$RUNNER_TEMP/chronicles-api"
+          "$(go env GOPATH)/bin/govulncheck" -mode=binary "$RUNNER_TEMP/chronicles-api-arm64"
       - name: Run the API against a real MongoDB
         env:
           MONGO_URL: mongodb://127.0.0.1:27017
@@ -103,7 +170,7 @@ jobs:
         working-directory: frontend
         run: |
           set -euo pipefail
-          npx playwright install --with-deps chromium
+          bash smoke/ensure-chromium.sh
           source smoke/wait-for-http.sh
           npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/chronicles-api-preview.log" 2>&1 &
           preview_pid=$!
@@ -114,7 +181,7 @@ jobs:
         if: always()
         run: cat "$RUNNER_TEMP/api.log" || true
       # Keep PR review screenshots and failed-main evidence without archiving every green main build.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-api-e2e
@@ -160,11 +227,12 @@ jobs:
         if: steps.admission.outputs.publish == 'true'
         with:
           persist-credentials: false
-      - uses: docker/setup-qemu-action@v3
+      # The API builder runs on BUILDPLATFORM and Go cross-compiles both
+      # targets; the scratch runtime runs no target-architecture build steps.
+      # Avoid unnecessary emulator initialization on the hosted runner.
+      - uses: docker/setup-buildx-action@v4
         if: steps.admission.outputs.publish == 'true'
-      - uses: docker/setup-buildx-action@v3
-        if: steps.admission.outputs.publish == 'true'
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         if: steps.admission.outputs.publish == 'true'
         with:
           registry: ghcr.io
@@ -178,6 +246,11 @@ jobs:
           context: api
           platforms: linux/arm64,linux/amd64
           push: true
+          # Cache only the expensive multi-arch build layers, never the release
+          # admission or provenance. A transient cache exporter outage must
+          # not block publication of a successfully built/attested image.
+          cache-from: type=gha,scope=chronicles-api-buildkit-v1
+          cache-to: type=gha,mode=max,scope=chronicles-api-buildkit-v1,ignore-error=true
           build-args: |
             CHRONICLES_SOURCE_SHA=${{ github.sha }}
           tags: ${{ env.IMAGE }}:staging-${{ github.sha }}

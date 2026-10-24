@@ -192,5 +192,75 @@
       "mapId": "terra-c2",
       "clue": "Busca a la Arpía Coronada en las Colinas de la Corona (C2)."
     }
+  ],
+  "lost-names": [
+    {
+      "when": [
+        {
+          "key": "torre_de_los_nombresBossDefeated",
+          "truthy": true
+        }
+      ],
+      "mapId": "vigilia-del-norte",
+      "clue": "Regresa a Vigilia del Norte (C1) y entrega el Libro de los Nombres a Osric."
+    },
+    {
+      "when": [
+        {
+          "itemId": "book-of-names"
+        }
+      ],
+      "mapId": "vigilia-del-norte",
+      "clue": "Lleva el Libro de los Nombres al archivero Osric, en Vigilia del Norte (C1)."
+    },
+    {
+      "mapId": "torre-de-los-nombres",
+      "clue": "Busca al Escriba sin Nombre en la Torre de los Nombres (A1)."
+    }
+  ],
+  "pinohelado-greta": [
+    {
+      "when": [
+        {
+          "key": "pinoheladoGrumHealed",
+          "truthy": true
+        }
+      ],
+      "mapId": "pinohelado",
+      "clue": "Grum está curado. Vuelve con Greta a Pinohelado (E1) para hablar con Joris."
+    },
+    {
+      "when": [
+        {
+          "key": "pinoheladoGrumSlain",
+          "truthy": true
+        }
+      ],
+      "mapId": "pinohelado",
+      "clue": "Grum ha muerto. Regresa con Greta a Pinohelado (E1) para contárselo a Joris."
+    },
+    {
+      "when": [
+        {
+          "itemId": "frost-moss"
+        }
+      ],
+      "mapId": "terra-e2",
+      "clue": "Tienes musgo de escarcha. Regresa a las Estribaciones de Escoria (E2) para curar a Grum o decidir su destino."
+    },
+    {
+      "when": [
+        {
+          "key": "e2GretaFound",
+          "truthy": true
+        }
+      ],
+      "mapId": "terra-e1",
+      "clue": "Greta dice que Grum necesita musgo de escarcha del Bosque de Escarcha (E1); también puedes enfrentarte al trol."
+    },
+    {
+      "mapId": "terra-e2",
+      "clue": "Busca a Greta y a Grum en las Estribaciones de Escoria (E2), al este de Pinohelado."
+    }
   ]
 }

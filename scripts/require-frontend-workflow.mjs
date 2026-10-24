@@ -17,7 +17,9 @@ export class FrontendWorkflowPendingError extends Error {
 }
 
 
-export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
+export function verifyFrontendWorkflow(payload, {
+  sha, event, repository, allowMissingRetry = false,
+}) {
   if (!/^[0-9a-f]{40}$/.test(sha ?? '')) throw new Error('Invalid source SHA');
   if (!['push', 'pull_request'].includes(event)) throw new Error('Unexpected event');
   if (repository !== 'evilsysadmin/chronicles-of-matthias') {
@@ -68,6 +70,16 @@ export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
       + sha + ' (' + latest.status + '/' + (latest.conclusion ?? 'unknown') + ')',
     );
   }
+  // GitHub may expose a successful Actions build check before listing its
+  // parent workflow run (or temporarily omit that run during finalization).
+  // Only the bounded caller that already checked a green same-SHA build may
+  // retry absence. Never authorize on absence, a foreign workflow or a bad
+  // API response; the official completed/success identity remains mandatory.
+  if (!latest && allowMissingRetry) {
+    throw new FrontendWorkflowPendingError(
+      'Official frontend workflow not yet visible for source SHA ' + sha,
+    );
+  }
   if (!latest || latest.status !== 'completed' || latest.conclusion !== 'success') {
     throw new Error(
       'Official Chronicles frontend workflow not green for exact source SHA '
@@ -80,9 +92,13 @@ export function verifyFrontendWorkflow(payload, { sha, event, repository }) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const [sha, event, repository] = process.argv.slice(2);
+    const [sha, event, repository, observationFlag, ...extraArgs] = process.argv.slice(2);
+    if (extraArgs.length || (observationFlag && observationFlag !== '--retry-missing-official')) {
+      throw new Error('Unexpected workflow verification arguments');
+    }
     const id = verifyFrontendWorkflow(JSON.parse(readFileSync(0, 'utf8')), {
       sha, event, repository,
+      allowMissingRetry: observationFlag === '--retry-missing-official',
     });
     console.log('FRONTEND_WORKFLOW_IDENTITY_GREEN sha=' + sha
       + ' workflow_id=' + FRONTEND_WORKFLOW_ID + ' run_id=' + id);
