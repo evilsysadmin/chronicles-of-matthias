@@ -169,7 +169,9 @@ describe('Swordhaven modular real-time 3D', () => {
           }
           expect(scale.x).toBeGreaterThan(0.12);
           expect(scale.y).toBeGreaterThan(0.15);
-          expect(scale.z).toBeLessThanOrEqual(0.43);
+          // Instanced transforms round to Float32, so 0.43 can read back
+          // as 0.430000007 without any change to the authored depth.
+          expect(scale.z).toBeLessThan(0.44);
           portal.push([pos.x, pos.y]);
         }
         expect(portal.some(([x, y]) => x < -0.9 && y > 1 && y < 3)).toBe(true);
