@@ -142,8 +142,13 @@
   }
 }
 @media (max-height: 480px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+  /* Override the old three-column folio rule (44px portrait / identity /
+     close). MM3 has no header portrait: without this, the identity is forced
+     into the 44px ghost column and becomes a 268px-tall stack. */
+  .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 40px;
     min-height: 0;
+    gap: 5px;
     padding: 3px 7px;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
