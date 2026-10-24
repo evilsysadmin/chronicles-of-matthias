@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4174/smoke/inn-room.html';
 const browser = await chromium.launch();
 try {
-  for (const [width,height] of [[360,780],[390,844],[430,932],[1280,800]]) {
+  for (const [width,height] of [[360,780],[390,844],[430,932],[844,390],[1280,800]]) {
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
     const errors = [];
@@ -22,6 +22,16 @@ try {
         'Tavern must fit the screen: '+JSON.stringify(rect));
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
       assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden');
+      // Mobile inn controls must remain legible and reachable, even when the
+      // header has a long name and a separate gold counter.
+      if (width <= 844) {
+        const close = await room.getByRole('button', { name:'Salir de la taberna' }).boundingBox();
+        assert.ok(close && close.width >= 44 && close.height >= 44,
+          'Inn close target must be at least 44px: '+JSON.stringify(close));
+        const heading = room.locator('.chronicles-inn__heading');
+        assert.equal(await heading.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), true,
+          'Inn heading must not overflow horizontally');
+      }
       const gold = async () => Number(await page.locator('[data-inn-gold]').innerText());
       const qty = async () => Number(await page.locator('[data-inn-food-count]').innerText());
       const purse = await gold(), foodBefore = await qty();
