@@ -145,33 +145,22 @@ describe('MM3 map symbol legends', () => {
     expect(noRoute).not.toContain('data-chronicles-route-target=');
   });
 
-  it('labels guild and objective contextually on the local minimap', () => {
+  it('reserves every minimap tile for the map while the full map retains its legend', () => {
     const known = renderToStaticMarkup(
-      <ChroniclesMinimap
-        state={state}
-        radius={7}
-        visitedCells={['15:4']}
-        target={target}
-      />,
+      <ChroniclesMinimap state={state} radius={7} visitedCells={['15:4']}
+        target={target} routeLabel="Camino de los estandartes" />,
     );
     expect(known).toContain('data-chronicles-poi="guild"');
-    expect(known).toContain('chronicles-minimap__legend');
-    expect(known).toContain('class="is-guild"><b>G</b> gremio');
-    expect(known).toContain('class="is-target"><b>★</b> objetivo');
+    expect(known).toContain('data-chronicles-route-target="in-view"');
+    expect(known).not.toContain('chronicles-minimap__legend');
+    expect(known).not.toContain('title="Siguiente salida:');
     expect(known).toContain('★: rumbo al objetivo');
-
-    const unknown = renderToStaticMarkup(
-      <ChroniclesMinimap state={state} radius={7} visitedCells={[]} target={target} />,
+    expect(known).toContain('siguiente salida: Camino de los estandartes');
+    const full = renderToStaticMarkup(
+      <ChroniclesAutomap open state={state} visitedCells={['15:4']}
+        target={target} onClose={() => {}} />,
     );
-    expect(unknown).not.toContain('data-chronicles-poi="guild"');
-    expect(unknown).not.toContain('class="is-guild"');
-    expect(unknown).toContain('class="is-target"><b>★</b> objetivo');
-
-    const noTarget = renderToStaticMarkup(
-      <ChroniclesMinimap state={state} radius={7} visitedCells={['15:4']} />,
-    );
-    expect(noTarget).toContain('class="is-guild"><b>G</b> gremio');
-    expect(noTarget).not.toContain('class="is-target"');
-    expect(noTarget).not.toContain('★: rumbo al objetivo');
+    expect(full).toContain('chronicles-automap__legend-guild');
+    expect(full).toContain('★</i> rumbo al objetivo');
   });
 });
