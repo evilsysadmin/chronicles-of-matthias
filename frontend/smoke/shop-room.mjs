@@ -314,6 +314,10 @@ try {
           && position.peek.right <= position.detail.left - 2
           && position.peek.width >= 180,
           'Preview must be readable to the RIGHT of the clipped catalogue: ' + JSON.stringify(position));
+        // The painted keeper is the room's visual focal point, not a tooltip backdrop.
+        // Brunna's face occupies the right half of the aisle at desktop widths.
+        assert(position.peek.right <= width * .63,
+          'Desktop comparison obscures Brunna: ' + JSON.stringify(position));
         assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
           'Wide hover must never expand or reflow the stock ledger');
       }
