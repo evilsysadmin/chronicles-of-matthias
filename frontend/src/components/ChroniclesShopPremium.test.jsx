@@ -57,17 +57,18 @@ describe('Chronicles premium shop UI', () => {
     }
   });
 
-  it('uses shaded art with distinct paint servers for each real armoury item', () => {
+  it('uses one dedicated portrait for each of Odo’s seven stocked items', () => {
     const html = render('first-book-armorer');
-    expect(html).toContain('data-chronicles-shop-glyph="armor"');
-    expect(html).toContain('data-chronicles-shop-art="brass-shield"');
-    expect(html).toContain('aria-label="Armadura"');
-    const ids = [...html.matchAll(/<linearGradient id="([^"]+)"/g)].map((match) => match[1]);
-    // Odo now has six bespoke portraits; only the guard vest still uses
-    // the generic SVG. Its paint servers must remain unique and intact.
-    expect((html.match(/data-chronicles-shop-glyph="armor"/g) || []).length).toBe(1);
-    expect(ids.length).toBeGreaterThanOrEqual(5);
-    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of [
+      'wooden-shield', 'leather-leather', 'brass-shield', 'brass-ring',
+      'brass-scale', 'leather-padded', 'roadwatch-vest',
+    ]) {
+      expect(html).toContain('data-chronicles-shop-art="' + id + '"');
+      expect(html).toContain('data-chronicles-shop-item="' + id + '"');
+    }
+    expect((html.match(/data-chronicles-shop-item="/g) || []).length).toBe(7);
+    expect(html).not.toContain('data-chronicles-shop-glyph=');
+    expect(html).not.toContain('<linearGradient');
   });
 
   it('uses per-item standalone 2D art for the first real weapons, preserving fallback glyphs', () => {
@@ -119,11 +120,11 @@ describe('Chronicles premium shop UI', () => {
     expect(shieldArt).not.toBe(cuirassArt);
     expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-shield'])).toBeTruthy();
     expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['brass-ring'])).toBeTruthy();
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeTruthy();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="wooden-shield"');
     expect(html).toContain('data-chronicles-shop-art="leather-leather"');
-    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+    expect(html).toContain('data-chronicles-shop-art="roadwatch-vest"');
     expect(html).not.toContain('data-chronicles-shop-glyph="shield"');
   });
 
@@ -139,11 +140,11 @@ describe('Chronicles premium shop UI', () => {
     expect(chroniclesShopItemArt(shield)).toBeTruthy();
     expect(chroniclesShopItemArt(ringmail)).toBeTruthy();
     expect(chroniclesShopItemArt(shield)).not.toBe(chroniclesShopItemArt(ringmail));
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeTruthy();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="brass-shield"');
     expect(html).toContain('data-chronicles-shop-art="brass-ring"');
-    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+    expect(html).toContain('data-chronicles-shop-art="roadwatch-vest"');
   });
 
   it('uses different 2D material treatments for padded leather and brass scales', () => {
@@ -160,11 +161,26 @@ describe('Chronicles premium shop UI', () => {
     expect(scaleArt).toBeTruthy();
     expect(paddingArt).toBeTruthy();
     expect(scaleArt).not.toBe(paddingArt);
-    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeNull();
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['roadwatch-vest'])).toBeTruthy();
     const html = render('first-book-armorer');
     expect(html).toContain('data-chronicles-shop-art="brass-scale"');
     expect(html).toContain('data-chronicles-shop-art="leather-padded"');
-    expect(html).toContain('data-chronicles-shop-glyph="armor"');
+    expect(html).toContain('data-chronicles-shop-art="roadwatch-vest"');
+  });
+
+  it('distinguishes the named roadwatch guard vest from an ordinary leather cuirass', () => {
+    const guard = CHRONICLES_EQUIPMENT['roadwatch-vest'];
+    const cuirass = CHRONICLES_EQUIPMENT['leather-leather'];
+    expect(guard.slot).toBe('armor');
+    expect(guard.baseItemId).toBe('vest');
+    expect(guard.materialId).toBe('leather');
+    expect(guard.armorType).toBe('leather');
+    expect(chroniclesShopItemArt(guard)).toBeTruthy();
+    expect(chroniclesShopItemArt(guard)).not.toBe(chroniclesShopItemArt(cuirass));
+    expect(chroniclesShopItemArt(CHRONICLES_EQUIPMENT['bronze-leather'])).toBeNull();
+    const html = render('first-book-armorer');
+    expect(html).toContain('data-chronicles-shop-art="roadwatch-vest"');
+    expect(html).toContain('alt="Jubón de cuero de guardia"');
   });
 
   it('keeps one explicit checkout button in the detail, not one purchase trigger per list row', () => {

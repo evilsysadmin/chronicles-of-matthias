@@ -473,9 +473,18 @@ try {
             assert(size.complete && size.w >= 512 && size.h >= 512,
               id + ': dedicated 2D armour portrait failed to decode ' + JSON.stringify(size));
           }
-          assert.equal(await dialog.locator('[data-chronicles-shop-item="roadwatch-vest"] svg')
-            .getAttribute('aria-label'), 'Armadura',
-            'Guard leather vest must keep its accessible SVG fallback');
+          const guardVest = dialog.locator('[data-chronicles-shop-item="roadwatch-vest"] img[data-chronicles-shop-art="roadwatch-vest"]');
+          await guardVest.waitFor({ state: 'visible' });
+          assert.equal(await guardVest.getAttribute('alt'), 'Jubón de cuero de guardia');
+          const guardSize = await guardVest.evaluate((img) => ({
+            w: img.naturalWidth, h: img.naturalHeight, complete: img.complete,
+          }));
+          assert(guardSize.complete && guardSize.w >= 512 && guardSize.h >= 512,
+            'Guard vest full-resolution portrait failed: ' + JSON.stringify(guardSize));
+          const covered = await dialog.locator('[data-chronicles-shop-item] img[data-chronicles-shop-art]').count();
+          assert.equal(covered, 7, 'All seven Odo stock items need their own sprite');
+          assert.equal(await dialog.locator('[data-chronicles-shop-item] svg[data-chronicles-shop-glyph]').count(), 0,
+            'No generic icon remains in Odo stock');
           // Verify the real room receives non-interactive light. One mobile
           // scenario exercises the reduced-motion fallback, not just CSS text.
           const light = await scene.evaluate((node) => ({
