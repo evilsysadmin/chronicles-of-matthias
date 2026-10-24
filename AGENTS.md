@@ -87,10 +87,14 @@
   progresión real, salvas colectivas antes de contacto y combate por turnos
   al entrar en contacto. No romper el modo Tactics al mejorar MM3.
 - **Controles de teclado vigentes**: flechas ↑/↓ avanzan/retroceden;
-  ←/→ giran; **A** ataca cuerpo a cuerpo; **S** dispara con el grupo
-  fuera del combate y con el héroe activo en iniciativa. Espacio conserva
-  ataque automático alternativo. `C` abre magia. Mantener código, ayuda,
-  botones y pruebas sincronizados.
+  ←/→ giran; **Q/E** hacen strafe lateral izquierda/derecha sin girar;
+  en el menú de aventura **Q** abre la confirmación de salida sin guardar;
+  **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
+  exploración es inerte); **S** dispara con el grupo fuera del combate y
+  con el héroe activo en iniciativa. **Espacio NO ataca**
+  ni tiene alias de ataque automático en primera persona; no recuperarlo.
+  El botón táctil de ataque automático permanece disponible por separado.
+  `C` abre magia. Mantener código, ayuda, botones y pruebas sincronizados.
 - Cada tiro visual corresponde a un héroe vivo que lleva **arma de proyectiles
   válida para su clase**: arco, ballesta u honda. Puede haber animación/sonido
   de proyectiles disparados al aire, pero **no inventar impactos, daño, XP,

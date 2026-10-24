@@ -21,6 +21,17 @@ test('stale PR runs may cancel without cancelling required main checks', () => {
   }
 });
 
+test('required frontend and contract time budgets cover cached-browser E2E completion', () => {
+  // Keep the source CI fail-closed, but avoid cancelling a passing browser
+  // run immediately before its final artifact and checkout cleanup.
+  assert.match(frontend, /timeout-minutes: 30/);
+  assert.match(ci, /timeout-minutes: 40/);
+  assert.match(ci, /for attempt in \$\(seq 1 216\)/);
+  assert.match(ci, /sleep 10/);
+  assert.match(ci, /completed:success\)/);
+  assert.match(ci, /--retry-missing-official/);
+});
+
 test('both frontend-installing workflows use npm cache keyed to lockfile', () => {
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /cache: 'npm'\s*\n          cache-dependency-path: frontend\/package-lock\.json/);
@@ -28,10 +39,19 @@ test('both frontend-installing workflows use npm cache keyed to lockfile', () =>
   }
 });
 
+test('new direct frontend check context is stable while the required bridge stays fail-closed', () => {
+  assert.ok(frontend.includes('    name: frontend-vitest-build-chromium'));
+  assert.ok(ci.includes('check_name=frontend-vitest-build-chromium'));
+  assert.ok(ci.includes('Require real frontend Vitest, build and Chromium smoke'));
+  assert.ok(ci.includes('node scripts/require-frontend-workflow.mjs'));
+  assert.ok(ci.includes('for attempt in $(seq 1 216)'));
+  assert.ok(!ci.includes('check_name=build '));
+});
+
 test('protected checks and exact-SHA admission prerequisites are intact', () => {
   assert.match(ci, /repository-contract:/);
   assert.match(ci, /Require real frontend Vitest, build and Chromium smoke/);
-  assert.match(frontend, /node smoke\/first-hour-contact\.mjs/);
+  assert.match(frontend, /node smoke\/run-timed\.mjs smoke\/first-hour-contact\.mjs/);
   assert.match(api, /name: api-e2e/);
   assert.match(api, /needs: verify/);
 });
@@ -46,7 +66,7 @@ test('green main does not upload screenshots while PRs and failed main retain ev
   assert.match(frontend, /if: github\.event_name == 'pull_request'\n        with:\n          name: chronicles-frontend-dist/);
 });
 
-test('API and frontend E2E use npm-ci locked exact Playwright, never ad hoc npm install', () => {
+test('API and frontend E2E use npm-ci locked exact Playwright with tested Chromium host readiness', () => {
   const pkg = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
   const lock = JSON.parse(readFileSync(new URL('../frontend/package-lock.json', import.meta.url), 'utf8'));
   const version = '1.64.1';
@@ -60,7 +80,7 @@ test('API and frontend E2E use npm-ci locked exact Playwright, never ad hoc npm 
   }
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund/);
-    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
     assert.doesNotMatch(workflow, /npm install --no-save|npm install --package-lock-only|playwright@\^|playwright@~/);
     assert.doesNotMatch(workflow, /CHRONICLES_LOCKCHUNK|Bootstrap exact Playwright lockfile/);
   }
@@ -85,7 +105,7 @@ test('Chromium cache key comes from installed npm-locked Playwright in both E2Es
     assert.match(workflow, /node -p "require\('\.\/node_modules\/playwright\/package\.json'\)\.version"/);
     assert.match(workflow, /node -p "require\('\.\/package\.json'\)\.devDependencies\.playwright"/);
     assert.match(workflow, /\[\[ "\$version" == "\$declared" \]\]/);
-    assert.match(workflow, /npx playwright install --with-deps chromium/);
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
     assert.doesNotMatch(workflow, /restore-keys:/);
     const npmInstall = workflow.indexOf('npm ci --ignore-scripts');
     const keyDerivation = workflow.indexOf('Resolve locked Playwright version for browser cache');
@@ -101,9 +121,14 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
     assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
   }
   assert.match(api, /actions\/setup-go@v6/);
+  // Docker publish actions must use their Node 24 native majors.
+  assert.match(api, /uses: docker\/setup-buildx-action@v4/);
+  assert.match(api, /uses: docker\/login-action@v4/);
+  assert.doesNotMatch(api, /docker\/(?:setup-buildx-action|login-action)@v3/);
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /actions\/cache@v5/);
-    assert.match(workflow, /actions\/upload-artifact@v5/);
+    assert.match(workflow, /actions\/upload-artifact@v7/);
+    assert.doesNotMatch(workflow, /actions\/upload-artifact@v[3456]/);
   }
 });
 
@@ -124,7 +149,35 @@ test('obsolete API images cannot publish or attest without exact-SHA main admiss
   assert.match(job, /publish=false/);
   assert.match(job, /publish=true/);
   const gated = (job.match(/^\s+if: steps\.admission\.outputs\.publish == 'true'$/gm) || []).length;
-  assert.equal(gated, 7, 'all checkout, QEMU, Buildx, login, build, provenance and summary steps must be gated');
+  assert.equal(gated, 6, 'checkout, Buildx, login, build, provenance and summary must stay gated');
   assert.match(job, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
   assert.match(job, /push-to-registry: true/);
+});
+
+
+test('a single shared browser bootstrap checks real host readiness before apt fallback', () => {
+  const script = readFileSync(new URL('../frontend/smoke/ensure-chromium.sh', import.meta.url), 'utf8');
+  const probe = readFileSync(new URL('../frontend/smoke/chromium-host-probe.mjs', import.meta.url), 'utf8');
+  assert.match(script, /npx playwright install chromium/);
+  assert.match(script, /node smoke\/chromium-host-probe\.mjs/);
+  assert.match(script, /42\)/);
+  assert.match(script, /npx playwright install-deps chromium/);
+  assert.doesNotMatch(script, /install --with-deps chromium/);
+  assert.match(probe, /chromium\.launch\(/);
+  assert.match(probe, /Missing libraries:/);
+  assert.match(probe, /process\.exitCode = missingHostDeps \? 42 : 1/);
+  for (const workflow of [frontend, api]) {
+    assert.match(workflow, /bash smoke\/ensure-chromium\.sh/);
+  }
+});
+
+test('main-only API image publication uses a non-blocking multi-arch BuildKit cache', () => {
+  const publish = api.slice(api.indexOf('\n  publish:\n'));
+  assert.match(publish, /needs: verify/);
+  assert.match(publish, /if: github\.event_name != 'pull_request'/);
+  assert.match(publish, /cache-from: type=gha,scope=chronicles-api-buildkit-v1/);
+  assert.match(publish, /cache-to: type=gha,mode=max,scope=chronicles-api-buildkit-v1,ignore-error=true/);
+  assert.doesNotMatch(api.slice(0, api.indexOf('\n  publish:\n')), /cache-to: type=gha/);
+  assert.match(publish, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
+  assert.match(publish, /push-to-registry: true/);
 });

@@ -33,5 +33,8 @@ describe('Chronicles adventure menu folio — visual-only refactor (#134)', () =
     expect(styles).toContain('@media (orientation: landscape)');
     expect(styles).toContain('min-height: 44px');
     expect(styles).toContain('.chronicles-audio-controls');
+    expect(styles).toContain('expedition-study-desktop-v2.avif');
+    expect(styles).toContain('grid-template-columns: minmax(0, 1fr)');
+    expect(styles).toContain('background: transparent;');
   });
 });

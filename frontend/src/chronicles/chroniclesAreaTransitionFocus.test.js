@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { chroniclesBindAreaTravelFocus } from './chroniclesAreaTransitionFocus.js';
+import { chroniclesBindAreaTravelFocus, chroniclesAreaTravelKeyDecision } from './chroniclesAreaTransitionFocus.js';
 
 function focusFixture() {
   const listeners = new Map();
@@ -31,6 +31,23 @@ function focusFixture() {
 }
 
 describe('MM3 travel choice keyboard focus', () => {
+  it('uses horizontal arrows for No/Yes and Enter for the focused choice', () => {
+    expect(chroniclesAreaTravelKeyDecision('ArrowLeft', 'accept')).toBe('focus-cancel');
+    expect(chroniclesAreaTravelKeyDecision('ArrowRight', 'cancel')).toBe('focus-accept');
+    expect(chroniclesAreaTravelKeyDecision('Enter', 'cancel')).toBe('cancel');
+    expect(chroniclesAreaTravelKeyDecision('Enter', 'accept')).toBe('accept');
+    expect(chroniclesAreaTravelKeyDecision('Enter')).toBe('cancel');
+    expect(chroniclesAreaTravelKeyDecision('Escape', 'accept')).toBe('cancel');
+    expect(chroniclesAreaTravelKeyDecision('n')).toBe('cancel');
+    expect(chroniclesAreaTravelKeyDecision('Y')).toBe('accept');
+    expect(chroniclesAreaTravelKeyDecision('S')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('s')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('a')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('ArrowDown')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('Tab')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('ArrowUp')).toBeNull();
+    expect(chroniclesAreaTravelKeyDecision('Control+Enter')).toBeNull();
+  });
   it('focuses the safe No choice and restores the original HUD button afterward', () => {
     const { doc, opener, cancel, dialog, listeners } = focusFixture();
     const release = chroniclesBindAreaTravelFocus(dialog, doc);

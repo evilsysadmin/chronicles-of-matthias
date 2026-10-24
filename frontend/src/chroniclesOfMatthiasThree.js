@@ -24,7 +24,7 @@ import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './
 import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
-import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyFlightSample } from './chronicles/chroniclesVolleyMotion.js';
+import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -692,7 +692,7 @@ export function createChroniclesOfMatthiasGame(host, {
   camera.rotation.order = 'YXZ';
   scene.add(camera);
   const combatFx = createCombatFx(camera);
-  const volleyFx = createChroniclesVolleyProjectileArt(THREE, camera);
+  const volleyFx = createChroniclesVolleyProjectileArt(THREE, camera, scene);
 
   // Every authored outdoor region uses the campaign exterior, except the
   // legacy Swordhaven square, which keeps its own historic builder.
@@ -743,6 +743,8 @@ export function createChroniclesOfMatthiasGame(host, {
   let attackFxConfig = ATTACK_FX.matthias;
   let volleyFxStartedAt = -1;
   let volleyFxCount = 0;
+  let volleyObstacleDistance = Infinity;
+  let volleyLaunchPose = null;
   const enemyHitStartedAt = new Map();
   const enemyAttackStartedAt = new Map();
   const enemyDeathStartedAt = new Map();
@@ -812,6 +814,14 @@ export function createChroniclesOfMatthiasGame(host, {
       });
     });
     latestState = state;
+    if (volleyFxCount > 0 && !chroniclesVolleyMatchesLaunchPose(volleyLaunchPose, state)) {
+      // The projectile mesh is a camera child. Cancel a stale visual instead
+      // of swinging its trajectory with a later movement/turn action.
+      volleyFxCount = 0;
+      volleyFxStartedAt = -1;
+      volleyLaunchPose = null;
+      volleyFx.group.visible = false;
+    }
     (dungeon.spectralChapel.userData.chroniclesGlowMaterials || []).forEach((glow) => {
       glow.emissiveIntensity = state.sigilAwake ? 1.25 : 0.18;
     });
@@ -875,6 +885,21 @@ export function createChroniclesOfMatthiasGame(host, {
   function playVolley(shooterIds = []) {
     if (reducedMotion || destroyed) return;
     volleyFxCount = volleyFx.setFamilies(chroniclesVolleyProjectileKinds(latestState, shooterIds));
+    if (volleyFxCount > 0) volleyFx.anchorLaunchPose(desiredYaw);
+    volleyLaunchPose = volleyFxCount > 0 && latestState
+      ? { x: latestState.x, y: latestState.y, direction: latestState.direction }
+      : null;
+    // Snapshot the wall in front of the party at shot time. Generated house
+    // facades and shop doors share scenePlan.grid's solid '#' cells.
+    volleyObstacleDistance = chroniclesVolleyObstacleDistance(
+      scenePlan?.grid,
+      latestState && { x: latestState.x, y: latestState.y },
+      CHRONICLES_DIRECTIONS[latestState?.direction],
+      CELL,
+      // The 3D inn/shop doors project as much as ~0.44 m toward the street
+      // from the solid tile boundary. Stop before the wood and stone frames.
+      scenePlan?.regionKind === 'settlement' ? 0.55 : 0.08,
+    );
     volleyFxStartedAt = clock.getElapsedTime();
     volleyFx.group.visible = volleyFxCount > 0;
   }
@@ -1021,8 +1046,9 @@ export function createChroniclesOfMatthiasGame(host, {
       volleyFx.group.visible = volleyVisible;
       if (volleyVisible) {
         volleyFx.projectiles.forEach((projectile, index) => {
-          const flight = chroniclesVolleyFlightSample(
+          const flight = chroniclesVolleyVisibleFlight(
             volleyFxCount, index, volleyElapsed, projectile.userData.volleyKind,
+            volleyObstacleDistance,
           );
           projectile.visible = Boolean(flight);
           if (!flight) return;

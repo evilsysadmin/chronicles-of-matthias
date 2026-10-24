@@ -125,6 +125,44 @@ describe('authored first-book quest geography', () => {
       .toBeNull();
   });
 
+  it('guides Greta\'s real five-stage troll choice without assuming a moral outcome', () => {
+    const quest = active('pinohelado-greta', 'Busca a Greta en las Estribaciones de Escoria (E2).');
+    const stages = [
+      [{}, 'terra-e2', 'Estribaciones de Escoria'],
+      [{ e2GretaFound: true }, 'terra-e1', 'Bosque de Escarcha'],
+      [{ e2GretaFound: true, inventory: { 'frost-moss': { quantity: 1 } } }, 'terra-e2', 'Estribaciones de Escoria'],
+      [{ pinoheladoGrumHealed: true, e2GretaFound: true,
+        inventory: { 'frost-moss': { quantity: 1 } } }, 'pinohelado', 'Pinohelado'],
+      [{ pinoheladoGrumSlain: true, e2GretaFound: true }, 'pinohelado', 'Pinohelado'],
+    ];
+    for (const [state, mapId, region] of stages) {
+      expect(chroniclesQuestRegionHint(quest, state)).toMatchObject({ mapId, region });
+    }
+    expect(chroniclesQuestRegionHint({ ...quest, status: 'completed' },
+      { pinoheladoGrumHealed: true })).toBeNull();
+    expect(chroniclesQuestRegionHint(active('pinohelado-unknown'), {})).toBeNull();
+  });
+
+  it('only hints the tracked Greta quest destination when it lies outside the current region', () => {
+    const objective = 'Busca a Greta en las Estribaciones de Escoria (E2).';
+    const state = {
+      ...createChroniclesState('pinohelado'),
+      trackedQuestId: 'pinohelado-greta',
+      quests: {
+        'pinohelado-greta': { id: 'pinohelado-greta', title: 'La leñadora y el trol',
+          status: 'active', objective, order: 1 },
+      },
+    };
+    expect(chroniclesHudQuestDestination(state, objective)).toEqual({
+      mapId: 'terra-e2', region: 'Estribaciones de Escoria',
+    });
+    expect(chroniclesHudQuestDestination({ ...state, mapId: 'terra-e2', e2GretaFound: true },
+      objective)).toEqual({ mapId: 'terra-e1', region: 'Bosque de Escarcha' });
+    expect(chroniclesHudQuestDestination({ ...state, pinoheladoGrumHealed: true },
+      objective)).toBeNull();
+    expect(chroniclesHudQuestDestination(state, 'Encuentro táctico, no misión')).toBeNull();
+  });
+
   it('validates all authored clues and map references without embedding coordinates', () => {
     for (const [questId, stages] of Object.entries(questRegionHints)) {
       expect(questId.length).toBeGreaterThan(0);

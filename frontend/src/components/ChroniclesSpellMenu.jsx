@@ -5,8 +5,10 @@ import {
   chroniclesMemberSchool,
   chroniclesMemberSp,
   chroniclesMemberSpells,
+  chroniclesHealTargetStatus,
+  CHRONICLES_SPELLS,
 } from '../chronicles/chroniclesMagic.js';
-import { chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
+import { chroniclesCarriedConsumables, chroniclesConsumableCount } from '../chronicles/chroniclesConsumables.js';
 import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 
@@ -37,15 +39,137 @@ export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) 
   return next ? next === tab ? 'close' : next : null;
 }
 
+// Brief MM3 speech plaque over the caster portrait, not another modal.
+export function ChroniclesSpellTargetQuestion({ spellId, notice = '' }) {
+  return (
+    <span className="chronicles-spell-target-question"
+      data-chronicles-spell-target-question={spellId} role="status">
+      <strong>¿A quién?</strong>
+      <small>1–4 · elige compañero · Esc cancela</small>
+      {notice && <small className="is-warning">{notice}</small>}
+    </span>
+  );
+}
+
+// On touch devices Escape may not exist. This lives next to (never inside)
+// the party portrait buttons, preserving valid HTML and click semantics.
+export function ChroniclesSpellTargetCancel({ onCancel }) {
+  return (
+    <button type="button" className="chronicles-spell-target-cancel"
+      data-chronicles-spell-target-cancel
+      aria-label="Cancelar selección de destinatario del hechizo"
+      onClick={onCancel}>
+      ✕ <span>Cancelar</span>
+    </button>
+  );
+}
+
+// One dedicated strip above the portraits. The question and Cancel are
+// siblings of the hero buttons, never descendants of a portrait button.
+export function ChroniclesSpellTargetBanner({ spellId, notice = '', onCancel }) {
+  return (
+    <div className="chronicles-spell-target-banner" data-chronicles-spell-target-banner={spellId}>
+      <ChroniclesSpellTargetQuestion spellId={spellId} notice={notice} />
+      <ChroniclesSpellTargetCancel onCancel={onCancel} />
+    </div>
+  );
+}
+
+// Explicit target list, including the *reason* a fallen or healthy hero cannot
+// be healed. Disabled entries are still readable; no spell points are spent.
+export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
+  const elixirCount = chroniclesConsumableCount(state, 'revive-draught');
+  return (
+    <div className="chronicles-spell-menu__heal-picker" data-chronicles-heal-picker={spell.id}>
+      <button type="button" className="chronicles-spell-menu__heal-back" onClick={onBack}>
+        ← Volver a hechizos
+      </button>
+      <h3>¿A quién quieres curar con {spell.name}?</h3>
+      <p>Elige al compañero que recibirá {spell.amount} PV. La elección no gasta PH ni turno.</p>
+      <ul className="chronicles-spell-menu__heal-targets">
+        {(state?.party || []).map((target) => {
+          const status = chroniclesHealTargetStatus(target);
+          return (
+            <li key={target.id}>
+              <button type="button" data-chronicles-heal-target={target.id}
+                disabled={status !== 'wounded'} onClick={() => onSelect(target.id)}
+                title={status === 'fallen' ? '0 PV: necesita resurrección'
+                  : status === 'healthy' ? 'Salud completa' : 'Curar este compañero'}>
+                <span><strong>{target.name}</strong>
+                  <small>{target.hp} / {target.maxHp} PV</small></span>
+                <span>{status === 'fallen' ? 'CAÍDO · REVIVIR'
+                  : status === 'healthy' ? 'YA ESTÁ SANO' : 'CURAR'}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {(state?.party || []).some((target) => target.hp <= 0) && (
+        <p role="status" className="chronicles-spell-menu__heal-warning">
+          A 0 PV no se puede curar con este hechizo.
+          {elixirCount > 0 ? (
+            <>
+              {' '}Llevas {elixirCount} {elixirCount === 1 ? 'Elixir de retorno' : 'Elixires de retorno'}.
+              {onOpenRevive && (
+                <button type="button" className="chronicles-spell-menu__heal-back"
+                  data-chronicles-open-revive onClick={onOpenRevive}>
+                  Ir a Objetos y elegir a quién reanimar →
+                </button>
+              )}
+            </>
+          ) : (
+            <> No llevas ningún Elixir de retorno. Necesitas conseguir uno para reanimar al caído.</>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// The elixir is single-use: choose who gets up instead of quietly reviving
+// a different ally. The reducer remains responsible for item/turn legality.
+export function ChroniclesReviveTargetPicker({ state, item, onSelect, onBack }) {
+  const fallen = (state?.party || []).filter((hero) => hero.hp <= 0);
+  return (
+    <div className="chronicles-spell-menu__heal-picker" data-chronicles-revive-picker={item.id}>
+      <button type="button" className="chronicles-spell-menu__heal-back" onClick={onBack}>
+        ← Volver a objetos
+      </button>
+      <h3>¿A quién quieres reanimar con {item.name}?</h3>
+      <p>Elige a un compañero caído. Confirmar consume un elixir y el turno del usuario.</p>
+      <ul className="chronicles-spell-menu__heal-targets">
+        {(state?.party || []).map((hero) => (
+          <li key={hero.id}>
+            <button type="button" data-chronicles-revive-target={hero.id}
+              disabled={hero.hp > 0} onClick={() => onSelect(hero.id)}
+              title={hero.hp <= 0 ? 'Reanimar a este compañero' : 'Este compañero sigue en pie'}>
+              <span><strong>{hero.name}</strong><small>{hero.hp} / {hero.maxHp} PV</small></span>
+              <span>{hero.hp <= 0 ? 'REANIMAR' : 'EN PIE'}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p role="status" className="chronicles-spell-menu__heal-warning">
+        {fallen.length
+          ? 'Solo puedes reanimar personajes a 0 PV. La elección aún no consume el elixir.'
+          : 'Nadie está caído. Guarda el Elixir de retorno para cuando haga falta.'}
+      </p>
+    </div>
+  );
+}
+
 // A single folio owns the focus while it is open. This component only
 // chooses available actions; casting, inventory and turns belong to the reducer.
 export default function ChroniclesSpellMenu({
   state, member, itemUser = member, onCast, onUse = () => {}, onClose,
-  onOpenSheet = null, initialTab = 'spells',
+  onOpenSheet = null, onRequestTarget = null, initialTab = 'spells',
 }) {
   const spells = chroniclesMemberSpells(state, member);
   const items = chroniclesCarriedConsumables(state);
   const [tab, setTab] = useState(() => (initialTab === 'items' || !spells.length ? 'items' : 'spells'));
+  const [healSpellId, setHealSpellId] = useState(null);
+  const [reviveItemId, setReviveItemId] = useState(null);
+  const [healNotice, setHealNotice] = useState('');
   const panelRef = useRef(null);
   const firstRef = useRef(null);
   const labelId = useId();
@@ -56,8 +180,11 @@ export default function ChroniclesSpellMenu({
   useEffect(() => {
     const fallback = panelRef.current?.querySelector('[role="tab"][aria-selected="true"]')
       || panelRef.current?.querySelector('.chronicles-spell-menu__close');
-    (firstRef.current && !firstRef.current.disabled ? firstRef.current : fallback)?.focus();
-  }, [tab]);
+    const pickerFocus = (healSpellId || reviveItemId) && panelRef.current?.querySelector(
+      '[data-chronicles-heal-picker] button:not([disabled]), [data-chronicles-revive-picker] button:not([disabled])',
+    );
+    (pickerFocus || (firstRef.current && !firstRef.current.disabled ? firstRef.current : fallback))?.focus();
+  }, [tab, healSpellId, reviveItemId]);
 
   useEffect(() => {
     const onKey = (event) => {
@@ -86,7 +213,7 @@ export default function ChroniclesSpellMenu({
     if (pageAction) {
       event.preventDefault();
       if (pageAction === 'close') onClose();
-      else setTab(pageAction);
+      else { setHealSpellId(null); setReviveItemId(null); setHealNotice(''); setTab(pageAction); }
       return;
     }
     if (event.key !== 'Tab') return;
@@ -111,6 +238,8 @@ export default function ChroniclesSpellMenu({
   const canAct = !state?.initiative || (actor?.kind === 'party' && actor.id === member.id);
   const stock = items.reduce((sum, entry) => sum + entry.quantity, 0);
   const actingMember = tab === 'items' && itemUser ? itemUser : member;
+  const healSpell = healSpellId ? CHRONICLES_SPELLS[healSpellId] : null;
+  const reviveItem = items.find(({ item }) => item.id === reviveItemId && item.kind === 'revive')?.item;
 
   return (
     <div className="chronicles-cast-backdrop" onPointerDown={(event) => {
@@ -148,13 +277,13 @@ export default function ChroniclesSpellMenu({
             <button id={spellsTabId} type="button" role="tab" aria-selected={tab === 'spells'}
               aria-controls={pageId} tabIndex={tab === 'spells' ? 0 : -1}
               data-chronicles-menu-tab-button="spells" aria-keyshortcuts="C"
-              title="Hechizos (C)" onClick={() => setTab('spells')}>
+              title="Hechizos (C)" onClick={() => { setHealSpellId(null); setReviveItemId(null); setHealNotice(''); setTab('spells'); }}>
               ✦ Hechizos <small>{spells.length} · C</small>
             </button>
             <button id={itemsTabId} type="button" role="tab" aria-selected={tab === 'items'}
               aria-controls={pageId} tabIndex={tab === 'items' ? 0 : -1}
               data-chronicles-menu-tab-button="items" aria-keyshortcuts="I"
-              title="Objetos (I)" onClick={() => setTab('items')}>
+              title="Objetos (I)" onClick={() => { setHealSpellId(null); setReviveItemId(null); setHealNotice(''); setTab('items'); }}>
               ◈ Objetos <small>{stock} · I</small>
             </button>
           </div>
@@ -162,7 +291,16 @@ export default function ChroniclesSpellMenu({
         <div id={pageId} className="chronicles-spell-menu__pages"
           role={spells.length ? 'tabpanel' : undefined}
           aria-labelledby={spells.length ? (tab === 'spells' ? spellsTabId : itemsTabId) : undefined}>
-          {tab === 'spells' ? (
+          {tab === 'spells' && healSpell ? (
+            <ChroniclesHealTargetPicker state={state} spell={healSpell}
+              onBack={() => setHealSpellId(null)}
+              onSelect={(targetId) => onCast(healSpell.id, targetId)}
+              onOpenRevive={canAct && itemUser?.hp > 0 ? () => {
+                setHealSpellId(null);
+                setTab('items');
+                setReviveItemId('revive-draught');
+              } : null} />
+          ) : tab === 'spells' ? (
             <ul className="chronicles-spell-menu__entries">
               {spells.map((spell, index) => {
                 const affordable = canAct && !down && sp >= spell.cost;
@@ -171,7 +309,20 @@ export default function ChroniclesSpellMenu({
                   <li key={spell.id}>
                     <button ref={index === 0 ? firstRef : undefined} type="button"
                       data-chronicles-cast={spell.id} data-cast-kind={spell.kind}
-                      disabled={!affordable} onClick={() => onCast(spell.id)}
+                      disabled={!affordable} onClick={() => {
+                        setHealNotice('');
+                        if (spell.kind === 'heal' && !spell.everyone) {
+                          if (onRequestTarget) onRequestTarget(spell.id);
+                          else setHealSpellId(spell.id);
+                        } else if (spell.kind === 'heal'
+                          && !state.party.some((target) => target.hp > 0 && target.hp < target.maxHp)) {
+                          setHealNotice(state.party.some((target) => target.hp <= 0)
+                            ? 'Los compañeros caídos a 0 PV requieren un Elixir de retorno desde Objetos.'
+                            : 'Nadie necesita curación. No has gastado PH.');
+                        } else {
+                          onCast(spell.id);
+                        }
+                      }}
                       title={!canAct ? 'No es el turno de este personaje' : down ? 'El personaje está fuera de combate' : sp < spell.cost ? 'No tienes suficientes PH' : `Lanzar ${spell.name}`}>
                       <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
                       <span className="chronicles-spell-menu__entry">
@@ -184,7 +335,12 @@ export default function ChroniclesSpellMenu({
                   </li>
                 );
               })}
+              {healNotice && <li role="status" className="chronicles-spell-menu__heal-warning">{healNotice}</li>}
             </ul>
+          ) : reviveItem ? (
+            <ChroniclesReviveTargetPicker state={state} item={reviveItem}
+              onBack={() => setReviveItemId(null)}
+              onSelect={(targetId) => onUse(reviveItem.id, targetId)} />
           ) : (
             <ul className="chronicles-spell-menu__entries">
               {items.map(({ item, quantity }, index) => {
@@ -193,7 +349,10 @@ export default function ChroniclesSpellMenu({
                   <li key={item.id}>
                     <button ref={index === 0 ? firstRef : undefined} type="button"
                       data-chronicles-use-item={item.id} data-cast-kind={item.kind}
-                      disabled={!canAct || !itemUser || itemUser.hp <= 0} onClick={() => onUse(item.id)}>
+                      disabled={!canAct || !itemUser || itemUser.hp <= 0} onClick={() => {
+                        if (item.kind === 'revive') setReviveItemId(item.id);
+                        else onUse(item.id);
+                      }}>
                       <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
                       <span className="chronicles-spell-menu__entry">
                         <strong>{item.name}</strong>
@@ -217,9 +376,11 @@ export default function ChroniclesSpellMenu({
           <span>{!canAct
             ? 'Es el turno de otro combatiente: puedes consultar, no actuar.'
             : tab === 'items'
-              ? 'Usar un objeto gasta el turno de quien lo usa.'
+              ? reviveItem ? 'Elige al caído. Se consume un elixir solo al confirmar.'
+                : 'Usar un objeto gasta el turno de quien lo usa.'
               : down ? 'El personaje no puede lanzar hechizos mientras esté caído.'
-                : 'Más hechizos en el gremio. La posada devuelve los PH.'}</span>
+                : healSpell ? 'Elige al compañero herido. Los caídos a 0 PV necesitan revivir.'
+                  : 'Curar no resucita a un caído (0 PV). La posada devuelve los PH.'}</span>
           <kbd>{onOpenSheet ? '1–4 · FICHAS  |  ' : ''}ESC · CERRAR</kbd>
         </footer>
       </section>

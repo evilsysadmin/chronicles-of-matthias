@@ -2,6 +2,8 @@ package legacyimport
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -40,7 +42,7 @@ func TestImportCopiesRunsOnceAndProgression(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result != (Result{RunsImported: 1, RunsKept: 1, Progression: "imported"}) {
+	if result != (Result{RunsFound: 2, RunsImported: 1, RunsKept: 1, Progression: "imported"}) {
 		t.Fatalf("result %+v", result)
 	}
 	stored, _ := progression.Get(context.Background(), "ana")
@@ -49,7 +51,7 @@ func TestImportCopiesRunsOnceAndProgression(t *testing.T) {
 	}
 	// Running it again changes nothing.
 	again, _ := Import(context.Background(), src, target, progression, "ana", time.Now())
-	if again != (Result{RunsKept: 2, Progression: "kept"}) {
+	if again != (Result{RunsFound: 2, RunsKept: 2, Progression: "kept"}) {
 		t.Fatalf("again %+v", again)
 	}
 }
@@ -93,5 +95,156 @@ func TestImportNamesTheFailingStage(t *testing.T) {
 	_, err = Import(context.Background(), failingSource{context.DeadlineExceeded}, fakeRuns{}, chroniclesprogression.NewMemory(), "ana", time.Now())
 	if err == nil || err.Error() != "legacy import failed at read-legacy-runs: timeout" {
 		t.Fatalf("err %v", err)
+	}
+}
+
+ 
+// A batch of 200 is not a hard owner limit: consume 201+ cursor records.
+type fakeCursor struct {
+	rows       []bson.D
+	index      int
+	failAfter  int // -1 = no failure
+	readErr    error
+	decodeAt   int // 1-based; zero = no failure
+}
+
+func (f *fakeCursor) Next(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		f.readErr = ctx.Err()
+		return false
+	}
+	if f.failAfter >= 0 && f.index == f.failAfter {
+		return false
+	}
+	if f.index >= len(f.rows) {
+		return false
+	}
+	f.index++
+	return true
+}
+
+func (f *fakeCursor) Decode(dst any) error {
+	if f.decodeAt == f.index {
+		return errors.New("decode unavailable")
+	}
+	*dst.(*bson.D) = f.rows[f.index-1]
+	return nil
+}
+
+func (f *fakeCursor) Err() error { return f.readErr }
+
+func TestReadRunCursorNeverTruncatesAtBatchSize(t *testing.T) {
+	for _, size := range []int{0, 1, 200, 201, 431} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			rows := make([]bson.D, 0, size)
+			for n := 0; n < size; n++ {
+				rows = append(rows, run(fmt.Sprintf("legacy-%d", n)))
+			}
+			read, err := readRunCursor(context.Background(), &fakeCursor{rows: rows, failAfter: -1})
+			if err != nil || len(read) != size {
+				t.Fatalf("read %d of %d: %v", len(read), size, err)
+			}
+			target := fakeRuns{}
+			result, err := Import(
+				context.Background(), fakeSource{runs: read}, target,
+				chroniclesprogression.NewMemory(), "ana", time.Now(),
+			)
+			if err != nil || result.RunsFound != size || result.RunsImported != size || len(target) != size {
+				t.Fatalf("migration %+v for %d: %v", result, size, err)
+			}
+			repeated, err := Import(
+				context.Background(), fakeSource{runs: read}, target,
+				chroniclesprogression.NewMemory(), "ana", time.Now(),
+			)
+			if err != nil || repeated.RunsFound != size || repeated.RunsKept != size || repeated.RunsImported != 0 {
+				t.Fatalf("idempotent replay %+v for %d: %v", repeated, size, err)
+			}
+		})
+	}
+}
+
+func TestReadRunCursorFailsClosedOnPartialRead(t *testing.T) {
+	rows := make([]bson.D, 205)
+	for i := range rows {
+		rows[i] = run(fmt.Sprintf("legacy-%d", i))
+	}
+	read, err := readRunCursor(context.Background(), &fakeCursor{
+		rows: rows, failAfter: 200, readErr: errors.New("cursor unavailable"),
+	})
+	if err == nil || read != nil {
+		t.Fatalf("incomplete read reported as complete: %d rows, %v", len(read), err)
+	}
+	read, err = readRunCursor(context.Background(), &fakeCursor{
+		rows: rows, failAfter: -1, decodeAt: 201,
+	})
+	if err == nil || read != nil {
+		t.Fatalf("decode failure reported as complete: %d rows, %v", len(read), err)
+	}
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	read, err = readRunCursor(cancelled, &fakeCursor{rows: rows, failAfter: -1})
+	if !errors.Is(err, context.Canceled) || read != nil {
+		t.Fatalf("cancelled read reported as complete: %d rows, %v", len(read), err)
+	}
+}
+
+ 
+func TestImportRejectsForeignAndAmbiguousSourceBeforeAnyWrite(t *testing.T) {
+	tests := []struct {
+		name string
+		bad  bson.D
+	}{
+		{"foreign-owner", run("foreign")},
+		{"missing-owner", bson.D{{Key: "_id", Value: "missing"}}},
+		{"missing-id", bson.D{{Key: "owner", Value: "ana"}}},
+		{"invalid-id", bson.D{{Key: "_id", Value: 7}, {Key: "owner", Value: "ana"}}},
+		{"duplicate-owner-field", bson.D{{Key: "_id", Value: "duplicate-owner"}, {Key: "owner", Value: "ana"}, {Key: "owner", Value: "ana"}}},
+		{"duplicate-id-field", bson.D{{Key: "_id", Value: "dupe"}, {Key: "_id", Value: "dupe"}, {Key: "owner", Value: "ana"}}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			target := fakeRuns{}
+			source := fakeSource{runs: []bson.D{run("valid"), tc.bad}}
+			if tc.name == "foreign-owner" {
+				source.runs[1] = bson.D{{Key: "_id", Value: "foreign"}, {Key: "owner", Value: "another-user"}}
+			}
+			result, err := Import(context.Background(), source, target, chroniclesprogression.NewMemory(), "ana", time.Now())
+			if err == nil || err.Error() != "legacy import failed at validate-legacy-runs: invalid" ||
+				len(target) != 0 || result.RunsImported != 0 {
+				t.Fatalf("malformed source produced partial import: %+v, %v", result, err)
+			}
+		})
+	}
+	target := fakeRuns{}
+	result, err := Import(context.Background(), fakeSource{
+		runs: []bson.D{run("duplicated"), run("duplicated")},
+	}, target, chroniclesprogression.NewMemory(), "ana", time.Now())
+	if err == nil || len(target) != 0 || result.RunsImported != 0 {
+		t.Fatalf("duplicate source ID produced partial import: %+v, %v", result, err)
+	}
+}
+
+
+func TestValidateDistinctSourceAndTargetDatabases(t *testing.T) {
+	for _, tc := range []struct {
+		source, target string
+		valid          bool
+	}{
+		{"chess_study_staging", "chronicles_staging", true},
+		{"chess_study_staging", "chess_study_staging", false},
+		{" chess_study_staging ", "chess_study_staging", false},
+		{"", "chronicles_staging", false},
+		{"chess_study_staging", "", false},
+		{"chess_study_staging", "chess_study", false},
+		{"chess_study", "chronicles_staging", false},
+		{"other_legacy_db", "chronicles_staging", false},
+	} {
+		err := ValidateDistinctDatabases(tc.source, tc.target)
+		if tc.valid && err != nil {
+			t.Fatalf("valid distinct source and target rejected: %v", err)
+		}
+		if !tc.valid && (err == nil || err.Error() != "legacy import failed at validate-source: invalid") {
+			t.Fatalf("unsafe source/target configuration accepted: %v", err)
+		}
 	}
 }

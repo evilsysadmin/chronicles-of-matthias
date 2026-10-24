@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import {
+  chroniclesSpellTargetHotkey,
   chroniclesMemberMaxSp,
   chroniclesMemberSp,
   chroniclesMemberSpells,
@@ -42,6 +43,40 @@ describe('Chronicles · MM3 magic', () => {
     expect(chroniclesMemberMaxSp(state, { ...archer, mm3: { ...archer.mm3, raceId: 'elf' } })).toBe(3);
   });
 
+  it('routes 1–4 to party order only during unmodified discrete target selection', () => {
+    const state = town();
+    for (const [index, hero] of state.party.entries()) {
+      expect(chroniclesSpellTargetHotkey({ key: String(index + 1) }, state.party)).toBe(hero.id);
+    }
+    for (const event of [
+      { key: '0' }, { key: '5' }, { key: 'a' }, { key: 'Escape' },
+      { key: '1', repeat: true }, { key: '2', shiftKey: true },
+      { key: '3', ctrlKey: true }, { key: '4', metaKey: true },
+      { key: '1', altKey: true }, { key: '2', isComposing: true },
+    ]) expect(chroniclesSpellTargetHotkey(event, state.party)).toBeNull();
+    expect(chroniclesSpellTargetHotkey({ key: '4' }, state.party.slice(0, 3))).toBeNull();
+  });
+
+  it('selects a real hero without spending HP, SP or turn until the cast is confirmed', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+    )) };
+    const turnBefore = state.turns;
+    const spBefore = chroniclesMemberSp(state, member(state, 'bishop'));
+    const targetId = chroniclesSpellTargetHotkey({ key: '1' }, state.party);
+    expect(targetId).toBe('matthias');
+    // Asking the question is presentation-only. The reducer is called once,
+    // after the chosen living, wounded member has been validated.
+    expect(state.turns).toBe(turnBefore);
+    expect(chroniclesMemberSp(state, member(state, 'bishop'))).toBe(spBefore);
+    const healed = chroniclesReduce(state, { type: 'cast', memberId: 'bishop',
+      spellId: 'first-aid', targetId });
+    expect(member(healed, 'matthias').hp).toBe(9);
+    expect(healed.turns).toBe(turnBefore + 1);
+    expect(chroniclesMemberSp(healed, member(healed, 'bishop'))).toBe(spBefore - 1);
+  });
+
   it('heals the most wounded ally with First Aid and the inn restores spell points', () => {
     let state = town(20);
     state = { ...state, party: state.party.map((entry) => entry.id === 'rook' ? { ...entry, hp: 2 } : entry) };
@@ -57,8 +92,55 @@ describe('Chronicles · MM3 magic', () => {
     expect(unknown.message).toMatch(/no conoce/);
     // Resting at the tavern refills the book.
     const tavern = chroniclesReduce({ ...state, x: 7, y: 10 }, 'interact');
-    expect(chroniclesMemberSp(tavern, member(tavern, 'bishop'))).toBe(5);
-    expect(tavern.spellPoints).toBeUndefined();
+    expect(tavern.inn?.id).toBe('first-book-healer');
+    // Opening is free and does not magically restore PH; resting is explicit.
+    expect(chroniclesMemberSp(tavern, member(tavern, 'bishop'))).toBe(4);
+    const rested = chroniclesReduce(tavern, { type: 'inn-rest' });
+    expect(chroniclesMemberSp(rested, member(rested, 'bishop'))).toBe(5);
+    expect(rested.spellPoints).toBeUndefined();
+  });
+
+  it('targets a chosen wounded ally, not merely the automatically most wounded one', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 1 }
+        : hero.id === 'matthias' ? { ...hero, hp: 4 } : hero
+    )) };
+    const targeted = chroniclesReduce(state, {
+      type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'matthias',
+    });
+    expect(member(targeted, 'matthias').hp).toBe(10);
+    expect(member(targeted, 'rook').hp).toBe(1);
+    expect(targeted.turns).toBe(state.turns + 1);
+    expect(chroniclesMemberSp(targeted, member(targeted, 'bishop'))).toBe(4);
+    expect(targeted.message).toMatch(/Primeros auxilios sobre Matthias/);
+    const legacy = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'first-aid' });
+    expect(member(legacy, 'rook').hp).toBe(7);
+  });
+
+  it('explains that healing cannot revive a fallen target and spends neither SP nor turn', () => {
+    const base = town();
+    const state = { ...base, party: base.party.map((hero) => (
+      hero.id === 'rook' ? { ...hero, hp: 0 }
+        : hero.id === 'matthias' ? { ...hero, hp: 3 } : hero
+    )) };
+    for (const targetId of ['rook', 'nonexistent']) {
+      const result = chroniclesReduce(state, {
+        type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId,
+      });
+      expect(result.party).toEqual(state.party);
+      expect(result.turns).toBe(state.turns);
+      expect(chroniclesMemberSp(result, member(result, 'bishop'))).toBe(5);
+      expect(result.message).toMatch(targetId === 'rook' ? /0 PV.*Elixir de retorno/ : /No existe/);
+    }
+    const allStandingFull = { ...state, party: state.party.map((hero) => (
+      hero.hp > 0 ? { ...hero, hp: hero.maxHp } : hero
+    )) };
+    const noWounds = chroniclesReduce(allStandingFull, {
+      type: 'cast', memberId: 'bishop', spellId: 'first-aid',
+    });
+    expect(noWounds.message).toMatch(/0 PV.*Elixir de retorno/);
+    expect(noWounds.turns).toBe(allStandingFull.turns);
   });
 
   it('sells membership and spells at the guild, only to casters of the matching force', () => {

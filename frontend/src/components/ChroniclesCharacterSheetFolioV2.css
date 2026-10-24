@@ -610,6 +610,26 @@
   color: #c5b69d;
   line-height: 1.4;
 }
+/* One A/S card, one real unequip action: no second set of weapon slots. */
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__weapon-card > button {
+  min-height: 38px;
+  margin-top: 3px;
+  padding: 6px 10px;
+  border: 1px solid #ac8658;
+  background: #f0ddbb;
+  color: #3a2818;
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__weapon-card > button:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__weapon-card > button:focus-visible {
+  outline: 3px solid #d7a959;
+  outline-offset: 2px;
+}
 .chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview {
   display: grid;
   gap: 5px;

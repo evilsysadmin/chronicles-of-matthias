@@ -29,7 +29,6 @@ import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.j
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
-import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
@@ -95,7 +94,6 @@ import {
 } from '../chroniclesOfMatthiasProgression.js';
 import {
   chroniclesAutomapMarkSeen,
-  chroniclesMapCoordinatesLabel,
   clearChroniclesAutomapVisited,
   loadChroniclesAutomapVisited,
   saveChroniclesAutomapVisited,
@@ -105,9 +103,10 @@ import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
+import ChroniclesInn from './ChroniclesInn.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
-import ChroniclesSpellMenu from './ChroniclesSpellMenu.jsx';
+import ChroniclesSpellMenu, { ChroniclesSpellTargetBanner } from './ChroniclesSpellMenu.jsx';
 import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
@@ -123,7 +122,7 @@ import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.j
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
 import {
-  CHRONICLES_SPELLS, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
+  CHRONICLES_SPELLS, chroniclesHealTargetStatus, chroniclesSpellTargetHotkey, chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesMemberSpells,
 } from '../chronicles/chroniclesMagic.js';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 import ChroniclesCombatRoster, { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
@@ -166,7 +165,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -175,8 +174,9 @@ import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
 import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 import { chroniclesAreaTransitionIntent } from '../chronicles/chroniclesAreaTransitionIntent.js';
-import { chroniclesBindAreaTravelFocus } from '../chronicles/chroniclesAreaTransitionFocus.js';
-import './ChroniclesAreaTransition.css';
+import { chroniclesAreaTravelKeyDecision } from '../chronicles/chroniclesAreaTransitionFocus.js';
+import ChroniclesAreaTransitionDialog from './ChroniclesAreaTransitionDialog.jsx';
+
 import './ChroniclesAdventureMenuFolio.css';
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
@@ -311,6 +311,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [state?.message]);
   const [partyBark, setPartyBark] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Parent owns the nested folio so global Escape/Back uses the same state.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [firstStepsOpen, setFirstStepsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -329,6 +331,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [automapOpen, setAutomapOpen] = useState(false);
   // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
   const [spellMenuOpen, setSpellMenuOpen] = useState(false);
+  // MM3's short-lived, no-cost question sits above the caster's portrait.
+  const [pendingSpellTarget, setPendingSpellTarget] = useState(null);
+  const [spellTargetNotice, setSpellTargetNotice] = useState('');
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
@@ -503,14 +508,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // Escape handler. Dismiss the topmost visible panel without opening the
     // adventure menu underneath. The same priority applies to browser Back.
     const action = chroniclesFirstPersonEscapeAction({
-      menuOpen, confirmExitWithoutSaving, spellMenuOpen, adminOpen,
+      menuOpen, confirmExitWithoutSaving, feedbackOpen, spellMenuOpen, adminOpen,
       sheetOpen: Boolean(sheetMemberId),
       shopOpen: Boolean(stateRef.current?.shop),
-      guildOpen: Boolean(stateRef.current?.guild),
+      guildOpen: Boolean(stateRef.current?.guild), innOpen: Boolean(stateRef.current?.inn),
       audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+    else if (action === 'back-feedback') setFeedbackOpen(false);
     else if (action === 'close-sheet') setSheetMemberId(null);
+    else if (action === 'close-inn') dispatch({ type: 'inn-close' });
     else if (action === 'close-shop') dispatch({ type: 'shop-close' });
     else if (action === 'close-guild') dispatch({ type: 'guild-close' });
     else if (action === 'close-spell') setSpellMenuOpen(false);
@@ -526,7 +533,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       else menuSummaryRef.current?.focus();
       setMenuOpen((open) => !open);
     }
-  }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) });
+  }, { contextMenu: false, disabled: chronicleModalOpen || Boolean(areaTransition) || Boolean(pendingSpellTarget) });
 
   const confirmCharacterBuild = useCallback((build) => {
     void requestChroniclesLandscapeOnEntry();
@@ -782,12 +789,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     }
   }, [areaTransition, state, cancelAreaTravel]);
 
-  useEffect(() => {
-    if (!areaTransition) return undefined;
-    const dialog = document.querySelector('[data-chronicles-area-transition] [role="dialog"]');
-    return chroniclesBindAreaTravelFocus(dialog, document);
-  }, [areaTransition]);
-
   const clearTouchHold = useCallback(() => {
     const active = touchHoldRef.current;
     if (active.delayId !== null) window.clearTimeout(active.delayId);
@@ -886,7 +887,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // mode: 'auto' (botón táctil), 'melee' (A · atacar), 'missile' (S · disparar).
   const attackWithSelected = useCallback((mode = 'auto') => {
     const current = stateRef.current;
-    if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
+    if (!current || current.phase === 'defeated' || current.phase === 'escaped'
+      || (mode === 'melee' && !current.initiative)) return;
     const initiativeActor = chroniclesCurrentInitiativeActor(current.initiative);
     if (initiativeActor?.kind === 'enemy') return;
     const memberId = initiativeActor?.kind === 'party'
@@ -1258,15 +1260,41 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     });
   }, [exitChronicles]);
 
+  const chooseSpellTarget = useCallback((targetId) => {
+    const pending = pendingSpellTarget;
+    const current = stateRef.current;
+    if (!pending || !current) return;
+    const spell = CHRONICLES_SPELLS[pending.spellId];
+    const caster = current.party.find((hero) => hero.id === pending.memberId);
+    const target = current.party.find((hero) => hero.id === targetId);
+    const actor = chroniclesCurrentInitiativeActor(current.initiative);
+    if (!spell || spell.kind !== 'heal' || spell.everyone || !caster || caster.hp <= 0
+      || (actor && (actor.kind !== 'party' || actor.id !== caster.id))) {
+      setPendingSpellTarget(null);
+      setSpellTargetNotice('');
+      return;
+    }
+    const status = chroniclesHealTargetStatus(target);
+    if (status !== 'wounded') {
+      setSpellTargetNotice(status === 'fallen'
+        ? 'A 0 PV necesita resurrección, no curación.'
+        : 'Ese compañero ya tiene todos sus PV.');
+      return;
+    }
+    setPendingSpellTarget(null);
+    setSpellTargetNotice('');
+    dispatch({ type: 'cast', memberId: caster.id, spellId: spell.id, targetId: target.id });
+  }, [dispatch, pendingSpellTarget]);
+
   useEffect(() => {
     if (!ready || !stateRef.current) return undefined;
     const onKeyDown = (event) => {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
-      // Let forms and modal dialogues own their keyboard events. Shift+Tab
-      // always retains browser focus navigation; once inside the game menu,
-      // plain Tab traverses its accessible controls rather than closing it.
+      // Form fields retain keyboard input. Shift+Tab navigates normally.
+      // Plain Tab on the focused menu gem toggles it; inside folio controls,
+      // native Tab still navigates and cannot discard a draft or save.
       const target = event.target;
       const isEditing = target?.isContentEditable
         || target?.closest?.('input, textarea, select, [contenteditable="true"]');
@@ -1274,10 +1302,30 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // typing S/Q into an input must never invoke save/quit.
       if (isEditing && !(menuOpen && event.key === 'Escape')) return;
       if (areaTransitionRef.current) {
-        if (event.key !== 'Tab') event.preventDefault();
+        if (event.key === 'Tab') return;
+        event.preventDefault();
         if (event.repeat) return;
-        if (event.key === 'Escape' || event.key === 'n' || event.key === 'N') cancelAreaTravel();
-        else if (event.key === 'Enter' || event.key === 'y' || event.key === 'Y' || event.key === 's' || event.key === 'S') acceptAreaTravel();
+        const selected = document.activeElement?.matches?.('[data-area-transition-accept]')
+          ? 'accept' : 'cancel';
+        const decision = chroniclesAreaTravelKeyDecision(event.key, selected);
+        if (decision === 'focus-cancel') document.querySelector('[data-area-transition-cancel]')?.focus();
+        else if (decision === 'focus-accept') document.querySelector('[data-area-transition-accept]')?.focus();
+        else if (decision === 'cancel') cancelAreaTravel();
+        else if (decision === 'accept') acceptAreaTravel();
+        return;
+      }
+      // Target selection owns 1–4 *before* the normal party/sheet shortcuts.
+      // No dispatch, spell points or initiative turn until a legal target.
+      if (pendingSpellTarget) {
+        const targetId = chroniclesSpellTargetHotkey(event, current.party);
+        if (event.key === 'Escape' || targetId) {
+          event.preventDefault();
+          if (event.repeat) return;
+          if (event.key === 'Escape') {
+            setPendingSpellTarget(null);
+            setSpellTargetNotice('');
+          } else chooseSpellTarget(targetId);
+        } else if (event.key !== 'Tab') event.preventDefault();
         return;
       }
       const hero = chroniclesPartyHotkeyMember(event, current.party, { menuOpen });
@@ -1292,7 +1340,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (sheetMemberId) {
           setSheetMemberId(hero.id);
         } else {
-          const overlay = chronicleModalOpen || current.shop || current.guild || spellMenuOpen
+          const overlay = chronicleModalOpen || current.shop || current.guild || current.inn || spellMenuOpen
             || automapOpen || menuOpen || journalOpen || quickStatusOpen || audienceRef.current;
           if (overlay) partyHotkeyRef.current = { key: '', at: 0 };
           else {
@@ -1305,10 +1353,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         }
         return;
       }
-      if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || spellMenuOpen
+      if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.inn || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
         menuOpen, saveBusy, confirmExitWithoutSaving,
+        subpageOpen: feedbackOpen,
       });
       if (menuShortcut) {
         event.preventDefault();
@@ -1317,6 +1366,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // a subsequent Esc closes the menu without modifying the run.
         if (menuShortcut === 'request-exit') setConfirmExitWithoutSaving(true);
         if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
+        if (menuShortcut === 'back-feedback') setFeedbackOpen(false);
         if (menuShortcut === 'close') {
           setConfirmExitWithoutSaving(false);
           chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
@@ -1325,6 +1375,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         return;
       }
       if (event.key === 'Tab') {
+        // The gem retains the fast Tab open/close toggle. Once a player moves
+        // focus into the folio, native Tab traversal is essential for keyboard
+        // access; never close while a confirmation or feedback form is open.
+        if (chroniclesAdventureTabClosesMenu(event, menuSummaryRef.current, {
+          menuOpen, confirmExitWithoutSaving, feedbackOpen,
+        })) {
+          event.preventDefault();
+          chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+          setMenuOpen(false);
+          return;
+        }
         if (event.shiftKey || target?.closest?.('.chronicles-game-menu')) return;
         event.preventDefault();
         if (event.repeat) return;
@@ -1335,6 +1396,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         menuSummaryRef.current?.focus();
         return;
       }
+      // The mailbox is a page of the modal, not a game context. J/G/M (and
+      // every other world shortcut) must not switch views under its draft.
+      if (menuOpen && feedbackOpen) return;
       if (event.key === 'j' || event.key === 'J') {
         event.preventDefault();
         if (event.repeat) return;
@@ -1371,9 +1435,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           return;
         }
       }
-      // MM3: directional arrows navigate; A attacks, S shoots.
+      // MM3: arrows navigate, Q/E strafe; A attacks only in combat, S shoots anywhere.
+      // The adventure menu consumes Q before directional keys while visible.
       // Space is intentionally unbound; it must never dispatch an attack.
-      const combatMode = chroniclesCombatKeyMode(event.key);
+      const combatMode = chroniclesCombatKeyMode(event.key, { inCombat: Boolean(current.initiative) });
       if (combatMode) {
         event.preventDefault();
         if (event.repeat) return;
@@ -1400,8 +1465,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
-    confirmExitWithoutSaving, dispatch, interactWithContext, journalOpen, menuOpen, openMemberSheet,
-    persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen]);
+    confirmExitWithoutSaving, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
+    persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
+    pendingSpellTarget, chooseSpellTarget]);
 
   const startFreshGame = (entryMapId = null) => {
     setFirstStepsOpen(false);
@@ -1530,7 +1596,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     );
   }
 
-  const direction = CHRONICLES_DIRECTIONS[state.direction];
   const objective = chroniclesObjective(state);
   // The authored quest's region takes precedence when the objective text
   // does not name its destination (e.g. the missing banner in Swordhaven).
@@ -1539,7 +1604,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const objectiveTravelNote = authoredDestination
     ? `DESTINO · ${authoredDestination.region}${routeHint ? ` · ${routeHint.text}` : ''}`
     : routeHint ? `→ ${routeHint.text}` : null;
-  const locationHud = chroniclesRegionHudLocation(chroniclesMapForState(state));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
   const touchVolley = chroniclesTouchVolleyOpportunity(state);
@@ -1578,6 +1642,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       ref={gameRootRef}
       className="chronicles"
       data-chronicles="true"
+      data-chronicles-targeting={pendingSpellTarget ? pendingSpellTarget.spellId : undefined}
       data-chronicles-map-id={state.mapId}
       data-chronicles-turns={state.turns}
       data-chronicles-phase={state.phase}
@@ -1595,16 +1660,23 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       <div className="chronicles-shell">
         <aside className="chronicles-party" aria-label="Grupo de Matthias">
           <span className="chronicles-panel-kicker">GRUPO · 1–4 SELECCIONAR · DOBLE FICHA</span>
+          {pendingSpellTarget && (
+            <ChroniclesSpellTargetBanner spellId={pendingSpellTarget.spellId}
+              notice={spellTargetNotice} onCancel={() => {
+                setPendingSpellTarget(null);
+                setSpellTargetNotice('');
+              }} />
+          )}
           {state.party.map((member, index) => {
             return (
               <button
                 type="button"
                 key={member.id}
-                className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''}`}
-                onClick={() => openMemberSheet(member.id)}
+                className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''} ${pendingSpellTarget && chroniclesHealTargetStatus(member) === 'wounded' ? 'is-spell-target-valid' : ''}`}
+                onClick={() => pendingSpellTarget ? chooseSpellTarget(member.id) : openMemberSheet(member.id)}
                 disabled={expeditionOver}
-                aria-label={`Seleccionar ${member.name}`}
-                title={`${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: ficha`}
+                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}`}
+                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
@@ -1651,8 +1723,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
         <main className="chronicles-stage-wrap">
           <div className="chronicles-statusbar" aria-live="polite">
-            <span>{locationHud.kind} <b>{locationHud.value}</b></span>
-            <span>RUMBO <b>{direction.label} · {chroniclesMapCoordinatesLabel(chroniclesMapForState(state), state)}</b></span>
+            {/* Preserve objective nth-child selectors without retaining a large location panel. */}
+            <span className="chronicles-statusbar__retired-location" hidden aria-hidden="true" />
+            {/* Preserve child indexing for the objective/active MM3 HUD selectors. */}
+            <span className="chronicles-statusbar__retired-bearing" hidden aria-hidden="true" />
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
             {/* The objective is the Crónica's cover: tapping it opens the
                 quest log and the narration behind that one line. */}
@@ -1729,6 +1803,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   // Also handle native <summary> dismissal and pointer close.
                   chroniclesReleaseAdventureMenuFocus(event.currentTarget);
                   setConfirmExitWithoutSaving(false);
+                  setFeedbackOpen(false);
                 }
               }}
             >
@@ -1736,6 +1811,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span className="chronicles-menu-gem__hint" aria-hidden="true">MENÚ</span>
               </summary>
               <ChroniclesAdventureMenu
+                feedbackOpen={feedbackOpen} onFeedbackOpenChange={setFeedbackOpen}
                 onClose={() => {
                   chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
                   setMenuOpen(false);
@@ -1763,7 +1839,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <div className="chronicles-stage">
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
-            <div className="chronicles-crosshair" aria-hidden="true">·</div>
             {relockPrompt && typeof document !== 'undefined' && createPortal(
               <div className="chronicles-relock" role="dialog" aria-modal="true" aria-labelledby="chronicles-relock-title" data-chronicles-relock>
                 <button type="button" className="chronicles-relock__go" onClick={() => { void activateLandscape(); }}>
@@ -1780,34 +1855,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               <ChroniclesHitSplat key={splat.token} impact={splat} className="is-enemy"
                 style={all.length > 1 ? { left: `${50 + (index - (all.length - 1) / 2) * 14}%` } : null} />
             ))}
-            {areaTransition && typeof document !== 'undefined' && createPortal(
-              <div className="chronicles-area-transition" data-chronicles-area-transition
-                role="presentation">
-                <section className="chronicles-area-transition__card" role="dialog" aria-modal="true"
-                  aria-labelledby="chronicles-area-transition-title"
-                  aria-describedby="chronicles-area-transition-hint"
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Tab') return;
-                    const buttons = event.currentTarget.querySelectorAll('button:not([disabled])');
-                    if (buttons.length !== 2) return;
-                    if (event.shiftKey && document.activeElement === buttons[0]) {
-                      event.preventDefault();
-                      buttons[1].focus();
-                    } else if (!event.shiftKey && document.activeElement === buttons[1]) {
-                      event.preventDefault();
-                      buttons[0].focus();
-                    }
-                  }}>
-                  <div className="chronicles-area-transition__eyebrow">UN NUEVO UMBRAL</div>
-                  <h2 id="chronicles-area-transition-title">{areaTransition.question}</h2>
-                  <p id="chronicles-area-transition-hint">La compañía espera tu decisión.</p>
-                  <div className="chronicles-area-transition__actions">
-                    <button type="button" data-area-transition-cancel onClick={cancelAreaTravel}>No · Esc</button>
-                    <button type="button" className="is-primary" data-area-transition-accept onClick={acceptAreaTravel}>Sí · Enter</button>
-                  </div>
-                </section>
-              </div>, document.body,
-            )}
+            {areaTransition && <ChroniclesAreaTransitionDialog
+              question={areaTransition.question}
+              onCancel={cancelAreaTravel}
+              onAccept={acceptAreaTravel}
+            />}
             <ChroniclesInitiativeRail initiative={state.initiative} />
             <ChroniclesNarratorOverlay message={state.message} open={chronicleModalOpen}
               onOpenChange={(next) => {
@@ -1839,7 +1891,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               npc={npcAtPosition}
               suspended={Boolean(audience || chronicleModalOpen || menuOpen || journalOpen
                 || quickStatusOpen || automapOpen || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || expeditionOver)}
+                || state.shop || state.guild || state.inn || expeditionOver)}
               onTalk={interactWithContext}
             />
             <ChroniclesFirstSteps
@@ -1849,7 +1901,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               open={firstStepsOpen}
               suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || state.initiative || expeditionOver)}
+                || state.shop || state.guild || state.inn || state.initiative || expeditionOver)}
               onClose={() => setFirstStepsOpen(false)}
               onOpenJournal={() => {
                 setMenuOpen(false);
@@ -1865,7 +1917,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               target={chroniclesEnemyTargetAhead(state, 4)}
               suspended={Boolean(menuOpen || journalOpen || chronicleModalOpen || automapOpen
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
-                || state.shop || state.guild || expeditionOver)}
+                || state.shop || state.guild || state.inn || expeditionOver)}
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
               meleeReach={meleeReach} missileReach={missileReach} />
@@ -1892,6 +1944,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <ChroniclesMinimap
             state={state}
             target={routeHint?.position || null}
+            routeLabel={routeHint?.text || ''}
             visitedCells={automapVisitedByMap[state.mapId] || []}
             hidden={automapOpen || expeditionOver}
             onExpand={() => {
@@ -1946,7 +1999,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   aria-label={touchVolley.available
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
-                  title="Flechas · mover/girar · A · atacar · S · disparar"
+                  title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar"
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
                     ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {actionMenuAvailable && (
@@ -1994,6 +2047,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span><kbd>↑</kbd> avanzar</span>
                 <span><kbd>↓</kbd> retroceder</span>
                 <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
+                <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                 <span><kbd>A</kbd> atacar</span>
                 <span><kbd>S</kbd> disparar</span>
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>
@@ -2024,7 +2078,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         </div>
       </div>
 
-      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && (
+      {spellMenuOpen && caster && !expeditionOver && !sheetMember && !state.shop && !state.guild && !state.inn && (
         <ChroniclesSpellMenu
           state={state}
           member={caster}
@@ -2035,13 +2089,21 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             setSpellMenuOpen(false);
             openMemberSheet(memberId);
           }}
-          onCast={(spellId) => {
+          onRequestTarget={(spellId) => {
             setSpellMenuOpen(false);
-            dispatch({ type: 'cast', memberId: caster.id, spellId });
+            setPendingSpellTarget({ spellId, memberId: caster.id });
+            setSpellTargetNotice('');
           }}
-          onUse={(itemId) => {
+          onCast={(spellId, targetId = null) => {
             setSpellMenuOpen(false);
-            if (itemUser) dispatch({ type: 'use-item', memberId: itemUser.id, itemId });
+            dispatch({ type: 'cast', memberId: caster.id, spellId, ...(targetId ? { targetId } : {}) });
+          }}
+          onUse={(itemId, targetId = null) => {
+            setSpellMenuOpen(false);
+            if (itemUser) dispatch({
+              type: 'use-item', memberId: itemUser.id, itemId,
+              ...(targetId ? { targetId } : {}),
+            });
           }}
         />
       )}
@@ -2052,6 +2114,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           onAction={dispatch}
           onClose={() => dispatch({ type: 'guild-close' })}
         />
+      )}
+
+      {state.inn && !sheetMember && (
+        <ChroniclesInn state={state} onAction={dispatch}
+          onClose={() => dispatch({ type: 'inn-close' })} />
       )}
 
       {state.shop && !sheetMember && (
@@ -2105,6 +2172,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         open={automapOpen}
         state={state}
         target={routeHint?.position || null}
+        routeLabel={routeHint?.text || ''}
         objective={objective}
         visitedMapIds={Object.keys(automapVisitedByMap)}
         visitedCells={automapVisitedByMap[state.mapId] || []}

@@ -3,6 +3,7 @@ import { clearStorageMemoryFallback } from '../safeStorage.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
+  chroniclesAutomapRouteEdge,
   chroniclesAutomapTouchedCells,
   chroniclesAutomapMarkVisited,
   chroniclesAutomapMarkSeen,
@@ -60,6 +61,27 @@ describe('Chronicles automap', () => {
 
     clearChroniclesAutomapVisited(runId);
     expect(loadChroniclesAutomapVisited(runId)).toEqual({});
+  });
+
+  it('clips far route directions to the visible explored viewport without resizing it', () => {
+    const viewport = { x: 4, y: 4, width: 5.2, height: 5.2 };
+    const state = { x: 6, y: 6 };
+    const east = chroniclesAutomapRouteEdge(viewport, state, { x: 20, y: 6 });
+    expect(east.x).toBeCloseTo(8.65);
+    expect(east.y).toBeCloseTo(6.5);
+    expect(east.angle).toBe(0);
+    const north = chroniclesAutomapRouteEdge(viewport, state, { x: 6, y: -20 });
+    expect(north.x).toBeCloseTo(6.5);
+    expect(north.y).toBeCloseTo(4.55);
+    expect(north.angle).toBe(-90);
+    const diagonal = chroniclesAutomapRouteEdge(viewport, state, { x: 20, y: -20 });
+    expect(diagonal).not.toBeNull();
+    expect(diagonal.x).toBeGreaterThan(4.55);
+    expect(diagonal.x).toBeLessThan(8.65);
+    expect(diagonal.y).toBeCloseTo(4.55);
+    expect(chroniclesAutomapRouteEdge(viewport, state, { x: 7, y: 6 })).toBeNull();
+    expect(chroniclesAutomapRouteEdge(viewport, state, null)).toBeNull();
+    expect(chroniclesAutomapRouteEdge(viewport, { x: 100, y: 100 }, { x: 20, y: 6 })).toBeNull();
   });
 
   it('maps the canonical N/E/S/O direction index to arrow rotation', () => {

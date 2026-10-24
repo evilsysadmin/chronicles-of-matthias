@@ -24,6 +24,17 @@ function verifyToolchainPins(docker, ci, module) {
   assert.doesNotMatch(ci, /^\s*go-version-file:/m, 'Go module minimum is not a substitute for patched CI toolchain');
   assert.equal(pinnedCi[0][1], image[1], 'Docker and CI must compile with the same Go patch release');
   assert.ok(atLeast(image[1], '1.27.3'), 'security floor: Go 1.27.3 or newer required');
+  const inside = docker.match(/^ARG EXPECTED_GO_VERSION=(\d+\.\d+\.\d+)$/m);
+  assert.ok(inside, 'production Docker builder must declare expected patch release');
+  assert.equal(inside[1], image[1], 'builder/compiler assertion must match the Docker Go patch tag');
+  assert.ok(docker.includes('test "$(GOTOOLCHAIN=local go env GOVERSION)" = "go${EXPECTED_GO_VERSION}"'),
+    'builder must reject a compiler different from the patched Docker tag');
+  assert.ok(docker.includes('test "$(go version /out/chronicles-api)" = "/out/chronicles-api: go${EXPECTED_GO_VERSION}"'),
+    'production binary must embed the selected patched Go compiler');
+  assert.ok(docker.includes("go version -m /out/chronicles-api | grep -Fqx \"$(printf '\\tbuild\\tGOOS=%s' \"$TARGETOS\")\""),
+    'actual Docker binary must match target OS');
+  assert.ok(docker.includes("go version -m /out/chronicles-api | grep -Fqx \"$(printf '\\tbuild\\tGOARCH=%s' \"$TARGETARCH\")\""),
+    'actual Docker binary must match target architecture');
   const minimum = module.match(/^go\s+(\d+\.\d+(?:\.\d+)?)\s*$/m);
   assert.ok(minimum, 'api/go.mod must declare the minimum Go release');
   const minVersion = minimum[1].split('.').length === 2 ? `${minimum[1]}.0` : minimum[1];
@@ -55,8 +66,200 @@ test('security contract rejects CI patch drift, floating tags and unpatched 1.27
 
 test('security contract allows deliberate matching future Go point-release upgrades', () => {
   verifyToolchainPins(
-    dockerfile.replace('golang:1.27.3-alpine3.23', 'golang:1.27.4-alpine3.23'),
+    dockerfile.replace('golang:1.27.3-alpine3.23', 'golang:1.27.4-alpine3.23').replace('EXPECTED_GO_VERSION=1.27.3', 'EXPECTED_GO_VERSION=1.27.4'),
     workflow.replace("go-version: '1.27.3'", "go-version: '1.27.4'"),
     goMod,
   );
+});
+
+function verifiesBothCompiledGoBinaries(source) {
+  const start = source.indexOf('      - name: Build and vet (amd64 + arm64)');
+  const end = source.indexOf('      - name: Go vulnerability scan (reachable source paths)');
+  if (start < 0 || end <= start) return false;
+  const step = source.slice(start, end);
+  return step.includes('export GOTOOLCHAIN=local')
+    && step.includes('build_go" =~ ^go(')
+    && step.includes('patch >= 3')
+    && step.includes('major > 1 || (major == 1')
+    && step.includes('go version -m "$binary"')
+    && step.includes('GOOS=linux GOARCH=amd64 go build -o "$RUNNER_TEMP/chronicles-api"')
+    && step.includes('GOOS=linux GOARCH=arm64 go build -o "$RUNNER_TEMP/chronicles-api-arm64"')
+    && step.includes('[[ "$reported" == "$binary: $build_go" ]]')
+    && step.includes('go version -m "$binary"')
+    && step.includes("grep -Fqx $'\\tbuild\\tGOOS=linux'")
+    && step.includes("grep -Fqx $'\\tbuild\\tGOARCH='")
+    && step.includes('verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64')
+    && step.includes('verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64')
+    && !step.includes('|| true');
+}
+
+test('required API build inspects patched Go stdlib and binary metadata for both architectures', () => {
+  assert.ok(verifiesBothCompiledGoBinaries(workflow));
+});
+
+test('binary-provenance gate rejects missing platform or compiler checks', () => {
+  for (const removed of [
+    'export GOTOOLCHAIN=local',
+    'go version -m "$binary"',
+    'verify_binary_build "$RUNNER_TEMP/chronicles-api" amd64',
+    'verify_binary_build "$RUNNER_TEMP/chronicles-api-arm64" arm64',
+    "grep -Fqx $'\\tbuild\\tGOARCH='",
+  ]) {
+    assert.equal(verifiesBothCompiledGoBinaries(workflow.replace(removed, '')), false, removed);
+  }
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('patch >= 3', 'patch >= 2')), false);
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('major > 1 || (major == 1', 'major >= 1 || (major == 1')), false);
+  assert.equal(verifiesBothCompiledGoBinaries(workflow.replace('build_go" =~ ^go(', 'build_go" == go1.27.3 || go(')), false);
+});
+
+test('production Docker attestation fails closed on compiler, target or proof removal', () => {
+  for (const [missing, label] of [
+    ['ARG EXPECTED_GO_VERSION=1.27.3', 'expected patch'],
+    ['GOTOOLCHAIN=local go env GOVERSION', 'local toolchain'],
+    ['go version /out/chronicles-api', 'binary version'],
+    ["printf '\\tbuild\\tGOOS=%s'", 'binary operating system'],
+    ["printf '\\tbuild\\tGOARCH=%s'", 'binary architecture'],
+  ]) {
+    assert.ok(dockerfile.includes(missing), label);
+    assert.throws(() => verifyToolchainPins(dockerfile.replace(missing, ''), workflow, goMod), undefined, label);
+  }
+  assert.throws(
+    () => verifyToolchainPins(dockerfile.replace('EXPECTED_GO_VERSION=1.27.3', 'EXPECTED_GO_VERSION=1.27.2'), workflow, goMod),
+    /match the Docker Go patch tag/,
+  );
+});
+
+// Docker independently resolves the application graph; the CI runner's
+// OpenPGP check is not sufficient for the executable shipped in an image.
+function assertsProductionOpenPGPExclusion(docker) {
+  const buildIndex = docker.indexOf('RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build');
+  const guardIndex = docker.indexOf('GO-2026-5932 has no patched x/crypto/openpgp release');
+  assert.ok(guardIndex >= 0 && guardIndex < buildIndex, 'Docker OpenPGP guard must precede the actual build');
+  for (const required of [
+    'RUN set -eu;',
+    'CGO_ENABLED=0 GOTOOLCHAIN=local GOOS="$TARGETOS" GOARCH="$TARGETARCH" go list -deps ./cmd/chronicles-api',
+    "grep -Eq '^golang[.]org/x/crypto/openpgp(/|$)'",
+    'GO-2026-5932: forbidden legacy OpenPGP import',
+    'exit 1;',
+  ]) {
+    assert.ok(docker.includes(required), `missing production OpenPGP check: ${required}`);
+  }
+  assert.doesNotMatch(docker, /\|\|\s*(?:true|:)(?:\s|$)/, 'release Docker build must fail closed');
+}
+
+test('release Docker builder excludes unsafe OpenPGP imports in both target graphs', () => {
+  assertsProductionOpenPGPExclusion(dockerfile);
+});
+
+test('Docker OpenPGP guard cannot be removed, narrowed, or bypassed', () => {
+  for (const mutation of [
+    (d) => d.replace('GO-2026-5932 has no patched x/crypto/openpgp release', ''),
+    (d) => d.replace('GOOS="$TARGETOS" GOARCH="$TARGETARCH" go list', 'GOOS=linux GOARCH=amd64 go list'),
+    (d) => d.replace('openpgp(/|$)', 'ssh(/|$)'),
+    (d) => d.replace('go list -deps ./cmd/chronicles-api', 'echo skipped'),
+    (d) => d.replace('exit 1;', 'exit 0;'),
+    (d) => d.replace('exit 1;', 'exit 1 || true;'),
+  ]) {
+    const changed = mutation(dockerfile);
+    assert.notEqual(changed, dockerfile, 'mutation must alter the fixture');
+    assert.throws(() => assertsProductionOpenPGPExclusion(changed));
+  }
+});
+
+function assertReleaseBuilderCacheIntegrity(docker) {
+  const builder = docker.split('\nFROM scratch')[0];
+  const toolchain = builder.indexOf('\nENV GOTOOLCHAIN=local\n');
+  const download = builder.indexOf('RUN go mod download && go mod verify');
+  const source = builder.indexOf('COPY internal/');
+  const build = builder.indexOf('go build -trimpath');
+  assert.ok(toolchain > 0 && toolchain < download,
+    'Docker must pin the bundled Go compiler before accessing dependencies');
+  assert.ok(download > 0 && download < source && source < build,
+    'Docker must download and verify cached dependencies before compiling source');
+  assert.doesNotMatch(builder, /\|\|\s*(?:true|:)(?:\s|$)/,
+    'Go cache integrity check cannot ignore failures');
+}
+
+test('release Docker builder fixes local toolchain and checks module-cache integrity', () => {
+  assertReleaseBuilderCacheIntegrity(dockerfile);
+});
+
+test('release Docker module checks reject missing, skipped, or reordered verification', () => {
+  for (const mutation of [
+    (d) => d.replace('ENV GOTOOLCHAIN=local', 'ENV GOTOOLCHAIN=auto'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod verify && go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && go mod verify || true'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && echo verified'),
+  ]) {
+    const altered = mutation(dockerfile);
+    assert.notEqual(altered, dockerfile, 'mutation must change the actual Dockerfile');
+    assert.throws(() => assertReleaseBuilderCacheIntegrity(altered));
+  }
+});
+
+function assertFullApiJobUsesLocalGo(ci) {
+  const verify = ci.indexOf('\n  verify:\n');
+  const publish = ci.indexOf('\n  publish:\n', verify);
+  assert.ok(verify >= 0 && publish > verify, 'mandatory API verify job must exist');
+  const job = ci.slice(verify, publish);
+  const beforeSteps = job.split('\n    steps:\n')[0];
+  assert.match(beforeSteps, /\n    env:\n      GOTOOLCHAIN: local\n/,
+    'every Go operation in the required API job must inherit GOTOOLCHAIN=local');
+  const steps = job.slice(beforeSteps.length);
+  for (const op of ['go vet ./cmd/...', 'go test ./internal/chronicles/', 'go run ./cmd/terragen -check',
+    'go install golang.org/x/vuln/cmd/govulncheck@v1.9.0',
+    'go list -deps ./cmd/chronicles-api', 'go build -o "$RUNNER_TEMP/chronicles-api"']) {
+    assert.ok(steps.includes(op), `required Go operation missing from job: ${op}`);
+  }
+}
+
+test('all API CI commands share the patched local Go toolchain across steps', () => {
+  assertFullApiJobUsesLocalGo(workflow);
+});
+
+test('API Go toolchain policy rejects removal, auto-switching or per-step-only exports', () => {
+  const livePolicy = '    env:\n      GOTOOLCHAIN: local\n';
+  assert.ok(workflow.includes(livePolicy));
+  for (const changed of [
+    workflow.replace(livePolicy, ''),
+    workflow.replace(livePolicy, '    env:\n      GOTOOLCHAIN: auto\n'),
+    workflow.replace(livePolicy, '      - name: Build and vet (amd64 + arm64)\n        env:\n          GOTOOLCHAIN: local\n'),
+  ]) {
+    assert.throws(() => assertFullApiJobUsesLocalGo(changed));
+  }
+});
+
+
+function verifyGoModuleTidyDiff(ci) {
+  const start = ci.indexOf('\n  verify:\n');
+  const end = ci.indexOf('\n  publish:\n', start);
+  assert.ok(start >= 0 && end > start, 'required API verify job exists');
+  const job = ci.slice(start, end);
+  const gate = job.indexOf('      - name: Check Go module graph (read-only)\n        working-directory: api\n        run: go mod tidy -diff\n');
+  const build = job.indexOf('      - name: Build and vet (amd64 + arm64)\n');
+  const pin = job.indexOf("          go-version: '1.27.3'");
+  assert.ok(pin >= 0 && gate > pin && build > gate,
+    'a fail-closed, read-only go mod tidy -diff must run before API compile and scans');
+  assert.doesNotMatch(job.slice(gate, build), /continue-on-error:|if:\s*false|(?:\|\|\s*(?:true|:))|go mod tidy -e/,
+    'module integrity may not be suppressed');
+}
+
+test('API CI checks canonical go.mod/go.sum without mutating the checkout', () => {
+  verifyGoModuleTidyDiff(workflow);
+});
+
+test('API module consistency gate cannot be dropped, weakened or reordered', () => {
+  for (const modify of [
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -e -diff'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -diff || true'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: echo clean'),
+    (c) => c.replace('      - name: Check Go module graph (read-only)\n', '      - name: Check Go module graph (read-only)\n        continue-on-error: true\n'),
+    (c) => c.replace('run: go mod tidy -diff\n', 'run: go mod tidy -diff\n        if: false\n'),
+  ]) {
+    const altered = modify(workflow);
+    assert.notEqual(altered, workflow, 'mutation must change workflow');
+    assert.throws(() => verifyGoModuleTidyDiff(altered));
+  }
 });

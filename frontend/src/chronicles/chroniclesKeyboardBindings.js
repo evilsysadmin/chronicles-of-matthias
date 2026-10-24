@@ -1,18 +1,34 @@
 // First-person control contract shared with regression tests:
-// directional arrows move/turn; A and S never move the party.
+// arrows move/turn; Q/E strafe; A and S never move the party.
 export const CHRONICLES_DIRECTION_KEYS = Object.freeze({
   ArrowUp: 'forward',
   ArrowDown: 'backward',
   ArrowLeft: 'turn-left',
   ArrowRight: 'turn-right',
+  q: 'strafe-left',
+  Q: 'strafe-left',
+  e: 'strafe-right',
+  E: 'strafe-right',
 });
 
-export function chroniclesCombatKeyMode(key) {
-  if (key === 'a' || key === 'A') return 'melee';
+export function chroniclesCombatKeyMode(key, { inCombat = false } = {}) {
+  // Exploration is not a melee turn: A must not spend a turn or trigger attack FX.
+  if (key === 'a' || key === 'A') return inCombat ? 'melee' : null;
   if (key === 's' || key === 'S') return 'missile';
   // Space is intentionally not a combat shortcut. Only A performs melee;
   // S remains the explicit ranged/volley command.
   return null;
+}
+
+// Only plain Tab on the active menu GEM acts as the reverse toggle. Tab inside
+// buttons/forms keeps native keyboard navigation; Shift+Tab stays untouched.
+export function chroniclesAdventureTabClosesMenu(event, summary, {
+  menuOpen = false, confirmExitWithoutSaving = false, feedbackOpen = false,
+} = {}) {
+  return Boolean(menuOpen && !confirmExitWithoutSaving && !feedbackOpen
+    && event?.key === 'Tab' && !event.shiftKey && !event.repeat
+    && !event.defaultPrevented && !event.ctrlKey && !event.altKey && !event.metaKey
+    && event.target === summary);
 }
 
 // Adventure-menu shortcuts have their own scope: S must continue to shoot
@@ -20,12 +36,18 @@ export function chroniclesCombatKeyMode(key) {
 // Do not steal keys from text fields or repeated/composed browser events.
 export function chroniclesAdventureMenuShortcut(event, {
   menuOpen = false, saveBusy = false, confirmExitWithoutSaving = false,
+  subpageOpen = false,
 } = {}) {
   if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
     || event.ctrlKey || event.altKey || event.metaKey) return null;
   // Escape is a dialogue-level dismissal even with a range/text control
   // focused. Every other shortcut remains owned by focused form controls.
-  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit' : 'close';
+  if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit'
+    : subpageOpen ? 'back-feedback' : 'close';
+  // Pages within the adventure folio own their own keyboard interactions.
+  // Do not save or request a dangerous exit from feedback navigation buttons
+  // or the still-focusable outer summary while the feedback page is visible.
+  if (subpageOpen) return null;
   const target = event.target;
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
@@ -42,10 +64,12 @@ export function chroniclesAdventureMenuShortcut(event, {
 export function chroniclesFirstPersonEscapeAction({
   menuOpen = false,
   confirmExitWithoutSaving = false,
+  feedbackOpen = false,
   spellMenuOpen = false,
   sheetOpen = false,
   shopOpen = false,
   guildOpen = false,
+  innOpen = false,
   adminOpen = false,
   audienceOpen = false,
   automapOpen = false,
@@ -53,9 +77,13 @@ export function chroniclesFirstPersonEscapeAction({
   quickStatusOpen = false,
 } = {}) {
   if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
+  // Escape and browser Back must first leave the nested feedback page, even
+  // when the outer summary (rather than the textarea) owns keyboard focus.
+  if (menuOpen && feedbackOpen) return 'back-feedback';
   // The character dossier can sit on top of a merchant/guild. Dismiss its
   // own topmost layer first, rather than closing the shop behind it.
   if (sheetOpen) return 'close-sheet';
+  if (innOpen) return 'close-inn';
   if (shopOpen) return 'close-shop';
   if (guildOpen) return 'close-guild';
   if (spellMenuOpen) return 'close-spell';

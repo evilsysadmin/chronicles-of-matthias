@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
+import { swordhavenSurfaceTexture } from './chroniclesSwordhaven3D.js';
 
 const demo = {
   mapId: 'banner-road', regionKind: 'wilderness', width: 5, height: 5,
@@ -183,6 +184,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(plaster).toBeInstanceOf(THREE.InstancedMesh);
     expect(plaster.count).toBe(94);
     expect(plaster.instanceColor).toBeTruthy();
+    expect(plaster.material.map).toBe(swordhavenSurfaceTexture('stucco'));
+    expect(plaster.material.map).toBeInstanceOf(THREE.DataTexture);
+    expect(plaster.material.map.wrapS).toBe(THREE.RepeatWrapping);
     expect(plaster.castShadow).toBe(false);
     expect(plaster.geometry.parameters.height).toBeCloseTo(6.4 - 0.52);
     expect(plaster.geometry.parameters.width).toBeCloseTo(4 * 0.935);
@@ -286,6 +290,14 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(roofs.castShadow).toBe(false);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
+    expect(roofs.material.map).toBe(swordhavenSurfaceTexture('roof'));
+    expect(roofs.material.map.wrapT).toBe(THREE.RepeatWrapping);
+    const uv = roofs.geometry.getAttribute('uv');
+    expect(uv.count).toBe(6);
+    expect(uv.getX(0)).toBe(0);
+    expect(uv.getX(1)).toBe(1);
+    expect(uv.getY(4)).toBe(0.5);
+    expect(roofs.geometry.getAttribute('position').count).toBe(6);
     roofs.geometry.computeBoundingBox();
     expect(roofs.geometry.boundingBox.max.x).toBeLessThan(8);
     expect(roofs.geometry.boundingBox.max.z).toBeLessThan(2);

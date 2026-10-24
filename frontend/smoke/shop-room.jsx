@@ -26,8 +26,9 @@ function makeState() {
   const room = new URLSearchParams(window.location.search).get('room');
   // Directly mount other REAL Swordhaven counters for visual QA. The Brunna
   // path still goes through the actual reducer and transactional smoke.
-  if (room === 'odo' || room === 'guild') {
-    const id = room === 'odo' ? 'first-book-armorer' : 'first-book-guild';
+  if (room === 'odo' || room === 'guild' || room === 'apothecary') {
+    const id = room === 'odo' ? 'first-book-armorer'
+      : room === 'apothecary' ? 'first-book-apothecary' : 'first-book-guild';
     const entry = chroniclesMapById('swordhaven-first-book').interactables.find((candidate) => candidate.id === id);
     if (!entry) throw new Error('Missing authored shop: ' + id);
     return room === 'guild'

@@ -67,6 +67,40 @@ describe('ChroniclesMinimap', () => {
     expect(html).not.toContain('data-chronicles-poi-id="swordhaven-to-sewers"');
   });
 
+  it('announces only currently revealed local services to screen readers', () => {
+    const state = createChroniclesState('swordhaven-first-book');
+    const label = (visitedCells, radius = 3) => {
+      const html = renderToStaticMarkup(
+        <ChroniclesMinimap state={state} radius={radius} visitedCells={visitedCells} />,
+      );
+      return html.match(/<button[^>]*aria-label="([^"]*)"/)?.[1] || '';
+    };
+
+    expect(label([])).toMatch(/^Minimapa local\. Abrir automapa completo\. Ubicación: SWORDHAVEN\. Coordenadas: X\d+ Y\d+$/);
+    expect(label(['7:4'])).toContain('F: Forja de Brunna');
+    expect(label(['7:4'])).not.toContain('Coracería de Odo');
+    expect(label(['7:4', '11:4'])).toContain('A: Coracería de Odo');
+    // Knowing a shop outside the local viewport must not make it audible.
+    expect(label(['15:4'])).not.toContain('Gremio de las Tres Fuerzas');
+    expect(label(['7:4', '11:4'], 7)).not.toContain('Gremio de las Tres Fuerzas');
+  });
+
+  it('bounds town POI announcements to three names and a remainder count', () => {
+    const state = createChroniclesState('swordhaven-first-book');
+    const html = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} radius={7}
+        visitedCells={['7:4', '11:4', '15:4', '14:6', '13:6', '9:1', '11:10']} />,
+    );
+    const label = html.match(/<button[^>]*aria-label="([^"]*)"/)?.[1] || '';
+    expect(label).toContain('Lugares descubiertos:');
+    expect(label).toContain('F: Forja de Brunna');
+    expect(label).toContain('A: Coracería de Odo');
+    expect(label).toContain('y 4 más');
+    expect(label).toContain('Abrir automapa completo');
+    // The map itself still contains all seven discovered semantic glyphs.
+    expect((html.match(/data-chronicles-poi="/g) || []).length).toBe(7);
+  });
+
   it('disappears while the full automap or a terminal overlay owns the scene', () => {
     const state = createChroniclesState('crypt-eight-squares');
     expect(renderToStaticMarkup(

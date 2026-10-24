@@ -328,3 +328,51 @@
   .chronicles .chronicles-spell-menu--folio *::before,
   .chronicles .chronicles-spell-menu--folio *::after { animation: none; transition: none; }
 }
+
+/* Targeted healing stays inside the grimoire: no invisible party selection
+   and no cast until a valid, living wounded ally is explicitly chosen. */
+.chronicles .chronicles-spell-menu__heal-picker {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  color: #f4dfb8;
+}
+.chronicles .chronicles-spell-menu__heal-picker h3 { margin: 0; font-size: 1.3rem; }
+.chronicles .chronicles-spell-menu__heal-picker p { margin: 0; line-height: 1.45; }
+.chronicles .chronicles-spell-menu__heal-back {
+  width: fit-content;
+  min-height: 40px;
+  background: #303644;
+  color: #f4dfb8;
+  border: 1px solid #b49464;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.chronicles .chronicles-spell-menu__heal-targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.chronicles .chronicles-spell-menu__heal-targets button {
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid #ad8e64;
+  background: #293541;
+  color: #f5dfb3;
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles .chronicles-spell-menu__heal-targets button span { display: grid; gap: 3px; }
+.chronicles .chronicles-spell-menu__heal-targets button small { color: #d1c6b6; }
+.chronicles .chronicles-spell-menu__heal-targets button:disabled { opacity: .72; cursor: not-allowed; background: #26272b; }
+.chronicles .chronicles-spell-menu__heal-targets button:focus-visible,
+.chronicles .chronicles-spell-menu__heal-back:focus-visible { outline: 2px solid #f5d795; outline-offset: 2px; }
+.chronicles .chronicles-spell-menu__heal-warning {
+  padding: 10px 12px;
+  border-left: 3px solid #d3a66d;
+  color: #ffdfb0;
+  background: #4b382f;
+  font-size: 1.04rem;
+  line-height: 1.4;
+}

@@ -1540,3 +1540,101 @@
     border: 0;
   }
 }
+
+/* A pending spell only accepts portraits or 1–4; moving/attacking through
+   the touch controls while the question is open must not consume a turn. */
+.chronicles[data-chronicles-targeting] .chronicles-stage-wrap {
+  pointer-events: none;
+}
+
+/* One genuine row immediately above the portraits, not a tooltip
+   projected from the caster. The sapphire belongs to the view row and cannot
+   overlap this strip as its height becomes part of the party layout. */
+.chronicles .chronicles-party .chronicles-spell-target-banner {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 16;
+  justify-self: center;
+  align-self: center;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 5px 8px;
+  border: 2px solid #efc479;
+  background: #231b26;
+  box-shadow: 0 5px 16px #000b, inset 0 0 0 1px #84572b;
+  pointer-events: auto;
+}
+.chronicles .chronicles-spell-target-question {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px 12px;
+  color: #fff1ca;
+  font: clamp(1.05rem, 1.45vw, 1.35rem)/1.05 var(--mm3-pixel-font);
+  text-align: center;
+}
+.chronicles .chronicles-spell-target-question strong { color: #ffe6a9; font-weight: 700; }
+.chronicles .chronicles-spell-target-question small { color: #e1d8c4; font-size: .88em; }
+.chronicles .chronicles-spell-target-question .is-warning { color: #ffb6a9; }
+.chronicles .chronicles-party .chronicles-spell-target-cancel {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 4px 11px;
+  border: 1px solid #e7bb6a;
+  border-radius: 0;
+  background: #45334a;
+  color: #ffe5ac;
+  font: 1.06rem/1 var(--mm3-pixel-font);
+  cursor: pointer;
+}
+.chronicles .chronicles-party .chronicles-spell-target-cancel:hover,
+.chronicles .chronicles-party .chronicles-spell-target-cancel:focus-visible {
+  background: #644667;
+  outline: 2px solid #ffe5ac;
+  outline-offset: 2px;
+}
+.chronicles[data-chronicles-targeting] .chronicles-party-member.is-spell-target-valid {
+  border-color: #ffe4a0 #94751e #94751e #ffe4a0;
+  box-shadow: 0 0 0 2px rgba(245, 211, 113, .65);
+}
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-party .chronicles-spell-target-banner {
+    width: 100%;
+    gap: 3px;
+    padding: 3px 5px;
+  }
+  .chronicles .chronicles-spell-target-question {
+    gap: 2px 6px;
+    font-size: .88rem;
+  }
+  .chronicles .chronicles-spell-target-cancel {
+    min-height: 28px;
+    font-size: .82rem;
+  }
+}
+
+
+/* MM3 desktop previously hid the coordinate title; present it as the same
+   discrete bottom caption used by the mobile minimap, never over the tiles. */
+.chronicles .chronicles-minimap__title { display: block; }
+
+
+/* The wide MM3 minimap sits on a pale sandstone tablet. Its coordinate
+   caption needs dark ink there; keep the lighter caption on the dark,
+   compact minimap background for mobile and short landscape. */
+@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
+  .chronicles .chronicles-minimap__title,
+  .chronicles .chronicles-minimap__location {
+    color: #24160d;
+    text-shadow: none;
+  }
+}
