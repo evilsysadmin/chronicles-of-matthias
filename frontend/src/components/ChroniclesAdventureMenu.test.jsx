@@ -18,7 +18,9 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
     expect(html).toContain('Guardar partida · S');
     expect(html).toContain('data-confirming-exit="false"');
-    expect(html).toContain('S · guardar · Q · salir · ESC · cerrar · TAB · navegar');
+    expect(html).toContain('S · guardar · Q · salir · TAB/ESC · cerrar · MAYÚS+TAB · navegar');
+    // Plain Tab closes the folio; only Shift+Tab retains native focus traversal.
+    expect(html).not.toContain('ESC · cerrar · TAB · navegar');
     expect(html).toContain('Salir sin guardar · Q');
     expect(html).toContain('S · guardar · Q · salir');
     expect(html).toContain('Guardar y salir');
