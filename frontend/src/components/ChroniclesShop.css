@@ -957,10 +957,11 @@
 .chronicles-shop__peek-stage {
   grid-column: 2;
   min-width: 0;
-  width: min(100%, 360px);
+  width: min(100%, 310px);
   max-height: 100%;
   align-self: start;
-  justify-self: end;
+  /* Keep the painted merchant's face clear; use the aisle nearest the stock. */
+  justify-self: start;
   overflow-y: auto;
   z-index: 3;
   pointer-events: none;
