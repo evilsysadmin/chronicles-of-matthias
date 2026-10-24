@@ -116,7 +116,10 @@ function manhattanDistance(left, right) {
 }
 
 function enemyEngagementRange(enemy) {
-  const attackReach = Math.max(1, Number(enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1));
+  // Corrupt or legacy reach values must neither disable engagement (NaN)
+  // nor grant an unlimited sightline range (Infinity).
+  const rawReach = Number(enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1);
+  const attackReach = Number.isFinite(rawReach) ? Math.max(1, rawReach) : 1;
   const configured = Number(enemy?.ai?.engageRange);
   return Number.isFinite(configured) && configured >= 1
     ? Math.max(attackReach, configured)
