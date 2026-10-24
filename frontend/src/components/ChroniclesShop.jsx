@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesMemberCanEquip } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
+import { chroniclesCompactShopComparisonGroups } from '../chronicles/chroniclesShopCompactComparison.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import {
@@ -71,6 +72,59 @@ function ShopGearPeek({ state, item }) {
         </small>
       )}
       <small className="chronicles-shop__gear-peek-note">Cambios respecto al equipo actual · comprar no equipa</small>
+    </aside>
+  );
+}
+
+// Touch layouts have no spare height for four repetitive hero rows, lengthy
+// tooltips and the checkout. Group only identical verified stat changes;
+ // all names, class restrictions and displaced shields stay readable.
+function ShopCompactGearPeek({ state, item }) {
+  const comparisons = chroniclesShopEquipmentComparisons(state, item);
+  const groups = chroniclesCompactShopComparisonGroups(comparisons);
+  const handlingNote = chroniclesShopHandlingNote(item, state?.combatRules);
+  return (
+    <aside className="chronicles-shop__gear-peek chronicles-shop__gear-peek--compact"
+      aria-label={`Cambios reales de ${item.name} para la compañía`}>
+      {groups.map((group) => (
+        <div className={`chronicles-shop__gear-peek-member${group.eligible ? '' : ' is-incompatible'}`}
+          key={group.names.join(':')}>
+          <span className="chronicles-shop__gear-peek-name">{group.names.join(', ')}</span>
+          <span className="chronicles-shop__gear-peek-values">
+            {!group.eligible ? (group.reason || 'No puede equiparlo')
+              : group.alreadyEquipped ? 'Ya lo lleva'
+                : group.changes.length ? group.changes.map(({ key, label, delta }) => (
+                  <span key={key}
+                    className={`chronicles-shop__gear-peek-delta is-${delta > 0 ? 'better' : 'worse'}`}
+                    aria-label={`${label}: ${delta > 0 ? '+' : ''}${delta} respecto al equipo actual`}>
+                    {label} {delta > 0 ? '+' : ''}{delta}
+                  </span>
+                )) : 'Sin cambios'}
+          </span>
+          {group.displacedShieldName && (
+            <small className="chronicles-shop__gear-peek-warning">
+              Deja el escudo: {group.displacedShieldName}
+            </small>
+          )}
+        </div>
+      ))}
+      {handlingNote && <small className="chronicles-shop__gear-peek-note">{handlingNote}</small>}
+      {state?.combatRules === 'mm3' && (
+        item.slot === 'armor' || item.slot === 'shield'
+          || (item.slot === 'weapon' && item.twoHanded)
+      ) && (
+        <small className="chronicles-shop__gear-peek-note">
+          En MM3 la CA evita impactos; no reduce el daño de los golpes acertados.
+        </small>
+      )}
+      {comparisons.some(({ stats }) => stats.some(({ key, delta }) => key === 'toHit' && delta < 0)) && (
+        <small className="chronicles-shop__gear-peek-note">
+          Acierto negativo: diferencia respecto al equipo que lleva.
+        </small>
+      )}
+      <small className="chronicles-shop__gear-peek-note">
+        Respecto al equipo actual · comprar no equipa
+      </small>
     </aside>
   );
 }
@@ -505,6 +559,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
               onClick={backToStock}>← Volver a mercancías</button>
             {selected ? (
               <>
+                <div className="chronicles-shop__inspection">
                 <div className="chronicles-shop__detail-top">
                   <small>{SLOT_LABEL[selectedItem.slot] || 'Objeto'}</small>
                   <h3>{selectedItem.name}</h3>
@@ -529,9 +584,10 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     <summary>{selectedItem.slot === 'consumable' ? 'Ver efecto del objeto' : 'Ver cambios al equiparlo'}</summary>
                     {selectedItem.slot === 'consumable'
                       ? <ShopConsumablePeek item={selectedItem} />
-                      : <ShopGearPeek state={state} item={selectedItem} />}
+                      : <ShopCompactGearPeek state={state} item={selectedItem} />}
                   </details>
                 )}
+                </div>
                 <div className="chronicles-shop__checkout">
                   <div className="chronicles-shop__checkout-price">
                     <span>{tab === 'buy' ? 'Precio' : 'Recibirás'}</span>
