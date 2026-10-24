@@ -28,6 +28,27 @@ async function catalogFilterTops(dialog) {
   );
 }
 
+// Regression for 844×390: opening comparison must never push checkout below
+// the touch viewport. Test viewport geometry, not just display/DOM existence.
+async function assertLandscapeCheckoutVisible(dialog, label) {
+  const layout = await dialog.locator('.chronicles-shop__primary').evaluate((button) => {
+    const detail = button.closest('.chronicles-shop__detail');
+    const rect = button.getBoundingClientRect();
+    const panel = detail.getBoundingClientRect();
+    return {
+      buttonTop: rect.top, buttonBottom: rect.bottom,
+      panelTop: panel.top, panelBottom: panel.bottom,
+      viewport: window.innerHeight,
+      height: rect.height,
+      visible: getComputedStyle(button).visibility === 'visible',
+    };
+  });
+  assert(layout.visible && layout.height >= 38 && layout.buttonTop >= layout.panelTop - 1
+      && layout.buttonBottom <= layout.panelBottom + 1
+      && layout.buttonBottom <= layout.viewport - 2,
+    label + ': purchase action clipped under the expanded comparison: ' + JSON.stringify(layout));
+}
+
 // Capture the true room composition without React panels for art direction.
 // Temporary QA stylesheet is always removed before asserting interactions.
 async function captureArtworkOnly(page, filename) {
@@ -232,10 +253,18 @@ try {
           ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
           : dagger.locator('.chronicles-shop__gear-peek');
       await peek.waitFor({ state: 'visible' });
-      assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
-        'Hover/focus/tap must show the real comparison for all four companions');
+      const rows = await peek.locator('.chronicles-shop__gear-peek-member').count();
+      if (width <= 900) {
+        assert(rows >= 1 && rows <= 4,
+          'Touch comparison must group equivalent real outcomes without hiding heroes');
+        for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
+          assert((await peek.innerText()).includes(name),
+            'Touch comparison lost ' + name);
+        }
+      } else assert.equal(rows, 4, 'Desktop must keep its four per-hero comparisons');
       assert.match(await peek.innerText(), /Matthias/);
       assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Brunna expanded gear preview');
       if (width >= 1180 && height >= 540) {
         const position = await peek.evaluate((el) => {
           const rect = (node) => {
@@ -561,10 +590,17 @@ try {
               ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
               : vest.locator('.chronicles-shop__gear-peek');
           await note.waitFor({ state: 'visible' });
-          assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
-            'Every Odo armor/shield needs its actual four-hero equip comparison');
-          assert.match(await note.innerText(), /Armadura|No puede equiparlo|Sin cambios/);
-          assert.match(await note.innerText(), /en MM3 no resta daño si el golpe acierta/);
+          const odoRows = await note.locator('.chronicles-shop__gear-peek-member').count();
+          if (width <= 900) {
+            assert(odoRows >= 1 && odoRows <= 4, 'Odo touch summary lost or duplicated outcomes');
+            for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
+              assert((await note.innerText()).includes(name), 'Odo compact preview lost ' + name);
+            }
+          } else assert.equal(odoRows, 4);
+          assert.match(await note.innerText(), /CA|Armadura|No puede equiparlo|Sin cambios/);
+          assert.match(await note.innerText(),
+            width <= 900 ? /En MM3 la CA evita impactos; no reduce el daño/ : /en MM3 no resta daño si el golpe acierta/);
+          if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Odo expanded armor preview');
           assert.doesNotMatch(await note.innerText(), /Reducción de daño [+-]\d/,
             'MM3 must not advertise damage mitigation that its combat code never applies');
           assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
