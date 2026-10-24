@@ -216,15 +216,52 @@ try {
       const inv = equipment.locator('.chronicles-character-sheet__inventory');
       const rows = inv.locator('[data-inventory-item]');
       assert.ok(await rows.count() >= 3, 'Reward grants must populate the actual backpack');
+      const density = await inv.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const rows = [...node.querySelectorAll('[data-inventory-item]')];
+        const boxes = rows.map((button) => button.getBoundingClientRect());
+        return {
+          count: rows.length,
+          firstRowHeight: boxes[0].height,
+          visible: boxes.filter((box) => box.top >= rect.top && box.bottom <= rect.bottom - 2).length,
+          listHeight: rect.height,
+          horizontalOverflow: node.scrollWidth > node.clientWidth + 1,
+        };
+      });
+      assert.ok(density.firstRowHeight >= 44 && density.firstRowHeight <= 50,
+        'Items must remain compact with minimum 44px targets: ' + JSON.stringify(density));
+      assert.equal(density.horizontalOverflow, false, 'Inventory must not overflow sideways');
+      if (width >= 1200) {
+        assert.ok(density.visible >= Math.min(5, density.count),
+          'Five objects should be visible without scrolling whenever five exist: '
+          + JSON.stringify(density));
+      }
+
       if (width === 1280) {
         const labelWidth = await rows.first().locator('span').evaluate(
           (node) => node.getBoundingClientRect().width);
         assert.ok(labelWidth >= 120,
           '1280px inventory labels must have enough width for words, not letters: ' + labelWidth);
       }
+      assert.equal(await rows.first().getAttribute('title'),
+        await rows.first().locator('span').innerText(),
+        'An ellipsized item keeps its full name available on hover');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
+      if (width >= 1200) {
+        const ledger = await detail.locator('dl').evaluate((node) => ({
+          columns: getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
+          entries: node.querySelectorAll(':scope > div').length,
+          labels: [...node.querySelectorAll('dt')].map((element) => element.textContent.trim()),
+          overflow: node.scrollWidth > node.clientWidth + 1,
+        }));
+        assert.equal(ledger.columns, 2, 'Wide object mechanics should use two columns');
+        assert.ok(ledger.entries >= 6 && ledger.labels.includes('Puede usarlo'),
+          'Object stats and equipability must remain visible');
+        assert.equal(ledger.overflow, false, 'Stats ledger cannot scroll sideways');
+      }
+
       // Read actual mechanics before descriptive prose, without changing DOM
       // source order (including screen-reader reading and interactive focus).
       const statPriority = await detail.evaluate((node) => {

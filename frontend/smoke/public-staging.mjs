@@ -274,17 +274,24 @@ try {
 
       if (viewport.width === 390) {
         // Real touch input, not a mouse click on a small viewport.
-        await heroFolio.getByRole('button', {
-          name: 'Ver ficha de ' + fourthHeroName, exact: true,
-        }).tap();
+        // The compact hero dock exposes live HP in each accessible name.
+        // Match the unique name prefix; the old exact name became stale
+        // when the dock was simplified in PR #555.
+        const fourthHeroButton = heroFolio.getByRole('button', {
+          name: 'Ver ficha de ' + fourthHeroName + ',',
+        });
+        assert.match(await fourthHeroButton.getAttribute('aria-label'), /, \d+ de \d+ PV$/);
+        await fourthHeroButton.tap();
         await page.waitForFunction((name) => document.querySelector(
           '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
         )?.textContent?.trim() === name, fourthHeroName);
         assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
           /Equipo/, 'Touch selection must keep the Equipment tab');
-        await heroFolio.getByRole('button', {
-          name: 'Ver ficha de ' + firstHeroName, exact: true,
-        }).tap();
+        const firstHeroButton = heroFolio.getByRole('button', {
+          name: 'Ver ficha de ' + firstHeroName + ',',
+        });
+        assert.match(await firstHeroButton.getAttribute('aria-label'), /, \d+ de \d+ PV$/);
+        await firstHeroButton.tap();
         await page.waitForFunction((name) => document.querySelector(
           '[role="dialog"][data-chronicles-folio="v2"] #chronicles-character-sheet-title',
         )?.textContent?.trim() === name, firstHeroName);
