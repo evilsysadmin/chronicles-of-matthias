@@ -1658,12 +1658,17 @@
     display: block;
     line-height: 1.05;
   }
-  .chronicles .chronicles-objective-trigger b {
+  /* Override the legacy two-line -webkit-box rule on portrait phones.
+     The real HUD uses a span:nth-child(4) ancestor; a plain button selector
+     loses that specificity even though the isolated fixture looked correct. */
+  .chronicles .chronicles-statusbar > span:nth-child(4) .chronicles-objective-trigger b {
     display: block;
     max-width: 100%;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    -webkit-line-clamp: unset;
     line-height: 1.15;
   }
   .chronicles .chronicles-objective-trigger .chronicles-route-hint {
