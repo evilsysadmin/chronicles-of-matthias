@@ -248,6 +248,13 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const [sort, setSort] = useState('name');
   const [selectedId, setSelectedId] = useState(null);
   const [previewId, setPreviewId] = useState(null);
+  const [inspecting, setInspecting] = useState(false);
+  const inspectingRef = useRef(false);
+  inspectingRef.current = inspecting;
+  const [mobileView, setMobileView] = useState(() => (
+    typeof window !== 'undefined'
+    && Boolean(window.matchMedia?.('(max-width: 900px)').matches)
+  ));
   // Wide merchants have a true aisle for a readable hover card. On phones
   // and cramped desktops, keep the accessible preview below its item.
   const [peekInAisle, setPeekInAisle] = useState(() => (
@@ -256,17 +263,26 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   ));
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
-  const detailsRef = useRef(null);
+  const backToStockRef = useRef(null);
+  const lastPickedRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
     const media = window.matchMedia('(min-width: 1180px) and (min-height: 540px)');
-    const sync = () => setPeekInAisle(media.matches);
+    const phone = window.matchMedia('(max-width: 900px)');
+    const sync = () => {
+      setPeekInAisle(media.matches);
+      setMobileView(phone.matches);
+    };
     sync();
     media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
+    phone.addEventListener('change', sync);
+    return () => {
+      media.removeEventListener('change', sync);
+      phone.removeEventListener('change', sync);
+    };
   }, []);
   const map = chroniclesMapForState(state);
   const entry = (map?.interactables || []).find((item) => item.id === state.shop?.id);
@@ -282,7 +298,12 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopImmediatePropagation();
-        onCloseRef.current();
+        if (inspectingRef.current && window.matchMedia?.('(max-width: 900px) and (orientation: portrait)').matches) {
+          setInspecting(false);
+          requestAnimationFrame(() => lastPickedRef.current?.focus());
+        } else {
+          onCloseRef.current();
+        }
         return;
       }
       if (event.key !== 'Tab') return;
@@ -348,15 +369,24 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
     setQuery('');
     setSelectedId(null);
     setPreviewId(null);
+    setInspecting(false);
   };
 
-  const pickItem = (id) => {
+  const pickItem = (id, row) => {
     setSelectedId(id);
     setPreviewId(id);
-    // On phones the detail follows the catalogue, without trapping the user.
-    if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 900px)').matches) {
-      requestAnimationFrame(() => detailsRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' }));
+    lastPickedRef.current = row;
+    // In portrait, inspect as a second view; landscape keeps both panes in
+    // place and never scrolls the stock when an item is selected.
+    if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 900px) and (orientation: portrait)').matches) {
+      setInspecting(true);
+      requestAnimationFrame(() => backToStockRef.current?.focus());
     }
+  };
+
+  const backToStock = () => {
+    setInspecting(false);
+    requestAnimationFrame(() => lastPickedRef.current?.focus());
   };
 
   const shop = (
@@ -364,7 +394,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
       <section
         ref={dialogRef}
         tabIndex={-1}
-        className="chronicles-shop"
+        className={`chronicles-shop${inspecting ? ' is-inspecting' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={entry.label}
@@ -439,7 +469,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     aria-pressed={selectedItem?.id === item.id}
                     aria-describedby={visiblePreviewId === item.id && tab === 'buy'
                       ? `chronicles-shop-peek-${item.id}` : undefined}
-                    onClick={() => pickItem(item.id)}>
+                    onClick={(event) => pickItem(item.id, event.currentTarget)}>
                     <span className="chronicles-shop__entry-icon"><ShopItemVisual item={item} /></span>
                     <span className="chronicles-shop__entry-description">
                       <strong>{item.name}</strong>
@@ -447,7 +477,7 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     </span>
                     <span className="chronicles-shop__entry-price">{price} <small>oro</small></span>
                   </button>
-                  {tab === 'buy' && !peekInAisle && visiblePreviewId === item.id && (
+                  {tab === 'buy' && !peekInAisle && !mobileView && visiblePreviewId === item.id && (
                     item.slot === 'consumable'
                       ? <ShopConsumablePeek item={item} />
                       : <ShopGearPeek state={state} item={item} />
@@ -470,7 +500,9 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                 : <ShopGearPeek state={state} item={previewItem} />}
             </div>
           )}
-          <section ref={detailsRef} className="chronicles-shop__detail" aria-label="Detalle del artículo">
+          <section className="chronicles-shop__detail" aria-label="Detalle del artículo">
+            <button ref={backToStockRef} type="button" className="chronicles-shop__back-to-stock"
+              onClick={backToStock}>← Volver a mercancías</button>
             {selected ? (
               <>
                 <div className="chronicles-shop__detail-top">
@@ -492,6 +524,14 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   </div>
                   {tab === 'sell' && <p className="chronicles-shop__owned">Disponible en mochila: ×{selected.quantity}</p>}
                 </div>
+                {mobileView && tab === 'buy' && (
+                  <details className="chronicles-shop__mobile-preview">
+                    <summary>{selectedItem.slot === 'consumable' ? 'Ver efecto del objeto' : 'Ver cambios al equiparlo'}</summary>
+                    {selectedItem.slot === 'consumable'
+                      ? <ShopConsumablePeek item={selectedItem} />
+                      : <ShopGearPeek state={state} item={selectedItem} />}
+                  </details>
+                )}
                 <div className="chronicles-shop__checkout">
                   <div className="chronicles-shop__checkout-price">
                     <span>{tab === 'buy' ? 'Precio' : 'Recibirás'}</span>
