@@ -429,11 +429,10 @@
   .chronicles .chronicles-game-menu__folio-section { padding: 8px 12px; }
 }
 
-/* Illustrated field journal — a pause screen, not a tiled admin dashboard.
-   Uses the already-authored, lightweight Chronicles expedition study (AVIF).
-   Art is purely decorative; all controls remain native keyboard/touch targets. */
+/* Illustrated field journal: the pause menu is wider and shorter on desktop.
+   Keep mobile scroll containment and the existing keyboard/touch controls. */
 .chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio {
-  width: min(510px, calc(100vw - 20px));
+  width: min(640px, calc(100vw - 20px));
   border: 1px solid #b99a68;
   border-radius: 8px;
   background: linear-gradient(160deg, #24231f, #161d23 72%);
@@ -441,10 +440,10 @@
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
   position: relative;
-  min-height: 124px;
+  min-height: 108px;
   grid-template-columns: 42px minmax(0, 1fr) 44px;
   align-items: start;
-  padding: 15px 16px 14px;
+  padding: 12px 16px;
   border-bottom: 1px solid #b19460;
   background:
     linear-gradient(90deg, #151b20fa 0%, #181e22ea 43%, #1e1f20a3 75%, #191c20aa 100%),
@@ -470,8 +469,8 @@
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy {
   align-self: center;
-  max-width: 330px;
-  gap: 6px;
+  max-width: 460px;
+  gap: 5px;
   text-shadow: 0 2px 8px #000e;
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-copy small {
@@ -487,7 +486,7 @@
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading-legend {
   color: #d9c4a2;
   font: italic .87rem/1.3 Georgia, serif;
-  max-width: 240px;
+  max-width: 440px;
 }
 .chronicles .chronicles-game-menu__panel--folio button.chronicles-game-menu__close {
   border: 1px solid #a99064;
@@ -496,11 +495,10 @@
   color: #f2e6cb;
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section {
-  padding: 13px 20px 10px;
+  padding: 11px 20px 9px;
   gap: 8px;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 37px, #beae7425 38px, transparent 39px),
-    linear-gradient(130deg, #252827, #1a2025 80%);
+  /* Avoid false horizontal rules behind the actual interactive rows. */
+  background: linear-gradient(130deg, #252827, #1a2025 80%);
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__section-kicker {
   color: #c1ab83;
@@ -511,8 +509,9 @@
   gap: 4px;
 }
 .chronicles .chronicles-game-menu__action-pair {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
+  border-bottom: 1px solid #ad9d794f;
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions button.chronicles-game-menu__continue {
   min-height: 51px;
@@ -532,7 +531,6 @@
   min-height: 44px;
   padding: 8px 10px 8px 13px;
   border: 1px solid transparent;
-  border-bottom: 1px solid #ad9d794f;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -567,9 +565,10 @@
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row,
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  padding-top: 6px;
+  gap: 0;
+  padding-top: 4px;
   border-top: 1px solid #c0a4744a;
+  border-bottom: 1px solid #ad9d794f;
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row > button {
   border-bottom: 0;
@@ -580,10 +579,9 @@
   justify-self: start;
   width: 100%;
   min-height: 44px;
-  margin-top: 1px;
-  padding: 9px 12px;
+  margin-top: 0;
+  padding: 8px 12px;
   border: 0;
-  border-top: 1px solid #a27c735c;
   border-radius: 0;
   background: transparent;
   color: #dbaba3 !important;
@@ -606,6 +604,13 @@
   background: #1e2528;
 }
 @media (max-width: 620px) {
+  /* Compact phones cannot fit two readable expedition actions per row. */
+  .chronicles .chronicles-game-menu__action-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chronicles .chronicles-game-menu__action-pair > button + button {
+    border-top: 1px solid #ad9d794f;
+  }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__heading {
     min-height: 100px;
     padding: 10px 11px;

@@ -68,6 +68,28 @@ try {
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
+          const alignment = await dialog.evaluate((node) => {
+            const rows = [...node.querySelectorAll('.chronicles-game-menu__action-pair')];
+            const utility = node.querySelector('.chronicles-game-menu__utility-row');
+            const section = node.querySelector('.chronicles-game-menu__folio-section');
+            const bounds = (element) => element.getBoundingClientRect();
+            const sameEdges = (a, b) => Math.abs(bounds(a).left - bounds(b).left) <= 1
+              && Math.abs(bounds(a).right - bounds(b).right) <= 1;
+            return {
+              rows: rows.length,
+              sameEdges: rows.every((row) => sameEdges(row, utility)),
+              dividerWidths: [...rows, utility].map((row) => getComputedStyle(row).borderBottomWidth),
+              horizontalColumns: bounds(rows[0].children[0]).top === bounds(rows[0].children[1]).top,
+              falseRuling: getComputedStyle(section).backgroundImage.includes('repeating-linear-gradient'),
+            };
+          });
+          assert.equal(alignment.rows, 2, 'Two semantic action pairs are present');
+          assert.equal(alignment.sameEdges, true, 'Dividers span the same full folio width');
+          assert.deepEqual(alignment.dividerWidths, ['1px', '1px', '1px'],
+            'Section separators are uniform');
+          assert.equal(alignment.falseRuling, false, 'No decorative stripes compete with dividers');
+          assert.equal(alignment.horizontalColumns, width > 620,
+            'Related actions share a row only when there is enough horizontal space');
           // Expanded sound scrolls a short landscape folio. Reset before
           // saving the canonical open-menu screenshot so it depicts the
           // initial cover/header rather than the last scrolled menu row.
@@ -185,6 +207,46 @@ try {
       } finally {
         await ctx.close();
       }
+    }
+  }
+
+  // Dedicated desktop screenshot: proportions and uninterrupted folio rules.
+  // The mobile matrix above keeps its original 27 combinations unchanged.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=adventure', { waitUntil: 'load' });
+      const menu = page.getByRole('dialog', { name: 'Menú de aventura' });
+      await menu.waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const shape = await menu.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const pairs = [...node.querySelectorAll('.chronicles-game-menu__action-pair')];
+        const utility = node.querySelector('.chronicles-game-menu__utility-row');
+        const buttons = pairs[0]?.querySelectorAll('button');
+        return {
+          width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom,
+          twoColumns: buttons?.length === 2 && Math.abs(buttons[0].getBoundingClientRect().top
+            - buttons[1].getBoundingClientRect().top) < 1,
+          allAligned: pairs.every((row) => Math.abs(row.getBoundingClientRect().left
+            - utility.getBoundingClientRect().left) < 1
+            && Math.abs(row.getBoundingClientRect().right - utility.getBoundingClientRect().right) < 1),
+          noHorizontalScroll: document.documentElement.scrollWidth <= innerWidth + 1,
+        };
+      });
+      assert.ok(shape.width >= 600 && shape.width / shape.height >= 1.1,
+        `Desktop menu should be a wider, shorter folio: ${JSON.stringify(shape)}`);
+      assert.ok(shape.twoColumns && shape.allAligned, 'Desktop action rows stay aligned in two columns');
+      assert.ok(shape.right <= 1281 && shape.bottom <= 801 && shape.noHorizontalScroll,
+        'Desktop folio must fit the screen');
+      await page.screenshot({ path: 'smoke-folio-adventure-desktop-1280.png' });
+      console.log('ADVENTURE_FOLIO_DESKTOP_OK');
+    } catch (error) {
+      failures++;
+      console.error(`ADVENTURE_FOLIO_DESKTOP_FAIL: ${error.message}`);
+    } finally {
+      await ctx.close();
     }
   }
 
