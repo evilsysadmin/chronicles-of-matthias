@@ -3,7 +3,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
-import ChroniclesShop from './ChroniclesShop.jsx';
+import ChroniclesShop, { ShopCompactGearPeek } from './ChroniclesShop.jsx';
+import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
 import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 
@@ -55,6 +56,26 @@ describe('Chronicles premium shop UI', () => {
       expect(html).not.toContain('chronicles-shop__compare-toggle');
       expect(html).not.toContain('chronicles-shop__comparison-grid');
     }
+  });
+
+  it('shows per-hero eligibility and real before → after values without a rules lecture', () => {
+    const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const armor = CHRONICLES_EQUIPMENT['brass-scale'];
+    const comparisons = chroniclesShopEquipmentComparisons(state, armor);
+    const html = renderToStaticMarkup(createElement(ShopCompactGearPeek, { state, item: armor }));
+    expect(html).toContain('data-chronicles-shop-party-comparison');
+    expect((html.match(/data-chronicles-shop-hero=/g) || [])).toHaveLength(state.party.length);
+    for (const hero of comparisons) {
+      expect(html).toContain(`data-chronicles-shop-hero="${hero.memberId}"`);
+      expect(html).toContain(hero.name);
+      for (const stat of hero.stats.filter(({ delta }) => delta !== 0)) {
+        expect(html).toContain(`${stat.before} → ${stat.after}`);
+      }
+    }
+    expect(html).toContain('Puede equiparlo');
+    expect(html).not.toContain('En MM3');
+    expect(html).not.toContain('no reduce el daño');
+    expect(html).not.toContain('comprar no equipa');
   });
 
   it('uses one dedicated portrait for each of Odo’s seven stocked items', () => {
