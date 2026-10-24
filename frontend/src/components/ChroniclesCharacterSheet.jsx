@@ -125,6 +125,7 @@ export default function ChroniclesCharacterSheet({
     const nextId = member?.id;
     if (previousViewedMemberIdRef.current === nextId) return;
     previousViewedMemberIdRef.current = nextId;
+    setSelectedBagItem(null);
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
     if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
@@ -684,7 +685,7 @@ export default function ChroniclesCharacterSheet({
             {chroniclesPartyHotkeySlots(state.party).map(({ member: hero, slot }) => (
               <button type="button" key={hero.id}
                 disabled={!onSelectMember && !canChangeEquipment}
-                aria-label={activeFolio === 'equipment' && transferableItem && hero.id !== member.id
+                aria-label={activeFolio === 'equipment' && transferableItem && canChangeEquipment && hero.id !== member.id
                   ? `Entregar 1 ${transferableItem.name} a ${hero.name} · ${slot}`
                   : `Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
