@@ -131,6 +131,30 @@ describe('Chronicles difficulty/progression policy', () => {
       .toEqual(chroniclesDifficultyBand(fallback));
   });
 
+  it.each([
+    ['target above the deployed-party cap', {
+      partyLevel: 2, depth: 4, targetLevel: 5, minLevel: 4,
+      maxLevel: 5, depthPressure: 2, progressionPressure: 0,
+    }],
+    ['maximum above the deployed-party cap', {
+      partyLevel: 2, depth: 4, targetLevel: 3, minLevel: 2,
+      maxLevel: 5, depthPressure: 2, progressionPressure: 0,
+    }],
+    ['maximum more than one level above target', {
+      partyLevel: 6, depth: 4, targetLevel: 3, minLevel: 2,
+      maxLevel: 5, depthPressure: 2, progressionPressure: 2,
+    }],
+    ['minimum more than one level below target', {
+      partyLevel: 6, depth: 4, targetLevel: 4, minLevel: 1,
+      maxLevel: 5, depthPressure: 2, progressionPressure: 2,
+    }],
+  ])('rejects an internally inconsistent saved %s', (_label, difficulty) => {
+    const fallback = { progression: leveledParty(3), depth: 4 };
+    const run = { areas: [{ mapId: 'crypt', difficulty }] };
+    expect(chroniclesResolvedDifficultyBand(run, 'crypt', fallback))
+      .toEqual(chroniclesDifficultyBand(fallback));
+  });
+
   it('does not count settlement and wilderness stops as dungeon levels', () => {
     const run = {
       currentMapId: 'crypt',
