@@ -166,52 +166,71 @@ try {
     }
   }
 
-  // This is a layout-only replica using the production HUD selectors and CSS.
-  // The authenticated stage remains covered separately by mount/public smokes.
+  // Structural replica with the same selectors/CSS as the production HUD.
+  // Objectives belong to the Crónica, not a persistent overlay on the scene.
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
     const ctx = await browser.newContext({
-      viewport: { width, height }, isMobile: true, hasTouch: true,
-      deviceScaleFactor: 1,
+      viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1,
     });
     const page = await ctx.newPage();
     try {
-      await page.goto(base + '?view=objective-hud', { waitUntil: 'load' });
-      await page.locator('[data-chronicles-objective]').waitFor({ state: 'visible', timeout: 20_000 });
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('[data-chronicles-journal-trigger]').waitFor({ state: 'visible', timeout: 20_000 });
       await page.waitForFunction(() => document.fonts.status === 'loaded');
       const geometry = await page.evaluate(() => {
-        const objective = document.querySelector('[data-chronicles-objective]');
-        const route = objective?.querySelector('.chronicles-route-hint');
+        const journal = document.querySelector('[data-chronicles-journal-trigger]');
+        const group = document.querySelector('[data-chronicles-quick-status-trigger]');
         const faces = [...document.querySelectorAll('.chronicles-party-member')];
-        if (!objective || !route || faces.length !== 4) return null;
-        const objectiveRect = objective.closest('.chronicles-statusbar > span').getBoundingClientRect();
-        const faceRects = faces.map((face) => face.getBoundingClientRect());
+        if (!journal || !group || faces.length !== 4) return null;
+        const buttons = [journal, group].map((node) => node.getBoundingClientRect());
+        const faceRects = faces.map((node) => node.getBoundingClientRect());
         return {
-          objectiveBottom: objectiveRect.bottom,
+          navBottom: Math.max(...buttons.map((rect) => rect.bottom)),
           partyTop: Math.min(...faceRects.map((rect) => rect.top)),
           partyLeft: Math.min(...faceRects.map((rect) => rect.left)),
           partyRight: Math.max(...faceRects.map((rect) => rect.right)),
-          routeWrap: getComputedStyle(route).whiteSpace,
-          routeOverflow: getComputedStyle(route).textOverflow,
-          fullRoute: route.textContent.trim(),
-          accessibleTitle: objective.title,
-          overflowing: document.documentElement.scrollWidth > innerWidth + 1,
+          buttonMinHeight: Math.min(...buttons.map((rect) => rect.height)),
+          navRight: Math.max(...buttons.map((rect) => rect.right)),
+          noObjective: !document.querySelector('[data-chronicles-objective], .chronicles-objective-trigger'),
+          noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
         };
       });
-      assert.ok(geometry, 'Expected the objective and four actual party portraits');
-      assert.ok(geometry.partyTop >= geometry.objectiveBottom + 4,
-        `Objective must not cover the portraits at ${width}x${height}: ${JSON.stringify(geometry)}`);
-      assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1,
-        `Portrait strip fits the viewport at ${width}x${height}: ${JSON.stringify(geometry)}`);
-      assert.equal(geometry.routeWrap, 'nowrap', 'Long route hint must remain on one line');
-      assert.equal(geometry.routeOverflow, 'ellipsis', 'Long route hint should visually truncate');
-      assert.ok(geometry.accessibleTitle.includes(geometry.fullRoute),
-        'The complete authored route stays available in the objective tooltip');
-      assert.equal(geometry.overflowing, false, 'Objective HUD must not scroll sideways');
-      await page.screenshot({ path: `smoke-objective-hud-${width}.png` });
-      console.log(`OBJECTIVE_PARTY_HUD_OK ${width}x${height}`);
+      assert.ok(geometry, 'Crónica/Grupo and four selectable heroes exist');
+      assert.ok(geometry.noObjective, 'No permanent objective plaque');
+      assert.ok(geometry.navBottom + 4 <= geometry.partyTop,
+        `Navigation must not cover heroes at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.buttonMinHeight >= 44, 'Journal/group must remain touchable');
+      assert.ok(geometry.navRight <= width - 60,
+        `Leave room for the top-right menu gem at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1, 'Heroes fit screen');
+      assert.ok(geometry.noHorizontalOverflow, 'HUD must not scroll sideways');
+      await page.screenshot({ path: `smoke-compact-hud-${width}.png` });
+      console.log(`COMPACT_PARTY_HUD_OK ${width}x${height}`);
     } catch (error) {
       failures++;
-      console.error(`OBJECTIVE_PARTY_HUD_FAIL ${width}x${height}: ${error.message}`);
+      console.error(`COMPACT_PARTY_HUD_FAIL ${width}x${height}: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Desktop MM3: portraits are still selectable, but no longer take a huge
+  // band away from the first-person view.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('.chronicles-party-member').first().waitFor({ state: 'visible', timeout: 20_000 });
+      const portraitHeight = await page.locator('.chronicles-party-member .chronicles-party-glyph').first()
+        .evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(portraitHeight >= 48 && portraitHeight <= 76,
+        `Desktop portraits must be compact: ${portraitHeight}`);
+      await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
+      console.log('COMPACT_PARTY_HUD_DESKTOP_OK');
+    } catch (error) {
+      failures++;
+      console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL: ${error.message}`);
     } finally {
       await ctx.close();
     }
