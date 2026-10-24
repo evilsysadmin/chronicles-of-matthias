@@ -142,8 +142,13 @@
   }
 }
 @media (max-height: 480px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+  /* Override the old three-column folio rule (44px portrait / identity /
+     close). MM3 has no header portrait: without this, the identity is forced
+     into the 44px ghost column and becomes a 268px-tall stack. */
+  .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 40px;
     min-height: 0;
+    gap: 5px;
     padding: 3px 7px;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
@@ -176,25 +181,34 @@
   }
 }
 @media (max-height: 480px) {
+  /* In short landscape the hero name, class and resource chips cannot all
+     fit on one line (Hildegard previously ran under the close button).
+     Give the identity two compact rows; reserve the close-button column. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
     align-items: center;
-    gap: 7px;
+    gap: 2px 8px;
+    min-width: 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
     font-size: 1.12rem;
-    flex: 0 0 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
     font-size: .71rem;
-    flex: 0 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
-    flex: 0 0 auto;
-    flex-wrap: nowrap;
+    grid-column: 1 / -1;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 4px;
-    margin-left: auto;
+    margin-left: 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
     padding: 1px 3px;
