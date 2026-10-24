@@ -96,7 +96,21 @@ try {
       const xpHeight = await sheet.locator('.chronicles-character-sheet__progression')
         .evaluate((node) => node.getBoundingClientRect().height);
       assert(xpHeight <= 36, 'XP cannot steal workbench height: ' + xpHeight);
-      assert.equal(await sheet.locator('.chronicles-character-sheet__party-dock img').count(), 4);
+      const partyDock = sheet.getByRole('navigation', { name: 'Seleccionar personaje de la compañía' });
+      assert.equal(await partyDock.locator('img').count(), 0,
+        'The equipment dossier must not repeat the large exploration portraits');
+      assert.equal(await partyDock.locator('button').count(), 4,
+        'All four characters must remain directly selectable');
+      const partyDockHeight = await partyDock.evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(partyDockHeight >= 44 && partyDockHeight <= 68,
+        'Compact hero selection should give height back to the equipment workbench: ' + partyDockHeight);
+      assert.equal(await partyDock.locator('button[aria-pressed="true"]').count(), 1);
+      for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
+        const tab = partyDock.getByRole('button', { name: new RegExp('Ver ficha de ' + name) });
+        assert.equal(await tab.count(), 1, 'Each hero remains selectable: ' + name);
+        assert.equal(await tab.locator('.chronicles-character-sheet__party-hp').isVisible(), true,
+          'Live HP remains visible in compact selector: ' + name);
+      }
       assert(metrics.dockTop > metrics.top && metrics.dockBottom <= metrics.bottom + 2,
         'Party dock must remain visible and contained: ' + JSON.stringify(metrics));
       assert(metrics.documentWidth <= width + 1 && metrics.left >= -1 && metrics.right <= width + 1,
@@ -482,11 +496,23 @@ try {
           dialogBottom: node.getBoundingClientRect().bottom,
           docWidth: document.documentElement.scrollWidth,
           portraitCount: node.querySelectorAll('.chronicles-character-sheet__head img').length,
+          dockPortraits: node.querySelectorAll('.chronicles-character-sheet__party-dock img').length,
+          dockHeight: dock.height,
+          dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => ({
+            height: button.getBoundingClientRect().height,
+            hpVisible: getComputedStyle(button.querySelector('.chronicles-character-sheet__party-hp')).display !== 'none',
+          })),
         };
       });
       assert(geometry.headerHeight <= (height <= 480 ? 85 : 100),
         'Compact touch identity must leave room for content: ' + JSON.stringify(geometry));
       assert.equal(geometry.portraitCount, 0);
+      assert.equal(geometry.dockPortraits, 0, 'No full portraits in mobile sheet selector');
+      assert.ok(geometry.dockHeight >= 44 && geometry.dockHeight <= 68,
+        'Compact party navigation must preserve vertical space: ' + JSON.stringify(geometry));
+      assert.equal(geometry.dockButtons.length, 4, 'All heroes must remain selectable on touch');
+      assert.ok(geometry.dockButtons.every(({ height: hitHeight, hpVisible }) => hitHeight >= 44 && hpVisible),
+        'Live HP and touch targets must remain visible: ' + JSON.stringify(geometry));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));

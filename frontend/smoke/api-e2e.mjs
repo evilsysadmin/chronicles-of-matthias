@@ -94,6 +94,15 @@ try {
   await page.locator('#chronicles-journal-panel-quests').waitFor();
   await page.getByRole('button', { name: 'Cerrar Crónica' }).click();
   await page.setViewportSize({ width: 1280, height: 800 });
+  // The exploration scene must keep its original generous portrait sizing.
+  // The 48px compact selector belongs ONLY to the equipment dossier.
+  const explorationPortraits = await page.locator(
+    '[data-chronicles="true"] .chronicles-party .chronicles-party-member > .chronicles-party-glyph'
+  ).evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
+  expect(explorationPortraits.length === 4
+    && explorationPortraits.every((height) => height >= 84 && height <= 170),
+  'real exploration HUD portraits must retain their original MM3 proportions: '
+    + JSON.stringify(explorationPortraits));
   await page.getByLabel('Abrir menú de Chronicles').click();
   const adventure = page.locator('[data-chronicles-adventure-menu]');
   await adventure.waitFor({ state: 'visible' });
