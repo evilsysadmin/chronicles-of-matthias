@@ -106,6 +106,12 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(masonry).toBeInstanceOf(THREE.InstancedMesh);
       expect(masonry.userData.chroniclesDecorativeOnly).toBe(true);
       expect(masonry.count).toBeGreaterThan(30);
+      const foliage = building.getObjectByName('window-box-leaf-clusters');
+      const vines = building.getObjectByName('window-box-trailing-stems');
+      expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
+      expect(vines).toBeInstanceOf(THREE.InstancedMesh);
+      expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(foliage.count).toBe(36); // Mobile/coarse campaign budget.
     }
     const paved = scene.getObjectByName('chronicles-campaign-road');
     expect(paved).toBeInstanceOf(THREE.InstancedMesh);
