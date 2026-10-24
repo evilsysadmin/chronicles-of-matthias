@@ -159,7 +159,7 @@ try {
           // Closed <details> sections hide their contents in the rendered UI.
           // Open each relevant section as a real user would before asserting
           // visible copy, so the smoke checks progressive disclosure honestly.
-          await help.getByText('Conceptos básicos').click();
+          // The first section starts open; its visible CA definition must remain.
           assert.match(await help.innerText(), /CA · Armadura/);
           await help.getByText('Equipo, compras y comparaciones').click();
           assert.match(await help.innerText(), /Comprar guarda el artículo/);
