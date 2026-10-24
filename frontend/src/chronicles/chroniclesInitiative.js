@@ -28,7 +28,9 @@ export function chroniclesPartyInitiativeAgility(state, member) {
   const base = nonNegativeInteger(member.agility);
   const progressionBonus = nonNegativeInteger(state?.rpgModifiers?.[member.id]?.initiativeBonus);
   // MM Speed: its bonus (negative for slow heroes) moves the hero in the order.
-  const speedBonus = Number(member.mm3?.bonuses?.speed || 0);
+  const rawSpeedBonus = Number(member.mm3?.bonuses?.speed ?? 0);
+  // Corrupt legacy MM3 bonuses must not turn AGI or initiative into NaN/Infinity.
+  const speedBonus = Number.isFinite(rawSpeedBonus) ? rawSpeedBonus : 0;
   return Math.max(0, base + progressionBonus + speedBonus);
 }
 
