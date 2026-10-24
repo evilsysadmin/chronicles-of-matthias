@@ -156,7 +156,12 @@ try {
           await help.waitFor({ state: 'visible' });
           assert.equal(await help.locator('details').count(), 4,
             'Help must explain game concepts from the pause menu');
+          // Closed <details> sections hide their contents in the rendered UI.
+          // Open each relevant section as a real user would before asserting
+          // visible copy, so the smoke checks progressive disclosure honestly.
+          await help.getByText('Conceptos básicos').click();
           assert.match(await help.innerText(), /CA · Armadura/);
+          await help.getByText('Equipo, compras y comparaciones').click();
           assert.match(await help.innerText(), /Comprar guarda el artículo/);
           assert.doesNotMatch(await help.innerText(), /MM3/);
           assert.equal(await dialog.locator('[data-chronicles-menu-save]').count(), 0,
