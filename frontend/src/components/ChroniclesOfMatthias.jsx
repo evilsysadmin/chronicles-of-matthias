@@ -1601,9 +1601,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // does not name its destination (e.g. the missing banner in Swordhaven).
   const authoredDestination = chroniclesHudQuestDestination(state, objective);
   const routeHint = chroniclesRouteHint(state, authoredDestination || chroniclesObjectiveDestination(objective));
-  const objectiveTravelNote = authoredDestination
-    ? `DESTINO · ${authoredDestination.region}${routeHint ? ` · ${routeHint.text}` : ''}`
-    : routeHint ? `→ ${routeHint.text}` : null;
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
   const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
   const touchVolley = chroniclesTouchVolleyOpportunity(state);
@@ -1723,32 +1720,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
         <main className="chronicles-stage-wrap">
           <div className="chronicles-statusbar" aria-live="polite">
-            {/* Preserve objective nth-child selectors without retaining a large location panel. */}
+            {/* Hidden compatibility slots keep the desktop active-member index stable. */}
             <span className="chronicles-statusbar__retired-location" hidden aria-hidden="true" />
-            {/* Preserve child indexing for the objective/active MM3 HUD selectors. */}
             <span className="chronicles-statusbar__retired-bearing" hidden aria-hidden="true" />
             <span>ACTIVO <b>{selectedMember?.name}</b></span>
-            {/* The objective is the Crónica's cover: tapping it opens the
-                quest log and the narration behind that one line. */}
-            <span>
-              <button type="button" className="chronicles-objective-trigger" data-chronicles-objective
-                aria-haspopup="dialog" aria-expanded={chronicleModalOpen}
-                title={`Objetivo: ${objective}${objectiveTravelNote ? `\n${objectiveTravelNote}` : ''}\nAbrir la Crónica (J)`}
-                onClick={() => {
-                  clearTouchHold();
-                  setJournalOpen(false);
-                  setMenuOpen(false);
-                  setAutomapOpen(false);
-                  setChronicleModalOpen((open) => !open);
-                }}>
-                <small className="chronicles-objective-trigger__label">OBJETIVO</small> <b>{objective}</b>
-                {objectiveTravelNote && <small className="chronicles-route-hint" data-chronicles-route-hint
-                  data-chronicles-quest-destination={authoredDestination?.mapId || undefined}>{objectiveTravelNote}</small>}
-                <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
-              </button>
-            </span>
-            {/* Desktop: a plain way into the expedition Crónica, the same book J
-                opens. Phones reach it from the objective box instead. */}
+            {/* The Crónica owns quest objectives; no persistent duplicate plaque. */}
             <div className="chronicles-chronicle-slot">
               <button type="button" className="chronicles-chronicle-trigger" data-chronicles-journal-trigger
                 aria-haspopup="dialog" aria-expanded={journalOpen}
