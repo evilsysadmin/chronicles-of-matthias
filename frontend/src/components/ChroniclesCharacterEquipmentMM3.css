@@ -200,6 +200,17 @@
 /* Two-column mechanics ledger where the inspector is wide enough, not another
    tall stack of text. DOM order and all equipability rules remain untouched. */
 @media (min-width: 1200px) and (min-height: 581px) {
+  /* The actual Chromium capture at 1280/1440 showed a 58px wrapped first
+     row. Give the inventory names room before shrinking the tap targets. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack {
+    grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    font-size: .88rem;
+    line-height: 1.22;
+  }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
     padding: 10px 11px;
