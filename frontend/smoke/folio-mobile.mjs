@@ -150,6 +150,23 @@ try {
               === 'use:revive-draught:rook');
         }
         if(view === 'adventure') {
+          const helpTrigger = dialog.locator('[data-chronicles-menu-help]');
+          await helpTrigger.click();
+          const help = dialog.locator('[data-chronicles-game-help]');
+          await help.waitFor({ state: 'visible' });
+          assert.equal(await help.locator('details').count(), 4,
+            'Help must explain game concepts from the pause menu');
+          assert.match(await help.innerText(), /CA · Armadura/);
+          assert.match(await help.innerText(), /Comprar guarda el artículo/);
+          assert.doesNotMatch(await help.innerText(), /MM3/);
+          assert.equal(await dialog.locator('[data-chronicles-menu-save]').count(), 0,
+            'Menu actions must not compete with the guide');
+          await page.screenshot({ path: `smoke-folio-help-${width}.png` });
+          await help.getByRole('button', { name: 'Volver al menú' }).click();
+          await help.waitFor({ state: 'hidden' });
+          await dialog.locator('[data-chronicles-menu-save]').waitFor({ state: 'visible' });
+          assert.equal(await helpTrigger.evaluate((node) => document.activeElement === node), true,
+            'Closing help restores focus to its trigger');
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();
           await dialog.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor();
           await dialog.getByRole('button', { name: 'Cancelar' }).click();
