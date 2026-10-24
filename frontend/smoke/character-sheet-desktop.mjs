@@ -243,6 +243,9 @@ try {
         assert.ok(labelWidth >= 120,
           '1280px inventory labels must have enough width for words, not letters: ' + labelWidth);
       }
+      assert.equal(await rows.first().getAttribute('title'),
+        await rows.first().locator('span').innerText(),
+        'An ellipsized item keeps its full name available on hover');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
