@@ -340,6 +340,29 @@ describe('Chronicles combat engagement and leash', () => {
     expect(next.phase).toBe('explore');
   });
 
+  it('does not prematurely end combat for a legacy enemy without a positive leash range', () => {
+    const order = [
+      { kind: 'party', id: 'matthias', name: 'Matthias', initiative: 9 },
+      { kind: 'enemy', id: 'tobias', name: 'Tobías', initiative: 4 },
+    ];
+    const state = {
+      ...base, phase: 'combat', x: 1, y: 15,
+      initiative: { order, cursor: 0, round: 3 },
+    };
+    // The party is behind solid masonry and beyond a zero-range leash.
+    // Missing, nullable and blank legacy fields must all preserve combat.
+    for (const rawRange of [undefined, null, '', ' ', 0]) {
+      const enemy = {
+        ...tobias,
+        ai: { attackReach: 1, ...(rawRange === undefined ? {} : { engageRange: rawRange }) },
+      };
+      const next = chroniclesAdvanceCombatInitiative(state, [enemy]);
+      expect(next.phase).toBe('combat');
+      expect(next.initiative.order.map((actor) => actor.id)).toEqual(['matthias', 'tobias']);
+      expect(next.initiative.round).toBe(3);
+    }
+  });
+
   it('keeps fighting a creature that is still close', () => {
     const order = [
       { kind: 'party', id: 'matthias', name: 'Matthias', initiative: 9 },
