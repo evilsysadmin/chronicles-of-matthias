@@ -537,6 +537,8 @@ try {
         const dock = node.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
         return {
           headerHeight: head.height,
+          headColumns: getComputedStyle(node.querySelector('.chronicles-character-sheet__head'))
+            .gridTemplateColumns.split(' ').filter(Boolean).length,
           dockBottom: dock.bottom,
           dialogBottom: node.getBoundingClientRect().bottom,
           docWidth: document.documentElement.scrollWidth,
@@ -551,6 +553,8 @@ try {
       });
       assert(geometry.headerHeight <= (height <= 480 ? 85 : 100),
         'Compact touch identity must leave room for content: ' + JSON.stringify(geometry));
+      if (height <= 480) assert.equal(geometry.headColumns, 2,
+        'Short landscape has no portrait: reserve only identity and close columns');
       assert.equal(geometry.portraitCount, 0);
       assert.equal(geometry.dockPortraits, 0, 'No full portraits in mobile sheet selector');
       assert.ok(geometry.dockHeight >= 44 && geometry.dockHeight <= 68,
