@@ -92,6 +92,19 @@ describe('Chronicles difficulty/progression policy', () => {
     })).toBe(authoritative);
   });
 
+  it.each([
+    ['object', { crypt: { difficulty: { targetLevel: 99 } } }],
+    ['string', 'corrupt-legacy-areas'],
+    ['number', 42],
+  ])('falls back safely when saved areas is a %s', (_label, areas) => {
+    const fallback = { progression: leveledParty(3), depth: 4 };
+    expect(chroniclesResolvedDifficultyBand(
+      { areas },
+      'crypt',
+      fallback,
+    )).toEqual(chroniclesDifficultyBand(fallback));
+  });
+
   it('does not count settlement and wilderness stops as dungeon levels', () => {
     const run = {
       currentMapId: 'crypt',
