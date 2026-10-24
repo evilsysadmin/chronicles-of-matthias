@@ -90,8 +90,14 @@ function isUsableDifficultySnapshot(value) {
   return value.partyLevel >= 1 && value.partyLevel <= CHRONICLES_MAX_LEVEL
     && value.depth >= 0 && value.depth <= 99
     && value.targetLevel >= 1 && value.targetLevel <= CHRONICLES_MAX_LEVEL
-    && value.minLevel >= 1 && value.minLevel <= value.targetLevel
+    // Go difficultyBand caps both the target and the upper encounter range
+    // at one level above the deployed party, even on very deep floors.
+    && value.targetLevel <= value.partyLevel + ABOVE_PARTY_CAP
+    && value.minLevel >= Math.max(1, value.targetLevel - 1)
+    && value.minLevel <= value.targetLevel
     && value.maxLevel >= value.targetLevel && value.maxLevel <= CHRONICLES_MAX_LEVEL
+    && value.maxLevel <= value.partyLevel + ABOVE_PARTY_CAP
+    && value.maxLevel <= value.targetLevel + 1
     && value.depthPressure >= 0 && value.depthPressure <= DEPTH_PRESSURE_CAP
     && value.progressionPressure >= 0
     && value.progressionPressure <= Math.floor((CHRONICLES_MAX_LEVEL - 1) / 2);
