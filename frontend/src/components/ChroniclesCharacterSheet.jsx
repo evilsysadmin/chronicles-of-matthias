@@ -257,6 +257,7 @@ export default function ChroniclesCharacterSheet({
                     role="group" aria-label="Objetos de la mochila">
                     {visibleBackpack.map((item) => (
                       <button type="button" key={item.id} data-inventory-item={item.id}
+                        title={!tacticsMode ? item.name : undefined}
                         className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
                         aria-pressed={selectedInventoryItem?.id === item.id}
                         onClick={() => setSelectedItemId(item.id)}
