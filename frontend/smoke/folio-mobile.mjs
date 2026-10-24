@@ -298,8 +298,8 @@ try {
     }
   }
 
-  // Desktop MM3: portraits are still selectable, but no longer take a huge
-  // band away from the first-person view.
+  // Desktop MM3: exploration retains its large original hero portraits.
+  // Only the character-sheet/equipment dock is allowed to compact them.
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
@@ -308,10 +308,10 @@ try {
       await page.locator('.chronicles-party-member').first().waitFor({ state: 'visible', timeout: 20_000 });
       const portraitHeight = await page.locator('.chronicles-party-member .chronicles-party-glyph').first()
         .evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(portraitHeight >= 48 && portraitHeight <= 76,
-        `Desktop portraits must be compact: ${portraitHeight}`);
+      assert.ok(portraitHeight >= 84 && portraitHeight <= 170,
+        `Exploration hero portraits must keep original scale: ${portraitHeight}`);
       await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
-      console.log('COMPACT_PARTY_HUD_DESKTOP_OK');
+      console.log('EXPLORATION_PARTY_PORTRAITS_OK');
     } catch (error) {
       failures++;
       console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL: ${error.message}`);
