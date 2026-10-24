@@ -100,7 +100,7 @@ try {
     expect(layout.partyLeft >= -1 && layout.partyRight <= width + 1,
       `real HUD portraits leave viewport at ${width}x${height}: ${JSON.stringify(layout)}`);
     expect(layout.labelOverflow === 'ellipsis' && layout.labelWrap === 'nowrap',
-      `real HUD long objective does not truncate at ${width}x${height}`);
+      `real HUD long objective does not truncate at ${width}x${height}: ${JSON.stringify(layout)}`);
     if (layout.routeOverflow !== null) {
       expect(layout.routeOverflow === 'ellipsis' && layout.routeWrap === 'nowrap',
         `real HUD long destination does not truncate at ${width}x${height}`);
