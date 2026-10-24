@@ -60,6 +60,29 @@ export function swordhavenGrassTexture() {
 
 const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, roof: 3, timber: 3, cobble: 1 });
 const surfaceCache = new Map();
+const surfaceNormalCache = new Map();
+
+// Cached tangent-space relief for close-up masonry and cobbles only. Texture
+// axes/repeat match the albedo so sunlight responds to the same stone seams.
+export function swordhavenSurfaceNormalTexture(kind) {
+  if (kind !== 'masonry' && kind !== 'cobble') {
+    throw new Error('Unsupported Swordhaven relief: ' + kind);
+  }
+  if (surfaceNormalCache.has(kind)) return surfaceNormalCache.get(kind);
+  const { size, normals } = chroniclesTownSurfacePixels(kind);
+  const texture = new THREE.DataTexture(normals, size, size, THREE.RGBAFormat);
+  texture.name = 'chronicles-town-normal-' + kind;
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(SURFACE_REPEAT[kind], SURFACE_REPEAT[kind]);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  surfaceNormalCache.set(kind, texture);
+  return texture;
+}
 
 // Town-only fine albedo: reusable deterministic ashlar, planks and paving.
 // Linear mipmaps tame crawling mortar lines in the first-person camera.
@@ -753,7 +776,11 @@ export function buildSwordhavenFountain(mats) {
 export function createSwordhavenMaterials() {
   return {
     grass: material(0xffffff, { map: swordhavenGrassTexture(), roughness: 0.98 }), cobble: material(0x9d9588),
-    stone: material(0xafa597, { map: swordhavenSurfaceTexture('masonry'), roughness: 0.95 }),
+    stone: material(0xafa597, {
+      map: swordhavenSurfaceTexture('masonry'),
+      normalMap: swordhavenSurfaceNormalTexture('masonry'),
+      normalScale: new THREE.Vector2(0.56, 0.56), roughness: 0.95,
+    }),
     plaster: material(0xe0caac, { map: swordhavenSurfaceTexture('stucco'), roughness: 0.97 }),
     timber: material(0x694b34, { map: swordhavenSurfaceTexture('timber'), roughness: 0.85 }),
     gold: material(0xd6ae67, { metalness: 0.48 }),
@@ -762,7 +789,11 @@ export function createSwordhavenMaterials() {
     arcane: material(0x9576db, { emissive: 0x403b99, emissiveIntensity: 1.1 }),
     embers: material(0xffa754, { emissive: 0xeb6a20, emissiveIntensity: 1.2 }),
     steel: material(0x80909a, { metalness: 0.6, roughness: 0.32 }),
-    paving: material(0xffffff, { roughness: 0.96 }),
+    paving: material(0xffffff, {
+      map: swordhavenSurfaceTexture('cobble'),
+      normalMap: swordhavenSurfaceNormalTexture('cobble'),
+      normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.96,
+    }),
     roofSeams: material(0x413a36, { roughness: 0.92 }),
   };
 }

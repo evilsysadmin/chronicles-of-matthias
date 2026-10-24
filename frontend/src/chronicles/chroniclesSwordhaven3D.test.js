@@ -4,7 +4,7 @@ import {
   buildSwordhavenScene, createSwordhavenWalkGrid, SWORDHAVEN_BUILDINGS,
   SWORDHAVEN_INTERACTION_CELLS, SWORDHAVEN_GATE_CELL, SWORDHAVEN_SPAWN,
   swordhavenGrassTexture, createSwordhavenSkyDome,
-  swordhavenSurfaceTexture,
+  swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 
 describe('Swordhaven modular real-time 3D', () => {
@@ -186,6 +186,40 @@ describe('Swordhaven modular real-time 3D', () => {
     expect(swordhavenSurfaceTexture('roof')).not.toBe(swordhavenSurfaceTexture('masonry'));
     expect(swordhavenGrassTexture().magFilter).toBe(THREE.NearestFilter);
     expect(() => swordhavenSurfaceTexture('unknown')).toThrow(/Unsupported/);
+  });
+
+
+  it('adds periodic, linear normal maps only to town stone and cobbles', () => {
+    for (const kind of ['masonry', 'cobble']) {
+      const albedo = swordhavenSurfaceTexture(kind);
+      const normal = swordhavenSurfaceNormalTexture(kind);
+      expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
+      expect(normal).toBeInstanceOf(THREE.DataTexture);
+      expect(normal.colorSpace).toBe(THREE.NoColorSpace);
+      expect(normal.wrapS).toBe(THREE.RepeatWrapping);
+      expect(normal.wrapT).toBe(THREE.RepeatWrapping);
+      expect(normal.magFilter).toBe(THREE.LinearFilter);
+      expect(normal.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+      expect(normal.repeat.toArray()).toEqual(albedo.repeat.toArray());
+      expect(normal.image.width).toBe(albedo.image.width);
+      expect(normal.image.data).toHaveLength(albedo.image.data.length);
+      const slopes = new Set();
+      for (let i = 0; i < normal.image.data.length; i += 4) {
+        const [r, g, b, a] = normal.image.data.subarray(i, i + 4);
+        slopes.add(`${r}:${g}`);
+        expect(b).toBeGreaterThanOrEqual(128);
+        expect(a).toBe(255);
+      }
+      expect(slopes.size).toBeGreaterThan(30);
+    }
+    expect(() => swordhavenSurfaceNormalTexture('roof')).toThrow(/Unsupported/);
+    const scene = new THREE.Scene();
+    buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: true });
+    const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+    expect(temple.getObjectByName('timber-and-stone-walls').material.normalMap)
+      .toBe(swordhavenSurfaceNormalTexture('masonry'));
+    expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
+      .toBe(swordhavenSurfaceNormalTexture('cobble'));
   });
 
   it('batches detailed leadwork, foliage and door straps on each shop without new interactions', () => {
