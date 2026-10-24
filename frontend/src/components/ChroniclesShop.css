@@ -1355,4 +1355,50 @@
   .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-title { margin-bottom: 2px; }
   .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member { padding: 2px 0; }
   .chronicles-shop__gear-peek-eligibility { font-size: 9px; }
+
+  /* A short landscape viewport must reveal ALL four heroes before the
+     pinned purchase action. Two compact columns beat a clipped fourth row. */
+  .chronicles-shop__gear-peek--compact {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 2px 8px;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-title {
+    grid-column: 1 / -1;
+    line-height: 1.1;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-name {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-values {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    font-size: 10px;
+    line-height: 1.16;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-stat {
+    white-space: nowrap;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-stat b {
+    margin-left: 2px;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-warning {
+    font-size: 9px;
+    line-height: 1.15;
+  }
 }
