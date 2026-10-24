@@ -41,7 +41,59 @@ try {
   await page.getByRole('button', { name: /Nueva expedición/ }).click();
   await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
-  await page.waitForTimeout(2000);
+  // Dismiss the first-run board tutorial before measuring the authenticated HUD.
+  const firstSteps = page.locator('[data-chronicles-first-steps]');
+  if (await firstSteps.isVisible().catch(() => false)) {
+    await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+    await firstSteps.waitFor({ state: 'hidden' });
+  }
+  // Real authenticated HUD: no duplicated objective plaque; Crónica owns
+  // the quest text and opens as an accessible dialog. Preserve four hero
+  // shortcuts and the right-side sapphire across portrait/landscape phones.
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
+    await page.setViewportSize({ width, height });
+    const layout = await page.evaluate(() => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      const journal = root?.querySelector('[data-chronicles-journal-trigger]');
+      const group = root?.querySelector('[data-chronicles-quick-status-trigger]');
+      const faces = [...(root?.querySelectorAll('.chronicles-party-member') || [])];
+      if (!root || root.hasAttribute('data-chronicles-hud-fixture') || !journal || !group || faces.length !== 4) return null;
+      const rect = (node) => {
+        const { left, right, top, bottom, height } = node.getBoundingClientRect();
+        return { left, right, top, bottom, height };
+      };
+      const buttons = [journal, group].map(rect);
+      const portraits = faces.map(rect);
+      return {
+        noPermanentObjective: !root.querySelector('[data-chronicles-objective], .chronicles-objective-trigger'),
+        journalVisible: buttons[0].height >= 44,
+        groupVisible: buttons[1].height >= 44,
+        navBottom: Math.max(...buttons.map(({ bottom }) => bottom)),
+        navRight: Math.max(...buttons.map(({ right }) => right)),
+        partyTop: Math.min(...portraits.map(({ top }) => top)),
+        partyLeft: Math.min(...portraits.map(({ left }) => left)),
+        partyRight: Math.max(...portraits.map(({ right }) => right)),
+        documentWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(Boolean(layout) && layout.noPermanentObjective,
+      `real game HUD must omit duplicate objective at ${width}x${height}: ${JSON.stringify(layout)}`);
+    expect(layout.journalVisible && layout.groupVisible, 'Crónica and Grupo remain touch targets');
+    expect(layout.navBottom + 4 <= layout.partyTop,
+      `journal/group controls overlap portraits at ${width}x${height}: ${JSON.stringify(layout)}`);
+    expect(layout.navRight <= width - 60,
+      `journal/group controls obstruct the top-right menu at ${width}x${height}`);
+    expect(layout.partyLeft >= -1 && layout.partyRight <= width + 1, 'four portraits fit viewport');
+    expect(layout.documentWidth <= width + 1, 'real HUD must not scroll sideways');
+    await page.screenshot({ path: `api-e2e-compact-hud-${width}.png` });
+    console.log(`REAL_COMPACT_HUD_OK ${width}x${height}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('[data-chronicles-journal-trigger]').click();
+  await page.getByRole('dialog', { name: 'Crónica de expedición' }).waitFor({ timeout: 15000 });
+  await page.locator('#chronicles-journal-panel-quests').waitFor();
+  await page.getByRole('button', { name: 'Cerrar Crónica' }).click();
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.getByLabel('Abrir menú de Chronicles').click();
   const adventure = page.locator('[data-chronicles-adventure-menu]');
   await adventure.waitFor({ state: 'visible' });

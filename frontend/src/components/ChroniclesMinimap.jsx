@@ -157,7 +157,6 @@ export default function ChroniclesMinimap({
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
   const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
-  const guildVisible = markers.some((marker) => marker.category === 'guild');
   const coordinates = chroniclesMapCoordinatesLabel(map, state) || 'LOCAL';
   const region = chroniclesRegionHudLocation(map);
   const locationText = region.kind.startsWith('ÁREA ') ? `${region.kind} · ${region.value}` : region.value;
@@ -220,12 +219,6 @@ export default function ChroniclesMinimap({
           <path d={`M ${cx} ${cy - .38} L ${cx + .28} ${cy + .26} L ${cx} ${cy + .12} L ${cx - .28} ${cy + .26} Z`} />
         </g>
       </svg>
-      {(guildVisible || target) && (
-        <span className="chronicles-minimap__legend" aria-hidden="true">
-          {guildVisible && <span className="is-guild"><b>G</b> gremio</span>}
-          {target && <span className="is-target" title={routeLabel ? `Siguiente salida: ${routeLabel}` : undefined}><b>★</b> objetivo</span>}
-        </span>
-      )}
       <span className="chronicles-minimap__expand" aria-hidden="true">⌖</span>
     </button>
   );

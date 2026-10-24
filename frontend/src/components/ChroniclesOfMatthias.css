@@ -849,8 +849,7 @@
 }
 
 .chronicles-minimap__title,
-.chronicles-minimap__expand,
-.chronicles-minimap__legend {
+.chronicles-minimap__expand {
   position: absolute;
   z-index: 2;
   pointer-events: none;
@@ -873,33 +872,6 @@
   color: rgba(232, 198, 139, .72);
   font-size: .8rem;
 }
-
-/* Contextual, touch-readable key: do not clutter the map with undiscovered POIs. */
-.chronicles-minimap__legend {
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 2px 4px;
-  font-size: .5rem;
-  line-height: 1.15;
-  text-shadow: 0 1px 2px #000;
-}
-.chronicles-minimap__legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 3px;
-  border: 1px solid rgba(216, 175, 108, .43);
-  border-radius: 3px;
-  background: rgba(9, 8, 7, .9);
-  white-space: nowrap;
-}
-.chronicles-minimap__legend .is-guild b { color: #d8c0ff; }
-.chronicles-minimap__legend .is-target b { color: #ffd36a; }
 
 .chronicles-minimap__cell {
   vector-effect: non-scaling-stroke;
@@ -1020,25 +992,7 @@
 
   .chronicles-statusbar > span { display: none; }
 
-  .chronicles-statusbar > span:nth-child(4) {
-    min-width: 0;
-    max-width: min(64vw, 430px);
-    min-height: 44px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 5px 11px;
-    border: 1px solid rgba(207, 168, 108, .3);
-    border-radius: 12px;
-    background: rgba(9, 8, 7, .76);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .32);
-    backdrop-filter: blur(8px);
-  }
 
-  .chronicles-statusbar > span:nth-child(4) b {
-    max-width: 100%;
-    font-size: .72rem;
-  }
 
   .chronicles-landscape-trigger {
     appearance: none;
@@ -1295,10 +1249,6 @@
     min-height: 44px;
   }
 
-  .chronicles-statusbar > span:nth-child(4) {
-    min-height: 40px;
-    max-width: min(55vw, 390px);
-  }
 
   .chronicles-map-trigger {
     width: 44px;
@@ -1373,12 +1323,6 @@
 }
 
 @media (max-width: 520px) {
-  .chronicles-statusbar > span:nth-child(4) { max-width: calc(100vw - 136px); }
-  .chronicles-statusbar:has(.chronicles-landscape-trigger) > span:nth-child(4) { max-width: calc(100vw - 192px); }
-
-  .chronicles-party {
-    grid-template-columns: repeat(4, 46px);
-  }
 
   .chronicles-party-member {
     width: 46px;
@@ -1578,13 +1522,6 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 /* Portrait first-person HUD: the objective should be readable without opening
    an overlay. Limit it to two lines so the party row retains its touch space. */
 @media (max-width: 520px) {
-  .chronicles-statusbar > span:nth-child(4) b {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-height: 1.15;
-  }
   /* With a route hint the objective keeps one line, so the box stays two
      lines tall and never covers the portraits; the full text is one tap
      away in the Crónica. */

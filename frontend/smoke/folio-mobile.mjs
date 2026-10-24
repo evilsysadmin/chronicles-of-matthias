@@ -187,6 +187,76 @@ try {
       }
     }
   }
+
+  // Structural replica with the same selectors/CSS as the production HUD.
+  // Objectives belong to the Crónica, not a persistent overlay on the scene.
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('[data-chronicles-journal-trigger]').waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const geometry = await page.evaluate(() => {
+        const journal = document.querySelector('[data-chronicles-journal-trigger]');
+        const group = document.querySelector('[data-chronicles-quick-status-trigger]');
+        const faces = [...document.querySelectorAll('.chronicles-party-member')];
+        if (!journal || !group || faces.length !== 4) return null;
+        const buttons = [journal, group].map((node) => node.getBoundingClientRect());
+        const faceRects = faces.map((node) => node.getBoundingClientRect());
+        return {
+          navBottom: Math.max(...buttons.map((rect) => rect.bottom)),
+          partyTop: Math.min(...faceRects.map((rect) => rect.top)),
+          partyLeft: Math.min(...faceRects.map((rect) => rect.left)),
+          partyRight: Math.max(...faceRects.map((rect) => rect.right)),
+          buttonMinHeight: Math.min(...buttons.map((rect) => rect.height)),
+          navRight: Math.max(...buttons.map((rect) => rect.right)),
+          noObjective: !document.querySelector('[data-chronicles-objective], .chronicles-objective-trigger'),
+          noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
+        };
+      });
+      assert.ok(geometry, 'Crónica/Grupo and four selectable heroes exist');
+      assert.ok(geometry.noObjective, 'No permanent objective plaque');
+      assert.ok(geometry.navBottom + 4 <= geometry.partyTop,
+        `Navigation must not cover heroes at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.buttonMinHeight >= 44, 'Journal/group must remain touchable');
+      assert.ok(geometry.navRight <= width - 60,
+        `Leave room for the top-right menu gem at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1, 'Heroes fit screen');
+      assert.ok(geometry.noHorizontalOverflow, 'HUD must not scroll sideways');
+      await page.screenshot({ path: `smoke-compact-hud-${width}.png` });
+      console.log(`COMPACT_PARTY_HUD_OK ${width}x${height}`);
+    } catch (error) {
+      failures++;
+      console.error(`COMPACT_PARTY_HUD_FAIL ${width}x${height}: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Desktop MM3: portraits are still selectable, but no longer take a huge
+  // band away from the first-person view.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('.chronicles-party-member').first().waitFor({ state: 'visible', timeout: 20_000 });
+      const portraitHeight = await page.locator('.chronicles-party-member .chronicles-party-glyph').first()
+        .evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(portraitHeight >= 48 && portraitHeight <= 76,
+        `Desktop portraits must be compact: ${portraitHeight}`);
+      await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
+      console.log('COMPACT_PARTY_HUD_DESKTOP_OK');
+    } catch (error) {
+      failures++;
+      console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
 } finally {
   await browser.close();
 }

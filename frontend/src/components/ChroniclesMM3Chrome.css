@@ -473,8 +473,6 @@
   .chronicles .chronicles-statusbar > span:first-child { padding-left: 8px; }
   .chronicles .chronicles-statusbar > span:last-child { border-right: 2px solid var(--mm3-hi); }
   .chronicles .chronicles-statusbar > span b { color: #f2e6c4; }
-  .chronicles .chronicles-statusbar > span:nth-child(4) { grid-column: 1 / -1; }
-  .chronicles .chronicles-statusbar > span:nth-child(4) b { white-space: nowrap; }
   .chronicles .chronicles-statusbar .chronicles-map-trigger,
   .chronicles .chronicles-game-menu > summary {
     min-height: 40px;
@@ -911,7 +909,7 @@
      HP and SP on the same dark stone as every other hero. */
   .chronicles .chronicles-party-member,
   .chronicles .chronicles-party-hireling {
-    --face: clamp(84px, 16.5vh, 170px);
+    --face: clamp(48px, 8vh, 76px);
     --face-w: min(calc(var(--face) * .78), 44%);
     position: relative;
     flex: none;
@@ -1409,12 +1407,6 @@
   .chronicles .chronicles-touch button.is-attack { grid-column: 7; }
   .chronicles .chronicles-touch button.is-magic { grid-column: 6; grid-row: 2; align-self: end; }
   .chronicles .chronicles-touch button.is-contextual { grid-column: 5; grid-row: 2; align-self: end; }
-  .chronicles .chronicles-objective-trigger b {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   /* The tactical note sits in the free top band (right of the portraits,
      under the objective, left of the minimap), never over the creature it
      describes, which is drawn in the middle of the view. */
@@ -1443,7 +1435,7 @@
   }
 }
 
-/* CRÓNICA under OBJETIVO on desktop; phones open it from the objective box. */
+/* Crónica and Grupo are direct permanent actions; quests live in Crónica. */
 .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot { display: none; }
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
   .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot {
@@ -1491,54 +1483,7 @@
     font-size: .8em;
   }
   .chronicles .chronicles-chronicle-trigger i { font-style: normal; }
-  /* The CRÓNICA button replaces the small tag inside the objective. */
-  .chronicles .chronicles-objective-trigger__more { display: none; }
-  /* A quiet one-line quest reminder, not a permanent three-line notice.
-     The full objective and authored region remain in the accessible button,
-     its tooltip, and the Crónica (J). */
-  .chronicles .chronicles-statusbar > span:nth-child(4) {
-    align-self: start;
-    min-height: 40px;
-    padding: 4px 8px;
-  }
-  .chronicles .chronicles-objective-trigger {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-    min-height: 28px;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  .chronicles .chronicles-objective-trigger__label {
-    flex: 0 0 auto;
-    margin: 0;
-    color: #b7aca0;
-    font-size: .62rem;
-    letter-spacing: .07em;
-  }
-  .chronicles .chronicles-statusbar > span:nth-child(4) b {
-    display: block;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    -webkit-line-clamp: unset;
-  }
-  /* Retain the destination for assistive technology but never let a long
-     route string enlarge the permanent desktop HUD. */
-  .chronicles .chronicles-objective-trigger .chronicles-route-hint {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
+
 }
 
 /* A pending spell only accepts portraits or 1–4; moving/attacking through
@@ -1637,4 +1582,39 @@
     color: #24160d;
     text-shadow: none;
   }
+}
+
+/* On touch layouts Crónica remains directly accessible after removing the
+   duplicative objective plaque. Keep its controls clear of the menu gem and
+   above the portrait strip, with real 44px tap targets. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-statusbar > div.chronicles-chronicle-slot {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: calc(100vw - 94px - env(safe-area-inset-right));
+    pointer-events: auto;
+  }
+  .chronicles .chronicles-chronicle-trigger {
+    min-width: 0;
+    min-height: 44px;
+    padding: 5px 9px;
+    border: 2px solid #c4c4c9;
+    border-right-color: #34343b;
+    border-bottom-color: #34343b;
+    background: #a3a3a8 var(--mm3-stone) 0 0 / 128px 128px;
+    color: #101014;
+    font: 700 .88rem/1 var(--mm3-pixel-font);
+    white-space: nowrap;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .chronicles .chronicles-chronicle-trigger:focus-visible {
+    outline: 2px solid #ffdf8a;
+    outline-offset: 2px;
+  }
+  .chronicles .chronicles-chronicle-trigger kbd { display: none; }
 }
