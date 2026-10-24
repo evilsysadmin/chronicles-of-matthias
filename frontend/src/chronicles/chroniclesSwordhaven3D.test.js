@@ -186,7 +186,8 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(forge.getObjectByName('corner-dressed-stone-courses')).toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('corner-dressed-stone-courses').count).toBeGreaterThan(20);
       expect(forge.getObjectByName('side-window-amber-glass')).toBeTruthy();
-      expect(forge.getObjectByName('door-stone-lintel')).toBeTruthy();
+      expect(forge.getObjectByName('swordhaven-facade-dressed-stones'))
+        .toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
       expect(Boolean(forge.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
       const tower = scene.getObjectByName('swordhaven-building-swordhaven-temple')
