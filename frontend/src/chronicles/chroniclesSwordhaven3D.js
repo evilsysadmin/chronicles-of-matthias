@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 
 // Authored in grid coordinates: future map collision must reserve these footprints.
 export const SWORDHAVEN_BUILDINGS = Object.freeze([
@@ -50,8 +51,7 @@ const material = (color, extra = {}) => new THREE.MeshStandardMaterial({
 });
 
 
-// Meadow and town surfaces are MM3-style pixel art (chunky texels, short
-// colour ramps, ordered dithering) shared with the overworld renderer.
+// The meadow and wilderness retain their deliberately pixelated texture.
 export function swordhavenGrassTexture() {
   const texture = chroniclesPixelTexture('grass');
   texture.repeat.set(20, 20);
@@ -59,13 +59,26 @@ export function swordhavenGrassTexture() {
 }
 
 const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, roof: 3, timber: 3, cobble: 1 });
+const surfaceCache = new Map();
 
-// One cached pattern per surface, reused across buildings and runs: no
-// material-per-brick or new draw calls.
+// Town-only fine albedo: reusable deterministic ashlar, planks and paving.
+// Linear mipmaps tame crawling mortar lines in the first-person camera.
 export function swordhavenSurfaceTexture(kind) {
   if (!SURFACE_REPEAT[kind]) throw new Error('Unsupported Swordhaven material: ' + kind);
-  const texture = chroniclesPixelTexture(kind);
+  if (surfaceCache.has(kind)) return surfaceCache.get(kind);
+  const { size, pixels } = chroniclesTownSurfacePixels(kind);
+  const texture = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+  texture.name = 'chronicles-town-' + kind;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(SURFACE_REPEAT[kind], SURFACE_REPEAT[kind]);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  texture.userData.chroniclesTownSurface = { kind, size };
+  surfaceCache.set(kind, texture);
   return texture;
 }
 
@@ -338,6 +351,20 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   mesh(root, new THREE.BoxGeometry(1.75, 3.12, 0.16), mats.timber,
     'shop-door', [0, 1.56, facadeZ + 0.16]);
+  // Two batched wrought-iron straps give the previously flat door depth.
+  const doorIronwork = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1.61, 0.072, 0.055), mats.steel, 2,
+  );
+  doorIronwork.name = 'shop-door-iron-straps';
+  const doorIron = new THREE.Object3D();
+  for (const [index, y] of [0.90, 2.43].entries()) {
+    doorIron.position.set(0, y, facadeZ + 0.28);
+    doorIron.updateMatrix();
+    doorIronwork.setMatrixAt(index, doorIron.matrix);
+  }
+  doorIronwork.instanceMatrix.needsUpdate = true;
+  root.add(doorIronwork);
+
   // A projecting stone entrance frame and arched lintel add real depth.
   for (const side of [-1, 1]) {
     mesh(root, new THREE.BoxGeometry(0.28, 3.27, 0.35), mats.stone,
@@ -377,13 +404,62 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'stone-window-sill', [x, 2.04, front + 0.11]);
     mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
       'flower-window-box', [x, 1.83, front + 0.34]);
-    for (const fx of [-0.49, 0, 0.49]) {
-      mesh(root, new THREE.IcosahedronGeometry(0.22, 0), mats.leaves,
-        'window-box-leaves', [x + fx, 2.13, front + 0.38]);
-      mesh(root, new THREE.IcosahedronGeometry(0.11, 0), mats.flowers,
-        'window-box-flowers', [x + fx + 0.03, 2.3, front + 0.42]);
+  }
+  // Leaded diamond glazing reads at eye level without eight draw calls
+  // per window. All lattice strips share a single per-building batch.
+  const diamondLead = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.035, 0.93, 0.043), mats.steel, 8,
+  );
+  diamondLead.name = 'window-diamond-leadwork';
+  const detail = new THREE.Object3D();
+  let leadIndex = 0;
+  for (const x of [-width * 0.33, width * 0.33]) {
+    for (const slope of [-1, 1]) {
+      for (const shift of [-0.24, 0.24]) {
+        detail.position.set(x + shift, 2.75, facadeZ + 0.39);
+        detail.rotation.set(0, 0, slope * 0.71);
+        detail.scale.set(1, 1, 1);
+        detail.updateMatrix();
+        diamondLead.setMatrixAt(leadIndex++, detail.matrix);
+      }
     }
   }
+  diamondLead.instanceMatrix.needsUpdate = true;
+  root.add(diamondLead);
+
+  // Rounded leaves and mixed flowers replace the conspicuous low-poly
+  // icosahedrons. Per-house instancing is cheaper than the old 12 meshes.
+  const leaves = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.20, coarse ? 6 : 10, coarse ? 4 : 8), mats.leaves, 24,
+  );
+  const blossoms = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.09, coarse ? 6 : 9, coarse ? 4 : 6), mats.flowers, 24,
+  );
+  leaves.name = 'window-box-leaf-clusters';
+  blossoms.name = 'window-box-blooms';
+  const flowerTints = [0xf7e7e3, 0xda8692, 0xf0ce83, 0xf9f3da];
+  for (const [windowIndex, x] of [-width * 0.33, width * 0.33].entries()) {
+    for (let k = 0; k < 12; k += 1) {
+      const index = windowIndex * 12 + k;
+      const offsetX = ((k % 6) - 2.5) * 0.22;
+      const row = Math.floor(k / 6);
+      detail.rotation.set(0, 0, (k % 5 - 2) * 0.16);
+      detail.scale.set(0.9 + (k % 3) * 0.14, 0.65 + row * 0.14, 0.78);
+      detail.position.set(x + offsetX, 2.14 + row * 0.11, facadeZ + 0.52 + row * 0.025);
+      detail.updateMatrix();
+      leaves.setMatrixAt(index, detail.matrix);
+      detail.scale.set(1, 1, 1);
+      detail.position.set(x + offsetX + (k % 2 ? 0.045 : -0.045),
+        2.29 + (k % 3) * 0.035, facadeZ + 0.57);
+      detail.updateMatrix();
+      blossoms.setMatrixAt(index, detail.matrix);
+      blossoms.setColorAt(index, new THREE.Color(flowerTints[(k + windowIndex) % flowerTints.length]));
+    }
+  }
+  leaves.instanceMatrix.needsUpdate = true;
+  blossoms.instanceMatrix.needsUpdate = true;
+  blossoms.instanceColor.needsUpdate = true;
+  root.add(leaves, blossoms);
   // The former blank side walls now have inset windows and deep stone sills.
   // All facade details remain within the foundation's authored footprint.
   for (const side of [-1, 1]) {
