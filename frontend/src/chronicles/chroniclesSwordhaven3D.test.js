@@ -160,23 +160,55 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
-  it('keeps the repeating authored-style patterns deterministic and distinct', () => {
+  it('uses deterministic, fine-grained town textures without changing the pixelated meadow', () => {
     for (const kind of ['stucco', 'masonry', 'roof', 'timber', 'cobble']) {
       const texture = swordhavenSurfaceTexture(kind);
-      expect(texture).toBe(swordhavenSurfaceTexture(kind));
+      expect(texture).toBe(swordhavenSurfaceTexture(kind)); // No regeneration at remount.
+      expect(texture).toBeInstanceOf(THREE.DataTexture);
       expect(texture.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(texture.wrapS).toBe(THREE.RepeatWrapping);
       expect(texture.wrapT).toBe(THREE.RepeatWrapping);
-      expect(texture.magFilter).toBe(THREE.NearestFilter);
-      // Pixel art: every texel comes from a short hand-picked ramp.
-      const tones = new Set(texture.image.data.filter((_v, index) => index % 4 === 0));
-      expect(tones.size, kind).toBeGreaterThanOrEqual(3);
-      expect(tones.size, kind).toBeLessThanOrEqual(6);
+      expect(texture.magFilter).toBe(THREE.LinearFilter);
+      expect(texture.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+      expect(texture.anisotropy).toBeLessThanOrEqual(4);
+      expect(texture.userData.chroniclesTownSurface.kind).toBe(kind);
+      const { width, height, data } = texture.image;
+      expect(width).toBeGreaterThanOrEqual(128);
+      expect(height).toBe(width);
+      expect(data).toHaveLength(width * height * 4);
+      const tones = new Set();
+      for (let i = 0; i < data.length; i += 4) {
+        tones.add(data[i]);
+        expect(data[i + 3]).toBe(255);
+      }
+      expect(tones.size, kind).toBeGreaterThan(15);
     }
     expect(swordhavenSurfaceTexture('roof')).not.toBe(swordhavenSurfaceTexture('masonry'));
+    expect(swordhavenGrassTexture().magFilter).toBe(THREE.NearestFilter);
     expect(() => swordhavenSurfaceTexture('unknown')).toThrow(/Unsupported/);
   });
 
+  it('batches detailed leadwork, foliage and door straps on each shop without new interactions', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      const built = buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      for (const spec of SWORDHAVEN_BUILDINGS) {
+        const facade = scene.getObjectByName('swordhaven-building-' + spec.id);
+        const lead = facade.getObjectByName('window-diamond-leadwork');
+        const leaves = facade.getObjectByName('window-box-leaf-clusters');
+        const flowers = facade.getObjectByName('window-box-blooms');
+        const straps = facade.getObjectByName('shop-door-iron-straps');
+        expect(lead).toBeInstanceOf(THREE.InstancedMesh);
+        expect(lead.count).toBe(8);
+        expect(leaves.count).toBe(24);
+        expect(flowers.count).toBe(24);
+        expect(flowers.instanceColor).toBeTruthy();
+        expect(straps.count).toBe(2);
+        expect(facade.getObjectByName('window-box-leaves')).toBeFalsy();
+      }
+      expect(built.contentProps).toHaveLength(0);
+    }
+  });
 
   it('adds instanced road shoulders and grass tufts without introducing collision geometry', () => {
     const scene = new THREE.Scene();
