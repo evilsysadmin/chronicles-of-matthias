@@ -40,7 +40,8 @@ describe('MM3 map symbol legends', () => {
       <ChroniclesMinimap state={state} visitedCells={[]} target={target} routeLabel={label} />,
     );
     expect(small).toContain('siguiente salida: Camino de los estandartes');
-    expect(small).toContain('title="Siguiente salida: Camino de los estandartes');
+    expect(small).not.toContain('title="Siguiente salida:');
+    expect(small).not.toContain('chronicles-minimap__legend');
 
     // Without an active route, stale strings must not suggest a destination.
     const none = renderToStaticMarkup(
