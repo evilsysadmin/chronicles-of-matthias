@@ -49,7 +49,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toContain('mantiene las ventajas del escudo');
   });
 
-  it('shows each hero only their carried stock and provides a transfer control', () => {
+  it('keeps individual backpacks and presents the MM3 manual 1–4 handoff', () => {
     const inventory = {
       'brass-sword': { id: 'brass-sword', name: 'Espada de latón', quantity: 1 },
       'brass-shield': { id: 'brass-shield', name: 'Escudo de latón', quantity: 1 },
@@ -63,8 +63,11 @@ describe('Chronicles character sheet combat summary', () => {
     expect(hildegard).toContain('Mochila de Hildegard');
     expect(hildegard).toContain('data-inventory-item="brass-sword"');
     expect(hildegard).not.toContain('data-inventory-item="brass-shield"');
-    expect(hildegard).toContain('Pasar objeto');
-    expect(hildegard).toContain('Compañero que recibirá el objeto');
+    expect(hildegard).toContain('Elige un objeto y pulsa 1–4');
+    expect(hildegard).toContain('Seleccionar personaje de la compañía');
+    expect(hildegard).not.toContain('Pasar objeto');
+    expect(hildegard).not.toContain('Compañero que recibirá el objeto');
+    expect(hildegard).not.toContain('Repartir botín');
   });
 
   it('retains the distinct legacy damage reduction summary', () => {
