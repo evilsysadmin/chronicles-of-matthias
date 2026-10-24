@@ -22,6 +22,12 @@ async function gotoReadyShop(page, target) {
   }, undefined, { timeout: 20_000 });
 }
 
+async function catalogFilterTops(dialog) {
+  return dialog.locator('.chronicles-shop__filters label').evaluateAll(
+    (labels) => labels.map((label) => label.getBoundingClientRect().top),
+  );
+}
+
 // Capture the true room composition without React panels for art direction.
 // Temporary QA stylesheet is always removed before asserting interactions.
 async function captureArtworkOnly(page, filename) {
@@ -96,8 +102,15 @@ try {
         assert(boxes.detail.top >= height * .30,
           'The receipt should sit lower than Brunna’s face: ' + JSON.stringify(boxes));
       }
-      assert(boxes.catalog.width > 240 && boxes.detail.width > 240,
+      const portraitPhone = width <= 900 && height > width;
+      assert(boxes.catalog.width > 240 && (portraitPhone ? boxes.detail.width === 0 : boxes.detail.width > 240),
         `Unusable shop panels at ${width}px: ${JSON.stringify(boxes)}`);
+      if (portraitPhone) {
+        assert(boxes.list.height > height * .35,
+          `Portrait must dedicate most available room to stock: ${JSON.stringify(boxes)}`);
+        assert(boxes.catalog.bottom <= height + 1,
+          `Portrait stock escapes viewport: ${JSON.stringify(boxes)}`);
+      }
       if (width > 900) {
         assert(boxes.catalog.right + 25 < boxes.detail.left,
           `Brunna scene is squeezed between panels at ${width}px: ${JSON.stringify(boxes)}`);
@@ -109,10 +122,16 @@ try {
         if (width >= 700 && height <= 500) {
           assert(boxes.catalog.top < height * 0.48 && boxes.detail.top < height * 0.48,
             `Landscape market is hidden below an empty art band: ${JSON.stringify(boxes)}`);
-          assert(boxes.catalog.right + 35 < boxes.detail.left,
-            `Landscape lost Brunna between the panels: ${JSON.stringify(boxes)}`);
-          assert(boxes.list.height > 80,
-            `Landscape stock cannot scroll: ${JSON.stringify(boxes)}`);
+          assert(boxes.detail.left - boxes.catalog.right >= 5
+              && boxes.detail.left - boxes.catalog.right <= 15,
+            `Landscape must use adjacent, stock-first panes: ${JSON.stringify(boxes)}`);
+          assert(boxes.catalog.width > boxes.detail.width,
+            `Landscape inventory must be wider than checkout: ${JSON.stringify(boxes)}`);
+          assert(boxes.list.height > 115,
+            `Landscape stock cannot scroll enough offers: ${JSON.stringify(boxes)}`);
+          const filterTops = await catalogFilterTops(dialog);
+          assert(filterTops.every((top) => Math.abs(top - filterTops[0]) < 2),
+            `Landscape filters must fit a single row: ${filterTops}`);
           assert(boxes.catalog.bottom <= height + 1 && boxes.detail.bottom <= height + 1,
             `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
         }
@@ -166,7 +185,7 @@ try {
       const missingArt = dialog.locator('[data-chronicles-shop-item="wooden-staff"] svg');
       assert.equal(await missingArt.getAttribute('aria-label'), 'Arma',
         'Unpainted weapons must retain the accessible fallback glyph');
-      const spriteGeometry = await dialog.evaluate((root) => {
+      const spriteGeometry = !portraitPhone && await dialog.evaluate((root) => {
         const portrait = root.querySelector('.chronicles-shop__item-portrait');
         const sprite = portrait?.querySelector('img[data-chronicles-shop-art="wooden-longbow"]');
         if (!portrait || !sprite) return null;
@@ -175,12 +194,14 @@ try {
         return { parent: { left:p.left, right:p.right, top:p.top, bottom:p.bottom },
           image: { left:s.left, right:s.right, top:s.top, bottom:s.bottom } };
       });
-      assert(spriteGeometry, 'Selected longbow must display its own detailed sprite');
-      assert(spriteGeometry.image.left >= spriteGeometry.parent.left - 1
-        && spriteGeometry.image.right <= spriteGeometry.parent.right + 1
-        && spriteGeometry.image.top >= spriteGeometry.parent.top - 1
-        && spriteGeometry.image.bottom <= spriteGeometry.parent.bottom + 1,
-        'Weapon portrait must stay inside its own panel: ' + JSON.stringify(spriteGeometry));
+      if (!portraitPhone) {
+        assert(spriteGeometry, 'Selected longbow must display its own detailed sprite');
+        assert(spriteGeometry.image.left >= spriteGeometry.parent.left - 1
+          && spriteGeometry.image.right <= spriteGeometry.parent.right + 1
+          && spriteGeometry.image.top >= spriteGeometry.parent.top - 1
+          && spriteGeometry.image.bottom <= spriteGeometry.parent.bottom + 1,
+          'Weapon portrait must stay inside its own panel: ' + JSON.stringify(spriteGeometry));
+      }
 
       // Filtering, sorting and selection must only alter presentation.
       const catalog = dialog.locator('.chronicles-shop__catalog');
@@ -199,9 +220,17 @@ try {
       // The exact same combat comparison is now discoverable on stock
       // hover/focus, without creating a second dashboard over the merchant.
       if (width > 900) await dagger.locator('button').hover();
-      const peek = width >= 1180 && height >= 540
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
-        : dagger.locator('.chronicles-shop__gear-peek');
+      if (width <= 900) {
+        const comparison = detail.locator('.chronicles-shop__mobile-preview');
+        await comparison.locator('summary').click();
+        assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
+          'Touch preview must not expand rows and steal inventory space');
+      }
+      const peek = width <= 900
+        ? detail.locator('.chronicles-shop__mobile-preview .chronicles-shop__gear-peek')
+        : width >= 1180 && height >= 540
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+          : dagger.locator('.chronicles-shop__gear-peek');
       await peek.waitFor({ state: 'visible' });
       assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
         'Hover/focus/tap must show the real comparison for all four companions');
@@ -234,9 +263,19 @@ try {
         await peek.waitFor({ state: 'hidden' });
       }
       if ([390, 1280].includes(width)) {
-        await dagger.locator('button').focus();
+        if (!portraitPhone) await dagger.locator('button').focus();
         await peek.waitFor({ state: 'visible' });
         await page.screenshot({ path: `smoke-shop-gear-peek-${width}.png` });
+      }
+      if (portraitPhone) {
+        assert.equal(await catalog.isVisible(), false, 'Portrait inspection must hide stock without destroying it');
+        const stockReturn = detail.getByRole('button', { name: '← Volver a mercancías' });
+        await stockReturn.click();
+        await catalog.waitFor({ state: 'visible' });
+        assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 11,
+          'Returning from inspection must preserve full inventory');
+        await dagger.locator('button').click();
+        await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
       }
 
       // Buy and sell through the real reducer (not fake onAction state).
@@ -258,6 +297,10 @@ try {
 
       assert.deepEqual(errors, [], `Browser exceptions at ${width}px`);
       await page.keyboard.press('Escape');
+      if (portraitPhone) {
+        await catalog.waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+      }
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.body.style.overflow), '',
         'Closing the shop must restore game scrolling');
