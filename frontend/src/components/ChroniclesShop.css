@@ -1126,3 +1126,72 @@
   .chronicles-shop__checkout { margin-top: 6px; }
   .chronicles-shop__mobile-preview { margin: 5px 0; }
 }
+
+
+/* Comparison density: one line per *distinct actual effect*, not per hero.
+   Compact cards work across portrait and landscape without hiding drawbacks. */
+.chronicles-shop__inspection { display: contents; }
+
+@media (max-width: 900px) {
+  .chronicles-shop__gear-peek--compact {
+    padding: 5px 7px;
+    font-size: 11px;
+    line-height: 1.22;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 8px;
+    align-items: baseline;
+    padding: 4px 0;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-name {
+    font-size: 11px;
+    line-height: 1.24;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-values {
+    justify-content: end;
+    gap: 2px 6px;
+    font-size: 11px;
+    line-height: 1.25;
+    text-align: right;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-warning {
+    grid-column: 1 / -1;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-note {
+    margin-top: 3px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  /* The purchase action is a fixed, non-overlapping part of the receipt,
+     never pushed below the viewport by an opened comparison. */
+  .chronicles-shop__detail { overflow: hidden; }
+  .chronicles-shop__inspection {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .chronicles-shop__detail .chronicles-shop__checkout {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding-top: 4px;
+    gap: 4px;
+    background: rgba(20, 13, 9, .98);
+    box-shadow: 0 -7px 14px rgba(12, 8, 6, .55);
+  }
+  .chronicles-shop__detail .chronicles-shop__checkout-price { padding-top: 3px; }
+  .chronicles-shop__detail .chronicles-shop__primary { min-height: 40px; }
+  .chronicles-shop__detail .chronicles-shop__checkout-hint { font-size: 10px; line-height: 1.15; }
+  .chronicles-shop__detail .chronicles-shop__eligibility { padding: 3px 0; }
+  .chronicles-shop__detail .chronicles-shop__detail-top p { margin-bottom: 4px; }
+  .chronicles-shop__detail .chronicles-shop__mobile-preview { margin: 5px 0 0; }
+  .chronicles-shop__detail .chronicles-shop__mobile-preview summary { min-height: 36px; padding: 9px 10px; }
+}
