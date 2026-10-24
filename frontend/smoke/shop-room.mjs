@@ -345,6 +345,37 @@ try {
         await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
       }
 
+      // All weapon families use the same per-hero preview as Odo's armour.
+      // Use the actual longbow from Brunna: it is restricted to its real class.
+      if ([390, 844, 1280].includes(width)) {
+        const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
+        if (width <= 900) await longbow.locator('button').click();
+        else {
+          await longbow.locator('button').click();
+          await longbow.locator('button').hover();
+        }
+        const rangePreview = width <= 900
+          ? detail.locator('[data-chronicles-shop-party-comparison]')
+          : dialog.locator('.chronicles-shop__peek-stage [data-chronicles-shop-party-comparison]');
+        await rangePreview.waitFor({ state: 'visible' });
+        assert.equal(await rangePreview.locator('[data-chronicles-shop-hero]').count(), 4,
+          'Ranged-weapon preview must name all four heroes separately');
+        assert.match(await rangePreview.innerText(), /No puede equiparlo/,
+          'Ranged-weapon preview must explain class restrictions');
+        assert.match(await rangePreview.innerText(), /Acierto|Daño|Alcance/,
+          'Ranged-weapon preview must include actual ranged statistics');
+        assert.doesNotMatch(await rangePreview.innerText(), /MM3/,
+          'Merchant comparison must never print engine/ruleset jargon');
+        if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Longbow comparison');
+        await page.screenshot({ path: `smoke-shop-ranged-comparison-${width}.png` });
+        if (portraitPhone) {
+          await detail.getByRole('button', { name: '← Volver a mercancías' }).click();
+          await catalog.waitFor({ state: 'visible' });
+        }
+        await dagger.locator('button').click();
+        await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
+      }
+
       // Buy and sell through the real reducer (not fake onAction state).
       const before = Number((await dialog.locator('.chronicles-shop__purse').getAttribute('aria-label')).match(/\d+/)?.[0]);
       await detail.locator('.chronicles-shop__primary').click();
