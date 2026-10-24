@@ -150,6 +150,28 @@ try {
               === 'use:revive-draught:rook');
         }
         if(view === 'adventure') {
+          const helpTrigger = dialog.locator('[data-chronicles-menu-help]');
+          await helpTrigger.click();
+          const help = dialog.locator('[data-chronicles-game-help]');
+          await help.waitFor({ state: 'visible' });
+          assert.equal(await help.locator('details').count(), 4,
+            'Help must explain game concepts from the pause menu');
+          // Closed <details> sections hide their contents in the rendered UI.
+          // Open each relevant section as a real user would before asserting
+          // visible copy, so the smoke checks progressive disclosure honestly.
+          // The first section starts open; its visible CA definition must remain.
+          assert.match(await help.innerText(), /CA · Armadura/);
+          await help.getByText('Equipo, compras y comparaciones').click();
+          assert.match(await help.innerText(), /Comprar guarda el artículo/);
+          assert.doesNotMatch(await help.innerText(), /MM3/);
+          assert.equal(await dialog.locator('[data-chronicles-menu-save]').count(), 0,
+            'Menu actions must not compete with the guide');
+          await page.screenshot({ path: `smoke-folio-help-${width}.png` });
+          await help.getByRole('button', { name: 'Volver al menú' }).click();
+          await help.waitFor({ state: 'hidden' });
+          await dialog.locator('[data-chronicles-menu-save]').waitFor({ state: 'visible' });
+          assert.equal(await helpTrigger.evaluate((node) => document.activeElement === node), true,
+            'Closing help restores focus to its trigger');
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();
           await dialog.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor();
           await dialog.getByRole('button', { name: 'Cancelar' }).click();

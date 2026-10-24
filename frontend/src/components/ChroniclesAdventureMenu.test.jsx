@@ -35,6 +35,15 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('aria-hidden="true"');
   });
 
+  it('offers a dedicated help entry without crowding the default action list', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
+    expect(html).toContain('data-chronicles-menu-help');
+    expect(html).toContain('aria-controls="chronicles-game-help"');
+    expect(html).toContain('? Ayuda');
+    expect(html).toContain('data-help-open="false"');
+    expect(html).not.toContain('data-chronicles-game-help');
+  });
+
   it('Q still requires explicit confirmation before discarding the run', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
       confirmExitWithoutSaving />);

@@ -1304,3 +1304,101 @@
     height: auto;
   }
 }
+
+/* One merchant row per hero. The source comparison includes real before/after
+   values, so a shared percentage or grouped-name summary cannot hide losses. */
+@media (max-width: 900px) {
+  .chronicles-shop__mobile-preview.is-always-visible {
+    display: block;
+    margin: 5px 0 2px;
+  }
+}
+.chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member {
+  display: grid;
+  grid-template-columns: minmax(82px, 34%) minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 9px;
+  padding: 4px 0;
+}
+.chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-name {
+  display: grid;
+  gap: 1px;
+  color: #ffe0ac;
+  font-weight: 700;
+}
+.chronicles-shop__gear-peek-eligibility {
+  font: 10px/1.1 sans-serif;
+  font-weight: 500;
+  color: #e6a6a1;
+}
+.chronicles-shop__gear-peek-eligibility.is-eligible { color: #a6d4a1; }
+.chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 7px;
+  justify-content: flex-start;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.chronicles-shop__gear-peek-stat {
+  white-space: nowrap;
+  color: #d3cdc4;
+}
+.chronicles-shop__gear-peek-stat b { margin-left: 4px; }
+.chronicles-shop__gear-peek-stat.is-better b { color: #a8dda0; }
+.chronicles-shop__gear-peek-stat.is-worse b { color: #f5a5a3; }
+@media (min-width: 700px) and (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  /* The per-hero comparison precedes optional prose; checkout stays pinned. */
+  .chronicles-shop__detail-top > p { display: none; }
+  .chronicles-shop__mobile-preview.is-always-visible { margin: 3px 0 0; }
+  .chronicles-shop__gear-peek--compact { padding: 3px 6px; }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-title { margin-bottom: 2px; }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member { padding: 2px 0; }
+  .chronicles-shop__gear-peek-eligibility { font-size: 9px; }
+
+  /* A short landscape viewport must reveal ALL four heroes before the
+     pinned purchase action. Two compact columns beat a clipped fourth row. */
+  .chronicles-shop__gear-peek--compact {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 2px 8px;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-title {
+    grid-column: 1 / -1;
+    line-height: 1.1;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-member {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1px;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-name {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-values {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    font-size: 10px;
+    line-height: 1.16;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-stat {
+    white-space: nowrap;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-stat b {
+    margin-left: 2px;
+  }
+  .chronicles-shop__gear-peek--compact .chronicles-shop__gear-peek-warning {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+}

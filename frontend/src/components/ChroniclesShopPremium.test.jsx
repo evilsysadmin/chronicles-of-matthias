@@ -3,7 +3,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
-import ChroniclesShop from './ChroniclesShop.jsx';
+import ChroniclesShop, { ShopCompactGearPeek } from './ChroniclesShop.jsx';
+import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
 import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 
@@ -55,6 +56,77 @@ describe('Chronicles premium shop UI', () => {
       expect(html).not.toContain('chronicles-shop__compare-toggle');
       expect(html).not.toContain('chronicles-shop__comparison-grid');
     }
+  });
+
+  it('shows per-hero eligibility and real before → after values without a rules lecture', () => {
+    const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const armor = CHRONICLES_EQUIPMENT['brass-scale'];
+    const comparisons = chroniclesShopEquipmentComparisons(state, armor);
+    const html = renderToStaticMarkup(createElement(ShopCompactGearPeek, { state, item: armor }));
+    expect(html).toContain('data-chronicles-shop-party-comparison');
+    expect((html.match(/data-chronicles-shop-hero=/g) || [])).toHaveLength(state.party.length);
+    for (const hero of comparisons) {
+      expect(html).toContain(`data-chronicles-shop-hero="${hero.memberId}"`);
+      expect(html).toContain(hero.name);
+      for (const stat of hero.stats.filter(({ delta }) => delta !== 0)) {
+        expect(html).toContain(`${stat.before} → ${stat.after}`);
+      }
+    }
+    expect(html).toContain('Puede equiparlo');
+    expect(html).not.toContain('En MM3');
+    expect(html).not.toContain('no reduce el daño');
+    expect(html).not.toContain('comprar no equipa');
+  });
+
+  it('shows individual melee-weapon trades, including accuracy loss and a displaced shield', () => {
+    const state = {
+      ...createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
+      equipment: { matthias: { weapon: 'brass-dagger', shield: 'iron-shield' } },
+    };
+    const weapon = CHRONICLES_EQUIPMENT['wooden-staff'];
+    const comparisons = chroniclesShopEquipmentComparisons(state, weapon);
+    const html = renderToStaticMarkup(createElement(ShopCompactGearPeek, { state, item: weapon }));
+    expect((html.match(/data-chronicles-shop-hero=/g) || [])).toHaveLength(state.party.length);
+    for (const hero of comparisons) {
+      expect(html).toContain(`data-chronicles-shop-hero="${hero.memberId}"`);
+      for (const { before, after, delta } of hero.stats.filter(({ delta }) => delta !== 0)) {
+        expect(html).toContain(`${before} → ${after}`);
+        expect(html).toContain(`<b>${delta > 0 ? '+' : ''}${delta}</b>`);
+      }
+    }
+    const matthias = comparisons.find((hero) => hero.memberId === 'matthias');
+    expect(matthias.displacedShield?.name).toBe(CHRONICLES_EQUIPMENT['iron-shield'].name);
+    expect(html).toContain('Pierde escudo:');
+    expect(html).toMatch(/Acierto|Daño|Alcance|CA/);
+    expect(state.equipment.matthias.weapon).toBe('brass-dagger');
+    expect(state.equipment.matthias.shield).toBe('iron-shield');
+  });
+
+  it('compares ranged weapons per hero using the actual missile bonuses, not melee', () => {
+    const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const state = {
+      ...base,
+      equipment: { matthias: { weapon: 'brass-dagger', missile: 'wooden-bow' } },
+    };
+    const missile = CHRONICLES_EQUIPMENT['wooden-longbow'];
+    const comparisons = chroniclesShopEquipmentComparisons(state, missile);
+    const html = renderToStaticMarkup(createElement(ShopCompactGearPeek, { state, item: missile }));
+    expect((html.match(/data-chronicles-shop-hero=/g) || [])).toHaveLength(state.party.length);
+    const eligible = comparisons.filter((hero) => hero.eligible);
+    const blocked = comparisons.filter((hero) => !hero.eligible);
+    expect(eligible.length + blocked.length).toBe(state.party.length);
+    for (const hero of eligible) {
+      expect(html).toContain(`data-chronicles-shop-hero="${hero.memberId}"`);
+      for (const { before, after, delta } of hero.stats.filter(({ delta }) => delta !== 0)) {
+        expect(html).toContain(`${before} → ${after}`);
+        expect(html).toContain(`<b>${delta > 0 ? '+' : ''}${delta}</b>`);
+      }
+    }
+    for (const hero of blocked) expect(html).toContain(hero.reason);
+    expect(html).toContain('Puede equiparlo');
+    expect(html).toContain('No puede equiparlo');
+    expect(html).not.toContain('En MM3');
+    expect(state.equipment.matthias.missile).toBe('wooden-bow');
   });
 
   it('uses one dedicated portrait for each of Odo’s seven stocked items', () => {
