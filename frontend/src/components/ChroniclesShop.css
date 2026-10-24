@@ -1022,6 +1022,9 @@
     grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas: 'head' 'tabs' 'market';
   }
+  /* Real thumb-sized controls in portrait; short landscape keeps its compact layout. */
+  .chronicles-shop__close { width: 44px; height: 44px; }
+  .chronicles-shop__tabs button { min-height: 44px; }
   .chronicles-shop::before {
     background: linear-gradient(180deg, rgba(8, 5, 4, .72), rgba(8, 5, 4, .82));
   }
