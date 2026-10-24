@@ -39,7 +39,7 @@ function surfaceDetail(kind, x, y, spec) {
   if (kind === 'stucco') {
     const speck = hash(x, y, 7);
     return { shade: 1 + erosion * 0.16 + fine * 0.10 + grain * 0.09
-      - (speck > 0.991 ? 0.22 : 0), mortar: false };
+      - (speck > 0.991 ? 0.22 : 0), mortar: false, elevation: 0.5 };
   }
   if (kind === 'timber') {
     const board = Math.floor(x / 24);
@@ -48,26 +48,39 @@ function surfaceDetail(kind, x, y, spec) {
     const knot = hash(Math.floor(x / 7), Math.floor(y / 11), 23) > 0.98 ? -0.18 : 0;
     return { shade: 0.96 + (hash(board, 0, 31) - 0.5) * 0.24
       + erosion * 0.10 + grainLine + grain * 0.07 + knot,
-    mortar: edge < 2 };
+    mortar: edge < 2, elevation: 0.5 };
   }
 
-  // Staggered ashlar, slate and irregular cobbles. Rows and half-row shifts
-  // divide the power-of-two texture exactly, including at wrapped UV seams.
+  // Tile-friendly staggered courses. Slightly wandering grout and rounded
+  // cobble corners break the grid, but keep UVs and old collision meshes.
   const { width, height } = spec;
   const row = Math.floor(y / height);
   const shifted = (x + (row % 2) * width / 2) % size;
   const column = Math.floor(shifted / width);
   const lx = shifted % width;
   const ly = y % height;
-  const wobble = kind === 'cobble'
-    ? Math.sin(ly * 0.72 + row * 1.3) * 0.85 : 0;
-  const edge = (kind === 'cobble' ? 2.5 : 1.8) + wobble;
-  const mortar = lx < edge || ly < (kind === 'cobble' ? 2.0 : 1.8);
-  const bevel = (lx < 5 || ly < 5 ? 0.12 : 0)
-    - (lx > width - 6 || ly > height - 6 ? 0.15 : 0);
-  const stone = hash(column, row, kind === 'cobble' ? 41 : kind === 'roof' ? 43 : 47);
-  return { shade: 1 + (stone - 0.5) * 0.30 + erosion * 0.24
-    + fine * 0.14 + grain * 0.11 + bevel, mortar };
+  const dx = Math.min(lx, width - 1 - lx);
+  const dy = Math.min(ly, height - 1 - ly);
+  const cobble = kind === 'cobble';
+  const seamX = (cobble ? 1.9 : 1.25)
+    + Math.sin(ly * 0.51 + row * 1.13 + column * 2.17) * (cobble ? 0.83 : 0.40);
+  const seamY = (cobble ? 1.45 : 1.1)
+    + Math.sin(lx * 0.36 + row * 1.71 + column * 0.42) * (cobble ? 0.57 : 0.3);
+  const corner = cobble && dx < 4.5 && dy < 3.8
+    && ((4.5 - dx) / 4.5) ** 2 + ((3.8 - dy) / 3.8) ** 2 > 0.92;
+  const mortar = dx <= seamX || dy <= seamY || corner;
+  const rounding = Math.min(1, Math.max(0,
+    Math.min(dx - seamX, dy - seamY) / (cobble ? 4 : 5)));
+  const stone = hash(column, row, cobble ? 41 : kind === 'roof' ? 43 : 47);
+  const pit = hash(Math.floor(x / 3), Math.floor(y / 3), 61) > 0.988 ? -0.13 : 0;
+  const shade = 0.98 + (stone - 0.5) * (cobble ? 0.37 : 0.30)
+    + erosion * 0.24 + fine * 0.13 + grain * 0.08 + pit
+    + (rounding - 0.5) * (cobble ? 0.23 : 0.17);
+  // Elevation feeds a tangent-space normal map: actual light direction makes
+  // the mortar sink and the weathered stone rise, without extra triangles.
+  const elevation = mortar ? 0.10
+    : 0.45 + rounding * (cobble ? 0.37 : 0.28) + fine * 0.11;
+  return { shade, mortar, elevation, stone };
 }
 
 const byte = value => Math.max(0, Math.min(255, Math.round(value)));
@@ -77,20 +90,46 @@ export function chroniclesTownSurfacePixels(kind) {
   if (!spec) throw new Error('Unsupported Swordhaven material: ' + kind);
   const { size, base } = spec;
   const pixels = new Uint8Array(size * size * 4);
+  const stoneRelief = kind === 'masonry' || kind === 'cobble';
+  const heights = stoneRelief ? new Float32Array(size * size) : null;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const detail = surfaceDetail(kind, x, y, spec);
       const moss = kind === 'cobble' && detail.mortar
         && noise(x, y, size, 16, 53) > 0.68;
-      const offset = (y * size + x) * 4;
+      const lichen = kind === 'masonry' && !detail.mortar
+        && hash(Math.floor(x / 3), Math.floor(y / 3), 59) > 0.993;
+      const index = y * size + x;
+      const offset = index * 4;
+      if (heights) heights[index] = detail.elevation;
       for (let channel = 0; channel < 3; channel += 1) {
         const pigment = detail.mortar
-          ? (kind === 'timber' ? [61, 46, 34] : moss ? [75, 95, 50] : [91, 85, 76])[channel]
-          : base[channel] * detail.shade;
+          ? (moss ? [76, 98, 55] : [95, 89, 80])[channel]
+          : lichen ? [130, 137, 100][channel]
+          : base[channel] * detail.shade
+            + (channel === 0 ? 1 : channel === 2 ? -1 : 0) * ((detail.stone ?? 0.5) - 0.5) * 13;
         pixels[offset + channel] = byte(pigment);
       }
       pixels[offset + 3] = 255;
     }
   }
-  return { size, pixels };
+  if (!heights) return { size, pixels };
+
+  // Periodic central differences preserve the repeating atlas at the edges.
+  // Standard tangent-space RGB; linear-data texture, not sRGB albedo.
+  const normals = new Uint8Array(pixels.length);
+  const heightAt = (x, y) => heights[((y + size) % size) * size + ((x + size) % size)];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const slopeX = (heightAt(x + 1, y) - heightAt(x - 1, y)) * 1.6;
+      const slopeY = (heightAt(x, y + 1) - heightAt(x, y - 1)) * 1.6;
+      const length = Math.hypot(slopeX, slopeY, 1);
+      const offset = (y * size + x) * 4;
+      normals[offset] = byte(127.5 * (1 - slopeX / length));
+      normals[offset + 1] = byte(127.5 * (1 - slopeY / length));
+      normals[offset + 2] = byte(127.5 * (1 + 1 / length));
+      normals[offset + 3] = 255;
+    }
+  }
+  return { size, pixels, normals };
 }

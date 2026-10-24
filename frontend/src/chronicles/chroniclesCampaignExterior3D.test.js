@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
-import { swordhavenSurfaceTexture } from './chroniclesSwordhaven3D.js';
+import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 
 const demo = {
   mapId: 'banner-road', regionKind: 'wilderness', width: 5, height: 5,
@@ -100,6 +100,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(names).toHaveLength(10);
     const paved = scene.getObjectByName('chronicles-campaign-road');
     expect(paved).toBeInstanceOf(THREE.InstancedMesh);
+    expect(paved.material.map).toBe(swordhavenSurfaceTexture('cobble'));
+    expect(paved.material.normalMap).toBe(swordhavenSurfaceNormalTexture('cobble'));
+    expect(paved.material.normalScale.x).toBeGreaterThan(0);
     expect(paved.count).toBe([...grid.join('')].filter(cell => cell === '.').length);
     // Row-major instances really reach the off-axis alleys in the south.
     const alley = { x: 3, y: 17 };

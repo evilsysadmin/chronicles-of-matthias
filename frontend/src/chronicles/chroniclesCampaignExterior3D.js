@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import {
   addSwordhavenClouds, buildSwordhavenFountain, buildSwordhavenHouse, buildSwordhavenTree, createSwordhavenMaterials,
-  createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture,
+  createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
@@ -373,8 +373,15 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const earth = material(biome?.ground ?? (forest ? 0xaebc9e : 0xffffff), { map: biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture() });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
-  // Roads are pixel-art cobbles: one 64-px tile per 4 m cell.
-  const paver = material(roadMap ? 0xcabfa6 : 0xddd3bf, { map: swordhavenSurfaceTexture('cobble') });
+  // The shared town-only relief adds directional light to weathered paving.
+  // Wild roads retain their cheaper albedo-only rendering.
+  const paver = material(roadMap ? 0xcabfa6 : 0xddd3bf, {
+    map: swordhavenSurfaceTexture('cobble'),
+    ...(settlement ? {
+      normalMap: swordhavenSurfaceNormalTexture('cobble'),
+      normalScale: new THREE.Vector2(0.72, 0.72),
+    } : {}),
+  });
   const timber = material(0x4d3424);
   const linen = material(0x963f32, { side: THREE.DoubleSide });
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });
