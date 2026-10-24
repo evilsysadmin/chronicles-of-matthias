@@ -255,6 +255,41 @@ describe('Chronicles initiative', () => {
     expect(next.initiative.round).toBe(4);
   });
 
+  it('keeps the current round when a leading enemy loses the party and leaves initiative', () => {
+    // The lost enemy was the first actor. The next hero is still acting in
+    // this round, even though the shortened order now wraps internally.
+    const lost = {
+      id: 'lost', name: 'Lost', hpKey: 'lostHp', x: 9, y: 17,
+      ai: { engageRange: 2, attackReach: 1 },
+    };
+    const nearby = {
+      id: 'nearby', name: 'Nearby', hpKey: 'nearbyHp', x: 1, y: 16,
+      ai: { engageRange: 2, attackReach: 1 },
+    };
+    const state = {
+      mapId: 'swordhaven-sewers',
+      phase: 'combat',
+      x: 1, y: 15,
+      party: [{ id: 'matthias', hp: 5 }],
+      lostHp: 5,
+      nearbyHp: 5,
+      initiative: {
+        version: 1, die: '1d8', round: 3, cursor: 0,
+        order: [
+          { id: 'lost', kind: 'enemy', name: 'Lost', initiative: 10 },
+          { id: 'matthias', kind: 'party', name: 'Matthias', initiative: 9 },
+          { id: 'nearby', kind: 'enemy', name: 'Nearby', initiative: 8 },
+        ],
+      },
+    };
+
+    const next = chroniclesAdvanceCombatInitiative(state, [lost, nearby]);
+    expect(next.phase).toBe('combat');
+    expect(next.initiative.order.map((actor) => actor.id)).toEqual(['matthias', 'nearby']);
+    expect(chroniclesCurrentInitiativeActor(next.initiative)?.id).toBe('matthias');
+    expect(next.initiative.round).toBe(3);
+  });
+
   it('treats nullable legacy agility as missing rather than overriding the enemy build with zero', () => {
     const enemy = {
       id: 'horse-thing',
