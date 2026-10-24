@@ -87,6 +87,15 @@ const REQUIRED_DIFFICULTY_FIELDS = [
 function isUsableDifficultySnapshot(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if (!REQUIRED_DIFFICULTY_FIELDS.every((field) => Number.isSafeInteger(value[field]))) return false;
+  // These fields form one deterministic band in Go, not seven independent
+  // ranges. A saved snapshot can pass every range check yet misstate threat.
+  const expectedDepthPressure = Math.min(DEPTH_PRESSURE_CAP, Math.floor(value.depth / 2));
+  const expectedProgressionPressure = Math.floor((value.partyLevel - 1) / 2);
+  const expectedTarget = Math.min(
+    CHRONICLES_MAX_LEVEL,
+    value.partyLevel + ABOVE_PARTY_CAP,
+    1 + expectedDepthPressure + expectedProgressionPressure,
+  );
   return value.partyLevel >= 1 && value.partyLevel <= CHRONICLES_MAX_LEVEL
     && value.depth >= 0 && value.depth <= 99
     && value.targetLevel >= 1 && value.targetLevel <= CHRONICLES_MAX_LEVEL
@@ -100,7 +109,14 @@ function isUsableDifficultySnapshot(value) {
     && value.maxLevel <= value.targetLevel + 1
     && value.depthPressure >= 0 && value.depthPressure <= DEPTH_PRESSURE_CAP
     && value.progressionPressure >= 0
-    && value.progressionPressure <= Math.floor((CHRONICLES_MAX_LEVEL - 1) / 2);
+    && value.progressionPressure <= Math.floor((CHRONICLES_MAX_LEVEL - 1) / 2)
+    && value.depthPressure === expectedDepthPressure
+    && value.progressionPressure === expectedProgressionPressure
+    && value.targetLevel === expectedTarget
+    && value.minLevel === Math.max(1, expectedTarget - 1)
+    && value.maxLevel === Math.min(
+      CHRONICLES_MAX_LEVEL, value.partyLevel + ABOVE_PARTY_CAP, expectedTarget + 1,
+    );
 }
 
 export function chroniclesResolvedDifficultyBand(
