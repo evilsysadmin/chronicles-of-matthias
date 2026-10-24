@@ -36,6 +36,7 @@ import { chroniclesVolleyPresentationShooterIds } from '../chronicles/chronicles
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
+import { chroniclesDoorwayPrompt } from '../chronicles/chroniclesDoorwayPrompt.js';
 import { chroniclesInitializeLostKingIntro } from '../chronicles/chroniclesLostKingIntro.js';
 import { chroniclesApplyArrival } from '../chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from '../chronicles/chroniclesSwordhavenReturnPortal.js';
@@ -875,7 +876,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       dispatch('interact');
       return;
     }
-    const dialogue = chroniclesNpcDialogueForState(current, chroniclesContextualContentAction(current));
+    const rawContextual = chroniclesContextualContentAction(current);
+    const rawDialogue = chroniclesNpcDialogueForState(current, rawContextual);
+    const { contextual, npc: dialogue } = chroniclesDoorwayPrompt(current, rawContextual, rawDialogue);
+    if (!contextual && !dialogue) return;
     if (dialogue) {
       audienceRef.current = dialogue;
       setAudience(dialogue);
@@ -1119,7 +1123,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           },
           onContentClick: (contentId) => {
             const current = stateRef.current;
-            const contextual = chroniclesContextualContentAction(current);
+            const contextual = chroniclesDoorwayPrompt(
+              current, chroniclesContextualContentAction(current), null,
+            ).contextual;
             if (contextual?.id !== contentId) return;
             interactWithContext();
           },
@@ -1429,7 +1435,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
       if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
       if (event.key === 'f' || event.key === 'F') {
-        if (chroniclesAreaTransitionIntent(current, 'interact') || chroniclesContextualContentAction(current)) {
+        const rawContextual = chroniclesContextualContentAction(current);
+        const rawDialogue = chroniclesNpcDialogueForState(current, rawContextual);
+        const offer = chroniclesDoorwayPrompt(current, rawContextual, rawDialogue);
+        if (chroniclesAreaTransitionIntent(current, 'interact') || offer.contextual || offer.npc) {
           event.preventDefault();
           interactWithContext();
           return;
@@ -1619,9 +1628,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const journalEntries = chroniclesJournalEntries(state);
   const activeQuests = chroniclesQuestLogEntries(state).filter((quest) => quest.status === 'active');
   const expeditionOver = state.phase === 'defeated' || state.phase === 'escaped';
-  const contextualAction = chroniclesContextualContentAction(state);
+  const rawContextualAction = chroniclesContextualContentAction(state);
   const exitUnderfoot = chroniclesAreaTransitionIntent(state, 'interact')?.atThreshold === true;
-  const npcAtPosition = chroniclesNpcDialogueForState(state, contextualAction);
+  const rawNpcAtPosition = chroniclesNpcDialogueForState(state, rawContextualAction);
+  const { contextual: contextualAction, npc: npcAtPosition } = chroniclesDoorwayPrompt(
+    state, rawContextualAction, rawNpcAtPosition,
+  );
   const activeInitiativeActor = chroniclesCurrentInitiativeActor(state.initiative);
   // In combat the hero whose turn it is casts; exploring, the selected one.
   const caster = activeInitiativeActor?.kind === 'party'
