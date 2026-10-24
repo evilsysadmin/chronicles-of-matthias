@@ -370,7 +370,24 @@ try {
           'Ranged-weapon preview must include actual ranged statistics');
         assert.doesNotMatch(await rangePreview.innerText(), /MM3/,
           'Merchant comparison must never print engine/ruleset jargon');
-        if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Longbow comparison');
+        if (width === 844) {
+          await assertLandscapeCheckoutVisible(dialog, 'Longbow comparison');
+          const visibility = await rangePreview.evaluate((peek) => {
+            const inspection = peek.closest('.chronicles-shop__inspection');
+            const frame = inspection.getBoundingClientRect();
+            return {
+              noHorizontalOverflow: peek.scrollWidth <= peek.clientWidth + 1,
+              rows: [...peek.querySelectorAll('[data-chronicles-shop-hero]')].map((row) => {
+                const r = row.getBoundingClientRect();
+                return { name: row.getAttribute('data-chronicles-shop-hero'),
+                  fullyVisible: r.top >= frame.top && r.bottom <= frame.bottom - 2 };
+              }),
+            };
+          });
+          assert(visibility.noHorizontalOverflow, 'Weapon comparison overflows horizontally: ' + JSON.stringify(visibility));
+          assert(visibility.rows.every((row) => row.fullyVisible),
+            'All four heroes must fit above pinned checkout without scrolling: ' + JSON.stringify(visibility));
+        }
         await page.screenshot({ path: `smoke-shop-ranged-comparison-${width}.png` });
         if (portraitPhone) {
           await detail.getByRole('button', { name: '← Volver a mercancías' }).click();
