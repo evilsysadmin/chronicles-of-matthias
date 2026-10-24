@@ -40,7 +40,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
-import { chroniclesBagInventoryEntries, chroniclesCanSharePartyLoot } from '../chronicles/chroniclesPersonalBags.js';
+import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
@@ -109,8 +109,9 @@ export default function ChroniclesCharacterSheet({
 }) {
   // Navigation belongs to the sheet, not the durable campaign state.
   const [activeFolio, setActiveFolio] = useState(() => initialFolio === 'equipment' ? 'equipment' : 'record');
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  const [transferTargetId, setTransferTargetId] = useState('');
+  // Selection is deliberately explicit and belongs to one hero's bag.
+  // The first item can still be previewed without becoming a transfer target.
+  const [selectedBagItem, setSelectedBagItem] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
   const inventoryListRef = useRef(null);
@@ -124,27 +125,12 @@ export default function ChroniclesCharacterSheet({
     const nextId = member?.id;
     if (previousViewedMemberIdRef.current === nextId) return;
     previousViewedMemberIdRef.current = nextId;
+    setSelectedBagItem(null);
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
     if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
     if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
   }, [member?.id, mode]);
-
-  // A modal may lose DOM focus after an equipment action rerenders its buttons.
-  // Keep 1–4 working while the sheet is open, even if focus falls to <body>.
-  // Events from inside the sheet are already handled (and stopped) below;
-  // editable targets and other consumed events are excluded by the shared guard.
-  useEffect(() => {
-    if (!state?.party || !member || !onSelectMember) return undefined;
-    const onWindowPartyKey = (event) => {
-      const hero = chroniclesPartyHotkeyMember(event, state.party);
-      if (!hero) return;
-      event.preventDefault();
-      onSelectMember(hero.id);
-    };
-    window.addEventListener('keydown', onWindowPartyKey);
-    return () => window.removeEventListener('keydown', onWindowPartyKey);
-  }, [state?.party, member, onSelectMember]);
 
   if (!state || !progression || !member) return null;
 
@@ -176,14 +162,13 @@ export default function ChroniclesCharacterSheet({
     ? chroniclesInventoryEntries(state)
     : chroniclesBagInventoryEntries(state, member.id))
     .filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
-  const recipients = (state.party || []).filter((hero) => hero.id !== member.id);
-  const transferRecipientId = recipients.find((hero) => hero.id === transferTargetId)?.id || recipients[0]?.id || '';
+  const selectedItemId = selectedBagItem?.memberId === member.id ? selectedBagItem.itemId : null;
   const gold = chroniclesGoldBalance(state);
   const backpackCounts = chroniclesBackpackCounts(inventory);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
   // The first visible item is a safe preview; selection never equips it.
-  const selectedInventoryItem = visibleBackpack.find((item) => item.id === selectedItemId)
-    || (!tacticsMode ? visibleBackpack[0] : null);
+  const transferableItem = !tacticsMode && visibleBackpack.find((item) => item.id === selectedItemId);
+  const selectedInventoryItem = transferableItem || (!tacticsMode ? visibleBackpack[0] : null);
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
@@ -194,6 +179,36 @@ export default function ChroniclesCharacterSheet({
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
+
+  // The 1–4 party targets double as hand-off destinations only after the
+  // player explicitly selects an inventory object. Transfers remain one copy
+  // at a time, via the existing save-backed reducer.
+  const handOffTo = (targetId) => {
+    if (activeFolio === 'equipment' && transferableItem) {
+      if (canChangeEquipment && targetId !== member.id) {
+        onEquipmentAction?.({ type: 'transfer-item', itemId: transferableItem.id, toMemberId: targetId });
+        setSelectedBagItem(null);
+      }
+      // Same-hero and locked/in-combat actions do not change the active sheet.
+      return;
+    }
+    setSelectedBagItem(null);
+    onSelectMember?.(targetId);
+  };
+
+  // A modal may lose DOM focus after rerenders. Keep 1–4 available even if
+  // focus falls to <body>; the sheet itself stops bubbling events below.
+  useEffect(() => {
+    if (!state?.party || !member || (!onSelectMember && !onEquipmentAction)) return undefined;
+    const onWindowPartyKey = (event) => {
+      const hero = chroniclesPartyHotkeyMember(event, state.party);
+      if (!hero) return;
+      event.preventDefault();
+      handOffTo(hero.id);
+    };
+    window.addEventListener('keydown', onWindowPartyKey);
+    return () => window.removeEventListener('keydown', onWindowPartyKey);
+  }, [state?.party, member, onSelectMember, onEquipmentAction, activeFolio, transferableItem, canChangeEquipment]);
 
   // Filtering/searching invalidates the old list position. Without resetting
   // the nested scroll, the first matching object can stay outside the viewport.
@@ -222,10 +237,10 @@ export default function ChroniclesCharacterSheet({
     // Switch the displayed dossier, never the initiative actor. Tactics and
     // first-person share this binding; text fields keep their own numbers.
     const hero = chroniclesPartyHotkeyMember(event, state.party);
-    if (hero && onSelectMember) {
+    if (hero && (onSelectMember || onEquipmentAction)) {
       event.preventDefault();
       event.stopPropagation();
-      onSelectMember(hero.id);
+      handOffTo(hero.id);
     }
   };
 
@@ -235,13 +250,6 @@ export default function ChroniclesCharacterSheet({
             <article className="chronicles-character-sheet__backpack">
               <span className="chronicles-character-sheet__backpack-heading">
                 {tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}
-                {!tacticsMode && chroniclesCanSharePartyLoot(state) && (
-                  <button type="button" className="chronicles-character-sheet__share-loot"
-                    title="Distribuye las existencias sin equipar entre las mochilas del grupo"
-                    onClick={() => onEquipmentAction?.({ type: 'share-party-loot' })}>
-                    Repartir botín
-                  </button>
-                )}
               </span>
               {!tacticsMode && inventory.length > 0 && (
                 <div className="chronicles-character-sheet__backpack-tools">
@@ -250,7 +258,7 @@ export default function ChroniclesCharacterSheet({
                       .map(({ id, label }) => (
                         <button type="button" key={id}
                           aria-pressed={backpackFilter === id}
-                          onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedItemId(null); }}>
+                          onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedBagItem(null); }}>
                           {label} <small>{backpackCounts[id]}</small>
                         </button>
                       ))}
@@ -259,7 +267,7 @@ export default function ChroniclesCharacterSheet({
                     Buscar en la mochila
                     <input type="search" value={backpackSearch}
                       placeholder="Nombre, material u objeto…"
-                      onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedItemId(null); }}
+                      onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedBagItem(null); }}
                     />
                   </label>
                   <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
@@ -274,16 +282,16 @@ export default function ChroniclesCharacterSheet({
                     {visibleBackpack.map((item) => (
                       <button type="button" key={item.id} data-inventory-item={item.id}
                         title={!tacticsMode ? item.name : undefined}
-                        className={selectedInventoryItem?.id === item.id ? 'is-selected' : ''}
-                        aria-pressed={selectedInventoryItem?.id === item.id}
-                        onClick={() => setSelectedItemId(item.id)}
+                        className={selectedItemId === item.id ? 'is-selected' : ''}
+                        aria-pressed={selectedItemId === item.id}
+                        onClick={() => setSelectedBagItem({ memberId: member.id, itemId: item.id })}
                         onKeyDown={(event) => {
                           if (tacticsMode) return;
                           const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
                           if (!nextId) return;
                           event.preventDefault();
                           event.stopPropagation();
-                          setSelectedItemId(nextId);
+                          setSelectedBagItem({ memberId: member.id, itemId: nextId });
                           const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
                           inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
                         }}
@@ -300,7 +308,13 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
               )}
-              {!tacticsMode && inventory.length > 0 && <small className="chronicles-character-sheet__inventory-hint">↑ ↓ Seleccionar objeto · Equipar desde el detalle · No se modifica nada hasta confirmar</small>}
+              {!tacticsMode && inventory.length > 0 && (
+                <small className="chronicles-character-sheet__inventory-hint" aria-live="polite">
+                  {transferableItem
+                    ? `Seleccionado: ${transferableItem.name}. Pulsa 1–4 o toca el compañero de destino para entregar 1 unidad.`
+                    : 'Elige un objeto y pulsa 1–4 (o toca un compañero) para entregar 1 unidad.'}
+                </small>
+              )}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <strong>{selectedInventoryItem.name}</strong>
@@ -338,22 +352,7 @@ export default function ChroniclesCharacterSheet({
                       Equipar {selectedEquipment.name}
                     </button>
                   </>}
-                  {recipients.length > 0 && (
-                    <div className="chronicles-character-sheet__bag-transfer" aria-label="Transferir objeto entre compañeros">
-                      <label>Entregar 1 a
-                        <select aria-label="Compañero que recibirá el objeto"
-                          value={transferRecipientId} onChange={(event) => setTransferTargetId(event.target.value)}>
-                          {recipients.map((hero) => <option key={hero.id} value={hero.id}>{hero.name}</option>)}
-                        </select>
-                      </label>
-                      <button type="button" disabled={!canChangeEquipment || !transferRecipientId}
-                        onClick={() => onEquipmentAction?.({
-                          type: 'transfer-item', toMemberId: transferRecipientId, itemId: selectedInventoryItem.id,
-                        })}>
-                        Pasar objeto
-                      </button>
-                    </div>
-                  )}
+
                 </aside>
               )}
             </article>
@@ -685,10 +684,12 @@ export default function ChroniclesCharacterSheet({
           <nav className="chronicles-character-sheet__party-dock" aria-label="Seleccionar personaje de la compañía">
             {chroniclesPartyHotkeySlots(state.party).map(({ member: hero, slot }) => (
               <button type="button" key={hero.id}
-                disabled={!onSelectMember}
-                aria-label={`Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
+                disabled={!onSelectMember && !canChangeEquipment}
+                aria-label={activeFolio === 'equipment' && transferableItem && canChangeEquipment && hero.id !== member.id
+                  ? `Entregar 1 ${transferableItem.name} a ${hero.name} · ${slot}`
+                  : `Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
-                onClick={() => onSelectMember?.(hero.id)}
+                onClick={() => handOffTo(hero.id)}
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
