@@ -68,11 +68,14 @@
 }
 @media(max-width:680px), (max-height:570px) {
  .chronicles-inn { display:block; }
+ /* Let long inn names wrap without pushing the gold or close action off-screen. */
  .chronicles-inn__heading { padding:14px 16px; }
+ .chronicles-inn__heading > div:first-child { min-width:0; }
  .chronicles-inn__heading p { font-size:.85rem; }
- .chronicles-inn__heading h2 { font-size:1.85rem; }
+ .chronicles-inn__heading h2 { font-size:1.85rem; overflow-wrap:anywhere; }
  .chronicles-inn__heading-actions b { padding:9px; font-size:.9rem; }
- .chronicles-inn__heading-actions button { width:40px; height:40px; }
+ /* The exit action must remain thumb-sized even at 360px. */
+ .chronicles-inn__heading-actions button { width:44px; height:44px; flex-shrink:0; }
  .chronicles-inn__activities { display:block; padding:14px; }
  .chronicles-inn__intro { margin-bottom:10px; padding:12px; }
  .chronicles-inn__choices { display:grid; grid-template-columns:1fr; gap:9px; }
