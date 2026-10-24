@@ -653,20 +653,13 @@ export default function ChroniclesCharacterSheet({
             {chroniclesPartyHotkeySlots(state.party).map(({ member: hero, slot }) => (
               <button type="button" key={hero.id}
                 disabled={!onSelectMember}
-                aria-label={`Ver ficha de ${hero.name}`}
+                aria-label={`Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
                 onClick={() => onSelectMember?.(hero.id)}
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
-                <img src={chroniclesPartyPortraitUrl(hero)} alt="" draggable="false" />
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
                 <span className="chronicles-character-sheet__party-hp">{hero.hp}/{hero.maxHp} PV</span>
-                <span className="chronicles-character-sheet__party-gear" aria-label={chroniclesWornGear(state, hero.id).map((slot) => `${slot.label}: ${slot.name}`).join(', ')}>
-                  {chroniclesWornGear(state, hero.id).map((slot) => (
-                    <i key={slot.slot} className={slot.empty ? 'is-empty' : ''} title={`${slot.label}: ${slot.name}`}>{slot.glyph}</i>
-                  ))}
-                  <small>{chroniclesArmsLabel(state, hero.id)}</small>
-                </span>
               </button>
             ))}
           </nav>
