@@ -278,7 +278,7 @@ try {
       if (width > 900) await dagger.locator('button').hover();
       if (width <= 900) {
         const comparison = detail.locator('.chronicles-shop__mobile-preview');
-        await comparison.locator('summary').click();
+        await comparison.locator('[data-chronicles-shop-party-comparison]').waitFor({ state: 'visible' });
         assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
           'Touch preview must not expand rows and steal inventory space');
       }
@@ -290,8 +290,7 @@ try {
       await peek.waitFor({ state: 'visible' });
       const rows = await peek.locator('.chronicles-shop__gear-peek-member').count();
       if (width <= 900) {
-        assert(rows >= 1 && rows <= 4,
-          'Touch comparison must group equivalent real outcomes without hiding heroes');
+        assert.equal(rows, 4, 'Touch comparison must show every hero separately');
         for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
           assert((await peek.innerText()).includes(name),
             'Touch comparison lost ' + name);
@@ -299,7 +298,7 @@ try {
       } else assert.equal(rows, 4, 'Desktop must keep its four per-hero comparisons');
       assert.match(await peek.innerText(), /Matthias/);
       assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
-      if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Brunna expanded gear preview');
+      if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Brunna per-hero gear preview');
       if (width >= 1180 && height >= 540) {
         const position = await peek.evaluate((el) => {
           const rect = (node) => {
@@ -653,7 +652,7 @@ try {
           else await vest.locator('button').click();
           if (width <= 900) {
             const comparison = dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview');
-            await comparison.locator('summary').click();
+            await comparison.locator('[data-chronicles-shop-party-comparison]').waitFor({ state: 'visible' });
             assert.equal(await vest.locator('.chronicles-shop__gear-peek').count(), 0,
               'Touching Odo merchandise must not expand the stock row');
           }
@@ -665,15 +664,15 @@ try {
           await note.waitFor({ state: 'visible' });
           const odoRows = await note.locator('.chronicles-shop__gear-peek-member').count();
           if (width <= 900) {
-            assert(odoRows >= 1 && odoRows <= 4, 'Odo touch summary lost or duplicated outcomes');
+            assert.equal(odoRows, 4, 'Odo must show one separate real outcome per hero');
             for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
               assert((await note.innerText()).includes(name), 'Odo compact preview lost ' + name);
             }
           } else assert.equal(odoRows, 4);
           assert.match(await note.innerText(), /CA|Armadura|No puede equiparlo|Sin cambios/);
-          assert.match(await note.innerText(),
-            width <= 900 ? /En MM3 la CA evita impactos; no reduce el daño/ : /en MM3 no resta daño si el golpe acierta/);
-          if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Odo expanded armor preview');
+          assert.doesNotMatch(await note.innerText(), /MM3|no reduce el daño/,
+            'Merchant should show deltas, not system-rules lectures');
+          if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Odo per-hero armor preview');
           assert.doesNotMatch(await note.innerText(), /Reducción de daño [+-]\d/,
             'MM3 must not advertise damage mitigation that its combat code never applies');
           assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
@@ -736,7 +735,7 @@ try {
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
       const peekInAisle = width >= 1180 && height >= 540;
-      if (mobile) await dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview summary').click();
+      if (mobile) await dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
       const note = mobile
         ? dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek')
         : peekInAisle
