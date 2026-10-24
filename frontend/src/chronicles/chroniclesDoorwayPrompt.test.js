@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesContextualContentAction, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import { chroniclesDoorwayPrompt } from './chroniclesDoorwayPrompt.js';
 
 const map = chroniclesMapById('swordhaven-first-book');
@@ -21,9 +22,12 @@ describe('MM3 town contextual button proximity', () => {
     expect(twoBefore.npc).toBeNull();
 
     const oneBefore = promptAt(state(13, 6, 1));
-    // The authored outdoor altar remains an independent interaction underfoot.
-    expect(oneBefore.contextual?.id).toBe('first-book-temple-altar');
+    // Facing the temple must not advertise either the altar or an early entrance.
+    expect(oneBefore.contextual).toBeNull();
     expect(oneBefore.npc).toBeNull();
+    // Turn away from the door: the authored outdoor altar is still usable
+    // only while standing on its own square.
+    expect(promptAt(state(13, 6, 0)).contextual?.id).toBe('first-book-temple-altar');
 
     const atDoor = promptAt(state(14, 6, 1));
     expect(atDoor.npc?.name).toBe('Sacerdotisa Ilse');
@@ -35,9 +39,16 @@ describe('MM3 town contextual button proximity', () => {
       entry.shop || entry.guild || entry.visualType === 'building-tavern'
     )).map((entry) => [entry.x + ',' + entry.y, entry])).values()];
     expect(doors.length).toBeGreaterThanOrEqual(4);
+    const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    const width = Math.max(...map.grid.map((row) => row.length));
+    const center = { x: (width - 1) / 2, y: (map.grid.length - 1) / 2 };
+    const houses = settlementHouseBlocks(map.grid, width, map.grid.length)
+      .map((block) => ({ block, door: settlementHouseFacing(block, map.grid, center).door }));
     for (const entry of doors) {
-      const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-      const facing = directions.findIndex(([dx, dy]) => map.grid[entry.y + dy]?.[entry.x + dx] === '#');
+      const house = houses.find(({ door }) => door.x === entry.x && door.y === entry.y);
+      expect(house, entry.id).toBeTruthy();
+      const facing = directions.findIndex(([dx, dy]) => house.block.cells
+        .some((cell) => cell.x === entry.x + dx && cell.y === entry.y + dy));
       expect(facing, entry.id).toBeGreaterThanOrEqual(0);
       const [dx, dy] = directions[facing];
       const before = promptAt(state(entry.x - dx, entry.y - dy, facing));
