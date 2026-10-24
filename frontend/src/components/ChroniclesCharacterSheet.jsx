@@ -40,7 +40,7 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
-import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
+import { chroniclesBagInventoryEntries, chroniclesCanSharePartyLoot } from '../chronicles/chroniclesPersonalBags.js';
 import { CHRONICLES_BACKPACK_FILTERS, chroniclesBackpackCounts, chroniclesBackpackCategory, chroniclesBackpackMoveSelection, chroniclesFilterBackpack } from '../chronicles/chroniclesBackpackFilters.js';
 import {
   CHRONICLES_SPELL_SCHOOLS,
@@ -233,7 +233,16 @@ export default function ChroniclesCharacterSheet({
   // Tactics retains its original relic-first layout and keyboard order.
   const backpackPanel = (
             <article className="chronicles-character-sheet__backpack">
-              <span>{tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}</span>
+              <span className="chronicles-character-sheet__backpack-heading">
+                {tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}
+                {!tacticsMode && chroniclesCanSharePartyLoot(state) && (
+                  <button type="button" className="chronicles-character-sheet__share-loot"
+                    title="Distribuye las existencias sin equipar entre las mochilas del grupo"
+                    onClick={() => onEquipmentAction?.({ type: 'share-party-loot' })}>
+                    Repartir botín
+                  </button>
+                )}
+              </span>
               {!tacticsMode && inventory.length > 0 && (
                 <div className="chronicles-character-sheet__backpack-tools">
                   <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
