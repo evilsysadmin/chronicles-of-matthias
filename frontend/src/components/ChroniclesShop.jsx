@@ -97,7 +97,7 @@ function ShopCompactGearPeek({ state, item }) {
                   <span key={key}
                     className={`chronicles-shop__gear-peek-delta is-${delta > 0 ? 'better' : 'worse'}`}
                     aria-label={`${label}: ${delta > 0 ? '+' : ''}${delta} respecto al equipo actual`}>
-                    {label} {delta > 0 ? '+' : ''}{delta}
+                    {key === 'armorClass' ? 'CA' : label} {delta > 0 ? '+' : ''}{delta}
                   </span>
                 )) : 'Sin cambios'}
           </span>
