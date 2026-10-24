@@ -1,10 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
-import { chroniclesMemberCanEquip } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopEquipmentComparisons } from '../chronicles/chroniclesShopComparison.js';
-import { chroniclesCompactShopComparisonGroups } from '../chronicles/chroniclesShopCompactComparison.js';
-import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import {
   chroniclesShopSellable,
@@ -18,115 +15,50 @@ import './ChroniclesShop.css';
 
 const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
 
-// Read-only merchant advice, shown at the stock item instead of the
-// purchase panel. Uses the exact existing combat-preview calculations.
-function ShopGearPeek({ state, item }) {
+// Preview-only, never mutates equipment. Each hero gets an explicit row:
+// grouped names hid differing baselines and made an improvement hard to judge.
+export function ShopCompactGearPeek({ state, item }) {
   const comparisons = chroniclesShopEquipmentComparisons(state, item);
-  const handlingNote = chroniclesShopHandlingNote(item, state?.combatRules);
   return (
-    <aside className="chronicles-shop__gear-peek"
+    <aside className="chronicles-shop__gear-peek chronicles-shop__gear-peek--compact"
       id={`chronicles-shop-peek-${item.id}`}
-      aria-label={`Quién puede equipar ${item.name} y cambio de estadísticas`}>
-      <strong className="chronicles-shop__gear-peek-title">Si lo equipas…</strong>
-      {comparisons.map((comparison) => {
-        const deltas = comparison.stats.filter((stat) => stat.delta !== 0);
-        return (
-          <div key={comparison.memberId}
-            className={`chronicles-shop__gear-peek-member${comparison.eligible ? '' : ' is-incompatible'}`}>
-            <span className="chronicles-shop__gear-peek-name">{comparison.name}</span>
-            <span className="chronicles-shop__gear-peek-values">
-              {!comparison.eligible ? (comparison.reason || 'No puede equiparlo')
-                : comparison.alreadyEquipped ? 'Ya lo lleva'
-                  : deltas.length ? deltas.map((stat) => (
+      data-chronicles-shop-party-comparison
+      aria-label={`Quién puede equipar ${item.name} y qué cambia por personaje`}>
+      <strong className="chronicles-shop__gear-peek-title">Al equiparlo · por personaje</strong>
+      {comparisons.map((hero) => (
+        <div key={hero.memberId} data-chronicles-shop-hero={hero.memberId}
+          className={`chronicles-shop__gear-peek-member${hero.eligible ? '' : ' is-incompatible'}`}>
+          <span className="chronicles-shop__gear-peek-name">
+            {hero.name}
+            <small className={`chronicles-shop__gear-peek-eligibility${hero.eligible ? ' is-eligible' : ''}`}>
+              {hero.eligible ? 'Puede equiparlo' : 'No puede equiparlo'}
+            </small>
+          </span>
+          <span className="chronicles-shop__gear-peek-values">
+            {!hero.eligible ? (hero.reason || 'No puede equiparlo')
+              : hero.alreadyEquipped ? 'Ya lo lleva'
+                : hero.stats.filter(({ delta }) => delta !== 0).length
+                  ? hero.stats.filter(({ delta }) => delta !== 0).map((stat) => (
                     <span key={stat.key}
-                      className={`chronicles-shop__gear-peek-delta is-${stat.delta > 0 ? 'better' : 'worse'}`}
-                      aria-label={`${stat.label}: ${stat.before} a ${stat.after}`}>
-                      {stat.label} {stat.delta > 0 ? '+' : ''}{stat.delta}
+                      className={`chronicles-shop__gear-peek-stat is-${stat.delta > 0 ? 'better' : 'worse'}`}
+                      aria-label={`${stat.label}: de ${stat.before} a ${stat.after}, ${stat.delta > 0 ? '+' : ''}${stat.delta}`}>
+                      {stat.key === 'armorClass' ? 'CA' : stat.label} {stat.before} → {stat.after}
+                      <b>{stat.delta > 0 ? '+' : ''}{stat.delta}</b>
                     </span>
                   )) : 'Sin cambios'}
-            </span>
-            {comparison.displacedShield && (
-              <small className="chronicles-shop__gear-peek-warning">
-                Deja el escudo: {comparison.displacedShield.name}
-              </small>
-            )}
-          </div>
-        );
-      })}
-      {handlingNote && (
-        <small className="chronicles-shop__gear-peek-note">{handlingNote}</small>
-      )}
-      {state?.combatRules === 'mm3' && (
-        item.slot === 'armor' || item.slot === 'shield'
-          || (item.slot === 'weapon' && item.twoHanded)
-      ) && (
-        <small className="chronicles-shop__gear-peek-note">
-          Armadura (CA) dificulta los impactos; en MM3 no resta daño si el golpe acierta.
-        </small>
-      )}
-      {comparisons.some((comparison) => comparison.stats.some(
-        (stat) => stat.key === 'toHit' && stat.delta < 0,
-      )) && (
-        <small className="chronicles-shop__gear-peek-note">
-          Acierto −1 es respecto a lo que lleva: puede significar perder un bono anterior, no una penalización del objeto.
-        </small>
-      )}
-      <small className="chronicles-shop__gear-peek-note">Cambios respecto al equipo actual · comprar no equipa</small>
+          </span>
+          {hero.displacedShield && (
+            <small className="chronicles-shop__gear-peek-warning">Pierde escudo: {hero.displacedShield.name}</small>
+          )}
+        </div>
+      ))}
     </aside>
   );
 }
 
-// Touch layouts have no spare height for four repetitive hero rows, lengthy
-// tooltips and the checkout. Group only identical verified stat changes;
- // all names, class restrictions and displaced shields stay readable.
-function ShopCompactGearPeek({ state, item }) {
-  const comparisons = chroniclesShopEquipmentComparisons(state, item);
-  const groups = chroniclesCompactShopComparisonGroups(comparisons);
-  const handlingNote = chroniclesShopHandlingNote(item, state?.combatRules);
-  return (
-    <aside className="chronicles-shop__gear-peek chronicles-shop__gear-peek--compact"
-      aria-label={`Cambios reales de ${item.name} para la compañía`}>
-      {groups.map((group) => (
-        <div className={`chronicles-shop__gear-peek-member${group.eligible ? '' : ' is-incompatible'}`}
-          key={group.names.join(':')}>
-          <span className="chronicles-shop__gear-peek-name">{group.names.join(', ')}</span>
-          <span className="chronicles-shop__gear-peek-values">
-            {!group.eligible ? (group.reason || 'No puede equiparlo')
-              : group.alreadyEquipped ? 'Ya lo lleva'
-                : group.changes.length ? group.changes.map(({ key, label, delta }) => (
-                  <span key={key}
-                    className={`chronicles-shop__gear-peek-delta is-${delta > 0 ? 'better' : 'worse'}`}
-                    aria-label={`${label}: ${delta > 0 ? '+' : ''}${delta} respecto al equipo actual`}>
-                    {key === 'armorClass' ? 'CA' : label} {delta > 0 ? '+' : ''}{delta}
-                  </span>
-                )) : 'Sin cambios'}
-          </span>
-          {group.displacedShieldName && (
-            <small className="chronicles-shop__gear-peek-warning">
-              Deja el escudo: {group.displacedShieldName}
-            </small>
-          )}
-        </div>
-      ))}
-      {handlingNote && <small className="chronicles-shop__gear-peek-note">{handlingNote}</small>}
-      {state?.combatRules === 'mm3' && (
-        item.slot === 'armor' || item.slot === 'shield'
-          || (item.slot === 'weapon' && item.twoHanded)
-      ) && (
-        <small className="chronicles-shop__gear-peek-note">
-          En MM3 la CA evita impactos; no reduce el daño de los golpes acertados.
-        </small>
-      )}
-      {comparisons.some(({ stats }) => stats.some(({ key, delta }) => key === 'toHit' && delta < 0)) && (
-        <small className="chronicles-shop__gear-peek-note">
-          Acierto negativo: diferencia respecto al equipo que lleva.
-        </small>
-      )}
-      <small className="chronicles-shop__gear-peek-note">
-        Respecto al equipo actual · comprar no equipa
-      </small>
-    </aside>
-  );
+// The aisle and the selected article use the same truthful per-hero data.
+function ShopGearPeek(props) {
+  return <ShopCompactGearPeek {...props} />;
 }
 
 // Potion and scroll merchants share the same exploratory UI, but a
@@ -158,11 +90,7 @@ function ShopConsumablePeek({ item }) {
   );
 }
 
-// Who in the company could actually use it: MM3 class rules, same as the sheet.
-function users(state, item) {
-  return (state.party || []).filter((member) => chroniclesMemberCanEquip(member, item));
-}
-
+// The character sheet remains the authority for class equipment restrictions.
 // Cloud image faults (offline, blocked CDN, 404) must never leave the room
 // black or broken. Only one fallback attempt, avoiding recursive error loops.
 function ShopRoomArtwork({ room }) {
@@ -294,7 +222,7 @@ function ShopItemGlyph({ item }) {
   );
 }
 
-// Who can really equip the selected object: same rules as character sheet.
+// Keep merchant eligibility aligned with the character sheet.
 export default function ChroniclesShop({ state, onAction, onClose }) {
   const [tab, setTab] = useState('buy');
   const [category, setCategory] = useState('all');
@@ -411,7 +339,6 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const visiblePreviewId = touchPeek ? selectedId : previewId;
   const previewItem = tab === 'buy'
     ? offers.find(({ item }) => item.id === visiblePreviewId)?.item : null;
-  const eligible = selectedItem && selectedItem.slot !== 'consumable' ? users(state, selectedItem) : [];
   const affordable = selected && gold >= selected.price;
   // The reducer refuses sales above its hard 9,999 gold purse cap. Explain
   // that refusal before the user clicks instead of silently doing nothing.
@@ -565,27 +492,19 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                   <h3>{selectedItem.name}</h3>
                   <div className="chronicles-shop__item-portrait"><ShopItemVisual item={selectedItem} /></div>
                   <p>{selectedItem.description}</p>
-                  {chroniclesShopHandlingNote(selectedItem, state?.combatRules) && (
-                    <small className="chronicles-shop__handling-note" data-chronicles-shop-handling>
-                      {chroniclesShopHandlingNote(selectedItem, state?.combatRules)}
-                    </small>
+                  {selectedItem.slot === 'consumable' && (
+                    <div className="chronicles-shop__eligibility">
+                      Para toda la compañía · tienes {selected.quantity}
+                    </div>
                   )}
-                  <div className="chronicles-shop__eligibility">
-                    {selectedItem.slot === 'consumable'
-                      ? 'Para toda la compañía · tienes ' + selected.quantity
-                      : eligible.length
-                        ? 'Pueden equiparlo: ' + eligible.map((member) => member.name).join(', ')
-                        : 'Nadie de la compañía puede equiparlo'}
-                  </div>
                   {tab === 'sell' && <p className="chronicles-shop__owned">Disponible en mochila: ×{selected.quantity}</p>}
                 </div>
-                {mobileView && tab === 'buy' && (
-                  <details className="chronicles-shop__mobile-preview">
-                    <summary>{selectedItem.slot === 'consumable' ? 'Ver efecto del objeto' : 'Ver cambios al equiparlo'}</summary>
+                {tab === 'buy' && (
+                  <div className="chronicles-shop__mobile-preview is-always-visible">
                     {selectedItem.slot === 'consumable'
                       ? <ShopConsumablePeek item={selectedItem} />
                       : <ShopCompactGearPeek state={state} item={selectedItem} />}
-                  </details>
+                  </div>
                 )}
                 </div>
                 <div className="chronicles-shop__checkout">
@@ -599,12 +518,13 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                     {tab === 'buy' ? (affordable ? 'Comprar' : 'Oro insuficiente')
                       : saleExceedsGoldCap ? 'Bolsa de oro llena' : 'Vender una unidad'}
                   </button>
-                  <small className="chronicles-shop__checkout-hint">
-                    {tab === 'buy' ? 'La compra va a la mochila. Equipar es una acción aparte.'
-                      : saleExceedsGoldCap
+                  {tab === 'sell' && (
+                    <small className="chronicles-shop__checkout-hint">
+                      {saleExceedsGoldCap
                         ? `Límite: 9.999 oro. Gasta al menos ${gold + selected.price - 9999} oro para vender este objeto.`
                         : 'Solo se venden objetos sin equipar.'}
-                  </small>
+                    </small>
+                  )}
                 </div>
               </>
             ) : (
