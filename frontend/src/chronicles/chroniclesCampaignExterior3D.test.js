@@ -98,6 +98,15 @@ describe('Chronicles file-authored exterior renderer', () => {
     const town = scene.getObjectByName('chronicles-campaign-town');
     const names = town.children.map(child => child.name).filter(name => name.startsWith('swordhaven-building-'));
     expect(names).toHaveLength(10);
+    // The campaign town uses the same facades as the classic square, not a
+    // static mock. Decorative masonry cannot become a new collision mask.
+    const buildingMeshes = town.children.filter(child => child.name.startsWith('swordhaven-building-'));
+    for (const building of buildingMeshes) {
+      const masonry = building.getObjectByName('swordhaven-facade-dressed-stones');
+      expect(masonry).toBeInstanceOf(THREE.InstancedMesh);
+      expect(masonry.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(masonry.count).toBeGreaterThan(30);
+    }
     const paved = scene.getObjectByName('chronicles-campaign-road');
     expect(paved).toBeInstanceOf(THREE.InstancedMesh);
     expect(paved.material.map).toBe(swordhavenSurfaceTexture('cobble'));

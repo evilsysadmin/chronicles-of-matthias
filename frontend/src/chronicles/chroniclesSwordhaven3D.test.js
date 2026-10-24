@@ -141,6 +141,43 @@ describe('Swordhaven modular real-time 3D', () => {
       .toBe(swordhavenSurfaceTexture('masonry'));
   });
 
+  it('builds a single masonry-detail batch with true portal depth and intact door aperture', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      for (const spec of SWORDHAVEN_BUILDINGS) {
+        const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+        const stones = building.getObjectByName('swordhaven-facade-dressed-stones');
+        expect(stones).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stones.count).toBeGreaterThan(30);
+        expect(stones.instanceColor).toBeTruthy();
+        expect(stones.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(stones.castShadow).toBe(!coarsePointer);
+        expect(building.getObjectByName('door-recessed-stone-jamb')).toBeFalsy();
+        expect(building.getObjectByName('door-stone-lintel')).toBeFalsy();
+        const portal = [];
+        const matrix = new THREE.Matrix4();
+        const pos = new THREE.Vector3();
+        const scale = new THREE.Vector3();
+        for (let index = 0; index < stones.count; index += 1) {
+          stones.getMatrixAt(index, matrix);
+          pos.setFromMatrixPosition(matrix);
+          scale.setFromMatrixScale(matrix);
+          // No decorative blocks in front of the door below the stone lintel.
+          if (pos.y < 0.71 && Math.abs(pos.x) < 0.78) {
+            throw new Error('Foundation dressing blocks the door');
+          }
+          expect(scale.x).toBeGreaterThan(0.12);
+          expect(scale.y).toBeGreaterThan(0.15);
+          expect(scale.z).toBeLessThanOrEqual(0.43);
+          portal.push([pos.x, pos.y]);
+        }
+        expect(portal.some(([x, y]) => x < -0.9 && y > 1 && y < 3)).toBe(true);
+        expect(portal.some(([x, y]) => x > 0.9 && y > 1 && y < 3)).toBe(true);
+      }
+    }
+  });
+
   it('adds dressed stone corners, dormers and side windows to the five houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
