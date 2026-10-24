@@ -49,9 +49,7 @@ function Fixture() {
   // Structural CSS fixture for the real first-person HUD selectors, not a
   // gameplay mock. Long authored route text reproduces the reported overlap.
   // The production objective action still opens the real Crónica.
-  if (view === 'objective-hud') {
-    const objective = 'Busca el estandarte cerca del mojón sin nombre.';
-    const route = 'DESTINO · Camino de los Estandartes · Salir al Camino de los Estandartes · por el norte';
+  if (view === 'compact-hud') {
     return (
       <div className="chronicles" data-chronicles-hud-fixture="true">
         <div className="chronicles-shell">
@@ -72,15 +70,14 @@ function Fixture() {
               <span hidden aria-hidden="true" className="chronicles-statusbar__retired-location" />
               <span hidden aria-hidden="true" className="chronicles-statusbar__retired-bearing" />
               <span>ACTIVO <b>Matthias</b></span>
-              <span>
-                <button type="button" className="chronicles-objective-trigger"
-                  data-chronicles-objective title={`Objetivo: ${objective}\n${route}\nAbrir la Crónica (J)`}>
-                  <small className="chronicles-objective-trigger__label">OBJETIVO</small>
-                  <b>{objective}</b>
-                  <small className="chronicles-route-hint">{route}</small>
-                  <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
+              <div className="chronicles-chronicle-slot">
+                <button type="button" className="chronicles-chronicle-trigger" data-chronicles-journal-trigger>
+                  📜 CRÓNICA
                 </button>
-              </span>
+                <button type="button" className="chronicles-chronicle-trigger" data-chronicles-quick-status-trigger>
+                  ⚑ GRUPO
+                </button>
+              </div>
             </div>
             <div className="chronicles-stage" aria-hidden="true" />
           </main>
