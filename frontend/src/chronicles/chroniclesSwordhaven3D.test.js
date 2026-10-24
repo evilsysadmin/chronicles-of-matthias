@@ -141,6 +141,45 @@ describe('Swordhaven modular real-time 3D', () => {
       .toBe(swordhavenSurfaceTexture('masonry'));
   });
 
+  it('builds a single masonry-detail batch with true portal depth and intact door aperture', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      for (const spec of SWORDHAVEN_BUILDINGS) {
+        const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+        const stones = building.getObjectByName('swordhaven-facade-dressed-stones');
+        expect(stones).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stones.count).toBeGreaterThan(30);
+        expect(stones.instanceColor).toBeTruthy();
+        expect(stones.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(stones.castShadow).toBe(!coarsePointer);
+        expect(building.getObjectByName('door-recessed-stone-jamb')).toBeFalsy();
+        expect(building.getObjectByName('door-stone-lintel')).toBeFalsy();
+        const portal = [];
+        const matrix = new THREE.Matrix4();
+        const pos = new THREE.Vector3();
+        const scale = new THREE.Vector3();
+        for (let index = 0; index < stones.count; index += 1) {
+          stones.getMatrixAt(index, matrix);
+          pos.setFromMatrixPosition(matrix);
+          scale.setFromMatrixScale(matrix);
+          // No decorative blocks in front of the door below the stone lintel.
+          if (pos.y < 0.71 && Math.abs(pos.x) < 0.78) {
+            throw new Error('Foundation dressing blocks the door');
+          }
+          expect(scale.x).toBeGreaterThan(0.12);
+          expect(scale.y).toBeGreaterThan(0.15);
+          // Instanced transforms round to Float32, so 0.43 can read back
+          // as 0.430000007 without any change to the authored depth.
+          expect(scale.z).toBeLessThan(0.44);
+          portal.push([pos.x, pos.y]);
+        }
+        expect(portal.some(([x, y]) => x < -0.9 && y > 1 && y < 3)).toBe(true);
+        expect(portal.some(([x, y]) => x > 0.9 && y > 1 && y < 3)).toBe(true);
+      }
+    }
+  });
+
   it('adds dressed stone corners, dormers and side windows to the five houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
@@ -149,7 +188,8 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(forge.getObjectByName('corner-dressed-stone-courses')).toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('corner-dressed-stone-courses').count).toBeGreaterThan(20);
       expect(forge.getObjectByName('side-window-amber-glass')).toBeTruthy();
-      expect(forge.getObjectByName('door-stone-lintel')).toBeTruthy();
+      expect(forge.getObjectByName('swordhaven-facade-dressed-stones'))
+        .toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
       expect(Boolean(forge.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
       const tower = scene.getObjectByName('swordhaven-building-swordhaven-temple')

@@ -274,6 +274,88 @@ function emblem(group, kind, mats) {
   }
 }
 
+// Distinct stone courses give nearby entrances real silhouette depth instead
+// of three perfectly smooth cuboids. One instanced batch per building covers
+// the recessed portal, window lintels and the exposed foundation frontage.
+// All placements are local to the same original wall and do not add colliders.
+function dressSwordhavenFacadeMasonry(root, { mats, width, depth, facadeZ, coarse }) {
+  const blocks = [];
+  const place = (x, y, z, w, h, d, tone) => {
+    blocks.push({ x, y, z, w, h, d, tone });
+  };
+  // Six stone courses per jamb. Their narrow mortar gaps are visible at eye
+  // height, and the alternating widths imply hand-dressed blocks.
+  for (const side of [-1, 1]) {
+    for (let course = 0; course < 6; course += 1) {
+      place(side * (0.985 + (course % 2) * 0.012), 0.265 + course * 0.495,
+        facadeZ + 0.28, 0.32 + (course % 3) * 0.014, 0.472, 0.35,
+        (course + (side > 0 ? 1 : 0)) % 4);
+    }
+  }
+  // Three crown stones and a restrained central keystone, beneath the sign.
+  for (const [i, x] of [-0.75, 0, 0.75].entries()) {
+    place(x, 3.215, facadeZ + 0.27, 0.73, 0.235, 0.43, (i + 1) % 4);
+  }
+  place(0, 3.395, facadeZ + 0.25, 0.30, 0.23, 0.36, 2);
+
+  // Window heads throw a short, genuine depth shadow on the leaded glass.
+  // The existing sills and timber rails are left alone.
+  for (const side of [-1, 1]) {
+    const x = side * width * 0.33;
+    place(x, 3.455, facadeZ + 0.245, 1.72, 0.18, 0.32, 1);
+    for (const dx of [-0.70, 0.70]) {
+      place(x + dx, 3.345, facadeZ + 0.225, 0.18, 0.27, 0.28, 3);
+    }
+  }
+
+  // Raised, staggered ashlar frontage over the otherwise featureless 70 cm
+  // foundation. Leave the actual door aperture clear at all elevations.
+  // Depth follows the original foundation even on the deeper tavern.
+  const face = depth / 2 + 0.354;
+  for (const side of [-1, 1]) {
+    const left = side < 0 ? -width / 2 - 0.11 : 1.23;
+    const right = side < 0 ? -1.23 : width / 2 + 0.11;
+    for (let row = 0; row < 2; row += 1) {
+      const courseHeight = 0.275;
+      const step = coarse ? 0.76 : 0.68;
+      const offset = row === 0 ? 0 : step * 0.4;
+      let cursor = left;
+      let stone = 0;
+      while (cursor < right - 0.08) {
+        const span = Math.min(step - 0.025, right - cursor - 0.02);
+        if (span > 0.12) {
+          place(cursor + span / 2 + 0.01, 0.175 + row * 0.30,
+            face, span, courseHeight, 0.11,
+            (stone + row * 2 + (side > 0 ? 1 : 0)) % 4);
+        }
+        cursor += step;
+        stone += 1;
+        if (stone === 1 && offset) cursor += offset;
+      }
+    }
+  }
+
+  const stones = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1),
+    mats.stone, blocks.length);
+  stones.name = 'swordhaven-facade-dressed-stones';
+  stones.userData.chroniclesDecorativeOnly = true;
+  stones.castShadow = !coarse;
+  stones.receiveShadow = true;
+  const dummy = new THREE.Object3D();
+  const shades = [0xf6f0e7, 0xe1d7c9, 0xfaf3e9, 0xd8cec0];
+  const color = new THREE.Color();
+  blocks.forEach(({ x, y, z, w, h, d, tone }, index) => {
+    dummy.position.set(x, y, z);
+    dummy.scale.set(w, h, d);
+    dummy.updateMatrix();
+    stones.setMatrixAt(index, dummy.matrix);
+    stones.setColorAt(index, color.setHex(shades[tone]));
+  });
+  stones.instanceMatrix.needsUpdate = true;
+  if (stones.instanceColor) stones.instanceColor.needsUpdate = true;
+  root.add(stones);
+}
+
 export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const root = new THREE.Group();
   root.name = 'swordhaven-building-' + spec.id;
@@ -388,13 +470,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   doorIronwork.instanceMatrix.needsUpdate = true;
   root.add(doorIronwork);
 
-  // A projecting stone entrance frame and arched lintel add real depth.
-  for (const side of [-1, 1]) {
-    mesh(root, new THREE.BoxGeometry(0.28, 3.27, 0.35), mats.stone,
-      'door-recessed-stone-jamb', [side * 0.98, 1.62, facadeZ + 0.28]);
-  }
-  mesh(root, new THREE.BoxGeometry(2.27, 0.21, 0.43), mats.stone,
-    'door-stone-lintel', [0, 3.21, facadeZ + 0.26]);
+  // A single batch of dressed stone replaces featureless door posts,
+  // with uneven masonry courses and projecting window heads / low plinth.
+  // Geometry stays decorative; the authored map owns all collision.
+  dressSwordhavenFacadeMasonry(root, { mats, width, depth, facadeZ, coarse });
   // Lanterns and pennants are attached to the blocking building footprint,
   // never freestanding on traversable tiles.
   for (const x of [-width * 0.41, width * 0.41]) {
