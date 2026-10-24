@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
+import { dressSwordhavenWindowBoxes } from './chroniclesSwordhavenFoliage.js';
 
 // Authored in grid coordinates: future map collision must reserve these footprints.
 export const SWORDHAVEN_BUILDINGS = Object.freeze([
@@ -529,39 +530,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   diamondLead.instanceMatrix.needsUpdate = true;
   root.add(diamondLead);
 
-  // Rounded leaves and mixed flowers replace the conspicuous low-poly
-  // icosahedrons. Per-house instancing is cheaper than the old 12 meshes.
-  const leaves = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.20, coarse ? 6 : 10, coarse ? 4 : 8), mats.leaves, 24,
-  );
-  const blossoms = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.09, coarse ? 6 : 9, coarse ? 4 : 6), mats.flowers, 24,
-  );
-  leaves.name = 'window-box-leaf-clusters';
-  blossoms.name = 'window-box-blooms';
-  const flowerTints = [0xf7e7e3, 0xda8692, 0xf0ce83, 0xf9f3da];
-  for (const [windowIndex, x] of [-width * 0.33, width * 0.33].entries()) {
-    for (let k = 0; k < 12; k += 1) {
-      const index = windowIndex * 12 + k;
-      const offsetX = ((k % 6) - 2.5) * 0.22;
-      const row = Math.floor(k / 6);
-      detail.rotation.set(0, 0, (k % 5 - 2) * 0.16);
-      detail.scale.set(0.9 + (k % 3) * 0.14, 0.65 + row * 0.14, 0.78);
-      detail.position.set(x + offsetX, 2.14 + row * 0.11, facadeZ + 0.52 + row * 0.025);
-      detail.updateMatrix();
-      leaves.setMatrixAt(index, detail.matrix);
-      detail.scale.set(1, 1, 1);
-      detail.position.set(x + offsetX + (k % 2 ? 0.045 : -0.045),
-        2.29 + (k % 3) * 0.035, facadeZ + 0.57);
-      detail.updateMatrix();
-      blossoms.setMatrixAt(index, detail.matrix);
-      blossoms.setColorAt(index, new THREE.Color(flowerTints[(k + windowIndex) % flowerTints.length]));
-    }
-  }
-  leaves.instanceMatrix.needsUpdate = true;
-  blossoms.instanceMatrix.needsUpdate = true;
-  blossoms.instanceColor.needsUpdate = true;
-  root.add(leaves, blossoms);
+  // Real shaped leaves, petals and hanging stems, four instanced draw calls
+  // per storefront. Far fewer instances on coarse/touch surfaces.
+  dressSwordhavenWindowBoxes(root, {
+    windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
+  });
   // The former blank side walls now have inset windows and deep stone sills.
   // All facade details remain within the foundation's authored footprint.
   for (const side of [-1, 1]) {
@@ -865,6 +838,12 @@ export function createSwordhavenMaterials() {
     gold: material(0xd6ae67, { metalness: 0.48 }),
     window: material(0xf8b96e, { emissive: 0x925124, emissiveIntensity: 0.45 }),
     leaves: material(0x64864c), flowers: material(0xc7756c),
+    // White bases accept per-instance foliage/petal variation without
+    // multiplying tones by an already green/red material tint.
+    planterLeaves: material(0xffffff, { side: THREE.DoubleSide, roughness: 0.96 }),
+    planterPetals: material(0xffffff, { side: THREE.DoubleSide, roughness: 0.92 }),
+    planterCenters: material(0xeab75e, { roughness: 0.88 }),
+    planterStems: material(0x426b3c, { roughness: 0.98 }),
     arcane: material(0x9576db, { emissive: 0x403b99, emissiveIntensity: 1.1 }),
     embers: material(0xffa754, { emissive: 0xeb6a20, emissiveIntensity: 1.2 }),
     steel: material(0x80909a, { metalness: 0.6, roughness: 0.32 }),

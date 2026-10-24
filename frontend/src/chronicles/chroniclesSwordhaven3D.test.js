@@ -274,13 +274,69 @@ describe('Swordhaven modular real-time 3D', () => {
         const straps = facade.getObjectByName('shop-door-iron-straps');
         expect(lead).toBeInstanceOf(THREE.InstancedMesh);
         expect(lead.count).toBe(8);
-        expect(leaves.count).toBe(24);
-        expect(flowers.count).toBe(24);
+        const centers = facade.getObjectByName('window-box-flower-centers');
+        const stems = facade.getObjectByName('window-box-trailing-stems');
+        expect(leaves).toBeInstanceOf(THREE.InstancedMesh);
+        expect(flowers).toBeInstanceOf(THREE.InstancedMesh);
+        expect(centers).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stems).toBeInstanceOf(THREE.InstancedMesh);
+        expect(leaves.count).toBe(coarsePointer ? 36 : 68);
+        expect(flowers.count).toBe(coarsePointer ? 10 : 16);
+        expect(centers.count).toBe(flowers.count);
+        expect(stems.count).toBe(coarsePointer ? 6 : 10);
+        expect(leaves.geometry).toBeInstanceOf(THREE.BufferGeometry);
+        expect(leaves.geometry).not.toBeInstanceOf(THREE.SphereGeometry);
+        expect(flowers.geometry).not.toBeInstanceOf(THREE.SphereGeometry);
+        expect(leaves.material.side).toBe(THREE.DoubleSide);
+        expect(flowers.material.side).toBe(THREE.DoubleSide);
+        expect(leaves.instanceColor).toBeTruthy();
         expect(flowers.instanceColor).toBeTruthy();
+        for (const mesh of [leaves, flowers, centers, stems]) {
+          expect(mesh.userData.chroniclesDecorativeOnly).toBe(true);
+          expect(mesh.castShadow).toBe(false);
+          expect(mesh.count).toBeLessThanOrEqual(68);
+        }
         expect(straps.count).toBe(2);
         expect(facade.getObjectByName('window-box-leaves')).toBeFalsy();
       }
       expect(built.contentProps).toHaveLength(0);
+    }
+  });
+
+  it('keeps each hanging planter above walkable ground and inside the shallow facade envelope', () => {
+    const scene = new THREE.Scene();
+    buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: false });
+    for (const spec of SWORDHAVEN_BUILDINGS) {
+      const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+      const center = building.getObjectByName('window-box-flower-centers');
+      const leaves = building.getObjectByName('window-box-leaf-clusters');
+      const stems = building.getObjectByName('window-box-trailing-stems');
+      const facadeZ = (spec.emblem === 'mug' ? 8.2 : 7.1) / 2 + 0.10;
+      const matrix = new THREE.Matrix4();
+      const at = new THREE.Vector3();
+      const colors = new Set();
+      for (let i = 0; i < leaves.count; i += 1) {
+        leaves.getMatrixAt(i, matrix);
+        at.setFromMatrixPosition(matrix);
+        expect(at.y).toBeGreaterThan(1.4);
+        expect(at.z).toBeGreaterThan(facadeZ + 0.7);
+        expect(at.z).toBeLessThan(facadeZ + 0.95);
+        const color = new THREE.Color();
+        leaves.getColorAt(i, color);
+        colors.add(color.getHexString());
+      }
+      expect(colors.size).toBeGreaterThanOrEqual(4);
+      for (const mesh of [center, stems]) {
+        for (let i = 0; i < mesh.count; i += 1) {
+          mesh.getMatrixAt(i, matrix);
+          at.setFromMatrixPosition(matrix);
+          expect(at.y).toBeGreaterThan(1.45);
+          // The tiny raised flower stamen projects ~0.014 m beyond 0.95.
+          // Allow its authored depth, still under one metre from the facade.
+          expect(at.z).toBeLessThan(facadeZ + 0.99);
+        }
+      }
+      expect(building.getObjectByName('flower-window-box')).toBeTruthy();
     }
   });
 
