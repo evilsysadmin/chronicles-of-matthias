@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesFeedbackMailbox from './ChroniclesFeedbackMailbox.jsx';
+import ChroniclesGameHelp from './ChroniclesGameHelp.jsx';
 
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
@@ -15,6 +16,9 @@ export default function ChroniclesAdventureMenu({
   const [feedbackDraft, setFeedbackDraft] = useState('');
   const [feedbackCategory, setFeedbackCategory] = useState('bug');
   const [soundOpen, setSoundOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpButtonRef = useRef(null);
+  const previousHelpOpenRef = useRef(false);
   const feedbackButtonRef = useRef(null);
   const previousFeedbackOpenRef = useRef(false);
   const cancelExitRef = useRef(null);
@@ -25,6 +29,10 @@ export default function ChroniclesAdventureMenu({
     else if (wasConfirmingExitRef.current) requestExitRef.current?.focus();
     wasConfirmingExitRef.current = confirmExitWithoutSaving;
   }, [confirmExitWithoutSaving]);
+  useEffect(() => {
+    if (previousHelpOpenRef.current && !helpOpen) helpButtonRef.current?.focus();
+    previousHelpOpenRef.current = helpOpen;
+  }, [helpOpen]);
   useEffect(() => {
     if (previousFeedbackOpenRef.current && !feedbackOpen) feedbackButtonRef.current?.focus();
     previousFeedbackOpenRef.current = feedbackOpen;
@@ -47,11 +55,14 @@ export default function ChroniclesAdventureMenu({
       {saveNotice && <small className="chronicles-game-menu__notice" role="status">{saveNotice}</small>}
       <div className="chronicles-game-menu__folio-columns"
         data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
-        data-feedback-open={feedbackOpen ? 'true' : 'false'}>
-        <section className="chronicles-game-menu__folio-section" aria-label={feedbackOpen ? 'Buzón de feedback' : 'Acciones de expedición'}>
-          <span className="chronicles-game-menu__section-kicker">{feedbackOpen ? 'MENSAJERÍA' : 'EXPEDICIÓN'}</span>
-          <div className="chronicles-game-menu__actions">
-            {!confirmExitWithoutSaving && !feedbackOpen && (
+        data-feedback-open={feedbackOpen ? 'true' : 'false'}
+        data-help-open={helpOpen ? 'true' : 'false'}>
+        <section className="chronicles-game-menu__folio-section" aria-label={helpOpen ? 'Guía del aventurero' : feedbackOpen ? 'Buzón de feedback' : 'Acciones de expedición'}>
+          <span className="chronicles-game-menu__section-kicker">{helpOpen ? 'AYUDA' : feedbackOpen ? 'MENSAJERÍA' : 'EXPEDICIÓN'}</span>
+          {helpOpen && !confirmExitWithoutSaving && !feedbackOpen
+            ? <ChroniclesGameHelp onBack={() => setHelpOpen(false)} />
+            : <div className="chronicles-game-menu__actions">
+            {!confirmExitWithoutSaving && !feedbackOpen && !helpOpen && (
               <>
                 <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
               <span aria-hidden="true">▶</span> Continuar
@@ -70,6 +81,9 @@ export default function ChroniclesAdventureMenu({
               <button type="button" aria-expanded={soundOpen}
                 aria-controls="chronicles-menu-sound"
                 onClick={() => setSoundOpen((value) => !value)}>♫ Sonido {soundOpen ? '▴' : '▾'}</button>
+              <button type="button" ref={helpButtonRef} data-chronicles-menu-help
+                aria-expanded={helpOpen} aria-controls="chronicles-game-help"
+                onClick={() => { setSoundOpen(false); setHelpOpen(true); }}>? Ayuda</button>
               <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
                 aria-label="Buzón de feedback"
                 onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
@@ -80,7 +94,7 @@ export default function ChroniclesAdventureMenu({
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
               </>
             )}
-            {!confirmExitWithoutSaving && feedbackOpen && (
+            {!confirmExitWithoutSaving && feedbackOpen && !helpOpen && (
               <ChroniclesFeedbackMailbox draft={feedbackDraft} onDraftChange={setFeedbackDraft}
                 draftCategory={feedbackCategory} onCategoryChange={setFeedbackCategory}
                 onBack={() => onFeedbackOpenChange?.(false)} />
@@ -92,13 +106,13 @@ export default function ChroniclesAdventureMenu({
                 <button type="button" ref={cancelExitRef} onClick={onCancelExit}>Cancelar</button>
               </div>
             )}
-          </div>
+          </div>}
         </section>
         <section id="chronicles-menu-sound"
           className="chronicles-game-menu__folio-section chronicles-game-menu__folio-sound" aria-label="Mezclador de sonido"
-          hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen}
-          inert={!soundOpen || confirmExitWithoutSaving || feedbackOpen ? '' : undefined}
-          aria-hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen ? 'true' : undefined}>
+          hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen || helpOpen}
+          inert={!soundOpen || confirmExitWithoutSaving || feedbackOpen || helpOpen ? '' : undefined}
+          aria-hidden={!soundOpen || confirmExitWithoutSaving || feedbackOpen || helpOpen ? 'true' : undefined}>
           <span className="chronicles-game-menu__section-kicker">AMBIENTE</span>
           <ChroniclesAudioControls id="chronicles-audio-options"
             hint="First Verse en el libro de expediciones; Second Verse durante la aventura." />
@@ -108,6 +122,7 @@ export default function ChroniclesAdventureMenu({
         {confirmExitWithoutSaving
           ? 'ESC · cancelar salida · TAB · elegir respuesta'
           : feedbackOpen ? 'ESC · volver al menú · TAB · navegar'
+          : helpOpen ? 'TAB · recorrer ayuda · Volver al menú'
           : 'S · guardar · Q · salir · TAB en la gema · cerrar · TAB en controles · navegar'}
       </small>
     </div>
