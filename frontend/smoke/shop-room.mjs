@@ -124,6 +124,24 @@ try {
           'The receipt should sit lower than Brunna’s face: ' + JSON.stringify(boxes));
       }
       const portraitPhone = width <= 900 && height > width;
+      if (portraitPhone) {
+        // Inspect computed hit boxes in Chromium: a visible 35px close icon
+        // used to be too small to tap reliably on 360–430px phones.
+        const controls = await dialog.evaluate((root) => {
+          const size = (element) => {
+            const { width: w, height: h } = element.getBoundingClientRect();
+            return { width: w, height: h };
+          };
+          return {
+            close: size(root.querySelector('.chronicles-shop__close')),
+            tabs: [...root.querySelectorAll('.chronicles-shop__tabs button')].map(size),
+          };
+        });
+        assert(controls.close.width >= 44 && controls.close.height >= 44,
+          'Portrait close control must be thumb-sized: ' + JSON.stringify(controls));
+        assert(controls.tabs.every(({ width: w, height: h }) => w >= 44 && h >= 44),
+          'Portrait buy/sell tabs must remain thumb-sized: ' + JSON.stringify(controls));
+      }
       assert(boxes.catalog.width > 240 && (portraitPhone ? boxes.detail.width === 0 : boxes.detail.width > 240),
         `Unusable shop panels at ${width}px: ${JSON.stringify(boxes)}`);
       if (portraitPhone) {
@@ -567,6 +585,11 @@ try {
           };
         });
         assert.equal(geometry.bodyScroll, 'hidden', room + ': world scroll must remain locked');
+        if (width === 390) {
+          const close = await dialog.locator('.chronicles-shop__close').boundingBox();
+          assert(close?.width >= 44 && close?.height >= 44,
+            room + ': portrait close target is too small: ' + JSON.stringify(close));
+        }
         assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
         assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
         assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
