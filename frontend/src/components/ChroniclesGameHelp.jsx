@@ -2,7 +2,7 @@
 // AGENTS.md, the active MM3 combat rules and the shop's real comparison data.
 export default function ChroniclesGameHelp({ onBack }) {
   return (
-    <div className="chronicles-game-help" data-chronicles-game-help>
+    <div id="chronicles-game-help" className="chronicles-game-help" data-chronicles-game-help>
       <div className="chronicles-game-help__head">
         <strong>Guía del aventurero</strong>
         <button type="button" onClick={onBack}>← Volver al menú</button>
