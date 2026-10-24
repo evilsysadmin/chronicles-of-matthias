@@ -515,7 +515,11 @@ try {
         assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
         assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
         assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
-        if (room === 'odo') assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
+        if (room === 'odo') {
+          assert(geometry.catalog.width > 240 && (
+            width <= 900 && height > width ? geometry.detail.width === 0 : geometry.detail.width > 240
+          ), 'Odo must keep an accessible stock-first merchant layout: ' + JSON.stringify(geometry));
+        }
         else {
           assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
           if (width <= 844) {
@@ -545,9 +549,17 @@ try {
           const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
           if (width > 900) await vest.locator('button').hover();
           else await vest.locator('button').click();
-          const note = width >= 1180 && height >= 540
-            ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
-            : vest.locator('.chronicles-shop__gear-peek');
+          if (width <= 900) {
+            const comparison = dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview');
+            await comparison.locator('summary').click();
+            assert.equal(await vest.locator('.chronicles-shop__gear-peek').count(), 0,
+              'Touching Odo merchandise must not expand the stock row');
+          }
+          const note = width <= 900
+            ? dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview .chronicles-shop__gear-peek')
+            : width >= 1180 && height >= 540
+              ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+              : vest.locator('.chronicles-shop__gear-peek');
           await note.waitFor({ state: 'visible' });
           assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
             'Every Odo armor/shield needs its actual four-hero equip comparison');
@@ -615,20 +627,27 @@ try {
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
       const peekInAisle = width >= 1180 && height >= 540;
-      const note = peekInAisle
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
-        : potion.locator('.chronicles-shop__consumable-peek');
+      if (mobile) await dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview summary').click();
+      const note = mobile
+        ? dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek')
+        : peekInAisle
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+          : potion.locator('.chronicles-shop__consumable-peek');
       await note.waitFor({ state: 'visible' });
       assert.match(await note.innerText(), /15 PV/);
       assert.match(await note.innerText(), /Toda la compañía/);
       assert.equal(await note.locator('.chronicles-shop__gear-peek-delta').count(), 0,
         'Potions do not equip and cannot invent combat-stat differences');
       const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
-      if (mobile) await scroll.locator('button').click();
-      else await scroll.locator('button').hover();
-      const scrollNote = peekInAisle
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
-        : scroll.locator('.chronicles-shop__consumable-peek');
+      if (mobile) {
+        await dialog.getByRole('button', { name: '← Volver a mercancías' }).click();
+        await scroll.locator('button').click();
+      } else await scroll.locator('button').hover();
+      const scrollNote = mobile
+        ? dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek')
+        : peekInAisle
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+          : scroll.locator('.chronicles-shop__consumable-peek');
       await scrollNote.waitFor({ state: 'visible' });
       assert.match(await scrollNote.innerText(),
         /14 de daño · alcance 3/);
