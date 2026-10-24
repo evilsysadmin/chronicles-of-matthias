@@ -314,7 +314,7 @@ export default function ChroniclesCharacterSheet({
                     ? `Seleccionado: ${transferableItem.name}. Pulsa 1–4 o toca el compañero de destino para entregar 1 unidad.`
                     : 'Elige un objeto y pulsa 1–4 (o toca un compañero) para entregar 1 unidad.'}
                 </small>
-              )>
+              )}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <strong>{selectedInventoryItem.name}</strong>
