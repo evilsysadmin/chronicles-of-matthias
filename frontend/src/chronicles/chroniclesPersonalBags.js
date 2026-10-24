@@ -1,6 +1,7 @@
-// Personal MM3 backpacks are allocations of the authoritative party inventory,
-// NOT extra copies of items. Gold remains a shared party currency. Any stock
-// from pre-backpack saves or new loot is assigned to the first party member.
+// Personal MM3 backpacks allocate the authoritative party inventory; no
+// objects are copied and gold remains a shared currency. Explicit ownership
+// from saves or player transfers wins. Ownerless loot is spread across the
+// party instead of being silently dumped into the first hero's backpack.
 const GOLD = 'crown-gold';
 
 function count(value) {
@@ -21,11 +22,56 @@ export function chroniclesBagOwnership(state) {
       if (allocated) bags[id][itemId] = allocated;
       remaining -= allocated;
     }
-    // Older saves and newly awarded loot have no ownership entry. Keep every
-    // copy rather than making it vanish or duplicating it for each hero.
-    if (remaining) bags[members[0]][itemId] = (bags[members[0]][itemId] || 0) + remaining;
+    // A legacy/loot stack has no owner yet: put the entire stack in the
+    // least-populated personal bag. Prefer the party order when tied. Existing
+    // allocations above are never moved (especially saved player transfers).
+    if (remaining) {
+      let recipient = members[0];
+      for (const id of members.slice(1)) {
+        if (Object.keys(bags[id]).length < Object.keys(bags[recipient]).length) recipient = id;
+      }
+      bags[recipient][itemId] = (bags[recipient][itemId] || 0) + remaining;
+    }
   }
   return bags;
+}
+
+// A previously saved company may have explicitly persisted every single
+// loose item against its first hero. Never silently reinterpret that save:
+// offer a user-triggered, atomic redistribution instead.
+export function chroniclesCanSharePartyLoot(state) {
+  if (state?.combatRules !== 'mm3' || state.phase !== 'explore' || state.initiative
+    || (state.party || []).length < 2) return false;
+  const bags = chroniclesBagOwnership(state);
+  const memberIds = state.party.map(({ id }) => id);
+  const stock = Object.values(state.inventory || {})
+    .filter((item) => item?.id !== GOLD)
+    .reduce((sum, item) => sum + count(item?.quantity), 0);
+  if (stock < 2) return false;
+  const supplied = memberIds.filter((id) => Object.keys(bags[id] || {}).length > 0).length;
+  return supplied < Math.min(memberIds.length, stock);
+}
+
+export function chroniclesSharePartyLoot(state) {
+  if (!chroniclesCanSharePartyLoot(state)) return state;
+  const ids = state.party.map(({ id }) => id);
+  const bagOwners = Object.fromEntries(ids.map((id) => [id, {}]));
+  let next = 0;
+  // Round-robin individual copies so stacks of potions also circulate.
+  // No global inventory, equipment, gold or save data is mutated in place.
+  for (const [itemId, item] of Object.entries(state.inventory || {})) {
+    if (itemId === GOLD) continue;
+    const quantity = count(item?.quantity);
+    if (!quantity) continue;
+    const each = Math.floor(quantity / ids.length);
+    const extra = quantity % ids.length;
+    for (let i = 0; i < ids.length; i += 1) {
+      const added = each + (((i - next + ids.length) % ids.length) < extra ? 1 : 0);
+      if (added) bagOwners[ids[i]][itemId] = added;
+    }
+    next = (next + quantity) % ids.length;
+  }
+  return { ...state, bagOwners, message: 'La compañía reparte el botín entre sus mochilas.' };
 }
 
 export function chroniclesBagQuantity(state, memberId, itemId) {
