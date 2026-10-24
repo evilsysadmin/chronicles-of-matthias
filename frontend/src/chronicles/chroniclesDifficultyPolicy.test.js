@@ -105,6 +105,32 @@ describe('Chronicles difficulty/progression policy', () => {
     )).toEqual(chroniclesDifficultyBand(fallback));
   });
 
+  it.each([
+    ['array', []],
+    ['partial object', { targetLevel: 5 }],
+    ['non-finite level', {
+      partyLevel: 4, depth: 2, targetLevel: Infinity, minLevel: 4,
+      maxLevel: 5, depthPressure: 1, progressionPressure: 1,
+    }],
+    ['non-integer depth', {
+      partyLevel: 4, depth: 2.5, targetLevel: 5, minLevel: 4,
+      maxLevel: 5, depthPressure: 1, progressionPressure: 1,
+    }],
+    ['inverted level range', {
+      partyLevel: 4, depth: 2, targetLevel: 5, minLevel: 6,
+      maxLevel: 5, depthPressure: 1, progressionPressure: 1,
+    }],
+    ['oversized target', {
+      partyLevel: 4, depth: 2, targetLevel: 999, minLevel: 4,
+      maxLevel: 999, depthPressure: 1, progressionPressure: 1,
+    }],
+  ])('recomputes difficulty when the saved snapshot is a %s', (_label, difficulty) => {
+    const fallback = { progression: leveledParty(3), depth: 4 };
+    const run = { areas: [{ mapId: 'crypt', difficulty }] };
+    expect(chroniclesResolvedDifficultyBand(run, 'crypt', fallback))
+      .toEqual(chroniclesDifficultyBand(fallback));
+  });
+
   it('does not count settlement and wilderness stops as dungeon levels', () => {
     const run = {
       currentMapId: 'crypt',
