@@ -42,7 +42,7 @@ export function ShopCompactGearPeek({ state, item, id }) {
                     <span key={stat.key}
                       className={`chronicles-shop__gear-peek-stat is-${stat.delta > 0 ? 'better' : 'worse'}`}
                       aria-label={`${stat.label}: de ${stat.before} a ${stat.after}, ${stat.delta > 0 ? '+' : ''}${stat.delta}`}>
-                      {stat.key === 'armorClass' ? 'CA' : stat.label} {stat.before} → {stat.after}
+                      {stat.key === 'armorClass' ? 'CA' : stat.key === 'toHit' ? 'Acierto' : stat.key === 'damage' ? 'Daño' : stat.key === 'reach' ? 'Alcance' : stat.label} {stat.before} → {stat.after}
                       <b>{stat.delta > 0 ? '+' : ''}{stat.delta}</b>
                     </span>
                   )) : 'Sin cambios'}
