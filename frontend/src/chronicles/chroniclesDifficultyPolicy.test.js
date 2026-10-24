@@ -223,6 +223,26 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(chroniclesRunDepth(run, 'entry')).toBe(0);
   });
 
+  it('does not turn whitespace-only legacy map ids into extra dungeon floors', () => {
+    const legacy = {
+      currentMapId: 'crypt',
+      areas: [{ mapId: 'entry' }, { mapId: ' \t ' }, { mapId: 'crypt' }],
+    };
+    expect(chroniclesRunDepth(legacy)).toBe(1);
+
+    const typed = {
+      currentMapId: 'crypt',
+      areas: [
+        { mapId: 'entry', regionKind: 'dungeon' },
+        { mapId: ' \t ', regionKind: 'dungeon' },
+        { mapId: 'crypt', regionKind: 'dungeon' },
+      ],
+    };
+    expect(chroniclesRunDepth(typed)).toBe(1);
+    expect(chroniclesRunDepth(typed, ' \t ')).toBe(0);
+    expect(chroniclesRunDepth({ ...typed, currentMapId: '  ' })).toBe(0);
+  });
+
   it('derives run depth from the authoritative route order', () => {
     const run = {
       currentMapId: 'archive',
