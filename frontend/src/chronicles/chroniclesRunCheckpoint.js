@@ -1,5 +1,6 @@
 import { CHRONICLES_EQUIPMENT_SLOTS, chroniclesEquippedItem, chroniclesNormalizeMemberEquipment } from './chroniclesEquipment.js';
 import { chroniclesApplyStartingKit } from './chroniclesStartingKit.js';
+import { chroniclesBagOwnership } from './chroniclesPersonalBags.js';
 import { chroniclesSpellAvailableTo } from './chroniclesMagic.js';
 import {
   chroniclesMapById,
@@ -172,6 +173,22 @@ function runtimeCheckpointFlags(state) {
     }
   });
 
+  // Personal backpacks are allocations of the shared, authoritative
+  // inventory. Each bounded numeric flag survives existing Go/Mongo saves
+  // without introducing a second, duplicative inventory document.
+  if (source.combatRules === 'mm3') {
+    const bags = chroniclesBagOwnership(source);
+    for (const [memberId, bag] of Object.entries(bags)) {
+      const safeMemberId = shortStringOrNull(memberId, 40);
+      if (!safeMemberId) continue;
+      for (const [itemId, quantity] of Object.entries(bag)) {
+        const safeItemId = shortStringOrNull(itemId, 80);
+        const amount = integerOrNull(quantity, 1, 9999);
+        if (safeItemId && amount !== null) flags[runtimeKey('bag', safeMemberId, safeItemId)] = amount;
+      }
+    }
+  }
+
   // MM3 magic: spent spell points, each caster's spellbook, guild memberships.
   (source.party || []).forEach((member) => {
     const sp = integerOrNull(source.spellPoints?.[member.id], 0, 999);
@@ -330,6 +347,22 @@ function applyRuntimeCheckpoint(state, flags) {
     }
   });
   next.equipment = equipment;
+
+  // Invalid/obsolete bag flag entries never create objects: only surviving
+  // item counts in the validated aggregate inventory may be assigned.
+  if (next.combatRules === 'mm3') {
+    const bagOwners = {};
+    for (const member of next.party || []) {
+      const bag = {};
+      for (const itemId of Object.keys(next.inventory || {})) {
+        if (itemId === 'crown-gold' || itemId.length > 80) continue;
+        const quantity = integerOrNull(flags[runtimeKey('bag', member.id, itemId)], 1, 9999);
+        if (quantity !== null) bag[itemId] = quantity;
+      }
+      if (Object.keys(bag).length) bagOwners[member.id] = bag;
+    }
+    next.bagOwners = chroniclesBagOwnership({ ...next, bagOwners });
+  }
 
   const spellPoints = {};
   const spellbook = {};

@@ -7,6 +7,7 @@ import {
 } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesEquipItem } from '../chronicles/chroniclesEquipment.js';
+import { chroniclesTransferBagItem } from '../chronicles/chroniclesPersonalBags.js';
 import ChroniclesFirstThreatCue, {
   chroniclesFirstThreatDetails, chroniclesFirstThreatDismissed,
 } from './ChroniclesFirstThreatCue.jsx';
@@ -20,7 +21,8 @@ function armedRoad() {
     { type: 'grant-item', itemId: 'wooden-sling', name: 'Honda de madera' },
   ]);
   const bow = chroniclesEquipItem(stocked, 'matthias', 'wooden-bow');
-  return chroniclesEquipItem(bow, 'rook', 'wooden-sling');
+  const handed = chroniclesTransferBagItem(bow, 'matthias', 'rook', 'wooden-sling');
+  return chroniclesEquipItem(handed, 'rook', 'wooden-sling');
 }
 
 function render(state = road, target = actualSighting, props = {}) {

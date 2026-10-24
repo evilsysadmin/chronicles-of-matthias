@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesPartyAttackStats, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesEquipItem, chroniclesEquippedItem, chroniclesUnequipItem } from './chroniclesEquipment.js';
+import { chroniclesTransferBagItem } from './chroniclesPersonalBags.js';
 import { chroniclesTargetReachLabel } from '../components/ChroniclesTacticalMargin.jsx';
 import { chroniclesTacticalAttackReach } from './chroniclesTacticalAttackReach.js';
 
@@ -11,6 +12,7 @@ function partyWithOnlyRookSling() {
   state = chroniclesApplyContentEffects(state, [{
     type: 'grant-item', itemId: 'brass-sling', name: 'Honda de latón',
   }]);
+  state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'brass-sling');
   state = chroniclesEquipItem(state, 'rook', 'brass-sling');
   expect(chroniclesEquippedItem(state, 'rook', 'missile')?.id).toBe('brass-sling');
   expect(chroniclesEquippedItem(state, 'matthias', 'missile')).toBeNull();

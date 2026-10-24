@@ -10,6 +10,7 @@ import {
   chroniclesEquippedItem,
 } from './chroniclesEquipment.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
+import { chroniclesTransferBagItem } from './chroniclesPersonalBags.js';
 import { CHRONICLES_MM3_CLASS_IDS } from './chroniclesMM3Rules.js';
 import { chroniclesMemberCanEquip } from './chroniclesEquipment.js';
 
@@ -361,6 +362,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
 
   it('turns material into real to-hit and damage, and survives a checkpoint with class rules', () => {
     let state = mm3Company('steel-sword', 'bronze-shield');
+    // Explicit hand-off is required before Hildegard may wear Matthias's loot.
+    state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'steel-sword');
+    state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'bronze-shield');
     const before = chroniclesPartyAttackStats(state, 'rook');
     state = chroniclesEquipItem(state, 'rook', 'steel-sword');
     state = chroniclesEquipItem(state, 'rook', 'bronze-shield');

@@ -190,7 +190,13 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(cleric.equipment).toBe(stocked.equipment);
     expect(cleric.message).toMatch(/Clérigo/);
     // Faust is an Arquero: swords allowed.
-    const archer = chroniclesEquipItem(stocked, 'knight', 'roadwatch-sabre');
+    // First Book MM3 uses personal packs: Faust must receive the sword
+    // before it can be worn. A sword in Matthias's bag is not his.
+    expect(chroniclesEquipItem(stocked, 'knight', 'roadwatch-sabre')).toBe(stocked);
+    const handed = chroniclesReduce(stocked, {
+      type: 'transfer-item', memberId: 'matthias', toMemberId: 'knight', itemId: 'roadwatch-sabre',
+    });
+    const archer = chroniclesEquipItem(handed, 'knight', 'roadwatch-sabre');
     expect(chroniclesEquippedItem(archer, 'knight', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(archer, 'knight').toHit)
       .toBe(chroniclesPartyAttackStats(stocked, 'knight').toHit + CHRONICLES_EQUIPMENT['roadwatch-sabre'].toHitBonus);

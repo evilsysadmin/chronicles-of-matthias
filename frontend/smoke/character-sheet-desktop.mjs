@@ -151,7 +151,8 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
-      assert.equal(await sheet.getByText('Mochila de expedición').count(), 1);
+      assert.equal(await sheet.getByText('Mochila de Matthias').count(), 1,
+        'Each MM3 equipment dossier must identify the selected hero own backpack');
       const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
       await assertParchmentSurface(meleeCard, 'Equipment weapon card');
