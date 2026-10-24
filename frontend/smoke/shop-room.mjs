@@ -150,6 +150,23 @@ try {
             `Landscape inventory must be wider than checkout: ${JSON.stringify(boxes)}`);
           assert(boxes.list.height > 115,
             `Landscape stock cannot scroll enough offers: ${JSON.stringify(boxes)}`);
+          const ledger = await dialog.locator('.chronicles-shop__list').evaluate((list) => {
+            const bounds = list.getBoundingClientRect();
+            const items = [...list.querySelectorAll('[data-chronicles-shop-item]')];
+            return {
+              columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+              visible: items.filter((item) => {
+                const r = item.getBoundingClientRect();
+                return r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+              }).length,
+              total: items.length,
+              firstHeight: items[0]?.getBoundingClientRect().height,
+            };
+          });
+          assert.equal(ledger.columns, 2,
+            'Landscape stock must use two actual grid columns: ' + JSON.stringify(ledger));
+          assert(ledger.visible >= 7 && ledger.firstHeight >= 44,
+            'Landscape should expose at least seven touch-size merchandise rows at once: ' + JSON.stringify(ledger));
           const filterTops = await catalogFilterTops(dialog);
           assert(filterTops.every((top) => Math.abs(top - filterTops[0]) < 2),
             `Landscape filters must fit a single row: ${filterTops}`);
@@ -548,6 +565,26 @@ try {
           assert(geometry.catalog.width > 240 && (
             width <= 900 && height > width ? geometry.detail.width === 0 : geometry.detail.width > 240
           ), 'Odo must keep an accessible stock-first merchant layout: ' + JSON.stringify(geometry));
+          if (width === 844) {
+            const stock = await dialog.locator('.chronicles-shop__list').evaluate((list) => {
+              const bounds = list.getBoundingClientRect();
+              const rows = [...list.querySelectorAll('[data-chronicles-shop-item]')];
+              return {
+                total: rows.length,
+                columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+                client: list.clientHeight, scroll: list.scrollHeight,
+                visible: rows.filter((row) => {
+                  const r = row.getBoundingClientRect();
+                  return r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+                }).length,
+              };
+            });
+            assert.equal(stock.total, 7, 'Odo must keep all seven real items');
+            assert.equal(stock.columns, 2, 'Odo merchandise must span two columns in landscape');
+            assert.equal(stock.visible, 7, 'All seven Odo items must be visible without scrolling: ' + JSON.stringify(stock));
+            assert(stock.scroll <= stock.client + 2,
+              'Odo must not need catalogue scrolling at 844×390: ' + JSON.stringify(stock));
+          }
         }
         else {
           assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
