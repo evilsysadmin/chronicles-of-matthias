@@ -41,7 +41,78 @@ try {
   await page.getByRole('button', { name: /Nueva expedición/ }).click();
   await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
-  await page.waitForTimeout(2000);
+  // The real authenticated first-person HUD, not a duplicated CSS fixture.
+  // Stress the existing rendered objective with long authored-style text only;
+  // do not mutate React state, combat, saves, quests or server records.
+  const hudOriginal = await page.evaluate(() => {
+    const root = document.querySelector('[data-chronicles="true"]');
+    const button = root?.querySelector('[data-chronicles-objective]');
+    const label = button?.querySelector('b');
+    const route = button?.querySelector('.chronicles-route-hint');
+    const portraits = root?.querySelectorAll('.chronicles-party-member');
+    if (!root || !button || !label || portraits?.length !== 4
+      || root.hasAttribute('data-chronicles-hud-fixture')) return null;
+    return { objective: label.textContent, route: route?.textContent || null, title: button.title };
+  });
+  expect(Boolean(hudOriginal), 'actual MM3 objective and four real portraits must mount');
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
+    await page.setViewportSize({ width, height });
+    const layout = await page.evaluate(() => {
+      const button = document.querySelector('[data-chronicles="true"] [data-chronicles-objective]');
+      const label = button.querySelector('b');
+      const route = button.querySelector('.chronicles-route-hint');
+      const objective = 'Busca el estandarte cerca del mojón sin nombre, antes de cruzar el desfiladero de las ruinas antiguas.';
+      const destination = 'DESTINO · Camino de los Estandartes · Salir al Camino de los Estandartes · por el norte, después por la bifurcación oeste';
+      label.textContent = objective;
+      if (route) route.textContent = destination;
+      button.title = `Objetivo: ${objective}\\n${destination}\\nAbrir la Crónica (J)`;
+      const rect = (node) => {
+        const { left, right, top, bottom } = node.getBoundingClientRect();
+        return { left, right, top, bottom };
+      };
+      const faces = [...document.querySelectorAll('[data-chronicles="true"] .chronicles-party-member')];
+      const partyRects = faces.map(rect);
+      const objectiveRect = rect(button.closest('.chronicles-statusbar > span'));
+      return {
+        objectiveRect,
+        partyTop: Math.min(...partyRects.map(({ top }) => top)),
+        partyLeft: Math.min(...partyRects.map(({ left }) => left)),
+        partyRight: Math.max(...partyRects.map(({ right }) => right)),
+        faces: partyRects.length,
+        labelOverflow: getComputedStyle(label).textOverflow,
+        labelWrap: getComputedStyle(label).whiteSpace,
+        routeOverflow: route ? getComputedStyle(route).textOverflow : null,
+        routeWrap: route ? getComputedStyle(route).whiteSpace : null,
+        title: button.title,
+        objective, destination,
+        documentWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(layout.faces === 4 && layout.partyTop >= layout.objectiveRect.bottom + 4,
+      `real HUD objective overlaps portraits at ${width}x${height}: ${JSON.stringify(layout)}`);
+    expect(layout.partyLeft >= -1 && layout.partyRight <= width + 1,
+      `real HUD portraits leave viewport at ${width}x${height}: ${JSON.stringify(layout)}`);
+    expect(layout.labelOverflow === 'ellipsis' && layout.labelWrap === 'nowrap',
+      `real HUD long objective does not truncate at ${width}x${height}`);
+    if (layout.routeOverflow !== null) {
+      expect(layout.routeOverflow === 'ellipsis' && layout.routeWrap === 'nowrap',
+        `real HUD long destination does not truncate at ${width}x${height}`);
+    }
+    expect(layout.title.includes(layout.objective) && layout.title.includes(layout.destination),
+      'full objective and destination must remain available via the real button tooltip');
+    expect(layout.documentWidth <= width + 1,
+      `real HUD creates horizontal scroll at ${width}x${height}`);
+    await page.screenshot({ path: `api-e2e-objective-hud-${width}.png` });
+    console.log(`REAL_OBJECTIVE_HUD_OK ${width}x${height}`);
+  }
+  await page.evaluate(({ objective, route, title }) => {
+    const button = document.querySelector('[data-chronicles="true"] [data-chronicles-objective]');
+    button.querySelector('b').textContent = objective;
+    const routeNode = button.querySelector('.chronicles-route-hint');
+    if (routeNode && route !== null) routeNode.textContent = route;
+    button.title = title;
+  }, hudOriginal);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.getByLabel('Abrir menú de Chronicles').click();
   const adventure = page.locator('[data-chronicles-adventure-menu]');
   await adventure.waitFor({ state: 'visible' });
