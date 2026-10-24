@@ -55,6 +55,13 @@ try {
     return { objective: label.textContent, route: route?.textContent || null, title: button.title };
   });
   expect(Boolean(hudOriginal), 'actual MM3 objective and four real portraits must mount');
+  // The first-run guide can cover the top of the scene. Close it before
+  // collecting visual evidence; it is not part of the objective HUD.
+  const firstSteps = page.locator('[data-chronicles-first-steps]');
+  if (await firstSteps.isVisible().catch(() => false)) {
+    await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+    await firstSteps.waitFor({ state: 'hidden' });
+  }
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => {
@@ -65,7 +72,7 @@ try {
       const destination = 'DESTINO · Camino de los Estandartes · Salir al Camino de los Estandartes · por el norte, después por la bifurcación oeste';
       label.textContent = objective;
       if (route) route.textContent = destination;
-      button.title = `Objetivo: ${objective}\\n${destination}\\nAbrir la Crónica (J)`;
+      button.title = `Objetivo: ${objective}\n${destination}\nAbrir la Crónica (J)`;
       const rect = (node) => {
         const { left, right, top, bottom } = node.getBoundingClientRect();
         return { left, right, top, bottom };
