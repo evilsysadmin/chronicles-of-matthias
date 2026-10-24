@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createChroniclesState } from '../src/chroniclesOfMatthias.js';
 import { chroniclesMemberSpells } from '../src/chronicles/chroniclesMagic.js';
+import { chroniclesPartyPortraitUrl } from '../src/chronicles/chroniclesPartyPortraitAssets.js';
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -44,6 +45,49 @@ function Fixture() {
   const [dismissed, setDismissed] = useState(false);
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lastAction, setLastAction] = useState('');
+
+  // Structural CSS fixture for the real first-person HUD selectors, not a
+  // gameplay mock. Long authored route text reproduces the reported overlap.
+  // The production objective action still opens the real Crónica.
+  if (view === 'objective-hud') {
+    const objective = 'Busca el estandarte cerca del mojón sin nombre.';
+    const route = 'DESTINO · Camino de los Estandartes · Salir al Camino de los Estandartes · por el norte';
+    return (
+      <div className="chronicles" data-chronicles-hud-fixture="true">
+        <div className="chronicles-shell">
+          <aside className="chronicles-party" aria-label="Grupo de Matthias">
+            {state.party.map((member) => (
+              <button key={member.id} type="button" className="chronicles-party-member"
+                aria-label={`Seleccionar ${member.name}`}>
+                <span className="chronicles-party-glyph has-authored-portrait">
+                  <img className="chronicles-party-thumbnail" src={chroniclesPartyPortraitUrl(member)} alt="" />
+                </span>
+                <span><strong>{member.name}</strong></span>
+                <b>{member.hp}/{member.maxHp}</b>
+              </button>
+            ))}
+          </aside>
+          <main className="chronicles-stage-wrap">
+            <div className="chronicles-statusbar">
+              <span hidden aria-hidden="true" className="chronicles-statusbar__retired-location" />
+              <span hidden aria-hidden="true" className="chronicles-statusbar__retired-bearing" />
+              <span>ACTIVO <b>Matthias</b></span>
+              <span>
+                <button type="button" className="chronicles-objective-trigger"
+                  data-chronicles-objective title={`Objetivo: ${objective}\n${route}\nAbrir la Crónica (J)`}>
+                  <small className="chronicles-objective-trigger__label">OBJETIVO</small>
+                  <b>{objective}</b>
+                  <small className="chronicles-route-hint">{route}</small>
+                  <i className="chronicles-objective-trigger__more" aria-hidden="true">Crónica ⌄</i>
+                </button>
+              </span>
+            </div>
+            <div className="chronicles-stage" aria-hidden="true" />
+          </main>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="chronicles" style={{ background: '#10151d' }}>
       <div data-test-result role="status" style={{ position:'fixed',top:0,left:0,zIndex:1 }}>

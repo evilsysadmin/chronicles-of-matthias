@@ -165,6 +165,57 @@ try {
       }
     }
   }
+
+  // This is a layout-only replica using the production HUD selectors and CSS.
+  // The authenticated stage remains covered separately by mount/public smokes.
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: true, hasTouch: true,
+      deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=objective-hud', { waitUntil: 'load' });
+      await page.locator('[data-chronicles-objective]').waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const geometry = await page.evaluate(() => {
+        const objective = document.querySelector('[data-chronicles-objective]');
+        const route = objective?.querySelector('.chronicles-route-hint');
+        const faces = [...document.querySelectorAll('.chronicles-party-member')];
+        if (!objective || !route || faces.length !== 4) return null;
+        const objectiveRect = objective.closest('.chronicles-statusbar > span').getBoundingClientRect();
+        const faceRects = faces.map((face) => face.getBoundingClientRect());
+        return {
+          objectiveBottom: objectiveRect.bottom,
+          partyTop: Math.min(...faceRects.map((rect) => rect.top)),
+          partyLeft: Math.min(...faceRects.map((rect) => rect.left)),
+          partyRight: Math.max(...faceRects.map((rect) => rect.right)),
+          routeWrap: getComputedStyle(route).whiteSpace,
+          routeOverflow: getComputedStyle(route).textOverflow,
+          fullRoute: route.textContent.trim(),
+          accessibleTitle: objective.title,
+          overflowing: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      assert.ok(geometry, 'Expected the objective and four actual party portraits');
+      assert.ok(geometry.partyTop >= geometry.objectiveBottom + 4,
+        `Objective must not cover the portraits at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1,
+        `Portrait strip fits the viewport at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.equal(geometry.routeWrap, 'nowrap', 'Long route hint must remain on one line');
+      assert.equal(geometry.routeOverflow, 'ellipsis', 'Long route hint should visually truncate');
+      assert.ok(geometry.accessibleTitle.includes(geometry.fullRoute),
+        'The complete authored route stays available in the objective tooltip');
+      assert.equal(geometry.overflowing, false, 'Objective HUD must not scroll sideways');
+      await page.screenshot({ path: `smoke-objective-hud-${width}.png` });
+      console.log(`OBJECTIVE_PARTY_HUD_OK ${width}x${height}`);
+    } catch (error) {
+      failures++;
+      console.error(`OBJECTIVE_PARTY_HUD_FAIL ${width}x${height}: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
 } finally {
   await browser.close();
 }
