@@ -63,7 +63,7 @@ function Marker({ marker }) {
       aria-label={marker.label}
       pointerEvents="none">
       <title>{marker.label}</title>
-      <rect x={x + .08} y={y + .08} width=".84" height=".84" rx=".12" />
+      <rect x={x + .05} y={y + .05} width=".90" height=".90" rx=".12" />
       <text x={x + .5} y={y + .54} textAnchor="middle" dominantBaseline="middle">{marker.glyph}</text>
     </g>
   );
