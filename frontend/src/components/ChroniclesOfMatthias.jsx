@@ -1908,7 +1908,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || state.shop || state.guild || state.inn || expeditionOver)}
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
-              meleeReach={meleeReach} missileReach={missileReach} />
+              meleeReach={meleeReach} missileReach={missileReach}
+              canProvoke={!state.initiative && touchVolley.available && tacticalTarget?.distance > missileReach} />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}

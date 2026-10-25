@@ -32,6 +32,14 @@ describe('Tactical margin uses real MM3 attack range', () => {
       .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
   });
 
+  it('does not invent range-four hits, but explains that S can provoke combat', () => {
+    const target = { distance: 4 };
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 3, canProvoke: true }))
+      .toBe('FUERA DE ALCANCE · S: ALERTAR Y COMBATIR');
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 0, canProvoke: false }))
+      .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
+  });
+
   it('shows no S reach when all four heroes lack a usable projectile weapon', () => {
     let state = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
     for (const member of state.party) state = chroniclesUnequipItem(state, member.id, 'missile');

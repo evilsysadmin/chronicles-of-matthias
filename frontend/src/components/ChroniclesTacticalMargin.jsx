@@ -20,16 +20,17 @@ export function chroniclesRetaliationLabel(target, { combat = false } = {}) {
 // Explain why A seems inert when a sprite fills the corridor but the hero
 // still stands two or three grid cells away. Never claim missile reach when
 // the hero is carrying no ranged weapon.
-export function chroniclesTargetReachLabel(target, { meleeReach = 1, missileReach = 0 } = {}) {
+export function chroniclesTargetReachLabel(target, { meleeReach = 1, missileReach = 0, canProvoke = false } = {}) {
   if (!target || target.distance <= meleeReach) return null;
   if (missileReach >= target.distance) return 'A: FUERA DE ALCANCE · S: A TIRO';
+  if (canProvoke && missileReach > 0) return 'FUERA DE ALCANCE · S: ALERTAR Y COMBATIR';
   return 'FUERA DE ALCANCE · ACÉRCATE PARA ATACAR';
 }
 
-export default function ChroniclesTacticalMargin({ target, combat = false, meleeReach = 1, missileReach = 0 }) {
+export default function ChroniclesTacticalMargin({ target, combat = false, meleeReach = 1, missileReach = 0, canProvoke = false }) {
   if (!target) return null;
   const distanceLabel = target.distance === 1 ? '1 casilla' : `${target.distance} casillas`;
-  const rangeHint = chroniclesTargetReachLabel(target, { meleeReach, missileReach });
+  const rangeHint = chroniclesTargetReachLabel(target, { meleeReach, missileReach, canProvoke });
 
   return (
     <div className="chronicles-target-margin" aria-live="polite" data-chronicles-target={target.id}>
