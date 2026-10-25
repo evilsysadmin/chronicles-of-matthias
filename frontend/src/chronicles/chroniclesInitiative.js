@@ -169,6 +169,9 @@ function actorIsAlive(state, enemyById, actor) {
 
 export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (!state || state.initiative) return state;
+  // A wiped company cannot take a turn: never create an enemy-only combat.
+  // Defeat resolution belongs to the reducer, not to this engagement helper.
+  if (!Array.isArray(state.party) || !state.party.some((member) => Number(member?.hp || 0) > 0)) return state;
   const forceEnemyIds = new Set(Array.isArray(options.forceEnemyIds) ? options.forceEnemyIds : []);
   const candidates = Array.isArray(enemies) ? enemies : [];
   const engagedById = new Map(
