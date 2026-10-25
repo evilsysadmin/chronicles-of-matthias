@@ -81,6 +81,16 @@ func lookup(d bson.D, key string) (any, bool) {
 	return nil, false
 }
 
+// saturatingStatDelta preserves large legacy stats when difficulty adds a
+// positive adjustment. Callers normalize the base stat to >= 0 first.
+func saturatingStatDelta(value, delta int64) int64 {
+	const maxInt64 = int64(1<<63 - 1)
+	if delta > 0 && value > maxInt64-delta {
+		return maxInt64
+	}
+	return value + delta
+}
+
 func damageDelta(applied int64) int64 {
 	if applied < 0 {
 		abs := -applied
@@ -136,8 +146,8 @@ func applyDifficulty(manifest bson.D, partyLevel, depth int64) (bson.D, bson.D, 
 			}
 		}
 		hp, retaliation = max(1, hp), max(0, retaliation)
-		enemy = setKey(enemy, "maxHp", max(1, hp+applied))
-		enemy = setKey(enemy, "retaliation", max(0, retaliation+dmg))
+		enemy = setKey(enemy, "maxHp", max(1, saturatingStatDelta(hp, applied)))
+		enemy = setKey(enemy, "retaliation", max(0, saturatingStatDelta(retaliation, dmg)))
 		current := authored
 		build, isBuild := get(enemy, "enemyBuild").(bson.D)
 		if isBuild {
