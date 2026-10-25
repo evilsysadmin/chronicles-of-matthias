@@ -83,6 +83,23 @@ export function chroniclesShopBuy(state, map, itemId) {
   };
 }
 
+// Small UI acknowledgement only after the atomic inventory + purse exchange.
+// Refused purchases/sales, stale merchant views and cap failures never toast.
+export function chroniclesShopTradeNotice(previous, next, action) {
+  if (!previous || !next || !action || previous === next) return '';
+  const item = chroniclesShopItem(action.itemId);
+  if (!item) return '';
+  const before = Number(previous.inventory?.[item.id]?.quantity || 0);
+  const after = Number(next.inventory?.[item.id]?.quantity || 0);
+  const goldBefore = chroniclesGoldBalance(previous);
+  const goldAfter = chroniclesGoldBalance(next);
+  if (action.type === 'shop-buy' && after === before + 1
+    && goldAfter === goldBefore - item.price) return `¡${item.name} comprado!`;
+  if (action.type === 'shop-sell' && after === before - 1
+    && goldAfter === goldBefore + chroniclesShopSellPrice(item)) return `¡${item.name} vendido!`;
+  return '';
+}
+
 export function chroniclesShopSell(state, map, itemId) {
   const entry = state?.shop ? shopEntry(state, map, state.shop.id) : null;
   const item = chroniclesShopItem(itemId);

@@ -3,7 +3,7 @@ import { chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from './chroniclesContentRuntime.js';
 import { CHRONICLES_EQUIPMENT } from './chroniclesEquipment.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { chroniclesShopSellPrice } from './chroniclesShops.js';
+import { chroniclesShopSellPrice, chroniclesShopTradeNotice } from './chroniclesShops.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 function atForge(gold) {
@@ -14,6 +14,27 @@ function atForge(gold) {
 }
 
 describe('Chronicles · MM3 shops', () => {
+  it('floats receipts for purchases and sales only after gold and inventory actually change', () => {
+    const open = atForge(30);
+    const buyAction = { type: 'shop-buy', itemId: 'brass-dagger' };
+    const bought = chroniclesReduce(open, buyAction);
+    expect(chroniclesShopTradeNotice(open, bought, buyAction))
+      .toBe('¡Daga de latón comprada!');
+    expect(chroniclesShopTradeNotice(open, bought, { ...buyAction, itemId: 'brass-axe' }))
+      .toBe('');
+
+    const sellAction = { type: 'shop-sell', itemId: 'brass-dagger' };
+    const sold = chroniclesReduce(bought, sellAction);
+    expect(chroniclesShopTradeNotice(bought, sold, sellAction))
+      .toBe('¡Daga de latón vendida!');
+
+    const broke = atForge(0);
+    const refused = chroniclesReduce(broke, buyAction);
+    expect(chroniclesShopTradeNotice(broke, refused, buyAction)).toBe('');
+    expect(chroniclesShopTradeNotice(open, open, sellAction)).toBe('');
+    expect(chroniclesShopTradeNotice(sold, sold, sellAction)).toBe('');
+  });
+
   it('stocks the starting town only with junk: wood, brass and leather', () => {
     const map = chroniclesMapById('swordhaven-first-book');
     for (const id of ['first-book-weaponsmith', 'first-book-armorer']) {

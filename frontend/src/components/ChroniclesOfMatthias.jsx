@@ -647,7 +647,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         stateRef.current = updated;
         setState(updated);
       }
-      return; // Equipping and trading are not movement ticks or combat actions.
+      return updated; // Synchronous result lets shop feedback verify completed trades.
     }
     const activeActor = chroniclesCurrentInitiativeActor(current.initiative);
     if (current.initiative && activeActor?.kind === 'enemy') return;
