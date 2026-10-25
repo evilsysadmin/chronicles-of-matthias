@@ -37,9 +37,17 @@
   border: 1px solid #ab8453;
   padding: 2px 5px;
   background: #f8e6bd;
+  /* Parchment needs dark ink even on mobile: the inherited pale gold/blue
+     text was nearly invisible against these compact resource plates. */
+  color: #5d3e20;
   box-shadow: none;
   font-size: .78rem;
   line-height: 1.25;
+}
+/* The old MM3 nth-child(2) rule colors PH pastel blue; outrank it by
+   targeting semantic resources rather than their position in the row. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span[data-resource] b {
+  color: #2d2218;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head > button {
   align-self: center;
