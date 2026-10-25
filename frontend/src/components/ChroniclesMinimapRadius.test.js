@@ -30,7 +30,7 @@ describe('Chronicles minimap position caption', () => {
     expect(html).toContain('data-chronicles-coordinates');
     expect(html).toContain(position);
     expect(html).toContain('data-chronicles-location');
-    expect(html).toContain('UBICACIÓN · SWORDHAVEN');
+    expect(html).toContain('class="chronicles-minimap__location-prefix">UBICACIÓN · </span>SWORDHAVEN');
     expect(html).toContain('Ubicación: SWORDHAVEN. Coordenadas: ' + position);
     expect(chroniclesRegionHudLocation(map).kind).toBe('PUEBLO');
     expect(html).not.toContain('PUEBLO');
