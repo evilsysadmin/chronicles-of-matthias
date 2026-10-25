@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import {
   addSwordhavenClouds, buildSwordhavenFountain, buildSwordhavenHouse, buildSwordhavenTree, createSwordhavenMaterials,
@@ -72,6 +73,25 @@ function settlementStreetFacingFaces({ grid, blocked, zones }) {
   return faces;
 }
 
+// One instanced frame still owns the complete window silhouette: a projecting
+// wooden sill and two slim leaded-glass dividers. Merge the four small boxes
+// ONCE rather than adding per-window meshes/draw calls. The forward-most
+// detail stays inside the impassable 4m cell (never over the walking lane).
+function settlementWindowFrameGeometry() {
+  const frame = new THREE.BoxGeometry(1.32, 0.84, 0.022);
+  const sill = new THREE.BoxGeometry(1.46, 0.10, 0.030);
+  sill.translate(0, -0.46, 0.010);
+  const mullion = new THREE.BoxGeometry(0.048, 0.52, 0.008);
+  mullion.translate(0, 0.02, 0.022);
+  const transom = new THREE.BoxGeometry(0.77, 0.045, 0.008);
+  transom.translate(0, 0.02, 0.022);
+  const parts = [frame, sill, mullion, transom];
+  const geometry = mergeGeometries(parts, false);
+  parts.forEach(part => part.dispose());
+  if (!geometry) throw new Error('Swordhaven window frame geometry could not be merged');
+  return geometry;
+}
+
 function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
   // Windows alternate along the block; timber beams cover every street edge.
   const facades = settlementStreetFacingFaces({ grid, blocked, zones })
@@ -82,7 +102,7 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   const storeys = wallHeight >= 4 ? [2.15, 4.45] : [0.96];
   const count = facades.length * storeys.length;
   const frames = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.32, 0.84, 0.022),
+    settlementWindowFrameGeometry(),
     material(0x78533b),
     count,
   );
