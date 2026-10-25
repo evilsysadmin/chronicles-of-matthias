@@ -48,7 +48,9 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.roofRelief, 'true',
           'Real street roofs must use aligned, shared shingle relief');
-        assert.equal(Number(result.cornerUprights), 226);
+        // 188 facade posts + 38 reinforced corners + 92 diagonal braces
+        // on the 46 windowless faces, still in the same instanced batch.
+        assert.equal(Number(result.cornerUprights), 318);
         // A close masonry facade at phone width may occupy almost the entire
         // frame with just a few colours. Only reject a truly flat framebuffer.
         assert.ok(Number(result.pixelVariants) >= 2,
