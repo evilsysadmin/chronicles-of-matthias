@@ -90,7 +90,9 @@ export function chroniclesTownSurfacePixels(kind) {
   if (!spec) throw new Error('Unsupported Swordhaven material: ' + kind);
   const { size, base } = spec;
   const pixels = new Uint8Array(size * size * 4);
-  const stoneRelief = kind === 'masonry' || kind === 'cobble';
+  // Reuse the existing tile elevation for roof courses too: one 128px
+  // tangent-space map gives shingles directional light without new meshes.
+  const stoneRelief = kind === 'masonry' || kind === 'cobble' || kind === 'roof';
   const heights = stoneRelief ? new Float32Array(size * size) : null;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
