@@ -29,7 +29,7 @@ function scenario(partyPosition = { x: 3, y: 5 }) {
 
 describe('Chronicles enemy perception and short-term memory', () => {
   it('visually detects a party four squares away and pursues instead of randomly roaming', () => {
-    const initial = createChroniclesState(mapId);
+    const initial = createChroniclesState(mapId, null, { rules: 'mm3' });
     const goblin = chroniclesMapById(mapId).enemies.find((enemy) => enemy.id === 'ash-goblin');
     expect(goblin.ai.engageRange).toBe(2); // Old radius was too short for detection.
     const openCorridor = {
