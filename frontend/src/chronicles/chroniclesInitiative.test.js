@@ -170,6 +170,26 @@ describe('Chronicles initiative', () => {
     }
   });
 
+  it.each(['defeated', 'escaped'])('never reopens a %s expedition via a forced encounter', (phase) => {
+    const state = {
+      phase,
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 7, agility: 4 }],
+      enemyHp: 3,
+    };
+    const enemy = {
+      id: 'enemy', name: 'Enemy', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Even a saved terminal state with living heroes must stay terminal.
+    // Test both proximity and the explicit forceEnemyIds override.
+    expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+    expect(chroniclesStartInitiativeCombat(state, [enemy], {
+      forceEnemyIds: ['enemy'], random: () => 0,
+    })).toBe(state);
+  });
+
   it('continues after a fallen current actor instead of restarting the round', () => {
     const state = {
       phase: 'combat',
