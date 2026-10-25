@@ -133,7 +133,12 @@ function hashText(text) {
 }
 
 function cellSignature(entries = []) {
-  return (entries || []).map((entry) => String(entry.x) + ',' + String(entry.y)).join(';');
+  // The same procedural layout must keep its palette regardless of the
+  // traversal order used to enumerate wall and floor cells.
+  return (entries || [])
+    .map((entry) => String(entry.x) + ',' + String(entry.y))
+    .sort()
+    .join(';');
 }
 
 export function chroniclesMaterialSceneSeed(scenePlan = null) {

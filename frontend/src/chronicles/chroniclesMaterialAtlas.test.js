@@ -70,6 +70,28 @@ describe('Chronicles semantic material atlas', () => {
     same.floorProfileIds.forEach((id) => expect(CHRONICLES_MATERIAL_ENVIRONMENTS.dungeon.floor).toContain(id));
   });
 
+  it('keeps the same material palette when procedural cells arrive in a different order', () => {
+    const scene = {
+      mapId: 'crypt-eight-squares',
+      width: 7,
+      height: 7,
+      walls: [{ x: 2, y: 0 }, { x: 0, y: 0 }, { x: 1, y: 0 }],
+      floors: [{ x: 3, y: 2 }, { x: 1, y: 1 }, { x: 2, y: 1 }],
+    };
+    const reordered = {
+      ...scene,
+      walls: [...scene.walls].reverse(),
+      floors: [...scene.floors].reverse(),
+    };
+    expect(chroniclesMaterialPlanForScene(reordered))
+      .toEqual(chroniclesMaterialPlanForScene(scene));
+    // Seed stability must not collapse genuinely different layouts.
+    expect(chroniclesMaterialPlanForScene({
+      ...scene,
+      walls: [...scene.walls, { x: 4, y: 0 }],
+    }).seed).not.toBe(chroniclesMaterialPlanForScene(scene).seed);
+  });
+
   it('honors an authored wall palette from the map instead of re-rolling it', () => {
     const plan = chroniclesMaterialPlanForScene({
       mapId: 'crypt-eight-squares',
