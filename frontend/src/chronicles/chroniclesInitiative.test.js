@@ -234,6 +234,32 @@ describe('Chronicles initiative', () => {
     expect(next.initiative.round).toBe(3);
   });
 
+  it.each([['enemy survives', 4], ['last enemy also falls', 0]])(
+    'ends a wiped company in defeat when %s', (_scenario, enemyHp) => {
+      const state = {
+        phase: 'combat',
+        party: [{ id: 'matthias', hp: 0, agility: 4 }],
+        partyPositions: { matthias: { x: 2, y: 3 } },
+        combatWard: { turns: 1 },
+        enemyStatus: { enemy: { stunned: 1 } },
+        enemyHp,
+        initiative: {
+          version: 1, die: '1d8', round: 2, cursor: 0,
+          order: [
+            { id: 'matthias', kind: 'party', initiative: 8 },
+            { id: 'enemy', kind: 'enemy', initiative: 5 },
+          ],
+        },
+      };
+      const next = chroniclesAdvanceCombatInitiative(state, [{ id: 'enemy', hpKey: 'enemyHp' }]);
+      expect(next.phase).toBe('defeated');
+      expect(next.initiative).toBeNull();
+      expect(next.partyPositions).toEqual({});
+      expect(next.combatWard).toBeUndefined();
+      expect(next.enemyStatus).toBeUndefined();
+    },
+  );
+
   it('drops defeated actors and returns to exploration when combat has no enemies left', () => {
     const state = {
       phase: 'combat',
