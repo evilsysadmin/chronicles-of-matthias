@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
+import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import {
   buildSwordhavenScene, createSwordhavenWalkGrid, SWORDHAVEN_BUILDINGS,
   SWORDHAVEN_INTERACTION_CELLS, SWORDHAVEN_GATE_CELL, SWORDHAVEN_SPAWN,
@@ -234,6 +235,7 @@ describe('Swordhaven modular real-time 3D', () => {
       const albedo = swordhavenSurfaceTexture(kind);
       const normal = swordhavenSurfaceNormalTexture(kind);
       expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
+      expect(chroniclesTownSurfacePixels(kind)).toBe(chroniclesTownSurfacePixels(kind));
       expect(normal).toBeInstanceOf(THREE.DataTexture);
       expect(normal.colorSpace).toBe(THREE.NoColorSpace);
       expect(normal.wrapS).toBe(THREE.RepeatWrapping);
@@ -267,7 +269,7 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(roof.material.normalScale.x).toBeCloseTo(0.35);
       expect(roof.material.map.repeat.toArray()).toEqual(roof.material.normalMap.repeat.toArray());
     }
-  });
+  }, 12000); // The shared atlas is first generated during this rendering test.
 
   it('batches detailed leadwork, foliage and door straps on each shop without new interactions', () => {
     for (const coarsePointer of [true, false]) {
