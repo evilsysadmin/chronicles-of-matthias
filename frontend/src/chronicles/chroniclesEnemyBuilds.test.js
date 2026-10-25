@@ -10,6 +10,7 @@ import {
   createDefaultChroniclesEnemyBuild,
   deriveLegacyChroniclesEnemyBuild,
   resolveChroniclesEnemyBuildDefinition,
+  normalizeChroniclesEnemyBuild,
   validateChroniclesEnemyBuild,
 } from './chroniclesEnemyBuilds.js';
 
@@ -137,6 +138,20 @@ describe('Chronicles EnemyBuild v1', () => {
       engageRangeBonus: 2,
       initiativeBonus: 3,
     });
+  });
+
+  it('rejects inherited Object.prototype names as enemy skills', () => {
+    for (const id of ['constructor', 'toString', '__proto__']) {
+      const result = validateChroniclesEnemyBuild({ version: 1, level: 1, skills: [id] });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(`Skill enemiga desconocida: ${id}`);
+    }
+
+    const build = normalizeChroniclesEnemyBuild({
+      skills: ['constructor', 'toString', '__proto__', 'brutal-strike', 'brutal-strike'],
+    });
+    expect(build.skills).toEqual(['brutal-strike']);
+    expect(chroniclesEnemyBuildModifiers(build).damageBonus).toBe(1);
   });
 
   it('rejects unknown skills and stats beyond the contract caps', () => {
