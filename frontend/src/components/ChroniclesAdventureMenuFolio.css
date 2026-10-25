@@ -729,3 +729,12 @@
 @media (orientation: landscape) and (max-height: 480px) {
   .chronicles .chronicles-game-help { max-height: min(48dvh, 180px); }
 }
+
+/* On narrow touch screens the persistent keyboard legend repeats shortcuts
+   already available in Ayuda. Give that height back to the actual menu;
+   keep the legend for mouse/keyboard users and larger layouts. */
+@media (max-width: 620px) and (pointer: coarse) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__hint {
+    display: none;
+  }
+}
