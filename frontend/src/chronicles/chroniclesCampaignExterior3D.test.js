@@ -231,7 +231,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     // frames and timber beams, but never over the neighbouring road tile.
     const wallSurface = 4 * 0.98 / 2;
     const plasterSurface = 1.974 + plaster.geometry.parameters.depth / 2;
-    const windowSurface = 1.972 + frames.geometry.parameters.depth / 2;
+    const windowSurface = 1.972 + frameBounds.max.z; // Merged sill/mullions, not a BoxGeometry.
     const timberSurface = 1.973 + beams.geometry.parameters.depth / 2;
     expect(plasterSurface).toBeGreaterThan(wallSurface);
     expect(windowSurface).toBeGreaterThan(plasterSurface);
