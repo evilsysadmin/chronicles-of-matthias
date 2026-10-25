@@ -28,6 +28,38 @@ function scenario(partyPosition = { x: 3, y: 5 }) {
 }
 
 describe('Chronicles enemy perception and short-term memory', () => {
+  it('visually detects a party four squares away and pursues instead of randomly roaming', () => {
+    const initial = createChroniclesState(mapId, null, { rules: 'mm3' });
+    const goblin = chroniclesMapById(mapId).enemies.find((enemy) => enemy.id === 'ash-goblin');
+    expect(goblin.ai.engageRange).toBe(2); // Old radius was too short for detection.
+    const openCorridor = {
+      ...initial, phase: 'explore', x: 3, y: 1,
+      party: initial.party.map((member) => ({
+        ...member, hp: member.id === 'matthias' ? member.hp : 0,
+      })),
+      partyPositions: { matthias: { x: 3, y: 1 } },
+      enemyPositions: { 'ash-goblin': { x: 3, y: 5 } },
+      cryptSpiderHp: 0, emberWispHp: 0, boneHoundHp: 0,
+      explorationEnemySteps: 0,
+    };
+    expect(chroniclesEnemyHasSightline(openCorridor, { x: 3, y: 5 }, { x: 3, y: 1 }))
+      .toBe(true);
+    const spotted = chroniclesRememberEnemySight(openCorridor, goblin);
+    expect(spotted.enemyAwareness['ash-goblin']).toMatchObject({ x: 3, y: 1 });
+    expect(chroniclesChooseEnemyStep(spotted, goblin)).toEqual({ x: 3, y: 4 });
+    // No supernatural sight: the diagonal has obstructing walls, so patrol
+    // resumes instead of targeting a player it cannot actually see.
+    const behindWall = {
+      ...openCorridor, x: 1, y: 3,
+      partyPositions: { matthias: { x: 1, y: 3 } },
+    };
+    expect(chroniclesEnemyHasSightline(behindWall, { x: 3, y: 5 }, { x: 1, y: 3 }))
+      .toBe(false);
+    expect(chroniclesRememberEnemySight(behindWall, goblin).enemyAwareness?.['ash-goblin'])
+      .toBeUndefined();
+  });
+
+
   it('cannot see through a solid wall or a blocked diagonal corner', () => {
     const state = scenario();
     expect(chroniclesEnemyHasSightline(state, { x: 3, y: 3 }, { x: 1, y: 1 })).toBe(false);
