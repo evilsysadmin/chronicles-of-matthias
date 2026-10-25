@@ -153,6 +153,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(panes).toBeInstanceOf(THREE.InstancedMesh);
     expect(frames.count).toBeGreaterThan(80); // Two storeys, still two draw calls.
     expect(panes.count).toBe(frames.count);
+    // Each instanced frame contains the projecting sill and both crossbars.
+    // Geometry is merged ONCE: no new mesh or draw call per window.
+    expect(frames.geometry.index.count).toBe(36 * 4);
+    const frameBounds = new THREE.Box3()
+      .setFromBufferAttribute(frames.geometry.getAttribute('position'));
+    expect(frameBounds.min.y).toBeCloseTo(-0.51);
+    expect(frameBounds.max.x).toBeCloseTo(0.73);
+    expect(frameBounds.max.z).toBeCloseTo(0.026);
+    expect(frameBounds.max.z + 1.972).toBeLessThan(2);
+    expect(town.getObjectByName('chronicles-town-street-window-sills')).toBeUndefined();
     // The first window faces a real alley from an existing solid cell.
     // Its cladding must be in front of the 3.92m wall, but still inside the
     // 4m impassable cell (never a new invisible street collision).
