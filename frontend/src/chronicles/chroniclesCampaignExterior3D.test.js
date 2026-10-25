@@ -153,13 +153,14 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(panes).toBeInstanceOf(THREE.InstancedMesh);
     expect(frames.count).toBeGreaterThan(80); // Two storeys, still two draw calls.
     expect(panes.count).toBe(frames.count);
-    // Each instanced frame contains the projecting sill and both crossbars.
-    // Geometry is merged ONCE: no new mesh or draw call per window.
-    expect(frames.geometry.index.count).toBe(36 * 4);
+    // Sill, leadwork and two open shutter panels with diagonal braces share
+    // ONE instanced frame batch: eight boxes, no extra per-window draw calls.
+    expect(frames.geometry.index.count).toBe(36 * 8);
     const frameBounds = new THREE.Box3()
       .setFromBufferAttribute(frames.geometry.getAttribute('position'));
     expect(frameBounds.min.y).toBeCloseTo(-0.51);
-    expect(frameBounds.max.x).toBeCloseTo(0.73);
+    expect(frameBounds.min.x).toBeCloseTo(-0.995);
+    expect(frameBounds.max.x).toBeCloseTo(0.995);
     expect(frameBounds.max.z).toBeCloseTo(0.026);
     expect(frameBounds.max.z + 1.972).toBeLessThan(2);
     expect(town.getObjectByName('chronicles-town-street-window-sills')).toBeUndefined();
