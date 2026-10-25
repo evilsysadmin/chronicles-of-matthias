@@ -86,15 +86,19 @@ function settlementWindowFrameGeometry() {
   const transom = new THREE.BoxGeometry(0.77, 0.045, 0.008);
   transom.translate(0, 0.02, 0.022);
   const parts = [frame, sill, mullion, transom];
-  // Open shutters add a recognisable lived-in silhouette to the flat street
-  // fronts. Both panels and their braces share the existing frame draw call.
+  // Three separated planks read as real open shutters even on a phone.
+  // Their diagonal braces sit just proud of the wood, still inside the wall
+  // cell. All eight additions reuse the existing frame draw call.
   for (const side of [-1, 1]) {
-    const shutter = new THREE.BoxGeometry(0.25, 0.70, 0.020);
-    shutter.translate(side * 0.87, 0, 0.010);
-    const brace = new THREE.BoxGeometry(0.060, 0.67, 0.012);
+    for (const y of [-0.235, 0, 0.235]) {
+      const plank = new THREE.BoxGeometry(0.25, 0.22, 0.020);
+      plank.translate(side * 0.87, y, 0.010);
+      parts.push(plank);
+    }
+    const brace = new THREE.BoxGeometry(0.060, 0.67, 0.008);
     brace.rotateZ(side * 0.22);
-    brace.translate(side * 0.87, 0, 0.017);
-    parts.push(shutter, brace);
+    brace.translate(side * 0.87, 0, 0.021);
+    parts.push(brace);
   }
   const geometry = mergeGeometries(parts, false);
   parts.forEach(part => part.dispose());
