@@ -86,7 +86,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('Este personaje no lleva una reliquia vinculada.');
     const tactics = render(null, 'equipment', {}, null, 'tactics');
     expect(tactics).not.toContain('chronicles-character-sheet__backpack-advanced');
-    expect(tactics).toContain('mitigación');
+    expect(tactics).toContain('Mochila de expedición');
   });
 
   it('retains the distinct legacy damage reduction summary', () => {
