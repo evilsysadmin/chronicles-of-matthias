@@ -243,7 +243,10 @@ func applyComposition(manifest bson.D, seed int64) (bson.D, compositionPlan) {
 	enemies, _ := get(composed, "enemies").(bson.A)
 	for _, raw := range enemies {
 		if enemy, ok := raw.(bson.D); ok {
-			if id, isString := get(enemy, "id").(string); isString && omitted[id] {
+			// An omitted optional ID may also be used by a required or protected
+			// encounter in legacy manifests. Only omit entries that actually
+			// qualified for seed variation; never remove a story guardian.
+			if id, isString := get(enemy, "id").(string); isString && omitted[id] && optionalEnemyIsVariable(manifest, enemy) {
 				continue
 			}
 		}
