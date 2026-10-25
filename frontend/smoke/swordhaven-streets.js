@@ -84,6 +84,8 @@ try {
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     roofCount: String(roofs.count),
+    roofRelief: String(roofs.material.normalMap?.name === 'chronicles-town-normal-roof'
+      && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
     pixelVariants: String(distinct.size),
   });
