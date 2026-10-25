@@ -44,7 +44,9 @@
   font-size: .78rem;
   line-height: 1.25;
 }
-.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span b {
+/* The old MM3 nth-child(2) rule colors PH pastel blue; outrank it by
+   targeting semantic resources rather than their position in the row. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span[data-resource] b {
   color: #2d2218;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head > button {
