@@ -220,12 +220,16 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
       }
     }
   }
+  // Only the windowless faces need extra structure: diagonal timber braces
+  // break up large blank plaster panels without crowding the shuttered ones.
+  const blankFaces = faces.filter(({ x, y }) => (x + y) % 2 !== 0);
   const wood = material(0x66503a, { roughness: 0.93 });
   const beams = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
   );
   const posts = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood, faces.length * 2 + cornerJoints.length,
+    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood,
+    faces.length * 2 + cornerJoints.length + blankFaces.length * 2,
   );
   const dummy = new THREE.Object3D();
   faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
@@ -256,6 +260,25 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
     dummy.position.set(wx + dx * 1.93, wallHeight / 2 - 0.04, wz + dy * 1.93);
     dummy.updateMatrix();
     posts.setMatrixAt(faces.length * 2 + i, dummy.matrix);
+  });
+  // Mirror a pair of short diagonal braces on each blind frontage. Reuse the
+  // existing upright geometry, material and draw call via scaled instances.
+  // The 4cm-deep timber stays entirely on the blocked side of the tile.
+  blankFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    for (const [sideIndex, side] of [-1, 1].entries()) {
+      const sideways = side * 0.75;
+      dummy.rotation.set(0, yaw, 0);
+      dummy.rotateZ(side * 0.48);
+      dummy.scale.set(1, 0.34, 1);
+      dummy.position.set(
+        wx + dx * 1.973 + Math.cos(yaw) * sideways,
+        1.9,
+        wz + dy * 1.973 - Math.sin(yaw) * sideways,
+      );
+      dummy.updateMatrix();
+      posts.setMatrixAt(faces.length * 2 + cornerJoints.length + faceIndex * 2 + sideIndex, dummy.matrix);
+    }
   });
   beams.instanceMatrix.needsUpdate = true;
   posts.instanceMatrix.needsUpdate = true;
