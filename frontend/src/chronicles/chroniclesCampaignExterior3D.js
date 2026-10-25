@@ -408,6 +408,13 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     }), valid.length,
   );
   const dummy = new THREE.Object3D();
+  // Three restrained clay shades break up identical roof runs without
+  // extra meshes, materials, or random flicker between visits.
+  const roofTints = [
+    new THREE.Color('#ffffff'),
+    new THREE.Color('#eee1d5'),
+    new THREE.Color('#e0d4cb'),
+  ];
   valid.forEach(({ x, y, width }, index) => {
     const [wx, wz] = gridToWorld(x + (width - 1) / 2, y, center);
     // X-scale alters only span length, not roof pitch/height: a pair of
@@ -416,8 +423,10 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);
+    roofs.setColorAt(index, roofTints[(x * 5 + y * 7 + width) % roofTints.length]);
   });
   roofs.instanceMatrix.needsUpdate = true;
+  roofs.instanceColor.needsUpdate = true;
   roofs.name = 'chronicles-town-south-pitched-roofs';
   roofs.castShadow = false;
   roofs.receiveShadow = true;

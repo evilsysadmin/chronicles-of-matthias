@@ -332,6 +332,15 @@ describe('Chronicles file-authored exterior renderer', () => {
     const roofs = town.getObjectByName('chronicles-town-south-pitched-roofs');
     expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
     expect(roofs.count).toBe(7);
+    // A single instanced roof batch carries three stable clay shades.
+    // Colour variation must not add per-house materials or draw calls.
+    expect(roofs.instanceColor).toBeTruthy();
+    const expectedRoofTints = [
+      new THREE.Color('#ffffff'),
+      new THREE.Color('#eee1d5'),
+      new THREE.Color('#e0d4cb'),
+    ];
+    const roofShades = new Set();
     expect(roofs.castShadow).toBe(false);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
@@ -365,7 +374,15 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(scale.z).toBeCloseTo(1);
       expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
       expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
+      const actualTint = new THREE.Color();
+      roofs.getColorAt(index, actualTint);
+      const expectedTint = expectedRoofTints[(run.x * 5 + run.y * 7 + run.width) % 3];
+      expect(actualTint.r).toBeCloseTo(expectedTint.r, 5);
+      expect(actualTint.g).toBeCloseTo(expectedTint.g, 5);
+      expect(actualTint.b).toBeCloseTo(expectedTint.b, 5);
+      roofShades.add(actualTint.getHexString());
     }
+    expect(roofShades.size).toBe(3);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
