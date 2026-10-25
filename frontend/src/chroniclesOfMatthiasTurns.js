@@ -340,9 +340,13 @@ export function chroniclesEnemyHasSightline(state, from, to) {
 function visiblePartyPosition(state, enemy, from) {
   if (!usesEnemyAwareness(enemy)) return null;
   const authoredRange = Number(enemy.ai.engageRange);
-  // Early pursuit belongs to first-person exploration only. Tactics combat
-  // and the initiative enemy phases keep their explicitly authored ranges.
-  const range = state.phase === 'explore' && state.combatRules === 'mm3'
+  // In first-person MM3, an enemy already committed to an initiative fight
+  // keeps pursuing a visible company after a ranged opening. Tactics retains
+  // its authored awareness distance, and walls still block detection.
+  const fightingThisEnemy = state.initiative?.order?.some(
+    (actor) => actor.kind === 'enemy' && actor.id === enemy.id,
+  );
+  const range = state.combatRules === 'mm3' && (state.phase === 'explore' || fightingThisEnemy)
     ? Math.max(authoredRange, EXPLORATION_SIGHT_RANGE) : authoredRange;
   return partyTargetPositions(state)
     .filter((target) => distance(from, target) <= range && chroniclesEnemyHasSightline(state, from, target))
@@ -553,10 +557,9 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
   } else if (target) {
     next = damageParty(next, enemy, enemyIndex, events, target);
   } else {
+    // Movement consumes this actor's entire action. Only an enemy that
+    // started its turn in weapon range can make a melee/ranged attack.
     next = moveEnemy(next, enemy, chroniclesChooseEnemyStep(next, enemy), events);
-    const movedPosition = chroniclesRuntimeEnemyPosition(next, enemy);
-    const movedTarget = chroniclesEnemyAttackTarget(next, enemy, movedPosition);
-    if (movedTarget) next = damageParty(next, enemy, enemyIndex, events, movedTarget);
   }
   const defeated = partyDefeated(next);
   return {
@@ -605,10 +608,9 @@ export function chroniclesResolveEnemyTurn(state) {
       next = damageParty(next, enemy, enemyIndex, events, target);
       return;
     }
+    // The collective enemy phase follows the same one-action rule as
+    // initiative: approach now, swing only on a later turn.
     next = moveEnemy(next, enemy, chroniclesChooseEnemyStep(next, enemy), events);
-    const movedPosition = chroniclesRuntimeEnemyPosition(next, enemy);
-    const movedTarget = chroniclesEnemyAttackTarget(next, enemy, movedPosition);
-    if (movedTarget) next = damageParty(next, enemy, enemyIndex, events, movedTarget);
   });
 
   const defeated = partyDefeated(next);

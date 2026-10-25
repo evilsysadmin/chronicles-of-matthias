@@ -68,21 +68,28 @@ describe('Chronicles enemy intent preview', () => {
     expect(JSON.stringify(state)).toBe(before);
   });
 
-  it('telegraphs a melee creature moving into range and attacking in the same turn', () => {
+  it('telegraphs approaching now and melee danger only on the following turn', () => {
     const pawn = enemy('corrupted-pawn');
     const state = createChroniclesState();
     const preview = chroniclesPreviewEnemyTurn(state);
     expect(preview.intents.find((intent) => intent.enemyId === pawn.id)).toEqual({
       enemyId: 'corrupted-pawn',
-      kind: 'move-attack',
+      kind: 'move',
       from: { x: 3, y: 5 },
       to: { x: 2, y: 5 },
-      targetId: 'matthias',
-      damage: 1,
-      hpLost: 1,
-      lethal: false,
     });
-    expect(preview.attackedMemberIds).toEqual(['matthias']);
+    expect(preview.attackedMemberIds).toEqual([]);
+
+    const adjacent = chroniclesPreviewEnemyTurn(chroniclesResolveEnemyTurn(state));
+    const attack = adjacent.intents.find((intent) => intent.enemyId === pawn.id);
+    expect(attack).toMatchObject({
+      enemyId: 'corrupted-pawn',
+      kind: 'attack',
+      hpLost: 1,
+    });
+    // Target selection rotates with the round; don't hardcode the victim.
+    expect(state.party.some((member) => member.id === attack.targetId && member.hp > 0)).toBe(true);
+    expect(adjacent.attackedMemberIds).toEqual([attack.targetId]);
   });
 
   it('telegraphs the spectral bishop attacking down a clear lane without moving', () => {
