@@ -116,3 +116,39 @@ func TestApplyDifficultySaturatesLegacyEnemyStats(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyDifficultyRespectsPartyLevelCeilingForHighAuthoredEnemies(t *testing.T) {
+	manifest := bson.D{
+		{Key: "proceduralDifficulty", Value: int64(5)},
+		{Key: "enemies", Value: bson.A{bson.D{
+			{Key: "id", Value: "veteran-guardian"},
+			{Key: "maxHp", Value: int64(10)},
+			{Key: "retaliation", Value: int64(2)},
+			{Key: "enemyBuild", Value: bson.D{{Key: "level", Value: int64(5)}}},
+		}}},
+	}
+	scaled, band, err := applyDifficulty(manifest, 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := get(band, "maxLevel"); got != int64(2) {
+		t.Fatalf("low-level party ceiling = %v, want 2", got)
+	}
+	if got := get(band, "appliedDelta"); got != int64(-2) {
+		t.Fatalf("bounded stat delta = %v, want -2", got)
+	}
+	enemy := get(scaled, "enemies").(bson.A)[0].(bson.D)
+	if got := get(enemy, "difficultyLevel"); got != int64(2) {
+		t.Errorf("difficultyLevel = %v, exceeds party ceiling 2", got)
+	}
+	if got := get(get(enemy, "enemyBuild").(bson.D), "level"); got != int64(2) {
+		t.Errorf("enemyBuild.level = %v, exceeds party ceiling 2", got)
+	}
+	if got := get(enemy, "maxHp"); got != int64(8) {
+		t.Errorf("maxHp = %v, want bounded stat adjustment to 8", got)
+	}
+	original := get(manifest, "enemies").(bson.A)[0].(bson.D)
+	if got := get(get(original, "enemyBuild").(bson.D), "level"); got != int64(5) {
+		t.Errorf("authored enemy level mutated: %v", got)
+	}
+}
