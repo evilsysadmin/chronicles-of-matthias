@@ -203,6 +203,12 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
+  // A party wiped during an active round must end in defeat, even if
+  // enemies survive or the final enemy fell at the same time.
+  if (!Array.isArray(state.party) || !state.party.some((member) => Number(member?.hp || 0) > 0)) {
+    const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
+  }
   // Preserve the original turn boundary before leashed enemies are pruned.
   const orderBeforeLeash = state.initiative.order;
   const cursorBeforeLeash = Math.min(orderBeforeLeash.length - 1, nonNegativeInteger(state.initiative.cursor));
