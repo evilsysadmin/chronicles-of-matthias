@@ -905,7 +905,7 @@
 .chronicles-minimap__poi text {
   fill: #ffe4ab;
   stroke: none;
-  font: 800 .68px/1 Georgia, serif;
+  font: 800 .82px/1 Georgia, serif;
   pointer-events: none;
 }
 .chronicles-minimap__poi.is-dungeon rect,

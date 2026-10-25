@@ -437,6 +437,30 @@ try {
       assert(position.centered && position.belowTiles,
         'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));
       await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
+      await gotoFixture(page, url + '?view=minimap-poi');
+      const serviceBadges = await page.locator('[data-chronicles-minimap]').evaluate((root) =>
+        [...root.querySelectorAll('.chronicles-minimap__poi')].map((poi) => {
+          const glyph = poi.querySelector('text');
+          const shield = poi.querySelector('rect');
+          const ink = glyph.getBBox();
+          const plate = shield.getBBox();
+          return {
+            glyph: glyph.textContent,
+            size: parseFloat(getComputedStyle(glyph).fontSize),
+            fits: ink.width <= plate.width + .04 && ink.height <= plate.height + .04,
+            foreground: getComputedStyle(glyph).fill,
+            background: getComputedStyle(shield).fill,
+          };
+        }));
+      assert.deepEqual(serviceBadges.map((badge) => badge.glyph).sort(), ['A', 'F'],
+        'Only the two genuinely discovered local Swordhaven services may be visible');
+      assert(serviceBadges.every((badge) => badge.size >= .8 && badge.fits
+        && badge.foreground === 'rgb(255, 228, 171)'
+        && badge.background === 'rgb(27, 24, 19)'),
+      'Tiny service glyphs must be larger, high contrast and fit their shields: ' + JSON.stringify(serviceBadges));
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false,
+        'Service badges must not cause horizontal overflow');
+      await page.screenshot({ path: 'smoke-minimap-poi-' + width + '.png' });
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {
