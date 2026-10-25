@@ -98,6 +98,29 @@ try {
         await page.screenshot({ path: `smoke-folio-${view}-${width}.png` });
         if(view === 'cast') {
           if (width <= 430) {
+            const tabLines = await dialog.locator('.chronicles-spell-menu__tabs button')
+              .evaluateAll((buttons) => buttons.map((button) => {
+                const shortcut = button.querySelector('small');
+                const label = document.createRange();
+                label.selectNodeContents(button.firstChild);
+                const labelBounds = label.getBoundingClientRect();
+                const shortcutBounds = shortcut.getBoundingClientRect();
+                return {
+                  labelTop: labelBounds.top,
+                  shortcutTop: shortcutBounds.top,
+                  shortcutRight: shortcutBounds.right,
+                  buttonRight: button.getBoundingClientRect().right,
+                  scrollWidth: button.scrollWidth,
+                  clientWidth: button.clientWidth,
+                };
+              }));
+            assert.equal(tabLines.length, 2, 'CAST has two page tabs');
+            assert(tabLines.every((tab) => Math.abs(tab.labelTop - tab.shortcutTop) <= 8
+              && tab.shortcutRight <= tab.buttonRight - 2
+              && tab.scrollWidth <= tab.clientWidth + 1),
+            `CAST page labels and C/I shortcuts must stay on one line at ${width}px: ${JSON.stringify(tabLines)}`);
+          }
+          if (width <= 430) {
             const description = await dialog.locator('.chronicles-spell-menu__entry small')
               .first().evaluate((node) => {
                 const style = getComputedStyle(node);

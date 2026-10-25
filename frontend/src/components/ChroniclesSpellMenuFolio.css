@@ -320,6 +320,24 @@
   }
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer { padding: 8px 10px; }
 }
+/* Wider phones already fit both labels; retain their original readable size. */
+@media (max-width: 375px) {
+  /* Keep page names, counts and C/I shortcuts on one line on narrow phones. */
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs {
+    gap: 6px;
+    padding: 8px 9px 7px;
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs button {
+    padding: 6px 4px;
+    font-size: 1.02rem;
+    white-space: nowrap;
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs small {
+    margin-left: 2px;
+    font-size: .9em;
+    white-space: nowrap;
+  }
+}
 @media (max-height: 470px) {
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-header {
     padding-top: 7px;
