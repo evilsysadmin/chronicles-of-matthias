@@ -48,6 +48,7 @@ import {
 import { loadChroniclesCharacterDraft } from '../chronicles/chroniclesCharacterDraft.js';
 import {
   chroniclesApplyRunCheckpoint,
+  chroniclesCheckpointRunProgression,
   chroniclesRunCheckpointFingerprint,
 } from '../chronicles/chroniclesRunCheckpoint.js';
 import {
@@ -85,6 +86,7 @@ import { CHRONICLES_TURN_ENGINE_VERSION } from '../chroniclesOfMatthiasTurns.js'
 import {
   applyChroniclesProgressionToTacticsState,
   applyChroniclesTacticsProgression,
+  chroniclesFreshExpeditionProgression,
   chroniclesHeroProgress,
   loadChroniclesProgression,
   reconcileChroniclesProgressionInTacticsState,
@@ -225,6 +227,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const partyBarkSequenceRef = useRef(0);
   const [progression, setProgression] = useState(() => loadChroniclesProgression());
   const progressionRef = useRef(progression);
+  const runProgressionActiveRef = useRef(false);
   // The heroes' progression also lives on the server (it follows the account
   // between devices). Runs bootstrap only once it has been pulled, or the
   // pull failed and the local copy stands.
@@ -234,7 +237,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     let active = true;
     chroniclesPullProgression(progressionRef.current, { signal: controller.signal })
       .then((pulled) => {
-        if (!active) return;
+        if (!active || runProgressionActiveRef.current) return;
         if (pulled.from === 'remote') {
           const saved = saveChroniclesProgression(pulled.progression);
           progressionRef.current = saved;
@@ -538,10 +541,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const confirmCharacterBuild = useCallback((build) => {
     void requestChroniclesLandscapeOnEntry();
-    const selected = setChroniclesCharacterBuild(progression, build);
+    const selected = chroniclesFreshExpeditionProgression(build);
     if (!selected.updated) return;
-    const saved = saveChroniclesProgression(selected.progression);
-    void chroniclesPushProgression(saved).catch(() => {});
+    const saved = selected.progression;
+    // A new run owns its XP; never overwrite the account's legacy/Tactics
+    // progression, which older saved runs may still need for recovery.
+    runProgressionActiveRef.current = true;
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, ensureChroniclesRun(FIRST_PERSON_RUN_SCOPE));
     progressionRef.current = saved;
     stateRef.current = null;
@@ -558,7 +563,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     setCharacterSetupDone(true);
     setEntryView('playing');
     setBootstrapRevision((revision) => revision + 1);
-  }, [progression]);
+  }, []);
 
   const retryBootstrap = useCallback(() => {
     staleRunRecoveryAttemptedRef.current = false;
@@ -734,7 +739,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // XP and attribute gains remain in this session until Save / area exit.
       progressionRef.current = progressResult.progression;
       setProgression(progressResult.progression);
-      next = reconcileChroniclesProgressionInTacticsState(next, progressResult.progression);
+      next = {
+        ...reconcileChroniclesProgressionInTacticsState(next, progressResult.progression),
+        runProgression: progressResult.progression,
+      };
     }
 
     if (next !== current) pendingActionSoundRef.current = {
@@ -931,7 +939,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     setProgression(nextProgression);
     const current = stateRef.current;
     if (!current) return;
-    const reconciled = reconcileChroniclesProgressionInTacticsState(current, nextProgression);
+    const reconciled = {
+      ...reconcileChroniclesProgressionInTacticsState(current, nextProgression),
+      runProgression: nextProgression,
+    };
     stateRef.current = reconciled;
     setState(reconciled);
   }, []);
@@ -1018,9 +1029,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     })
       .then((world) => {
         if (!active) return;
+        const savedRunProgression = chroniclesCheckpointRunProgression(world);
+        const runProgression = savedRunProgression || activeProgression;
         const progressed = applyChroniclesProgressionToTacticsState(
-          createChroniclesState(null, activeProgression.characterBuild, { rules: 'mm3' }),
-          activeProgression,
+          createChroniclesState(null, runProgression.characterBuild, { rules: 'mm3' }),
+          runProgression,
         );
         const restored = chroniclesReconcileCurrentMapEnemyHp(chroniclesApplyRunCheckpoint(progressed, world));
         // The run id seeds every MM3 die so F5 never rerolls a blow.
@@ -1029,12 +1042,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             fresh: !remoteSelection && world.worldVersion === 0,
           })),
           runSeed: world.runId,
+          runProgression,
         };
         const confirmedId = chroniclesMarkSavedRunRemote(FIRST_PERSON_RUN_SCOPE, operationId, world.runId);
         if (!confirmedId) return;
         activeRunIdRef.current = confirmedId;
         chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, confirmedId);
         authoritativeRunRef.current = world;
+        progressionRef.current = runProgression;
+        setProgression(runProgression);
         // Record the authoritative bootstrap as our comparison baseline.
         // New runs have no durable checkpoint until an explicit Save or area exit.
         checkpointFingerprintRef.current = chroniclesRunCheckpointFingerprint(restored);
@@ -1044,11 +1060,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         if (resumed) {
           // Session snapshots from before a town gained new enemies can miss
           // their HP keys. The rendering and targeting contracts must agree.
-          next = { ...chroniclesReconcileCurrentMapEnemyHp(resumed.state), runSeed: world.runId };
-          if (resumed.progression) {
-            progressionRef.current = resumed.progression;
-            setProgression(resumed.progression);
-          }
+          const resumedProgression = resumed.progression || runProgression;
+          next = {
+            ...chroniclesReconcileCurrentMapEnemyHp(resumed.state),
+            runSeed: world.runId,
+            runProgression: resumedProgression,
+          };
+          progressionRef.current = resumedProgression;
+          setProgression(resumedProgression);
         }
         checkpointMapRef.current = next.mapId;
         setAutomapVisitedByMap(resumed?.automap || loadChroniclesAutomapVisited(confirmedId));
@@ -1154,11 +1173,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const persistCheckpoint = useCallback((snapshot, reason = 'manual') => {
     const requestedRunId = authoritativeRunRef.current?.runId;
     if (!snapshot || !requestedRunId) return Promise.resolve(false);
-    const fingerprint = chroniclesRunCheckpointFingerprint(snapshot);
-    if (!fingerprint) return Promise.resolve(false);
-    // Capture the progression and visited tiles at precisely this snapshot,
-    // not later play while an earlier area checkpoint is still in flight.
+    // Snapshot progression alongside world state, not in the shared profile.
+    // Including it in the fingerprint makes leveling a durable change.
     const stagedProgression = progressionRef.current;
+    const stagedSnapshot = { ...snapshot, runProgression: stagedProgression };
+    const fingerprint = chroniclesRunCheckpointFingerprint(stagedSnapshot);
+    if (!fingerprint) return Promise.resolve(false);
     const visited = chroniclesAutomapMarkSeen(
       automapVisitedRef.current, chroniclesMapForState(snapshot), snapshot,
     );
@@ -1173,7 +1193,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // authoritative world snapshot already exists.
       if (!checkpointExistsRef.current || fingerprint !== checkpointFingerprintRef.current) {
         const updated = await chroniclesCheckpointState(
-          requestedRunId, snapshot, currentRun.worldVersion,
+          requestedRunId, stagedSnapshot, currentRun.worldVersion,
           {
             terminalStatus: snapshot.phase === 'escaped' ? 'completed' : null,
             adminTravel: Boolean(snapshot[CHRONICLES_ADMIN_TRAVEL_KEY]),
@@ -1192,8 +1212,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // become durable; failures leave both staged for a later manual retry.
       checkpointExistsRef.current = true;
       saveChroniclesAutomapVisited(requestedRunId, visited);
-      saveChroniclesProgression(stagedProgression);
-      void chroniclesPushProgression(stagedProgression).catch(() => {});
       chroniclesNoteSavedRunCheckpoint(FIRST_PERSON_RUN_SCOPE, requestedRunId, snapshot.mapId);
       if (reason === 'manual') setSaveNotice('Partida guardada correctamente.');
       return true;
@@ -1482,6 +1500,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     setFirstStepsOpen(false);
     chroniclesClearPlayingRun();
     beginChroniclesRun(FIRST_PERSON_RUN_SCOPE, { entryMapId });
+    const fresh = chroniclesFreshExpeditionProgression().progression;
+    runProgressionActiveRef.current = true;
+    progressionRef.current = fresh;
+    setProgression(fresh);
     setCharacterSetupDone(false);
     setEntryView('setup');
     refreshSaves((value) => value + 1);
@@ -1490,6 +1512,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const loadSavedGame = (runId) => {
     if (!chroniclesSelectSavedRun(FIRST_PERSON_RUN_SCOPE, runId)) return;
     setFirstStepsOpen(false);
+    // Legacy saves without run-scoped flags retain their old account fallback.
+    runProgressionActiveRef.current = true;
+    progressionRef.current = loadChroniclesProgression();
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, runId);
     // Loading an existing expedition skips character setup; use this click to
     // request the same native fullscreen/orientation affordance as New game.
@@ -1520,6 +1545,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       checkpointMapRef.current = null;
       checkpointExistsRef.current = false;
       const durableProgression = loadChroniclesProgression();
+      runProgressionActiveRef.current = false;
       progressionRef.current = durableProgression;
       setProgression(durableProgression);
       setState(null);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   chroniclesApplyRunCheckpoint,
+  chroniclesCheckpointRunProgression,
   chroniclesRunCheckpointFingerprint,
   chroniclesRunCheckpointPayload,
   chroniclesRunHasRuntimeCheckpoint,
@@ -381,5 +382,71 @@ describe('Chronicles campaign gold recovery', () => {
     expect(replayed).toBe(restored);
     expect(chroniclesGoldBalance(replayed)).toBe(18);
     expect(chroniclesRunCheckpointPayload(restored, 5).inventory).toEqual(payload.inventory);
+  });
+});
+
+
+describe('Chronicles per-expedition progression isolation', () => {
+  it('starts a new four-hero expedition at level 1 without changing old save progress', async () => {
+    const {
+      chroniclesFreshExpeditionProgression, grantChroniclesXp,
+      chroniclesXpThresholdForLevel,
+    } = await import('../chroniclesOfMatthiasProgression.js');
+    const veteran = grantChroniclesXp(
+      chroniclesFreshExpeditionProgression().progression,
+      'matthias', chroniclesXpThresholdForLevel(9),
+      'old-expedition:reward',
+    ).progression;
+    const oldState = { ...createChroniclesState(), runProgression: veteran };
+    const oldCheckpoint = chroniclesRunCheckpointPayload(oldState, 4);
+    const fresh = chroniclesFreshExpeditionProgression().progression;
+    for (const hero of Object.values(fresh.heroes)) {
+      expect(hero).toMatchObject({
+        level: 1, xp: 0, attributePoints: 0, skillPoints: 0, skills: [],
+      });
+      expect(Object.values(hero.attributes).every((amount) => amount === 0)).toBe(true);
+    }
+    expect(fresh.claimedAwards).toEqual([]);
+    expect(chroniclesCheckpointRunProgression(oldCheckpoint).heroes.matthias.level).toBe(9);
+    expect(veteran.heroes.matthias.level).toBe(9);
+  });
+
+  it('restores different heroes, builds and XP per run using bounded server flags', async () => {
+    const {
+      chroniclesFreshExpeditionProgression, grantChroniclesXp,
+      chroniclesXpThresholdForLevel, spendChroniclesAttributePoint,
+    } = await import('../chroniclesOfMatthiasProgression.js');
+    const base = chroniclesFreshExpeditionProgression().progression;
+    const evolved = grantChroniclesXp(base, 'rook', chroniclesXpThresholdForLevel(5), 'run-a:xp').progression;
+    const invested = spendChroniclesAttributePoint(evolved, 'rook', 'vigor').progression;
+    const a = chroniclesRunCheckpointPayload({ ...createChroniclesState(), runProgression: invested }, 0);
+    const b = chroniclesRunCheckpointPayload({ ...createChroniclesState(), runProgression: base }, 0);
+    const restoredA = chroniclesCheckpointRunProgression(a);
+    const restoredB = chroniclesCheckpointRunProgression(b);
+    expect(restoredA.heroes.rook.level).toBe(5);
+    expect(restoredA.heroes.rook.attributes.vigor).toBe(1);
+    expect(restoredA.claimedAwards).toContain('run-a:xp');
+    expect(restoredB.heroes.rook).toMatchObject({ level: 1, xp: 0 });
+    expect(restoredB.claimedAwards).toEqual([]);
+    expect(chroniclesApplyRunCheckpoint(createChroniclesState(), a).runProgression).toEqual(restoredA);
+    for (const [key, value] of Object.entries(a.worldFlags)) {
+      if (key.startsWith('__chrRuntime.progression.part.')) {
+        expect(Array.from(value).length).toBeLessThanOrEqual(240);
+      }
+    }
+    expect(chroniclesRunCheckpointFingerprint({ ...createChroniclesState(), runProgression: invested }))
+      .not.toBe(chroniclesRunCheckpointFingerprint({ ...createChroniclesState(), runProgression: base }));
+  });
+
+  it('keeps legacy saves readable and declines truncated run progression', async () => {
+    const { chroniclesFreshExpeditionProgression } = await import('../chroniclesOfMatthiasProgression.js');
+    const fresh = chroniclesFreshExpeditionProgression().progression;
+    const payload = chroniclesRunCheckpointPayload({ ...createChroniclesState(), runProgression: fresh }, 0);
+    expect(chroniclesCheckpointRunProgression({ worldFlags: {} })).toBeNull();
+    const corrupt = { ...payload.worldFlags };
+    delete corrupt['__chrRuntime.progression.part.0'];
+    expect(chroniclesCheckpointRunProgression({ worldFlags: corrupt })).toBeNull();
+    const old = chroniclesApplyRunCheckpoint(createChroniclesState(), { worldFlags: { '__chrRuntime.version': 1 } });
+    expect(old.runProgression).toBeUndefined();
   });
 });
