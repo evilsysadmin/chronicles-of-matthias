@@ -281,7 +281,7 @@ export default function ChroniclesCharacterSheet({
                     </small>
                   </div>
                 </details>
-              )
+              )}
               {inventory.length ? (
                 visibleBackpack.length ? (
                   <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
