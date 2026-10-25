@@ -347,8 +347,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(uv.getY(4)).toBe(0.5);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     roofs.geometry.computeBoundingBox();
-    expect(roofs.geometry.boundingBox.max.x).toBeLessThan(8);
-    expect(roofs.geometry.boundingBox.max.z).toBeLessThan(2);
+    // 22cm eaves beyond the 4m cell make the roofline visible from street
+    // level. The original six vertices / 18 indices remain unchanged.
+    expect(roofs.geometry.boundingBox.max.x).toBeCloseTo(8.22);
+    expect(roofs.geometry.boundingBox.max.z).toBeCloseTo(2.22);
     for (const [index, run] of roofRuns.entries()) {
       expect(grid[run.y].slice(run.x, run.x + run.width)).toBe('#'.repeat(run.width));
       expect(grid[run.y - 1].slice(run.x, run.x + run.width)).toContain('.');
@@ -356,8 +358,9 @@ describe('Chronicles file-authored exterior renderer', () => {
       const roof = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
       expect(roof.x).toBeCloseTo((run.x + (run.width - 1) / 2 - center.x) * 4);
       const scale = new THREE.Vector3().setFromMatrixScale(facadeMatrix);
-      const actualRoofLength = (4 * 4 - 0.16) * scale.x;
-      expect(actualRoofLength).toBeCloseTo(run.width * 4 - 0.16);
+      const actualRoofLength = (4 * 4 + 0.44) * scale.x;
+      expect(actualRoofLength).toBeCloseTo(run.width * 4 + 0.44);
+      expect(actualRoofLength - run.width * 4).toBeCloseTo(0.44);
       expect(scale.y).toBeCloseTo(1);
       expect(scale.z).toBeCloseTo(1);
       expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
