@@ -73,10 +73,10 @@ function settlementStreetFacingFaces({ grid, blocked, zones }) {
   return faces;
 }
 
-// One instanced frame still owns the complete window silhouette: a projecting
-// wooden sill and two slim leaded-glass dividers. Merge the four small boxes
-// ONCE rather than adding per-window meshes/draw calls. The forward-most
-// detail stays inside the impassable 4m cell (never over the walking lane).
+// One instanced frame owns the complete window silhouette: a projecting sill,
+// leaded-glass dividers and open timber shutters with diagonal braces.
+// Merge once rather than adding per-window meshes/draw calls. Every detail
+// stays inside the impassable 4m cell (never over the walking lane).
 function settlementWindowFrameGeometry() {
   const frame = new THREE.BoxGeometry(1.32, 0.84, 0.022);
   const sill = new THREE.BoxGeometry(1.46, 0.10, 0.030);
@@ -86,6 +86,16 @@ function settlementWindowFrameGeometry() {
   const transom = new THREE.BoxGeometry(0.77, 0.045, 0.008);
   transom.translate(0, 0.02, 0.022);
   const parts = [frame, sill, mullion, transom];
+  // Open shutters add a recognisable lived-in silhouette to the flat street
+  // fronts. Both panels and their braces share the existing frame draw call.
+  for (const side of [-1, 1]) {
+    const shutter = new THREE.BoxGeometry(0.25, 0.70, 0.020);
+    shutter.translate(side * 0.87, 0, 0.010);
+    const brace = new THREE.BoxGeometry(0.060, 0.67, 0.012);
+    brace.rotateZ(side * 0.22);
+    brace.translate(side * 0.87, 0, 0.017);
+    parts.push(shutter, brace);
+  }
   const geometry = mergeGeometries(parts, false);
   parts.forEach(part => part.dispose());
   if (!geometry) throw new Error('Swordhaven window frame geometry could not be merged');
