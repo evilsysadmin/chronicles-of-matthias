@@ -14,6 +14,13 @@ function nonNegativeInteger(value, fallback = 0) {
   return Math.max(0, Math.floor(number));
 }
 
+// Legacy or computed HP may be non-finite. Infinity is not a living
+// combatant: admitting it can leave an unkillable actor in initiative.
+function hasLivingHitPoints(value) {
+  const hp = Number(value);
+  return Number.isFinite(hp) && hp > 0;
+}
+
 export function chroniclesRollD8(random = Math.random) {
   const raw = Number(random());
   const normalized = Number.isFinite(raw) ? Math.min(0.999999999999, Math.max(0, raw)) : 0;
@@ -59,7 +66,7 @@ export function chroniclesRollInitiative(
   { random = Math.random } = {},
 ) {
   const partyActors = (state?.party || [])
-    .filter((member) => Number(member?.hp || 0) > 0)
+    .filter((member) => hasLivingHitPoints(member?.hp))
     .map((member) => actorEntry({
       id: member.id,
       kind: 'party',
@@ -69,7 +76,7 @@ export function chroniclesRollInitiative(
     }));
 
   const enemyActors = (Array.isArray(enemies) ? enemies : [])
-    .filter((enemy) => Number(state?.[enemy?.hpKey] || 0) > 0)
+    .filter((enemy) => hasLivingHitPoints(state?.[enemy?.hpKey]))
     .map((enemy) => actorEntry({
       id: enemy.id,
       kind: 'enemy',
@@ -136,7 +143,7 @@ export function chroniclesEngagedEnemies(state, enemies) {
   return (Array.isArray(enemies) ? enemies : []).filter((enemy) => {
     // Match the initiative roster's living-enemy predicate: NaN from a
     // malformed legacy HP value must not start a party-only combat.
-    if (!(Number(state?.[enemy?.hpKey] || 0) > 0)) return false;
+    if (!(hasLivingHitPoints(state?.[enemy?.hpKey]))) return false;
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
       && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
@@ -163,10 +170,10 @@ export function chroniclesEnemyLostParty(state, enemy) {
 
 function actorIsAlive(state, enemyById, actor) {
   if (actor.kind === 'party') {
-    return (state?.party || []).some((member) => member.id === actor.id && Number(member.hp || 0) > 0);
+    return (state?.party || []).some((member) => member.id === actor.id && hasLivingHitPoints(member.hp));
   }
   const enemy = enemyById.get(actor.id);
-  return Boolean(enemy && Number(state?.[enemy.hpKey] || 0) > 0);
+  return Boolean(enemy && hasLivingHitPoints(state?.[enemy.hpKey]));
 }
 
 export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
@@ -176,14 +183,14 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (state.phase === 'defeated' || state.phase === 'escaped') return state;
   // A wiped company cannot take a turn: never create an enemy-only combat.
   // Defeat resolution belongs to the reducer, not to this engagement helper.
-  if (!Array.isArray(state.party) || !state.party.some((member) => Number(member?.hp || 0) > 0)) return state;
+  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) return state;
   const forceEnemyIds = new Set(Array.isArray(options.forceEnemyIds) ? options.forceEnemyIds : []);
   const candidates = Array.isArray(enemies) ? enemies : [];
   const engagedById = new Map(
     chroniclesEngagedEnemies(state, candidates).map((enemy) => [enemy.id, enemy]),
   );
   candidates.forEach((enemy) => {
-    if (forceEnemyIds.has(enemy.id) && Number(state?.[enemy.hpKey] || 0) > 0) {
+    if (forceEnemyIds.has(enemy.id) && hasLivingHitPoints(state?.[enemy.hpKey])) {
       engagedById.set(enemy.id, enemy);
     }
   });
@@ -205,7 +212,7 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
   // A party wiped during an active round must end in defeat, even if
   // enemies survive or the final enemy fell at the same time.
-  if (!Array.isArray(state.party) || !state.party.some((member) => Number(member?.hp || 0) > 0)) {
+  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) {
     const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
   }
