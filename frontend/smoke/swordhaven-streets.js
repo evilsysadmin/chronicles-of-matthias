@@ -87,6 +87,8 @@ try {
     wallCount: String(wall.count),
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
+    plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
+      && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
     roofRelief: String(roofs.material.normalMap?.name === 'chronicles-town-normal-roof'
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),

@@ -203,6 +203,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(plaster.count).toBe(94);
     expect(plaster.instanceColor).toBeTruthy();
     expect(plaster.material.map).toBe(swordhavenSurfaceTexture('stucco'));
+    expect(plaster.material.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
+    expect(plaster.material.normalScale.toArray()).toEqual([0.22, 0.22]);
+    expect(plaster.material.map.repeat.toArray()).toEqual(plaster.material.normalMap.repeat.toArray());
     expect(plaster.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(plaster.material.map.wrapS).toBe(THREE.RepeatWrapping);
     expect(plaster.castShadow).toBe(false);

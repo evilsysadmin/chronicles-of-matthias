@@ -63,10 +63,10 @@ const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, roof: 3, timber: 3
 const surfaceCache = new Map();
 const surfaceNormalCache = new Map();
 
-// Cached tangent-space relief for masonry, cobbles and roof courses.
-// Axes/repeat match the albedo; roof detail needs no extra geometry.
+// Cached tangent-space relief for masonry, cobbles, roof and limewash.
+// Axes/repeat match the albedo; detail needs no extra geometry.
 export function swordhavenSurfaceNormalTexture(kind) {
-  if (kind !== 'masonry' && kind !== 'cobble' && kind !== 'roof') {
+  if (kind !== 'masonry' && kind !== 'cobble' && kind !== 'roof' && kind !== 'stucco') {
     throw new Error('Unsupported Swordhaven relief: ' + kind);
   }
   if (surfaceNormalCache.has(kind)) return surfaceNormalCache.get(kind);
@@ -838,7 +838,11 @@ export function createSwordhavenMaterials() {
       normalMap: swordhavenSurfaceNormalTexture('masonry'),
       normalScale: new THREE.Vector2(0.56, 0.56), roughness: 0.95,
     }),
-    plaster: material(0xe0caac, { map: swordhavenSurfaceTexture('stucco'), roughness: 0.97 }),
+    plaster: material(0xe0caac, {
+      map: swordhavenSurfaceTexture('stucco'),
+      normalMap: swordhavenSurfaceNormalTexture('stucco'),
+      normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.97,
+    }),
     timber: material(0x694b34, { map: swordhavenSurfaceTexture('timber'), roughness: 0.85 }),
     gold: material(0xd6ae67, { metalness: 0.48 }),
     window: material(0xf8b96e, { emissive: 0x925124, emissiveIntensity: 0.45 }),
