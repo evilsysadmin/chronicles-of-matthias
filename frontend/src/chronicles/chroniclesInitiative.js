@@ -37,7 +37,9 @@ export function chroniclesPartyInitiativeAgility(state, member) {
   // MM Speed: its bonus (negative for slow heroes) moves the hero in the order.
   const rawSpeedBonus = Number(member.mm3?.bonuses?.speed ?? 0);
   // Corrupt legacy MM3 bonuses must not turn AGI or initiative into NaN/Infinity.
-  const speedBonus = Number.isFinite(rawSpeedBonus) ? rawSpeedBonus : 0;
+  // Only whole, safely representable MM3 bonuses can affect AGI + 1d8.
+  // Fractional/unsafe legacy values would break the integer initiative contract.
+  const speedBonus = Number.isSafeInteger(rawSpeedBonus) ? rawSpeedBonus : 0;
   return Math.max(0, base + progressionBonus + speedBonus);
 }
 
