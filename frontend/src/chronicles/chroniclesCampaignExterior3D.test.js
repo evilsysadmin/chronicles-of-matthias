@@ -153,9 +153,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(panes).toBeInstanceOf(THREE.InstancedMesh);
     expect(frames.count).toBeGreaterThan(80); // Two storeys, still two draw calls.
     expect(panes.count).toBe(frames.count);
-    // Sill, leadwork and two open shutter panels with diagonal braces share
-    // ONE instanced frame batch: eight boxes, no extra per-window draw calls.
-    expect(frames.geometry.index.count).toBe(36 * 8);
+    // Sill, leadwork and two three-plank shutters with diagonal braces share
+    // ONE instanced frame batch: twelve boxes, no extra per-window draw calls.
+    expect(frames.geometry.index.count).toBe(36 * 12);
     const frameBounds = new THREE.Box3()
       .setFromBufferAttribute(frames.geometry.getAttribute('position'));
     expect(frameBounds.min.y).toBeCloseTo(-0.51);
