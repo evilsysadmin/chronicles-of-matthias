@@ -67,7 +67,7 @@ function normalizeSkills(raw) {
   if (!Array.isArray(raw)) return [];
   return [...new Set(
     raw
-      .filter((id) => typeof id === 'string' && CHRONICLES_ENEMY_SKILLS[id])
+      .filter((id) => typeof id === 'string' && Object.hasOwn(CHRONICLES_ENEMY_SKILLS, id))
       .map((id) => id.trim()),
   )].slice(0, 8);
 }
@@ -122,7 +122,7 @@ export function validateChroniclesEnemyBuild(raw) {
 
   const skills = Array.isArray(raw.skills) ? raw.skills : [];
   skills.forEach((skillId) => {
-    if (typeof skillId !== 'string' || !CHRONICLES_ENEMY_SKILLS[skillId]) {
+    if (typeof skillId !== 'string' || !Object.hasOwn(CHRONICLES_ENEMY_SKILLS, skillId)) {
       errors.push(`Skill enemiga desconocida: ${String(skillId)}`);
     }
   });
