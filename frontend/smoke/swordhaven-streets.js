@@ -90,7 +90,8 @@ try {
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     windowDetail: String(windowFrames.count === windowPanes.count
-      && windowFrames.geometry.index.count === 36 * 4
+      && windowFrames.geometry.index.count === 36 * 12
+      && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.x >= 0.99
       && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.z + 1.972 < 2),
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
