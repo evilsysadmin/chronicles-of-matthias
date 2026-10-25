@@ -97,6 +97,22 @@ try {
         }
         await page.screenshot({ path: `smoke-folio-${view}-${width}.png` });
         if(view === 'cast') {
+          if (width <= 430) {
+            const description = await dialog.locator('.chronicles-spell-menu__entry small')
+              .first().evaluate((node) => {
+                const style = getComputedStyle(node);
+                return {
+                  fontSize: parseFloat(style.fontSize),
+                  lineHeight: parseFloat(style.lineHeight),
+                  scrollHeight: node.scrollHeight,
+                  clientHeight: node.clientHeight,
+                };
+              });
+            assert(description.fontSize >= 17 && description.lineHeight >= 20,
+              `CAST mobile spell copy is too small: ${JSON.stringify(description)}`);
+            assert(description.scrollHeight <= description.clientHeight + 1,
+              `CAST mobile spell copy is clipped: ${JSON.stringify(description)}`);
+          }
           await dialog.getByRole('tab', { name: /Objetos/ }).click();
           await page.locator('[data-chronicles-use-item="healing-potion"]').waitFor();
           // The original regression appeared only after switching pages

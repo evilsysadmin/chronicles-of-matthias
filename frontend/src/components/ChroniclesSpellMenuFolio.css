@@ -313,7 +313,11 @@
   }
   .chronicles .chronicles-spell-menu__rune { width: 32px; height: 32px; font-size: 1.2rem; }
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry strong { font-size: 1.15rem; }
-  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small { font-size: .95rem; }
+  /* Pixel-font descriptions need more breathing room at phone widths. */
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small {
+    font-size: 1.08rem;
+    line-height: 1.22;
+  }
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer { padding: 8px 10px; }
 }
 @media (max-height: 470px) {
