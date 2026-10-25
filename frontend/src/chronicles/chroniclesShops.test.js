@@ -19,14 +19,14 @@ describe('Chronicles · MM3 shops', () => {
     const buyAction = { type: 'shop-buy', itemId: 'brass-dagger' };
     const bought = chroniclesReduce(open, buyAction);
     expect(chroniclesShopTradeNotice(open, bought, buyAction))
-      .toBe('¡Daga de latón comprada!');
+      .toBe('¡Compraste Daga de latón!');
     expect(chroniclesShopTradeNotice(open, bought, { ...buyAction, itemId: 'brass-axe' }))
       .toBe('');
 
     const sellAction = { type: 'shop-sell', itemId: 'brass-dagger' };
     const sold = chroniclesReduce(bought, sellAction);
     expect(chroniclesShopTradeNotice(bought, sold, sellAction))
-      .toBe('¡Daga de latón vendida!');
+      .toBe('¡Vendiste Daga de latón!');
 
     const broke = atForge(0);
     const refused = chroniclesReduce(broke, buyAction);

@@ -94,9 +94,9 @@ export function chroniclesShopTradeNotice(previous, next, action) {
   const goldBefore = chroniclesGoldBalance(previous);
   const goldAfter = chroniclesGoldBalance(next);
   if (action.type === 'shop-buy' && after === before + 1
-    && goldAfter === goldBefore - item.price) return `¡${item.name} comprado!`;
+    && goldAfter === goldBefore - item.price) return `¡Compraste ${item.name}!`;
   if (action.type === 'shop-sell' && after === before - 1
-    && goldAfter === goldBefore + chroniclesShopSellPrice(item)) return `¡${item.name} vendido!`;
+    && goldAfter === goldBefore + chroniclesShopSellPrice(item)) return `¡Vendiste ${item.name}!`;
   return '';
 }
 
