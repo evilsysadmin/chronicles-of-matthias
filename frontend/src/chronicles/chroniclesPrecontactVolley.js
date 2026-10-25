@@ -1,7 +1,8 @@
 import {
   chroniclesActiveEnemies, chroniclesEnemyTargetAhead,
-  chroniclesOpeningVolleyShots,
+  chroniclesOpeningVolleyShots, chroniclesOpeningVolleyShooters,
 } from '../chroniclesOfMatthias.js';
+import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 
@@ -9,6 +10,18 @@ import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 // S at that distance can start an encounter but cannot magically extend the
 // weapon's hit range. Use the same limit for keyboard and touch behavior.
 export const CHRONICLES_VOLLEY_PROVOCATION_RANGE = 4;
+
+// S launches an expedition-wide volley outside combat, or the active
+// hero's missile while initiative is running. No weapon means no action.
+export function chroniclesMissileRefusal(state, memberId = null) {
+  if (!state || state.combatRules !== 'mm3') return null;
+  if (!state.initiative) {
+    return chroniclesOpeningVolleyShooters(state).length ? null : 'Sin arma a distancia';
+  }
+  const actor = state.party?.find((member) => member.id === memberId);
+  return actor?.hp > 0 && !chroniclesEquippedItem(state, actor.id, 'missile')
+    ? 'Sin arma a distancia' : null;
+}
 
 // A single touch attack button advertises the *company* salvo even when
 // the selected member has no bow. Melee adjacent targets keep attack priority.

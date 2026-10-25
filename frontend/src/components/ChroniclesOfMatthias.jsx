@@ -31,7 +31,8 @@ import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortrai
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
-import { chroniclesAdvanceOpeningVolley, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
+import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
+import './ChroniclesQuietActionNotice.css';
 import { chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
@@ -288,6 +289,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const partyHotkeyRef = useRef({ key: '', at: 0 });
   const [rendererError, setRendererError] = useState('');
   const [retaliationCue, setRetaliationCue] = useState(null);
+  const [missileNotice, setMissileNotice] = useState('');
+  const missileNoticeTimerRef = useRef(null);
+  const showMissileNotice = useCallback((message) => {
+    if (missileNoticeTimerRef.current) window.clearTimeout(missileNoticeTimerRef.current);
+    setMissileNotice(message);
+    missileNoticeTimerRef.current = window.setTimeout(() => {
+      missileNoticeTimerRef.current = null;
+      setMissileNotice('');
+    }, 1500);
+  }, []);
+  useEffect(() => () => {
+    if (missileNoticeTimerRef.current) window.clearTimeout(missileNoticeTimerRef.current);
+  }, []);
   const [hitSplats, setHitSplats] = useState([]);
   const hitSplatSequenceRef = useRef(0);
   const pendingActionSoundRef = useRef(null);
@@ -907,12 +921,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       ? initiativeActor.id
       : selectedMemberIdRef.current;
     const member = current.party.find((candidate) => candidate.id === memberId);
+    if (mode === 'missile') {
+      const refusal = chroniclesMissileRefusal(current, memberId);
+      if (refusal) { showMissileNotice(refusal); return; }
+    }
     const startsCombat = !current.initiative
       && member
       && chroniclesEnemyTargetAhead(current, chroniclesPartyAttackStats(current, member.id, mode).reach);
     if (!startsCombat) engineRef.current?.playAttack?.(memberId);
     dispatch(mode === 'auto' ? { type: 'attack', memberId } : { type: 'attack', memberId, mode });
-  }, [dispatch]);
+  }, [dispatch, showMissileNotice]);
 
   // S is a company volley before initiative; once engaged it is the
   // current hero's ordinary missile attack.
@@ -923,6 +941,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       attackWithSelected('missile');
       return;
     }
+    const refusal = chroniclesMissileRefusal(current);
+    if (refusal) { showMissileNotice(refusal); return; }
     // An empty corridor still gets actual visible launches from armed heroes.
     // Only the combat reducer decides whether those shots hit anything.
     const shooterIds = chroniclesVolleyPresentationShooterIds(current);
@@ -931,7 +951,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       else engineRef.current?.playAttack?.(shooterIds[0]);
     }
     dispatch({ type: 'volley' });
-  }, [attackWithSelected, dispatch]);
+  }, [attackWithSelected, dispatch, showMissileNotice]);
 
   const applyLiveProgression = useCallback((nextProgression) => {
     // Character-sheet spending is also part of the player's next saved game.
@@ -1937,6 +1957,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               meleeReach={meleeReach} missileReach={missileReach}
               canProvoke={!state.initiative && touchVolley.available && tacticalTarget?.distance > missileReach} />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
+            {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-missile-refusal>{missileNotice}</div>}
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
             {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}

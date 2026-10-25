@@ -1,0 +1,26 @@
+/* Small, ephemeral input refusal: never obstruct the view or controls. */
+.chronicles .chronicles-quiet-action-notice {
+  position: absolute;
+  z-index: 12;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(80%, 240px);
+  padding: 3px 10px;
+  border: 1px solid rgba(218, 174, 110, .48);
+  border-radius: 4px;
+  background: rgba(19, 17, 17, .83);
+  color: #e5c9a0;
+  font: 13px var(--mm3-pixel-font);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: chronicles-quiet-notice-in 120ms ease-out both;
+}
+@keyframes chronicles-quiet-notice-in {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles .chronicles-quiet-action-notice { animation: none; }
+}

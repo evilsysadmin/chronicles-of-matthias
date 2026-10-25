@@ -3,11 +3,13 @@ import {
   chroniclesActiveEnemies,
   chroniclesEnemyTargetAhead,
   chroniclesOpeningVolleyShots,
+  chroniclesCombatMissileTarget,
   chroniclesReduce,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import {
   chroniclesAdvanceOpeningVolley,
+  chroniclesMissileRefusal,
   chroniclesPrecontactMeleeContact,
   chroniclesTouchVolleyOpportunity,
 } from './chroniclesPrecontactVolley.js';
@@ -128,5 +130,53 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
     expect(chroniclesPrecontactMeleeContact(near)).toBe(true);
     const dead = { ...near, [enemy.hpKey]: 0 };
     expect(chroniclesPrecontactMeleeContact(dead)).toBe(false);
+  });
+});
+
+describe('S / melee-range missile contract', () => {
+  it('refuses a company volley without any legal weapon: no turn, HP, XP or animation source', () => {
+    const base = { ...rangedCompany(), equipment: {} };
+    expect(chroniclesMissileRefusal(base)).toBe('Sin arma a distancia');
+    expect(chroniclesOpeningVolleyShots(base).shooters).toEqual([]);
+    const after = chroniclesReduce(base, { type: 'volley' });
+    expect(after.turns).toBe(base.turns);
+    expect(after.inventory).toBe(base.inventory);
+    expect(chroniclesAdvanceOpeningVolley(base, after)).toBe(after);
+  });
+
+  it('refuses an unarmed active hero in initiative without spending the actor turn', () => {
+    const base = rangedCompany();
+    const active = {
+      ...base, phase: 'combat',
+      initiative: { order: [{ kind: 'party', id: 'rook' }], cursor: 0, round: 1 },
+    };
+    expect(chroniclesMissileRefusal(active, 'rook')).toBe('Sin arma a distancia');
+    const after = chroniclesReduce(active, { type: 'attack', memberId: 'rook', mode: 'missile' });
+    expect(after.turns).toBe(active.turns);
+    expect(chroniclesMissileRefusal(active, 'matthias')).toBeNull();
+  });
+
+  it('permits a real missile hit at melee distance while engaged, even when enemy is to the side', () => {
+    const base = rangedCompany();
+    const sighted = chroniclesEnemyTargetAhead(base, 3);
+    expect(sighted).toBeTruthy();
+    const enemy = sighted.enemy;
+    const close = {
+      ...base, phase: 'combat',
+      direction: 0,
+      enemyPositions: {
+        ...base.enemyPositions, [enemy.id]: { x: base.x + 1, y: base.y },
+      },
+      initiative: { order: [
+        { kind: 'party', id: 'matthias' },
+        { kind: 'enemy', id: enemy.id },
+      ], cursor: 0, round: 1 },
+    };
+    expect(chroniclesEnemyTargetAhead(close, 3)).toBeNull();
+    expect(chroniclesCombatMissileTarget(close, 3)?.enemy.id).toBe(enemy.id);
+    expect(chroniclesMissileRefusal(close, 'matthias')).toBeNull();
+    const resolved = chroniclesReduce(close, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+    expect(resolved.turns).toBe(close.turns + 1);
+    expect(resolved.message).toMatch(/(falla|impacta|derrota|acaba con)/i);
   });
 });
