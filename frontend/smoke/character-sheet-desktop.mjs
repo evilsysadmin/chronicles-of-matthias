@@ -673,9 +673,10 @@ try {
         'Live HP and touch targets must remain visible: ' + JSON.stringify(geometry));
       assert.deepEqual(geometry.dockButtons.filter(({ hpClipped }) => hpClipped), [],
         'Every live HP fraction must fit the actual painted party dock: ' + JSON.stringify(geometry.dockButtons));
-      assert.ok(geometry.dockButtons.every(({ fraction, accessibleLabel }) =>
-        /^\d+\/\d+$/.test(fraction) && accessibleLabel.includes(fraction) && accessibleLabel.includes('PV')),
-      'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ fraction, accessibleLabel }) => {
+        const [current, maximum] = fraction.split('/');
+        return /^\d+\/\d+$/.test(fraction) && accessibleLabel.includes(`${current} de ${maximum} PV`);
+      }), 'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
       assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 380)),
         'Only the narrowest phone may omit the redundant visible PV suffix: ' + JSON.stringify(geometry.dockButtons));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
