@@ -61,7 +61,9 @@ try {
   const plaster = town?.getObjectByName('chronicles-town-street-limewash-fronts');
   const roofs = town?.getObjectByName('chronicles-town-south-pitched-roofs');
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
-  if (!wall || !road || !plaster || !roofs || !posts) {
+  const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
+  const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
+  if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
 
@@ -87,6 +89,9 @@ try {
     wallCount: String(wall.count),
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
+    windowDetail: String(windowFrames.count === windowPanes.count
+      && windowFrames.geometry.index.count === 36 * 4
+      && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.z + 1.972 < 2),
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
