@@ -206,6 +206,30 @@ export function chroniclesEnemyDistanceAhead(state, maxReach = 2) {
   return chroniclesEnemyTargetAhead(state, maxReach)?.distance ?? null;
 }
 
+// In first-person initiative, adjacency may be beside/behind the camera,
+// or overlap the anchor on a restored/legacy formation. A bow remains usable
+// at melee range: prefer the enemy in the line of fire, then an engaged enemy
+// occupying a physically adjacent cell. Do not target enemies through walls
+// or outside the ongoing fight.
+export function chroniclesCombatMissileTarget(state, reach) {
+  const straight = chroniclesEnemyTargetAhead(state, reach);
+  if (straight || !chroniclesUsesMM3Combat(state) || !state?.initiative || reach < 1) return straight;
+  const engagedIds = new Set(state.initiative.order
+    .filter((actor) => actor.kind === 'enemy').map((actor) => actor.id));
+  return chroniclesActiveEnemies(state)
+    .filter((enemy) => engagedIds.has(enemy.id))
+    .map((enemy) => {
+      const position = chroniclesEnemyPosition(state, enemy);
+      const distance = Math.abs(position.x - state.x) + Math.abs(position.y - state.y);
+      return { enemy, position, distance };
+    })
+    .filter(({ position, distance }) => (
+      distance <= 1 && distance <= reach
+      && chroniclesTileAt(position.x, position.y, state) !== '#'
+    ))
+    .sort((a, b) => a.distance - b.distance || a.enemy.id.localeCompare(b.enemy.id))[0] || null;
+}
+
 function withMessage(state, message) {
   return { ...state, message, turns: state.turns + 1 };
 }
@@ -571,7 +595,7 @@ function resolveOpeningVolley(state) {
   if (!chroniclesUsesMM3Combat(state) || state.initiative) return state;
   const { target, shooters, shots, remainingHp } = chroniclesOpeningVolleyShots(state);
   if (!shooters.length) {
-    return withMessage(state, 'Salva imposible: nadie lleva un arma de proyectiles equipada que su clase pueda usar.');
+    return { ...state, message: 'Sin arma a distancia' }; // No action/turn.
   }
   if (!target || !shots.length) {
     // Firing into empty air costs a turn but is not a narrative event.
@@ -606,7 +630,7 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const mm3 = chroniclesUsesMM3Combat(state);
   const mode = spell || !mm3 ? 'melee' : requestedMode === 'auto' ? chroniclesAttackMode(state, member.id) : requestedMode;
   if (mode === 'missile' && !chroniclesEquippedItem(state, member.id, 'missile')) {
-    return withMessage(state, `${member.name} no lleva arma de proyectiles. Un arco, una ballesta o una honda, en el hueco de proyectil.`);
+    return { ...state, message: 'Sin arma a distancia' }; // Refusal never consumes the action.
   }
   const attacker = spell
     ? { ...member, attackName: spell.name }
@@ -621,7 +645,9 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
 
   const weaponStats = chroniclesPartyAttackStats(state, attacker.id, mm3 ? mode : 'auto');
   const attackStats = spell ? { ...weaponStats, reach: spell.reach } : weaponStats;
-  const target = chroniclesEnemyTargetAhead(state, attackStats.reach);
+  const target = mode === 'missile' && mm3 && !spell
+    ? chroniclesCombatMissileTarget(state, attackStats.reach)
+    : chroniclesEnemyTargetAhead(state, attackStats.reach);
   if (!target) {
     if (mode === 'missile') return withMessage(state, `${attacker.name} tensa ${attacker.attackName.toLowerCase()}, pero no hay nada a tiro (alcance ${attackStats.reach}).`);
     return withMessage(state, `${attacker.name} ejecuta ${attacker.attackName.toLowerCase()} contra absolutamente nada. La nada resiste.`);
