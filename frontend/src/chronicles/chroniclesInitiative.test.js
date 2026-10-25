@@ -151,6 +151,25 @@ describe('Chronicles initiative', () => {
     expect(forced.initiative.order.map((actor) => actor.id).sort()).toEqual(['far', 'matthias']);
   });
 
+  it('never starts enemy-only initiative after the entire company has fallen', () => {
+    const state = {
+      phase: 'explore',
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 0, agility: 4 }],
+      enemyHp: 3,
+    };
+    const enemy = {
+      id: 'enemy', name: 'Enemy', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Both ordinary proximity and an explicitly forced encounter must leave
+    // defeat handling to the reducer instead of trapping the player in combat.
+    for (const options of [{ random: () => 0 }, { forceEnemyIds: ['enemy'], random: () => 0 }]) {
+      expect(chroniclesStartInitiativeCombat(state, [enemy], options)).toBe(state);
+    }
+  });
+
   it('continues after a fallen current actor instead of restarting the round', () => {
     const state = {
       phase: 'combat',
