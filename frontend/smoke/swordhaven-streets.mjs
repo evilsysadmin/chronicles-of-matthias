@@ -41,6 +41,8 @@ try {
         assert.ok(Number(result.wallCount) > 50);
         assert.ok(Number(result.roadCount) > 100);
         assert.equal(Number(result.plasterCount), 94);
+        assert.equal(result.plasterRelief, 'true',
+          'Real street facades must use aligned, shared limewash relief');
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.roofRelief, 'true',
           'Real street roofs must use aligned, shared shingle relief');

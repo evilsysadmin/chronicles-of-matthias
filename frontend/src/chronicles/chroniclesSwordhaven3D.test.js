@@ -230,8 +230,8 @@ describe('Swordhaven modular real-time 3D', () => {
   });
 
 
-  it('adds periodic, linear normal maps to town stone, cobbles and roof courses', () => {
-    for (const kind of ['masonry', 'cobble', 'roof']) {
+  it('adds periodic, linear normal maps to stone, cobbles, roof and limewash', () => {
+    for (const kind of ['masonry', 'cobble', 'roof', 'stucco']) {
       const albedo = swordhavenSurfaceTexture(kind);
       const normal = swordhavenSurfaceNormalTexture(kind);
       expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
@@ -254,12 +254,17 @@ describe('Swordhaven modular real-time 3D', () => {
       }
       expect(slopes.size).toBeGreaterThan(30);
     }
-    expect(() => swordhavenSurfaceNormalTexture('stucco')).toThrow(/Unsupported/);
+    expect(() => swordhavenSurfaceNormalTexture('timber')).toThrow(/Unsupported/);
     const scene = new THREE.Scene();
     buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: true });
     const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
     expect(temple.getObjectByName('timber-and-stone-walls').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('masonry'));
+    const forgeWall = scene.getObjectByName('swordhaven-building-swordhaven-forge')
+      .getObjectByName('timber-and-stone-walls').material;
+    expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
+    expect(forgeWall.normalScale.toArray()).toEqual([0.50, 0.50]);
+    expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));
     for (const spec of SWORDHAVEN_BUILDINGS) {

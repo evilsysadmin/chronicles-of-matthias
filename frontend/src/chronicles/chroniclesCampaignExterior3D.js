@@ -125,9 +125,13 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
   const height = wallHeight - 0.52;
   const panels = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.935, height, 0.012),
-    // Authored limewash still varies by house via instanceColor. Reuse the
-    // existing cached plaster grain instead of leaving a flat colour polygon.
-    material(0xffffff, { map: swordhavenSurfaceTexture('stucco'), roughness: 0.97 }),
+    // House-specific tint stays in instanceColor; a shared, restrained
+    // stucco normal map adds light response without more geometry or batches.
+    material(0xffffff, {
+      map: swordhavenSurfaceTexture('stucco'),
+      normalMap: swordhavenSurfaceNormalTexture('stucco'),
+      normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
+    }),
     faces.length,
   );
   const dummy = new THREE.Object3D();

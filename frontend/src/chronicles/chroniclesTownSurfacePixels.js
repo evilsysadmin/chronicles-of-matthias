@@ -38,8 +38,12 @@ function surfaceDetail(kind, x, y, spec) {
   const fine = noise(x, y, size, 32, 19) - 0.5;
   if (kind === 'stucco') {
     const speck = hash(x, y, 7);
+    // Subtle, non-directional limewash pores: the same noise drives pigment
+    // and relief, without changing the existing albedo or facade geometry.
+    const pitting = speck > 0.991 ? 1 : 0;
     return { shade: 1 + erosion * 0.16 + fine * 0.10 + grain * 0.09
-      - (speck > 0.991 ? 0.22 : 0), mortar: false, elevation: 0.5 };
+      - pitting * 0.22, mortar: false,
+    elevation: 0.5 + erosion * 0.20 + fine * 0.12 + grain * 0.10 - pitting * 0.15 };
   }
   if (kind === 'timber') {
     const board = Math.floor(x / 24);
@@ -94,9 +98,10 @@ export function chroniclesTownSurfacePixels(kind) {
   if (surfaceCache.has(kind)) return surfaceCache.get(kind);
   const { size, base } = spec;
   const pixels = new Uint8Array(size * size * 4);
-  // Reuse the existing tile elevation for roof courses too: one 128px
-  // tangent-space map gives shingles directional light without new meshes.
-  const stoneRelief = kind === 'masonry' || kind === 'cobble' || kind === 'roof';
+  // One shared normal atlas per material: stone joints, roof shingles and
+  // fine limewash pores all respond to light without extra polygons.
+  const stoneRelief = kind === 'masonry' || kind === 'cobble'
+    || kind === 'roof' || kind === 'stucco';
   const heights = stoneRelief ? new Float32Array(size * size) : null;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
