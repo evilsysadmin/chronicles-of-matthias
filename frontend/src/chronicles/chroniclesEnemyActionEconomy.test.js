@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesPartyMemberPosition } from '../chroniclesPartyFootprint.js';
 import {
   chroniclesResolveEnemyActor,
   chroniclesResolveEnemyTurn,
@@ -140,7 +141,9 @@ describe('Chronicles first-person combat reach follows the visible camera anchor
     const tactics = { ...inFront, combatRules: null };
     const tacticsTarget = chroniclesEnemyAttackTarget(tactics, goblin);
     expect(tacticsTarget).toBeTruthy();
-    const tacticalCell = tactics.partyPositions[tacticsTarget.id];
+    // Revalidated formation positions are authoritative when a legacy save
+    // contains duplicated per-hero cells; the raw saved map may be discarded.
+    const tacticalCell = chroniclesPartyMemberPosition(tactics, tacticsTarget.id);
     expect(Math.abs(tacticalCell.x - 1) + Math.abs(tacticalCell.y - 3)).toBe(1);
     expect(chroniclesChooseEnemyStep(inFront, goblin)).toEqual({ x: 1, y: 2 });
   });
