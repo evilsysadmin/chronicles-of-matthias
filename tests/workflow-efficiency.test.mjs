@@ -21,17 +21,14 @@ test('stale PR runs may cancel without cancelling required main checks', () => {
   }
 });
 
-test('required frontend and contract time budgets cover cached-browser E2E completion', () => {
-  // Keep the source CI fail-closed, but avoid cancelling a passing browser
-  // run immediately before its final artifact and checkout cleanup.
+test('frontend remains independently tested while the repository-contract job is fast', () => {
   assert.match(frontend, /timeout-minutes: 30/);
-  assert.match(ci, /timeout-minutes: 40/);
-  assert.match(ci, /for attempt in \$\(seq 1 216\)/);
-  assert.match(ci, /sleep 10/);
-  assert.match(ci, /completed:success\)/);
-  assert.match(ci, /--retry-missing-official/);
+  assert.match(ci, /timeout-minutes: 10/);
+  assert.doesNotMatch(ci, /for attempt in/);
+  assert.doesNotMatch(ci, /sleep 10/);
+  assert.match(ci, /- run: npm test/);
+  assert.match(ci, /DO NOT MERGE before required-status-check ruleset 25198769/);
 });
-
 test('both frontend-installing workflows use npm cache keyed to lockfile', () => {
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /cache: 'npm'\s*\n          cache-dependency-path: frontend\/package-lock\.json/);
@@ -39,19 +36,16 @@ test('both frontend-installing workflows use npm cache keyed to lockfile', () =>
   }
 });
 
-test('new direct frontend check context is stable while the required bridge stays fail-closed', () => {
+test('the direct frontend check is named stably for GitHub ruleset enforcement', () => {
   assert.ok(frontend.includes('    name: frontend-vitest-build-chromium'));
-  assert.ok(ci.includes('check_name=frontend-vitest-build-chromium'));
-  assert.ok(ci.includes('Require real frontend Vitest, build and Chromium smoke'));
-  assert.ok(ci.includes('node scripts/require-frontend-workflow.mjs'));
-  assert.ok(ci.includes('for attempt in $(seq 1 216)'));
-  assert.ok(!ci.includes('check_name=build '));
+  assert.ok(ci.includes('frontend-vitest-build-chromium'));
+  assert.doesNotMatch(ci, /check_name=|require-frontend-workflow|for attempt in/);
 });
 
 test('protected checks and exact-SHA admission prerequisites are intact', () => {
   assert.match(ci, /repository-contract:/);
-  assert.match(ci, /Require real frontend Vitest, build and Chromium smoke/);
-  assert.match(frontend, /node smoke\/run-timed\.mjs smoke\/first-hour-contact\.mjs/);
+  assert.match(frontend, /name: frontend-vitest-build-chromium/);
+  assert.match(frontend, /smoke\/run-timed\.mjs smoke\/first-hour-contact\.mjs/);
   assert.match(api, /name: api-e2e/);
   assert.match(api, /needs: verify/);
 });

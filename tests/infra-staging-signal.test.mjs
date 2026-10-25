@@ -32,8 +32,11 @@ test('handoff retries whichever of the three required checks completes last', ()
   ]);
   // Source CI already gates Chromium, but the independent frontend workflow
   // can complete after both CI and API. Its completion must wake the handoff.
-  assert.match(ci, /Require real frontend Vitest, build and Chromium smoke for exact source SHA/);
-  assert.match(ci, /completed:success\)/);
+  const frontend = readFileSync('.github/workflows/react-frontend.yml', 'utf8');
+  assert.match(frontend, /name: frontend-vitest-build-chromium/);
+  // Ruleset 25198769 must require this check before the polling bridge is retired.
+  assert.match(ci, /DO NOT MERGE before required-status-check ruleset 25198769/);
+  assert.doesNotMatch(ci, /for attempt in/);
   // Receiving an event still cannot bypass the all-three-green admission.
   assert.match(workflow, /385763056,386812503,387132683/);
   assert.match(workflow, /all\(\.\[\];/);
