@@ -334,7 +334,10 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   geometry.computeVertexNormals();
   const roofs = new THREE.InstancedMesh(
     geometry, material(0xb88d75, {
-      map: swordhavenSurfaceTexture('roof'), side: THREE.DoubleSide, roughness: 0.95,
+      map: swordhavenSurfaceTexture('roof'),
+      normalMap: swordhavenSurfaceNormalTexture('roof'),
+      normalScale: new THREE.Vector2(0.35, 0.35),
+      side: THREE.DoubleSide, roughness: 0.95,
     }), valid.length,
   );
   const dummy = new THREE.Object3D();
