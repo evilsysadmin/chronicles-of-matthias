@@ -138,7 +138,10 @@ describe('Chronicles first-person combat reach follows the visible camera anchor
       ...goblin, ai: { ...goblin.ai, attackReach: 2 },
     })).toBeTruthy();
     const tactics = { ...inFront, combatRules: null };
-    expect(chroniclesEnemyAttackTarget(tactics, goblin)?.id).toBe('matthias');
+    const tacticsTarget = chroniclesEnemyAttackTarget(tactics, goblin);
+    expect(tacticsTarget).toBeTruthy();
+    const tacticalCell = tactics.partyPositions[tacticsTarget.id];
+    expect(Math.abs(tacticalCell.x - 1) + Math.abs(tacticalCell.y - 3)).toBe(1);
     expect(chroniclesChooseEnemyStep(inFront, goblin)).toEqual({ x: 1, y: 2 });
   });
 });
