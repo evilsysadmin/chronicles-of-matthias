@@ -151,6 +151,24 @@ describe('Chronicles initiative', () => {
     expect(forced.initiative.order.map((actor) => actor.id).sort()).toEqual(['far', 'matthias']);
   });
 
+  it.each(['invalid-hp', NaN])('does not start party-only combat for an enemy with invalid HP (%s)', (enemyHp) => {
+    const state = {
+      phase: 'explore',
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 7, agility: 4 }],
+      enemyHp,
+    };
+    const enemy = {
+      id: 'broken', name: 'Broken', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Previously engagement treated NaN as alive (NaN <= 0 is false),
+    // while the initiative roller discarded it (NaN > 0 is false).
+    expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([]);
+    expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+  });
+
   it('never starts enemy-only initiative after the entire company has fallen', () => {
     const state = {
       phase: 'explore',
