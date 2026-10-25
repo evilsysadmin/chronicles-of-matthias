@@ -330,7 +330,7 @@ func applyRoutePlan(manifest bson.D, seed int64, route *RouteSnapshot) (bson.D, 
 			return nil, manifestErr("route primary exit requires one transition")
 		}
 		// Only the isolated manifest's transition changes.
-		effects[transitions[0]] = bson.D{{Key: "type", Value: "transition-map"}, {Key: "mapId", Value: nextID}}
+		effects[transitions[0]] = setKey(effects[transitions[0]].(bson.D), "mapId", nextID)
 	}
 	generation, ok := get(manifest, "generation").(bson.D)
 	if !ok {
