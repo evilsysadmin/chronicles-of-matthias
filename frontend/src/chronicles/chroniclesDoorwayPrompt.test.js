@@ -4,6 +4,7 @@ import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import { chroniclesDoorwayPrompt } from './chroniclesDoorwayPrompt.js';
+import { chroniclesAreaTransitionIntent } from './chroniclesAreaTransitionIntent.js';
 
 const map = chroniclesMapById('swordhaven-first-book');
 const state = (x, y, direction) => ({
@@ -58,6 +59,23 @@ describe('MM3 town contextual button proximity', () => {
       expect(lookingAway.contextual?.id, entry.id).not.toBe(entry.id);
       expect(onDoor.contextual?.id, entry.id).toBe(entry.id);
     }
+  });
+
+  it('does not advertise a hidden sewer grate one square before its actual threshold', () => {
+    const withKey = (x, y, direction = 1) => ({
+      ...state(x, y, direction),
+      inventory: { 'sewer-key': { id: 'sewer-key', quantity: 1, name: 'Llave' } },
+    });
+    const oneBefore = withKey(12, 13);
+    expect(chroniclesContextualContentAction(oneBefore)?.id).toBe('swordhaven-to-sewers');
+    expect(promptAt(oneBefore).contextual).toBeNull();
+    expect(chroniclesAreaTransitionIntent(oneBefore, 'interact')).toBeNull();
+    expect(chroniclesAreaTransitionIntent(oneBefore, 'forward')?.exitId).toBe('swordhaven-to-sewers');
+    const underfoot = withKey(13, 13);
+    expect(promptAt(underfoot).contextual?.id).toBe('swordhaven-to-sewers');
+    expect(chroniclesAreaTransitionIntent(underfoot, 'interact')).toMatchObject({
+      exitId: 'swordhaven-to-sewers', atThreshold: true,
+    });
   });
 
   it('preserves ordinary map content, not turning all prompts into door-only actions', () => {

@@ -28,9 +28,14 @@ function buildingDoorFacing(map, entry) {
 export function chroniclesDoorwayPrompt(state, contextual, npc) {
   if (!state) return { contextual: null, npc: null };
   const map = chroniclesMapForState(state);
-  const entryById = (id) => (map?.interactables || []).find((entry) => entry.id === id);
+  const entryById = (id) => [...(map?.interactables || []), ...(map?.exits || [])]
+    .find((entry) => entry.id === id);
   const available = (entry) => {
     if (!entry) return true; // Portals and other virtual actions have no map entry.
+    // A coordinate-authored exit can be crossed by walking onto its tile,
+    // but must not advertise a remote USAR from an adjacent empty square.
+    if (entry.kind === 'exit' && Number.isInteger(entry.x) && Number.isInteger(entry.y)
+      && (entry.x !== state.x || entry.y !== state.y)) return false;
     const building = String(entry.visualType || '').startsWith('building-');
     const doorway = building || Boolean(entry.shop || entry.guild);
     const townShrine = map?.regionKind === 'settlement' && entry.visualType === 'shrine';

@@ -87,6 +87,10 @@ function interactionEntry(state, map) {
   const entry = [...(map.exits || []), ...(map.interactables || [])]
     .find((candidate) => candidate.id === contextual.id);
   if (!entry || !chroniclesRequirementsMet(state, entry.requirements)) return null;
+  // Exits with fixed coordinates are retried with F only on the actual tile.
+  // Approaching from a neighboring square remains a movement action.
+  if (entry.kind === 'exit' && Number.isInteger(entry.x) && Number.isInteger(entry.y)
+    && (state.x !== entry.x || state.y !== entry.y)) return null;
   const destinationId = destinationFor(entry.action?.effects);
   if (!destinationId) return null;
   return { entry, destinationId };
