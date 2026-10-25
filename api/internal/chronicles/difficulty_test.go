@@ -152,3 +152,44 @@ func TestApplyDifficultyRespectsPartyLevelCeilingForHighAuthoredEnemies(t *testi
 		t.Errorf("authored enemy level mutated: %v", got)
 	}
 }
+
+func TestApplyDifficultyEnforcesDeepFloorMinimumLevel(t *testing.T) {
+	manifest := bson.D{
+		{Key: "proceduralDifficulty", Value: int64(2)},
+		{Key: "enemies", Value: bson.A{bson.D{
+			{Key: "id", Value: "weak-scout"},
+			{Key: "maxHp", Value: int64(5)},
+			{Key: "retaliation", Value: int64(1)},
+			{Key: "enemyBuild", Value: bson.D{{Key: "level", Value: int64(1)}}},
+		}}},
+	}
+	for _, tc := range []struct {
+		depth, wantMin, wantLevel, wantHP int64
+	}{
+		{0, 2, 2, 6},
+		{6, 5, 5, 8},
+		{8, 6, 6, 8},
+	} {
+		scaled, band, err := applyDifficulty(manifest, 6, tc.depth)
+		if err != nil {
+			t.Fatalf("depth %d: applyDifficulty: %v", tc.depth, err)
+		}
+		if got := get(band, "minLevel"); got != tc.wantMin {
+			t.Errorf("depth %d: minLevel = %v, want %d", tc.depth, got, tc.wantMin)
+		}
+		enemy := get(scaled, "enemies").(bson.A)[0].(bson.D)
+		if got := get(enemy, "difficultyLevel"); got != tc.wantLevel {
+			t.Errorf("depth %d: difficultyLevel = %v, want %d", tc.depth, got, tc.wantLevel)
+		}
+		if got := get(get(enemy, "enemyBuild").(bson.D), "level"); got != tc.wantLevel {
+			t.Errorf("depth %d: enemyBuild.level = %v, want %d", tc.depth, got, tc.wantLevel)
+		}
+		if got := get(enemy, "maxHp"); got != tc.wantHP {
+			t.Errorf("depth %d: maxHp = %v, want %d", tc.depth, got, tc.wantHP)
+		}
+	}
+	original := get(manifest, "enemies").(bson.A)[0].(bson.D)
+	if got := get(get(original, "enemyBuild").(bson.D), "level"); got != int64(1) {
+		t.Errorf("authored enemyBuild.level mutated: %v", got)
+	}
+}
