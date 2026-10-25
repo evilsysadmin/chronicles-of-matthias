@@ -48,7 +48,10 @@ function occupiedByEnemy(state, position, ignoredEnemyId) {
 
 function canOccupy(state, enemy, position) {
   if (!walkable(state, position)) return false;
-  if (chroniclesPartyCellOccupied(state, position)) return false;
+  // MM3's first-person company has a single world cell (the camera).
+  // Per-hero combat formation cells are tactical bookkeeping, not physical
+  // obstacles to an approaching creature. Tactics keeps true occupied cells.
+  if (!chroniclesUsesMM3Combat(state) && chroniclesPartyCellOccupied(state, position)) return false;
   // The camera's cell is the company's even when the combat formation had
   // to leave it empty (a trap or a relic underfoot): a creature standing
   // inside the viewer cannot be seen or struck.
@@ -71,12 +74,19 @@ function lineIsClear(state, from, to) {
 }
 
 function livingPartyTargetsWithPositions(state) {
-  const positions = new Map(
+  // In first-person MM3 every hero fights from the visible party anchor.
+  // The deployed per-hero cells are an internal formation and must not extend
+  // enemy attack reach by one or more tiles beyond what the player sees.
+  // Tactics still uses its individual, physically occupied grid cells.
+  const anchor = chroniclesUsesMM3Combat(state)
+    && Number.isInteger(Number(state?.x)) && Number.isInteger(Number(state?.y))
+    ? { x: Number(state.x), y: Number(state.y) } : null;
+  const positions = anchor ? null : new Map(
     chroniclesLivingPartyPositions(state).map(({ memberId, position }) => [memberId, position]),
   );
   return (state?.party || [])
-    .filter((member) => Number(member.hp || 0) > 0 && positions.has(member.id))
-    .map((member) => ({ member, position: positions.get(member.id) }));
+    .filter((member) => Number(member.hp || 0) > 0 && (anchor || positions.has(member.id)))
+    .map((member) => ({ member, position: anchor || positions.get(member.id) }));
 }
 
 function enemyCanAttackCell(state, enemy, position, partyPosition) {
