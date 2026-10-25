@@ -7,6 +7,8 @@ import {
 
 export const CHRONICLES_INITIATIVE_VERSION = 1;
 export const CHRONICLES_INITIATIVE_DIE_SIDES = 8;
+// Leave room for the largest 1d8 roll, even with extreme legacy stats.
+const MAX_SAFE_INITIATIVE_AGILITY = Number.MAX_SAFE_INTEGER - CHRONICLES_INITIATIVE_DIE_SIDES;
 
 function nonNegativeInteger(value, fallback = 0) {
   const number = Number(value);
@@ -40,14 +42,15 @@ export function chroniclesPartyInitiativeAgility(state, member) {
   // Only whole, safely representable MM3 bonuses can affect AGI + 1d8.
   // Fractional/unsafe legacy values would break the integer initiative contract.
   const speedBonus = Number.isSafeInteger(rawSpeedBonus) ? rawSpeedBonus : 0;
-  return Math.max(0, base + progressionBonus + speedBonus);
+  return Math.min(MAX_SAFE_INITIATIVE_AGILITY, Math.max(0, base + progressionBonus + speedBonus));
 }
 
 export function chroniclesEnemyInitiativeAgility(enemy) {
   if (!enemy) return 0;
   const resolved = resolveChroniclesEnemyBuildDefinition(enemy);
   const buildAgility = nonNegativeInteger(resolved?.build?.attributes?.agility);
-  return nonNegativeInteger(enemy.agility == null || enemy.agility === '' ? buildAgility : enemy.agility, buildAgility);
+  return Math.min(MAX_SAFE_INITIATIVE_AGILITY,
+    nonNegativeInteger(enemy.agility == null || enemy.agility === '' ? buildAgility : enemy.agility, buildAgility));
 }
 
 function actorEntry({ id, kind, name, agility, random }) {
