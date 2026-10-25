@@ -403,7 +403,19 @@ describe('Chronicles initiative', () => {
     };
     expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: null })).toBe(4);
     expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: '' })).toBe(4);
+    expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: '   ' })).toBe(4);
+    expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: '\t\n' })).toBe(4);
     expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: 0 })).toBe(0);
+    expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: ' 0 ' })).toBe(0);
+
+    const rolled = chroniclesRollInitiative({
+      party: [{ id: 'matthias', hp: 7, agility: 2 }],
+      horseHp: 3,
+    }, [{ ...enemy, hpKey: 'horseHp', agility: '   ' }], { random: () => 0 });
+    expect(rolled.order.map(({ id, agility }) => [id, agility])).toEqual([
+      ['horse-thing', 4],
+      ['matthias', 2],
+    ]);
   });
 
   it('derives legacy enemy AGI from movement when no authored AGI exists', () => {
