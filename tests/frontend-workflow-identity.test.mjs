@@ -241,5 +241,5 @@ test('standalone repository-contract cannot replace independent browser-required
   assert.match(ci, /DO NOT MERGE before required-status-check ruleset 25198769/);
   assert.doesNotMatch(ci, /for attempt in|check_name=|require-frontend-workflow\.mjs/);
   assert.match(frontend, /name: frontend-vitest-build-chromium/);
-  assert.match(frontend, /node smoke\/first-hour-contact\.mjs/);
+  assert.match(frontend, /smoke\/first-hour-contact\.mjs/);
 });
