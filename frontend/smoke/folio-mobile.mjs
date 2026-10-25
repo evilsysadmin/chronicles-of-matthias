@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
+    for (const view of width === 1280 ? ['adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -68,6 +68,20 @@ try {
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
+          // A touch-sized pause folio has an Ayuda control; its repeated
+          // keyboard legend should not steal vertical space from actions.
+          const footer = await dialog.locator('.chronicles-game-menu__hint').evaluate((node) => ({
+            display: getComputedStyle(node).display,
+            height: node.getBoundingClientRect().height,
+            coarse: matchMedia('(pointer: coarse)').matches,
+          }));
+          const compactTouch = width <= 620 && footer.coarse;
+          assert.equal(footer.display === 'none', compactTouch,
+            `Adventure keyboard legend visibility at ${width}px: ${JSON.stringify(footer)}`);
+          if (compactTouch) assert.equal(footer.height, 0,
+            'Hidden keyboard legend must free actual vertical space');
+          assert.equal(await dialog.getByRole('button', { name: /Ayuda/ }).isVisible(), true,
+            'Touch users still need the visible help action');
           const alignment = await dialog.evaluate((node) => {
             const rows = [...node.querySelectorAll('.chronicles-game-menu__action-pair')];
             const utility = node.querySelector('.chronicles-game-menu__utility-row');
