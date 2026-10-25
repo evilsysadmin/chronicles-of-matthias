@@ -81,13 +81,15 @@ describe('Chronicles enemy intent preview', () => {
     expect(preview.attackedMemberIds).toEqual([]);
 
     const adjacent = chroniclesPreviewEnemyTurn(chroniclesResolveEnemyTurn(state));
-    expect(adjacent.intents.find((intent) => intent.enemyId === pawn.id)).toMatchObject({
+    const attack = adjacent.intents.find((intent) => intent.enemyId === pawn.id);
+    expect(attack).toMatchObject({
       enemyId: 'corrupted-pawn',
       kind: 'attack',
-      targetId: 'matthias',
       hpLost: 1,
     });
-    expect(adjacent.attackedMemberIds).toEqual(['matthias']);
+    // Target selection rotates with the round; don't hardcode the victim.
+    expect(state.party.some((member) => member.id === attack.targetId && member.hp > 0)).toBe(true);
+    expect(adjacent.attackedMemberIds).toEqual([attack.targetId]);
   });
 
   it('telegraphs the spectral bishop attacking down a clear lane without moving', () => {
