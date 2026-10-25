@@ -17,8 +17,13 @@ permissions:
   actions: read
   contents: read
 
+# GitHub retains at most one pending run per concurrency group, even when
+# cancel-in-progress is false. All three source checks may finish together;
+# a SHA-only group can cancel the final completion's pending signal.
+# Scope by triggering workflow run; the admission gate and dispatch receipt
+# still prevent duplicate Infra requests for the same source SHA.
 concurrency:
-  group: chronicles-infra-signal-${{ github.event.workflow_run.head_sha }}
+  group: chronicles-infra-signal-${{ github.event.workflow_run.head_sha }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
