@@ -267,13 +267,15 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   blankFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
     const [wx, wz] = gridToWorld(x, y, center);
     for (const [sideIndex, side] of [-1, 1].entries()) {
-      const sideways = side * 0.75;
+      // Structural A-braces: meet the storey beam at the centre and
+      // finish by the lower upright/plinth, never floating mid-wall.
+      const sideways = side * 0.85;
       dummy.rotation.set(0, yaw, 0);
-      dummy.rotateZ(side * 0.48);
-      dummy.scale.set(1, 0.34, 1);
+      dummy.rotateZ(side * 0.52);
+      dummy.scale.set(1, 0.55, 1);
       dummy.position.set(
         wx + dx * 1.973 + Math.cos(yaw) * sideways,
-        1.9,
+        1.84,
         wz + dy * 1.973 - Math.sin(yaw) * sideways,
       );
       dummy.updateMatrix();
