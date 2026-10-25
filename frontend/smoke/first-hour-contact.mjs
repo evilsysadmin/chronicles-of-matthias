@@ -165,6 +165,8 @@ try {
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
       // Numeric input receives digits while the loot is still in the backpack.
       // Equipping its only item correctly removes the search controls afterward.
+      // Native disclosure keeps search available without dominating the sheet.
+      await sheet.locator('.chronicles-character-sheet__backpack-tools > summary').click();
       const backpackSearch = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
       await backpackSearch.fill('');
       await backpackSearch.press('1');
