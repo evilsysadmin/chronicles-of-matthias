@@ -34,8 +34,7 @@ func authoredDifficulty(manifest bson.D) (int64, error) {
 		return boundedInt(explicit, 1, 5, 1), nil
 	}
 	enemies := docs(get(manifest, "enemies"))
-	raw, _ := get(manifest, "enemies").(bson.A)
-	if len(raw) == 0 {
+	if len(enemies) == 0 {
 		return 1, nil
 	}
 	total := int64(0)
@@ -46,7 +45,9 @@ func authoredDifficulty(manifest bson.D) (int64, error) {
 		}
 		total += max(1, hp)
 	}
-	average := float64(total) / float64(len(raw))
+	// Malformed legacy entries are skipped by docs() and by the scaling loop.
+	// They must not dilute the average of enemies that actually exist.
+	average := float64(total) / float64(len(enemies))
 	switch {
 	case average <= 5:
 		return 1, nil
