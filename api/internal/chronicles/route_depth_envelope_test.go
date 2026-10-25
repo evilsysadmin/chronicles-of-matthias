@@ -94,8 +94,14 @@ func TestRealDungeonAreaEnvelopeScalesWithRouteDepth(t *testing.T) {
         t.Fatal(err)
     }
     for _, enemy := range docs(get(authored, "enemies")) {
-        if get(enemy, "id") == "corrupted-pawn" && get(enemy, "maxHp") != int64(5) {
-            t.Fatalf("authored pawn HP mutated: %v", get(enemy, "maxHp"))
+        if get(enemy, "id") == "corrupted-pawn" {
+            hp, err := maxHp(enemy)
+            if err != nil {
+                t.Fatal(err)
+            }
+            if hp != 5 {
+                t.Fatalf("authored pawn HP mutated: %d", hp)
+            }
         }
     }
 }
