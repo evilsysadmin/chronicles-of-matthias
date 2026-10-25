@@ -134,7 +134,9 @@ export function chroniclesEngagedEnemies(state, enemies) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return [];
   const partyPosition = { x: state.x, y: state.y };
   return (Array.isArray(enemies) ? enemies : []).filter((enemy) => {
-    if (Number(state?.[enemy?.hpKey] || 0) <= 0) return false;
+    // Match the initiative roster's living-enemy predicate: NaN from a
+    // malformed legacy HP value must not start a party-only combat.
+    if (!(Number(state?.[enemy?.hpKey] || 0) > 0)) return false;
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
       && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
