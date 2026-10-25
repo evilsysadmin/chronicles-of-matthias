@@ -48,7 +48,10 @@ function occupiedByEnemy(state, position, ignoredEnemyId) {
 
 function canOccupy(state, enemy, position) {
   if (!walkable(state, position)) return false;
-  if (chroniclesPartyCellOccupied(state, position)) return false;
+  // MM3's first-person company has a single world cell (the camera).
+  // Per-hero combat formation cells are tactical bookkeeping, not physical
+  // obstacles to an approaching creature. Tactics keeps true occupied cells.
+  if (!chroniclesUsesMM3Combat(state) && chroniclesPartyCellOccupied(state, position)) return false;
   // The camera's cell is the company's even when the combat formation had
   // to leave it empty (a trap or a relic underfoot): a creature standing
   // inside the viewer cannot be seen or struck.
@@ -71,12 +74,19 @@ function lineIsClear(state, from, to) {
 }
 
 function livingPartyTargetsWithPositions(state) {
-  const positions = new Map(
+  // In first-person MM3 every hero fights from the visible party anchor.
+  // The deployed per-hero cells are an internal formation and must not extend
+  // enemy attack reach by one or more tiles beyond what the player sees.
+  // Tactics still uses its individual, physically occupied grid cells.
+  const anchor = chroniclesUsesMM3Combat(state)
+    && Number.isInteger(Number(state?.x)) && Number.isInteger(Number(state?.y))
+    ? { x: Number(state.x), y: Number(state.y) } : null;
+  const positions = anchor ? null : new Map(
     chroniclesLivingPartyPositions(state).map(({ memberId, position }) => [memberId, position]),
   );
   return (state?.party || [])
-    .filter((member) => Number(member.hp || 0) > 0 && positions.has(member.id))
-    .map((member) => ({ member, position: positions.get(member.id) }));
+    .filter((member) => Number(member.hp || 0) > 0 && (anchor || positions.has(member.id)))
+    .map((member) => ({ member, position: anchor || positions.get(member.id) }));
 }
 
 function enemyCanAttackCell(state, enemy, position, partyPosition) {
@@ -128,9 +138,10 @@ function positionKey(position) {
   return `${position.x}:${position.y}`;
 }
 
-function canAttackAnyPartyFrom(state, enemy, position) {
-  return livingPartyTargetsWithPositions(state)
-    .some(({ position: partyPosition }) => enemyCanAttackCell(state, enemy, position, partyPosition));
+function canAttackAnyPartyFrom(state, enemy, position, targets) {
+  return targets.some(({ position: partyPosition }) => (
+    enemyCanAttackCell(state, enemy, position, partyPosition)
+  ));
 }
 
 function chooseGreedyCardinalStep(state, enemy, from) {
@@ -142,6 +153,9 @@ function chooseGreedyCardinalStep(state, enemy, from) {
 }
 
 function chooseCardinalStep(state, enemy, from) {
+  // Snapshot living party targets once per enemy decision, not on every BFS tile.
+  // No cache survives this call: the next turn sees deaths and formation changes.
+  const targets = livingPartyTargetsWithPositions(state);
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
 
@@ -149,7 +163,7 @@ function chooseCardinalStep(state, enemy, from) {
   // moving the remaining queue on every expanded tile.
   for (let head = 0; head < queue.length; head += 1) {
     const current = queue[head];
-    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position)) {
+    if (current.firstStep && canAttackAnyPartyFrom(state, enemy, current.position, targets)) {
       return current.firstStep;
     }
 
@@ -282,6 +296,10 @@ export function chroniclesChooseEnemyDisengageStep(state, enemy) {
 // Only roaming/patrolling species use awareness; scripted guards and special
 // chess movers keep their authored policies. A sighting is local to this map.
 const ENEMY_MEMORY_ROUNDS = 2;
+// A roaming creature can see farther than its short melee engagement radius.
+// It must pursue through genuinely clear lines of sight, not continue picking
+// arbitrary patrol headings until the player is nearly touching it.
+const EXPLORATION_SIGHT_RANGE = 5;
 
 function usesEnemyAwareness(enemy) {
   // Boss/chess-piece movement is rule-authored: never replace its cadence
@@ -331,7 +349,15 @@ export function chroniclesEnemyHasSightline(state, from, to) {
 
 function visiblePartyPosition(state, enemy, from) {
   if (!usesEnemyAwareness(enemy)) return null;
-  const range = Number(enemy.ai.engageRange);
+  const authoredRange = Number(enemy.ai.engageRange);
+  // In first-person MM3, an enemy already committed to an initiative fight
+  // keeps pursuing a visible company after a ranged opening. Tactics retains
+  // its authored awareness distance, and walls still block detection.
+  const fightingThisEnemy = state.initiative?.order?.some(
+    (actor) => actor.kind === 'enemy' && actor.id === enemy.id,
+  );
+  const range = state.combatRules === 'mm3' && (state.phase === 'explore' || fightingThisEnemy)
+    ? Math.max(authoredRange, EXPLORATION_SIGHT_RANGE) : authoredRange;
   return partyTargetPositions(state)
     .filter((target) => distance(from, target) <= range && chroniclesEnemyHasSightline(state, from, target))
     .sort((a, b) => distance(from, a) - distance(from, b))[0] || null;
@@ -541,10 +567,9 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
   } else if (target) {
     next = damageParty(next, enemy, enemyIndex, events, target);
   } else {
+    // Movement consumes this actor's entire action. Only an enemy that
+    // started its turn in weapon range can make a melee/ranged attack.
     next = moveEnemy(next, enemy, chroniclesChooseEnemyStep(next, enemy), events);
-    const movedPosition = chroniclesRuntimeEnemyPosition(next, enemy);
-    const movedTarget = chroniclesEnemyAttackTarget(next, enemy, movedPosition);
-    if (movedTarget) next = damageParty(next, enemy, enemyIndex, events, movedTarget);
   }
   const defeated = partyDefeated(next);
   return {
@@ -593,10 +618,9 @@ export function chroniclesResolveEnemyTurn(state) {
       next = damageParty(next, enemy, enemyIndex, events, target);
       return;
     }
+    // The collective enemy phase follows the same one-action rule as
+    // initiative: approach now, swing only on a later turn.
     next = moveEnemy(next, enemy, chroniclesChooseEnemyStep(next, enemy), events);
-    const movedPosition = chroniclesRuntimeEnemyPosition(next, enemy);
-    const movedTarget = chroniclesEnemyAttackTarget(next, enemy, movedPosition);
-    if (movedTarget) next = damageParty(next, enemy, enemyIndex, events, movedTarget);
   });
 
   const defeated = partyDefeated(next);

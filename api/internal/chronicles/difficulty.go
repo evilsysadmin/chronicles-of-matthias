@@ -34,19 +34,22 @@ func authoredDifficulty(manifest bson.D) (int64, error) {
 		return boundedInt(explicit, 1, 5, 1), nil
 	}
 	enemies := docs(get(manifest, "enemies"))
-	raw, _ := get(manifest, "enemies").(bson.A)
-	if len(raw) == 0 {
+	if len(enemies) == 0 {
 		return 1, nil
 	}
-	total := int64(0)
+	// Legacy enemy HP can approach MaxInt64. An int64 sum can wrap and
+	// incorrectly classify a dangerous encounter as difficulty 1.
+	total := 0.0
 	for _, enemy := range enemies {
 		hp, err := maxHp(enemy)
 		if err != nil {
 			return 0, err
 		}
-		total += max(1, hp)
+		total += float64(max(1, hp))
 	}
-	average := float64(total) / float64(len(raw))
+	// Malformed legacy entries are skipped by docs() and by the scaling loop.
+	// They must not dilute the average of enemies that actually exist.
+	average := total / float64(len(enemies))
 	switch {
 	case average <= 5:
 		return 1, nil
@@ -76,6 +79,16 @@ func lookup(d bson.D, key string) (any, bool) {
 		}
 	}
 	return nil, false
+}
+
+// saturatingStatDelta preserves large legacy stats when difficulty adds a
+// positive adjustment. Callers normalize the base stat to >= 0 first.
+func saturatingStatDelta(value, delta int64) int64 {
+	const maxInt64 = int64(1<<63 - 1)
+	if delta > 0 && value > maxInt64-delta {
+		return maxInt64
+	}
+	return value + delta
 }
 
 func damageDelta(applied int64) int64 {
@@ -133,14 +146,24 @@ func applyDifficulty(manifest bson.D, partyLevel, depth int64) (bson.D, bson.D, 
 			}
 		}
 		hp, retaliation = max(1, hp), max(0, retaliation)
-		enemy = setKey(enemy, "maxHp", max(1, hp+applied))
-		enemy = setKey(enemy, "retaliation", max(0, retaliation+dmg))
+		enemy = setKey(enemy, "maxHp", max(1, saturatingStatDelta(hp, applied)))
+		enemy = setKey(enemy, "retaliation", max(0, saturatingStatDelta(retaliation, dmg)))
 		current := authored
 		build, isBuild := get(enemy, "enemyBuild").(bson.D)
 		if isBuild {
 			current = boundedInt(get(build, "level"), 1, enemyLevelCap, authored)
 		}
 		level := boundedInt(current+applied, 1, enemyLevelCap, authored)
+		// Deep floors must also respect the advertised minimum: a weak
+		// authored enemy can remain below the band after the delta cap.
+		if floor, ok := get(band, "minLevel").(int64); ok {
+			level = max(level, floor)
+		}
+		// A high authored level can survive the bounded negative delta.
+		// Respect the director's advertised ceiling for low-level parties.
+		if ceiling, ok := get(band, "maxLevel").(int64); ok {
+			level = min(level, ceiling)
+		}
 		enemy = setKey(enemy, "difficultyLevel", level)
 		if isBuild {
 			enemy = setKey(enemy, "enemyBuild", setKey(copyDoc(build), "level", level))

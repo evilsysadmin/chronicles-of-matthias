@@ -7,11 +7,20 @@ import {
 
 export const CHRONICLES_INITIATIVE_VERSION = 1;
 export const CHRONICLES_INITIATIVE_DIE_SIDES = 8;
+// Leave room for the largest 1d8 roll, even with extreme legacy stats.
+const MAX_SAFE_INITIATIVE_AGILITY = Number.MAX_SAFE_INTEGER - CHRONICLES_INITIATIVE_DIE_SIDES;
 
 function nonNegativeInteger(value, fallback = 0) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(0, Math.floor(number));
+}
+
+// Legacy or computed HP may be non-finite. Infinity is not a living
+// combatant: admitting it can leave an unkillable actor in initiative.
+function hasLivingHitPoints(value) {
+  const hp = Number(value);
+  return Number.isFinite(hp) && hp > 0;
 }
 
 export function chroniclesRollD8(random = Math.random) {
@@ -28,15 +37,20 @@ export function chroniclesPartyInitiativeAgility(state, member) {
   const base = nonNegativeInteger(member.agility);
   const progressionBonus = nonNegativeInteger(state?.rpgModifiers?.[member.id]?.initiativeBonus);
   // MM Speed: its bonus (negative for slow heroes) moves the hero in the order.
-  const speedBonus = Number(member.mm3?.bonuses?.speed || 0);
-  return Math.max(0, base + progressionBonus + speedBonus);
+  const rawSpeedBonus = Number(member.mm3?.bonuses?.speed ?? 0);
+  // Corrupt legacy MM3 bonuses must not turn AGI or initiative into NaN/Infinity.
+  // Only whole, safely representable MM3 bonuses can affect AGI + 1d8.
+  // Fractional/unsafe legacy values would break the integer initiative contract.
+  const speedBonus = Number.isSafeInteger(rawSpeedBonus) ? rawSpeedBonus : 0;
+  return Math.min(MAX_SAFE_INITIATIVE_AGILITY, Math.max(0, base + progressionBonus + speedBonus));
 }
 
 export function chroniclesEnemyInitiativeAgility(enemy) {
   if (!enemy) return 0;
   const resolved = resolveChroniclesEnemyBuildDefinition(enemy);
   const buildAgility = nonNegativeInteger(resolved?.build?.attributes?.agility);
-  return nonNegativeInteger(enemy.agility == null || enemy.agility === '' ? buildAgility : enemy.agility, buildAgility);
+  return Math.min(MAX_SAFE_INITIATIVE_AGILITY,
+    nonNegativeInteger(enemy.agility == null || enemy.agility === '' ? buildAgility : enemy.agility, buildAgility));
 }
 
 function actorEntry({ id, kind, name, agility, random }) {
@@ -57,7 +71,7 @@ export function chroniclesRollInitiative(
   { random = Math.random } = {},
 ) {
   const partyActors = (state?.party || [])
-    .filter((member) => Number(member?.hp || 0) > 0)
+    .filter((member) => hasLivingHitPoints(member?.hp))
     .map((member) => actorEntry({
       id: member.id,
       kind: 'party',
@@ -67,7 +81,7 @@ export function chroniclesRollInitiative(
     }));
 
   const enemyActors = (Array.isArray(enemies) ? enemies : [])
-    .filter((enemy) => Number(state?.[enemy?.hpKey] || 0) > 0)
+    .filter((enemy) => hasLivingHitPoints(state?.[enemy?.hpKey]))
     .map((enemy) => actorEntry({
       id: enemy.id,
       kind: 'enemy',
@@ -116,7 +130,10 @@ function manhattanDistance(left, right) {
 }
 
 function enemyEngagementRange(enemy) {
-  const attackReach = Math.max(1, Number(enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1));
+  // Corrupt or legacy reach values must neither disable engagement (NaN)
+  // nor grant an unlimited sightline range (Infinity).
+  const rawReach = Number(enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1);
+  const attackReach = Number.isFinite(rawReach) ? Math.max(1, rawReach) : 1;
   const configured = Number(enemy?.ai?.engageRange);
   return Number.isFinite(configured) && configured >= 1
     ? Math.max(attackReach, configured)
@@ -129,7 +146,9 @@ export function chroniclesEngagedEnemies(state, enemies) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return [];
   const partyPosition = { x: state.x, y: state.y };
   return (Array.isArray(enemies) ? enemies : []).filter((enemy) => {
-    if (Number(state?.[enemy?.hpKey] || 0) <= 0) return false;
+    // Match the initiative roster's living-enemy predicate: NaN from a
+    // malformed legacy HP value must not start a party-only combat.
+    if (!(hasLivingHitPoints(state?.[enemy?.hpKey]))) return false;
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
       && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
@@ -144,7 +163,10 @@ export const CHRONICLES_COMBAT_LEASH = 2;
 // the fight. Without this, an enemy stuck behind walls kept combat going
 // forever while the party walked off.
 export function chroniclesEnemyLostParty(state, enemy) {
-  if (!enemy || !Number.isFinite(Number(enemy.ai?.engageRange))) return false;
+  // Legacy null/blank ranges mean "not configured", not a zero-tile leash.
+  const rawRange = enemy?.ai?.engageRange;
+  const range = Number(rawRange);
+  if (rawRange == null || !Number.isFinite(range) || range < 1) return false;
   const partyPosition = { x: state.x, y: state.y };
   const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
   return manhattanDistance(partyPosition, enemyPosition) > enemyEngagementRange(enemy) + CHRONICLES_COMBAT_LEASH
@@ -153,21 +175,27 @@ export function chroniclesEnemyLostParty(state, enemy) {
 
 function actorIsAlive(state, enemyById, actor) {
   if (actor.kind === 'party') {
-    return (state?.party || []).some((member) => member.id === actor.id && Number(member.hp || 0) > 0);
+    return (state?.party || []).some((member) => member.id === actor.id && hasLivingHitPoints(member.hp));
   }
   const enemy = enemyById.get(actor.id);
-  return Boolean(enemy && Number(state?.[enemy.hpKey] || 0) > 0);
+  return Boolean(enemy && hasLivingHitPoints(state?.[enemy.hpKey]));
 }
 
 export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (!state || state.initiative) return state;
+  // Forced engagements must not revive a finished expedition. Proximity
+  // engagement already excludes these phases; apply the same rule here.
+  if (state.phase === 'defeated' || state.phase === 'escaped') return state;
+  // A wiped company cannot take a turn: never create an enemy-only combat.
+  // Defeat resolution belongs to the reducer, not to this engagement helper.
+  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) return state;
   const forceEnemyIds = new Set(Array.isArray(options.forceEnemyIds) ? options.forceEnemyIds : []);
   const candidates = Array.isArray(enemies) ? enemies : [];
   const engagedById = new Map(
     chroniclesEngagedEnemies(state, candidates).map((enemy) => [enemy.id, enemy]),
   );
   candidates.forEach((enemy) => {
-    if (forceEnemyIds.has(enemy.id) && Number(state?.[enemy.hpKey] || 0) > 0) {
+    if (forceEnemyIds.has(enemy.id) && hasLivingHitPoints(state?.[enemy.hpKey])) {
       engagedById.set(enemy.id, enemy);
     }
   });
@@ -187,6 +215,15 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
+  // A party wiped during an active round must end in defeat, even if
+  // enemies survive or the final enemy fell at the same time.
+  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) {
+    const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
+  }
+  // Preserve the original turn boundary before leashed enemies are pruned.
+  const orderBeforeLeash = state.initiative.order;
+  const cursorBeforeLeash = Math.min(orderBeforeLeash.length - 1, nonNegativeInteger(state.initiative.cursor));
   const enemyById = new Map((Array.isArray(enemies) ? enemies : []).map((enemy) => [enemy.id, enemy]));
   const lost = state.initiative.order.filter((actor) => (
     actor.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
@@ -229,17 +266,21 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
     Math.min(originalOrder.length - 1, nonNegativeInteger(state.initiative.cursor)),
   );
   let nextActor = null;
-  let wrapped = false;
   for (let offset = 1; offset <= originalOrder.length; offset += 1) {
     const rawIndex = currentCursor + offset;
     const index = rawIndex % originalOrder.length;
     const candidate = originalOrder[index];
     if (!actorIsAlive(state, enemyById, candidate)) continue;
     nextActor = candidate;
-    wrapped = rawIndex >= originalOrder.length;
     break;
   }
   if (!nextActor) return { ...state, initiative: null };
+  // A removed first actor can make the shortened list wrap without ending the
+  // original round. Count a new round only across the original turn boundary.
+  const nextOriginalIndex = orderBeforeLeash.findIndex((actor) => (
+    actor.kind === nextActor.kind && actor.id === nextActor.id
+  ));
+  const wrapped = nextOriginalIndex <= cursorBeforeLeash;
 
   const nextCursor = livingOrder.findIndex((actor) => (
     actor.kind === nextActor.kind && actor.id === nextActor.id

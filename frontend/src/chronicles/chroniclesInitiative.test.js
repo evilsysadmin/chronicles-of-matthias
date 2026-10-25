@@ -4,6 +4,7 @@ import {
   chroniclesAdvanceInitiative,
   chroniclesCurrentInitiativeActor,
   chroniclesEnemyInitiativeAgility,
+  chroniclesEngagedEnemies,
   chroniclesPartyInitiativeAgility,
   chroniclesRollInitiative,
   chroniclesStartInitiativeCombat,
@@ -60,6 +61,26 @@ describe('Chronicles initiative', () => {
     expect(initiative.order.map((actor) => actor.id)).toEqual(['agi-4', 'agi-6']);
     expect(initiative.order[0].initiative).toBe(12);
     expect(initiative.order[1].initiative).toBe(7);
+  });
+
+  it('ignores corrupt MM3 speed while preserving valid slow penalties and initiative order', () => {
+    const party = [
+      { id: 'matthias', hp: 7, agility: 4, mm3: { bonuses: { speed: 'broken' } } },
+      { id: 'rook', hp: 7, agility: 5, mm3: { bonuses: { speed: Infinity } } },
+      { id: 'bishop', hp: 7, agility: 6, mm3: { bonuses: { speed: -4 } } },
+    ];
+    const state = { party, rpgModifiers: { matthias: { initiativeBonus: 3 } } };
+
+    expect(chroniclesPartyInitiativeAgility(state, party[0])).toBe(7);
+    expect(chroniclesPartyInitiativeAgility(state, party[1])).toBe(5);
+    expect(chroniclesPartyInitiativeAgility(state, party[2])).toBe(2);
+
+    const rolled = chroniclesRollInitiative(state, [], { random: () => 0 });
+    expect(rolled.order.map(({ id, agility, initiative }) => [id, agility, initiative])).toEqual([
+      ['matthias', 7, 8],
+      ['rook', 5, 6],
+      ['bishop', 2, 3],
+    ]);
   });
 
   it('adds progression AGI exactly once to the resolved party stat and advances by rounds', () => {
@@ -130,6 +151,63 @@ describe('Chronicles initiative', () => {
     expect(forced.initiative.order.map((actor) => actor.id).sort()).toEqual(['far', 'matthias']);
   });
 
+  it.each(['invalid-hp', NaN])('does not start party-only combat for an enemy with invalid HP (%s)', (enemyHp) => {
+    const state = {
+      phase: 'explore',
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 7, agility: 4 }],
+      enemyHp,
+    };
+    const enemy = {
+      id: 'broken', name: 'Broken', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Previously engagement treated NaN as alive (NaN <= 0 is false),
+    // while the initiative roller discarded it (NaN > 0 is false).
+    expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([]);
+    expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+  });
+
+  it('never starts enemy-only initiative after the entire company has fallen', () => {
+    const state = {
+      phase: 'explore',
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 0, agility: 4 }],
+      enemyHp: 3,
+    };
+    const enemy = {
+      id: 'enemy', name: 'Enemy', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Both ordinary proximity and an explicitly forced encounter must leave
+    // defeat handling to the reducer instead of trapping the player in combat.
+    for (const options of [{ random: () => 0 }, { forceEnemyIds: ['enemy'], random: () => 0 }]) {
+      expect(chroniclesStartInitiativeCombat(state, [enemy], options)).toBe(state);
+    }
+  });
+
+  it.each(['defeated', 'escaped'])('never reopens a %s expedition via a forced encounter', (phase) => {
+    const state = {
+      phase,
+      x: 2, y: 2,
+      party: [{ id: 'matthias', name: 'Matthias', hp: 7, agility: 4 }],
+      enemyHp: 3,
+    };
+    const enemy = {
+      id: 'enemy', name: 'Enemy', hpKey: 'enemyHp',
+      x: 2, y: 3, ai: { engageRange: 1, movement: 'hold' },
+    };
+
+    // Even a saved terminal state with living heroes must stay terminal.
+    // Test both proximity and the explicit forceEnemyIds override.
+    expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+    expect(chroniclesStartInitiativeCombat(state, [enemy], {
+      forceEnemyIds: ['enemy'], random: () => 0,
+    })).toBe(state);
+  });
+
   it('continues after a fallen current actor instead of restarting the round', () => {
     const state = {
       phase: 'combat',
@@ -155,6 +233,32 @@ describe('Chronicles initiative', () => {
     expect(chroniclesCurrentInitiativeActor(next.initiative)?.id).toBe('enemy');
     expect(next.initiative.round).toBe(3);
   });
+
+  it.each([['enemy survives', 4], ['last enemy also falls', 0]])(
+    'ends a wiped company in defeat when %s', (_scenario, enemyHp) => {
+      const state = {
+        phase: 'combat',
+        party: [{ id: 'matthias', hp: 0, agility: 4 }],
+        partyPositions: { matthias: { x: 2, y: 3 } },
+        combatWard: { turns: 1 },
+        enemyStatus: { enemy: { stunned: 1 } },
+        enemyHp,
+        initiative: {
+          version: 1, die: '1d8', round: 2, cursor: 0,
+          order: [
+            { id: 'matthias', kind: 'party', initiative: 8 },
+            { id: 'enemy', kind: 'enemy', initiative: 5 },
+          ],
+        },
+      };
+      const next = chroniclesAdvanceCombatInitiative(state, [{ id: 'enemy', hpKey: 'enemyHp' }]);
+      expect(next.phase).toBe('defeated');
+      expect(next.initiative).toBeNull();
+      expect(next.partyPositions).toEqual({});
+      expect(next.combatWard).toBeUndefined();
+      expect(next.enemyStatus).toBeUndefined();
+    },
+  );
 
   it('drops defeated actors and returns to exploration when combat has no enemies left', () => {
     const state = {
@@ -255,6 +359,41 @@ describe('Chronicles initiative', () => {
     expect(next.initiative.round).toBe(4);
   });
 
+  it('keeps the current round when a leading enemy loses the party and leaves initiative', () => {
+    // The lost enemy was the first actor. The next hero is still acting in
+    // this round, even though the shortened order now wraps internally.
+    const lost = {
+      id: 'lost', name: 'Lost', hpKey: 'lostHp', x: 9, y: 17,
+      ai: { engageRange: 2, attackReach: 1 },
+    };
+    const nearby = {
+      id: 'nearby', name: 'Nearby', hpKey: 'nearbyHp', x: 1, y: 16,
+      ai: { engageRange: 2, attackReach: 1 },
+    };
+    const state = {
+      mapId: 'swordhaven-sewers',
+      phase: 'combat',
+      x: 1, y: 15,
+      party: [{ id: 'matthias', hp: 5 }],
+      lostHp: 5,
+      nearbyHp: 5,
+      initiative: {
+        version: 1, die: '1d8', round: 3, cursor: 0,
+        order: [
+          { id: 'lost', kind: 'enemy', name: 'Lost', initiative: 10 },
+          { id: 'matthias', kind: 'party', name: 'Matthias', initiative: 9 },
+          { id: 'nearby', kind: 'enemy', name: 'Nearby', initiative: 8 },
+        ],
+      },
+    };
+
+    const next = chroniclesAdvanceCombatInitiative(state, [lost, nearby]);
+    expect(next.phase).toBe('combat');
+    expect(next.initiative.order.map((actor) => actor.id)).toEqual(['matthias', 'nearby']);
+    expect(chroniclesCurrentInitiativeActor(next.initiative)?.id).toBe('matthias');
+    expect(next.initiative.round).toBe(3);
+  });
+
   it('treats nullable legacy agility as missing rather than overriding the enemy build with zero', () => {
     const enemy = {
       id: 'horse-thing',
@@ -283,6 +422,18 @@ describe('Chronicles combat engagement and leash', () => {
   const party = [{ id: 'matthias', name: 'Matthias', hp: 8, agility: 3 }];
   const base = { mapId: 'swordhaven-sewers', party, tobiasHp: 5, rpgModifiers: {}, phase: 'explore' };
 
+  it('bounds invalid legacy attack reach while preserving valid engage distance', () => {
+    // Sewer corridor has clear sightline between x=9 and x=11 on row 17.
+    const state = { ...base, x: 11, y: 17 };
+    const invalidReach = { ...tobias, ai: { engageRange: 2, attackReach: 'invalid' } };
+    expect(chroniclesEngagedEnemies(state, [invalidReach]).map((enemy) => enemy.id)).toEqual(['tobias']);
+
+    // Infinity in an old save must not turn a melee creature into a map-wide trigger.
+    const unlimited = { ...tobias, ai: { attackReach: Infinity } };
+    expect(chroniclesEngagedEnemies(state, [unlimited])).toEqual([]);
+    expect(chroniclesEngagedEnemies({ ...state, x: 10 }, [unlimited]).map((enemy) => enemy.id)).toEqual(['tobias']);
+  });
+
   it('does not start a fight through a wall', () => {
     const state = { ...base, x: 7, y: 17 };
     expect(chroniclesStartInitiativeCombat(state, [tobias], { random: () => 0 }).initiative).toBeFalsy();
@@ -303,6 +454,29 @@ describe('Chronicles combat engagement and leash', () => {
     const next = chroniclesAdvanceCombatInitiative(state, [tobias]);
     expect(next.initiative).toBeNull();
     expect(next.phase).toBe('explore');
+  });
+
+  it('does not prematurely end combat for a legacy enemy without a positive leash range', () => {
+    const order = [
+      { kind: 'party', id: 'matthias', name: 'Matthias', initiative: 9 },
+      { kind: 'enemy', id: 'tobias', name: 'Tobías', initiative: 4 },
+    ];
+    const state = {
+      ...base, phase: 'combat', x: 1, y: 15,
+      initiative: { order, cursor: 0, round: 3 },
+    };
+    // The party is behind solid masonry and beyond a zero-range leash.
+    // Missing, nullable and blank legacy fields must all preserve combat.
+    for (const rawRange of [undefined, null, '', ' ', 0]) {
+      const enemy = {
+        ...tobias,
+        ai: { attackReach: 1, ...(rawRange === undefined ? {} : { engageRange: rawRange }) },
+      };
+      const next = chroniclesAdvanceCombatInitiative(state, [enemy]);
+      expect(next.phase).toBe('combat');
+      expect(next.initiative.order.map((actor) => actor.id)).toEqual(['matthias', 'tobias']);
+      expect(next.initiative.round).toBe(3);
+    }
   });
 
   it('keeps fighting a creature that is still close', () => {

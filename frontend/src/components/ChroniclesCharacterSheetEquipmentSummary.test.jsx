@@ -5,11 +5,11 @@ import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 
-const render = (rules, folio = 'equipment', stateOverrides = {}) => {
+const render = (rules, folio = 'equipment', stateOverrides = {}, memberId = null, mode = 'chronicles') => {
   const state = { ...createChroniclesState('swordhaven-first-book', null, { rules }), ...stateOverrides };
   return renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
-    state, progression: createChroniclesProgression(), member: state.party[0],
-    mode: 'chronicles', initialFolio: folio, onClose: () => {},
+    state, progression: createChroniclesProgression(), member: state.party.find((hero) => hero.id === memberId) || state.party[0],
+    mode, initialFolio: folio, onClose: () => {},
   }));
 };
 
@@ -47,6 +47,46 @@ describe('Chronicles character sheet combat summary', () => {
     });
     expect(html).toContain('Disparo a una mano');
     expect(html).toContain('mantiene las ventajas del escudo');
+  });
+
+  it('keeps individual backpacks and presents the MM3 manual 1–4 handoff', () => {
+    const inventory = {
+      'brass-sword': { id: 'brass-sword', name: 'Espada de latón', quantity: 1 },
+      'brass-shield': { id: 'brass-shield', name: 'Escudo de latón', quantity: 1 },
+    };
+    const ownership = { matthias: { 'brass-shield': 1 }, rook: { 'brass-sword': 1 } };
+    const matthias = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'matthias');
+    const hildegard = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'rook');
+    expect(matthias).toContain('Mochila de Matthias');
+    expect(matthias).toContain('data-inventory-item="brass-shield"');
+    expect(matthias).not.toContain('data-inventory-item="brass-sword"');
+    expect(hildegard).toContain('Mochila de Hildegard');
+    expect(hildegard).toContain('data-inventory-item="brass-sword"');
+    expect(hildegard).not.toContain('data-inventory-item="brass-shield"');
+    expect(hildegard).toContain('Elige un objeto y pulsa 1–4');
+    expect(hildegard).toContain('Seleccionar personaje de la compañía');
+    expect(hildegard).not.toContain('Pasar objeto');
+    expect(hildegard).not.toContain('Compañero que recibirá el objeto');
+    expect(hildegard).not.toContain('Repartir botín');
+  });
+
+  it('keeps essential equipment actions visible while optional backpack controls and long attributes are collapsed', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: { 'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' } },
+      bagOwners: { matthias: { 'brass-sling': 1 } },
+    });
+    expect(html).toMatch(/<details class="chronicles-character-sheet__backpack-tools">\s*<summary>/);
+    expect(html).toContain('Filtrar y buscar');
+    expect(html).toContain('chronicles-character-sheet__backpack-advanced');
+    expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Descripción y atributos<\/summary>/);
+    expect(html).toMatch(/Puede equiparlo|Clase incompatible/);
+    expect(html).toContain('Equipar Honda de latón');
+    expect(html).toMatch(/Si equipas este objeto|Diferencia respecto al equipo actual/);
+    expect(html).toContain('data-chronicles-equipment-handling');
+    expect(html).not.toContain('Este personaje no lleva una reliquia vinculada.');
+    const tactics = render(null, 'equipment', {}, null, 'tactics');
+    expect(tactics).not.toContain('chronicles-character-sheet__backpack-advanced');
+    expect(tactics).toContain('Mochila de expedición');
   });
 
   it('retains the distinct legacy damage reduction summary', () => {

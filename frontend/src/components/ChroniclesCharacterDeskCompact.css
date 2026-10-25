@@ -1,0 +1,225 @@
+/* MM3 workbench: the party dock already carries all portraits. Reclaim the
+   duplicate cover area for inventory, item details and the selected chapter.
+   This intentionally does not affect the Tactics character sheet. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 10px;
+  padding: 7px 14px;
+  align-items: center;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 13px;
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+  margin: 0;
+  font-size: clamp(1.22rem, 1.6vw, 1.62rem);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
+  margin: 0;
+  font-size: .84rem;
+  line-height: 1.2;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 0 auto;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
+  border: 1px solid #ab8453;
+  padding: 2px 5px;
+  background: #f8e6bd;
+  /* Parchment needs dark ink even on mobile: the inherited pale gold/blue
+     text was nearly invisible against these compact resource plates. */
+  color: #5d3e20;
+  box-shadow: none;
+  font-size: .78rem;
+  line-height: 1.25;
+}
+/* The old MM3 nth-child(2) rule colors PH pastel blue; outrank it by
+   targeting semantic resources rather than their position in the row. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span[data-resource] b {
+  color: #2d2218;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head > button {
+  align-self: center;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression {
+  grid-template-columns: auto minmax(72px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 13px;
+  min-height: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-copy {
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression b,
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression small {
+  font-size: .72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-track {
+  height: 6px;
+  min-width: 0;
+}
+/* On wide screens, devote more height to the inventory rail without making
+   the equipment inspector or filters overlap the permanent hero selector. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__section-head {
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+    max-height: clamp(235px, 35dvh, 320px);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card {
+    gap: 4px;
+    padding: 8px;
+    margin: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__dual-weapons {
+    gap: 7px;
+    margin: 7px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__gear-slot {
+    padding-block: 6px;
+  }
+}
+/* Phones retain a readable two-line identity. The content can scroll, while
+   equipment actions stay touch-sized and the hero switcher remains anchored. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    min-height: 0;
+    gap: 5px;
+    padding: 5px 9px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
+    gap: 2px 8px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+    font-size: 1.17rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
+    font-size: .75rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
+    font-size: .74rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression {
+    grid-template-columns: auto minmax(40px, 1fr);
+    padding: 3px 9px;
+    gap: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__progression > small {
+    display: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-track {
+    height: 5px;
+  }
+}
+@media (max-width: 410px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 38px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+    font-size: 1.12rem;
+  }
+}
+@media (max-height: 480px) {
+  /* Override the old three-column folio rule (44px portrait / identity /
+     close). MM3 has no header portrait: without this, the identity is forced
+     into the 44px ghost column and becomes a 268px-tall stack. */
+  .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__head {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    min-height: 0;
+    gap: 5px;
+    padding: 3px 7px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+    flex-basis: auto;
+    margin-left: auto;
+  }
+}
+
+/* Mobile must obey the same two-region contract as desktop: a scrollable
+   workbench above a *persistent* party dock, never a 1500px-tall modal whose
+   hero selector lives below the viewport. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__scroll {
+    display: block;
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-dock {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+}
+@media (max-height: 480px) {
+  /* In short landscape the hero name, class and resource chips cannot all
+     fit on one line (Hildegard previously ran under the close button).
+     Give the identity two compact rows; reserve the close-button column. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 8px;
+    min-width: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity h3 {
+    font-size: 1.12rem;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__identity p {
+    font-size: .71rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick {
+    grid-column: 1 / -1;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
+    margin-left: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__quick > span {
+    padding: 1px 3px;
+    font-size: .68rem;
+  }
+}

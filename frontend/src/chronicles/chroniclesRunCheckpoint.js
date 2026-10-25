@@ -1,6 +1,8 @@
 import { CHRONICLES_EQUIPMENT_SLOTS, chroniclesEquippedItem, chroniclesNormalizeMemberEquipment } from './chroniclesEquipment.js';
 import { chroniclesApplyStartingKit } from './chroniclesStartingKit.js';
+import { chroniclesBagOwnership } from './chroniclesPersonalBags.js';
 import { chroniclesSpellAvailableTo } from './chroniclesMagic.js';
+import { normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import {
   chroniclesMapById,
   chroniclesMergeSlain,
@@ -12,6 +14,51 @@ const CONTENT_GROUPS = Object.freeze(['triggers', 'interactables', 'treasures', 
 const RUNTIME_PREFIX = '__chrRuntime.';
 const RUNTIME_VERSION = 1;
 const RUNTIME_VERSION_KEY = `${RUNTIME_PREFIX}version`;
+const PROGRESSION_PART_COUNT = `${RUNTIME_PREFIX}progression.parts`;
+const PROGRESSION_PART_PREFIX = `${RUNTIME_PREFIX}progression.part.`;
+const PROGRESSION_PART_SIZE = 240;
+const PROGRESSION_MAX_PARTS = 192;
+
+// The Go checkpoint API limits ordinary string flags to 256 Unicode runes.
+// Chunk the complete run-specific progression (including XP, character build,
+// earned/spent points, unlocked skills and claimed-award anti-farming ledger)
+// so restoring a saved run never depends on a newer account-wide profile.
+function runProgressionFlags(progression) {
+  if (!progression) return {};
+  const chars = Array.from(JSON.stringify(normalizeChroniclesProgression(progression)));
+  const count = Math.ceil(chars.length / PROGRESSION_PART_SIZE);
+  if (count < 1 || count > PROGRESSION_MAX_PARTS) {
+    throw new Error('Progresión de expedición demasiado grande para guardar.');
+  }
+  const flags = { [PROGRESSION_PART_COUNT]: count };
+  for (let index = 0; index < count; index += 1) {
+    flags[`${PROGRESSION_PART_PREFIX}${index}`] = chars
+      .slice(index * PROGRESSION_PART_SIZE, (index + 1) * PROGRESSION_PART_SIZE).join('');
+  }
+  return flags;
+}
+
+// A missing snapshot identifies a legacy save: its old account-level
+// progression remains the fallback, without rewriting old saved campaigns.
+export function chroniclesCheckpointRunProgression(run) {
+  const flags = run?.worldFlags;
+  if (!flags || typeof flags !== 'object') return null;
+  const count = flags[PROGRESSION_PART_COUNT];
+  if (!Number.isInteger(count) || count < 1 || count > PROGRESSION_MAX_PARTS) return null;
+  const parts = [];
+  for (let index = 0; index < count; index += 1) {
+    const part = flags[`${PROGRESSION_PART_PREFIX}${index}`];
+    if (typeof part !== 'string' || !part.length || Array.from(part).length > PROGRESSION_PART_SIZE) return null;
+    parts.push(part);
+  }
+  try {
+    const decoded = JSON.parse(parts.join(''));
+    if (!decoded || typeof decoded !== 'object' || !decoded.heroes || !decoded.characterBuild) return null;
+    return normalizeChroniclesProgression(decoded);
+  } catch {
+    return null;
+  }
+}
 
 function authoredSetKeys(map) {
   // Reward outcomes must survive a checkpoint too: an atomic claim-reward
@@ -172,6 +219,22 @@ function runtimeCheckpointFlags(state) {
     }
   });
 
+  // Personal backpacks are allocations of the shared, authoritative
+  // inventory. Each bounded numeric flag survives existing Go/Mongo saves
+  // without introducing a second, duplicative inventory document.
+  if (source.combatRules === 'mm3') {
+    const bags = chroniclesBagOwnership(source);
+    for (const [memberId, bag] of Object.entries(bags)) {
+      const safeMemberId = shortStringOrNull(memberId, 40);
+      if (!safeMemberId) continue;
+      for (const [itemId, quantity] of Object.entries(bag)) {
+        const safeItemId = shortStringOrNull(itemId, 80);
+        const amount = integerOrNull(quantity, 1, 9999);
+        if (safeItemId && amount !== null) flags[runtimeKey('bag', safeMemberId, safeItemId)] = amount;
+      }
+    }
+  }
+
   // MM3 magic: spent spell points, each caster's spellbook, guild memberships.
   (source.party || []).forEach((member) => {
     const sp = integerOrNull(source.spellPoints?.[member.id], 0, 999);
@@ -232,7 +295,7 @@ function runtimeCheckpointFlags(state) {
     if (list.length && mapId.length <= 64) flags[runtimeKey('slain', mapId)] = list.join(',').slice(0, 256);
   });
 
-  return flags;
+  return { ...flags, ...runProgressionFlags(source.runProgression) };
 }
 
 function slainFromFlags(flags) {
@@ -330,6 +393,22 @@ function applyRuntimeCheckpoint(state, flags) {
     }
   });
   next.equipment = equipment;
+
+  // Invalid/obsolete bag flag entries never create objects: only surviving
+  // item counts in the validated aggregate inventory may be assigned.
+  if (next.combatRules === 'mm3') {
+    const bagOwners = {};
+    for (const member of next.party || []) {
+      const bag = {};
+      for (const itemId of Object.keys(next.inventory || {})) {
+        if (itemId === 'crown-gold' || itemId.length > 80) continue;
+        const quantity = integerOrNull(flags[runtimeKey('bag', member.id, itemId)], 1, 9999);
+        if (quantity !== null) bag[itemId] = quantity;
+      }
+      if (Object.keys(bag).length) bagOwners[member.id] = bag;
+    }
+    next.bagOwners = chroniclesBagOwnership({ ...next, bagOwners });
+  }
 
   const spellPoints = {};
   const spellbook = {};
@@ -474,6 +553,8 @@ export function chroniclesApplyRunCheckpoint(state, run) {
     claimedRewards: normalizedLedger(run.claimedRewards),
   };
   const restored = chroniclesApplyStartingKit(applyRuntimeCheckpoint(durable, worldFlags), run);
+  const savedProgression = chroniclesCheckpointRunProgression(run);
+  if (savedProgression) restored.runProgression = savedProgression;
   const runStatus = run.runStatus || run.status || 'active';
   if (runStatus === 'completed') return { ...restored, phase: 'escaped' };
   if (runStatus === 'defeated') return { ...restored, phase: 'defeated', turnPhase: 'party' };

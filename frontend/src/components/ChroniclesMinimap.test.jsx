@@ -19,6 +19,16 @@ describe('ChroniclesMinimap', () => {
     expect(html).toContain('data-chronicles-minimap-facing=');
   });
 
+  it('keeps the complete place name accessible while separating its optional visual prefix', () => {
+    const state = createChroniclesState('swordhaven-first-book');
+    const html = renderToStaticMarkup(
+      <ChroniclesMinimap state={state} visitedCells={[]} />,
+    );
+    expect(html).toContain('class="chronicles-minimap__location-prefix">UBICACIÓN · </span>SWORDHAVEN');
+    expect(html).toContain('Ubicación: SWORDHAVEN. Coordenadas:');
+    expect(html).toContain('data-chronicles-location');
+  });
+
   it('uses the full map\'s F for forja and A for armaduras on discovered cells only', () => {
     const state = createChroniclesState('swordhaven-first-book');
     const notVisited = renderToStaticMarkup(
@@ -76,7 +86,7 @@ describe('ChroniclesMinimap', () => {
       return html.match(/<button[^>]*aria-label="([^"]*)"/)?.[1] || '';
     };
 
-    expect(label([])).toMatch(/^Minimapa local\. Abrir automapa completo\. Coordenadas: X\d+ Y\d+$/);
+    expect(label([])).toMatch(/^Minimapa local\. Abrir automapa completo\. Ubicación: SWORDHAVEN\. Coordenadas: X\d+ Y\d+$/);
     expect(label(['7:4'])).toContain('F: Forja de Brunna');
     expect(label(['7:4'])).not.toContain('Coracería de Odo');
     expect(label(['7:4', '11:4'])).toContain('A: Coracería de Odo');

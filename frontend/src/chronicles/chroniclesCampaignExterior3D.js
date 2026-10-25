@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import {
   addSwordhavenClouds, buildSwordhavenFountain, buildSwordhavenHouse, buildSwordhavenTree, createSwordhavenMaterials,
-  createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture,
+  createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
@@ -72,6 +73,39 @@ function settlementStreetFacingFaces({ grid, blocked, zones }) {
   return faces;
 }
 
+// One instanced frame owns the complete window silhouette: a projecting sill,
+// leaded-glass dividers and open timber shutters with diagonal braces.
+// Merge once rather than adding per-window meshes/draw calls. Every detail
+// stays inside the impassable 4m cell (never over the walking lane).
+function settlementWindowFrameGeometry() {
+  const frame = new THREE.BoxGeometry(1.32, 0.84, 0.022);
+  const sill = new THREE.BoxGeometry(1.46, 0.10, 0.030);
+  sill.translate(0, -0.46, 0.010);
+  const mullion = new THREE.BoxGeometry(0.048, 0.52, 0.008);
+  mullion.translate(0, 0.02, 0.022);
+  const transom = new THREE.BoxGeometry(0.77, 0.045, 0.008);
+  transom.translate(0, 0.02, 0.022);
+  const parts = [frame, sill, mullion, transom];
+  // Three separated planks read as real open shutters even on a phone.
+  // Their diagonal braces sit just proud of the wood, still inside the wall
+  // cell. All eight additions reuse the existing frame draw call.
+  for (const side of [-1, 1]) {
+    for (const y of [-0.235, 0, 0.235]) {
+      const plank = new THREE.BoxGeometry(0.25, 0.22, 0.020);
+      plank.translate(side * 0.87, y, 0.010);
+      parts.push(plank);
+    }
+    const brace = new THREE.BoxGeometry(0.060, 0.67, 0.008);
+    brace.rotateZ(side * 0.22);
+    brace.translate(side * 0.87, 0, 0.021);
+    parts.push(brace);
+  }
+  const geometry = mergeGeometries(parts, false);
+  parts.forEach(part => part.dispose());
+  if (!geometry) throw new Error('Swordhaven window frame geometry could not be merged');
+  return geometry;
+}
+
 function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
   // Windows alternate along the block; timber beams cover every street edge.
   const facades = settlementStreetFacingFaces({ grid, blocked, zones })
@@ -82,7 +116,7 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   const storeys = wallHeight >= 4 ? [2.15, 4.45] : [0.96];
   const count = facades.length * storeys.length;
   const frames = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.32, 0.84, 0.022),
+    settlementWindowFrameGeometry(),
     material(0x78533b),
     count,
   );
@@ -125,7 +159,13 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
   const height = wallHeight - 0.52;
   const panels = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.935, height, 0.012),
-    material(0xffffff, { roughness: 0.97 }),
+    // House-specific tint stays in instanceColor; a shared, restrained
+    // stucco normal map adds light response without more geometry or batches.
+    material(0xffffff, {
+      map: swordhavenSurfaceTexture('stucco'),
+      normalMap: swordhavenSurfaceNormalTexture('stucco'),
+      normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
+    }),
     faces.length,
   );
   const dummy = new THREE.Object3D();
@@ -180,12 +220,16 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
       }
     }
   }
+  // Only the windowless faces need extra structure: diagonal timber braces
+  // break up large blank plaster panels without crowding the shuttered ones.
+  const blankFaces = faces.filter(({ x, y }) => (x + y) % 2 !== 0);
   const wood = material(0x66503a, { roughness: 0.93 });
   const beams = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
   );
   const posts = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood, faces.length * 2 + cornerJoints.length,
+    new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood,
+    faces.length * 2 + cornerJoints.length + blankFaces.length * 2,
   );
   const dummy = new THREE.Object3D();
   faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
@@ -216,6 +260,27 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
     dummy.position.set(wx + dx * 1.93, wallHeight / 2 - 0.04, wz + dy * 1.93);
     dummy.updateMatrix();
     posts.setMatrixAt(faces.length * 2 + i, dummy.matrix);
+  });
+  // Mirror a pair of short diagonal braces on each blind frontage. Reuse the
+  // existing upright geometry, material and draw call via scaled instances.
+  // The 4cm-deep timber stays entirely on the blocked side of the tile.
+  blankFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    for (const [sideIndex, side] of [-1, 1].entries()) {
+      // Structural A-braces: meet the storey beam at the centre and
+      // finish by the lower upright/plinth, never floating mid-wall.
+      const sideways = side * 0.85;
+      dummy.rotation.set(0, yaw, 0);
+      dummy.rotateZ(side * 0.52);
+      dummy.scale.set(1, 0.55, 1);
+      dummy.position.set(
+        wx + dx * 1.973 + Math.cos(yaw) * sideways,
+        1.84,
+        wz + dy * 1.973 - Math.sin(yaw) * sideways,
+      );
+      dummy.updateMatrix();
+      posts.setMatrixAt(faces.length * 2 + cornerJoints.length + faceIndex * 2 + sideIndex, dummy.matrix);
+    }
   });
   beams.instanceMatrix.needsUpdate = true;
   posts.instanceMatrix.needsUpdate = true;
@@ -292,8 +357,8 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
 }
 
 // Pitched roof silhouettes on authored 2–6-cell solid wall runs. The six
-// triangles are shared by ONE instanced mesh regardless of span width, with
-// no new collisions or per-house geometry. Saved party cells never change.
+// triangles are shared by ONE instanced mesh regardless of span width. High
+// eaves may overhang the road visually but never alter collision geometry. Saved party cells never change.
 function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6 }) {
   if (!Array.isArray(runs) || !runs.length) return;
   const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
@@ -311,8 +376,12 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     valid.push(run);
   }
   if (!valid.length) return;
-  const length = CELL * 4 - 0.16;
-  const depth = CELL - 0.16;
+  // Small 22cm eaves reveal the pitched roof from street level. Their
+  // underside is >6m above the walkable grid; collisions stay unchanged.
+  // No extra triangles, instances or draw calls on mobile.
+  const eave = 0.22;
+  const length = CELL * 4 + eave * 2;
+  const depth = CELL + eave * 2;
   const vertices = new Float32Array([
     -length / 2, 0, -depth / 2,
     length / 2, 0, -depth / 2,
@@ -323,22 +392,41 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   ]);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  // UVs follow the roof slope instead of projecting a flat roof-colour
+  // triangle. Preserve all six vertices and 18 indices for old mobile budgets.
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute([
+    0, 0, 1, 0, 0, 1, 1, 1, 0, 0.5, 1, 0.5,
+  ], 2));
   geometry.setIndex([0, 1, 5, 0, 5, 4, 4, 5, 3, 4, 3, 2, 0, 4, 2, 1, 3, 5]);
   geometry.computeVertexNormals();
   const roofs = new THREE.InstancedMesh(
-    geometry, material(0x775343, { side: THREE.DoubleSide, roughness: 0.95 }), valid.length,
+    geometry, material(0xb88d75, {
+      map: swordhavenSurfaceTexture('roof'),
+      normalMap: swordhavenSurfaceNormalTexture('roof'),
+      normalScale: new THREE.Vector2(0.35, 0.35),
+      side: THREE.DoubleSide, roughness: 0.95,
+    }), valid.length,
   );
   const dummy = new THREE.Object3D();
+  // Three restrained clay shades break up identical roof runs without
+  // extra meshes, materials, or random flicker between visits.
+  const roofTints = [
+    new THREE.Color('#ffffff'),
+    new THREE.Color('#eee1d5'),
+    new THREE.Color('#e0d4cb'),
+  ];
   valid.forEach(({ x, y, width }, index) => {
     const [wx, wz] = gridToWorld(x + (width - 1) / 2, y, center);
     // X-scale alters only span length, not roof pitch/height: a pair of
     // cottages and a five-cell terrace share the same triangle budget.
-    dummy.scale.set((CELL * width - 0.16) / length, 1, 1);
+    dummy.scale.set((CELL * width + eave * 2) / length, 1, 1);
     dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);
+    roofs.setColorAt(index, roofTints[(x * 5 + y * 7 + width) % roofTints.length]);
   });
   roofs.instanceMatrix.needsUpdate = true;
+  roofs.instanceColor.needsUpdate = true;
   roofs.name = 'chronicles-town-south-pitched-roofs';
   roofs.castShadow = false;
   roofs.receiveShadow = true;
@@ -364,8 +452,15 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const earth = material(biome?.ground ?? (forest ? 0xaebc9e : 0xffffff), { map: biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture() });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
-  // Roads are pixel-art cobbles: one 64-px tile per 4 m cell.
-  const paver = material(roadMap ? 0xcabfa6 : 0xddd3bf, { map: swordhavenSurfaceTexture('cobble') });
+  // The shared town-only relief adds directional light to weathered paving.
+  // Wild roads retain their cheaper albedo-only rendering.
+  const paver = material(roadMap ? 0xcabfa6 : 0xddd3bf, {
+    map: swordhavenSurfaceTexture('cobble'),
+    ...(settlement ? {
+      normalMap: swordhavenSurfaceNormalTexture('cobble'),
+      normalScale: new THREE.Vector2(0.72, 0.72),
+    } : {}),
+  });
   const timber = material(0x4d3424);
   const linen = material(0x963f32, { side: THREE.DoubleSide });
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });

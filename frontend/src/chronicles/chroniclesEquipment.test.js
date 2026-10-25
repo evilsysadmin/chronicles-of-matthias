@@ -181,16 +181,26 @@ describe('Chronicles First Book · real purchased gear', () => {
 
   it('lets MM3 classes, not hero names, decide gear and turns armor into real AC', () => {
     const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
-    const stocked = chroniclesApplyContentEffects(initial, [
+    const grant = chroniclesApplyContentEffects(initial, [
       { type: 'grant-item', itemId: 'roadwatch-sabre', name: 'Sable' },
       { type: 'grant-item', itemId: 'roadwatch-vest', name: 'Jubón' },
     ]);
+    // Deliberate test setup: both items belong to Matthias until transferred.
+    const stocked = { ...grant, bagOwners: { matthias: {
+      'roadwatch-sabre': 1, 'roadwatch-vest': 1,
+    } } };
     // Aziz is a Clérigo: blunt weapons only, so the sabre is refused.
     const cleric = chroniclesEquipItem(stocked, 'bishop', 'roadwatch-sabre');
     expect(cleric.equipment).toBe(stocked.equipment);
     expect(cleric.message).toMatch(/Clérigo/);
     // Faust is an Arquero: swords allowed.
-    const archer = chroniclesEquipItem(stocked, 'knight', 'roadwatch-sabre');
+    // First Book MM3 uses personal packs: Faust must receive the sword
+    // before it can be worn. A sword in Matthias's bag is not his.
+    expect(chroniclesEquipItem(stocked, 'knight', 'roadwatch-sabre')).toBe(stocked);
+    const handed = chroniclesReduce(stocked, {
+      type: 'transfer-item', memberId: 'matthias', toMemberId: 'knight', itemId: 'roadwatch-sabre',
+    });
+    const archer = chroniclesEquipItem(handed, 'knight', 'roadwatch-sabre');
     expect(chroniclesEquippedItem(archer, 'knight', 'weapon')?.id).toBe('roadwatch-sabre');
     expect(chroniclesPartyAttackStats(archer, 'knight').toHit)
       .toBe(chroniclesPartyAttackStats(stocked, 'knight').toHit + CHRONICLES_EQUIPMENT['roadwatch-sabre'].toHitBonus);

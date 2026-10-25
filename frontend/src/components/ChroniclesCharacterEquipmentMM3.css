@@ -49,15 +49,15 @@
   .chronicles-character-sheet__inventory {
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-column: 1; grid-row: 2 / span 2;
-    gap: 3px; padding: 6px; max-height: 300px; min-height: 180px;
+    gap: 3px; padding: 5px; max-height: 320px; min-height: 180px;
     overflow-y: auto; align-content: start; scrollbar-gutter: stable;
     border: 2px solid #b48b58; background: #ecd2a6;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
-    display: grid; grid-template-columns: 34px minmax(0, 1fr) auto;
-    align-items: center; gap: 8px; min-width: 0; min-height: 49px;
-    padding: 6px 9px; border: 1px solid #bb9968;
+    display: grid; grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center; gap: 7px; min-width: 0; min-height: 44px;
+    padding: 4px 7px; border: 1px solid #bb9968;
     background: #f8e7c4; color: #392716; font: inherit; text-align: left;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -69,7 +69,13 @@
   .chronicles-character-sheet__inventory button:hover:not(.is-selected) { background: #fff1d6; }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__inventory button > span {
-    min-width: 0; overflow-wrap: anywhere; font-weight: 650;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .98rem;
+    line-height: 1.16;
+    font-weight: 650;
   }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__inventory button > small {
@@ -77,9 +83,9 @@
   }
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__inventory-glyph {
-    display: grid; place-items: center; width: 31px; height: 31px;
+    display: grid; place-items: center; width: 26px; height: 26px;
     border: 1px solid #d3ad79; background: #85592b; color: #fff1ca;
-    font-size: 1.26rem; font-style: normal;
+    font-size: 1rem; font-style: normal;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
@@ -191,6 +197,66 @@
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button { order: 5; }
 }
 
+/* Two-column mechanics ledger where the inspector is wide enough, not another
+   tall stack of text. DOM order and all equipability rules remain untouched. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  /* The actual Chromium capture at 1280/1440 showed a 58px wrapped first
+     row. Give the inventory names room before shrinking the tap targets. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack {
+    grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    font-size: .88rem;
+    line-height: 1.22;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
+    padding: 10px 11px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px 9px;
+    margin: 7px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details dl > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 4px 2px 5px;
+    border-bottom: 1px solid #d1b489;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details dl > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details dt {
+    font-size: .8rem;
+    line-height: 1.12;
+    color: #785735;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details dd {
+    min-width: 0;
+    text-align: left;
+    font-size: .95rem;
+    line-height: 1.18;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button {
+    margin-top: 5px;
+  }
+}
+
 /* The same real MM3 hand-use explanation as Odo's shop, without a new card. */
 .chronicles-character-sheet__handling-note {
   display: block;
@@ -205,4 +271,11 @@
 .chronicles-character-sheet__weapon-card .chronicles-character-sheet__handling-note {
   margin-top: 2px;
   font-size: 11px;
+}
+
+/* The backpack sends items directly through the persistent 1–4 hero dock.
+   No second recipient picker or reparto toolbar is necessary here. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__backpack-heading {
+  display: block;
 }

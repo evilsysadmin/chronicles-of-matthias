@@ -382,6 +382,14 @@ export function createChroniclesProgression() {
   };
 }
 
+// A new expedition always starts at level 1, regardless of prior saves or
+// account-wide/Tactics progression. The chosen party build is the only input.
+export function chroniclesFreshExpeditionProgression(build = null) {
+  const pristine = createChroniclesProgression();
+  if (!build) return { progression: pristine, updated: true, errors: [] };
+  return setChroniclesCharacterBuild(pristine, build);
+}
+
 export function normalizeChroniclesProgression(raw) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const heroes = Object.fromEntries(HERO_IDS.map((id) => [id, normalizeHero(source.heroes?.[id])]));

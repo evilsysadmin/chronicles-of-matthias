@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
+import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import {
   buildSwordhavenScene, createSwordhavenWalkGrid, SWORDHAVEN_BUILDINGS,
   SWORDHAVEN_INTERACTION_CELLS, SWORDHAVEN_GATE_CELL, SWORDHAVEN_SPAWN,
   swordhavenGrassTexture, createSwordhavenSkyDome,
-  swordhavenSurfaceTexture,
+  swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 
 describe('Swordhaven modular real-time 3D', () => {
@@ -141,6 +142,45 @@ describe('Swordhaven modular real-time 3D', () => {
       .toBe(swordhavenSurfaceTexture('masonry'));
   });
 
+  it('builds a single masonry-detail batch with true portal depth and intact door aperture', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      for (const spec of SWORDHAVEN_BUILDINGS) {
+        const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+        const stones = building.getObjectByName('swordhaven-facade-dressed-stones');
+        expect(stones).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stones.count).toBeGreaterThan(30);
+        expect(stones.instanceColor).toBeTruthy();
+        expect(stones.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(stones.castShadow).toBe(!coarsePointer);
+        expect(building.getObjectByName('door-recessed-stone-jamb')).toBeFalsy();
+        expect(building.getObjectByName('door-stone-lintel')).toBeFalsy();
+        const portal = [];
+        const matrix = new THREE.Matrix4();
+        const pos = new THREE.Vector3();
+        const scale = new THREE.Vector3();
+        for (let index = 0; index < stones.count; index += 1) {
+          stones.getMatrixAt(index, matrix);
+          pos.setFromMatrixPosition(matrix);
+          scale.setFromMatrixScale(matrix);
+          // No decorative blocks in front of the door below the stone lintel.
+          if (pos.y < 0.71 && Math.abs(pos.x) < 0.78) {
+            throw new Error('Foundation dressing blocks the door');
+          }
+          expect(scale.x).toBeGreaterThan(0.12);
+          expect(scale.y).toBeGreaterThan(0.15);
+          // Instanced transforms round to Float32, so 0.43 can read back
+          // as 0.430000007 without any change to the authored depth.
+          expect(scale.z).toBeLessThan(0.44);
+          portal.push([pos.x, pos.y]);
+        }
+        expect(portal.some(([x, y]) => x < -0.9 && y > 1 && y < 3)).toBe(true);
+        expect(portal.some(([x, y]) => x > 0.9 && y > 1 && y < 3)).toBe(true);
+      }
+    }
+  });
+
   it('adds dressed stone corners, dormers and side windows to the five houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
@@ -149,7 +189,8 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(forge.getObjectByName('corner-dressed-stone-courses')).toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('corner-dressed-stone-courses').count).toBeGreaterThan(20);
       expect(forge.getObjectByName('side-window-amber-glass')).toBeTruthy();
-      expect(forge.getObjectByName('door-stone-lintel')).toBeTruthy();
+      expect(forge.getObjectByName('swordhaven-facade-dressed-stones'))
+        .toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
       expect(Boolean(forge.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
       const tower = scene.getObjectByName('swordhaven-building-swordhaven-temple')
@@ -160,23 +201,158 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
-  it('keeps the repeating authored-style patterns deterministic and distinct', () => {
+  it('uses deterministic, fine-grained town textures without changing the pixelated meadow', () => {
     for (const kind of ['stucco', 'masonry', 'roof', 'timber', 'cobble']) {
       const texture = swordhavenSurfaceTexture(kind);
-      expect(texture).toBe(swordhavenSurfaceTexture(kind));
+      expect(texture).toBe(swordhavenSurfaceTexture(kind)); // No regeneration at remount.
+      expect(texture).toBeInstanceOf(THREE.DataTexture);
       expect(texture.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(texture.wrapS).toBe(THREE.RepeatWrapping);
       expect(texture.wrapT).toBe(THREE.RepeatWrapping);
-      expect(texture.magFilter).toBe(THREE.NearestFilter);
-      // Pixel art: every texel comes from a short hand-picked ramp.
-      const tones = new Set(texture.image.data.filter((_v, index) => index % 4 === 0));
-      expect(tones.size, kind).toBeGreaterThanOrEqual(3);
-      expect(tones.size, kind).toBeLessThanOrEqual(6);
+      expect(texture.magFilter).toBe(THREE.LinearFilter);
+      expect(texture.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+      expect(texture.anisotropy).toBeLessThanOrEqual(4);
+      expect(texture.userData.chroniclesTownSurface.kind).toBe(kind);
+      const { width, height, data } = texture.image;
+      expect(width).toBeGreaterThanOrEqual(128);
+      expect(height).toBe(width);
+      expect(data).toHaveLength(width * height * 4);
+      const tones = new Set();
+      for (let i = 0; i < data.length; i += 4) {
+        tones.add(data[i]);
+        expect(data[i + 3]).toBe(255);
+      }
+      expect(tones.size, kind).toBeGreaterThan(15);
     }
     expect(swordhavenSurfaceTexture('roof')).not.toBe(swordhavenSurfaceTexture('masonry'));
+    expect(swordhavenGrassTexture().magFilter).toBe(THREE.NearestFilter);
     expect(() => swordhavenSurfaceTexture('unknown')).toThrow(/Unsupported/);
   });
 
+
+  it('adds periodic, linear normal maps to stone, cobbles, roof and limewash', () => {
+    for (const kind of ['masonry', 'cobble', 'roof', 'stucco']) {
+      const albedo = swordhavenSurfaceTexture(kind);
+      const normal = swordhavenSurfaceNormalTexture(kind);
+      expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
+      expect(chroniclesTownSurfacePixels(kind)).toBe(chroniclesTownSurfacePixels(kind));
+      expect(normal).toBeInstanceOf(THREE.DataTexture);
+      expect(normal.colorSpace).toBe(THREE.NoColorSpace);
+      expect(normal.wrapS).toBe(THREE.RepeatWrapping);
+      expect(normal.wrapT).toBe(THREE.RepeatWrapping);
+      expect(normal.magFilter).toBe(THREE.LinearFilter);
+      expect(normal.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+      expect(normal.repeat.toArray()).toEqual(albedo.repeat.toArray());
+      expect(normal.image.width).toBe(albedo.image.width);
+      expect(normal.image.data).toHaveLength(albedo.image.data.length);
+      const slopes = new Set();
+      for (let i = 0; i < normal.image.data.length; i += 4) {
+        const [r, g, b, a] = normal.image.data.subarray(i, i + 4);
+        slopes.add(`${r}:${g}`);
+        expect(b).toBeGreaterThanOrEqual(128);
+        expect(a).toBe(255);
+      }
+      expect(slopes.size).toBeGreaterThan(30);
+    }
+    expect(() => swordhavenSurfaceNormalTexture('timber')).toThrow(/Unsupported/);
+    const scene = new THREE.Scene();
+    buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: true });
+    const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+    expect(temple.getObjectByName('timber-and-stone-walls').material.normalMap)
+      .toBe(swordhavenSurfaceNormalTexture('masonry'));
+    const forgeWall = scene.getObjectByName('swordhaven-building-swordhaven-forge')
+      .getObjectByName('timber-and-stone-walls').material;
+    expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
+    expect(forgeWall.normalScale.toArray()).toEqual([0.50, 0.50]);
+    expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
+    expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
+      .toBe(swordhavenSurfaceNormalTexture('cobble'));
+    for (const spec of SWORDHAVEN_BUILDINGS) {
+      const roof = scene.getObjectByName('swordhaven-building-' + spec.id)
+        .getObjectByName('pitched-roof-1');
+      expect(roof.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+      expect(roof.material.normalScale.x).toBeCloseTo(0.35);
+      expect(roof.material.map.repeat.toArray()).toEqual(roof.material.normalMap.repeat.toArray());
+    }
+  }, 12000); // The shared atlas is first generated during this rendering test.
+
+  it('batches detailed leadwork, foliage and door straps on each shop without new interactions', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      const built = buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      for (const spec of SWORDHAVEN_BUILDINGS) {
+        const facade = scene.getObjectByName('swordhaven-building-' + spec.id);
+        const lead = facade.getObjectByName('window-diamond-leadwork');
+        const leaves = facade.getObjectByName('window-box-leaf-clusters');
+        const flowers = facade.getObjectByName('window-box-blooms');
+        const straps = facade.getObjectByName('shop-door-iron-straps');
+        expect(lead).toBeInstanceOf(THREE.InstancedMesh);
+        expect(lead.count).toBe(8);
+        const centers = facade.getObjectByName('window-box-flower-centers');
+        const stems = facade.getObjectByName('window-box-trailing-stems');
+        expect(leaves).toBeInstanceOf(THREE.InstancedMesh);
+        expect(flowers).toBeInstanceOf(THREE.InstancedMesh);
+        expect(centers).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stems).toBeInstanceOf(THREE.InstancedMesh);
+        expect(leaves.count).toBe(coarsePointer ? 36 : 68);
+        expect(flowers.count).toBe(coarsePointer ? 10 : 16);
+        expect(centers.count).toBe(flowers.count);
+        expect(stems.count).toBe(coarsePointer ? 6 : 10);
+        expect(leaves.geometry).toBeInstanceOf(THREE.BufferGeometry);
+        expect(leaves.geometry).not.toBeInstanceOf(THREE.SphereGeometry);
+        expect(flowers.geometry).not.toBeInstanceOf(THREE.SphereGeometry);
+        expect(leaves.material.side).toBe(THREE.DoubleSide);
+        expect(flowers.material.side).toBe(THREE.DoubleSide);
+        expect(leaves.instanceColor).toBeTruthy();
+        expect(flowers.instanceColor).toBeTruthy();
+        for (const mesh of [leaves, flowers, centers, stems]) {
+          expect(mesh.userData.chroniclesDecorativeOnly).toBe(true);
+          expect(mesh.castShadow).toBe(false);
+          expect(mesh.count).toBeLessThanOrEqual(68);
+        }
+        expect(straps.count).toBe(2);
+        expect(facade.getObjectByName('window-box-leaves')).toBeFalsy();
+      }
+      expect(built.contentProps).toHaveLength(0);
+    }
+  });
+
+  it('keeps each hanging planter above walkable ground and inside the shallow facade envelope', () => {
+    const scene = new THREE.Scene();
+    buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: false });
+    for (const spec of SWORDHAVEN_BUILDINGS) {
+      const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+      const center = building.getObjectByName('window-box-flower-centers');
+      const leaves = building.getObjectByName('window-box-leaf-clusters');
+      const stems = building.getObjectByName('window-box-trailing-stems');
+      const facadeZ = (spec.emblem === 'mug' ? 8.2 : 7.1) / 2 + 0.10;
+      const matrix = new THREE.Matrix4();
+      const at = new THREE.Vector3();
+      const colors = new Set();
+      for (let i = 0; i < leaves.count; i += 1) {
+        leaves.getMatrixAt(i, matrix);
+        at.setFromMatrixPosition(matrix);
+        expect(at.y).toBeGreaterThan(1.4);
+        expect(at.z).toBeGreaterThan(facadeZ + 0.7);
+        expect(at.z).toBeLessThan(facadeZ + 0.95);
+        const color = new THREE.Color();
+        leaves.getColorAt(i, color);
+        colors.add(color.getHexString());
+      }
+      expect(colors.size).toBeGreaterThanOrEqual(4);
+      for (const mesh of [center, stems]) {
+        for (let i = 0; i < mesh.count; i += 1) {
+          mesh.getMatrixAt(i, matrix);
+          at.setFromMatrixPosition(matrix);
+          expect(at.y).toBeGreaterThan(1.45);
+          // The tiny raised flower stamen projects ~0.014 m beyond 0.95.
+          // Allow its authored depth, still under one metre from the facade.
+          expect(at.z).toBeLessThan(facadeZ + 0.99);
+        }
+      }
+      expect(building.getObjectByName('flower-window-box')).toBeTruthy();
+    }
+  });
 
   it('adds instanced road shoulders and grass tufts without introducing collision geometry', () => {
     const scene = new THREE.Scene();

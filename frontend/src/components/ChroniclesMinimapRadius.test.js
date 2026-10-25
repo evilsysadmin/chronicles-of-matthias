@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesMapCoordinatesLabel } from '../chronicles/chroniclesAutomap.js';
+import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import { describe, expect, it } from 'vitest';
 import ChroniclesMinimap, { chroniclesMinimapRadiusX } from './ChroniclesMinimap.jsx';
 
@@ -28,6 +29,11 @@ describe('Chronicles minimap position caption', () => {
     expect(html).toContain('data-chronicles-minimap="visible"');
     expect(html).toContain('data-chronicles-coordinates');
     expect(html).toContain(position);
+    expect(html).toContain('data-chronicles-location');
+    expect(html).toContain('class="chronicles-minimap__location-prefix">UBICACIÓN · </span>SWORDHAVEN');
+    expect(html).toContain('Ubicación: SWORDHAVEN. Coordenadas: ' + position);
+    expect(chroniclesRegionHudLocation(map).kind).toBe('PUEBLO');
+    expect(html).not.toContain('PUEBLO');
     expect(html).not.toContain('RUMBO');
   });
 
@@ -37,5 +43,6 @@ describe('Chronicles minimap position caption', () => {
       state, visitedCells: [], hidden: true, onExpand: () => {},
     }));
     expect(html).toBe('');
+    expect(html).not.toContain('data-chronicles-location');
   });
 });

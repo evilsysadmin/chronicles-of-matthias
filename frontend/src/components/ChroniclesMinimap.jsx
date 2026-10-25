@@ -4,6 +4,7 @@ import {
   chroniclesMapForState,
 } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesDiscoveredPois, chroniclesRouteTargetOverlapsPoi } from '../chronicles/chroniclesAutomapPoi.js';
+import { chroniclesRegionHudLocation } from '../chronicles/chroniclesRegionHud.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
@@ -62,7 +63,7 @@ function Marker({ marker }) {
       aria-label={marker.label}
       pointerEvents="none">
       <title>{marker.label}</title>
-      <rect x={x + .08} y={y + .08} width=".84" height=".84" rx=".12" />
+      <rect x={x + .05} y={y + .05} width=".90" height=".90" rx=".12" />
       <text x={x + .5} y={y + .54} textAnchor="middle" dominantBaseline="middle">{marker.glyph}</text>
     </g>
   );
@@ -156,18 +157,22 @@ export default function ChroniclesMinimap({
   const cy = state.y + .5;
   const facing = chroniclesAutomapFacingDegrees(state.direction);
   const markers = discoveredLocalMarkers(map, state, revealed, radiusX, radiusY);
-  const guildVisible = markers.some((marker) => marker.category === 'guild');
   const coordinates = chroniclesMapCoordinatesLabel(map, state) || 'LOCAL';
+  const region = chroniclesRegionHudLocation(map);
+  const locationText = region.kind.startsWith('ÁREA ') ? `${region.kind} · ${region.value}` : region.value;
 
   return (
     <button
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
-      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Coordenadas: ${coordinates}`}
+      aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Ubicación: ${locationText}. Coordenadas: ${coordinates}`}
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
+      <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>
+        <span className="chronicles-minimap__location-prefix">UBICACIÓN · </span>{locationText}
+      </span>
       <svg
         ref={svgRef}
         viewBox={`${minX} ${minY} ${width} ${height}`}
@@ -216,12 +221,6 @@ export default function ChroniclesMinimap({
           <path d={`M ${cx} ${cy - .38} L ${cx + .28} ${cy + .26} L ${cx} ${cy + .12} L ${cx - .28} ${cy + .26} Z`} />
         </g>
       </svg>
-      {(guildVisible || target) && (
-        <span className="chronicles-minimap__legend" aria-hidden="true">
-          {guildVisible && <span className="is-guild"><b>G</b> gremio</span>}
-          {target && <span className="is-target" title={routeLabel ? `Siguiente salida: ${routeLabel}` : undefined}><b>★</b> objetivo</span>}
-        </span>
-      )}
       <span className="chronicles-minimap__expand" aria-hidden="true">⌖</span>
     </button>
   );

@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'alley', 'ward']) {
+    for (const view of ['oldtown', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -41,8 +41,16 @@ try {
         assert.ok(Number(result.wallCount) > 50);
         assert.ok(Number(result.roadCount) > 100);
         assert.equal(Number(result.plasterCount), 94);
+        assert.equal(result.windowDetail, 'true',
+          'Rendered street windows must have merged mullions and sills inside solid cells');
+        assert.equal(result.plasterRelief, 'true',
+          'Real street facades must use aligned, shared limewash relief');
         assert.equal(Number(result.roofCount), 7);
-        assert.equal(Number(result.cornerUprights), 226);
+        assert.equal(result.roofRelief, 'true',
+          'Real street roofs must use aligned, shared shingle relief');
+        // 188 facade posts + 38 reinforced corners + 92 diagonal braces
+        // on the 46 windowless faces, still in the same instanced batch.
+        assert.equal(Number(result.cornerUprights), 318);
         // A close masonry facade at phone width may occupy almost the entire
         // frame with just a few colours. Only reject a truly flat framebuffer.
         assert.ok(Number(result.pixelVariants) >= 2,

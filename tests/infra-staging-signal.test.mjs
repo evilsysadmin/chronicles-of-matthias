@@ -129,3 +129,13 @@ test('handoff rejects malformed GitHub main SHA instead of pretending it is obso
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+test('source workflow completions cannot cancel the pending final dispatch owner', () => {
+  // GitHub permits only one pending run per concurrency group. A SHA-only
+  // group can drop the third completion event while another signal is active.
+  const match = workflow.match(/concurrency:\n\s*group: ([^\n]+)\n\s*cancel-in-progress: false/);
+  assert.ok(match, 'source handoff must declare a non-cancelling concurrency group');
+  assert.match(match[1], /github\.event\.workflow_run\.head_sha/);
+  assert.match(match[1], /github\.event\.workflow_run\.id/,
+    'each of the three completed source workflows needs its own pending slot');
+});

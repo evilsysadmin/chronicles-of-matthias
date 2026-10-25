@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { r2AssetUrl } from '../r2Assets.js';
+import { unlockChroniclesActionAudio } from './chroniclesActionAudio.js';
 import {
   getAmbientPlaybackState,
   getAmbientVolume,
@@ -47,6 +48,9 @@ export function useChroniclesSoundtrack(entryView) {
       if (status === 'playing' || status === 'gap') pauseAmbientMusic();
     };
     const retryAfterGesture = () => {
+      // FX must be unlocked *during* the gesture: enemy responses and React
+      // post-paint hit cues happen later, after transient activation ends.
+      unlockChroniclesActionAudio();
       // Autoplay is often blocked after F5 until the next real user gesture.
       if (!audio.src || !audio.paused || audio.error) return;
       const attempt = audio.play();

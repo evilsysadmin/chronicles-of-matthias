@@ -10,6 +10,45 @@ const views = [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800], [144
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = 0;
 
+// Wait for the actual React dialog, fonts and visible artwork instead of
+// paying Playwright's 500ms network-idle quiet window on every merchant scene.
+async function gotoReadyShop(page, target) {
+  await page.goto(target, { waitUntil: 'load' });
+  await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 20_000 });
+  await page.waitForFunction(() => {
+    const images = [...document.images].filter((img) => img.getClientRects().length);
+    return document.fonts.status === 'loaded'
+      && images.every((img) => img.complete && img.naturalWidth > 0);
+  }, undefined, { timeout: 20_000 });
+}
+
+async function catalogFilterTops(dialog) {
+  return dialog.locator('.chronicles-shop__filters label').evaluateAll(
+    (labels) => labels.map((label) => label.getBoundingClientRect().top),
+  );
+}
+
+// Regression for 844×390: opening comparison must never push checkout below
+// the touch viewport. Test viewport geometry, not just display/DOM existence.
+async function assertLandscapeCheckoutVisible(dialog, label) {
+  const layout = await dialog.locator('.chronicles-shop__primary').evaluate((button) => {
+    const detail = button.closest('.chronicles-shop__detail');
+    const rect = button.getBoundingClientRect();
+    const panel = detail.getBoundingClientRect();
+    return {
+      buttonTop: rect.top, buttonBottom: rect.bottom,
+      panelTop: panel.top, panelBottom: panel.bottom,
+      viewport: window.innerHeight,
+      height: rect.height,
+      visible: getComputedStyle(button).visibility === 'visible',
+    };
+  });
+  assert(layout.visible && layout.height >= 38 && layout.buttonTop >= layout.panelTop - 1
+      && layout.buttonBottom <= layout.panelBottom + 1
+      && layout.buttonBottom <= layout.viewport - 2,
+    label + ': purchase action clipped under the expanded comparison: ' + JSON.stringify(layout));
+}
+
 // Capture the true room composition without React panels for art direction.
 // Temporary QA stylesheet is always removed before asserting interactions.
 async function captureArtworkOnly(page, filename) {
@@ -38,7 +77,7 @@ try {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      await page.goto(url, { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url);
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible', timeout: 20_000 });
       const image = page.locator('.chronicles-shop__scene img');
@@ -84,8 +123,33 @@ try {
         assert(boxes.detail.top >= height * .30,
           'The receipt should sit lower than Brunna’s face: ' + JSON.stringify(boxes));
       }
-      assert(boxes.catalog.width > 240 && boxes.detail.width > 240,
+      const portraitPhone = width <= 900 && height > width;
+      if (portraitPhone) {
+        // Inspect computed hit boxes in Chromium: a visible 35px close icon
+        // used to be too small to tap reliably on 360–430px phones.
+        const controls = await dialog.evaluate((root) => {
+          const size = (element) => {
+            const { width: w, height: h } = element.getBoundingClientRect();
+            return { width: w, height: h };
+          };
+          return {
+            close: size(root.querySelector('.chronicles-shop__close')),
+            tabs: [...root.querySelectorAll('.chronicles-shop__tabs button')].map(size),
+          };
+        });
+        assert(controls.close.width >= 44 && controls.close.height >= 44,
+          'Portrait close control must be thumb-sized: ' + JSON.stringify(controls));
+        assert(controls.tabs.every(({ width: w, height: h }) => w >= 44 && h >= 44),
+          'Portrait buy/sell tabs must remain thumb-sized: ' + JSON.stringify(controls));
+      }
+      assert(boxes.catalog.width > 240 && (portraitPhone ? boxes.detail.width === 0 : boxes.detail.width > 240),
         `Unusable shop panels at ${width}px: ${JSON.stringify(boxes)}`);
+      if (portraitPhone) {
+        assert(boxes.list.height > height * .35,
+          `Portrait must dedicate most available room to stock: ${JSON.stringify(boxes)}`);
+        assert(boxes.catalog.bottom <= height + 1,
+          `Portrait stock escapes viewport: ${JSON.stringify(boxes)}`);
+      }
       if (width > 900) {
         assert(boxes.catalog.right + 25 < boxes.detail.left,
           `Brunna scene is squeezed between panels at ${width}px: ${JSON.stringify(boxes)}`);
@@ -97,10 +161,33 @@ try {
         if (width >= 700 && height <= 500) {
           assert(boxes.catalog.top < height * 0.48 && boxes.detail.top < height * 0.48,
             `Landscape market is hidden below an empty art band: ${JSON.stringify(boxes)}`);
-          assert(boxes.catalog.right + 35 < boxes.detail.left,
-            `Landscape lost Brunna between the panels: ${JSON.stringify(boxes)}`);
-          assert(boxes.list.height > 80,
-            `Landscape stock cannot scroll: ${JSON.stringify(boxes)}`);
+          assert(boxes.detail.left - boxes.catalog.right >= 5
+              && boxes.detail.left - boxes.catalog.right <= 15,
+            `Landscape must use adjacent, stock-first panes: ${JSON.stringify(boxes)}`);
+          assert(boxes.catalog.width > boxes.detail.width,
+            `Landscape inventory must be wider than checkout: ${JSON.stringify(boxes)}`);
+          assert(boxes.list.height > 115,
+            `Landscape stock cannot scroll enough offers: ${JSON.stringify(boxes)}`);
+          const ledger = await dialog.locator('.chronicles-shop__list').evaluate((list) => {
+            const bounds = list.getBoundingClientRect();
+            const items = [...list.querySelectorAll('[data-chronicles-shop-item]')];
+            return {
+              columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+              visible: items.filter((item) => {
+                const r = item.getBoundingClientRect();
+                return r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+              }).length,
+              total: items.length,
+              firstHeight: items[0]?.getBoundingClientRect().height,
+            };
+          });
+          assert.equal(ledger.columns, 2,
+            'Landscape stock must use two actual grid columns: ' + JSON.stringify(ledger));
+          assert(ledger.visible >= 7 && ledger.firstHeight >= 44,
+            'Landscape should expose at least seven touch-size merchandise rows at once: ' + JSON.stringify(ledger));
+          const filterTops = await catalogFilterTops(dialog);
+          assert(filterTops.every((top) => Math.abs(top - filterTops[0]) < 2),
+            `Landscape filters must fit a single row: ${filterTops}`);
           assert(boxes.catalog.bottom <= height + 1 && boxes.detail.bottom <= height + 1,
             `Landscape panels escape viewport: ${JSON.stringify(boxes)}`);
         }
@@ -154,7 +241,7 @@ try {
       const missingArt = dialog.locator('[data-chronicles-shop-item="wooden-staff"] svg');
       assert.equal(await missingArt.getAttribute('aria-label'), 'Arma',
         'Unpainted weapons must retain the accessible fallback glyph');
-      const spriteGeometry = await dialog.evaluate((root) => {
+      const spriteGeometry = !portraitPhone && await dialog.evaluate((root) => {
         const portrait = root.querySelector('.chronicles-shop__item-portrait');
         const sprite = portrait?.querySelector('img[data-chronicles-shop-art="wooden-longbow"]');
         if (!portrait || !sprite) return null;
@@ -163,12 +250,14 @@ try {
         return { parent: { left:p.left, right:p.right, top:p.top, bottom:p.bottom },
           image: { left:s.left, right:s.right, top:s.top, bottom:s.bottom } };
       });
-      assert(spriteGeometry, 'Selected longbow must display its own detailed sprite');
-      assert(spriteGeometry.image.left >= spriteGeometry.parent.left - 1
-        && spriteGeometry.image.right <= spriteGeometry.parent.right + 1
-        && spriteGeometry.image.top >= spriteGeometry.parent.top - 1
-        && spriteGeometry.image.bottom <= spriteGeometry.parent.bottom + 1,
-        'Weapon portrait must stay inside its own panel: ' + JSON.stringify(spriteGeometry));
+      if (!portraitPhone) {
+        assert(spriteGeometry, 'Selected longbow must display its own detailed sprite');
+        assert(spriteGeometry.image.left >= spriteGeometry.parent.left - 1
+          && spriteGeometry.image.right <= spriteGeometry.parent.right + 1
+          && spriteGeometry.image.top >= spriteGeometry.parent.top - 1
+          && spriteGeometry.image.bottom <= spriteGeometry.parent.bottom + 1,
+          'Weapon portrait must stay inside its own panel: ' + JSON.stringify(spriteGeometry));
+      }
 
       // Filtering, sorting and selection must only alter presentation.
       const catalog = dialog.locator('.chronicles-shop__catalog');
@@ -187,14 +276,29 @@ try {
       // The exact same combat comparison is now discoverable on stock
       // hover/focus, without creating a second dashboard over the merchant.
       if (width > 900) await dagger.locator('button').hover();
-      const peek = width >= 1180 && height >= 540
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
-        : dagger.locator('.chronicles-shop__gear-peek');
+      if (width <= 900) {
+        const comparison = detail.locator('.chronicles-shop__mobile-preview');
+        await comparison.locator('[data-chronicles-shop-party-comparison]').waitFor({ state: 'visible' });
+        assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
+          'Touch preview must not expand rows and steal inventory space');
+      }
+      const peek = width <= 900
+        ? detail.locator('.chronicles-shop__mobile-preview .chronicles-shop__gear-peek')
+        : width >= 1180 && height >= 540
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+          : dagger.locator('.chronicles-shop__gear-peek');
       await peek.waitFor({ state: 'visible' });
-      assert.equal(await peek.locator('.chronicles-shop__gear-peek-member').count(), 4,
-        'Hover/focus/tap must show the real comparison for all four companions');
+      const rows = await peek.locator('.chronicles-shop__gear-peek-member').count();
+      if (width <= 900) {
+        assert.equal(rows, 4, 'Touch comparison must show every hero separately');
+        for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
+          assert((await peek.innerText()).includes(name),
+            'Touch comparison lost ' + name);
+        }
+      } else assert.equal(rows, 4, 'Desktop must keep its four per-hero comparisons');
       assert.match(await peek.innerText(), /Matthias/);
       assert.match(await peek.innerText(), /Daño|Acierto|Alcance|No puede equiparlo|Sin cambios/);
+      if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Brunna per-hero gear preview');
       if (width >= 1180 && height >= 540) {
         const position = await peek.evaluate((el) => {
           const rect = (node) => {
@@ -209,6 +313,10 @@ try {
           && position.peek.right <= position.detail.left - 2
           && position.peek.width >= 180,
           'Preview must be readable to the RIGHT of the clipped catalogue: ' + JSON.stringify(position));
+        // The painted keeper is the room's visual focal point, not a tooltip backdrop.
+        // Brunna's face occupies the right half of the aisle at desktop widths.
+        assert(position.peek.right <= width * .63,
+          'Desktop comparison obscures Brunna: ' + JSON.stringify(position));
         assert.equal(await dagger.locator('.chronicles-shop__gear-peek').count(), 0,
           'Wide hover must never expand or reflow the stock ledger');
       }
@@ -222,9 +330,71 @@ try {
         await peek.waitFor({ state: 'hidden' });
       }
       if ([390, 1280].includes(width)) {
-        await dagger.locator('button').focus();
+        if (!portraitPhone) await dagger.locator('button').focus();
         await peek.waitFor({ state: 'visible' });
         await page.screenshot({ path: `smoke-shop-gear-peek-${width}.png` });
+      }
+      if (portraitPhone) {
+        assert.equal(await catalog.isVisible(), false, 'Portrait inspection must hide stock without destroying it');
+        const stockReturn = detail.getByRole('button', { name: '← Volver a mercancías' });
+        await stockReturn.click();
+        await catalog.waitFor({ state: 'visible' });
+        assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 11,
+          'Returning from inspection must preserve full inventory');
+        await dagger.locator('button').click();
+        await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
+      }
+
+      // All weapon families use the same per-hero preview as Odo's armour.
+      // Use the actual longbow from Brunna: it is restricted to its real class.
+      if ([390, 844, 1280].includes(width)) {
+        const longbow = dialog.locator('[data-chronicles-shop-item="wooden-longbow"]');
+        if (portraitPhone) {
+          await detail.getByRole('button', { name: '← Volver a mercancías' }).click();
+          await catalog.waitFor({ state: 'visible' });
+        }
+        if (width <= 900) await longbow.locator('button').click();
+        else {
+          await longbow.locator('button').click();
+          await longbow.locator('button').hover();
+        }
+        const rangePreview = width <= 900
+          ? detail.locator('[data-chronicles-shop-party-comparison]')
+          : dialog.locator('.chronicles-shop__peek-stage [data-chronicles-shop-party-comparison]');
+        await rangePreview.waitFor({ state: 'visible' });
+        assert.equal(await rangePreview.locator('[data-chronicles-shop-hero]').count(), 4,
+          'Ranged-weapon preview must name all four heroes separately');
+        assert.match(await rangePreview.innerText(), /No puede equiparlo/,
+          'Ranged-weapon preview must explain class restrictions');
+        assert.match(await rangePreview.innerText(), /Acierto|Daño|Alcance/,
+          'Ranged-weapon preview must include actual ranged statistics');
+        assert.doesNotMatch(await rangePreview.innerText(), /MM3/,
+          'Merchant comparison must never print engine/ruleset jargon');
+        if (width === 844) {
+          await assertLandscapeCheckoutVisible(dialog, 'Longbow comparison');
+          const visibility = await rangePreview.evaluate((peek) => {
+            const inspection = peek.closest('.chronicles-shop__inspection');
+            const frame = inspection.getBoundingClientRect();
+            return {
+              noHorizontalOverflow: peek.scrollWidth <= peek.clientWidth + 1,
+              rows: [...peek.querySelectorAll('[data-chronicles-shop-hero]')].map((row) => {
+                const r = row.getBoundingClientRect();
+                return { name: row.getAttribute('data-chronicles-shop-hero'),
+                  fullyVisible: r.top >= frame.top && r.bottom <= frame.bottom - 2 };
+              }),
+            };
+          });
+          assert(visibility.noHorizontalOverflow, 'Weapon comparison overflows horizontally: ' + JSON.stringify(visibility));
+          assert(visibility.rows.every((row) => row.fullyVisible),
+            'All four heroes must fit above pinned checkout without scrolling: ' + JSON.stringify(visibility));
+        }
+        await page.screenshot({ path: `smoke-shop-ranged-comparison-${width}.png` });
+        if (portraitPhone) {
+          await detail.getByRole('button', { name: '← Volver a mercancías' }).click();
+          await catalog.waitFor({ state: 'visible' });
+        }
+        await dagger.locator('button').click();
+        await detail.getByRole('heading', { name: 'Daga de latón' }).waitFor();
       }
 
       // Buy and sell through the real reducer (not fake onAction state).
@@ -246,6 +416,10 @@ try {
 
       assert.deepEqual(errors, [], `Browser exceptions at ${width}px`);
       await page.keyboard.press('Escape');
+      if (portraitPhone) {
+        await catalog.waitFor({ state: 'visible' });
+        await page.keyboard.press('Escape');
+      }
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.body.style.overflow), '',
         'Closing the shop must restore game scrolling');
@@ -266,7 +440,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await context.newPage();
     try {
-      await page.goto(url + '?gold-cap=1', { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url + '?gold-cap=1');
       const dialog = page.getByRole('dialog');
       await dialog.waitFor();
       await dialog.getByRole('tab', { name: /Vender/ }).click();
@@ -316,7 +490,7 @@ try {
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       try {
-        await page.goto(url + '?room=' + room, { waitUntil: 'networkidle' });
+        await gotoReadyShop(page, url + '?room=' + room);
         const dialog = page.getByRole('dialog');
         await dialog.waitFor({ state: 'visible' });
         const scene = dialog.locator('.chronicles-shop__scene');
@@ -372,9 +546,18 @@ try {
             assert(size.complete && size.w >= 512 && size.h >= 512,
               id + ': dedicated 2D armour portrait failed to decode ' + JSON.stringify(size));
           }
-          assert.equal(await dialog.locator('[data-chronicles-shop-item="roadwatch-vest"] svg')
-            .getAttribute('aria-label'), 'Armadura',
-            'Guard leather vest must keep its accessible SVG fallback');
+          const guardVest = dialog.locator('[data-chronicles-shop-item="roadwatch-vest"] img[data-chronicles-shop-art="roadwatch-vest"]');
+          await guardVest.waitFor({ state: 'visible' });
+          assert.equal(await guardVest.getAttribute('alt'), 'Jubón de cuero de guardia');
+          const guardSize = await guardVest.evaluate((img) => ({
+            w: img.naturalWidth, h: img.naturalHeight, complete: img.complete,
+          }));
+          assert(guardSize.complete && guardSize.w >= 512 && guardSize.h >= 512,
+            'Guard vest full-resolution portrait failed: ' + JSON.stringify(guardSize));
+          const covered = await dialog.locator('[data-chronicles-shop-item] img[data-chronicles-shop-art]').count();
+          assert.equal(covered, 7, 'All seven Odo stock items need their own sprite');
+          assert.equal(await dialog.locator('[data-chronicles-shop-item] svg[data-chronicles-shop-glyph]').count(), 0,
+            'No generic icon remains in Odo stock');
           // Verify the real room receives non-interactive light. One mobile
           // scenario exercises the reduced-motion fallback, not just CSS text.
           const light = await scene.evaluate((node) => ({
@@ -457,10 +640,39 @@ try {
           };
         });
         assert.equal(geometry.bodyScroll, 'hidden', room + ': world scroll must remain locked');
+        if (width === 390) {
+          const close = await dialog.locator('.chronicles-shop__close').boundingBox();
+          assert(close?.width >= 44 && close?.height >= 44,
+            room + ': portrait close target is too small: ' + JSON.stringify(close));
+        }
         assert(geometry.overflow <= width + 1, room + ': horizontal overflow ' + width);
         assert(geometry.dialog.left >= -1 && geometry.dialog.right <= width + 1);
         assert(geometry.dialog.top >= -1 && geometry.dialog.bottom <= height + 1);
-        if (room === 'odo') assert(geometry.catalog.width > 240 && geometry.detail.width > 240);
+        if (room === 'odo') {
+          assert(geometry.catalog.width > 240 && (
+            width <= 900 && height > width ? geometry.detail.width === 0 : geometry.detail.width > 240
+          ), 'Odo must keep an accessible stock-first merchant layout: ' + JSON.stringify(geometry));
+          if (width === 844) {
+            const stock = await dialog.locator('.chronicles-shop__list').evaluate((list) => {
+              const bounds = list.getBoundingClientRect();
+              const rows = [...list.querySelectorAll('[data-chronicles-shop-item]')];
+              return {
+                total: rows.length,
+                columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+                client: list.clientHeight, scroll: list.scrollHeight,
+                visible: rows.filter((row) => {
+                  const r = row.getBoundingClientRect();
+                  return r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+                }).length,
+              };
+            });
+            assert.equal(stock.total, 7, 'Odo must keep all seven real items');
+            assert.equal(stock.columns, 2, 'Odo merchandise must span two columns in landscape');
+            assert.equal(stock.visible, 7, 'All seven Odo items must be visible without scrolling: ' + JSON.stringify(stock));
+            assert(stock.scroll <= stock.client + 2,
+              'Odo must not need catalogue scrolling at 844×390: ' + JSON.stringify(stock));
+          }
+        }
         else {
           assert(await dialog.locator('[data-chronicles-guild-spell]').count() > 0, 'Guild spells must be listed');
           if (width <= 844) {
@@ -490,14 +702,29 @@ try {
           const vest = dialog.locator('[data-chronicles-shop-item="leather-padded"]');
           if (width > 900) await vest.locator('button').hover();
           else await vest.locator('button').click();
-          const note = width >= 1180 && height >= 540
-            ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
-            : vest.locator('.chronicles-shop__gear-peek');
+          if (width <= 900) {
+            const comparison = dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview');
+            await comparison.locator('[data-chronicles-shop-party-comparison]').waitFor({ state: 'visible' });
+            assert.equal(await vest.locator('.chronicles-shop__gear-peek').count(), 0,
+              'Touching Odo merchandise must not expand the stock row');
+          }
+          const note = width <= 900
+            ? dialog.locator('.chronicles-shop__detail .chronicles-shop__mobile-preview .chronicles-shop__gear-peek')
+            : width >= 1180 && height >= 540
+              ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__gear-peek')
+              : vest.locator('.chronicles-shop__gear-peek');
           await note.waitFor({ state: 'visible' });
-          assert.equal(await note.locator('.chronicles-shop__gear-peek-member').count(), 4,
-            'Every Odo armor/shield needs its actual four-hero equip comparison');
-          assert.match(await note.innerText(), /Armadura|No puede equiparlo|Sin cambios/);
-          assert.match(await note.innerText(), /en MM3 no resta daño si el golpe acierta/);
+          const odoRows = await note.locator('.chronicles-shop__gear-peek-member').count();
+          if (width <= 900) {
+            assert.equal(odoRows, 4, 'Odo must show one separate real outcome per hero');
+            for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
+              assert((await note.innerText()).includes(name), 'Odo compact preview lost ' + name);
+            }
+          } else assert.equal(odoRows, 4);
+          assert.match(await note.innerText(), /CA|Armadura|No puede equiparlo|Sin cambios/);
+          assert.doesNotMatch(await note.innerText(), /MM3|no reduce el daño/,
+            'Merchant should show deltas, not system-rules lectures');
+          if (width === 844) await assertLandscapeCheckoutVisible(dialog, 'Odo per-hero armor preview');
           assert.doesNotMatch(await note.innerText(), /Reducción de daño [+-]\d/,
             'MM3 must not advertise damage mitigation that its combat code never applies');
           assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
@@ -550,7 +777,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      await page.goto(url + '?room=apothecary', { waitUntil: 'networkidle' });
+      await gotoReadyShop(page, url + '?room=apothecary');
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible' });
       assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
@@ -560,20 +787,27 @@ try {
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
       const peekInAisle = width >= 1180 && height >= 540;
-      const note = peekInAisle
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
-        : potion.locator('.chronicles-shop__consumable-peek');
+      if (mobile) await dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek').waitFor({ state: 'visible' });
+      const note = mobile
+        ? dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek')
+        : peekInAisle
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+          : potion.locator('.chronicles-shop__consumable-peek');
       await note.waitFor({ state: 'visible' });
       assert.match(await note.innerText(), /15 PV/);
       assert.match(await note.innerText(), /Toda la compañía/);
       assert.equal(await note.locator('.chronicles-shop__gear-peek-delta').count(), 0,
         'Potions do not equip and cannot invent combat-stat differences');
       const scroll = dialog.locator('[data-chronicles-shop-item="fire-scroll"]');
-      if (mobile) await scroll.locator('button').click();
-      else await scroll.locator('button').hover();
-      const scrollNote = peekInAisle
-        ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
-        : scroll.locator('.chronicles-shop__consumable-peek');
+      if (mobile) {
+        await dialog.getByRole('button', { name: '← Volver a mercancías' }).click();
+        await scroll.locator('button').click();
+      } else await scroll.locator('button').hover();
+      const scrollNote = mobile
+        ? dialog.locator('.chronicles-shop__detail .chronicles-shop__consumable-peek')
+        : peekInAisle
+          ? dialog.locator('.chronicles-shop__peek-stage .chronicles-shop__consumable-peek')
+          : scroll.locator('.chronicles-shop__consumable-peek');
       await scrollNote.waitFor({ state: 'visible' });
       assert.match(await scrollNote.innerText(),
         /14 de daño · alcance 3/);

@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
+    for (const view of width === 1280 ? ['adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -22,9 +22,17 @@ try {
       const errors = [];
       page.on('pageerror', (err) => errors.push(err.message));
       try {
-        await page.goto(base + '?view=' + view, { waitUntil: 'networkidle' });
+        // 27 fixture navigations previously paid Playwright's 500ms networkidle
+        // quiet window even after the actual dialog was rendered. Wait for
+        // load + the real dialog + paint resources, never a speculative sleep.
+        await page.goto(base + '?view=' + view, { waitUntil: 'load' });
         const dialog = page.getByRole('dialog');
         await dialog.waitFor({ state: 'visible', timeout: 20_000 });
+        await page.waitForFunction(() => {
+          const visible = [...document.images].filter((img) => img.getClientRects().length);
+          return document.fonts.status === 'loaded'
+            && visible.every((img) => img.complete && img.naturalWidth > 0);
+        }, undefined, { timeout: 15_000 });
         const details = await page.evaluate(() => {
           const d = document.querySelector('[role="dialog"]');
           const content = d.querySelector('.chronicles-spell-menu__pages')
@@ -60,6 +68,42 @@ try {
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
+          // A touch-sized pause folio has an Ayuda control; its repeated
+          // keyboard legend should not steal vertical space from actions.
+          const footer = await dialog.locator('.chronicles-game-menu__hint').evaluate((node) => ({
+            display: getComputedStyle(node).display,
+            height: node.getBoundingClientRect().height,
+            coarse: matchMedia('(pointer: coarse)').matches,
+          }));
+          const compactTouch = width <= 620 && footer.coarse;
+          assert.equal(footer.display === 'none', compactTouch,
+            `Adventure keyboard legend visibility at ${width}px: ${JSON.stringify(footer)}`);
+          if (compactTouch) assert.equal(footer.height, 0,
+            'Hidden keyboard legend must free actual vertical space');
+          assert.equal(await dialog.getByRole('button', { name: /Ayuda/ }).isVisible(), true,
+            'Touch users still need the visible help action');
+          const alignment = await dialog.evaluate((node) => {
+            const rows = [...node.querySelectorAll('.chronicles-game-menu__action-pair')];
+            const utility = node.querySelector('.chronicles-game-menu__utility-row');
+            const section = node.querySelector('.chronicles-game-menu__folio-section');
+            const bounds = (element) => element.getBoundingClientRect();
+            const sameEdges = (a, b) => Math.abs(bounds(a).left - bounds(b).left) <= 1
+              && Math.abs(bounds(a).right - bounds(b).right) <= 1;
+            return {
+              rows: rows.length,
+              sameEdges: rows.every((row) => sameEdges(row, utility)),
+              dividerWidths: [...rows, utility].map((row) => getComputedStyle(row).borderBottomWidth),
+              horizontalColumns: bounds(rows[0].children[0]).top === bounds(rows[0].children[1]).top,
+              falseRuling: getComputedStyle(section).backgroundImage.includes('repeating-linear-gradient'),
+            };
+          });
+          assert.equal(alignment.rows, 2, 'Two semantic action pairs are present');
+          assert.equal(alignment.sameEdges, true, 'Dividers span the same full folio width');
+          assert.deepEqual(alignment.dividerWidths, ['1px', '1px', '1px'],
+            'Section separators are uniform');
+          assert.equal(alignment.falseRuling, false, 'No decorative stripes compete with dividers');
+          assert.equal(alignment.horizontalColumns, width > 620,
+            'Related actions share a row only when there is enough horizontal space');
           // Expanded sound scrolls a short landscape folio. Reset before
           // saving the canonical open-menu screenshot so it depicts the
           // initial cover/header rather than the last scrolled menu row.
@@ -67,6 +111,45 @@ try {
         }
         await page.screenshot({ path: `smoke-folio-${view}-${width}.png` });
         if(view === 'cast') {
+          if (width <= 430) {
+            const tabLines = await dialog.locator('.chronicles-spell-menu__tabs button')
+              .evaluateAll((buttons) => buttons.map((button) => {
+                const shortcut = button.querySelector('small');
+                const label = document.createRange();
+                label.selectNodeContents(button.firstChild);
+                const labelBounds = label.getBoundingClientRect();
+                const shortcutBounds = shortcut.getBoundingClientRect();
+                return {
+                  labelTop: labelBounds.top,
+                  shortcutTop: shortcutBounds.top,
+                  shortcutRight: shortcutBounds.right,
+                  buttonRight: button.getBoundingClientRect().right,
+                  scrollWidth: button.scrollWidth,
+                  clientWidth: button.clientWidth,
+                };
+              }));
+            assert.equal(tabLines.length, 2, 'CAST has two page tabs');
+            assert(tabLines.every((tab) => Math.abs(tab.labelTop - tab.shortcutTop) <= 8
+              && tab.shortcutRight <= tab.buttonRight - 2
+              && tab.scrollWidth <= tab.clientWidth + 1),
+            `CAST page labels and C/I shortcuts must stay on one line at ${width}px: ${JSON.stringify(tabLines)}`);
+          }
+          if (width <= 430) {
+            const description = await dialog.locator('.chronicles-spell-menu__entry small')
+              .first().evaluate((node) => {
+                const style = getComputedStyle(node);
+                return {
+                  fontSize: parseFloat(style.fontSize),
+                  lineHeight: parseFloat(style.lineHeight),
+                  scrollHeight: node.scrollHeight,
+                  clientHeight: node.clientHeight,
+                };
+              });
+            assert(description.fontSize >= 17 && description.lineHeight >= 20,
+              `CAST mobile spell copy is too small: ${JSON.stringify(description)}`);
+            assert(description.scrollHeight <= description.clientHeight + 1,
+              `CAST mobile spell copy is clipped: ${JSON.stringify(description)}`);
+          }
           await dialog.getByRole('tab', { name: /Objetos/ }).click();
           await page.locator('[data-chronicles-use-item="healing-potion"]').waitFor();
           // The original regression appeared only after switching pages
@@ -142,6 +225,28 @@ try {
               === 'use:revive-draught:rook');
         }
         if(view === 'adventure') {
+          const helpTrigger = dialog.locator('[data-chronicles-menu-help]');
+          await helpTrigger.click();
+          const help = dialog.locator('[data-chronicles-game-help]');
+          await help.waitFor({ state: 'visible' });
+          assert.equal(await help.locator('details').count(), 4,
+            'Help must explain game concepts from the pause menu');
+          // Closed <details> sections hide their contents in the rendered UI.
+          // Open each relevant section as a real user would before asserting
+          // visible copy, so the smoke checks progressive disclosure honestly.
+          // The first section starts open; its visible CA definition must remain.
+          assert.match(await help.innerText(), /CA · Armadura/);
+          await help.getByText('Equipo, compras y comparaciones').click();
+          assert.match(await help.innerText(), /Comprar guarda el artículo/);
+          assert.doesNotMatch(await help.innerText(), /MM3/);
+          assert.equal(await dialog.locator('[data-chronicles-menu-save]').count(), 0,
+            'Menu actions must not compete with the guide');
+          await page.screenshot({ path: `smoke-folio-help-${width}.png` });
+          await help.getByRole('button', { name: 'Volver al menú' }).click();
+          await help.waitFor({ state: 'hidden' });
+          await dialog.locator('[data-chronicles-menu-save]').waitFor({ state: 'visible' });
+          assert.equal(await helpTrigger.evaluate((node) => document.activeElement === node), true,
+            'Closing help restores focus to its trigger');
           await dialog.getByRole('button', { name: 'Salir sin guardar' }).click();
           await dialog.getByRole('group', { name: 'Confirmar salida sin guardar' }).waitFor();
           await dialog.getByRole('button', { name: 'Cancelar' }).click();
@@ -155,6 +260,116 @@ try {
       } finally {
         await ctx.close();
       }
+    }
+  }
+
+  // Dedicated desktop screenshot: proportions and uninterrupted folio rules.
+  // The mobile matrix above keeps its original 27 combinations unchanged.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=adventure', { waitUntil: 'load' });
+      const menu = page.getByRole('dialog', { name: 'Menú de aventura' });
+      await menu.waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const shape = await menu.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        const pairs = [...node.querySelectorAll('.chronicles-game-menu__action-pair')];
+        const utility = node.querySelector('.chronicles-game-menu__utility-row');
+        const buttons = pairs[0]?.querySelectorAll('button');
+        return {
+          width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom,
+          twoColumns: buttons?.length === 2 && Math.abs(buttons[0].getBoundingClientRect().top
+            - buttons[1].getBoundingClientRect().top) < 1,
+          allAligned: pairs.every((row) => Math.abs(row.getBoundingClientRect().left
+            - utility.getBoundingClientRect().left) < 1
+            && Math.abs(row.getBoundingClientRect().right - utility.getBoundingClientRect().right) < 1),
+          noHorizontalScroll: document.documentElement.scrollWidth <= innerWidth + 1,
+        };
+      });
+      assert.ok(shape.width >= 600 && shape.width / shape.height >= 1.1,
+        `Desktop menu should be a wider, shorter folio: ${JSON.stringify(shape)}`);
+      assert.ok(shape.twoColumns && shape.allAligned, 'Desktop action rows stay aligned in two columns');
+      assert.ok(shape.right <= 1281 && shape.bottom <= 801 && shape.noHorizontalScroll,
+        'Desktop folio must fit the screen');
+      await page.screenshot({ path: 'smoke-folio-adventure-desktop-1280.png' });
+      console.log('ADVENTURE_FOLIO_DESKTOP_OK');
+    } catch (error) {
+      failures++;
+      console.error(`ADVENTURE_FOLIO_DESKTOP_FAIL: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Structural replica with the same selectors/CSS as the production HUD.
+  // Objectives belong to the Crónica, not a persistent overlay on the scene.
+  for (const [width, height] of [[360, 780], [390, 844], [430, 932], [768, 354], [844, 390], [1024, 600]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('[data-chronicles-journal-trigger]').waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const geometry = await page.evaluate(() => {
+        const journal = document.querySelector('[data-chronicles-journal-trigger]');
+        const group = document.querySelector('[data-chronicles-quick-status-trigger]');
+        const faces = [...document.querySelectorAll('.chronicles-party-member')];
+        if (!journal || !group || faces.length !== 4) return null;
+        const buttons = [journal, group].map((node) => node.getBoundingClientRect());
+        const faceRects = faces.map((node) => node.getBoundingClientRect());
+        return {
+          navBottom: Math.max(...buttons.map((rect) => rect.bottom)),
+          partyTop: Math.min(...faceRects.map((rect) => rect.top)),
+          partyLeft: Math.min(...faceRects.map((rect) => rect.left)),
+          partyRight: Math.max(...faceRects.map((rect) => rect.right)),
+          buttonMinHeight: Math.min(...buttons.map((rect) => rect.height)),
+          navRight: Math.max(...buttons.map((rect) => rect.right)),
+          noObjective: !document.querySelector('[data-chronicles-objective], .chronicles-objective-trigger'),
+          noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
+        };
+      });
+      assert.ok(geometry, 'Crónica/Grupo and four selectable heroes exist');
+      assert.ok(geometry.noObjective, 'No permanent objective plaque');
+      assert.ok(geometry.navBottom + 4 <= geometry.partyTop,
+        `Navigation must not cover heroes at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.buttonMinHeight >= 44, 'Journal/group must remain touchable');
+      assert.ok(geometry.navRight <= width - 60,
+        `Leave room for the top-right menu gem at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1, 'Heroes fit screen');
+      assert.ok(geometry.noHorizontalOverflow, 'HUD must not scroll sideways');
+      await page.screenshot({ path: `smoke-compact-hud-${width}.png` });
+      console.log(`COMPACT_PARTY_HUD_OK ${width}x${height}`);
+    } catch (error) {
+      failures++;
+      console.error(`COMPACT_PARTY_HUD_FAIL ${width}x${height}: ${error.message}`);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Desktop MM3: exploration retains its large original hero portraits.
+  // Only the character-sheet/equipment dock is allowed to compact them.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
+      await page.locator('.chronicles-party-member').first().waitFor({ state: 'visible', timeout: 20_000 });
+      const portraitHeight = await page.locator('.chronicles-party-member .chronicles-party-glyph').first()
+        .evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(portraitHeight >= 84 && portraitHeight <= 170,
+        `Exploration hero portraits must keep original scale: ${portraitHeight}`);
+      await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
+      console.log('EXPLORATION_PARTY_PORTRAITS_OK');
+    } catch (error) {
+      failures++;
+      console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL: ${error.message}`);
+    } finally {
+      await ctx.close();
     }
   }
 } finally {

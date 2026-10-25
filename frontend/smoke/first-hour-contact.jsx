@@ -26,6 +26,7 @@ import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
 import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx';
 import ChroniclesAutomap from '../src/components/ChroniclesAutomap.jsx';
+import ChroniclesMinimap from '../src/components/ChroniclesMinimap.jsx';
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
 import { chroniclesCurrentInitiativeActor } from '../src/chronicles/chroniclesInitiative.js';
 import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
@@ -316,6 +317,21 @@ if (view === 'threat') {
   content = <RealQuickStatusHotkeyFlow />;
 } else if (view === 'automap') {
   content = <RealAutomapHotkeyFlow />;
+} else if (view === 'minimap-poi') {
+  // Real authored Swordhaven services, deliberately discovered for the
+  // visual smoke: check tiny glyphs on the actual MM3 minimap at each width.
+  const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+  content = <div className="chronicles" style={{ width: 'min(370px, 90vw)', padding: 8 }}>
+    <ChroniclesMinimap state={{ ...state, x: 9, y: 4 }}
+      visitedCells={['7:4', '11:4']} onExpand={() => {}} />
+  </div>;
+} else if (view === 'minimap-ink') {
+  // Actual MM3 minimap, actual authored location and production CSS; this
+  // isolated surface catches a low-contrast caption on its sandstone bezel.
+  content = <div className="chronicles" style={{ width: 'min(370px, 90vw)', padding: 8 }}>
+    <ChroniclesMinimap state={createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' })}
+      visitedCells={[]} onExpand={() => {}} />
+  </div>;
 } else if (view === 'journal') {
   content = <RealJournalHotkeyFlow />;
  } else if (view === 'spell-menu' || view === 'spell-menu-enemy') {

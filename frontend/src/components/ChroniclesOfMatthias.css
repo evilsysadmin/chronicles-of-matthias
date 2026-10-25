@@ -849,8 +849,7 @@
 }
 
 .chronicles-minimap__title,
-.chronicles-minimap__expand,
-.chronicles-minimap__legend {
+.chronicles-minimap__expand {
   position: absolute;
   z-index: 2;
   pointer-events: none;
@@ -873,33 +872,6 @@
   color: rgba(232, 198, 139, .72);
   font-size: .8rem;
 }
-
-/* Contextual, touch-readable key: do not clutter the map with undiscovered POIs. */
-.chronicles-minimap__legend {
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 2px 4px;
-  font-size: .5rem;
-  line-height: 1.15;
-  text-shadow: 0 1px 2px #000;
-}
-.chronicles-minimap__legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 3px;
-  border: 1px solid rgba(216, 175, 108, .43);
-  border-radius: 3px;
-  background: rgba(9, 8, 7, .9);
-  white-space: nowrap;
-}
-.chronicles-minimap__legend .is-guild b { color: #d8c0ff; }
-.chronicles-minimap__legend .is-target b { color: #ffd36a; }
 
 .chronicles-minimap__cell {
   vector-effect: non-scaling-stroke;
@@ -933,7 +905,7 @@
 .chronicles-minimap__poi text {
   fill: #ffe4ab;
   stroke: none;
-  font: 800 .68px/1 Georgia, serif;
+  font: 800 .82px/1 Georgia, serif;
   pointer-events: none;
 }
 .chronicles-minimap__poi.is-dungeon rect,
@@ -1020,25 +992,7 @@
 
   .chronicles-statusbar > span { display: none; }
 
-  .chronicles-statusbar > span:nth-child(4) {
-    min-width: 0;
-    max-width: min(64vw, 430px);
-    min-height: 44px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 5px 11px;
-    border: 1px solid rgba(207, 168, 108, .3);
-    border-radius: 12px;
-    background: rgba(9, 8, 7, .76);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .32);
-    backdrop-filter: blur(8px);
-  }
 
-  .chronicles-statusbar > span:nth-child(4) b {
-    max-width: 100%;
-    font-size: .72rem;
-  }
 
   .chronicles-landscape-trigger {
     appearance: none;
@@ -1295,10 +1249,6 @@
     min-height: 44px;
   }
 
-  .chronicles-statusbar > span:nth-child(4) {
-    min-height: 40px;
-    max-width: min(55vw, 390px);
-  }
 
   .chronicles-map-trigger {
     width: 44px;
@@ -1373,12 +1323,6 @@
 }
 
 @media (max-width: 520px) {
-  .chronicles-statusbar > span:nth-child(4) { max-width: calc(100vw - 136px); }
-  .chronicles-statusbar:has(.chronicles-landscape-trigger) > span:nth-child(4) { max-width: calc(100vw - 192px); }
-
-  .chronicles-party {
-    grid-template-columns: repeat(4, 46px);
-  }
 
   .chronicles-party-member {
     width: 46px;
@@ -1578,13 +1522,6 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 /* Portrait first-person HUD: the objective should be readable without opening
    an overlay. Limit it to two lines so the party row retains its touch space. */
 @media (max-width: 520px) {
-  .chronicles-statusbar > span:nth-child(4) b {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-height: 1.15;
-  }
   /* With a route hint the objective keeps one line, so the box stays two
      lines tall and never covers the portraits; the full text is one tap
      away in the Crónica. */
@@ -1852,14 +1789,15 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 
 /* RUMBO moved to the minimap: keep the original statusbar child slots stable
    for the long-standing MM3 objective and responsive selectors. */
-.chronicles-statusbar > .chronicles-statusbar__retired-bearing { display: none !important; }
+.chronicles-statusbar > .chronicles-statusbar__retired-bearing,
+.chronicles-statusbar > .chronicles-statusbar__retired-location { display: none !important; }
 
 /* Coordinates belong to the map, in a quiet bottom caption below the tiles.
    Still one keyboard/touch button and one ResizeObserver-driven SVG. */
 .chronicles-minimap {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 16px;
+  grid-template-rows: minmax(0, 1fr) 16px 18px;
 }
 .chronicles-minimap svg { grid-column: 1; grid-row: 1; min-height: 0; }
 .chronicles-minimap__title {
@@ -1880,4 +1818,31 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.chronicles-minimap__legend { bottom: 21px; }
+.chronicles-minimap__location {
+  position: static;
+  z-index: 2;
+  pointer-events: none;
+  grid-column: 1;
+  grid-row: 3;
+  align-self: center;
+  justify-self: center;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 3px;
+  border: 0;
+  background: transparent;
+  color: #e2c597;
+  font: 600 .62rem/1.25 Georgia, serif;
+  letter-spacing: .045em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: none;
+}
+.chronicles-minimap__legend { bottom: 37px; }
+
+/* Compact 104px minimaps have room for the place, not a redundant label.
+   Keep the full region name in the button's accessible description. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles-minimap__location-prefix { display: none; }
+}

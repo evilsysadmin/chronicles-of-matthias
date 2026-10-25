@@ -70,7 +70,7 @@
 }
 .chronicles .chronicles-spell-menu--folio header .chronicles-spell-menu__eyebrow {
   display: block;
-  color: #4e2914;
+  color: #100907;
   font-size: .88rem;
   letter-spacing: .13em;
 }
@@ -82,7 +82,7 @@
 }
 .chronicles .chronicles-spell-menu--folio header p {
   margin: 0;
-  color: #462c1c;
+  color: #100907;
   font: 400 1.12rem/1.15 var(--mm3-pixel-font);
 }
 .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__close {
@@ -313,8 +313,30 @@
   }
   .chronicles .chronicles-spell-menu__rune { width: 32px; height: 32px; font-size: 1.2rem; }
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry strong { font-size: 1.15rem; }
-  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small { font-size: .95rem; }
+  /* Pixel-font descriptions need more breathing room at phone widths. */
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entry small {
+    font-size: 1.08rem;
+    line-height: 1.22;
+  }
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer { padding: 8px 10px; }
+}
+/* Wider phones already fit both labels; retain their original readable size. */
+@media (max-width: 375px) {
+  /* Keep page names, counts and C/I shortcuts on one line on narrow phones. */
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs {
+    gap: 6px;
+    padding: 8px 9px 7px;
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs button {
+    padding: 6px 4px;
+    font-size: 1.02rem;
+    white-space: nowrap;
+  }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__tabs small {
+    margin-left: 2px;
+    font-size: .9em;
+    white-space: nowrap;
+  }
 }
 @media (max-height: 470px) {
   .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-header {

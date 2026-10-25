@@ -10,6 +10,7 @@ import {
   createDefaultChroniclesEnemyBuild,
   deriveLegacyChroniclesEnemyBuild,
   resolveChroniclesEnemyBuildDefinition,
+  normalizeChroniclesEnemyBuild,
   validateChroniclesEnemyBuild,
 } from './chroniclesEnemyBuilds.js';
 
@@ -34,6 +35,31 @@ describe('Chronicles EnemyBuild v1', () => {
     expect(first.baseStats.maxHp + modifiers.bonusMaxHp).toBe(legacy.maxHp);
     expect(first.baseStats.retaliation + modifiers.damageBonus).toBe(legacy.retaliation);
     expect(first.baseStats.engageRange + modifiers.engageRangeBonus).toBe(legacy.ai.engageRange);
+  });
+
+  it('falls back to finite safe stats for malformed legacy enemies', () => {
+    for (const invalid of [Infinity, 'not-a-number']) {
+      const resolved = deriveLegacyChroniclesEnemyBuild({
+        id: 'corrupt-legacy',
+        maxHp: invalid,
+        retaliation: invalid,
+        retaliationReach: invalid,
+        ai: { movement: 'hold', engageRange: invalid },
+      });
+      const modifiers = chroniclesEnemyBuildModifiers(resolved.build);
+
+      expect(resolved.source).toBe('derived-legacy');
+      expect(resolved.build.skills).toEqual([]);
+      expect(resolved.baseStats).toEqual({
+        maxHp: 1,
+        retaliation: 0,
+        retaliationReach: 1,
+        engageRange: undefined,
+      });
+      expect(resolved.baseStats.maxHp + modifiers.bonusMaxHp).toBe(1);
+      expect(resolved.baseStats.retaliation + modifiers.damageBonus).toBe(0);
+      expect(resolved.baseStats.retaliationReach + modifiers.reachBonus).toBe(1);
+    }
   });
 
   it('gives every shipped enemy a versioned build whose base plus modifiers reconstructs its effective stats', () => {
@@ -112,6 +138,20 @@ describe('Chronicles EnemyBuild v1', () => {
       engageRangeBonus: 2,
       initiativeBonus: 3,
     });
+  });
+
+  it('rejects inherited Object.prototype names as enemy skills', () => {
+    for (const id of ['constructor', 'toString', '__proto__']) {
+      const result = validateChroniclesEnemyBuild({ version: 1, level: 1, skills: [id] });
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(`Skill enemiga desconocida: ${id}`);
+    }
+
+    const build = normalizeChroniclesEnemyBuild({
+      skills: ['constructor', 'toString', '__proto__', 'brutal-strike', 'brutal-strike'],
+    });
+    expect(build.skills).toEqual(['brutal-strike']);
+    expect(chroniclesEnemyBuildModifiers(build).damageBonus).toBe(1);
   });
 
   it('rejects unknown skills and stats beyond the contract caps', () => {

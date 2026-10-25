@@ -10,14 +10,24 @@ import {
   chroniclesEquippedItem,
 } from './chroniclesEquipment.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
+import { chroniclesTransferBagItem } from './chroniclesPersonalBags.js';
 import { CHRONICLES_MM3_CLASS_IDS } from './chroniclesMM3Rules.js';
 import { chroniclesMemberCanEquip } from './chroniclesEquipment.js';
 
 function mm3Company(...itemIds) {
   const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
-  return chroniclesApplyContentEffects(initial, itemIds.map((itemId) => ({
+  const stocked = chroniclesApplyContentEffects(initial, itemIds.map((itemId) => ({
     type: 'grant-item', itemId, name: CHRONICLES_EQUIPMENT[itemId].name,
   })));
+  // These catalog tests compare how Matthias wears several alternatives.
+  // Explicitly stage them in his bag rather than relying on default loot
+  // ownership, which now spreads genuinely unassigned loot across the party.
+  return {
+    ...stocked,
+    bagOwners: { matthias: Object.fromEntries(
+      Object.entries(stocked.inventory || {}).map(([id, entry]) => [id, entry.quantity]),
+    ) },
+  };
 }
 
 describe('Chronicles · MM3 equipment catalog', () => {
@@ -361,6 +371,9 @@ describe('Chronicles · MM3 equipment catalog', () => {
 
   it('turns material into real to-hit and damage, and survives a checkpoint with class rules', () => {
     let state = mm3Company('steel-sword', 'bronze-shield');
+    // Explicit hand-off is required before Hildegard may wear Matthias's loot.
+    state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'steel-sword');
+    state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'bronze-shield');
     const before = chroniclesPartyAttackStats(state, 'rook');
     state = chroniclesEquipItem(state, 'rook', 'steel-sword');
     state = chroniclesEquipItem(state, 'rook', 'bronze-shield');

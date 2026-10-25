@@ -16,7 +16,10 @@ function boundedInteger(value, min, max, fallback = min) {
 
 export function chroniclesDeployedPartyLevel(progression, deployedMemberIds = HERO_IDS) {
   const current = normalizeChroniclesProgression(progression);
-  const levels = [...new Set(deployedMemberIds)]
+  // Legacy or malformed saved deployment data must not crash difficulty setup.
+  // The default roster is the only safe fallback for a non-array value.
+  const memberIds = Array.isArray(deployedMemberIds) ? deployedMemberIds : HERO_IDS;
+  const levels = [...new Set(memberIds)]
     .filter((memberId) => HERO_IDS.includes(memberId))
     .map((memberId) => chroniclesHeroProgress(current, memberId).level);
   if (!levels.length) return 1;
@@ -27,14 +30,18 @@ export function chroniclesDeployedPartyLevel(progression, deployedMemberIds = HE
 export function chroniclesRunDepth(authoritativeRun, mapId = null) {
   const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
   const currentMapId = mapId || authoritativeRun?.currentMapId;
+  if (typeof currentMapId !== 'string' || !currentMapId.trim()) return 0;
   const index = areas.findIndex((area) => area?.mapId === currentMapId);
   if (index < 0) return 0;
-  // Old runs store only dungeon maps and continue using their route index.
+  // Malformed legacy route entries must not count as dungeon floors.
+  // Valid old routes still use their ordered dungeon stops as before.
+  const visited = areas.slice(0, index + 1).filter((area) =>
+    typeof area?.mapId === 'string' && area.mapId.trim().length > 0);
   // When an overworld is authored, village and road stops do not add dungeon
   // floors or artificial combat pressure to the first real dungeon.
   const hasRegionKinds = areas.some((area) => area?.regionKind || area?.map?.regionKind);
-  if (!hasRegionKinds) return index;
-  const dungeonVisits = areas.slice(0, index + 1).filter((area) =>
+  if (!hasRegionKinds) return Math.max(0, visited.length - 1);
+  const dungeonVisits = visited.filter((area) =>
     (area?.regionKind || area?.map?.regionKind || 'dungeon') === 'dungeon').length;
   return Math.max(0, dungeonVisits - 1);
 }
@@ -70,14 +77,57 @@ export function chroniclesDifficultyBand({
 }
 
 
+// The Go API always returns these seven integer fields in a difficulty band.
+// Corrupt legacy snapshots must not override a safe local recomputation.
+const REQUIRED_DIFFICULTY_FIELDS = [
+  'partyLevel', 'depth', 'targetLevel', 'minLevel', 'maxLevel',
+  'depthPressure', 'progressionPressure',
+];
+
+function isUsableDifficultySnapshot(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!REQUIRED_DIFFICULTY_FIELDS.every((field) => Number.isSafeInteger(value[field]))) return false;
+  // These fields form one deterministic band in Go, not seven independent
+  // ranges. A saved snapshot can pass every range check yet misstate threat.
+  const expectedDepthPressure = Math.min(DEPTH_PRESSURE_CAP, Math.floor(value.depth / 2));
+  const expectedProgressionPressure = Math.floor((value.partyLevel - 1) / 2);
+  const expectedTarget = Math.min(
+    CHRONICLES_MAX_LEVEL,
+    value.partyLevel + ABOVE_PARTY_CAP,
+    1 + expectedDepthPressure + expectedProgressionPressure,
+  );
+  return value.partyLevel >= 1 && value.partyLevel <= CHRONICLES_MAX_LEVEL
+    && value.depth >= 0 && value.depth <= 99
+    && value.targetLevel >= 1 && value.targetLevel <= CHRONICLES_MAX_LEVEL
+    // Go difficultyBand caps both the target and the upper encounter range
+    // at one level above the deployed party, even on very deep floors.
+    && value.targetLevel <= value.partyLevel + ABOVE_PARTY_CAP
+    && value.minLevel >= Math.max(1, value.targetLevel - 1)
+    && value.minLevel <= value.targetLevel
+    && value.maxLevel >= value.targetLevel && value.maxLevel <= CHRONICLES_MAX_LEVEL
+    && value.maxLevel <= value.partyLevel + ABOVE_PARTY_CAP
+    && value.maxLevel <= value.targetLevel + 1
+    && value.depthPressure >= 0 && value.depthPressure <= DEPTH_PRESSURE_CAP
+    && value.progressionPressure >= 0
+    && value.progressionPressure <= Math.floor((CHRONICLES_MAX_LEVEL - 1) / 2)
+    && value.depthPressure === expectedDepthPressure
+    && value.progressionPressure === expectedProgressionPressure
+    && value.targetLevel === expectedTarget
+    && value.minLevel === Math.max(1, expectedTarget - 1)
+    && value.maxLevel === Math.min(
+      CHRONICLES_MAX_LEVEL, value.partyLevel + ABOVE_PARTY_CAP, expectedTarget + 1,
+    );
+}
+
 export function chroniclesResolvedDifficultyBand(
   authoritativeRun,
   mapId,
   fallback = {},
 ) {
-  const authoritative = authoritativeRun?.areas
-    ?.find((area) => area?.mapId === mapId)
-    ?.difficulty;
-  if (authoritative && typeof authoritative === 'object') return authoritative;
+  // A malformed legacy save may contain a non-array `areas` value.
+  // Do not let its shape crash the local difficulty fallback.
+  const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
+  const authoritative = areas.find((area) => area?.mapId === mapId)?.difficulty;
+  if (isUsableDifficultySnapshot(authoritative)) return authoritative;
   return chroniclesDifficultyBand(fallback);
 }

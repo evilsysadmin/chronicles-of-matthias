@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
+import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 
 const demo = {
   mapId: 'banner-road', regionKind: 'wilderness', width: 5, height: 5,
@@ -97,8 +98,26 @@ describe('Chronicles file-authored exterior renderer', () => {
     const town = scene.getObjectByName('chronicles-campaign-town');
     const names = town.children.map(child => child.name).filter(name => name.startsWith('swordhaven-building-'));
     expect(names).toHaveLength(10);
+    // The campaign town uses the same facades as the classic square, not a
+    // static mock. Decorative masonry cannot become a new collision mask.
+    const buildingMeshes = town.children.filter(child => child.name.startsWith('swordhaven-building-'));
+    for (const building of buildingMeshes) {
+      const masonry = building.getObjectByName('swordhaven-facade-dressed-stones');
+      expect(masonry).toBeInstanceOf(THREE.InstancedMesh);
+      expect(masonry.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(masonry.count).toBeGreaterThan(30);
+      const foliage = building.getObjectByName('window-box-leaf-clusters');
+      const vines = building.getObjectByName('window-box-trailing-stems');
+      expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
+      expect(vines).toBeInstanceOf(THREE.InstancedMesh);
+      expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(foliage.count).toBe(36); // Mobile/coarse campaign budget.
+    }
     const paved = scene.getObjectByName('chronicles-campaign-road');
     expect(paved).toBeInstanceOf(THREE.InstancedMesh);
+    expect(paved.material.map).toBe(swordhavenSurfaceTexture('cobble'));
+    expect(paved.material.normalMap).toBe(swordhavenSurfaceNormalTexture('cobble'));
+    expect(paved.material.normalScale.x).toBeGreaterThan(0);
     expect(paved.count).toBe([...grid.join('')].filter(cell => cell === '.').length);
     // Row-major instances really reach the off-axis alleys in the south.
     const alley = { x: 3, y: 17 };
@@ -134,6 +153,17 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(panes).toBeInstanceOf(THREE.InstancedMesh);
     expect(frames.count).toBeGreaterThan(80); // Two storeys, still two draw calls.
     expect(panes.count).toBe(frames.count);
+    // Sill, leadwork and two three-plank shutters with diagonal braces share
+    // ONE instanced frame batch: twelve boxes, no extra per-window draw calls.
+    expect(frames.geometry.index.count).toBe(36 * 12);
+    const frameBounds = new THREE.Box3()
+      .setFromBufferAttribute(frames.geometry.getAttribute('position'));
+    expect(frameBounds.min.y).toBeCloseTo(-0.51);
+    expect(frameBounds.min.x).toBeCloseTo(-0.995);
+    expect(frameBounds.max.x).toBeCloseTo(0.995);
+    expect(frameBounds.max.z).toBeCloseTo(0.026);
+    expect(frameBounds.max.z + 1.972).toBeLessThan(2);
+    expect(town.getObjectByName('chronicles-town-street-window-sills')).toBeUndefined();
     // The first window faces a real alley from an existing solid cell.
     // Its cladding must be in front of the 3.92m wall, but still inside the
     // 4m impassable cell (never a new invisible street collision).
@@ -164,7 +194,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(beams).toBeInstanceOf(THREE.InstancedMesh);
     expect(uprights).toBeInstanceOf(THREE.InstancedMesh);
     expect(beams.count).toBe(188);
-    expect(uprights.count).toBe(beams.count + 38); // Perpendicular street corners.
+    // Blind walls get paired diagonal braces in the same upright batch,
+    // preserving the original two timber draw calls and all corner joints.
+    expect(uprights.count).toBeGreaterThan(beams.count + 38);
+    expect(uprights.count).toBeLessThan(beams.count * 2 + 38);
     // Reinforced external corners reuse the existing timber batch; no extra
     // geometry draw calls and no timbers protrude into walkable tiles.
     const cornerMatrix = new THREE.Matrix4();
@@ -176,6 +209,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(firstCorner.z).toBeCloseTo((16 - center.y) * 4 + 1.93);
     expect(cornerScale.z).toBeCloseTo(3.25);
     expect(1.93 + 0.13 / 2).toBeLessThan(2);
+    const braceMatrix = new THREE.Matrix4();
+    uprights.getMatrixAt(beams.count + 38, braceMatrix);
+    const bracePosition = new THREE.Vector3().setFromMatrixPosition(braceMatrix);
+    const braceScale = new THREE.Vector3().setFromMatrixScale(braceMatrix);
+    expect(bracePosition.y).toBeCloseTo(1.84);
+    expect(braceScale.y).toBeCloseTo(0.55);
+    expect(braceScale.z).toBeCloseTo(1);
+    expect(Math.abs(braceMatrix.elements[1])).toBeGreaterThan(0.1); // Actually diagonal.
+    // 4cm depth plus its inset is strictly within the blocked 4m cell.
+    expect(1.973 + 0.04 / 2).toBeLessThan(2);
     expect(beams.count).toBe(188);
     // Warm plaster between the timbers makes the blocked cells read as
     // actual houses. Every open street-facing side shares ONE extra batch.
@@ -183,6 +226,12 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(plaster).toBeInstanceOf(THREE.InstancedMesh);
     expect(plaster.count).toBe(94);
     expect(plaster.instanceColor).toBeTruthy();
+    expect(plaster.material.map).toBe(swordhavenSurfaceTexture('stucco'));
+    expect(plaster.material.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
+    expect(plaster.material.normalScale.toArray()).toEqual([0.50, 0.50]);
+    expect(plaster.material.map.repeat.toArray()).toEqual(plaster.material.normalMap.repeat.toArray());
+    expect(plaster.material.map).toBeInstanceOf(THREE.DataTexture);
+    expect(plaster.material.map.wrapS).toBe(THREE.RepeatWrapping);
     expect(plaster.castShadow).toBe(false);
     expect(plaster.geometry.parameters.height).toBeCloseTo(6.4 - 0.52);
     expect(plaster.geometry.parameters.width).toBeCloseTo(4 * 0.935);
@@ -196,7 +245,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     // frames and timber beams, but never over the neighbouring road tile.
     const wallSurface = 4 * 0.98 / 2;
     const plasterSurface = 1.974 + plaster.geometry.parameters.depth / 2;
-    const windowSurface = 1.972 + frames.geometry.parameters.depth / 2;
+    const windowSurface = 1.972 + frameBounds.max.z; // Merged sill/mullions, not a BoxGeometry.
     const timberSurface = 1.973 + beams.geometry.parameters.depth / 2;
     expect(plasterSurface).toBeGreaterThan(wallSurface);
     expect(windowSurface).toBeGreaterThan(plasterSurface);
@@ -283,12 +332,34 @@ describe('Chronicles file-authored exterior renderer', () => {
     const roofs = town.getObjectByName('chronicles-town-south-pitched-roofs');
     expect(roofs).toBeInstanceOf(THREE.InstancedMesh);
     expect(roofs.count).toBe(7);
+    // A single instanced roof batch carries three stable clay shades.
+    // Colour variation must not add per-house materials or draw calls.
+    expect(roofs.instanceColor).toBeTruthy();
+    const expectedRoofTints = [
+      new THREE.Color('#ffffff'),
+      new THREE.Color('#eee1d5'),
+      new THREE.Color('#e0d4cb'),
+    ];
+    const roofShades = new Set();
     expect(roofs.castShadow).toBe(false);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
+    expect(roofs.material.map).toBe(swordhavenSurfaceTexture('roof'));
+    expect(roofs.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+    expect(roofs.material.normalScale.x).toBeCloseTo(0.35);
+    expect(roofs.material.map.repeat.toArray()).toEqual(roofs.material.normalMap.repeat.toArray());
+    expect(roofs.material.map.wrapT).toBe(THREE.RepeatWrapping);
+    const uv = roofs.geometry.getAttribute('uv');
+    expect(uv.count).toBe(6);
+    expect(uv.getX(0)).toBe(0);
+    expect(uv.getX(1)).toBe(1);
+    expect(uv.getY(4)).toBe(0.5);
+    expect(roofs.geometry.getAttribute('position').count).toBe(6);
     roofs.geometry.computeBoundingBox();
-    expect(roofs.geometry.boundingBox.max.x).toBeLessThan(8);
-    expect(roofs.geometry.boundingBox.max.z).toBeLessThan(2);
+    // 22cm eaves beyond the 4m cell make the roofline visible from street
+    // level. The original six vertices / 18 indices remain unchanged.
+    expect(roofs.geometry.boundingBox.max.x).toBeCloseTo(8.22);
+    expect(roofs.geometry.boundingBox.max.z).toBeCloseTo(2.22);
     for (const [index, run] of roofRuns.entries()) {
       expect(grid[run.y].slice(run.x, run.x + run.width)).toBe('#'.repeat(run.width));
       expect(grid[run.y - 1].slice(run.x, run.x + run.width)).toContain('.');
@@ -296,13 +367,22 @@ describe('Chronicles file-authored exterior renderer', () => {
       const roof = new THREE.Vector3().setFromMatrixPosition(facadeMatrix);
       expect(roof.x).toBeCloseTo((run.x + (run.width - 1) / 2 - center.x) * 4);
       const scale = new THREE.Vector3().setFromMatrixScale(facadeMatrix);
-      const actualRoofLength = (4 * 4 - 0.16) * scale.x;
-      expect(actualRoofLength).toBeCloseTo(run.width * 4 - 0.16);
+      const actualRoofLength = (4 * 4 + 0.44) * scale.x;
+      expect(actualRoofLength).toBeCloseTo(run.width * 4 + 0.44);
+      expect(actualRoofLength - run.width * 4).toBeCloseTo(0.44);
       expect(scale.y).toBeCloseTo(1);
       expect(scale.z).toBeCloseTo(1);
       expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
       expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
+      const actualTint = new THREE.Color();
+      roofs.getColorAt(index, actualTint);
+      const expectedTint = expectedRoofTints[(run.x * 5 + run.y * 7 + run.width) % 3];
+      expect(actualTint.r).toBeCloseTo(expectedTint.r, 5);
+      expect(actualTint.g).toBeCloseTo(expectedTint.g, 5);
+      expect(actualTint.b).toBeCloseTo(expectedTint.b, 5);
+      roofShades.add(actualTint.getHexString());
     }
+    expect(roofShades.size).toBe(3);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }

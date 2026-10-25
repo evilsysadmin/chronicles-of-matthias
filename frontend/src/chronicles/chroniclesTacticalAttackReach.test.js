@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesPartyAttackStats, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesEquipItem, chroniclesEquippedItem, chroniclesUnequipItem } from './chroniclesEquipment.js';
+import { chroniclesTransferBagItem } from './chroniclesPersonalBags.js';
 import { chroniclesTargetReachLabel } from '../components/ChroniclesTacticalMargin.jsx';
 import { chroniclesTacticalAttackReach } from './chroniclesTacticalAttackReach.js';
 
@@ -11,6 +12,7 @@ function partyWithOnlyRookSling() {
   state = chroniclesApplyContentEffects(state, [{
     type: 'grant-item', itemId: 'brass-sling', name: 'Honda de latón',
   }]);
+  state = chroniclesTransferBagItem(state, 'matthias', 'rook', 'brass-sling');
   state = chroniclesEquipItem(state, 'rook', 'brass-sling');
   expect(chroniclesEquippedItem(state, 'rook', 'missile')?.id).toBe('brass-sling');
   expect(chroniclesEquippedItem(state, 'matthias', 'missile')).toBeNull();
@@ -27,6 +29,14 @@ describe('Tactical margin uses real MM3 attack range', () => {
     expect(chroniclesTargetReachLabel({ distance: slingReach }, range))
       .toBe('A: FUERA DE ALCANCE · S: A TIRO');
     expect(chroniclesTargetReachLabel({ distance: slingReach + 1 }, range))
+      .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
+  });
+
+  it('does not invent range-four hits, but explains that S can provoke combat', () => {
+    const target = { distance: 4 };
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 3, canProvoke: true }))
+      .toBe('FUERA DE ALCANCE · S: ALERTAR Y COMBATIR');
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 0, canProvoke: false }))
       .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
   });
 

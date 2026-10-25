@@ -85,41 +85,41 @@ jobs:
           preview_pid=$!
           trap 'kill "${preview_pid:-}" "${dev_pid:-}" 2>/dev/null || true' EXIT
           wait_for_http http://localhost:4173/ "$preview_pid" "$RUNNER_TEMP/chronicles-preview.log" "Vite preview"
-          node smoke/mount.mjs http://localhost:4173/
+          node smoke/run-timed.mjs smoke/mount.mjs http://localhost:4173/
           # Real menu components, independent of staging SSO or an account.
           npx vite --port 4174 --strictPort > "$RUNNER_TEMP/chronicles-dev.log" 2>&1 &
           dev_pid=$!
           wait_for_http http://localhost:4174/smoke/folio-mobile.html "$dev_pid" "$RUNNER_TEMP/chronicles-dev.log" "Vite smoke fixtures"
           # Fail fast on the actual MM3 desktop dossier before the full fixture battery.
-          node smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
+          node smoke/run-timed.mjs smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
           # Targeted healing lives in a dedicated party row, never over the sapphire.
-          node smoke/spell-target-banner.mjs http://localhost:4174/smoke/spell-target-banner.html
-          node smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
+          node smoke/run-timed.mjs smoke/spell-target-banner.mjs http://localhost:4174/smoke/spell-target-banner.html
+          node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
-          node smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
+          node smoke/run-timed.mjs smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
           # Real Swordhaven tavern: independent rest/food/rumor transactions and ESC.
-          node smoke/inn-room.mjs http://localhost:4174/smoke/inn-room.html
+          node smoke/run-timed.mjs smoke/inn-room.mjs http://localhost:4174/smoke/inn-room.html
           # Real expedition journal: truthful region hints, chapter navigation and mobile layout.
-          node smoke/journal-book.mjs http://localhost:4174/smoke/journal-book.html
+          node smoke/run-timed.mjs smoke/journal-book.mjs http://localhost:4174/smoke/journal-book.html
           # Screenshot the actual React/Suspense loader at desktop and mobile widths.
-          node smoke/loader.mjs http://localhost:4174/smoke/loader.html
+          node smoke/run-timed.mjs smoke/loader.mjs http://localhost:4174/smoke/loader.html
           # Real party editor: back/resume, F5 draft, commit and 360/390/430 + desktop.
-          node smoke/character-setup.mjs http://localhost:4174/smoke/character-setup.html
+          node smoke/run-timed.mjs smoke/character-setup.mjs http://localhost:4174/smoke/character-setup.html
           # Catalog outage: readable local saves, disabled mutation, truthful empty state.
-          node smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
+          node smoke/run-timed.mjs smoke/save-menu.mjs http://localhost:4174/smoke/save-menu.html
           # First contact/payment: genuine road sightline and earned quest receipt, mobile + desktop.
-          node smoke/first-hour-contact.mjs http://localhost:4174/smoke/first-hour-contact.html
+          node smoke/run-timed.mjs smoke/first-hour-contact.mjs http://localhost:4174/smoke/first-hour-contact.html
           # Real adventure menu + production S/Q/Esc resolver: save intent,
           # safe exit confirmation, editable controls and mobile/desktop fit.
-          node smoke/adventure-menu-shortcuts.mjs http://localhost:4174/smoke/adventure-menu-shortcuts.html
+          node smoke/run-timed.mjs smoke/adventure-menu-shortcuts.mjs http://localhost:4174/smoke/adventure-menu-shortcuts.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
-          node smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
+          node smoke/run-timed.mjs smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
           # from reproducible fixed cameras, both mobile and desktop.
-          node smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
+          node smoke/run-timed.mjs smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
         with:
           name: chronicles-mount-smoke
@@ -128,7 +128,7 @@ jobs:
           compression-level: 0
           retention-days: 7
       # Infra independently rebuilds pinned releases; this bundle is for PR inspection.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: github.event_name == 'pull_request'
         with:
           name: chronicles-frontend-dist

@@ -41,11 +41,11 @@ test('the direct frontend check is named stably for GitHub ruleset enforcement',
   assert.ok(ci.includes('frontend-vitest-build-chromium'));
   assert.doesNotMatch(ci, /check_name=|require-frontend-workflow|for attempt in/);
 });
+
 test('protected checks and exact-SHA admission prerequisites are intact', () => {
   assert.match(ci, /repository-contract:/);
   assert.match(frontend, /name: frontend-vitest-build-chromium/);
-  assert.match(ci, /repository-contract:/);
-  assert.match(frontend, /node smoke\/first-hour-contact\.mjs/);
+  assert.match(frontend, /smoke\/run-timed\.mjs smoke\/first-hour-contact\.mjs/);
   assert.match(api, /name: api-e2e/);
   assert.match(api, /needs: verify/);
 });
@@ -115,9 +115,14 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
     assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
   }
   assert.match(api, /actions\/setup-go@v6/);
+  // Docker publish actions must use their Node 24 native majors.
+  assert.match(api, /uses: docker\/setup-buildx-action@v4/);
+  assert.match(api, /uses: docker\/login-action@v4/);
+  assert.doesNotMatch(api, /docker\/(?:setup-buildx-action|login-action)@v3/);
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /actions\/cache@v5/);
-    assert.match(workflow, /actions\/upload-artifact@v5/);
+    assert.match(workflow, /actions\/upload-artifact@v7/);
+    assert.doesNotMatch(workflow, /actions\/upload-artifact@v[3456]/);
   }
 });
 
@@ -138,7 +143,7 @@ test('obsolete API images cannot publish or attest without exact-SHA main admiss
   assert.match(job, /publish=false/);
   assert.match(job, /publish=true/);
   const gated = (job.match(/^\s+if: steps\.admission\.outputs\.publish == 'true'$/gm) || []).length;
-  assert.equal(gated, 7, 'all checkout, QEMU, Buildx, login, build, provenance and summary steps must be gated');
+  assert.equal(gated, 6, 'checkout, Buildx, login, build, provenance and summary must stay gated');
   assert.match(job, /CHRONICLES_SOURCE_SHA=\$\{\{ github\.sha \}\}/);
   assert.match(job, /push-to-registry: true/);
 });

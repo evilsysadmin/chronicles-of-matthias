@@ -165,6 +165,8 @@ try {
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
       // Numeric input receives digits while the loot is still in the backpack.
       // Equipping its only item correctly removes the search controls afterward.
+      // Native disclosure keeps search available without dominating the sheet.
+      await sheet.locator('.chronicles-character-sheet__backpack-tools > summary').click();
       const backpackSearch = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
       await backpackSearch.fill('');
       await backpackSearch.press('1');
@@ -385,6 +387,82 @@ try {
       }
       assert.equal(await allGuides.count(), 1, 'No ghost guide after 8 scene transitions');
       await page.screenshot({ path: 'smoke-guide-reconciliation-' + width + '.png' });
+      // Check the real computed ink/geometry, not a CSS source-text matcher.
+      await gotoFixture(page, url + '?view=minimap-ink');
+      const coord = page.locator('[data-chronicles-coordinates]');
+      await coord.waitFor({ state: 'visible' });
+      const position = await coord.evaluate((node) => {
+        const parent = node.closest('[data-chronicles-minimap]');
+        const svg = parent.querySelector('svg');
+        const caption = node.getBoundingClientRect();
+        const location = parent.querySelector('[data-chronicles-location]');
+        const locationBounds = location.getBoundingClientRect();
+        const frame = parent.getBoundingClientRect();
+        const prefix = location.querySelector('.chronicles-minimap__location-prefix');
+        const placeRange = document.createRange();
+        placeRange.selectNodeContents(location.lastChild);
+        const placeBounds = placeRange.getBoundingClientRect();
+        return {
+          color: getComputedStyle(node).color,
+          shadow: getComputedStyle(node).textShadow,
+          label: node.textContent.trim(),
+          centered: Math.abs((caption.left + caption.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
+          location: location.textContent.trim(),
+          prefixDisplay: getComputedStyle(prefix).display,
+          placeFits: placeBounds.left >= locationBounds.left - 1
+            && placeBounds.right <= locationBounds.right + 1,
+          locationClipped: location.scrollWidth > location.clientWidth + 1,
+          locationColor: getComputedStyle(location).color,
+          locationCentered: Math.abs((locationBounds.left + locationBounds.right) / 2 -
+            (frame.left + frame.right) / 2) <= 3,
+          locationBelowCoordinates: locationBounds.top >= caption.bottom - 2,
+          locationWithinFrame: locationBounds.bottom <= frame.bottom + 1,
+        };
+      });
+      const sandstone = width >= 1025 || (width >= 801 && height >= 601);
+      assert.equal(position.color, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Coords need dark ink on sandstone and pale ink on dark compact minimap: ' + JSON.stringify(position));
+      if (sandstone) assert.equal(position.shadow, 'none', 'Dark coordinates must not have a light halo');
+      assert.equal(position.locationColor, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
+        'Location must contrast with the actual minimap backing: ' + JSON.stringify(position));
+      assert.equal(position.location, 'UBICACIÓN · SWORDHAVEN');
+      const compactMap = width <= 800 || (width <= 1024 && height <= 600);
+      assert.equal(position.prefixDisplay === 'none', compactMap,
+        'Only compact minimaps should omit the redundant visible prefix: ' + JSON.stringify(position));
+      assert(position.placeFits && !position.locationClipped,
+        'SWORDHAVEN must fit in the minimap caption without ellipsis: ' + JSON.stringify(position));
+      assert(position.locationCentered && position.locationBelowCoordinates && position.locationWithinFrame,
+        'Location should stay centered below coordinates within the minimap frame: ' + JSON.stringify(position));
+      assert.match(position.label, /^X\d+ Y\d+$/);
+      assert(position.centered && position.belowTiles,
+        'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));
+      await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
+      await gotoFixture(page, url + '?view=minimap-poi');
+      const serviceBadges = await page.locator('[data-chronicles-minimap]').evaluate((root) =>
+        [...root.querySelectorAll('.chronicles-minimap__poi')].map((poi) => {
+          const glyph = poi.querySelector('text');
+          const shield = poi.querySelector('rect');
+          const ink = glyph.getBBox();
+          const plate = shield.getBBox();
+          return {
+            glyph: glyph.textContent,
+            size: parseFloat(getComputedStyle(glyph).fontSize),
+            fits: ink.width <= plate.width + .04 && ink.height <= plate.height + .04,
+            foreground: getComputedStyle(glyph).fill,
+            background: getComputedStyle(shield).fill,
+          };
+        }));
+      assert.deepEqual(serviceBadges.map((badge) => badge.glyph).sort(), ['A', 'F'],
+        'Only the two genuinely discovered local Swordhaven services may be visible');
+      assert(serviceBadges.every((badge) => badge.size >= .8 && badge.fits
+        && badge.foreground === 'rgb(255, 228, 171)'
+        && badge.background === 'rgb(27, 24, 19)'),
+      'Tiny service glyphs must be larger, high contrast and fit their shields: ' + JSON.stringify(serviceBadges));
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false,
+        'Service badges must not cause horizontal overflow');
+      await page.screenshot({ path: 'smoke-minimap-poi-' + width + '.png' });
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {

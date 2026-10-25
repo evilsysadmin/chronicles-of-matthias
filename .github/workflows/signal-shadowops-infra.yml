@@ -17,8 +17,13 @@ permissions:
   actions: read
   contents: read
 
+# GitHub retains at most one pending run per concurrency group, even when
+# cancel-in-progress is false. All three source checks may finish together;
+# a SHA-only group can cancel the final completion's pending signal.
+# Scope by triggering workflow run; the admission gate and dispatch receipt
+# still prevent duplicate Infra requests for the same source SHA.
 concurrency:
-  group: chronicles-infra-signal-${{ github.event.workflow_run.head_sha }}
+  group: chronicles-infra-signal-${{ github.event.workflow_run.head_sha }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
@@ -208,8 +213,9 @@ jobs:
               # earlier results, concealing our prior successful receipt.
               (.name == $name) and
               (.expired | type == "boolean") and
-              (.workflow_run.id | type == "number") and
-              (.workflow_run.id > 0)
+              (.workflow_run.id |
+                if type == "number" then (. > 0 and . == floor)
+                else false end)
             ] | all)
           ' <<<"$receipts" >/dev/null; then
             echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
@@ -217,13 +223,17 @@ jobs:
           fi
           prior_ids="$(jq -r --arg name "$receipt_name" '
             [.artifacts[] | select(.name == $name and .expired == false)
-              | .workflow_run.id | select(type == "number" and . > 0)] | unique[]
+              | .workflow_run.id | select(type == "number" and . > 0 and . == floor)] | unique[]
           ' <<<"$receipts")" || {
             echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
             exit 66
           }
           while IFS= read -r prior_id; do
-            [[ "$prior_id" =~ ^[0-9]+$ ]] || continue
+            [[ -z "$prior_id" ]] && continue
+            [[ "$prior_id" =~ ^[0-9]+$ ]] || {
+              echo 'CHRONICLES_DISPATCH_RECEIPT_INCONCLUSIVE' >&2
+              exit 66
+            }
             origin="$(GH_TOKEN="$SOURCE_READ_TOKEN" gh api "repos/evilsysadmin/chronicles-of-matthias/actions/runs/$prior_id")"
             # A malformed origin response is NOT evidence that the existing
             # receipt was untrusted. Without a trustworthy origin we cannot

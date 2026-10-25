@@ -165,3 +165,101 @@ test('Docker OpenPGP guard cannot be removed, narrowed, or bypassed', () => {
     assert.throws(() => assertsProductionOpenPGPExclusion(changed));
   }
 });
+
+function assertReleaseBuilderCacheIntegrity(docker) {
+  const builder = docker.split('\nFROM scratch')[0];
+  const toolchain = builder.indexOf('\nENV GOTOOLCHAIN=local\n');
+  const download = builder.indexOf('RUN go mod download && go mod verify');
+  const source = builder.indexOf('COPY internal/');
+  const build = builder.indexOf('go build -trimpath');
+  assert.ok(toolchain > 0 && toolchain < download,
+    'Docker must pin the bundled Go compiler before accessing dependencies');
+  assert.ok(download > 0 && download < source && source < build,
+    'Docker must download and verify cached dependencies before compiling source');
+  assert.doesNotMatch(builder, /\|\|\s*(?:true|:)(?:\s|$)/,
+    'Go cache integrity check cannot ignore failures');
+}
+
+test('release Docker builder fixes local toolchain and checks module-cache integrity', () => {
+  assertReleaseBuilderCacheIntegrity(dockerfile);
+});
+
+test('release Docker module checks reject missing, skipped, or reordered verification', () => {
+  for (const mutation of [
+    (d) => d.replace('ENV GOTOOLCHAIN=local', 'ENV GOTOOLCHAIN=auto'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod verify && go mod download'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && go mod verify || true'),
+    (d) => d.replace('RUN go mod download && go mod verify', 'RUN go mod download && echo verified'),
+  ]) {
+    const altered = mutation(dockerfile);
+    assert.notEqual(altered, dockerfile, 'mutation must change the actual Dockerfile');
+    assert.throws(() => assertReleaseBuilderCacheIntegrity(altered));
+  }
+});
+
+function assertFullApiJobUsesLocalGo(ci) {
+  const verify = ci.indexOf('\n  verify:\n');
+  const publish = ci.indexOf('\n  publish:\n', verify);
+  assert.ok(verify >= 0 && publish > verify, 'mandatory API verify job must exist');
+  const job = ci.slice(verify, publish);
+  const beforeSteps = job.split('\n    steps:\n')[0];
+  assert.match(beforeSteps, /\n    env:\n      GOTOOLCHAIN: local\n/,
+    'every Go operation in the required API job must inherit GOTOOLCHAIN=local');
+  const steps = job.slice(beforeSteps.length);
+  for (const op of ['go vet ./cmd/...', 'go test ./internal/chronicles/', 'go run ./cmd/terragen -check',
+    'go install golang.org/x/vuln/cmd/govulncheck@v1.9.0',
+    'go list -deps ./cmd/chronicles-api', 'go build -o "$RUNNER_TEMP/chronicles-api"']) {
+    assert.ok(steps.includes(op), `required Go operation missing from job: ${op}`);
+  }
+}
+
+test('all API CI commands share the patched local Go toolchain across steps', () => {
+  assertFullApiJobUsesLocalGo(workflow);
+});
+
+test('API Go toolchain policy rejects removal, auto-switching or per-step-only exports', () => {
+  const livePolicy = '    env:\n      GOTOOLCHAIN: local\n';
+  assert.ok(workflow.includes(livePolicy));
+  for (const changed of [
+    workflow.replace(livePolicy, ''),
+    workflow.replace(livePolicy, '    env:\n      GOTOOLCHAIN: auto\n'),
+    workflow.replace(livePolicy, '      - name: Build and vet (amd64 + arm64)\n        env:\n          GOTOOLCHAIN: local\n'),
+  ]) {
+    assert.throws(() => assertFullApiJobUsesLocalGo(changed));
+  }
+});
+
+
+function verifyGoModuleTidyDiff(ci) {
+  const start = ci.indexOf('\n  verify:\n');
+  const end = ci.indexOf('\n  publish:\n', start);
+  assert.ok(start >= 0 && end > start, 'required API verify job exists');
+  const job = ci.slice(start, end);
+  const gate = job.indexOf('      - name: Check Go module graph (read-only)\n        working-directory: api\n        run: go mod tidy -diff\n');
+  const build = job.indexOf('      - name: Build and vet (amd64 + arm64)\n');
+  const pin = job.indexOf("          go-version: '1.27.3'");
+  assert.ok(pin >= 0 && gate > pin && build > gate,
+    'a fail-closed, read-only go mod tidy -diff must run before API compile and scans');
+  assert.doesNotMatch(job.slice(gate, build), /continue-on-error:|if:\s*false|(?:\|\|\s*(?:true|:))|go mod tidy -e/,
+    'module integrity may not be suppressed');
+}
+
+test('API CI checks canonical go.mod/go.sum without mutating the checkout', () => {
+  verifyGoModuleTidyDiff(workflow);
+});
+
+test('API module consistency gate cannot be dropped, weakened or reordered', () => {
+  for (const modify of [
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -e -diff'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: go mod tidy -diff || true'),
+    (c) => c.replace('run: go mod tidy -diff', 'run: echo clean'),
+    (c) => c.replace('      - name: Check Go module graph (read-only)\n', '      - name: Check Go module graph (read-only)\n        continue-on-error: true\n'),
+    (c) => c.replace('run: go mod tidy -diff\n', 'run: go mod tidy -diff\n        if: false\n'),
+  ]) {
+    const altered = modify(workflow);
+    assert.notEqual(altered, workflow, 'mutation must change workflow');
+    assert.throws(() => verifyGoModuleTidyDiff(altered));
+  }
+});
