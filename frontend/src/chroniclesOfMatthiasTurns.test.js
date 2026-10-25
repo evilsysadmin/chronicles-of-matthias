@@ -14,7 +14,7 @@ function enemy(id) {
 }
 
 describe('Chronicles alternating creature turns', () => {
-  it('lets a melee enemy move into reach and attack in the same actor turn', () => {
+  it('spends its actor turn approaching before a melee attack on the next turn', () => {
     const pawn = enemy('corrupted-pawn');
     const state = createChroniclesState();
 
@@ -23,6 +23,12 @@ describe('Chronicles alternating creature turns', () => {
     expect(chroniclesRuntimeEnemyPosition(next, pawn)).toEqual({ x: 2, y: 5 });
     expect(next.enemyTurnEvents).toEqual([
       { type: 'move', enemyId: 'corrupted-pawn', from: { x: 3, y: 5 }, to: { x: 2, y: 5 } },
+    ]);
+    expect(next.party.find((member) => member.id === 'matthias')?.hp)
+      .toBe(state.party.find((member) => member.id === 'matthias')?.hp);
+
+    const adjacent = chroniclesResolveEnemyActor(next, pawn.id);
+    expect(adjacent.enemyTurnEvents).toEqual([
       expect.objectContaining({
         type: 'attack',
         enemyId: 'corrupted-pawn',
@@ -30,7 +36,7 @@ describe('Chronicles alternating creature turns', () => {
         damage: 1,
       }),
     ]);
-    expect(next.party.find((member) => member.id === 'matthias')?.hp).toBe(6);
+    expect(adjacent.party.find((member) => member.id === 'matthias')?.hp).toBe(6);
   });
 
   it('recomputes pursuit targets for each state, not for each BFS tile', () => {
@@ -77,13 +83,18 @@ describe('Chronicles alternating creature turns', () => {
     expect(next.partyPositions).toEqual(state.partyPositions);
   });
 
-  it('keeps aggregate enemy turns on the same move-then-attack contract', () => {
+  it('keeps aggregate enemy turns on the same move-or-attack contract', () => {
     const pawn = enemy('corrupted-pawn');
-    const next = chroniclesResolveEnemyTurn(createChroniclesState());
+    const start = createChroniclesState();
+    const next = chroniclesResolveEnemyTurn(start);
 
     expect(chroniclesRuntimeEnemyPosition(next, pawn)).toEqual({ x: 2, y: 5 });
-    expect(next.enemyTurnEvents.map((event) => event.type)).toEqual(['move', 'attack']);
-    expect(next.party.some((member) => member.hp < member.maxHp)).toBe(true);
+    expect(next.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(next.party).toEqual(start.party);
+
+    const adjacent = chroniclesResolveEnemyTurn(next);
+    expect(adjacent.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
+    expect(adjacent.party.some((member) => member.hp < member.maxHp)).toBe(true);
   });
 
   it('targets the reachable combatant cell instead of the exploration anchor', () => {
