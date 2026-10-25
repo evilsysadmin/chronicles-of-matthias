@@ -70,6 +70,25 @@ describe('Chronicles character sheet combat summary', () => {
     expect(hildegard).not.toContain('Repartir botín');
   });
 
+  it('keeps essential equipment actions visible while optional backpack controls and long attributes are collapsed', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: { 'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' } },
+      bagOwners: { matthias: { 'brass-sling': 1 } },
+    });
+    expect(html).toMatch(/<details class="chronicles-character-sheet__backpack-tools">\s*<summary>/);
+    expect(html).toContain('Filtrar y buscar');
+    expect(html).toContain('chronicles-character-sheet__backpack-advanced');
+    expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Descripción y atributos<\/summary>/);
+    expect(html).toContain('Puede equiparlo');
+    expect(html).toContain('Equipar Honda de latón');
+    expect(html).toContain('Diferencia respecto al equipo actual');
+    expect(html).toContain('data-chronicles-equipment-handling');
+    expect(html).not.toContain('Este personaje no lleva una reliquia vinculada.');
+    const tactics = render(null, 'equipment');
+    expect(tactics).not.toContain('chronicles-character-sheet__backpack-advanced');
+    expect(tactics).toContain('mitigación');
+  });
+
   it('retains the distinct legacy damage reduction summary', () => {
     const html = render(null);
     expect(html).toContain('mitigación');
