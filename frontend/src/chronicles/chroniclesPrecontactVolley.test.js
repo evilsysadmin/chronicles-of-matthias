@@ -177,6 +177,6 @@ describe('S / melee-range missile contract', () => {
     expect(chroniclesMissileRefusal(close, 'matthias')).toBeNull();
     const resolved = chroniclesReduce(close, { type: 'attack', memberId: 'matthias', mode: 'missile' });
     expect(resolved.turns).toBe(close.turns + 1);
-    expect(resolved.message).toMatch(/(falla|impacta|derrota)/i);
+    expect(resolved.message).toMatch(/(falla|impacta|derrota|acaba con)/i);
   });
 });

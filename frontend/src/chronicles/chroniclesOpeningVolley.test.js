@@ -93,7 +93,8 @@ describe('Chronicles · MM3 opening company volley', () => {
     const base = volleyCompany();
     const state = { ...base, equipment: { bishop: { missile: 'wooden-bow' } } };
     const result = chroniclesReduce(state, { type: 'volley' });
-    expect(result.message).toMatch(/nadie lleva un arma de proyectiles/i);
+    expect(result.message).toBe('Sin arma a distancia');
+    expect(result.turns).toBe(state.turns);
     expect(result.party).toEqual(state.party);
     expect(chroniclesOpeningVolleyShooters({ ...base, initiative: { order: [] } })).toEqual([]);
     const inCombat = { ...base, initiative: { order: [] } };
