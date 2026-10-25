@@ -1840,3 +1840,9 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   text-shadow: none;
 }
 .chronicles-minimap__legend { bottom: 37px; }
+
+/* Compact 104px minimaps have room for the place, not a redundant label.
+   Keep the full region name in the button's accessible description. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles-minimap__location-prefix { display: none; }
+}

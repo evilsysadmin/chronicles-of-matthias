@@ -396,6 +396,10 @@ try {
         const location = parent.querySelector('[data-chronicles-location]');
         const locationBounds = location.getBoundingClientRect();
         const frame = parent.getBoundingClientRect();
+        const prefix = location.querySelector('.chronicles-minimap__location-prefix');
+        const placeRange = document.createRange();
+        placeRange.selectNodeContents(location.lastChild);
+        const placeBounds = placeRange.getBoundingClientRect();
         return {
           color: getComputedStyle(node).color,
           shadow: getComputedStyle(node).textShadow,
@@ -404,6 +408,10 @@ try {
             (frame.left + frame.right) / 2) <= 3,
           belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
           location: location.textContent.trim(),
+          prefixDisplay: getComputedStyle(prefix).display,
+          placeFits: placeBounds.left >= locationBounds.left - 1
+            && placeBounds.right <= locationBounds.right + 1,
+          locationClipped: location.scrollWidth > location.clientWidth + 1,
           locationColor: getComputedStyle(location).color,
           locationCentered: Math.abs((locationBounds.left + locationBounds.right) / 2 -
             (frame.left + frame.right) / 2) <= 3,
@@ -418,14 +426,17 @@ try {
       assert.equal(position.locationColor, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
         'Location must contrast with the actual minimap backing: ' + JSON.stringify(position));
       assert.equal(position.location, 'UBICACIÓN · SWORDHAVEN');
+      const compactMap = width <= 800 || (width <= 1024 && height <= 600);
+      assert.equal(position.prefixDisplay === 'none', compactMap,
+        'Only compact minimaps should omit the redundant visible prefix: ' + JSON.stringify(position));
+      assert(position.placeFits && !position.locationClipped,
+        'SWORDHAVEN must fit in the minimap caption without ellipsis: ' + JSON.stringify(position));
       assert(position.locationCentered && position.locationBelowCoordinates && position.locationWithinFrame,
         'Location should stay centered below coordinates within the minimap frame: ' + JSON.stringify(position));
       assert.match(position.label, /^X\d+ Y\d+$/);
       assert(position.centered && position.belowTiles,
         'Coordinates must remain centered below minimap tiles: ' + JSON.stringify(position));
-      if (width === 1280 || width === 390) {
-        await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
-      }
+      await page.screenshot({ path: 'smoke-minimap-ink-' + width + '.png' });
       assert.deepEqual(errors, [], 'No browser errors allowed');
       console.log('OK first-hour real sighting/payment/guide reconciliation ' + width + 'px');
     } catch (error) {
