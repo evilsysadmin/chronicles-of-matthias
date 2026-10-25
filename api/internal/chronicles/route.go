@@ -286,7 +286,8 @@ func (r *RouteSnapshot) index(mapID string) int {
 	return -1
 }
 
-// applyRoutePlan mirrors _apply_route_plan (mutates manifest's exit effect).
+// applyRoutePlan rewrites the selected exit on an isolated copy so that
+// two runs with different routes cannot change each other's source manifest.
 func applyRoutePlan(manifest bson.D, seed int64, route *RouteSnapshot) (bson.D, error) {
 	if route == nil {
 		return manifest, nil
@@ -296,6 +297,9 @@ func applyRoutePlan(manifest bson.D, seed int64, route *RouteSnapshot) (bson.D, 
 	if at < 0 {
 		return manifest, nil
 	}
+	// The exit action contains nested bson.A values; a shallow bson.D copy
+	// would still overwrite the caller's transition-map effect.
+	manifest = copyDoc(manifest)
 	var next any
 	if at+1 < len(route.MapIDs) {
 		nextID := route.MapIDs[at+1]
@@ -325,7 +329,7 @@ func applyRoutePlan(manifest bson.D, seed int64, route *RouteSnapshot) (bson.D, 
 		if len(transitions) != 1 {
 			return nil, manifestErr("route primary exit requires one transition")
 		}
-		// effects is shared with the manifest: replace the element in place.
+		// Only the isolated manifest's transition changes.
 		effects[transitions[0]] = bson.D{{Key: "type", Value: "transition-map"}, {Key: "mapId", Value: nextID}}
 	}
 	generation, ok := get(manifest, "generation").(bson.D)
