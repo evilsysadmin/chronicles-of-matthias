@@ -89,8 +89,18 @@ function livingPartyTargetsWithPositions(state) {
     .map((member) => ({ member, position: anchor || positions.get(member.id) }));
 }
 
+// Threat previews enumerate a square of reach² cells. Corrupt legacy values
+// must not grant unlimited attacks or hang the UI (Infinity/huge ranges).
+// All authored combat reach is measured in whole map cells.
+const MAX_ENEMY_ATTACK_REACH = 16;
+
+function enemyAttackReach(enemy) {
+  const raw = Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1);
+  return Number.isSafeInteger(raw) && raw >= 1 && raw <= MAX_ENEMY_ATTACK_REACH ? raw : 1;
+}
+
 function enemyCanAttackCell(state, enemy, position, partyPosition) {
-  const reach = Math.max(1, Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1));
+  const reach = enemyAttackReach(enemy);
   const separation = distance(position, partyPosition);
   if (separation < 1 || separation > reach) return false;
   if (reach === 1) return separation === 1;
@@ -642,7 +652,7 @@ export function chroniclesEnemyThreatCells(
   enemy,
   position = chroniclesRuntimeEnemyPosition(state, enemy),
 ) {
-  const reach = Math.max(1, Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1));
+  const reach = enemyAttackReach(enemy);
   const cells = [];
   for (let dy = -reach; dy <= reach; dy += 1) {
     for (let dx = -reach; dx <= reach; dx += 1) {
