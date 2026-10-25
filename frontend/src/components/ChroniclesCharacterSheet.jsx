@@ -693,7 +693,7 @@ export default function ChroniclesCharacterSheet({
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
-                <span className="chronicles-character-sheet__party-hp">{hero.hp}/{hero.maxHp} PV</span>
+                <span className="chronicles-character-sheet__party-hp"><span className="chronicles-character-sheet__party-hp-value">{hero.hp}/{hero.maxHp}</span><span className="chronicles-character-sheet__party-hp-unit"> PV</span></span>
               </button>
             ))}
           </nav>
