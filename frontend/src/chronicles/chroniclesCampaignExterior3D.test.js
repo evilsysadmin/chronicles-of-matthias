@@ -309,6 +309,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
     expect(roofs.material.map).toBe(swordhavenSurfaceTexture('roof'));
+    expect(roofs.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+    expect(roofs.material.normalScale.x).toBeCloseTo(0.35);
+    expect(roofs.material.map.repeat.toArray()).toEqual(roofs.material.normalMap.repeat.toArray());
     expect(roofs.material.map.wrapT).toBe(THREE.RepeatWrapping);
     const uv = roofs.geometry.getAttribute('uv');
     expect(uv.count).toBe(6);

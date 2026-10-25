@@ -63,10 +63,10 @@ const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, roof: 3, timber: 3
 const surfaceCache = new Map();
 const surfaceNormalCache = new Map();
 
-// Cached tangent-space relief for close-up masonry and cobbles only. Texture
-// axes/repeat match the albedo so sunlight responds to the same stone seams.
+// Cached tangent-space relief for masonry, cobbles and roof courses.
+// Axes/repeat match the albedo; roof detail needs no extra geometry.
 export function swordhavenSurfaceNormalTexture(kind) {
-  if (kind !== 'masonry' && kind !== 'cobble') {
+  if (kind !== 'masonry' && kind !== 'cobble' && kind !== 'roof') {
     throw new Error('Unsupported Swordhaven relief: ' + kind);
   }
   if (surfaceNormalCache.has(kind)) return surfaceNormalCache.get(kind);
@@ -372,7 +372,12 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
   const facadeZ = depth / 2 + 0.10;
-  const roof = material(spec.roof, { map: swordhavenSurfaceTexture('roof'), roughness: 0.95 });
+  const roof = material(spec.roof, {
+    map: swordhavenSurfaceTexture('roof'),
+    normalMap: swordhavenSurfaceNormalTexture('roof'),
+    normalScale: new THREE.Vector2(0.35, 0.35),
+    roughness: 0.95,
+  });
   const roofRidgeY = height + 1.8;
   const wallMaterial = isTemple ? mats.stone : mats.plaster;
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,

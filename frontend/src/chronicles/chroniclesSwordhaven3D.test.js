@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
+import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import {
   buildSwordhavenScene, createSwordhavenWalkGrid, SWORDHAVEN_BUILDINGS,
   SWORDHAVEN_INTERACTION_CELLS, SWORDHAVEN_GATE_CELL, SWORDHAVEN_SPAWN,
@@ -229,11 +230,12 @@ describe('Swordhaven modular real-time 3D', () => {
   });
 
 
-  it('adds periodic, linear normal maps only to town stone and cobbles', () => {
-    for (const kind of ['masonry', 'cobble']) {
+  it('adds periodic, linear normal maps to town stone, cobbles and roof courses', () => {
+    for (const kind of ['masonry', 'cobble', 'roof']) {
       const albedo = swordhavenSurfaceTexture(kind);
       const normal = swordhavenSurfaceNormalTexture(kind);
       expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
+      expect(chroniclesTownSurfacePixels(kind)).toBe(chroniclesTownSurfacePixels(kind));
       expect(normal).toBeInstanceOf(THREE.DataTexture);
       expect(normal.colorSpace).toBe(THREE.NoColorSpace);
       expect(normal.wrapS).toBe(THREE.RepeatWrapping);
@@ -252,7 +254,7 @@ describe('Swordhaven modular real-time 3D', () => {
       }
       expect(slopes.size).toBeGreaterThan(30);
     }
-    expect(() => swordhavenSurfaceNormalTexture('roof')).toThrow(/Unsupported/);
+    expect(() => swordhavenSurfaceNormalTexture('stucco')).toThrow(/Unsupported/);
     const scene = new THREE.Scene();
     buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: true });
     const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
@@ -260,7 +262,14 @@ describe('Swordhaven modular real-time 3D', () => {
       .toBe(swordhavenSurfaceNormalTexture('masonry'));
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));
-  });
+    for (const spec of SWORDHAVEN_BUILDINGS) {
+      const roof = scene.getObjectByName('swordhaven-building-' + spec.id)
+        .getObjectByName('pitched-roof-1');
+      expect(roof.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+      expect(roof.material.normalScale.x).toBeCloseTo(0.35);
+      expect(roof.material.map.repeat.toArray()).toEqual(roof.material.normalMap.repeat.toArray());
+    }
+  }, 12000); // The shared atlas is first generated during this rendering test.
 
   it('batches detailed leadwork, foliage and door straps on each shop without new interactions', () => {
     for (const coarsePointer of [true, false]) {
