@@ -643,10 +643,21 @@ try {
           portraitCount: node.querySelectorAll('.chronicles-character-sheet__head img').length,
           dockPortraits: node.querySelectorAll('.chronicles-character-sheet__party-dock img').length,
           dockHeight: dock.height,
-          dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => ({
-            height: button.getBoundingClientRect().height,
-            hpVisible: getComputedStyle(button.querySelector('.chronicles-character-sheet__party-hp')).display !== 'none',
-          })),
+          dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => {
+            const hp = button.querySelector('.chronicles-character-sheet__party-hp');
+            const value = hp.querySelector('.chronicles-character-sheet__party-hp-value');
+            const unit = hp.querySelector('.chronicles-character-sheet__party-hp-unit');
+            return {
+              height: button.getBoundingClientRect().height,
+              hpVisible: getComputedStyle(hp).display !== 'none',
+              hpClipped: hp.scrollWidth > hp.clientWidth + 1,
+              hpWidth: hp.clientWidth,
+              hpScrollWidth: hp.scrollWidth,
+              fraction: value.textContent.trim(),
+              unitVisible: getComputedStyle(unit).display !== 'none',
+              accessibleLabel: button.getAttribute('aria-label'),
+            };
+          }),
         };
       });
       assert(geometry.headerHeight <= (height <= 480 ? 85 : 100),
@@ -660,6 +671,13 @@ try {
       assert.equal(geometry.dockButtons.length, 4, 'All heroes must remain selectable on touch');
       assert.ok(geometry.dockButtons.every(({ height: hitHeight, hpVisible }) => hitHeight >= 44 && hpVisible),
         'Live HP and touch targets must remain visible: ' + JSON.stringify(geometry));
+      assert.deepEqual(geometry.dockButtons.filter(({ hpClipped }) => hpClipped), [],
+        'Every live HP fraction must fit the actual painted party dock: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ fraction, accessibleLabel }) =>
+        /^\\d+\\/\\d+$/.test(fraction) && accessibleLabel.includes(fraction) && accessibleLabel.includes('PV')),
+      'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 380)),
+        'Only the narrowest phone may omit the redundant visible PV suffix: ' + JSON.stringify(geometry.dockButtons));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
