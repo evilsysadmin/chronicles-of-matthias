@@ -9,6 +9,9 @@ const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
+  // Look up from an authored walkable approach to inspect the actual pitched
+  // roof surface, not only the walls below it.
+  roofline: { x: 9, y: 14, heading: 'south', lookUp: 3.5 },
 });
 const direction = {
   north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0],
@@ -47,7 +50,7 @@ try {
   const worldZ = (chosen.y - center.y) * 4;
   const [dx, dy] = direction[chosen.heading];
   camera.position.set(worldX, 1.62, worldZ);
-  camera.lookAt(worldX + dx * 4, 1.62, worldZ + dy * 4);
+  camera.lookAt(worldX + dx * 4, 1.62 + (chosen.lookUp || 0), worldZ + dy * 4);
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
