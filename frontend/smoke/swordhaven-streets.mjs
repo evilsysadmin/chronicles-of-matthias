@@ -42,6 +42,8 @@ try {
         assert.ok(Number(result.roadCount) > 100);
         assert.equal(Number(result.plasterCount), 94);
         assert.equal(Number(result.roofCount), 7);
+        assert.equal(result.roofRelief, 'true',
+          'Real street roofs must use aligned, shared shingle relief');
         assert.equal(Number(result.cornerUprights), 226);
         // A close masonry facade at phone width may occupy almost the entire
         // frame with just a few colours. Only reject a truly flat framebuffer.
