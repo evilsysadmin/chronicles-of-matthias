@@ -286,6 +286,10 @@ export function chroniclesChooseEnemyDisengageStep(state, enemy) {
 // Only roaming/patrolling species use awareness; scripted guards and special
 // chess movers keep their authored policies. A sighting is local to this map.
 const ENEMY_MEMORY_ROUNDS = 2;
+// A roaming creature can see farther than its short melee engagement radius.
+// It must pursue through genuinely clear lines of sight, not continue picking
+// arbitrary patrol headings until the player is nearly touching it.
+const EXPLORATION_SIGHT_RANGE = 5;
 
 function usesEnemyAwareness(enemy) {
   // Boss/chess-piece movement is rule-authored: never replace its cadence
@@ -335,7 +339,7 @@ export function chroniclesEnemyHasSightline(state, from, to) {
 
 function visiblePartyPosition(state, enemy, from) {
   if (!usesEnemyAwareness(enemy)) return null;
-  const range = Number(enemy.ai.engageRange);
+  const range = Math.max(Number(enemy.ai.engageRange), EXPLORATION_SIGHT_RANGE);
   return partyTargetPositions(state)
     .filter((target) => distance(from, target) <= range && chroniclesEnemyHasSightline(state, from, target))
     .sort((a, b) => distance(from, a) - distance(from, b))[0] || null;
