@@ -130,7 +130,7 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
     material(0xffffff, {
       map: swordhavenSurfaceTexture('stucco'),
       normalMap: swordhavenSurfaceNormalTexture('stucco'),
-      normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.97,
+      normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
     }),
     faces.length,
   );

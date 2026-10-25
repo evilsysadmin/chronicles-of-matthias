@@ -43,7 +43,7 @@ function surfaceDetail(kind, x, y, spec) {
     const pitting = speck > 0.991 ? 1 : 0;
     return { shade: 1 + erosion * 0.16 + fine * 0.10 + grain * 0.09
       - pitting * 0.22, mortar: false,
-    elevation: 0.5 + erosion * 0.12 + fine * 0.07 + grain * 0.025 - pitting * 0.09 };
+    elevation: 0.5 + erosion * 0.20 + fine * 0.12 + grain * 0.10 - pitting * 0.15 };
   }
   if (kind === 'timber') {
     const board = Math.floor(x / 24);

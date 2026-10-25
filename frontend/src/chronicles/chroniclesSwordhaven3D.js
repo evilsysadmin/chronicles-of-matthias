@@ -841,7 +841,7 @@ export function createSwordhavenMaterials() {
     plaster: material(0xe0caac, {
       map: swordhavenSurfaceTexture('stucco'),
       normalMap: swordhavenSurfaceNormalTexture('stucco'),
-      normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.97,
+      normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
     }),
     timber: material(0x694b34, { map: swordhavenSurfaceTexture('timber'), roughness: 0.85 }),
     gold: material(0xd6ae67, { metalness: 0.48 }),

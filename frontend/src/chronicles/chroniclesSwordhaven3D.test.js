@@ -263,7 +263,7 @@ describe('Swordhaven modular real-time 3D', () => {
     const forgeWall = scene.getObjectByName('swordhaven-building-swordhaven-forge')
       .getObjectByName('timber-and-stone-walls').material;
     expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
-    expect(forgeWall.normalScale.toArray()).toEqual([0.22, 0.22]);
+    expect(forgeWall.normalScale.toArray()).toEqual([0.50, 0.50]);
     expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));
