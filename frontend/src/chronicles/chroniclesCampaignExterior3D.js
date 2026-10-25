@@ -357,8 +357,8 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
 }
 
 // Pitched roof silhouettes on authored 2–6-cell solid wall runs. The six
-// triangles are shared by ONE instanced mesh regardless of span width, with
-// no new collisions or per-house geometry. Saved party cells never change.
+// triangles are shared by ONE instanced mesh regardless of span width. High
+// eaves may overhang the road visually but never alter collision geometry. Saved party cells never change.
 function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6 }) {
   if (!Array.isArray(runs) || !runs.length) return;
   const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
@@ -376,8 +376,12 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     valid.push(run);
   }
   if (!valid.length) return;
-  const length = CELL * 4 - 0.16;
-  const depth = CELL - 0.16;
+  // Small 22cm eaves reveal the pitched roof from street level. Their
+  // underside is >6m above the walkable grid; collisions stay unchanged.
+  // No extra triangles, instances or draw calls on mobile.
+  const eave = 0.22;
+  const length = CELL * 4 + eave * 2;
+  const depth = CELL + eave * 2;
   const vertices = new Float32Array([
     -length / 2, 0, -depth / 2,
     length / 2, 0, -depth / 2,
@@ -408,7 +412,7 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
     const [wx, wz] = gridToWorld(x + (width - 1) / 2, y, center);
     // X-scale alters only span length, not roof pitch/height: a pair of
     // cottages and a five-cell terrace share the same triangle budget.
-    dummy.scale.set((CELL * width - 0.16) / length, 1, 1);
+    dummy.scale.set((CELL * width + eave * 2) / length, 1, 1);
     dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);
