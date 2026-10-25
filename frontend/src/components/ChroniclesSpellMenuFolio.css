@@ -70,7 +70,7 @@
 }
 .chronicles .chronicles-spell-menu--folio header .chronicles-spell-menu__eyebrow {
   display: block;
-  color: #4e2914;
+  color: #100907;
   font-size: .88rem;
   letter-spacing: .13em;
 }
@@ -82,7 +82,7 @@
 }
 .chronicles .chronicles-spell-menu--folio header p {
   margin: 0;
-  color: #462c1c;
+  color: #100907;
   font: 400 1.12rem/1.15 var(--mm3-pixel-font);
 }
 .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__close {
