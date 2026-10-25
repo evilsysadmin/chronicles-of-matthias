@@ -170,7 +170,9 @@ export default function ChroniclesMinimap({
       onClick={onExpand}
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
-      <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>UBICACIÓN · {locationText}</span>
+      <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>
+        <span className="chronicles-minimap__location-prefix">UBICACIÓN · </span>{locationText}
+      </span>
       <svg
         ref={svgRef}
         viewBox={`${minX} ${minY} ${width} ${height}`}
