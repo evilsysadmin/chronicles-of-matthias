@@ -810,3 +810,12 @@
     font-size: .85rem;
   }
 }
+
+/* At 360px each hero receives about 50px of text space. Keep the complete
+   live HP fraction instead of ellipsizing it just to repeat the PV unit;
+   the button's accessible name still announces the unit in full. */
+@media (max-width: 380px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-hp-unit {
+    display: none;
+  }
+}
