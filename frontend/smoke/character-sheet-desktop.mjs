@@ -18,7 +18,7 @@ async function assertParchmentSurface(locator, label) {
 async function assertResourceContrast(sheet, resource) {
   const chip = sheet.locator(`.chronicles-character-sheet__quick [data-resource="${resource}"]`);
   assert.equal(await chip.count(), 1, 'Expected a real ' + resource + ' resource badge');
-  const ratio = await chip.evaluate((node) => {
+  const ratios = await chip.evaluate((node) => {
     const rgb = (value) => (value.match(/[0-9.]+/g) || []).slice(0, 3).map(Number);
     const linear = (channel) => {
       const c = channel / 255;
@@ -28,11 +28,17 @@ async function assertResourceContrast(sheet, resource) {
       const [r, g, b] = rgb(value).map(linear);
       return r * .2126 + g * .7152 + b * .0722;
     };
-    const ink = luminance(getComputedStyle(node.querySelector('b')).color);
     const paper = luminance(getComputedStyle(node).backgroundColor);
-    return (Math.max(ink, paper) + .05) / (Math.min(ink, paper) + .05);
+    const contrast = (element) => {
+      const ink = luminance(getComputedStyle(element).color);
+      return (Math.max(ink, paper) + .05) / (Math.min(ink, paper) + .05);
+    };
+    return { label: contrast(node), value: contrast(node.querySelector('b')) };
   });
-  assert.ok(ratio >= 4.5, resource + ' badge must be readable on parchment; measured contrast=' + ratio.toFixed(2));
+  for (const [part, ratio] of Object.entries(ratios)) {
+    assert.ok(ratio >= 4.5,
+      resource + ' ' + part + ' must have readable contrast on parchment; measured=' + ratio.toFixed(2));
+  }
 }
 
 async function assertNavigationHighlight(nav, expected) {
@@ -692,6 +698,11 @@ try {
           columns: getComputedStyle(wrapper).gridTemplateColumns,
         };
       });
+      // Computed ink contrast, not a CSS-string assertion: the 390px
+      // screenshot exposed pale PV/PH/ORO labels and values on beige chips.
+      for (const resource of ['health', 'magic', 'gold']) {
+        await assertResourceContrast(sheet, resource);
+      }
       assert.equal(identity.titleText, 'Hildegard', 'Fixture must check the longer hero name');
       assert.match(identity.classText, /Nivel/, 'Class and level must remain readable');
       assert.ok(identity.overflow <= 1,
