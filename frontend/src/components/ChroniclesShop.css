@@ -513,10 +513,37 @@
 .chronicles-shop__comparison-warning { font-size: 11px; color: #e6bb70; }
 
 .chronicles-shop__checkout {
+  position: relative;
   display: grid;
   gap: 10px;
   margin-top: auto;
   padding-top: 20px;
+}
+
+/* Floating receipt directly above the checkout, never changing its height. */
+.chronicles-shop__trade-notice {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  right: 0;
+  z-index: 4;
+  max-width: min(100%, 360px);
+  padding: 5px 11px;
+  border: 1px solid rgba(228, 181, 105, .58);
+  border-radius: 3px;
+  background: rgba(22, 17, 13, .93);
+  color: #f7d8a4;
+  font: 13px Georgia, serif;
+  text-align: right;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  animation: chronicles-shop-receipt-appear 120ms ease-out both;
+}
+@keyframes chronicles-shop-receipt-appear {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-shop__trade-notice { animation: none; }
 }
 
 .chronicles-shop__checkout-price {

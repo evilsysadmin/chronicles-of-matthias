@@ -7,6 +7,7 @@ import {
   chroniclesShopSellable,
   chroniclesShopSellPrice,
   chroniclesShopStock,
+  chroniclesShopTradeNotice,
 } from '../chronicles/chroniclesShops.js';
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
 import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
@@ -231,6 +232,11 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const [selectedId, setSelectedId] = useState(null);
   const [previewId, setPreviewId] = useState(null);
   const [inspecting, setInspecting] = useState(false);
+  const [tradeNotice, setTradeNotice] = useState('');
+  const tradeNoticeTimerRef = useRef(null);
+  useEffect(() => () => {
+    if (tradeNoticeTimerRef.current) window.clearTimeout(tradeNoticeTimerRef.current);
+  }, []);
   const inspectingRef = useRef(false);
   inspectingRef.current = inspecting;
   const [mobileView, setMobileView] = useState(() => (
@@ -368,6 +374,20 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
   const backToStock = () => {
     setInspecting(false);
     requestAnimationFrame(() => lastPickedRef.current?.focus());
+  };
+
+  const submitTrade = () => {
+    if (!selectedItem) return;
+    const action = { type: tab === 'buy' ? 'shop-buy' : 'shop-sell', itemId: selectedItem.id };
+    const updated = onAction(action);
+    const notice = chroniclesShopTradeNotice(state, updated, action);
+    if (!notice) return;
+    if (tradeNoticeTimerRef.current) window.clearTimeout(tradeNoticeTimerRef.current);
+    setTradeNotice(notice);
+    tradeNoticeTimerRef.current = window.setTimeout(() => {
+      tradeNoticeTimerRef.current = null;
+      setTradeNotice('');
+    }, 1700);
   };
 
   const shop = (
@@ -508,13 +528,14 @@ export default function ChroniclesShop({ state, onAction, onClose }) {
                 )}
                 </div>
                 <div className="chronicles-shop__checkout">
+                  {tradeNotice && <div className="chronicles-shop__trade-notice" role="status" aria-live="polite" data-chronicles-shop-trade-notice>{tradeNotice}</div>}
                   <div className="chronicles-shop__checkout-price">
                     <span>{tab === 'buy' ? 'Precio' : 'Recibirás'}</span>
                     <strong>◉ {selected.price} oro</strong>
                   </div>
                   <button type="button" className="chronicles-shop__primary"
                     disabled={(tab === 'buy' && !affordable) || saleExceedsGoldCap}
-                    onClick={() => onAction({ type: tab === 'buy' ? 'shop-buy' : 'shop-sell', itemId: selectedItem.id })}>
+                    onClick={submitTrade}>
                     {tab === 'buy' ? (affordable ? 'Comprar' : 'Oro insuficiente')
                       : saleExceedsGoldCap ? 'Bolsa de oro llena' : 'Vender una unidad'}
                   </button>
