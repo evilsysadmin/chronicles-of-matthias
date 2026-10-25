@@ -392,6 +392,24 @@ function playCue(cue) {
   });
 }
 
+// Unlock the shared WebAudio context from a real pointer/keyboard gesture.
+// Delayed enemy turns and post-commit React effects are not trusted gestures,
+// so their first impact could otherwise be silent under browser autoplay rules.
+export function unlockChroniclesActionAudio() {
+  if (getChroniclesFxVolume() <= 0) return false;
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+    try {
+      const attempt = ctx.resume();
+      attempt?.catch?.(() => {}); // A blocked resume may succeed on the next gesture.
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function playChroniclesActionSound(previous, next, action) {
   playCue(chroniclesActionAudioCue(previous, next, action));
 }
