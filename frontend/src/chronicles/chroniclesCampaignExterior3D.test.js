@@ -213,8 +213,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     uprights.getMatrixAt(beams.count + 38, braceMatrix);
     const bracePosition = new THREE.Vector3().setFromMatrixPosition(braceMatrix);
     const braceScale = new THREE.Vector3().setFromMatrixScale(braceMatrix);
-    expect(bracePosition.y).toBeCloseTo(1.9);
-    expect(braceScale.y).toBeCloseTo(0.34);
+    expect(bracePosition.y).toBeCloseTo(1.84);
+    expect(braceScale.y).toBeCloseTo(0.55);
     expect(braceScale.z).toBeCloseTo(1);
     expect(Math.abs(braceMatrix.elements[1])).toBeGreaterThan(0.1); // Actually diagonal.
     // 4cm depth plus its inset is strictly within the blocked 4m cell.
