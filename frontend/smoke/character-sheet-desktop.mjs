@@ -261,46 +261,52 @@ try {
         'Initial first-item preview does not silently select an item for transfer');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
+      // Optional mechanics are initially closed, making the decision and
+      // Equipar action available without a wall of catalogue rows.
+      const more = detail.locator('.chronicles-character-sheet__item-more');
+      assert.equal(await more.evaluate((node) => node.open), false,
+        'Long object attributes must start collapsed');
+      assert.equal(await more.locator('dl').isVisible(), false);
+      const initialDetail = await detail.evaluate((node) => {
+        const essentials = node.querySelector(':scope > .chronicles-character-sheet__item-essentials');
+        const action = node.querySelector(':scope > button');
+        const optional = node.querySelector(':scope > .chronicles-character-sheet__item-more');
+        const preview = node.querySelector(':scope > .chronicles-character-sheet__swap-preview');
+        const dock = document.querySelector('.chronicles-character-sheet__party-dock');
+        return { essentials: essentials?.getBoundingClientRect().top,
+          action: action?.getBoundingClientRect().bottom,
+          optional: optional?.getBoundingClientRect().top,
+          preview: preview?.getBoundingClientRect().top,
+          dock: dock?.getBoundingClientRect().top };
+      });
+      assert.ok(initialDetail.essentials < initialDetail.optional,
+        'Core item identity and class compatibility precede the optional record');
+      assert.ok(initialDetail.action < initialDetail.optional,
+        'Equipar must precede the expanded long item description');
+      if (initialDetail.preview != null) {
+        assert.ok(initialDetail.preview < initialDetail.action,
+          'Read-only before/after mechanics must precede Equipar');
+      }
       if (width >= 1200) {
-        const ledger = await detail.locator('dl').evaluate((node) => ({
+        assert.ok(initialDetail.action < initialDetail.dock - 6,
+          'Primary equip action must be visible above the party dock: ' + JSON.stringify(initialDetail));
+      }
+      await more.locator('summary').click();
+      if (width >= 1200) {
+        const ledger = await more.locator('dl').evaluate((node) => ({
           columns: getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
           entries: node.querySelectorAll(':scope > div').length,
           labels: [...node.querySelectorAll('dt')].map((element) => element.textContent.trim()),
           overflow: node.scrollWidth > node.clientWidth + 1,
         }));
-        assert.equal(ledger.columns, 2, 'Wide object mechanics should use two columns');
+        assert.equal(ledger.columns, 2, 'Expanded mechanics must use two compact columns');
         assert.ok(ledger.entries >= 6 && ledger.labels.includes('Puede usarlo'),
-          'Object stats and equipability must remain visible');
-        assert.equal(ledger.overflow, false, 'Stats ledger cannot scroll sideways');
+          'Detailed object stats and equipability remain available on demand');
+        assert.equal(ledger.overflow, false, 'Expanded stats cannot scroll sideways');
       }
+      await more.locator('summary').click();
+      assert.equal(await more.evaluate((node) => node.open), false);
 
-      // Read actual mechanics before descriptive prose, without changing DOM
-      // source order (including screen-reader reading and interactive focus).
-      const statPriority = await detail.evaluate((node) => {
-        const description = node.querySelector(':scope > p');
-        const stats = node.querySelector(':scope > dl');
-        const damageLabel = [...stats.querySelectorAll('dt')]
-          .find((element) => element.textContent.trim() === 'Daño adicional');
-        const dock = document.querySelector('.chronicles-character-sheet__party-dock');
-        return {
-          statsTop: stats.getBoundingClientRect().top,
-          descriptionTop: description.getBoundingClientRect().top,
-          damageBottom: damageLabel?.parentElement.getBoundingClientRect().bottom,
-          dockTop: dock.getBoundingClientRect().top,
-          domDescriptionFirst: [...node.children].indexOf(description) < [...node.children].indexOf(stats),
-        };
-      });
-      assert.equal(statPriority.domDescriptionFirst, true,
-        'Accessible document order must be unchanged: ' + JSON.stringify(statPriority));
-      if (width >= 1200) {
-        assert.ok(statPriority.statsTop < statPriority.descriptionTop,
-          'Desktop equipment mechanics should precede flavour text visually: ' + JSON.stringify(statPriority));
-        assert.ok(statPriority.damageBottom < statPriority.dockTop - 12,
-          'Real damage bonus should be legible without scrolling beneath the party dock: ' + JSON.stringify(statPriority));
-      } else {
-        assert.ok(statPriority.descriptionTop < statPriority.statsTop,
-          '1024px equipment detail should preserve its current visual order');
-      }
       // Opening Equipment must show the inventory list immediately. On wide
       // desktop the selected item's details take priority over optional filters;
       // narrow desktop retains its existing filter-first arrangement.
@@ -331,6 +337,11 @@ try {
         assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
           'At 1024px the validated filter-first layout must remain intact: ' + JSON.stringify(aboveFold));
       }
+      const filterDisclosure = equipment.locator('.chronicles-character-sheet__backpack-tools');
+      assert.equal(await filterDisclosure.evaluate((node) => node.open), false,
+        'Filter/search must start collapsed to avoid another tall inspector column');
+      await filterDisclosure.locator('summary').click();
+      assert.equal(await filterDisclosure.evaluate((node) => node.open), true);
       if (width >= 1200) {
         const filters = await equipment.locator('.chronicles-character-sheet__backpack-filters')
           .evaluate((group) => {
@@ -578,6 +589,8 @@ try {
         'The same sword returns without duplication');
       // Numbers typed in a search field must never cause a transfer.
       await bag.locator('[data-inventory-item="bronze-sword"]').click();
+      // Search is an optional disclosure, not an always-visible tall panel.
+      await sheet.locator('.chronicles-character-sheet__backpack-tools > summary').click();
       const search = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
       await search.focus();
       await page.keyboard.press('2');
