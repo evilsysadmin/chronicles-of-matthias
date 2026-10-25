@@ -37,17 +37,19 @@ func authoredDifficulty(manifest bson.D) (int64, error) {
 	if len(enemies) == 0 {
 		return 1, nil
 	}
-	total := int64(0)
+	// Legacy enemy HP can approach MaxInt64. An int64 sum can wrap and
+	// incorrectly classify a dangerous encounter as difficulty 1.
+	total := 0.0
 	for _, enemy := range enemies {
 		hp, err := maxHp(enemy)
 		if err != nil {
 			return 0, err
 		}
-		total += max(1, hp)
+		total += float64(max(1, hp))
 	}
 	// Malformed legacy entries are skipped by docs() and by the scaling loop.
 	// They must not dilute the average of enemies that actually exist.
-	average := float64(total) / float64(len(enemies))
+	average := total / float64(len(enemies))
 	switch {
 	case average <= 5:
 		return 1, nil
