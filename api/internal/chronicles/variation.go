@@ -23,7 +23,9 @@ const (
 
 var moduleGroups = []string{"enemies", "triggers", "interactables", "treasures", "traps", "exits"}
 
-var safeOptionalDefeatEffects = map[string]bool{"grant-item": true, "heal-party": true, "refill-class-abilities": true}
+// Item drops may be required to complete a quest or open a later floor.
+// Without dependency analysis, never omit their source encounter by seed.
+var safeOptionalDefeatEffects = map[string]bool{"heal-party": true, "refill-class-abilities": true}
 
 // asciiJSON is json.dumps(value, sort_keys=True, separators=(",", ":"))
 // with Python's default ensure_ascii=True, for the small plan payloads.
