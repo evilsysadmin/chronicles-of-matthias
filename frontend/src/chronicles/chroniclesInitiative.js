@@ -169,6 +169,9 @@ function actorIsAlive(state, enemyById, actor) {
 
 export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (!state || state.initiative) return state;
+  // Forced engagements must not revive a finished expedition. Proximity
+  // engagement already excludes these phases; apply the same rule here.
+  if (state.phase === 'defeated' || state.phase === 'escaped') return state;
   // A wiped company cannot take a turn: never create an enemy-only combat.
   // Defeat resolution belongs to the reducer, not to this engagement helper.
   if (!Array.isArray(state.party) || !state.party.some((member) => Number(member?.hp || 0) > 0)) return state;
