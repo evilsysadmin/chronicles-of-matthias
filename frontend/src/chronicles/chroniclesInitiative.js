@@ -49,8 +49,11 @@ export function chroniclesEnemyInitiativeAgility(enemy) {
   if (!enemy) return 0;
   const resolved = resolveChroniclesEnemyBuildDefinition(enemy);
   const buildAgility = nonNegativeInteger(resolved?.build?.attributes?.agility);
+  // Whitespace-only legacy strings are missing values, not explicit AGI 0.
+  const missingAgility = enemy.agility == null
+    || (typeof enemy.agility === 'string' && !enemy.agility.trim());
   return Math.min(MAX_SAFE_INITIATIVE_AGILITY,
-    nonNegativeInteger(enemy.agility == null || enemy.agility === '' ? buildAgility : enemy.agility, buildAgility));
+    nonNegativeInteger(missingAgility ? buildAgility : enemy.agility, buildAgility));
 }
 
 function actorEntry({ id, kind, name, agility, random }) {
