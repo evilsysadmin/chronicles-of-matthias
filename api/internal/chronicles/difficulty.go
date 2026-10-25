@@ -154,6 +154,11 @@ func applyDifficulty(manifest bson.D, partyLevel, depth int64) (bson.D, bson.D, 
 			current = boundedInt(get(build, "level"), 1, enemyLevelCap, authored)
 		}
 		level := boundedInt(current+applied, 1, enemyLevelCap, authored)
+		// A high authored level can survive the bounded negative delta.
+		// Respect the director's advertised ceiling for low-level parties.
+		if ceiling, ok := get(band, "maxLevel").(int64); ok {
+			level = min(level, ceiling)
+		}
 		enemy = setKey(enemy, "difficultyLevel", level)
 		if isBuild {
 			enemy = setKey(enemy, "enemyBuild", setKey(copyDoc(build), "level", level))
