@@ -62,3 +62,55 @@ func TestApplyRoutePlanDoesNotMutateSourceOrEarlierRun(t *testing.T) {
 		t.Fatal("second route mutated the authored manifest")
 	}
 }
+
+
+// A seeded route changes only the destination; authored transition metadata
+// must survive, including fields added by future content revisions.
+func TestApplyRoutePlanPreservesTransitionEffectFields(t *testing.T) {
+	transition := bson.D{
+		{Key: "type", Value: "transition-map"},
+		{Key: "mapId", Value: "authored-next"},
+		{Key: "requiresFlag", Value: "gate-open"},
+		{Key: "metadata", Value: bson.D{{Key: "label", Value: "crypt gate"}}},
+	}
+	manifest := bson.D{
+		{Key: "id", Value: "crypt-eight-squares"},
+		{Key: "exits", Value: bson.A{bson.D{
+			{Key: "id", Value: "black-gate"},
+			{Key: "action", Value: bson.D{{Key: "effects", Value: bson.A{transition}}}},
+		}}},
+	}
+	authored := copyDoc(manifest)
+	route := &RouteSnapshot{
+		PolicyVersion: 4,
+		MapIDs: []string{"crypt-eight-squares", "gallery-of-forks"},
+		PrimaryExitIDs: map[string]string{"crypt-eight-squares": "black-gate"},
+	}
+	updated, err := applyRoutePlan(manifest, 42, route)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exits := docs(get(updated, "exits"))
+	if len(exits) != 1 {
+		t.Fatalf("rewritten exits = %v", exits)
+	}
+	action, ok := get(exits[0], "action").(bson.D)
+	if !ok {
+		t.Fatalf("rewritten exit has no action")
+	}
+	effects, ok := get(action, "effects").(bson.A)
+	if !ok || len(effects) != 1 {
+		t.Fatalf("rewritten effects = %v", effects)
+	}
+	got, ok := effects[0].(bson.D)
+	if !ok {
+		t.Fatalf("rewritten transition = %T", effects[0])
+	}
+	want := setKey(copyDoc(transition), "mapId", "gallery-of-forks")
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("rewritten transition = %v, want %v", got, want)
+	}
+	if !reflect.DeepEqual(manifest, authored) {
+		t.Fatal("rewriting the route changed authored transition metadata")
+	}
+}
