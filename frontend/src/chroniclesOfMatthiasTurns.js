@@ -339,7 +339,11 @@ export function chroniclesEnemyHasSightline(state, from, to) {
 
 function visiblePartyPosition(state, enemy, from) {
   if (!usesEnemyAwareness(enemy)) return null;
-  const range = Math.max(Number(enemy.ai.engageRange), EXPLORATION_SIGHT_RANGE);
+  const authoredRange = Number(enemy.ai.engageRange);
+  // Early pursuit belongs to first-person exploration only. Tactics combat
+  // and the initiative enemy phases keep their explicitly authored ranges.
+  const range = state.phase === 'explore' && state.combatRules === 'mm3'
+    ? Math.max(authoredRange, EXPLORATION_SIGHT_RANGE) : authoredRange;
   return partyTargetPositions(state)
     .filter((target) => distance(from, target) <= range && chroniclesEnemyHasSightline(state, from, target))
     .sort((a, b) => distance(from, a) - distance(from, b))[0] || null;
