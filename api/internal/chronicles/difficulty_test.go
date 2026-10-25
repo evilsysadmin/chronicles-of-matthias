@@ -30,6 +30,22 @@ func TestAuthoredDifficultyIgnoresMalformedEnemyEntries(t *testing.T) {
 			want: 3,
 		},
 		{
+			name: "large legacy HP values cannot overflow the threat average",
+			manifest: bson.D{{Key: "enemies", Value: bson.A{
+				bson.D{{Key: "maxHp", Value: int64(1<<63 - 1)}},
+				bson.D{{Key: "maxHp", Value: int64(1<<63 - 1)}},
+			}}},
+			want: 5,
+		},
+		{
+			name: "a huge enemy remains dangerous alongside a weak enemy",
+			manifest: bson.D{{Key: "enemies", Value: bson.A{
+				bson.D{{Key: "maxHp", Value: int64(1<<63 - 1)}},
+				bson.D{{Key: "maxHp", Value: int64(1)}},
+			}}},
+			want: 5,
+		},
+		{
 			name: "all malformed enemies use baseline",
 			manifest: bson.D{{Key: "enemies", Value: bson.A{"invalid", nil}}},
 			want: 1,
