@@ -194,7 +194,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(beams).toBeInstanceOf(THREE.InstancedMesh);
     expect(uprights).toBeInstanceOf(THREE.InstancedMesh);
     expect(beams.count).toBe(188);
-    expect(uprights.count).toBe(beams.count + 38); // Perpendicular street corners.
+    // Blind walls get paired diagonal braces in the same upright batch,
+    // preserving the original two timber draw calls and all corner joints.
+    expect(uprights.count).toBeGreaterThan(beams.count + 38);
+    expect(uprights.count).toBeLessThan(beams.count * 2 + 38);
     // Reinforced external corners reuse the existing timber batch; no extra
     // geometry draw calls and no timbers protrude into walkable tiles.
     const cornerMatrix = new THREE.Matrix4();
@@ -206,6 +209,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(firstCorner.z).toBeCloseTo((16 - center.y) * 4 + 1.93);
     expect(cornerScale.z).toBeCloseTo(3.25);
     expect(1.93 + 0.13 / 2).toBeLessThan(2);
+    const braceMatrix = new THREE.Matrix4();
+    uprights.getMatrixAt(beams.count + 38, braceMatrix);
+    const bracePosition = new THREE.Vector3().setFromMatrixPosition(braceMatrix);
+    const braceScale = new THREE.Vector3().setFromMatrixScale(braceMatrix);
+    expect(bracePosition.y).toBeCloseTo(1.84);
+    expect(braceScale.y).toBeCloseTo(0.55);
+    expect(braceScale.z).toBeCloseTo(1);
+    expect(Math.abs(braceMatrix.elements[1])).toBeGreaterThan(0.1); // Actually diagonal.
+    // 4cm depth plus its inset is strictly within the blocked 4m cell.
+    expect(1.973 + 0.04 / 2).toBeLessThan(2);
     expect(beams.count).toBe(188);
     // Warm plaster between the timbers makes the blocked cells read as
     // actual houses. Every open street-facing side shares ONE extra batch.
