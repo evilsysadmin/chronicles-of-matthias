@@ -4,6 +4,7 @@ import './ChroniclesCharacterSheetFolioV2.css';
 import './ChroniclesCharacterSheetArchive.css';
 import './ChroniclesCharacterEquipmentMM3.css';
 import './ChroniclesCharacterDeskCompact.css';
+import './ChroniclesCharacterEquipmentDensity.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -252,28 +253,34 @@ export default function ChroniclesCharacterSheet({
                 {tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}
               </span>
               {!tacticsMode && inventory.length > 0 && (
-                <div className="chronicles-character-sheet__backpack-tools">
-                  <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
-                    {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
-                      .map(({ id, label }) => (
-                        <button type="button" key={id}
-                          aria-pressed={backpackFilter === id}
-                          onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedBagItem(null); }}>
-                          {label} <small>{backpackCounts[id]}</small>
-                        </button>
-                      ))}
+                <details className="chronicles-character-sheet__backpack-tools">
+                  <summary>
+                    Filtrar y buscar <small>{visibleBackpack.length}/{inventory.length}</small>
+                    {(backpackFilter !== 'all' || backpackSearch) && <b>Filtros activos</b>}
+                  </summary>
+                  <div className="chronicles-character-sheet__backpack-advanced">
+                    <div className="chronicles-character-sheet__backpack-filters" role="group" aria-label="Filtrar objetos por ranura">
+                      {CHRONICLES_BACKPACK_FILTERS.filter(({ id }) => id === 'all' || id === backpackFilter || backpackCounts[id] > 0)
+                        .map(({ id, label }) => (
+                          <button type="button" key={id}
+                            aria-pressed={backpackFilter === id}
+                            onClick={() => { resetBackpackScroll(); setBackpackFilter(id); setSelectedBagItem(null); }}>
+                            {label} <small>{backpackCounts[id]}</small>
+                          </button>
+                        ))}
+                    </div>
+                    <label className="chronicles-character-sheet__backpack-search">
+                      Buscar en la mochila
+                      <input type="search" value={backpackSearch}
+                        placeholder="Nombre, material u objeto…"
+                        onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedBagItem(null); }}
+                      />
+                    </label>
+                    <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
+                      {visibleBackpack.length} de {inventory.length} tipos de objeto
+                    </small>
                   </div>
-                  <label className="chronicles-character-sheet__backpack-search">
-                    Buscar en la mochila
-                    <input type="search" value={backpackSearch}
-                      placeholder="Nombre, material u objeto…"
-                      onChange={(event) => { resetBackpackScroll(); setBackpackSearch(event.target.value); setSelectedBagItem(null); }}
-                    />
-                  </label>
-                  <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
-                    {visibleBackpack.length} de {inventory.length} tipos de objeto
-                  </small>
-                </div>
+                </details>
               )}
               {inventory.length ? (
                 visibleBackpack.length ? (
@@ -318,25 +325,19 @@ export default function ChroniclesCharacterSheet({
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <strong>{selectedInventoryItem.name}</strong>
-                  <p>{selectedEquipment?.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>
-                  {!tacticsMode && selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
-                    <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
-                      {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
-                    </small>
-                  )}
-                  <dl>
-                    <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
+                  <div className="chronicles-character-sheet__item-essentials">
+                    <span>×{selectedInventoryItem.quantity}</span>
                     {selectedEquipment && <>
-                      <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
-                      <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
-                      <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
-                      <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
-                      <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
-                      <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                      <span>{{ weapon: 'Arma A', missile: 'Proyectiles S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</span>
+                      <span className={canEquipSelected ? 'can-equip' : 'cannot-equip'}>
+                        {canEquipSelected ? 'Puede equiparlo' : 'Clase incompatible'}
+                      </span>
                     </>}
-                  </dl>
+                  </div>
+                  {!selectedEquipment && (
+                    <p>{selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  )}
                   {selectedEquipment && <>
-                    <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>
                     {weaponSwap ? (
                       <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
                         <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
@@ -352,7 +353,27 @@ export default function ChroniclesCharacterSheet({
                       Equipar {selectedEquipment.name}
                     </button>
                   </>}
-
+                  <details className="chronicles-character-sheet__item-more">
+                    <summary>Descripción y atributos</summary>
+                    {selectedEquipment && <p>{selectedEquipment.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>}
+                    {selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
+                      <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
+                        {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
+                      </small>
+                    )}
+                    <dl>
+                      <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
+                      {selectedEquipment && <>
+                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
+                        <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
+                        <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
+                        <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
+                        <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
+                        <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                      </>}
+                    </dl>
+                    {selectedEquipment && <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>}
+                  </details>
                 </aside>
               )}
             </article>
@@ -544,7 +565,7 @@ export default function ChroniclesCharacterSheet({
             <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
               <span>Reliquia vinculada</span>
               <b>{relic?.name || 'Ninguna'}</b>
-              <small>{relic?.description || 'Este personaje no lleva una reliquia vinculada.'}</small>
+              {relic && <small>{relic.description}</small>}
             </article>
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
               <span>Armas y armaduras equipadas</span>

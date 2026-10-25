@@ -1,0 +1,189 @@
+/* Compact MM3 equipment desk. Primary choices, comparison and equip action
+   remain visible; optional search and technical catalogue data use native
+   keyboard-accessible disclosures. Tactics retains its original layout. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #b88e58;
+  background: #f6e4c1;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools > summary,
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__item-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 9px;
+  cursor: pointer;
+  color: #4c3119;
+  font-size: .87rem;
+  font-weight: 700;
+  list-style: none;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] summary::-webkit-details-marker { display: none; }
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] summary::before {
+  content: '▸';
+  font-size: 1rem;
+  color: #81542c;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] details[open] > summary::before { content: '▾'; }
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] summary:focus-visible {
+  outline: 3px solid #5b3717;
+  outline-offset: -3px;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools > summary small {
+  margin-left: auto;
+  color: #6e4c2b;
+  font-size: .80rem;
+  font-variant-numeric: tabular-nums;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools > summary b {
+  color: #7a331b;
+  font-size: .75rem;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-advanced {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border-top: 1px solid #c9a273;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more {
+  min-width: 0;
+  margin-top: 5px;
+  border-top: 1px solid #d3b389;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more > summary {
+  padding-inline: 0;
+  font-size: .78rem;
+  min-height: 35px;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-essentials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  margin-top: 6px;
+  font-size: .76rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-essentials span {
+  padding: 3px 5px;
+  background: #e8d2ac;
+  color: #574027;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-essentials .cannot-equip {
+  background: #efd1c6;
+  color: #852c1a;
+}
+.chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-essentials .can-equip {
+  background: #dce5cb;
+  color: #30502b;
+}
+/* Tuck the optional catalogue record below the decision instead of inserting
+   a tall seven-field ledger before the comparison and primary Equipar button. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
+    min-height: 0;
+    padding: 9px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__item-essentials { order: 1; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > p { order: 2; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__swap-preview { order: 3; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > small { order: 4; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button { order: 5; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__item-more { order: 6; }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview {
+    margin-top: 7px; padding: 7px; gap: 2px;
+  }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview > div {
+    gap: 5px; padding: 3px 0;
+  }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview > small {
+    font-size: .72rem; line-height: 1.3;
+  }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl {
+    display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 3px 8px;
+  }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl > div {
+    display: flex; flex-wrap: wrap; gap: 3px 6px;
+    padding: 4px 0; min-width: 0;
+  }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl dd {
+    margin-left: auto; text-align: left;
+  }
+  /* The empty relic does not need its own explanatory paragraph/50px band. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout .chronicles-character-sheet__relic {
+    display: flex; align-items: baseline; flex-wrap: wrap;
+    gap: 5px 12px; min-height: 0; padding: 5px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__relic b { margin: 0; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment {
+    gap: 4px; padding: 8px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment > span {
+    line-height: 1.15;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__dual-weapons {
+    gap: 6px; margin: 3px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card {
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    gap: 3px; padding: 6px 8px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card > b {
+    font-size: .86rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card > strong {
+    font-size: .92rem; line-height: 1.12;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card > small {
+    font-size: .77rem; line-height: 1.25;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card > button {
+    margin-top: 0; padding: 5px 7px; min-height: 36px; font-size: .77rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__gear-slot {
+    gap: 3px 8px; padding-block: 4px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__gear-slot button {
+    min-height: 36px; padding: 5px 8px; font-size: .82rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment > small {
+    line-height: 1.25; font-size: .76rem;
+  }
+}
+@media (max-width: 850px), (max-height: 580px) {
+  /* Do not shrink interactive targets on touch/small displays. Both optional
+     disclosures start closed but open normally with keyboard or tapping. */
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
+  .chronicles-character-sheet__backpack-tools > summary,
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
+  .chronicles-character-sheet__item-more > summary { min-height: 44px; }
+  .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
+  .chronicles-character-sheet__item-details { padding: 9px; }
+}
