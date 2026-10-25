@@ -66,6 +66,21 @@ try {
         const undersized = buttons.filter((button) => button.height < 39 || button.width < 38);
         assert.deepEqual(undersized, [], `${view} ${width} touch target too small`);
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
+        if (view === 'cast' || view === 'items') {
+          const footer = await dialog.locator('.chronicles-spell-menu__folio-footer').evaluate((node) => ({
+            shortcutDisplay: getComputedStyle(node.querySelector('kbd')).display,
+            coarse: matchMedia('(pointer: coarse)').matches,
+            lineHeight: parseFloat(getComputedStyle(node).lineHeight),
+            overflow: node.scrollWidth > node.clientWidth + 1,
+          }));
+          const compactTouch = width <= 520 && footer.coarse;
+          assert.equal(footer.shortcutDisplay === 'none', compactTouch,
+            `CAST/items keyboard footer at ${width}px: ${JSON.stringify(footer)}`);
+          assert.equal(footer.overflow, false,
+            `CAST/items footer must not overflow at ${width}px: ${JSON.stringify(footer)}`);
+          if (compactTouch) assert(footer.lineHeight >= 20,
+            `CAST/items touch usage note needs readable line spacing: ${JSON.stringify(footer)}`);
+        }
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
           // A touch-sized pause folio has an Ayuda control; its repeated

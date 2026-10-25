@@ -318,7 +318,17 @@
     font-size: 1.08rem;
     line-height: 1.22;
   }
-  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer { padding: 8px 10px; }
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer {
+    padding: 8px 10px;
+    line-height: 1.25;
+  }
+}
+/* Touch users have a visible close button and the keyboard legend belongs in Help.
+   Let the real usage note take the full folio width on narrow phones. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__folio-footer kbd {
+    display: none;
+  }
 }
 /* Wider phones already fit both labels; retain their original readable size. */
 @media (max-width: 375px) {
