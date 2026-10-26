@@ -4,12 +4,16 @@ import { chroniclesEnemyCanAttackParty } from '../chroniclesOfMatthiasTurns.js';
 
 vi.mock('../chroniclesOfMatthias.js', () => ({
   chroniclesReduce: vi.fn((state, action) => action === 'forward'
-    ? { ...state, x: state.x + 1 }
+    ? { ...state, x: state.x + 1, turns: state.turns + 1 }
     : action === 'transition'
-      ? { ...state, mapId: 'crypt-eight-squares', x: 1, y: 5 }
+      ? { ...state, mapId: 'crypt-eight-squares', x: 1, y: 5, turns: state.turns + 1 }
     : action === 'blocked'
-      ? { ...state, message: 'pared' }
-      : { ...state, direction: (state.direction + 1) % 4 }),
+      ? { ...state, message: 'pared', turns: state.turns + 1 }
+      : action === 'rejected' ? { ...state, message: 'acción denegada' }
+        : action === 'cast' || action === 'volley' || action === 'turn-right'
+          ? { ...state, turns: state.turns + 1,
+              ...(action === 'turn-right' ? { direction: (state.direction + 1) % 4 } : {}) }
+          : state),
   chroniclesActiveEnemies: vi.fn(() => [{ id: 'sentinel' }]),
 }));
 vi.mock('../chroniclesOfMatthiasTurns.js', () => ({
@@ -28,7 +32,7 @@ vi.mock('../chroniclesOfMatthiasTurns.js', () => ({
   }),
 }));
 describe('one party tile, one enemy move', () => {
-  const state = { x: 1, y: 1, direction: 0, phase: 'explore', enemyPositions: { sentinel: { x: 4, y: 2 } } };
+  const state = { x: 1, y: 1, direction: 0, turns: 0, phase: 'explore', enemyPositions: { sentinel: { x: 4, y: 2 } } };
   it('moves enemies exactly once after a successful tile step', () => {
     const first = chroniclesGridExplorationStep(state, 'forward');
     expect(first.x).toBe(2);
@@ -54,16 +58,22 @@ describe('one party tile, one enemy move', () => {
     expect(arrived.enemyPositions).toEqual(before.enemyPositions);
     expect(arrived.explorationEnemySteps).toBeUndefined();
   });
-  it('does not activate an enemy for turning in place', () => {
-    const turned = chroniclesGridExplorationStep(state, 'turn-right');
-    expect(turned.enemyPositions).toEqual(state.enemyPositions);
-    expect(turned.explorationEnemySteps).toBeUndefined();
+  it('moves aware enemies once for turns, spells, or arrows without player displacement', () => {
+    for (const action of ['turn-right', 'cast', 'volley']) {
+      const progressed = chroniclesGridExplorationStep(state, action);
+      expect(progressed.enemyPositions.sentinel).toEqual({ x: 3, y: 2 });
+      expect(progressed.explorationEnemySteps).toBe(1);
+      expect(progressed.turns).toBe(1);
+    }
   });
-  it('never moves an enemy after a blocked step', () => {
+  it('advances when a blocked step costs a turn, but not when an action is refused', () => {
     const blocked = chroniclesGridExplorationStep(state, 'blocked');
-    expect(blocked.enemyPositions).toEqual(state.enemyPositions);
+    expect(blocked.enemyPositions.sentinel).toEqual({ x: 3, y: 2 });
     expect(blocked.message).toBe('pared');
-    expect(blocked.explorationEnemySteps).toBeUndefined();
+    expect(blocked.explorationEnemySteps).toBe(1);
+    const refused = chroniclesGridExplorationStep(state, 'rejected');
+    expect(refused.enemyPositions).toEqual(state.enemyPositions);
+    expect(refused.explorationEnemySteps).toBeUndefined();
   });
   it('does not grant exploration movement during initiative combat', () => {
     const combat = { ...state, phase: 'combat' };
@@ -76,6 +86,7 @@ describe('one party tile, one enemy move', () => {
     const moved = chroniclesGridExplorationStep(saved, 'forward');
     expect(moved.explorationEnemySteps).toBe(18);
     expect(moved.enemyAwareness.ancient).toEqual({ tick: 14 });
-    expect(chroniclesGridExplorationStep(moved, 'turn-right').explorationEnemySteps).toBe(18);
+    expect(chroniclesGridExplorationStep(moved, 'turn-right').explorationEnemySteps).toBe(19);
+    expect(chroniclesGridExplorationStep(moved, 'rejected').explorationEnemySteps).toBe(18);
   });
 });

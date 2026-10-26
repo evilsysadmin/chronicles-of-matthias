@@ -6,34 +6,25 @@ import {
   chroniclesRuntimeEnemyPosition,
 } from '../chroniclesOfMatthiasTurns.js';
 
-// Exploration-only adapter. Combats continue using their Agility + 1d8 initiative owner.
-// A reducer transition that does not change the party tile never grants enemy movement.
-export function chroniclesGridExplorationStep(state, action) {
-  const before = state;
-  const next = chroniclesReduce(before, action);
-  if (!before || !next || before.phase !== 'explore' || next.phase !== 'explore') return next;
-  // Crossing an authored gate changes areas, not an exploration tile inside the
-  // destination. Never grant enemies a free step on the arrival transition.
-  if (next.mapId !== before.mapId) return next;
-  if (next.x === before.x && next.y === before.y) return next;
-  // Only a real exploration tile advances patrol cadence and sighting age.
-  // The turn engine already understands this clock, but it was never fed by
-  // exploration, leaving patrol headings frozen and sightings unrecorded.
+// A spent exploration turn advances creature awareness and movement even
+// without player displacement (turning, shooting into an empty corridor,
+// casting). Refused actions and authored map transitions do not advance time.
+export function chroniclesAdvanceExplorationEnemies(before, after) {
+  if (!before || !after || before.phase !== 'explore' || after.phase !== 'explore'
+    || before.initiative || after.initiative || before.mapId !== after.mapId
+    || !(Number(after.turns) > Number(before.turns))) return after;
+
   const progressed = {
-    ...next,
-    explorationEnemySteps: Math.max(0, Math.floor(Number(next.explorationEnemySteps) || 0)) + 1,
+    ...after,
+    explorationEnemySteps: Math.max(0, Math.floor(Number(after.explorationEnemySteps) || 0)) + 1,
   };
-  // Engagement takes precedence over exploration movement: an enemy already
-  // in reach must enter initiative, not escape the encounter on this tick.
-  const activeEnemies = chroniclesActiveEnemies(progressed);
-  if (activeEnemies.some((enemy) => chroniclesEnemyCanAttackParty(progressed, enemy))) return progressed;
-  // Reuse the authored occupancy/AI predicates; this scheduler never calls attack or damage APIs.
+  const enemies = chroniclesActiveEnemies(progressed);
+  // No free exploration attack or movement when combat initiative should
+  // take over; keep the enemy in the cell where the player saw it.
+  if (enemies.some((enemy) => chroniclesEnemyCanAttackParty(progressed, enemy))) return progressed;
 
   let current = progressed;
-  for (const enemy of activeEnemies) {
-    // Record visible party positions before each enemy's next movement, so
-    // awareness-based pursuers can investigate the last real sighting rather
-    // than instantly forgetting a party that moved behind masonry.
+  for (const enemy of enemies) {
     current = chroniclesRememberEnemySight(current, enemy);
     const from = chroniclesRuntimeEnemyPosition(current, enemy);
     const to = chroniclesChooseEnemyStep(current, enemy);
@@ -47,4 +38,8 @@ export function chroniclesGridExplorationStep(state, action) {
     };
   }
   return current;
+}
+
+export function chroniclesGridExplorationStep(state, action) {
+  return chroniclesAdvanceExplorationEnemies(state, chroniclesReduce(state, action));
 }
