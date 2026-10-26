@@ -318,3 +318,24 @@
     color: #281a10;
   }
 }
+
+/* Compact the mobile comparison ledger without hiding any deltas or touching
+   the Equipar action. Preserve readable text and the desktop workbench. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview {
+    margin-top: 8px;
+    padding: 9px 10px;
+    gap: 3px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview > div {
+    grid-template-columns: minmax(0, 1fr) auto 36px;
+    gap: 6px;
+    padding: 3px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__swap-preview > small {
+    line-height: 1.3;
+  }
+}
