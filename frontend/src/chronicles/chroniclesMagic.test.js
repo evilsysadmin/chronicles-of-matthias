@@ -143,8 +143,9 @@ describe('Chronicles · MM3 magic', () => {
     const noWounds = chroniclesReduce(allStandingFull, {
       type: 'cast', memberId: 'bishop', spellId: 'first-aid',
     });
-    expect(noWounds.message).toMatch(/0 PV.*Elixir de retorno/);
-    expect(noWounds.turns).toBe(allStandingFull.turns);
+    expect(noWounds.message).toMatch(/ya está sano/i);
+    expect(noWounds.turns).toBe(allStandingFull.turns + 1);
+    expect(chroniclesMemberSp(noWounds, member(noWounds, 'bishop'))).toBe(4);
   });
 
   it('sells membership and spells at the guild, only to casters of the matching force', () => {
@@ -221,7 +222,8 @@ describe('MM3 full-health healing remains a real cast', () => {
 
   it('casts mass heal on an entirely healthy living company with no HP delta', () => {
     const base = town();
-    const state = { ...base, spellbook: { bishop: ['first-aid', 'mass-heal'] }, spellPoints: { bishop: 7 } };
+    const state = { ...base, rpgModifiers: { bishop: { level: 2 } },
+      spellbook: { bishop: ['first-aid', 'mass-heal'] }, spellPoints: { bishop: 7 } };
     const result = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'mass-heal' });
     expect(result.turns).toBe(state.turns + 1);
     expect(result.party).toEqual(state.party);
