@@ -1,5 +1,7 @@
 .chronicles-inn__backdrop {
-  position: fixed; inset: 0; z-index: 190; background: #130f0f;
+  /* Portalled to document.body: must clear the game's own z-index: 10000.
+     Match the merchant room's proven stacking layer. */
+  position: fixed; inset: 0; z-index: 10150; background: #130f0f;
   color: #f5e4c8; font-family: Georgia, serif;
 }
 .chronicles-inn {

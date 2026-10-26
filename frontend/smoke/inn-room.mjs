@@ -12,6 +12,24 @@ try {
       await page.goto(url, { waitUntil: 'networkidle' });
       const room = page.getByRole('dialog', { name: 'Taberna La Espada Mellada' });
       await room.waitFor({ state:'visible' });
+      // Browser visibility alone is insufficient: the real game root sits
+      // at z-index 10000 and used to cover this portalled inn at z-index 190.
+      const layers = await page.evaluate(() => {
+        const world = document.querySelector('[data-inn-world-shell]');
+        const inn = document.querySelector('[data-chronicles-inn-room]');
+        const close = inn?.querySelector('button[aria-label="Salir de la taberna"]');
+        if (!world || !inn || !close) return null;
+        const bounds = close.getBoundingClientRect();
+        const hit = document.elementFromPoint(bounds.left + bounds.width / 2,
+          bounds.top + bounds.height / 2);
+        return {
+          world: Number.parseInt(getComputedStyle(world).zIndex, 10),
+          inn: Number.parseInt(getComputedStyle(inn).zIndex, 10),
+          closeOnTop: close === hit || close.contains(hit),
+        };
+      });
+      assert.ok(layers && layers.inn > layers.world && layers.closeOnTop,
+        'Tavern must be painted and clickable ABOVE the first-person world: ' + JSON.stringify(layers));
       assert.equal(await page.locator('[data-chronicles-inn-room]').getAttribute('data-chronicles-inn-room'),
         'first-book-healer');
       const scene = room.locator('.chronicles-inn__scene');
