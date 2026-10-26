@@ -70,6 +70,8 @@ try {
   renderer.render(scene, camera);
 
   const wall = scene.getObjectByName('chronicles-campaign-visible-blockers');
+  const perimeter = scene.getObjectByName('chronicles-campaign-town-perimeter');
+  const battlements = scene.getObjectByName('chronicles-campaign-town-battlements');
   const road = scene.getObjectByName('chronicles-campaign-road');
   const town = scene.getObjectByName('chronicles-campaign-town');
   const plaster = town?.getObjectByName('chronicles-town-street-limewash-fronts');
@@ -93,7 +95,7 @@ try {
     child.name.startsWith('swordhaven-building-first-book-tavern-'));
   const watch = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-watch-'));
-  if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
+  if (!wall || !perimeter || !battlements || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
 
@@ -116,7 +118,11 @@ try {
     streetView: name,
     cameraCell: chosen.x + ',' + chosen.y,
     wallHeight: String(wall.geometry.parameters.height),
-    wallCount: String(wall.count),
+    // Original total still covers every authored solid non-house tile;
+    // the city enclosure now lives in its own reliably rendered batch.
+    wallCount: String(wall.count + perimeter.count),
+    perimeterCount: String(perimeter.count),
+    perimeterUnculled: String(!perimeter.frustumCulled && !battlements.frustumCulled),
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     windowDetail: String(windowFrames.count === windowPanes.count
