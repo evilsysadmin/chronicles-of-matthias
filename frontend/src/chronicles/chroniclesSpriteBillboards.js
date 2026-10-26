@@ -24,11 +24,14 @@ const SPRITES = Object.freeze(Object.fromEntries(
     })]),
 ));
 
-// Authoritative R2 object key: chronicles/sprites/ash-goblin.webp in the
-// "chronicles" bucket (key "sprites/ash-goblin.webp"). The Cloudflare dashboard
-// URL is not a public asset URL: a public HTTPS origin must be configured at build.
-// Keep the locally packed, 5-frame sprite as a safe fallback until the remote
-// 6-frame atlas has actually loaded and passed its dimension contract.
+// Reviewed, SHA-addressed R2 object: bucket chronicles,
+// key sprites/ash-goblin-96ed70aafe94827f.webp. The immutable WebP's bytes
+// and Cache-Control metadata were verified by Chess Studio's R2 operator
+// workflow. Keep the locally packed, 5-frame goblin until its six-frame
+// replacement actually loads and passes the dimension contract.
+export const CHRONICLES_ASH_GOBLIN_R2_URL =
+  'https://assets.chronicles.shadowops.dpdns.org/sprites/ash-goblin-96ed70aafe94827f.webp';
+
 export const CHRONICLES_ASH_GOBLIN_R2_FRAMES = Object.freeze([
   'idle-a', 'idle-b', 'menace', 'attack', 'hurt', 'dead',
 ]);
@@ -38,7 +41,8 @@ export function chroniclesGoblinR2Url(candidate) {
   try {
     const parsed = new URL(candidate.trim());
     if (parsed.protocol !== 'https:' || parsed.hostname === 'dash.cloudflare.com'
-        || !parsed.pathname.endsWith('/sprites/ash-goblin.webp')) return null;
+        || !/^\/sprites\/ash-goblin-[0-9a-f]{16}\.webp$/.test(parsed.pathname)
+        || parsed.search || parsed.hash || parsed.username || parsed.password) return null;
     return parsed.href;
   } catch {
     return null;
@@ -179,7 +183,7 @@ export function buildChroniclesSpriteBillboard(visualType, { tint = 0xffffff } =
   };
 
   const goblinUrl = visualType === 'ash-goblin'
-    ? chroniclesGoblinR2Url(import.meta.env.VITE_CHRONICLES_ASH_GOBLIN_URL)
+    ? chroniclesGoblinR2Url(import.meta.env.VITE_CHRONICLES_ASH_GOBLIN_URL || CHRONICLES_ASH_GOBLIN_R2_URL)
     : null;
   if (goblinUrl && typeof document !== 'undefined') {
     // Retain the complete local five-frame billboard until the six-frame R2
