@@ -594,6 +594,31 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'temple-spire', [0, height + 5.5, -depth * 0.11], !coarse);
     mesh(root, new THREE.TorusGeometry(0.49, 0.10, 8, 20), mats.gold,
       'temple-rose-window', [0, height - 0.56, facadeZ + 0.14]);
+    // The temple has a stone colonnaded entrance, not a merchant doorway.
+    // Keep columns outside the nameplate and door; the raised pediment stays
+    // between the nameplate and heraldic sign. Entirely decorative geometry.
+    const portico = new THREE.Group();
+    portico.name = 'temple-limestone-portico';
+    portico.userData.chroniclesDecorativeOnly = true;
+    portico.position.z = facadeZ + 0.60;
+    for (const side of [-1, 1]) {
+      mesh(portico, new THREE.CylinderGeometry(0.27, 0.31, 3.15, coarse ? 10 : 16),
+        mats.stone, 'temple-portico-column', [side * 1.99, 2.19, 0.03], !coarse);
+      mesh(portico, new THREE.BoxGeometry(0.74, 0.26, 0.68), mats.stone,
+        'temple-portico-plinth', [side * 1.99, 0.65, 0.03]);
+      mesh(portico, new THREE.BoxGeometry(0.74, 0.23, 0.68), mats.stone,
+        'temple-portico-capital', [side * 1.99, 3.83, 0.03]);
+    }
+    mesh(portico, new THREE.BoxGeometry(4.70, 0.20, 0.53), mats.stone,
+      'temple-portico-entablature', [0, 4.28, 0.03]);
+    const pediment = new THREE.Shape();
+    pediment.moveTo(-2.25, 4.42);
+    pediment.lineTo(2.25, 4.42);
+    pediment.lineTo(0, 5.07);
+    pediment.closePath();
+    mesh(portico, new THREE.ShapeGeometry(pediment), mats.stone,
+      'temple-portico-triangular-pediment', [0, 0, 0.34]);
+    root.add(portico);
   } else if (isTownHall) {
     // The mayor's red roof has a modest stone cupola rather than another
     // temple spire. All decorative meshes remain over the solid house cells.
