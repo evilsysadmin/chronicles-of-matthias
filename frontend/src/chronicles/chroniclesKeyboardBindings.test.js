@@ -28,6 +28,10 @@ describe('Chronicles MM3 · keyboard movement and attack contract', () => {
       expect(chroniclesCombatKeyMode(key), key).toBe('missile');
       expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('missile');
     }
+    for (const key of ['b', 'B']) {
+      expect(chroniclesCombatKeyMode(key, { inCombat: false }), key).toBeNull();
+      expect(chroniclesCombatKeyMode(key, { inCombat: true }), key).toBe('block');
+    }
     for (const key of [' ', 'Space', 'Spacebar', 'w', 'W', 'd', 'D', 'q', 'Q', 'e', 'E',
       ...Object.keys(CHRONICLES_DIRECTION_KEYS)]) {
       expect(chroniclesCombatKeyMode(key), key).toBeNull();
