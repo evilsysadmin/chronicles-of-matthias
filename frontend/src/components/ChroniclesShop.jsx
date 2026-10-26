@@ -69,7 +69,7 @@ function ShopConsumablePeek({ item }) {
     : item.kind === 'mana' ? `Recupera hasta ${item.amount} PH`
       : item.kind === 'revive' ? 'Reanima a un compañero caído'
         : item.kind === 'scroll' && item.spell
-          ? `${item.spell.damage} de daño · alcance ${item.spell.reach}`
+          ? `${item.spell.damage} de daño · objetivo visible`
           : item.description;
   return (
     <aside className="chronicles-shop__gear-peek chronicles-shop__consumable-peek"

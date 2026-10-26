@@ -146,7 +146,11 @@ export default function ChroniclesCharacterSheet({
   const xp = xpProgress(progress, xpWindow);
   const ability = resourceStatus(state, member.id);
   const attributes = chroniclesAllowedAttributes(member.id);
-  const skills = chroniclesSkillsForMember(member.id);
+  // Old Tactics doctrine choices that only increase attack-square reach
+  // have no effect in first-person MM3. Do not sell the player a dead perk.
+  // Leave the definitions/learned IDs intact for Tactics and old saves.
+  const skills = chroniclesSkillsForMember(member.id)
+    .filter((skill) => state.combatRules !== 'mm3' || !Number(skill.modifiers?.reachBonus));
   const modifiers = state.rpgModifiers?.[member.id] || {};
   const firstPersonStats = chroniclesPartyAttackStats(state, member.id);
   const equippedWeapon = chroniclesEquippedItem(state, member.id, 'weapon');
@@ -374,7 +378,6 @@ export default function ChroniclesCharacterSheet({
                         <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
                         <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
                         {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </div>
@@ -490,7 +493,7 @@ export default function ChroniclesCharacterSheet({
           {mm3 && <div><span>ACIERTO</span><b>{signed(firstPersonStats.toHit)}</b></div>}
           {mm3 && <div><span>ARMADURA</span><b>{chroniclesPartyArmorClass(state, member.id)}</b></div>}
           {!tacticsMode && !mm3 && <div><span>REDUCCIÓN</span><b>{gearBonus.damageReduction}</b></div>}
-          <div><span>ALCANCE</span><b>{reach}</b></div>
+          {!mm3 && <div><span>ALCANCE</span><b>{reach}</b></div>}
         </div>
 
         {mm3 && (
@@ -616,8 +619,8 @@ export default function ChroniclesCharacterSheet({
                     <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
                       <b>{label}</b>
                       <strong>{worn?.name || 'Sin equipar'}</strong>
-                      <small>{stats.reach > 0
-                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                      <small>{slot === 'weapon' || worn
+                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)}`
                         : 'Sin arma de proyectiles · no puede disparar'}</small>
                       {slot === 'missile' && worn && chroniclesShopHandlingNote(worn, state?.combatRules) && (
                         <small className="chronicles-character-sheet__handling-note" data-chronicles-worn-handling>
@@ -668,6 +671,9 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__attribute-grid">
             {attributes.map((attributeKey) => {
               const definition = CHRONICLES_ATTRIBUTE_DEFINITIONS[attributeKey];
+              const effect = mm3 && attributeKey === 'precision'
+                ? '+1 daño a distancia/magia cada 3 puntos'
+                : definition.effect;
               const value = Number(progress.attributes?.[attributeKey] || 0);
               const canSpend = typeof onAllocateAttribute === 'function'
                 && progress.attributePoints > 0
@@ -677,10 +683,10 @@ export default function ChroniclesCharacterSheet({
                   type="button"
                   key={attributeKey}
                   disabled={!canSpend}
-                  title={definition.effect}
+                  title={effect}
                   onClick={() => onAllocateAttribute?.(member.id, attributeKey)}
                 >
-                  <span><b>{definition.label}</b><small>{definition.effect}</small></span>
+                  <span><b>{definition.label}</b><small>{effect}</small></span>
                   <strong>{value}/{CHRONICLES_ATTRIBUTE_CAP}</strong>
                   <i aria-hidden="true">{canSpend ? '+' : '·'}</i>
                 </button>
@@ -734,7 +740,7 @@ export default function ChroniclesCharacterSheet({
         </div>
 
         <footer className="chronicles-character-sheet__foot">
-          <span>{member.attackName || profile.attackName} · daño {damage} · alcance {reach}</span>
+          <span>{member.attackName || profile.attackName} · daño {damage}{mm3 ? '' : ` · alcance ${reach}`}</span>
           <span>Esc · cerrar</span>
         </footer>
         </div>{/* folio-content */}

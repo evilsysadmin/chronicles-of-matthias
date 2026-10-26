@@ -19,7 +19,7 @@ describe('Chronicles worn gear', () => {
     const bow = firstOf((item) => item.slot === 'missile' && item.twoHanded && item.reach > 1 && item.allowedMembers?.includes('knight'));
     const gear = chroniclesWornGear({ ...base, equipment: { knight: { missile: bow.id } } }, knight.id);
     expect(gear[1]).toMatchObject({ name: bow.name, glyph: '➶', empty: false });
-    expect(gear[1].effects).toContain(`Alcance ${bow.reach}`);
+    expect(gear[1].effects.some((effect) => /alcance/i.test(effect))).toBe(false);
     expect(gear[1].effects).not.toContain('A dos manos');
     expect(gear[3]).toMatchObject({ name: 'Sin equipar', empty: true });
   });

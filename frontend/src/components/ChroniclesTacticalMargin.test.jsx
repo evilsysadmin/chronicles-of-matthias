@@ -5,9 +5,9 @@ import { chroniclesRetaliationLabel, chroniclesTargetReachLabel } from './Chroni
 describe('ChroniclesTacticalMargin', () => {
   it('explains a visible bandit too far away to hit with A, without inventing a hit', () => {
     expect(chroniclesTargetReachLabel({ distance: 2 }, { meleeReach: 1, missileReach: 0 }))
-      .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
+      .toBe('ACÉRCATE PARA GOLPEAR');
     expect(chroniclesTargetReachLabel({ distance: 2 }, { meleeReach: 1, missileReach: 4 }))
-      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+      .toBe('A: ACÉRCATE PARA GOLPEAR · S: A TIRO');
     expect(chroniclesTargetReachLabel({ distance: 1 }, { meleeReach: 1, missileReach: 0 })).toBeNull();
   });
 

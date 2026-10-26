@@ -22,8 +22,8 @@ export function chroniclesRetaliationLabel(target, { combat = false } = {}) {
 // the hero is carrying no ranged weapon.
 export function chroniclesTargetReachLabel(target, { meleeReach = 1, missileReach = 0 } = {}) {
   if (!target || target.distance <= meleeReach) return null;
-  if (missileReach >= target.distance) return 'A: FUERA DE ALCANCE · S: A TIRO';
-  return 'FUERA DE ALCANCE · ACÉRCATE PARA ATACAR';
+  if (missileReach >= target.distance) return 'A: ACÉRCATE PARA GOLPEAR · S: A TIRO';
+  return 'ACÉRCATE PARA GOLPEAR';
 }
 
 export default function ChroniclesTacticalMargin({ target, combat = false, meleeReach = 1, missileReach = 0 }) {

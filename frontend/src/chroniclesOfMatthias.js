@@ -429,14 +429,11 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
   if (shooting && chroniclesUsesMM3Combat(state) && !weapon) return { damage: 0, reach: 0, toHit: 0 };
   return {
     damage: Math.max(0, Number(member.damage || 0) + persistentDamageBonus + equipment.attackDamageBonus),
-    // MM3 missiles follow straight line of sight through the finite map,
-    // unlike spells/melee and non-MM3 Tactics. The item catalog's legacy
-    // numeric missile reaches do not cap the shot.
-    reach: shooting && chroniclesUsesMM3Combat(state)
-      ? chroniclesMM3MissileSightReach(state)
-      : Math.max(1, Number(
-        chroniclesUsesMM3Combat(state) ? (weapon?.reach || 1) : (member.reach || 1),
-      ) + persistentReachBonus),
+    // MM3 has no weapon-range stat: melee requires adjacency, and
+    // missiles use unobstructed sight. Preserve Tactics reach separately.
+    reach: chroniclesUsesMM3Combat(state)
+      ? (shooting ? chroniclesMM3MissileSightReach(state) : 1)
+      : Math.max(1, Number(member.reach || 1) + persistentReachBonus),
     // MM to-hit: level + Accuracy bonus + weapon (material) to-hit.
     toHit: Math.max(1, Number(modifiers.level || 1))
       + Number(member.mm3?.bonuses?.accuracy || 0)
@@ -661,7 +658,9 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
       : member;
 
   const weaponStats = chroniclesPartyAttackStats(state, attacker.id, mm3 ? mode : 'auto');
-  const attackStats = spell ? { ...weaponStats, reach: spell.reach } : weaponStats;
+  const attackStats = spell ? {
+    ...weaponStats, reach: mm3 ? chroniclesMM3MissileSightReach(state) : spell.reach,
+  } : weaponStats;
   const target = mode === 'missile' && mm3 && !spell
     ? chroniclesCombatMissileTarget(state, attackStats.reach)
     : chroniclesEnemyTargetAhead(state, attackStats.reach);
@@ -782,8 +781,10 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   const consume = (next) => chroniclesApplyContentEffects(next, [{ type: 'consume-item', itemId, quantity: 1 }]);
   if (item.kind === 'scroll') {
     const { spell } = item;
-    const ahead = chroniclesEnemyTargetAhead(state, spell.reach);
-    if (!ahead) return refuse(`${user.name} desenrolla ${item.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
+    const ahead = chroniclesEnemyTargetAhead(
+      state, chroniclesUsesMM3Combat(state) ? chroniclesMM3MissileSightReach(state) : spell.reach,
+    );
+    if (!ahead) return refuse(`${user.name} desenrolla ${item.name}, pero no hay ningún enemigo en su línea de visión.`);
     const next = resolveAttack(state, memberId, spell);
     if (next === state) return state;
     return { ...consume(next), message: `${next.message} (${item.name}, ${CHRONICLES_ELEMENT_LABELS[spell.element]})` };
@@ -846,10 +847,11 @@ function resolveCast(state, memberId, spellId, targetId = null) {
     return refuse(`${caster.name} no tiene puntos de hechizo para ${spell.name} (${spell.cost} PH). Descansa en una posada.`);
   }
   if (spell.kind === 'attack') {
-    if (!chroniclesEnemyTargetAhead(state, spell.reach)) {
-      return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
-    }
-    const splash = spell.area ? splashTargets(state, chroniclesEnemyTargetAhead(state, spell.reach).enemy, spell.area) : [];
+    const target = chroniclesEnemyTargetAhead(
+      state, chroniclesUsesMM3Combat(state) ? chroniclesMM3MissileSightReach(state) : spell.reach,
+    );
+    if (!target) return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo en su línea de visión.`);
+    const splash = spell.area ? splashTargets(state, target.enemy, spell.area) : [];
     let next = resolveAttack(state, memberId, spell);
     if (next === state) return state;
     if (splash.length) next = applySplash(next, caster, spell, splash);
@@ -872,8 +874,10 @@ function resolveCast(state, memberId, spellId, targetId = null) {
     };
   }
   if (spell.kind === 'paralyze') {
-    const target = chroniclesEnemyTargetAhead(state, spell.reach);
-    if (!target) return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo a ${spell.reach} casillas.`);
+    const target = chroniclesEnemyTargetAhead(
+      state, chroniclesUsesMM3Combat(state) ? chroniclesMM3MissileSightReach(state) : spell.reach,
+    );
+    if (!target) return refuse(`${caster.name} prepara ${spell.name}, pero no hay ningún enemigo en su línea de visión.`);
     const { enemy } = target;
     const turns = chroniclesParalysisTurns(spell, enemy);
     const name = `${enemy.name[0].toUpperCase()}${enemy.name.slice(1)}`;

@@ -755,7 +755,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         ? current.party.find((member) => member.id === action.memberId)
         : null;
       const forcedTarget = attackingMember
-        ? chroniclesEnemyTargetAhead(current, offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id, action.mode || 'auto').reach)
+        ? chroniclesEnemyTargetAhead(current, offensiveSpell && current.combatRules === 'mm3'
+          ? chroniclesMM3MissileSightReach(current)
+          : offensiveSpell?.reach ?? chroniclesPartyAttackStats(current, attackingMember.id, action.mode || 'auto').reach)
         : null;
       // Entering an area is not a tactical movement inside it. The player
       // gets to see the new room/return portal before enemies can engage.

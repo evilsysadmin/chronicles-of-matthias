@@ -171,7 +171,7 @@ function weaponItem(baseId, materialId) {
     weaponFamily: base.family, twoHanded: Boolean(base.twoHanded),
     reach: Number(base.reach || 1),
     allowedMembers: base.allowed,
-    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''}${base.reach > 1 ? ` · alcance ${base.reach}` : ''} · acierto ${signed(toHit)}, daño ${signed(damage)}.`,
+    description: `${base.name}${slot === 'missile' ? ' · proyectil' : base.twoHanded ? ' a dos manos' : ''} · acierto ${signed(toHit)}, daño ${signed(damage)}.`,
   });
 }
 

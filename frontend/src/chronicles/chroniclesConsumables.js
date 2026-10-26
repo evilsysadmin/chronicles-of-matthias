@@ -33,12 +33,12 @@ export const CHRONICLES_CONSUMABLES = Object.freeze({
   'fire-scroll': consumable({
     id: 'fire-scroll', name: 'Pergamino de llamas', price: 25, kind: 'scroll',
     spell: Object.freeze({ id: 'fire-scroll', name: 'Pergamino de llamas', damage: 14, reach: 3, element: 'fire', cost: 0 }),
-    description: 'Lanza una llamarada a tres casillas: 14 de fuego. No falla. Un solo uso.',
+    description: 'Lanza una llamarada contra un enemigo visible: 14 de fuego. No falla. Un solo uso.',
   }),
   'lightning-scroll': consumable({
     id: 'lightning-scroll', name: 'Pergamino de tormenta', price: 40, kind: 'scroll',
     spell: Object.freeze({ id: 'lightning-scroll', name: 'Pergamino de tormenta', damage: 20, reach: 4, element: 'electricity', cost: 0 }),
-    description: 'Un rayo a cuatro casillas: 20 de electricidad. No falla. Un solo uso.',
+    description: 'Un rayo contra un enemigo visible: 20 de electricidad. No falla. Un solo uso.',
   }),
 });
 

@@ -32,7 +32,8 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(compact).toContain('grid-column: 1 / -1');
     expect(compact).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain("worn?.name || 'Sin equipar'");
-    expect(sheet).toContain('Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}');
+    expect(sheet).toContain('Daño ${stats.damage} · Acierto ${signed(stats.toHit)}');
+    expect(sheet).not.toContain('· Alcance ${stats.reach}');
     expect(sheet).toContain("'Sin arma de proyectiles · no puede disparar'");
   });
 
