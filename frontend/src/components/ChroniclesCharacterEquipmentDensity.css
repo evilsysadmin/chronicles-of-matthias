@@ -357,6 +357,23 @@
     order: 1;
     width: 100%;
     min-height: 44px;
+    font-weight: 700;
+  }
+  /* Read-only preview fixtures and unavailable actions must remain legible.
+     Disabled means non-interactive, not near-invisible text on grey. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button:not(:disabled) {
+    border: 1px solid #cda56b;
+    background: #cda56b;
+    color: #24190f;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button:disabled {
+    opacity: 1;
+    border: 1px solid #6c5942;
+    background: #3a3229;
+    color: #bfb09a;
+    cursor: not-allowed;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__swap-preview,
