@@ -304,7 +304,7 @@ export default function ChroniclesCharacterSheet({
                         }}
                       >
                         {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
-                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⛨', other: '◆' }[chroniclesBackpackCategory(item)]}
+                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⬟', other: '◆' }[chroniclesBackpackCategory(item)]}
                         </i>}
                         <span>{item.name}</span>
                         {item.quantity > 1 && <small>×{item.quantity}</small>}

@@ -270,3 +270,51 @@
     line-height: 1.3;
   }
 }
+
+
+/* Mobile inventory glyphs are currently unframed inline symbols, making the
+   weapon/shield categories hard to scan. Give every category a stable visual
+   column without enlarging the existing 44px touch row or changing its text. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 9px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory-glyph {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 26px;
+    height: 26px;
+    border: 1px solid #97754b;
+    background: #49311f;
+    color: #f8d9a0;
+    font: normal 1.05rem/1 system-ui, sans-serif;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > small {
+    justify-self: end;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected
+  .chronicles-character-sheet__inventory-glyph {
+    background: #d2a46b;
+    border-color: #e9c894;
+    color: #281a10;
+  }
+}
