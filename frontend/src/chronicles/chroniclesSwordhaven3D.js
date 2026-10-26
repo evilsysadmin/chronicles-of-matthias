@@ -382,8 +382,14 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     roughness: 0.95,
   });
   const roofRidgeY = height + 1.8;
-  // Stone walls distinguish the armorer from half-timbered merchants.
-  const wallMaterial = isTemple || isArmor ? mats.stone : mats.plaster;
+  // The guild's slate-violet masonry is a real architectural finish, not a
+  // recoloured sign. Reuse the town's cached stone maps on both wall and gable.
+  const guildStone = isMagic ? material(0x9d8aa9, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.94,
+  }) : null;
+  const wallMaterial = guildStone || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
@@ -451,8 +457,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mats.timber, 'roof-edge-fascia', [side * width * 0.49, height + 0.02, 0]);
     fascia.rotation.z = side * 0.16;
   }
-  // The armorer uses a clean masonry frontage; all doors and signs stay put.
-  if (!isArmor) {
+  // Armorer and mage guild use uninterrupted masonry, unlike timber merchants.
+  // Doors, shop signs, windows and their collision cells remain untouched.
+  if (!isArmor && !isMagic) {
     // Repeated timber posts and braces form recognisable half-timbered facades.
     const beamY = [1.02, height - 0.67];
     for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
