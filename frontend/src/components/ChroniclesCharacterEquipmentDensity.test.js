@@ -65,4 +65,20 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain('chronicles-character-sheet__swap-preview');
   });
 
+
+  it('keeps the primary mobile Equipar decision ahead of lengthy comparisons without hiding deltas', () => {
+    const mobile = css.split('/* On narrow touch phones, place the primary Equipar decision')[1];
+    expect(mobile).toBeTruthy();
+    expect(mobile).toContain('@media (max-width: 520px) and (pointer: coarse)');
+    expect(mobile).toContain('flex-direction: column');
+    expect(mobile).toMatch(/__item-details > button\\s*\\{[^}]*order:\\s*1;/);
+    expect(mobile).toMatch(/__item-details > \\.chronicles-character-sheet__swap-preview,[\\s\\S]*order:\\s*2;/);
+    expect(mobile).toMatch(/__item-details > \\.chronicles-character-sheet__item-more\\s*\\{[^}]*order:\\s*3;/);
+    expect(mobile).toContain('min-height: 44px');
+    expect(mobile).not.toMatch(/display:\\s*none|visibility:\\s*hidden/);
+    expect(sheet).toContain("onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })");
+    expect(sheet).toContain('disabled={!canChangeEquipment || !canEquipSelected}');
+    expect(sheet).toContain('Si equipas este objeto');
+  });
+
 });
