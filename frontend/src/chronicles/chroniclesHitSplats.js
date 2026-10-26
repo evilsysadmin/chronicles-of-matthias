@@ -27,8 +27,8 @@ export function chroniclesHitImpacts(previous, next) {
   return impacts;
 }
 
-// 0.55 of the slot for a scratch, the whole slot (and a bit) for a blow that
-// takes half or more of the victim's life.
+// Keep the MM3 damage feedback readable without letting the blood drop
+// dominate either portraits or the enemy in view (~15% smaller than before).
 export function chroniclesSplatScale(impact) {
-  return 0.55 + 0.6 * Math.min(1, (Number(impact?.share) || 0) * 2);
+  return 0.85 * (0.55 + 0.6 * Math.min(1, (Number(impact?.share) || 0) * 2));
 }

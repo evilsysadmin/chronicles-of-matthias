@@ -31,5 +31,8 @@ describe('Chronicles hit splats', () => {
   it('grows with the share of life a blow takes', () => {
     expect(chroniclesSplatScale({ share: 0.05 })).toBeLessThan(chroniclesSplatScale({ share: 0.3 }));
     expect(chroniclesSplatScale({ share: 0.5 })).toBe(chroniclesSplatScale({ share: 1 }));
+    // ~15% reduction on both portrait and enemy: numeric damage remains legible.
+    expect(chroniclesSplatScale({ share: 0 })).toBeCloseTo(0.55 * 0.85);
+    expect(chroniclesSplatScale({ share: 0.5 })).toBeCloseTo(1.15 * 0.85);
   });
 });
