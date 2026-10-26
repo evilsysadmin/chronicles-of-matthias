@@ -5,6 +5,7 @@ import './ChroniclesCharacterSheetArchive.css';
 import './ChroniclesCharacterEquipmentMM3.css';
 import './ChroniclesCharacterDeskCompact.css';
 import './ChroniclesCharacterEquipmentDensity.css';
+import './ChroniclesCharacterRetroMM3.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
