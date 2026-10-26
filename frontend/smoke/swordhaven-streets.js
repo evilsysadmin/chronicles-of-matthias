@@ -156,6 +156,9 @@ try {
       apothecary?.getObjectByName('apothecary-roof-herbarium')
       && apothecary?.getObjectByName('apothecary-hanging-herbs')
       && !apothecary?.getObjectByName('magic-shop-turret')
+      && guild?.getObjectByName('magic-guild-pointed-entry')
+      && guild?.getObjectByName('magic-guild-gable-oculus')
+      && !apothecary?.getObjectByName('magic-guild-pointed-entry')
       && guild?.getObjectByName('magic-shop-turret')
       && !guild?.getObjectByName('apothecary-roof-herbarium')
     )),
