@@ -375,6 +375,37 @@ describe('Chronicles run checkpoint recovery', () => {
     expect(defeated.turnPhase).toBe('party');
   });
 
+  it('ignores structural keys in legacy world flags without discarding authored progress', () => {
+    const base = createChroniclesState('gallery-of-forks');
+    const restored = chroniclesApplyRunCheckpoint(base, {
+      worldFlags: {
+        galleryLeverPulled: true,
+        cryptSigilAwake: true,
+        mapId: 'retired-map',
+        phase: 'escaped',
+        turnPhase: 'enemy',
+        x: 999,
+        party: 'corrupt-party',
+        initiative: 'corrupt-initiative',
+        combatRules: 'tactics',
+        enemyPositions: 'corrupt-positions',
+        mapFlagsById: 'corrupt-floor-state',
+      },
+    });
+
+    expect(restored.mapId).toBe(base.mapId);
+    expect(restored.phase).toBe(base.phase);
+    expect(restored.turnPhase).toBe(base.turnPhase);
+    expect(restored.x).toBe(base.x);
+    expect(restored.party).toEqual(base.party);
+    expect(restored.initiative).toEqual(base.initiative);
+    expect(restored.combatRules).toBe(base.combatRules);
+    expect(restored.enemyPositions).toEqual(base.enemyPositions);
+    expect(restored.mapFlagsById).toEqual(base.mapFlagsById);
+    expect(restored.galleryLeverPulled).toBe(true);
+    expect(restored.cryptSigilAwake).toBe(true);
+  });
+
   it('keeps old checkpoints compatible when no runtime namespace is present', () => {
     const base = createChroniclesState('gallery-of-forks');
     const recovered = chroniclesApplyRunCheckpoint(
