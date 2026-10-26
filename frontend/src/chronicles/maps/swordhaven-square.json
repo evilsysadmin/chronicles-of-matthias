@@ -137,15 +137,35 @@
     },
     {
       "id": "swordhaven-temple",
-      "kind": "lore",
+      "kind": "service",
       "x": 9,
       "y": 5,
       "label": "Visitar Templo",
       "action": {
-        "effects": [],
-        "message": "Las campanas del templo suenan sobre los tejados de Swordhaven."
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 10
+          },
+          {
+            "type": "revive-party"
+          },
+          {
+            "type": "heal-party",
+            "amount": 20
+          }
+        ],
+        "message": "Ilse reza ante el altar del templo. Las heridas se cierran y los caídos vuelven a respirar."
       },
-      "visualType": "building-temple"
+      "visualType": "building-temple",
+      "requirements": [
+        {
+          "itemId": "crown-gold",
+          "quantity": 10,
+          "message": "La ofrenda del altar es de diez monedas."
+        }
+      ]
     }
   ],
   "treasures": [],
