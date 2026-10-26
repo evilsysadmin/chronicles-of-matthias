@@ -213,7 +213,9 @@ function chooseKnightStep(state, enemy, from) {
   // The chess knight of the scavenger crypt is a rules piece: it only jumps.
   if (enemy.visualType === 'scavenger-knight') return best;
   if (!best || nearestPartyDistance(state, best) >= nearestPartyDistance(state, from)) {
-    return chooseCardinalStep(state, enemy, from) || best;
+    // If the cardinal route is blocked too, wait instead of jumping away
+    // from the party and oscillating between two unreachable landing tiles.
+    return chooseCardinalStep(state, enemy, from);
   }
   return best;
 }

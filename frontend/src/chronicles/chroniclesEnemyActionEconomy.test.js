@@ -184,3 +184,43 @@ describe('Chronicles MM3 pursuit around occupied chokepoints', () => {
     expect(chroniclesChooseEnemyStep(cleared, hunter)).toEqual({ x: 1, y: 2 });
   });
 });
+
+describe('Chronicles organic knight pursuit at a blocked chokepoint', () => {
+  it('waits when only backward jumps remain and resumes after the blockers clear', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const active = chroniclesActiveEnemies(base);
+    const spider = active.find((enemy) => enemy.id === 'sewers-spider');
+    const doorway = active.find((enemy) => enemy.id === GOBLIN);
+    const flank = active.find((enemy) => enemy.id === 'sewers-goblin-mid');
+    const landing = active.find((enemy) => enemy.id === 'sewers-hound');
+    const inactive = Object.fromEntries(active
+      .filter((enemy) => ![spider.id, doorway.id, flank.id, landing.id].includes(enemy.id))
+      .map((enemy) => [enemy.hpKey, 0]));
+    const blocked = {
+      ...base,
+      ...inactive,
+      x: 1, y: 1, phase: 'combat', turnPhase: 'enemy',
+      party: base.party.map((hero) => hero.id === 'matthias' ? hero : { ...hero, hp: 0 }),
+      partyPositions: { matthias: { x: 1, y: 1 } },
+      enemyPositions: {
+        [spider.id]: { x: 1, y: 3 },
+        [doorway.id]: { x: 1, y: 2 },
+        [flank.id]: { x: 2, y: 1 },
+        [landing.id]: { x: 3, y: 2 },
+      },
+      initiative: { round: 1, cursor: 0, order: [{ kind: 'enemy', id: spider.id }] },
+    };
+
+    // The only free knight landing (2,5) is farther away; all cardinal
+    // routes to the party and the closer knight landing are occupied.
+    expect(chroniclesChooseEnemyStep(blocked, spider)).toBeNull();
+    const waited = chroniclesResolveEnemyActor(blocked, spider.id);
+    expect(waited.enemyTurnEvents).toEqual([]);
+    expect(chroniclesRuntimeEnemyPosition(waited, spider)).toEqual({ x: 1, y: 3 });
+    expect(waited.party.map((hero) => hero.hp)).toEqual(blocked.party.map((hero) => hero.hp));
+
+    // Once the doorway clears, the organic spider may crawl through it.
+    const cleared = { ...blocked, [doorway.hpKey]: 0 };
+    expect(chroniclesChooseEnemyStep(cleared, spider)).toEqual({ x: 1, y: 2 });
+  });
+});
