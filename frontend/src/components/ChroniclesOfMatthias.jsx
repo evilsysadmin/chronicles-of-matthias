@@ -34,6 +34,7 @@ import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegi
 import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
 import './ChroniclesQuietActionNotice.css';
+import { chroniclesLootNotice } from '../chronicles/chroniclesLootNotice.js';
 import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
@@ -302,6 +303,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, []);
   useEffect(() => () => {
     if (missileNoticeTimerRef.current) window.clearTimeout(missileNoticeTimerRef.current);
+  }, []);
+  const [lootNotice, setLootNotice] = useState(null);
+  const lootTimerRef = useRef(null);
+  const showLootNotice = useCallback((notice) => {
+    if (!notice) return;
+    if (lootTimerRef.current) window.clearTimeout(lootTimerRef.current);
+    setLootNotice(notice);
+    lootTimerRef.current = window.setTimeout(() => {
+      lootTimerRef.current = null;
+      setLootNotice(null);
+    }, 2400);
+  }, []);
+  useEffect(() => () => {
+    if (lootTimerRef.current) window.clearTimeout(lootTimerRef.current);
   }, []);
   const [hitSplats, setHitSplats] = useState([]);
   const hitSplatSequenceRef = useRef(0);
@@ -773,6 +788,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     stateRef.current = next;
     setState(next);
+    showLootNotice(chroniclesLootNotice(current, next, action));
 
     const bark = chroniclesPartyBark(current, next);
     if (bark) {
@@ -799,7 +815,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }, 1800);
     }
     return next;
-  }, [showHitSplats]);
+  }, [showHitSplats, showLootNotice]);
 
   const cancelAreaTravel = useCallback(() => {
     areaTransitionRef.current = null;
@@ -1975,6 +1991,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-missile-refusal>{missileNotice}</div>}
+            {lootNotice && <div key={lootNotice.text} className="chronicles-quiet-action-notice chronicles-loot-notice" role="status" aria-live="polite" data-chronicles-loot-receipt>{lootNotice.text}</div>}
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
             {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}
