@@ -490,6 +490,43 @@ describe('Chronicles run checkpoint recovery', () => {
     expect(restore(2).initiative.cursor).toBe(1);
   });
 
+  it('removes duplicate initiative actors without skipping the saved active turn', () => {
+    const base = createChroniclesState('gallery-of-forks');
+    const enemy = chroniclesMapById(base.mapId).enemies[0];
+    const hero = { id: 'matthias', kind: 'party', name: 'Matthias', agility: 4, roll: 3, initiative: 7 };
+    const foe = { id: enemy.id, kind: 'enemy', name: enemy.name, agility: 2, roll: 5, initiative: 7 };
+    const restore = (order, cursor) => chroniclesApplyRunCheckpoint(base, {
+      worldFlags: {
+        '__chrRuntime.version': 1,
+        '__chrRuntime.phase': 'combat',
+        '__chrRuntime.turnPhase': 'party',
+        '__chrRuntime.initiative': JSON.stringify({
+          version: 1, die: '1d8', round: 2, cursor, order,
+        }),
+      },
+    });
+
+    // A repeated enemy before the cursor cannot earn an extra action.
+    const repeatedFoe = restore([foe, { ...foe }, hero], 2).initiative;
+    expect(repeatedFoe.order.map((actor) => actor.id)).toEqual([enemy.id, 'matthias']);
+    expect(repeatedFoe.order[repeatedFoe.cursor].id).toBe('matthias');
+
+    // When the active hero is the second copy, keep that occurrence and turn.
+    const repeatedHero = restore([hero, foe, { ...hero }], 2).initiative;
+    expect(repeatedHero.order.map((actor) => actor.id)).toEqual([enemy.id, 'matthias']);
+    expect(repeatedHero.order[repeatedHero.cursor].id).toBe('matthias');
+
+    // New checkpoints also normalize duplicates before they reach the API.
+    const saved = chroniclesRunCheckpointPayload({
+      ...base,
+      phase: 'combat',
+      initiative: { version: 1, die: '1d8', round: 2, cursor: 2, order: [hero, foe, { ...hero }] },
+    }, 1);
+    const persisted = JSON.parse(saved.worldFlags['__chrRuntime.initiative']);
+    expect(persisted.order.map((actor) => actor.id)).toEqual([enemy.id, 'matthias']);
+    expect(persisted.cursor).toBe(1);
+  });
+
   it('treats authoritative terminal status as stronger than a stale runtime phase', () => {
     const base = createChroniclesState();
     const completed = chroniclesApplyRunCheckpoint(base, {
