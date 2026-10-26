@@ -6,6 +6,7 @@ import {
   chroniclesGoblinR2Url,
   chroniclesGoblinR2AtlasValid,
   CHRONICLES_ASH_GOBLIN_R2_FRAMES,
+  CHRONICLES_ASH_GOBLIN_R2_URL,
   chroniclesSpriteFrameIndex,
 } from './chroniclesSpriteBillboards.js';
 
@@ -19,8 +20,12 @@ describe('Chronicles 2.5D billboards', () => {
 
   it('validates the six-pose remote goblin and rejects private dashboard URLs or invalid sheets', () => {
     expect(CHRONICLES_ASH_GOBLIN_R2_FRAMES).toEqual(['idle-a', 'idle-b', 'menace', 'attack', 'hurt', 'dead']);
-    expect(chroniclesGoblinR2Url('https://assets.example.org/sprites/ash-goblin.webp'))
-      .toBe('https://assets.example.org/sprites/ash-goblin.webp');
+    expect(CHRONICLES_ASH_GOBLIN_R2_URL).toBe(
+      'https://assets.chronicles.shadowops.dpdns.org/sprites/ash-goblin-96ed70aafe94827f.webp',
+    );
+    expect(chroniclesGoblinR2Url(CHRONICLES_ASH_GOBLIN_R2_URL)).toBe(CHRONICLES_ASH_GOBLIN_R2_URL);
+    expect(chroniclesGoblinR2Url('https://assets.example.org/sprites/ash-goblin.webp')).toBeNull();
+    expect(chroniclesGoblinR2Url(CHRONICLES_ASH_GOBLIN_R2_URL + '?rev=2')).toBeNull();
     expect(chroniclesGoblinR2Url('https://dash.cloudflare.com/example/r2/default/buckets/chronicles/objects/sprites%2Fash-goblin.webp/details'))
       .toBeNull();
     expect(chroniclesGoblinR2Url('http://assets.example.org/sprites/ash-goblin.webp')).toBeNull();
