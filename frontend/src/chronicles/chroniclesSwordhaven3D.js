@@ -679,7 +679,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const crest = new THREE.Group();
     crest.name = 'armor-roof-crest';
     crest.userData.chroniclesDecorativeOnly = true;
-    crest.position.set(0, height + 1.30, facadeZ + 0.12);
+    // Lift the emblem clear of the hanging sign and dark roof ridge: it must
+    // read as a distinct silhouette even in the 390px first-person view.
+    crest.position.set(0, height + 1.90, facadeZ + 0.20);
     const shield = new THREE.Shape();
     shield.moveTo(-1.02, 0.78);
     shield.lineTo(1.02, 0.78);
@@ -687,7 +689,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     shield.lineTo(0, -1.25);
     shield.lineTo(-0.85, -0.40);
     shield.closePath();
-    mesh(crest, new THREE.ShapeGeometry(shield), mats.steel,
+    mesh(crest, new THREE.ShapeGeometry(shield),
+      material(0x9fb2bd, { metalness: 0.30, roughness: 0.42 }),
       'armor-crest-shield', [0, 0, 0]);
     mesh(crest, new THREE.BoxGeometry(0.16, 1.57, 0.10), mats.gold,
       'armor-crest-spine', [0, 0.05, 0.06]);
