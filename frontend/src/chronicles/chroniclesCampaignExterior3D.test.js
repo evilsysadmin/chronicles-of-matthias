@@ -468,6 +468,22 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(armorer.getObjectByName('forge-roof-smokestack')).toBeFalsy();
     expect(watch?.getObjectByName('armor-roof-crest')).toBeFalsy();
 
+    // The guardhouse is a military lookout, not another shield merchant.
+    // Crenellations are overhead dressing and cannot change walkable cells.
+    expect(watch).toBeTruthy();
+    const watchTower = watch.getObjectByName('watchhouse-battlement-tower');
+    expect(watchTower).toBeInstanceOf(THREE.Group);
+    expect(watchTower.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(watchTower.getObjectByName('watchhouse-tower-masonry')).toBeInstanceOf(THREE.Mesh);
+    expect(watchTower.getObjectByName('watchhouse-parapet-rim')).toBeInstanceOf(THREE.Mesh);
+    expect(watchTower.getObjectByName('watchhouse-arrow-slit')).toBeInstanceOf(THREE.Mesh);
+    expect(watchTower.children.filter(child => child.name === 'watchhouse-front-merlon')).toHaveLength(3);
+    expect(watchTower.children.filter(child => child.name === 'watchhouse-side-merlon')).toHaveLength(2);
+    expect(new THREE.Box3().setFromObject(watchTower).min.y).toBeGreaterThan(5);
+    expect(new THREE.Box3().setFromObject(watchTower).max.y).toBeGreaterThan(10);
+    expect(armorer.getObjectByName('watchhouse-battlement-tower')).toBeFalsy();
+    expect(forge.getObjectByName('watchhouse-battlement-tower')).toBeFalsy();
+
     // The quartermaster's general store must read as a market storefront,
     // not another forge or guardhouse. Canopy is overhead-only decoration.
     const store = town.children.find(child =>
