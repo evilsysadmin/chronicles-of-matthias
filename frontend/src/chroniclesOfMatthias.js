@@ -372,8 +372,8 @@ function resolveContextualContentAction(state) {
   if (contextual.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID) {
     const arrived = chroniclesApplyContentEffects(state, [{
       type: 'transition-map',
-      mapId: 'swordhaven-square',
-      entryExitId: 'swordhaven-south-gate',
+      mapId: 'swordhaven-first-book',
+      entryExitId: 'to-first-book-banner-road',
     }]);
     return {
       ...arrived,
