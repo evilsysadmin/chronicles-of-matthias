@@ -156,6 +156,8 @@ describe('Chronicles run transport', () => {
       quests: {},
       worldFlags: {
         galleryLeverPulled: true,
+        '__chrRuntime.mapFlags.parts': 1,
+        '__chrRuntime.mapFlags.part.0': '{"gallery-of-forks":{"galleryLeverPulled":true}}',
         '__chrRuntime.version': 1,
         '__chrRuntime.x': 99,
       },
