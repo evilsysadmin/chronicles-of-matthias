@@ -94,7 +94,7 @@ describe('Chronicles declarative map catalog', () => {
     const townIds = chroniclesMapIds().filter((id) =>
       chroniclesMapById(id).title === 'Swordhaven');
     expect(townIds).toEqual(['swordhaven-first-book']);
-    for (const retired of ['swordhaven-square', 'swordhaven-campaign']) {
+    for (const retired of ['swordhaven-square', 'swordhaven-campaign', 'banner-road']) {
       expect(chroniclesMapIds()).not.toContain(retired);
       expect(() => chroniclesMapTransitionState(
         { mapId: 'swordhaven-first-book' }, retired,
