@@ -495,6 +495,11 @@ function clearedEnemyState(map) {
 }
 
 export function chroniclesMapTransitionState(state, mapId) {
+  // Saved-map lookups may fall back for compatibility, but an explicit
+  // transition must never silently send the party to the default dungeon.
+  if (!MAP_IDS.has(mapId)) {
+    throw new Error(`Chronicles transition has unknown destination map ${mapId || '<missing>'}`);
+  }
   const previousMap = chroniclesMapForState(state);
   const map = chroniclesMapById(mapId);
   const slainEnemies = chroniclesMergeSlain(state?.slainEnemies, previousMap?.id, chroniclesSlainIndices(previousMap, state));
