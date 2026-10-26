@@ -38,7 +38,12 @@ try {
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
-        assert.ok(Number(result.wallCount) > 50);
+        // The old combined 126 blockers are now split between interior
+        // street walls and the independent 80-cell fortified town perimeter.
+        assert.equal(Number(result.wallCount), 126);
+        assert.equal(Number(result.perimeterCount), 80);
+        assert.equal(result.perimeterUnculled, 'true',
+          'The town enclosure must not vanish under camera frustum culling');
         assert.ok(Number(result.roadCount) > 100);
         assert.equal(Number(result.plasterCount), 94);
         assert.equal(result.windowDetail, 'true',

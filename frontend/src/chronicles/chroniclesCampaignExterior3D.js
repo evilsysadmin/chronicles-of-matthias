@@ -537,6 +537,53 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     if (tile === '#') blocked.push({ x, y });
   }));
   if (village) {
+    // The city wall is an enclosing structure, not another loose street
+    // blocker. Keep it in its own fixed batch: a combined street/perimeter
+    // InstancedMesh can disappear as a whole under visibility culling, leaving
+    // Swordhaven looking out onto empty sky. Use only solid edge tiles from
+    // the authored collision map; no invisible or new barriers.
+    const perimeter = blocked.filter(({ x, y }) =>
+      x === 0 || y === 0 || x === width - 1 || y === height - 1);
+    if (perimeter.length) {
+      const wall = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(CELL * 0.99, streetWallHeight, CELL * 0.99),
+        stone, perimeter.length,
+      );
+      wall.name = 'chronicles-campaign-town-perimeter';
+      wall.frustumCulled = false; // The enclosure must not vanish while turning.
+      wall.castShadow = !coarsePointer;
+      wall.receiveShadow = true;
+      const merlonCells = perimeter.filter(({ x, y }) => (x + y) % 2 === 0);
+      const merlons = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(CELL * 0.72, 0.76, CELL * 0.72),
+        stone, merlonCells.length,
+      );
+      merlons.name = 'chronicles-campaign-town-battlements';
+      merlons.frustumCulled = false;
+      merlons.castShadow = !coarsePointer;
+      merlons.receiveShadow = true;
+      const dummy = new THREE.Object3D();
+      for (const [index, { x, y }] of perimeter.entries()) {
+        const [wx, wz] = gridToWorld(x, y, sceneCenter);
+        dummy.position.set(wx, streetWallHeight / 2 - 0.04, wz);
+        dummy.updateMatrix();
+        wall.setMatrixAt(index, dummy.matrix);
+      }
+      merlonCells.forEach(({ x, y }, index) => {
+        const [wx, wz] = gridToWorld(x, y, sceneCenter);
+        dummy.position.set(wx, streetWallHeight + 0.34, wz);
+        dummy.updateMatrix();
+        merlons.setMatrixAt(index, dummy.matrix);
+      });
+      wall.instanceMatrix.needsUpdate = true;
+      merlons.instanceMatrix.needsUpdate = true;
+      scene.add(wall, merlons);
+      // Never draw the same masonry twice (depth flicker/z-fighting).
+      const edge = new Set(perimeter.map(({ x, y }) => x + ',' + y));
+      blocked = blocked.filter(({ x, y }) => !edge.has(x + ',' + y));
+    }
+  }
+  if (village) {
     const town = new THREE.Group();
     town.name = 'chronicles-campaign-town';
     const houses = settlementHouseBlocks(grid, width, height);
