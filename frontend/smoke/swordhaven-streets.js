@@ -6,7 +6,8 @@ import swordhaven from '../src/chronicles/maps/swordhaven-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 
 const VIEWS = Object.freeze({
-  oldtown: { x: 3, y: 4, heading: 'north' },
+  oldtown: { x: 3, y: 4, heading: 'north' }, // Apothecary entrance
+  guild: { x: 15, y: 4, heading: 'north' }, // Same street, distinct facade
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
@@ -63,6 +64,10 @@ try {
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
+  const apothecary = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-apothecary-'));
+  const guild = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-guild-'));
   if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
@@ -100,6 +105,13 @@ try {
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
     pixelVariants: String(distinct.size),
+    distinctShopFacades: String(Boolean(
+      apothecary?.getObjectByName('apothecary-roof-herbarium')
+      && apothecary?.getObjectByName('apothecary-hanging-herbs')
+      && !apothecary?.getObjectByName('magic-shop-turret')
+      && guild?.getObjectByName('magic-shop-turret')
+      && !guild?.getObjectByName('apothecary-roof-herbarium')
+    )),
   });
 } catch (error) {
   document.body.dataset.sceneError = error.message;
