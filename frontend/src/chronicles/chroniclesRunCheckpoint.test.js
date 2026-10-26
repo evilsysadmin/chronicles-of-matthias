@@ -105,6 +105,33 @@ describe('Chronicles checkpoint projection', () => {
     expect(recovered.sigilAwake).toBe(true);
   });
 
+  it('ignores wrongly typed floor flags while preserving valid switches on the same floor', () => {
+    const visited = chroniclesMapTransitionState({
+      ...createChroniclesState('gallery-of-forks'),
+      galleryLeverPulled: true,
+      galleryRelicCollected: true,
+    }, 'menagerie-of-ash');
+    const checkpoint = chroniclesRunCheckpointPayload(visited, 2);
+    const corrupt = {
+      ...checkpoint,
+      worldFlags: {
+        ...checkpoint.worldFlags,
+        '__chrRuntime.mapFlags.parts': 1,
+        '__chrRuntime.mapFlags.part.0': JSON.stringify({
+          'gallery-of-forks': {
+            galleryLeverPulled: 'true',
+            galleryRelicCollected: true,
+          },
+        }),
+      },
+    };
+    const restored = chroniclesApplyRunCheckpoint(createChroniclesState('menagerie-of-ash'), corrupt);
+    const gallery = chroniclesMapTransitionState(restored, 'gallery-of-forks');
+
+    expect(gallery.galleryLeverPulled).toBe(false);
+    expect(gallery.galleryRelicCollected).toBe(true);
+  });
+
   it('normalizes explicit monotonic ledgers without inventing entries', () => {
     const payload = chroniclesRunCheckpointPayload({
       ...createChroniclesState(),

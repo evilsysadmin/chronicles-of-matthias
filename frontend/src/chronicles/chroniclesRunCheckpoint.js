@@ -155,7 +155,9 @@ function restoredMapFlagSnapshots(flags) {
       if (!values || typeof values !== 'object' || Array.isArray(values)) continue;
       const initial = chroniclesMapById(mapId).initialFlags || {};
       const changed = Object.fromEntries(Object.keys(initial)
-        .filter((key) => Object.hasOwn(values, key) && durableFlagValue(values[key]))
+        .filter((key) => Object.hasOwn(values, key) && durableFlagValue(values[key])
+          // A malformed save must not turn a boolean door/lever into a truthy string.
+          && (initial[key] === null ? values[key] === null : typeof values[key] === typeof initial[key]))
         .map((key) => [key, values[key]]));
       if (Object.keys(changed).length) snapshots[mapId] = changed;
     }
