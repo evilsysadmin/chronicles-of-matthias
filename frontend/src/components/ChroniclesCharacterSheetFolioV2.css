@@ -820,19 +820,19 @@
   }
 }
 
-/* The four hero names are actionable navigation, not decorative abbreviations.
-   Give long names two readable lines on phones without shrinking hit targets,
-   changing the HP row or affecting the desktop/exploration party strip. */
+/* On narrow phones, let the hero's complete name use the full button width.
+   Keep the number beside HP on the second row: no tiny text, odd mid-word
+   wrapping or extra dock height; the exploration party strip is untouched. */
 @media (max-width: 620px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-dock button {
-    height: 56px;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: 'name name' 'number hp';
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-name {
-    font-size: .86rem;
-    line-height: 1.12;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    font-size: .82rem;
+    white-space: nowrap;
     text-overflow: clip;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-number {
+    font-size: .84rem;
   }
 }
