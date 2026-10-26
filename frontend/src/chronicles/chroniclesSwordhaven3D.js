@@ -679,9 +679,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const crest = new THREE.Group();
     crest.name = 'armor-roof-crest';
     crest.userData.chroniclesDecorativeOnly = true;
-    // Lift the emblem clear of the hanging sign and dark roof ridge: it must
-    // read as a distinct silhouette even in the 390px first-person view.
-    crest.position.set(0, height + 1.90, facadeZ + 0.20);
+    // Mount the full shield above the ridge, not half-hidden by roof shingles.
+    // A timber mast anchors it to the existing solid gable, including on touch.
+    crest.position.set(0, height + 3.15, facadeZ + 0.20);
+    mesh(crest, new THREE.BoxGeometry(0.24, 3.20, 0.22), mats.timber,
+      'armor-crest-roof-mast', [0, -1.60, -0.15]);
     const shield = new THREE.Shape();
     shield.moveTo(-1.02, 0.78);
     shield.lineTo(1.02, 0.78);
