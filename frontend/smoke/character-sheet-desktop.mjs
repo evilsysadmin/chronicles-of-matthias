@@ -671,6 +671,7 @@ try {
               hpWidth: hp.clientWidth,
               hpScrollWidth: hp.scrollWidth,
               fraction: value.textContent.trim(),
+              healthGlyph: getComputedStyle(value, '::before').content,
               unitVisible: getComputedStyle(unit).display !== 'none',
               accessibleLabel: button.getAttribute('aria-label'),
             };
@@ -702,6 +703,9 @@ try {
       }), 'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
       assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 380)),
         'Only the narrowest phone may omit the redundant visible PV suffix: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ healthGlyph }) =>
+        (healthGlyph.includes('♥')) === (width <= 380)),
+      'Only narrow phones should show a health glyph when the PV suffix is hidden: ' + JSON.stringify(geometry.dockButtons));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
