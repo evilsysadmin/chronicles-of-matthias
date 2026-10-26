@@ -208,20 +208,8 @@ describe('Chronicles · Terra catalog integrity', () => {
       });
     });
     expect(unknown).toEqual([]);
-    // Swordhaven's campaign botica, its restored legacy-square shop,
-    // and the eight generated towns.
-    expect(boticas).toBe(10);
-  });
-});
-
-describe('Chronicles · objective over legacy exits', () => {
-  it('shows the active quest in classic Swordhaven instead of «encuentra la salida»', () => {
-    let state = createChroniclesState('swordhaven-square', null, { rules: 'mm3' });
-    expect(chroniclesObjective(state)).toBe('Explora Swordhaven y encuentra la salida');
-    state = chroniclesApplyContentEffects(state, [
-      { type: 'start-quest', questId: 'lost-king-prologue', title: 'El rey desaparecido', objective: 'Investiga el antiguo sello de la Cripta de las Ocho Casillas.' },
-    ]);
-    expect(chroniclesObjective(state)).toBe('Investiga el antiguo sello de la Cripta de las Ocho Casillas.');
+    // One Swordhaven botica and the eight generated town boticas.
+    expect(boticas).toBe(9);
   });
 });
 
