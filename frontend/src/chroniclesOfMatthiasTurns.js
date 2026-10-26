@@ -94,13 +94,13 @@ function livingPartyTargetsWithPositions(state) {
 // All authored combat reach is measured in whole map cells.
 const MAX_ENEMY_ATTACK_REACH = 16;
 
-function enemyAttackReach(enemy) {
+export function chroniclesEnemyAttackReach(enemy) {
   const raw = Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1);
   return Number.isSafeInteger(raw) && raw >= 1 && raw <= MAX_ENEMY_ATTACK_REACH ? raw : 1;
 }
 
 function enemyCanAttackCell(state, enemy, position, partyPosition) {
-  const reach = enemyAttackReach(enemy);
+  const reach = chroniclesEnemyAttackReach(enemy);
   const separation = distance(position, partyPosition);
   if (separation < 1 || separation > reach) return false;
   if (reach === 1) return separation === 1;
@@ -652,7 +652,7 @@ export function chroniclesEnemyThreatCells(
   enemy,
   position = chroniclesRuntimeEnemyPosition(state, enemy),
 ) {
-  const reach = enemyAttackReach(enemy);
+  const reach = chroniclesEnemyAttackReach(enemy);
   const cells = [];
   for (let dy = -reach; dy <= reach; dy += 1) {
     for (let dx = -reach; dx <= reach; dx += 1) {
