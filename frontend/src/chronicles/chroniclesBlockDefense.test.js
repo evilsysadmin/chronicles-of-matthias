@@ -59,7 +59,8 @@ describe('Chronicles MM3 BLOCK (B)', () => {
     const { goblin, state } = goblinFight();
     const act = { type: 'block', memberId: 'matthias' };
     expect(chroniclesReduce({ ...state, initiative: null, phase: 'explore' }, act).turns).toBe(state.turns);
-    expect(chroniclesReduce({ ...state, combatRules: null }, act)).toBe(state);
+    const tactics = { ...state, combatRules: null };
+    expect(chroniclesReduce(tactics, act)).toBe(tactics);
     expect(chroniclesReduce(state, { type: 'block', memberId: 'rook' })).toBe(state);
     expect(chroniclesReduce({ ...state, initiative: { ...state.initiative, cursor: 1 } }, act).combatBlock).toBeUndefined();
     const fallen = { ...state, party: state.party.map((hero) => ({ ...hero, hp: 0 })) };
