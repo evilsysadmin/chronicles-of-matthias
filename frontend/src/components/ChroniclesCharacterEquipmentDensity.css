@@ -188,6 +188,16 @@
   .chronicles-character-sheet__item-details { padding: 9px; }
 }
 
+/* The company gold balance already appears in the persistent identity strip.
+   On narrow touch phones, omit only its duplicate in the Equipment heading;
+   keep the section title, explanation, and accessible primary gold chip. */
+@media (max-width: 430px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b {
+    display: none;
+  }
+}
+
 /* Compact only genuinely empty mobile gear panels. Keep filled backpacks,
    linked relics, Tactics and all touch targets unchanged. */
 @media (max-width: 520px) and (pointer: coarse) {
