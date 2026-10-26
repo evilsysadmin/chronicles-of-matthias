@@ -66,7 +66,7 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list button.is-selected {
     border-color: #72451f #ffe0a1 #ffe0a1 #72451f;
-    background: #ad713e;
+    background: #8a512c;
     color: #fff6e1;
     box-shadow: inset 3px 0 0 #2b842b;
   }
@@ -99,7 +99,7 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__cost {
     font-size: .85rem;
-    color: #277427;
+    color: #205c20;
     font-variant-numeric: tabular-nums;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__list button.is-selected .chronicles-sheet-grimoire__cost {
