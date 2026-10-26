@@ -11,7 +11,10 @@ function movementSignature(enemy) {
   const movement = enemy.ai?.movement || 'cardinal-chase';
   const engagedMovement = enemy.ai?.engagedMovement || '-';
   const reach = Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1);
-  return `${movement}>${engagedMovement}@${reach}`;
+  // Pursuit activation distance changes enemy behavior even when the step
+  // geometry is the same: goblins, spiders and hounds remain distinct.
+  const engageRange = enemy.ai?.engageRange ?? '-';
+  return `${movement}>${engagedMovement}@${reach}~${engageRange}`;
 }
 
 describe('Chronicles Tactics bestiary behavior', () => {
@@ -60,7 +63,7 @@ describe('Chronicles Tactics bestiary behavior', () => {
     });
   });
 
-  it('keeps monster-heavy rooms from collapsing into one repeated movement pattern', () => {
+  it('keeps monster-heavy rooms from collapsing into one repeated pursuit pattern', () => {
     chroniclesMapIds().forEach((mapId) => {
       const map = chroniclesMapById(mapId);
       if (map.enemies.length < 4) return;
