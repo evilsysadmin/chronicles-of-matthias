@@ -657,11 +657,15 @@ try {
           dockPortraits: node.querySelectorAll('.chronicles-character-sheet__party-dock img').length,
           dockHeight: dock.height,
           dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => {
+            const name = button.querySelector('.chronicles-character-sheet__party-name');
             const hp = button.querySelector('.chronicles-character-sheet__party-hp');
             const value = hp.querySelector('.chronicles-character-sheet__party-hp-value');
             const unit = hp.querySelector('.chronicles-character-sheet__party-hp-unit');
             return {
               height: button.getBoundingClientRect().height,
+              name: name.textContent.trim(),
+              nameClipped: name.scrollWidth > name.clientWidth + 1 || name.scrollHeight > name.clientHeight + 1,
+              nameWhiteSpace: getComputedStyle(name).whiteSpace,
               hpVisible: getComputedStyle(hp).display !== 'none',
               hpClipped: hp.scrollWidth > hp.clientWidth + 1,
               hpWidth: hp.clientWidth,
@@ -686,6 +690,12 @@ try {
         'Live HP and touch targets must remain visible: ' + JSON.stringify(geometry));
       assert.deepEqual(geometry.dockButtons.filter(({ hpClipped }) => hpClipped), [],
         'Every live HP fraction must fit the actual painted party dock: ' + JSON.stringify(geometry.dockButtons));
+      if (width <= 620) {
+        assert.ok(geometry.dockButtons.every(({ nameWhiteSpace }) => nameWhiteSpace === 'normal'),
+          'Phone hero names must wrap instead of ending in ellipses: ' + JSON.stringify(geometry.dockButtons));
+        assert.deepEqual(geometry.dockButtons.filter(({ nameClipped }) => nameClipped), [],
+          'All four hero names must be fully readable in the painted dock: ' + JSON.stringify(geometry.dockButtons));
+      }
       assert.ok(geometry.dockButtons.every(({ fraction, accessibleLabel }) => {
         const [current, maximum] = fraction.split('/');
         return /^\d+\/\d+$/.test(fraction) && accessibleLabel.includes(`${current} de ${maximum} PV`);
