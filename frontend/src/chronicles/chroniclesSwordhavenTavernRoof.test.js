@@ -19,7 +19,7 @@ describe('Swordhaven tavern architectural identity', () => {
     });
     const town = scene.getObjectByName('chronicles-campaign-town');
     const tavern = town.children.find(child =>
-      child.name.startsWith('swordhaven-building-first-book-healer-'));
+      child.name.startsWith('swordhaven-building-first-book-tavern-'));
     const forge = town.children.find(child =>
       child.name.startsWith('swordhaven-building-first-book-forge-'));
     expect(tavern).toBeTruthy();

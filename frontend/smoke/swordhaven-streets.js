@@ -87,7 +87,7 @@ try {
   const store = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-store-'));
   const tavern = town?.children.find(child =>
-    child.name.startsWith('swordhaven-building-first-book-healer-'));
+    child.name.startsWith('swordhaven-building-first-book-tavern-'));
   const watch = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-watch-'));
   if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
