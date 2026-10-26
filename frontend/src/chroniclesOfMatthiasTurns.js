@@ -385,6 +385,9 @@ function visiblePartyPosition(state, enemy, from) {
 function lastKnownPartyPosition(state, enemy, from) {
   const sighting = state.enemyAwareness?.[enemy.id];
   if (!sighting || sighting.mapId !== state.mapId || sighting.phase !== awarenessPhase(state)) return null;
+  // Saved awareness is untrusted too: never route a pursuer toward a
+  // fractional, non-finite or unsafe tile from a legacy/corrupt save.
+  if (!validTilePosition(sighting)) return null;
   const age = awarenessTick(state) - Number(sighting.tick);
   if (!Number.isFinite(age) || age < 0 || age > ENEMY_MEMORY_ROUNDS) return null;
   if (sameCell(from, sighting)) return null; // The investigated tile is empty.
