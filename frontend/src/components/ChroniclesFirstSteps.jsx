@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { getStorageItem, setStorageItem, STORAGE_SESSION } from '../safeStorage.js';
 import './ChroniclesFirstSteps.css';
 
-const FIRST_STEPS_MARKER = 'chronicles:lost-king:commission-received';
 const FIRST_BOOK_ARRIVAL_MARKER = 'arrival:swordhaven-first-book';
 const DISMISSED_PREFIX = 'chronicles-first-steps-dismissed-v1:';
 
@@ -11,7 +10,7 @@ function dismissalKey(runId) {
 }
 
 // The authored commission, not a guessed visit count, identifies the first
-// minutes of the actual Swordhaven campaign. No tutorial for legacy/Tactics,
+// minutes of the actual Swordhaven campaign. No tutorial for Tactics,
 // other maps, completed quests or returning expeditions.
 export function chroniclesFirstStepsStory(state) {
   if (state?.phase !== 'explore' || !Number.isInteger(state?.turns)
