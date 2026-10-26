@@ -277,6 +277,14 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(bay.children.filter(child => child.name === 'forge-workshop-stone-pier')).toHaveLength(2);
       expect(bay.children.filter(child => child.name === 'forge-workshop-cross-brace')).toHaveLength(2);
       expect(bay.getObjectByName('forge-workshop-iron-keystone')).toBeTruthy();
+      const recess = bay.getObjectByName('forge-workshop-soot-recess');
+      const coals = bay.getObjectByName('forge-workshop-embers');
+      expect(recess.material.color.getHex()).toBe(0x261c17);
+      expect(coals).toBeInstanceOf(THREE.InstancedMesh);
+      expect(coals.count).toBe(3);
+      expect(coals.material).toBe(forge.getObjectByName('forge-brazier-embers').material);
+      expect(coals.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(coals.castShadow).toBe(false);
       const piers = bay.children.filter(child => child.name === 'forge-workshop-stone-pier');
       const leftEdge = bay.position.x + piers[0].position.x
         - piers[0].geometry.parameters.width / 2;
