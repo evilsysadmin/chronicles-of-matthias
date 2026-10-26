@@ -1,5 +1,5 @@
 import { resolveChroniclesEnemyBuildDefinition } from './chroniclesEnemyBuilds.js';
-import { chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyAttackReach, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import {
   chroniclesCollapsePartyAfterCombat,
   chroniclesDeployPartyForCombat,
@@ -135,8 +135,8 @@ function manhattanDistance(left, right) {
 function enemyEngagementRange(enemy) {
   // Corrupt or legacy reach values must neither disable engagement (NaN)
   // nor grant an unlimited sightline range (Infinity).
-  const rawReach = Number(enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1);
-  const attackReach = Number.isFinite(rawReach) ? Math.max(1, rawReach) : 1;
+  // Engagement and real attacks must agree on the same bounded reach.
+  const attackReach = chroniclesEnemyAttackReach(enemy);
   const configured = Number(enemy?.ai?.engageRange);
   return Number.isFinite(configured) && configured >= 1
     ? Math.max(attackReach, configured)
