@@ -18,6 +18,10 @@ const PROGRESSION_PART_COUNT = `${RUNTIME_PREFIX}progression.parts`;
 const PROGRESSION_PART_PREFIX = `${RUNTIME_PREFIX}progression.part.`;
 const PROGRESSION_PART_SIZE = 240;
 const PROGRESSION_MAX_PARTS = 192;
+const MAP_FLAGS_PART_COUNT = `${RUNTIME_PREFIX}mapFlags.parts`;
+const MAP_FLAGS_PART_PREFIX = `${RUNTIME_PREFIX}mapFlags.part.`;
+const MAP_FLAGS_PART_SIZE = 240;
+const MAP_FLAGS_MAX_PARTS = 128;
 
 // The Go checkpoint API limits ordinary string flags to 256 Unicode runes.
 // Chunk the complete run-specific progression (including XP, character build,
@@ -95,6 +99,70 @@ function checkpointFlagKeys(currentMapId) {
 
 function durableFlagValue(value) {
   return value === null || ['boolean', 'number', 'string'].includes(typeof value);
+}
+
+// Floor-local flags must survive a real API checkpoint, not just an in-memory
+// map transition. Save only deviations from authored defaults to stay bounded.
+function checkpointMapFlagSnapshots(source) {
+  const prior = source.mapFlagsById && typeof source.mapFlagsById === 'object'
+    && !Array.isArray(source.mapFlagsById) ? source.mapFlagsById : {};
+  const snapshots = {};
+  for (const mapId of chroniclesMapIds()) {
+    const map = chroniclesMapById(mapId);
+    const values = mapId === source.mapId ? source : prior[mapId];
+    if (!values || typeof values !== 'object' || Array.isArray(values)) continue;
+    const changed = Object.fromEntries(Object.entries(map.initialFlags || {})
+      .filter(([key, initial]) => Object.hasOwn(values, key)
+        && durableFlagValue(values[key]) && values[key] !== initial)
+      .map(([key]) => [key, values[key]]));
+    if (Object.keys(changed).length) snapshots[mapId] = changed;
+  }
+  return snapshots;
+}
+
+function checkpointMapFlagParts(source) {
+  const snapshots = checkpointMapFlagSnapshots(source);
+  if (!Object.keys(snapshots).length) return {};
+  const chars = Array.from(JSON.stringify(snapshots));
+  const count = Math.ceil(chars.length / MAP_FLAGS_PART_SIZE);
+  if (count > MAP_FLAGS_MAX_PARTS) {
+    throw new Error('Demasiados cambios de mazmorra para guardar la expedición.');
+  }
+  const parts = { [MAP_FLAGS_PART_COUNT]: count };
+  for (let index = 0; index < count; index += 1) {
+    parts[`${MAP_FLAGS_PART_PREFIX}${index}`] = chars
+      .slice(index * MAP_FLAGS_PART_SIZE, (index + 1) * MAP_FLAGS_PART_SIZE).join('');
+  }
+  return parts;
+}
+
+function restoredMapFlagSnapshots(flags) {
+  const count = flags[MAP_FLAGS_PART_COUNT];
+  if (!Number.isInteger(count) || count < 1 || count > MAP_FLAGS_MAX_PARTS) return null;
+  const parts = [];
+  for (let index = 0; index < count; index += 1) {
+    const part = flags[`${MAP_FLAGS_PART_PREFIX}${index}`];
+    if (typeof part !== 'string' || !part.length
+      || Array.from(part).length > MAP_FLAGS_PART_SIZE) return null;
+    parts.push(part);
+  }
+  try {
+    const parsed = JSON.parse(parts.join(''));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const snapshots = {};
+    for (const mapId of chroniclesMapIds()) {
+      const values = parsed[mapId];
+      if (!values || typeof values !== 'object' || Array.isArray(values)) continue;
+      const initial = chroniclesMapById(mapId).initialFlags || {};
+      const changed = Object.fromEntries(Object.keys(initial)
+        .filter((key) => Object.hasOwn(values, key) && durableFlagValue(values[key]))
+        .map((key) => [key, values[key]]));
+      if (Object.keys(changed).length) snapshots[mapId] = changed;
+    }
+    return snapshots;
+  } catch {
+    return null;
+  }
 }
 
 function normalizedLedger(values) {
@@ -295,7 +363,7 @@ function runtimeCheckpointFlags(state) {
     if (list.length && mapId.length <= 64) flags[runtimeKey('slain', mapId)] = list.join(',').slice(0, 256);
   });
 
-  return { ...flags, ...runProgressionFlags(source.runProgression) };
+  return { ...flags, ...checkpointMapFlagParts(source), ...runProgressionFlags(source.runProgression) };
 }
 
 function slainFromFlags(flags) {
@@ -340,6 +408,8 @@ function applyRuntimeCheckpoint(state, flags) {
   const turnPhase = shortStringOrNull(flags[runtimeKey('turnPhase')], 32);
 
   let next = { ...state };
+  const savedMapFlags = restoredMapFlagSnapshots(flags);
+  if (savedMapFlags) next.mapFlagsById = savedMapFlags;
   if (x !== null && y !== null && validWalkablePosition(map, x, y)) {
     next.x = x;
     next.y = y;
