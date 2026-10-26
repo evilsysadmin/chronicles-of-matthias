@@ -35,4 +35,34 @@ describe('MM3 compact spellbook visual skin', () => {
     expect(skin).not.toMatch(/pointer-events:\s*none|display:\s*none\s*!important/);
     expect(skin).not.toContain('@media (max-width: 850px)');
   });
+
+  it('keeps selected labels and PH costs readable against their real backgrounds', () => {
+    const block = (selector) => {
+      const start = skin.indexOf(selector + ' {');
+      expect(start).toBeGreaterThanOrEqual(0);
+      return skin.slice(start, skin.indexOf('}', start));
+    };
+    const color = (declarations, property) => {
+      const match = declarations.match(new RegExp('(?:^|\\n)\\s*' + property + ':\\s*(#[0-9a-f]{6})\\s*;', 'i'));
+      expect(match).not.toBeNull();
+      return match[1];
+    };
+    const luminance = (hex) => {
+      const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const [r, g, b] = channels.map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return r * 0.2126 + g * 0.7152 + b * 0.0722;
+    };
+    const contrast = (foreground, background) => {
+      const a = luminance(foreground);
+      const b = luminance(background);
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    };
+    const row = block('.chronicles-sheet-grimoire__list button');
+    const selected = block('.chronicles-sheet-grimoire__list button.is-selected');
+    const cost = block('.chronicles-sheet-grimoire__cost');
+    const selectedCost = block('.chronicles-sheet-grimoire__list button.is-selected .chronicles-sheet-grimoire__cost');
+    expect(contrast(color(selected, 'color'), color(selected, 'background'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(color(cost, 'color'), color(row, 'background'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(color(selectedCost, 'color'), color(selected, 'background'))).toBeGreaterThanOrEqual(4.5);
+  });
 });
