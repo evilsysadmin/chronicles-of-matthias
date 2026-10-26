@@ -33,9 +33,15 @@ function walkable(state, position) {
   return chroniclesTileAt(position.x, position.y, state) !== '#';
 }
 
+function validTilePosition(position) {
+  return Number.isSafeInteger(position?.x) && Number.isSafeInteger(position?.y);
+}
+
 export function chroniclesRuntimeEnemyPosition(state, enemy) {
   const runtime = state?.enemyPositions?.[enemy.id];
-  if (runtime && Number.isFinite(runtime.x) && Number.isFinite(runtime.y)) return runtime;
+  // Restored legacy coordinates must be actual grid cells. Fractions can
+  // make discrete sightline tracing loop forever; use the authored spawn.
+  if (validTilePosition(runtime)) return runtime;
   return chroniclesEnemyPosition(state, enemy);
 }
 
@@ -334,6 +340,9 @@ function awarenessTick(state) {
 // Discrete grid ray: walls and solid diagonal corners stop sight. Creatures
 // cannot magically detect the party through masonry.
 export function chroniclesEnemyHasSightline(state, from, to) {
+  // Bresenham advances by whole cells. A fractional/invalid endpoint can
+  // never be reached by that loop and would freeze the game.
+  if (!validTilePosition(from) || !validTilePosition(to)) return false;
   let x = from.x;
   let y = from.y;
   const dx = Math.abs(to.x - x);
