@@ -13,6 +13,7 @@ const VIEWS = Object.freeze({
   guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
+  temple: { x: 10, y: 6, heading: 'east', target: { x: 15, y: 6 }, cameraHeight: 2.4, lookUp: 2.5 },
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
@@ -84,6 +85,8 @@ try {
     child.name.startsWith('swordhaven-building-first-book-forge-'));
   const armorer = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-armor-'));
+  const temple = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-temple-'));
   const store = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-store-'));
   const tavern = town?.children.find(child =>
@@ -127,6 +130,13 @@ try {
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
     pixelVariants: String(distinct.size),
+    distinctTemplePortico: String(Boolean(
+      temple?.getObjectByName('temple-limestone-portico')
+      && temple?.getObjectByName('temple-portico-column')
+      && temple?.getObjectByName('temple-portico-triangular-pediment')
+      && !armorer?.getObjectByName('temple-limestone-portico')
+      && !guild?.getObjectByName('temple-limestone-portico')
+    )),
     distinctMetalworkFacades: String(Boolean(
       forge?.getObjectByName('forge-roof-smokestack')
       && forge?.getObjectByName('forge-brazier')
