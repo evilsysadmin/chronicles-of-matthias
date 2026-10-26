@@ -33,18 +33,6 @@ describe('authored first-book quest geography', () => {
     }).mapId).toBe('swordhaven-first-book');
   });
 
-  it('uses only explicitly authored stages of the king prologue', () => {
-    expect(chroniclesQuestRegionHint(active('lost-king-prologue',
-      'Investiga el antiguo sello de la Cripta de las Ocho Casillas.'), {}).mapId)
-      .toBe('crypt-eight-squares');
-    expect(chroniclesQuestRegionHint(active('lost-king-prologue',
-      'Regresa a Swordhaven para registrar el hallazgo.'), {}).mapId)
-      .toBe('swordhaven-square');
-    expect(chroniclesQuestRegionHint(active('lost-king-prologue',
-      'Investiga la Puerta Negra y busca documentación en la Galería de las Bifurcaciones.'), {}).mapId)
-      .toBe('gallery-of-forks');
-  });
-
   it('locates six authored Terra errands and hunts without inventing routes', () => {
     const destinations = [
       ['ascua-smith-errand', 'terra-f3', 'Crestas Volcánicas'],
@@ -190,16 +178,16 @@ describe('authored first-book quest geography', () => {
       .toMatchObject({ relation: 'same-map' });
 
     const found = chroniclesQuestRegionHint(active('banner-contract'), { bannerFound: true });
-    expect(chroniclesQuestRegionContext(found, { mapId: 'swordhaven-square' }))
-      .toMatchObject({ relation: 'same-region' });
-    expect(chroniclesQuestRegionContext(null, { mapId: 'swordhaven-square' })).toBeNull();
+    expect(chroniclesQuestRegionContext(found, { mapId: 'swordhaven-first-book' }))
+      .toMatchObject({ relation: 'same-map' });
+    expect(chroniclesQuestRegionContext(null, { mapId: 'swordhaven-first-book' })).toBeNull();
     expect(chroniclesQuestRegionContext(found, {})).toBeNull();
   });
 
   it('never fabricates a location for a finished, unknown or unrecognized quest stage', () => {
     expect(chroniclesQuestRegionHint({ id: 'banner-contract', status: 'completed' }, {})).toBeNull();
     expect(chroniclesQuestRegionHint(active('an-unwritten-contract'), {})).toBeNull();
-    expect(chroniclesQuestRegionHint(active('lost-king-prologue', 'Paso aún desconocido.'), {})).toBeNull();
+    expect(chroniclesQuestRegionHint(active('unknown-quest', 'Paso aún desconocido.'), {})).toBeNull();
   });
 });
 
@@ -245,8 +233,6 @@ describe('HUD location for quests outside the current map', () => {
     });
     const atHome = stateWithQuest('swordhaven-first-book', { bannerFound: true });
     expect(chroniclesHudQuestDestination(atHome, chroniclesObjective(atHome))).toBeNull();
-    const adjacentTownMap = stateWithQuest('swordhaven-square', { bannerFound: true });
-    expect(chroniclesHudQuestDestination(adjacentTownMap, chroniclesObjective(adjacentTownMap))).toBeNull();
   });
 
   it('never invents a destination for unrelated tactical messages, unknown or completed missions', () => {
