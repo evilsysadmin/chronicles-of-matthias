@@ -191,6 +191,15 @@ export function chroniclesFrontCell(state) {
   return { x: state.x + direction.dx, y: state.y + direction.dy };
 }
 
+// In MM3 a valid missile reaches any enemy in the straight, unobstructed
+// visible corridor. The authored grid bounds the ray: never scan endlessly or
+// grant magic/spells and melee the same unlimited range.
+export function chroniclesMM3MissileSightReach(state) {
+  if (!chroniclesUsesMM3Combat(state)) return 0;
+  const grid = chroniclesMapForState(state)?.grid || [];
+  return Math.max(grid.length, ...grid.map((row) => row.length), 0);
+}
+
 export function chroniclesEnemyTargetAhead(state, maxReach = 2) {
   const direction = CHRONICLES_DIRECTIONS[state.direction];
   for (let distance = 1; distance <= maxReach; distance += 1) {
@@ -420,11 +429,14 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
   if (shooting && chroniclesUsesMM3Combat(state) && !weapon) return { damage: 0, reach: 0, toHit: 0 };
   return {
     damage: Math.max(0, Number(member.damage || 0) + persistentDamageBonus + equipment.attackDamageBonus),
-    // MM3 is a weapon-based RPG: melee can strike adjacent enemies, bows
-    // reach further. Tactics retains its chess-piece attack reach.
-    reach: Math.max(1, Number(
-      chroniclesUsesMM3Combat(state) ? (weapon?.reach || 1) : (member.reach || 1),
-    ) + persistentReachBonus),
+    // MM3 missiles follow straight line of sight through the finite map,
+    // unlike spells/melee and non-MM3 Tactics. The item catalog's legacy
+    // numeric missile reaches do not cap the shot.
+    reach: shooting && chroniclesUsesMM3Combat(state)
+      ? chroniclesMM3MissileSightReach(state)
+      : Math.max(1, Number(
+        chroniclesUsesMM3Combat(state) ? (weapon?.reach || 1) : (member.reach || 1),
+      ) + persistentReachBonus),
     // MM to-hit: level + Accuracy bonus + weapon (material) to-hit.
     toHit: Math.max(1, Number(modifiers.level || 1))
       + Number(member.mm3?.bonuses?.accuracy || 0)
@@ -615,7 +627,7 @@ function resolveOpeningVolley(state) {
 }
 
 // MM3's plain attack: melee when something is adjacent, otherwise shoot if
-// the hero carries a missile weapon and the target is within its range.
+// the hero carries a missile weapon and the target is in unobstructed sight.
 export function chroniclesAttackMode(state, memberId) {
   if (!chroniclesUsesMM3Combat(state)) return 'melee';
   const melee = chroniclesPartyAttackStats(state, memberId, 'melee');
@@ -650,7 +662,7 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
     ? chroniclesCombatMissileTarget(state, attackStats.reach)
     : chroniclesEnemyTargetAhead(state, attackStats.reach);
   if (!target) {
-    if (mode === 'missile') return withMessage(state, `${attacker.name} tensa ${attacker.attackName.toLowerCase()}, pero no hay nada a tiro (alcance ${attackStats.reach}).`);
+    if (mode === 'missile') return withMessage(state, `${attacker.name} tensa ${attacker.attackName.toLowerCase()}, pero no hay enemigo en su línea de tiro.`);
     return withMessage(state, `${attacker.name} ejecuta ${attacker.attackName.toLowerCase()} contra absolutamente nada. La nada resiste.`);
   }
 

@@ -28,15 +28,15 @@ describe('Tactical margin uses real MM3 attack range', () => {
     expect(range.missileReach).toBe(slingReach);
     expect(chroniclesTargetReachLabel({ distance: slingReach }, range))
       .toBe('A: FUERA DE ALCANCE · S: A TIRO');
-    expect(chroniclesTargetReachLabel({ distance: slingReach + 1 }, range))
-      .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
+    expect(chroniclesTargetReachLabel({ distance: 7 }, range))
+      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
   });
 
-  it('does not invent range-four hits, but explains that S can provoke combat', () => {
-    const target = { distance: 4 };
-    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 3, canProvoke: true }))
-      .toBe('FUERA DE ALCANCE · S: ALERTAR Y COMBATIR');
-    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 0, canProvoke: false }))
+  it('advertises shots across a visible corridor, not a separate provoke-only range', () => {
+    const target = { distance: 7 };
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 25 }))
+      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+    expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 0 }))
       .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
   });
 
