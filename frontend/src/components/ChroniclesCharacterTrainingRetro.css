@@ -151,11 +151,7 @@
     background: #ffe1af;
   }
 }
-@media (min-width: 1250px) and (min-height: 650px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-training] .chronicles-character-sheet__attribute-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
+/* Four actual attributes stay in a balanced 2×2 ledger even on wide
+   desktops; the previous three-column override stranded one card alone. */
 /* On touch/short screens the earlier single-column safe layouts and minimum
    target sizes remain authoritative. No hidden attributes or skill controls. */
