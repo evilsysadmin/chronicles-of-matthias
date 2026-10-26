@@ -26,7 +26,10 @@ import {
   chroniclesStartInitiativeCombat,
 } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficultyPolicy.js';
-import { playChroniclesActionSound } from '../chronicles/chroniclesActionAudio.js';
+import { playChroniclesActionSound, playChroniclesLevelUpChime } from '../chronicles/chroniclesActionAudio.js';
+import { chroniclesPortraitLevelUpEvents } from '../chronicles/chroniclesProgressionFeedback.js';
+import ChroniclesPortraitLevelUp from './ChroniclesPortraitLevelUp.jsx';
+import './ChroniclesPortraitLevelUp.css';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
@@ -304,6 +307,45 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   useEffect(() => () => {
     if (missileNoticeTimerRef.current) window.clearTimeout(missileNoticeTimerRef.current);
   }, []);
+  // Ephemeral per-hero feedback. These cues are deliberately never persisted.
+  const [portraitLevelUps, setPortraitLevelUps] = useState({});
+  const portraitLevelUpSerialRef = useRef(0);
+  const portraitLevelUpTimersRef = useRef(new Map());
+  const pendingLevelUpChimeRef = useRef(null);
+  const clearPortraitLevelUps = useCallback(() => {
+    portraitLevelUpTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    portraitLevelUpTimersRef.current.clear();
+    pendingLevelUpChimeRef.current = null;
+    setPortraitLevelUps({});
+  }, []);
+  useEffect(() => () => {
+    portraitLevelUpTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    portraitLevelUpTimersRef.current.clear();
+  }, []);
+  const showPortraitLevelUps = useCallback((levelUps, party, committed) => {
+    const events = chroniclesPortraitLevelUpEvents({ levelUps }, party);
+    if (!events.length) return;
+    // A batch of simultaneous level-ups plays one chime, not four.
+    pendingLevelUpChimeRef.current = committed;
+    const cues = {};
+    for (const event of events) {
+      const previous = portraitLevelUpTimersRef.current.get(event.memberId);
+      if (previous != null) window.clearTimeout(previous);
+      const token = ++portraitLevelUpSerialRef.current;
+      cues[event.memberId] = { ...event, token };
+      const timeout = window.setTimeout(() => {
+        portraitLevelUpTimersRef.current.delete(event.memberId);
+        setPortraitLevelUps((current) => {
+          if (current[event.memberId]?.token !== token) return current;
+          const next = { ...current };
+          delete next[event.memberId];
+          return next;
+        });
+      }, 1700);
+      portraitLevelUpTimersRef.current.set(event.memberId, timeout);
+    }
+    setPortraitLevelUps((current) => ({ ...current, ...cues }));
+  }, []);
   const [lootNotice, setLootNotice] = useState(null);
   const lootTimerRef = useRef(null);
   const showLootNotice = useCallback((notice) => {
@@ -328,6 +370,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (!queued || queued.committed !== state) return;
     pendingActionSoundRef.current = null; // StrictMode must not replay sounds.
     playChroniclesActionSound(queued.previous, queued.resolved, queued.action);
+    if (pendingLevelUpChimeRef.current === state) {
+      pendingLevelUpChimeRef.current = null; // no chime on reload/StrictMode
+      playChroniclesLevelUpChime();
+    }
   }, [state]);
   // Every line the chronicle shows is kept for the Crónica (per run), since
   // the band on the view fades after a few seconds.
@@ -783,6 +829,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       };
     }
 
+    if (progressResult.levelUps.length) showPortraitLevelUps(progressResult.levelUps, next.party, next);
     if (next !== current) pendingActionSoundRef.current = {
       previous: current, resolved: next, committed: next, action,
     };
@@ -815,7 +862,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }, 1800);
     }
     return next;
-  }, [showHitSplats, showLootNotice]);
+  }, [showHitSplats, showLootNotice, showPortraitLevelUps]);
 
   const cancelAreaTravel = useCallback(() => {
     areaTransitionRef.current = null;
@@ -1549,6 +1596,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     pendingSpellTarget, chooseSpellTarget]);
 
   const startFreshGame = (entryMapId = null) => {
+    clearPortraitLevelUps();
     setFirstStepsOpen(false);
     chroniclesClearPlayingRun();
     beginChroniclesRun(FIRST_PERSON_RUN_SCOPE, { entryMapId });
@@ -1563,6 +1611,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const loadSavedGame = (runId) => {
     if (!chroniclesSelectSavedRun(FIRST_PERSON_RUN_SCOPE, runId)) return;
+    clearPortraitLevelUps();
     setFirstStepsOpen(false);
     // Legacy saves without run-scoped flags retain their old account fallback.
     runProgressionActiveRef.current = true;
@@ -1584,6 +1633,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   };
 
   const returnToSaveMenu = () => {
+    clearPortraitLevelUps();
     setFirstStepsOpen(false);
     chroniclesClearSessionResume(activeRunIdRef.current);
     chroniclesClearPlayingRun();
@@ -1781,6 +1831,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
                   ))}
                 </span>
+                {portraitLevelUps[member.id] && (
+                  <ChroniclesPortraitLevelUp key={portraitLevelUps[member.id].token}
+                    heroName={member.name} toLevel={portraitLevelUps[member.id].toLevel} />
+                )}
                 <span><strong>{index + 1}. {member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level} · {member.row === 'front' ? 'FRENTE' : 'RETAGUARDIA'}</small></span>
                 <span className="chronicles-party-bars" aria-hidden="true" data-band={chroniclesHealthBand(member.hp, member.maxHp)}>
                   <i className="is-hp" style={{ '--fill': member.maxHp ? Math.max(0, member.hp) / member.maxHp : 0 }} />
