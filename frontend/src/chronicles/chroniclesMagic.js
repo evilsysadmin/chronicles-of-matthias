@@ -38,12 +38,12 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'flying-fist': spell({
     id: 'flying-fist', name: 'Puño volador', schools: ['esoterica'], cost: 2, price: 12,
     kind: 'attack', damage: 6, reach: 2, element: 'energy',
-    description: 'Un guantelete encantado golpea a un enemigo a dos casillas. No falla.',
+    description: 'Un guantelete encantado golpea a un enemigo visible. No falla.',
   }),
   'elemental-arrow': spell({
     id: 'elemental-arrow', name: 'Flecha elemental', schools: ['cosmonium', 'gaiam'], cost: 2, price: 15,
     kind: 'attack', damage: 8, reach: 3, element: 'fire',
-    description: 'Un dardo de fuego a tres casillas. No falla.',
+    description: 'Un dardo de fuego contra un enemigo visible. No falla.',
   }),
   'detect-magic': spell({
     id: 'detect-magic', name: 'Detectar magia', schools: ['cosmonium'], cost: 1, price: 8,
@@ -54,22 +54,22 @@ export const CHRONICLES_SPELLS = Object.freeze({
   'cold-ray': spell({
     id: 'cold-ray', name: 'Rayo gélido', schools: ['cosmonium', 'gaiam'], cost: 3, price: 22,
     kind: 'attack', damage: 10, reach: 3, element: 'cold',
-    description: 'Un haz de escarcha a tres casillas. No falla.',
+    description: 'Un haz de escarcha contra un enemigo visible. No falla.',
   }),
   'poison-cloud': spell({
     id: 'poison-cloud', name: 'Nube venenosa', schools: ['gaiam'], cost: 3, price: 24,
     kind: 'attack', damage: 11, reach: 2, element: 'poison',
-    description: 'Una nube verde envuelve a un enemigo a dos casillas. No falla.',
+    description: 'Una nube verde envuelve a un enemigo visible. No falla.',
   }),
   'holy-strike': spell({
     id: 'holy-strike', name: 'Golpe sagrado', schools: ['esoterica'], cost: 4, price: 32,
     kind: 'attack', damage: 13, reach: 2, element: 'magic',
-    description: 'La fe golpea a un enemigo a dos casillas. No falla.',
+    description: 'La fe golpea a un enemigo visible. No falla.',
   }),
   'lightning-bolt': spell({
     id: 'lightning-bolt', name: 'Relámpago', schools: ['cosmonium'], cost: 4, price: 34,
     kind: 'attack', damage: 15, reach: 3, element: 'electricity',
-    description: 'Un rayo a tres casillas. No falla, y deja olor a tormenta.',
+    description: 'Un rayo contra un enemigo visible. No falla, y deja olor a tormenta.',
   }),
   'heal-wounds': spell({
     id: 'heal-wounds', name: 'Curar heridas', schools: ['esoterica', 'gaiam'], cost: 3, price: 25,
@@ -81,12 +81,12 @@ export const CHRONICLES_SPELLS = Object.freeze({
   fireball: spell({
     id: 'fireball', name: 'Bola de fuego', schools: ['cosmonium'], cost: 5, price: 45,
     kind: 'attack', damage: 12, reach: 3, element: 'fire', area: 1,
-    description: 'Estalla sobre un enemigo a tres casillas y quema también a los que tiene al lado. No falla.',
+    description: 'Estalla sobre un enemigo visible y quema también a los que tiene al lado. No falla.',
   }),
   paralyze: spell({
     id: 'paralyze', name: 'Paralizar', schools: ['esoterica', 'gaiam'], cost: 4, price: 38,
     kind: 'paralyze', reach: 3, turns: 2,
-    description: 'Un enemigo a tres casillas pierde sus dos próximas acciones (los jefes, una).',
+    description: 'Un enemigo visible pierde sus dos próximas acciones (los jefes, una).',
   }),
   'mass-heal': spell({
     id: 'mass-heal', name: 'Sanación en grupo', schools: ['esoterica', 'gaiam'], cost: 6, price: 50,
