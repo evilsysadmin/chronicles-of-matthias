@@ -295,7 +295,7 @@
     border: 1px solid #97754b;
     background: #49311f;
     color: #f8d9a0;
-    font: normal 1rem/1 Georgia, serif;
+    font: normal 1.05rem/1 system-ui, sans-serif;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > span {
