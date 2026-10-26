@@ -9,7 +9,8 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
   it('only condenses empty backpacks and unlinked relics on narrow touch screens', () => {
     expect(mobileEmpty).toBeTruthy();
     expect(mobileEmpty).toContain('@media (max-width: 520px) and (pointer: coarse)');
-    expect(mobileEmpty).toMatch(/\.chronicles-character-sheet--mm3\.chronicles-character-sheet--folio-v2\s*\[data-chronicles-equipment-folio\] \.chronicles-character-sheet__backpack:has\(> small\)/);
+    expect(mobileEmpty).toContain('.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2');
+    expect(mobileEmpty).toContain('.chronicles-character-sheet__backpack:has(> small):not(:has(> details))');
     expect(mobileEmpty).toMatch(/\.chronicles-character-sheet__relic:not\(\.has-relic\)/);
     expect(mobileEmpty).toContain('min-height: 0');
     expect(mobileEmpty).not.toMatch(/display:\s*none|visibility:\s*hidden/);
