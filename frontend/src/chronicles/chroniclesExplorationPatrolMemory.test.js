@@ -112,3 +112,22 @@ describe('restored enemy positions respect dungeon walls', () => {
     expect(chroniclesEnemyAttackTarget(restored, goblin)).toBeNull();
   });
 });
+
+describe('MM3 organic knight pursuit of remembered sightings', () => {
+  it('crawls toward a last-seen tile rather than jumping away when no knight landing helps', () => {
+    const map = chroniclesMapById('swordhaven-sewers');
+    const spider = map.enemies.find((enemy) => enemy.id === 'sewers-spider');
+    const state = {
+      ...createChroniclesState(map.id, null, { rules: 'mm3' }),
+      // The company is elsewhere: only a real, short-lived sighting remains.
+      x: 15, y: 1, phase: 'explore', turnPhase: 'party', explorationEnemySteps: 6,
+      enemyPositions: { [spider.id]: { x: 1, y: 3 } },
+      enemyAwareness: {
+        [spider.id]: { x: 1, y: 2, tick: 2, phase: 'explore', mapId: map.id },
+      },
+    };
+    // All legal knight landings are farther from (1,2), while the corridor
+    // directly north is open. The creature must not oscillate away and back.
+    expect(chroniclesChooseEnemyStep(state, spider)).toEqual({ x: 1, y: 2 });
+  });
+});
