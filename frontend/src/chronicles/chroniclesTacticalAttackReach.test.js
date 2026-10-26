@@ -27,17 +27,17 @@ describe('Tactical margin uses real MM3 attack range', () => {
     expect(slingReach).toBeGreaterThan(1);
     expect(range.missileReach).toBe(slingReach);
     expect(chroniclesTargetReachLabel({ distance: slingReach }, range))
-      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+      .toBe('A: ACÉRCATE PARA GOLPEAR · S: A TIRO');
     expect(chroniclesTargetReachLabel({ distance: 7 }, range))
-      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+      .toBe('A: ACÉRCATE PARA GOLPEAR · S: A TIRO');
   });
 
   it('advertises shots across a visible corridor, not a separate provoke-only range', () => {
     const target = { distance: 7 };
     expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 25 }))
-      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+      .toBe('A: ACÉRCATE PARA GOLPEAR · S: A TIRO');
     expect(chroniclesTargetReachLabel(target, { meleeReach: 1, missileReach: 0 }))
-      .toBe('FUERA DE ALCANCE · ACÉRCATE PARA ATACAR');
+      .toBe('ACÉRCATE PARA GOLPEAR');
   });
 
   it('shows no S reach when all four heroes lack a usable projectile weapon', () => {
@@ -56,7 +56,7 @@ describe('Tactical margin uses real MM3 attack range', () => {
     const rookTurn = chroniclesTacticalAttackReach(combat, 'matthias');
     expect(rookTurn.missileReach).toBe(chroniclesPartyAttackStats(combat, 'rook', 'missile').reach);
     expect(chroniclesTargetReachLabel({ distance: rookTurn.missileReach }, rookTurn))
-      .toBe('A: FUERA DE ALCANCE · S: A TIRO');
+      .toBe('A: ACÉRCATE PARA GOLPEAR · S: A TIRO');
 
     const matthiasTurn = {
       ...combat, initiative: { ...combat.initiative, order: [{ id: 'matthias', kind: 'party' }] },

@@ -97,7 +97,8 @@ describe('Chronicles premium shop UI', () => {
     const matthias = comparisons.find((hero) => hero.memberId === 'matthias');
     expect(matthias.displacedShield?.name).toBe(CHRONICLES_EQUIPMENT['iron-shield'].name);
     expect(html).toContain('Pierde escudo:');
-    expect(html).toMatch(/Acierto|Daño|Alcance|CA/);
+    expect(html).toMatch(/Acierto|Daño|CA/);
+    expect(html).not.toMatch(/alcance/i);
     expect(state.equipment.matthias.weapon).toBe('brass-dagger');
     expect(state.equipment.matthias.shield).toBe('iron-shield');
   });
@@ -125,6 +126,7 @@ describe('Chronicles premium shop UI', () => {
     for (const hero of blocked) expect(html).toContain(hero.reason);
     expect(html).toContain('Puede equiparlo');
     expect(html).toContain('No puede equiparlo');
+    expect(html).not.toMatch(/alcance/i);
     expect(html).not.toContain('En MM3');
     expect(state.equipment.matthias.missile).toBe('wooden-bow');
   });

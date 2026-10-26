@@ -18,6 +18,7 @@ describe('Chronicles character sheet combat summary', () => {
     const html = render('mm3');
     expect(html).toContain('Equipo A: daño');
     expect(html).toContain('El disparo S usa sus propios bonos');
+    expect(html).not.toMatch(/alcance/i);
     expect(html).toContain('CA del equipo');
     expect(html).toContain('dificulta impactos, no resta daño');
     expect(html).not.toMatch(/CA \+\d+ · reducción \d+/);
@@ -81,6 +82,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Descripción y atributos<\/summary>/);
     expect(html).toMatch(/Puede equiparlo|Clase incompatible/);
     expect(html).toContain('Equipar Honda de latón');
+    expect(html).not.toMatch(/alcance/i);
     expect(html).toMatch(/Si equipas este objeto|Diferencia respecto al equipo actual/);
     expect(html).toContain('data-chronicles-equipment-handling');
     expect(html).not.toContain('Este personaje no lleva una reliquia vinculada.');

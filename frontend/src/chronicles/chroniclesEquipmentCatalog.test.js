@@ -161,11 +161,12 @@ describe('Chronicles · MM3 equipment catalog', () => {
     // The sword should not be a strictly better mace for the SAME price.
     expect(CHRONICLES_EQUIPMENT['brass-dagger'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-mace'].price);
     expect(CHRONICLES_EQUIPMENT['brass-mace'].price).toBeLessThan(CHRONICLES_EQUIPMENT['brass-sword'].price);
-    // A spear gives actual two-tile melee reach at the cost of its shield hand.
+    // Even polearms in MM3 require an adjacent enemy; the two-hand
+    // tradeoff is precision/damage/shield, not extra attack squares.
     const spear = attacks('wooden-spear');
     const staff = attacks('wooden-staff');
-    expect(spear.stats.reach).toBe(2);
-    expect(staff.stats.reach).toBe(2);
+    expect(spear.stats.reach).toBe(1);
+    expect(staff.stats.reach).toBe(1);
     expect(CHRONICLES_EQUIPMENT['wooden-spear'].twoHanded).toBe(true);
   });
 

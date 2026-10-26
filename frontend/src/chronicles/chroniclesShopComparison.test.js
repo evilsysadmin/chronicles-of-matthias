@@ -40,7 +40,7 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.inventory).toEqual(base.inventory);
   });
 
-  it('compares missile-slot bonuses and reach, not melee stats', () => {
+  it('compares missile bonuses without fake MM3 reach', () => {
     const state = {
       ...initial(),
       equipment: {
@@ -51,27 +51,24 @@ describe('Chronicles shop · preview equipment against party', () => {
     const preview = memberPreview(state, 'matthias', 'wooden-longbow');
     expect(preview.eligible).toBe(true);
     expect(preview.current?.id).toBe('wooden-bow');
-    expect(preview.stats.map((stat) => stat.key)).toEqual(['toHit', 'damage', 'reach']);
+    expect(preview.stats.map((stat) => stat.key)).toEqual(['toHit', 'damage']);
     expect(metric(preview, 'toHit').label).toBe('Acierto (bono)');
     expect(metric(preview, 'damage').label).toBe('Daño (bono)');
     expect(metric(preview, 'toHit').delta)
       .toBe(item('wooden-longbow').toHitBonus - item('wooden-bow').toHitBonus);
     expect(metric(preview, 'damage').delta)
       .toBe(item('wooden-longbow').attackDamageBonus - item('wooden-bow').attackDamageBonus);
-    expect(metric(preview, 'reach').delta)
-      .toBe(item('wooden-longbow').reach - item('wooden-bow').reach);
+    expect(metric(preview, 'reach')).toBeUndefined();
     expect(state.equipment.matthias).toEqual(before);
   });
 
-  it('shows honest melee reach when a bow is also equipped, and real shield tradeoffs for ranged arms', () => {
+  it('does not fake polearm reach and preserves real shield tradeoffs', () => {
     const state = {
       ...initial(),
       equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow', shield: 'bronze-shield' } },
     };
     const spear = memberPreview(state, 'matthias', 'wooden-spear');
-    expect(metric(spear, 'reach').delta).toBe(1);
-    expect(metric(spear, 'reach').before).toBe(1);
-    expect(metric(spear, 'reach').after).toBe(2);
+    expect(metric(spear, 'reach')).toBeUndefined();
     const bow = memberPreview(state, 'matthias', 'wooden-longbow');
     expect(metric(bow, 'toHit').after)
       .toBe(item('wooden-longbow').toHitBonus);
@@ -82,13 +79,13 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(state.equipment.matthias.missile).toBe('wooden-bow');
   });
 
-  it('reflects the actual dagger precision vs axe damage and polearm reach', () => {
+  it('reflects actual dagger precision vs axe damage without invented reach', () => {
     const current = { ...initial(), equipment: { matthias: { weapon: 'brass-dagger' } } };
     const axe = memberPreview(current, 'matthias', 'brass-axe');
     const spear = memberPreview(current, 'matthias', 'wooden-spear');
     expect(metric(axe, 'toHit').delta).toBeLessThan(0);
     expect(metric(axe, 'damage').delta).toBeGreaterThan(0);
-    expect(metric(spear, 'reach').delta).toBe(1);
+    expect(metric(spear, 'reach')).toBeUndefined();
     expect(current.equipment.matthias.weapon).toBe('brass-dagger');
   });
 
