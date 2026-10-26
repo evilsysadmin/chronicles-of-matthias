@@ -148,3 +148,39 @@ describe('Chronicles first-person combat reach follows the visible camera anchor
     expect(chroniclesChooseEnemyStep(inFront, goblin)).toEqual({ x: 1, y: 2 });
   });
 });
+
+describe('Chronicles MM3 pursuit around occupied chokepoints', () => {
+  it('waits instead of oscillating when every attack approach is blocked, then resumes', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const active = chroniclesActiveEnemies(base);
+    const hunter = active.find((enemy) => enemy.id === GOBLIN);
+    const doorway = active.find((enemy) => enemy.id === 'sewers-goblin-mid');
+    const flank = active.find((enemy) => enemy.id === 'sewers-spider');
+    const inactive = Object.fromEntries(active
+      .filter((enemy) => ![hunter.id, doorway.id, flank.id].includes(enemy.id))
+      .map((enemy) => [enemy.hpKey, 0]));
+    const blocked = {
+      ...base,
+      ...inactive,
+      x: 1, y: 1, phase: 'combat', turnPhase: 'enemy',
+      enemyPositions: {
+        [hunter.id]: { x: 1, y: 3 },
+        [doorway.id]: { x: 1, y: 2 },
+        [flank.id]: { x: 2, y: 1 },
+      },
+      initiative: { round: 1, cursor: 0, order: [{ kind: 'enemy', id: hunter.id }] },
+    };
+
+    // Both legal adjacent attack cells are occupied. The hunter has open
+    // corridor behind it but no path to attack; walking south would create
+    // the old back-and-forth jitter.
+    expect(chroniclesChooseEnemyStep(blocked, hunter)).toBeNull();
+    const waited = chroniclesResolveEnemyActor(blocked, hunter.id);
+    expect(chroniclesRuntimeEnemyPosition(waited, hunter)).toEqual({ x: 1, y: 3 });
+    expect(waited.party.map((hero) => hero.hp)).toEqual(blocked.party.map((hero) => hero.hp));
+
+    // A later turn must retry pathfinding when those cells become free.
+    const cleared = { ...blocked, [doorway.hpKey]: 0, [flank.hpKey]: 0 };
+    expect(chroniclesChooseEnemyStep(cleared, hunter)).toEqual({ x: 1, y: 2 });
+  });
+});
