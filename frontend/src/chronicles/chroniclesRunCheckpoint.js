@@ -422,8 +422,12 @@ function applyRuntimeCheckpoint(state, flags) {
   const turns = integerOrNull(flags[runtimeKey('turns')]);
   const round = integerOrNull(flags[runtimeKey('round')]);
   const explorationEnemySteps = integerOrNull(flags[runtimeKey('explorationEnemySteps')]);
-  const phase = shortStringOrNull(flags[runtimeKey('phase')], 32);
-  const turnPhase = shortStringOrNull(flags[runtimeKey('turnPhase')], 32);
+  // Only reducer-owned phases/turn owners may be restored. A corrupt string
+  // must never strand a saved expedition in an unrecognized state.
+  const phase = ['explore', 'combat', 'defeated', 'escaped'].includes(flags[runtimeKey('phase')])
+    ? flags[runtimeKey('phase')] : null;
+  const turnPhase = ['party', 'enemy'].includes(flags[runtimeKey('turnPhase')])
+    ? flags[runtimeKey('turnPhase')] : null;
 
   let next = { ...state };
   const savedMapFlags = restoredMapFlagSnapshots(flags);
@@ -445,6 +449,17 @@ function applyRuntimeCheckpoint(state, flags) {
     } catch {
       next.initiative = null;
     }
+  }
+  // Enemy turns and initiative exist only inside combat. Legacy or damaged
+  // checkpoints may disagree; do not freeze exploration behind a ghost turn.
+  // Preserve the *absence* of turnPhase on valid older saves: adding "party"
+  // changes their checkpoint fingerprint and causes unnecessary writes.
+  const invalidTurnOwner = flags[runtimeKey('turnPhase')] !== undefined && turnPhase === null;
+  if (next.phase !== 'combat') {
+    if (next.turnPhase === 'enemy' || invalidTurnOwner) next.turnPhase = 'party';
+    next.initiative = null;
+  } else if (invalidTurnOwner || (!next.initiative && next.turnPhase === 'enemy')) {
+    next.turnPhase = 'party';
   }
 
   if (Array.isArray(next.party)) {
