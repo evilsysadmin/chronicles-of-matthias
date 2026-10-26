@@ -98,7 +98,25 @@ function checkpointFlagKeys(currentMapId) {
 }
 
 function durableFlagValue(value) {
-  return value === null || ['boolean', 'number', 'string'].includes(typeof value);
+  return value === null || typeof value === 'boolean' || typeof value === 'string'
+    || (typeof value === 'number' && Number.isFinite(value));
+}
+
+// Old saves also carry authored flags directly in worldFlags, outside the
+// per-floor snapshot. Check their types against the map definitions so a
+// legacy "true" string cannot silently open a boolean door on recovery.
+// Unknown authored keys remain valid for backward compatibility.
+function authoredInitialFlagTypeMatches(key, value) {
+  let known = false;
+  for (const mapId of chroniclesMapIds()) {
+    const initial = chroniclesMapById(mapId).initialFlags || {};
+    if (!Object.hasOwn(initial, key)) continue;
+    known = true;
+    const expected = initial[key];
+    if ((expected === null ? value === null : typeof value === typeof expected)
+      && durableFlagValue(value)) return true;
+  }
+  return !known;
 }
 
 // Floor-local flags must survive a real API checkpoint, not just an in-memory
@@ -113,7 +131,9 @@ function checkpointMapFlagSnapshots(source) {
     if (!values || typeof values !== 'object' || Array.isArray(values)) continue;
     const changed = Object.fromEntries(Object.entries(map.initialFlags || {})
       .filter(([key, initial]) => Object.hasOwn(values, key)
-        && durableFlagValue(values[key]) && values[key] !== initial)
+        && durableFlagValue(values[key])
+        && (initial === null ? values[key] === null : typeof values[key] === typeof initial)
+        && values[key] !== initial)
       .map(([key]) => [key, values[key]]));
     if (Object.keys(changed).length) snapshots[mapId] = changed;
   }
@@ -406,8 +426,9 @@ const NON_AUTHORED_WORLD_FLAG_KEYS = new Set([
 function authoredWorldFlags(flags) {
   if (!flags || typeof flags !== 'object' || Array.isArray(flags)) return {};
   return Object.fromEntries(
-    Object.entries(flags).filter(([key]) => (
+    Object.entries(flags).filter(([key, value]) => (
       !String(key).startsWith(RUNTIME_PREFIX) && !NON_AUTHORED_WORLD_FLAG_KEYS.has(key)
+      && authoredInitialFlagTypeMatches(key, value)
     )),
   );
 }
@@ -627,7 +648,7 @@ export function chroniclesWorldFlagsForCheckpoint(state) {
     checkpointFlagKeys(source.mapId)
       .filter((key, index, keys) => keys.indexOf(key) === index)
       .filter((key) => Object.prototype.hasOwnProperty.call(source, key))
-      .filter((key) => durableFlagValue(source[key]))
+      .filter((key) => durableFlagValue(source[key]) && authoredInitialFlagTypeMatches(key, source[key]))
       .map((key) => [key, source[key]]),
   );
   return {
