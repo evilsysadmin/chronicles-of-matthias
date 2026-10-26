@@ -208,8 +208,9 @@ describe('Chronicles · Terra catalog integrity', () => {
       });
     });
     expect(unknown).toEqual([]);
-    // Swordhaven and the eight generated towns.
-    expect(boticas).toBe(9);
+    // Swordhaven's campaign botica, its restored legacy-square shop,
+    // and the eight generated towns.
+    expect(boticas).toBe(10);
   });
 });
 
