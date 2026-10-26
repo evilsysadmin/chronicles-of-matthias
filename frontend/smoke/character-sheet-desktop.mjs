@@ -716,6 +716,25 @@ try {
         const backpackRows = sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]');
         assert.ok(await backpackRows.count() >= 3,
           'The mobile backpack evidence must show real populated inventory');
+        const glyphGeometry = await backpackRows.evaluateAll((buttons) => buttons.map((button) => {
+          const icon = button.querySelector('.chronicles-character-sheet__inventory-glyph');
+          const name = button.querySelector('span');
+          const iconBox = icon.getBoundingClientRect();
+          const nameBox = name.getBoundingClientRect();
+          return {
+            display: getComputedStyle(button).display,
+            iconWidth: iconBox.width, iconHeight: iconBox.height,
+            iconRight: iconBox.right, nameLeft: nameBox.left,
+            rowHeight: button.getBoundingClientRect().height,
+            clipped: button.scrollWidth > button.clientWidth + 1,
+          };
+        }));
+        assert.ok(glyphGeometry.every((row) => row.display === 'grid'
+          && row.iconWidth >= 24 && row.iconHeight >= 24
+          && row.nameLeft >= row.iconRight + 5
+          && row.rowHeight >= 44 && row.rowHeight <= 52 && !row.clipped),
+        'Populated mobile inventory must align legible category icons and names without taller rows: '
+          + JSON.stringify(glyphGeometry));
         await page.mouse.move(10, 10);
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
