@@ -5,9 +5,9 @@ import test from 'node:test';
 const source = readFileSync(new URL('../frontend/smoke/folio-mobile.mjs', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/react-frontend.yml', import.meta.url), 'utf8');
 
-test('mobile folio still covers all 28 real view/viewport pairs', () => {
+test('mobile folio still covers all 29 real view/viewport pairs', () => {
   assert.match(source, /\[\[360, 780\], \[390, 844\], \[430, 932\], \[844, 390\], \[1280, 800\]\]/);
-  assert.match(source, /width === 1280 \? \['adventure', 'healing', 'revive', 'rescue'\]/);
+  assert.match(source, /width === 1280 \? \['cast', 'adventure', 'healing', 'revive', 'rescue'\]/);
   assert.match(source, /\['cast', 'items', 'adventure', 'healing', 'revive', 'rescue'\]/);
   assert.match(workflow, /node smoke\/run-timed\.mjs smoke\/folio-mobile\.mjs /);
 });
