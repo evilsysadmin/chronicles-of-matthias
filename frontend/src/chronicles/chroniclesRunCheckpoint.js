@@ -382,10 +382,26 @@ function slainFromFlags(flags) {
   return slain;
 }
 
+// Legacy worldFlags may contain arbitrary primitive keys. They are not
+// allowed to replace the reducer's structural state (map, phase, party,
+// combat, etc.); those fields have their own validated runtime checkpoint
+// representation. Keep unknown legacy *authored* flags for compatibility.
+const NON_AUTHORED_WORLD_FLAG_KEYS = new Set([
+  'mapId', 'combatRules', 'phase', 'turnPhase', 'initiative',
+  'x', 'y', 'direction', 'turns', 'round', 'explorationEnemySteps',
+  'party', 'partyPositions', 'enemyPositions', 'enemyAwareness',
+  'mapFlagsById', 'slainEnemies', 'equipment', 'inventory', 'quests',
+  'consumedContentIds', 'claimedRewards', 'runProgression',
+  'spellPoints', 'spellbook', 'bagOwners', 'guildMemberships',
+  'classAbilityCharges', 'enemyStatus', 'combatWard', 'combatBlock',
+]);
+
 function authoredWorldFlags(flags) {
   if (!flags || typeof flags !== 'object' || Array.isArray(flags)) return {};
   return Object.fromEntries(
-    Object.entries(flags).filter(([key]) => !String(key).startsWith(RUNTIME_PREFIX)),
+    Object.entries(flags).filter(([key]) => (
+      !String(key).startsWith(RUNTIME_PREFIX) && !NON_AUTHORED_WORLD_FLAG_KEYS.has(key)
+    )),
   );
 }
 
