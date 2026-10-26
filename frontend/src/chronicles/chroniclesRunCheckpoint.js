@@ -532,7 +532,21 @@ function applyRuntimeCheckpoint(state, flags) {
     enemyPositions[enemy.id] = { x: enemyX, y: enemyY };
     restoredEnemyPosition = true;
   });
-  if (restoredEnemyPosition) next.enemyPositions = enemyPositions;
+  if (restoredEnemyPosition) {
+    // A stale or malformed checkpoint must not stack living enemies in one
+    // cell, including a restored position on another foe's default spawn.
+    // Fall back to authored spawns as a group rather than inventing a tile.
+    const occupied = new Set();
+    const overlaps = (map?.enemies || []).some((enemy) => {
+      if (Number(next[enemy.hpKey] ?? enemy.maxHp) <= 0) return false;
+      const position = enemyPositions[enemy.id] || { x: enemy.x, y: enemy.y };
+      const cell = `${position.x},${position.y}`;
+      if (occupied.has(cell)) return true;
+      occupied.add(cell);
+      return false;
+    });
+    if (!overlaps) next.enemyPositions = enemyPositions;
+  }
 
   const enemyAwareness = {};
   (map?.enemies || []).forEach((enemy) => {
