@@ -819,3 +819,20 @@
     display: none;
   }
 }
+
+/* The four hero names are actionable navigation, not decorative abbreviations.
+   Give long names two readable lines on phones without shrinking hit targets,
+   changing the HP row or affecting the desktop/exploration party strip. */
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-dock button {
+    height: 56px;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-name {
+    font-size: .86rem;
+    line-height: 1.12;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+}
