@@ -9,8 +9,8 @@ const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
   // Both facades from matching walkable oblique positions, far enough away
   // to show the roof silhouette instead of only the door at eye level.
-  apothecary: { x: 5, y: 5, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.2 },
-  guild: { x: 13, y: 5, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 2.2 },
+  apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
+  guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
