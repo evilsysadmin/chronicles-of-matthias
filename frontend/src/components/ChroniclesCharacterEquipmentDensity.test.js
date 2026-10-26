@@ -46,7 +46,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(glyphs).toContain('width: 26px');
     expect(glyphs).toContain('height: 26px');
     expect(glyphs).toContain('text-overflow: ellipsis');
-    expect(glyphs).not.toMatch(/display:\\s*none|visibility:\\s*hidden/);
+    expect(glyphs).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain('aria-hidden="true"');
     expect(sheet).toContain('data-inventory-item={item.id}');
   });
