@@ -80,9 +80,11 @@ export function chroniclesShopEquipmentComparisons(state, item) {
     // struck. Damage reduction is a legacy combat rule: never show a fake
     // reduction loss in a modern MM3 merchant comparison.
     const defenses = chroniclesUsesMM3Combat(state) ? ['armorClass'] : ['armorClass', 'damageReduction'];
+    // Range is not a comparable stat in MM3. Preserve it only for Tactics.
+    const rangeMetric = chroniclesUsesMM3Combat(state) ? [] : ['reach'];
     const keys = item.slot === 'weapon'
-      ? ['toHit', 'damage', 'reach', ...(displacedShield ? defenses : [])]
-      : item.slot === 'missile' ? ['toHit', 'damage', 'reach']
+      ? ['toHit', 'damage', ...rangeMetric, ...(displacedShield ? defenses : [])]
+      : item.slot === 'missile' ? ['toHit', 'damage', ...rangeMetric]
         : item.slot === 'shield' ? [...defenses, ...(after.toHit !== before.toHit ? ['toHit'] : [])]
           : item.slot === 'armor' ? [
               ...defenses,

@@ -374,7 +374,6 @@ export default function ChroniclesCharacterSheet({
                         <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
                         <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        <div><span>Alcance</span><strong>{weaponSwap.before.reach} → {weaponSwap.after.reach}</strong><em>{signed(weaponSwap.delta.reach)}</em></div>
                         {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </div>
@@ -490,7 +489,7 @@ export default function ChroniclesCharacterSheet({
           {mm3 && <div><span>ACIERTO</span><b>{signed(firstPersonStats.toHit)}</b></div>}
           {mm3 && <div><span>ARMADURA</span><b>{chroniclesPartyArmorClass(state, member.id)}</b></div>}
           {!tacticsMode && !mm3 && <div><span>REDUCCIÓN</span><b>{gearBonus.damageReduction}</b></div>}
-          <div><span>ALCANCE</span><b>{reach}</b></div>
+          {!mm3 && <div><span>ALCANCE</span><b>{reach}</b></div>}
         </div>
 
         {mm3 && (
@@ -616,8 +615,8 @@ export default function ChroniclesCharacterSheet({
                     <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
                       <b>{label}</b>
                       <strong>{worn?.name || 'Sin equipar'}</strong>
-                      <small>{stats.reach > 0
-                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}`
+                      <small>{slot === 'weapon' || worn
+                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)}`
                         : 'Sin arma de proyectiles · no puede disparar'}</small>
                       {slot === 'missile' && worn && chroniclesShopHandlingNote(worn, state?.combatRules) && (
                         <small className="chronicles-character-sheet__handling-note" data-chronicles-worn-handling>
@@ -734,7 +733,7 @@ export default function ChroniclesCharacterSheet({
         </div>
 
         <footer className="chronicles-character-sheet__foot">
-          <span>{member.attackName || profile.attackName} · daño {damage} · alcance {reach}</span>
+          <span>{member.attackName || profile.attackName} · daño {damage}{mm3 ? '' : ` · alcance ${reach}`}</span>
           <span>Esc · cerrar</span>
         </footer>
         </div>{/* folio-content */}
