@@ -417,6 +417,28 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(temple.getObjectByName('temple-bell-tower')).toBeTruthy();
     expect(temple.getObjectByName('civic-cupola-tower')).toBeFalsy();
 
+    // Two crystal-sign shops must not look like the same wizard's tower.
+    // The apothecary has its own green rooftop herbarium and hanging herbs,
+    // while the guild retains the original turret. Pure dressing: no grid edit.
+    const apothecary = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-apothecary-'));
+    const guild = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-guild-'));
+    expect(apothecary).toBeTruthy();
+    expect(guild).toBeTruthy();
+    const herbarium = apothecary.getObjectByName('apothecary-roof-herbarium');
+    expect(herbarium).toBeInstanceOf(THREE.Group);
+    expect(herbarium.getObjectByName('herbarium-green-glazing')).toBeInstanceOf(THREE.Mesh);
+    expect(herbarium.getObjectByName('herbarium-glazed-roof')).toBeInstanceOf(THREE.Mesh);
+    const herbs = apothecary.getObjectByName('apothecary-hanging-herbs');
+    expect(herbs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(herbs.count).toBe(4);
+    expect(herbs.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(new THREE.Box3().setFromObject(herbarium).min.y).toBeGreaterThan(5);
+    expect(apothecary.getObjectByName('magic-shop-turret')).toBeFalsy();
+    expect(guild.getObjectByName('magic-shop-turret')).toBeTruthy();
+    expect(guild.getObjectByName('apothecary-roof-herbarium')).toBeFalsy();
+
     // From the authored spawn on the plaza, players can walk to the mayor:
     // do not let architectural dressing imply a door behind solid collision.
     const visited = new Set();

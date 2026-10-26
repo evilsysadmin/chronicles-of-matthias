@@ -7,6 +7,10 @@ import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCam
 
 const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
+  // Both facades from matching walkable oblique positions, far enough away
+  // to show the roof silhouette instead of only the door at eye level.
+  apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
+  guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
@@ -51,7 +55,11 @@ try {
   const [dx, dy] = direction[chosen.heading];
   const eye = chosen.cameraHeight || 1.62;
   camera.position.set(worldX, eye, worldZ);
-  camera.lookAt(worldX + dx * 4, eye + (chosen.lookUp || 0), worldZ + dy * 4);
+  camera.lookAt(
+    chosen.target ? (chosen.target.x - center.x) * 4 : worldX + dx * 4,
+    eye + (chosen.lookUp || 0),
+    chosen.target ? (chosen.target.y - center.y) * 4 : worldZ + dy * 4,
+  );
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
@@ -63,6 +71,10 @@ try {
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
+  const apothecary = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-apothecary-'));
+  const guild = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-guild-'));
   if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
@@ -100,6 +112,13 @@ try {
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
     pixelVariants: String(distinct.size),
+    distinctShopFacades: String(Boolean(
+      apothecary?.getObjectByName('apothecary-roof-herbarium')
+      && apothecary?.getObjectByName('apothecary-hanging-herbs')
+      && !apothecary?.getObjectByName('magic-shop-turret')
+      && guild?.getObjectByName('magic-shop-turret')
+      && !guild?.getObjectByName('apothecary-roof-herbarium')
+    )),
   });
 } catch (error) {
   document.body.dataset.sceneError = error.message;

@@ -552,7 +552,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const styleId = contentAt.get(door.x + ',' + door.y);
       const style = TOWN_BUILDING_STYLES[styleId] || TOWN_HOME_STYLES[homeIndex++ % TOWN_HOME_STYLES.length];
       const { root } = buildSwordhavenHouse(
-        { id: 'first-book-' + (styleId || 'home') + '-' + index, x: block.cx, y: block.cy, roof: style.roof, emblem: style.emblem, label: style.label },
+        { id: 'first-book-' + (styleId || 'home') + '-' + index, x: block.cx, y: block.cy,
+          roof: style.roof, emblem: style.emblem, label: style.label, serviceStyle: styleId },
         village, coarsePointer, new Set(), sceneCenter,
       );
       root.rotation.y = facing.yaw;

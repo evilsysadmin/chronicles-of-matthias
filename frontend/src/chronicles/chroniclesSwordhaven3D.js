@@ -366,7 +366,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isTemple = spec.emblem === 'sun';
   const isTownHall = spec.emblem === 'civic';
   const isTavern = spec.emblem === 'mug';
-  const isMagic = spec.emblem === 'crystal';
+  const isApothecary = spec.serviceStyle === 'apothecary';
+  const isMagic = spec.emblem === 'crystal' && !isApothecary;
   const isForge = spec.emblem === 'swords';
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
@@ -596,6 +597,42 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'civic-cupola-roof', [0, height + 3.82, -depth * 0.11], !coarse);
     mesh(root, new THREE.CylinderGeometry(1.02, 1.02, 0.13, 8), mats.gold,
       'civic-cupola-crest', [0, height + 1.40, -depth * 0.11]);
+  } else if (isApothecary) {
+    // The apothecary is a glazed rooftop herbarium, not a second wizard's
+    // turret. All pieces sit above the authored solid building footprint.
+    const herbalGlass = material(0x79b39b, {
+      emissive: 0x12372a, emissiveIntensity: 0.18, metalness: 0.12, roughness: 0.34,
+    });
+    const herbarium = new THREE.Group();
+    herbarium.name = 'apothecary-roof-herbarium';
+    herbarium.position.set(0, height + 1.72, -depth * 0.12);
+    mesh(herbarium, new THREE.BoxGeometry(2.95, 1.35, 2.22), mats.timber,
+      'herbarium-timber-frame', [0, 0.68, 0]);
+    mesh(herbarium, new THREE.BoxGeometry(2.65, 1.20, 2.29), herbalGlass,
+      'herbarium-green-glazing', [0, 0.68, 0.025]);
+    for (const side of [-1, 1]) {
+      const pane = mesh(herbarium, new THREE.BoxGeometry(1.72, 0.14, 2.55),
+        herbalGlass, 'herbarium-glazed-roof', [side * 0.72, 1.62, 0]);
+      pane.rotation.z = -side * 0.50;
+    }
+    root.add(herbarium);
+    // Drying herbs distinguish the street-level frontage even on a phone.
+    // Batch all four bunches; never add an obstacle or a light source.
+    const herbs = new THREE.InstancedMesh(new THREE.ConeGeometry(0.19, 0.60, 7),
+      material(0x62865a), 4);
+    herbs.name = 'apothecary-hanging-herbs';
+    herbs.userData.chroniclesDecorativeOnly = true;
+    const bundle = new THREE.Object3D();
+    for (let i = 0; i < herbs.count; i += 1) {
+      const side = i < 2 ? -1 : 1;
+      bundle.position.set(side * (1.20 + (i % 2) * 0.39),
+        2.25 + (i % 2) * 0.26, facadeZ + 0.45);
+      bundle.rotation.z = Math.PI + side * 0.12;
+      bundle.updateMatrix();
+      herbs.setMatrixAt(i, bundle.matrix);
+    }
+    herbs.instanceMatrix.needsUpdate = true;
+    root.add(herbs);
   } else if (isMagic) {
     mesh(root, new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), mats.plaster,
       'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);
