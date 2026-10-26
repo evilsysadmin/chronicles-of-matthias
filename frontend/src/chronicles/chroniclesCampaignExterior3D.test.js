@@ -468,6 +468,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(armorer.getObjectByName('forge-roof-smokestack')).toBeFalsy();
     expect(watch?.getObjectByName('armor-roof-crest')).toBeFalsy();
 
+    // The quartermaster's general store must read as a market storefront,
+    // not another forge or guardhouse. Canopy is overhead-only decoration.
+    const store = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-store-'));
+    expect(store).toBeTruthy();
+    const awning = store.getObjectByName('store-market-awning');
+    expect(awning).toBeInstanceOf(THREE.Group);
+    expect(awning.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(awning.getObjectByName('store-awning-cloth')).toBeInstanceOf(THREE.Mesh);
+    expect(awning.getObjectByName('store-awning-front-rail')).toBeInstanceOf(THREE.Mesh);
+    expect(awning.children.filter(child => child.name === 'store-awning-stripe')).toHaveLength(6);
+    expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.5);
+    expect(forge.getObjectByName('store-market-awning')).toBeFalsy();
+    expect(watch?.getObjectByName('store-market-awning')).toBeFalsy();
+
     // From the authored spawn on the plaza, players can walk to the mayor:
     // do not let architectural dressing imply a door behind solid collision.
     const visited = new Set();
