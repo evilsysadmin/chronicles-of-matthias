@@ -242,9 +242,13 @@ function shortStringOrNull(value, maxLength = 64) {
 
 function normalizedInitiative(value) {
   if (!value || typeof value !== 'object' || !Array.isArray(value.order)) return null;
-  const order = value.order
+  // Preserve the current actor's original index when malformed entries are
+  // discarded. Otherwise a bad entry before the cursor silently grants the
+  // next combatant the saved hero's turn on checkpoint recovery.
+  const requestedCursor = integerOrNull(Number(value.cursor), 0, value.order.length - 1) ?? 0;
+  const entries = value.order
     .slice(0, 64)
-    .map((actor) => {
+    .map((actor, index) => {
       const id = shortStringOrNull(actor?.id, 64);
       const kind = actor?.kind === 'party' || actor?.kind === 'enemy' ? actor.kind : null;
       const name = shortStringOrNull(actor?.name, 80) || id;
@@ -252,16 +256,17 @@ function normalizedInitiative(value) {
       const roll = integerOrNull(Number(actor?.roll), 1, 8);
       const initiative = integerOrNull(Number(actor?.initiative), 1, 1007);
       if (!id || !kind || agility === null || roll === null || initiative === null) return null;
-      return { id, kind, name, agility, roll, initiative };
+      return { index, actor: { id, kind, name, agility, roll, initiative } };
     })
     .filter(Boolean);
-  if (!order.length) return null;
+  if (!entries.length) return null;
+  const nextCursor = entries.findIndex((entry) => entry.index >= requestedCursor);
   return {
     version: integerOrNull(Number(value.version), 1, 99) || 1,
     die: value.die === '1d8' ? '1d8' : '1d8',
     round: integerOrNull(Number(value.round), 1, 9999) || 1,
-    cursor: Math.min(order.length - 1, integerOrNull(Number(value.cursor), 0, order.length - 1) || 0),
-    order,
+    cursor: nextCursor >= 0 ? nextCursor : entries.length - 1,
+    order: entries.map((entry) => entry.actor),
   };
 }
 
