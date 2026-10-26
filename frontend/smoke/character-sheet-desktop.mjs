@@ -735,6 +735,30 @@ try {
           && row.rowHeight >= 44 && row.rowHeight <= 52 && !row.clipped),
         'Populated mobile inventory must align legible category icons and names without taller rows: '
           + JSON.stringify(glyphGeometry));
+        // The fixed hero dock must show a continuation cue only while the
+        // genuinely scrollable equipment dossier still has content below.
+        const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
+        const dock = sheet.locator('.chronicles-character-sheet__party-dock');
+        const scrollCapacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
+        assert.ok(scrollCapacity > 80, 'Populated phone dossier must genuinely scroll');
+        await page.waitForFunction(() => document.querySelector(
+          '.chronicles-character-sheet__scroll'
+        )?.dataset.moreBelow === 'true');
+        const cueAtTop = await dock.evaluate((node) => getComputedStyle(node, '::before').content);
+        assert.match(cueAtTop, /Desliza para ver más/,
+          'Mobile dock must signal more content without hiding its party buttons');
+        await scrollArea.evaluate((node) => { node.scrollTop = node.scrollHeight; });
+        await page.waitForFunction(() => document.querySelector(
+          '.chronicles-character-sheet__scroll'
+        )?.dataset.moreBelow === 'false');
+        const cueAtEnd = await dock.evaluate((node) => getComputedStyle(node, '::before').content);
+        assert.ok(cueAtEnd === 'none' || cueAtEnd === 'normal',
+          'Continuation cue must disappear at the real end of the dossier: ' + cueAtEnd);
+        if (width === 390) await page.screenshot({ path: 'smoke-character-sheet-scroll-end-390.png' });
+        await scrollArea.evaluate((node) => { node.scrollTop = 0; });
+        await page.waitForFunction(() => document.querySelector(
+          '.chronicles-character-sheet__scroll'
+        )?.dataset.moreBelow === 'true');
         await page.mouse.move(10, 10);
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
