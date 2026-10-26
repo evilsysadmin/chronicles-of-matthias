@@ -718,6 +718,16 @@ try {
         'Changing party member must retain chosen folio on touch devices');
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert(await sheet.locator('[data-chronicles-equipment-folio]').isVisible());
+      const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
+      const repeatedEquipmentGold = sheet.locator(
+        '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
+      );
+      assert.equal(await companyGoldChip.isVisible(), true,
+        'The primary company gold balance must remain visible in the identity strip');
+      assert.equal(await repeatedEquipmentGold.isVisible(), width > 430,
+        'Only narrow touch phones may omit the redundant Equipment gold line');
+      assert.match(await repeatedEquipmentGold.getAttribute('aria-label'), /Oro de la compañía/,
+        'The secondary gold value remains in the document for larger layouts');
       if (width <= 520) {
         const emptyWeapons = await sheet.locator(
           '[data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button))'
