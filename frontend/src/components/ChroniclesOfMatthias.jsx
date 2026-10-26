@@ -1328,10 +1328,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       return;
     }
     const status = chroniclesHealTargetStatus(target);
-    if (status !== 'wounded') {
-      setSpellTargetNotice(status === 'fallen'
-        ? 'A 0 PV necesita resurrección, no curación.'
-        : 'Ese compañero ya tiene todos sus PV.');
+    if (status === 'fallen') {
+      setSpellTargetNotice('A 0 PV necesita resurrección, no curación.');
       return;
     }
     setPendingSpellTarget(null);
