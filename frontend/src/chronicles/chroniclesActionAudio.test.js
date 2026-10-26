@@ -154,11 +154,11 @@ describe('Chronicles action audio cues', () => {
     const lancer = { ...armed, equipment: { ...armed.equipment, rook: { weapon: 'bronze-spear' } } };
     expect(chroniclesActionAudioCue(lancer, { ...lancer, [enemy.hpKey]: 11 }, memberAttack('rook')))
       .toBe('hit:pierce');
-    expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias', 'missile'))).toBe('hit:arrow');
+    expect(chroniclesActionAudioCue(armed, hit, memberAttack('matthias', 'missile'))).toBe('volley:bow|hit:arrow');
     expect(chroniclesActionAudioCue(armed, dead, memberAttack('knight'))).toBe('defeat:cleave');
     expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias'))).toBe('miss:cut');
     expect(chroniclesActionAudioCue(armed, armed, memberAttack('rook'))).toBe('miss:blunt');
-    expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias', 'missile'))).toBe('miss:arrow');
+    expect(chroniclesActionAudioCue(armed, armed, memberAttack('matthias', 'missile'))).toBe('volley:bow|miss:arrow');
 
     const hurtParty = {
       ...armed,
@@ -177,4 +177,24 @@ describe('Chronicles action audio cues', () => {
       .toBe('hit:cut|hurt:blunt');
   });
 
+});
+
+describe('Chronicles S · individual initiative shot audio', () => {
+  it('sounds the real projectile launch and the actual hit/miss, but never one for an unarmed actor', () => {
+    const start = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const equipped = { ...start, equipment: {
+      matthias: { missile: 'wooden-bow' },
+      rook: { missile: 'bronze-crossbow' },
+      knight: { missile: 'wooden-sling' },
+    } };
+    const enemy = chroniclesMapForState(equipped).enemies[0];
+    for (const [id, family] of [['matthias', 'bow'], ['rook', 'crossbow'], ['knight', 'sling']]) {
+      const action = { type: 'attack', memberId: id, mode: 'missile' };
+      const hit = { ...equipped, [enemy.hpKey]: Math.max(0, Number(equipped[enemy.hpKey] || 5) - 1) };
+      expect(chroniclesActionAudioCue(equipped, hit, action)).toContain(`volley:${family}|hit:`);
+      expect(chroniclesActionAudioCue(equipped, equipped, action)).toContain(`volley:${family}|miss:`);
+    }
+    const unarmed = { ...equipped, equipment: { ...equipped.equipment, rook: {} } };
+    expect(chroniclesActionAudioCue(unarmed, unarmed, { type: 'attack', memberId: 'rook', mode: 'missile' })).toBeNull();
+  });
 });

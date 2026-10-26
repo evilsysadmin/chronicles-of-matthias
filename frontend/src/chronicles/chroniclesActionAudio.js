@@ -135,10 +135,20 @@ export function chroniclesActionAudioCue(previous, next, action) {
     return defeated ? 'defeat' : hurt ? 'retaliation' : 'hit';
   }
 
-  const family = partyImpactFamily(previous, action?.memberId || 'matthias', action?.mode || 'auto');
+  const memberId = action?.memberId || 'matthias';
+  const mode = action?.mode && action.mode !== 'auto'
+    ? action.mode : chroniclesAttackMode(previous, memberId);
+  const missileFamily = mode === 'missile'
+    ? chroniclesEquippedItem(previous, memberId, 'missile')?.weaponFamily : null;
+  // A refused S has no release or impact. Genuine individual shots have
+  // the same bow/crossbow/sling launch as the pre-contact company volley.
+  if (mode === 'missile' && !missileFamily) return null;
+  const family = partyImpactFamily(previous, memberId, mode);
   const strike = !damaged.length ? 'miss'
     : damaged.some((enemy) => enemy.hp > 0 && (afterById.get(enemy.id) ?? enemy.hp) === 0) ? 'defeat' : 'hit';
-  return `${strike}:${family}${hurt ? '|hurt:blunt' : ''}`;
+  const impact = `${strike}:${family}${hurt ? '|hurt:blunt' : ''}`;
+  return ['bow', 'crossbow', 'sling'].includes(missileFamily)
+    ? `volley:${missileFamily}|${impact}` : impact;
 }
 
 function connectTone(ctx, destination, { frequency, duration, gain, type = 'triangle', delay = 0, endFrequency = null }) {

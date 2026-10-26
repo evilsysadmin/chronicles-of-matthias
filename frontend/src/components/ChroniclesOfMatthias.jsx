@@ -33,7 +33,7 @@ import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegi
 import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
 import './ChroniclesQuietActionNotice.css';
-import { chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
+import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
 import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
@@ -928,7 +928,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const startsCombat = !current.initiative
       && member
       && chroniclesEnemyTargetAhead(current, chroniclesPartyAttackStats(current, member.id, mode).reach);
-    if (!startsCombat) engineRef.current?.playAttack?.(memberId);
+    if (!startsCombat) chroniclesPlayAttackPresentation(engineRef.current, current, memberId, mode);
     dispatch(mode === 'auto' ? { type: 'attack', memberId } : { type: 'attack', memberId, mode });
   }, [dispatch, showMissileNotice]);
 

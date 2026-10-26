@@ -5,7 +5,7 @@ import {
   chroniclesReduce,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
-import { chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
+import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
 import { chroniclesVolleyProjectileKinds } from './chroniclesVolleyProjectileArt.js';
 import { chroniclesActionAudioCue } from './chroniclesActionAudio.js';
 
@@ -66,5 +66,52 @@ describe('Chronicles S · visible pre-contact shots even without a target (#134)
     expect(chroniclesVolleyPresentationShooterIds({ ...empty, initiative: { order: [] } }))
       .toEqual([]);
     expect(chroniclesVolleyPresentationShooterIds({ ...empty, phase: 'defeated' })).toEqual([]);
+  });
+});
+
+describe('Chronicles S · physical missile in initiative', () => {
+  it('uses one true equipped projectile rather than a melee slash on the active hero turn', () => {
+    const party = readyParty();
+    const enemy = chroniclesOpeningVolleyShots(party).target;
+    expect(enemy).toBeTruthy();
+    const combat = { ...party, initiative: {
+      order: [{ kind: 'party', id: 'rook' }, { kind: 'enemy', id: enemy.id }],
+      cursor: 0, round: 1,
+    } };
+    const events = [];
+    const engine = {
+      playVolley: (ids) => events.push(['volley', ids]),
+      playAttack: (id) => events.push(['melee', id]),
+    };
+    expect(chroniclesPlayAttackPresentation(engine, combat, 'rook', 'missile')).toBe(true);
+    expect(events).toEqual([['volley', ['rook']]]);
+    expect(chroniclesVolleyProjectileKinds(combat, ['rook'])).toEqual(['crossbow']);
+    const fired = chroniclesReduce(combat, { type: 'attack', memberId: 'rook', mode: 'missile' });
+    expect(fired.turns).toBe(combat.turns + 1);
+  });
+
+  it('keeps automatic ranged attacks ranged, and A melee only', () => {
+    const party = readyParty();
+    const enemy = chroniclesOpeningVolleyShots(party).target;
+    const combat = { ...party,
+      enemyPositions: { ...party.enemyPositions, [enemy.id]: { x: party.x + 2, y: party.y } },
+      initiative: { order: [{ kind: 'party', id: 'matthias' }, { kind: 'enemy', id: enemy.id }], cursor: 0, round: 1 },
+    };
+    const events = [];
+    const engine = { playVolley: (ids) => events.push(['volley', ids]), playAttack: (id) => events.push(['melee', id]) };
+    chroniclesPlayAttackPresentation(engine, combat, 'matthias', 'auto');
+    chroniclesPlayAttackPresentation(engine, combat, 'matthias', 'melee');
+    expect(events).toEqual([['volley', ['matthias']], ['melee', 'matthias']]);
+  });
+
+  it('neither launches an imaginary projectile nor displays a slash for a refused S', () => {
+    const party = readyParty();
+    const combat = { ...party, initiative: { order: [{ kind: 'party', id: 'rook' }], cursor: 0, round: 1 },
+      equipment: { ...party.equipment, rook: { weapon: 'bronze-mace' } } };
+    const events = [];
+    const engine = { playVolley: (ids) => events.push(['volley', ids]), playAttack: (id) => events.push(['melee', id]) };
+    expect(chroniclesPlayAttackPresentation(engine, combat, 'rook', 'missile')).toBe(false);
+    expect(events).toEqual([]);
+    expect(chroniclesReduce(combat, { type: 'attack', memberId: 'rook', mode: 'missile' }).turns).toBe(combat.turns);
   });
 });
