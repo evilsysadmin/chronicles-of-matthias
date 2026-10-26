@@ -89,7 +89,7 @@ try {
                   overflow: node.scrollWidth > node.clientWidth + 1 };
               });
             assert.match(copy.family, /system-ui/i, 'Spell descriptions use a legible phone text face');
-            assert(copy.size >= 14 && copy.lineHeight >= 19 && !copy.overflow,
+            assert(copy.size >= 17 && copy.lineHeight >= 20 && !copy.overflow,
               `CAST descriptive copy must be readable without clipping: ${JSON.stringify(copy)}`);
             const usage = await dialog.locator('.chronicles-spell-menu__folio-footer')
               .evaluate((node) => getComputedStyle(node).fontFamily);
