@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'armor', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -48,6 +48,8 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.distinctShopFacades, 'true',
           'Apothecary and guild must have distinct authored silhouettes');
+        assert.equal(result.distinctMetalworkFacades, 'true',
+          'Forge and armorer must have distinct authored rooflines');
         assert.equal(result.roofRelief, 'true',
           'Real street roofs must use aligned, shared shingle relief');
         // 188 facade posts + 38 reinforced corners + 92 diagonal braces
