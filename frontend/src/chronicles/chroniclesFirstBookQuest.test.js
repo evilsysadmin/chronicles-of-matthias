@@ -15,11 +15,10 @@ import {
 function walkTo(state, x, y) { return { ...state, x, y }; }
 
 describe('Chronicles first book · Swordhaven / Banner Road', () => {
-  it('ships a reversible new-world route without changing either previous map identity', () => {
+  it('ships the canonical town-to-road route without duplicate towns', () => {
     const ids = chroniclesMapIds();
-    for (const id of ['swordhaven-square', 'swordhaven-campaign', 'banner-road', 'swordhaven-first-book', 'banner-road-first-book']) {
-      expect(ids).toContain(id);
-    }
+    for (const id of ['swordhaven-first-book', 'banner-road-first-book']) expect(ids).toContain(id);
+    for (const id of ['swordhaven-square', 'swordhaven-campaign', 'banner-road']) expect(ids).not.toContain(id);
     const city = chroniclesMapById('swordhaven-first-book');
     const road = chroniclesMapById('banner-road-first-book');
     expect(city.regionKind).toBe('settlement');
@@ -30,8 +29,7 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
     expect(road.exits[0].action.effects[0]).toMatchObject({
       type: 'transition-map', mapId: city.id, entryExitId: 'to-first-book-banner-road',
     });
-    expect(chroniclesMapById('swordhaven-campaign').interactables.map((e) => e.id))
-      .not.toContain('first-book-quartermaster');
+    expect(city.interactables.map((e) => e.id)).toContain('first-book-quartermaster');
   });
 
   it('completes one sidequest loop: take job, cross road, find clue, return, receive gold and trade', () => {
