@@ -386,3 +386,30 @@
     order: 3;
   }
 }
+
+/* The fixed party selector must not look like it cuts off the inventory.
+   A small, non-interactive parchment tab signals additional scroll content
+   only while there is actually more dossier below the viewport. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock {
+    position: relative;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__scroll[data-more-below="true"] + .chronicles-character-sheet__party-dock::before {
+    content: '↓ Desliza para ver más';
+    position: absolute;
+    z-index: 1;
+    top: -24px;
+    right: 7px;
+    padding: 4px 9px;
+    border: 1px solid #9b7445;
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+    background: #f6e4c1;
+    color: #392817;
+    font: 700 .72rem/1.25 system-ui, sans-serif;
+    box-shadow: 0 -3px 8px #0007;
+    pointer-events: none;
+  }
+}
