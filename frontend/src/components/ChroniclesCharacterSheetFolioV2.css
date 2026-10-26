@@ -818,6 +818,16 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-hp-unit {
     display: none;
   }
+  /* When PV no longer fits, a small heart keeps the bare fraction identifiable
+     as health. This is decoration only; the button still announces full PV. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-hp-value::before {
+    content: '♥';
+    display: inline-block;
+    margin-right: 2px;
+    color: #b5dfad;
+    font: 700 .7rem/1 system-ui, sans-serif;
+    vertical-align: 1px;
+  }
 }
 
 /* On narrow phones, let the hero's complete name use the full button width.
