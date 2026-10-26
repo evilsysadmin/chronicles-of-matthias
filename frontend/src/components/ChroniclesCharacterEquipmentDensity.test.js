@@ -52,4 +52,17 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain("shield: '⬟'");
   });
 
+  it('keeps mobile equipment comparisons complete but vertically tighter', () => {
+    const compact = css.split('/* Compact the mobile comparison ledger')[1];
+    expect(compact).toBeTruthy();
+    expect(compact).toContain('@media (max-width: 520px) and (pointer: coarse)');
+    expect(compact).toContain('.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2');
+    expect(compact).toContain('.chronicles-character-sheet__swap-preview > div');
+    expect(compact).toContain('grid-template-columns: minmax(0, 1fr) auto 36px');
+    expect(compact).toContain('padding: 3px 0');
+    expect(compact).toContain('line-height: 1.3');
+    expect(compact).not.toMatch(/display:\\s*none|visibility:\\s*hidden/);
+    expect(sheet).toContain('chronicles-character-sheet__swap-preview');
+  });
+
 });
