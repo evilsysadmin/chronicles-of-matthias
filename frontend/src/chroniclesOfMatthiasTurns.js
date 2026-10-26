@@ -416,10 +416,14 @@ export function chroniclesRememberEnemySight(state, enemy) {
 
 function chooseStepTowardSighting(state, enemy, from, target, knight = false) {
   if (knight) {
-    return KNIGHT_STEPS.map((step, index) => ({
+    const best = KNIGHT_STEPS.map((step, index) => ({
       x: from.x + step.dx, y: from.y + step.dy, index,
     })).filter((point) => canOccupy(state, enemy, point))
       .sort((a, b) => distance(a, target) - distance(b, target) || a.index - b.index)[0] || null;
+    // A remembered sighting is a destination, not a reason to jump away from
+    // it indefinitely. Organic knight movers may crawl when no jump helps.
+    return best && distance(best, target) < distance(from, target)
+      ? best : chooseStepTowardSighting(state, enemy, from, target);
   }
   const queue = [{ position: from, firstStep: null }];
   const visited = new Set([positionKey(from)]);
