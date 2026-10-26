@@ -49,6 +49,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(glyphs).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain('aria-hidden="true"');
     expect(sheet).toContain('data-inventory-item={item.id}');
+    expect(sheet).toContain("shield: '⬟'");
   });
 
 });
