@@ -369,7 +369,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isApothecary = spec.serviceStyle === 'apothecary';
   const isMagic = spec.emblem === 'crystal' && !isApothecary;
   const isForge = spec.emblem === 'swords';
-  const isArmor = spec.serviceStyle === 'armor';
+  const isArmor = spec.serviceStyle === 'armor' || spec.id === 'swordhaven-armor';
   const isStore = spec.serviceStyle === 'store';
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
@@ -755,6 +755,24 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'armor-display', [x, 1.12, facadeZ + 0.24]);
   }
   if (isArmor) {
+    // A heavy, squared ashlar gateway distinguishes the armorer at eye level
+    // from the guild's pointed arch and the forge's open brazier. All masonry
+    // stays beside/above the existing door and never changes collision.
+    const gate = new THREE.Group();
+    gate.name = 'armor-stone-gateway';
+    gate.userData.chroniclesDecorativeOnly = true;
+    gate.position.z = facadeZ + 0.38;
+    for (const side of [-1, 1]) {
+      mesh(gate, new THREE.BoxGeometry(0.43, 3.34, 0.42), mats.stone,
+        'armor-gateway-pier', [side * 1.24, 1.68, 0], !coarse);
+      mesh(gate, new THREE.SphereGeometry(0.085, 8, 6), mats.steel,
+        'armor-gateway-rivet', [side * 0.95, 3.48, 0.28]);
+    }
+    mesh(gate, new THREE.BoxGeometry(2.95, 0.36, 0.42), mats.stone,
+      'armor-gateway-lintel', [0, 3.48, 0], !coarse);
+    mesh(gate, new THREE.BoxGeometry(0.34, 0.27, 0.48), mats.steel,
+      'armor-gateway-keystone', [0, 3.77, 0.04]);
+    root.add(gate);
     // Armorer's raised heraldic shield breaks the gable silhouette.
     // The watchhouse shares a shield sign but NOT this merchant roof crest.
     const crest = new THREE.Group();
