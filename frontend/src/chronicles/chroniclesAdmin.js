@@ -15,15 +15,8 @@ const GROUPS = Object.freeze([
   Object.freeze({ id: 'wilderness', label: 'Terra' }),
 ]);
 
-// Several maps share a title (the campaign's Swordhaven, the classic square
-// of «Nuevo juego», an older campaign layout, a Terra cell named after its
-// dungeon). The admin list must tell them apart, so those carry the variant
-// they belong to.
+// Only map names genuinely repeated in different contexts get a qualifier.
 const ADMIN_VARIANTS = Object.freeze({
-  'swordhaven-first-book': 'campaña',
-  'swordhaven-square': 'plaza de Nuevo juego',
-  'swordhaven-campaign': 'trazado antiguo',
-  'banner-road': 'trazado antiguo',
   'terra-c6': 'exterior',
 });
 
