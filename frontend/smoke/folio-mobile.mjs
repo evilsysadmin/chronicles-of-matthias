@@ -80,6 +80,21 @@ try {
             `CAST/items footer must not overflow at ${width}px: ${JSON.stringify(footer)}`);
           if (compactTouch) assert(footer.lineHeight >= 20,
             `CAST/items touch usage note needs readable line spacing: ${JSON.stringify(footer)}`);
+          if (view === 'cast' && width <= 430) {
+            const copy = await dialog.locator('.chronicles-spell-menu__entry small').first()
+              .evaluate((node) => {
+                const style = getComputedStyle(node);
+                return { family: style.fontFamily, size: parseFloat(style.fontSize),
+                  lineHeight: parseFloat(style.lineHeight),
+                  overflow: node.scrollWidth > node.clientWidth + 1 };
+              });
+            assert.match(copy.family, /system-ui/i, 'Spell descriptions use a legible phone text face');
+            assert(copy.size >= 14 && copy.lineHeight >= 19 && !copy.overflow,
+              `CAST descriptive copy must be readable without clipping: ${JSON.stringify(copy)}`);
+            const usage = await dialog.locator('.chronicles-spell-menu__folio-footer')
+              .evaluate((node) => getComputedStyle(node).fontFamily);
+            assert.match(usage, /system-ui/i, 'CAST usage note uses the same readable text face');
+          }
         }
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
