@@ -1,4 +1,5 @@
-import { chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
+import { chroniclesAttackMode, chroniclesOpeningVolleyShots } from '../chroniclesOfMatthias.js';
+import { chroniclesVolleyProjectileKinds } from './chroniclesVolleyProjectileArt.js';
 
 // There are two valid outcomes to pressing S before contact:
 // 1. An enemy is in range: only shots that truly reach it cause hit feedback.
@@ -11,4 +12,19 @@ export function chroniclesVolleyPresentationShooterIds(state) {
   return target && shots.length
     ? shots.map(({ memberId }) => memberId)
     : shooters.map(({ id }) => id);
+}
+
+// S within initiative fires one physical projectile from the active hero.
+// Auto attacks share the same visual whenever the reducer chooses missiles.
+// An invalid/unarmed shooter never falls back to a fictional sword slash.
+export function chroniclesPlayAttackPresentation(engine, state, memberId, requestedMode = 'auto') {
+  const mode = requestedMode === 'auto' && state?.combatRules === 'mm3'
+    ? chroniclesAttackMode(state, memberId) : requestedMode;
+  if (mode === 'missile' && state?.combatRules === 'mm3') {
+    if (!chroniclesVolleyProjectileKinds(state, [memberId]).length) return false;
+    engine?.playVolley?.([memberId]);
+    return true;
+  }
+  engine?.playAttack?.(memberId);
+  return true;
 }
