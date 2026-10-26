@@ -6,7 +6,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesDoorwayPrompt } from './chroniclesDoorwayPrompt.js';
-import { chroniclesGoldBalance } from './chroniclesContentRuntime.js';
+import { chroniclesApplyContentEffects, chroniclesGoldBalance } from './chroniclesContentRuntime.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesInnRestPrice } from './chroniclesInns.js';
 import { chroniclesShopStock } from './chroniclesShops.js';
@@ -77,7 +77,7 @@ describe('Swordhaven legacy hub · every visible merchant door works', () => {
       const entry = map.interactables.find((candidate) => candidate.id === business.id);
       const stock = chroniclesShopStock(entry);
       expect(stock.length, entry.id).toBeGreaterThan(0);
-      const current = at(business);
+      const current = chroniclesApplyContentEffects(at(business), [{ type: 'grant-gold', amount: 100 }]);
       const selected = stock.find((item) => item.price <= chroniclesGoldBalance(current));
       expect(selected, entry.id).toBeTruthy();
       const opened = chroniclesReduce(current, 'interact');
@@ -90,7 +90,7 @@ describe('Swordhaven legacy hub · every visible merchant door works', () => {
   });
 
   it('enters the real inn for free and charges only on a separate REST action', () => {
-    const current = at(businesses[2]);
+    const current = chroniclesApplyContentEffects(at(businesses[2]), [{ type: 'grant-gold', amount: 100 }]);
     const inn = map.interactables.find((entry) => entry.id === 'swordhaven-tavern');
     expect(chroniclesInnRestPrice(inn)).toBe(5);
     const wounded = {
@@ -103,5 +103,20 @@ describe('Swordhaven legacy hub · every visible merchant door works', () => {
     const rested = chroniclesReduce(opened, { type: 'inn-rest' });
     expect(chroniclesGoldBalance(rested)).toBe(chroniclesGoldBalance(opened) - 5);
     expect(rested.party.every((member) => member.hp === member.maxHp)).toBe(true);
+  });
+
+  it('offers the established paid temple revival so a fallen hero is never stranded in this town', () => {
+    const entrance = { x: 9, y: 5, direction: 0 };
+    const prepared = chroniclesApplyContentEffects(at(entrance), [{ type: 'grant-gold', amount: 40 }]);
+    const fallen = {
+      ...prepared,
+      party: prepared.party.map((member, index) => ({ ...member, hp: index === 0 ? 0 : 1 })),
+    };
+    const action = chroniclesContextualContentAction(fallen);
+    expect(action?.id).toBe('swordhaven-temple');
+    const revived = chroniclesReduce(fallen, 'interact');
+    expect(chroniclesGoldBalance(revived)).toBe(chroniclesGoldBalance(fallen) - 10);
+    expect(revived.party[0].hp).toBeGreaterThan(0);
+    expect(revived.party.every((member) => member.hp > 0)).toBe(true);
   });
 });
