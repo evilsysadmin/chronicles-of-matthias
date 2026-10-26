@@ -370,6 +370,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isMagic = spec.emblem === 'crystal' && !isApothecary;
   const isForge = spec.emblem === 'swords';
   const isArmor = spec.serviceStyle === 'armor';
+  const isStore = spec.serviceStyle === 'store';
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
@@ -650,6 +651,32 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'tavern-porch-awning', [0, 3.35, facadeZ + 1.07], !coarse);
     for (const x of [-2.35, 2.35]) mesh(root, new THREE.CylinderGeometry(0.11, 0.14, 3.15, 8),
       mats.timber, 'porch-timber-support', [x, 1.63, facadeZ + 1.60], !coarse);
+  } else if (isStore) {
+    // A striped merchant canopy gives the general store a recognisable
+    // street-level silhouette. All geometry is decorative and elevated:
+    // the authored collision footprint and shop interaction stay unchanged.
+    const awning = new THREE.Group();
+    awning.name = 'store-market-awning';
+    awning.userData.chroniclesDecorativeOnly = true;
+    awning.position.set(0, 3.25, facadeZ + 0.65);
+    const canvas = material(0xd3b06e, { roughness: 1, metalness: 0 });
+    const stripe = material(0x855b3e, { roughness: 1, metalness: 0 });
+    const cloth = mesh(awning, new THREE.BoxGeometry(6.20, 0.10, 1.48), canvas,
+      'store-awning-cloth', [0, 0, 0]);
+    cloth.rotation.x = 0.16;
+    for (const x of [-2.45, -1.47, -0.49, 0.49, 1.47, 2.45]) {
+      const band = mesh(awning, new THREE.BoxGeometry(0.48, 0.018, 1.46), stripe,
+        'store-awning-stripe', [x, 0.062, 0]);
+      band.rotation.x = 0.16;
+    }
+    mesh(awning, new THREE.BoxGeometry(6.42, 0.14, 0.16), mats.timber,
+      'store-awning-front-rail', [0, -0.14, 0.77]);
+    for (const x of [-2.85, 2.85]) {
+      const rib = mesh(awning, new THREE.BoxGeometry(0.13, 0.13, 1.46), mats.timber,
+        'store-awning-side-rib', [x, 0, 0]);
+      rib.rotation.x = 0.16;
+    }
+    root.add(awning);
   } else if (isForge) {
     mesh(root, new THREE.CylinderGeometry(0.52, 0.59, 1.3, 10), mats.stone,
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
