@@ -24,6 +24,33 @@ const SPRITES = Object.freeze(Object.fromEntries(
     })]),
 ));
 
+// Authoritative R2 object key: chronicles/sprites/ash-goblin.webp in the
+// "chronicles" bucket (key "sprites/ash-goblin.webp"). The Cloudflare dashboard
+// URL is not a public asset URL: a public HTTPS origin must be configured at build.
+// Keep the locally packed, 5-frame sprite as a safe fallback until the remote
+// 6-frame atlas has actually loaded and passed its dimension contract.
+export const CHRONICLES_ASH_GOBLIN_R2_FRAMES = Object.freeze([
+  'idle-a', 'idle-b', 'menace', 'attack', 'hurt', 'dead',
+]);
+
+export function chroniclesGoblinR2Url(candidate) {
+  if (typeof candidate !== 'string' || !candidate.trim()) return null;
+  try {
+    const parsed = new URL(candidate.trim());
+    if (parsed.protocol !== 'https:' || parsed.hostname === 'dash.cloudflare.com'
+        || !parsed.pathname.endsWith('/sprites/ash-goblin.webp')) return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+export function chroniclesGoblinR2AtlasValid(image) {
+  // The approved six-cell horizontal sheet is 1536×256; rejecting any
+  // unexpected upload prevents frame UVs showing parts of adjacent poses.
+  return image?.width === 1536 && image?.height === 256;
+}
+
 export function chroniclesHasSpriteBillboard(visualType) {
   return Boolean(SPRITES[visualType] && spriteManifest[visualType]?.frames?.length);
 }
@@ -67,10 +94,14 @@ function sheetTexture(url, frameCount, pixelArt) {
 // `updateChroniclesSprite(time, cues)` for frame selection.
 export function buildChroniclesSpriteBillboard(visualType, { tint = 0xffffff } = {}) {
   const spec = SPRITES[visualType];
-  const frames = spriteManifest[visualType]?.frames || [];
+  let frames = spriteManifest[visualType]?.frames || [];
   if (!spec || !frames.length) return null;
 
-  const texture = sheetTexture(spec.url, frames.length, Boolean(spriteManifest[visualType]?.pixelArt));
+  let idleFps = spec.idleFps;
+  let texture = sheetTexture(spec.url, frames.length, Boolean(spriteManifest[visualType]?.pixelArt));
+  let disposed = false;
+  let lastTime = 0;
+  let lastCues = {};
   const material = new THREE.SpriteMaterial({
     map: texture,
     color: tint,
@@ -97,14 +128,49 @@ export function buildChroniclesSpriteBillboard(visualType, { tint = 0xffffff } =
   showFrame(0);
   group.userData.chroniclesBillboard = { visualType, frames, sprite };
   group.userData.updateChroniclesSprite = (time, cues = {}) => {
-    showFrame(chroniclesSpriteFrameIndex(frames, { ...cues, time, idleFps: spec.idleFps }));
+    lastTime = time;
+    lastCues = cues;
+    showFrame(chroniclesSpriteFrameIndex(frames, { ...cues, time, idleFps }));
   };
   group.userData.setChroniclesSpriteOpacity = (opacity) => {
     material.opacity = Math.max(0, Math.min(1, opacity));
   };
   group.userData.chroniclesDispose = () => {
+    disposed = true;
     texture.dispose();
     material.dispose();
   };
+
+  const goblinUrl = visualType === 'ash-goblin'
+    ? chroniclesGoblinR2Url(import.meta.env.VITE_CHRONICLES_ASH_GOBLIN_URL)
+    : null;
+  if (goblinUrl && typeof document !== 'undefined') {
+    // Retain the complete local five-frame billboard until the six-frame R2
+    // texture actually loads. A failed network/CORS request or a malformed
+    // atlas leaves both the local art AND its correct five-frame UVs intact.
+    new THREE.TextureLoader().load(goblinUrl, (remote) => {
+      if (disposed || !chroniclesGoblinR2AtlasValid(remote.image)) {
+        remote.dispose();
+        return;
+      }
+      remote.colorSpace = THREE.SRGBColorSpace;
+      remote.magFilter = THREE.NearestFilter;
+      remote.minFilter = THREE.LinearMipmapLinearFilter;
+      remote.repeat.set(1 / CHRONICLES_ASH_GOBLIN_R2_FRAMES.length, 1);
+      remote.needsUpdate = true;
+      const previous = texture;
+      texture = remote;
+      frames = CHRONICLES_ASH_GOBLIN_R2_FRAMES;
+      idleFps = 0.8;
+      material.map = remote;
+      material.needsUpdate = true;
+      group.userData.chroniclesBillboard.frames = frames;
+      currentFrame = -1;
+      group.userData.updateChroniclesSprite(lastTime, lastCues);
+      previous.dispose();
+    }, undefined, () => {
+      // Loading fails closed: the local sprite is still displayed.
+    });
+  }
   return group;
 }
