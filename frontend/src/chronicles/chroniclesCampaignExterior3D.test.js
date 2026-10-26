@@ -480,7 +480,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(watchTower.children.filter(child => child.name === 'watchhouse-front-merlon')).toHaveLength(3);
     expect(watchTower.children.filter(child => child.name === 'watchhouse-side-merlon')).toHaveLength(2);
     expect(new THREE.Box3().setFromObject(watchTower).min.y).toBeGreaterThan(5);
-    expect(new THREE.Box3().setFromObject(watchTower).max.y).toBeGreaterThan(10);
+    expect(new THREE.Box3().setFromObject(watchTower).max.y).toBeGreaterThan(11);
+    expect(new THREE.Box3().setFromObject(watchTower.getObjectByName('watchhouse-tower-masonry')).max.y).toBeGreaterThan(10.5);
+    expect(watchTower.position.z).toBeGreaterThan(0); // Street-facing, not hidden behind ridge.
     expect(armorer.getObjectByName('watchhouse-battlement-tower')).toBeFalsy();
     expect(forge.getObjectByName('watchhouse-battlement-tower')).toBeFalsy();
 
