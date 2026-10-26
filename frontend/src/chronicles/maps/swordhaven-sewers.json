@@ -39,7 +39,7 @@
       "id": "sewers-goblin-west",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 1,
+      "x": 2,
       "y": 5,
       "hpKey": "sewersGoblinWestHp",
       "maxHp": 4,
@@ -47,19 +47,21 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "squadId": "sewers-west-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-goblin-mid",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 7,
+      "x": 8,
       "y": 3,
       "hpKey": "sewersGoblinMidHp",
       "maxHp": 4,
@@ -67,13 +69,15 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "squadId": "sewers-central-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-spider",
@@ -166,21 +170,23 @@
       "id": "sewers-goblin-east",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 21,
-      "y": 3,
+      "x": 20,
+      "y": 7,
       "hpKey": "sewersGoblinEastHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "squadId": "sewers-cistern-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-goblin-cistern",
@@ -194,13 +200,15 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "squadId": "sewers-cistern-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-spider-south",
@@ -266,19 +274,21 @@
       "id": "sewers-goblin-drain",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 23,
-      "y": 10,
+      "x": 21,
+      "y": 7,
       "hpKey": "sewersGoblinDrainHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      }
+        "engageRange": 3
+      },
+      "squadId": "sewers-cistern-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-spider-conduit",
@@ -302,37 +312,41 @@
       "id": "sewers-goblin-overflow",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 10,
-      "y": 7,
+      "x": 3,
+      "y": 5,
       "hpKey": "sewersGoblinOverflowHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      }
+        "engageRange": 3
+      },
+      "squadId": "sewers-west-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-goblin-upper-gallery",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 12,
-      "y": 1,
+      "x": 9,
+      "y": 3,
       "hpKey": "sewersGoblinUpperGalleryHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      }
+        "engageRange": 3
+      },
+      "squadId": "sewers-central-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-spider-west-channel",
@@ -374,37 +388,41 @@
       "id": "sewers-goblin-east-culvert",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 17,
-      "y": 2,
+      "x": 10,
+      "y": 3,
       "hpKey": "sewersGoblinEastCulvertHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      }
+        "engageRange": 3
+      },
+      "squadId": "sewers-central-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-goblin-bottom-shaft",
       "visualType": "ash-goblin",
       "name": "goblin de cloaca",
-      "x": 2,
-      "y": 17,
+      "x": 4,
+      "y": 5,
       "hpKey": "sewersGoblinBottomShaftHp",
       "maxHp": 4,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "hold",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
-      }
+        "engageRange": 3
+      },
+      "squadId": "sewers-west-pack",
+      "killXp": 2
     },
     {
       "id": "sewers-spider-waterworks",

@@ -24,11 +24,23 @@ describe('Chronicles Tactics bestiary behavior', () => {
     const goblins = enemies.filter(({ enemy }) => enemy.visualType === 'ash-goblin');
     expect(goblins.length).toBeGreaterThanOrEqual(3);
     goblins.forEach(({ mapId, enemy }) => {
-      expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
-        movement: 'cardinal-roam',
-        engagedMovement: 'cardinal-chase',
-        engageRange: 2,
-      });
+      // Sewer pack goblins ambush in place; lone goblins in other regions
+      // still roam and pursue. Both must keep cardinal combat movement.
+      if (enemy.squadId) {
+        expect(mapId).toBe('swordhaven-sewers');
+        expect(enemy.killXp).toBe(2);
+        expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
+          movement: 'hold',
+          engagedMovement: 'cardinal-chase',
+          engageRange: 3,
+        });
+      } else {
+        expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
+          movement: 'cardinal-roam',
+          engagedMovement: 'cardinal-chase',
+          engageRange: 2,
+        });
+      }
     });
 
     const spiders = enemies.filter(({ enemy }) => enemy.visualType === 'crypt-spider');

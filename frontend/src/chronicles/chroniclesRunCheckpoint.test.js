@@ -317,8 +317,14 @@ describe('Chronicles run checkpoint recovery', () => {
     const recoveredMissing = chroniclesApplyRunCheckpoint(createChroniclesState(map.id), missing);
     expect(recoveredMissing.enemyPositions?.[west.id]).toBeUndefined();
 
-    const distinct = { x: west.x, y: west.y - 1 };
-    expect(map.grid[distinct.y][distinct.x]).not.toBe('#');
+    // The west goblin is now part of a corridor pack; north of its spawn
+    // is masonry. Choose a genuine open unoccupied neighbor for the
+    // non-overlap recovery case instead of depending on one authored cell.
+    const occupied = new Set(map.enemies.map((enemy) => `${enemy.x},${enemy.y}`));
+    const distinct = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+      .map(([dx, dy]) => ({ x: west.x + dx, y: west.y + dy }))
+      .find(({ x, y }) => map.grid[y]?.[x] === '.' && !occupied.has(`${x},${y}`));
+    expect(distinct).toBeTruthy();
     const valid = chroniclesRunCheckpointPayload({
       ...base,
       enemyPositions: { [west.id]: distinct, [mid.id]: cell },

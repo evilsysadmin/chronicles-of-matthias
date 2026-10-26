@@ -716,6 +716,9 @@ export const CHRONICLES_DAMAGE_XP_EVERY_HP = 2;
 
 // The company's bonus for a kill, before it is shared among the living.
 export function chroniclesKillXp(enemy) {
+  // Tiny authored mobs are dangerous in numbers, not individually: keep
+  // their collective kill bonus low without nerfing bosses or other maps.
+  if (Number.isSafeInteger(enemy?.killXp) && enemy.killXp >= 0) return enemy.killXp;
   return 5 + Math.max(1, nonNegativeInteger(enemy?.maxHp));
 }
 
