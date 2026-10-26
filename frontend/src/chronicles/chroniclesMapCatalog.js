@@ -1,5 +1,4 @@
 import cryptEightSquares from './maps/crypt-eight-squares.json';
-import bannerRoad from './maps/banner-road.json';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwoodFirstBook from './maps/rookwood-first-book.json';
@@ -355,7 +354,6 @@ export function chroniclesValidateMapDefinition(source, knownMapIds = null) {
 }
 
 const MAPS = Object.freeze({
-  [bannerRoad.id]: normalizeMap(bannerRoad),
   [swordhavenFirstBook.id]: normalizeMap(swordhavenFirstBook),
   [bannerRoadFirstBook.id]: normalizeMap(bannerRoadFirstBook),
   [rookwoodFirstBook.id]: normalizeMap(rookwoodFirstBook),
