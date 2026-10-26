@@ -72,9 +72,12 @@ export function chroniclesStableTorchLightAssignments(previous = [], nearest = [
   const available = [...new Set(nearest.filter((index) => Number.isSafeInteger(index) && index >= 0))]
     .slice(0, poolSize);
   const desired = new Set(available);
+  const kept = new Set();
   const assignments = Array.from({ length: poolSize }, (_, slot) => {
     const source = previous[slot];
-    return desired.has(source) ? source : null;
+    if (!desired.has(source) || kept.has(source)) return null;
+    kept.add(source);
+    return source;
   });
   const alreadyAssigned = new Set(assignments.filter((source) => source !== null));
   const fresh = available.filter((source) => !alreadyAssigned.has(source));
