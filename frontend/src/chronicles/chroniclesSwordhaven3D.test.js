@@ -201,6 +201,40 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives the temple a colonnaded stone portico without hiding its door or signs', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+      const portico = temple.getObjectByName('temple-limestone-portico');
+      expect(portico?.userData.chroniclesDecorativeOnly).toBe(true);
+      const columns = portico.children.filter(child => child.name === 'temple-portico-column');
+      expect(columns).toHaveLength(2);
+      expect(columns[0].position.x).toBeLessThan(-1.8);
+      expect(columns[1].position.x).toBeGreaterThan(1.8);
+      expect(columns[0].geometry.parameters.radialSegments).toBe(coarsePointer ? 10 : 16);
+      const door = temple.getObjectByName('shop-door');
+      expect(Math.abs(columns[0].position.x) - columns[0].geometry.parameters.radiusBottom)
+        .toBeGreaterThan(door.geometry.parameters.width / 2);
+      expect(portico.position.z).toBeGreaterThan(door.position.z);
+      const nameplate = temple.getObjectByName('swordhaven-shop-nameplate');
+      const entablature = portico.getObjectByName('temple-portico-entablature');
+      expect(entablature.position.y - entablature.geometry.parameters.height / 2)
+        .toBeGreaterThan(nameplate.position.y
+          + nameplate.getObjectByName('shop-nameplate-wood').geometry.parameters.height / 2);
+      const pediment = portico.getObjectByName('temple-portico-triangular-pediment');
+      expect(pediment).toBeTruthy();
+      const sign = temple.getObjectByName('swordhaven-interaction-swordhaven-temple');
+      expect(5.07).toBeLessThan(sign.position.y
+        - sign.getObjectByName('hanging-sign').geometry.parameters.height / 2);
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-temple')) {
+        expect(scene.getObjectByName('swordhaven-building-' + spec.id)
+          .getObjectByName('temple-limestone-portico')).toBeFalsy();
+      }
+      expect(createSwordhavenWalkGrid()[5][9]).toBe('.');
+    }
+  });
+
   it('gives only the mage guild a pointed stone entry and gable oculus without blocking its door', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
