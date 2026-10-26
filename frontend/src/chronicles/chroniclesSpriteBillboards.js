@@ -72,6 +72,43 @@ export function chroniclesSpriteFrameIndex(frames, {
 
 const textureCache = new Map();
 
+// Keep one decoded R2 source per URL for the entire browser session. Each
+// billboard gets its own inexpensive Texture clone (independent frame UVs),
+// while concurrent goblins share a single fetch and decode. Persistent HTTP
+// caching is handled separately by the R2 object's Cache-Control response.
+const remoteGoblinTextureCache = new Map();
+
+function onRemoteGoblinAtlas(url, callback) {
+  let entry = remoteGoblinTextureCache.get(url);
+  if (entry) {
+    if (entry.status === 'loaded') callback(entry.texture);
+    else if (entry.status === 'loading') entry.subscribers.push(callback);
+    return;
+  }
+  entry = { status: 'loading', subscribers: [callback], texture: null };
+  remoteGoblinTextureCache.set(url, entry);
+  new THREE.TextureLoader().load(url, (source) => {
+    if (!chroniclesGoblinR2AtlasValid(source.image)) {
+      source.dispose();
+      entry.status = 'failed';
+      entry.subscribers.length = 0;
+      return;
+    }
+    source.colorSpace = THREE.SRGBColorSpace;
+    source.magFilter = THREE.NearestFilter;
+    source.minFilter = THREE.LinearMipmapLinearFilter;
+    entry.status = 'loaded';
+    entry.texture = source;
+    const pending = entry.subscribers.splice(0);
+    pending.forEach((subscriber) => subscriber(source));
+  }, undefined, () => {
+    // Remember failures for this tab, so dozens of enemies never trigger a
+    // retry storm. Their local 5-frame placeholders remain active.
+    entry.status = 'failed';
+    entry.subscribers.length = 0;
+  });
+}
+
 function sheetTexture(url, frameCount, pixelArt) {
   if (!textureCache.has(url)) {
     // Headless (tests/SSR) gets an empty texture; browsers load the sheet.
@@ -148,14 +185,9 @@ export function buildChroniclesSpriteBillboard(visualType, { tint = 0xffffff } =
     // Retain the complete local five-frame billboard until the six-frame R2
     // texture actually loads. A failed network/CORS request or a malformed
     // atlas leaves both the local art AND its correct five-frame UVs intact.
-    new THREE.TextureLoader().load(goblinUrl, (remote) => {
-      if (disposed || !chroniclesGoblinR2AtlasValid(remote.image)) {
-        remote.dispose();
-        return;
-      }
-      remote.colorSpace = THREE.SRGBColorSpace;
-      remote.magFilter = THREE.NearestFilter;
-      remote.minFilter = THREE.LinearMipmapLinearFilter;
+    onRemoteGoblinAtlas(goblinUrl, (source) => {
+      if (disposed) return;
+      const remote = source.clone();
       remote.repeat.set(1 / CHRONICLES_ASH_GOBLIN_R2_FRAMES.length, 1);
       remote.needsUpdate = true;
       const previous = texture;
@@ -168,8 +200,6 @@ export function buildChroniclesSpriteBillboard(visualType, { tint = 0xffffff } =
       currentFrame = -1;
       group.userData.updateChroniclesSprite(lastTime, lastCues);
       previous.dispose();
-    }, undefined, () => {
-      // Loading fails closed: the local sprite is still displayed.
     });
   }
   return group;
