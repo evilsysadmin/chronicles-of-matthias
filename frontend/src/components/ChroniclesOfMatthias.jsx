@@ -43,7 +43,6 @@ import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.j
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
 import { chroniclesDoorwayPrompt } from '../chronicles/chroniclesDoorwayPrompt.js';
-import { chroniclesInitializeLostKingIntro } from '../chronicles/chroniclesLostKingIntro.js';
 import { chroniclesApplyArrival } from '../chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from '../chronicles/chroniclesSwordhavenReturnPortal.js';
 import {
@@ -1140,9 +1139,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         const restored = chroniclesReconcileCurrentMapEnemyHp(chroniclesApplyRunCheckpoint(progressed, world));
         // The run id seeds every MM3 die so F5 never rerolls a blow.
         let next = {
-          ...chroniclesApplyArrival(chroniclesInitializeLostKingIntro(restored, {
-            fresh: !remoteSelection && world.worldVersion === 0,
-          })),
+          ...chroniclesApplyArrival(restored),
           runSeed: world.runId,
           runProgression,
         };
