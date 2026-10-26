@@ -127,6 +127,42 @@ try {
         .evaluateAll((labels) => labels.filter((node) => node.scrollWidth > node.clientWidth + 1)
           .map((node) => node.textContent.trim()));
       assert.deepEqual(overflowingStats, [], 'No MM3 attribute label may overlap its value');
+      if (width >= 1200) {
+        // The old dashboard was two equally dominant gear/stats panels.
+        // Assert the *painted* classic ledger hierarchy, not merely CSS text.
+        const ledger = await sheet.evaluate((node) => {
+          const content = node.querySelector('[data-chronicles-chapter="record"]');
+          const stats = content.querySelector('.chronicles-character-sheet__section--core-stats');
+          const battle = content.querySelector('.chronicles-character-sheet__vitals');
+          const gear = content.querySelector('.chronicles-character-sheet__worn');
+          const statGrid = content.querySelector('.chronicles-character-sheet__mm3-stats');
+          const gearGrid = gear.querySelector('ul');
+          const columns = (el) => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+          const labels = [...statGrid.querySelectorAll('[data-stat]')].map((el) => ({
+            name: el.dataset.stat, clipped: el.scrollWidth > el.clientWidth + 2,
+          }));
+          const rect = (el) => {
+            const box = el.getBoundingClientRect();
+            return { top: box.top, bottom: box.bottom, width: box.width };
+          };
+          return { content: rect(content), stats: rect(stats), battle: rect(battle),
+            gear: rect(gear), statColumns: columns(statGrid),
+            gearColumns: columns(gearGrid), labels };
+        });
+        assert.equal(ledger.statColumns, 4,
+          'Classic MM3 status must be a full-width four-column ledger: ' + JSON.stringify(ledger));
+        assert.equal(ledger.gearColumns, 4,
+          'Worn gear should be a four-slot horizontal quick reference: ' + JSON.stringify(ledger));
+        assert.equal(ledger.labels.length, 8,
+          'All seven MM3 attributes plus the real HP condition must be present');
+        assert.deepEqual(ledger.labels.filter((item) => item.clipped), [],
+          'The new attribute cells must not overflow: ' + JSON.stringify(ledger));
+        assert.ok(ledger.stats.width >= ledger.content.width - 40
+          && ledger.stats.bottom <= ledger.battle.top + 2
+          && ledger.battle.bottom <= ledger.gear.top + 2,
+          'The attribute ledger must be ABOVE the combat and equipment strips: '
+          + JSON.stringify(ledger));
+      }
       if (width === 1024) {
         const statsDensity = await sheet.locator('.chronicles-character-sheet__mm3-stats')
           .evaluate((grid) => {
