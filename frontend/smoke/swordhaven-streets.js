@@ -14,6 +14,7 @@ const VIEWS = Object.freeze({
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
+  tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
@@ -85,6 +86,8 @@ try {
     child.name.startsWith('swordhaven-building-first-book-armor-'));
   const store = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-store-'));
+  const tavern = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-healer-'));
   const watch = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-watch-'));
   if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
@@ -136,6 +139,12 @@ try {
       && watch?.getObjectByName('watchhouse-tower-masonry')
       && watch?.getObjectByName('watchhouse-front-merlon')
       && !armorer?.getObjectByName('watchhouse-battlement-tower')
+    )),
+    distinctTavernRoof: String(Boolean(
+      tavern?.getObjectByName('tavern-double-hearth')
+      && tavern?.getObjectByName('tavern-hearth-flue-0')
+      && tavern?.getObjectByName('tavern-hearth-flue-1')
+      && !forge?.getObjectByName('tavern-double-hearth')
     )),
     distinctMarketStore: String(Boolean(
       store?.getObjectByName('store-market-awning')
