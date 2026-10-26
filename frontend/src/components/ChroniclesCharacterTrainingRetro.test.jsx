@@ -37,7 +37,8 @@ describe('Chronicles classic MM3 training ledger', () => {
     expect(skin).toContain('min-height: 58px');
     expect(skin).toContain("button.is-learned");
     expect(skin).toContain("button:not(:disabled):focus-visible");
-    expect(skin).toContain('repeat(3, minmax(0, 1fr))');
+    expect(skin).toContain('.chronicles-character-sheet__attribute-grid {\n    grid-template-columns: repeat(2, minmax(0, 1fr))');
+    expect(skin).not.toContain('repeat(3, minmax(0, 1fr))');
     expect(skin).not.toMatch(/pointer-events:\s*none|display:\s*none\s*!important/);
   });
 });
