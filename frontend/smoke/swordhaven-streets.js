@@ -180,6 +180,16 @@ try {
       && store?.getObjectByName('store-awning-stripe')
       && !forge?.getObjectByName('store-market-awning')
     )),
+    distinctGuildMasonry: String(Boolean(
+      guild?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0x9d8aa9
+      && guild?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
+      && guild?.getObjectByName('timber-and-stone-walls')?.material?.normalMap?.name === 'chronicles-town-normal-masonry'
+      && !guild?.getObjectByName('vertical-facade-post')
+      && !guild?.getObjectByName('diagonal-timber-brace')
+      && guild?.getObjectByName('shop-door')
+      && guild?.getObjectByName('swordhaven-shop-nameplate')
+      && forge?.getObjectByName('vertical-facade-post')
+    )),
     distinctShopFacades: String(Boolean(
       apothecary?.getObjectByName('apothecary-roof-herbarium')
       && apothecary?.getObjectByName('apothecary-hanging-herbs')
