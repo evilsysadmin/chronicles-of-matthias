@@ -761,6 +761,26 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
     mesh(root, new THREE.SphereGeometry(0.32, 9, 8), mats.embers,
       'forge-brazier-embers', [-width * 0.40, 1.42, facadeZ + 0.23]);
+    // The smith's street-facing workshop bay is framed in heavy dressed stone,
+    // with a wrought-iron grille over the existing right window. Unlike the
+    // armorer's doorway, this belongs to the workroom and leaves the entrance,
+    // engraved shop name and authored collision footprint entirely untouched.
+    const bay = new THREE.Group();
+    bay.name = 'forge-stone-workshop-bay';
+    bay.userData.chroniclesDecorativeOnly = true;
+    bay.position.set(width * 0.33, 0, facadeZ + 0.43);
+    for (const side of [-1, 1]) {
+      mesh(bay, new THREE.BoxGeometry(0.22, 1.52, 0.30), mats.stone,
+        'forge-workshop-stone-pier', [side * 0.87, 2.75, 0], !coarse);
+      const brace = mesh(bay, new THREE.BoxGeometry(0.085, 1.20, 0.10), mats.steel,
+        'forge-workshop-cross-brace', [side * 0.25, 2.75, 0.22]);
+      brace.rotation.z = side * 0.45;
+    }
+    mesh(bay, new THREE.BoxGeometry(1.92, 0.23, 0.36), mats.stone,
+      'forge-workshop-stone-lintel', [0, 3.59, 0], !coarse);
+    mesh(bay, new THREE.BoxGeometry(0.18, 0.30, 0.11), mats.steel,
+      'forge-workshop-iron-keystone', [0, 3.60, 0.23]);
+    root.add(bay);
     // A tall, iron-capped masonry flue identifies the weaponsmith from the
     // street. Its base intersects the solid roof; no smoke particles/lights.
     const stack = new THREE.Group();
