@@ -727,6 +727,30 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'armor-crest-crossbar', [0, 0.28, 0.06]);
     root.add(crest);
   }
+  if (spec.serviceStyle === 'watch') {
+    // A crenellated stone lookout makes the guardhouse legible as military
+    // architecture rather than a third shield merchant. All pieces rise from
+    // the existing solid roof; authored collisions and entry cells are intact.
+    const tower = new THREE.Group();
+    tower.name = 'watchhouse-battlement-tower';
+    tower.userData.chroniclesDecorativeOnly = true;
+    tower.position.set(0, height + 2.9, -depth * 0.18);
+    mesh(tower, new THREE.BoxGeometry(2.45, 3.65, 2.35), mats.stone,
+      'watchhouse-tower-masonry', [0, 0, 0], !coarse);
+    mesh(tower, new THREE.BoxGeometry(2.72, 0.22, 2.62), mats.steel,
+      'watchhouse-parapet-rim', [0, 1.90, 0]);
+    for (const x of [-0.97, 0, 0.97]) {
+      mesh(tower, new THREE.BoxGeometry(0.53, 0.75, 0.46), mats.stone,
+        'watchhouse-front-merlon', [x, 2.34, 1.16]);
+    }
+    for (const x of [-1.16, 1.16]) {
+      mesh(tower, new THREE.BoxGeometry(0.45, 0.75, 0.53), mats.stone,
+        'watchhouse-side-merlon', [x, 2.34, -0.86]);
+    }
+    mesh(tower, new THREE.BoxGeometry(0.15, 0.84, 0.08), mats.steel,
+      'watchhouse-arrow-slit', [0, 0.40, 1.22]);
+    root.add(tower);
+  }
   // Homes carry no shop sign.
   if (spec.emblem === 'home') return { root, sign: null, interactive: false };
   const sign = new THREE.Group();
