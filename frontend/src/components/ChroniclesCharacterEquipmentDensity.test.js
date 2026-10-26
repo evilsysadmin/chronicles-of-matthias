@@ -61,7 +61,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(compact).toContain('grid-template-columns: minmax(0, 1fr) auto 36px');
     expect(compact).toContain('padding: 3px 0');
     expect(compact).toContain('line-height: 1.3');
-    expect(compact).not.toMatch(/display:\\s*none|visibility:\\s*hidden/);
+    expect(compact).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain('chronicles-character-sheet__swap-preview');
   });
 
