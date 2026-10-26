@@ -232,6 +232,38 @@ describe('Chronicles run checkpoint recovery', () => {
     expect(recovered.message).not.toBe('runtime-only narration');
   });
 
+  it('rejects checkpoint enemy overlaps, including a missing foe at its authored spawn', () => {
+    const map = chroniclesMapById('swordhaven-sewers');
+    const [west, mid] = map.enemies;
+    const base = createChroniclesState(map.id);
+    const cell = { x: mid.x, y: mid.y };
+
+    const duplicate = chroniclesRunCheckpointPayload({
+      ...base,
+      enemyPositions: { [west.id]: cell, [mid.id]: cell },
+    }, 1);
+    const recoveredDuplicate = chroniclesApplyRunCheckpoint(createChroniclesState(map.id), duplicate);
+    expect(recoveredDuplicate.enemyPositions?.[west.id]).toBeUndefined();
+    expect(recoveredDuplicate.enemyPositions?.[mid.id]).toBeUndefined();
+
+    const missing = chroniclesRunCheckpointPayload({
+      ...base,
+      enemyPositions: { [west.id]: cell },
+    }, 1);
+    const recoveredMissing = chroniclesApplyRunCheckpoint(createChroniclesState(map.id), missing);
+    expect(recoveredMissing.enemyPositions?.[west.id]).toBeUndefined();
+
+    const distinct = { x: west.x, y: west.y - 1 };
+    expect(map.grid[distinct.y][distinct.x]).not.toBe('#');
+    const valid = chroniclesRunCheckpointPayload({
+      ...base,
+      enemyPositions: { [west.id]: distinct, [mid.id]: cell },
+    }, 1);
+    const recoveredValid = chroniclesApplyRunCheckpoint(createChroniclesState(map.id), valid);
+    expect(recoveredValid.enemyPositions[west.id]).toEqual(distinct);
+    expect(recoveredValid.enemyPositions[mid.id]).toEqual(cell);
+  });
+
   it('round-trips individual party combat cells across F5/re-entry', () => {
     const base = createChroniclesState();
     const snapshot = {
