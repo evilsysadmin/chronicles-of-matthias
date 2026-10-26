@@ -3,38 +3,36 @@ import { createChroniclesState, chroniclesReduce } from '../chroniclesOfMatthias
 import { chroniclesAreaTransitionIntent } from './chroniclesAreaTransitionIntent.js';
 
 describe('MM3 area travel confirmations', () => {
-  it('offers the real destination before leaving a settlement without spending a turn', () => {
-    const state = createChroniclesState('swordhaven-square');
-    const intent = chroniclesAreaTransitionIntent(state, 'backward');
-    expect(intent?.sourceId).toBe('swordhaven-square');
-    expect(intent?.destinationId).toBe('crypt-eight-squares');
-    expect(intent?.question).toContain('Cripta de las Ocho Casillas');
-    expect(state.mapId).toBe('swordhaven-square');
+  it('offers the canonical Banner Road before crossing Swordhaven north gate', () => {
+    const state = { ...createChroniclesState('swordhaven-first-book'), x: 9, y: 2, direction: 0 };
+    const intent = chroniclesAreaTransitionIntent(state, 'forward');
+    expect(intent).toMatchObject({
+      sourceId: 'swordhaven-first-book',
+      destinationId: 'banner-road-first-book',
+      exitId: 'to-first-book-banner-road',
+    });
+    expect(intent?.question).toContain('Camino de los Estandartes');
     expect(state.turns).toBe(0);
-    expect(state.y).toBe(16);
+    expect(state.y).toBe(2);
   });
 
-  it('moves onto the exit, keeps the party there on No, and reoffers the crossing with F', () => {
-    const start = createChroniclesState('swordhaven-square');
-    const intent = chroniclesAreaTransitionIntent(start, 'backward');
-    expect(intent?.exitId).toBe('swordhaven-south-gate');
-    // The UI chooses the deferred reducer action on this exact exit tile.
-    const standing = chroniclesReduce(start, { type: 'backward', deferAreaTransition: true });
-    expect(standing).toMatchObject({ mapId: 'swordhaven-square', x: 9, y: 17, phase: 'explore' });
+  it('defers the canonical town crossing and can retry by F after declining', () => {
+    const start = { ...createChroniclesState('swordhaven-first-book'), x: 9, y: 2, direction: 0 };
+    const intent = chroniclesAreaTransitionIntent(start, 'forward');
+    expect(intent?.exitId).toBe('to-first-book-banner-road');
+    const standing = chroniclesReduce(start, { type: 'forward', deferAreaTransition: true });
+    expect(standing).toMatchObject({ mapId: 'swordhaven-first-book', x: 9, y: 1, phase: 'explore' });
     expect(standing.turns).toBe(start.turns + 1);
-    // Choosing No only dismisses the UI and does not dispatch a reducer action.
-    const declined = standing;
-    expect(declined.x).toBe(standing.x);
-    expect(declined.y).toBe(standing.y);
-    expect(declined.turns).toBe(standing.turns);
-    const retried = chroniclesAreaTransitionIntent(declined, 'interact');
-    expect(retried).toMatchObject({ exitId: intent.exitId, destinationId: intent.destinationId, atThreshold: true });
+    const retried = chroniclesAreaTransitionIntent(standing, 'interact');
+    expect(retried).toMatchObject({
+      exitId: intent.exitId, destinationId: intent.destinationId, atThreshold: true,
+    });
     expect(retried.question).toBe(intent.question);
-    const crossed = chroniclesReduce(declined, { type: 'cross-area-threshold', exitId: retried.exitId });
-    expect(crossed.mapId).toBe('crypt-eight-squares');
+    const crossed = chroniclesReduce(standing, { type: 'cross-area-threshold', exitId: retried.exitId });
+    expect(crossed.mapId).toBe('banner-road-first-book');
     expect(crossed.turns).toBe(standing.turns);
-    // A stale/wrong exit identifier must not trigger a different crossing.
-    expect(chroniclesReduce(declined, { type: 'cross-area-threshold', exitId: 'nonexistent' })).toBe(declined);
+    expect(chroniclesReduce(standing, { type: 'cross-area-threshold', exitId: 'nonexistent' }))
+      .toBe(standing);
   });
 
   it('reoffers a legacy dungeon completion on the exit tile after declining', () => {
@@ -59,7 +57,7 @@ describe('MM3 area travel confirmations', () => {
   });
 
   it('does not prompt for ordinary movement, turning or initiative combat', () => {
-    const state = createChroniclesState('swordhaven-square');
+    const state = createChroniclesState('swordhaven-first-book');
     expect(chroniclesAreaTransitionIntent(state, 'forward')).toBeNull();
     expect(chroniclesAreaTransitionIntent(state, 'turn-left')).toBeNull();
     expect(chroniclesAreaTransitionIntent({ ...state, initiative: { cursor: 0 } }, 'backward')).toBeNull();
@@ -83,7 +81,7 @@ describe('MM3 area travel confirmations', () => {
   });
 
   it('never invites travel while inside a shop or after a defeat', () => {
-    const state = createChroniclesState('swordhaven-square');
+    const state = createChroniclesState('swordhaven-first-book');
     expect(chroniclesAreaTransitionIntent({ ...state, shop: { id: 'vendor' } }, 'backward')).toBeNull();
     expect(chroniclesAreaTransitionIntent({ ...state, phase: 'defeated' }, 'backward')).toBeNull();
   });

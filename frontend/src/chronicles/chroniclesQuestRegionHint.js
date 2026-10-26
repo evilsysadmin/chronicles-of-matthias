@@ -33,7 +33,7 @@ export function chroniclesQuestRegionHint(quest, state) {
 /**
  * Relate an already-revealed quest hint to the party's actual map.
  * This never invents walking directions, route lengths or secret coordinates.
- * Maps in the same named region (e.g. Swordhaven square and its town) are
+ * Maps in the same world region (e.g. a town and its dungeon) are
  * nearby in narrative terms, not necessarily on the exact destination tile.
  */
 export function chroniclesQuestRegionContext(hint, state) {

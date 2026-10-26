@@ -88,27 +88,30 @@ describe('Chronicles declarative map catalog', () => {
     });
     // Once the save has every keyed enemy, normalization is idempotent.
     expect(chroniclesReconcileCurrentMapEnemyHp(reconciled)).toBe(reconciled);
-    expect(chroniclesReconcileCurrentMapEnemyHp({ mapId: 'swordhaven-square' }))
-      .toEqual({ mapId: 'swordhaven-square' });
   });
 
-  it('loads Swordhaven as a safe, static and reachable 19x19 settlement', () => {
-    const town = chroniclesMapById('swordhaven-square');
-    expect(town.title).toBe('Swordhaven');
+  it('ships precisely one walkable Swordhaven with real shops and campaign exits', () => {
+    const townIds = chroniclesMapIds().filter((id) =>
+      chroniclesMapById(id).title === 'Swordhaven');
+    expect(townIds).toEqual(['swordhaven-first-book']);
+    for (const retired of ['swordhaven-square', 'swordhaven-campaign', 'banner-road']) {
+      expect(chroniclesMapIds()).not.toContain(retired);
+      expect(() => chroniclesMapTransitionState(
+        { mapId: 'swordhaven-first-book' }, retired,
+      )).toThrow('unknown destination map');
+    }
+    const town = chroniclesMapById('swordhaven-first-book');
     expect(town.regionKind).toBe('settlement');
-    expect(town.layoutMode).toBe('authored');
-    expect(town.grid).toHaveLength(19);
-    expect(town.grid.every(row => row.length === 19)).toBe(true);
-    expect(town.enemies).toHaveLength(0);
-    expect(town.exits.map(exit => exit.id)).toContain('swordhaven-south-gate');
+    expect(town.grid).toHaveLength(23);
+    expect(town.grid.every((row) => row.length === 19)).toBe(true);
     const access = [
-      ['swordhaven-forge', 4, 7],
-      ['swordhaven-armor', 14, 7],
-      ['swordhaven-tavern', 4, 15],
-      ['swordhaven-magic', 14, 15],
-      ['swordhaven-temple', 9, 5],
+      ['first-book-weaponsmith', 7, 4],
+      ['first-book-armorer', 11, 4],
+      ['first-book-apothecary', 3, 4],
+      ['first-book-guild', 15, 4],
+      ['first-book-healer', 7, 10],
+      ['first-book-temple', 14, 6],
     ];
-    expect(town.interactables.map(item => item.id)).toEqual(access.map(item => item[0]));
     const visited = new Set();
     const queue = [[town.partyStart.x, town.partyStart.y]];
     while (queue.length) {
@@ -118,12 +121,12 @@ describe('Chronicles declarative map catalog', () => {
       visited.add(key);
       queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
     }
-    for (const [, x, y] of access) {
-      expect(chroniclesMapTileAt(town, x, y)).not.toBe('#');
-      expect(visited.has(x + ':' + y)).toBe(true);
+    for (const [id, x, y] of access) {
+      expect(town.interactables.find((item) => item.id === id)).toMatchObject({ x, y });
+      expect(visited.has(x + ':' + y), id).toBe(true);
     }
-    expect(visited.has('9:17')).toBe(true);
-    expect(chroniclesMapTileAt(town, 9, 9)).toBe('#'); // Fountain footprint.
+    expect(town.exits.map((exit) => exit.id)).toContain('swordhaven-to-sewers');
+    expect(town.exits.map((exit) => exit.id)).toContain('to-first-book-banner-road');
   });
 
 

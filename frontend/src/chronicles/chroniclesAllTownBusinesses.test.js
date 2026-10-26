@@ -48,7 +48,7 @@ function atBusiness({ map, entry, direction }) {
 describe('Chronicles · every authored town merchant and inn must open', () => {
   it('actually audits a large number of businesses, including the full Swordhaven', () => {
     expect(businesses.length).toBeGreaterThanOrEqual(35);
-    for (const id of ['swordhaven-first-book', 'swordhaven-square', 'pinohelado', 'vado-de-sal']) {
+    for (const id of ['swordhaven-first-book', 'pinohelado', 'vado-de-sal']) {
       expect(businesses.some(({ map }) => map.id === id), id).toBe(true);
     }
   });

@@ -2,7 +2,6 @@ import React from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesInitializeLostKingIntro } from '../chronicles/chroniclesLostKingIntro.js';
 import { chroniclesApplyArrival } from '../chronicles/chroniclesArrival.js';
 import { setStorageItem, STORAGE_SESSION } from '../safeStorage.js';
 import ChroniclesFirstSteps, {
@@ -13,9 +12,6 @@ import ChroniclesFirstSteps, {
 
 function newSwordhaven() {
   return chroniclesApplyArrival(createChroniclesState('swordhaven-first-book'));
-}
-function legacyPrologue() {
-  return chroniclesInitializeLostKingIntro(createChroniclesState('swordhaven-square'), { fresh: true });
 }
 function render(state, options = {}) {
   return renderToStaticMarkup(
@@ -30,12 +26,11 @@ describe('Chronicles · first Swordhaven steps', () => {
     const fresh = newSwordhaven();
     expect(chroniclesShouldOfferFirstSteps(fresh)).toBe(true);
     expect(chroniclesFirstStepsStory(fresh)).toBe('first-book');
-    expect(chroniclesFirstStepsStory(legacyPrologue())).toBe('prologue');
+    expect(chroniclesFirstStepsStory(createChroniclesState('crypt-eight-squares'))).toBeNull();
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, turns: 3 })).toBe(false);
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, mapId: 'crypt-eight-squares' })).toBe(false);
     expect(chroniclesShouldOfferFirstSteps({ ...fresh, quests: {} })).toBe(false);
     expect(chroniclesShouldOfferFirstSteps(createChroniclesState('swordhaven-first-book'))).toBe(false);
-    expect(chroniclesShouldOfferFirstSteps(createChroniclesState('swordhaven-square'))).toBe(false);
   });
 
   it('explains actual keys without obstructing or inventing progress', () => {

@@ -65,30 +65,6 @@
       "clue": "Busca la seda de la tejedora."
     }
   ],
-  "lost-king-prologue": [
-    {
-      "objectiveIncludes": [
-        "Regresa a Swordhaven"
-      ],
-      "mapId": "swordhaven-square",
-      "clue": "Informa del hallazgo del sello."
-    },
-    {
-      "objectiveIncludes": [
-        "Puerta Negra",
-        "Galería"
-      ],
-      "mapId": "gallery-of-forks",
-      "clue": "Sigue el rastro documental de la galería."
-    },
-    {
-      "objectiveIncludes": [
-        "Cripta de las Ocho Casillas"
-      ],
-      "mapId": "crypt-eight-squares",
-      "clue": "Investiga el antiguo sello."
-    }
-  ],
   "ascua-smith-errand": [
     {
       "when": [

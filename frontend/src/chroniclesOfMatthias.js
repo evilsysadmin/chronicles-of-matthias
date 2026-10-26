@@ -55,7 +55,6 @@ import {
   chroniclesMM3EnemyToHit,
   chroniclesMM3Roll,
 } from './chronicles/chroniclesMM3Rules.js';
-import { chroniclesAdvanceLostKingIntro } from './chronicles/chroniclesLostKingIntro.js';
 import { chroniclesArriveOnTransition } from './chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID, chroniclesSwordhavenReturnAvailable } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesIsOverworldTravelExit } from './chronicles/chroniclesWorldReturnLinks.js';
@@ -303,7 +302,7 @@ function crossAreaThreshold(state, exitId) {
   } else if (exit?.id === exitId && chroniclesRequirementsMet(state, exit.requirements)) {
     crossed = runAreaExit(state, exit);
   }
-  return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, crossed));
+  return chroniclesArriveOnTransition(state, crossed);
 }
 
 
@@ -372,8 +371,8 @@ function resolveContextualContentAction(state) {
   if (contextual.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID) {
     const arrived = chroniclesApplyContentEffects(state, [{
       type: 'transition-map',
-      mapId: 'swordhaven-square',
-      entryExitId: 'swordhaven-south-gate',
+      mapId: 'swordhaven-first-book',
+      entryExitId: 'to-first-book-banner-road',
     }]);
     return {
       ...arrived,
@@ -1033,7 +1032,7 @@ function onDoorFacade(state, { block, door, entries }) {
 function enterBuildingAt(state, entryCell, label) {
   const atDoor = { ...state, x: entryCell.x, y: entryCell.y };
   if (chroniclesContextualContentAction(atDoor)) {
-    return chroniclesArriveOnTransition(atDoor, chroniclesAdvanceLostKingIntro(atDoor, resolveContextualContentAction(atDoor)));
+    return chroniclesArriveOnTransition(atDoor, resolveContextualContentAction(atDoor));
   }
   return withMessage(state, `${label}: no hay nadie que te atienda ahora mismo.`);
 }
@@ -1166,7 +1165,7 @@ export function chroniclesReduce(state, action) {
   }
   if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId, action.targetId || null);
   if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
-  if (actionType === 'interact') return chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state, resolveContextualContentAction(state)));
+  if (actionType === 'interact') return chroniclesArriveOnTransition(state, resolveContextualContentAction(state));
   if (actionType === 'cross-area-threshold') return crossAreaThreshold(state, action.exitId);
 
   const direction = CHRONICLES_DIRECTIONS[state.direction];
@@ -1187,8 +1186,8 @@ export function chroniclesReduce(state, action) {
     if (entered) return entered;
   }
   if (blocker) return withMessage(state, blocker.message);
-  const moved = chroniclesArriveOnTransition(state, chroniclesAdvanceLostKingIntro(state,
-    enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true })));
+  const moved = chroniclesArriveOnTransition(state,
+    enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true }));
   // In combat the heroes stand on their own cells around the camera. A step
   // moves the whole company: redeploy it around the new position instead of
   // leaving the heroes behind (enemies would walk into the camera's cell).
