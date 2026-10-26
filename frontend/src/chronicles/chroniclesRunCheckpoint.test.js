@@ -10,7 +10,7 @@ import {
 } from './chroniclesRunCheckpoint.js';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from './chroniclesContentRuntime.js';
-import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 
 function anotherWalkableCell(map, occupied = []) {
   const blocked = new Set(occupied.map(({ x, y }) => `${x},${y}`));
@@ -67,6 +67,42 @@ describe('Chronicles checkpoint projection', () => {
       sigilAwake: true,
       galleryLeverPulled: true,
     });
+  });
+
+  it('preserves switches and traps per dungeon floor across an actual API checkpoint', () => {
+    let state = { ...createChroniclesState('crypt-eight-squares'), sigilAwake: true };
+    state = chroniclesMapTransitionState(state, 'gallery-of-forks');
+    state = { ...state, galleryLeverPulled: true };
+    state = chroniclesMapTransitionState(state, 'menagerie-of-ash');
+    state = { ...state, emberCacheOpened: true };
+
+    const checkpoint = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(state, 3)));
+    const restored = chroniclesApplyRunCheckpoint(createChroniclesState('menagerie-of-ash'), checkpoint);
+    expect(restored.emberCacheOpened).toBe(true);
+    const gallery = chroniclesMapTransitionState(restored, 'gallery-of-forks');
+    expect(gallery.galleryLeverPulled).toBe(true);
+    const crypt = chroniclesMapTransitionState(gallery, 'crypt-eight-squares');
+    expect(crypt.sigilAwake).toBe(true);
+    expect(chroniclesMapTransitionState(crypt, 'menagerie-of-ash').emberCacheOpened).toBe(true);
+
+    for (const [key, value] of Object.entries(checkpoint.worldFlags)) {
+      if (key.startsWith('__chrRuntime.mapFlags.part.')) {
+        expect(Array.from(value).length).toBeLessThanOrEqual(240);
+      }
+    }
+  });
+
+  it('ignores incomplete floor snapshots without breaking legacy checkpoint recovery', () => {
+    const state = chroniclesMapTransitionState(
+      { ...createChroniclesState('crypt-eight-squares'), sigilAwake: true },
+      'gallery-of-forks',
+    );
+    const checkpoint = chroniclesRunCheckpointPayload(state, 1);
+    const damaged = { ...checkpoint, worldFlags: { ...checkpoint.worldFlags } };
+    delete damaged.worldFlags['__chrRuntime.mapFlags.part.0'];
+    const recovered = chroniclesApplyRunCheckpoint(createChroniclesState('gallery-of-forks'), damaged);
+    expect(recovered.mapFlagsById).toBeUndefined();
+    expect(recovered.sigilAwake).toBe(true);
   });
 
   it('normalizes explicit monotonic ledgers without inventing entries', () => {
