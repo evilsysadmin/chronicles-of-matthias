@@ -14,7 +14,6 @@ function effects(item) {
   if (item.attackDamageBonus) lines.push(`Daño ${signed(item.attackDamageBonus)}`);
   if (item.toHitBonus) lines.push(`Acierto ${signed(item.toHitBonus)}`);
   if (item.armorClassBonus) lines.push(`CA ${signed(item.armorClassBonus)}`);
-  if (Number(item.reach) > 1) lines.push(`Alcance ${item.reach}`);
   // A missile weapon never takes the shield hand (MM3).
   if (item.twoHanded && item.slot === 'weapon') lines.push('A dos manos');
   return lines;
