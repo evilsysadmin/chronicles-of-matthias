@@ -53,18 +53,17 @@ describe('Chronicles shared run identity', () => {
       .toMatchObject({ id, entryMapId: 'swordhaven-first-book' });
   });
 
-  it('mints an explicitly selected authored campaign run without rewriting legacy or Tactics identities', () => {
-    const legacy = beginChroniclesRun('first-person');
-    const campaign = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-campaign' });
-    expect(campaign).not.toBe(legacy);
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-campaign');
-    expect(ensureChroniclesRun('tactics')).toBe(campaign);
-    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-campaign');
+  it('uses the same Swordhaven for default and explicit fresh campaign starts', () => {
+    const first = beginChroniclesRun('first-person');
+    const second = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-first-book' });
+    expect(second).not.toBe(first);
+    expect(ensureChroniclesRun('tactics')).toBe(second);
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
     expect(chroniclesListSavedRuns('first-person')).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: legacy, entryMapId: 'swordhaven-first-book' }),
-      expect.objectContaining({ id: campaign, entryMapId: 'swordhaven-campaign' }),
+      expect.objectContaining({ id: first, entryMapId: 'swordhaven-first-book' }),
+      expect.objectContaining({ id: second, entryMapId: 'swordhaven-first-book' }),
     ]));
-    expect(chroniclesSelectSavedRun('first-person', legacy)).toBe(true);
+    expect(chroniclesSelectSavedRun('first-person', first)).toBe(true);
     expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
   });
 
@@ -72,7 +71,10 @@ describe('Chronicles shared run identity', () => {
     const current = beginChroniclesRun('first-person');
     expect(() => beginChroniclesRun('first-person', { entryMapId: 'crypt-eight-squares' })).toThrow(RangeError);
     expect(() => beginChroniclesRun('first-person', { entryMapId: 'unknown' })).toThrow(RangeError);
-    expect(() => beginChroniclesRun('tactics', { entryMapId: 'swordhaven-campaign' })).toThrow(RangeError);
+    for (const retired of ['swordhaven-campaign', 'swordhaven-square']) {
+      expect(() => beginChroniclesRun('first-person', { entryMapId: retired })).toThrow(RangeError);
+    }
+    expect(() => beginChroniclesRun('tactics', { entryMapId: 'swordhaven-first-book' })).toThrow(RangeError);
     expect(ensureChroniclesRun('first-person')).toBe(current);
     expect(chroniclesListSavedRuns('first-person')).toHaveLength(1);
   });
@@ -146,10 +148,10 @@ describe('Chronicles shared run identity', () => {
 
 
   it('preserves the authored campaign route when renewing a stale first-person run', () => {
-    const stale = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-campaign' });
+    const stale = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-first-book' });
     const renewed = renewChroniclesRun('first-person', stale);
     expect(renewed).not.toBe(stale);
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-campaign');
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
     expect(chroniclesListSavedRuns('first-person').map((run) => run.id)).toContain(renewed);
   });
 
