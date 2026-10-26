@@ -373,11 +373,12 @@ export function beginChroniclesRun(scope, { entryMapId = null } = {}) {
   // Do not discard the previous active run when starting a new expedition.
   // Existing run IDs keep their backend checkpoints and stay loadable.
   readRunState(scope);
-  // Default is still historical Swordhaven until the new world has passed its
-  // end-to-end server/renderer/restore gates and the UI offers explicit entry.
+  // One public Swordhaven: all fresh first-person runs start in the complete
+  // First Book town (shops, temple, guild, mayor, sewers). Older saved IDs
+  // remain readable and their authoritative checkpoints stay untouched.
   const run = {
     id: createRunId(), owner: currentOwner(), ended: false,
-    entryMapId: scope === 'first-person' ? (entryMapId || 'swordhaven-square') : null,
+    entryMapId: scope === 'first-person' ? (entryMapId || 'swordhaven-first-book') : null,
     pending: true,
   };
   writeRunState(run);

@@ -46,11 +46,11 @@ describe('Chronicles shared run identity', () => {
 
   it('starts fresh first-person expeditions in Swordhaven and shares the map identity', () => {
     const id = ensureChroniclesRun('first-person');
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-square');
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
     expect(ensureChroniclesRun('tactics')).toBe(id);
-    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-square');
+    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-first-book');
     expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)))
-      .toMatchObject({ id, entryMapId: 'swordhaven-square' });
+      .toMatchObject({ id, entryMapId: 'swordhaven-first-book' });
   });
 
   it('mints an explicitly selected authored campaign run without rewriting legacy or Tactics identities', () => {
@@ -61,11 +61,11 @@ describe('Chronicles shared run identity', () => {
     expect(ensureChroniclesRun('tactics')).toBe(campaign);
     expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-campaign');
     expect(chroniclesListSavedRuns('first-person')).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: legacy, entryMapId: 'swordhaven-square' }),
+      expect.objectContaining({ id: legacy, entryMapId: 'swordhaven-first-book' }),
       expect.objectContaining({ id: campaign, entryMapId: 'swordhaven-campaign' }),
     ]));
     expect(chroniclesSelectSavedRun('first-person', legacy)).toBe(true);
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-square');
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
   });
 
   it('rejects unsupported fresh-run map choices before changing the selected save', () => {
@@ -176,7 +176,7 @@ describe('Chronicles shared run identity', () => {
     });
     expect(chroniclesSelectSavedRun('first-person', first)).toBe(true);
     expect(ensureChroniclesRun('tactics')).toBe(first);
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-square');
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
     expect(chroniclesListSavedRuns('first-person').find((save) => save.id === first).active).toBe(true);
   });
 
@@ -280,7 +280,7 @@ describe('Chronicles shared run identity', () => {
 
     expect(chroniclesMarkSavedRunRemote('first-person', provisionalId, canonicalId)).toBe(canonicalId);
     expect(ensureChroniclesRun('tactics')).toBe(canonicalId);
-    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-square');
+    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-first-book');
     expect(chroniclesListSavedRuns('first-person')).toEqual([
       expect.objectContaining({
         id: canonicalId, title: 'Swordhaven · día uno',
