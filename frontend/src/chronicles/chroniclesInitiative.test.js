@@ -446,6 +446,26 @@ describe('Chronicles combat engagement and leash', () => {
     expect(chroniclesEngagedEnemies({ ...state, x: 10 }, [unlimited]).map((enemy) => enemy.id)).toEqual(['tobias']);
   });
 
+  it.each([Infinity, -Infinity, NaN, 1_000_000, 2.5])(
+    'never starts distant initiative from invalid attack reach %s',
+    (reach) => {
+      // Clear sewer corridor, two cells from the enemy. Invalid attack reach
+      // must not trigger combat at a distance the enemy cannot actually hit.
+      const state = { ...base, x: 11, y: 17 };
+      const enemy = { ...tobias, ai: { attackReach: reach } };
+      expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([]);
+      expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+      // The same corrupted save still engages normally at melee distance.
+      expect(chroniclesEngagedEnemies({ ...state, x: 10 }, [enemy])).toEqual([enemy]);
+    },
+  );
+
+  it('preserves valid authored ranged engagement without a separate engageRange', () => {
+    const state = { ...base, x: 11, y: 17 };
+    const enemy = { ...tobias, ai: { attackReach: 2 } };
+    expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([enemy]);
+  });
+
   it('does not start a fight through a wall', () => {
     const state = { ...base, x: 7, y: 17 };
     expect(chroniclesStartInitiativeCombat(state, [tobias], { random: () => 0 }).initiative).toBeFalsy();
