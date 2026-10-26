@@ -39,46 +39,100 @@
   "interactables": [
     {
       "id": "swordhaven-forge",
-      "kind": "lore",
+      "kind": "merchant",
       "x": 4,
       "y": 7,
       "label": "Visitar Armería",
       "action": {
         "effects": [],
         "message": "La fragua está encendida. El armero promete tener un catálogo listo para los aventureros."
+      },
+      "visualType": "building-forge",
+      "shop": {
+        "stock": [
+          "wooden-staff",
+          "wooden-mace",
+          "wooden-spear",
+          "brass-dagger",
+          "brass-mace",
+          "brass-spear",
+          "brass-sword",
+          "brass-axe",
+          "wooden-sling",
+          "wooden-longbow",
+          "brass-crossbow"
+        ]
       }
     },
     {
       "id": "swordhaven-armor",
-      "kind": "lore",
+      "kind": "merchant",
       "x": 14,
       "y": 7,
       "label": "Visitar Armaduras",
       "action": {
         "effects": [],
         "message": "Armaduras, escudos y un artesano que desconfía de los golpes en la cabeza."
+      },
+      "visualType": "building-armor",
+      "shop": {
+        "stock": [
+          "leather-padded",
+          "leather-leather",
+          "roadwatch-vest",
+          "brass-scale",
+          "brass-ring",
+          "wooden-shield",
+          "brass-shield"
+        ]
       }
     },
     {
       "id": "swordhaven-tavern",
-      "kind": "lore",
+      "kind": "service",
       "x": 4,
-      "y": 15,
+      "y": 11,
       "label": "Visitar Taberna",
       "action": {
-        "effects": [],
-        "message": "La taberna está abierta. Aquí empiezan rumores y encargos, no termina la aventura."
-      }
+        "effects": [
+          {
+            "type": "consume-item",
+            "itemId": "crown-gold",
+            "quantity": 5
+          },
+          {
+            "type": "heal-party",
+            "amount": 999
+          },
+          {
+            "type": "refill-class-abilities"
+          },
+          {
+            "type": "restore-spell-points"
+          }
+        ],
+        "message": "La compañía duerme en la taberna de La Espada Mellada. Despiertan con todos los puntos de vida y de hechizo; a los caídos solo los alza el templo."
+      },
+      "visualType": "building-tavern"
     },
     {
       "id": "swordhaven-magic",
-      "kind": "lore",
+      "kind": "merchant",
       "x": 14,
-      "y": 15,
+      "y": 11,
       "label": "Visitar Tienda arcana",
       "action": {
         "effects": [],
         "message": "Un olor a pergamino, tinta y hechicería sale de la tienda de magia."
+      },
+      "visualType": "building-apothecary",
+      "shop": {
+        "stock": [
+          "healing-potion",
+          "mana-potion",
+          "fire-scroll"
+        ],
+        "greeting": "«Pociones para las heridas, maná para los magos y un pergamino para quien no sabe leer runas. Se paga antes de beber»."
       }
     },
     {
@@ -90,7 +144,8 @@
       "action": {
         "effects": [],
         "message": "Las campanas del templo suenan sobre los tejados de Swordhaven."
-      }
+      },
+      "visualType": "building-temple"
     }
   ],
   "treasures": [],
