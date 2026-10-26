@@ -19,6 +19,7 @@ import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaign
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import {
   chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements,
+  chroniclesStableTorchLightAssignments, chroniclesTorchLightGain,
 } from './chronicles/chroniclesDungeonLighting.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
@@ -911,23 +912,37 @@ export function createChroniclesOfMatthiasGame(host, {
     return angle;
   }
 
-  // Lend the pooled lights to the flames nearest the camera.
-  function lendTorchLights() {
+  // Preserve a pool light's source identity when distances exchange rank.
+  // A new source fades in from darkness at its own location; no full-strength
+  // point light can teleport across the camera as the player crosses a tile.
+  let pooledAssignments = [];
+  let pooledGains = [];
+  let pooledLightTime = null;
+  function lendTorchLights(time) {
     const pool = dungeon.lightPool || [];
     if (!pool.length) return;
-    const sources = dungeon.torches.map((torch) => torch.lightAt).filter(Boolean);
-    if (!sources.length) return;
-    const nearest = chroniclesNearestLightSources(sources, camera.position.x, camera.position.z, pool.length);
     const lit = dungeon.torches.filter((torch) => torch.lightAt);
+    if (!lit.length) return;
+    const nearest = chroniclesNearestLightSources(
+      lit.map((torch) => torch.lightAt), camera.position.x, camera.position.z, pool.length,
+    );
+    const assigned = chroniclesStableTorchLightAssignments(pooledAssignments, nearest, pool.length);
+    const dt = pooledLightTime === null ? 0.1 : Math.max(0, time - pooledLightTime);
+    pooledLightTime = time;
     pool.forEach((light, slot) => {
-      const torch = lit[nearest[slot]];
+      const source = assigned[slot];
+      const torch = source === null ? null : lit[source];
       if (!torch) {
         light.intensity = 0;
+        pooledGains[slot] = 0;
         return;
       }
-      light.position.copy(torch.lightAt);
-      light.intensity = torch.baseIntensity * (torch.pulse ?? 1);
+      const changed = source !== pooledAssignments[slot];
+      pooledGains[slot] = chroniclesTorchLightGain(pooledGains[slot], dt, changed);
+      if (changed) light.position.copy(torch.lightAt);
+      light.intensity = torch.baseIntensity * (torch.pulse ?? 1) * pooledGains[slot];
     });
+    pooledAssignments = assigned;
   }
 
   function render() {
@@ -935,7 +950,7 @@ export function createChroniclesOfMatthiasGame(host, {
     frame = requestAnimationFrame(render);
     if (!visible) return;
     const time = clock.getElapsedTime();
-    lendTorchLights();
+    lendTorchLights(time);
     if (!reducedMotion) {
       camera.position.lerp(desiredPosition, 0.16);
       camera.rotation.y += wrapAngle(desiredYaw - camera.rotation.y) * 0.18;
