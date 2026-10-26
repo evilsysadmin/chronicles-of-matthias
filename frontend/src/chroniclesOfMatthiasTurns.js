@@ -39,10 +39,11 @@ function validTilePosition(position) {
 
 export function chroniclesRuntimeEnemyPosition(state, enemy) {
   const runtime = state?.enemyPositions?.[enemy.id];
-  // Restored legacy coordinates must be traversable grid cells. Fractions
-  // can hang sightline tracing, while wall/out-of-map cells let creatures
-  // attack from inside masonry; recover at the authored spawn instead.
-  if (validTilePosition(runtime) && walkable(state, runtime)) return runtime;
+  // Restored legacy coordinates must be whole cells. In first-person MM3,
+  // also reject wall/out-of-map cells: they let creatures attack from inside
+  // masonry. Tactics retains its existing board-coordinate contract.
+  if (validTilePosition(runtime)
+    && (!chroniclesUsesMM3Combat(state) || walkable(state, runtime))) return runtime;
   // The legacy position resolver trusts *integer* saved overrides even when
   // embedded in a wall. Drop that invalid override before asking it for the
   // keyed/authored spawn; otherwise the fallback returns the same bad cell.
