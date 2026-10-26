@@ -129,11 +129,6 @@ export default function ChroniclesSaveMenu({
             <details className="chronicles-save-menu__more">
               <summary>Otras opciones</summary>
               <div className="chronicles-save-menu__more-actions">
-                <button type="button" disabled={catalogUnresolved || busyRunId !== null} onClick={() => onNew()}>
-                  <ExpeditionMenuIcon kind="scroll" />
-                  <span className="chronicles-save-menu__action-copy">Otra aventura <small>Explorar un comienzo diferente</small></span>
-                  <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
-                </button>
                 <button type="button" onClick={() => openList('manage')}>
                   <ExpeditionMenuIcon kind="books" />
                   <span className="chronicles-save-menu__action-copy">Gestionar partidas</span>
