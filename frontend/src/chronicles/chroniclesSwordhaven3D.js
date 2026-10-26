@@ -658,7 +658,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     hearth.name = 'tavern-double-hearth';
     hearth.userData.chroniclesDecorativeOnly = true;
     hearth.position.set(-width * 0.28, height + 2.12, -depth * 0.21);
-    const hearthBrick = material(0x866251, { roughness: 0.98 });
+    const hearthBrick = material(0x866251, {
+      map: swordhavenSurfaceTexture('masonry'),
+      normalMap: swordhavenSurfaceNormalTexture('masonry'),
+      normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.98,
+    });
     mesh(hearth, new THREE.BoxGeometry(2.45, 2.15, 1.62), hearthBrick,
       'tavern-hearth-brick-breast', [0, -0.70, 0], !coarse);
     for (const [index, x] of [-0.68, 0.68].entries()) {

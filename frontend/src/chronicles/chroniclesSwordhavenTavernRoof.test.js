@@ -29,6 +29,8 @@ describe('Swordhaven tavern architectural identity', () => {
     expect(hearth.getObjectByName('tavern-hearth-brick-breast')).toBeTruthy();
     const flues = hearth.children.filter(child => child.name.startsWith('tavern-hearth-flue-'));
     expect(flues).toHaveLength(2);
+    expect(flues[0].material.map).toBeTruthy();
+    expect(flues[0].material.normalMap).toBeTruthy();
     expect(flues[0].geometry.parameters.height).toBeGreaterThan(flues[1].geometry.parameters.height);
     expect(tavern.getObjectByName('tavern-porch-awning')).toBeTruthy();
     expect(tavern.getObjectByName('stone-chimney')).toBeUndefined();
