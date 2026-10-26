@@ -9,7 +9,6 @@ import {
   chroniclesContextualContentAction,
   chroniclesPartyAttackStats,
   chroniclesMM3MissileSightReach,
-  chroniclesMM3MissileSightReach,
   chroniclesAttackMode,
   chroniclesOpeningVolleyShooters,
   chroniclesOpeningVolleyShots,

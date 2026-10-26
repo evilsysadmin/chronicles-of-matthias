@@ -146,7 +146,11 @@ export default function ChroniclesCharacterSheet({
   const xp = xpProgress(progress, xpWindow);
   const ability = resourceStatus(state, member.id);
   const attributes = chroniclesAllowedAttributes(member.id);
-  const skills = chroniclesSkillsForMember(member.id);
+  // Old Tactics doctrine choices that only increase attack-square reach
+  // have no effect in first-person MM3. Do not sell the player a dead perk.
+  // Leave the definitions/learned IDs intact for Tactics and old saves.
+  const skills = chroniclesSkillsForMember(member.id)
+    .filter((skill) => state.combatRules !== 'mm3' || !Number(skill.modifiers?.reachBonus));
   const modifiers = state.rpgModifiers?.[member.id] || {};
   const firstPersonStats = chroniclesPartyAttackStats(state, member.id);
   const equippedWeapon = chroniclesEquippedItem(state, member.id, 'weapon');
@@ -667,6 +671,9 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__attribute-grid">
             {attributes.map((attributeKey) => {
               const definition = CHRONICLES_ATTRIBUTE_DEFINITIONS[attributeKey];
+              const effect = mm3 && attributeKey === 'precision'
+                ? '+1 daño a distancia/magia cada 3 puntos'
+                : definition.effect;
               const value = Number(progress.attributes?.[attributeKey] || 0);
               const canSpend = typeof onAllocateAttribute === 'function'
                 && progress.attributePoints > 0
@@ -676,10 +683,10 @@ export default function ChroniclesCharacterSheet({
                   type="button"
                   key={attributeKey}
                   disabled={!canSpend}
-                  title={definition.effect}
+                  title={effect}
                   onClick={() => onAllocateAttribute?.(member.id, attributeKey)}
                 >
-                  <span><b>{definition.label}</b><small>{definition.effect}</small></span>
+                  <span><b>{definition.label}</b><small>{effect}</small></span>
                   <strong>{value}/{CHRONICLES_ATTRIBUTE_CAP}</strong>
                   <i aria-hidden="true">{canSpend ? '+' : '·'}</i>
                 </button>
