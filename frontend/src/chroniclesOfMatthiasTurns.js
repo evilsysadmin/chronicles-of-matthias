@@ -130,11 +130,19 @@ export function chroniclesEnemyAttackTarget(state, enemy, position = chroniclesR
     return livingOrder.length ? (index - rotation + livingOrder.length) % livingOrder.length : index;
   };
 
+  // In MM3 all heroes share the visible camera cell. Melee creatures
+  // pressure the front row, while authored line-of-sight shooters can threaten
+  // the rear. Keep the existing positional targeting contract in Tactics.
+  const shootsBackline = chroniclesUsesMM3Combat(state)
+    && chroniclesEnemyAttackReach(enemy) > 1
+    && enemy?.ai?.requiresLineOfSight === true;
+  const preferredRow = shootsBackline ? 'back' : 'front';
+
   return livingPartyTargetsWithPositions(state)
     .filter((target) => enemyCanAttackCell(state, enemy, position, target.position))
     .sort((left, right) => (
       distance(position, left.position) - distance(position, right.position)
-      || (left.member.row === 'front' ? 0 : 1) - (right.member.row === 'front' ? 0 : 1)
+      || (left.member.row === preferredRow ? 0 : 1) - (right.member.row === preferredRow ? 0 : 1)
       || turnRank(left.member) - turnRank(right.member)
       || left.member.id.localeCompare(right.member.id)
     ))[0]?.member || null;
