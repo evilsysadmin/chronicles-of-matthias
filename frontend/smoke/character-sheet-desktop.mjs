@@ -745,8 +745,17 @@ try {
           '.chronicles-character-sheet__scroll'
         )?.dataset.moreBelow === 'true');
         const cueAtTop = await dock.evaluate((node) => getComputedStyle(node, '::before').content);
-        assert.match(cueAtTop, /Desliza para ver más/,
+        assert.match(cueAtTop, /↓ Más/,
           'Mobile dock must signal more content without hiding its party buttons');
+        const cueGeometry = await dock.evaluate((node) => {
+          const cue = getComputedStyle(node, '::before');
+          return { top: cue.top, height: parseFloat(cue.height),
+            dockHeight: node.getBoundingClientRect().height };
+        });
+        assert.equal(cueGeometry.top, '0px',
+          'Continuation cue must stay inside the dock instead of covering statistics');
+        assert.ok(cueGeometry.height <= 18 && cueGeometry.dockHeight <= 68,
+          'Cue must not enlarge or obscure the persistent hero dock: ' + JSON.stringify(cueGeometry));
         await scrollArea.evaluate((node) => { node.scrollTop = node.scrollHeight; });
         await page.waitForFunction(() => document.querySelector(
           '.chronicles-character-sheet__scroll'
