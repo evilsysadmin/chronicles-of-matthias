@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
+    for (const view of width === 1280 ? ['cast', 'adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
@@ -80,6 +80,21 @@ try {
             `CAST/items footer must not overflow at ${width}px: ${JSON.stringify(footer)}`);
           if (compactTouch) assert(footer.lineHeight >= 20,
             `CAST/items touch usage note needs readable line spacing: ${JSON.stringify(footer)}`);
+          if (view === 'cast' && width <= 430) {
+            const copy = await dialog.locator('.chronicles-spell-menu__entry small').first()
+              .evaluate((node) => {
+                const style = getComputedStyle(node);
+                return { family: style.fontFamily, size: parseFloat(style.fontSize),
+                  lineHeight: parseFloat(style.lineHeight),
+                  overflow: node.scrollWidth > node.clientWidth + 1 };
+              });
+            assert.match(copy.family, /system-ui/i, 'Spell descriptions use a legible phone text face');
+            assert(copy.size >= 17 && copy.lineHeight >= 20 && !copy.overflow,
+              `CAST descriptive copy must be readable without clipping: ${JSON.stringify(copy)}`);
+            const usage = await dialog.locator('.chronicles-spell-menu__folio-footer')
+              .evaluate((node) => getComputedStyle(node).fontFamily);
+            assert.match(usage, /system-ui/i, 'CAST usage note uses the same readable text face');
+          }
         }
         if (view === 'adventure') {
           await assertAdventureFolioInk(dialog, `${width}x${height}`);
