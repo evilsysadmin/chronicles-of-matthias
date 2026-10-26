@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements } from './chroniclesDungeonLighting.js';
+import { chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements, chroniclesStableTorchLightAssignments, chroniclesTorchLightGain } from './chroniclesDungeonLighting.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesIsometricScenePlan } from './chroniclesIsometricScenePlan.js';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
@@ -40,6 +40,22 @@ describe('Dungeon lighting', () => {
     const braziers = chroniclesBrazierPlacements(map.grid, map.enemies);
     expect(braziers.map((brazier) => brazier.boss).sort()).toEqual([false, true]);
     braziers.forEach(({ x, y, dx, dy }) => expect(map.grid[y + dy][x + dx]).toBe('#'));
+  });
+
+  it('keeps pooled torch slots anchored when two sources swap nearest rank', () => {
+    const before = chroniclesStableTorchLightAssignments([], [2, 0, 4], 3);
+    expect(before).toEqual([2, 0, 4]);
+    expect(chroniclesStableTorchLightAssignments(before, [4, 2, 0], 3)).toEqual(before);
+    expect(chroniclesStableTorchLightAssignments(before, [4, 3, 2], 3)).toEqual([2, 3, 4]);
+    expect(chroniclesStableTorchLightAssignments([2, 2, 0], [2, 0, 3], 3)).toEqual([2, 3, 0]);
+    expect(chroniclesStableTorchLightAssignments(before, [], 3)).toEqual([null, null, null]);
+  });
+
+  it('fades a relocated light in instead of teleporting at full intensity', () => {
+    expect(chroniclesTorchLightGain(1, 1 / 60, true)).toBeLessThan(0.1);
+    expect(chroniclesTorchLightGain(1, 1 / 60, false)).toBe(1);
+    expect(chroniclesTorchLightGain(0.7, 500, true)).toBe(0.5);
+    expect(chroniclesTorchLightGain(0, 0, true)).toBe(0);
   });
 
   it('lends lights to the nearest sources', () => {
