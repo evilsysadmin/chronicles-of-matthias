@@ -858,14 +858,17 @@ function resolveCast(state, memberId, spellId, targetId = null) {
   }
   if (spell.kind === 'heal' && spell.everyone) {
     const wounded = state.party.filter((member) => member.hp > 0 && member.hp < member.maxHp);
-    if (!wounded.length) return refuse(`${caster.name} repasa ${spell.name}, pero nadie de la compañía está herido.`);
+    const standing = state.party.filter((member) => member.hp > 0);
+    if (!standing.length) return refuse(`No hay compañeros en pie a los que aplicar ${spell.name}.`);
     return {
       ...chroniclesSpendSp(state, caster.id, spell.cost),
       party: state.party.map((member) => (member.hp > 0
         ? { ...member, hp: Math.min(member.maxHp, member.hp + spell.amount) }
         : member)),
       turns: state.turns + 1,
-      message: `${caster.name} conjura ${spell.name}: ${wounded.map((member) => member.name).join(', ')} recuperan hasta ${spell.amount} PV.`,
+      message: wounded.length
+        ? `${caster.name} conjura ${spell.name}: ${wounded.map((member) => member.name).join(', ')} recuperan hasta ${spell.amount} PV.`
+        : `${caster.name} conjura ${spell.name}: todos están sanos; no se recupera ningún PV.`,
     };
   }
   if (spell.kind === 'paralyze') {
@@ -894,14 +897,11 @@ function resolveCast(state, memberId, spellId, targetId = null) {
   if (spell.kind === 'heal') {
     const patient = targetId
       ? state.party.find((member) => member.id === targetId)
-      : chroniclesMostWoundedAlly(state); // backward-compatible auto targeting
+      : chroniclesMostWoundedAlly(state) || state.party.find((member) => member.hp > 0); // backward-compatible auto targeting
     if (targetId && !patient) return refuse(`No existe ese compañero: no se ha lanzado ${spell.name}.`);
     const eligibility = chroniclesHealTargetStatus(patient);
     if (eligibility === 'fallen' && patient) {
       return refuse(`${patient.name} está caído con 0 PV. ${spell.name} cura heridas, pero no resucita. Usa un Elixir de retorno desde Objetos.`);
-    }
-    if (eligibility === 'healthy') {
-      return refuse(`${patient.name} ya tiene todos sus PV. ${spell.name} no se ha consumido.`);
     }
     if (!patient) {
       const fallen = state.party.some((member) => member.hp <= 0);
@@ -914,7 +914,9 @@ function resolveCast(state, memberId, spellId, targetId = null) {
       ...chroniclesSpendSp(state, caster.id, spell.cost),
       party: state.party.map((member) => member.id === patient.id ? { ...member, hp: healed } : member),
       turns: state.turns + 1,
-      message: `${caster.name} conjura ${spell.name} sobre ${patient.name}: ${patient.hp} → ${healed} PV.`,
+      message: eligibility === 'healthy'
+        ? `${caster.name} conjura ${spell.name} sobre ${patient.name}, que ya está sano. No recupera PV.`
+        : `${caster.name} conjura ${spell.name} sobre ${patient.name}: ${patient.hp} → ${healed} PV.`,
     };
   }
   if (spell.kind === 'detect') {

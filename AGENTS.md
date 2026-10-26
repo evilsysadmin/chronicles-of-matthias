@@ -101,6 +101,7 @@
   de proyectiles disparados al aire, pero **no inventar impactos, daño, XP,
   loot ni reacciones de enemigo** sin un objetivo real. Mantener coste de
   turno y guardados conforme al reductor.
+- Curaciones MM3: se pueden lanzar sobre un personaje al 100 % de PV, y la curación grupal sin heridos sigue gastando PH y turno sin aumentar PV. Personajes a 0 PV siguen necesitando resurrección; no inventar un efecto ni cancelar automáticamente el lanzamiento.
 - Para **impactos reales** (cuerpo a cuerpo y proyectiles), usar la gota de
   sangre con **número de daño** compartida:
   `chroniclesHitImpacts` / `ChroniclesHitSplat`. No duplicar feedback

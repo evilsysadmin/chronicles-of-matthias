@@ -75,8 +75,8 @@ export function ChroniclesSpellTargetBanner({ spellId, notice = '', onCancel }) 
   );
 }
 
-// Explicit target list, including the *reason* a fallen or healthy hero cannot
-// be healed. Disabled entries are still readable; no spell points are spent.
+// MM3 lets the player intentionally cast on a healthy hero (spending PH and
+// the turn without HP gain). Only fallen targets are disabled here.
 export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onOpenRevive = null }) {
   const elixirCount = chroniclesConsumableCount(state, 'revive-draught');
   return (
@@ -92,13 +92,13 @@ export function ChroniclesHealTargetPicker({ state, spell, onSelect, onBack, onO
           return (
             <li key={target.id}>
               <button type="button" data-chronicles-heal-target={target.id}
-                disabled={status !== 'wounded'} onClick={() => onSelect(target.id)}
+                disabled={status === 'fallen'} onClick={() => onSelect(target.id)}
                 title={status === 'fallen' ? '0 PV: necesita resurrección'
-                  : status === 'healthy' ? 'Salud completa' : 'Curar este compañero'}>
+                  : status === 'healthy' ? 'Salud completa · consume PH sin efecto' : 'Curar este compañero'}>
                 <span><strong>{target.name}</strong>
                   <small>{target.hp} / {target.maxHp} PV</small></span>
                 <span>{status === 'fallen' ? 'CAÍDO · REVIVIR'
-                  : status === 'healthy' ? 'YA ESTÁ SANO' : 'CURAR'}</span>
+                  : status === 'healthy' ? 'SANO · SIN EFECTO' : 'CURAR'}</span>
               </button>
             </li>
           );
@@ -315,10 +315,8 @@ export default function ChroniclesSpellMenu({
                           if (onRequestTarget) onRequestTarget(spell.id);
                           else setHealSpellId(spell.id);
                         } else if (spell.kind === 'heal'
-                          && !state.party.some((target) => target.hp > 0 && target.hp < target.maxHp)) {
-                          setHealNotice(state.party.some((target) => target.hp <= 0)
-                            ? 'Los compañeros caídos a 0 PV requieren un Elixir de retorno desde Objetos.'
-                            : 'Nadie necesita curación. No has gastado PH.');
+                          && spell.everyone && !state.party.some((target) => target.hp > 0)) {
+                          setHealNotice('No hay ningún compañero en pie. Para reanimar, usa un Elixir de retorno.');
                         } else {
                           onCast(spell.id);
                         }
@@ -379,7 +377,7 @@ export default function ChroniclesSpellMenu({
               ? reviveItem ? 'Elige al caído. Se consume un elixir solo al confirmar.'
                 : 'Usar un objeto gasta el turno de quien lo usa.'
               : down ? 'El personaje no puede lanzar hechizos mientras esté caído.'
-                : healSpell ? 'Elige al compañero herido. Los caídos a 0 PV necesitan revivir.'
+                : healSpell ? 'Elige destinatario: si está sano, gastarás PH sin curar. Los caídos necesitan revivir.'
                   : 'Curar no resucita a un caído (0 PV). La posada devuelve los PH.'}</span>
           <kbd>{onOpenSheet ? '1–4 · FICHAS  |  ' : ''}ESC · CERRAR</kbd>
         </footer>

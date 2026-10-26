@@ -84,9 +84,13 @@ describe('Chronicles · MM3 magic', () => {
     expect(member(state, 'rook').hp).toBe(Math.min(member(state, 'rook').maxHp, 8));
     expect(chroniclesMemberSp(state, member(state, 'bishop'))).toBe(4);
     expect(state.message).toMatch(/Primeros auxilios sobre Hildegard/);
-    // Nobody hurt: no spell point is spent.
+    // Original MM3 allows a wasted cast at full health: it still costs SP/turn.
     const full = { ...state, party: state.party.map((entry) => ({ ...entry, hp: entry.maxHp })) };
-    expect(chroniclesMemberSp(chroniclesReduce(full, { type: 'cast', memberId: 'bishop', spellId: 'first-aid' }), member(full, 'bishop'))).toBe(4);
+    const fullCast = chroniclesReduce(full, { type: 'cast', memberId: 'bishop', spellId: 'first-aid' });
+    expect(chroniclesMemberSp(fullCast, member(fullCast, 'bishop'))).toBe(3);
+    expect(fullCast.turns).toBe(full.turns + 1);
+    expect(fullCast.party).toEqual(full.party);
+    expect(fullCast.message).toMatch(/ya está sano/i);
     // A spell the caster does not know is refused.
     const unknown = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'flying-fist' });
     expect(unknown.message).toMatch(/no conoce/);
@@ -196,5 +200,35 @@ describe('Chronicles · MM3 magic', () => {
     const cast = chroniclesReduce(state, { type: 'cast', memberId: 'knight', spellId: 'detect-magic' });
     expect(cast.message).toMatch(/Queda un tesoro sin abrir/);
     expect(chroniclesMemberSp(cast, member(cast, 'knight'))).toBe(1);
+  });
+});
+
+
+describe('MM3 full-health healing remains a real cast', () => {
+  it('lets the player deliberately waste a chosen single-target cure but not revive the fallen', () => {
+    const state = town();
+    const before = chroniclesMemberSp(state, member(state, 'bishop'));
+    const result = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'matthias' });
+    expect(result.party).toEqual(state.party);
+    expect(result.turns).toBe(state.turns + 1);
+    expect(chroniclesMemberSp(result, member(result, 'bishop'))).toBe(before - 1);
+    expect(result.message).toMatch(/no recupera PV/i);
+    const fallen = { ...state, party: state.party.map((hero) => hero.id === 'matthias' ? { ...hero, hp: 0 } : hero) };
+    const refused = chroniclesReduce(fallen, { type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'matthias' });
+    expect(refused.turns).toBe(fallen.turns);
+    expect(chroniclesMemberSp(refused, member(refused, 'bishop'))).toBe(before);
+  });
+
+  it('casts mass heal on an entirely healthy living company with no HP delta', () => {
+    const base = town();
+    const state = { ...base, spellbook: { bishop: ['first-aid', 'mass-heal'] }, spellPoints: { bishop: 7 } };
+    const result = chroniclesReduce(state, { type: 'cast', memberId: 'bishop', spellId: 'mass-heal' });
+    expect(result.turns).toBe(state.turns + 1);
+    expect(result.party).toEqual(state.party);
+    expect(chroniclesMemberSp(result, member(result, 'bishop'))).toBe(1);
+    expect(result.message).toMatch(/todos están sanos/i);
+    const wiped = { ...state, party: state.party.map((hero) => ({ ...hero, hp: 0 })) };
+    expect(chroniclesReduce(wiped, { type: 'cast', memberId: 'bishop', spellId: 'mass-heal' }).turns)
+      .toBe(wiped.turns);
   });
 });
