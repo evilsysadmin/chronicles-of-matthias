@@ -369,6 +369,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isApothecary = spec.serviceStyle === 'apothecary';
   const isMagic = spec.emblem === 'crystal' && !isApothecary;
   const isForge = spec.emblem === 'swords';
+  const isArmor = spec.serviceStyle === 'armor';
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
@@ -575,10 +576,14 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     root.add(bay);
   }
-  mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
-    'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
-  mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
-    'chimney-cap', [width * 0.31, height + 2.24, -depth * 0.25]);
+  // The forge gets its own industrial stack below; other houses keep
+  // the small domestic chimney. Neither alters the authored collision grid.
+  if (!isForge) {
+    mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
+      'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
+    mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
+      'chimney-cap', [width * 0.31, height + 2.24, -depth * 0.25]);
+  }
 
   // Each hero building has a distinctive readable silhouette.
   if (isTemple) {
@@ -650,10 +655,50 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
     mesh(root, new THREE.SphereGeometry(0.32, 9, 8), mats.embers,
       'forge-brazier-embers', [-width * 0.40, 1.42, facadeZ + 0.23]);
+    // A tall, iron-capped masonry flue identifies the weaponsmith from the
+    // street. Its base intersects the solid roof; no smoke particles/lights.
+    const stack = new THREE.Group();
+    stack.name = 'forge-roof-smokestack';
+    stack.userData.chroniclesDecorativeOnly = true;
+    stack.position.set(width * 0.31, height + 2.45, -depth * 0.25);
+    mesh(stack, new THREE.BoxGeometry(1.36, 4.5, 1.24), mats.stone,
+      'forge-smokestack-masonry', [0, 0, 0], !coarse);
+    mesh(stack, new THREE.BoxGeometry(1.66, 0.30, 1.56), mats.steel,
+      'forge-smokestack-iron-crown', [0, 2.30, 0]);
+    mesh(stack, new THREE.BoxGeometry(0.80, 0.05, 0.70), mats.timber,
+      'forge-smokestack-vent', [0, 2.48, 0]);
+    root.add(stack);
   } else if (spec.emblem === 'shield') {
     for (const x of [-width * 0.35, width * 0.35]) mesh(root,
       new THREE.BoxGeometry(0.67, 1.48, 0.22), mats.steel,
       'armor-display', [x, 1.12, facadeZ + 0.24]);
+  }
+  if (isArmor) {
+    // Armorer's raised heraldic shield breaks the gable silhouette.
+    // The watchhouse shares a shield sign but NOT this merchant roof crest.
+    const crest = new THREE.Group();
+    crest.name = 'armor-roof-crest';
+    crest.userData.chroniclesDecorativeOnly = true;
+    // Mount the full shield above the ridge, not half-hidden by roof shingles.
+    // A timber mast anchors it to the existing solid gable, including on touch.
+    crest.position.set(0, height + 3.15, facadeZ + 0.20);
+    mesh(crest, new THREE.BoxGeometry(0.24, 3.20, 0.22), mats.timber,
+      'armor-crest-roof-mast', [0, -1.60, -0.15]);
+    const shield = new THREE.Shape();
+    shield.moveTo(-1.02, 0.78);
+    shield.lineTo(1.02, 0.78);
+    shield.lineTo(0.85, -0.40);
+    shield.lineTo(0, -1.25);
+    shield.lineTo(-0.85, -0.40);
+    shield.closePath();
+    mesh(crest, new THREE.ShapeGeometry(shield),
+      material(0x9fb2bd, { metalness: 0.30, roughness: 0.42 }),
+      'armor-crest-shield', [0, 0, 0]);
+    mesh(crest, new THREE.BoxGeometry(0.16, 1.57, 0.10), mats.gold,
+      'armor-crest-spine', [0, 0.05, 0.06]);
+    mesh(crest, new THREE.BoxGeometry(1.47, 0.14, 0.10), mats.gold,
+      'armor-crest-crossbar', [0, 0.28, 0.06]);
+    root.add(crest);
   }
   // Homes carry no shop sign.
   if (spec.emblem === 'home') return { root, sign: null, interactive: false };
