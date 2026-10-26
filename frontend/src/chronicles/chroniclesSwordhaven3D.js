@@ -769,6 +769,24 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     bay.name = 'forge-stone-workshop-bay';
     bay.userData.chroniclesDecorativeOnly = true;
     bay.position.set(width * 0.33, 0, facadeZ + 0.43);
+    // The firebox reads as a soot-dark opening instead of another amber
+    // merchant window. The ember glow is baked into materials, not a light.
+    mesh(bay, new THREE.BoxGeometry(1.44, 1.20, 0.10),
+      material(0x261c17, { roughness: 1 }),
+      'forge-workshop-soot-recess', [0, 2.75, 0.10]);
+    const coals = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(0.15, 8, 6), mats.embers, 3,
+    );
+    coals.name = 'forge-workshop-embers';
+    coals.userData.chroniclesDecorativeOnly = true;
+    const coal = new THREE.Object3D();
+    for (const [index, x] of [-0.42, 0, 0.42].entries()) {
+      coal.position.set(x, 2.40 + (index % 2) * 0.14, 0.21);
+      coal.updateMatrix();
+      coals.setMatrixAt(index, coal.matrix);
+    }
+    coals.instanceMatrix.needsUpdate = true;
+    bay.add(coals);
     for (const side of [-1, 1]) {
       mesh(bay, new THREE.BoxGeometry(0.22, 1.52, 0.30), mats.stone,
         'forge-workshop-stone-pier', [side * 0.87, 2.75, 0], !coarse);
