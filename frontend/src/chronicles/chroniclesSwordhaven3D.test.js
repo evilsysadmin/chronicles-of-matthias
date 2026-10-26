@@ -252,6 +252,14 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(gateway.getObjectByName('armor-gateway-lintel').position.y)
         .toBeGreaterThan(door.geometry.parameters.height);
       expect(gateway.children.filter(child => child.name === 'armor-gateway-rivet')).toHaveLength(2);
+      const nameplate = armorer.getObjectByName('swordhaven-shop-nameplate');
+      const nameplateBottom = nameplate.position.y
+        - nameplate.getObjectByName('shop-nameplate-wood').geometry.parameters.height / 2;
+      for (const name of ['armor-gateway-lintel', 'armor-gateway-keystone']) {
+        const part = gateway.getObjectByName(name);
+        expect(part.position.y + part.geometry.parameters.height / 2)
+          .toBeLessThan(nameplateBottom);
+      }
       for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-armor')) {
         const other = scene.getObjectByName('swordhaven-building-' + spec.id);
         expect(other.getObjectByName('armor-stone-gateway')).toBeFalsy();
