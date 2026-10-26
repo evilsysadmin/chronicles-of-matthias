@@ -376,6 +376,38 @@ describe('Chronicles run checkpoint recovery', () => {
     );
   });
 
+  it('recovers playable turns from corrupt checkpoint phases without changing valid combat initiative', () => {
+    const base = createChroniclesState('gallery-of-forks');
+    const initiative = {
+      version: 1, die: '1d8', round: 2, cursor: 0,
+      order: [{ id: 'matthias', kind: 'party', name: 'Matthias', agility: 4, roll: 2, initiative: 6 }],
+    };
+    const restore = (phase, turnPhase, withInitiative = true) => chroniclesApplyRunCheckpoint(base, {
+      worldFlags: {
+        '__chrRuntime.version': 1,
+        '__chrRuntime.phase': phase,
+        '__chrRuntime.turnPhase': turnPhase,
+        ...(withInitiative ? { '__chrRuntime.initiative': JSON.stringify(initiative) } : {}),
+      },
+    });
+
+    expect(restore('unrecognized-phase', 'enemy')).toMatchObject({
+      phase: 'explore', turnPhase: 'party', initiative: null,
+    });
+    expect(restore('explore', 'enemy')).toMatchObject({
+      phase: 'explore', turnPhase: 'party', initiative: null,
+    });
+    expect(restore('combat', 'invalid-turn')).toMatchObject({
+      phase: 'combat', turnPhase: 'party', initiative,
+    });
+    expect(restore('combat', 'enemy')).toMatchObject({
+      phase: 'combat', turnPhase: 'enemy', initiative,
+    });
+    expect(restore('combat', 'enemy', false)).toMatchObject({
+      phase: 'combat', turnPhase: 'party', initiative: null,
+    });
+  });
+
   it('treats authoritative terminal status as stronger than a stale runtime phase', () => {
     const base = createChroniclesState();
     const completed = chroniclesApplyRunCheckpoint(base, {
