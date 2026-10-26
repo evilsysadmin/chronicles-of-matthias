@@ -19,9 +19,6 @@ export function chroniclesFirstStepsStory(state) {
   if (state.mapId === 'swordhaven-first-book'
     && state?.quests?.['lost-king']?.status === 'active'
     && state?.consumedContentIds?.includes(FIRST_BOOK_ARRIVAL_MARKER)) return 'first-book';
-  if (state.mapId === 'swordhaven-square'
-    && state?.quests?.['lost-king-prologue']?.status === 'active'
-    && state?.consumedContentIds?.includes(FIRST_STEPS_MARKER)) return 'prologue';
   return null;
 }
 
@@ -67,8 +64,6 @@ export default function ChroniclesFirstSteps({
       </div>
       <p>{story === 'first-book'
         ? 'El Rey ha desaparecido. Desde la plaza, busca al sureste el Ayuntamiento: tejado rojo, cúpula de piedra y letrero sobre la entrada. Allí te espera el alcalde Aldric.'
-        : story === 'prologue'
-          ? 'La carta de la Dama nos envía tras el Rey. Empecemos por orientarnos en Swordhaven.'
           : 'Consulta el objetivo actual en la Crónica y oriéntate con el mapa.'}</p>
       <small className="chronicles-first-steps__keyboard-hint">
         Flechas: avanzar y girar · <kbd>M</kbd> mapa · <kbd>J</kbd> Crónica
