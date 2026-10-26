@@ -313,6 +313,17 @@ describe('Swordhaven modular real-time 3D', () => {
       const armorer = scene.getObjectByName('swordhaven-building-swordhaven-armor');
       const gateway = armorer.getObjectByName('armor-stone-gateway');
       const door = armorer.getObjectByName('shop-door');
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+      const armorWall = armorer.getObjectByName('timber-and-stone-walls');
+      expect(armorWall.material).toBe(temple.getObjectByName('timber-and-stone-walls').material);
+      expect(armorWall.material).not.toBe(forge.getObjectByName('timber-and-stone-walls').material);
+      expect(armorer.getObjectByName('roof-gable-1').material).toBe(armorWall.material);
+      expect(armorer.getObjectByName('horizontal-facade-beam')).toBeFalsy();
+      expect(armorer.getObjectByName('vertical-facade-post')).toBeFalsy();
+      expect(armorer.getObjectByName('diagonal-timber-brace')).toBeFalsy();
+      expect(forge.getObjectByName('diagonal-timber-brace')).toBeTruthy();
+      expect(armorer.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
       expect(gateway?.userData.chroniclesDecorativeOnly).toBe(true);
       expect(armorer.getObjectByName('armor-roof-crest')).toBeTruthy();
       expect(gateway.position.z).toBeGreaterThan(door.position.z);

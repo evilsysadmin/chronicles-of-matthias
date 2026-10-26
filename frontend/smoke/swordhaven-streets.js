@@ -153,6 +153,12 @@ try {
       && forge?.getObjectByName('forge-roof-smokestack')
       && forge?.getObjectByName('forge-brazier')
       && armorer?.getObjectByName('armor-roof-crest')
+      && armorer?.getObjectByName('timber-and-stone-walls')?.material
+        === temple?.getObjectByName('timber-and-stone-walls')?.material
+      && armorer?.getObjectByName('timber-and-stone-walls')?.material
+        !== forge?.getObjectByName('timber-and-stone-walls')?.material
+      && !armorer?.getObjectByName('diagonal-timber-brace')
+      && forge?.getObjectByName('diagonal-timber-brace')
       && !armorer?.getObjectByName('forge-roof-smokestack')
       && !forge?.getObjectByName('armor-roof-crest')
     )),

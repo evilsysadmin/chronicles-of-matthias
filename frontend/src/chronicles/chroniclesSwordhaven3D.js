@@ -382,7 +382,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     roughness: 0.95,
   });
   const roofRidgeY = height + 1.8;
-  const wallMaterial = isTemple ? mats.stone : mats.plaster;
+  // Stone walls distinguish the armorer from half-timbered merchants.
+  const wallMaterial = isTemple || isArmor ? mats.stone : mats.plaster;
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
@@ -450,18 +451,21 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mats.timber, 'roof-edge-fascia', [side * width * 0.49, height + 0.02, 0]);
     fascia.rotation.z = side * 0.16;
   }
-  // Repeated timber posts and braces form recognisable half-timbered facades.
-  const beamY = [1.02, height - 0.67];
-  for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
-    mats.timber, 'horizontal-facade-beam', [0, y, facadeZ]);
-  for (const x of [-width * 0.48, 0, width * 0.48]) {
-    mesh(root, new THREE.BoxGeometry(0.22, height, 0.27), mats.timber,
-      'vertical-facade-post', [x, height / 2, facadeZ], !coarse);
-  }
-  for (const side of [-1, 1]) {
-    const brace = mesh(root, new THREE.BoxGeometry(0.17, 2.15, 0.23), mats.timber,
-      'diagonal-timber-brace', [side * width * 0.34, height - 1.77, facadeZ + 0.06]);
-    brace.rotation.z = side * 0.55;
+  // The armorer uses a clean masonry frontage; all doors and signs stay put.
+  if (!isArmor) {
+    // Repeated timber posts and braces form recognisable half-timbered facades.
+    const beamY = [1.02, height - 0.67];
+    for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
+      mats.timber, 'horizontal-facade-beam', [0, y, facadeZ]);
+    for (const x of [-width * 0.48, 0, width * 0.48]) {
+      mesh(root, new THREE.BoxGeometry(0.22, height, 0.27), mats.timber,
+        'vertical-facade-post', [x, height / 2, facadeZ], !coarse);
+    }
+    for (const side of [-1, 1]) {
+      const brace = mesh(root, new THREE.BoxGeometry(0.17, 2.15, 0.23), mats.timber,
+        'diagonal-timber-brace', [side * width * 0.34, height - 1.77, facadeZ + 0.06]);
+      brace.rotation.z = side * 0.55;
+    }
   }
   mesh(root, new THREE.BoxGeometry(1.75, 3.12, 0.16), mats.timber,
     'shop-door', [0, 1.56, facadeZ + 0.16]);
