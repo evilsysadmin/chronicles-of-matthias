@@ -14,6 +14,7 @@ const VIEWS = Object.freeze({
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
+  watch: { x: 5, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 2.5 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
@@ -84,6 +85,8 @@ try {
     child.name.startsWith('swordhaven-building-first-book-armor-'));
   const store = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-store-'));
+  const watch = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-watch-'));
   if (!wall || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
@@ -127,6 +130,12 @@ try {
       && armorer?.getObjectByName('armor-roof-crest')
       && !armorer?.getObjectByName('forge-roof-smokestack')
       && !forge?.getObjectByName('armor-roof-crest')
+    )),
+    distinctWatchhouse: String(Boolean(
+      watch?.getObjectByName('watchhouse-battlement-tower')
+      && watch?.getObjectByName('watchhouse-tower-masonry')
+      && watch?.getObjectByName('watchhouse-front-merlon')
+      && !armorer?.getObjectByName('watchhouse-battlement-tower')
     )),
     distinctMarketStore: String(Boolean(
       store?.getObjectByName('store-market-awning')
