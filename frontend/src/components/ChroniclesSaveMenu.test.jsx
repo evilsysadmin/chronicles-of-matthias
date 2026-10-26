@@ -26,7 +26,7 @@ describe('Chronicles expedition entry', () => {
     expect(html).not.toContain('Continuar expedición');
     expect(html).not.toContain('Elegir otra expedición');
     expect(html).toContain('<summary>Otras opciones</summary>');
-    expect(html).toContain('Otra aventura');
+    expect(html).not.toContain('Otra aventura');
     expect(html).toContain('¿Tu primera expedición?');
     expect(html).toContain('Elige un grupo preparado o crea cuatro aventureros.');
     expect(html).toContain('data-testid="chronicles-home-first-steps"');
