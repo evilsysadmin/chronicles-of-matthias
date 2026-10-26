@@ -65,7 +65,7 @@
   "traps": [],
   "exits": [
     {
-      "id": "to-swordhaven-square",
+      "id": "to-swordhaven",
       "kind": "exit",
       "x": 10,
       "y": 1,
@@ -77,8 +77,8 @@
         "effects": [
           {
             "type": "transition-map",
-            "mapId": "swordhaven-campaign",
-            "entryExitId": "to-banner-road"
+            "mapId": "swordhaven-first-book",
+            "entryExitId": "to-first-book-banner-road"
           }
         ],
         "message": "La compañía llega a Swordhaven."
