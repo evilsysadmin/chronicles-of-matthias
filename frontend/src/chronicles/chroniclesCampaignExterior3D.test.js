@@ -461,6 +461,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(crest.userData.chroniclesDecorativeOnly).toBe(true);
     expect(crest.getObjectByName('armor-crest-shield')).toBeInstanceOf(THREE.Mesh);
     expect(crest.getObjectByName('armor-crest-crossbar')).toBeInstanceOf(THREE.Mesh);
+    expect(crest.getObjectByName('armor-crest-roof-mast')).toBeInstanceOf(THREE.Mesh);
+    expect(crest.position.y).toBeGreaterThan(8); // Shield clears the gable ridge.
     expect(new THREE.Box3().setFromObject(crest).min.y).toBeGreaterThan(5);
     expect(forge.getObjectByName('armor-roof-crest')).toBeFalsy();
     expect(armorer.getObjectByName('forge-roof-smokestack')).toBeFalsy();
