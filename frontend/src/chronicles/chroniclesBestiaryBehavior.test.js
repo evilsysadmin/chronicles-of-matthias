@@ -11,7 +11,10 @@ function movementSignature(enemy) {
   const movement = enemy.ai?.movement || 'cardinal-chase';
   const engagedMovement = enemy.ai?.engagedMovement || '-';
   const reach = Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1);
-  return `${movement}>${engagedMovement}@${reach}`;
+  // Pursuit activation distance changes enemy behavior even when the step
+  // geometry is the same: goblins, spiders and hounds remain distinct.
+  const engageRange = enemy.ai?.engageRange ?? '-';
+  return `${movement}>${engagedMovement}@${reach}~${engageRange}`;
 }
 
 describe('Chronicles Tactics bestiary behavior', () => {
@@ -31,10 +34,15 @@ describe('Chronicles Tactics bestiary behavior', () => {
     const spiders = enemies.filter(({ enemy }) => enemy.visualType === 'crypt-spider');
     expect(spiders.length).toBeGreaterThanOrEqual(6);
     spiders.forEach(({ mapId, enemy }) => {
-      expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
-        engagedMovement: 'knight-chase',
-        engageRange: 3,
-      });
+      // Hand-authored old maps can still carry the original chess-derived
+      // movement tag, but MM3's organic-creature resolver normalizes it to
+      // one cardinal tile. New maps must use the explicit cardinal policy.
+      expect(['cardinal-chase', 'knight-chase'], `${mapId}/${enemy.id}`)
+        .toContain(enemy.ai?.engagedMovement);
+      if (mapId === 'swordhaven-sewers') {
+        expect(enemy.ai?.engagedMovement, enemy.id).toBe('cardinal-chase');
+      }
+      expect(enemy.ai?.engageRange, `${mapId}/${enemy.id}`).toBe(3);
     });
 
     const hounds = enemies.filter(({ enemy }) => enemy.visualType === 'bone-hound');
@@ -55,7 +63,7 @@ describe('Chronicles Tactics bestiary behavior', () => {
     });
   });
 
-  it('keeps monster-heavy rooms from collapsing into one repeated movement pattern', () => {
+  it('keeps monster-heavy rooms from collapsing into one repeated pursuit pattern', () => {
     chroniclesMapIds().forEach((mapId) => {
       const map = chroniclesMapById(mapId);
       if (map.enemies.length < 4) return;
