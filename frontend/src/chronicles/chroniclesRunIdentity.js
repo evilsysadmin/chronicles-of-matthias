@@ -363,19 +363,17 @@ function readRunState(scope) {
 }
 
 export function beginChroniclesRun(scope, { entryMapId = null } = {}) {
-  // The campaign is opt-in and may only be selected for a *fresh* first-person
-  // run. Do not allow callers to mint an unknown map ID or silently redirect
-  // Tactics/legacy runs. Existing server checkpoints remain authoritative.
+  // The sole authored town entry for a fresh first-person expedition is
+  // Swordhaven First Book. Retired campaign variants are no longer accepted.
   legacyStorageKeyFor(scope);
-  if (entryMapId !== null && (scope !== 'first-person' || !['swordhaven-campaign', 'swordhaven-first-book'].includes(entryMapId))) {
+  if (entryMapId !== null && (scope !== 'first-person' || entryMapId !== 'swordhaven-first-book')) {
     throw new RangeError('Unsupported Chronicles fresh-run entry map');
   }
   // Do not discard the previous active run when starting a new expedition.
   // Existing run IDs keep their backend checkpoints and stay loadable.
   readRunState(scope);
-  // One public Swordhaven: all fresh first-person runs start in the complete
-  // First Book town (shops, temple, guild, mayor, sewers). Older saved IDs
-  // remain readable and their authoritative checkpoints stay untouched.
+  // One Swordhaven: fresh first-person runs always use the complete
+  // First Book town. Previously saved IDs are never silently retargeted.
   const run = {
     id: createRunId(), owner: currentOwner(), ended: false,
     entryMapId: scope === 'first-person' ? (entryMapId || 'swordhaven-first-book') : null,
@@ -402,10 +400,9 @@ export function renewChroniclesRun(scope, runId) {
   if (current && current.id === runId && !current.ended) {
     writeRunState({ ...current, ended: true });
   }
-  // A lost/stale server identity must not silently change an opted-in
-  // campaign back to legacy Swordhaven when first-person renews the run.
-  const entryMapId = scope === 'first-person' && ['swordhaven-campaign', 'swordhaven-first-book'].includes(current?.entryMapId)
-    ? current.entryMapId : null;
+  // Restart stale first-person slots in the only maintained Swordhaven.
+  // Tactics keeps its independent dungeon entry semantics.
+  const entryMapId = scope === 'first-person' ? 'swordhaven-first-book' : null;
   return beginChroniclesRun(scope, { entryMapId });
 }
 
