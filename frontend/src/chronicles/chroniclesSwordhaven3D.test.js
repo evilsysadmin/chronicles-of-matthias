@@ -201,6 +201,36 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the mage guild a pointed stone entry and gable oculus without blocking its door', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const guild = scene.getObjectByName('swordhaven-building-swordhaven-magic');
+      const entry = guild.getObjectByName('magic-guild-pointed-entry');
+      const oculus = guild.getObjectByName('magic-guild-gable-oculus');
+      expect(entry?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(oculus?.userData.chroniclesDecorativeOnly).toBe(true);
+      const piers = entry.children.filter(child => child.name === 'magic-entry-pier');
+      const arches = entry.children.filter(child => child.name === 'magic-entry-pointed-arch');
+      expect(piers).toHaveLength(2);
+      expect(arches).toHaveLength(2);
+      expect(piers[0].position.x).toBeLessThan(-1);
+      expect(piers[1].position.x).toBeGreaterThan(1);
+      expect(arches[0].rotation.z).toBeLessThan(0);
+      expect(arches[1].rotation.z).toBeGreaterThan(0);
+      expect(entry.position.z).toBeGreaterThan(guild.getObjectByName('shop-door').position.z);
+      expect(oculus.getObjectByName('magic-oculus-violet-glass')).toBeTruthy();
+      expect(oculus.getObjectByName('magic-oculus-brass-ring')).toBeTruthy();
+      expect(guild.getObjectByName('shop-door')).toBeTruthy();
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-magic')) {
+        const other = scene.getObjectByName('swordhaven-building-' + spec.id);
+        expect(other.getObjectByName('magic-guild-pointed-entry')).toBeFalsy();
+        expect(other.getObjectByName('magic-guild-gable-oculus')).toBeFalsy();
+      }
+      expect(createSwordhavenWalkGrid()[15][14]).toBe('.');
+    }
+  });
+
   it('uses deterministic, fine-grained town textures without changing the pixelated meadow', () => {
     for (const kind of ['stucco', 'masonry', 'roof', 'timber', 'cobble']) {
       const texture = swordhavenSurfaceTexture(kind);

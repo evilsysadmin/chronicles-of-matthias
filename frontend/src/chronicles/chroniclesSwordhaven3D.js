@@ -644,6 +644,38 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);
     mesh(root, new THREE.ConeGeometry(1.52, 3.5, coarse ? 12 : 20), roof,
       'magic-turret-roof', [-width * 0.40, height + 5.02, -depth * 0.28], !coarse);
+    // A pointed slate portal and luminous gable oculus give the mage guild
+    // its own street-level architecture, not just another merchant sign.
+    // The piers flank (never cover) the existing door; all parts stay inside
+    // the solid building footprint and are decorative only.
+    const portal = new THREE.Group();
+    portal.name = 'magic-guild-pointed-entry';
+    portal.userData.chroniclesDecorativeOnly = true;
+    portal.position.z = facadeZ + 0.38;
+    const slate = material(0x736781, {
+      map: swordhavenSurfaceTexture('masonry'),
+      normalMap: swordhavenSurfaceNormalTexture('masonry'),
+      normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.94,
+    });
+    for (const side of [-1, 1]) {
+      mesh(portal, new THREE.BoxGeometry(0.32, 2.70, 0.34), slate,
+        'magic-entry-pier', [side * 1.18, 2.0, 0], !coarse);
+      const arch = mesh(portal, new THREE.BoxGeometry(0.32, 1.65, 0.34), slate,
+        'magic-entry-pointed-arch', [side * 0.57, 3.65, 0.01], !coarse);
+      arch.rotation.z = side * 0.68;
+    }
+    root.add(portal);
+    // The small stained-glass roundel sits in the existing solid gable.
+    // No transparent sorting, new texture, light or animation is required.
+    const oculus = new THREE.Group();
+    oculus.name = 'magic-guild-gable-oculus';
+    oculus.userData.chroniclesDecorativeOnly = true;
+    oculus.position.set(0, height + 0.75, facadeZ + 0.27);
+    mesh(oculus, new THREE.CircleGeometry(0.49, 24), mats.arcane,
+      'magic-oculus-violet-glass', [0, 0, 0]);
+    mesh(oculus, new THREE.TorusGeometry(0.53, 0.075, 8, 24), mats.gold,
+      'magic-oculus-brass-ring', [0, 0, 0.035]);
+    root.add(oculus);
     mesh(root, new THREE.OctahedronGeometry(0.42, 0), mats.arcane,
       'arcane-window-lantern', [width * 0.33, height - 0.3, facadeZ + 0.28]);
   } else if (isTavern) {
