@@ -89,7 +89,7 @@
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "knight-chase",
+        "engagedMovement": "cardinal-chase",
         "engageRange": 3
       },
       "visualScale": 0.9,

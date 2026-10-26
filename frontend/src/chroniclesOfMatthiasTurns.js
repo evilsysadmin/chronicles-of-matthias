@@ -464,7 +464,14 @@ function enemyMovementForDistance(state, enemy, from) {
 
 export function chroniclesChooseEnemyStep(state, enemy) {
   const from = chroniclesRuntimeEnemyPosition(state, enemy);
-  const movement = enemyMovementForDistance(state, enemy, from);
+  const authoredMovement = enemyMovementForDistance(state, enemy, from);
+  // MM3 organic creatures walk through traversable neighboring cells.
+  // A leftover chess-knight jump can cross a corner and place a spider
+  // abruptly in front of the camera in a single spent action. Preserve
+  // the intentionally chess-authored scavenger-knight and Tactics rules.
+  const movement = chroniclesUsesMM3Combat(state)
+    && authoredMovement === 'knight-chase' && enemy.visualType !== 'scavenger-knight'
+    ? 'cardinal-chase' : authoredMovement;
   if (movement === 'hold') return null;
   if (usesEnemyAwareness(enemy) && !visiblePartyPosition(state, enemy, from)) {
     const memory = lastKnownPartyPosition(state, enemy, from);
