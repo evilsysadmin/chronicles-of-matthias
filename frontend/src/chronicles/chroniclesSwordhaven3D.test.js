@@ -265,6 +265,47 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the forge a framed workshop bay without obscuring the door or shop name', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      const built = buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const bay = forge.getObjectByName('forge-stone-workshop-bay');
+      const door = forge.getObjectByName('shop-door');
+      const nameplate = forge.getObjectByName('swordhaven-shop-nameplate');
+      expect(bay?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(bay.children.filter(child => child.name === 'forge-workshop-stone-pier')).toHaveLength(2);
+      expect(bay.children.filter(child => child.name === 'forge-workshop-cross-brace')).toHaveLength(2);
+      expect(bay.getObjectByName('forge-workshop-iron-keystone')).toBeTruthy();
+      const recess = bay.getObjectByName('forge-workshop-soot-recess');
+      const coals = bay.getObjectByName('forge-workshop-embers');
+      expect(recess.material.color.getHex()).toBe(0x261c17);
+      expect(coals).toBeInstanceOf(THREE.InstancedMesh);
+      expect(coals.count).toBe(3);
+      expect(coals.material).toBe(forge.getObjectByName('forge-brazier-embers').material);
+      expect(coals.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(coals.castShadow).toBe(false);
+      const piers = bay.children.filter(child => child.name === 'forge-workshop-stone-pier');
+      const leftEdge = bay.position.x + piers[0].position.x
+        - piers[0].geometry.parameters.width / 2;
+      expect(leftEdge).toBeGreaterThan(door.geometry.parameters.width / 2);
+      const lintel = bay.getObjectByName('forge-workshop-stone-lintel');
+      const lintelLeft = bay.position.x - lintel.geometry.parameters.width / 2;
+      const plaqueRight = nameplate.position.x
+        + nameplate.getObjectByName('shop-nameplate-wood').geometry.parameters.width / 2;
+      expect(lintelLeft).toBeGreaterThan(plaqueRight);
+      expect(bay.position.z).toBeGreaterThan(door.position.z);
+      expect(bay.position.z).toBeLessThan(7.1 / 2 + 0.60);
+      expect(bay.getObjectByName('forge-workshop-stone-pier').castShadow).toBe(!coarsePointer);
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-forge')) {
+        expect(scene.getObjectByName('swordhaven-building-' + spec.id)
+          .getObjectByName('forge-stone-workshop-bay')).toBeFalsy();
+      }
+      expect(built.contentProps).toHaveLength(0);
+      expect(createSwordhavenWalkGrid()[7][4]).toBe('.');
+    }
+  });
+
   it('gives only the canonical armorer a square stone gateway and roof crest', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();

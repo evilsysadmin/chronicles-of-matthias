@@ -51,7 +51,7 @@ try {
         assert.equal(result.distinctTemplePortico, 'true',
           'Temple must have its own colonnaded stone entrance');
         assert.equal(result.distinctMetalworkFacades, 'true',
-          'Forge and armorer must have distinct authored rooflines');
+          'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
         assert.equal(result.distinctWatchhouse, 'true',
           'Guardhouse must have a raised crenellated lookout distinct from the armorer');
         assert.equal(result.distinctTavernRoof, 'true',
