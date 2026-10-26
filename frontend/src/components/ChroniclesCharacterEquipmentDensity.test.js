@@ -23,4 +23,17 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain('data-chronicles-equipment-folio');
     expect(sheet).toContain('Armas y armaduras equipadas');
   });
+  it('keeps empty A/S weapon cards readable and compact only on touch phones', () => {
+    const compact = css.split('/* Empty A/S weapon cards waste two tall rows on phones')[1];
+    expect(compact).toBeTruthy();
+    expect(compact).toContain('@media (max-width: 520px) and (pointer: coarse)');
+    expect(compact).toContain('.chronicles-character-sheet__weapon-card:not(:has(> button))');
+    expect(compact).toContain('grid-template-columns: minmax(0, 1fr) auto');
+    expect(compact).toContain('grid-column: 1 / -1');
+    expect(compact).not.toMatch(/display:\s*none|visibility:\s*hidden/);
+    expect(sheet).toContain("worn?.name || 'Sin equipar'");
+    expect(sheet).toContain('Daño ${stats.damage} · Acierto ${signed(stats.toHit)} · Alcance ${stats.reach}');
+    expect(sheet).toContain("'Sin arma de proyectiles · no puede disparar'");
+  });
+
 });

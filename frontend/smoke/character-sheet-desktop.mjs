@@ -718,6 +718,30 @@ try {
         'Changing party member must retain chosen folio on touch devices');
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert(await sheet.locator('[data-chronicles-equipment-folio]').isVisible());
+      if (width <= 520) {
+        const emptyWeapons = await sheet.locator(
+          '[data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button))'
+        ).evaluateAll((cards) => cards.map((card) => {
+          const label = card.querySelector('b');
+          const value = card.querySelector('strong');
+          const explanation = card.querySelector('small');
+          return {
+            slot: card.dataset.slot,
+            height: card.getBoundingClientRect().height,
+            sameRow: Math.abs(label.getBoundingClientRect().top - value.getBoundingClientRect().top) <= 4,
+            clipped: [card, label, value, explanation].some((el) => el.scrollWidth > el.clientWidth + 1),
+            label: label.textContent.trim(),
+            value: value.textContent.trim(),
+            explanation: explanation.textContent.trim(),
+          };
+        }));
+        assert.deepEqual(emptyWeapons.map(({ slot }) => slot), ['weapon', 'missile'],
+          'Fixture must exercise both genuinely empty A/S slots');
+        assert.ok(emptyWeapons.every(({ sameRow, height, clipped }) => sameRow && height <= 110 && !clipped),
+          'Empty mobile weapon slots must fit on two readable rows: ' + JSON.stringify(emptyWeapons));
+        assert.ok(emptyWeapons.every(({ value, explanation }) => value === 'Sin equipar' && explanation.length > 0),
+          'Compacting empty slots must retain their meaningful status and stats');
+      }
       // Hildegard's longer name exposed a real 844x390 overlap with the close
       // button. Check actual painted rectangles, not only document overflow.
       const identity = await sheet.evaluate((node) => {

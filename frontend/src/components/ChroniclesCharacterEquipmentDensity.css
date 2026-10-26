@@ -221,3 +221,32 @@
     margin: 0;
   }
 }
+
+/* Empty A/S weapon cards waste two tall rows on phones even though they
+   contain no action. Put the slot and its empty state on one readable line;
+   keep the real damage/reach explanation below and leave equipped cards alone. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 4px 8px;
+    padding: 8px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button)) > b {
+    font-size: .93rem;
+    line-height: 1.2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button)) > strong {
+    font-size: .93rem;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button)) > small {
+    grid-column: 1 / -1;
+    line-height: 1.3;
+  }
+}
