@@ -246,7 +246,7 @@ function normalizedInitiative(value) {
   // discarded. Otherwise a bad entry before the cursor silently grants the
   // next combatant the saved hero's turn on checkpoint recovery.
   const requestedCursor = integerOrNull(Number(value.cursor), 0, value.order.length - 1) ?? 0;
-  const entries = value.order
+  const validEntries = value.order
     .slice(0, 64)
     .map((actor, index) => {
       const id = shortStringOrNull(actor?.id, 64);
@@ -259,8 +259,21 @@ function normalizedInitiative(value) {
       return { index, actor: { id, kind, name, agility, roll, initiative } };
     })
     .filter(Boolean);
-  if (!entries.length) return null;
-  const nextCursor = entries.findIndex((entry) => entry.index >= requestedCursor);
+  if (!validEntries.length) return null;
+  const currentEntry = validEntries.find((entry) => entry.index >= requestedCursor)
+    || validEntries[validEntries.length - 1];
+  // A damaged checkpoint must never give the same combatant extra turns.
+  // Prefer the current occurrence if it is duplicated, so recovery keeps
+  // the actor whose turn was actually saved rather than an earlier copy.
+  const selected = new Map();
+  for (const entry of validEntries) {
+    const key = `${entry.actor.kind}:${entry.actor.id}`;
+    if (!selected.has(key) || entry === currentEntry) selected.set(key, entry);
+  }
+  const entries = validEntries.filter((entry) => (
+    selected.get(`${entry.actor.kind}:${entry.actor.id}`) === entry
+  ));
+  const nextCursor = entries.indexOf(currentEntry);
   return {
     version: integerOrNull(Number(value.version), 1, 99) || 1,
     die: value.die === '1d8' ? '1d8' : '1d8',
