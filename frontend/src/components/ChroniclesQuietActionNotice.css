@@ -24,3 +24,15 @@
 @media (prefers-reduced-motion: reduce) {
   .chronicles .chronicles-quiet-action-notice { animation: none; }
 }
+
+/* Loot receipts share the quiet toast language, but are legible on busy 3D walls. */
+.chronicles .chronicles-loot-notice {
+  bottom: 42px;
+  max-width: min(88%, 560px);
+  width: max-content;
+  white-space: normal;
+  line-height: 1.35;
+  text-wrap: balance;
+  border-color: rgba(222, 186, 119, .68);
+  background: rgba(24, 20, 17, .91);
+}
