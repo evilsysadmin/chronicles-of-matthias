@@ -480,10 +480,31 @@ try {
       await assertParchmentSurface(skillCard, 'Training skill card');
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-training-' + width + '.png' });
 
-      // A long Training page must not make the next dossier section open mid-scroll.
-      // Exercise this only when the real fixture has a scrollable region.
+      // The compact MM3 training ledger can now fit without scrolling on
+      // every tested desktop. Still exercise restoration with a genuinely long
+      // dossier: duplicate *real* skill cards only inside the browser smoke
+      // fixture, marked inert/aria-hidden, not in production or game state.
       const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
-      const availableScroll = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
+      const ensureLongTrainingFixture = async () => {
+        const capacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
+        if (capacity > 120 || width !== 1280) return capacity;
+        await sheet.locator('[data-chronicles-training="skills"] .chronicles-character-sheet__skill-grid')
+          .evaluate((grid) => {
+            const cards = [...grid.querySelectorAll(':scope > button:not([data-smoke-overflow])')];
+            for (let batch = 0; batch < 12; batch += 1) {
+              for (const card of cards) {
+                const clone = card.cloneNode(true);
+                clone.disabled = true;
+                clone.tabIndex = -1;
+                clone.setAttribute('aria-hidden', 'true');
+                clone.dataset.smokeOverflow = 'true';
+                grid.appendChild(clone);
+              }
+            }
+          });
+        return scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
+      };
+      const availableScroll = await ensureLongTrainingFixture();
       if (availableScroll > 120) {
         exercisedScrollableDossier = true;
         await scrollArea.evaluate((node) => { node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight); });
@@ -497,6 +518,7 @@ try {
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
           'Changing to Equipment must return the desktop dossier to its beginning');
         await nav.getByRole('button', { name: /Mejoras/ }).click();
+        await ensureLongTrainingFixture();
 
         // A hero switch is not a folio change: the React modal remains mounted.
         // Force scroll again and use a native dock click, avoiding Playwright

@@ -1,0 +1,161 @@
+/* Classic MM3 progression ledger. Only styling; level, cap, points,
+   class requirements, competing branches and click actions remain canonical.
+   Restrict overrides to roomy first-person folio desktops. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] {
+    margin: 8px 11px 4px;
+    padding: 8px 10px 11px;
+    border: 2px solid;
+    border-color: #f7d6a4 #82502c #82502c #f7d6a4;
+    background: #e9ba82;
+    box-shadow: inset 0 0 0 1px #be814a;
+    color: #392611;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 7px 12px;
+    padding: 4px 2px 7px;
+    margin: 0 0 7px;
+    border-bottom: 2px solid #aa7441;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__section-head div span {
+    font: 400 1.08rem/1.15 var(--mm3-pixel-font, sans-serif);
+    color: #3c230e;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__section-head div small {
+    color: #694624;
+    font-size: .81rem;
+    line-height: 1.2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__section-head > b {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    border: 2px solid;
+    border-color: #f9dca9 #89542c #89542c #f9dca9;
+    background: #f3d3a4;
+    color: #296b27;
+    font-variant-numeric: tabular-nums;
+    font-size: .86rem;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid > button,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid > button {
+    min-width: 0;
+    min-height: 58px;
+    display: grid;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 8px;
+    border: 2px solid;
+    border-color: #f6d6a1 #ab7540 #ab7540 #f6d6a1;
+    border-radius: 0;
+    background: #f5d5a6;
+    box-shadow: none;
+    color: #422910;
+    opacity: 1;
+    text-align: left;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid > button {
+    grid-template-columns: minmax(0, 1fr) auto 25px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid > button {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid button span,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button span {
+    min-width: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid button span b,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button span b {
+    color: #40250f;
+    font: 400 .98rem/1.17 var(--mm3-pixel-font, sans-serif);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid button span small,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button span small {
+    color: #654423;
+    font-size: .76rem;
+    line-height: 1.22;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid button strong,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button strong {
+    color: #265d21;
+    font-size: .86rem;
+    text-align: right;
+    white-space: normal;
+    line-height: 1.18;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid button i {
+    width: 25px;
+    height: 25px;
+    color: #3d2611;
+    background: #e6b47a;
+    border: 1px solid #ac7941;
+    border-radius: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] button:disabled {
+    cursor: default;
+    opacity: 1;
+    background: #dfbb8c;
+    border-color: #e9c797 #976940 #976940 #e9c797;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] button:disabled strong {
+    color: #634b2c;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button.is-learned {
+    background: #d7e4be;
+    border-color: #eaf3d9 #65804b #65804b #eaf3d9;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__skill-grid button.is-learned strong {
+    color: #255c25;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] button:not(:disabled):hover,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] button:not(:disabled):focus-visible {
+    outline: 3px solid #275f25;
+    outline-offset: -3px;
+    background: #ffe1af;
+  }
+}
+@media (min-width: 1250px) and (min-height: 650px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-training] .chronicles-character-sheet__attribute-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+/* On touch/short screens the earlier single-column safe layouts and minimum
+   target sizes remain authoritative. No hidden attributes or skill controls. */

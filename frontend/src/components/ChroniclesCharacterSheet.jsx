@@ -7,6 +7,7 @@ import './ChroniclesCharacterDeskCompact.css';
 import './ChroniclesCharacterEquipmentDensity.css';
 import './ChroniclesCharacterRetroMM3.css';
 import './ChroniclesCharacterInventoryRetro.css';
+import './ChroniclesCharacterTrainingRetro.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -651,6 +652,7 @@ export default function ChroniclesCharacterSheet({
         </div>
 
         <div className="chronicles-character-sheet__section"
+          data-chronicles-training="attributes"
           hidden={!tacticsMode && activeFolio !== 'training'}>
           <div className="chronicles-character-sheet__section-head">
             <div><span>ATRIBUTOS</span><small>Bonificadores persistentes entre niveles y expediciones</small></div>
@@ -681,6 +683,7 @@ export default function ChroniclesCharacterSheet({
         </div>
 
         <div className="chronicles-character-sheet__section"
+          data-chronicles-training="skills"
           hidden={!tacticsMode && activeFolio !== 'training'}>
           <div className="chronicles-character-sheet__section-head">
             <div><span>TÉCNICAS Y GRIMORIO</span><small>Doctrinas aprendidas y caminos de especialización</small></div>
