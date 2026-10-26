@@ -102,34 +102,6 @@ function isGeneratedDungeon(scenePlan) {
   return scenePlan?.useAuthoredCryptDressing === false;
 }
 
-// The cool middle-distance light is shadowless. If its forward offset enters
-// a solid tile, it shines *through* a wall as a white hotspot whenever the
-// camera moves or turns. Trace through the actual first-person grid and keep
-// this light well clear of walls; near a dead end it fades away instead.
-const CORRIDOR_FILL_RANGE = 6.5;
-const CORRIDOR_FILL_WALL_CLEARANCE = 2.5;
-
-export function chroniclesSafeDungeonCorridorDistance(scenePlan, cameraPosition, forward) {
-  const { grid, center } = scenePlan || {};
-  if (!Array.isArray(grid) || !grid.length || !center ||
-    !Number.isFinite(cameraPosition?.x) || !Number.isFinite(cameraPosition?.z) ||
-    !Number.isFinite(forward?.x) || !Number.isFinite(forward?.z)) return 0;
-  const magnitude = Math.hypot(forward.x, forward.z);
-  if (magnitude < 0.0001) return 0;
-  const dx = forward.x / magnitude;
-  const dz = forward.z / magnitude;
-  // A quarter-metre probe (vs 4m tiles) also handles turns between compass
-  // directions, without the cost of a mesh raycast on every animation frame.
-  const end = CORRIDOR_FILL_RANGE + CORRIDOR_FILL_WALL_CLEARANCE;
-  for (let distance = 0; distance <= end + 0.001; distance += 0.25) {
-    const x = Math.floor((cameraPosition.x + dx * distance) / CELL + center.x + 0.5);
-    const y = Math.floor((cameraPosition.z + dz * distance) / CELL + center.y + 0.5);
-    const tile = grid[y]?.[x];
-    if (!tile || tile === '#') return Math.max(0, Math.min(CORRIDOR_FILL_RANGE, distance - CORRIDOR_FILL_WALL_CLEARANCE));
-  }
-  return CORRIDOR_FILL_RANGE;
-}
-
 function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
   const lightingProfile = scenePlan?.materials?.lightingProfile || 'default';
   const profileScale = lightingProfile === 'crypt-dark' ? 0.72 : 1;
@@ -179,13 +151,15 @@ function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
   floorBounce.position.set(-2.8, 0.42, 8.05);
   floorBounce.castShadow = false;
 
-  // Broad corridor fill recovers the middle distance. Its blue-grey temperature
-  // separates damp stone from the party torch and gives the corridor real depth.
+  // A low, cool fill preserves damp-stone readability. In generated mazes it
+  // stays with the party, NEVER sweeping 6.5 m ahead with the camera yaw: a
+  // shadowless forward light jumped between side walls at intersections and
+  // produced ~1s bright flashes as the player turned. Authored crypt is unchanged.
   const corridorFill = new THREE.PointLight(
     0x91aabd,
-    (coarsePointer ? 2.34 : 2.16) * profileScale,
-    18.5,
-    1.55,
+    (coarsePointer ? 2.34 : 2.16) * profileScale * (generated ? 0.6 : 1),
+    generated ? 9 : 18.5,
+    generated ? 2 : 1.55,
   );
   corridorFill.name = 'chronicles-readability-corridor-fill';
   corridorFill.position.set(0.8, 2.35, 7.9);
@@ -237,7 +211,6 @@ function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
     partyTorchBounce,
     partyTorchKeyBaseIntensity: partyTorchKey.intensity,
     partyTorchBounceBaseIntensity: partyTorchBounce.intensity,
-    corridorFillBaseIntensity: corridorFill.intensity,
   };
 }
 
@@ -317,13 +290,11 @@ export function buildChroniclesDungeonAtmosphere({
     partyBouncePosition.y = 1.05;
     readabilityLighting.partyTorchBounce.position.copy(partyBouncePosition);
     if (readabilityLighting.corridorFill) {
-      const forwardDistance = chroniclesSafeDungeonCorridorDistance(scenePlan, partyCamera.position, partyForward);
-      readabilityLighting.corridorFill.position.copy(partyCamera.position).addScaledVector(partyForward, forwardDistance);
-      readabilityLighting.corridorFill.position.y = 2.35;
-      // Fade the shadowless cool fill in tight corridors. The warm carried
-      // torches and ambient visibility remain unchanged.
-      readabilityLighting.corridorFill.intensity = readabilityLighting.corridorFillBaseIntensity
-        * Math.max(0, Math.min(1, (forwardDistance - 1) / (CORRIDOR_FILL_RANGE - 1)));
+      // Rotation-independent fill: no sideways teleporting or intensity
+      // toggling when the player turns through an open junction.
+      readabilityLighting.corridorFill.position.set(
+        partyCamera.position.x, 2.35, partyCamera.position.z,
+      );
     }
 
     const flicker = reducedMotion
