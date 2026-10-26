@@ -56,25 +56,50 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
     if (alive) expect(next.initiative.order.filter((actor) => actor.id === target.enemy.id)).toHaveLength(1);
   });
 
-  it('at four visible squares S provokes an encounter without pretending a range-three bow hits', () => {
+  it('shoots beyond the former range-three bow limit wherever the corridor is visible', () => {
     const base = rangedCompany();
     const target = chroniclesEnemyTargetAhead(base, 3);
     expect(target).toBeTruthy();
     const far = {
       ...base,
-      enemyPositions: { ...base.enemyPositions, [target.enemy.id]: { x: base.x + 4, y: base.y } },
+      [target.enemy.hpKey]: 100, // The enemy must survive the opening shots.
+      enemyPositions: { ...base.enemyPositions, [target.enemy.id]: { x: base.x + 7, y: base.y } },
     };
     expect(chroniclesEnemyTargetAhead(far, 3)).toBeNull();
-    expect(chroniclesEnemyTargetAhead(far, 4)?.enemy.id).toBe(target.enemy.id);
+    expect(chroniclesEnemyTargetAhead(far, 7)?.enemy.id).toBe(target.enemy.id);
     expect(chroniclesTouchVolleyOpportunity(far)).toEqual({ available: true, shooters: 2 });
+    const shot = chroniclesOpeningVolleyShots(far);
+    expect(shot.shots).toHaveLength(2);
     const fired = chroniclesReduce(far, { type: 'volley' });
-    expect(fired[target.enemy.hpKey]).toBe(far[target.enemy.hpKey]);
+    expect(fired[target.enemy.hpKey]).toBe(shot.remainingHp);
     const engaged = chroniclesAdvanceOpeningVolley(far, fired);
     expect(engaged.initiative?.order.some((actor) => actor.id === target.enemy.id)).toBe(true);
-    expect(engaged.message).toMatch(/fuera de alcance/i);
     expect(engaged.message).toMatch(/comienza el combate/i);
+    expect(engaged.message).not.toMatch(/fuera de alcance/i);
     expect(engaged.turns).toBe(far.turns + 1);
-    expect(engaged[target.enemy.hpKey]).toBe(far[target.enemy.hpKey]);
+    const act = { ...engaged, initiative: { order: [
+      { kind: 'party', id: 'matthias' }, { kind: 'enemy', id: target.enemy.id },
+    ], cursor: 0, round: 1 } };
+    const singleShot = chroniclesReduce(act, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+    expect(singleShot.turns).toBe(act.turns + 1);
+    expect(singleShot.message).not.toMatch(/no hay enemigo en su línea/i);
+  });
+
+  it('does not shoot through dungeon walls despite unrestricted missile range', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const enemy = chroniclesActiveEnemies(base)[0];
+    const blocked = { ...base, x: 1, y: 3, direction: 1,
+      equipment: { matthias: { missile: 'wooden-bow' } },
+      enemyPositions: { [enemy.id]: { x: 3, y: 3 } },
+      ...Object.fromEntries(chroniclesActiveEnemies(base)
+        .filter((candidate) => candidate.id !== enemy.id).map((candidate) => [candidate.hpKey, 0])),
+    };
+    // Sewer row 3 has a wall at x=2: the foe behind it is not targetable.
+    expect(chroniclesEnemyTargetAhead(blocked, 20)).toBeNull();
+    expect(chroniclesOpeningVolleyShots(blocked).target).toBeNull();
+    const fired = chroniclesReduce(blocked, { type: 'volley' });
+    expect(fired[enemy.hpKey]).toBe(blocked[enemy.hpKey]);
+    expect(chroniclesAdvanceOpeningVolley(blocked, fired).initiative).toBeFalsy();
   });
 
   it('never provokes from an empty corridor or with no legal ranged weapon', () => {

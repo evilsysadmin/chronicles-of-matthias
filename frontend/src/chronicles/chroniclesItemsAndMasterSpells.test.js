@@ -114,7 +114,7 @@ describe('Chronicles · potions, scrolls and the botica', () => {
 });
 
 describe('Chronicles · ranged arms', () => {
-  it('reaches further with long bows and crossbows, for the classes that may use them', () => {
+  it('keeps the class and equipment distinctions without limiting MM3 sight-range shots', () => {
     const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     const archer = member(state, 'knight');
     const cleric = member(state, 'bishop');
@@ -124,7 +124,7 @@ describe('Chronicles · ranged arms', () => {
     expect(chroniclesMemberCanEquip(archer, CHRONICLES_EQUIPMENT['steel-longbow'])).toBe(true);
     expect(chroniclesMemberCanEquip(cleric, CHRONICLES_EQUIPMENT['steel-longbow'])).toBe(false);
     const armed = { ...state, equipment: { knight: { weapon: 'iron-longbow' } } };
-    expect(chroniclesPartyAttackStats(armed, 'knight').reach).toBe(4);
+    expect(chroniclesPartyAttackStats(armed, 'knight').reach).toBeGreaterThan(4);
   });
 });
 

@@ -35,7 +35,7 @@ describe('Chronicles · MM3 opening company volley', () => {
     expect(shots.every((shot) => Number.isInteger(shot.roll) && shot.roll >= 1 && shot.roll <= 20)).toBe(true);
     expect(chroniclesOpeningVolleyShots(state)).toEqual(chroniclesOpeningVolleyShots(state));
     expect(chroniclesPartyAttackStats(state, 'matthias', 'melee').reach).toBe(1);
-    expect(chroniclesPartyAttackStats(state, 'matthias', 'missile').reach).toBe(3);
+    expect(chroniclesPartyAttackStats(state, 'matthias', 'missile').reach).toBeGreaterThan(7);
 
     const next = chroniclesReduce(state, { type: 'volley' });
     expect(next[target.hpKey]).toBe(remainingHp);

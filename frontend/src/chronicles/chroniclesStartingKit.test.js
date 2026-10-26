@@ -55,8 +55,8 @@ describe('Chronicles · MM3 starting kit', () => {
     expect(chroniclesPartyAttackStats(state, 'bishop').reach).toBe(1);
     // The archer stabs with the dagger (A) and shoots the bow (S).
     expect(chroniclesPartyAttackStats(state, 'knight', 'melee').reach).toBe(1);
-    expect(chroniclesPartyAttackStats(state, 'knight', 'missile').reach).toBe(3);
-    expect(chroniclesPartyAttackStats(state, 'knight').reach).toBe(3);
+    expect(chroniclesPartyAttackStats(state, 'knight', 'missile').reach).toBeGreaterThan(4);
+    expect(chroniclesPartyAttackStats(state, 'knight').reach).toBeGreaterThan(4);
     expect(chroniclesPartyAttackStats(state, 'knight').damage).toBeGreaterThan(0);
   });
 

@@ -54,16 +54,16 @@ describe('Chronicles first true road encounter', () => {
     expect(render(road, { enemy: null, distance: 3 })).toBe('');
   });
 
-  it('respects real bow/sling reach rather than claiming that every equipped shooter can hit', () => {
+  it('counts all valid shooters in a visible corridor regardless of legacy bow/sling distance', () => {
     const state = armedRoad();
     expect(chroniclesOpeningVolleyShooters(state)).toHaveLength(2);
-    expect(chroniclesPartyAttackStats(state, 'matthias', 'missile').reach).toBe(3);
-    expect(chroniclesPartyAttackStats(state, 'rook', 'missile').reach).toBe(2);
+    expect(chroniclesPartyAttackStats(state, 'matthias', 'missile').reach).toBeGreaterThan(4);
+    expect(chroniclesPartyAttackStats(state, 'rook', 'missile').reach).toBeGreaterThan(4);
 
     expect(chroniclesFirstThreatDetails(state, actualSighting)).toMatchObject({
-      shooterCount: 2, inRangeShooterCount: 1,
+      shooterCount: 2, inRangeShooterCount: 2,
     });
-    expect(render(state)).toContain('1 de 2 tiradores a tiro');
+    expect(render(state)).toContain('2 tiradores listos');
     expect(render(state)).toContain('S dispara una salva');
     expect(render(state)).toContain('chronicles-first-threat__keyboard-hint');
     expect(render(state)).toContain('chronicles-first-threat__touch-hint');
@@ -74,9 +74,9 @@ describe('Chronicles first true road encounter', () => {
     expect(chroniclesFirstThreatDetails(state, near).inRangeShooterCount).toBe(2);
     expect(render(state, near)).toContain('2 tiradores listos');
     const distant = { ...actualSighting, distance: 4 };
-    expect(chroniclesFirstThreatDetails(state, distant).inRangeShooterCount).toBe(0);
-    expect(render(state, distant)).toContain('fuera de su alcance');
-    expect(render(state, distant)).not.toContain('S dispara una salva');
+    expect(chroniclesFirstThreatDetails(state, distant).inRangeShooterCount).toBe(2);
+    expect(render(state, distant)).toContain('2 tiradores listos');
+    expect(render(state, distant)).toContain('S dispara una salva');
   });
 
   it('does not claim an attack, hit or reward when no missile can reach', () => {

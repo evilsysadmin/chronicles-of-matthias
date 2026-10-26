@@ -20,7 +20,7 @@ describe('Chronicles MM3 · ficha de doble arma (#134)', () => {
     expect(modes.weapon).toEqual(chroniclesPartyAttackStats(state, 'matthias', 'melee'));
     expect(modes.missile).toEqual(chroniclesPartyAttackStats(state, 'matthias', 'missile'));
     expect(modes.weapon.reach).toBe(1);
-    expect(modes.missile.reach).toBe(3);
+    expect(modes.missile.reach).toBeGreaterThan(4);
     expect(modes.weapon.damage).not.toBe(0);
   });
 

@@ -8,6 +8,7 @@ import {
   chroniclesBuildingEntryState,
   chroniclesContextualContentAction,
   chroniclesPartyAttackStats,
+  chroniclesMM3MissileSightReach,
   chroniclesAttackMode,
   chroniclesOpeningVolleyShooters,
   chroniclesOpeningVolleyShots,
@@ -1667,7 +1668,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // cell. Keep the target dossier visible so an out-of-range attack is
   // explained instead of silently resembling a broken button.
   const { meleeReach, missileReach } = chroniclesTacticalAttackReach(state, selectedMember?.id);
-  const tacticalTarget = chroniclesTargetAhead(state, Math.max(4, selectedAttackStats.reach || 1));
+  const tacticalTarget = chroniclesTargetAhead(state, chroniclesMM3MissileSightReach(state)
+    || Math.max(4, selectedAttackStats.reach || 1));
   const sheetMember = sheetMemberId
     ? state.party.find((member) => member.id === sheetMemberId) || null
     : null;
@@ -1955,7 +1957,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             />
             <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
               meleeReach={meleeReach} missileReach={missileReach}
-              canProvoke={!state.initiative && touchVolley.available && tacticalTarget?.distance > missileReach} />
+              />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-missile-refusal>{missileNotice}</div>}
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
