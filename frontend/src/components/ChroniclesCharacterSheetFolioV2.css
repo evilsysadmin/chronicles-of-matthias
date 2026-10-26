@@ -819,3 +819,20 @@
     display: none;
   }
 }
+
+/* On narrow phones, let the hero's complete name use the full button width.
+   Keep the number beside HP on the second row: no tiny text, odd mid-word
+   wrapping or extra dock height; the exploration party strip is untouched. */
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-dock button {
+    grid-template-areas: 'name name' 'number hp';
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-name {
+    font-size: .82rem;
+    white-space: nowrap;
+    text-overflow: clip;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__party-number {
+    font-size: .84rem;
+  }
+}
