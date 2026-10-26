@@ -810,7 +810,7 @@ try {
           : scroll.locator('.chronicles-shop__consumable-peek');
       await scrollNote.waitFor({ state: 'visible' });
       assert.match(await scrollNote.innerText(),
-        /14 de daño · alcance 3/);
+        /14 de daño · objetivo visible/);
       assert.equal(await dialog.locator('.chronicles-shop__compare-toggle').count(), 0);
       await page.screenshot({ path: `smoke-shop-apothecary-peek-${width}.png` });
       await dialog.getByRole('tab', { name: /Vender/ }).click();
