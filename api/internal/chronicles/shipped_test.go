@@ -41,3 +41,31 @@ func TestTempleFloorsChainToTheThrone(t *testing.T) {
 		}
 	}
 }
+
+func TestOnlyCanonicalSwordhavenIsShipped(t *testing.T) {
+	const ids := ShippedMapIDs()
+	canonical := 0
+	for _, id := range ids {
+		switch id {
+		case "swordhaven-first-book":
+			canonical++
+		case "swordhaven-square", "swordhaven-campaign":
+			t.Errorf("retired Swordhaven must not be shipped: %s", id)
+		}
+	}
+	if canonical != 1 {
+		t.Fatalf("expected one canonical Swordhaven, got %d", canonical)
+	}
+	for _, retired := range []string{"swordhaven-square", "swordhaven-campaign"} {
+		if _, _, err := LoadManifest(retired); err != ErrMapNotFound {
+			t.Errorf("%s should return ErrMapNotFound, got %v", retired, err)
+		}
+	}
+	road, _, err := LoadManifest("banner-road")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !TransitionTargets(road)["swordhaven-first-book"] {
+		t.Fatal("the legacy road must now return to canonical Swordhaven")
+	}
+}
