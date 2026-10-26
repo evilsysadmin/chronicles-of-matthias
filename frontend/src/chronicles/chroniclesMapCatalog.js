@@ -503,6 +503,18 @@ export function chroniclesMapTransitionState(state, mapId) {
   const previousMap = chroniclesMapForState(state);
   const map = chroniclesMapById(mapId);
   const slainEnemies = chroniclesMergeSlain(state?.slainEnemies, previousMap?.id, chroniclesSlainIndices(previousMap, state));
+  // Local switches and treasures belong to their own area, not to the next
+  // area's initial state. Snapshot only authored flags when leaving, then
+  // restore them on return; a first visit still receives its initial flags.
+  const previousFlags = Object.fromEntries(
+    Object.keys(previousMap.initialFlags).filter((key) => Object.hasOwn(state, key))
+      .map((key) => [key, state[key]]),
+  );
+  const mapFlagsById = {
+    ...(state?.mapFlagsById && !Array.isArray(state.mapFlagsById) ? state.mapFlagsById : {}),
+    [previousMap.id]: previousFlags,
+  };
+  const destinationFlags = { ...map.initialFlags, ...(mapFlagsById[map.id] || {}) };
   return {
     ...state,
     ...clearedEnemyState(previousMap),
@@ -512,7 +524,8 @@ export function chroniclesMapTransitionState(state, mapId) {
     y: map.partyStart.y,
     direction: map.partyStart.direction,
     ...chroniclesMapInitialEnemyState(map.id, { ...state, slainEnemies }),
-    ...map.initialFlags,
+    mapFlagsById,
+    ...destinationFlags,
     phase: 'explore',
     turnPhase: 'party',
     initiative: null,
