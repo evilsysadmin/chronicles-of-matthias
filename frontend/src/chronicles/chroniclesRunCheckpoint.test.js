@@ -132,6 +132,43 @@ describe('Chronicles checkpoint projection', () => {
     expect(gallery.galleryRelicCollected).toBe(true);
   });
 
+  it('rejects malformed authored flag types in legacy saves and new floor checkpoints', () => {
+    const base = createChroniclesState('gallery-of-forks');
+    const restoredLegacy = chroniclesApplyRunCheckpoint(base, {
+      worldFlags: {
+        galleryLeverPulled: 'true',
+        galleryRelicCollected: true,
+        cryptSigilAwake: true,
+      },
+    });
+    expect(restoredLegacy.galleryLeverPulled).toBe(false);
+    expect(restoredLegacy.galleryRelicCollected).toBe(true);
+    // Unknown legacy authored flags remain compatible.
+    expect(restoredLegacy.cryptSigilAwake).toBe(true);
+
+    const malformed = chroniclesWorldFlagsForCheckpoint({
+      ...base,
+      galleryLeverPulled: 'true',
+      galleryRelicCollected: true,
+      enemyHp: Infinity,
+    });
+    expect(malformed).not.toHaveProperty('galleryLeverPulled');
+    expect(malformed).not.toHaveProperty('enemyHp');
+    expect(malformed.galleryRelicCollected).toBe(true);
+
+    const elsewhere = {
+      ...createChroniclesState('menagerie-of-ash'),
+      mapFlagsById: {
+        'gallery-of-forks': { galleryLeverPulled: 'true', galleryRelicCollected: true },
+      },
+    };
+    const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(elsewhere, 2)));
+    const recovered = chroniclesApplyRunCheckpoint(createChroniclesState('menagerie-of-ash'), payload);
+    const back = chroniclesMapTransitionState(recovered, 'gallery-of-forks');
+    expect(back.galleryLeverPulled).toBe(false);
+    expect(back.galleryRelicCollected).toBe(true);
+  });
+
   it('normalizes explicit monotonic ledgers without inventing entries', () => {
     const payload = chroniclesRunCheckpointPayload({
       ...createChroniclesState(),
