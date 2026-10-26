@@ -82,7 +82,7 @@ function interactionEntry(state, map) {
   const contextual = chroniclesContextualContentAction(state);
   if (!contextual || contextual.locked) return null;
   if (contextual.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID) {
-    return { entry: contextual, destinationId: 'swordhaven-square' };
+    return { entry: contextual, destinationId: 'swordhaven-first-book' };
   }
   const entry = [...(map.exits || []), ...(map.interactables || [])]
     .find((candidate) => candidate.id === contextual.id);
