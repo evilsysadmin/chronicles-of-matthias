@@ -439,6 +439,33 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(guild.getObjectByName('magic-shop-turret')).toBeTruthy();
     expect(guild.getObjectByName('apothecary-roof-herbarium')).toBeFalsy();
 
+    // Two metalwork merchants must be recognisable by their roofline, not
+    // just their signs: a tall forge flue versus an armorer's gable shield.
+    const forge = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-forge-'));
+    const armorer = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-armor-'));
+    const watch = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-watch-'));
+    expect(forge).toBeTruthy();
+    expect(armorer).toBeTruthy();
+    const stack = forge.getObjectByName('forge-roof-smokestack');
+    const crest = armorer.getObjectByName('armor-roof-crest');
+    expect(stack).toBeInstanceOf(THREE.Group);
+    expect(stack.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(stack.getObjectByName('forge-smokestack-masonry')).toBeInstanceOf(THREE.Mesh);
+    expect(stack.getObjectByName('forge-smokestack-iron-crown')).toBeInstanceOf(THREE.Mesh);
+    expect(new THREE.Box3().setFromObject(stack).min.y).toBeGreaterThan(5);
+    expect(new THREE.Box3().setFromObject(stack).max.y).toBeGreaterThan(9);
+    expect(crest).toBeInstanceOf(THREE.Group);
+    expect(crest.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(crest.getObjectByName('armor-crest-shield')).toBeInstanceOf(THREE.Mesh);
+    expect(crest.getObjectByName('armor-crest-crossbar')).toBeInstanceOf(THREE.Mesh);
+    expect(new THREE.Box3().setFromObject(crest).min.y).toBeGreaterThan(5);
+    expect(forge.getObjectByName('armor-roof-crest')).toBeFalsy();
+    expect(armorer.getObjectByName('forge-roof-smokestack')).toBeFalsy();
+    expect(watch?.getObjectByName('armor-roof-crest')).toBeFalsy();
+
     // From the authored spawn on the plaza, players can walk to the mayor:
     // do not let architectural dressing imply a door behind solid collision.
     const visited = new Set();
