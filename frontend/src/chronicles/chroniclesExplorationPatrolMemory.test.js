@@ -131,3 +131,31 @@ describe('MM3 organic knight pursuit of remembered sightings', () => {
     expect(chroniclesChooseEnemyStep(state, spider)).toEqual({ x: 1, y: 2 });
   });
 });
+
+describe('restored MM3 sightings respect the traversable map', () => {
+  it('forgets wall and out-of-map sightings rather than pursuing impossible tiles', () => {
+    const map = chroniclesMapById('swordhaven-sewers');
+    const spider = map.enemies.find((enemy) => enemy.id === 'sewers-spider');
+    const hidden = {
+      ...createChroniclesState(map.id, null, { rules: 'mm3' }),
+      x: 15, y: 1, phase: 'explore', turnPhase: 'party', explorationEnemySteps: 6,
+      enemyPositions: { [spider.id]: { x: 1, y: 3 } },
+    };
+    const normalPatrolStep = chroniclesChooseEnemyStep(hidden, spider);
+
+    for (const sighting of [
+      { x: 2, y: 4 }, // authored internal sewer wall
+      { x: 100, y: 100 }, // outside the map
+    ]) {
+      const restored = {
+        ...hidden,
+        enemyAwareness: {
+          [spider.id]: { ...sighting, tick: 2, phase: 'explore', mapId: map.id },
+        },
+      };
+      expect(chroniclesChooseEnemyStep(restored, spider)).toEqual(normalPatrolStep);
+      expect(chroniclesRememberEnemySight(restored, spider).enemyAwareness?.[spider.id])
+        .toBeUndefined();
+    }
+  });
+});
