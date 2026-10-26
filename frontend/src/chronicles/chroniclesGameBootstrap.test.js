@@ -159,14 +159,14 @@ describe('Chronicles bounded authoritative-run bootstrap', () => {
     payload.worldVersion = 3;
     const createRun = vi.fn().mockResolvedValue(payload);
     const run = await chroniclesBootstrapWorld({
-      mapId: 'swordhaven-square',
+      mapId: 'swordhaven-first-book',
       createRun,
       budgetMs: 250,
       operationId: 'town-to-crypt-expedition',
     });
     expect(run.currentMapId).toBe('crypt-eight-squares');
     expect(run.worldVersion).toBe(3);
-    expect(createRun).toHaveBeenCalledWith('swordhaven-square', expect.objectContaining({
+    expect(createRun).toHaveBeenCalledWith('swordhaven-first-book', expect.objectContaining({
       operationId: 'town-to-crypt-expedition',
     }));
   });
@@ -175,7 +175,7 @@ describe('Chronicles bounded authoritative-run bootstrap', () => {
     const payload = remoteRun('Incorrect new run', 417, 'crypt-eight-squares');
     const createRun = vi.fn().mockResolvedValue(payload);
     await expect(chroniclesBootstrapWorld({
-      mapId: 'swordhaven-square',
+      mapId: 'swordhaven-first-book',
       createRun,
       budgetMs: 250,
     })).rejects.toMatchObject({
