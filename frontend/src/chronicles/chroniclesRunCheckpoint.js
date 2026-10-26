@@ -377,7 +377,12 @@ function slainFromFlags(flags) {
     let map = null;
     try { map = chroniclesMapById(mapId); } catch { return; }
     if (!map || map.id !== mapId) return;
-    const indices = value.split(',').map(Number)
+    // Number('') and Number(' ') both equal 0: malformed trailing CSV
+    // separators must never mark the first enemy dead on checkpoint recovery.
+    const indices = value.split(',')
+      .map((token) => token.trim())
+      .filter((token) => /^\d+$/.test(token))
+      .map(Number)
       .filter((index) => Number.isInteger(index) && index >= 0 && index < map.enemies.length);
     if (indices.length) slain[mapId] = [...new Set(indices)].sort((a, b) => a - b);
   });
