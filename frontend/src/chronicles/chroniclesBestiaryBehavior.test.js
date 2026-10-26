@@ -31,10 +31,15 @@ describe('Chronicles Tactics bestiary behavior', () => {
     const spiders = enemies.filter(({ enemy }) => enemy.visualType === 'crypt-spider');
     expect(spiders.length).toBeGreaterThanOrEqual(6);
     spiders.forEach(({ mapId, enemy }) => {
-      expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
-        engagedMovement: 'knight-chase',
-        engageRange: 3,
-      });
+      // Hand-authored old maps can still carry the original chess-derived
+      // movement tag, but MM3's organic-creature resolver normalizes it to
+      // one cardinal tile. New maps must use the explicit cardinal policy.
+      expect(['cardinal-chase', 'knight-chase'], `${mapId}/${enemy.id}`)
+        .toContain(enemy.ai?.engagedMovement);
+      if (mapId === 'swordhaven-sewers') {
+        expect(enemy.ai?.engagedMovement, enemy.id).toBe('cardinal-chase');
+      }
+      expect(enemy.ai?.engageRange, `${mapId}/${enemy.id}`).toBe(3);
     });
 
     const hounds = enemies.filter(({ enemy }) => enemy.visualType === 'bone-hound');
