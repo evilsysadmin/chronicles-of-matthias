@@ -218,6 +218,33 @@ export default function ChroniclesCharacterSheet({
     if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
   };
 
+  // A purely visual continuation cue: the party dock is fixed while the
+  // dossier scrolls underneath it. Show the cue only when more content exists
+  // below the current position, and remove it at the actual end of the page.
+  useEffect(() => {
+    if (tacticsMode) return undefined;
+    const scroller = folioScrollRef.current;
+    if (!scroller) return undefined;
+    const update = () => {
+      scroller.dataset.moreBelow = String(
+        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 12
+      );
+    };
+    scroller.addEventListener('scroll', update, { passive: true });
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null;
+    observer?.observe(scroller);
+    const content = scroller.querySelector('.chronicles-character-sheet__folio-layout');
+    if (content) observer?.observe(content);
+    const frame = window.requestAnimationFrame?.(update);
+    update();
+    return () => {
+      scroller.removeEventListener('scroll', update);
+      observer?.disconnect();
+      if (frame != null) window.cancelAnimationFrame?.(frame);
+      delete scroller.dataset.moreBelow;
+    };
+  }, [tacticsMode, activeFolio, member?.id, selectedInventoryItem?.id, visibleBackpack.length]);
+
   const selectFolio = (folio) => {
     setActiveFolio(folio);
     // A new desktop dossier section starts at the top; otherwise a long
