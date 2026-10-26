@@ -463,6 +463,33 @@ describe('Chronicles run checkpoint recovery', () => {
       .toBe(Object.hasOwn(base, 'turnPhase'));
   });
 
+  it('keeps the active initiative actor when an earlier saved entry is malformed', () => {
+    const base = createChroniclesState('gallery-of-forks');
+    const enemy = chroniclesMapById(base.mapId).enemies[0];
+    const order = [
+      { id: 'broken', kind: 'enemy', name: 'Broken', agility: 'bad', roll: 4, initiative: 4 },
+      { id: 'matthias', kind: 'party', name: 'Matthias', agility: 4, roll: 3, initiative: 7 },
+      { id: enemy.id, kind: 'enemy', name: enemy.name, agility: 2, roll: 5, initiative: 7 },
+    ];
+    const restore = (cursor) => chroniclesApplyRunCheckpoint(base, {
+      worldFlags: {
+        '__chrRuntime.version': 1,
+        '__chrRuntime.phase': 'combat',
+        '__chrRuntime.turnPhase': 'party',
+        '__chrRuntime.initiative': JSON.stringify({
+          version: 1, die: '1d8', round: 2, cursor, order,
+        }),
+      },
+    });
+
+    // The broken first actor is removed, but Matthias must keep his turn.
+    expect(restore(1).initiative.order.map((actor) => actor.id)).toEqual(['matthias', enemy.id]);
+    expect(restore(1).initiative.cursor).toBe(0);
+    // If the removed entry owned the cursor, select the next valid actor.
+    expect(restore(0).initiative.cursor).toBe(0);
+    expect(restore(2).initiative.cursor).toBe(1);
+  });
+
   it('treats authoritative terminal status as stronger than a stale runtime phase', () => {
     const base = createChroniclesState();
     const completed = chroniclesApplyRunCheckpoint(base, {
