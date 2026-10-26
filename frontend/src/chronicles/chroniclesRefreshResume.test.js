@@ -23,7 +23,7 @@ describe('Chronicles first-person reload continuity', () => {
 
   it('restores only the playing first-person expedition without minting a new run', () => {
     expect(chroniclesShouldResumePlayingRun('first-person')).toBe(false);
-    const runId = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-campaign' });
+    const runId = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-first-book' });
     expect(chroniclesShouldResumePlayingRun('first-person')).toBe(false);
     expect(chroniclesRememberPlayingRun('first-person', runId)).toBe(true);
     expect(chroniclesShouldResumePlayingRun('first-person')).toBe(true);
