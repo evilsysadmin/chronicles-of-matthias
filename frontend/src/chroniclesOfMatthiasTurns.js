@@ -165,14 +165,6 @@ function canAttackAnyPartyFrom(state, enemy, position, targets) {
   ));
 }
 
-function chooseGreedyCardinalStep(state, enemy, from) {
-  const targets = partyTargetPositions(state);
-  return CHRONICLES_DIRECTIONS
-    .map((step, index) => ({ x: from.x + step.dx, y: from.y + step.dy, index }))
-    .filter((position) => canOccupy(state, enemy, position))
-    .sort((left, right) => candidateScore(left, targets, left.index) - candidateScore(right, targets, right.index))[0] || null;
-}
-
 function chooseCardinalStep(state, enemy, from) {
   // Snapshot living party targets once per enemy decision, not on every BFS tile.
   // No cache survives this call: the next turn sees deaths and formation changes.
@@ -203,11 +195,10 @@ function chooseCardinalStep(state, enemy, from) {
     }
   }
 
-  // Authored/generated maps are expected to remain connected, but legacy or
-  // temporarily blocked rooms may not offer a route to an attack cell. Keep
-  // the old deterministic local move as a bounded fallback instead of jittering
-  // or teleporting through geometry.
-  return chooseGreedyCardinalStep(state, enemy, from);
+  // A temporarily occupied choke or a disconnected room can leave no
+  // reachable attack tile. Waiting is safer than greedily stepping away and
+  // oscillating on successive turns. Re-evaluate when the next turn begins.
+  return null;
 }
 
 function chooseKnightStep(state, enemy, from) {
