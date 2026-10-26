@@ -79,6 +79,22 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain("onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })");
     expect(sheet).toContain('disabled={!canChangeEquipment || !canEquipSelected}');
     expect(sheet).toContain('Si equipas este objeto');
+    const disabled = mobile.match(/__item-details > button:disabled\s*\{([^}]*)\}/)?.[1];
+    const enabled = mobile.match(/__item-details > button:not\(:disabled\)\s*\{([^}]*)\}/)?.[1];
+    expect(disabled).toBeTruthy();
+    expect(enabled).toBeTruthy();
+    const ink = (rules, name) => rules.match(new RegExp(name + ':\\s*(#[0-9a-f]{6})', 'i'))?.[1];
+    const luminance = (hex) => {
+      const channels = [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255);
+      const linear = channels.map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+    };
+    for (const rules of [disabled, enabled]) {
+      const fg = luminance(ink(rules, 'color'));
+      const bg = luminance(ink(rules, 'background'));
+      expect((Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(disabled).toContain('opacity: 1');
   });
 
 });
