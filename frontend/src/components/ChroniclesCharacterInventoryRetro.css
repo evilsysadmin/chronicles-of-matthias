@@ -84,6 +84,8 @@
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected {
     border-color: #6a461d #f8da94 #f8da94 #6a461d;
     background: #deb276;
+    /* Existing selected-state styles used white text: illegible on this parchment. */
+    color: #3b250f;
     box-shadow: inset 3px 0 0 #27802d;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
