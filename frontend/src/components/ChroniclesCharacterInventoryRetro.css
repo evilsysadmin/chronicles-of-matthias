@@ -1,0 +1,121 @@
+/* MM3 Items chapter: compact, legible copper-and-parchment inventory.
+   Never claim numeric shortcuts for item rows: 1–4 already transfers an
+   explicitly selected object to a party member. All buttons remain real. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] {
+    background: #bf7d49;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__section-head {
+    padding-block: 4px 7px;
+    border-bottom: 2px solid #9f6333;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout article {
+    background: #e6bc87;
+    border: 2px solid;
+    border-color: #f7daa9 #8e582d #8e582d #f7daa9;
+    color: #41270e;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-heading,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment > span {
+    color: #43250d;
+    font: 400 1.12rem/1.2 var(--mm3-pixel-font, 'Trebuchet MS', sans-serif);
+    letter-spacing: .02em;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+    display: grid;
+    align-content: start;
+    gap: 3px;
+    padding: 4px;
+    border: 2px inset #a36c3e;
+    background: #cf945e;
+    min-width: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    min-height: 44px;
+    height: 45px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 2px solid;
+    border-color: #f3d5a1 #956338 #956338 #f3d5a1;
+    border-radius: 0;
+    background: #f0c891;
+    color: #3b250f;
+    box-shadow: none;
+    font: 400 1.04rem/1.1 var(--mm3-pixel-font, 'Trebuchet MS', sans-serif);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > .chronicles-character-sheet__inventory-glyph {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    font-style: normal;
+    color: #714014;
+    background: #dda56f;
+    border: 1px solid #b7834b;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > small {
+    color: #654223;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button:hover,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected {
+    border-color: #6a461d #f8da94 #f8da94 #6a461d;
+    background: #deb276;
+    box-shadow: inset 3px 0 0 #27802d;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button:focus-visible {
+    outline: 3px solid #1c5423;
+    outline-offset: -3px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card {
+    background: #f1d09f;
+    border: 1px solid #ab7742;
+    color: #3c2917;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > strong,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card > strong {
+    color: #3e250f;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > button:not(:disabled) {
+    border: 2px solid;
+    border-color: #f9d995 #714223 #714223 #f9d995;
+    background: #bd7a38;
+    color: #fff8e8;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory-hint {
+    color: #533517;
+  }
+}
+/* Existing 360/390/430px controls, card widths and 44px touch targets remain
+   unchanged. This file is a desktop skin, not an input-system rewrite. */
