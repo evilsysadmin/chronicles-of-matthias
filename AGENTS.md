@@ -96,6 +96,7 @@
   El botón táctil de ataque automático permanece disponible por separado.
   `C` abre magia. Mantener código, ayuda, botones y pruebas sincronizados.
 - En MM3 **arco, ballesta y honda alcanzan a cualquier enemigo visible en línea recta y sin muros**, sin límite de casillas por tipo de arma. No extender esta regla a cuerpo a cuerpo, hechizos ni Tactics; el mapa limita la búsqueda y el HUD debe reflejarla.
+- Tiempo de exploración MM3: toda acción que **consume turno** (caminar, girar, disparar, conjurar) avanza detección y persecución una sola vez, incluso si el grupo no cambia de casilla. Las acciones rechazadas y transiciones de mapa no hacen avanzar criaturas. El contacto abre iniciativa; no introducir ataques gratis ni atravesar muros.
 - Cada tiro visual corresponde a un héroe vivo que lleva **arma de proyectiles
   válida para su clase**: arco, ballesta u honda. Puede haber animación/sonido
   de proyectiles disparados al aire, pero **no inventar impactos, daño, XP,

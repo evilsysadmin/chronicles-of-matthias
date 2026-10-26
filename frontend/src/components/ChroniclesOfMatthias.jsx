@@ -31,7 +31,7 @@ import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.j
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
-import { chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
+import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
 import './ChroniclesQuietActionNotice.css';
 import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
@@ -699,9 +699,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // Entering an area is not a tactical movement inside it. The player
       // gets to see the new room/return portal before enemies can engage.
       const transitionedMap = exploratoryNext?.mapId !== current.mapId;
-      // A distant volley is a complete pre-contact exchange: the target
-      // responds (move or ranged attack), but initiative waits for physical
-      // melee contact. Other actions preserve their existing engagement.
+      // A real opening volley engages initiative on its target. If it
+      // shoots empty air, aware creatures still get a movement tick.
       const started = transitionedMap ? exploratoryNext : openingVolley
         ? chroniclesAdvanceOpeningVolley(current, exploratoryNext)
         : chroniclesStartInitiativeCombat(
@@ -716,6 +715,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         : offensive
           ? openingVolley ? exploratoryNext : chroniclesReduce(current, action)
           : exploratoryNext;
+      // Movement/turning have already advanced through GridExplorationStep.
+      // Offensive actions run a separate path; give enemies their single
+      // exploration tick only if the action spent time without initiating.
+      if (offensive && !next.initiative) {
+        next = chroniclesAdvanceExplorationEnemies(current, next);
+        if (!transitionedMap) {
+          next = chroniclesStartInitiativeCombat(next, chroniclesActiveEnemies(next));
+        }
+      }
     } else {
       next = chroniclesReduce(current, action);
       // A refused cast or item (no spell points, no target) keeps the hero's turn.
