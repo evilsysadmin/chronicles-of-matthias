@@ -718,7 +718,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // Movement/turning have already advanced through GridExplorationStep.
       // Offensive actions run a separate path; give enemies their single
       // exploration tick only if the action spent time without initiating.
-      if (offensive && !next.initiative) {
+      if (offensive && !next.initiative && Number(next.turns) > Number(current.turns)) {
         next = chroniclesAdvanceExplorationEnemies(current, next);
         if (!transitionedMap) {
           next = chroniclesStartInitiativeCombat(next, chroniclesActiveEnemies(next));
