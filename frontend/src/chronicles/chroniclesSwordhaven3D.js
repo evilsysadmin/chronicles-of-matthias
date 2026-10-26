@@ -579,7 +579,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   // The forge gets its own industrial stack below; other houses keep
   // the small domestic chimney. Neither alters the authored collision grid.
-  if (!isForge) {
+  if (!isForge && !isTavern) {
     mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
       'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
     mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
@@ -651,6 +651,28 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'tavern-porch-awning', [0, 3.35, facadeZ + 1.07], !coarse);
     for (const x of [-2.35, 2.35]) mesh(root, new THREE.CylinderGeometry(0.11, 0.14, 3.15, 8),
       mats.timber, 'porch-timber-support', [x, 1.63, facadeZ + 1.60], !coarse);
+    // A broad twin-flue kitchen hearth, not the small domestic chimney or
+    // forge's iron smokestack. The brickwork intersects the existing roof,
+    // remains decorative and never changes the authored street collision.
+    const hearth = new THREE.Group();
+    hearth.name = 'tavern-double-hearth';
+    hearth.userData.chroniclesDecorativeOnly = true;
+    hearth.position.set(-width * 0.28, height + 2.12, -depth * 0.21);
+    const hearthBrick = material(0x866251, {
+      map: swordhavenSurfaceTexture('masonry'),
+      normalMap: swordhavenSurfaceNormalTexture('masonry'),
+      normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.98,
+    });
+    mesh(hearth, new THREE.BoxGeometry(2.45, 2.15, 1.62), hearthBrick,
+      'tavern-hearth-brick-breast', [0, -0.70, 0], !coarse);
+    for (const [index, x] of [-0.68, 0.68].entries()) {
+      const flueHeight = index === 0 ? 3.35 : 2.60;
+      mesh(hearth, new THREE.BoxGeometry(0.98, flueHeight, 1.02), hearthBrick,
+        'tavern-hearth-flue-' + index, [x, flueHeight / 2 + 0.15, 0], !coarse);
+      mesh(hearth, new THREE.BoxGeometry(1.20, 0.24, 1.26), mats.stone,
+        'tavern-hearth-cap-' + index, [x, flueHeight + 0.28, 0]);
+    }
+    root.add(hearth);
   } else if (isStore) {
     // A striped merchant canopy gives the general store a recognisable
     // street-level silhouette. All geometry is decorative and elevated:
