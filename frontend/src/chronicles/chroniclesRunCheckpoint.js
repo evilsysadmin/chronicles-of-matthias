@@ -452,10 +452,13 @@ function applyRuntimeCheckpoint(state, flags) {
   }
   // Enemy turns and initiative exist only inside combat. Legacy or damaged
   // checkpoints may disagree; do not freeze exploration behind a ghost turn.
+  // Preserve the *absence* of turnPhase on valid older saves: adding "party"
+  // changes their checkpoint fingerprint and causes unnecessary writes.
+  const invalidTurnOwner = flags[runtimeKey('turnPhase')] !== undefined && turnPhase === null;
   if (next.phase !== 'combat') {
-    next.turnPhase = 'party';
+    if (next.turnPhase === 'enemy' || invalidTurnOwner) next.turnPhase = 'party';
     next.initiative = null;
-  } else if (!next.initiative && next.turnPhase === 'enemy') {
+  } else if (invalidTurnOwner || (!next.initiative && next.turnPhase === 'enemy')) {
     next.turnPhase = 'party';
   }
 
