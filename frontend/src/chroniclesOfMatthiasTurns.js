@@ -39,9 +39,10 @@ function validTilePosition(position) {
 
 export function chroniclesRuntimeEnemyPosition(state, enemy) {
   const runtime = state?.enemyPositions?.[enemy.id];
-  // Restored legacy coordinates must be actual grid cells. Fractions can
-  // make discrete sightline tracing loop forever; use the authored spawn.
-  if (validTilePosition(runtime)) return runtime;
+  // Restored legacy coordinates must be traversable grid cells. Fractions
+  // can hang sightline tracing, while wall/out-of-map cells let creatures
+  // attack from inside masonry; recover at the authored spawn instead.
+  if (validTilePosition(runtime) && walkable(state, runtime)) return runtime;
   return chroniclesEnemyPosition(state, enemy);
 }
 
