@@ -8,6 +8,7 @@ import './ChroniclesCharacterEquipmentDensity.css';
 import './ChroniclesCharacterRetroMM3.css';
 import './ChroniclesCharacterInventoryRetro.css';
 import './ChroniclesCharacterTrainingRetro.css';
+import './ChroniclesCharacterRecordV3.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -477,7 +478,8 @@ export default function ChroniclesCharacterSheet({
           </nav>
         )}
 
-        <div className="chronicles-character-sheet__folio-content">
+        <div className="chronicles-character-sheet__folio-content"
+          data-chronicles-chapter={tacticsMode ? undefined : activeFolio}>
         <div className="chronicles-character-sheet__vitals"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>HP</span><b>{member.hp}/{member.maxHp}</b></div>
@@ -545,6 +547,11 @@ export default function ChroniclesCharacterSheet({
                   <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}</small>
                 </div>
               ))}
+              <div data-stat="condition" title="Estado general según los puntos de vida actuales">
+                <span>ESTADO</span>
+                <b>{member.hp <= 0 ? 'Caído' : member.hp < member.maxHp ? 'Herido' : 'Sano'}</b>
+                <small>{member.hp}/{member.maxHp} PV · condición física</small>
+              </div>
             </div>
           </div>
         )}
