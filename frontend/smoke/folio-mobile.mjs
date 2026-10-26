@@ -13,7 +13,7 @@ let failures = 0;
 
 try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
-    for (const view of width === 1280 ? ['adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
+    for (const view of width === 1280 ? ['cast', 'adventure', 'healing', 'revive', 'rescue'] : ['cast', 'items', 'adventure', 'healing', 'revive', 'rescue']) {
       const ctx = await browser.newContext({
         viewport: { width, height }, isMobile: true, hasTouch: true,
         deviceScaleFactor: 1,
