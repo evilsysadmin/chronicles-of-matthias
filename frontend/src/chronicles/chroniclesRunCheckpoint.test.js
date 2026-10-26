@@ -291,6 +291,20 @@ describe('Chronicles run checkpoint recovery', () => {
     expect(recoveredValid.enemyPositions[mid.id]).toEqual(cell);
   });
 
+  it('does not kill enemy zero when restored slain lists contain empty CSV tokens', () => {
+    const mapId = 'swordhaven-sewers';
+    const restore = (csv) => chroniclesApplyRunCheckpoint(createChroniclesState(mapId), {
+      worldFlags: {
+        '__chrRuntime.version': 1,
+        [`__chrRuntime.slain.${mapId}`]: csv,
+      },
+    });
+
+    expect(restore('1,').slainEnemies?.[mapId]).toEqual([1]);
+    expect(restore(' ,  ').slainEnemies?.[mapId]).toBeUndefined();
+    expect(restore('1,  ,0x0').slainEnemies?.[mapId]).toEqual([1]);
+  });
+
   it('round-trips individual party combat cells across F5/re-entry', () => {
     const base = createChroniclesState();
     const snapshot = {
