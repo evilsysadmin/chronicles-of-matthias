@@ -766,12 +766,12 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mesh(gate, new THREE.BoxGeometry(0.43, 3.34, 0.42), mats.stone,
         'armor-gateway-pier', [side * 1.24, 1.68, 0], !coarse);
       mesh(gate, new THREE.SphereGeometry(0.085, 8, 6), mats.steel,
-        'armor-gateway-rivet', [side * 0.95, 3.48, 0.28]);
+        'armor-gateway-rivet', [side * 0.95, 3.32, 0.28]);
     }
     mesh(gate, new THREE.BoxGeometry(2.95, 0.36, 0.42), mats.stone,
-      'armor-gateway-lintel', [0, 3.48, 0], !coarse);
+      'armor-gateway-lintel', [0, 3.32, 0], !coarse);
     mesh(gate, new THREE.BoxGeometry(0.34, 0.27, 0.48), mats.steel,
-      'armor-gateway-keystone', [0, 3.77, 0.04]);
+      'armor-gateway-keystone', [0, 3.32, 0.24]);
     root.add(gate);
     // Armorer's raised heraldic shield breaks the gable silhouette.
     // The watchhouse shares a shield sign but NOT this merchant roof crest.
