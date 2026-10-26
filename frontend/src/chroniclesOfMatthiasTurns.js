@@ -43,7 +43,10 @@ export function chroniclesRuntimeEnemyPosition(state, enemy) {
   // can hang sightline tracing, while wall/out-of-map cells let creatures
   // attack from inside masonry; recover at the authored spawn instead.
   if (validTilePosition(runtime) && walkable(state, runtime)) return runtime;
-  return chroniclesEnemyPosition(state, enemy);
+  // The legacy position resolver trusts *integer* saved overrides even when
+  // embedded in a wall. Drop that invalid override before asking it for the
+  // keyed/authored spawn; otherwise the fallback returns the same bad cell.
+  return chroniclesEnemyPosition({ ...state, enemyPositions: undefined }, enemy);
 }
 
 function occupiedByEnemy(state, position, ignoredEnemyId) {
