@@ -58,6 +58,19 @@ export function chroniclesProgressionFeedback(progressResult) {
   });
 }
 
+// Only actual XP-level transition events trigger portrait FX. Never derive
+// them from a loaded profile/checkpoint or from an ordinary XP award.
+export function chroniclesPortraitLevelUpEvents(progressResult, party = []) {
+  const members = new Set((party || []).map((member) => member.id));
+  return chroniclesProgressionFeedback(progressResult).heroes
+    .filter((hero) => hero.leveledUp && members.has(hero.memberId))
+    .map((hero) => Object.freeze({
+      memberId: hero.memberId,
+      fromLevel: hero.fromLevel,
+      toLevel: hero.toLevel,
+    }));
+}
+
 export function chroniclesProgressionFeedbackLabel(feedback, nameForMember = (memberId) => memberId) {
   if (!feedback?.hasRewards) return '';
   return feedback.heroes.map((hero) => {

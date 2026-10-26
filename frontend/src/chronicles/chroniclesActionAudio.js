@@ -247,6 +247,13 @@ function playBasicCue(ctx, cue, volume) {
     connectTone(ctx, bus, { frequency: 210, endFrequency: 155, duration: 0.07, gain: 0.014 });
     return;
   }
+  if (cue === 'level-up') {
+    // Restrained three-note chime; reuse the real SFX volume and audio bus.
+    connectTone(ctx, bus, { frequency: 392, duration: 0.18, gain: 0.027, type: 'sine' });
+    connectTone(ctx, bus, { frequency: 523, duration: 0.18, gain: 0.031, type: 'sine', delay: 0.09 });
+    connectTone(ctx, bus, { frequency: 659, duration: 0.27, gain: 0.032, type: 'sine', delay: 0.18 });
+    return;
+  }
   if (cue === 'spell' || cue === 'spell-hit') {
     // A shimmer: two sine voices rising a fifth, with air on top.
     connectTone(ctx, bus, { frequency: 523, endFrequency: 784, duration: 0.24, gain: 0.02, type: 'sine' });
@@ -422,6 +429,10 @@ export function unlockChroniclesActionAudio() {
 
 export function playChroniclesActionSound(previous, next, action) {
   playCue(chroniclesActionAudioCue(previous, next, action));
+}
+
+export function playChroniclesLevelUpChime() {
+  playCue('level-up');
 }
 
 // A short sample at the chosen SFX level, so moving the slider is audible.
