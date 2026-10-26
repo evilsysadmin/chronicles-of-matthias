@@ -141,6 +141,8 @@ try {
       forge?.getObjectByName('forge-stone-workshop-bay')
       && forge?.getObjectByName('forge-workshop-stone-lintel')
       && forge?.getObjectByName('forge-workshop-cross-brace')
+      && forge?.getObjectByName('forge-workshop-soot-recess')
+      && forge?.getObjectByName('forge-workshop-embers')
       && !armorer?.getObjectByName('forge-stone-workshop-bay')
       && forge?.getObjectByName('forge-roof-smokestack')
       && forge?.getObjectByName('forge-brazier')
