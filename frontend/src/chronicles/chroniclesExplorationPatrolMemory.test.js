@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import {
   chroniclesChooseEnemyStep,
+  chroniclesEnemyAttackTarget,
   chroniclesRememberEnemySight,
+  chroniclesRuntimeEnemyPosition,
 } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
@@ -76,4 +78,37 @@ describe('MM3 overworld patrols after several exploration steps', () => {
     }
   });
 
+});
+
+describe('restored enemy positions respect dungeon walls', () => {
+  const map = chroniclesMapById('swordhaven-sewers');
+  const goblin = map.enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
+
+  it('keeps valid floor cells but recovers from walls and out-of-bounds cells', () => {
+    const state = createChroniclesState(map.id, null, { rules: 'mm3' });
+    const restoredAt = (position) => ({
+      ...state, enemyPositions: { [goblin.id]: position },
+    });
+
+    expect(chroniclesRuntimeEnemyPosition(restoredAt({ x: 1, y: 4 }), goblin))
+      .toEqual({ x: 1, y: 4 });
+    for (const invalid of [
+      { x: 0, y: 1 }, // perimeter wall, adjacent to the party
+      { x: 2, y: 4 }, // internal sewer wall
+      { x: 100, y: 100 }, // beyond the authored map
+      { x: 1.5, y: 4 }, // legacy non-grid position
+    ]) {
+      expect(chroniclesRuntimeEnemyPosition(restoredAt(invalid), goblin))
+        .toEqual({ x: goblin.x, y: goblin.y });
+    }
+  });
+
+  it('never attacks the company from a restored wall cell', () => {
+    const state = createChroniclesState(map.id, null, { rules: 'mm3' });
+    const restored = {
+      ...state,
+      enemyPositions: { [goblin.id]: { x: 0, y: 1 } },
+    };
+    expect(chroniclesEnemyAttackTarget(restored, goblin)).toBeNull();
+  });
 });
