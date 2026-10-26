@@ -187,3 +187,37 @@
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio]
   .chronicles-character-sheet__item-details { padding: 9px; }
 }
+
+/* Compact only genuinely empty mobile gear panels. Keep filled backpacks,
+   linked relics, Tactics and all touch targets unchanged. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> small) {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-height: 0;
+    padding: 8px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> small) > small {
+    flex: 1 1 145px;
+    min-width: 0;
+    margin: 0;
+    line-height: 1.3;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__relic:not(.has-relic) {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-height: 0;
+    padding: 8px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__relic:not(.has-relic) > b {
+    margin: 0;
+  }
+}
