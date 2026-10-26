@@ -207,7 +207,7 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   const deployedState = chroniclesDeployPartyForCombat(state);
   const initiative = chroniclesRollInitiative(deployedState, engaged, options);
   if (!initiative.order.length) return state;
-  const { combatWard: _staleWard, ...fresh } = deployedState;
+  const { combatWard: _staleWard, combatBlock: _staleBlock, ...fresh } = deployedState;
   return {
     ...fresh,
     phase: 'combat',
@@ -221,7 +221,7 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // A party wiped during an active round must end in defeat, even if
   // enemies survive or the final enemy fell at the same time.
   if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) {
-    const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
   }
   // Preserve the original turn boundary before leashed enemies are pruned.
@@ -253,7 +253,7 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   const enemiesRemain = livingOrder.some((actor) => actor.kind === 'enemy');
   if (!enemiesRemain) {
     // Escudo de fe and any paralysis end with the fight.
-    const { combatWard: _ward, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return {
       ...collapsed,
       phase: state.phase === 'defeated' ? 'defeated' : 'explore',
@@ -288,8 +288,13 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   const nextCursor = livingOrder.findIndex((actor) => (
     actor.kind === nextActor.kind && actor.id === nextActor.id
   ));
+  // BLOCK protects a hero until (not through) the start of their NEXT turn.
+  // Clear only that hero's guard: an enemy or another ally must not cancel it.
+  const combatBlock = { ...(state.combatBlock || {}) };
+  if (nextActor.kind === 'party') delete combatBlock[nextActor.id];
   return {
     ...state,
+    combatBlock: Object.keys(combatBlock).length ? combatBlock : undefined,
     initiative: {
       ...state.initiative,
       order: livingOrder,

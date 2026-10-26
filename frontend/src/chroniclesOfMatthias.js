@@ -444,6 +444,9 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
   };
 }
 
+// MM3 BLOCK trades a complete hero turn for +4 AC against subsequent blows.
+export const CHRONICLES_BLOCK_AC_BONUS = 4;
+
 // MM armor class: Speed bonus + worn armor (type + material).
 // During a two-handed ranged attack, the shield cannot parry an immediate
 // counterstrike. Outside that action it still protects its owner.
@@ -452,8 +455,9 @@ export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = 
   if (!member) return 0;
   // Escudo de fe holds only while the fight it was cast in lasts.
   const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
+  const block = state?.initiative && state.combatBlock?.[memberId] === true ? CHRONICLES_BLOCK_AC_BONUS : 0;
   return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
-    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward);
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block);
 }
 
 export function chroniclesUsesMM3Combat(state) {
@@ -1134,6 +1138,20 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
   if (actionType === 'volley') return resolveOpeningVolley(state);
+  if (actionType === 'block') {
+    // No defense action during exploration, enemy initiative or another hero's
+    // turn. The guard is boolean and cannot stack through repeated dispatches.
+    if (!chroniclesUsesMM3Combat(state) || !state.initiative || !action?.memberId) return state;
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    const member = state.party.find((hero) => hero.id === action.memberId && hero.hp > 0);
+    if (actor?.kind !== 'party' || actor.id !== action.memberId || !member) return state;
+    return {
+      ...state,
+      turns: state.turns + 1,
+      combatBlock: { ...state.combatBlock, [member.id]: true },
+      message: `${member.name} se cubre: +${CHRONICLES_BLOCK_AC_BONUS} CA hasta su próximo turno.`,
+    };
+  }
   if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };
   if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
   if (actionType === 'attack') {

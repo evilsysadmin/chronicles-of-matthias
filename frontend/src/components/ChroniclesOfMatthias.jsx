@@ -933,6 +933,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     dispatch(mode === 'auto' ? { type: 'attack', memberId } : { type: 'attack', memberId, mode });
   }, [dispatch, showMissileNotice]);
 
+  const blockWithActive = useCallback(() => {
+    const current = stateRef.current;
+    if (!current || current.combatRules !== 'mm3' || !current.initiative) return;
+    const actor = chroniclesCurrentInitiativeActor(current.initiative);
+    if (actor?.kind !== 'party' || !current.party.some((hero) => hero.id === actor.id && hero.hp > 0)) return;
+    dispatch({ type: 'block', memberId: actor.id });
+  }, [dispatch]);
+
   // S is a company volley before initiative; once engaged it is the
   // current hero's ordinary missile attack.
   const shootWithParty = useCallback(() => {
@@ -1491,6 +1499,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         event.preventDefault();
         if (event.repeat) return;
         if (combatMode === 'missile') shootWithParty();
+        else if (combatMode === 'block') blockWithActive();
         else attackWithSelected(combatMode);
         return;
       }
@@ -1512,7 +1521,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
+  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
     confirmExitWithoutSaving, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget]);
@@ -2040,6 +2049,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar"
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
                     ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
+                {state.combatRules === 'mm3' && activeInitiativeActor?.kind === 'party' && (
+                  <button type="button" className="is-block"
+                    data-chronicles-touch-action="block"
+                    onClick={blockWithActive}
+                    title="B · BLOCK: +4 CA hasta tu próximo turno; consume turno"
+                    aria-label="Bloquear: ganar cuatro puntos de clase de armadura hasta el próximo turno (B)"
+                  >⛨<small>BLOCK · B</small></button>
+                )}
                 {actionMenuAvailable && (
                   <button
                     type="button"
@@ -2088,6 +2105,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                 <span><kbd>A</kbd> atacar</span>
                 <span><kbd>S</kbd> disparar</span>
+                <span><kbd>B</kbd> bloquear (+4 CA)</span>
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>
                 <span><kbd>F</kbd> usar/recoger</span>
                 <span><kbd>C</kbd> hechizos</span>
