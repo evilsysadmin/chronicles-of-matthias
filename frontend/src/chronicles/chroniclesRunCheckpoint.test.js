@@ -69,7 +69,7 @@ describe('Chronicles checkpoint projection', () => {
     });
   });
 
-  it('preserves switches and traps per dungeon floor across an actual API checkpoint', () => {
+  it('preserves switches and treasures per dungeon floor across an actual API checkpoint', () => {
     let state = { ...createChroniclesState('crypt-eight-squares'), sigilAwake: true };
     state = chroniclesMapTransitionState(state, 'gallery-of-forks');
     state = { ...state, galleryLeverPulled: true };
