@@ -64,22 +64,22 @@ function expectKnightJump(from, to) {
 
 describe('Chronicles of Matthias vertical slice', () => {
   it('strafes left and right relative to facing without rotating or bypassing collision', () => {
-    const start = createChroniclesState('swordhaven-square');
-    expect([start.x, start.y, start.direction]).toEqual([9, 16, 0]);
+    const start = createChroniclesState('swordhaven-first-book');
+    expect([start.x, start.y, start.direction]).toEqual([9, 7, 0]);
     const left = chroniclesReduce(start, 'strafe-left');
-    expect([left.x, left.y, left.direction]).toEqual([8, 16, 0]);
+    expect([left.x, left.y, left.direction]).toEqual([8, 7, 0]);
     expect(left.turns).toBe(start.turns + 1);
     const back = chroniclesReduce(left, 'strafe-right');
-    expect([back.x, back.y, back.direction]).toEqual([9, 16, 0]);
+    expect([back.x, back.y, back.direction]).toEqual([9, 7, 0]);
 
     const facingEast = { ...start, x: 9, y: 11, direction: 1 };
     const eastFacingLeft = chroniclesReduce(facingEast, 'strafe-left');
     expect([eastFacingLeft.x, eastFacingLeft.y, eastFacingLeft.direction])
       .toEqual([9, 10, 1]);
-    // An authored tree at 7,16 must stop lateral movement just like forward.
-    const nextToTree = { ...start, x: 8, y: 16, direction: 0 };
+    // The outer city wall stops lateral movement just like forward.
+    const nextToTree = { ...start, x: 1, y: 4, direction: 0 };
     const blocked = chroniclesReduce(nextToTree, 'strafe-left');
-    expect([blocked.x, blocked.y, blocked.direction]).toEqual([8, 16, 0]);
+    expect([blocked.x, blocked.y, blocked.direction]).toEqual([1, 4, 0]);
     expect(blocked.turns).toBe(nextToTree.turns + 1);
     expect(blocked.message).toMatch(/pared|bloquea|obstáculo|paso|árbol|muro|cerrado|avanzar/i);
   });
