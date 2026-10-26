@@ -102,6 +102,34 @@ function isGeneratedDungeon(scenePlan) {
   return scenePlan?.useAuthoredCryptDressing === false;
 }
 
+// The cool middle-distance light is shadowless. If its forward offset enters
+// a solid tile, it shines *through* a wall as a white hotspot whenever the
+// camera moves or turns. Trace through the actual first-person grid and keep
+// this light well clear of walls; near a dead end it fades away instead.
+const CORRIDOR_FILL_RANGE = 6.5;
+const CORRIDOR_FILL_WALL_CLEARANCE = 2.5;
+
+export function chroniclesSafeDungeonCorridorDistance(scenePlan, cameraPosition, forward) {
+  const { grid, center } = scenePlan || {};
+  if (!Array.isArray(grid) || !grid.length || !center ||
+    !Number.isFinite(cameraPosition?.x) || !Number.isFinite(cameraPosition?.z) ||
+    !Number.isFinite(forward?.x) || !Number.isFinite(forward?.z)) return 0;
+  const magnitude = Math.hypot(forward.x, forward.z);
+  if (magnitude < 0.0001) return 0;
+  const dx = forward.x / magnitude;
+  const dz = forward.z / magnitude;
+  // A quarter-metre probe (vs 4m tiles) also handles turns between compass
+  // directions, without the cost of a mesh raycast on every animation frame.
+  const end = CORRIDOR_FILL_RANGE + CORRIDOR_FILL_WALL_CLEARANCE;
+  for (let distance = 0; distance <= end + 0.001; distance += 0.25) {
+    const x = Math.floor((cameraPosition.x + dx * distance) / CELL + center.x + 0.5);
+    const y = Math.floor((cameraPosition.z + dz * distance) / CELL + center.y + 0.5);
+    const tile = grid[y]?.[x];
+    if (!tile || tile === '#') return Math.max(0, Math.min(CORRIDOR_FILL_RANGE, distance - CORRIDOR_FILL_WALL_CLEARANCE));
+  }
+  return CORRIDOR_FILL_RANGE;
+}
+
 function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
   const lightingProfile = scenePlan?.materials?.lightingProfile || 'default';
   const profileScale = lightingProfile === 'crypt-dark' ? 0.72 : 1;
@@ -209,6 +237,7 @@ function addReadabilityLighting(root, { coarsePointer, scenePlan }) {
     partyTorchBounce,
     partyTorchKeyBaseIntensity: partyTorchKey.intensity,
     partyTorchBounceBaseIntensity: partyTorchBounce.intensity,
+    corridorFillBaseIntensity: corridorFill.intensity,
   };
 }
 
@@ -288,8 +317,13 @@ export function buildChroniclesDungeonAtmosphere({
     partyBouncePosition.y = 1.05;
     readabilityLighting.partyTorchBounce.position.copy(partyBouncePosition);
     if (readabilityLighting.corridorFill) {
-      readabilityLighting.corridorFill.position.copy(partyCamera.position).addScaledVector(partyForward, 6.5);
+      const forwardDistance = chroniclesSafeDungeonCorridorDistance(scenePlan, partyCamera.position, partyForward);
+      readabilityLighting.corridorFill.position.copy(partyCamera.position).addScaledVector(partyForward, forwardDistance);
       readabilityLighting.corridorFill.position.y = 2.35;
+      // Fade the shadowless cool fill in tight corridors. The warm carried
+      // torches and ambient visibility remain unchanged.
+      readabilityLighting.corridorFill.intensity = readabilityLighting.corridorFillBaseIntensity
+        * Math.max(0, Math.min(1, (forwardDistance - 1) / (CORRIDOR_FILL_RANGE - 1)));
     }
 
     const flicker = reducedMotion

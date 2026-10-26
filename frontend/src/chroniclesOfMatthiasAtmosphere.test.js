@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesIsometricScenePlan } from './chronicles/chroniclesIsometricScenePlan.js';
 import { CHRONICLES_MINIMUM_VISIBILITY } from './chronicles/chroniclesLightingPolicy.js';
 import { chroniclesMapById } from './chronicles/chroniclesMapCatalog.js';
-import { buildChroniclesDungeonAtmosphere } from './chroniclesOfMatthiasAtmosphere.js';
+import { buildChroniclesDungeonAtmosphere, chroniclesSafeDungeonCorridorDistance } from './chroniclesOfMatthiasAtmosphere.js';
 
 describe('Chronicles of Matthias dungeon atmosphere', () => {
   it('keeps the desktop atmosphere richer than the coarse-pointer budget', () => {
@@ -210,4 +210,56 @@ describe('Chronicles of Matthias dungeon atmosphere', () => {
     expect(animatedPosition.getY(0)).not.toBe(animatedBefore);
     expect(stillPosition.getY(0)).toBe(stillBefore);
   });
+  it('never places a moving shadowless cool light through a solid dungeon wall', () => {
+    const plan = {
+      grid: ['########', '#......#', '########'],
+      center: { x: 0, y: 0 },
+    };
+    const facingEast = { x: 1, z: 0 };
+    // An open stretch retains the authored 6.5 m forward fill.
+    expect(chroniclesSafeDungeonCorridorDistance(plan, { x: 4, z: 4 }, facingEast)).toBe(6.5);
+    // As the wall approaches, the light stays at least 2.5 m behind it.
+    expect(chroniclesSafeDungeonCorridorDistance(plan, { x: 20, z: 4 }, facingEast)).toBeCloseTo(3.5);
+    // At a dead end, the forward fill is disabled instead of sitting in stone.
+    expect(chroniclesSafeDungeonCorridorDistance(plan, { x: 24, z: 4 }, facingEast)).toBe(0);
+    expect(chroniclesSafeDungeonCorridorDistance(plan, { x: 4, z: 4 }, { x: -1, z: 0 })).toBe(0);
+    expect(chroniclesSafeDungeonCorridorDistance({ grid: [] }, { x: 0, z: 0 }, facingEast)).toBe(0);
+  });
+
+  it('fades the cool dungeon fill against a wall without dimming the carried torch', () => {
+    const map = chroniclesMapById('swordhaven-sewers');
+    const scenePlan = {
+      ...chroniclesIsometricScenePlan(map),
+      grid: map.grid,
+      useAuthoredCryptDressing: false,
+    };
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(67, 1, 0.08, 70);
+    camera.position.set(
+      (1 - scenePlan.center.x) * 4,
+      1.62,
+      (1 - scenePlan.center.y) * 4,
+    );
+    const atmosphere = buildChroniclesDungeonAtmosphere({
+      scenePlan, reducedMotion: true,
+    });
+    scene.add(camera, atmosphere);
+    const fill = atmosphere.getObjectByName('chronicles-readability-corridor-fill');
+    const key = atmosphere.getObjectByName('chronicles-party-torch-key');
+
+    camera.rotation.y = Math.PI / 2; // From x=1, look into the west wall.
+    atmosphere.userData.updateChroniclesAtmosphere(1);
+    expect(fill?.isPointLight).toBe(true);
+    expect(fill.intensity).toBe(0);
+    expect(fill.position.x).toBeCloseTo(camera.position.x);
+    const warmTorchIntensity = key.intensity;
+
+    camera.rotation.y = -Math.PI / 2; // Open corridor to the east.
+    atmosphere.userData.updateChroniclesAtmosphere(2);
+    expect(fill.intensity).toBeGreaterThan(0);
+    expect(fill.position.x).toBeGreaterThan(camera.position.x);
+    expect(fill.position.y).toBe(2.35);
+    expect(key.intensity).toBe(warmTorchIntensity);
+  });
+
 });
