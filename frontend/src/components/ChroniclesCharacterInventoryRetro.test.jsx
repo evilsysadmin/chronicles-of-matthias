@@ -43,6 +43,8 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(css).toContain('min-height: 44px');
     expect(css).toContain('text-overflow: ellipsis');
     expect(css).toContain('button:focus-visible');
+    // Selected rows must retain dark readable text on the light copper surface.
+    expect(css).toMatch(/button\.is-selected\s*\{[^}]*color:\s*#3b250f;/);
     expect(css).not.toMatch(/pointer-events:\s*none|display:\s*none\s*!important/);
     expect(css).not.toContain('content: \'1)\'');
   });
