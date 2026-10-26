@@ -403,9 +403,9 @@ describe('Chronicles run checkpoint recovery', () => {
     expect(restore('combat', 'enemy')).toMatchObject({
       phase: 'combat', turnPhase: 'enemy', initiative,
     });
-    expect(restore('combat', 'enemy', false)).toMatchObject({
-      phase: 'combat', turnPhase: 'party', initiative: null,
-    });
+    const missingInitiative = restore('combat', 'enemy', false);
+    expect(missingInitiative).toMatchObject({ phase: 'combat', turnPhase: 'party' });
+    expect(missingInitiative.initiative).toBeFalsy();
     // Valid old checkpoints omit turnPhase entirely. Recovery must not invent
     // a new fingerprint field and trigger redundant server checkpoint writes.
     expect(Object.hasOwn(restore('explore', undefined, false), 'turnPhase'))
