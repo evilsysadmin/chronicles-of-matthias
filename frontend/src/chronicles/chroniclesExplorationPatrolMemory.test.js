@@ -46,4 +46,34 @@ describe('MM3 overworld patrols after several exploration steps', () => {
     const expired = chroniclesRememberEnemySight({ ...hidden, explorationEnemySteps: 12 }, deserter);
     expect(expired.enemyAwareness?.[deserter.id]).toBeUndefined();
   });
+
+  it('discards corrupt saved sightings rather than chasing impossible coordinates', () => {
+    const hidden = {
+      ...createChroniclesState(map.id),
+      x: 1,
+      y: 1,
+      explorationEnemySteps: 6,
+    };
+    const normalPatrolStep = chroniclesChooseEnemyStep(hidden, deserter);
+    for (const position of [
+      { x: 11.5, y: 7 },
+      { x: NaN, y: 7 },
+      { x: Infinity, y: 7 },
+      { x: 11, y: undefined },
+      { x: Number.MAX_SAFE_INTEGER + 1, y: 7 },
+    ]) {
+      const restored = {
+        ...hidden,
+        enemyAwareness: {
+          [deserter.id]: {
+            ...position, tick: 2, phase: 'explore', mapId: map.id,
+          },
+        },
+      };
+      expect(chroniclesChooseEnemyStep(restored, deserter)).toEqual(normalPatrolStep);
+      expect(chroniclesRememberEnemySight(restored, deserter).enemyAwareness?.[deserter.id])
+        .toBeUndefined();
+    }
+  });
+
 });
