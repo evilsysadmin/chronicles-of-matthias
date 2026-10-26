@@ -231,6 +231,44 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the canonical armorer a square stone gateway and roof crest', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const armorer = scene.getObjectByName('swordhaven-building-swordhaven-armor');
+      const gateway = armorer.getObjectByName('armor-stone-gateway');
+      const door = armorer.getObjectByName('shop-door');
+      expect(gateway?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(armorer.getObjectByName('armor-roof-crest')).toBeTruthy();
+      expect(gateway.position.z).toBeGreaterThan(door.position.z);
+      const piers = gateway.children.filter(child => child.name === 'armor-gateway-pier');
+      expect(piers).toHaveLength(2);
+      expect(piers[0].position.x).toBeLessThan(-1);
+      expect(piers[1].position.x).toBeGreaterThan(1);
+      expect(piers[0].position.x + piers[0].geometry.parameters.width / 2)
+        .toBeLessThan(-door.geometry.parameters.width / 2);
+      expect(piers[1].position.x - piers[1].geometry.parameters.width / 2)
+        .toBeGreaterThan(door.geometry.parameters.width / 2);
+      expect(gateway.getObjectByName('armor-gateway-lintel').position.y)
+        .toBeGreaterThan(door.geometry.parameters.height);
+      expect(gateway.children.filter(child => child.name === 'armor-gateway-rivet')).toHaveLength(2);
+      const nameplate = armorer.getObjectByName('swordhaven-shop-nameplate');
+      const nameplateBottom = nameplate.position.y
+        - nameplate.getObjectByName('shop-nameplate-wood').geometry.parameters.height / 2;
+      for (const name of ['armor-gateway-lintel', 'armor-gateway-keystone']) {
+        const part = gateway.getObjectByName(name);
+        expect(part.position.y + part.geometry.parameters.height / 2)
+          .toBeLessThan(nameplateBottom);
+      }
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-armor')) {
+        const other = scene.getObjectByName('swordhaven-building-' + spec.id);
+        expect(other.getObjectByName('armor-stone-gateway')).toBeFalsy();
+        expect(other.getObjectByName('armor-roof-crest')).toBeFalsy();
+      }
+      expect(createSwordhavenWalkGrid()[7][14]).toBe('.');
+    }
+  });
+
   it('uses deterministic, fine-grained town textures without changing the pixelated meadow', () => {
     for (const kind of ['stucco', 'masonry', 'roof', 'timber', 'cobble']) {
       const texture = swordhavenSurfaceTexture(kind);
