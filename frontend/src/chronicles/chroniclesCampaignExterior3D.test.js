@@ -522,10 +522,46 @@ describe('Chronicles file-authored exterior renderer', () => {
     // not every blocker belongs to the outer town perimeter.
     const wall = grid.reduce((sum, row, y) => sum + [...row].filter((tile, x) => (
       tile === '#' && (x === 0 || y === 0 || x === width - 1 || y === height - 1))).length, 0);
-    const blockers = scene.getObjectByName('chronicles-campaign-visible-blockers').count;
-    expect(blockers).toBeGreaterThan(wall);
-    expect(blockers).toBe(126);
+    const perimeter = scene.getObjectByName('chronicles-campaign-town-perimeter');
+    const battlements = scene.getObjectByName('chronicles-campaign-town-battlements');
     const urbanWalls = scene.getObjectByName('chronicles-campaign-visible-blockers');
+    expect(perimeter).toBeInstanceOf(THREE.InstancedMesh);
+    expect(battlements).toBeInstanceOf(THREE.InstancedMesh);
+    expect(perimeter.frustumCulled).toBe(false);
+    expect(battlements.frustumCulled).toBe(false);
+    expect(perimeter.count).toBe(wall); // Every solid border tile, including corners.
+    expect(battlements.count).toBeGreaterThan(0);
+    expect(perimeter.geometry.parameters.height).toBe(6.4);
+    expect(urbanWalls.count + perimeter.count).toBe(126);
+    expect(urbanWalls.count).toBeLessThan(perimeter.count); // No doubled border masonry.
+    // Actual 1.62m first-person eye rays from the plaza must hit solid
+    // stone on all four sides, not empty sky; this tests live mesh placement
+    // rather than simply counting instances in the authored map.
+    scene.updateMatrixWorld(true);
+    for (const direction of [
+      [0, 0, -1], [0, 0, 1], [-1, 0, 0], [1, 0, 0],
+    ]) {
+      const ray = new THREE.Raycaster(
+        new THREE.Vector3(0, 1.62, 0),
+        new THREE.Vector3(...direction), 0.1, 90,
+      );
+      expect(ray.intersectObject(perimeter).length).toBeGreaterThan(0);
+    }
+    // The matrix of every perimeter instance corresponds to a real blocked
+    // edge tile. No extra obstacle may appear over a shop approach or street.
+    const perimeterMatrix = new THREE.Matrix4();
+    const perimeterPosition = new THREE.Vector3();
+    const visitedPerimeter = new Set();
+    for (let index = 0; index < perimeter.count; index += 1) {
+      perimeter.getMatrixAt(index, perimeterMatrix);
+      perimeterPosition.setFromMatrixPosition(perimeterMatrix);
+      const x = Math.round(perimeterPosition.x / 4 + center.x);
+      const y = Math.round(perimeterPosition.z / 4 + center.y);
+      expect(grid[y][x]).toBe('#');
+      expect(x === 0 || x === width - 1 || y === 0 || y === height - 1).toBe(true);
+      visitedPerimeter.add(x + ',' + y);
+    }
+    expect(visitedPerimeter.size).toBe(wall);
     expect(swordhavenFirstBook.landscape.streetWallHeight).toBe(6.4);
     expect(urbanWalls).toBeInstanceOf(THREE.InstancedMesh);
     expect(urbanWalls.geometry.parameters.height).toBe(6.4);
