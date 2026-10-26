@@ -21,8 +21,8 @@ describe('Chronicles admin tools', () => {
     const labels = groups.flatMap((group) => group.maps.map((map) => map.label));
     expect(new Set(labels).size).toBe(labels.length);
     const towns = Object.fromEntries(groups[0].maps.map((map) => [map.id, map.label]));
-    expect(towns['swordhaven-first-book']).toBe('Swordhaven (campaña)');
-    expect(towns['swordhaven-square']).toBe('Swordhaven (plaza de Nuevo juego)');
+    expect(towns['swordhaven-first-book']).toBe('Swordhaven');
+    expect(towns['swordhaven-square']).toBeUndefined();
   });
 
   it('travels anywhere and marks the jump for the next checkpoint only in memory', () => {
