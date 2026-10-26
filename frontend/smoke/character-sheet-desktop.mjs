@@ -691,8 +691,8 @@ try {
       assert.deepEqual(geometry.dockButtons.filter(({ hpClipped }) => hpClipped), [],
         'Every live HP fraction must fit the actual painted party dock: ' + JSON.stringify(geometry.dockButtons));
       if (width <= 620) {
-        assert.ok(geometry.dockButtons.every(({ nameWhiteSpace }) => nameWhiteSpace === 'normal'),
-          'Phone hero names must wrap instead of ending in ellipses: ' + JSON.stringify(geometry.dockButtons));
+        assert.ok(geometry.dockButtons.every(({ nameWhiteSpace }) => nameWhiteSpace === 'nowrap'),
+          'Phone hero names must fit on one full-width row without ellipses: ' + JSON.stringify(geometry.dockButtons));
         assert.deepEqual(geometry.dockButtons.filter(({ nameClipped }) => nameClipped), [],
           'All four hero names must be fully readable in the painted dock: ' + JSON.stringify(geometry.dockButtons));
       }
