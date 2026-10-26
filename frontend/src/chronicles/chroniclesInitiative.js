@@ -202,6 +202,26 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
       engagedById.set(enemy.id, enemy);
     }
   });
+  // MM3 sewer ambushes are authored as small squads. Once one goblin sees
+  // the party (or is hit by a forced volley), nearby squadmates enter the same
+  // initiative. Do not summon members across walls, across the map, or from
+  // the dead; their actual movement still consumes ordinary enemy turns.
+  // Tactics keeps its original independent-engagement semantics.
+  if (state.combatRules === 'mm3') {
+    const alerted = [...engagedById.values()].filter((enemy) => (
+      typeof enemy.squadId === 'string' && enemy.squadId.length > 0
+    ));
+    candidates.forEach((enemy) => {
+      if (!enemy.squadId || engagedById.has(enemy.id) || !hasLivingHitPoints(state?.[enemy.hpKey])) return;
+      const position = chroniclesRuntimeEnemyPosition(state, enemy);
+      if (alerted.some((mate) => {
+        if (mate.squadId !== enemy.squadId) return false;
+        const matePosition = chroniclesRuntimeEnemyPosition(state, mate);
+        return manhattanDistance(position, matePosition) <= 4
+          && chroniclesEnemyHasSightline(state, position, matePosition);
+      })) engagedById.set(enemy.id, enemy);
+    });
+  }
   const engaged = [...engagedById.values()];
   if (!engaged.length) return state;
   const deployedState = chroniclesDeployPartyForCombat(state);
