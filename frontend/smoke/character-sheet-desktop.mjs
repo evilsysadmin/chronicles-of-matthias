@@ -710,6 +710,15 @@ try {
       await equipmentTab.click();
       await sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]').first()
         .waitFor({ state: 'visible' });
+      // Photograph a genuinely populated hero backpack before switching to
+      // the empty Hildegard fixture. This is the mobile inventory golden path.
+      if (width <= 430) {
+        const backpackRows = sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]');
+        assert.ok(await backpackRows.count() >= 3,
+          'The mobile backpack evidence must show real populated inventory');
+        await page.mouse.move(10, 10);
+        await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
+      }
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
         >= (height <= 480 ? 34 : 44), 'Touch equipment tab must remain usable');
       await nav.getByRole('button', { name: /Hechizos/ }).click();
@@ -718,6 +727,12 @@ try {
         'Changing party member must retain chosen folio on touch devices');
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert(await sheet.locator('[data-chronicles-equipment-folio]').isVisible());
+      const equipmentSubtitle = sheet.locator(
+        '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
+      );
+      assert.match(await equipmentSubtitle.textContent(), /Equipo personal y botín de la expedición/);
+      assert.equal(await equipmentSubtitle.isVisible(), width > 430,
+        'Only narrow touch phones omit the redundant Equipment subtitle');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
       const repeatedEquipmentGold = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
