@@ -22,6 +22,9 @@ function Fixture() {
   const [state, setState] = useState(makeState);
   const action = (next) => setState((current) => chroniclesReduce(current, next));
   return <>
+    {/* The real game shell is a fixed stacking context at z-index: 10000.
+        The portal must actually clear it; a room-only smoke misses that bug. */}
+    <div className="chronicles" data-inn-world-shell aria-hidden="true" />
     <button type="button" data-inn-reopen onClick={() => setState(makeState())}
       style={{ position:'fixed',bottom:0,left:0,zIndex:0 }}>REOPEN TAVERN</button>
     <output data-inn-gold style={{display:'none'}}>{chroniclesGoldBalance(state)}</output>
