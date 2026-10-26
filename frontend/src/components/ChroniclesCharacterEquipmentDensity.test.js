@@ -36,4 +36,19 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain("'Sin arma de proyectiles · no puede disparar'");
   });
 
+  it('aligns populated mobile backpack glyphs without shrinking touch rows or changing desktop', () => {
+    const glyphs = css.split('/* Mobile inventory glyphs are currently unframed inline symbols')[1];
+    expect(glyphs).toBeTruthy();
+    expect(glyphs).toContain('@media (max-width: 520px) and (pointer: coarse)');
+    expect(glyphs).toContain('grid-template-columns: 26px minmax(0, 1fr) auto');
+    expect(glyphs).toContain('min-height: 44px');
+    expect(glyphs).toContain('.chronicles-character-sheet__inventory-glyph');
+    expect(glyphs).toContain('width: 26px');
+    expect(glyphs).toContain('height: 26px');
+    expect(glyphs).toContain('text-overflow: ellipsis');
+    expect(glyphs).not.toMatch(/display:\\s*none|visibility:\\s*hidden/);
+    expect(sheet).toContain('aria-hidden="true"');
+    expect(sheet).toContain('data-inventory-item={item.id}');
+  });
+
 });
