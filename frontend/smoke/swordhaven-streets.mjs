@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'armor', 'store', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -48,6 +48,8 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.distinctShopFacades, 'true',
           'Apothecary and guild must have distinct authored silhouettes');
+        assert.equal(result.distinctTemplePortico, 'true',
+          'Temple must have its own colonnaded stone entrance');
         assert.equal(result.distinctMetalworkFacades, 'true',
           'Forge and armorer must have distinct authored rooflines');
         assert.equal(result.distinctWatchhouse, 'true',
