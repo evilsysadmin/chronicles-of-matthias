@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import './ChroniclesCharacterGrimoire.css';
+import './ChroniclesCharacterGrimoireRetro.css';
 
 // Consultation-only character grimoire. The CAST (C) combat/exploration flow
 // remains the only authority for spell legality, targets and spending PH.
