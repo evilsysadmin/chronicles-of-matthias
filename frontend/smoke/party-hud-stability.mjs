@@ -52,13 +52,22 @@ async function addCombatRoster(page) {
     const section = document.createElement('section');
     section.className = 'chronicles-combat-roster';
     section.setAttribute('aria-label', 'Combate');
-    section.innerHTML = `<details><summary>
-      <span class="chronicles-combat-roster__heading">Combate · 3 enemigos</span>
-      <span class="chronicles-combat-roster__target">Objetivo: goblin de cloaca</span>
-      <span class="chronicles-combat-roster__chevron">▾</span>
-    </summary><ol aria-label="Enemigos en combate">
-      <li data-band="healthy">Goblin de Cloaca</li><li>Goblin de Cloaca</li><li>Goblin de Cloaca</li>
-    </ol></details>`;
+    const enemies = Array.from({ length: 22 }, (_, index) =>
+      `<li data-band="${index < 8 ? 'healthy' : index < 15 ? 'hurt' : 'critical'}"
+          data-target="${index === 0 ? 'true' : 'false'}">
+          Goblin de Cloaca ${index + 1}</li>`).join('');
+    section.innerHTML = `<div class="chronicles-combat-roster__desktop">
+      <header class="chronicles-combat-roster__desktop-header">
+        <strong>Combate · 22 enemigos</strong><small>Objetivo: goblin de cloaca</small>
+      </header>
+      <ol aria-label="Enemigos en combate">${enemies}</ol>
+    </div>
+    <details class="chronicles-combat-roster__compact">
+      <summary><span class="chronicles-combat-roster__heading">Combate · 22 enemigos</span>
+        <span class="chronicles-combat-roster__target">Objetivo: goblin de cloaca</span>
+        <span class="chronicles-combat-roster__chevron">▾</span></summary>
+      <ol aria-label="Enemigos en combate">${enemies}</ol>
+    </details>`;
     main.appendChild(section);
   });
 }
@@ -69,17 +78,19 @@ async function removeCombatRoster(page) {
 
 function verifyCombatStable(baseline, current, label, viewport) {
   assert.ok(current.roster, label + ': roster is missing');
-  assert.ok(current.roster.height >= 50 && current.roster.bottom <= viewport.height + 1,
+  assert.ok(Math.abs(current.roster.x - baseline.map.x) <= 1
+    && Math.abs(current.roster.y - baseline.map.y) <= 1,
+    label + ': roster must replace the minimap in exactly the same slot');
+  assert.ok(Math.abs(current.roster.height - baseline.map.height) <= 1,
+    label + ': roster must keep the minimap slot height');
+  assert.equal(current.map.height, 0, label + ': minimap must be hidden while fighting');
+  assert.ok(current.roster.bottom <= viewport.height + 1,
     label + ': the combat roster escaped the viewport');
-  assert.ok(Math.abs(current.party.y - baseline.party.y) <= 1,
-    label + ': opening combat shifted portraits: ' +
-      JSON.stringify({ before: baseline.party, after: current.party }));
-  assert.ok(Math.abs(current.party.bottom - baseline.party.bottom) <= 1,
-    label + ': portrait bottom must remain anchored');
+  assert.ok(Math.abs(current.party.y - baseline.party.y) <= 1
+    && Math.abs(current.party.bottom - baseline.party.bottom) <= 1,
+    label + ': starting combat moved the six portraits');
   assert.ok(Math.abs(current.controls.y - baseline.controls.y) <= 1,
-    label + ': movement controls moved, instead of the map shrinking');
-  assert.ok(current.map.height <= baseline.map.height + 1 && current.map.height >= 140,
-    label + ': minimap should use available space, not disappear');
+    label + ': the movement controls must never shift');
   assert.ok(current.stage.height > 250, label + ': first-person view must remain usable');
   assert.equal(current.controlsRows.split(' ').length, 2);
   for (const [index, portrait] of current.portraits.entries()) {
@@ -154,12 +165,23 @@ try {
       await addCombatRoster(page);
       let combat = await measure(page);
       verifyCombatStable(after, combat, 'combat begins', viewport);
-      const details = page.locator('.chronicles-combat-roster details');
-      await details.locator('summary').click();
+      // No accordion on desktop: all 22 entries are in the visible, scrollable
+      // list from the first combat frame; nothing overflows into portraits.
+      const rosterList = page.locator('.chronicles-combat-roster__desktop ol');
+      assert.equal(await rosterList.isVisible(), true);
+      assert.equal(await page.locator('.chronicles-combat-roster__compact').isVisible(), false);
+      assert.equal(await rosterList.locator('li').count(), 22);
+      const size = await rosterList.evaluate(element => ({
+        client: element.clientHeight, scroll: element.scrollHeight,
+        initialTop: element.scrollTop,
+      }));
+      assert.ok(size.scroll > size.client, 'Long combat roster must have internal scroll');
+      await rosterList.evaluate(element => { element.scrollTop = element.scrollHeight; });
+      assert.ok(await rosterList.evaluate(element => element.scrollTop > 0),
+        'User must be able to reach the last enemies without opening a disclosure');
       combat = await measure(page);
-      verifyCombatStable(after, combat, 'enemy list expanded', viewport);
+      verifyCombatStable(after, combat, 'long enemy list scrolled', viewport);
       await page.screenshot({ path: 'smoke-party-hud-combat-' + viewport.width + '.png' });
-      await details.locator('summary').click();
       await removeCombatRoster(page);
       const restored = await measure(page);
       verifyStable(baseline, restored, 'combat ends', viewport);
