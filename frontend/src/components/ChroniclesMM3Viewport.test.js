@@ -34,7 +34,14 @@ describe('MM3 desktop viewport space', () => {
     expect(map).toContain('grid-area: map');
     expect(map).toContain('position: relative');
     expect(map).toContain('width: auto');
-    expect(map).toContain('height: clamp(150px, 29dvh, 272px)');
+    expect(map).toContain('height: clamp(230px, 43dvh, 400px)');
+    expect(map).toContain('grid-template-rows: minmax(0, 1fr) 22px');
+    const svg = declarations(details, '.chronicles .chronicles-minimap svg');
+    expect(svg).toContain('width: 100%');
+    expect(svg).toContain('height: 100%');
+    expect(svg).toContain('min-height: 0');
+    const location = declarations(details, '.chronicles .chronicles-minimap__location');
+    expect(location).toContain('grid-row: 2');
     expect(map).not.toContain('width: 132px');
   });
 });
