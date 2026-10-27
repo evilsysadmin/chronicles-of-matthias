@@ -36,6 +36,7 @@ describe('Swordhaven audience premium environment', () => {
     expect(html).toContain(CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL);
     expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
     expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain('data-chronicles-interior-loading');
     expect(html).toContain('aria-hidden="true"');
     expect((html.match(/alt="El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento"/g) || [])).toHaveLength(1);
     expect(html).toContain('Alcalde Aldric');
@@ -122,8 +123,8 @@ describe('Cinematic audience layout contracts', () => {
 
   it('guards the approved scene with its original local fallback on failure', () => {
     const component = readFileSync(new URL('../components/ChroniclesAudience.jsx', import.meta.url), 'utf8');
-    expect(component).toContain('room.fallbackSrc && event.currentTarget.getAttribute');
-    expect(component).toContain('event.currentTarget.src = room.fallbackSrc');
+    expect(component).toContain('<ShopRoomArtwork key={room.src} room={room} onCancel={onClose} />');
+    expect(component).not.toContain('event.currentTarget.src = room.fallbackSrc');
     expect(component).toContain('data-chronicles-audience-room={dialogue.room}');
   });
 });
