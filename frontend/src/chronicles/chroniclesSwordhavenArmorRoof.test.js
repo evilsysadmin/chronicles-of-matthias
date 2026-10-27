@@ -16,6 +16,7 @@ describe('Swordhaven armorer roof silhouette', () => {
     const caps = shoulders.children.filter(child => child.name === 'armor-roof-shoulder-cap');
     expect(piers).toHaveLength(2);
     expect(caps).toHaveLength(2);
+    expect(shoulders.children.filter(child => child.name === 'armor-roof-shoulder-hip')).toHaveLength(2);
     expect(shoulders.children.filter(child => child.name === 'armor-roof-shoulder-slit')).toHaveLength(2);
     expect(piers[0].position.x).toBeCloseTo(-piers[1].position.x);
     // Roof shoulders must project ahead of the gable and above the ridge:
