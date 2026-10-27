@@ -288,6 +288,35 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(chroniclesRunDepth({ ...typed, currentMapId: '  ' })).toBe(0);
   });
 
+  it('does not inflate legacy dungeon depth when a saved route repeats a floor', () => {
+    const run = {
+      currentMapId: 'archive',
+      areas: [
+        { mapId: 'entry' },
+        { mapId: 'gallery' },
+        { mapId: 'gallery' },
+        { mapId: 'archive' },
+      ],
+    };
+    expect(chroniclesRunDepth(run)).toBe(2);
+    expect(chroniclesRunDepth(run, 'gallery')).toBe(1);
+  });
+
+  it('counts unique dungeon floors, not repeated typed stops or settlements', () => {
+    const run = {
+      currentMapId: 'crypt',
+      areas: [
+        { mapId: 'village', regionKind: 'settlement' },
+        { mapId: 'entry', regionKind: 'dungeon' },
+        { mapId: 'entry', regionKind: 'dungeon' },
+        { mapId: 'road', regionKind: 'wilderness' },
+        { mapId: 'crypt', regionKind: 'dungeon' },
+      ],
+    };
+    expect(chroniclesRunDepth(run)).toBe(1);
+    expect(chroniclesRunDepth(run, 'entry')).toBe(0);
+  });
+
   it('derives run depth from the authoritative route order', () => {
     const run = {
       currentMapId: 'archive',
