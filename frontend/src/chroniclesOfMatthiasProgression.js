@@ -708,9 +708,9 @@ function award(progress, awards, levelUps, memberId, amount, awardId, reason) {
   return result.progression;
 }
 
-// One XP for every two points of damage in a blow (rounded up). Two
-// per point let the front line hit the level cap with half the campaign
-// still to play (campaign bot, 2026-10).
+// One XP for every two HP removed from an enemy's original health pool
+// (rounded up across the full pool, not once per separate blow). Paying
+// for each 1-HP hit would inflate the same encounter's XP budget.
 export const CHRONICLES_DAMAGE_XP_PER_HP = 1;
 export const CHRONICLES_DAMAGE_XP_EVERY_HP = 2;
 
@@ -738,7 +738,10 @@ export function chroniclesKillXpShares(enemy, living) {
   })).filter((share) => share.xp > 0);
 }
 
-function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace, originHp = before) {
+function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace) {
+  // Anchor the ticks to authored maximum HP across every action and shooter.
+  // Four 1-HP hits and one 4-HP hit must award the same two damage XP.
+  const originHp = Math.max(before, nonNegativeInteger(enemy?.maxHp, before));
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
     // Preserve the original per-blow XP budget across different shooters:
@@ -803,7 +806,7 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
           if (!creditedDamage) continue;
           progress = awardDamageBudget(
             progress, awards, levelUps, shot.memberId, enemy,
-            remaining, remaining - creditedDamage, namespace, before,
+            remaining, remaining - creditedDamage, namespace,
           );
           remaining -= creditedDamage;
         }

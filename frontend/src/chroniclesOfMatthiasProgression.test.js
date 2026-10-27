@@ -356,8 +356,8 @@ describe('Chronicles Tactics · progression', () => {
     expect(stored.owner).toBe('bob');
   });
 
-  it('shares a kill among the living heroes and keeps damage XP with the striker', () => {
-    const before = tacticsState({ enemyHp: 1 });
+  it('shares a kill among living heroes and credits full-pool damage XP only to the striker', () => {
+    const before = tacticsState({ enemyHp: 6 });
     const after = tacticsState({ enemyHp: 0 });
     const result = applyChroniclesTacticsProgression(createChroniclesProgression(), before, after, {
       actorMemberId: 'rook', actionKind: 'attack', runId: 'share-run',
@@ -369,7 +369,7 @@ describe('Chronicles Tactics · progression', () => {
     expect(kills.reduce((sum, entry) => sum + entry.xp, 0)).toBe(11);
     const rookShare = shares.find((share) => share.memberId === 'rook')?.xp || 0;
     expect(chroniclesHeroProgress(result.progression, 'rook').xp)
-      .toBe(rookShare + CHRONICLES_DAMAGE_XP_PER_HP);
+      .toBe(rookShare + 3 * CHRONICLES_DAMAGE_XP_PER_HP);
   });
 
   it('pays healing XP for a healing spell as well as for an ability', () => {
