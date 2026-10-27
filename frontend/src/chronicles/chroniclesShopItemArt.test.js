@@ -16,6 +16,9 @@ const portraits = Object.freeze({
   'brass-scale': 'brass-scalemail.svg',
   'leather-padded': 'leather-gambeson.svg',
   'roadwatch-vest': 'roadwatch-guard-vest.svg',
+  'healing-potion': 'healing-potion.svg',
+  'mana-potion': 'mana-potion.svg',
+  'fire-scroll': 'fire-scroll.svg',
 });
 
 describe('Authored 2D merchant portraits', () => {
