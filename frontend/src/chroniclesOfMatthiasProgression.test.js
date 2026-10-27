@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createChroniclesState } from './chroniclesOfMatthias.js';
 import {
   CHRONICLES_DAMAGE_XP_PER_HP,
+  chroniclesKillXpShares,
   CHRONICLES_PROGRESSION_STORAGE_KEY,
   CHRONICLES_RUN_STORAGE_KEY,
   CHRONICLES_TACTICS_RUN_STORAGE_KEY,
@@ -362,10 +363,13 @@ describe('Chronicles Tactics · progression', () => {
       actorMemberId: 'rook', actionKind: 'attack', runId: 'share-run',
     });
     const kills = result.awards.filter((entry) => entry.reason === 'baja');
-    expect(kills.map((entry) => entry.memberId).sort()).toEqual(['bishop', 'knight', 'matthias', 'rook']);
-    const killShare = kills[0].xp;
-    expect(kills.every((entry) => entry.xp === killShare)).toBe(true);
-    expect(chroniclesHeroProgress(result.progression, 'rook').xp).toBe(killShare + CHRONICLES_DAMAGE_XP_PER_HP);
+    const shares = chroniclesKillXpShares({ id: 'corrupted-pawn', maxHp: 6 }, after.party);
+    expect(kills.map((entry) => ({ memberId: entry.memberId, xp: entry.xp })))
+      .toEqual(shares);
+    expect(kills.reduce((sum, entry) => sum + entry.xp, 0)).toBe(11);
+    const rookShare = shares.find((share) => share.memberId === 'rook')?.xp || 0;
+    expect(chroniclesHeroProgress(result.progression, 'rook').xp)
+      .toBe(rookShare + CHRONICLES_DAMAGE_XP_PER_HP);
   });
 
   it('pays healing XP for a healing spell as well as for an ability', () => {
