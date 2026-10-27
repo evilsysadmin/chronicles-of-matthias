@@ -92,6 +92,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     for (const offset of [0, 1]) {
       const result = playSewerEncounter(offset);
       expect(playSewerEncounter(offset)).toEqual(result);
+      console.info('CHRONICLES_MM3_ACTIVE_ENCOUNTER ' + JSON.stringify(result));
       expect(result.finished).toBe(true);
       expect(['explore', 'defeated']).toContain(result.phase);
       expect(result.heroAttacks + result.heroBlocks).toBeGreaterThan(0);
@@ -99,7 +100,6 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(result.steps).toBeLessThan(128);
       expect(Object.values(result.enemyHpLeft).every((hp) => Number.isFinite(hp) && hp >= 0)).toBe(true);
       expect(Object.values(result.partyHpLost).every((hp) => hp >= 0)).toBe(true);
-      console.info('CHRONICLES_MM3_ACTIVE_ENCOUNTER ' + JSON.stringify(result));
     }
   });
 });
