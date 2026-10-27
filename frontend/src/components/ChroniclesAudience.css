@@ -41,7 +41,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  image-rendering: pixelated;
+  image-rendering: auto; /* Authored illustration, never enlarged as pixel art. */
 }
 
 .chronicles-audience__dialogue {
@@ -149,4 +149,14 @@
 
   .chronicles-audience__dialogue { gap: 7px; padding: 9px; }
   .chronicles-audience__actions button { min-height: 40px; }
+}
+
+/* The mayor's audience is an illustrated civic chamber; protect the 
+   character and foreground papers at portrait and landscape sizes. */
+.chronicles-audience__scene[data-chronicles-audience-room='aldric-hall'] img {
+  object-position: 53% 46%;
+  image-rendering: auto;
+}
+.chronicles-audience__scene[data-chronicles-audience-room='aldric-hall'] {
+  background: #33251d;
 }
