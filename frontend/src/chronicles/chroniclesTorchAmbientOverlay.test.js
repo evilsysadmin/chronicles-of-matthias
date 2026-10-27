@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import {
   chroniclesTorchGlowProjection,
   chroniclesTorchAmbientGlowBudget,
-  chroniclesTorchAmbientLayerCount,
-  chroniclesTorchGlowGradient,
   chroniclesTorchGlowOccluded,
+  chroniclesTorchOverlayPoseSnapshot,
+  chroniclesTorchOverlayPoseChanged,
 } from './chroniclesTorchAmbientOverlay.js';
 
 function camera() {
@@ -19,31 +19,49 @@ function camera() {
 }
 
 describe('Static WebGL with CSS-composited torch ambience', () => {
+  it('does not re-project idle torches for repeated combat frames at one pose', () => {
+    const view = camera();
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, null)).toBe(true);
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(false);
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(false);
+  });
+
+  it('invalidates projection when the camera moves, turns or its FOV changes', () => {
+    const view = camera();
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    view.position.x = 1.5;
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+    view.position.x = 0;
+    view.rotation.y += 0.3;
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+    view.rotation.y -= 0.3;
+    view.updateMatrixWorld(true);
+    view.fov = 75;
+    view.updateProjectionMatrix();
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+  });
+
+  it('invalidates cached glow projections when the viewport changes', () => {
+    const view = camera();
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    expect(chroniclesTorchOverlayPoseChanged(view, 801, 400, snapshot)).toBe(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 401, snapshot)).toBe(true);
+  });
+
   it('limits active glow layers to four on desktop and two on coarse pointers', () => {
     expect(chroniclesTorchAmbientGlowBudget()).toBe(4);
     expect(chroniclesTorchAmbientGlowBudget(false)).toBe(4);
     expect(chroniclesTorchAmbientGlowBudget(true)).toBe(2);
   });
 
-  it('keeps four independent torch positions with at most two animated layers', () => {
-    expect(chroniclesTorchAmbientGlowBudget(false)).toBe(4);
-    expect(chroniclesTorchAmbientLayerCount(false)).toBe(2);
-    expect(chroniclesTorchAmbientGlowBudget(true)).toBe(2);
-    expect(chroniclesTorchAmbientLayerCount(true)).toBe(2);
-    const gradient = chroniclesTorchGlowGradient({ x: 120, y: 80, size: 40 });
-    expect(gradient).toContain('ellipse 20.0px 25.2px at 120.0px 81.0px');
-    expect(gradient).toContain('rgba(255, 192, 96, .37)');
-    expect(chroniclesTorchGlowGradient({ x: NaN, y: 80, size: 40 })).toBeNull();
-    expect(chroniclesTorchGlowGradient({ x: 0, y: 0, size: 0 })).toBeNull();
-  });
-
   it('uses low-rate compositor flicker without backdrop blending or a WebGL loop', () => {
     const css = readFileSync(new URL('./chroniclesTorchAmbientOverlay.css', import.meta.url), 'utf8');
     expect(css).toMatch(/animation:\s*chronicles-torch-ambient-flicker\s+4\.2s\s+steps\(5,\s*end\)/);
     expect(css).not.toMatch(/mix-blend-mode\s*:/);
-    expect(css).toMatch(/chronicles-torch-ambient-glow-layer/);
-    expect(css).toMatch(/animation-duration:\s*5\.6s/);
-    expect(css).not.toMatch(/transform:\s*translate3d/);
     expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
     expect(css).toMatch(/animation:\s*none/);
   });
