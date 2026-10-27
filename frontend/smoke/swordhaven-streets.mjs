@@ -53,6 +53,8 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.distinctGuildMasonry, 'true',
           'Guild must have its own slate masonry without merchant timberwork');
+        assert.equal(result.distinctGuildObservatory, 'true',
+          'Real Swordhaven guild must have a unique roof observatory on desktop and mobile');
         assert.equal(result.distinctApothecaryMasonry, 'true',
           'Botica must have sage masonry walls and gables without merchant timber lattice');
         assert.equal(result.distinctShopFacades, 'true',
