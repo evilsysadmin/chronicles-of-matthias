@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import ChroniclesAudience from '../components/ChroniclesAudience.jsx';
-import { CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from './chroniclesShopArt.js';
+import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY, CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from './chroniclesShopArt.js';
 import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesContextualContentAction, createChroniclesState } from '../chroniclesOfMatthias.js';
 
@@ -29,7 +29,15 @@ describe('Swordhaven audience premium environment', () => {
       dialogue, onAction: () => '', onClose: () => {},
     }));
     expect(html).toContain('data-chronicles-audience-room="aldric-hall"');
+    expect(CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY).toBe('stores/ayuntamiento-aldric-premium.webp');
+    expect(CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/ayuntamiento-aldric-premium.webp');
     expect(html).toContain('aldric-hall-illustrated.svg');
+    expect(html).toContain(CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL);
+    expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain('aria-hidden="true"');
+    expect((html.match(/alt="El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento"/g) || [])).toHaveLength(1);
     expect(html).toContain('Alcalde Aldric');
     expect(html).toContain('Presentar la carta de la Dama');
     expect(html).toContain('data-chronicles-dialogue-choice="quest"');

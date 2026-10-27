@@ -25,30 +25,30 @@ try {
           return img && img.complete && img.naturalWidth >= (isTemple ? 400 : 1000)
             && img.naturalHeight >= (isTemple ? 300 : 700);
         }, npc === 'ilse');
-        if (npc === 'ilse') {
+        if (npc === 'ilse' || npc === 'aldric') {
           const fallback = scene.locator('img[data-chronicles-shop-art-layer="fallback"]');
           const premium = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
-          assert.equal(await fallback.count(), 1, 'Ilse local SVG must always be present');
-          assert.equal(await premium.count(), 1, 'Ilse must request the uploaded premium WebP');
-          await page.waitForFunction(() => {
-            const img = document.querySelector('[data-chronicles-audience-room="temple"] img[data-chronicles-shop-art-layer="premium"]');
+          assert.equal(await fallback.count(), 1, npc + ': previous illustrated room must remain as a fallback');
+          assert.equal(await premium.count(), 1, npc + ': should request the approved premium WebP');
+          await page.waitForFunction((room) => {
+            const img = document.querySelector('[data-chronicles-audience-room="' + room + '"] img[data-chronicles-shop-art-layer="premium"]');
             return img?.complete && (!img.naturalWidth || img.classList.contains('is-ready'));
-          }, null, { timeout: 7000 });
+          }, roomId, { timeout: 7000 });
           const art = await premium.evaluate(img => ({
             url: img.currentSrc, width: img.naturalWidth, height: img.naturalHeight,
             ready: img.classList.contains('is-ready'),
             opacity: Number.parseFloat(getComputedStyle(img).opacity),
             position: getComputedStyle(img).position,
           }));
-          assert.equal(art.url,
-            'https://assets.chronicles.shadowops.dpdns.org/stores/templo-ilse-premium.webp');
-          assert.equal(art.position, 'absolute', 'Temple WebP must overlay, not push dialogue down');
+          const expectedAsset = npc === 'ilse' ? 'templo-ilse-premium.webp' : 'ayuntamiento-aldric-premium.webp';
+          assert.equal(art.url, 'https://assets.chronicles.shadowops.dpdns.org/stores/' + expectedAsset);
+          assert.equal(art.position, 'absolute', npc + ': WebP must overlay, not push dialogue down');
           if (art.width > 0) {
             assert(art.width >= 1500 && art.height >= 800 && art.ready,
-              'Decoded panoramic temple must be displayed');
+              npc + ': decoded panoramic art must be displayed');
           } else {
             assert(!art.ready && art.opacity === 0,
-              'Failed CDN temple image must stay hidden over local SVG');
+              npc + ': failed CDN image must stay hidden over local SVG');
           }
         }
         const geometry = await page.evaluate(() => {

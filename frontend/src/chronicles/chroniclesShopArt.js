@@ -55,3 +55,10 @@ export const CHRONICLES_GUILD_PREMIUM_ART_URL =
 export const CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY = 'stores/templo-ilse-premium.webp';
 export const CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY}`;
+
+// Approved panoramic civic hall supplied by the player in the independent
+// Chronicles R2 stores prefix. Mutable key, standard cache semantics;
+// retain the previously approved local illustrated SVG during CDN outages.
+export const CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY = 'stores/ayuntamiento-aldric-premium.webp';
+export const CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY}`;
