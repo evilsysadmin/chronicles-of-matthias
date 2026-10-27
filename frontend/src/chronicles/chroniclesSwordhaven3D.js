@@ -397,7 +397,15 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.97,
   }) : null;
-  const wallMaterial = guildStone || tavernBrick || (isTemple || isArmor ? mats.stone : mats.plaster);
+  // The botica is a sage-coloured stone herb house, not another half-timbered
+  // merchant frontage. Its roof herbarium, hanging herbs and doorway survive.
+  const apothecaryStone = isApothecary ? material(0xa8b9a0, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.96,
+  }) : null;
+  const wallMaterial = guildStone || tavernBrick || apothecaryStone
+    || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
@@ -465,9 +473,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mats.timber, 'roof-edge-fascia', [side * width * 0.49, height + 0.02, 0]);
     fascia.rotation.z = side * 0.16;
   }
-  // Armorer and mage guild use uninterrupted masonry, unlike timber merchants.
+  // Stone-fronted armorer, guild and botica have no merchant timber lattice.
   // Doors, shop signs, windows and their collision cells remain untouched.
-  if (!isArmor && !isMagic) {
+  if (!isArmor && !isMagic && !isApothecary) {
     // Repeated timber posts and braces form recognisable half-timbered facades.
     const beamY = [1.02, height - 0.67];
     for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
