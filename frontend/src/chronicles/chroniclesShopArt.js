@@ -48,3 +48,10 @@ export const CHRONICLES_BOTICA_PREMIUM_ART_URL =
 export const CHRONICLES_GUILD_PREMIUM_ART_KEY = 'stores/gremio-premium.webp';
 export const CHRONICLES_GUILD_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_GUILD_PREMIUM_ART_KEY}`;
+
+// Clean temple panorama uploaded by the player to Chronicles R2 /stores.
+// Mutable object key: leave normal CDN cache semantics, not immutable TTL.
+// The illustrated local temple is retained as a fail-safe if HTTPS fails.
+export const CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY = 'stores/templo-ilse-premium.webp';
+export const CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY}`;
