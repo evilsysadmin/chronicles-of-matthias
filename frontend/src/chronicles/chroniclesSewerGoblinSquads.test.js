@@ -3,6 +3,7 @@ import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfM
 import { chroniclesEngagedEnemies, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesMM3AttackHits, chroniclesMM3EnemyArmorClass } from './chroniclesMM3Rules.js';
 import {
   applyChroniclesTacticsProgression,
   chroniclesKillXp,
@@ -64,6 +65,15 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
       expect(enemy.maxHp, enemy.id).toBe(expected);
       expect(state[enemy.hpKey], enemy.id).toBe(expected);
       expect(enemy.ai.attackReach, enemy.id).toBe(1);
+      const ac = enemy.id === 'sewers-goblin-sluice' ? 5 : ({
+        'ash-goblin': 3, 'crypt-spider': 4, 'bone-hound': 5, 'road-bandit': 4,
+      })[enemy.visualType];
+      expect(enemy.armorClass, enemy.id).toBe(ac);
+      expect(chroniclesMM3EnemyArmorClass(enemy), enemy.id).toBe(ac);
+      // Each creature's actual AC must enter the same d20 hit rule that
+      // melee and missile attacks already share, not be decorative metadata.
+      expect(chroniclesMM3AttackHits(10 + ac - 1, 0, chroniclesMM3EnemyArmorClass(enemy))).toBe(false);
+      expect(chroniclesMM3AttackHits(10 + ac, 0, chroniclesMM3EnemyArmorClass(enemy))).toBe(true);
       expect(enemy.ai.engagedMovement, enemy.id).toBe('cardinal-chase');
       // Endurance is the only balancing lever in this cut: no inflated burst
       // damage and no extra level/XP rewards from these low-level mobs.
