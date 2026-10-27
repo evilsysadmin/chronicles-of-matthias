@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import aldricHall from '../assets/chronicles/ui/shops/aldric-hall.svg';
 import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustrated.svg';
 import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
 import braskIllustrated from '../assets/chronicles/ui/shops/brask-watch-illustrated.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
-import { CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
+import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
 import { ShopRoomArtwork } from './ChroniclesShop.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesAudience.css';
 
 const ROOM_ART = Object.freeze({
   'aldric-hall': Object.freeze({
-    src: aldricIllustrated,
-    fallbackSrc: aldricHall,
+    src: CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL,
+    fallbackSrc: aldricIllustrated,
     alt: 'El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento',
   }),
   'watch-house': Object.freeze({
@@ -106,7 +105,7 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
         </header>
 
         <figure className="chronicles-audience__scene" data-chronicles-audience-room={dialogue.room}>
-          {room?.fallbackSrc && dialogue.room === 'temple' ? (
+          {room?.fallbackSrc && room.src.startsWith('https://assets.chronicles.shadowops.dpdns.org/stores/') ? (
             <ShopRoomArtwork room={room} />
           ) : room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async"
             onError={(event) => {
