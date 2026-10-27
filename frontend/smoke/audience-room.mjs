@@ -8,6 +8,7 @@ try {
     for (const [npc, expected, roomId] of [
       ['aldric', 'Alcalde Aldric', 'aldric-hall'],
       ['brask', 'Sargento Brask', 'watch-house'],
+      ['ilse', 'Sacerdotisa Ilse', 'temple'],
     ]) {
       const context = await browser.newContext({ viewport: { width, height } });
       const page = await context.newPage();
@@ -18,11 +19,38 @@ try {
         const modal = page.getByRole('dialog', { name: 'Conversación con ' + expected });
         await modal.waitFor({ state: 'visible' });
         const scene = modal.locator('[data-chronicles-audience-room="' + roomId + '"]');
-        const picture = scene.locator('img');
-        await page.waitForFunction(() => {
+        const picture = scene.locator('img').first();
+        await page.waitForFunction((isTemple) => {
           const img = document.querySelector('.chronicles-audience__scene img');
-          return img && img.complete && img.naturalWidth >= 1000 && img.naturalHeight >= 700;
-        });
+          return img && img.complete && img.naturalWidth >= (isTemple ? 400 : 1000)
+            && img.naturalHeight >= (isTemple ? 300 : 700);
+        }, npc === 'ilse');
+        if (npc === 'ilse') {
+          const fallback = scene.locator('img[data-chronicles-shop-art-layer="fallback"]');
+          const premium = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
+          assert.equal(await fallback.count(), 1, 'Ilse local SVG must always be present');
+          assert.equal(await premium.count(), 1, 'Ilse must request the uploaded premium WebP');
+          await page.waitForFunction(() => {
+            const img = document.querySelector('[data-chronicles-audience-room="temple"] img[data-chronicles-shop-art-layer="premium"]');
+            return img?.complete && (!img.naturalWidth || img.classList.contains('is-ready'));
+          }, null, { timeout: 7000 });
+          const art = await premium.evaluate(img => ({
+            url: img.currentSrc, width: img.naturalWidth, height: img.naturalHeight,
+            ready: img.classList.contains('is-ready'),
+            opacity: Number.parseFloat(getComputedStyle(img).opacity),
+            position: getComputedStyle(img).position,
+          }));
+          assert.equal(art.url,
+            'https://assets.chronicles.shadowops.dpdns.org/stores/templo-ilse-premium.webp');
+          assert.equal(art.position, 'absolute', 'Temple WebP must overlay, not push dialogue down');
+          if (art.width > 0) {
+            assert(art.width >= 1500 && art.height >= 800 && art.ready,
+              'Decoded panoramic temple must be displayed');
+          } else {
+            assert(!art.ready && art.opacity === 0,
+              'Failed CDN temple image must stay hidden over local SVG');
+          }
+        }
         const geometry = await page.evaluate(() => {
           const dlg = document.querySelector('.chronicles-audience');
           const image = document.querySelector('.chronicles-audience__scene');
@@ -75,14 +103,15 @@ try {
         }
         // Real lore answer stays in the room; story effects never happen merely
         // by opening the dialog or asking a question.
-        const say = modal.locator('[data-chronicles-dialogue-choice="town"], [data-chronicles-dialogue-choice="road"]');
+        const say = modal.locator('[data-chronicles-dialogue-choice="town"], [data-chronicles-dialogue-choice="road"], [data-chronicles-dialogue-choice="wounded"]');
         await say.click();
         assert((await modal.locator('[data-chronicles-dialogue-answer]').innerText()).length > 45);
         assert.equal(await page.locator('[data-audience-action]').innerText(), '');
         const quest = modal.locator('[data-chronicles-dialogue-choice="quest"]');
         await quest.click();
         assert.equal(await page.locator('[data-audience-action]').innerText(),
-          npc === 'aldric' ? 'swordhaven-mayor' : 'first-book-watch-house');
+          npc === 'aldric' ? 'swordhaven-mayor'
+            : npc === 'brask' ? 'first-book-watch-house' : 'first-book-temple');
         assert.equal(await modal.locator('[data-chronicles-dialogue-choice="quest"]').count(), 0,
           'Claimed action must not be offered twice inside the same audience');
         await page.keyboard.press('Escape');
