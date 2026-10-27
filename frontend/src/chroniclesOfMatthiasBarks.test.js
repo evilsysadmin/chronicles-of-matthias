@@ -28,7 +28,7 @@ describe('chroniclesPartyBark', () => {
   it('celebrates actual first-book payment once and proposes the real quartermaster', () => {
     const at = (state, x, y) => ({ ...state, x, y });
     let state = createChroniclesState('swordhaven-first-book');
-    state = chroniclesTacticsUse(at(state, 11, 9), 'first-book-missing-board');
+    state = chroniclesTacticsUse(at(state, 12, 10), 'first-book-missing-board');
     state = chroniclesTacticsUse(at(state, 9, 1), 'to-first-book-banner-road');
     state = chroniclesTacticsUse(at(state, 9, 5), 'first-book-lost-banner');
     state = chroniclesTacticsUse(at(state, 10, 1), 'to-first-book-swordhaven');
