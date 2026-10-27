@@ -8,7 +8,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
-import { applyChroniclesTacticsProgression, createChroniclesProgression, chroniclesKillXp } from '../chroniclesOfMatthiasProgression.js';
+import { applyChroniclesTacticsProgression, createChroniclesProgression, chroniclesKillXp, chroniclesKillXpShares } from '../chroniclesOfMatthiasProgression.js';
 
 function volleyCompany() {
   const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
@@ -79,11 +79,13 @@ describe('Chronicles · MM3 opening company volley', () => {
       runId: 'mm3-volley-xp-regression',
     };
     const first = applyChroniclesTacticsProgression(createChroniclesProgression(), previous, next, args);
-    const killShare = Math.ceil(chroniclesKillXp(target) / 4);
-    expect(first.progression.heroes.matthias.xp).toBe(killShare + 1);
-    expect(first.progression.heroes.knight.xp).toBe(killShare + 1);
-    expect(first.progression.heroes.rook.xp).toBe(killShare);
-    expect(first.progression.heroes.bishop.xp).toBe(killShare);
+    const shares = chroniclesKillXpShares(target, previous.party);
+    expect(shares.reduce((sum, share) => sum + share.xp, 0)).toBe(chroniclesKillXp(target));
+    for (const member of previous.party) {
+      const killShare = shares.find((entry) => entry.memberId === member.id)?.xp || 0;
+      const damageXp = ['matthias', 'knight'].includes(member.id) ? 1 : 0;
+      expect(first.progression.heroes[member.id].xp).toBe(killShare + damageXp);
+    }
     // Replaying/checkpoint retry must not pay the same volley twice.
     const duplicate = applyChroniclesTacticsProgression(first.progression, previous, next, args);
     expect(duplicate.awards).toEqual([]);

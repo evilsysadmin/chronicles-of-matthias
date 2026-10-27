@@ -107,9 +107,11 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     const after = { ...before, [goblin.hpKey]: 0 };
     const params = { actorMemberId: 'matthias', actionKind: 'attack', runId: 'pack-expedition' };
     const result = applyChroniclesTacticsProgression(createChroniclesProgression(), before, after, params);
-    expect(result.awards.filter((award) => award.reason === 'baja')).toHaveLength(4);
-    expect(result.awards.filter((award) => award.reason === 'baja').map((award) => award.xp))
-      .toEqual([1, 1, 1, 1]);
+    const killAwards = result.awards.filter((award) => award.reason === 'baja');
+    expect(killAwards).toHaveLength(2);
+    expect(killAwards.map((award) => award.xp)).toEqual([1, 1]);
+    expect(killAwards.reduce((total, award) => total + award.xp, 0))
+      .toBe(chroniclesKillXp(goblin));
     expect(result.awards.filter((award) => award.reason === 'daño útil').length).toBeGreaterThan(0);
     const replay = applyChroniclesTacticsProgression(result.progression, before, after, params);
     expect(replay.awards).toEqual([]);
