@@ -15,6 +15,7 @@ import {
   chroniclesJournalEntries,
   chroniclesObjective,
   chroniclesReduce,
+  chroniclesCombatPartyStepBlocked,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesPartyBark } from '../chroniclesOfMatthiasBarks.js';
@@ -671,6 +672,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const dispatch = useCallback((action, acceptedTravel = false) => {
     const current = stateRef.current;
     if (!current) return;
+    // Never open a doorway/area prompt for a combat step. Enforce before
+    // transition detection, not only in the reducer below.
+    if (chroniclesCombatPartyStepBlocked(current, action)) return current;
     // No world input while the counter is open, except the confirmed sale.
     if (provisionsOpenRef.current && !(action?.type === 'interact'
       && action?.provisionsPurchase === true)) return current;
@@ -925,7 +929,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     clearTouchHold();
 
     const current = stateRef.current;
-    if (!current || current.phase === 'defeated' || current.phase === 'escaped') return;
+    if (!current || current.phase === 'defeated' || current.phase === 'escaped'
+      || chroniclesCombatPartyStepBlocked(current, action)) return;
 
     try {
       event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -2180,6 +2185,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="forward"
+                  disabled={chroniclesCombatPartyStepBlocked(state, 'forward')}
+                  title={state.initiative ? 'En combate no puedes mover al grupo' : 'Avanzar'}
                   onPointerDown={(event) => startTouchHold('forward', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2230,6 +2237,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="backward"
+                  disabled={chroniclesCombatPartyStepBlocked(state, 'backward')}
+                  title={state.initiative ? 'En combate no puedes mover al grupo' : 'Retroceder'}
                   onPointerDown={(event) => startTouchHold('backward', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2250,8 +2259,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               </div>
 
               <div className="chronicles-keyboard-help">
-                <span><kbd>↑</kbd> avanzar</span>
-                <span><kbd>↓</kbd> retroceder</span>
+                {state.initiative && state.combatRules === 'mm3'
+                  ? <span data-chronicles-combat-movement-hint>COMBATE · grupo inmóvil</span>
+                  : <>
+                    <span><kbd>↑</kbd> avanzar</span>
+                    <span><kbd>↓</kbd> retroceder</span>
+                  </>}
                 <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
                 <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                 <span><kbd>A</kbd> atacar</span>
