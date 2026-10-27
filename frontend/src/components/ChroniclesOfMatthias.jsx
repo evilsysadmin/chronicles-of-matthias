@@ -147,6 +147,7 @@ import {
 import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
+import ChroniclesNoticeBoard from './ChroniclesNoticeBoard.jsx';
 import { CHRONICLES_CONSUMABLES, chroniclesCarriedConsumables } from '../chronicles/chroniclesConsumables.js';
 import ChroniclesJournalModal from './ChroniclesJournalModal.jsx';
 import ChroniclesDefeatOverlay from './ChroniclesDefeatOverlay.jsx';
@@ -431,6 +432,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const areaTransitionRef = useRef(null);
   const [audience, setAudience] = useState(null);
   const audienceRef = useRef(null);
+  const [noticeBoardOpen, setNoticeBoardOpen] = useState(false);
+  const closeNoticeBoard = useCallback(() => setNoticeBoardOpen(false), []);
   const [automapVisitedByMap, setAutomapVisitedByMap] = useState({});
   const touchHoldRef = useRef({ delayId: null, repeatId: null });
   const { needsRotation, lockState, activateLandscape, relockPrompt, declineLandscape } = useChroniclesLandscape(characterSetupDone);
@@ -975,6 +978,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const rawDialogue = chroniclesNpcDialogueForState(current, rawContextual);
     const { contextual, npc: dialogue } = chroniclesDoorwayPrompt(current, rawContextual, rawDialogue);
     if (!contextual && !dialogue) return;
+    const board = chroniclesMapForState(current)?.interactables?.find((entry) => entry.id === contextual?.id);
+    if (board?.visualType === 'notice-board') {
+      setNoticeBoardOpen(true);
+      return;
+    }
     if (dialogue) {
       audienceRef.current = dialogue;
       setAudience(dialogue);
@@ -1449,6 +1457,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         } else if (event.key !== 'Tab') event.preventDefault();
         return;
       }
+      // The board owns its own focus and shortcuts while its modal is open.
+      if (noticeBoardOpen) return;
       const hero = chroniclesPartyHotkeyMember(event, current.party, { menuOpen });
       if (hero) {
         event.preventDefault();
@@ -1592,9 +1602,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
     confirmExitWithoutSaving, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
-    pendingSpellTarget, chooseSpellTarget]);
+    pendingSpellTarget, chooseSpellTarget, noticeBoardOpen]);
 
   const startFreshGame = (entryMapId = null) => {
+    setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
     chroniclesClearPlayingRun();
@@ -1610,6 +1621,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const loadSavedGame = (runId) => {
     if (!chroniclesSelectSavedRun(FIRST_PERSON_RUN_SCOPE, runId)) return;
+    setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
     // Legacy saves without run-scoped flags retain their old account fallback.
@@ -1632,6 +1644,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   };
 
   const returnToSaveMenu = () => {
+    setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
     chroniclesClearSessionResume(activeRunIdRef.current);
@@ -2259,6 +2272,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           onAction={dispatch}
           onClose={() => dispatch({ type: 'shop-close' })}
         />
+      )}
+
+      {noticeBoardOpen && !sheetMember && (
+        <ChroniclesNoticeBoard state={state} onClose={closeNoticeBoard}
+          onAccept={(offerId) => {
+            const current = stateRef.current;
+            const contextual = chroniclesContextualContentAction(current);
+            if (contextual?.id !== offerId || contextual.locked) return;
+            dispatch('interact');
+          }} />
       )}
 
       {audience && !sheetMember && (

@@ -97,8 +97,11 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
     expect(chroniclesContextualContentAction(state)?.id).toBe('first-book-missing-board');
     state = chroniclesReduce(state, 'interact');
     expect(state.quests['banner-contract'].status).toBe('active');
-    // The board is consumed after accepting; it must not shadow the turn-in.
-    expect(chroniclesContextualContentAction(state)?.id).not.toBe('first-book-missing-board');
+    // Accepting a job must never erase the physical board. It stays readable
+    // but cannot start that same contract again or duplicate its rewards.
+    expect(chroniclesContextualContentAction(state)).toMatchObject({
+      id: 'first-book-missing-board', locked: true,
+    });
 
     state = chroniclesReduce({ ...state, x: 9, y: 2, direction: 0 }, 'forward');
     expect(state.mapId).toBe('banner-road-first-book');
