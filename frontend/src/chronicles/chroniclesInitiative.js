@@ -206,7 +206,11 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (state.phase === 'defeated' || state.phase === 'escaped') return state;
   // A wiped company cannot take a turn: never create an enemy-only combat.
   // Defeat resolution belongs to the reducer, not to this engagement helper.
-  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) return state;
+  // Corrupt restored heroes without valid IDs are not actionable actors. Do not
+  // start an enemy-only initiative when all nominally living heroes are invalid.
+  if (!Array.isArray(state.party) || !state.party.some((member) => (
+    validActorId(member?.id) && hasLivingHitPoints(member?.hp)
+  ))) return state;
   const forceEnemyIds = new Set(Array.isArray(options.forceEnemyIds) ? options.forceEnemyIds : []);
   const candidates = Array.isArray(enemies) ? enemies : [];
   const engagedById = new Map(
