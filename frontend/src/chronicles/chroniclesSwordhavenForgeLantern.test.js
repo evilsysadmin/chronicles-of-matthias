@@ -17,6 +17,9 @@ describe('Swordhaven forge smoke lantern', () => {
     expect(lantern.children.filter(child => child.name === 'forge-lantern-iron-louver')).toHaveLength(3);
     const cap = lantern.getObjectByName('forge-lantern-pitched-cap');
     expect(cap).toBeTruthy();
+    expect(lantern.children.filter(child => child.name === 'forge-lantern-pitched-cap')).toHaveLength(2);
+    expect(lantern.getObjectByName('forge-lantern-timber-gable')).toBeTruthy();
+    expect(lantern.getObjectByName('forge-lantern-oak-post').position.y).toBeLessThan(0);
     // A roof feature hidden behind the main gable is not a visual improvement.
     expect(lantern.position.z).toBeGreaterThan(forge.getObjectByName('roof-gable-1').position.z);
     expect(lantern.position.y + cap.position.y).toBeGreaterThan(
