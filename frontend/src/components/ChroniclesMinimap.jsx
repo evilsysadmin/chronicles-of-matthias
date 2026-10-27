@@ -22,7 +22,8 @@ export function chroniclesMinimapRadiusForSize(baseRadius, width, height) {
   const base = Number.isInteger(baseRadius) && baseRadius > 0
     ? baseRadius : CHRONICLES_MINIMAP_RADIUS;
   if (!Number.isFinite(width) || !Number.isFinite(height)) return base;
-  if (width >= 245 && height >= 220) return Math.max(base, 6);
+  // Large desktop panels can comfortably show two additional terrain rows.
+  if (width >= 245 && height >= 220) return Math.max(base, 7);
   if (width >= 190 && height >= 165) return Math.max(base, 5);
   return base;
 }
