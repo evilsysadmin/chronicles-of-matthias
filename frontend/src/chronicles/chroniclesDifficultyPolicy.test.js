@@ -84,6 +84,34 @@ describe('Chronicles difficulty/progression policy', () => {
       .toEqual(chroniclesDifficultyBand({ progression, depth: 4 }));
   });
 
+  it.each([
+    ['fractional decimal', '4.5'],
+    ['hexadecimal', '0x10'],
+    ['exponential notation', '4e1'],
+    ['repeated underscores', '4__0'],
+    ['out-of-range int64', '9223372036854775808'],
+  ])('rejects %s depth strings rather than inventing extra dungeon floors', (_label, depth) => {
+    const progression = leveledParty(6);
+    expect(chroniclesDifficultyBand({ progression, depth }))
+      .toEqual(chroniclesDifficultyBand({ progression, depth: 0 }));
+  });
+
+  it.each([
+    ['signed decimal', ' +4 ', 4],
+    ['underscored decimal', '4_0', 40],
+    ['maximum Go int64', '9223372036854775807', 99],
+  ])('accepts %s depth strings supported by the Go director', (_label, depth, expected) => {
+    const progression = leveledParty(6);
+    expect(chroniclesDifficultyBand({ progression, depth }))
+      .toEqual(chroniclesDifficultyBand({ progression, depth: expected }));
+  });
+
+  it('rejects float64 depth overflow like the Go director', () => {
+    const progression = leveledParty(6);
+    expect(chroniclesDifficultyBand({ progression, depth: 1e20 }))
+      .toEqual(chroniclesDifficultyBand({ progression, depth: 0 }));
+  });
+
   it('prefers the backend difficulty snapshot over local recomputation', () => {
     const authoritative = Object.freeze({
       partyLevel: 4,
