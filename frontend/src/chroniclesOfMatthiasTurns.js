@@ -122,8 +122,14 @@ function enemyCanAttackCell(state, enemy, position, partyPosition) {
 export function chroniclesEnemyAttackTarget(state, enemy, position = chroniclesRuntimeEnemyPosition(state, enemy)) {
   const livingOrder = (state?.party || []).filter((member) => Number(member.hp || 0) > 0);
   const enemyIndex = Math.max(0, chroniclesActiveEnemies(state).findIndex((candidate) => candidate.id === enemy?.id));
+  // In MM3 initiative combat, each enemy acts separately and the legacy
+  // exploration round stays unchanged. Rotate targets on the actual combat
+  // round so one frontliner is not focused forever across successive rounds.
+  // Keep the original collective-turn counter for Tactics/legacy combat.
+  const targetRound = chroniclesUsesMM3Combat(state) && state?.initiative
+    ? state.initiative.round : state?.round;
   const rotation = livingOrder.length
-    ? (Math.max(0, Number(state?.round || 0)) + enemyIndex) % livingOrder.length
+    ? (Math.max(0, Number(targetRound || 0)) + enemyIndex) % livingOrder.length
     : 0;
   const turnRank = (member) => {
     const index = Math.max(0, livingOrder.findIndex((candidate) => candidate.id === member.id));
