@@ -810,6 +810,32 @@ try {
       const dialog = page.getByRole('dialog');
       await dialog.waitFor({ state: 'visible' });
       assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
+      const boticaRoom = dialog.locator('.chronicles-shop__scene[data-chronicles-shop-room="botica-apothecary"]');
+      const boticaFallback = boticaRoom.locator('img[data-chronicles-shop-art-layer="fallback"]');
+      const boticaPremium = boticaRoom.locator('img[data-chronicles-shop-art-layer="premium"]');
+      assert.equal(await boticaFallback.count(), 1, 'Botica must keep bundled room as fallback');
+      assert.equal(await boticaPremium.count(), 1, 'Botica must try the exact uploaded premium WebP');
+      const localArt = await boticaFallback.evaluate(node => ({
+        loaded: node.complete && node.naturalWidth >= 1500 && node.naturalHeight >= 800,
+        src: node.currentSrc, position: getComputedStyle(node).objectPosition,
+      }));
+      assert(localArt.loaded && localArt.src.includes('botica-apothecary.svg'),
+        'Botica local illustrated room must always decode');
+      assert.match(localArt.position, /^50% /, 'Botica shopkeeper must stay in the central aisle');
+      await page.waitForFunction(() => {
+        const img = document.querySelector('[data-chronicles-shop-room="botica-apothecary"] img[data-chronicles-shop-art-layer="premium"]');
+        return img?.complete && (!img.naturalWidth || img.classList.contains('is-ready'));
+      }, null, { timeout: 7_000 });
+      const remoteArt = await boticaPremium.evaluate(node => ({
+        src: node.currentSrc, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
+        ready: node.classList.contains('is-ready'),
+        opacity: Number.parseFloat(getComputedStyle(node).opacity),
+      }));
+      assert.equal(remoteArt.src,
+        'https://assets.chronicles.shadowops.dpdns.org/stores/botica-premium.webp');
+      if (remoteArt.loaded) assert(remoteArt.ready, 'Decoded Botica premium art must reveal');
+      else assert(!remoteArt.ready && remoteArt.opacity === 0,
+        'Failed R2 download must leave Botica SVG visible without a broken glyph');
       assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 3,
         'Apothecary must keep all three authored offers');
       for (const id of ['healing-potion', 'mana-potion', 'fire-scroll']) {
