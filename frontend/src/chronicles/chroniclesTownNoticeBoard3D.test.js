@@ -23,7 +23,7 @@ describe('Swordhaven estandarte notice board', () => {
     expect(bounds.max.x - bounds.min.x).toBeLessThan(3.1);
     expect(bounds.max.z - bounds.min.z).toBeLessThan(1);
     expect(bounds.max.y).toBeLessThan(3.3);
-    expect(bounds.min.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.min.y).toBeGreaterThan(-1e-6); // Float32 bounds at ground level.
   });
 
   it('keeps the quest usable from a walkable cell next to the south wall, away from the shop doorway', () => {
