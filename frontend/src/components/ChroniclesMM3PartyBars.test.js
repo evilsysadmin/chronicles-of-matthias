@@ -22,7 +22,7 @@ describe('MM3 party PV bar alignment', () => {
     expect(portraitStrip).toContain('{index + 1}. {member.name}');
     expect(portraitStrip).toContain('<small>Nv {chroniclesHeroProgress(progression, member.id).level}</small>');
     expect(portraitStrip).toContain('{member.hp}/{member.maxHp}');
-    expect(portraitStrip).not.toMatch(/FRENTE|RETAGUARDIA|member\\.row/);
+    expect(portraitStrip).not.toMatch(/FRENTE|RETAGUARDIA|member\.row/);
   });
 
   it('still renders PH only for actual spellcasters, not an invented resource bar', () => {
