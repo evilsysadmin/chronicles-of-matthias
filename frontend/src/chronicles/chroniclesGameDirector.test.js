@@ -109,6 +109,36 @@ describe('Chronicles Game Director frontend resolver', () => {
     expect(resolved.fallbackReason).toBe('network-down');
   });
 
+  it('never uses bundled fallback when the area request was cancelled', async () => {
+    const controller = new AbortController();
+    const fetchManifest = vi.fn().mockImplementation(async () => {
+      controller.abort();
+      throw new Error('request-cancelled');
+    });
+
+    await expect(chroniclesResolveAreaManifest('gallery-of-forks', {
+      seed: 9,
+      signal: controller.signal,
+      fetchManifest,
+      allowBundledFallback: true,
+    })).rejects.toMatchObject({ reason: 'aborted' });
+  });
+
+  it('discards a remote area that resolves after navigation cancellation', async () => {
+    const controller = new AbortController();
+    const fetchManifest = vi.fn().mockImplementation(async () => {
+      controller.abort();
+      return remoteEnvelope('crypt-eight-squares', 22);
+    });
+
+    await expect(chroniclesResolveAreaManifest('crypt-eight-squares', {
+      seed: 22,
+      signal: controller.signal,
+      fetchManifest,
+      allowBundledFallback: true,
+    })).rejects.toMatchObject({ reason: 'aborted' });
+  });
+
   it('rejects incompatible or inconsistent remote envelopes', async () => {
     const wrongSchema = remoteEnvelope('menagerie-of-ash', 12);
     wrongSchema.schemaVersion = 99;

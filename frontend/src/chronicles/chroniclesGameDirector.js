@@ -81,7 +81,8 @@ export async function chroniclesResolveAreaManifest(
   } = {},
 ) {
   const fail = (reason, error = null) => {
-    if (allowBundledFallback) return localFallback(mapId, seed, reason);
+    // Cancellation belongs to the caller's navigation, never to a fallback scene.
+    if (allowBundledFallback && reason !== 'aborted') return localFallback(mapId, seed, reason);
     const failure = error instanceof Error ? error : new Error(reason);
     failure.reason = reason;
     throw failure;
@@ -92,6 +93,9 @@ export async function chroniclesResolveAreaManifest(
 
   try {
     const payload = await fetchManifest(mapId, seed, { signal });
+    // Some transports resolve even after AbortSignal fires. Never reveal a
+    // stale area after the player has navigated elsewhere.
+    if (signal?.aborted) return fail('aborted');
     return chroniclesValidateAreaEnvelope(payload, mapId, seed);
   } catch (error) {
     if (signal?.aborted) return fail('aborted', error);
