@@ -46,6 +46,9 @@ describe('Chronicles premium shop UI', () => {
     expect(armor).toContain('Coracería de Odo');
     expect(armor).toContain('data-chronicles-shop-room="odo-forge"');
     expect(armor).toContain('odo-armory.svg');
+    expect(armor).toContain('https://assets.chronicles.shadowops.dpdns.org/stores/Odo_Armeria_Premium_Fondo_Limpio_2026.webp');
+    expect(armor).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(armor).toContain('data-chronicles-shop-art-layer="premium"');
     expect(armor).toContain('pasa el ratón o enfoca');
     expect(potion).toContain('data-chronicles-shop="first-book-apothecary"');
     expect(potion).toContain('Poción de curación');
