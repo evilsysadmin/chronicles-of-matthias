@@ -46,7 +46,7 @@ describe('Shop environment artwork acceptance', () => {
     expect(height).toBe(941);
   });
 
-  for (const name of ['odo-armory.svg', 'guild-archive.svg']) {
+  for (const name of ['odo-armory.svg', 'guild-archive.svg', 'botica-apothecary.svg']) {
     it(name + ': wide clean environment without rendered UI or remote dependencies', () => {
       const bytes = source(name);
       expect(bytes.length).toBeLessThan(700_000);

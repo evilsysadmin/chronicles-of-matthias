@@ -11,6 +11,10 @@ describe('Chronicles shop rooms', () => {
     const odo = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-armorer'));
     expect(odo.src).toBe(CHRONICLES_ODO_UPLOADED_ART_URL);
     expect(odo.fallbackSrc).toContain('odo-armory.svg');
+    expect(room('first-book-apothecary')).toBe('botica-apothecary');
+    const apothecary = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-apothecary'));
+    expect(apothecary.src).toContain('botica-apothecary.svg');
+    expect(apothecary.fallbackSrc).toBeUndefined();
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
