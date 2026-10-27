@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from './chroniclesShopRooms.js';
-import { CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
+import { CHRONICLES_ODO_UPLOADED_ART_KEY, CHRONICLES_ODO_UPLOADED_ART_URL, CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
 
 describe('Chronicles shop rooms', () => {
   it('shows each Swordhaven shopkeeper in their own room', () => {
@@ -9,13 +9,8 @@ describe('Chronicles shop rooms', () => {
     const room = (id) => chroniclesShopRoom(town.interactables.find((entry) => entry.id === id))?.id;
     expect(room('first-book-armorer')).toBe('odo-forge');
     const odo = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-armorer'));
-    if (chroniclesShopArtUrl('chronicles.shop.odo')) {
-      expect(odo.src).toBe(chroniclesShopArtUrl('chronicles.shop.odo'));
-      expect(odo.fallbackSrc).toContain('odo-armory.svg');
-    } else {
-      expect(odo.src).toContain('odo-armory.svg');
-      expect(odo.fallbackSrc).toBeNull();
-    }
+    expect(odo.src).toBe(CHRONICLES_ODO_UPLOADED_ART_URL);
+    expect(odo.fallbackSrc).toContain('odo-armory.svg');
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
@@ -61,16 +56,20 @@ describe('Chronicles shop art manifests — exact R2 pins only', () => {
       ['contentType', 'text/html'], ['bytes', 0],
     ]) expect(chroniclesShopArtUrl('chronicles.shop.odo', mutate(field,value))).toBeNull();
   });
+  it('pins the uploaded WebP to the separate Chronicles bucket, never to the dashboard', () => {
+    expect(CHRONICLES_ODO_UPLOADED_ART_KEY).toBe('stores/Odo_Armeria_Premium_Fondo_Limpio_2026.webp');
+    expect(CHRONICLES_ODO_UPLOADED_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/Odo_Armeria_Premium_Fondo_Limpio_2026.webp');
+    expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain('dash.cloudflare.com');
+    expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain(CHRONICLES_SHOP_ART_ORIGIN);
+    expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain('?');
+  });
+
   it('keeps Brunna and guild local while Odo has offline fallback', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const odo = chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-armorer'));
-    if (chroniclesShopArtUrl('chronicles.shop.odo')) {
-      expect(odo.src).toBe(url);
-      expect(odo.fallbackSrc).toContain('odo-armory.svg');
-    } else {
-      expect(odo.src).toContain('odo-armory.svg');
-      expect(odo.fallbackSrc).toBeNull();
-    }
+    expect(odo.src).toBe(CHRONICLES_ODO_UPLOADED_ART_URL);
+    expect(odo.fallbackSrc).toContain('odo-armory.svg');
     expect(chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-weaponsmith')).src)
       .toContain('brunna-forge.webp');
   });

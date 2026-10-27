@@ -22,3 +22,14 @@ export function chroniclesShopArtUrl(logicalId, source = manifest) {
   const expected = `${CHRONICLES_SHOP_ART_ORIGIN}/${entry.key}`;
   return entry.url === expected ? expected : null;
 }
+
+
+// This clean WebP is uploaded to the *independent* Chronicles R2 bucket,
+// not to Chess Studio's content-addressed shop-publisher namespace.
+// The Cloudflare dashboard path is private; only this separate, public
+// custom-domain URL may be used by the browser. Keep the local room as a
+// fail-safe until the public HTTPS GET is verified in staging.
+// This object key is mutable: do not declare a year-long immutable cache TTL.
+export const CHRONICLES_ODO_UPLOADED_ART_KEY = 'stores/Odo_Armeria_Premium_Fondo_Limpio_2026.webp';
+export const CHRONICLES_ODO_UPLOADED_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ODO_UPLOADED_ART_KEY}`;
