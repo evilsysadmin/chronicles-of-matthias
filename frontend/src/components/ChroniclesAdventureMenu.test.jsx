@@ -39,6 +39,30 @@ describe('Chronicles adventure menu hotkey affordances', () => {
   });
 
 
+  it('explains combat restrictions and disables all save actions, not loading or exiting without saving', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} inCombat />);
+    expect(html).toContain('data-chronicles-combat-save-notice');
+    expect(html).toContain('No puedes guardar durante el combate.');
+    expect(html).toMatch(/data-chronicles-menu-save[^>]*disabled=""/);
+    expect(html).toMatch(/class="chronicles-game-menu__save-exit"[^>]*disabled=""/);
+    expect(html).toMatch(/data-chronicles-menu-load[^>]*>Cargar partida<\/button>/);
+    expect(html).toContain('Salir sin guardar · Q');
+    expect(html).toContain('Guardado desactivado en combate');
+    expect(html).not.toContain('S · guardar · Q · salir');
+    expect(html).not.toContain('Partida guardada correctamente.');
+  });
+
+  it('leaves the save-before-switch choice disabled in combat while allowing discard or cancel', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      inCombat confirmLoadSelection />);
+    expect(html).toContain('solo puedes elegir otra partida sin guardar');
+    expect(html).toMatch(/disabled=""[^>]*>Guardar esta partida y elegir otra<\/button>/);
+    expect(html).not.toMatch(/disabled=""[^>]*>Elegir sin guardar<\/button>/);
+    expect(html).toContain('Guardar esta partida y elegir otra');
+    expect(html).toContain('Elegir sin guardar');
+    expect(html).toContain('Cancelar');
+  });
+
   it('requires a choice about unsaved progress before opening saved expeditions', () => {
     const markup = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} confirmLoadSelection />);
     expect(markup).toContain('data-confirming-load="true"');

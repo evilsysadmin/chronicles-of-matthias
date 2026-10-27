@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import ChroniclesFeedbackMailbox from './ChroniclesFeedbackMailbox.jsx';
 import ChroniclesGameHelp from './ChroniclesGameHelp.jsx';
+import { CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolicy.js';
 
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
@@ -10,7 +11,7 @@ export default function ChroniclesAdventureMenu({
   onSaveExit, onRequestLoad, onSaveBeforeLoad, onLoadWithoutSave, onCancelLoad,
   onAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, confirmLoadSelection = false,
-  saveNotice = '', saveBusy = false, isAdmin = false,
+  saveNotice = '', saveBusy = false, inCombat = false, isAdmin = false,
   feedbackOpen = false, onFeedbackOpenChange,
 }) {
   // Keep both unsent fields across Escape/Back; a re-entry must not silently
@@ -63,7 +64,11 @@ export default function ChroniclesAdventureMenu({
         <button type="button" className="chronicles-game-menu__close" aria-label="Cerrar menú"
           hidden={confirmExitWithoutSaving || confirmLoadSelection} onClick={onClose}>×</button>
       </div>
-      {saveNotice && <small className="chronicles-game-menu__notice" role="status">{saveNotice}</small>}
+      {inCombat
+        ? <small className="chronicles-game-menu__notice" role="status" data-chronicles-combat-save-notice>
+          {CHRONICLES_COMBAT_SAVE_NOTICE}
+        </small>
+        : saveNotice && <small className="chronicles-game-menu__notice" role="status">{saveNotice}</small>}
       <div className="chronicles-game-menu__folio-columns"
         data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
         data-confirming-load={confirmLoadSelection ? 'true' : 'false'}
@@ -84,12 +89,14 @@ export default function ChroniclesAdventureMenu({
               <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
             </div>
             <div className="chronicles-game-menu__action-pair">
-              <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave} disabled={saveBusy}>
+              <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave}
+                disabled={saveBusy || inCombat} title={inCombat ? CHRONICLES_COMBAT_SAVE_NOTICE : undefined}>
                 {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
               </button>
               <button type="button" ref={requestLoadRef} className="chronicles-game-menu__load"
                 data-chronicles-menu-load onClick={onRequestLoad} disabled={saveBusy}>Cargar partida</button>
-              <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
+              <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit}
+                disabled={saveBusy || inCombat} title={inCombat ? CHRONICLES_COMBAT_SAVE_NOTICE : undefined}>Guardar y salir</button>
             </div>
             <div className="chronicles-game-menu__utility-row">
               <button type="button" aria-expanded={soundOpen}
@@ -116,8 +123,10 @@ export default function ChroniclesAdventureMenu({
             {confirmLoadSelection && (
               <div className="chronicles-game-menu__exit-confirm" role="group" aria-label="Confirmar cambio de partida"
                 data-chronicles-load-confirm>
-                <small>Elige una expedición guardada. Los cambios desde el último guardado o cambio de área se perderán si no guardas antes.</small>
-                <button type="button" onClick={onSaveBeforeLoad} disabled={saveBusy}>Guardar esta partida y elegir otra</button>
+                <small>{inCombat
+                  ? 'Estás en combate: solo puedes elegir otra partida sin guardar el enfrentamiento actual.'
+                  : 'Elige una expedición guardada. Los cambios desde el último guardado o cambio de área se perderán si no guardas antes.'}</small>
+                <button type="button" onClick={onSaveBeforeLoad} disabled={saveBusy || inCombat}>Guardar esta partida y elegir otra</button>
                 <button type="button" onClick={onLoadWithoutSave} disabled={saveBusy}>Elegir sin guardar</button>
                 <button type="button" ref={cancelLoadRef} onClick={onCancelLoad} disabled={saveBusy}>Cancelar</button>
               </div>
@@ -147,6 +156,7 @@ export default function ChroniclesAdventureMenu({
           : confirmLoadSelection ? 'ESC · cancelar cambio de partida · TAB · elegir respuesta'
           : feedbackOpen ? 'ESC · volver al menú · TAB · navegar'
           : helpOpen ? 'TAB · recorrer ayuda · Volver al menú'
+          : inCombat ? 'Guardado desactivado en combate · Q · salir sin guardar · TAB · navegar'
           : 'S · guardar · Q · salir · TAB en la gema · cerrar · TAB en controles · navegar'}
       </small>
     </div>
