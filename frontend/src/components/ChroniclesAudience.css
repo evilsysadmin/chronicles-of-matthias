@@ -1,166 +1,164 @@
-/* Mayor's audience borrows the MM3 shop frame; unlike a merchant, its
-   primary surface is a figure in a room and the actual campaign dialogue. */
+/* Audiences use the same cinematic language as Brunna: the room itself
+   occupies the stage, while real dialogue controls float over one side.
+   Keeping the original actors in the art makes this purely presentational. */
 .chronicles-audience.chronicles-shop {
-  grid-template-columns: minmax(0, 1.25fr) minmax(230px, 1fr);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1240px, 100%);
+  height: min(790px, calc(100dvh - 24px));
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .77fr);
   grid-template-rows: auto minmax(0, 1fr);
-  grid-template-areas:
-    'scene head'
-    'scene dialogue';
-  /* Four numbered answers should fit without hiding the last behind a scroll.
-     The decorative MM3 frame stays inside these viewport-safe bounds. */
-  width: min(960px, 100%);
-  height: min(700px, calc(100dvh - 52px));
-  gap: 10px 12px;
+  grid-template-areas: '. head' '. dialogue';
+  gap: 10px;
+  padding: clamp(12px, 1.5vw, 23px);
 }
-
-.chronicles-audience__head {
-  min-height: 108px;
-  align-content: center;
+.chronicles-audience.chronicles-shop::before {
+  background: linear-gradient(90deg,
+    rgba(11, 9, 8, .13) 0%,
+    rgba(11, 9, 8, .08) 37%,
+    rgba(11, 9, 8, .48) 58%,
+    rgba(11, 9, 8, .77) 100%);
 }
-
-.chronicles-audience__head > div {
-  min-width: 0;
-  padding-right: 26px;
-}
-
 .chronicles-audience__scene {
-  grid-area: scene;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   min-width: 0;
   min-height: 0;
   margin: 0;
   overflow: hidden;
-  border: 2px solid;
-  border-color: var(--mm3-lo) var(--mm3-hi) var(--mm3-hi) var(--mm3-lo);
+  pointer-events: none;
   background: #19110d;
-  box-shadow: 0 0 0 1px #141416, inset 0 0 20px rgba(0,0,0,.3);
 }
-
 .chronicles-audience__scene img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  image-rendering: auto; /* Authored illustration, never enlarged as pixel art. */
+  image-rendering: auto;
 }
-
+.chronicles-audience__head,
 .chronicles-audience__dialogue {
-  grid-area: dialogue;
+  position: relative;
+  z-index: 2;
   min-width: 0;
   min-height: 0;
+  border: 1px solid rgba(213, 167, 98, .38);
+  background: rgba(16, 13, 13, .88);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .36);
+}
+.chronicles-audience__head {
+  min-height: 104px;
+  padding: 15px 17px;
+  align-content: center;
+}
+.chronicles-audience__head > div {
+  min-width: 0;
+  padding-right: 28px;
+}
+.chronicles-audience__dialogue {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: clamp(10px, 1.4vw, 16px);
+  gap: 11px;
+  padding: clamp(12px, 1.7vw, 19px);
   overflow-y: auto;
-  border: 2px solid;
-  border-color: var(--mm3-lo) var(--mm3-hi) var(--mm3-hi) var(--mm3-lo);
-  background: #17171b;
-  color: #eadbbf;
+  overscroll-behavior: contain;
+  color: #f3e3c8;
 }
-
 .chronicles-audience__dialogue > small {
-  color: #e0b86c;
+  color: #e4b971;
   font-family: var(--mm3-pixel-font), monospace;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   letter-spacing: .07em;
 }
-
 .chronicles-audience__dialogue p {
   margin: 0;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(.91rem, 1.4vw, 1.04rem);
-  line-height: 1.57;
+  font-size: clamp(.93rem, 1.4vw, 1.12rem);
+  line-height: 1.52;
   white-space: pre-wrap;
 }
-
 .chronicles-audience__actions {
   display: grid;
-  gap: 6px;
+  gap: 7px;
   margin-top: auto;
 }
-
 .chronicles-audience__actions button {
   min-height: 44px;
-  padding: 8px 10px;
-  border: 2px solid;
-  border-color: #ffeec2 #6b4510 #6b4510 #ffeec2;
-  background: #e3b45c var(--mm3-stone) 0 0 / 128px 128px;
-  color: #211308;
-  font: 700 .89rem/1.2 system-ui, sans-serif;
+  padding: 9px 11px;
+  border: 1px solid #a8804b;
+  background: linear-gradient(180deg, rgba(92, 68, 43, .95), rgba(47, 34, 27, .97));
+  color: #fff0d1;
+  text-align: left;
+  font: 600 .9rem/1.3 system-ui, sans-serif;
   cursor: pointer;
 }
-
 .chronicles-audience__actions button:last-child:not(:first-child) {
-  border-color: var(--mm3-hi) var(--mm3-lo) var(--mm3-lo) var(--mm3-hi);
-  background-color: #9d9da2;
+  border-color: #66594a;
+  background: rgba(46, 42, 41, .96);
 }
-
-.chronicles-audience__actions button:focus-visible,
-.chronicles-audience__actions button:hover {
-  outline: 2px solid #f3ce79;
+.chronicles-audience__actions button:hover,
+.chronicles-audience__actions button:focus-visible {
+  outline: 2px solid #edca8c;
   outline-offset: 1px;
-}
-
-@media (max-width: 680px) {
-  .chronicles-audience.chronicles-shop {
-    grid-template-columns: minmax(0, 1fr);
-    /* Portrait art is secondary to the conversation and four choices. */
-    grid-template-rows: minmax(108px, 19dvh) auto minmax(0, 1fr);
-    grid-template-areas: 'scene' 'head' 'dialogue';
-    height: calc(100dvh - 24px);
-    gap: 7px;
-    padding: 19px;
-  }
-
-  .chronicles-audience__head {
-    min-height: 0;
-    padding: 10px 12px;
-  }
-
-  .chronicles-audience__head > div {
-    grid-column: 1 / -1;
-  }
-
-  .chronicles-audience__head h2 { margin-bottom: 1px; }
-
-  .chronicles-audience__dialogue {
-    padding: 10px;
-    gap: 7px;
-  }
-
-  .chronicles-audience__dialogue p {
-    font-size: .91rem;
-    line-height: 1.36;
-  }
-
-  .chronicles-audience__actions { gap: 5px; }
-  .chronicles-audience__actions button { min-height: 44px; padding: 6px 8px; }
-}
-
-@media (max-height: 560px) and (orientation: landscape) {
-  .chronicles-audience.chronicles-shop {
-    grid-template-columns: minmax(0, 1fr) minmax(225px, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'scene head' 'scene dialogue';
-    height: calc(100dvh - 16px);
-    padding: 17px;
-  }
-
-  .chronicles-audience__dialogue { gap: 7px; padding: 9px; }
-  .chronicles-audience__actions button { min-height: 40px; }
-}
-
-/* The mayor's audience is an illustrated civic chamber; protect the 
-   character and foreground papers at portrait and landscape sizes. */
-.chronicles-audience__scene[data-chronicles-audience-room='aldric-hall'] img {
-  object-position: 53% 46%;
-  image-rendering: auto;
+  background: linear-gradient(180deg, #77603f, #443124);
 }
 .chronicles-audience__scene[data-chronicles-audience-room='aldric-hall'] {
   background: #33251d;
 }
+.chronicles-audience__scene[data-chronicles-audience-room='watch-house'] {
+  background: #26313a;
+}
 
-/* Brask's smooth garrison illustration is independent of temple and mayor. */
-.chronicles-audience__scene[data-chronicles-audience-room='watch-house'] img { object-position: 50% 45%; image-rendering: auto; }
-.chronicles-audience__scene[data-chronicles-audience-room='watch-house'] { background: #26313a; }
+/* Portrait: preserve the readable, vertically stacked dialogue rather than
+   placing buttons on top of the figure. Art gets a compact but real viewport. */
+@media (max-width: 680px) and (orientation: portrait) {
+  .chronicles-audience.chronicles-shop {
+    width: 100%;
+    height: calc(100dvh - 16px);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(100px, 20dvh) auto minmax(0, 1fr);
+    grid-template-areas: 'scene' 'head' 'dialogue';
+    gap: 7px;
+    padding: 10px;
+  }
+  .chronicles-audience__scene {
+    position: relative;
+    inset: auto;
+    grid-area: scene;
+    border: 1px solid rgba(212, 164, 106, .65);
+  }
+  .chronicles-audience.chronicles-shop::before { display: none; }
+  .chronicles-audience__head {
+    min-height: 0;
+    padding: 9px 12px;
+  }
+  .chronicles-audience__head > div { grid-column: 1 / -1; }
+  .chronicles-audience__head h2 { margin-bottom: 1px; }
+  .chronicles-audience__dialogue { padding: 10px 12px; gap: 8px; }
+  .chronicles-audience__dialogue p { font-size: .94rem; line-height: 1.38; }
+  .chronicles-audience__actions { gap: 6px; }
+  .chronicles-audience__actions button { min-height: 44px; padding: 8px 10px; }
+}
+
+/* Narrow landscape remains a full-width room, with the speech surface at
+   right so the person on the left stays visible at 844 × 390. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .chronicles-audience.chronicles-shop {
+    width: 100%;
+    height: calc(100dvh - 12px);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, .95fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: '. head' '. dialogue';
+    padding: 11px;
+    gap: 5px;
+  }
+  .chronicles-audience__head { min-height: 0; padding: 6px 11px; }
+  .chronicles-audience__dialogue { gap: 5px; padding: 8px 10px; }
+  .chronicles-audience__dialogue p { font-size: .88rem; line-height: 1.3; }
+  .chronicles-audience__actions { gap: 4px; }
+  .chronicles-audience__actions button { min-height: 40px; padding: 5px 8px; }
+}
