@@ -13,6 +13,7 @@ describe('Swordhaven audience premium environment', () => {
     expect(room).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
     expect(room).toContain('viewBox="0 0 1600 900"');
     expect(room).toContain('scale(3.4)');
+    expect(room).toContain('translate(175 28)');
     expect(room).toContain('id="office-stone"');
     expect(room).toContain('url(#robe)');
     expect(room.length).toBeGreaterThan(10000);
@@ -38,6 +39,7 @@ describe('Swordhaven audience premium environment', () => {
     expect(art).toContain('viewBox="0 0 1600 900"');
     expect(art).toContain('id="g-brick"');
     expect(art).toContain('scale(3.2)');
+    expect(art).toContain('translate(145 22)');
     expect(art.length).toBeGreaterThan(5000);
     expect(art).not.toMatch(/<(?:text|image|script|foreignObject)\\b/i);
     const state = { ...createChroniclesState('swordhaven-first-book'), x: 4, y: 6 };
@@ -60,5 +62,30 @@ describe('Swordhaven audience premium environment', () => {
       expect(html).toContain(who);
       expect(html).toContain('role="dialog"');
     }
+  });
+});
+
+describe('Cinematic audience layout contracts', () => {
+  const css = readFileSync(new URL('../components/ChroniclesAudience.css', import.meta.url), 'utf8');
+
+  it('shows the illustrated full-room scene beneath a right-hand dialogue panel', () => {
+    expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*position:\s*absolute;/s);
+    expect(css).toMatch(/grid-template-areas:\s*'\. head' '\. dialogue'/);
+    expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*pointer-events:\s*none;/s);
+    expect(css).toMatch(/\.chronicles-audience__scene img\s*\{[^}]*image-rendering:\s*auto;/s);
+  });
+
+  it('keeps a real visible art strip and full-sized touch actions in portrait', () => {
+    expect(css).toMatch(/max-width:\s*680px\) and \(orientation:\s*portrait\)/);
+    expect(css).toMatch(/grid-template-areas:\s*'scene' 'head' 'dialogue'/);
+    expect(css).toMatch(/\.chronicles-audience__scene\s*\{\s*position:\s*relative;/);
+    expect(css).toMatch(/\.chronicles-audience__actions button\s*\{ min-height:\s*44px;/);
+  });
+
+  it('guards the approved scene with its original local fallback on failure', () => {
+    const component = readFileSync(new URL('../components/ChroniclesAudience.jsx', import.meta.url), 'utf8');
+    expect(component).toContain('room.fallbackSrc && event.currentTarget.getAttribute');
+    expect(component).toContain('event.currentTarget.src = room.fallbackSrc');
+    expect(component).toContain('data-chronicles-audience-room={dialogue.room}');
   });
 });

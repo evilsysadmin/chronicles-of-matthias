@@ -125,7 +125,7 @@
 <circle cx="1000" cy="655" r="4.5"/>
 </g>
 <!-- Preserve Aldric's canonical character, costume, beard and face (not a generic NPC) -->
-<g transform="translate(512 28) scale(3.4)"><path d="M107 189Q99 142 119 129Q138 118 159 119Q183 116 204 130Q218 153 210 198Z" fill="url(#robe)" stroke="#231319" stroke-width="4"/>
+<g transform="translate(175 28) scale(3.4)"><path d="M107 189Q99 142 119 129Q138 118 159 119Q183 116 204 130Q218 153 210 198Z" fill="url(#robe)" stroke="#231319" stroke-width="4"/>
   <path d="M127 131l20 36 11-26 14 26 22-38-21-11-30-3z" fill="#d0a974" stroke="#573c30" stroke-width="2"/>
   <path d="M151 154l7-9 10 9-9 27z" fill="#6e2430"/>
   <path d="M118 138Q103 149 101 187l25 10 16-31-8-29Z" fill="#64232a" stroke="#31151a" stroke-width="3"/>

@@ -102,7 +102,15 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
         </header>
 
         <figure className="chronicles-audience__scene" data-chronicles-audience-room={dialogue.room}>
-          {room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async" /> : (
+          {room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async"
+            onError={(event) => {
+              // The original authored room is still packaged with the app.
+              // Recover on a missing/undecodable upgraded illustration without
+              // retry loops, broken-image glyphs, or blocking the conversation.
+              if (room.fallbackSrc && event.currentTarget.getAttribute('src') !== room.fallbackSrc) {
+                event.currentTarget.src = room.fallbackSrc;
+              }
+            }} /> : (
             <div className="chronicles-audience__scene-fallback" aria-hidden="true">✦</div>
           )}
         </figure>
