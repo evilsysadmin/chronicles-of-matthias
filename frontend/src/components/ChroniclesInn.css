@@ -13,8 +13,8 @@
   position: fixed; inset: 0; height: 100%; width: 100%; z-index: -1;
   overflow: hidden; pointer-events: none;
 }
-/* Keep the original SVG painted while the user-uploaded WebP downloads.
-   Both cover the exact same room geometry rather than extending the layout. */
+/* The black Chronicles gate hides the SVG while the WebP decodes.
+   Both layers share the same geometry, with no visible transitional artwork. */
 .chronicles-inn__scene img {
   position: absolute; inset: 0; display: block; height: 100%; width: 100%;
   object-fit: cover; object-position: center; pointer-events: none;
@@ -22,7 +22,7 @@
 }
 .chronicles-inn__scene img.chronicles-shop__premium-art {
   opacity: 0;
-  transition: opacity 180ms ease-out;
+  transition: none;
 }
 .chronicles-inn__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
 .chronicles-inn::before {
