@@ -15,7 +15,8 @@
   object-fit: cover; object-position: 50% 45%; pointer-events: none;
 }
 .chronicles-provisions__scene img.chronicles-shop__premium-art {
-  opacity: 0; transition: opacity 180ms ease-out;
+  /* The full-window gate must reveal the premium image at full opacity in one frame. */
+  opacity: 0; transition: none;
 }
 .chronicles-provisions__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
 .chronicles-provisions__veil {

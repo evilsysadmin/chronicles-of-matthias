@@ -58,11 +58,16 @@ try {
         ready:n.classList.contains('is-ready'),
         opacity:parseFloat(getComputedStyle(n).opacity),
         position:getComputedStyle(n).position,
+        transition:getComputedStyle(n).transitionDuration,
       }));
       assert.equal(imageState.url,
         'https://assets.chronicles.shadowops.dpdns.org/stores/tienda-provisiones-premium.webp');
       assert.equal(imageState.position,'absolute');
-      if(imageState.loaded) assert(imageState.loaded>=1500 && imageState.height>=800 && imageState.ready);
+      if(imageState.loaded) {
+        assert(imageState.loaded>=1500 && imageState.height>=800 && imageState.ready);
+        assert.equal(imageState.opacity,1,'Premium image must be fully opaque at reveal');
+        assert.equal(imageState.transition,'0s','Never crossfade the old SVG over premium art');
+      }
       else assert(!imageState.ready && imageState.opacity===0,'Fallback must remain visible if R2 fails');
       if ([390,1280].includes(width))
         await page.screenshot({path:'smoke-provisions-'+width+'.png'});
