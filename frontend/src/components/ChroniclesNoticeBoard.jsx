@@ -59,6 +59,11 @@ export default function ChroniclesNoticeBoard({ state, onAccept, onClose }) {
         }
         return;
       }
+      // Enter/Space must still activate a focused quest button natively.
+      if ((event.key === 'Enter' || event.key === ' ') && panelRef.current?.contains(document.activeElement)) {
+        event.stopImmediatePropagation();
+        return;
+      }
       // World movement and party hotkeys must not act behind this folio.
       if (!event.ctrlKey && !event.altKey && !event.metaKey) {
         event.preventDefault();
