@@ -738,3 +738,23 @@
     display: none;
   }
 }
+
+
+/* Keep Save/Load side by side in the expedition folio without adding height. */
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__action-pair:has(> .chronicles-game-menu__load) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio[data-confirming-load="true"] {
+  width: min(520px, calc(100vw - 20px));
+}
+.chronicles .chronicles-game-menu__folio-columns[data-confirming-load="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 620px) {
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__action-pair:has(> .chronicles-game-menu__load) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__action-pair:has(> .chronicles-game-menu__load) > .chronicles-game-menu__save-exit {
+    grid-column: 1 / -1;
+  }
+}
