@@ -75,6 +75,10 @@
   color: #f7dda6; border: 1px solid #bc9463;
 }
 @media (max-width:680px), (max-height:570px) {
+  /* Compact landscape: never let the tall counter overpaint header/close.
+     Scroll the actual room content instead of squeezing the main flex row. */
+  .chronicles-provisions__head, .chronicles-provisions__foot { flex-shrink: 0; }
+  .chronicles-provisions__counter { flex: 0 0 auto; min-height: max-content; }
   .chronicles-provisions__head { padding: 13px 16px; }
   .chronicles-provisions__head h2 { font-size: 1.75rem; }
   .chronicles-provisions__head p { font-size: .86rem; }
