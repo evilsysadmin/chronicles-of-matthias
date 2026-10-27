@@ -15,6 +15,18 @@ import {
 
 export const CHRONICLES_MINIMAP_RADIUS = 3;
 
+// A physically larger desktop minimap must show more of the already-explored
+// world, not merely stretch the original seven squares. Keep the compact
+// touch minimap at its original scale for readable POIs and party direction.
+export function chroniclesMinimapRadiusForSize(baseRadius, width, height) {
+  const base = Number.isInteger(baseRadius) && baseRadius > 0
+    ? baseRadius : CHRONICLES_MINIMAP_RADIUS;
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return base;
+  if (width >= 245 && height >= 220) return Math.max(base, 6);
+  if (width >= 190 && height >= 165) return Math.max(base, 5);
+  return base;
+}
+
 const MINIMAP_ACCESSIBLE_BASE = 'Minimapa local. Abrir automapa completo';
 
 // The minimap is one focusable button: describe only POIs already shown by
@@ -48,7 +60,7 @@ function inWindow(position, state, radiusX, radiusY = radiusX) {
 }
 
 // Use the same authored, deduplicated, discovery-gated POIs as the full M map.
-// Only their presentation and seven-tile viewport are different.
+// Only their presentation and responsive local viewport are different.
 function discoveredLocalMarkers(map, state, revealed, radiusX, radiusY) {
   return chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition)
     .filter((marker) => inWindow(marker.position, state, radiusX, radiusY));
@@ -115,21 +127,27 @@ export default function ChroniclesMinimap({
 }) {
   const map = chroniclesMapForState(state);
   const svgRef = useRef(null);
-  const [aspect, setAspect] = useState(1);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     const node = svgRef.current;
     if (!node || typeof ResizeObserver === 'undefined') return undefined;
     const measure = () => {
       const { width, height } = node.getBoundingClientRect();
-      if (width > 0 && height > 0) setAspect(width / height);
+      if (width > 0 && height > 0) {
+        const nextWidth = Math.round(width);
+        const nextHeight = Math.round(height);
+        setSize((old) => old.width === nextWidth && old.height === nextHeight
+          ? old : { width: nextWidth, height: nextHeight });
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
   }, [hidden, Boolean(state && map)]);
-  const radiusX = chroniclesMinimapRadiusX(radius, aspect);
-  const radiusY = radius;
+  const radiusY = chroniclesMinimapRadiusForSize(radius, size.width, size.height);
+  const aspect = size.height > 0 ? size.width / size.height : 1;
+  const radiusX = chroniclesMinimapRadiusX(radiusY, aspect);
   const visited = useMemo(
     () => new Set(Array.isArray(visitedCells) ? visitedCells : []),
     [visitedCells],
@@ -166,6 +184,7 @@ export default function ChroniclesMinimap({
       type="button"
       className="chronicles-minimap"
       data-chronicles-minimap="visible"
+      data-chronicles-minimap-radius={radiusY}
       aria-label={`${chroniclesMinimapAccessibleLabel(markers, target, routeLabel)}. Ubicación: ${locationText}. Coordenadas: ${coordinates}`}
       onClick={onExpand}
     >
@@ -178,7 +197,7 @@ export default function ChroniclesMinimap({
         viewBox={`${minX} ${minY} ${width} ${height}`}
         preserveAspectRatio="xMidYMid slice"
         role="img"
-        aria-label={`Entorno explorado en un radio de ${radius} casillas`}
+        aria-label={`Entorno explorado en un radio de ${radiusY} casillas`}
       >
         <defs>
           <pattern id="chronicles-minimap-wall-hatch" patternUnits="userSpaceOnUse" width=".24" height=".24">
