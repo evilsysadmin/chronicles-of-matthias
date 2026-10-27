@@ -472,6 +472,14 @@ function enemyMovementForDistance(state, enemy, from) {
   const engagedMovement = enemy.ai?.engagedMovement;
   const engageRange = Number(enemy.ai?.engageRange);
   if (!engagedMovement || !Number.isFinite(engageRange) || engageRange < 1) return movement;
+  // A squadmate alerted into MM3 initiative must continue to approach the
+  // now-stationary company, even if its current distance exceeds the initial
+  // detection radius. Otherwise a hold-type goblin stranded four tiles away
+  // waits forever with no legal way for the player to close the gap.
+  // Real pathfinding/collisions still determine whether it can actually step.
+  if (chroniclesUsesMM3Combat(state) && state.initiative?.order?.some(
+    (actor) => actor.kind === 'enemy' && actor.id === enemy.id
+  )) return engagedMovement;
   if (usesEnemyAwareness(enemy)) {
     return visiblePartyPosition(state, enemy, from) || lastKnownPartyPosition(state, enemy, from)
       ? engagedMovement : movement;
