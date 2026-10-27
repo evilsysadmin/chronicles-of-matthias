@@ -69,6 +69,7 @@ describe('Cinematic audience layout contracts', () => {
   const css = readFileSync(new URL('../components/ChroniclesAudience.css', import.meta.url), 'utf8');
 
   it('shows the illustrated full-room scene beneath a right-hand dialogue panel', () => {
+    expect(css).toMatch(/\\.chronicles-audience__dialogue\\s*\\{\\s*grid-area:\\s*dialogue;/);
     expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*position:\s*absolute;/s);
     expect(css).toMatch(/grid-template-areas:\s*'\. head' '\. dialogue'/);
     expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*pointer-events:\s*none;/s);
