@@ -11,9 +11,20 @@
 }
 .chronicles-inn__scene {
   position: fixed; inset: 0; height: 100%; width: 100%; z-index: -1;
+  overflow: hidden; pointer-events: none;
+}
+/* Keep the original SVG painted while the user-uploaded WebP downloads.
+   Both cover the exact same room geometry rather than extending the layout. */
+.chronicles-inn__scene img {
+  position: absolute; inset: 0; display: block; height: 100%; width: 100%;
   object-fit: cover; object-position: center; pointer-events: none;
   filter: saturate(.96) contrast(1.08);
 }
+.chronicles-inn__scene img.chronicles-shop__premium-art {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+.chronicles-inn__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
 .chronicles-inn::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(90deg, rgba(18,12,12,.91), rgba(26,17,13,.57) 41%, rgba(25,16,15,.31) 65%, rgba(13,10,10,.73)),
@@ -92,4 +103,6 @@
  .chronicles-inn__choices p { font-size:.83rem; margin-bottom:8px; }
  .chronicles-inn__footer { padding:12px 14px; flex-wrap:wrap; }
 }
-@media(prefers-reduced-motion:reduce) { .chronicles-inn *, .chronicles-inn *::before { transition:none!important; animation:none!important; } }
+@media(prefers-reduced-motion:reduce) {
+ .chronicles-inn *, .chronicles-inn *::before { transition:none!important; animation:none!important; }
+}
