@@ -69,6 +69,7 @@ describe('Cinematic audience layout contracts', () => {
   const css = readFileSync(new URL('../components/ChroniclesAudience.css', import.meta.url), 'utf8');
 
   it('shows the illustrated full-room scene beneath a right-hand dialogue panel', () => {
+    expect(css).toMatch(/\.chronicles-audience__dialogue\s*\{\s*grid-area:\s*dialogue;/);
     expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*position:\s*absolute;/s);
     expect(css).toMatch(/grid-template-areas:\s*'\. head' '\. dialogue'/);
     expect(css).toMatch(/\.chronicles-audience__scene\s*\{[^}]*pointer-events:\s*none;/s);
@@ -87,5 +88,13 @@ describe('Cinematic audience layout contracts', () => {
     expect(component).toContain('room.fallbackSrc && event.currentTarget.getAttribute');
     expect(component).toContain('event.currentTarget.src = room.fallbackSrc');
     expect(component).toContain('data-chronicles-audience-room={dialogue.room}');
+  });
+});
+
+describe('Audience layer contract', () => {
+  it('uses a body-level portal in browsers so first-person stacking cannot cover it', () => {
+    const component = readFileSync(new URL('../components/ChroniclesAudience.jsx', import.meta.url), 'utf8');
+    expect(component).toContain("createPortal(modal, document.body)");
+    expect(component).toContain("typeof document === 'undefined' ? modal");
   });
 });
