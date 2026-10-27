@@ -16,6 +16,15 @@ describe('MM3 party PV bar alignment', () => {
     expect(desktop).toContain('.chronicles .chronicles-party-bars i { height: 9px; }');
   });
 
+  it('keeps the portrait HUD focused on name, level, PV and PH without front/rear jargon', () => {
+    const portraitStrip = party.split('<aside className="chronicles-party"')[1]
+      ?.split('<main className="chronicles-stage-wrap">')[0] || '';
+    expect(portraitStrip).toContain('{index + 1}. {member.name}');
+    expect(portraitStrip).toContain('<small>Nv {chroniclesHeroProgress(progression, member.id).level}</small>');
+    expect(portraitStrip).toContain('{member.hp}/{member.maxHp}');
+    expect(portraitStrip).not.toMatch(/FRENTE|RETAGUARDIA|member\\.row/);
+  });
+
   it('still renders PH only for actual spellcasters, not an invented resource bar', () => {
     expect(party).toContain('<i className="is-hp"');
     expect(party).toMatch(/chroniclesMemberMaxSp\(state, member\) > 0 && \(\s*<i className="is-sp"/);
