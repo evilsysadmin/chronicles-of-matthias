@@ -182,6 +182,14 @@ describe('Chronicles MM3 pursuit around occupied chokepoints', () => {
     // A later turn must retry pathfinding when those cells become free.
     const cleared = { ...blocked, [doorway.hpKey]: 0, [flank.hpKey]: 0 };
     expect(chroniclesChooseEnemyStep(cleared, hunter)).toEqual({ x: 1, y: 2 });
+    const resumed = chroniclesResolveEnemyActor(cleared, hunter.id);
+    expect(chroniclesRuntimeEnemyPosition(resumed, hunter)).toEqual({ x: 1, y: 2 });
+    expect(resumed.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(resumed.party.map((hero) => hero.hp)).toEqual(cleared.party.map((hero) => hero.hp));
+
+    // Movement costs the entire action: the goblin can strike only on its next turn.
+    const adjacent = chroniclesResolveEnemyActor(resumed, hunter.id);
+    expect(adjacent.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
   });
 });
 
