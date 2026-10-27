@@ -157,7 +157,9 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(squad.byEnemy[OVERFLOW].attacks).toBeGreaterThan(0);
     expect(squad.attacks).toBeGreaterThan(single.attacks);
     expect(squad.attacks).toBeLessThan(squad.turns);
-    expect(squad.damage).toBeGreaterThanOrEqual(single.damage);
+    // The authored drain route must increase real, landed pressure, not
+    // merely permit harmless extra moves or missed attacks.
+    expect(squad.damage).toBeGreaterThan(single.damage);
   });
 
   it('isolates geometry with the same three goblins and the same party', () => {
