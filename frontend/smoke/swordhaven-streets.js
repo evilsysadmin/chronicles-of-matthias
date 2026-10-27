@@ -190,7 +190,15 @@ try {
       && store?.getObjectByName('store-loft-window')
       && !store?.getObjectByName('pitched-roof-dormer--1')
       && !forge?.getObjectByName('store-merchant-loft')
-      && forge?.getObjectByName('pitched-roof-dormer--1')
+      && forge?.getObjectByName('forge-roof-smoke-lantern')
+      && !forge?.getObjectByName('pitched-roof-dormer--1')
+    )),
+    distinctForgeLantern: String(Boolean(
+      forge?.getObjectByName('forge-roof-smoke-lantern')?.userData.chroniclesDecorativeOnly
+      && forge?.getObjectByName('forge-lantern-iron-louver')
+      && forge?.getObjectByName('forge-lantern-pitched-cap')
+      && !store?.getObjectByName('forge-roof-smoke-lantern')
+      && !armorer?.getObjectByName('forge-roof-smoke-lantern')
     )),
     distinctMarketStore: String(Boolean(
       store?.getObjectByName('store-market-awning')

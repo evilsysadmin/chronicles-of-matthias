@@ -617,6 +617,42 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(loft, new THREE.BoxGeometry(2.60, 0.18, 0.24), mats.timber,
       'store-loft-front-beam', [0, -0.75, 0.78]);
     root.add(loft);
+  } else if (isForge) {
+    // The smithy has a raised, louvered smoke lantern instead of domestic
+    // dormers. Its asymmetric oak-and-iron roofline is visible above the
+    // front gable and stays entirely inside the authored solid footprint.
+    const vent = new THREE.Group();
+    vent.name = 'forge-roof-smoke-lantern';
+    vent.userData.chroniclesDecorativeOnly = true;
+    vent.position.set(-width * 0.20, roofRidgeY + 0.06, facadeZ + 0.24);
+    mesh(vent, new THREE.BoxGeometry(3.00, 1.30, 0.74),
+      material(0x392b21, { roughness: 1 }),
+      'forge-lantern-dark-opening', [0, -0.15, 0], !coarse);
+    // The posts continue into the roof: a freestanding dark box would read
+    // like modern HVAC rather than an old timber-framed smithy lantern.
+    for (const side of [-1, 1]) {
+      mesh(vent, new THREE.BoxGeometry(0.22, 2.45, 0.90), mats.timber,
+        'forge-lantern-oak-post', [side * 1.54, -0.40, 0], !coarse);
+    }
+    const smokeLouver = material(0x645040, { roughness: 0.97, metalness: 0.06 });
+    for (const y of [-0.51, -0.13, 0.25]) {
+      const slat = mesh(vent, new THREE.BoxGeometry(2.94, 0.13, 0.16), smokeLouver,
+        'forge-lantern-iron-louver', [0, y, 0.48]);
+      slat.rotation.x = -0.18;
+    }
+    const lanternGable = new THREE.Shape();
+    lanternGable.moveTo(-1.73, 0.76);
+    lanternGable.lineTo(1.73, 0.76);
+    lanternGable.lineTo(0, 1.56);
+    lanternGable.closePath();
+    mesh(vent, new THREE.ShapeGeometry(lanternGable), mats.timber,
+      'forge-lantern-timber-gable', [0, 0, 0.48]);
+    for (const side of [-1, 1]) {
+      const cap = mesh(vent, new THREE.BoxGeometry(1.92, 0.19, 1.18), roof,
+        'forge-lantern-pitched-cap', [side * 0.83, 1.13, 0], !coarse);
+      cap.rotation.z = -side * 0.44;
+    }
+    root.add(vent);
   } else {
     // Other houses retain their ordinary dormers, one on touch and two on desktop.
     for (const side of (coarse ? [-1] : [-1, 1])) {
