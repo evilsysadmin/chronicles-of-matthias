@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustrated.svg';
-import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
 import braskIllustrated from '../assets/chronicles/ui/shops/brask-watch-illustrated.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
-import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
+import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
 import { ShopRoomArtwork } from './ChroniclesShop.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesAudience.css';
@@ -16,8 +15,8 @@ const ROOM_ART = Object.freeze({
     alt: 'El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento',
   }),
   'watch-house': Object.freeze({
-    src: braskIllustrated,
-    fallbackSrc: braskWatch,
+    src: CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL,
+    fallbackSrc: braskIllustrated,
     alt: 'El sargento Brask, armado ante el mapa del cuartel',
   }),
   temple: Object.freeze({
