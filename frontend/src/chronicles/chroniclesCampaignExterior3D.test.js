@@ -110,6 +110,14 @@ describe('Chronicles file-authored exterior renderer', () => {
       const vines = building.getObjectByName('window-box-trailing-stems');
       // The temple uses pointed stained glass instead of merchant planters
       // in both the classic square and the real First Book campaign town.
+      const armorBays = building.getObjectByName('armor-forged-display-bays');
+      if (armorBays) {
+        expect(armorBays.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(armorBays.children).toHaveLength(2);
+        expect(foliage).toBeFalsy();
+        expect(vines).toBeFalsy();
+        continue;
+      }
       const lancets = building.getObjectByName('temple-stained-glass-lancets');
       if (lancets) {
         expect(lancets.userData.chroniclesDecorativeOnly).toBe(true);
