@@ -146,4 +146,35 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     expect(approached.party.map((member) => member.hp)).toEqual(hpBefore);
   });
 
+  it('queues the entire west squad through a freed corridor without stacking or free hits', () => {
+    const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+    const atEntrance = { ...base, x: 1, y: 5 };
+    const enemies = chroniclesActiveEnemies(atEntrance);
+    const west = enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
+    const middle = enemies.find((enemy) => enemy.id === 'sewers-goblin-overflow');
+    const rear = enemies.find((enemy) => enemy.id === 'sewers-goblin-bottom-shaft');
+    const combat = chroniclesStartInitiativeCombat(atEntrance, enemies, { random: () => 0 });
+    expect(inCombat(combat)).toEqual(expect.arrayContaining([middle.id, rear.id]));
+
+    // The frontline falls at (2,5). Both survivors must use their own
+    // initiative action to fill the newly opened corridor in order.
+    const cleared = { ...combat, turnPhase: 'enemy', [west.hpKey]: 0 };
+    const hpBefore = cleared.party.map((member) => member.hp);
+    const middleTurn = chroniclesResolveEnemyActor(cleared, middle.id);
+    expect(middleTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(middleTurn, middle)).toEqual({ x: 2, y: 5 });
+    expect(middleTurn.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    const rearTurn = chroniclesResolveEnemyActor(middleTurn, rear.id);
+    expect(rearTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(rearTurn, rear)).toEqual({ x: 3, y: 5 });
+    expect(chroniclesRuntimeEnemyPosition(rearTurn, middle)).toEqual({ x: 2, y: 5 });
+    expect(rearTurn.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    // A subsequent action, not either movement, may finally attack.
+    const nextMiddleTurn = chroniclesResolveEnemyActor(rearTurn, middle.id);
+    expect(nextMiddleTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
+    expect(chroniclesRuntimeEnemyPosition(nextMiddleTurn, middle)).toEqual({ x: 2, y: 5 });
+  });
+
 });
