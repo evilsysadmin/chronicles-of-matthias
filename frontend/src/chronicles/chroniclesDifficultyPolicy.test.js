@@ -67,6 +67,23 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(absurdDepth.maxLevel).toBeLessThanOrEqual(3);
   });
 
+  it.each([
+    ['boolean', true],
+    ['numeric array', [4]],
+    ['string array', ['4']],
+    ['object', { value: 4 }],
+  ])('does not invent dungeon depth from a malformed %s', (_label, depth) => {
+    const progression = leveledParty(6);
+    expect(chroniclesDifficultyBand({ progression, depth }))
+      .toEqual(chroniclesDifficultyBand({ progression, depth: 0 }));
+  });
+
+  it('preserves numeric-string dungeon depth for legacy saves', () => {
+    const progression = leveledParty(6);
+    expect(chroniclesDifficultyBand({ progression, depth: '4' }))
+      .toEqual(chroniclesDifficultyBand({ progression, depth: 4 }));
+  });
+
   it('prefers the backend difficulty snapshot over local recomputation', () => {
     const authoritative = Object.freeze({
       partyLevel: 4,
