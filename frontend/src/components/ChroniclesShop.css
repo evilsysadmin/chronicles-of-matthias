@@ -197,7 +197,6 @@
   min-width: 0;
   padding: clamp(10px, 1.3vw, 19px);
 }
-
 .chronicles-shop__filters {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -966,13 +965,14 @@
   image-rendering: auto;
 }
 
-/* The local SVG always paints first. An R2 image overlays it only after
-   a successful load, with no blank/broken frame on slow or offline clients. */
+/* The full-window Chronicles gate covers both layers until the remote WebP
+   is decoded. No crossfade: the first revealed frame must be 100% premium.
+   SVG fallback only becomes visible on actual CDN/decode failure or timeout. */
 .chronicles-shop__scene img.chronicles-shop__premium-art {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 180ms ease-out;
+  transition: none;
 }
 .chronicles-shop__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {

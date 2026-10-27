@@ -12,6 +12,8 @@ try {
       await page.goto(url, { waitUntil: 'load' });
       const room = page.getByRole('dialog', { name:'Tienda de provisiones de Swordhaven' });
       await room.waitFor({ state:'visible' });
+      // The shared atomic-art gate owns the screen until premium or fallback is decoded.
+      await page.locator('[data-chronicles-interior-loading]').waitFor({ state:'detached', timeout:16_000 });
       const counter = page.locator('[data-chronicles-provisions="open"]');
       const close = room.getByRole('button', { name: 'Salir de la tienda de provisiones' });
       const before = async () => ({

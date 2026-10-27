@@ -58,7 +58,7 @@ export default function ChroniclesInn({ state, onAction, onClose }) {
       <section ref={dialogRef} className="chronicles-inn" role="dialog" aria-modal="true"
         aria-label={`Taberna ${chroniclesInnName(entry)}`}>
         <div className="chronicles-inn__scene" data-chronicles-inn-art="tavern">
-          <ShopRoomArtwork room={{
+          <ShopRoomArtwork onCancel={onClose} room={{
             src: CHRONICLES_TAVERN_PREMIUM_ART_URL,
             fallbackSrc: scene,
             alt: 'Interior de taberna medieval con vigas, chimenea encendida, mesas y mostrador de roble',

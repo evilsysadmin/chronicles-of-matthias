@@ -50,6 +50,8 @@ describe('Swordhaven premium provisions counter', () => {
     expect(html).toContain('data-chronicles-provisions="open"');
     expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
     expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain('data-chronicles-interior-loading');
+    expect(html).toContain('Salir durante la carga');
     expect(html).toContain(CHRONICLES_PROVISIONS_PREMIUM_ART_URL);
     expect(html).toContain('Comprar raciones · 7 oro');
     expect(html).toContain('Salir de la tienda de provisiones');

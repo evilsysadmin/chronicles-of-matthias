@@ -18,6 +18,7 @@ try {
         await page.goto(url + '?npc=' + npc, { waitUntil: 'load' });
         const modal = page.getByRole('dialog', { name: 'Conversación con ' + expected });
         await modal.waitFor({ state: 'visible' });
+        await page.locator('[data-chronicles-interior-loading]').waitFor({ state: 'detached', timeout: 16_000 });
         const scene = modal.locator('[data-chronicles-audience-room="' + roomId + '"]');
         const picture = scene.locator('img').first();
         await page.waitForFunction((isTemple) => {

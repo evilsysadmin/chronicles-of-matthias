@@ -79,7 +79,7 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
       >
         {room ? (
           <figure className="chronicles-shop__scene" data-chronicles-shop-room={room.id}>
-            <ShopRoomArtwork room={room} />
+            <ShopRoomArtwork key={room.src} room={room} onCancel={onClose} />
           </figure>
         ) : null}
 

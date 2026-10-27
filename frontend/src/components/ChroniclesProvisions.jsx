@@ -72,7 +72,7 @@ export default function ChroniclesProvisions({ state, onBuy, onClose }) {
       <section ref={dialogRef} className="chronicles-provisions" role="dialog" aria-modal="true"
         aria-label="Tienda de provisiones de Swordhaven">
         <div className="chronicles-provisions__scene" aria-label="Interior de la tienda del intendente">
-          <ShopRoomArtwork room={{
+          <ShopRoomArtwork onCancel={onClose} room={{
             src: CHRONICLES_PROVISIONS_PREMIUM_ART_URL,
             fallbackSrc: hallFallback,
             alt: 'Interior de madera de la tienda de provisiones, con mostrador y mercancías',
