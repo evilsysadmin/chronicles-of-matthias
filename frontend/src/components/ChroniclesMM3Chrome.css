@@ -815,7 +815,8 @@
     /* Fill the spare right rail, but leave room for movement and journal.
        The map itself grows; radius/POI discovery and mobile HUD stay unchanged. */
     height: clamp(230px, 43dvh, 400px);
-    grid-template-rows: minmax(0, 1fr) 22px;
+    /* Keep separate caption tracks: SVG, coordinates, then location. */
+    grid-template-rows: minmax(0, 1fr) 16px 22px;
     padding: 8px;
     border: 3px solid;
     border-color: #f0c48a #5a2e12 #5a2e12 #f0c48a;
@@ -832,7 +833,7 @@
     background: #171321;
   }
   .chronicles .chronicles-minimap__location {
-    grid-row: 2;
+    grid-row: 3;
     align-self: center;
     font-size: clamp(.72rem, .85vw, .87rem);
   }
