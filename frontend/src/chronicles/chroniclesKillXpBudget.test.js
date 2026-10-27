@@ -43,11 +43,12 @@ describe('Chronicles MM3 · exact finite kill XP budget', () => {
       .reduce((sum, award) => sum + award.xp, 0)).toBe(9);
   });
 
-  it('pays the same finite damage XP for four 1-HP blows as one 4-HP blow', () => {
+  it('keeps the old two-damage-XP budget despite eight actual HP, split or all at once', () => {
     const map = chroniclesMapById(MAP_ID);
     const goblin = map.enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
     const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
-    expect(base[goblin.hpKey]).toBe(4);
+    expect(base[goblin.hpKey]).toBe(8);
+    expect(goblin.damageXpHpCap).toBe(4);
 
     function play(hpSteps, runId) {
       let state = base;
@@ -72,7 +73,7 @@ describe('Chronicles MM3 · exact finite kill XP budget', () => {
     }
 
     const single = play([0], 'damage-budget-single');
-    const split = play([3, 2, 1, 0], 'damage-budget-split');
+    const split = play([7, 6, 5, 4, 3, 2, 1, 0], 'damage-budget-split');
     expect(single.damageXp).toBe(2);
     expect(split.damageXp).toBe(2);
     expect(split.byHero).toEqual({ matthias: 1, rook: 0, bishop: 1, knight: 0 });
@@ -86,6 +87,7 @@ describe('Chronicles MM3 · exact finite kill XP budget', () => {
     const map = chroniclesMapById(MAP_ID);
     const goblins = map.enemies.filter((enemy) => enemy.squadId);
     expect(goblins).toHaveLength(9);
+    expect(goblins.every((goblin) => goblin.maxHp === 8 && goblin.damageXpHpCap === 4)).toBe(true);
     expect(new Set(goblins.map((enemy) => enemy.squadId)).size).toBe(3);
 
     let previous = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
