@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesEngagedEnemies, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
+import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import {
   applyChroniclesTacticsProgression,
   chroniclesKillXp,
@@ -117,4 +118,32 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
       chroniclesMapTransitionState({ ...after }, 'swordhaven-first-book'), MAP_ID);
     expect(reentered[goblin.hpKey]).toBe(0);
   });
+
+  it('makes screened squadmates spend an action approaching, never attack through their frontline', () => {
+    const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+    const atEntrance = { ...base, x: 1, y: 5 };
+    const enemies = chroniclesActiveEnemies(atEntrance);
+    const west = enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
+    const overflow = enemies.find((enemy) => enemy.id === 'sewers-goblin-overflow');
+    const combat = chroniclesStartInitiativeCombat(atEntrance, enemies, { random: () => 0 });
+    expect(inCombat(combat)).toContain(overflow.id);
+    const enemyTurn = { ...combat, turnPhase: 'enemy' };
+    const hpBefore = enemyTurn.party.map((member) => member.hp);
+
+    // The frontline goblin occupies (2,5), so its mate at (3,5) must not
+    // strike the party at (1,5), teleport, or damage anyone through it.
+    const blocked = chroniclesResolveEnemyActor(enemyTurn, overflow.id);
+    expect(blocked.enemyTurnEvents.some((event) => event.type === 'attack')).toBe(false);
+    expect(blocked.party.map((member) => member.hp)).toEqual(hpBefore);
+    expect(chroniclesRuntimeEnemyPosition(blocked, overflow)).toEqual({ x: 3, y: 5 });
+
+    // After the frontline falls, the next action moves one cardinal tile;
+    // reaching melee range does not also grant a free attack.
+    const cleared = { ...enemyTurn, [west.hpKey]: 0 };
+    const approached = chroniclesResolveEnemyActor(cleared, overflow.id);
+    expect(approached.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(approached, overflow)).toEqual({ x: 2, y: 5 });
+    expect(approached.party.map((member) => member.hp)).toEqual(hpBefore);
+  });
+
 });
