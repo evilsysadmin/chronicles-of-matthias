@@ -25,7 +25,7 @@ try {
           return img && img.complete && img.naturalWidth >= (isTemple ? 400 : 1000)
             && img.naturalHeight >= (isTemple ? 300 : 700);
         }, npc === 'ilse');
-        if (npc === 'ilse' || npc === 'aldric') {
+        if (['ilse', 'aldric', 'brask'].includes(npc)) {
           const fallback = scene.locator('img[data-chronicles-shop-art-layer="fallback"]');
           const premium = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
           assert.equal(await fallback.count(), 1, npc + ': previous illustrated room must remain as a fallback');
@@ -40,7 +40,8 @@ try {
             opacity: Number.parseFloat(getComputedStyle(img).opacity),
             position: getComputedStyle(img).position,
           }));
-          const expectedAsset = npc === 'ilse' ? 'templo-ilse-premium.webp' : 'ayuntamiento-aldric-premium.webp';
+          const expectedAsset = npc === 'ilse' ? 'templo-ilse-premium.webp'
+            : npc === 'aldric' ? 'ayuntamiento-aldric-premium.webp' : 'cuartel-brask-premium.webp';
           assert.equal(art.url, 'https://assets.chronicles.shadowops.dpdns.org/stores/' + expectedAsset);
           assert.equal(art.position, 'absolute', npc + ': WebP must overlay, not push dialogue down');
           if (art.width > 0) {

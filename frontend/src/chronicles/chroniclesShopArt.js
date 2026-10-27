@@ -62,3 +62,10 @@ export const CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL =
 export const CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY = 'stores/ayuntamiento-aldric-premium.webp';
 export const CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY}`;
+
+// The user-uploaded clean Brask guardhouse panorama in the independent
+// Chronicles bucket. Mutable R2 key: normal cache semantics, not immutable.
+// Keep the previously approved illustrated garrison SVG as local fallback.
+export const CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY = 'stores/cuartel-brask-premium.webp';
+export const CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY}`;

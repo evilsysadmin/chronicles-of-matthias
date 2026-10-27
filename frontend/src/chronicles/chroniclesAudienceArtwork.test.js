@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import ChroniclesAudience from '../components/ChroniclesAudience.jsx';
-import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY, CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from './chroniclesShopArt.js';
+import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_KEY, CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY, CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from './chroniclesShopArt.js';
 import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesContextualContentAction, createChroniclesState } from '../chroniclesOfMatthias.js';
 
@@ -55,8 +55,18 @@ describe('Swordhaven audience premium environment', () => {
     const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
     const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
     expect(html).toContain('data-chronicles-audience-room="watch-house"');
+    expect(CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY).toBe('stores/cuartel-brask-premium.webp');
+    expect(CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/cuartel-brask-premium.webp');
     expect(html).toContain('brask-watch-illustrated.svg');
+    expect(html).toContain(CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL);
+    expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain('aria-hidden="true"');
+    expect((html.match(/alt="El sargento Brask, armado ante el mapa del cuartel"/g) || [])).toHaveLength(1);
     expect(html).toContain('Sargento Brask');
+    expect(html).toContain('data-chronicles-dialogue-choice="road"');
+    expect(html).toContain('data-chronicles-dialogue-choice="advice"');
     expect(html).toContain('data-chronicles-dialogue-choice="quest"');
   });
 
