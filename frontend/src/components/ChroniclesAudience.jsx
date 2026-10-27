@@ -5,6 +5,8 @@ import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustr
 import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
 import braskIllustrated from '../assets/chronicles/ui/shops/brask-watch-illustrated.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
+import { CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
+import { ShopRoomArtwork } from './ChroniclesShop.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesAudience.css';
 
@@ -20,7 +22,8 @@ const ROOM_ART = Object.freeze({
     alt: 'El sargento Brask, armado ante el mapa del cuartel',
   }),
   temple: Object.freeze({
-    src: ilseTemple,
+    src: CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL,
+    fallbackSrc: ilseTemple,
     alt: 'La sacerdotisa Ilse ante el altar del templo',
   }),
 });
@@ -103,7 +106,9 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
         </header>
 
         <figure className="chronicles-audience__scene" data-chronicles-audience-room={dialogue.room}>
-          {room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async"
+          {room?.fallbackSrc && dialogue.room === 'temple' ? (
+            <ShopRoomArtwork room={room} />
+          ) : room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async"
             onError={(event) => {
               // The original authored room is still packaged with the app.
               // Recover on a missing/undecodable upgraded illustration without
