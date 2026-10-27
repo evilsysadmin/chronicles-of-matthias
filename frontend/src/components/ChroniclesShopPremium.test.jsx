@@ -71,7 +71,7 @@ describe('Chronicles premium shop UI', () => {
     }
   });
 
-  it('keeps Odo visible while approved remote art loads or fails', () => {
+  it('starts with a black Chronicles gate and reveals premium art without a visible fallback', () => {
     const remote = 'https://assets.chess-studio.shadowops.dpdns.org/chronicles/shops/odo/approved.webp';
     const fallback = '/local/odo-armory.svg';
     const room = { id: 'odo-forge', src: remote, fallbackSrc: fallback, alt: 'La armería de Odo' };
@@ -83,6 +83,9 @@ describe('Chronicles premium shop UI', () => {
     expect(html).toContain('data-chronicles-shop-art-layer="premium"');
     expect(html).toContain('class="chronicles-shop__premium-art"');
     expect(html).not.toContain('is-ready');
+    expect(html).toContain('data-chronicles-interior-loading');
+    expect(html).toContain('CARGANDO INTERIOR');
+    expect(html).toContain('Salir durante la carga');
     expect(html).toContain('aria-hidden="true"');
     expect((html.match(/alt="La armería de Odo"/g) || [])).toHaveLength(1);
 
@@ -91,9 +94,10 @@ describe('Chronicles premium shop UI', () => {
     }));
     expect((local.match(/<img/g) || [])).toHaveLength(1);
     expect(local).not.toContain('data-chronicles-shop-art-layer');
+    expect(local).toContain('data-chronicles-interior-loading');
 
-    // Pending CDN images must stay invisible while the already-decoded
-    // local artwork occupies the full frame; no motion for reduced-motion.
+    // Pending art is covered by the full-window portal; never crossfade.
+    expect(css).toContain('transition: none;');
     const css = readFileSync(new URL('./ChroniclesShop.css', import.meta.url), 'utf8');
     expect(css).toMatch(/\.chronicles-shop__scene img\.chronicles-shop__premium-art\s*\{[^}]*position: absolute;[^}]*opacity: 0;/s);
     expect(css).toMatch(/\.chronicles-shop__scene img\.chronicles-shop__premium-art\.is-ready\s*\{\s*opacity: 1;/s);
