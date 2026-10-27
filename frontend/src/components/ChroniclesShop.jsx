@@ -91,16 +91,27 @@ function ShopConsumablePeek({ item }) {
   );
 }
 
-// The character sheet remains the authority for class equipment restrictions.
-// Cloud image faults (offline, blocked CDN, 404) must never leave the room
-// black or broken. Only one fallback attempt, avoiding recursive error loops.
-function ShopRoomArtwork({ room }) {
-  const [src, setSrc] = useState(room.src);
-  useEffect(() => { setSrc(room.src); }, [room.src]);
-  return <img src={src} alt={room.alt} draggable="false" decoding="async"
-    onError={() => {
-      if (room.fallbackSrc && src !== room.fallbackSrc) setSrc(room.fallbackSrc);
-    }} />;
+// The shop background must be present from its first painted frame. When
+// approved R2 art is pinned, keep the local room illustration visible beneath
+// it until the network image has loaded; a slow/failed CDN must never leave a
+// broken-image glyph or empty backdrop. The fallback remains the accessible
+// image; the premium overlay is visual-only and cannot steal focus.
+export function ShopRoomArtwork({ room }) {
+  const [premiumReady, setPremiumReady] = useState(false);
+  if (!room.fallbackSrc || room.src === room.fallbackSrc) {
+    return <img src={room.src} alt={room.alt} draggable="false" decoding="async" />;
+  }
+  return (
+    <>
+      <img src={room.fallbackSrc} alt={room.alt} draggable="false"
+        decoding="async" data-chronicles-shop-art-layer="fallback" />
+      <img src={room.src} alt="" aria-hidden="true" draggable="false"
+        decoding="async" data-chronicles-shop-art-layer="premium"
+        className={`chronicles-shop__premium-art${premiumReady ? ' is-ready' : ''}`}
+        onLoad={() => setPremiumReady(true)}
+        onError={() => setPremiumReady(false)} />
+    </>
+  );
 }
 
 function ShopItemVisual({ item }) {
