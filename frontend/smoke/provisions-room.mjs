@@ -37,7 +37,7 @@ try {
         };
       });
       assert(stacking.counter > stacking.world && stacking.closeHit,
-        'Merchant counter must sit above the first person world');
+        'Merchant counter must sit above the first person world: ' + JSON.stringify(stacking));
       assert(stacking.rect.left >= -1 && stacking.rect.right <= width+1
         && stacking.overlayOverflow <= width+1, 'No horizontal overflow in merchant room');
       assert.equal(await close.evaluate(n=>n.getBoundingClientRect().height >= 44),true);
