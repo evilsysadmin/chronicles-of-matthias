@@ -137,21 +137,27 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     }
   });
 
-  it('exposes why a three-goblin corridor is not three simultaneous attackers', () => {
+  it('gives the western goblin pack a real southern flanking route, without free attacks', () => {
+    // Two opened drain cells connect the existing lower corridor to the
+    // company's southern side. Goblins still walk one tile per spent turn.
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    expect(chroniclesTileAt(1, 6, base)).toBe('.');
+    expect(chroniclesTileAt(2, 6, base)).toBe('.');
+    const pack = chroniclesActiveEnemies(base).filter((enemy) => enemy.squadId === 'sewers-west-pack');
+    expect(pack).toHaveLength(3);
+    expect(pack.every((enemy) => enemy.killXp === 2)).toBe(true);
+
     const single = runPressure(cases[0]);
-    const corridor = runPressure(cases[1]);
-    expect(single.attacks).toBe(4);
-    expect(corridor.enemies).toBe(3);
-    expect(corridor.attacks).toBe(single.attacks);
-    // The two rear creatures spend 3 actions trying to approach and
-    // 5 actions physically blocked; none reaches the company's melee cell.
-    expect(corridor.moves).toBe(3);
-    expect(corridor.blocked).toBe(5);
-    expect(corridor.moves + corridor.blocked).toBe(8);
-    expect(corridor.byEnemy[WEST].attacks).toBe(4);
-    expect(corridor.byEnemy[OVERFLOW].attacks).toBe(0);
-    expect(corridor.byEnemy[REAR].attacks).toBe(0);
-    expect(corridor.damage).toBe(single.damage);
+    const squad = runPressure(cases[1]);
+    expect(squad.enemies).toBe(3);
+    expect(squad.byEnemy[WEST].attacks).toBe(single.attacks);
+    // The rear goblin must approach along the actual floor before attacking;
+    // the third goblin cannot magically attack through its companions.
+    expect(squad.byEnemy[OVERFLOW].moves).toBeGreaterThanOrEqual(3);
+    expect(squad.byEnemy[OVERFLOW].attacks).toBeGreaterThan(0);
+    expect(squad.attacks).toBeGreaterThan(single.attacks);
+    expect(squad.attacks).toBeLessThan(squad.turns);
+    expect(squad.damage).toBeGreaterThanOrEqual(single.damage);
   });
 
   it('isolates geometry with the same three goblins and the same party', () => {
