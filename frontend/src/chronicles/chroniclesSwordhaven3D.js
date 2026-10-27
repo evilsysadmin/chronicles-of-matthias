@@ -897,6 +897,23 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'armor-display', [x, 1.12, facadeZ + 0.24]);
   }
   if (isArmor) {
+    // Paired ashlar roof shoulders give the armorer a fortified silhouette,
+    // distinct from the watchhouse's single battlement tower. They sit in
+    // front of the roof gable, above the solid building footprint, and never
+    // change doors, authored collisions or the existing heraldic crest.
+    const shoulders = new THREE.Group();
+    shoulders.name = 'armor-roof-shoulders';
+    shoulders.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      const x = side * width * 0.42;
+      mesh(shoulders, new THREE.BoxGeometry(0.86, 2.10, 0.92), mats.stone,
+        'armor-roof-shoulder-pier', [x, height + 1.55, facadeZ + 0.16], !coarse);
+      mesh(shoulders, new THREE.BoxGeometry(1.10, 0.22, 1.12), mats.steel,
+        'armor-roof-shoulder-cap', [x, height + 2.69, facadeZ + 0.16]);
+      mesh(shoulders, new THREE.BoxGeometry(0.12, 0.68, 0.08), mats.steel,
+        'armor-roof-shoulder-slit', [x, height + 1.75, facadeZ + 0.66]);
+    }
+    root.add(shoulders);
     // A heavy, squared ashlar gateway distinguishes the armorer at eye level
     // from the guild's pointed arch and the forge's open brazier. All masonry
     // stays beside/above the existing door and never changes collision.
