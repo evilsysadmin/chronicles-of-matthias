@@ -33,7 +33,8 @@ function engravedTitle() {
           if (!(bits & (1 << (4 - cx)))) continue;
           for (let dy = 0; dy < scale; dy += 1) for (let dx = 0; dx < scale; dx += 1) {
             const px = start + (index * 6 + cx) * scale + dx;
-            const py = top + ry * scale + dy;
+            // DataTexture rows begin at the bottom; keep glyphs and titles upright.
+            const py = height - 1 - (top + ry * scale + dy);
             const i = (py * width + px) * 4;
             pixels.set([244, 213, 151, 255], i);
           }
