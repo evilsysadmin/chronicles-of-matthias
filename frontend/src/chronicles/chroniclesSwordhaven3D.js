@@ -404,7 +404,14 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.96,
   }) : null;
-  const wallMaterial = guildStone || tavernBrick || apothecaryStone
+  // The market store keeps limewash, but in a warm ochre distinct from the
+  // smith's pale plaster. Reuse the existing stucco albedo and relief.
+  const storeOchre = isStore ? material(0xd9b98a, {
+    map: swordhavenSurfaceTexture('stucco'),
+    normalMap: swordhavenSurfaceNormalTexture('stucco'),
+    normalScale: new THREE.Vector2(0.38, 0.38), roughness: 0.96,
+  }) : null;
+  const wallMaterial = guildStone || tavernBrick || apothecaryStone || storeOchre
     || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
@@ -783,6 +790,25 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       rib.rotation.x = 0.16;
     }
     root.add(awning);
+    // An oak-clad merchant frontage beneath the canopy distinguishes the
+    // quartermaster at eye level. Both bays flank the existing door and sit
+    // entirely on the authored solid building footprint; no collision change.
+    const storefront = new THREE.Group();
+    storefront.name = 'store-oak-frontage';
+    storefront.userData.chroniclesDecorativeOnly = true;
+    const oak = material(0x765339, { roughness: 0.94 });
+    for (const side of [-1, 1]) {
+      const x = side * 2.47;
+      mesh(storefront, new THREE.BoxGeometry(2.38, 1.24, 0.13), oak,
+        'store-oak-panel', [x, 0.99, facadeZ + 0.33]);
+      for (const offset of [-0.91, 0, 0.91]) {
+        mesh(storefront, new THREE.BoxGeometry(0.12, 1.18, 0.07), mats.timber,
+          'store-oak-batten', [x + offset, 0.99, facadeZ + 0.44]);
+      }
+      mesh(storefront, new THREE.BoxGeometry(2.50, 0.14, 0.22), mats.timber,
+        'store-oak-rail', [x, 1.66, facadeZ + 0.42]);
+    }
+    root.add(storefront);
   } else if (isForge) {
     mesh(root, new THREE.CylinderGeometry(0.52, 0.59, 1.3, 10), mats.stone,
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
