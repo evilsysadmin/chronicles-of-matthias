@@ -23,6 +23,7 @@ async function gotoReadyShop(page, target) {
       // An optional remote overlay is allowed to fail; the already-decoded
       // local artwork must still satisfy the ordinary image-readiness gate.
   }, undefined, { timeout: 20_000 });
+  await page.locator('[data-chronicles-interior-loading]').waitFor({ state: 'detached', timeout: 16_000 });
 }
 
 async function catalogFilterTops(dialog) {
