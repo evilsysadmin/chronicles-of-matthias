@@ -336,6 +336,8 @@
 /* ─── Desktop / wide landscape: the full MM3 screen ─────────────────────── */
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
   .chronicles .chronicles-shell {
+    /* The fixed 100dvh shell must include its own top/bottom padding. */
+    box-sizing: border-box;
     grid-template-columns: minmax(0, 1fr) clamp(244px, 21vw, 316px);
     grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas:
