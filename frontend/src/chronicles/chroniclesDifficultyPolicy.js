@@ -9,6 +9,9 @@ const DEPTH_PRESSURE_CAP = 6;
 const ABOVE_PARTY_CAP = 1;
 
 function boundedInteger(value, min, max, fallback = min) {
+  // Go's boundedInt rejects booleans and structured values. Number([4]) or
+  // Number(true) would otherwise invent dungeon depth in a corrupt save.
+  if (typeof value !== 'number' && typeof value !== 'string') return fallback;
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(number)));
