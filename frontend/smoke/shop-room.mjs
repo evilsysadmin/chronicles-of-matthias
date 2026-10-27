@@ -18,7 +18,10 @@ async function gotoReadyShop(page, target) {
   await page.waitForFunction(() => {
     const images = [...document.images].filter((img) => img.getClientRects().length);
     return document.fonts.status === 'loaded'
-      && images.every((img) => img.complete && img.naturalWidth > 0);
+      && images.every((img) => img.complete && (
+        img.naturalWidth > 0
+        || img.dataset.chroniclesShopArtLayer === 'premium' // Failed CDN: local room stays visible.
+      ));
   }, undefined, { timeout: 20_000 });
 }
 
@@ -496,7 +499,7 @@ try {
         const scene = dialog.locator('.chronicles-shop__scene');
         const expected = room === 'odo' ? 'odo-forge' : 'guild-sanctum';
         assert.equal(await scene.getAttribute('data-chronicles-shop-room'), expected);
-        const img = scene.locator('img');
+        const img = scene.locator('img').first(); // Approved R2 adds an optional second overlay.
         await img.waitFor();
         const art = await img.evaluate((image) => ({
           loaded: image.complete && image.naturalWidth > 0,
@@ -505,8 +508,30 @@ try {
         }));
         assert(art.loaded, room + ': artwork did not decode at ' + width);
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
-        assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong artwork source');
+        assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong base artwork source');
         if (room === 'odo') {
+          // Once the manifest is pinned the local fallback MUST remain
+          // visible until the approved remote WebP decodes. A failed fetch
+          // must not break merchant interaction or show an empty image.
+          const overlay = scene.locator('[data-chronicles-shop-art-layer="premium"]');
+          if (await overlay.count()) {
+            const checked = await overlay.evaluate((node) => ({
+              src: node.currentSrc, width: node.naturalWidth, height: node.naturalHeight,
+              ready: node.classList.contains('is-ready'),
+              opacity: Number.parseFloat(getComputedStyle(node).opacity),
+            }));
+            assert.match(checked.src, /^https:\/\/assets\.chess-studio\.shadowops\.dpdns\.org\/chronicles\/shops\/odo\/odo-premium-composite-79e0b13fc2ee2ffb\.webp$/,
+              'Only the approved immutable Odo WebP may overlay the room');
+            if (checked.width > 0) {
+              assert(checked.width >= 1500 && checked.height >= 800,
+                'Approved Odo WebP must be a full-quality panoramic background');
+              assert(checked.ready, 'Decoded R2 art must be promoted to the visible layer');
+            } else {
+              assert(!checked.ready && checked.opacity === 0,
+                'A broken CDN image must remain hidden over the local room');
+            }
+          }
+
           for (const [id, alt] of [
             ['wooden-shield', 'Escudo de madera'],
             ['leather-leather', 'Coraza de cuero'],
