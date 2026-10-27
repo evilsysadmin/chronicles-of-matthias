@@ -30,4 +30,35 @@ describe('Swordhaven temple roof silhouette', () => {
     expect(forge.getObjectByName('temple-gable-pinnacles')).toBeFalsy();
     expect(guild.getObjectByName('temple-gable-pinnacles')).toBeFalsy();
   });
+  it.each([true, false])('replaces merchant windows with two pointed stained-glass lancets on coarsePointer=%s', (coarsePointer) => {
+    const scene = new THREE.Scene();
+    buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+    const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+    const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+    const armorer = scene.getObjectByName('swordhaven-building-swordhaven-armor');
+    const lancets = temple.getObjectByName('temple-stained-glass-lancets');
+    expect(lancets?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(lancets?.children).toHaveLength(2);
+    expect(lancets.children[0].position.x).toBeCloseTo(-lancets.children[1].position.x);
+    expect(lancets.position.z).toBeGreaterThan(temple.getObjectByName('shop-door').position.z);
+    for (const bay of lancets.children) {
+      const stone = bay.getObjectByName('temple-lancet-stone-arch');
+      const glass = bay.getObjectByName('temple-lancet-stained-glass');
+      expect(stone?.geometry).toBeInstanceOf(THREE.ShapeGeometry);
+      expect(glass?.geometry).toBeInstanceOf(THREE.ShapeGeometry);
+      expect(glass.position.z).toBeGreaterThan(stone.position.z);
+      expect(bay.getObjectByName('temple-lancet-lead-mullion')).toBeTruthy();
+      expect(bay.getObjectByName('temple-lancet-stone-sill')).toBeTruthy();
+    }
+    expect(temple.getObjectByName('warm-glass-window')).toBeFalsy();
+    expect(temple.getObjectByName('window-diamond-leadwork')).toBeFalsy();
+    expect(temple.getObjectByName('flower-window-box')).toBeFalsy();
+    expect(temple.getObjectByName('vertical-facade-post')).toBeFalsy();
+    expect(temple.getObjectByName('shop-door-iron-straps')).toBeTruthy();
+    expect(temple.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
+    expect(forge.getObjectByName('warm-glass-window')).toBeTruthy();
+    expect(forge.getObjectByName('flower-window-box')).toBeTruthy();
+    expect(armorer.getObjectByName('temple-stained-glass-lancets')).toBeFalsy();
+  });
+
 });
