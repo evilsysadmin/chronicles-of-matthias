@@ -168,6 +168,16 @@ try {
       && watch?.getObjectByName('watchhouse-front-merlon')
       && !armorer?.getObjectByName('watchhouse-battlement-tower')
     )),
+    distinctTavernBrick: String(Boolean(
+      tavern?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xb98b70
+      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
+      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.normalMap?.name === 'chronicles-town-normal-masonry'
+      && tavern?.getObjectByName('roof-gable-1')?.material
+        === tavern?.getObjectByName('timber-and-stone-walls')?.material
+      && tavern?.getObjectByName('vertical-facade-post')
+      && tavern?.getObjectByName('shop-door')
+      && forge?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-stucco'
+    )),
     distinctTavernRoof: String(Boolean(
       tavern?.getObjectByName('tavern-double-hearth')
       && tavern?.getObjectByName('tavern-hearth-flue-0')
