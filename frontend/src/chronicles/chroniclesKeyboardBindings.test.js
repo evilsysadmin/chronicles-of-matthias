@@ -197,6 +197,30 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
 });
 
 
+describe('Chronicles pause menu · choose saved expedition', () => {
+  const key = (keyName) => ({
+    key: keyName, target: { isContentEditable: false, closest: () => null },
+  });
+
+  it('cancels the load decision on Esc without closing the adventure menu', () => {
+    const confirm = { menuOpen: true, confirmLoadSelection: true };
+    expect(chroniclesAdventureMenuShortcut(key('Escape'), confirm)).toBe('cancel-load');
+    expect(chroniclesFirstPersonEscapeAction(confirm)).toBe('cancel-load');
+    expect(chroniclesAdventureMenuShortcut(key('Escape'), { menuOpen: true })).toBe('close');
+  });
+
+  it('does not shoot, save, quit or close via Tab while choosing a saved game', () => {
+    const confirm = { menuOpen: true, confirmLoadSelection: true };
+    for (const name of ['s', 'S', 'q', 'Q']) {
+      expect(chroniclesAdventureMenuShortcut(key(name), confirm)).toBeNull();
+    }
+    expect(chroniclesAdventureTabClosesMenu({
+      key: 'Tab', target: {}, shiftKey: false, repeat: false,
+    }, {}, confirm)).toBe(false);
+    expect(chroniclesAdventureMenuShortcut(key('s'), { menuOpen: true })).toBe('save');
+  });
+});
+
 describe('Chronicles modal adventure-menu Tab containment', () => {
   const setup = () => {
     const doc = { activeElement: null, defaultView: { getComputedStyle: () => ({ visibility: 'visible' }) } };
