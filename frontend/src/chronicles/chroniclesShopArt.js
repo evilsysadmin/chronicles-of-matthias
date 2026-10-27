@@ -69,3 +69,10 @@ export const CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL =
 export const CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY = 'stores/cuartel-brask-premium.webp';
 export const CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_BRASK_WATCH_PREMIUM_ART_KEY}`;
+
+// Clean tavern panorama supplied by the player in the independent Chronicles
+// R2 stores prefix. The mutable key does not carry immutable cache semantics;
+// the existing tavern SVG stays packaged and visible on slow/offline clients.
+export const CHRONICLES_TAVERN_PREMIUM_ART_KEY = 'stores/taberna-premium.webp';
+export const CHRONICLES_TAVERN_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_TAVERN_PREMIUM_ART_KEY}`;
