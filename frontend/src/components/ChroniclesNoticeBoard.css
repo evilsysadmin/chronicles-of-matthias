@@ -1,0 +1,129 @@
+/* Diegetic notice-board folio: no extra art download or persistent HUD banner. */
+.chronicles-notice-board__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10240;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(7, 7, 9, .8);
+  backdrop-filter: blur(5px);
+  color-scheme: only light;
+}
+.chronicles-notice-board {
+  box-sizing: border-box;
+  width: min(740px, 100%);
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 3px solid #c19a5b;
+  outline: 1px solid #25150b;
+  background: #29241f;
+  color: #f6e8d2;
+  box-shadow: 0 28px 72px rgba(0, 0, 0, .75), inset 0 0 0 3px #49372a;
+  font-family: Georgia, serif;
+}
+.chronicles-notice-board header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px clamp(15px, 4vw, 30px) 16px;
+  border-bottom: 2px solid #947342;
+  background: linear-gradient(150deg, #3c3025, #171717);
+}
+.chronicles-notice-board header small,
+.chronicles-notice-board h3 {
+  font: 1rem/1.1 'Chronicles Pixel', Georgia, serif;
+  letter-spacing: .16em;
+  color: #e4c27e;
+}
+.chronicles-notice-board header h2 {
+  margin: 7px 0;
+  font: bold clamp(1.7rem, 4vw, 2.5rem)/1.05 Georgia, serif;
+  color: #fff1d4;
+}
+.chronicles-notice-board header p {
+  margin: 0;
+  color: #ddc9aa;
+}
+.chronicles-notice-board__close {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #b89766;
+  border-radius: 4px;
+  background: #242426;
+  color: #fff1d4;
+  font: bold 1.25rem/1 Georgia, serif;
+}
+.chronicles-notice-board__body {
+  min-height: 0;
+  padding: 14px clamp(12px, 4vw, 28px) 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.chronicles-notice-board h3 { margin: 14px 0 10px; }
+.chronicles-notice-board ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.chronicles-notice-board__card {
+  padding: clamp(12px, 3vw, 20px);
+  border: 2px solid #b18b54;
+  background: linear-gradient(#e8d8af, #ceae79);
+  box-shadow: inset 0 0 0 1px #f6ebd0, 0 4px 12px #0005;
+  color: #332116;
+}
+.chronicles-notice-board__card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.chronicles-notice-board__card strong { font-size: clamp(1.15rem, 3vw, 1.45rem); }
+.chronicles-notice-board__card-head span {
+  padding: 4px 7px;
+  border: 1px solid #86633b;
+  color: #3e2816;
+  font: 1rem/1 'Chronicles Pixel', monospace;
+}
+.chronicles-notice-board__card-head .is-completed { color: #1e5438; border-color: #52745b; }
+.chronicles-notice-board__card-head .is-active { color: #6f440d; }
+.chronicles-notice-board__card p { margin: 9px 0 0; line-height: 1.35; }
+.chronicles-notice-board__detail { font-style: italic; }
+.chronicles-notice-board__objective {
+  padding-top: 8px;
+  border-top: 1px solid #b18b54;
+  font-weight: bold;
+}
+.chronicles-notice-board__card button {
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: 2px solid #ba8c49;
+  background: #34291f;
+  color: #fff0ca;
+  font: bold 1.1rem Georgia, serif;
+}
+.chronicles-notice-board button { cursor: pointer; }
+.chronicles-notice-board button:focus-visible { outline: 3px solid #f3d372; outline-offset: 2px; }
+.chronicles-notice-board__empty { margin: 12px 0; }
+.chronicles-notice-board footer {
+  padding: 10px clamp(12px, 4vw, 28px);
+  border-top: 1px solid #68513c;
+  color: #d2b994;
+  font: 1.05rem/1.1 'Chronicles Pixel', Georgia, serif;
+}
+@media (max-width: 520px) {
+  .chronicles-notice-board__backdrop { padding: 6px; }
+  .chronicles-notice-board header { padding: 14px 12px 10px; }
+  .chronicles-notice-board header h2 { font-size: 1.6rem; }
+  .chronicles-notice-board header p { font-size: .88rem; }
+  .chronicles-notice-board__body { padding: 8px 10px 14px; }
+  .chronicles-notice-board__card { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-notice-board__backdrop { backdrop-filter: none; }
+}
