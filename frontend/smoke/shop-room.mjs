@@ -515,6 +515,10 @@ try {
           // must not break merchant interaction or show an empty image.
           const overlay = scene.locator('[data-chronicles-shop-art-layer="premium"]');
           if (await overlay.count()) {
+            await page.waitForFunction(() => {
+              const remote = document.querySelector('[data-chronicles-shop-art-layer="premium"]');
+              return remote?.complete && (!remote.naturalWidth || remote.classList.contains('is-ready'));
+            }, null, { timeout: 5_000 });
             const checked = await overlay.evaluate((node) => ({
               src: node.currentSrc, width: node.naturalWidth, height: node.naturalHeight,
               ready: node.classList.contains('is-ready'),
