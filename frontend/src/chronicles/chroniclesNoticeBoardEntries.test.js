@@ -14,7 +14,7 @@ describe('Swordhaven notice board — lasting offers', () => {
     const map = chroniclesMapById('swordhaven-first-book');
     const entry = map.interactables.find((item) => item.id === 'first-book-missing-board');
     expect(entry.visualType).toBe('notice-board');
-    expect(entry.when).toBeUndefined();
+    expect(entry.when).toEqual([]);
     const initial = atBoard(createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }));
     expect(chroniclesContextualContentAction(initial)).toMatchObject({ id: entry.id, locked: false });
     expect(chroniclesNoticeBoardEntries(initial).posted[0]).toMatchObject({
