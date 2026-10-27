@@ -10,6 +10,7 @@ describe('Chronicles adventure menu hotkey affordances', () => {
   const handlers = {
     onClose: () => {}, onContinue: () => {}, onJournal: () => {},
     onQuickStatus: () => {}, onSave: () => {}, onSaveExit: () => {},
+    onRequestLoad: () => {}, onSaveBeforeLoad: () => {}, onLoadWithoutSave: () => {}, onCancelLoad: () => {},
     onAdmin: () => {}, onRequestExit: () => {},
     onDiscardExit: () => {}, onCancelExit: () => {},
   };
@@ -22,6 +23,8 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('Salir sin guardar · Q');
     expect(html).toContain('S · guardar · Q · salir');
     expect(html).toContain('Guardar y salir');
+    expect(html).toContain('Cargar partida');
+    expect(html).toContain('data-chronicles-menu-load');
     expect(html).toContain('CHRONICLES OF MATTHIAS · FOLIO DE PAUSA');
     expect(html).toContain('chronicles-game-menu__heading-legend');
     expect(html).toContain('✉ Feedback');
@@ -33,6 +36,29 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('id="chronicles-menu-sound"');
     expect(html).toContain('hidden=""');
     expect(html).toContain('aria-hidden="true"');
+  });
+
+
+  it('requires a choice about unsaved progress before opening saved expeditions', () => {
+    const markup = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} confirmLoadSelection />);
+    expect(markup).toContain('data-confirming-load="true"');
+    expect(markup).toContain('Confirmar cambio de partida');
+    expect(markup).toContain('Guardar esta partida y elegir otra');
+    expect(markup).toContain('Elegir sin guardar');
+    expect(markup).toContain('Cancelar');
+    expect(markup).toContain('ESC · cancelar cambio de partida');
+    expect(markup).not.toContain('data-chronicles-menu-load');
+    expect(markup).not.toContain('Guardar partida · S');
+    expect(markup).not.toContain('>Continuar<');
+    expect(markup).toContain('hidden=""');
+  });
+
+  it('blocks choosing another run while a save is already in progress', () => {
+    const markup = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      confirmLoadSelection saveBusy />);
+    expect(markup).toContain('Confirmar cambio de partida');
+    expect(markup).toContain('Elegir sin guardar');
+    expect(markup).toMatch(/disabled=""/);
   });
 
   it('offers a dedicated help entry without crowding the default action list', () => {
