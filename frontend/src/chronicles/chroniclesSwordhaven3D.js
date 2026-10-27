@@ -624,22 +624,34 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const vent = new THREE.Group();
     vent.name = 'forge-roof-smoke-lantern';
     vent.userData.chroniclesDecorativeOnly = true;
-    vent.position.set(-width * 0.20, roofRidgeY + 0.06, facadeZ + 0.32);
+    vent.position.set(-width * 0.20, roofRidgeY + 0.06, facadeZ + 0.24);
     mesh(vent, new THREE.BoxGeometry(3.00, 1.30, 0.74),
-      material(0x29251e, { roughness: 1 }),
-      'forge-lantern-dark-opening', [0, 0.05, 0], !coarse);
+      material(0x392b21, { roughness: 1 }),
+      'forge-lantern-dark-opening', [0, -0.15, 0], !coarse);
+    // The posts continue into the roof: a freestanding dark box would read
+    // like modern HVAC rather than an old timber-framed smithy lantern.
     for (const side of [-1, 1]) {
-      mesh(vent, new THREE.BoxGeometry(0.19, 1.53, 0.90), mats.timber,
-        'forge-lantern-oak-post', [side * 1.54, 0.06, 0], !coarse);
+      mesh(vent, new THREE.BoxGeometry(0.22, 2.45, 0.90), mats.timber,
+        'forge-lantern-oak-post', [side * 1.54, -0.40, 0], !coarse);
     }
-    for (const y of [-0.34, 0.04, 0.42]) {
-      const slat = mesh(vent, new THREE.BoxGeometry(2.94, 0.13, 0.16), mats.steel,
+    const smokeLouver = material(0x645040, { roughness: 0.97, metalness: 0.06 });
+    for (const y of [-0.51, -0.13, 0.25]) {
+      const slat = mesh(vent, new THREE.BoxGeometry(2.94, 0.13, 0.16), smokeLouver,
         'forge-lantern-iron-louver', [0, y, 0.48]);
       slat.rotation.x = -0.18;
     }
-    const cap = mesh(vent, new THREE.BoxGeometry(3.45, 0.19, 1.18), roof,
-      'forge-lantern-pitched-cap', [0, 0.87, 0], !coarse);
-    cap.rotation.x = -0.17;
+    const lanternGable = new THREE.Shape();
+    lanternGable.moveTo(-1.73, 0.76);
+    lanternGable.lineTo(1.73, 0.76);
+    lanternGable.lineTo(0, 1.56);
+    lanternGable.closePath();
+    mesh(vent, new THREE.ShapeGeometry(lanternGable), mats.timber,
+      'forge-lantern-timber-gable', [0, 0, 0.48]);
+    for (const side of [-1, 1]) {
+      const cap = mesh(vent, new THREE.BoxGeometry(1.92, 0.19, 1.18), roof,
+        'forge-lantern-pitched-cap', [side * 0.83, 1.13, 0], !coarse);
+      cap.rotation.z = -side * 0.44;
+    }
     root.add(vent);
   } else {
     // Other houses retain their ordinary dormers, one on touch and two on desktop.
