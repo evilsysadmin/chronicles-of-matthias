@@ -25,10 +25,10 @@ describe('Static WebGL with CSS-composited torch ambience', () => {
 
   it('uses low-rate compositor flicker without backdrop blending or a WebGL loop', () => {
     const css = readFileSync(new URL('./chroniclesTorchAmbientOverlay.css', import.meta.url), 'utf8');
-    expect(css).toMatch(/animation:\\s*chronicles-torch-ambient-flicker\\s+4\\.2s\\s+steps\\(5,\\s*end\\)/);
-    expect(css).not.toMatch(/mix-blend-mode\\s*:/);
-    expect(css).toMatch(/prefers-reduced-motion:\\s*reduce/);
-    expect(css).toMatch(/animation:\\s*none/);
+    expect(css).toMatch(/animation:\s*chronicles-torch-ambient-flicker\s+4\.2s\s+steps\(5,\s*end\)/);
+    expect(css).not.toMatch(/mix-blend-mode\s*:/);
+    expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
+    expect(css).toMatch(/animation:\s*none/);
   });
 
   it('projects only torches within the view frustum', () => {
