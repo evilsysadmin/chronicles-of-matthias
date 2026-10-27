@@ -268,6 +268,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [characterSetupDone, setCharacterSetupDone] = useState(entryView === 'playing');
   useChroniclesSoundtrack(entryView);
   const [savesRefreshKey, refreshSaves] = useState(0);
+  const [saveBookInitialScreen, setSaveBookInitialScreen] = useState('home');
   const [saveInventory, setSaveInventory] = useState(null);
   const [saveMenuLoading, setSaveMenuLoading] = useState(false);
   const [saveMenuError, setSaveMenuError] = useState('');
@@ -417,6 +418,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveNotice, setSaveNotice] = useState('');
   const [confirmExitWithoutSaving, setConfirmExitWithoutSaving] = useState(false);
+  const [confirmLoadSelection, setConfirmLoadSelection] = useState(false);
   // A modal must acquire focus when opened by pointer/touch as well as Tab.
   // It must also reject stray focus on game HUD controls underneath it.
   useEffect(() => {
@@ -427,7 +429,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     document.addEventListener('focusin', onFocus);
     chroniclesRestoreAdventureMenuFocus(menu, document.activeElement);
     return () => document.removeEventListener('focusin', onFocus);
-  }, [menuOpen, confirmExitWithoutSaving]);
+  }, [menuOpen, confirmExitWithoutSaving, confirmLoadSelection]);
   const [areaTransition, setAreaTransition] = useState(null);
   const areaTransitionRef = useRef(null);
   const [audience, setAudience] = useState(null);
@@ -590,13 +592,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // Escape handler. Dismiss the topmost visible panel without opening the
     // adventure menu underneath. The same priority applies to browser Back.
     const action = chroniclesFirstPersonEscapeAction({
-      menuOpen, confirmExitWithoutSaving, feedbackOpen, spellMenuOpen, adminOpen,
+      menuOpen, confirmExitWithoutSaving, confirmLoadSelection, feedbackOpen, spellMenuOpen, adminOpen,
       sheetOpen: Boolean(sheetMemberId),
       shopOpen: Boolean(stateRef.current?.shop),
       guildOpen: Boolean(stateRef.current?.guild), innOpen: Boolean(stateRef.current?.inn),
       audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
+    else if (action === 'cancel-load') { if (!saveBusy) setConfirmLoadSelection(false); }
     else if (action === 'back-feedback') setFeedbackOpen(false);
     else if (action === 'close-sheet') setSheetMemberId(null);
     else if (action === 'close-inn') dispatch({ type: 'inn-close' });
@@ -1487,7 +1490,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.inn || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
-        menuOpen, saveBusy, confirmExitWithoutSaving,
+        menuOpen, saveBusy, confirmExitWithoutSaving, confirmLoadSelection,
         subpageOpen: feedbackOpen,
       });
       if (menuShortcut) {
@@ -1497,6 +1500,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // a subsequent Esc closes the menu without modifying the run.
         if (menuShortcut === 'request-exit') setConfirmExitWithoutSaving(true);
         if (menuShortcut === 'cancel-exit') setConfirmExitWithoutSaving(false);
+        if (menuShortcut === 'cancel-load' && !saveBusy) setConfirmLoadSelection(false);
         if (menuShortcut === 'back-feedback') setFeedbackOpen(false);
         if (menuShortcut === 'close') {
           setConfirmExitWithoutSaving(false);
@@ -1510,7 +1514,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         // focus into the folio, native Tab traversal is essential for keyboard
         // access; never close while a confirmation or feedback form is open.
         if (chroniclesAdventureTabClosesMenu(event, menuSummaryRef.current, {
-          menuOpen, confirmExitWithoutSaving, feedbackOpen,
+          menuOpen, confirmExitWithoutSaving, confirmLoadSelection, feedbackOpen,
         })) {
           event.preventDefault();
           chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
@@ -1529,7 +1533,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
       // The mailbox is a page of the modal, not a game context. J/G/M (and
       // every other world shortcut) must not switch views under its draft.
-      if (menuOpen && feedbackOpen) return;
+      if (menuOpen && (feedbackOpen || confirmExitWithoutSaving || confirmLoadSelection)) return;
       if (event.key === 'j' || event.key === 'J') {
         event.preventDefault();
         if (event.repeat) return;
@@ -1600,11 +1604,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
-    confirmExitWithoutSaving, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
+    confirmExitWithoutSaving, confirmLoadSelection, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget, noticeBoardOpen]);
 
   const startFreshGame = (entryMapId = null) => {
+    setSaveBookInitialScreen('home');
     setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
@@ -1621,6 +1626,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   const loadSavedGame = (runId) => {
     if (!chroniclesSelectSavedRun(FIRST_PERSON_RUN_SCOPE, runId)) return;
+    setSaveBookInitialScreen('home');
     setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
@@ -1643,7 +1649,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     setBootstrapRevision((revision) => revision + 1);
   };
 
-  const returnToSaveMenu = () => {
+  const returnToSaveMenu = (initialScreen = 'home') => {
+    setConfirmLoadSelection(false);
+    setSaveBookInitialScreen(initialScreen === 'load' ? 'load' : 'home');
     setNoticeBoardOpen(false);
     clearPortraitLevelUps();
     setFirstStepsOpen(false);
@@ -1678,6 +1686,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return (
       <>
         <ChroniclesSaveMenu
+          initialScreen={saveBookInitialScreen}
           saves={saveInventory ?? chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE)}
           loading={saveMenuLoading}
           error={saveMenuError}
@@ -1936,6 +1945,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   // Also handle native <summary> dismissal and pointer close.
                   chroniclesReleaseAdventureMenuFocus(event.currentTarget);
                   setConfirmExitWithoutSaving(false);
+                  setConfirmLoadSelection(false);
                   setFeedbackOpen(false);
                 }
               }}
@@ -1958,6 +1968,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
                 onSaveExit={() => void saveAndExit()}
+                onRequestLoad={() => {
+                  if (saveBusy) return;
+                  setConfirmExitWithoutSaving(false);
+                  setConfirmLoadSelection(true);
+                }}
+                onCancelLoad={() => { if (!saveBusy) setConfirmLoadSelection(false); }}
+                onLoadWithoutSave={() => { if (!saveBusy) returnToSaveMenu('load'); }}
+                onSaveBeforeLoad={async () => {
+                  if (saveBusy) return;
+                  const saved = await persistCheckpoint(stateRef.current, 'manual');
+                  if (saved) returnToSaveMenu('load');
+                }}
+                confirmLoadSelection={confirmLoadSelection}
                 onAdmin={() => { setMenuOpen(false); setAdminOpen(true); }}
                 onRequestExit={() => setConfirmExitWithoutSaving(true)}
                 onDiscardExit={() => void discardAndExit()}
