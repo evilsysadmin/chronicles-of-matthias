@@ -8,6 +8,7 @@ import {
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
+import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
 // File-authored exterior topology: no independent collision map or invisible
@@ -699,6 +700,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       activatedRoot = buildNameOak(root, { timber, plaque, coarsePointer });
     } else if (entry.visualType === 'name-plaque') {
       buildNamePlaque(root, { timber, plaque });
+    } else if (entry.visualType === 'notice-board') {
+      // The authored contract sits beside the south-facing house wall, not in
+      // the middle of Odo's shop approach. Collision still uses the map grid.
+      root.position.z += 1.72;
+      buildChroniclesTownNoticeBoard(root);
     } else if (entry.visualType === 'rookwood-mourner') {
       // 2.5D painted billboard; the procedural figure stays as fallback.
       const billboard = buildChroniclesSpriteBillboard('rookwood-mourner');
