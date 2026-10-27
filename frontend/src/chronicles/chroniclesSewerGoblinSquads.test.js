@@ -146,4 +146,47 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     expect(approached.party.map((member) => member.hp)).toEqual(hpBefore);
   });
 
+  it('keeps the rear goblin waiting behind a living squadmate, then resumes without free hits', () => {
+    const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+    const atEntrance = { ...base, x: 1, y: 5 };
+    const enemies = chroniclesActiveEnemies(atEntrance);
+    const west = enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
+    const middle = enemies.find((enemy) => enemy.id === 'sewers-goblin-overflow');
+    const rear = enemies.find((enemy) => enemy.id === 'sewers-goblin-bottom-shaft');
+    const combat = chroniclesStartInitiativeCombat(atEntrance, enemies, { random: () => 0 });
+    expect(inCombat(combat)).toEqual(expect.arrayContaining([middle.id, rear.id]));
+
+    // The frontline falls at (2,5). The middle goblin advances, but its
+    // living body still blocks the only route to melee for the rear goblin.
+    const cleared = { ...combat, turnPhase: 'enemy', [west.hpKey]: 0 };
+    const hpBefore = cleared.party.map((member) => member.hp);
+    const middleTurn = chroniclesResolveEnemyActor(cleared, middle.id);
+    expect(middleTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(middleTurn, middle)).toEqual({ x: 2, y: 5 });
+    expect(middleTurn.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    const rearTurn = chroniclesResolveEnemyActor(middleTurn, rear.id);
+    expect(rearTurn.enemyTurnEvents).toEqual([]);
+    expect(chroniclesRuntimeEnemyPosition(rearTurn, rear)).toEqual({ x: 4, y: 5 });
+    expect(chroniclesRuntimeEnemyPosition(rearTurn, middle)).toEqual({ x: 2, y: 5 });
+    expect(rearTurn.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    // When the middle goblin also falls, the rear one retries pathfinding.
+    // It must walk two cardinal tiles on two separate turns before striking.
+    const opened = { ...rearTurn, [middle.hpKey]: 0 };
+    const firstStep = chroniclesResolveEnemyActor(opened, rear.id);
+    expect(firstStep.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(firstStep, rear)).toEqual({ x: 3, y: 5 });
+    expect(firstStep.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    const secondStep = chroniclesResolveEnemyActor(firstStep, rear.id);
+    expect(secondStep.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    expect(chroniclesRuntimeEnemyPosition(secondStep, rear)).toEqual({ x: 2, y: 5 });
+    expect(secondStep.party.map((member) => member.hp)).toEqual(hpBefore);
+
+    const nextTurn = chroniclesResolveEnemyActor(secondStep, rear.id);
+    expect(nextTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
+    expect(chroniclesRuntimeEnemyPosition(nextTurn, rear)).toEqual({ x: 2, y: 5 });
+  });
+
 });
