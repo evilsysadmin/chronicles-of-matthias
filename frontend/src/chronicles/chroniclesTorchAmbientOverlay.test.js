@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import {
   chroniclesTorchGlowProjection,
   chroniclesTorchAmbientGlowBudget,
+  chroniclesTorchAmbientLayerCount,
+  chroniclesTorchGlowGradient,
   chroniclesTorchGlowOccluded,
 } from './chroniclesTorchAmbientOverlay.js';
 
@@ -23,10 +25,25 @@ describe('Static WebGL with CSS-composited torch ambience', () => {
     expect(chroniclesTorchAmbientGlowBudget(true)).toBe(2);
   });
 
+  it('keeps four independent torch positions with at most two animated layers', () => {
+    expect(chroniclesTorchAmbientGlowBudget(false)).toBe(4);
+    expect(chroniclesTorchAmbientLayerCount(false)).toBe(2);
+    expect(chroniclesTorchAmbientGlowBudget(true)).toBe(2);
+    expect(chroniclesTorchAmbientLayerCount(true)).toBe(2);
+    const gradient = chroniclesTorchGlowGradient({ x: 120, y: 80, size: 40 });
+    expect(gradient).toContain('ellipse 20.0px 25.2px at 120.0px 81.0px');
+    expect(gradient).toContain('rgba(255, 192, 96, .37)');
+    expect(chroniclesTorchGlowGradient({ x: NaN, y: 80, size: 40 })).toBeNull();
+    expect(chroniclesTorchGlowGradient({ x: 0, y: 0, size: 0 })).toBeNull();
+  });
+
   it('uses low-rate compositor flicker without backdrop blending or a WebGL loop', () => {
     const css = readFileSync(new URL('./chroniclesTorchAmbientOverlay.css', import.meta.url), 'utf8');
     expect(css).toMatch(/animation:\s*chronicles-torch-ambient-flicker\s+4\.2s\s+steps\(5,\s*end\)/);
     expect(css).not.toMatch(/mix-blend-mode\s*:/);
+    expect(css).toMatch(/chronicles-torch-ambient-glow-layer/);
+    expect(css).toMatch(/animation-duration:\s*5\.6s/);
+    expect(css).not.toMatch(/transform:\s*translate3d/);
     expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
     expect(css).toMatch(/animation:\s*none/);
   });

@@ -39,6 +39,24 @@ export function chroniclesTorchAmbientGlowBudget(coarse = false) {
   return coarse ? 2 : 4;
 }
 
+// A pair of independently flickering gradients is enough to give up to four
+// visible torches life without allocating a compositor animation per torch.
+export function chroniclesTorchAmbientLayerCount(coarse = false) {
+  return Math.min(2, chroniclesTorchAmbientGlowBudget(coarse));
+}
+
+// All positions originate in projected Three.js vectors, not HTML input.
+// Keeping gradients inside full-size layers avoids per-flame DOM transforms.
+export function chroniclesTorchGlowGradient(screen) {
+  const { x, y, size } = screen || {};
+  if (![x, y, size].every(Number.isFinite) || size <= 0) return null;
+  const rx = (size / 2).toFixed(1);
+  const ry = (size * 0.63).toFixed(1);
+  const cx = x.toFixed(1);
+  const cy = (y + size * 0.025).toFixed(1);
+  return `radial-gradient(ellipse ${rx}px ${ry}px at ${cx}px ${cy}px, rgba(255, 192, 96, .37) 0%, rgba(255, 111, 35, .15) 39%, rgba(255, 90, 22, 0) 76%)`;
+}
+
 export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches, { coarse = false } = {}) {
   if (!torches?.length) return { update() {}, setVisible() {}, dispose() {} };
 
@@ -52,10 +70,10 @@ export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches
   host.appendChild(layer);
 
   const maxGlows = chroniclesTorchAmbientGlowBudget(coarse);
-  const glows = Array.from({ length: Math.min(maxGlows, torches.length) }, (_, index) => {
+  const layers = Array.from({ length: Math.min(chroniclesTorchAmbientLayerCount(coarse), torches.length) }, (_, index) => {
     const element = document.createElement('span');
-    element.className = 'chronicles-torch-ambient-glow';
-    element.style.animationDelay = `${index * -0.47}s`;
+    element.className = 'chronicles-torch-ambient-glow-layer';
+    element.style.animationDelay = `${index * -1.37}s`;
     layer.appendChild(element);
     return element;
   });
@@ -81,19 +99,21 @@ export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches
       return screen && { anchor, screen };
     }).filter(Boolean).sort((a, b) => a.screen.distance - b.screen.distance);
 
+    const gradients = Array.from({ length: layers.length }, () => []);
     let shown = 0;
     for (const candidate of projected) {
-      if (shown >= glows.length) break;
+      if (shown >= maxGlows) break;
       if (chroniclesTorchGlowOccluded(raycaster, camera, candidate.anchor, walls)) continue;
-      const glow = glows[shown];
-      glow.style.left = `${candidate.screen.x}px`;
-      glow.style.top = `${candidate.screen.y}px`;
-      glow.style.width = `${candidate.screen.size}px`;
-      glow.style.height = `${candidate.screen.size * 1.26}px`;
-      glow.hidden = false;
+      const gradient = chroniclesTorchGlowGradient(candidate.screen);
+      if (!gradient) continue;
+      gradients[shown % layers.length].push(gradient);
       shown++;
     }
-    for (let i = shown; i < glows.length; i++) glows[i].hidden = true;
+    layers.forEach((element, index) => {
+      const background = gradients[index].join(', ');
+      if (element.style.backgroundImage !== background) element.style.backgroundImage = background;
+      element.hidden = gradients[index].length === 0;
+    });
   }
 
   function setVisible(visible) {
