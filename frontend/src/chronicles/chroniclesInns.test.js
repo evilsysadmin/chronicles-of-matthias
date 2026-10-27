@@ -3,6 +3,7 @@ import { createChroniclesState, chroniclesReduce, chroniclesContextualContentAct
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from './chroniclesContentRuntime.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { CHRONICLES_INN_FOOD, chroniclesInnEntry, chroniclesInnRestPrice, chroniclesInnRumors } from './chroniclesInns.js';
+import { CHRONICLES_TAVERN_PREMIUM_ART_KEY, CHRONICLES_TAVERN_PREMIUM_ART_URL } from './chroniclesShopArt.js';
 import { chroniclesMemberSp } from './chroniclesMagic.js';
 
 const map = chroniclesMapById('swordhaven-first-book');
@@ -19,6 +20,14 @@ function atInn(gold = 35) {
 const act = (state, type) => chroniclesReduce(state, { type });
 
 describe('Chronicles · tavern room instead of one-click rest', () => {
+  it('uses the exact uploaded tavern panorama on the independent Chronicles R2 origin', () => {
+    expect(CHRONICLES_TAVERN_PREMIUM_ART_KEY).toBe('stores/taberna-premium.webp');
+    expect(CHRONICLES_TAVERN_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/taberna-premium.webp');
+    expect(CHRONICLES_TAVERN_PREMIUM_ART_URL).not.toContain('dash.cloudflare.com');
+    expect(CHRONICLES_TAVERN_PREMIUM_ART_URL).not.toContain('?');
+  });
+
   it('opens La Espada Mellada without paying and exposes all three independent actions', () => {
     const state = atInn();
     const purse = chroniclesGoldBalance(state);
