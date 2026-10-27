@@ -181,7 +181,7 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
-  it('adds dressed stone corners, dormers and side windows to the five houses', () => {
+  it('keeps dressed stone, side windows and distinctive rooflines on the houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
       buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
@@ -191,10 +191,11 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(forge.getObjectByName('side-window-amber-glass')).toBeTruthy();
       expect(forge.getObjectByName('swordhaven-facade-dressed-stones'))
         .toBeInstanceOf(THREE.InstancedMesh);
-      expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
-      expect(Boolean(forge.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
-      const tower = scene.getObjectByName('swordhaven-building-swordhaven-temple')
-        .getObjectByName('temple-bell-tower');
+      expect(forge.getObjectByName('forge-roof-smoke-lantern')).toBeTruthy();
+      const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
+      expect(temple.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
+      expect(Boolean(temple.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
+      const tower = temple.getObjectByName('temple-bell-tower');
       expect(tower.geometry.parameters.radialSegments).toBeGreaterThanOrEqual(12);
       const magic = scene.getObjectByName('swordhaven-building-swordhaven-magic');
       expect(magic.getObjectByName('magic-shop-turret').geometry.parameters.radialSegments).toBeGreaterThanOrEqual(12);
