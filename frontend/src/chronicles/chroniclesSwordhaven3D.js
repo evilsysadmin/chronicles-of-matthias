@@ -652,8 +652,26 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'temple-bell-tower', [0, height + 2.5, -depth * 0.11], !coarse);
     mesh(root, new THREE.ConeGeometry(1.48, 2.8, coarse ? 12 : 20), roof,
       'temple-spire', [0, height + 5.5, -depth * 0.11], !coarse);
-    mesh(root, new THREE.TorusGeometry(0.49, 0.10, 8, 20), mats.gold,
-      'temple-rose-window', [0, height - 0.56, facadeZ + 0.14]);
+    // Two slender limestone pinnacles lift the temple's gable shoulders
+    // above the roofline. Unlike the armorer's square iron-capped towers,
+    // these are narrow octagonal stone spires with small gilded finials.
+    // They never alter the authored solid footprint or entrance.
+    const pinnacles = new THREE.Group();
+    pinnacles.name = 'temple-gable-pinnacles';
+    pinnacles.userData.chroniclesDecorativeOnly = true;
+    pinnacles.position.z = facadeZ + 0.25;
+    for (const side of [-1, 1]) {
+      const x = side * width * 0.40;
+      mesh(pinnacles, new THREE.BoxGeometry(0.76, 0.24, 0.76), mats.stone,
+        'temple-pinnacle-plinth', [x, height + 0.32, 0], !coarse);
+      mesh(pinnacles, new THREE.CylinderGeometry(0.24, 0.30, 1.05, coarse ? 8 : 12),
+        mats.stone, 'temple-pinnacle-shaft', [x, height + 0.86, 0], !coarse);
+      mesh(pinnacles, new THREE.ConeGeometry(0.39, 0.94, coarse ? 8 : 12),
+        roof, 'temple-pinnacle-spire', [x, height + 1.81, 0], !coarse);
+      mesh(pinnacles, new THREE.SphereGeometry(0.14, 8, 6), mats.gold,
+        'temple-pinnacle-finial', [x, height + 2.33, 0]);
+    }
+    root.add(pinnacles);
     // The temple has a stone colonnaded entrance, not a merchant doorway.
     // Keep columns outside the nameplate and door; the raised pediment stays
     // between the nameplate and heraldic sign. Entirely decorative geometry.
