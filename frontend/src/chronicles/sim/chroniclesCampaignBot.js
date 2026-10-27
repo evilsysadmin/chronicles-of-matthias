@@ -332,7 +332,12 @@ export class ChroniclesCampaignBot {
     // Nobody in reach ahead: close in on the nearest foe by a real path,
     // then face it. A foe walled off from us is left behind.
     const target = this.nearestEnemy({ reachable: true });
-    if (!target) return this.stepAway();
+    // In MM3 initiative the group cannot move. A legal BLOCK passes the
+    // active hero's turn so engaged enemies can approach through real paths.
+    // Never spin on a rejected forward step or a retreat in the simulator.
+    const holdPosition = () => ({ type: 'block', memberId });
+    if (!target) return this.state.initiative && this.state.combatRules === 'mm3'
+      ? holdPosition() : this.stepAway();
     if (target.distance === 1 || (target.distance <= reach && this.lineClear(target))) {
       const dir = this.directionTo(target);
       if (dir !== this.state.direction) return this.turnToward(dir);
@@ -341,7 +346,8 @@ export class ChroniclesCampaignBot {
     const [nx, ny] = target.path[0];
     const dir = STEP.findIndex(([dx, dy]) => this.state.x + dx === nx && this.state.y + dy === ny);
     if (dir !== this.state.direction) return this.turnToward(dir);
-    return 'forward';
+    return this.state.initiative && this.state.combatRules === 'mm3'
+      ? holdPosition() : 'forward';
   }
 
   lineClear(target) {

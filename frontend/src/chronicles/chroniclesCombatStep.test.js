@@ -26,6 +26,28 @@ describe('Chronicles combat step', () => {
   });
 });
 
+describe('MM3 initiative movement lock on an authored combat map', () => {
+  it('freezes the company on its encounter cells, leaving enemy movement and facing available', () => {
+    const initial = createChroniclesState(null, null, { rules: 'mm3' });
+    const arrived = chroniclesApplyContentEffects(initial, [{ type: 'transition-map', mapId: 'terra-a3' }]);
+    const placed = { ...arrived, x: 10, y: 8, direction: 0, enemyPositions: { 'terra-a3-foe-0': { x: 10, y: 4 } } };
+    const combat = chroniclesStartInitiativeCombat(placed, chroniclesActiveEnemies(placed), { forceEnemyIds: ['terra-a3-foe-0'] });
+    expect(combat.initiative?.order.length).toBeGreaterThan(0);
+    const before = chroniclesLivingPartyPositions(combat);
+
+    for (const action of ['forward', 'backward', 'strafe-left', 'strafe-right']) {
+      const rejected = chroniclesReduce(combat, action);
+      expect(rejected).toBe(combat);
+      expect([rejected.x, rejected.y, rejected.turns, rejected.direction])
+        .toEqual([combat.x, combat.y, combat.turns, combat.direction]);
+      expect(chroniclesLivingPartyPositions(rejected)).toEqual(before);
+    }
+    const rotated = chroniclesReduce(combat, 'turn-left');
+    expect(rotated.direction).toBe(3);
+    expect([rotated.x, rotated.y]).toEqual([combat.x, combat.y]);
+  });
+});
+
 describe('Chronicles camera cell', () => {
   it('is never entered by a creature, even when no hero deploys on it', async () => {
     const { chroniclesChooseEnemyStep } = await import('../chroniclesOfMatthiasTurns.js');

@@ -131,6 +131,7 @@
   Objetivo visual: **retro-premium**, lectura clara y elegante para arco,
   virote y piedra; estela discreta, vuelo natural y gasto GPU moderado.
   Preferir una mejora visual pequeña y validable a efectos exagerados.
+- **Combate MM3 estacionario:** mientras exista iniciativa, el grupo **no puede avanzar, retroceder ni desplazarse lateralmente** con teclado, táctil ni llamada directa al reductor. Rechazar sin gastar turnos ni cambiar posición; conservar los giros para orientar ataques y permitir desplazamientos al concluir el combate. No modificar el movimiento táctico de enemigos ni el modo Tactics.
 - Defensa MM3: durante iniciativa **B** es BLOCK del héroe activo (+4 CA, consume una acción completa y expira cuando el héroe vuelve a tener turno). No se acumula; sin combate o durante turno enemigo es inerte. El HUD debe ofrecerlo también en táctil.
 - Equipo MM3: arma de mano **A**, proyectiles **S**, armadura y escudo;
   seguir clases, ranuras, stock, bonificaciones *reales* y reglas de manos.

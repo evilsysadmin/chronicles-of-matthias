@@ -57,8 +57,8 @@ import {
 } from './chronicles/chroniclesMM3Rules.js';
 import { chroniclesArriveOnTransition } from './chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID, chroniclesSwordhavenReturnAvailable } from './chronicles/chroniclesSwordhavenReturnPortal.js';
-import { chroniclesIsOverworldTravelExit } from './chronicles/chroniclesWorldReturnLinks.js';
 import { chroniclesDeployPartyForCombat } from './chroniclesPartyFootprint.js';
+import { chroniclesIsOverworldTravelExit } from './chronicles/chroniclesWorldReturnLinks.js';
 
 const DEFAULT_MAP = chroniclesMapById(DEFAULT_CHRONICLES_MAP_ID);
 
@@ -1115,9 +1115,26 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
+// First-person MM3 combat fixes the company's position for the whole
+// initiative exchange. Camera rotation is still allowed for facing/aiming;
+// enemy tactical movement and the separate Tactics mode are unaffected.
+const CHRONICLES_PARTY_STEPS = new Set([
+  'forward', 'backward', 'strafe-left', 'strafe-right',
+]);
+
+export function chroniclesCombatPartyStepBlocked(state, action) {
+  const type = typeof action === 'string' ? action : action?.type;
+  return Boolean(state?.initiative && state.combatRules === 'mm3'
+    && CHRONICLES_PARTY_STEPS.has(type));
+}
+
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
+  // Enforce this in the rules, not only in the input UI: neither a direct
+  // reducer call nor a held touch/keyboard event can move the entire party,
+  // spend initiative or trigger area changes during first-person combat.
+  if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
   if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
@@ -1188,9 +1205,8 @@ export function chroniclesReduce(state, action) {
   if (blocker) return withMessage(state, blocker.message);
   const moved = chroniclesArriveOnTransition(state,
     enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true }));
-  // In combat the heroes stand on their own cells around the camera. A step
-  // moves the whole company: redeploy it around the new position instead of
-  // leaving the heroes behind (enemies would walk into the camera's cell).
+  // Preserve legacy/Tactics tactical formation redeployment. MM3 cannot
+  // reach this path during initiative because party translation is blocked.
   if (state.initiative && moved.mapId === state.mapId && moved.partyPositions && Object.keys(moved.partyPositions).length) {
     return chroniclesDeployPartyForCombat({ ...moved, partyPositions: {} });
   }
