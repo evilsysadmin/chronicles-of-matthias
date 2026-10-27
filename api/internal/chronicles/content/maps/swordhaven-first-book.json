@@ -269,11 +269,13 @@
       "y": 10,
       "visualType": "notice-board",
       "visualFacing": 0,
-      "label": "Aceptar encargo: estandarte perdido",
-      "when": [
+      "label": "Consultar tablón de encargos",
+      "lockedLabel": "Consultar tablón de encargos",
+      "requirements": [
         {
           "key": "missing-knights-notice",
-          "falsy": true
+          "falsy": true,
+          "message": "Ya has aceptado este encargo; consulta el tablón para leerlo de nuevo."
         }
       ],
       "action": {
