@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesRollInitiative, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesAdvanceCombatInitiative, chroniclesCurrentInitiativeActor, chroniclesRollInitiative, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 
 describe('Chronicles fresh initiative roster integrity', () => {
   it('rolls only once for each living hero and enemy even if input rosters repeat an id', () => {
@@ -46,6 +46,38 @@ describe('Chronicles fresh initiative roster integrity', () => {
       ['enemy', 'shared'],
     ]);
   });
+  it.each([
+    ['dead duplicate follows the live entry', ['liveHp', 'deadHp']],
+    ['dead duplicate precedes the live entry', ['deadHp', 'liveHp']],
+    ['both duplicate entries are alive', ['liveHp', 'otherLiveHp']],
+  ])('keeps the living goblin turn when %s', (_scenario, hpKeys) => {
+    const state = {
+      phase: 'combat',
+      party: [{ id: 'matthias', hp: 7, agility: 5 }],
+      liveHp: 4,
+      deadHp: 0,
+      otherLiveHp: 3,
+    };
+    const enemies = hpKeys.map((hpKey) => ({ id: 'goblin', hpKey, agility: 2 }));
+    const initiative = chroniclesRollInitiative(state, enemies, { random: () => 0 });
+    expect(initiative.order.map(({ kind, id }) => [kind, id])).toEqual([
+      ['party', 'matthias'],
+      ['enemy', 'goblin'],
+    ]);
+
+    // The next turn must use the same first living enemy as the roller,
+    // even when a later duplicate points at zero HP in a legacy save.
+    const next = chroniclesAdvanceCombatInitiative({ ...state, initiative }, enemies);
+    expect(next.phase).toBe('combat');
+    expect(next.initiative.order).toHaveLength(2);
+    expect(chroniclesCurrentInitiativeActor(next.initiative)?.id).toBe('goblin');
+    expect(next.initiative.round).toBe(1);
+
+    const following = chroniclesAdvanceCombatInitiative(next, enemies);
+    expect(chroniclesCurrentInitiativeActor(following.initiative)?.id).toBe('matthias');
+    expect(following.initiative.round).toBe(2);
+  });
+
   it.each(['', '   ', null])('does not start enemy-only combat with invalid living hero id %s', (invalidId) => {
     const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
     const goblin = chroniclesActiveEnemies(base).find((enemy) => enemy.id === 'sewers-goblin-west');
