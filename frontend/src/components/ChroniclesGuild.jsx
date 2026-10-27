@@ -5,6 +5,7 @@ import { chroniclesGuildCanLearn, chroniclesGuildMember, chroniclesGuildSpells }
 import { CHRONICLES_SPELL_SCHOOLS, chroniclesMemberKnowsSpell, chroniclesSpellAvailableTo } from '../chronicles/chroniclesMagic.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
+import { ShopRoomArtwork } from './ChroniclesShop.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesGuild.css';
 
@@ -78,7 +79,7 @@ export default function ChroniclesGuild({ state, onAction, onClose }) {
       >
         {room ? (
           <figure className="chronicles-shop__scene" data-chronicles-shop-room={room.id}>
-            <img src={room.src} alt={room.alt} draggable="false" />
+            <ShopRoomArtwork room={room} />
           </figure>
         ) : null}
 

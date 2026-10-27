@@ -509,6 +509,33 @@ try {
         assert(art.loaded, room + ': artwork did not decode at ' + width);
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
         assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong base artwork source');
+        if (room === 'guild') {
+          const fallback = scene.locator('img[data-chronicles-shop-art-layer="fallback"]');
+          const overlay = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
+          assert.equal(await fallback.count(), 1, 'Guild local archive must remain visible');
+          assert.equal(await overlay.count(), 1, 'Guild should load uploaded R2 WebP');
+          await page.waitForFunction(() => {
+            const node = document.querySelector('[data-chronicles-shop-room="guild-sanctum"] img[data-chronicles-shop-art-layer="premium"]');
+            return node?.complete && (!node.naturalWidth || node.classList.contains('is-ready'));
+          }, null, { timeout: 7_000 });
+          const artState = await overlay.evaluate(node => ({
+            src: node.currentSrc,
+            width: node.naturalWidth,
+            height: node.naturalHeight,
+            ready: node.classList.contains('is-ready'),
+            opacity: Number.parseFloat(getComputedStyle(node).opacity),
+            position: getComputedStyle(node).position,
+          }));
+          assert.equal(artState.src, 'https://assets.chronicles.shadowops.dpdns.org/stores/gremio-premium.webp');
+          assert.equal(artState.position, 'absolute', 'Guild overlay must not stack beneath the fallback');
+          if (artState.width) {
+            assert(artState.width >= 1500 && artState.height >= 800 && artState.ready,
+              'Decoded Guild painterly panorama must become visible');
+          } else {
+            assert(!artState.ready && artState.opacity === 0,
+              'Failed R2 Guild art must leave the bundled archive in place');
+          }
+        }
         if (room === 'odo') {
           // The exact uploaded Chronicles R2 WebP has a local fallback that MUST remain
           // visible until the approved remote WebP decodes. A failed fetch

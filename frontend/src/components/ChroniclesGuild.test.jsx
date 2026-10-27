@@ -24,6 +24,12 @@ describe('Chronicles guild full-room experience', () => {
     expect(html).toContain('aria-modal="true"');
     expect(html).toContain('data-chronicles-guild="first-book-guild"');
     expect(html).toContain('data-chronicles-shop-room="guild-sanctum"');
+    expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain('guild-archive.svg');
+    expect(html).toContain('https://assets.chronicles.shadowops.dpdns.org/stores/gremio-premium.webp');
+    expect((html.match(/alt="La biblioteca del gremio:/g) || [])).toHaveLength(1);
+    expect(html).toContain('aria-hidden="true"');
     expect(html).toContain('chronicles-guild__membership');
     expect(html).toContain('chronicles-guild__spells');
     expect(html).toContain('data-chronicles-guild-join');
@@ -57,6 +63,8 @@ describe('Chronicles guild full-room experience', () => {
     expect(js).toContain("event.key === 'Escape'");
     expect(js).toContain("event.key !== 'Tab'");
     expect(css).toContain('pointer-events: none');
+    expect(css).toContain('img.chronicles-shop__premium-art');
+    expect(css).toMatch(/img\.chronicles-shop__premium-art\s*\{[^}]*position: absolute;[^}]*opacity: 0;/s);
     expect(css).toContain('@media (max-width: 900px)');
     expect(css).toContain('(orientation: landscape)');
   });
