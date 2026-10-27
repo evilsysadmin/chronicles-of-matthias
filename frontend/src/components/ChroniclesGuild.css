@@ -82,6 +82,18 @@
   filter: none;
 }
 
+/* Guild-specific img layout is normally position:static; the remote art
+   must instead overlap the local archive, never add a second tall image. */
+.chronicles-guild .chronicles-shop__scene img.chronicles-shop__premium-art {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.chronicles-guild .chronicles-shop__scene img.chronicles-shop__premium-art.is-ready {
+  opacity: 1;
+}
+
 .chronicles-guild .chronicles-shop__identity {
   background: linear-gradient(90deg, rgba(8, 17, 24, .97), rgba(12, 22, 31, .69), transparent);
   border-color: #8dc8b7;
