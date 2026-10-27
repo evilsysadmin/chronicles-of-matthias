@@ -265,8 +265,10 @@
     {
       "id": "first-book-missing-board",
       "kind": "lore",
-      "x": 11,
-      "y": 9,
+      "x": 12,
+      "y": 10,
+      "visualType": "notice-board",
+      "visualFacing": 0,
       "label": "Aceptar encargo: estandarte perdido",
       "when": [
         {
