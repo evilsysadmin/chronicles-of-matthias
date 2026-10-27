@@ -71,11 +71,15 @@ function actorEntry({ id, kind, name, agility, random }) {
 // Saved initiative orders are deduplicated during checkpoint recovery, but
 // newly rolled rounds must also reject repeated roster entries. Otherwise a
 // duplicate living enemy or hero gets an extra action before the first save.
+function validActorId(id) {
+  return typeof id === 'string' && id.trim().length > 0;
+}
+
 function uniqueLivingCombatants(entries, hitPoints) {
   const seen = new Set();
   return (Array.isArray(entries) ? entries : []).filter((entry) => {
     const id = entry?.id;
-    if (typeof id !== 'string' || !id || seen.has(id) || !hasLivingHitPoints(hitPoints(entry))) return false;
+    if (!validActorId(id) || seen.has(id) || !hasLivingHitPoints(hitPoints(entry))) return false;
     seen.add(id);
     return true;
   });
@@ -233,7 +237,9 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
       })) engagedById.set(enemy.id, enemy);
     });
   }
-  const engaged = [...engagedById.values()];
+  // Reject malformed roster IDs before rolling: otherwise a forced encounter
+  // can start party-only combat after the initiative roller drops its enemy.
+  const engaged = [...engagedById.values()].filter((enemy) => validActorId(enemy?.id));
   if (!engaged.length) return state;
   const deployedState = chroniclesDeployPartyForCombat(state);
   const initiative = chroniclesRollInitiative(deployedState, engaged, options);

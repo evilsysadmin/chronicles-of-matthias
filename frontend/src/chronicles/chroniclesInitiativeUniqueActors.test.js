@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesRollInitiative } from './chroniclesInitiative.js';
+import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesRollInitiative, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 
 describe('Chronicles fresh initiative roster integrity', () => {
   it('rolls only once for each living hero and enemy even if input rosters repeat an id', () => {
@@ -9,6 +10,7 @@ describe('Chronicles fresh initiative roster integrity', () => {
         { id: 'hero', name: 'Duplicate', hp: 5, agility: 99 },
         { id: 'fallen', hp: 0, agility: 99 },
         { id: '', hp: 5, agility: 99 },
+        { id: '   ', hp: 5, agility: 99 },
       ],
       goblinHp: 4,
     };
@@ -16,6 +18,7 @@ describe('Chronicles fresh initiative roster integrity', () => {
       { id: 'goblin', name: 'Original goblin', hpKey: 'goblinHp', agility: 2 },
       { id: 'goblin', name: 'Duplicate goblin', hpKey: 'goblinHp', agility: 99 },
       { id: '', hpKey: 'goblinHp', agility: 99 },
+      { id: '   ', hpKey: 'goblinHp', agility: 99 },
     ];
     let rolls = 0;
     const initiative = chroniclesRollInitiative(state, enemies, {
@@ -43,4 +46,17 @@ describe('Chronicles fresh initiative roster integrity', () => {
       ['enemy', 'shared'],
     ]);
   });
+  it.each(['', '   ', null])('refuses forced combat with invalid enemy id %s', (invalidId) => {
+    const state = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const goblin = chroniclesActiveEnemies(state).find((enemy) => enemy.id === 'sewers-goblin-west');
+    expect(goblin).toBeTruthy();
+    let rolls = 0;
+    const next = chroniclesStartInitiativeCombat(state, [{ ...goblin, id: invalidId }], {
+      forceEnemyIds: [invalidId],
+      random: () => { rolls += 1; return 0; },
+    });
+    expect(next).toBe(state);
+    expect(rolls).toBe(0);
+  });
+
 });
