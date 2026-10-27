@@ -57,6 +57,7 @@ import {
 } from './chronicles/chroniclesMM3Rules.js';
 import { chroniclesArriveOnTransition } from './chronicles/chroniclesArrival.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID, chroniclesSwordhavenReturnAvailable } from './chronicles/chroniclesSwordhavenReturnPortal.js';
+import { chroniclesDeployPartyForCombat } from './chroniclesPartyFootprint.js';
 import { chroniclesIsOverworldTravelExit } from './chronicles/chroniclesWorldReturnLinks.js';
 
 const DEFAULT_MAP = chroniclesMapById(DEFAULT_CHRONICLES_MAP_ID);
@@ -1204,6 +1205,11 @@ export function chroniclesReduce(state, action) {
   if (blocker) return withMessage(state, blocker.message);
   const moved = chroniclesArriveOnTransition(state,
     enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true }));
+  // Preserve legacy/Tactics tactical formation redeployment. MM3 cannot
+  // reach this path during initiative because party translation is blocked.
+  if (state.initiative && moved.mapId === state.mapId && moved.partyPositions && Object.keys(moved.partyPositions).length) {
+    return chroniclesDeployPartyForCombat({ ...moved, partyPositions: {} });
+  }
   return moved;
 }
 
