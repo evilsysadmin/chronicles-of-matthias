@@ -200,6 +200,18 @@ try {
       && guild?.getObjectByName('swordhaven-shop-nameplate')
       && forge?.getObjectByName('vertical-facade-post')
     )),
+    distinctApothecaryMasonry: String(Boolean(
+      apothecary?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xa8b9a0
+      && apothecary?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
+      && apothecary?.getObjectByName('timber-and-stone-walls')?.material?.normalMap?.name === 'chronicles-town-normal-masonry'
+      && apothecary?.getObjectByName('roof-gable-1')?.material
+        === apothecary?.getObjectByName('timber-and-stone-walls')?.material
+      && !apothecary?.getObjectByName('vertical-facade-post')
+      && !apothecary?.getObjectByName('diagonal-timber-brace')
+      && apothecary?.getObjectByName('shop-door')
+      && store?.getObjectByName('vertical-facade-post')
+      && store?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-stucco'
+    )),
     distinctShopFacades: String(Boolean(
       apothecary?.getObjectByName('apothecary-roof-herbarium')
       && apothecary?.getObjectByName('apothecary-hanging-herbs')
