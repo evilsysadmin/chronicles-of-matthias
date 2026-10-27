@@ -61,6 +61,8 @@ try {
           'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
         assert.equal(result.distinctWatchhouse, 'true',
           'Guardhouse must have a raised crenellated lookout distinct from the armorer');
+        assert.equal(result.distinctTavernBrick, 'true',
+          'Tavern must have warm brick walls and gables, distinct from merchant plaster');
         assert.equal(result.distinctTavernRoof, 'true',
           'Tavern must have a unique two-flue brick hearth roofline');
         assert.equal(result.distinctMarketStore, 'true',
