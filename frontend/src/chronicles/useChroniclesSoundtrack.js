@@ -24,6 +24,22 @@ export function chroniclesSoundtrackGain(volume, muted) {
   return normalized * 0.72; // Leave headroom for speech and SFX.
 }
 
+// A silent HTMLAudioElement still downloads/decodes the MP3. Pausing transport
+// for mute or zero volume stops that work; a later preference change or user
+// gesture can restart exactly the same track and playback position.
+export function syncChroniclesSoundtrackPlayback(audio, volume, muted) {
+  if (!audio) return;
+  const gain = chroniclesSoundtrackGain(volume, muted);
+  audio.volume = gain;
+  if (gain === 0) {
+    if (!audio.paused) audio.pause();
+    return;
+  }
+  if (!audio.src || !audio.paused || audio.error) return;
+  const attempt = audio.play();
+  if (attempt?.catch) void attempt.catch(() => {});
+}
+
 // Chronicles owns its own recorded score. The global radio retains its place
 // and resumes only if it was actually playing before entering Chronicles.
 export function useChroniclesSoundtrack(entryView) {
@@ -33,7 +49,8 @@ export function useChroniclesSoundtrack(entryView) {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return undefined;
     const audio = new Audio();
     audio.loop = true;
-    audio.preload = 'auto';
+    // Defer media fetch/decode until music is actually audible.
+    audio.preload = 'none';
     audioRef.current = audio;
 
     const globalStatus = getAmbientPlaybackState()?.status;
@@ -41,7 +58,7 @@ export function useChroniclesSoundtrack(entryView) {
     if (restoreGlobal) pauseAmbientMusic();
 
     const syncPreferences = () => {
-      audio.volume = chroniclesSoundtrackGain(getAmbientVolume(), isMusicMuted());
+      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
       // Transport/media-key controls may restart the global station while
       // Chronicles is foregrounded. Never play both soundtracks together.
       const status = getAmbientPlaybackState()?.status;
@@ -52,9 +69,8 @@ export function useChroniclesSoundtrack(entryView) {
       // post-paint hit cues happen later, after transient activation ends.
       unlockChroniclesActionAudio();
       // Autoplay is often blocked after F5 until the next real user gesture.
-      if (!audio.src || !audio.paused || audio.error) return;
-      const attempt = audio.play();
-      if (attempt?.catch) void attempt.catch(() => {});
+      // Do not reawaken muted media during pointer/keyboard/focus events.
+      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
     };
     syncPreferences();
     window.addEventListener('chess-ambient-transport', syncPreferences);
@@ -83,10 +99,8 @@ export function useChroniclesSoundtrack(entryView) {
     if (audio.src !== url) {
       audio.pause();
       audio.src = url;
-      audio.load();
+      // play() initiates loading only when audible; no eager load for mute.
     }
-    audio.volume = chroniclesSoundtrackGain(getAmbientVolume(), isMusicMuted());
-    const attempt = audio.play();
-    if (attempt?.catch) void attempt.catch(() => {});
+    syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
   }, [entryView]);
 }
