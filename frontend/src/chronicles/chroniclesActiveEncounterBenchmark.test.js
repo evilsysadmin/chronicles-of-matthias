@@ -3,6 +3,7 @@ import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, 
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
+  chroniclesEnemyLostParty,
   chroniclesStartInitiativeCombat,
 } from './chroniclesInitiative.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
@@ -122,6 +123,8 @@ function playSewerEncounter(rollOffset) {
     finished: !state.initiative,
     enemyHpLeft: Object.fromEntries(enemies.map((enemy) => [enemy.id, state[enemy.hpKey]])),
     enemyHpInitially: initialEnemyHp,
+    legitimateWithdrawals: enemies.filter((enemy) => state[enemy.hpKey] > 0
+      && chroniclesEnemyLostParty(state, enemy)).map((enemy) => enemy.id),
     partyHpLost: Object.fromEntries(state.party.map(({ id, hp }) => [id, initialHp[id] - hp])),
     downed: state.party.filter(({ hp }) => hp <= 0).length,
     lastMessage: state.message,
@@ -130,7 +133,7 @@ function playSewerEncounter(rollOffset) {
 }
 
 describe('MM3 active encounter baseline · real actions and initiative', () => {
-  it('finishes the authored western goblin pack with real attacks/blocks under two d8 orders', () => {
+  it('resolves the tougher pack by real kills or legal disengagement under two d8 orders', () => {
     const outcomes = [];
     for (const offset of [0, 1]) {
       const result = playSewerEncounter(offset);
@@ -138,11 +141,15 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(playSewerEncounter(offset)).toEqual(result);
       console.info('CHRONICLES_MM3_ACTIVE_ENCOUNTER ' + JSON.stringify(result));
       expect(result.finished).toBe(true);
-      // A benchmark that permits party defeat or surviving goblins can hide a
-      // major balance regression while still reporting a completed encounter.
+      // Combat may legitimately end after a survivor withdraws beyond its
+      // leash and line of sight. It must never count that foe as killed,
+      // or silently end while a still-engaged enemy remains nearby.
       expect(result.phase).toBe('explore');
       expect(result.downed).toBe(0);
-      expect(Object.values(result.enemyHpLeft).every((hp) => hp === 0)).toBe(true);
+      const remaining = Object.entries(result.enemyHpLeft)
+        .filter(([, hp]) => hp > 0).map(([id]) => id);
+      expect(remaining).toEqual(result.legitimateWithdrawals);
+      expect(PACK.length - remaining.length).toBeGreaterThanOrEqual(2);
       expect(result.heroAttacks + result.heroBlocks + result.heroRotations + result.heroMoves).toBeGreaterThan(0);
       expect(result.enemyMoves + result.enemyAttacks + result.enemyWaits).toBeGreaterThan(0);
       expect(result.steps).toBeLessThan(128);

@@ -42,7 +42,7 @@
       "x": 2,
       "y": 5,
       "hpKey": "sewersGoblinWestHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -55,7 +55,9 @@
       "visualScale": 0.9,
       "visualMotion": "grounded",
       "squadId": "sewers-west-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-goblin-mid",
@@ -64,7 +66,7 @@
       "x": 8,
       "y": 3,
       "hpKey": "sewersGoblinMidHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -77,7 +79,9 @@
       "visualScale": 0.9,
       "visualMotion": "grounded",
       "squadId": "sewers-central-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-spider",
@@ -86,7 +90,7 @@
       "x": 15,
       "y": 5,
       "hpKey": "sewersSpiderHp",
-      "maxHp": 5,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -97,7 +101,9 @@
         "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "skitter"
+      "visualMotion": "skitter",
+      "damageXpHpCap": 5,
+      "armorClass": 4
     },
     {
       "id": "sewers-hound",
@@ -106,7 +112,7 @@
       "x": 5,
       "y": 9,
       "hpKey": "sewersHoundHp",
-      "maxHp": 6,
+      "maxHp": 10,
       "retaliation": 2,
       "optional": true,
       "activation": "always",
@@ -117,7 +123,9 @@
         "engageRange": 4
       },
       "visualScale": 0.95,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "damageXpHpCap": 6,
+      "armorClass": 5
     },
     {
       "id": "sewers-smuggler",
@@ -126,7 +134,7 @@
       "x": 9,
       "y": 17,
       "hpKey": "sewersSmugglerHp",
-      "maxHp": 9,
+      "maxHp": 13,
       "retaliation": 2,
       "optional": true,
       "activation": "always",
@@ -164,7 +172,9 @@
         }
       },
       "defeatedFlag": "sewersSmugglerDefeated",
-      "blockingMessage": "Tobías se interpone delante de su alijo: «Estas cloacas son mías. El alcalde puede venir a decírmelo él»."
+      "blockingMessage": "Tobías se interpone delante de su alijo: «Estas cloacas son mías. El alcalde puede venir a decírmelo él».",
+      "damageXpHpCap": 9,
+      "armorClass": 4
     },
     {
       "id": "sewers-goblin-east",
@@ -173,7 +183,7 @@
       "x": 20,
       "y": 7,
       "hpKey": "sewersGoblinEastHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -186,7 +196,9 @@
       "visualScale": 0.9,
       "visualMotion": "grounded",
       "squadId": "sewers-cistern-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-goblin-cistern",
@@ -195,7 +207,7 @@
       "x": 19,
       "y": 7,
       "hpKey": "sewersGoblinCisternHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -208,7 +220,9 @@
       "visualScale": 0.9,
       "visualMotion": "grounded",
       "squadId": "sewers-cistern-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-spider-south",
@@ -217,7 +231,7 @@
       "x": 5,
       "y": 15,
       "hpKey": "sewersSpiderSouthHp",
-      "maxHp": 5,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -228,7 +242,9 @@
         "engageRange": 3
       },
       "visualScale": 0.9,
-      "visualMotion": "skitter"
+      "visualMotion": "skitter",
+      "damageXpHpCap": 5,
+      "armorClass": 4
     },
     {
       "id": "sewers-hound-south",
@@ -237,7 +253,7 @@
       "x": 13,
       "y": 15,
       "hpKey": "sewersHoundSouthHp",
-      "maxHp": 6,
+      "maxHp": 10,
       "retaliation": 2,
       "optional": true,
       "activation": "always",
@@ -248,7 +264,9 @@
         "engageRange": 4
       },
       "visualScale": 0.95,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "damageXpHpCap": 6,
+      "armorClass": 5
     },
     {
       "id": "sewers-goblin-sluice",
@@ -257,7 +275,7 @@
       "x": 21,
       "y": 15,
       "hpKey": "sewersGoblinSluiceHp",
-      "maxHp": 6,
+      "maxHp": 12,
       "retaliation": 2,
       "optional": true,
       "activation": "always",
@@ -268,7 +286,9 @@
         "engageRange": 2
       },
       "visualScale": 0.9,
-      "visualMotion": "grounded"
+      "visualMotion": "grounded",
+      "damageXpHpCap": 6,
+      "armorClass": 5
     },
     {
       "id": "sewers-goblin-drain",
@@ -277,7 +297,7 @@
       "x": 21,
       "y": 7,
       "hpKey": "sewersGoblinDrainHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -288,7 +308,9 @@
         "engageRange": 3
       },
       "squadId": "sewers-cistern-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-spider-conduit",
@@ -297,7 +319,7 @@
       "x": 17,
       "y": 12,
       "hpKey": "sewersSpiderConduitHp",
-      "maxHp": 5,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -306,7 +328,9 @@
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 3
-      }
+      },
+      "damageXpHpCap": 5,
+      "armorClass": 4
     },
     {
       "id": "sewers-goblin-overflow",
@@ -315,7 +339,7 @@
       "x": 3,
       "y": 5,
       "hpKey": "sewersGoblinOverflowHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -326,7 +350,9 @@
         "engageRange": 3
       },
       "squadId": "sewers-west-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-goblin-upper-gallery",
@@ -335,7 +361,7 @@
       "x": 9,
       "y": 3,
       "hpKey": "sewersGoblinUpperGalleryHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -346,7 +372,9 @@
         "engageRange": 3
       },
       "squadId": "sewers-central-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-spider-west-channel",
@@ -355,7 +383,7 @@
       "x": 1,
       "y": 12,
       "hpKey": "sewersSpiderWestChannelHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -364,7 +392,9 @@
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 3
-      }
+      },
+      "damageXpHpCap": 4,
+      "armorClass": 4
     },
     {
       "id": "sewers-hound-sunken-bridge",
@@ -373,7 +403,7 @@
       "x": 16,
       "y": 17,
       "hpKey": "sewersHoundSunkenBridgeHp",
-      "maxHp": 5,
+      "maxHp": 10,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -382,7 +412,9 @@
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 4
-      }
+      },
+      "damageXpHpCap": 5,
+      "armorClass": 5
     },
     {
       "id": "sewers-goblin-east-culvert",
@@ -391,7 +423,7 @@
       "x": 10,
       "y": 3,
       "hpKey": "sewersGoblinEastCulvertHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -402,7 +434,9 @@
         "engageRange": 3
       },
       "squadId": "sewers-central-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-goblin-bottom-shaft",
@@ -411,7 +445,7 @@
       "x": 4,
       "y": 5,
       "hpKey": "sewersGoblinBottomShaftHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -422,7 +456,9 @@
         "engageRange": 3
       },
       "squadId": "sewers-west-pack",
-      "killXp": 2
+      "killXp": 2,
+      "damageXpHpCap": 4,
+      "armorClass": 3
     },
     {
       "id": "sewers-spider-waterworks",
@@ -431,7 +467,7 @@
       "x": 12,
       "y": 11,
       "hpKey": "sewersSpiderWaterworksHp",
-      "maxHp": 4,
+      "maxHp": 8,
       "retaliation": 1,
       "optional": true,
       "activation": "always",
@@ -440,7 +476,9 @@
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
         "engageRange": 3
-      }
+      },
+      "damageXpHpCap": 4,
+      "armorClass": 4
     }
   ],
   "triggers": [],

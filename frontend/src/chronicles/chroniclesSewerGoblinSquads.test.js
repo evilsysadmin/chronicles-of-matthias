@@ -3,6 +3,7 @@ import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfM
 import { chroniclesEngagedEnemies, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesMM3AttackHits, chroniclesMM3EnemyArmorClass } from './chroniclesMM3Rules.js';
 import {
   applyChroniclesTacticsProgression,
   chroniclesKillXp,
@@ -40,7 +41,7 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
       const members = map.enemies.filter((enemy) => enemy.squadId === pack.id);
       expect(members.map((enemy) => enemy.id).sort()).toEqual([...pack.goblins].sort());
       for (const member of members) {
-        expect(member.maxHp).toBe(4);
+        expect(member.maxHp).toBe(8);
         expect(member.retaliation).toBe(1);
         expect(member.ai.movement).toBe('hold');
         expect(member.ai.engagedMovement).toBe('cardinal-chase');
@@ -50,6 +51,37 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
       }
     }
     expect(map.enemies.find((enemy) => enemy.id === 'sewers-goblin-sluice').squadId).toBeUndefined();
+  });
+
+  it('toughens every sewer foe without increasing attack damage or ordinary kill XP', () => {
+    const map = chroniclesMapById(MAP_ID);
+    const state = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+    const expectedHp = {
+      'ash-goblin': 8, 'crypt-spider': 8, 'bone-hound': 10,
+      'road-bandit': 13,
+    };
+    for (const enemy of map.enemies) {
+      const expected = enemy.id === 'sewers-goblin-sluice' ? 12 : expectedHp[enemy.visualType];
+      expect(enemy.maxHp, enemy.id).toBe(expected);
+      expect(state[enemy.hpKey], enemy.id).toBe(expected);
+      expect(enemy.ai.attackReach, enemy.id).toBe(1);
+      const ac = enemy.id === 'sewers-goblin-sluice' ? 5 : ({
+        'ash-goblin': 3, 'crypt-spider': 4, 'bone-hound': 5, 'road-bandit': 4,
+      })[enemy.visualType];
+      expect(enemy.armorClass, enemy.id).toBe(ac);
+      expect(chroniclesMM3EnemyArmorClass(enemy), enemy.id).toBe(ac);
+      // Each creature's actual AC must enter the same d20 hit rule that
+      // melee and missile attacks already share, not be decorative metadata.
+      expect(chroniclesMM3AttackHits(10 + ac - 1, 0, chroniclesMM3EnemyArmorClass(enemy))).toBe(false);
+      expect(chroniclesMM3AttackHits(10 + ac, 0, chroniclesMM3EnemyArmorClass(enemy))).toBe(true);
+      expect(enemy.ai.engagedMovement, enemy.id).toBe('cardinal-chase');
+      // Endurance is the only balancing lever in this cut: no inflated burst
+      // damage and no extra level/XP rewards from these low-level mobs.
+      if (enemy.visualType === 'ash-goblin' && enemy.id !== 'sewers-goblin-sluice') {
+        expect(enemy.retaliation, enemy.id).toBe(1);
+        expect(enemy.killXp, enemy.id).toBe(2);
+      }
+    }
   });
 
   it.each(PACKS)('$id joins one initiative with all three living goblins', (pack) => {

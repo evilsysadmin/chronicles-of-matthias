@@ -742,8 +742,16 @@ function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, 
   // Anchor the ticks to authored maximum HP across every action and shooter.
   // Four 1-HP hits and one 4-HP hit must award the same two damage XP.
   const originHp = Math.max(before, nonNegativeInteger(enemy?.maxHp, before));
+  // Tougher authored creatures may retain the same finite damage-XP budget
+  // as before their HP buff. A cap is in HP of *rewardable damage*, not the
+  // creature's actual life: later blows still deal damage and can kill it.
+  // Missing/invalid caps preserve the historical progression rules.
+  const authoredCap = enemy?.damageXpHpCap;
+  const rewardableHp = Number.isSafeInteger(authoredCap) && authoredCap > 0
+    ? Math.min(originHp, authoredCap) : originHp;
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
+    if (originHp - hp > rewardableHp) continue;
     // Preserve the original per-blow XP budget across different shooters:
     // splitting 4 HP into two 2-HP shots must not create extra XP.
     if ((originHp - 1 - hp) % CHRONICLES_DAMAGE_XP_EVERY_HP !== 0) continue;
