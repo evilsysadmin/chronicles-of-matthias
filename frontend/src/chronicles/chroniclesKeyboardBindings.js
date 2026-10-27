@@ -36,7 +36,7 @@ export function chroniclesAdventureTabClosesMenu(event, summary, {
 // outside the pause menu, while Q requests (never confirms) an unsafe exit.
 // Do not steal keys from text fields or repeated/composed browser events.
 export function chroniclesAdventureMenuShortcut(event, {
-  menuOpen = false, saveBusy = false, confirmExitWithoutSaving = false,
+  menuOpen = false, saveBusy = false, inCombat = false, confirmExitWithoutSaving = false,
   confirmLoadSelection = false, subpageOpen = false,
 } = {}) {
   if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
@@ -53,7 +53,7 @@ export function chroniclesAdventureMenuShortcut(event, {
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
   if (saveBusy || confirmExitWithoutSaving || confirmLoadSelection) return null;
-  if (event.key === 's' || event.key === 'S') return 'save';
+  if (event.key === 's' || event.key === 'S') return inCombat ? null : 'save';
   if (event.key === 'q' || event.key === 'Q') return 'request-exit';
   return null;
 }
