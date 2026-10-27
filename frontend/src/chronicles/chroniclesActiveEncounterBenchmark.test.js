@@ -37,7 +37,7 @@ function playSewerEncounter(rollOffset) {
 
   const metrics = {
     rollOffset, steps: 0, rounds: 0,
-    heroAttacks: 0, heroBlocks: 0,
+    heroAttacks: 0, heroBlocks: 0, heroDamage: 0,
     enemyMoves: 0, enemyAttacks: 0, enemyWaits: 0,
   };
   while (state.initiative && metrics.steps < 128) {
@@ -47,6 +47,7 @@ function playSewerEncounter(rollOffset) {
     if (actor.kind === 'party') {
       const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id });
       if (attempted.turns === state.turns + 1) {
+        metrics.heroDamage += enemies.reduce((sum, enemy) => sum + Math.max(0, state[enemy.hpKey] - attempted[enemy.hpKey]), 0);
         metrics.heroAttacks += 1;
         state = attempted;
       } else {
@@ -84,6 +85,8 @@ function playSewerEncounter(rollOffset) {
     enemyHpInitially: initialEnemyHp,
     partyHpLost: Object.fromEntries(state.party.map(({ id, hp }) => [id, initialHp[id] - hp])),
     downed: state.party.filter(({ hp }) => hp <= 0).length,
+    lastMessage: state.message,
+    enemyPositions: state.enemyPositions,
   };
 }
 
