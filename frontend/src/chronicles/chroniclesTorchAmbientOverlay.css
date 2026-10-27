@@ -1,0 +1,39 @@
+/* Opacity is compositor-animated over the static WebGL frame: no scene redraw. */
+.chronicles-torch-ambient-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint style;
+}
+.chronicles-torch-ambient-layer[hidden],
+.chronicles-torch-ambient-glow[hidden] {
+  display: none;
+}
+.chronicles-torch-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate3d(-50%, -48%, 0);
+  background: radial-gradient(ellipse at center,
+    rgba(255, 192, 96, .37) 0%,
+    rgba(255, 111, 35, .15) 39%,
+    rgba(255, 90, 22, 0) 76%);
+  mix-blend-mode: screen;
+  will-change: opacity;
+  animation: chronicles-torch-ambient-flicker 2.8s ease-in-out infinite alternate;
+}
+@keyframes chronicles-torch-ambient-flicker {
+  0% { opacity: .42; }
+  46% { opacity: .72; }
+  73% { opacity: .50; }
+  100% { opacity: .82; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-torch-ambient-glow {
+    animation: none;
+    opacity: .56;
+    will-change: auto;
+  }
+}

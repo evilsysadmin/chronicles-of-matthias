@@ -14,6 +14,8 @@ import { buildChroniclesEnemyVisual } from './chroniclesEnemyVisualRegistry.js';
 import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
 import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFrameGate.js';
+import { createChroniclesFrameScheduler } from './chronicles/chroniclesFrameScheduler.js';
+import { createChroniclesTorchAmbientOverlay } from './chronicles/chroniclesTorchAmbientOverlay.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
@@ -728,6 +730,9 @@ export function createChroniclesOfMatthiasGame(host, {
     ? new THREE.Group()
     : buildChroniclesDungeonAtmosphere({ coarsePointer: coarse, reducedMotion, scenePlan });
   scene.add(dressing, atmosphere);
+  // The 3D world may sleep between actions; a tiny CSS-composited halo layer
+  // keeps nearby, unoccluded flames alive without re-rendering the WebGL canvas.
+  const ambientTorchGlows = createChroniclesTorchAmbientOverlay(host, camera, scene, dungeon.torches || [], { coarse });
   let destroyed = false;
   const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
@@ -739,7 +744,6 @@ export function createChroniclesOfMatthiasGame(host, {
   const initialDirection = CHRONICLES_DIRECTIONS[initialState?.direction] || CHRONICLES_DIRECTIONS[1];
   let desiredYaw = Math.atan2(-initialDirection.dx, -initialDirection.dy);
   let latestState = null;
-  let frame = 0;
   let attackFxStartedAt = -1;
   let attackFxConfig = ATTACK_FX.matthias;
   let volleyFxStartedAt = -1;
@@ -763,19 +767,33 @@ export function createChroniclesOfMatthiasGame(host, {
     camera.aspect = width / height;
     camera.fov = chroniclesFirstPersonFov(camera.aspect);
     camera.updateProjectionMatrix();
+    scheduler.invalidate(0);
   }
 
   function syncState(state) {
     const now = clock.getElapsedTime();
     const previousState = latestState;
+    let animateState = !reducedMotion && Boolean(previousState && (
+      state.x !== previousState.x || state.y !== previousState.y
+      || state.direction !== previousState.direction
+    ));
     dungeon.enemyDefinitions.forEach((enemyDefinition) => {
       const previousHp = previousState?.[enemyDefinition.hpKey];
       const nextHp = state[enemyDefinition.hpKey];
-      if (previousHp != null && nextHp < previousHp) enemyHitStartedAt.set(enemyDefinition.id, now);
+      if (previousHp != null && nextHp < previousHp) {
+        enemyHitStartedAt.set(enemyDefinition.id, now);
+        animateState = !reducedMotion;
+      }
       const landedBlow = state.enemyTurnEvents !== previousState?.enemyTurnEvents
         && (state.enemyTurnEvents || []).some((event) => event.type === 'attack' && event.enemyId === enemyDefinition.id && !event.missed);
-      if (landedBlow) enemyAttackStartedAt.set(enemyDefinition.id, now);
-      if (!reducedMotion && previousHp > 0 && nextHp === 0) enemyDeathStartedAt.set(enemyDefinition.id, now);
+      if (landedBlow) {
+        enemyAttackStartedAt.set(enemyDefinition.id, now);
+        animateState = !reducedMotion;
+      }
+      if (!reducedMotion && previousHp > 0 && nextHp === 0) {
+        enemyDeathStartedAt.set(enemyDefinition.id, now);
+        animateState = true;
+      }
     });
     desiredPosition = worldForCell(state.x, state.y, dungeon.sceneCenter);
     const direction = CHRONICLES_DIRECTIONS[state.direction];
@@ -796,6 +814,7 @@ export function createChroniclesOfMatthiasGame(host, {
         from.y = 0;
         enemyMoveFrom.set(enemyDefinition.id, from);
         enemyMoveStartedAt.set(enemyDefinition.id, now);
+        animateState = true;
       }
       const target = worldForCell(currentCell.x, currentCell.y, dungeon.sceneCenter);
       target.y = 0;
@@ -865,10 +884,10 @@ export function createChroniclesOfMatthiasGame(host, {
     if (reducedMotion) {
       camera.position.copy(desiredPosition);
       camera.rotation.y = desiredYaw;
-      atmosphere.userData.updateChroniclesAtmosphere?.(now);
-      renderer.render(scene, camera);
-      firstFrameGate.markFrameRendered();
     }
+    // A changed view paints once; movement and impacts get a short animation
+    // window. The GPU stays idle while the player is waiting.
+    scheduler.invalidate(animateState ? 1050 : 0);
   }
 
   function playAttack(memberId) {
@@ -881,6 +900,7 @@ export function createChroniclesOfMatthiasGame(host, {
     combatFx.slash.scale.set(attackFxConfig.width, 1, 1);
     combatFx.ring.scale.setScalar(attackFxConfig.ring);
     combatFx.group.visible = true;
+    scheduler.invalidate(450);
   }
 
   function playVolley(shooterIds = []) {
@@ -903,6 +923,7 @@ export function createChroniclesOfMatthiasGame(host, {
     );
     volleyFxStartedAt = clock.getElapsedTime();
     volleyFx.group.visible = volleyFxCount > 0;
+    if (volleyFxCount > 0) scheduler.invalidate(Math.ceil(CHRONICLES_VOLLEY_MAX_DURATION * 1000) + 100);
   }
 
   function wrapAngle(value) {
@@ -945,11 +966,14 @@ export function createChroniclesOfMatthiasGame(host, {
     pooledAssignments = assigned;
   }
 
-  function render() {
-    if (destroyed) return;
-    frame = requestAnimationFrame(render);
-    if (!visible) return;
+  function render(settled = false) {
+    if (destroyed || !visible) return;
     const time = clock.getElapsedTime();
+    if (settled) {
+      // Even throttled tabs must finish exactly at the target grid pose.
+      camera.position.copy(desiredPosition);
+      camera.rotation.y = desiredYaw;
+    }
     lendTorchLights(time);
     if (!reducedMotion) {
       camera.position.lerp(desiredPosition, 0.16);
@@ -1090,8 +1114,17 @@ export function createChroniclesOfMatthiasGame(host, {
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
     renderer.render(scene, camera);
+    ambientTorchGlows.update();
     firstFrameGate.markFrameRendered();
   }
+
+  const scheduler = createChroniclesFrameScheduler({
+    requestFrame: (callback) => requestAnimationFrame(callback),
+    cancelFrame: (id) => cancelAnimationFrame(id),
+    now: () => performance.now(),
+    draw: render,
+  });
+  scheduler.setVisible(visible);
 
   const onContentPointerUp = (event) => {
     if (typeof onContentClick !== 'function') return;
@@ -1114,10 +1147,13 @@ export function createChroniclesOfMatthiasGame(host, {
   observer?.observe(host);
   const onWindowResize = () => resize();
   if (!observer) window.addEventListener('resize', onWindowResize);
-  const onVisibility = () => { visible = document.visibilityState !== 'hidden'; };
+  const onVisibility = () => {
+    visible = document.visibilityState !== 'hidden';
+    scheduler.setVisible(visible);
+    ambientTorchGlows.setVisible(visible);
+  };
   document.addEventListener('visibilitychange', onVisibility);
   resize();
-  render();
   onReady?.('THREE.JS · FIRST PERSON');
 
   return {
@@ -1127,7 +1163,8 @@ export function createChroniclesOfMatthiasGame(host, {
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      cancelAnimationFrame(frame);
+      scheduler.dispose();
+      ambientTorchGlows.dispose();
       observer?.disconnect();
       if (!observer) window.removeEventListener('resize', onWindowResize);
       document.removeEventListener('visibilitychange', onVisibility);
