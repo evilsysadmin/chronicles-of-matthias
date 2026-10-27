@@ -389,7 +389,15 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.94,
   }) : null;
-  const wallMaterial = guildStone || (isTemple || isArmor ? mats.stone : mats.plaster);
+  // The inn is a warm, brick-built public house rather than another limewashed
+  // merchant shop. Its timber frame, door and windows remain in place; the
+  // masonry relief also continues across both roof gables without new assets.
+  const tavernBrick = isTavern ? material(0xb98b70, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.97,
+  }) : null;
+  const wallMaterial = guildStone || tavernBrick || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
