@@ -5,6 +5,8 @@ import {
   chroniclesTorchGlowProjection,
   chroniclesTorchAmbientGlowBudget,
   chroniclesTorchGlowOccluded,
+  chroniclesTorchOverlayPoseSnapshot,
+  chroniclesTorchOverlayPoseChanged,
 } from './chroniclesTorchAmbientOverlay.js';
 
 function camera() {
@@ -17,6 +19,39 @@ function camera() {
 }
 
 describe('Static WebGL with CSS-composited torch ambience', () => {
+  it('does not re-project idle torches for repeated combat frames at one pose', () => {
+    const view = camera();
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, null)).toBe(true);
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(false);
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(false);
+  });
+
+  it('invalidates projection when the camera moves, turns or its FOV changes', () => {
+    const view = camera();
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    view.position.x = 1.5;
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+    view.position.x = 0;
+    view.rotation.y += 0.3;
+    view.updateMatrixWorld(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+    view.rotation.y -= 0.3;
+    view.updateMatrixWorld(true);
+    view.fov = 75;
+    view.updateProjectionMatrix();
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 400, snapshot)).toBe(true);
+  });
+
+  it('invalidates cached glow projections when the viewport changes', () => {
+    const view = camera();
+    const snapshot = chroniclesTorchOverlayPoseSnapshot(view, 800, 400);
+    expect(chroniclesTorchOverlayPoseChanged(view, 801, 400, snapshot)).toBe(true);
+    expect(chroniclesTorchOverlayPoseChanged(view, 800, 401, snapshot)).toBe(true);
+  });
+
   it('limits active glow layers to four on desktop and two on coarse pointers', () => {
     expect(chroniclesTorchAmbientGlowBudget()).toBe(4);
     expect(chroniclesTorchAmbientGlowBudget(false)).toBe(4);

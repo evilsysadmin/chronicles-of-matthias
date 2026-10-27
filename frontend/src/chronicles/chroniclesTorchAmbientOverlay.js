@@ -39,6 +39,24 @@ export function chroniclesTorchAmbientGlowBudget(coarse = false) {
   return coarse ? 2 : 4;
 }
 
+// A running combat effect can redraw the frame while the camera is still.
+// Re-project and raycast flame glows only if that camera/viewport really moved.
+export function chroniclesTorchOverlayPoseSnapshot(camera, width, height) {
+  return {
+    width, height,
+    world: camera.matrixWorld.elements.slice(),
+    projection: camera.projectionMatrix.elements.slice(),
+  };
+}
+
+export function chroniclesTorchOverlayPoseChanged(camera, width, height, snapshot) {
+  if (!snapshot || snapshot.width !== width || snapshot.height !== height) return true;
+  const world = camera.matrixWorld.elements;
+  const projection = camera.projectionMatrix.elements;
+  return world.some((value, index) => value !== snapshot.world[index])
+    || projection.some((value, index) => value !== snapshot.projection[index]);
+}
+
 export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches, { coarse = false } = {}) {
   if (!torches?.length) return { update() {}, setVisible() {}, dispose() {} };
 
@@ -66,12 +84,15 @@ export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches
   const raycaster = new THREE.Raycaster();
   const position = new THREE.Vector3();
   let disposed = false;
+  let lastPose = null;
 
   function update() {
     if (disposed || layer.hidden) return;
     const width = host.clientWidth;
     const height = host.clientHeight;
     camera.updateMatrixWorld(true);
+    if (!chroniclesTorchOverlayPoseChanged(camera, width, height, lastPose)) return;
+    lastPose = chroniclesTorchOverlayPoseSnapshot(camera, width, height);
 
     const projected = torches.map((torch) => {
       if (!torch.flame?.visible || !torch.root?.visible) return null;
@@ -97,7 +118,12 @@ export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches
   }
 
   function setVisible(visible) {
-    if (!disposed) layer.hidden = !visible;
+    if (disposed) return;
+    const wasHidden = layer.hidden;
+    layer.hidden = !visible;
+    // The page may return from suspension after an external resize or GPU
+    // context change, even if its camera coordinates appear identical.
+    if (wasHidden !== layer.hidden) lastPose = null;
   }
 
   function dispose() {
