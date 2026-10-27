@@ -18,11 +18,11 @@ describe('Chronicles minimap width', () => {
 });
 
 describe('Chronicles responsive minimap terrain range', () => {
-  it('shows 13 terrain rows on a large desktop map instead of enlarging 7 tiles', () => {
+  it('shows 15 terrain rows on a large desktop map instead of enlarging 7 tiles', () => {
     const radius = chroniclesMinimapRadiusForSize(3, 286, 300);
-    expect(radius).toBe(6);
-    expect(2 * radius + 1).toBe(13);
-    expect(chroniclesMinimapRadiusX(radius, 1.25)).toBe(8); // 17 visible columns
+    expect(radius).toBe(7);
+    expect(2 * radius + 1).toBe(15);
+    expect(chroniclesMinimapRadiusX(radius, 1.25)).toBe(9); // 19 visible columns
   });
 
   it('preserves readable compact mobile maps and scales an intermediate map', () => {
@@ -31,7 +31,7 @@ describe('Chronicles responsive minimap terrain range', () => {
     }
     expect(chroniclesMinimapRadiusForSize(3, 225, 200)).toBe(5);
     expect(chroniclesMinimapRadiusForSize(3, 300, 210)).toBe(5);
-    expect(chroniclesMinimapRadiusForSize(3, 300, 260)).toBe(6);
+    expect(chroniclesMinimapRadiusForSize(3, 300, 260)).toBe(7);
     expect(chroniclesMinimapRadiusForSize(8, 300, 260)).toBe(8); // explicit wider radius
     expect(chroniclesMinimapRadiusForSize(3, 220, 110)).toBe(3);
   });
@@ -44,7 +44,7 @@ describe('Chronicles responsive minimap terrain range', () => {
     // SSR has no measured SVG; compact fallback keeps hydration predictable.
     expect(html).toContain('data-chronicles-minimap-radius="3"');
     expect(html).toContain('Entorno explorado en un radio de 3 casillas');
-    expect(html).not.toContain('data-chronicles-minimap-radius="6"');
+    expect(html).not.toContain('data-chronicles-minimap-radius="7"');
   });
 });
 
