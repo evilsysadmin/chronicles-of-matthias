@@ -96,9 +96,9 @@ describe('Cinematic audience layout contracts', () => {
   });
 
   it('does not let Ilse remote art overlay its dialogue, including reduced motion', () => {
-    expect(css).toMatch(/\\.chronicles-audience__scene img\\.chronicles-shop__premium-art\\s*\\{[^}]*position:\\s*absolute;[^}]*opacity:\\s*0;/s);
-    expect(css).toMatch(/\\.chronicles-audience__scene img\\.chronicles-shop__premium-art\\.is-ready\\s*\\{[^}]*opacity:\\s*1;/s);
-    expect(css).toMatch(/prefers-reduced-motion:\\s*reduce[\\s\\S]*chronicles-shop__premium-art\\s*\\{\\s*transition:\\s*none;/);
+    expect(css).toMatch(/\.chronicles-audience__scene img\.chronicles-shop__premium-art\s*\{[^}]*position:\s*absolute;[^}]*opacity:\s*0;/s);
+    expect(css).toMatch(/\.chronicles-audience__scene img\.chronicles-shop__premium-art\.is-ready\s*\{[^}]*opacity:\s*1;/s);
+    expect(css).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*chronicles-shop__premium-art\s*\{\s*transition:\s*none;/);
     expect(css).toContain("data-chronicles-audience-room='temple'");
   });
 
