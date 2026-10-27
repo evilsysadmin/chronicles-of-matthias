@@ -722,6 +722,22 @@ export function chroniclesKillXp(enemy) {
   return 5 + Math.max(1, nonNegativeInteger(enemy?.maxHp));
 }
 
+// Split the *total* bounty, not a rounded-up share for every hero.
+// E.g. a 2-XP goblin must award exactly 2 XP across four survivors, not 4.
+// Rotate any remainder using the stable enemy ID so the first party slots do
+// not always pocket the odd point across a whole dungeon.
+export function chroniclesKillXpShares(enemy, living) {
+  if (!Array.isArray(living) || living.length === 0) return [];
+  const total = chroniclesKillXp(enemy);
+  const whole = Math.floor(total / living.length);
+  const remainder = total % living.length;
+  const start = [...String(enemy?.id || '')].reduce((sum, letter) => sum + letter.charCodeAt(0), 0) % living.length;
+  return living.map((member, index) => ({
+    memberId: member.id,
+    xp: whole + ((index - start + living.length) % living.length < remainder ? 1 : 0),
+  })).filter((share) => share.xp > 0);
+}
+
 function awardDamageBudget(progress, awards, levelUps, memberId, enemy, before, after, namespace, originHp = before) {
   let next = progress;
   for (let hp = before - 1; hp >= after; hp -= 1) {
@@ -804,15 +820,14 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
         // the hero who lands the blows does not outlevel the rest by half a
         // campaign (the damage XP above stays with whoever dealt it).
         const living = (next.party || []).filter((member) => member.hp > 0 && HERO_IDS.includes(member.id));
-        const share = Math.ceil(chroniclesKillXp(enemy) / Math.max(1, living.length));
-        living.forEach((member) => {
+        chroniclesKillXpShares(enemy, living).forEach(({ memberId, xp }) => {
           progress = award(
             progress,
             awards,
             levelUps,
-            member.id,
-            share,
-            member.id === actorMemberId ? `${namespace}:kill:${enemy.id}` : `${namespace}:kill:${enemy.id}:${member.id}`,
+            memberId,
+            xp,
+            memberId === actorMemberId ? `${namespace}:kill:${enemy.id}` : `${namespace}:kill:${enemy.id}:${memberId}`,
             'baja',
           );
         });
