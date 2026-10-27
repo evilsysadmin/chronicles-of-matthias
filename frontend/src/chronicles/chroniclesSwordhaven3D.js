@@ -621,6 +621,51 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       displays.add(bay);
     }
     root.add(displays);
+  } else if (isMagic) {
+    // Tall violet leaded panes make the guild legible as an arcane school
+    // instead of another amber-window merchant shop. Decorative facade only.
+    const glazing = new THREE.Group();
+    glazing.name = 'magic-guild-violet-glazing';
+    glazing.userData.chroniclesDecorativeOnly = true;
+    glazing.position.z = facadeZ + 0.46;
+    const violetGlass = material(0x7658a9, {
+      emissive: 0x302052, emissiveIntensity: 0.42,
+      roughness: 0.36, metalness: 0.04, side: THREE.DoubleSide,
+    });
+    const pointedFrame = new THREE.Shape();
+    pointedFrame.moveTo(-0.83, -1.04);
+    pointedFrame.lineTo(0.83, -1.04);
+    pointedFrame.lineTo(0.83, 0.49);
+    pointedFrame.lineTo(0, 1.33);
+    pointedFrame.lineTo(-0.83, 0.49);
+    pointedFrame.closePath();
+    const pointedPane = new THREE.Shape();
+    pointedPane.moveTo(-0.63, -0.83);
+    pointedPane.lineTo(0.63, -0.83);
+    pointedPane.lineTo(0.63, 0.38);
+    pointedPane.lineTo(0, 1.03);
+    pointedPane.lineTo(-0.63, 0.38);
+    pointedPane.closePath();
+    for (const x of [-width * 0.33, width * 0.33]) {
+      const bay = new THREE.Group();
+      bay.name = 'magic-guild-glass-bay';
+      bay.position.set(x, 2.75, 0);
+      mesh(bay, new THREE.ShapeGeometry(pointedFrame), mats.stone,
+        'magic-window-stone-frame', [0, 0, 0], !coarse);
+      mesh(bay, new THREE.ShapeGeometry(pointedPane), violetGlass,
+        'magic-window-violet-pane', [0, 0, 0.075], !coarse);
+      mesh(bay, new THREE.BoxGeometry(0.065, 1.67, 0.07), mats.gold,
+        'magic-window-brass-mullion', [0, -0.11, 0.13]);
+      for (const side of [-1, 1]) {
+        const lead = mesh(bay, new THREE.BoxGeometry(0.055, 0.70, 0.07), mats.gold,
+          'magic-window-pointed-lead', [side * 0.23, 0.46, 0.13]);
+        lead.rotation.z = side * 0.61;
+      }
+      mesh(bay, new THREE.BoxGeometry(1.82, 0.18, 0.35), mats.stone,
+        'magic-window-carved-sill', [0, -1.10, 0.04]);
+      glazing.add(bay);
+    }
+    root.add(glazing);
   } else {
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;
