@@ -38,8 +38,8 @@ function Fixture() {
   };
   return <>
     <div className="chronicles" data-provisions-world-shell aria-hidden="true" />
-    <button type="button" data-provisions-reopen onClick={() => setOpen(true)}
-      style={{ position: 'fixed', left: 0, bottom: 0 }}>REOPEN</button>
+    {!open && <button type="button" data-provisions-reopen onClick={() => setOpen(true)}
+      style={{ position: 'fixed', left: 0, bottom: 0, zIndex: 10000 }}>REOPEN</button>}
     <output data-provisions-fixture-gold style={{display:'none'}}>{chroniclesGoldBalance(state)}</output>
     <output data-provisions-fixture-rations style={{display:'none'}}>{state.inventory?.['road-rations']?.quantity || 0}</output>
     <output data-provisions-fixture-turns style={{display:'none'}}>{state.turns}</output>
