@@ -1,0 +1,46 @@
+name: Chronicles goblin R2 · actual WebGL visual smoke
+on:
+  pull_request:
+    paths:
+      - frontend/src/chronicles/chroniclesSpriteBillboards.js
+      - frontend/src/chronicles/chroniclesSpriteBillboards.test.js
+      - frontend/smoke/goblin-r2.*
+      - .github/workflows/chronicles-goblin-r2-visual.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  goblin-real-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked browser/runtime dependencies
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Chromium · production goblin renderer with approved public R2 texture
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash smoke/ensure-chromium.sh
+          source smoke/wait-for-http.sh
+          npx vite --host 127.0.0.1 --port 4174 --strictPort > "$RUNNER_TEMP/chronicles-goblin-vite.log" 2>&1 &
+          dev_pid=$!
+          trap 'kill "${dev_pid:-}" 2>/dev/null || true' EXIT
+          wait_for_http http://127.0.0.1:4174/smoke/goblin-r2.html "$dev_pid" "$RUNNER_TEMP/chronicles-goblin-vite.log" "Vite goblin fixture"
+          node smoke/run-timed.mjs smoke/goblin-r2.mjs http://127.0.0.1:4174/smoke/goblin-r2.html
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: chronicles-goblin-r2-visual-${{ github.sha }}
+          path: frontend/smoke-goblin-r2-*.png
+          if-no-files-found: warn
+          retention-days: 7

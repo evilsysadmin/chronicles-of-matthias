@@ -3,6 +3,10 @@ import spriteManifest from '../assets/chronicles/sprites/sprites.json';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import {
   chroniclesHasSpriteBillboard,
+  chroniclesGoblinR2Url,
+  chroniclesGoblinR2AtlasValid,
+  CHRONICLES_ASH_GOBLIN_R2_FRAMES,
+  CHRONICLES_ASH_GOBLIN_R2_URL,
   chroniclesSpriteFrameIndex,
 } from './chroniclesSpriteBillboards.js';
 
@@ -12,6 +16,34 @@ describe('Chronicles 2.5D billboards', () => {
     expect(spriteManifest['rookwood-mourner'].frames).toEqual(['idle-a', 'idle-b', 'speak', 'grateful']);
     expect(chroniclesHasSpriteBillboard('bone-hound')).toBe(true);
     expect(chroniclesHasSpriteBillboard('crypt-spider')).toBe(false);
+  });
+
+  it('validates the six-pose remote goblin and rejects private dashboard URLs or invalid sheets', () => {
+    expect(CHRONICLES_ASH_GOBLIN_R2_FRAMES).toEqual(['idle-a', 'idle-b', 'menace', 'attack', 'hurt', 'dead']);
+    expect(CHRONICLES_ASH_GOBLIN_R2_URL).toBe(
+      'https://assets.chronicles.shadowops.dpdns.org/sprites/ash-goblin-96ed70aafe94827f.webp',
+    );
+    expect(chroniclesGoblinR2Url(CHRONICLES_ASH_GOBLIN_R2_URL)).toBe(CHRONICLES_ASH_GOBLIN_R2_URL);
+    expect(chroniclesGoblinR2Url('https://assets.example.org/sprites/ash-goblin.webp')).toBeNull();
+    expect(chroniclesGoblinR2Url(CHRONICLES_ASH_GOBLIN_R2_URL + '?rev=2')).toBeNull();
+    expect(chroniclesGoblinR2Url('https://dash.cloudflare.com/example/r2/default/buckets/chronicles/objects/sprites%2Fash-goblin.webp/details'))
+      .toBeNull();
+    expect(chroniclesGoblinR2Url('http://assets.example.org/sprites/ash-goblin.webp')).toBeNull();
+    expect(chroniclesGoblinR2Url('https://assets.example.org/sprites/other.webp')).toBeNull();
+    expect(chroniclesGoblinR2AtlasValid({ width: 1536, height: 256 })).toBe(true);
+    expect(chroniclesGoblinR2AtlasValid({ width: 1280, height: 256 })).toBe(false);
+    expect(chroniclesGoblinR2AtlasValid(null)).toBe(false);
+    expect(chroniclesSpriteFrameIndex(CHRONICLES_ASH_GOBLIN_R2_FRAMES, { menace: true })).toBe(2);
+    expect(chroniclesSpriteFrameIndex(CHRONICLES_ASH_GOBLIN_R2_FRAMES, { attacking: true })).toBe(3);
+    expect(chroniclesSpriteFrameIndex(CHRONICLES_ASH_GOBLIN_R2_FRAMES, { hurt: true })).toBe(4);
+    expect(chroniclesSpriteFrameIndex(CHRONICLES_ASH_GOBLIN_R2_FRAMES, { dead: true })).toBe(5);
+  });
+
+  it('retains the local five-frame goblin and procedural Tactics representation as fallback', () => {
+    const billboard = buildChroniclesEnemyVisual('ash-goblin', { sprites: true });
+    expect(billboard.model.userData.chroniclesBillboard.frames).toEqual(spriteManifest['ash-goblin'].frames);
+    expect(buildChroniclesEnemyVisual('ash-goblin').model.userData.chroniclesBillboard).toBeUndefined();
+    billboard.model.userData.chroniclesDispose();
   });
 
   it('orders cues dead > hurt > attack > menace, and alternates idle frames over time', () => {
