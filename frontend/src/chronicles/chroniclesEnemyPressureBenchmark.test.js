@@ -154,6 +154,30 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(corridor.damage).toBe(single.damage);
   });
 
+  it('isolates geometry with the same three goblins and the same party', () => {
+    // Three identical authored enemies, but this time each has an adjacent
+    // cardinal approach in the small walkable chamber at the sewer entrance.
+    // This is test-only positioning; neither the map nor spawn data changes.
+    const flanking = {
+      id: 'three-goblins-flanking',
+      mapId: 'swordhaven-sewers',
+      party: { x: 2, y: 1, direction: 2 },
+      enemies: [WEST, OVERFLOW, REAR],
+      positions: {
+        [WEST]: { x: 1, y: 1 },
+        [OVERFLOW]: { x: 3, y: 1 },
+        [REAR]: { x: 2, y: 2 },
+      },
+    };
+    const corridor = runPressure(cases[1], 2);
+    const chamber = runPressure(flanking, 2);
+    expect(chamber.enemies).toBe(corridor.enemies);
+    expect(chamber.turns).toBe(corridor.turns);
+    expect(chamber.attacks).toBeGreaterThan(corridor.attacks);
+    expect(chamber.moves + chamber.blocked).toBeLessThan(corridor.moves + corridor.blocked);
+    console.info('CHRONICLES_MM3_GEOMETRY_COMPARISON ' + JSON.stringify({ corridor, chamber }));
+  });
+
   it('records extra threat from a real ranged plus melee encounter in open ground', () => {
     const corridor = runPressure(cases[1]);
     const mixed = runPressure(cases[2]);
