@@ -4,6 +4,8 @@ import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { CHRONICLES_INN_FOOD, chroniclesInnEntry, chroniclesInnName, chroniclesInnRestPrice, chroniclesInnRumors } from '../chronicles/chroniclesInns.js';
 import scene from '../assets/chronicles/ui/inn/tavern-hall.svg';
+import { CHRONICLES_TAVERN_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
+import { ShopRoomArtwork } from './ChroniclesShop.jsx';
 import './ChroniclesInn.css';
 
 export default function ChroniclesInn({ state, onAction, onClose }) {
@@ -55,8 +57,13 @@ export default function ChroniclesInn({ state, onAction, onClose }) {
     <div className="chronicles-inn__backdrop" data-chronicles-inn-room={entry.id}>
       <section ref={dialogRef} className="chronicles-inn" role="dialog" aria-modal="true"
         aria-label={`Taberna ${chroniclesInnName(entry)}`}>
-        <img className="chronicles-inn__scene" src={scene}
-          alt="Interior de taberna medieval con vigas, chimenea encendida, mesas y mostrador de roble" draggable="false" />
+        <div className="chronicles-inn__scene" data-chronicles-inn-art="tavern">
+          <ShopRoomArtwork room={{
+            src: CHRONICLES_TAVERN_PREMIUM_ART_URL,
+            fallbackSrc: scene,
+            alt: 'Interior de taberna medieval con vigas, chimenea encendida, mesas y mostrador de roble',
+          }} />
+        </div>
         <header className="chronicles-inn__heading">
           <div><small>{entry.id === 'first-book-healer' ? 'TABERNA · SWORDHAVEN' : 'POSADA · TERRA'}</small>
             <h2>{chroniclesInnName(entry)}</h2>
