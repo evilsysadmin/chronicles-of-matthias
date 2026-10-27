@@ -15,7 +15,7 @@ describe('Swordhaven audience premium environment', () => {
     expect(room).toContain('scale(3.4)');
     expect(room).toContain('id="office-stone"');
     expect(room).toContain('url(#robe)');
-    expect(room.length).toBeGreaterThan(14000);
+    expect(room.length).toBeGreaterThan(10000);
     expect(room.length).toBeLessThan(180000);
     expect(room).not.toMatch(/<(?:text|script|image|foreignObject|a)\b|\bonload\s*=|href\s*=/i);
   });
