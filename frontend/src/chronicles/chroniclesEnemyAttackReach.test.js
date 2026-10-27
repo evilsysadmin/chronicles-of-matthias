@@ -73,6 +73,24 @@ describe('MM3 first-book ranged pressure on the rear row', () => {
     expect(chroniclesEnemyAttackTarget(state, melee)?.row).toBe('front');
   });
 
+  it('rotates melee targets on real MM3 initiative rounds, not the frozen exploration round', () => {
+    const { state, archer } = archerFight();
+    const melee = { ...archer, ai: { ...archer.ai, attackReach: 1, requiresLineOfSight: false } };
+    const frontOnly = {
+      ...state,
+      phase: 'combat',
+      round: 0,
+      party: state.party.map((hero) => hero.row === 'back' ? { ...hero, hp: 0 } : hero),
+    };
+    const frontIds = frontOnly.party.filter((hero) => hero.hp > 0).map((hero) => hero.id);
+    expect(frontIds).toHaveLength(2);
+    const first = chroniclesEnemyAttackTarget({ ...frontOnly, initiative: { round: 1 } }, melee);
+    const second = chroniclesEnemyAttackTarget({ ...frontOnly, initiative: { round: 2 } }, melee);
+    expect([first?.id, second?.id].sort()).toEqual([...frontIds].sort());
+    // The exploration turn is unchanged during individual initiative actions.
+    expect(frontOnly.round).toBe(0);
+  });
+
   it('preserves Tactics targeting rather than applying the MM3 rear-row preference', () => {
     const { state, archer } = archerFight(null);
     expect(chroniclesEnemyAttackTarget(state, archer)?.row).toBe('front');
