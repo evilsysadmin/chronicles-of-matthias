@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+<defs>
+    <linearGradient id="wall" x2="0" y2="1"><stop stop-color="#30231b"/><stop offset=".64" stop-color="#745238"/><stop offset="1" stop-color="#38261c"/></linearGradient>
+    <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#b0844b"/><stop offset=".36" stop-color="#6f4629"/><stop offset="1" stop-color="#301b15"/></linearGradient>
+    <linearGradient id="robe" x2="0" y2="1"><stop stop-color="#8b3035"/><stop offset=".48" stop-color="#551b29"/><stop offset="1" stop-color="#260f1d"/></linearGradient>
+    <linearGradient id="skin" x2="0" y2="1"><stop stop-color="#e5b58a"/><stop offset=".55" stop-color="#bc815f"/><stop offset="1" stop-color="#794736"/></linearGradient>
+    <radialGradient id="sun"><stop stop-color="#ffdda0" stop-opacity=".5"/><stop offset="1" stop-color="#b4672b" stop-opacity="0"/></radialGradient>
+    <pattern id="grain" width="10" height="9" patternUnits="userSpaceOnUse"><path d="M1 2h3M7 7h2" stroke="#160d0a" opacity=".25"/></pattern>
+  
+<linearGradient id="office-wall" x2="0" y2="1"><stop stop-color="#1c2028"/><stop offset=".46" stop-color="#453d36"/><stop offset="1" stop-color="#241b19"/></linearGradient>
+<linearGradient id="office-desk" x2=".1" y2="1"><stop stop-color="#cc9559"/><stop offset=".13" stop-color="#5e3826"/><stop offset=".73" stop-color="#291c1b"/><stop offset="1" stop-color="#7e502e"/></linearGradient>
+<linearGradient id="office-red" x2="1" y2="1"><stop stop-color="#a6544b"/><stop offset=".35" stop-color="#571f2f"/><stop offset="1" stop-color="#210f23"/></linearGradient>
+<linearGradient id="office-glass" x2=".3" y2="1"><stop stop-color="#cde1dc"/><stop offset=".5" stop-color="#5e8794"/><stop offset="1" stop-color="#182f46"/></linearGradient>
+<radialGradient id="office-warm"><stop stop-color="#ffdb98" stop-opacity=".65"/><stop offset="1" stop-color="#bd7229" stop-opacity="0"/></radialGradient>
+<radialGradient id="office-blue"><stop stop-color="#8ec5df" stop-opacity=".6"/><stop offset="1" stop-color="#52768b" stop-opacity="0"/></radialGradient>
+<pattern id="office-stone" width="156" height="92" patternUnits="userSpaceOnUse"><path d="M0 0H156M0 46H156M78 0V46M0 46V92M156 46V92" stroke="#111113" stroke-width="3" opacity=".31" fill="none"/></pattern>
+<pattern id="office-grain" width="29" height="23" patternUnits="userSpaceOnUse"><path d="M0 4l20 5M5 20l15-3" stroke="#d2a272" opacity=".14" stroke-width=".65"/></pattern>
+</defs>
+<rect width="1600" height="900" fill="url(#office-wall)"/><rect width="1600" height="650" fill="url(#office-stone)"/>
+<path d="M0 0H1600V110H0Z" fill="#17191d"/>
+<path d="M0 94 800 169 1600 94V141L800 219 0 141Z" fill="url(#wood)" stroke="#886044" stroke-width="13"/>
+<path d="M0 0h155l58 652-76 248H0Z M1478 0h122v900h-96l-66-248Z" fill="#27211e" opacity=".8"/>
+<path d="M112 100V650M1448 94V650" stroke="#765139" stroke-width="46"/>
+<!-- Illuminated lancet window with sunrise over the city -->
+<path d="M206 198Q375 7 545 198V568H206Z" fill="#17262f" stroke="#856647" stroke-width="21"/>
+<path d="M226 204Q376 50 525 204V545H226Z" fill="url(#office-glass)"/>
+<path d="M230 485l78-99 39 41 72-93 103 151v58H230Z" fill="#546c6b" opacity=".63"/>
+<path d="M231 518l62-60 64 19 59-78 104 120v22H231Z" fill="#2e3e47" opacity=".8"/>
+<path d="M376 69V548M226 323H526M300 154V548M450 154V548" stroke="#bba17b" stroke-width="11"/>
+<path d="M375 68V548M230 326h292" stroke="#292a27" stroke-width="6"/>
+<ellipse cx="390" cy="316" rx="372" ry="275" fill="url(#office-blue)" opacity=".42"/>
+<!-- Banner, heraldry, archivist library -->
+<path d="M610 153h230v336L733 440 613 489Z" fill="url(#office-red)" stroke="#ae7d4e" stroke-width="8"/>
+<path d="M632 178h181v246l-86-31-95 31Z" fill="none" stroke="#d1a66a" stroke-width="4" opacity=".65"/>
+<path d="M677 282l51-54 55 54-11 75h-84Z" fill="#9e824b" stroke="#debe7f" stroke-width="8"/>
+<path d="M713 277h31v80h-31Z" fill="#392525"/><path d="M685 355h94" stroke="#d3b27c" stroke-width="8"/>
+<path d="M1270 130H1530V573H1270Z" fill="#251a18" stroke="#99714f" stroke-width="14"/>
+
+<path d="M1280 210h239" stroke="#a07852" stroke-width="13"/><path d="M1280 218h239" stroke="#251a14" stroke-width="7"/>
+<path d="M1294 145h12v58h-12Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1312 150h14v53h-14Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1330 155h16v48h-16Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1348 160h12v43h-12Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1366 145h14v58h-14Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1384 150h16v53h-16Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1402 155h12v48h-12Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1420 160h14v43h-14Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1438 145h16v58h-16Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1456 150h12v53h-12Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1474 155h14v48h-14Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1492 160h16v43h-16Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1280 320h239" stroke="#a07852" stroke-width="13"/><path d="M1280 328h239" stroke="#251a14" stroke-width="7"/>
+<path d="M1294 255h12v58h-12Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1312 260h14v53h-14Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1330 265h16v48h-16Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1348 270h12v43h-12Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1366 255h14v58h-14Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1384 260h16v53h-16Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1402 265h12v48h-12Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1420 270h14v43h-14Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1438 255h16v58h-16Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1456 260h12v53h-12Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1474 265h14v48h-14Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1492 270h16v43h-16Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1280 430h239" stroke="#a07852" stroke-width="13"/><path d="M1280 438h239" stroke="#251a14" stroke-width="7"/>
+<path d="M1294 365h12v58h-12Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1312 370h14v53h-14Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1330 375h16v48h-16Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1348 380h12v43h-12Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1366 365h14v58h-14Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1384 370h16v53h-16Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1402 375h12v48h-12Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1420 380h14v43h-14Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1438 365h16v58h-16Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1456 370h12v53h-12Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1474 375h14v48h-14Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1492 380h16v43h-16Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1280 540h239" stroke="#a07852" stroke-width="13"/><path d="M1280 548h239" stroke="#251a14" stroke-width="7"/>
+<path d="M1294 475h12v58h-12Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1312 480h14v53h-14Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1330 485h16v48h-16Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1348 490h12v43h-12Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1366 475h14v58h-14Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1384 480h16v53h-16Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1402 485h12v48h-12Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1420 490h14v43h-14Z" fill="#5b4c58" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1438 475h16v58h-16Z" fill="#ad7048" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1456 480h12v53h-12Z" fill="#636d61" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1474 485h14v48h-14Z" fill="#783f36" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1492 490h16v43h-16Z" fill="#c49357" stroke="#211a16" stroke-width="1.5"/>
+<path d="M1000 140h218v280h-218Z" fill="#4a3029" stroke="#a88255" stroke-width="12"/>
+<path d="M1018 151h180v250h-180Z" fill="#b9976a"/>
+<path d="M1025 213q52-37 168-26M1027 258q45 40 160-11M1047 359l78-108 52 55M1039 171l88 68" stroke="#795b46" stroke-width="8" opacity=".85" fill="none"/>
+<g fill="#92392e"><circle cx="1057" cy="264" r="8"/><circle cx="1167" cy="212" r="9"/><circle cx="1135" cy="343" r="6"/></g>
+<!-- Floor and central chair, behind mayor -->
+<path d="M0 638h1600v262H0Z" fill="#423026"/>
+<path d="M0 650h1600M0 749h1600M0 849h1600" stroke="#7b5841" stroke-width="8" opacity=".5"/>
+<path d="M740 550q6-155 165-165q178 7 183 165v164H740Z" fill="#24181c" stroke="#ae8555" stroke-width="22"/>
+<path d="M763 550q5-136 142-141q139 8 155 141v157H763Z" fill="url(#office-red)" stroke="#6e392f" stroke-width="14"/>
+<g fill="#ca9b60">
+<circle cx="800" cy="475" r="4.5"/>
+<circle cx="800" cy="520" r="4.5"/>
+<circle cx="800" cy="565" r="4.5"/>
+<circle cx="800" cy="610" r="4.5"/>
+<circle cx="800" cy="655" r="4.5"/>
+<circle cx="850" cy="475" r="4.5"/>
+<circle cx="850" cy="520" r="4.5"/>
+<circle cx="850" cy="565" r="4.5"/>
+<circle cx="850" cy="610" r="4.5"/>
+<circle cx="850" cy="655" r="4.5"/>
+<circle cx="900" cy="475" r="4.5"/>
+<circle cx="900" cy="520" r="4.5"/>
+<circle cx="900" cy="565" r="4.5"/>
+<circle cx="900" cy="610" r="4.5"/>
+<circle cx="900" cy="655" r="4.5"/>
+<circle cx="950" cy="475" r="4.5"/>
+<circle cx="950" cy="520" r="4.5"/>
+<circle cx="950" cy="565" r="4.5"/>
+<circle cx="950" cy="610" r="4.5"/>
+<circle cx="950" cy="655" r="4.5"/>
+<circle cx="1000" cy="475" r="4.5"/>
+<circle cx="1000" cy="520" r="4.5"/>
+<circle cx="1000" cy="565" r="4.5"/>
+<circle cx="1000" cy="610" r="4.5"/>
+<circle cx="1000" cy="655" r="4.5"/>
+</g>
+<!-- Preserve Aldric's canonical character, costume, beard and face (not a generic NPC) -->
+<g transform="translate(512 28) scale(3.4)"><path d="M107 189Q99 142 119 129Q138 118 159 119Q183 116 204 130Q218 153 210 198Z" fill="url(#robe)" stroke="#231319" stroke-width="4"/>
+  <path d="M127 131l20 36 11-26 14 26 22-38-21-11-30-3z" fill="#d0a974" stroke="#573c30" stroke-width="2"/>
+  <path d="M151 154l7-9 10 9-9 27z" fill="#6e2430"/>
+  <path d="M118 138Q103 149 101 187l25 10 16-31-8-29Z" fill="#64232a" stroke="#31151a" stroke-width="3"/>
+  <path d="M198 138q19 14 22 49l-25 11-16-32 7-29z" fill="#64232a" stroke="#31151a" stroke-width="3"/>
+  <path d="M126 111Q126 75 160 72Q193 75 193 111L182 128Q166 146 144 130z" fill="url(#skin)" stroke="#6c4133" stroke-width="3"/>
+  <path d="M124 108l-4-17 6-23 16-10 26-4 21 11 9 24-7 18-5-19-13-9-23 2-17 12z" fill="#7a746b" stroke="#413b37" stroke-width="3"/>
+  <path d="M129 87l10-20 17-7-10 19zM173 60l15 14 4 18-13-13z" fill="#b7b3a3"/>
+  <path d="M133 94l15-4 8 3M166 93l9-4 15 5" fill="none" stroke="#62463f" stroke-width="5"/>
+  <rect x="141" y="98" width="9" height="4" fill="#1e1b20"/><rect x="171" y="98" width="9" height="4" fill="#1e1b20"/>
+  <path d="M158 100l-5 13 9 3" fill="none" stroke="#935f48" stroke-width="3"/>
+  <path d="M142 117l12 7 9-3 8 3 11-8-6 20-11 8-11-2-11-8z" fill="#bbb3a2" stroke="#65564e" stroke-width="3"/>
+  <path d="M150 122q10 7 20 0" fill="none" stroke="#6f4539" stroke-width="3"/>
+  <path d="M146 140l14 25 14-25" fill="none" stroke="#d6b871" stroke-width="4"/>
+  <circle cx="160" cy="158" r="9" fill="#9f7438" stroke="#f1ca77" stroke-width="3"/>
+  <path d="M155 158h10M160 153v10" stroke="#442c1c" stroke-width="2"/>
+  </g>
+<!-- Foreground desk grounds the mayor in his actual office -->
+<path d="M0 704Q800 666 1600 702v198H0Z" fill="url(#office-desk)" stroke="#b5824d" stroke-width="13"/>
+<path d="M0 725q800-48 1600 2" fill="none" stroke="#ecc184" stroke-width="10" opacity=".45"/>
+<rect x="78" y="755" width="1445" height="125" rx="7" fill="none" stroke="#795036" stroke-width="9"/>
+<path d="M515 752v149M1220 752v149" stroke="#3a2620" stroke-width="15"/>
+<path d="M228 720l260-14 60 29-278 18Z M1050 725l260-16 59 37-274 8Z" fill="#e6cda0" stroke="#786044" stroke-width="5"/>
+<path d="M264 731l199-15M280 739l201-18M1101 733l179-15M1113 741l192-13" stroke="#937650" stroke-width="3" opacity=".85"/>
+<path d="M118 710l21-89 9-7 32 95Z" fill="#8a7546" stroke="#38291f" stroke-width="5"/>
+<ellipse cx="147" cy="614" rx="135" ry="140" fill="url(#office-warm)"/>
+<path d="M137 617q-16-23-4-42q14 8 4 42Z" fill="#ffe6a2"/>
+<rect x="1407" y="691" width="29" height="54" fill="#a78a5a" stroke="#32261f" stroke-width="7"/>
+<ellipse cx="1422" cy="627" rx="140" ry="138" fill="url(#office-warm)"/>
+<path d="M1420 678q-20-22-4-43q10 18 4 43Z" fill="#f4c67d"/>
+<rect width="1600" height="900" fill="url(#office-grain)" opacity=".6"/>
+<path d="M0 0H1600V900H0Z" fill="none" stroke="#201a16" stroke-width="31"/>
+</svg>

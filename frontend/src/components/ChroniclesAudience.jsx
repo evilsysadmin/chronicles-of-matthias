@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import aldricHall from '../assets/chronicles/ui/shops/aldric-hall.svg';
+import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustrated.svg';
 import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
 import './ChroniclesShop.css';
@@ -7,7 +8,8 @@ import './ChroniclesAudience.css';
 
 const ROOM_ART = Object.freeze({
   'aldric-hall': Object.freeze({
-    src: aldricHall,
+    src: aldricIllustrated,
+    fallbackSrc: aldricHall,
     alt: 'El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento',
   }),
   'watch-house': Object.freeze({
@@ -97,8 +99,8 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
             aria-label="Salir de la conversación">✕</button>
         </header>
 
-        <figure className="chronicles-audience__scene">
-          {room ? <img src={room.src} alt={room.alt} draggable="false" /> : (
+        <figure className="chronicles-audience__scene" data-chronicles-audience-room={dialogue.room}>
+          {room ? <img src={room.src} alt={room.alt} draggable="false" decoding="async" /> : (
             <div className="chronicles-audience__scene-fallback" aria-hidden="true">✦</div>
           )}
         </figure>
