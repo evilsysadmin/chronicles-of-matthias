@@ -65,7 +65,12 @@ try {
       if ([390,1280].includes(width))
         await page.screenshot({path:'smoke-provisions-'+width+'.png'});
       assert.equal(await room.locator('[data-provisions-buy]').isEnabled(),true);
-      await room.locator('[data-provisions-buy]').dblclick();
+      // Fire two clicks in the SAME event turn: the first callback must
+      // synchronously lock out the second before React even re-renders.
+      await room.locator('[data-provisions-buy]').evaluate((button) => {
+        button.click();
+        button.click();
+      });
       const bought=await before();
       assert.equal(bought.gold,initial.gold-7,'Exact 7-gold authoritative exchange');
       assert.equal(bought.rations,initial.rations+1,'Exactly one real road-rations item');
