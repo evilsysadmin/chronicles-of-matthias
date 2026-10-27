@@ -852,7 +852,13 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'tavern-gable-central-crown', [0, height + 1.83, 0], !coarse);
     mesh(stepped, new THREE.BoxGeometry(1.16, 0.14, 0.66), mats.stone,
       'tavern-gable-crown-coping', [0, height + 2.15, 0.04], !coarse);
-    root.add(stepped);
+    // The same brick silhouette closes the rear gable, visible when
+    // approaching the tavern from the northern street. Both remain decorative.
+    const rear = stepped.clone(true);
+    rear.name = 'tavern-brick-stepped-rear-gable';
+    rear.position.z = -(facadeZ + 0.28);
+    rear.rotation.y = Math.PI;
+    root.add(stepped, rear);
   }
   // Each hero building has a distinctive readable silhouette.
   if (isTemple) {
