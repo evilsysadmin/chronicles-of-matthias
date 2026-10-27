@@ -126,6 +126,14 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect(vines).toBeFalsy();
         continue;
       }
+      const guildGlazing = building.getObjectByName('magic-guild-violet-glazing');
+      if (guildGlazing) {
+        expect(guildGlazing.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(guildGlazing.children).toHaveLength(2);
+        expect(foliage).toBeFalsy();
+        expect(vines).toBeFalsy();
+        continue;
+      }
       expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
       expect(vines).toBeInstanceOf(THREE.InstancedMesh);
       expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);

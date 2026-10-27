@@ -486,6 +486,14 @@ describe('Swordhaven modular real-time 3D', () => {
           expect(straps.count).toBe(2);
           continue;
         }
+        if (spec.id === 'swordhaven-magic') {
+          expect(facade.getObjectByName('magic-guild-violet-glazing')).toBeTruthy();
+          expect(lead).toBeFalsy();
+          expect(leaves).toBeFalsy();
+          expect(flowers).toBeFalsy();
+          expect(straps.count).toBe(2);
+          continue;
+        }
         expect(lead).toBeInstanceOf(THREE.InstancedMesh);
         expect(lead.count).toBe(8);
         const centers = facade.getObjectByName('window-box-flower-centers');
@@ -530,6 +538,12 @@ describe('Swordhaven modular real-time 3D', () => {
       }
       if (spec.id === 'swordhaven-temple') {
         expect(building.getObjectByName('temple-stained-glass-lancets')).toBeTruthy();
+        expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
+        expect(building.getObjectByName('flower-window-box')).toBeFalsy();
+        continue;
+      }
+      if (spec.id === 'swordhaven-magic') {
+        expect(building.getObjectByName('magic-guild-violet-glazing')).toBeTruthy();
         expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
         expect(building.getObjectByName('flower-window-box')).toBeFalsy();
         continue;
