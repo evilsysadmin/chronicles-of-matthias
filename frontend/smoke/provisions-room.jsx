@@ -1,10 +1,11 @@
 // Real map, authoritative reducer and price: no stubbed purchases.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createChroniclesState, chroniclesContextualContentAction, chroniclesReduce } from '../src/chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from '../src/chronicles/chroniclesContentRuntime.js';
 import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
 import ChroniclesProvisions, { CHRONICLES_QUARTERMASTER_ID } from '../src/components/ChroniclesProvisions.jsx';
+import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/components/ChroniclesOfMatthias.css';
 
 function initial() {
@@ -20,18 +21,12 @@ function initial() {
 function Fixture() {
   const [state, setState] = useState(initial);
   const stateRef = useRef(state);
-  const [open, setOpen] = useState(true);
+  // Mount the world first, then open its shop. The world owns a lower-priority
+  // Back/Escape handler that must never dismiss the game underneath the shop.
+  const [open, setOpen] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  const [backgroundBacks, setBackgroundBacks] = useState(0);
+  useEscapeToClose(() => setBackgroundBacks((count) => count + 1), { contextMenu: false });
   const purchase = () => {
     const current = stateRef.current;
     if (chroniclesContextualContentAction(current)?.id !== CHRONICLES_QUARTERMASTER_ID) return current;
@@ -49,6 +44,7 @@ function Fixture() {
     <output data-provisions-fixture-rations style={{display:'none'}}>{state.inventory?.['road-rations']?.quantity || 0}</output>
     <output data-provisions-fixture-turns style={{display:'none'}}>{state.turns}</output>
     <output data-provisions-fixture-attempts style={{display:'none'}}>{attempts}</output>
+    <output data-provisions-fixture-background-backs style={{display:'none'}}>{backgroundBacks}</output>
     {open && <ChroniclesProvisions state={state} onBuy={purchase} onClose={() => setOpen(false)} />}
   </>;
 }
