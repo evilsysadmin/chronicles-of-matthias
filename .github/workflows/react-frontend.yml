@@ -97,6 +97,9 @@ jobs:
           node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
           node smoke/run-timed.mjs smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
+          # Real Swordhaven civic audiences, including portal stacking and
+          # full-room artwork geometry at touch/desktop viewports.
+          node smoke/run-timed.mjs smoke/audience-room.mjs http://localhost:4174/smoke/audience-room.html
           # Real Swordhaven tavern: independent rest/food/rumor transactions and ESC.
           node smoke/run-timed.mjs smoke/inn-room.mjs http://localhost:4174/smoke/inn-room.html
           # Real expedition journal: truthful region hints, chapter navigation and mobile layout.

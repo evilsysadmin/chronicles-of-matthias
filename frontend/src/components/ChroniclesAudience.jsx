@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import aldricHall from '../assets/chronicles/ui/shops/aldric-hall.svg';
 import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustrated.svg';
 import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
@@ -82,7 +83,7 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
 
   if (!dialogue) return null;
 
-  return (
+  const modal = (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
       <section className="chronicles-shop chronicles-audience"
         role="dialog" aria-modal="true"
@@ -132,4 +133,9 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
       </section>
     </div>
   );
+  // The first-person world creates its own high-z stacking context. A modal
+  // inside that context can end up *behind* the world even at z-index: 10150.
+  // Match merchant/inn behavior: render the entire audience in document.body.
+  // SSR retains plain markup for rendering and accessibility tests.
+  return typeof document === 'undefined' ? modal : createPortal(modal, document.body);
 }

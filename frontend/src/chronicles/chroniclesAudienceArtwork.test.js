@@ -89,3 +89,11 @@ describe('Cinematic audience layout contracts', () => {
     expect(component).toContain('data-chronicles-audience-room={dialogue.room}');
   });
 });
+
+describe('Audience layer contract', () => {
+  it('uses a body-level portal in browsers so first-person stacking cannot cover it', () => {
+    const component = readFileSync(new URL('../components/ChroniclesAudience.jsx', import.meta.url), 'utf8');
+    expect(component).toContain("createPortal(modal, document.body)");
+    expect(component).toContain("typeof document === 'undefined' ? modal");
+  });
+});
