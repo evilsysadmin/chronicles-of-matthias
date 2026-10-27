@@ -51,8 +51,15 @@ export function chroniclesRunDepth(authoritativeRun, mapId = null) {
   if (index < 0) return 0;
   // Malformed legacy route entries must not count as dungeon floors.
   // Valid old routes still use their ordered dungeon stops as before.
-  const visited = areas.slice(0, index + 1).filter((area) =>
-    typeof area?.mapId === 'string' && area.mapId.trim().length > 0);
+  // A route floor has one canonical map ID. Corrupt/legacy repeated entries
+  // must not add artificial dungeon pressure when a later floor is reached.
+  const seenMapIds = new Set();
+  const visited = areas.slice(0, index + 1).filter((area) => {
+    const id = area?.mapId;
+    if (typeof id !== 'string' || !id.trim() || seenMapIds.has(id)) return false;
+    seenMapIds.add(id);
+    return true;
+  });
   // When an overworld is authored, village and road stops do not add dungeon
   // floors or artificial combat pressure to the first real dungeon.
   const hasRegionKinds = areas.some((area) => area?.regionKind || area?.map?.regionKind);
