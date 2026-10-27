@@ -45,6 +45,9 @@ describe('Swordhaven general store frontage', () => {
     expect(loft?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(loft.getObjectByName('store-loft-oak-gable')).toBeTruthy();
     expect(loft.getObjectByName('store-loft-window')).toBeTruthy();
+    // The loft window must project in front of the main gable to be visible
+    // from the street-facing camera, not merely exist in the scene graph.
+    expect(loft.position.z + 0.77).toBeGreaterThan(store.getObjectByName('roof-gable-1').position.z);
     expect(loft.children.filter(child => child.name === 'store-loft-roof-slope')).toHaveLength(2);
     expect(store.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
     expect(store.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
