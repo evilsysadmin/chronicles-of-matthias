@@ -51,6 +51,9 @@ describe('Chronicles premium shop UI', () => {
     expect(armor).toContain('data-chronicles-shop-art-layer="premium"');
     expect(armor).toContain('pasa el ratón o enfoca');
     expect(potion).toContain('data-chronicles-shop="first-book-apothecary"');
+    expect(potion).toContain('data-chronicles-shop-room="botica-apothecary"');
+    expect(potion).toContain('botica-apothecary.svg');
+    expect(potion).not.toContain('data-chronicles-shop-art-layer="premium"');
     expect(potion).toContain('Poción de curación');
     expect(potion).toContain('Pergamino de llamas');
     expect(potion).toContain('pasa el ratón o enfoca');
