@@ -107,7 +107,7 @@ const REQUIRED_DIFFICULTY_FIELDS = [
   'depthPressure', 'progressionPressure',
 ];
 
-function isUsableDifficultySnapshot(value) {
+export function chroniclesIsUsableDifficultySnapshot(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if (!REQUIRED_DIFFICULTY_FIELDS.every((field) => Number.isSafeInteger(value[field]))) return false;
   // These fields form one deterministic band in Go, not seven independent
@@ -151,6 +151,6 @@ export function chroniclesResolvedDifficultyBand(
   // Do not let its shape crash the local difficulty fallback.
   const areas = Array.isArray(authoritativeRun?.areas) ? authoritativeRun.areas : [];
   const authoritative = areas.find((area) => area?.mapId === mapId)?.difficulty;
-  if (isUsableDifficultySnapshot(authoritative)) return authoritative;
+  if (chroniclesIsUsableDifficultySnapshot(authoritative)) return authoritative;
   return chroniclesDifficultyBand(fallback);
 }
