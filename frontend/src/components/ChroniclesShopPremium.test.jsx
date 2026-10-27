@@ -56,6 +56,11 @@ describe('Chronicles premium shop UI', () => {
     expect(potion).not.toContain('data-chronicles-shop-art-layer="premium"');
     expect(potion).toContain('Poción de curación');
     expect(potion).toContain('Pergamino de llamas');
+    for (const id of ['healing-potion', 'mana-potion', 'fire-scroll']) {
+      expect(potion).toContain('data-chronicles-shop-art="' + id + '"');
+    }
+    expect(potion).not.toContain('data-chronicles-shop-glyph=');
+
     expect(potion).toContain('pasa el ratón o enfoca');
     for (const html of [armor, potion]) {
       expect(html).toContain('chronicles-shop__detail');

@@ -812,6 +812,17 @@ try {
       assert.match(await dialog.locator('h2').innerText(), /Botica de Swordhaven/);
       assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 3,
         'Apothecary must keep all three authored offers');
+      for (const id of ['healing-potion', 'mana-potion', 'fire-scroll']) {
+        const artwork = dialog.locator('[data-chronicles-shop-item="' + id + '"] img[data-chronicles-shop-art="' + id + '"]');
+        await artwork.waitFor({ state: 'visible' });
+        const picture = await artwork.evaluate(node => ({
+          decoded: node.complete, width: node.naturalWidth, height: node.naturalHeight,
+        }));
+        assert(picture.decoded && picture.width === 512 && picture.height === 512,
+          id + ': Botica art must decode at 512 pixels: ' + JSON.stringify(picture));
+      }
+      assert.equal(await dialog.locator('[data-chronicles-shop-item] svg[data-chronicles-shop-glyph]').count(), 0,
+        'Botica must not use generic glyphs for its authored merchandise');
       const potion = dialog.locator('[data-chronicles-shop-item="healing-potion"]');
       if (mobile) await potion.locator('button').click();
       else await potion.locator('button').hover();
