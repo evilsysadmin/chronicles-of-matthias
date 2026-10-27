@@ -745,21 +745,51 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   } else if (isApothecary) {
     // The apothecary is a glazed rooftop herbarium, not a second wizard's
     // turret. All pieces sit above the authored solid building footprint.
-    const herbalGlass = material(0x79b39b, {
-      emissive: 0x12372a, emissiveIntensity: 0.18, metalness: 0.12, roughness: 0.34,
+    // Real glazing needs an open frame: the previous solid timber box
+    // obscured the panes and read as an opaque green roof cube from the street.
+    const herbalGlass = material(0xa0cbb4, {
+      emissive: 0x12372a, emissiveIntensity: 0.12, metalness: 0.04,
+      roughness: 0.27, transparent: true, opacity: 0.74,
+      depthWrite: false, side: THREE.DoubleSide,
     });
     const herbarium = new THREE.Group();
     herbarium.name = 'apothecary-roof-herbarium';
+    herbarium.userData.chroniclesDecorativeOnly = true;
     herbarium.position.set(0, height + 1.72, -depth * 0.12);
-    mesh(herbarium, new THREE.BoxGeometry(2.95, 1.35, 2.22), mats.timber,
-      'herbarium-timber-frame', [0, 0.68, 0]);
-    mesh(herbarium, new THREE.BoxGeometry(2.65, 1.20, 2.29), herbalGlass,
-      'herbarium-green-glazing', [0, 0.68, 0.025]);
-    for (const side of [-1, 1]) {
-      const pane = mesh(herbarium, new THREE.BoxGeometry(1.72, 0.14, 2.55),
-        herbalGlass, 'herbarium-glazed-roof', [side * 0.72, 1.62, 0]);
-      pane.rotation.z = -side * 0.50;
+    // Slender posts and continuous sills/eaves frame actual glass panels.
+    // The building's authored solid footprint and entrance are unchanged.
+    for (const x of [-1.38, 1.38]) {
+      for (const z of [-1.07, 1.07]) {
+        mesh(herbarium, new THREE.BoxGeometry(0.17, 1.46, 0.17), mats.timber,
+          'herbarium-corner-post', [x, 0.74, z], !coarse);
+      }
+      for (const y of [0.10, 1.43]) {
+        mesh(herbarium, new THREE.BoxGeometry(0.17, 0.14, 2.28), mats.timber,
+          'herbarium-side-rail', [x, y, 0], !coarse);
+      }
+      mesh(herbarium, new THREE.BoxGeometry(0.055, 1.17, 2.04), herbalGlass,
+        'herbarium-side-glazing', [x, 0.75, 0], !coarse);
     }
+    for (const z of [-1.07, 1.07]) {
+      for (const y of [0.10, 1.43]) {
+        mesh(herbarium, new THREE.BoxGeometry(2.92, 0.14, 0.17), mats.timber,
+          'herbarium-front-rail', [0, y, z], !coarse);
+      }
+      mesh(herbarium, new THREE.BoxGeometry(2.66, 1.17, 0.055), herbalGlass,
+        'herbarium-green-glazing', [0, 0.75, z], !coarse);
+    }
+    for (const side of [-1, 1]) {
+      const pane = mesh(herbarium, new THREE.BoxGeometry(1.72, 0.095, 2.46),
+        herbalGlass, 'herbarium-glazed-roof', [side * 0.72, 1.62, 0], !coarse);
+      pane.rotation.z = -side * 0.50;
+      // Exposed rafters make the pitched greenhouse silhouette legible even
+      // when the translucent panes blend into the sky on a small screen.
+      const rafter = mesh(herbarium, new THREE.BoxGeometry(1.77, 0.14, 0.15),
+        mats.timber, 'herbarium-roof-rafter', [side * 0.72, 1.70, 1.15], !coarse);
+      rafter.rotation.z = -side * 0.50;
+    }
+    mesh(herbarium, new THREE.BoxGeometry(0.17, 0.19, 2.54), mats.timber,
+      'herbarium-roof-ridge', [0, 2.05, 0], !coarse);
     root.add(herbarium);
     // Drying herbs distinguish the street-level frontage even on a phone.
     // Batch all four bunches; never add an obstacle or a light source.
