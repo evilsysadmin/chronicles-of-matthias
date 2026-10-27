@@ -13,6 +13,7 @@ import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
 import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 import { SHOP_SLOT_LABELS, SHOP_SORTS, chroniclesShopCategories, chroniclesShopSelectedOffer, chroniclesShopVisibleOffers } from '../chronicles/chroniclesShopCatalog.js';
 import './ChroniclesShop.css';
+import './ChroniclesInteriorLoading.css';
 
 const SLOT_LABEL = Object.freeze({ weapon: 'Arma', missile: 'Arma a distancia', armor: 'Armadura', shield: 'Escudo', consumable: 'Objeto' });
 
