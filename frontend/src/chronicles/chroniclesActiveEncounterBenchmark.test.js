@@ -131,17 +131,26 @@ function playSewerEncounter(rollOffset) {
 
 describe('MM3 active encounter baseline · real actions and initiative', () => {
   it('finishes the authored western goblin pack with real attacks/blocks under two d8 orders', () => {
+    const outcomes = [];
     for (const offset of [0, 1]) {
       const result = playSewerEncounter(offset);
+      outcomes.push(result);
       expect(playSewerEncounter(offset)).toEqual(result);
       console.info('CHRONICLES_MM3_ACTIVE_ENCOUNTER ' + JSON.stringify(result));
       expect(result.finished).toBe(true);
-      expect(['explore', 'defeated']).toContain(result.phase);
+      // A benchmark that permits party defeat or surviving goblins can hide a
+      // major balance regression while still reporting a completed encounter.
+      expect(result.phase).toBe('explore');
+      expect(result.downed).toBe(0);
+      expect(Object.values(result.enemyHpLeft).every((hp) => hp === 0)).toBe(true);
       expect(result.heroAttacks + result.heroBlocks + result.heroRotations + result.heroMoves).toBeGreaterThan(0);
       expect(result.enemyMoves + result.enemyAttacks + result.enemyWaits).toBeGreaterThan(0);
       expect(result.steps).toBeLessThan(128);
       expect(Object.values(result.enemyHpLeft).every((hp) => Number.isFinite(hp) && hp >= 0)).toBe(true);
       expect(Object.values(result.partyHpLost).every((hp) => hp >= 0)).toBe(true);
     }
+    // Both d8 orders must remain winnable, but the pack must still pose
+    // measurable pressure in at least one of the deterministic orders.
+    expect(outcomes.some(({ partyHpLost }) => Object.values(partyHpLost).some((hp) => hp > 0))).toBe(true);
   });
 });
