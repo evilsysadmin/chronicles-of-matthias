@@ -965,6 +965,19 @@
   image-rendering: auto;
 }
 
+/* The local SVG always paints first. An R2 image overlays it only after
+   a successful load, with no blank/broken frame on slow or offline clients. */
+.chronicles-shop__scene img.chronicles-shop__premium-art {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+.chronicles-shop__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-shop__scene img.chronicles-shop__premium-art { transition: none; }
+}
+
 @media (max-width: 900px) {
   .chronicles-shop__scene[data-chronicles-shop-room='odo-forge'] img {
     object-position: 53% 37%;

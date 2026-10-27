@@ -8,7 +8,14 @@ describe('Chronicles shop rooms', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const room = (id) => chroniclesShopRoom(town.interactables.find((entry) => entry.id === id))?.id;
     expect(room('first-book-armorer')).toBe('odo-forge');
-    expect(chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-armorer')).src).toContain('odo-armory.svg');
+    const odo = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-armorer'));
+    if (chroniclesShopArtUrl('chronicles.shop.odo')) {
+      expect(odo.src).toBe(chroniclesShopArtUrl('chronicles.shop.odo'));
+      expect(odo.fallbackSrc).toContain('odo-armory.svg');
+    } else {
+      expect(odo.src).toContain('odo-armory.svg');
+      expect(odo.fallbackSrc).toBeNull();
+    }
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
@@ -34,8 +41,11 @@ describe('Chronicles shop art manifests — exact R2 pins only', () => {
   };
   it('accepts approved immutable SHA16 address only after publisher records the entry', () => {
     expect(chroniclesShopArtUrl('chronicles.shop.odo', source)).toBe(url);
-    // Empty manifest is intentional: the source art is not yet proven live.
-    expect(chroniclesShopArtUrl('chronicles.shop.odo')).toBeNull();
+    // Today the manifest is unpinned. When the approved R2 entry is promoted,
+    // this acceptance test must require EXACTLY its reviewed digest/URL, not
+    // reject a correct manifest-only PR merely because Odo is finally live.
+    const liveUrl = chroniclesShopArtUrl('chronicles.shop.odo');
+    expect(liveUrl === null || liveUrl === url).toBe(true);
   });
   it('rejects other domain, unsafe/other-family key, stale digest, HTTP and type mismatch', () => {
     const mutate = (field, value) => ({
@@ -54,8 +64,13 @@ describe('Chronicles shop art manifests — exact R2 pins only', () => {
   it('keeps Brunna and guild local while Odo has offline fallback', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const odo = chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-armorer'));
-    expect(odo.src).toContain('odo-armory.svg');
-    expect(odo.fallbackSrc).toBeNull();
+    if (chroniclesShopArtUrl('chronicles.shop.odo')) {
+      expect(odo.src).toBe(url);
+      expect(odo.fallbackSrc).toContain('odo-armory.svg');
+    } else {
+      expect(odo.src).toContain('odo-armory.svg');
+      expect(odo.fallbackSrc).toBeNull();
+    }
     expect(chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-weaponsmith')).src)
       .toContain('brunna-forge.webp');
   });
