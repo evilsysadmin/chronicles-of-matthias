@@ -19,6 +19,10 @@ describe('Swordhaven estandarte notice board', () => {
     expect(lettering.userData.noticeBoardTitle).toBe('EDICTOS Y ENCARGOS');
     expect(lettering.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(lettering.material.map.image.data.some(v => v === 244)).toBe(true);
+    // The first E starts at the top-left of the texture, not upside down.
+    const rgba = lettering.material.map.image.data;
+    const pixelOffset = (58 * 256 + 67) * 4;
+    expect(Array.from(rgba.slice(pixelOffset, pixelOffset + 4))).toEqual([244, 213, 151, 255]);
     const bounds = new THREE.Box3().setFromObject(board);
     expect(bounds.max.x - bounds.min.x).toBeLessThan(3.1);
     expect(bounds.max.z - bounds.min.z).toBeLessThan(1);
