@@ -132,12 +132,12 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     const enemyTurn = { ...combat, turnPhase: 'enemy' };
     const hpBefore = enemyTurn.party.map((member) => member.hp);
 
-    // The frontline goblin occupies (2,5), so its mate at (3,5) must not
-    // strike the party at (1,5), teleport, or damage anyone through it.
+    // The frontline goblin occupies (2,5). Its mate at (3,5) can now
+    // enter the southern drain, but cannot teleport or attack in the same turn.
     const blocked = chroniclesResolveEnemyActor(enemyTurn, overflow.id);
-    expect(blocked.enemyTurnEvents.some((event) => event.type === 'attack')).toBe(false);
+    expect(blocked.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
     expect(blocked.party.map((member) => member.hp)).toEqual(hpBefore);
-    expect(chroniclesRuntimeEnemyPosition(blocked, overflow)).toEqual({ x: 3, y: 5 });
+    expect(chroniclesRuntimeEnemyPosition(blocked, overflow)).toEqual({ x: 3, y: 6 });
 
     // After the frontline falls, the next action moves one cardinal tile;
     // reaching melee range does not also grant a free attack.
@@ -148,7 +148,7 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     expect(approached.party.map((member) => member.hp)).toEqual(hpBefore);
   });
 
-  it('keeps the rear goblin waiting behind a living squadmate, then resumes without free hits', () => {
+  it('lets the rear goblin take a real detour without passing through companions or earning free hits', () => {
     const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
     const atEntrance = { ...base, x: 1, y: 5 };
     const enemies = chroniclesActiveEnemies(atEntrance);
@@ -158,8 +158,8 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     const combat = chroniclesStartInitiativeCombat(atEntrance, enemies, { random: () => 0 });
     expect(inCombat(combat)).toEqual(expect.arrayContaining([middle.id, rear.id]));
 
-    // The frontline falls at (2,5). The middle goblin advances, but its
-    // living body still blocks the only route to melee for the rear goblin.
+    // After the front goblin falls, the middle takes its cell. The rear
+    // must use a legal adjacent step rather than crossing the middle goblin.
     const cleared = { ...combat, turnPhase: 'enemy', [west.hpKey]: 0 };
     const hpBefore = cleared.party.map((member) => member.hp);
     const middleTurn = chroniclesResolveEnemyActor(cleared, middle.id);
@@ -168,27 +168,38 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
     expect(middleTurn.party.map((member) => member.hp)).toEqual(hpBefore);
 
     const rearTurn = chroniclesResolveEnemyActor(middleTurn, rear.id);
-    expect(rearTurn.enemyTurnEvents).toEqual([]);
-    expect(chroniclesRuntimeEnemyPosition(rearTurn, rear)).toEqual({ x: 4, y: 5 });
-    expect(chroniclesRuntimeEnemyPosition(rearTurn, middle)).toEqual({ x: 2, y: 5 });
+    expect(rearTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
+    const initialRear = chroniclesRuntimeEnemyPosition(middleTurn, rear);
+    const detour = chroniclesRuntimeEnemyPosition(rearTurn, rear);
+    expect(Math.abs(detour.x - initialRear.x) + Math.abs(detour.y - initialRear.y)).toBe(1);
+    expect(detour).not.toEqual({ x: 2, y: 5 });
     expect(rearTurn.party.map((member) => member.hp)).toEqual(hpBefore);
 
-    // When the middle goblin also falls, the rear one retries pathfinding.
-    // It must walk two cardinal tiles on two separate turns before striking.
-    const opened = { ...rearTurn, [middle.hpKey]: 0 };
-    const firstStep = chroniclesResolveEnemyActor(opened, rear.id);
-    expect(firstStep.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
-    expect(chroniclesRuntimeEnemyPosition(firstStep, rear)).toEqual({ x: 3, y: 5 });
-    expect(firstStep.party.map((member) => member.hp)).toEqual(hpBefore);
-
-    const secondStep = chroniclesResolveEnemyActor(firstStep, rear.id);
-    expect(secondStep.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
-    expect(chroniclesRuntimeEnemyPosition(secondStep, rear)).toEqual({ x: 2, y: 5 });
-    expect(secondStep.party.map((member) => member.hp)).toEqual(hpBefore);
-
-    const nextTurn = chroniclesResolveEnemyActor(secondStep, rear.id);
-    expect(nextTurn.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
-    expect(chroniclesRuntimeEnemyPosition(nextTurn, rear)).toEqual({ x: 2, y: 5 });
+    // Removing the middle goblin reopens the direct route. Every subsequent
+    // move costs an entire action; a hit is possible only on a later turn.
+    let state = { ...rearTurn, [middle.hpKey]: 0 };
+    let moves = 0;
+    let attacked = false;
+    for (let turn = 0; turn < 8; turn += 1) {
+      const from = chroniclesRuntimeEnemyPosition(state, rear);
+      const next = chroniclesResolveEnemyActor(state, rear.id);
+      const types = next.enemyTurnEvents.map((event) => event.type);
+      if (types[0] === 'attack') {
+        expect(types).toEqual(['attack']);
+        // The detour before the middle fell already consumed one move.
+        expect(moves + 1).toBeGreaterThanOrEqual(2);
+        expect(chroniclesRuntimeEnemyPosition(next, rear)).toEqual(from);
+        attacked = true;
+        break;
+      }
+      expect(types).toEqual(['move']);
+      const to = chroniclesRuntimeEnemyPosition(next, rear);
+      expect(Math.abs(to.x - from.x) + Math.abs(to.y - from.y)).toBe(1);
+      expect(next.party.map((member) => member.hp)).toEqual(hpBefore);
+      state = next;
+      moves += 1;
+    }
+    expect(attacked).toBe(true);
   });
 
 });
