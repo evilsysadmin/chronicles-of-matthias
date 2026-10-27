@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import aldricHall from '../assets/chronicles/ui/shops/aldric-hall.svg';
 import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustrated.svg';
 import braskWatch from '../assets/chronicles/ui/shops/brask-watch.svg';
+import braskIllustrated from '../assets/chronicles/ui/shops/brask-watch-illustrated.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
 import './ChroniclesShop.css';
 import './ChroniclesAudience.css';
@@ -13,7 +14,8 @@ const ROOM_ART = Object.freeze({
     alt: 'El alcalde Aldric, ante la mesa de su despacho en el ayuntamiento',
   }),
   'watch-house': Object.freeze({
-    src: braskWatch,
+    src: braskIllustrated,
+    fallbackSrc: braskWatch,
     alt: 'El sargento Brask, armado ante el mapa del cuartel',
   }),
   temple: Object.freeze({
