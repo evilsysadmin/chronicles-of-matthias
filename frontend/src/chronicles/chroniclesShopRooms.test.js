@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from './chroniclesShopRooms.js';
-import { CHRONICLES_BOTICA_PREMIUM_ART_KEY, CHRONICLES_BOTICA_PREMIUM_ART_URL, CHRONICLES_ODO_UPLOADED_ART_KEY, CHRONICLES_ODO_UPLOADED_ART_URL, CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
+import { CHRONICLES_BOTICA_PREMIUM_ART_KEY, CHRONICLES_BOTICA_PREMIUM_ART_URL, CHRONICLES_GUILD_PREMIUM_ART_KEY, CHRONICLES_GUILD_PREMIUM_ART_URL, CHRONICLES_ODO_UPLOADED_ART_KEY, CHRONICLES_ODO_UPLOADED_ART_URL, CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
 
 describe('Chronicles shop rooms', () => {
   it('shows each Swordhaven shopkeeper in their own room', () => {
@@ -19,7 +19,9 @@ describe('Chronicles shop rooms', () => {
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
     expect(room('first-book-guild')).toBe('guild-sanctum');
-    expect(chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-guild')).src).toContain('guild-archive.svg');
+    const guild = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-guild'));
+    expect(guild.src).toBe(CHRONICLES_GUILD_PREMIUM_ART_URL);
+    expect(guild.fallbackSrc).toContain('guild-archive.svg');
   });
 
   it('has no room for counters without a building', () => {
@@ -84,7 +86,18 @@ describe('Chronicles shop art manifests — exact R2 pins only', () => {
     expect(botica.id).toBe('botica-apothecary');
   });
 
-  it('keeps Brunna and guild local while Odo has offline fallback', () => {
+  it('pins the uploaded Guild WebP to the separate Chronicles R2 origin', () => {
+    expect(CHRONICLES_GUILD_PREMIUM_ART_KEY).toBe('stores/gremio-premium.webp');
+    expect(CHRONICLES_GUILD_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/gremio-premium.webp');
+    expect(CHRONICLES_GUILD_PREMIUM_ART_URL).not.toContain('dash.cloudflare.com');
+    expect(CHRONICLES_GUILD_PREMIUM_ART_URL).not.toContain(CHRONICLES_SHOP_ART_ORIGIN);
+    const town = chroniclesMapById('swordhaven-first-book');
+    const guild = chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-guild'));
+    expect(guild.fallbackSrc).toContain('guild-archive.svg');
+  });
+
+  it('keeps Brunna local while Odo and Guild have offline fallback', () => {
     const town = chroniclesMapById('swordhaven-first-book');
     const odo = chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-armorer'));
     expect(odo.src).toBe(CHRONICLES_ODO_UPLOADED_ART_URL);
