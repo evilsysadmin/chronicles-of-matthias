@@ -34,12 +34,15 @@ describe('Swordhaven audience premium environment', () => {
   });
 
   it('keeps Brask and Ilse existing interiors and choices intact', () => {
-    for (const [x, y, art, who] of [[4, 6, 'brask-watch.svg', 'Sargento Brask'], [14, 6, 'ilse-temple.svg', 'Sacerdotisa Ilse']]) {
+    for (const [x, y, room, who] of [[4, 6, 'watch-house', 'Sargento Brask'], [14, 6, 'temple', 'Sacerdotisa Ilse']]) {
       const state = { ...createChroniclesState('swordhaven-first-book'), x, y };
       const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
       const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
-      expect(html).toContain(art);
+      // Vite may inline small legacy SVGs as data: URIs, so check the
+      // actual room contract and preserved NPC identity, not a filename.
+      expect(html).toContain('data-chronicles-audience-room="' + room + '"');
       expect(html).toContain(who);
+      expect(html).toContain('role="dialog"');
     }
   });
 });
