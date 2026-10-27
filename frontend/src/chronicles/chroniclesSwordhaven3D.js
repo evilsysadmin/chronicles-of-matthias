@@ -910,6 +910,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'armor-roof-shoulder-pier', [x, height + 1.55, facadeZ + 0.16], !coarse);
       mesh(shoulders, new THREE.BoxGeometry(1.10, 0.22, 1.12), mats.steel,
         'armor-roof-shoulder-cap', [x, height + 2.69, facadeZ + 0.16]);
+      // A four-sided iron hip reads as a small fortified roof, not an
+      // open chimney, from both the street and the narrow mobile camera.
+      const hip = mesh(shoulders, new THREE.ConeGeometry(0.78, 0.88, 4), mats.steel,
+        'armor-roof-shoulder-hip', [x, height + 3.18, facadeZ + 0.16], !coarse);
+      hip.rotation.y = Math.PI / 4;
       mesh(shoulders, new THREE.BoxGeometry(0.12, 0.68, 0.08), mats.steel,
         'armor-roof-shoulder-slit', [x, height + 1.75, facadeZ + 0.66]);
     }
