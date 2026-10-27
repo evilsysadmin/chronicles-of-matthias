@@ -784,8 +784,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       cap.rotation.z = -side * 0.44;
     }
     root.add(vent);
-  } else if (!isTemple) {
-    // Domestic houses retain their ordinary dormers; the temple has a rose gable.
+  } else if (!isTemple && !isTavern) {
+    // Domestic houses retain dormers; the temple and tavern have distinctive gables.
     for (const side of (coarse ? [-1] : [-1, 1])) {
       const x = side * width * 0.245;
       const z = depth * 0.17;
@@ -813,6 +813,47 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'chimney-cap', [width * 0.31, height + 2.24, -depth * 0.25]);
   }
 
+  // A stepped brick gable gives the inn a broad, unmistakable street-facing
+  // roofline. Unlike the merchant dormers, it is one continuous masonry
+  // silhouette beneath the tavern's two-flue hearth. The original solid
+  // footprint, entrance and collision grid remain unchanged.
+  if (isTavern) {
+    const stepped = new THREE.Group();
+    stepped.name = 'tavern-brick-stepped-gable';
+    stepped.userData.chroniclesDecorativeOnly = true;
+    stepped.position.z = facadeZ + 0.28;
+    const bricks = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.78, 0.44, 0.50), tavernBrick, 8);
+    bricks.name = 'tavern-gable-brick-steps';
+    const coping = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.90, 0.13, 0.60), mats.stone, 8);
+    coping.name = 'tavern-gable-stone-coping';
+    const step = new THREE.Object3D();
+    const levels = [[3.35, 0.35], [2.50, 0.72], [1.65, 1.10], [0.80, 1.47]];
+    levels.forEach(([x, rise], level) => {
+      for (const [sideIndex, side] of [-1, 1].entries()) {
+        const index = level * 2 + sideIndex;
+        step.position.set(side * x, height + rise, 0);
+        step.updateMatrix();
+        bricks.setMatrixAt(index, step.matrix);
+        step.position.set(side * x, height + rise + 0.285, 0.04);
+        step.updateMatrix();
+        coping.setMatrixAt(index, step.matrix);
+      }
+    });
+    bricks.instanceMatrix.needsUpdate = true;
+    coping.instanceMatrix.needsUpdate = true;
+    bricks.castShadow = !coarse;
+    coping.castShadow = !coarse;
+    bricks.receiveShadow = true;
+    coping.receiveShadow = true;
+    stepped.add(bricks, coping);
+    mesh(stepped, new THREE.BoxGeometry(1.04, 0.50, 0.58), tavernBrick,
+      'tavern-gable-central-crown', [0, height + 1.83, 0], !coarse);
+    mesh(stepped, new THREE.BoxGeometry(1.16, 0.14, 0.66), mats.stone,
+      'tavern-gable-crown-coping', [0, height + 2.15, 0.04], !coarse);
+    root.add(stepped);
+  }
   // Each hero building has a distinctive readable silhouette.
   if (isTemple) {
     mesh(root, new THREE.CylinderGeometry(1.19, 1.38, 3.2, coarse ? 12 : 20), mats.stone,
