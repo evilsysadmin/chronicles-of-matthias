@@ -1538,7 +1538,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.inn || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
-        menuOpen, saveBusy, confirmExitWithoutSaving, confirmLoadSelection,
+        menuOpen, saveBusy, inCombat: Boolean(current.initiative), confirmExitWithoutSaving, confirmLoadSelection,
         subpageOpen: feedbackOpen,
       });
       if (menuShortcut) {
