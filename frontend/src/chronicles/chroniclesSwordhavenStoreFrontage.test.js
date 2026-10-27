@@ -41,6 +41,15 @@ describe('Swordhaven general store frontage', () => {
     expect(frontage.children.filter(child => child.name === 'store-oak-batten')).toHaveLength(6);
     expect(frontage.children.filter(child => child.name === 'store-oak-rail')).toHaveLength(2);
     expect(forge.getObjectByName('store-oak-frontage')).toBeFalsy();
+    const loft = store.getObjectByName('store-merchant-loft');
+    expect(loft?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(loft.getObjectByName('store-loft-oak-gable')).toBeTruthy();
+    expect(loft.getObjectByName('store-loft-window')).toBeTruthy();
+    expect(loft.children.filter(child => child.name === 'store-loft-roof-slope')).toHaveLength(2);
+    expect(store.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+    expect(store.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+    expect(forge.getObjectByName('store-merchant-loft')).toBeFalsy();
+    expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
     expect(store.getObjectByName('store-market-awning')).toBeTruthy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();

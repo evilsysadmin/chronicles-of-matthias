@@ -592,24 +592,48 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'side-window-crossbar', [edge + side * 0.17, 2.85, z]);
     }
   }
-  // Shaped dormers break the broad low-poly roof silhouette. One on touch,
-  // two on desktop; all parts are decorative and far above the walk grid.
-  for (const side of (coarse ? [-1] : [-1, 1])) {
-    const x = side * width * 0.245;
-    const z = depth * 0.17;
-    const bay = new THREE.Group();
-    bay.name = 'pitched-roof-dormer-' + side;
-    bay.position.set(x, height + 1.38, z);
-    mesh(bay, new THREE.BoxGeometry(1.22, 1.16, 1.10), wallMaterial,
-      'dormer-walls', [0, 0, 0]);
-    mesh(bay, new THREE.BoxGeometry(0.73, 0.69, 0.11), mats.window,
-      'dormer-glass', [0, 0.09, 0.61]);
-    for (const rx of [-1, 1]) {
-      const canopy = mesh(bay, new THREE.BoxGeometry(0.87, 0.14, 1.47), roof,
-        'dormer-roof-slope', [rx * 0.30, 0.76, 0]);
-      canopy.rotation.z = -rx * 0.48;
+  // A single broad merchant's attic loft replaces the ordinary domestic
+  // dormers on the general store. The oak gable and glazed loading bay break
+  // its roof silhouette without touching the solid map footprint or doors.
+  if (isStore) {
+    const loft = new THREE.Group();
+    loft.name = 'store-merchant-loft';
+    loft.userData.chroniclesDecorativeOnly = true;
+    loft.position.set(0, height + 1.38, depth * 0.27);
+    const oak = material(0x79553c, { roughness: 0.96 });
+    mesh(loft, new THREE.BoxGeometry(2.54, 1.45, 1.42), oak,
+      'store-loft-oak-gable', [0, 0, 0], !coarse);
+    mesh(loft, new THREE.BoxGeometry(1.32, 0.83, 0.10), mats.window,
+      'store-loft-window', [0, 0.12, 0.77]);
+    for (const side of [-1, 1]) {
+      const slope = mesh(loft, new THREE.BoxGeometry(1.66, 0.15, 1.85), roof,
+        'store-loft-roof-slope', [side * 0.53, 0.94, 0], !coarse);
+      slope.rotation.z = -side * 0.50;
+      mesh(loft, new THREE.BoxGeometry(0.14, 1.36, 0.14), mats.timber,
+        'store-loft-window-post', [side * 0.73, 0, 0.81]);
     }
-    root.add(bay);
+    mesh(loft, new THREE.BoxGeometry(2.60, 0.18, 0.24), mats.timber,
+      'store-loft-front-beam', [0, -0.75, 0.78]);
+    root.add(loft);
+  } else {
+    // Other houses retain their ordinary dormers, one on touch and two on desktop.
+    for (const side of (coarse ? [-1] : [-1, 1])) {
+      const x = side * width * 0.245;
+      const z = depth * 0.17;
+      const bay = new THREE.Group();
+      bay.name = 'pitched-roof-dormer-' + side;
+      bay.position.set(x, height + 1.38, z);
+      mesh(bay, new THREE.BoxGeometry(1.22, 1.16, 1.10), wallMaterial,
+        'dormer-walls', [0, 0, 0]);
+      mesh(bay, new THREE.BoxGeometry(0.73, 0.69, 0.11), mats.window,
+        'dormer-glass', [0, 0.09, 0.61]);
+      for (const rx of [-1, 1]) {
+        const canopy = mesh(bay, new THREE.BoxGeometry(0.87, 0.14, 1.47), roof,
+          'dormer-roof-slope', [rx * 0.30, 0.76, 0]);
+        canopy.rotation.z = -rx * 0.48;
+      }
+      root.add(bay);
+    }
   }
   // The forge gets its own industrial stack below; other houses keep
   // the small domestic chimney. Neither alters the authored collision grid.
