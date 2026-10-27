@@ -223,6 +223,10 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return nil, fmt.Errorf("chronicles progression: %w", err)
 	}
 
+	// The administrative census reads only this environment's MongoDB.
+	// It has independent server-side authorization; frontend visibility is cosmetic.
+	roster := newAdminRoster(db, jwtSecret, sso, timeout, origins)
+
 	// Reuse native authenticated feedback validation and rate limits. Both
 	// player and admin inboxes persist ONLY in Chronicles' own Mongo DB;
 	// userdata.Purge already removes the "feedback" collection for an account.
@@ -244,6 +248,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return func(r *http.Request) bool { _, ok := f(r); return ok }
 	}
 	return []route{
+		{"chronicles-admin-roster", roster, func(r *http.Request) bool { return r.URL.Path == adminRosterPath }},
 		{"login", login, ok2(gamesapi.LoginRoute)},
 		{"session", session, ok2(gamesapi.SessionRoute)},
 		{"account", account, ok2(gamesapi.AccountRoute)},
