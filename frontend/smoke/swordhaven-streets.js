@@ -184,6 +184,14 @@ try {
       && tavern?.getObjectByName('tavern-hearth-flue-1')
       && !forge?.getObjectByName('tavern-double-hearth')
     )),
+    distinctStoreLoft: String(Boolean(
+      store?.getObjectByName('store-merchant-loft')?.userData.chroniclesDecorativeOnly
+      && store?.getObjectByName('store-loft-oak-gable')
+      && store?.getObjectByName('store-loft-window')
+      && !store?.getObjectByName('pitched-roof-dormer--1')
+      && !forge?.getObjectByName('store-merchant-loft')
+      && forge?.getObjectByName('pitched-roof-dormer--1')
+    )),
     distinctMarketStore: String(Boolean(
       store?.getObjectByName('store-market-awning')
       && store?.getObjectByName('store-awning-cloth')
