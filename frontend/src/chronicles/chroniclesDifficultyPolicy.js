@@ -12,6 +12,7 @@ function boundedInteger(value, min, max, fallback = min) {
   // Go's boundedInt rejects booleans and structured values. Number([4]) or
   // Number(true) would otherwise invent dungeon depth in a corrupt save.
   if (typeof value !== 'number' && typeof value !== 'string') return fallback;
+  if (typeof value === 'number' && Math.abs(value) >= 2 ** 63) return fallback;
   if (typeof value === 'string') {
     // Go's pyval.Int accepts decimal integer strings (with single underscores),
     // not JS-only numeric coercions like "0x10", "4.5" or "4e1".
@@ -24,7 +25,6 @@ function boundedInteger(value, min, max, fallback = min) {
     }
     value = Number(raw.replace(/_/g, ''));
   }
-  if (typeof value === 'number' && Math.abs(value) >= 2 ** 63) return fallback;
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(number)));
