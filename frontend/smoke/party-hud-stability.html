@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chronicles MM3 HUD regression — contextual control</title>
+  <link rel="stylesheet" href="../src/components/ChroniclesOfMatthias.css">
+  <link rel="stylesheet" href="../src/components/ChroniclesMM3Chrome.css">
+</head>
+<body style="margin:0">
+  <!-- Same CSS selectors/DOM grid contract as the production MM3 screen. -->
+  <div class="chronicles">
+    <div class="chronicles-shell">
+      <aside class="chronicles-party" aria-label="Grupo de Matthias">
+        <span class="chronicles-panel-kicker">GRUPO</span>
+        <button class="chronicles-party-member is-selected" type="button">
+          <span class="chronicles-party-glyph has-authored-portrait"></span>
+          <span><strong>1. Matthias</strong><small>Nv 1</small></span>
+          <span class="chronicles-party-bars"><i class="is-hp"></i></span><b>11/11</b>
+        </button>
+        <button class="chronicles-party-member" type="button">
+          <span class="chronicles-party-glyph has-authored-portrait"></span>
+          <span><strong>2. Hildegard</strong><small>Nv 1</small></span>
+          <span class="chronicles-party-bars"><i class="is-hp"></i><i class="is-sp"></i></span><b>10/10</b>
+        </button>
+        <button class="chronicles-party-member" type="button">
+          <span class="chronicles-party-glyph has-authored-portrait"></span>
+          <span><strong>3. Aziz</strong><small>Nv 1</small></span>
+          <span class="chronicles-party-bars"><i class="is-hp"></i><i class="is-sp"></i></span><b>5/5</b>
+        </button>
+        <button class="chronicles-party-member" type="button">
+          <span class="chronicles-party-glyph has-authored-portrait"></span>
+          <span><strong>4. Faust</strong><small>Nv 1</small></span>
+          <span class="chronicles-party-bars"><i class="is-hp"></i><i class="is-sp"></i></span><b>7/7</b>
+        </button>
+        <div class="chronicles-party-hireling"><span class="chronicles-party-hireling__face"></span>
+          <span class="chronicles-party-hireling__label"><strong>Plaza libre</strong><small>Sin contratar</small></span></div>
+        <div class="chronicles-party-hireling"><span class="chronicles-party-hireling__face"></span>
+          <span class="chronicles-party-hireling__label"><strong>Plaza libre</strong><small>Sin contratar</small></span></div>
+      </aside>
+      <main class="chronicles-stage-wrap">
+        <div class="chronicles-stage" aria-hidden="true"></div>
+        <button class="chronicles-minimap" type="button" aria-label="Minimapa">
+          <svg viewBox="0 0 12 12" aria-hidden="true"><rect width="12" height="12" fill="#222"></rect></svg>
+          <span class="chronicles-minimap__title">X13 Y17</span>
+          <span class="chronicles-minimap__location">UBICACIÓN · SWORDHAVEN</span>
+        </button>
+        <div class="chronicles-touch" aria-label="Controles de la mazmorra">
+          <button type="button" data-chronicles-touch-action="turn-left">↶</button>
+          <button type="button" data-chronicles-touch-action="forward">↑</button>
+          <button type="button" data-chronicles-touch-action="attack" class="is-attack">⚔<small>MATTHIAS</small></button>
+          <button type="button" data-chronicles-touch-action="backward">↓</button>
+          <button type="button" data-chronicles-touch-action="turn-right">↷</button>
+        </div>
+        <div class="chronicles-statusbar"><div class="chronicles-chronicle-slot">
+          <button class="chronicles-chronicle-trigger">CRÓNICA</button>
+          <button class="chronicles-chronicle-trigger">GRUPO</button>
+        </div></div>
+        <div class="chronicles-journal" hidden></div>
+        <div class="chronicles-keyboard-help"></div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
