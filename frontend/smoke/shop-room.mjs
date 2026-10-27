@@ -510,7 +510,7 @@ try {
         assert(art.width >= 48 && art.height >= 48, room + ': tiny/corrupt image');
         assert(art.src.includes(room === 'odo' ? 'odo-armory.svg' : 'guild-archive.svg'), room + ': wrong base artwork source');
         if (room === 'odo') {
-          // Once the manifest is pinned the local fallback MUST remain
+          // The exact uploaded Chronicles R2 WebP has a local fallback that MUST remain
           // visible until the approved remote WebP decodes. A failed fetch
           // must not break merchant interaction or show an empty image.
           const overlay = scene.locator('[data-chronicles-shop-art-layer="premium"]');
@@ -524,8 +524,8 @@ try {
               ready: node.classList.contains('is-ready'),
               opacity: Number.parseFloat(getComputedStyle(node).opacity),
             }));
-            assert.match(checked.src, /^https:\/\/assets\.chess-studio\.shadowops\.dpdns\.org\/chronicles\/shops\/odo\/odo-premium-composite-79e0b13fc2ee2ffb\.webp$/,
-              'Only the approved immutable Odo WebP may overlay the room');
+            assert.match(checked.src, /^https:\/\/assets\.chronicles\.shadowops\.dpdns\.org\/stores\/Odo_Armeria_Premium_Fondo_Limpio_2026\.webp$/,
+              'Only the exact uploaded Chronicles R2 Odo WebP may overlay the room');
             if (checked.width > 0) {
               assert(checked.width >= 1500 && checked.height >= 800,
                 'Approved Odo WebP must be a full-quality panoramic background');
