@@ -136,6 +136,15 @@ try {
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
     pixelVariants: String(distinct.size),
+    distinctTempleRose: String(Boolean(
+      temple?.getObjectByName('temple-gable-rose-window')?.userData.chroniclesDecorativeOnly
+      && temple?.getObjectByName('temple-rose-blue-glass')
+      && temple?.getObjectByName('temple-rose-limestone-ring')
+      && temple?.getObjectByName('temple-rose-lead-tracery')?.count === 4
+      && !temple?.getObjectByName('pitched-roof-dormer--1')
+      && !temple?.getObjectByName('stone-chimney')
+      && !guild?.getObjectByName('temple-gable-rose-window')
+    )),
     distinctTemplePortico: String(Boolean(
       temple?.getObjectByName('temple-limestone-portico')
       && temple?.getObjectByName('temple-portico-column')

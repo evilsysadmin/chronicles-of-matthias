@@ -193,8 +193,18 @@ describe('Swordhaven modular real-time 3D', () => {
         .toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('forge-roof-smoke-lantern')).toBeTruthy();
       const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
-      expect(temple.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
-      expect(Boolean(temple.getObjectByName('pitched-roof-dormer-1'))).toBe(!coarsePointer);
+      // Sacred roofline: no generic merchant dormers or domestic chimney.
+      expect(temple.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+      expect(temple.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+      expect(temple.getObjectByName('stone-chimney')).toBeFalsy();
+      const rose = temple.getObjectByName('temple-gable-rose-window');
+      expect(rose?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(rose.position.z).toBeGreaterThan(temple.getObjectByName('roof-gable-1').position.z);
+      expect(rose.getObjectByName('temple-rose-blue-glass')?.geometry).toBeInstanceOf(THREE.CircleGeometry);
+      expect(rose.getObjectByName('temple-rose-limestone-ring')?.geometry).toBeInstanceOf(THREE.TorusGeometry);
+      expect(rose.getObjectByName('temple-rose-lead-tracery')?.count).toBe(4);
+      expect(scene.getObjectByName('swordhaven-building-swordhaven-magic')
+        .getObjectByName('temple-gable-rose-window')).toBeFalsy();
       const tower = temple.getObjectByName('temple-bell-tower');
       expect(tower.geometry.parameters.radialSegments).toBeGreaterThanOrEqual(12);
       const magic = scene.getObjectByName('swordhaven-building-swordhaven-magic');

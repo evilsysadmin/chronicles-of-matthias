@@ -784,8 +784,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       cap.rotation.z = -side * 0.44;
     }
     root.add(vent);
-  } else {
-    // Other houses retain their ordinary dormers, one on touch and two on desktop.
+  } else if (!isTemple) {
+    // Domestic houses retain their ordinary dormers; the temple has a rose gable.
     for (const side of (coarse ? [-1] : [-1, 1])) {
       const x = side * width * 0.245;
       const z = depth * 0.17;
@@ -806,7 +806,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   // The forge gets its own industrial stack below; other houses keep
   // the small domestic chimney. Neither alters the authored collision grid.
-  if (!isForge && !isTavern) {
+  if (!isForge && !isTavern && !isTemple) {
     mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
       'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
     mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
@@ -839,6 +839,33 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'temple-pinnacle-finial', [x, height + 2.33, 0]);
     }
     root.add(pinnacles);
+
+    // A true rose window belongs to the temple's front stone gable, not to
+    // a merchant dormer. Reuse the town stone/gold materials and keep all
+    // tracery on the building's authored solid footprint.
+    const rose = new THREE.Group();
+    rose.name = 'temple-gable-rose-window';
+    rose.userData.chroniclesDecorativeOnly = true;
+    rose.position.set(0, height + 0.72, facadeZ + 0.24);
+    mesh(rose, new THREE.CircleGeometry(0.66, coarse ? 16 : 32),
+      material(0x467f9d, { emissive: 0x193a51, emissiveIntensity: 0.32,
+        roughness: 0.35, metalness: 0.04, side: THREE.DoubleSide }),
+      'temple-rose-blue-glass', [0, 0, 0], !coarse);
+    mesh(rose, new THREE.TorusGeometry(0.75, 0.12, 6, coarse ? 16 : 32),
+      mats.stone, 'temple-rose-limestone-ring', [0, 0, 0.09]);
+    const tracery = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.055, 1.28, 0.065), mats.gold, 4);
+    tracery.name = 'temple-rose-lead-tracery';
+    const ray = new THREE.Object3D();
+    for (let i = 0; i < tracery.count; i += 1) {
+      ray.position.set(0, 0, 0.16);
+      ray.rotation.z = i * Math.PI / 4;
+      ray.updateMatrix();
+      tracery.setMatrixAt(i, ray.matrix);
+    }
+    tracery.instanceMatrix.needsUpdate = true;
+    rose.add(tracery);
+    root.add(rose);
     // The temple has a stone colonnaded entrance, not a merchant doorway.
     // Keep columns outside the nameplate and door; the raised pediment stays
     // between the nameplate and heraldic sign. Entirely decorative geometry.

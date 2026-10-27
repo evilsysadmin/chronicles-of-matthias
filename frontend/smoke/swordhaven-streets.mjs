@@ -59,6 +59,8 @@ try {
           'Botica must have sage masonry walls and gables without merchant timber lattice');
         assert.equal(result.distinctShopFacades, 'true',
           'Apothecary and guild must have distinct authored silhouettes');
+        assert.equal(result.distinctTempleRose, 'true',
+          'Temple must have its own rose gable without domestic dormers or chimney');
         assert.equal(result.distinctTemplePortico, 'true',
           'Temple must have its own colonnaded stone entrance');
         assert.equal(result.distinctMetalworkFacades, 'true',
