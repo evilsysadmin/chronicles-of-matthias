@@ -18,10 +18,10 @@ async function gotoReadyShop(page, target) {
   await page.waitForFunction(() => {
     const images = [...document.images].filter((img) => img.getClientRects().length);
     return document.fonts.status === 'loaded'
-      && images.every((img) => img.complete && (
-        img.naturalWidth > 0
-        || img.dataset.chroniclesShopArtLayer === 'premium' // Failed CDN: local room stays visible.
-      ));
+      && images.every((img) => (img.complete && img.naturalWidth > 0)
+        || (img.complete && img.dataset.chroniclesShopArtLayer === 'premium'));
+      // An optional remote overlay is allowed to fail; the already-decoded
+      // local artwork must still satisfy the ordinary image-readiness gate.
   }, undefined, { timeout: 20_000 });
 }
 
