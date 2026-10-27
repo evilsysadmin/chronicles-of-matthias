@@ -40,14 +40,14 @@
   object-position: center;
   image-rendering: auto;
 }
-/* Ilse: display the bundled SVG immediately; the clean remote panorama only
-   fades in after decoding. The overlay may never affect dialogue hit targets. */
+/* Shop and audience interiors share the full-window loading gate.
+   Once decoded, premium art replaces the hidden fallback in one frame. */
 .chronicles-audience__scene img.chronicles-shop__premium-art {
   position: absolute;
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 180ms ease-out;
+  transition: none;
 }
 .chronicles-audience__scene img.chronicles-shop__premium-art.is-ready {
   opacity: 1;
