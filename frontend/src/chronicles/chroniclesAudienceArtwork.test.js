@@ -20,7 +20,7 @@ describe('Swordhaven audience premium environment', () => {
     expect(room).not.toMatch(/<(?:text|script|image|foreignObject|a)\b|\bonload\s*=|href\s*=/i);
   });
 
-  it('renders Aldric's independent room instead of the old pixelated sprite', () => {
+  it("renders Aldric\'s independent room instead of the old pixelated sprite", () => {
     const state = { ...createChroniclesState('swordhaven-first-book'), x: 11, y: 10 };
     const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
     const html = renderToStaticMarkup(createElement(ChroniclesAudience, {
