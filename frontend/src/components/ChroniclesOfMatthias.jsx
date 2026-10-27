@@ -39,7 +39,7 @@ import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTou
 import './ChroniclesQuietActionNotice.css';
 import { chroniclesLootNotice } from '../chronicles/chroniclesLootNotice.js';
 import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
-import { chroniclesCheckpointReason } from '../chronicles/chroniclesSavePolicy.js';
+import { chroniclesCanCheckpoint, chroniclesCheckpointReason, CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolicy.js';
 import { chroniclesDiscardAndExit } from '../chronicles/chroniclesDiscardExit.js';
 import { chroniclesNpcDialogueForState } from '../chronicles/chroniclesNpcDialogue.js';
 import { chroniclesDoorwayPrompt } from '../chronicles/chroniclesDoorwayPrompt.js';
@@ -1308,6 +1308,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const persistCheckpoint = useCallback((snapshot, reason = 'manual') => {
     const requestedRunId = authoritativeRunRef.current?.runId;
     if (!snapshot || !requestedRunId) return Promise.resolve(false);
+    // Check both the requested snapshot and the live world before queueing.
+    // Keyboard S, Save/Exit, Save-before-load and area transitions share
+    // this single authority, regardless of what the menu renders.
+    if (!chroniclesCanCheckpoint(snapshot) || !chroniclesCanCheckpoint(stateRef.current)) {
+      if (reason === 'manual') setSaveNotice(CHRONICLES_COMBAT_SAVE_NOTICE);
+      return Promise.resolve(false);
+    }
     // Snapshot progression alongside world state, not in the shared profile.
     // Including it in the fingerprint makes leveling a durable change.
     const stagedProgression = progressionRef.current;
@@ -1323,6 +1330,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const request = checkpointQueueRef.current.catch(() => undefined).then(async () => {
       const currentRun = authoritativeRunRef.current;
       if (!currentRun?.runId || currentRun.runId !== requestedRunId) return false;
+      // A queued write may not start if the party entered combat while it
+      // was waiting on a previous checkpoint.
+      if (!chroniclesCanCheckpoint(stateRef.current)) {
+        if (reason === 'manual') setSaveNotice(CHRONICLES_COMBAT_SAVE_NOTICE);
+        return false;
+      }
       // A pristine first-person run must still write its *first* checkpoint.
       // Equal fingerprints only permit skipping a write if a durable
       // authoritative world snapshot already exists.
@@ -1522,7 +1535,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (audienceRef.current || chronicleModalOpen || sheetMemberId || current.shop || current.guild || current.inn || spellMenuOpen
         || current.phase === 'defeated' || current.phase === 'escaped') return;
       const menuShortcut = chroniclesAdventureMenuShortcut(event, {
-        menuOpen, saveBusy, confirmExitWithoutSaving, confirmLoadSelection,
+        menuOpen, saveBusy, inCombat: Boolean(current.initiative), confirmExitWithoutSaving, confirmLoadSelection,
         subpageOpen: feedbackOpen,
       });
       if (menuShortcut) {
@@ -1992,6 +2005,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}
                 onJournal={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
+                inCombat={Boolean(state.initiative)}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
                 onSaveExit={() => void saveAndExit()}
                 onRequestLoad={() => {
