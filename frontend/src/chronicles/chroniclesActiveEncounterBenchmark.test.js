@@ -8,8 +8,9 @@ import {
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
-// initiative action. Attack adjacent enemies, turn toward an adjacent flanker,
-// otherwise BLOCK while they approach. No swings at empty air, no free turns.
+// initiative action. Attack adjacent enemies, turn toward the nearest living
+// opponent, advance on distant stragglers, or BLOCK when movement is blocked.
+// No swings at empty air, no free turns.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 
@@ -38,7 +39,7 @@ function playSewerEncounter(rollOffset) {
 
   const metrics = {
     rollOffset, steps: 0, rounds: 0,
-    heroAttacks: 0, heroBlocks: 0, heroRotations: 0, heroDamage: 0,
+    heroAttacks: 0, heroBlocks: 0, heroRotations: 0, heroMoves: 0, heroDamage: 0,
     enemyMoves: 0, enemyAttacks: 0, enemyWaits: 0,
   };
   while (state.initiative && metrics.steps < 128) {
@@ -60,13 +61,34 @@ function playSewerEncounter(rollOffset) {
         metrics.heroDamage += enemies.reduce((sum, enemy) => sum + Math.max(0, state[enemy.hpKey] - attempted[enemy.hpKey]), 0);
         metrics.heroAttacks += 1;
         state = attempted;
-      } else if (nearest?.distance === 1) {
-        const facing = nearest.dx > 0 ? 1 : nearest.dx < 0 ? 3 : nearest.dy > 0 ? 2 : 0;
-        const delta = (facing - state.direction + 4) % 4;
-        const turned = chroniclesReduce(state, delta === 3 ? 'turn-left' : 'turn-right');
-        expect(turned.turns).toBe(state.turns + 1);
-        metrics.heroRotations += 1;
-        state = turned;
+      } else if (nearest) {
+        const facing = Math.abs(nearest.dx) >= Math.abs(nearest.dy) && nearest.dx !== 0
+          ? nearest.dx > 0 ? 1 : 3
+          : nearest.dy > 0 ? 2 : 0;
+        if (facing !== state.direction) {
+          const delta = (facing - state.direction + 4) % 4;
+          const turned = chroniclesReduce(state, delta === 3 ? 'turn-left' : 'turn-right');
+          expect(turned.turns).toBe(state.turns + 1);
+          metrics.heroRotations += 1;
+          state = turned;
+        } else if (nearest.distance > 1) {
+          const moved = chroniclesReduce(state, 'forward');
+          if (moved.turns === state.turns + 1) {
+            expect(Math.abs(moved.x - state.x) + Math.abs(moved.y - state.y)).toBe(1);
+            metrics.heroMoves += 1;
+            state = moved;
+          } else {
+            const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
+            expect(guarded.turns).toBe(state.turns + 1);
+            metrics.heroBlocks += 1;
+            state = guarded;
+          }
+        } else {
+          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
+          expect(guarded.turns).toBe(state.turns + 1);
+          metrics.heroBlocks += 1;
+          state = guarded;
+        }
       } else {
         const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
         expect(guarded.turns, `BLOCK must spend ${actor.id}'s turn`).toBe(state.turns + 1);
@@ -115,7 +137,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       console.info('CHRONICLES_MM3_ACTIVE_ENCOUNTER ' + JSON.stringify(result));
       expect(result.finished).toBe(true);
       expect(['explore', 'defeated']).toContain(result.phase);
-      expect(result.heroAttacks + result.heroBlocks + result.heroRotations).toBeGreaterThan(0);
+      expect(result.heroAttacks + result.heroBlocks + result.heroRotations + result.heroMoves).toBeGreaterThan(0);
       expect(result.enemyMoves + result.enemyAttacks + result.enemyWaits).toBeGreaterThan(0);
       expect(result.steps).toBeLessThan(128);
       expect(Object.values(result.enemyHpLeft).every((hp) => Number.isFinite(hp) && hp >= 0)).toBe(true);
