@@ -982,6 +982,8 @@
     grid-area: bars;
     align-self: end;
     width: 100%;
+    /* Keep the PH row reserved for non-casters, aligning every PV bar. */
+    grid-template-rows: repeat(2, 9px);
     padding: 0 2px 2px;
   }
   .chronicles .chronicles-party-bars i { height: 9px; }
