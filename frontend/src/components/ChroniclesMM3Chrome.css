@@ -173,8 +173,11 @@
   box-shadow: 0 0 0 1px #141416, 0 6px 18px rgba(0, 0, 0, .4);
 }
 
-/* Combat is a separate, compact, expandable enemy roster. The minimap
-   remains visible while initiative runs; the full list overlays on demand. */
+/* On mobile/short landscape the existing compact disclosure is retained:
+   its roster does not steal the floating minimap or block exploration. */
+.chronicles .chronicles-combat-roster__desktop { display: none; }
+
+/* Compact combat roster remains collapsible outside desktop MM3. */
 .chronicles .chronicles-combat-roster {
   min-width: 0;
   border: 3px solid;
@@ -875,26 +878,56 @@
   .chronicles .chronicles-minimap__marker.is-interactable { fill: #f2efe6; stroke: #3a1d08; }
   .chronicles .chronicles-minimap__party { fill: #e8241c; stroke: #3b0303; filter: none; }
 
-  /* In combat the minimap keeps its slot; the roster gets a small row of its own. */
-  .chronicles .chronicles-shell:has(.chronicles-combat-roster) {
-    grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'view map'
-      'view combat'
-      'view touch'
-      'view status'
-      'view journal'
-      'view help'
-      'view .'
-      'party party';
+  /* MM3 combat exchanges the minimap for the enemy roster in the SAME
+     grid area. No extra grid row, no portrait jump, no smaller portraits.
+     Exploration restores the minimap automatically after initiative ends. */
+  .chronicles .chronicles-shell:has(.chronicles-combat-roster) .chronicles-minimap {
+    display: none;
   }
   .chronicles .chronicles-combat-roster {
-    grid-area: combat;
+    grid-area: map;
     position: relative;
-    top: auto;
-    right: auto;
-    width: auto;
+    inset: auto;
     z-index: 7;
+    box-sizing: border-box;
+    height: clamp(230px, 43dvh, 400px);
+    min-height: 0;
+    overflow: hidden;
+  }
+  .chronicles .chronicles-combat-roster__compact { display: none; }
+  .chronicles .chronicles-combat-roster__desktop {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .chronicles .chronicles-combat-roster__desktop-header {
+    display: grid;
+    gap: 4px;
+    padding: 12px 12px 10px;
+    border-bottom: 2px solid #5a2e12;
+    color: #fff6e0;
+    font: 400 1.25rem/1.15 var(--mm3-pixel-font);
+    text-shadow: 1px 1px 0 #3a1d08;
+  }
+  .chronicles .chronicles-combat-roster__desktop-header small {
+    font: 400 1.1rem/1.1 var(--mm3-pixel-font);
+    color: #f9e79c;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chronicles .chronicles-combat-roster__desktop ol {
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 8px;
+    overflow-y: auto;
+    align-content: start;
+    border: 0;
+    box-shadow: none;
   }
 
   /* No title plaque: the automap holds the top of the panel. */

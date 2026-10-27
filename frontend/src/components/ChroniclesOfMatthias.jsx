@@ -86,7 +86,6 @@ import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
-import { chroniclesTargetAhead } from '../chroniclesOfMatthiasTargeting.js';
 import { CHRONICLES_TURN_ENGINE_VERSION } from '../chroniclesOfMatthiasTurns.js';
 import {
   applyChroniclesProgressionToTacticsState,
@@ -164,8 +163,6 @@ import ChroniclesPartyBark from './ChroniclesPartyBark.jsx';
 import ChroniclesFirstSteps from './ChroniclesFirstSteps.jsx';
 import ChroniclesFirstThreatCue from './ChroniclesFirstThreatCue.jsx';
 import ChroniclesFirstAudienceCue from './ChroniclesFirstAudienceCue.jsx';
-import ChroniclesTacticalMargin from './ChroniclesTacticalMargin.jsx';
-import { chroniclesTacticalAttackReach } from '../chronicles/chroniclesTacticalAttackReach.js';
 import useChroniclesLandscape, {
   releaseChroniclesLandscape,
   requestChroniclesLandscapeOnEntry,
@@ -1814,12 +1811,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const selectedCondition = chroniclesPartyCondition(selectedMember);
   const selectedRelic = chroniclesPartyRelic(state, selectedMember?.id);
   const selectedAttackStats = chroniclesPartyAttackStats(state, selectedMember?.id);
-  // A foe can be visible several cells away while A only reaches the next
-  // cell. Keep the target dossier visible so an out-of-range attack is
-  // explained instead of silently resembling a broken button.
-  const { meleeReach, missileReach } = chroniclesTacticalAttackReach(state, selectedMember?.id);
-  const tacticalTarget = chroniclesTargetAhead(state, chroniclesMM3MissileSightReach(state)
-    || Math.max(4, selectedAttackStats.reach || 1));
   const sheetMember = sheetMemberId
     ? state.party.find((member) => member.id === sheetMemberId) || null
     : null;
@@ -2124,9 +2115,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || quickStatusOpen || audience || sheetMemberId || spellMenuOpen
                 || state.shop || state.guild || state.inn || expeditionOver)}
             />
-            <ChroniclesTacticalMargin target={tacticalTarget} combat={Boolean(state.initiative)}
-              meleeReach={meleeReach} missileReach={missileReach}
-              />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-missile-refusal>{missileNotice}</div>}
             {lootNotice && <div key={lootNotice.text} className="chronicles-quiet-action-notice chronicles-loot-notice" role="status" aria-live="polite" data-chronicles-loot-receipt>{lootNotice.text}</div>}
