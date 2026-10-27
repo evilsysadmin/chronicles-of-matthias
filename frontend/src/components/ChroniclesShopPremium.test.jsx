@@ -97,8 +97,8 @@ describe('Chronicles premium shop UI', () => {
     expect(local).toContain('data-chronicles-interior-loading');
 
     // Pending art is covered by the full-window portal; never crossfade.
-    expect(css).toContain('transition: none;');
     const css = readFileSync(new URL('./ChroniclesShop.css', import.meta.url), 'utf8');
+    expect(css).toContain('transition: none;');
     expect(css).toMatch(/\.chronicles-shop__scene img\.chronicles-shop__premium-art\s*\{[^}]*position: absolute;[^}]*opacity: 0;/s);
     expect(css).toMatch(/\.chronicles-shop__scene img\.chronicles-shop__premium-art\.is-ready\s*\{\s*opacity: 1;/s);
     expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*chronicles-shop__premium-art\s*\{\s*transition: none;/);
