@@ -33,7 +33,44 @@ try {
       assert.equal(await page.locator('[data-chronicles-inn-room]').getAttribute('data-chronicles-inn-room'),
         'first-book-healer');
       const scene = room.locator('.chronicles-inn__scene');
-      assert.equal(await scene.evaluate((img) => img.complete && img.naturalWidth > 0), true);
+      const fallback = scene.locator('img[data-chronicles-shop-art-layer="fallback"]');
+      const premium = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
+      assert.equal(await fallback.count(), 1, 'Original tavern background remains accessible');
+      assert.equal(await premium.count(), 1, 'Tavern attempts its player-uploaded premium WebP');
+      await page.waitForFunction(() => {
+        const base = document.querySelector('.chronicles-inn__scene img[data-chronicles-shop-art-layer="fallback"]');
+        const top = document.querySelector('.chronicles-inn__scene img[data-chronicles-shop-art-layer="premium"]');
+        return base?.complete && base.naturalWidth > 0
+          && top?.complete && (!top.naturalWidth || top.classList.contains('is-ready'));
+      }, null, { timeout: 7000 });
+      const sceneState = await scene.evaluate(node => {
+        const base = node.querySelector('[data-chronicles-shop-art-layer="fallback"]');
+        const overlay = node.querySelector('[data-chronicles-shop-art-layer="premium"]');
+        return {
+          baseWidth: base.naturalWidth,
+          baseHeight: base.naturalHeight,
+          overlayUrl: overlay.currentSrc,
+          overlayWidth: overlay.naturalWidth,
+          overlayHeight: overlay.naturalHeight,
+          overlayReady: overlay.classList.contains('is-ready'),
+          overlayOpacity: Number.parseFloat(getComputedStyle(overlay).opacity),
+          basePosition: getComputedStyle(base).position,
+          overlayPosition: getComputedStyle(overlay).position,
+        };
+      });
+      assert(sceneState.baseWidth > 0 && sceneState.baseHeight > 0,
+        'Bundled tavern SVG must be decoded before opening transactions');
+      assert.equal(sceneState.overlayUrl,
+        'https://assets.chronicles.shadowops.dpdns.org/stores/taberna-premium.webp');
+      assert.equal(sceneState.basePosition, 'absolute');
+      assert.equal(sceneState.overlayPosition, 'absolute');
+      if (sceneState.overlayWidth) {
+        assert(sceneState.overlayWidth >= 1500 && sceneState.overlayHeight >= 800
+          && sceneState.overlayReady, 'Premium tavern panorama must decode and appear');
+      } else {
+        assert(!sceneState.overlayReady && sceneState.overlayOpacity === 0,
+          'Failed R2 tavern art must stay hidden behind the original scene');
+      }
       const rect = await room.boundingBox();
       assert.ok(rect && rect.x >= -1 && rect.x + rect.width <= width + 1 &&
         rect.y >= -1 && rect.y + rect.height <= height + 1,
