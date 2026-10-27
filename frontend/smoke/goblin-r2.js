@@ -21,7 +21,7 @@ try {
   renderer.setPixelRatio(1);
   renderer.setSize(innerWidth, innerHeight, false);
   const camera = new THREE.PerspectiveCamera(59, innerWidth / innerHeight, 0.1, 50);
-  camera.position.set(0, 1.65, innerWidth <= 430 ? 10.6 : 8.2);
+  camera.position.set(0, 1.65, innerWidth <= 430 ? 13.5 : 8.2);
   camera.lookAt(0, 1.0, 0);
 
   const cues = [{}, { attacking: true }, { dead: true }];
@@ -30,7 +30,7 @@ try {
     if (!result?.model?.userData?.chroniclesBillboard) {
       throw new Error('Missing production ash-goblin billboard');
     }
-    result.model.position.set((i - 1) * 2.25, 0, 0);
+    result.model.position.set((i - 1) * (innerWidth <= 430 ? 2.0 : 2.25), 0, 0);
     scene.add(result.model);
     return { ...result.model.userData, model: result.model, cue };
   });
