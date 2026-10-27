@@ -51,6 +51,8 @@ try {
         assert.equal(result.plasterRelief, 'true',
           'Real street facades must use aligned, shared limewash relief');
         assert.equal(Number(result.roofCount), 7);
+        assert.equal(result.distinctGuildMasonry, 'true',
+          'Guild must have its own slate masonry without merchant timberwork');
         assert.equal(result.distinctShopFacades, 'true',
           'Apothecary and guild must have distinct authored silhouettes');
         assert.equal(result.distinctTemplePortico, 'true',

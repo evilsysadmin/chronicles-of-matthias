@@ -265,6 +265,33 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('uses slate-violet masonry only for the guild while keeping its shopfront accessible', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const guild = scene.getObjectByName('swordhaven-building-swordhaven-magic');
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const armorer = scene.getObjectByName('swordhaven-building-swordhaven-armor');
+      const walls = guild.getObjectByName('timber-and-stone-walls');
+      expect(walls.material.color.getHex()).toBe(0x9d8aa9);
+      expect(walls.material.map).toBe(swordhavenSurfaceTexture('masonry'));
+      expect(walls.material.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
+      expect(guild.getObjectByName('roof-gable-1').material).toBe(walls.material);
+      expect(guild.getObjectByName('vertical-facade-post')).toBeFalsy();
+      expect(guild.getObjectByName('diagonal-timber-brace')).toBeFalsy();
+      expect(guild.getObjectByName('horizontal-facade-beam')).toBeFalsy();
+      expect(forge.getObjectByName('vertical-facade-post')).toBeTruthy();
+      expect(forge.getObjectByName('timber-and-stone-walls').material.map)
+        .toBe(swordhavenSurfaceTexture('stucco'));
+      expect(armorer.getObjectByName('timber-and-stone-walls').material).not.toBe(walls.material);
+      expect(guild.getObjectByName('shop-door')).toBeTruthy();
+      expect(guild.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel)
+        .toBe('MAGIA');
+      expect(guild.getObjectByName('magic-guild-pointed-entry')).toBeTruthy();
+      expect(createSwordhavenWalkGrid()[15][14]).toBe('.');
+    }
+  });
+
   it('gives only the forge a framed workshop bay without obscuring the door or shop name', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
