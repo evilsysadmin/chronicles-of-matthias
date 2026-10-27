@@ -139,6 +139,18 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
     // The live key handler checks the adventure menu before directional movement.
   });
 
+  it('blocks pause-menu S during combat, but preserves S as the gameplay shooting key', () => {
+    for (const key of ['s', 'S']) {
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: true, inCombat: true }))
+        .toBeNull();
+      expect(chroniclesAdventureMenuShortcut(keyEvent(key), { menuOpen: true, inCombat: false }))
+        .toBe('save');
+      expect(chroniclesCombatKeyMode(key, { inCombat: true })).toBe('missile');
+    }
+    expect(chroniclesAdventureMenuShortcut(keyEvent('q'), { menuOpen: true, inCombat: true }))
+      .toBe('request-exit');
+  });
+
   it('never interprets S or Q as adventure actions while a nested folio page owns the menu', () => {
     const subpage = { menuOpen: true, subpageOpen: true };
     for (const key of ['s', 'S', 'q', 'Q']) {
