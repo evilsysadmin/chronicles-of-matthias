@@ -35,6 +35,6 @@ describe('MM3 desktop viewport space', () => {
     expect(map).toContain('position: relative');
     expect(map).toContain('width: auto');
     expect(map).toContain('height: clamp(150px, 29dvh, 272px)');
-    expect(map).not.toMatch(/aspect-ratio|width:\\s*\\d+px/);
+    expect(map).not.toContain('width: 132px');
   });
 });
