@@ -38,7 +38,29 @@ describe('Swordhaven apothecary sage masonry', () => {
     expect(store.getObjectByName('vertical-facade-post')).toBeTruthy();
     expect(store.getObjectByName('timber-and-stone-walls').material.map)
       .toBe(swordhavenSurfaceTexture('stucco'));
-    expect(botica.getObjectByName('apothecary-roof-herbarium')).toBeTruthy();
+    const herbarium = botica.getObjectByName('apothecary-roof-herbarium');
+    expect(herbarium).toBeTruthy();
+    expect(herbarium.userData.chroniclesDecorativeOnly).toBe(true);
+    // The old opaque timber box concealed the greenhouse glazing. It must
+    // remain an open post-and-rail frame, including on coarse touch devices.
+    expect(herbarium.getObjectByName('herbarium-timber-frame')).toBeFalsy();
+    expect(herbarium.children.filter(child => child.name === 'herbarium-corner-post'))
+      .toHaveLength(4);
+    expect(herbarium.children.filter(child => child.name === 'herbarium-green-glazing'))
+      .toHaveLength(2);
+    expect(herbarium.children.filter(child => child.name === 'herbarium-side-glazing'))
+      .toHaveLength(2);
+    expect(herbarium.children.filter(child => child.name === 'herbarium-glazed-roof'))
+      .toHaveLength(2);
+    expect(herbarium.children.filter(child => child.name === 'herbarium-roof-rafter'))
+      .toHaveLength(2);
+    expect(herbarium.getObjectByName('herbarium-roof-ridge')).toBeTruthy();
+    const glazing = herbarium.getObjectByName('herbarium-green-glazing').material;
+    expect(glazing.transparent).toBe(true);
+    expect(glazing.opacity).toBeGreaterThan(0.5);
+    expect(glazing.opacity).toBeLessThan(1);
+    expect(glazing.depthWrite).toBe(false);
+    expect(herbarium.getObjectByName('herbarium-glazed-roof').material).toBe(glazing);
     expect(botica.getObjectByName('apothecary-hanging-herbs')).toBeTruthy();
     expect(botica.getObjectByName('shop-door')).toBeTruthy();
     expect(botica.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
