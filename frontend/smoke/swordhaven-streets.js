@@ -10,7 +10,7 @@ const VIEWS = Object.freeze({
   // Both facades from matching walkable oblique positions, far enough away
   // to show the roof silhouette instead of only the door at eye level.
   apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
-  guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
+  guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 3.2 },
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   temple: { x: 10, y: 6, heading: 'east', target: { x: 15, y: 6 }, cameraHeight: 2.4, lookUp: 2.5 },
@@ -205,6 +205,14 @@ try {
       && store?.getObjectByName('store-awning-cloth')
       && store?.getObjectByName('store-awning-stripe')
       && !forge?.getObjectByName('store-market-awning')
+    )),
+    distinctGuildObservatory: String(Boolean(
+      guild?.getObjectByName('magic-guild-roof-observatory')?.userData.chroniclesDecorativeOnly
+      && guild?.getObjectByName('magic-observatory-stone-drum')
+      && guild?.getObjectByName('magic-observatory-steep-roof')
+      && guild?.getObjectByName('magic-observatory-violet-window')
+      && !temple?.getObjectByName('magic-guild-roof-observatory')
+      && !apothecary?.getObjectByName('magic-guild-roof-observatory')
     )),
     distinctGuildMasonry: String(Boolean(
       guild?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0x9d8aa9
