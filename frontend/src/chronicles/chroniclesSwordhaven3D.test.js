@@ -229,6 +229,10 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(bricks.castShadow).toBe(!coarsePointer);
       expect(gable.position.z).toBeGreaterThan(tavern.getObjectByName('roof-gable-1').position.z);
       expect(gable.getObjectByName('tavern-gable-central-crown')).toBeTruthy();
+      const rear = tavern.getObjectByName('tavern-brick-stepped-rear-gable');
+      expect(rear?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(rear.position.z).toBeLessThan(0);
+      expect(rear.getObjectByName('tavern-gable-brick-steps')?.count).toBe(8);
       expect(tavern.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
       expect(tavern.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
       expect(tavern.getObjectByName('shop-door')).toBeTruthy();
