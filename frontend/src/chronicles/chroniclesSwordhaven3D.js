@@ -599,7 +599,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const loft = new THREE.Group();
     loft.name = 'store-merchant-loft';
     loft.userData.chroniclesDecorativeOnly = true;
-    loft.position.set(0, height + 1.38, depth * 0.27);
+    // Project the loading-bay window beyond the front gable so it actually
+    // reads from the street, not just from a top-down geometry inspection.
+    loft.position.set(0, height + 1.38, depth * 0.45);
     const oak = material(0x79553c, { roughness: 0.96 });
     mesh(loft, new THREE.BoxGeometry(2.54, 1.45, 1.42), oak,
       'store-loft-oak-gable', [0, 0, 0], !coarse);
