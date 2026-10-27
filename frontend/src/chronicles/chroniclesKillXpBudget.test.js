@@ -43,6 +43,45 @@ describe('Chronicles MM3 · exact finite kill XP budget', () => {
       .reduce((sum, award) => sum + award.xp, 0)).toBe(9);
   });
 
+  it('pays the same finite damage XP for four 1-HP blows as one 4-HP blow', () => {
+    const map = chroniclesMapById(MAP_ID);
+    const goblin = map.enemies.find((enemy) => enemy.id === 'sewers-goblin-west');
+    const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+    expect(base[goblin.hpKey]).toBe(4);
+
+    function play(hpSteps, runId) {
+      let state = base;
+      let progression = createChroniclesProgression();
+      let damageXp = 0;
+      const byHero = {};
+      for (const [index, hp] of hpSteps.entries()) {
+        const next = { ...state, [goblin.hpKey]: hp };
+        const actorMemberId = heroes[index % heroes.length].id;
+        const params = { actorMemberId, actionKind: 'attack', runId };
+        const result = applyChroniclesTacticsProgression(progression, state, next, params);
+        const earned = result.awards.filter((award) => award.reason === 'daño útil')
+          .reduce((sum, award) => sum + award.xp, 0);
+        damageXp += earned;
+        byHero[actorMemberId] = (byHero[actorMemberId] || 0) + earned;
+        // A retry of any one-HP hit must never create another XP claim.
+        expect(applyChroniclesTacticsProgression(result.progression, state, next, params).awards).toEqual([]);
+        progression = result.progression;
+        state = next;
+      }
+      return { damageXp, byHero, progression };
+    }
+
+    const single = play([0], 'damage-budget-single');
+    const split = play([3, 2, 1, 0], 'damage-budget-split');
+    expect(single.damageXp).toBe(2);
+    expect(split.damageXp).toBe(2);
+    expect(split.byHero).toEqual({ matthias: 1, rook: 0, bishop: 1, knight: 0 });
+    const companyXp = (progression) => heroes.reduce(
+      (sum, hero) => sum + chroniclesHeroProgress(progression, hero.id).xp, 0,
+    );
+    expect(companyXp(split.progression)).toBe(companyXp(single.progression));
+  });
+
   it('pays exactly 18 kill XP for all nine sewer goblins, in real progression across three packs', () => {
     const map = chroniclesMapById(MAP_ID);
     const goblins = map.enemies.filter((enemy) => enemy.squadId);
