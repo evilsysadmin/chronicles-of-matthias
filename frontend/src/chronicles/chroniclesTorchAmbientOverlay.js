@@ -33,6 +33,12 @@ export function chroniclesTorchGlowOccluded(raycaster, camera, position, walls) 
   return raycaster.intersectObjects(walls, false).length > 0;
 }
 
+// Keep a few nearby, visible flames animated without maintaining many
+// independent compositor layers on laptops or mobile devices.
+export function chroniclesTorchAmbientGlowBudget(coarse = false) {
+  return coarse ? 2 : 4;
+}
+
 export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches, { coarse = false } = {}) {
   if (!torches?.length) return { update() {}, setVisible() {}, dispose() {} };
 
@@ -45,7 +51,7 @@ export function createChroniclesTorchAmbientOverlay(host, camera, scene, torches
   layer.setAttribute('aria-hidden', 'true');
   host.appendChild(layer);
 
-  const maxGlows = coarse ? 4 : 8;
+  const maxGlows = chroniclesTorchAmbientGlowBudget(coarse);
   const glows = Array.from({ length: Math.min(maxGlows, torches.length) }, (_, index) => {
     const element = document.createElement('span');
     element.className = 'chronicles-torch-ambient-glow';

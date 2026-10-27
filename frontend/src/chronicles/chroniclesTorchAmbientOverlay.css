@@ -20,15 +20,17 @@
     rgba(255, 192, 96, .37) 0%,
     rgba(255, 111, 35, .15) 39%,
     rgba(255, 90, 22, 0) 76%);
-  mix-blend-mode: screen;
+  /* Normal alpha blend avoids an expensive backdrop read for every glow.
+     Small stepped opacity changes retain a soft flicker without forcing
+     the compositor to interpolate 60 frames per second forever. */
   will-change: opacity;
-  animation: chronicles-torch-ambient-flicker 2.8s ease-in-out infinite alternate;
+  animation: chronicles-torch-ambient-flicker 4.2s steps(5, end) infinite alternate;
 }
 @keyframes chronicles-torch-ambient-flicker {
-  0% { opacity: .42; }
-  46% { opacity: .72; }
-  73% { opacity: .50; }
-  100% { opacity: .82; }
+  0% { opacity: .54; }
+  46% { opacity: .68; }
+  73% { opacity: .57; }
+  100% { opacity: .72; }
 }
 @media (prefers-reduced-motion: reduce) {
   .chronicles-torch-ambient-glow {
