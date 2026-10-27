@@ -3,6 +3,7 @@ import {
   chroniclesMapIds,
   chroniclesValidateMapDefinition,
 } from './chroniclesMapCatalog.js';
+import { chroniclesIsUsableDifficultySnapshot } from './chroniclesDifficultyPolicy.js';
 
 export const CHRONICLES_DIRECTOR_SCHEMA_VERSION = 1;
 const REVISION_RE = /^[a-f0-9]{64}$/;
@@ -24,8 +25,14 @@ function normalizeDifficulty(payload) {
     'requestedDelta',
     'appliedDelta',
   ];
-  if (keys.some((key) => !Number.isInteger(payload[key]))) throw new Error('invalid-difficulty');
-  if (payload.version !== 1 || payload.partyLevel < 1 || payload.targetLevel < 1) {
+  if (keys.some((key) => !Number.isSafeInteger(payload[key]))) throw new Error('invalid-difficulty');
+  // The Go director computes one coherent band and a bounded delta. Accepting
+  // individually integer but contradictory values would misstate floor threat.
+  if (payload.version !== 1
+    || !chroniclesIsUsableDifficultySnapshot(payload)
+    || payload.authoredLevel < 1 || payload.authoredLevel > 5
+    || payload.requestedDelta !== payload.targetLevel - payload.authoredLevel
+    || payload.appliedDelta !== Math.max(-2, Math.min(3, payload.requestedDelta))) {
     throw new Error('invalid-difficulty');
   }
   return Object.freeze(Object.fromEntries(keys.map((key) => [key, payload[key]])));
