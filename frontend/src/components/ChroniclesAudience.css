@@ -160,3 +160,7 @@
 .chronicles-audience__scene[data-chronicles-audience-room='aldric-hall'] {
   background: #33251d;
 }
+
+/* Brask's smooth garrison illustration is independent of temple and mayor. */
+.chronicles-audience__scene[data-chronicles-audience-room='watch-house'] img { object-position: 50% 45%; image-rendering: auto; }
+.chronicles-audience__scene[data-chronicles-audience-room='watch-house'] { background: #26313a; }

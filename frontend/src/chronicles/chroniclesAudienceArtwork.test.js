@@ -33,8 +33,24 @@ describe('Swordhaven audience premium environment', () => {
     expect(html).toContain('data-chronicles-dialogue-choice="quest"');
   });
 
-  it('keeps Brask and Ilse existing interiors and choices intact', () => {
-    for (const [x, y, room, who] of [[4, 6, 'watch-house', 'Sargento Brask'], [14, 6, 'temple', 'Sacerdotisa Ilse']]) {
+  it('Brask has an illustrated 1600x900 garrison with his canonical silhouette', () => {
+    const art = readFileSync(new URL('../assets/chronicles/ui/shops/brask-watch-illustrated.svg', import.meta.url), 'utf8');
+    expect(art).toContain('viewBox="0 0 1600 900"');
+    expect(art).toContain('id="g-brick"');
+    expect(art).toContain('scale(3.2)');
+    expect(art.length).toBeGreaterThan(5000);
+    expect(art).not.toMatch(/<(?:text|image|script|foreignObject)\\b/i);
+    const state = { ...createChroniclesState('swordhaven-first-book'), x: 4, y: 6 };
+    const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
+    const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
+    expect(html).toContain('data-chronicles-audience-room="watch-house"');
+    expect(html).toContain('brask-watch-illustrated.svg');
+    expect(html).toContain('Sargento Brask');
+    expect(html).toContain('data-chronicles-dialogue-choice="quest"');
+  });
+
+  it('keeps Ilse temple unchanged', () => {
+    for (const [x, y, room, who] of [[14, 6, 'temple', 'Sacerdotisa Ilse']]) {
       const state = { ...createChroniclesState('swordhaven-first-book'), x, y };
       const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
       const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
