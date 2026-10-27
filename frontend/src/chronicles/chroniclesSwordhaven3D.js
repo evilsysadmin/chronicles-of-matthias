@@ -581,6 +581,46 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       lancets.add(bay);
     }
     root.add(lancets);
+  } else if (isArmor) {
+    // Forged display grilles and dark armour alcoves replace domestic
+    // amber windows and flower boxes. These are shallow facade ornaments,
+    // never blockers or new interaction targets on the authored town grid.
+    const displays = new THREE.Group();
+    displays.name = 'armor-forged-display-bays';
+    displays.userData.chroniclesDecorativeOnly = true;
+    displays.position.z = facadeZ + 0.46;
+    const alcove = material(0x28323a, { roughness: 0.97, metalness: 0.08 });
+    const shieldFace = material(0x899da9, { roughness: 0.45, metalness: 0.38 });
+    const shield = new THREE.Shape();
+    shield.moveTo(-0.43, 0.55);
+    shield.lineTo(0.43, 0.55);
+    shield.lineTo(0.36, -0.23);
+    shield.lineTo(0, -0.67);
+    shield.lineTo(-0.36, -0.23);
+    shield.closePath();
+    for (const x of [-width * 0.33, width * 0.33]) {
+      const bay = new THREE.Group();
+      bay.name = 'armor-forged-display-bay';
+      bay.position.set(x, 2.75, 0);
+      mesh(bay, new THREE.BoxGeometry(1.54, 1.73, 0.10), alcove,
+        'armor-display-dark-recess', [0, 0, 0], !coarse);
+      mesh(bay, new THREE.ShapeGeometry(shield), shieldFace,
+        'armor-display-shield', [0, 0, 0.09], !coarse);
+      mesh(bay, new THREE.BoxGeometry(0.11, 1.12, 0.05), mats.gold,
+        'armor-display-shield-spine', [0, -0.04, 0.14]);
+      for (const side of [-1, 1]) {
+        mesh(bay, new THREE.BoxGeometry(0.23, 2.03, 0.30), mats.stone,
+          'armor-display-stone-jamb', [side * 0.86, 0, 0.04], !coarse);
+        mesh(bay, new THREE.BoxGeometry(0.09, 1.77, 0.11), mats.steel,
+          'armor-display-iron-bar', [side * 0.49, 0, 0.22]);
+      }
+      for (const y of [-0.94, 0.94]) {
+        mesh(bay, new THREE.BoxGeometry(1.94, 0.22, 0.32), mats.stone,
+          'armor-display-stone-rail', [0, y, 0.04], !coarse);
+      }
+      displays.add(bay);
+    }
+    root.add(displays);
   } else {
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;

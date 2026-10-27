@@ -468,6 +468,14 @@ describe('Swordhaven modular real-time 3D', () => {
         const leaves = facade.getObjectByName('window-box-leaf-clusters');
         const flowers = facade.getObjectByName('window-box-blooms');
         const straps = facade.getObjectByName('shop-door-iron-straps');
+        if (spec.id === 'swordhaven-armor') {
+          expect(facade.getObjectByName('armor-forged-display-bays')).toBeTruthy();
+          expect(lead).toBeFalsy();
+          expect(leaves).toBeFalsy();
+          expect(flowers).toBeFalsy();
+          expect(straps.count).toBe(2);
+          continue;
+        }
         if (spec.id === 'swordhaven-temple') {
           // The temple now uses stone lancets, not merchant lead diamonds
           // or flower boxes; the real door straps are unchanged.
@@ -514,6 +522,12 @@ describe('Swordhaven modular real-time 3D', () => {
     buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: false });
     for (const spec of SWORDHAVEN_BUILDINGS) {
       const building = scene.getObjectByName('swordhaven-building-' + spec.id);
+      if (spec.id === 'swordhaven-armor') {
+        expect(building.getObjectByName('armor-forged-display-bays')).toBeTruthy();
+        expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
+        expect(building.getObjectByName('flower-window-box')).toBeFalsy();
+        continue;
+      }
       if (spec.id === 'swordhaven-temple') {
         expect(building.getObjectByName('temple-stained-glass-lancets')).toBeTruthy();
         expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
