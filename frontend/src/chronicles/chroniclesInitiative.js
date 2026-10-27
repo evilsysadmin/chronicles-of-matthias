@@ -192,6 +192,10 @@ export function chroniclesEnemyLostParty(state, enemy) {
 }
 
 function actorIsAlive(state, enemyById, actor) {
+  // A restored order may contain actors whose IDs were rejected by the fresh
+  // initiative roller. They cannot take a turn, even if a malformed roster
+  // entry with the same empty ID still has positive HP.
+  if (!validActorId(actor?.id)) return false;
   if (actor.kind === 'party') {
     return (state?.party || []).some((member) => member.id === actor.id && hasLivingHitPoints(member.hp));
   }
@@ -261,7 +265,9 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative?.order?.length) return state;
   // A party wiped during an active round must end in defeat, even if
   // enemies survive or the final enemy fell at the same time.
-  if (!Array.isArray(state.party) || !state.party.some((member) => hasLivingHitPoints(member?.hp))) {
+  if (!Array.isArray(state.party) || !state.party.some((member) => (
+    validActorId(member?.id) && hasLivingHitPoints(member?.hp)
+  ))) {
     const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
   }
