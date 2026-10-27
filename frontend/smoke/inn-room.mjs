@@ -12,6 +12,7 @@ try {
       await page.goto(url, { waitUntil: 'networkidle' });
       const room = page.getByRole('dialog', { name: 'Taberna La Espada Mellada' });
       await room.waitFor({ state:'visible' });
+      await page.locator('[data-chronicles-interior-loading]').waitFor({ state: 'detached', timeout: 16_000 });
       // Browser visibility alone is insufficient: the real game root sits
       // at z-index 10000 and used to cover this portalled inn at z-index 190.
       const layers = await page.evaluate(() => {
