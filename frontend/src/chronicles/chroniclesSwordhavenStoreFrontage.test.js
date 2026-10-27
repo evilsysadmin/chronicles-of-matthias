@@ -52,7 +52,8 @@ describe('Swordhaven general store frontage', () => {
     expect(store.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
     expect(store.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
     expect(forge.getObjectByName('store-merchant-loft')).toBeFalsy();
-    expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeTruthy();
+    expect(forge.getObjectByName('forge-roof-smoke-lantern')).toBeTruthy();
+    expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
     expect(store.getObjectByName('store-market-awning')).toBeTruthy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
