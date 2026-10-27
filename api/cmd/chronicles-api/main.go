@@ -169,13 +169,15 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		return nil, fmt.Errorf("session: %w", err)
 	}
 	purgeStore := userdata.NewMongo(db, envDurationMS("USER_PURGE_MONGO_TIMEOUT_MS", 5000*time.Millisecond))
+	inviteCode := os.Getenv("INVITE_CODE")
 	account, err := gamesapi.NewAccount(gamesapi.AccountConfig{
 		Config: base(), Store: accountstore.New(db, timeout),
 		Purge: func(ctx context.Context, username string) (userdata.Purged, error) {
 			return userdata.Purge(ctx, purgeStore, username)
 		},
 		IPGuard: ipGuard, Touch: sessions,
-		AllowRegistration: pythonFlag("ALLOW_REGISTRATION", "true"), InviteCode: os.Getenv("INVITE_CODE"),
+		AllowRegistration: registrationAllowed(environment, pythonFlag("ALLOW_REGISTRATION", "true"), inviteCode),
+		InviteCode: inviteCode,
 		EmailRecoveryEnabled: emailRecovery, Environment: environment, SyntheticSecret: synthetic,
 	})
 	if err != nil {
@@ -255,6 +257,21 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		{"ops", ops, gamesapi.OpsRoute},
 		{"ops-import", opsImport, gamesapi.OpsImportLegacyRoute},
 	}, nil
+}
+
+// registrationAllowed fails closed when a deployed environment has no invite
+// code. Local and CI environments retain their explicit registration setting.
+// Existing accounts can still log in if provisioning has not supplied the code.
+func registrationAllowed(environment string, enabled bool, inviteCode string) bool {
+	if !enabled {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(environment)) {
+	case "staging", "stage", "production", "prod":
+		return strings.TrimSpace(inviteCode) != ""
+	default:
+		return true
+	}
 }
 
 // Chess Studio's staging readiness requires CHESS_STUDIO_RUNTIME_SCHEMA to
