@@ -34,7 +34,7 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
 
   it('completes one sidequest loop: take job, cross road, find clue, return, receive gold and trade', () => {
     let state = createChroniclesState('swordhaven-first-book');
-    state = walkTo(state, 11, 9);
+    state = walkTo(state, 12, 10);
     expect(chroniclesTacticsInteractions(state)).toContainEqual(expect.objectContaining({
       id: 'first-book-missing-board',
     }));
@@ -93,7 +93,7 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
 
   it('lets the first-person player take, finish and spend a contract without competing NPC actions', () => {
     let state = createChroniclesState('swordhaven-first-book');
-    state = walkTo(state, 11, 9);
+    state = walkTo(state, 12, 10);
     expect(chroniclesContextualContentAction(state)?.id).toBe('first-book-missing-board');
     state = chroniclesReduce(state, 'interact');
     expect(state.quests['banner-contract'].status).toBe('active');
@@ -125,7 +125,7 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
 
   it('keeps first real spoils equipped and prevents reward farming across the second sortie after F5', () => {
     let state = createChroniclesState('swordhaven-first-book');
-    state = chroniclesTacticsUse(walkTo(state, 11, 9), 'first-book-missing-board');
+    state = chroniclesTacticsUse(walkTo(state, 12, 10), 'first-book-missing-board');
     state = chroniclesTacticsUse(walkTo(state, 9, 1), 'to-first-book-banner-road');
     const road = chroniclesMapById('banner-road-first-book');
     const deserter = road.enemies.find((enemy) => enemy.id === 'banner-road-deserter');
@@ -184,7 +184,7 @@ describe('Chronicles first book · Swordhaven / Banner Road', () => {
 
   it('recovers completed quest, spent gold, visited region and reward receipt after F5', () => {
     const initial = createChroniclesState('swordhaven-first-book');
-    let state = chroniclesTacticsUse(walkTo(initial, 11, 9), 'first-book-missing-board');
+    let state = chroniclesTacticsUse(walkTo(initial, 12, 10), 'first-book-missing-board');
     state = chroniclesTacticsUse(walkTo(state, 9, 1), 'to-first-book-banner-road');
     state = chroniclesTacticsUse(walkTo(state, 9, 5), 'first-book-lost-banner');
     state = chroniclesTacticsUse(walkTo(state, 10, 1), 'to-first-book-swordhaven');
