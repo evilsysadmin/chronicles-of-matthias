@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from './chroniclesShopRooms.js';
-import { CHRONICLES_ODO_UPLOADED_ART_KEY, CHRONICLES_ODO_UPLOADED_ART_URL, CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
+import { CHRONICLES_BOTICA_PREMIUM_ART_KEY, CHRONICLES_BOTICA_PREMIUM_ART_URL, CHRONICLES_ODO_UPLOADED_ART_KEY, CHRONICLES_ODO_UPLOADED_ART_URL, CHRONICLES_SHOP_ART_ORIGIN, chroniclesShopArtUrl } from './chroniclesShopArt.js';
 
 describe('Chronicles shop rooms', () => {
   it('shows each Swordhaven shopkeeper in their own room', () => {
@@ -13,8 +13,8 @@ describe('Chronicles shop rooms', () => {
     expect(odo.fallbackSrc).toContain('odo-armory.svg');
     expect(room('first-book-apothecary')).toBe('botica-apothecary');
     const apothecary = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-apothecary'));
-    expect(apothecary.src).toContain('botica-apothecary.svg');
-    expect(apothecary.fallbackSrc).toBeUndefined();
+    expect(apothecary.src).toBe(CHRONICLES_BOTICA_PREMIUM_ART_URL);
+    expect(apothecary.fallbackSrc).toContain('botica-apothecary.svg');
     expect(room('first-book-weaponsmith')).toBe('brunna-armory');
     const brunna = chroniclesShopRoom(town.interactables.find((entry) => entry.id === 'first-book-weaponsmith'));
     expect(brunna.src).toContain('brunna-forge.webp');
@@ -67,6 +67,21 @@ describe('Chronicles shop art manifests — exact R2 pins only', () => {
     expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain('dash.cloudflare.com');
     expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain(CHRONICLES_SHOP_ART_ORIGIN);
     expect(CHRONICLES_ODO_UPLOADED_ART_URL).not.toContain('?');
+  });
+
+  it('uses the player-uploaded Botica WebP from Chronicles R2 without a dashboard link', () => {
+    expect(CHRONICLES_BOTICA_PREMIUM_ART_KEY).toBe('stores/botica-premium.webp');
+    expect(CHRONICLES_BOTICA_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/botica-premium.webp');
+    expect(CHRONICLES_BOTICA_PREMIUM_ART_URL).not.toContain('dash.cloudflare.com');
+    expect(CHRONICLES_BOTICA_PREMIUM_ART_URL).not.toContain(CHRONICLES_SHOP_ART_ORIGIN);
+    const town = chroniclesMapById('swordhaven-first-book');
+    const botica = chroniclesShopRoom(town.interactables.find(e => e.id === 'first-book-apothecary'));
+    expect(botica.src).toBe(CHRONICLES_BOTICA_PREMIUM_ART_URL);
+    expect(botica.fallbackSrc).toContain('botica-apothecary.svg');
+    // The fallback is the same illustrated room already shipped to clients;
+    // merchant actions and other room bindings remain identical.
+    expect(botica.id).toBe('botica-apothecary');
   });
 
   it('keeps Brunna and guild local while Odo has offline fallback', () => {
