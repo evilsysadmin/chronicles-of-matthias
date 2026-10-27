@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchMe } from '../auth.js';
+import ChroniclesPlayerAdmin from './ChroniclesPlayerAdmin.jsx';
 import './ChroniclesSaveMenu.css';
 import { chroniclesSavedExpeditionArea } from '../chronicles/chroniclesSavedExpeditionArea.js';
 
@@ -41,6 +43,16 @@ export default function ChroniclesSaveMenu({
   loading = false, error = '', busyRunId = null, onRetrySync,
 }) {
   const [screen, setScreen] = useState('home');
+  const [mayViewAdmin, setMayViewAdmin] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    fetchMe().then((user) => {
+      if (mounted) setMayViewAdmin(Boolean(user?.isAdmin));
+    }).catch(() => {
+      if (mounted) setMayViewAdmin(false);
+    });
+    return () => { mounted = false; };
+  }, []);
   const [editing, setEditing] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [confirmForget, setConfirmForget] = useState(null);
@@ -134,6 +146,13 @@ export default function ChroniclesSaveMenu({
                   <span className="chronicles-save-menu__action-copy">Gestionar partidas</span>
                   <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
                 </button>
+                {mayViewAdmin && (
+                  <button type="button" data-chronicles-admin-link onClick={() => openList('admin')}>
+                    <ExpeditionMenuIcon kind="books" />
+                    <span className="chronicles-save-menu__action-copy">Administrar jugadores <small>Censo de esta instancia · solo lectura</small></span>
+                    <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
+                  </button>
+                )}
                 {onExit && (
                   <button type="button" className="is-exit" onClick={onExit}>
                     <ExpeditionMenuIcon kind="castle" />
@@ -147,10 +166,12 @@ export default function ChroniclesSaveMenu({
         ) : (
           <div className="chronicles-save-menu__browser">
             <div className="chronicles-save-menu__browser-heading">
-              <h2>{screen === 'load' ? 'Cargar juego' : 'Gestionar partidas'}</h2>
+              <h2>{screen === 'load' ? 'Cargar juego' : screen === 'admin' ? 'Administración' : 'Gestionar partidas'}</h2>
               <button type="button" onClick={() => openList('home')}>← Volver</button>
             </div>
-            {saves.length === 0 ? (
+            {screen === 'admin' ? (
+              <ChroniclesPlayerAdmin />
+            ) : saves.length === 0 ? (
               <p className="chronicles-save-menu__empty" role={error ? 'status' : undefined}>
                 {loading ? 'Buscando expediciones…'
                   : error ? 'No se pudo comprobar si hay partidas en el servidor. Vuelve y reintenta la sincronización.'
@@ -213,11 +234,11 @@ export default function ChroniclesSaveMenu({
                 ))}
               </ol>
             )}
-            <p className="chronicles-save-menu__disclaimer">
+            {screen !== 'admin' && <p className="chronicles-save-menu__disclaimer">
               {catalogUnresolved
                 ? 'Se muestra el índice local: puede estar incompleto o desactualizado. Las acciones de partidas estarán disponibles después de sincronizar.'
                 : 'Las partidas marcadas «Guardada en servidor» se sincronizan entre dispositivos al abrir este menú. Los nombres personalizados se conservan en este dispositivo.'}
-            </p>
+            </p>}
           </div>
         )}
       </section>
