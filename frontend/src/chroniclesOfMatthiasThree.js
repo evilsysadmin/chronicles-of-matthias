@@ -15,6 +15,7 @@ import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
 import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFrameGate.js';
 import { createChroniclesFrameScheduler } from './chronicles/chroniclesFrameScheduler.js';
+import { createChroniclesTorchAmbientOverlay } from './chronicles/chroniclesTorchAmbientOverlay.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
@@ -729,6 +730,9 @@ export function createChroniclesOfMatthiasGame(host, {
     ? new THREE.Group()
     : buildChroniclesDungeonAtmosphere({ coarsePointer: coarse, reducedMotion, scenePlan });
   scene.add(dressing, atmosphere);
+  // The 3D world may sleep between actions; a tiny CSS-composited halo layer
+  // keeps nearby, unoccluded flames alive without re-rendering the WebGL canvas.
+  const ambientTorchGlows = createChroniclesTorchAmbientOverlay(host, camera, scene, dungeon.torches || [], { coarse });
   let destroyed = false;
   const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
@@ -1110,6 +1114,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
     renderer.render(scene, camera);
+    ambientTorchGlows.update();
     firstFrameGate.markFrameRendered();
   }
 
@@ -1145,6 +1150,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const onVisibility = () => {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
+    ambientTorchGlows.setVisible(visible);
   };
   document.addEventListener('visibilitychange', onVisibility);
   resize();
@@ -1158,6 +1164,7 @@ export function createChroniclesOfMatthiasGame(host, {
       if (destroyed) return;
       destroyed = true;
       scheduler.dispose();
+      ambientTorchGlows.dispose();
       observer?.disconnect();
       if (!observer) window.removeEventListener('resize', onWindowResize);
       document.removeEventListener('visibilitychange', onVisibility);
