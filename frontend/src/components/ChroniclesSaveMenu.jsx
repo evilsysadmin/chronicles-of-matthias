@@ -40,9 +40,9 @@ function saveWhen(value) {
 
 export default function ChroniclesSaveMenu({
   saves = [], onNew, onLoad, onRename, onForget, onDelete, onExit,
-  loading = false, error = '', busyRunId = null, onRetrySync,
+  loading = false, error = '', busyRunId = null, onRetrySync, initialScreen = 'home',
 }) {
-  const [screen, setScreen] = useState('home');
+  const [screen, setScreen] = useState(initialScreen === 'load' ? 'load' : 'home');
   const [mayViewAdmin, setMayViewAdmin] = useState(false);
   useEffect(() => {
     let mounted = true;
