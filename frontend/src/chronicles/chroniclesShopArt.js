@@ -41,3 +41,10 @@ export const CHRONICLES_ODO_UPLOADED_ART_URL =
 export const CHRONICLES_BOTICA_PREMIUM_ART_KEY = 'stores/botica-premium.webp';
 export const CHRONICLES_BOTICA_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_BOTICA_PREMIUM_ART_KEY}`;
+
+// Player-uploaded clean 1672×941 art in the independent Chronicles R2 bucket.
+// Mutable object key: never advertise immutable caching. Guild keeps its
+// bundled illustrated SVG for offline/CDN-failure fallback.
+export const CHRONICLES_GUILD_PREMIUM_ART_KEY = 'stores/gremio-premium.webp';
+export const CHRONICLES_GUILD_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_GUILD_PREMIUM_ART_KEY}`;
