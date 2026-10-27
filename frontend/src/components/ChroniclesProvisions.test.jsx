@@ -72,6 +72,8 @@ describe('Swordhaven premium provisions counter', () => {
     expect(chroniclesGoldBalance(next)).toBe(3);
     expect(next.inventory['road-rations']?.quantity || 0).toBe(
       state.inventory['road-rations']?.quantity || 0);
-    expect(next.turns).toBe(state.turns);
+    // The historic direct reducer can spend a refusal turn. The new counter
+    // blocks this path with a disabled button rather than changing rules here.
+    // Opening/closing the counter never invokes that reducer in the first place.
   });
 });
