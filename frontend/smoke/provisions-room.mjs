@@ -10,6 +10,10 @@ try {
     page.on('pageerror', e => errors.push(e.message));
     try {
       await page.goto(url, { waitUntil: 'load' });
+      // The world Back stack handler must mount *before* the shop one,
+      // as in the real game. The previous fixture's custom window Escape
+      // listener hid a bug by closing the shop even when global Back didn't.
+      await page.locator('[data-provisions-reopen]').click();
       const room = page.getByRole('dialog', { name:'Tienda de provisiones de Swordhaven' });
       await room.waitFor({ state:'visible' });
       // The shared atomic-art gate owns the screen until premium or fallback is decoded.
@@ -91,9 +95,20 @@ try {
       assert.equal(again.rations,bought.rations+1);
       assert.equal(again.turns,bought.turns+1);
       assert.equal(again.attempts,2);
+      const beforeExit = await before();
       await page.keyboard.press('Escape');
       await room.waitFor({state:'hidden'});
+      assert.equal(Number(await page.locator('[data-provisions-fixture-background-backs]').innerText()),0,
+        'Escape must close the shop, not the world behind it');
+      assert.deepEqual(await before(),beforeExit,
+        'Leaving with Escape cannot buy items or consume a turn');
       assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+      // Re-enter to check mouse/touch close uses the same exit path.
+      await page.locator('[data-provisions-reopen]').click();
+      await room.waitFor({state:'visible'});
+      await room.getByRole('button',{name:'Salir de la tienda de provisiones'}).click();
+      await room.waitFor({state:'hidden'});
+      assert.equal(Number(await page.locator('[data-provisions-fixture-background-backs]').innerText()),0);
       assert.deepEqual(errors,[]);
       console.log('OK provisions counter '+width+'x'+height);
     } finally {await context.close();}
