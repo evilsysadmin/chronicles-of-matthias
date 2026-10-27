@@ -268,7 +268,11 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // Preserve the original turn boundary before leashed enemies are pruned.
   const orderBeforeLeash = state.initiative.order;
   const cursorBeforeLeash = Math.min(orderBeforeLeash.length - 1, nonNegativeInteger(state.initiative.cursor));
-  const enemyById = new Map((Array.isArray(enemies) ? enemies : []).map((enemy) => [enemy.id, enemy]));
+  // Match the fresh initiative roster: a duplicate legacy enemy ID may
+  // point at a different HP key. Resolve the first *living* valid entry,
+  // rather than letting a later dead duplicate erase an actionable actor.
+  const enemyById = new Map(uniqueLivingCombatants(enemies, (enemy) => state?.[enemy.hpKey])
+    .map((enemy) => [enemy.id, enemy]));
   const lost = state.initiative.order.filter((actor) => (
     actor.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
   ));
