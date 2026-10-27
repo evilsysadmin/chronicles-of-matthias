@@ -940,6 +940,27 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     herbs.instanceMatrix.needsUpdate = true;
     root.add(herbs);
   } else if (isMagic) {
+    // An octagonal observatory breaks the guild's otherwise generic pitched
+    // roofline. It sits above the existing roof, clear of the gable oculus and
+    // entrance, and reuses the town's stone, slate, brass and arcane materials.
+    // Decorative only: no collision, light source, texture or animation.
+    const observatory = new THREE.Group();
+    observatory.name = 'magic-guild-roof-observatory';
+    observatory.userData.chroniclesDecorativeOnly = true;
+    observatory.position.set(width * 0.08, height + 1.87, -depth * 0.04);
+    mesh(observatory, new THREE.CylinderGeometry(1.54, 1.72, 2.02, 8),
+      guildStone, 'magic-observatory-stone-drum', [0, 0.23, 0], !coarse);
+    mesh(observatory, new THREE.CylinderGeometry(1.81, 1.81, 0.18, 8),
+      mats.gold, 'magic-observatory-brass-collar', [0, 1.33, 0]);
+    mesh(observatory, new THREE.ConeGeometry(2.04, 2.45, 8),
+      roof, 'magic-observatory-steep-roof', [0, 2.63, 0], !coarse);
+    for (const x of [-0.65, 0.65]) {
+      mesh(observatory, new THREE.BoxGeometry(0.54, 0.96, 0.08),
+        mats.gold, 'magic-observatory-window-frame', [x, 0.24, 1.65], !coarse);
+      mesh(observatory, new THREE.BoxGeometry(0.38, 0.79, 0.10),
+        mats.arcane, 'magic-observatory-violet-window', [x, 0.24, 1.71], !coarse);
+    }
+    root.add(observatory);
     mesh(root, new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), mats.plaster,
       'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);
     mesh(root, new THREE.ConeGeometry(1.52, 3.5, coarse ? 12 : 20), roof,
