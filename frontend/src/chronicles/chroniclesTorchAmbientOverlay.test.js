@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import {
   chroniclesTorchGlowProjection,
+  chroniclesTorchAmbientGlowBudget,
   chroniclesTorchGlowOccluded,
 } from './chroniclesTorchAmbientOverlay.js';
 
@@ -15,6 +17,20 @@ function camera() {
 }
 
 describe('Static WebGL with CSS-composited torch ambience', () => {
+  it('limits active glow layers to four on desktop and two on coarse pointers', () => {
+    expect(chroniclesTorchAmbientGlowBudget()).toBe(4);
+    expect(chroniclesTorchAmbientGlowBudget(false)).toBe(4);
+    expect(chroniclesTorchAmbientGlowBudget(true)).toBe(2);
+  });
+
+  it('uses low-rate compositor flicker without backdrop blending or a WebGL loop', () => {
+    const css = readFileSync(new URL('./chroniclesTorchAmbientOverlay.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/animation:\\s*chronicles-torch-ambient-flicker\\s+4\\.2s\\s+steps\\(5,\\s*end\\)/);
+    expect(css).not.toMatch(/mix-blend-mode\\s*:/);
+    expect(css).toMatch(/prefers-reduced-motion:\\s*reduce/);
+    expect(css).toMatch(/animation:\\s*none/);
+  });
+
   it('projects only torches within the view frustum', () => {
     const view = camera();
     const point = chroniclesTorchGlowProjection(view, new THREE.Vector3(0, 1.62, -5), 800, 400);
