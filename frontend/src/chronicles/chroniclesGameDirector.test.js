@@ -165,6 +165,41 @@ describe('Chronicles Game Director frontend resolver', () => {
     })).rejects.toMatchObject({ reason: 'invalid-difficulty' });
   });
 
+  it.each([
+    ['negative dungeon depth', { depth: -1 }],
+    ['forged target level', { targetLevel: 10 }],
+    ['inconsistent depth pressure', { depthPressure: 0 }],
+    ['out-of-range authored level', { authoredLevel: 8 }],
+    ['wrong requested delta', { requestedDelta: 0 }],
+    ['unbounded applied delta', { appliedDelta: 8 }],
+    ['unsafe integer depth', { depth: Number.MAX_SAFE_INTEGER + 1 }],
+  ])('rejects remote difficulty with %s', async (_description, fields) => {
+    const payload = remoteEnvelope('crypt-eight-squares', 31);
+    Object.assign(payload.difficulty, fields);
+
+    await expect(chroniclesResolveAreaManifest('crypt-eight-squares', {
+      seed: 31,
+      fetchManifest: vi.fn().mockResolvedValue(payload),
+    })).rejects.toMatchObject({ reason: 'invalid-difficulty' });
+  });
+
+  it('accepts a valid negative Go difficulty delta on a shallow floor', async () => {
+    const payload = remoteEnvelope('crypt-eight-squares', 32);
+    Object.assign(payload.difficulty, {
+      authoredLevel: 5,
+      requestedDelta: -1,
+      appliedDelta: -1,
+    });
+
+    const resolved = await chroniclesResolveAreaManifest('crypt-eight-squares', {
+      seed: 32,
+      fetchManifest: vi.fn().mockResolvedValue(payload),
+    });
+    expect(resolved.difficulty).toMatchObject({
+      targetLevel: 4, authoredLevel: 5, requestedDelta: -1, appliedDelta: -1,
+    });
+  });
+
   it('does not ask the backend for an unknown internal map id', async () => {
     const fetchManifest = vi.fn();
 
