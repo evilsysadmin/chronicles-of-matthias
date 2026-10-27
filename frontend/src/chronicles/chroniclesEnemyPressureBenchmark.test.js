@@ -143,7 +143,11 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(single.attacks).toBe(4);
     expect(corridor.enemies).toBe(3);
     expect(corridor.attacks).toBe(single.attacks);
-    expect(corridor.blocked).toBeGreaterThanOrEqual(8);
+    // The two rear creatures spend 3 actions trying to approach and
+    // 5 actions physically blocked; none reaches the company's melee cell.
+    expect(corridor.moves).toBe(3);
+    expect(corridor.blocked).toBe(5);
+    expect(corridor.moves + corridor.blocked).toBe(8);
     expect(corridor.byEnemy[WEST].attacks).toBe(4);
     expect(corridor.byEnemy[OVERFLOW].attacks).toBe(0);
     expect(corridor.byEnemy[REAR].attacks).toBe(0);
