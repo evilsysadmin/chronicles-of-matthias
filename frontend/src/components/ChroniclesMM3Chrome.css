@@ -875,9 +875,12 @@
   .chronicles .chronicles-minimap__marker.is-interactable { fill: #f2efe6; stroke: #3a1d08; }
   .chronicles .chronicles-minimap__party { fill: #e8241c; stroke: #3b0303; filter: none; }
 
-  /* In combat the minimap keeps its slot; the roster gets a small row of its own. */
+  /* A combat roster adds another rail item. Give the map the flexible
+     track, NOT an intrinsic-height track: the fixed-height map plus roster
+     previously pushed the six portraits below the viewport. Portraits,
+     action controls and statusbar are always allocated first. */
   .chronicles .chronicles-shell:has(.chronicles-combat-roster) {
-    grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto auto 0 auto;
     grid-template-areas:
       'view map'
       'view combat'
@@ -887,6 +890,15 @@
       'view help'
       'view .'
       'party party';
+  }
+  .chronicles .chronicles-shell:has(.chronicles-combat-roster) .chronicles-minimap {
+    /* 100% of the leftover map track, capped at the normal exploration
+       size; shrinking its displayed area does not change discovery rules. */
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    max-height: clamp(230px, 43dvh, 400px);
+    align-self: start;
   }
   .chronicles .chronicles-combat-roster {
     grid-area: combat;
