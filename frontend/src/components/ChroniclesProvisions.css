@@ -24,6 +24,8 @@
     linear-gradient(0deg, rgba(16,12,10,.9), transparent 70%, rgba(16,12,10,.62));
 }
 .chronicles-provisions__head {
+  /* Keep the exit control visible and clickable in short landscape viewports. */
+  position: sticky; top: 0; z-index: 2; flex-shrink: 0;
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 16px; padding: clamp(16px,3vw,42px);
   background: linear-gradient(90deg, rgba(20,13,11,.95), rgba(22,14,12,.37));
