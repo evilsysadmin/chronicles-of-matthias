@@ -108,4 +108,48 @@ describe('Chronicles fresh initiative roster integrity', () => {
     expect(rolls).toBe(0);
   });
 
+  it.each(['', '   ', null])('ends restored enemy-only initiative when every living hero has invalid id %s', (invalidId) => {
+    const state = {
+      phase: 'combat',
+      party: [{ id: invalidId, hp: 7, agility: 5 }],
+      goblinHp: 3,
+      initiative: {
+        version: 1, die: '1d8', round: 2, cursor: 0,
+        order: [
+          { id: invalidId, kind: 'party', initiative: 9 },
+          { id: 'goblin', kind: 'enemy', initiative: 4 },
+        ],
+      },
+    };
+    const next = chroniclesAdvanceCombatInitiative(state, [{ id: 'goblin', hpKey: 'goblinHp' }]);
+    expect(next.phase).toBe('defeated');
+    expect(next.initiative).toBeNull();
+    expect(next.turnPhase).toBe('party');
+  });
+
+  it('skips an invalid saved hero slot without stealing a valid enemy turn', () => {
+    const state = {
+      phase: 'combat',
+      party: [
+        { id: 'matthias', hp: 7, agility: 5 },
+        { id: '  ', hp: 8, agility: 99 },
+      ],
+      goblinHp: 3,
+      initiative: {
+        version: 1, die: '1d8', round: 3, cursor: 0,
+        order: [
+          { id: 'matthias', kind: 'party', initiative: 10 },
+          { id: '  ', kind: 'party', initiative: 9 },
+          { id: 'goblin', kind: 'enemy', initiative: 4 },
+        ],
+      },
+    };
+    const enemies = [{ id: 'goblin', hpKey: 'goblinHp' }];
+    const next = chroniclesAdvanceCombatInitiative(state, enemies);
+    expect(next.phase).toBe('combat');
+    expect(next.initiative.order.map(({ id }) => id)).toEqual(['matthias', 'goblin']);
+    expect(chroniclesCurrentInitiativeActor(next.initiative)?.id).toBe('goblin');
+    expect(next.initiative.round).toBe(3);
+  });
+
 });
