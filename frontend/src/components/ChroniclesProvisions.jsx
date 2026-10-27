@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useEscapeToClose } from '../useEscapeToClose.js';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { CHRONICLES_PROVISIONS_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
@@ -13,6 +14,10 @@ import './ChroniclesProvisions.css';
 export const CHRONICLES_QUARTERMASTER_ID = 'first-book-quartermaster';
 
 export default function ChroniclesProvisions({ state, onBuy, onClose }) {
+  // The back stack handles Escape at document level, before the parent's
+  // window key handler. Register this modal as the topmost Back/Escape owner;
+  // otherwise that parent opens the adventure menu behind the shop.
+  useEscapeToClose(onClose, { contextMenu: false });
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
   const buyLockRef = useRef(false);
