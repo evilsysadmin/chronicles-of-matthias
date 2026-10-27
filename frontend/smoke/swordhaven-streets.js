@@ -194,6 +194,7 @@ try {
       && tavern?.getObjectByName('tavern-brick-stepped-gable')?.userData.chroniclesDecorativeOnly
       && tavern?.getObjectByName('tavern-gable-brick-steps')?.count === 8
       && tavern?.getObjectByName('tavern-gable-stone-coping')?.count === 8
+      && tavern?.getObjectByName('tavern-brick-stepped-rear-gable')?.userData.chroniclesDecorativeOnly
       && !tavern?.getObjectByName('pitched-roof-dormer--1')
       && !store?.getObjectByName('tavern-brick-stepped-gable')
       && !forge?.getObjectByName('tavern-double-hearth')
