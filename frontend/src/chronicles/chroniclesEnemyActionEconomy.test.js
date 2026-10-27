@@ -51,6 +51,38 @@ describe('Chronicles MM3 enemy action economy', () => {
     expect(chroniclesRuntimeEnemyPosition(third, { id: GOBLIN })).toEqual({ x: 1, y: 2 });
   });
 
+  it('chases an opening arrow beyond the 3-cell alert radius with one move per turn', () => {
+    const start = corridorFight(5); // 5 tiles: deliberately past engageRange 3
+    const goblin = chroniclesActiveEnemies(start).find(enemy => enemy.id === GOBLIN);
+    expect(goblin.ai.movement).toBe('hold');
+    expect(goblin.ai.engagedMovement).toBe('cardinal-chase');
+    expect(goblin.ai.attackReach).toBe(1);
+    const partyHp = start.party.map(hero => hero.hp);
+    let state = start;
+    for (const y of [5, 4, 3, 2]) {
+      const before = chroniclesRuntimeEnemyPosition(state, goblin);
+      const after = chroniclesResolveEnemyActor(state, GOBLIN);
+      const position = chroniclesRuntimeEnemyPosition(after, goblin);
+      expect(after.enemyTurnEvents.map(event => event.type)).toEqual(['move']);
+      expect(position).toEqual({ x: 1, y });
+      expect(Math.abs(position.x - before.x) + Math.abs(position.y - before.y)).toBe(1);
+      expect(after.party.map(hero => hero.hp)).toEqual(partyHp);
+      state = after;
+    }
+    const adjacent = chroniclesResolveEnemyActor(state, GOBLIN);
+    expect(adjacent.enemyTurnEvents.map(event => event.type)).toEqual(['attack']);
+    expect(chroniclesRuntimeEnemyPosition(adjacent, goblin)).toEqual({ x: 1, y: 2 });
+  });
+
+  it('never extends distant MM3 pursuit to the separate Tactics movement rules', () => {
+    const combat = corridorFight(5);
+    const tactics = { ...combat, combatRules: null };
+    const goblin = chroniclesActiveEnemies(tactics).find(enemy => enemy.id === GOBLIN);
+    const outcome = chroniclesResolveEnemyActor(tactics, GOBLIN);
+    expect(outcome.enemyTurnEvents).toEqual([]);
+    expect(chroniclesRuntimeEnemyPosition(outcome, goblin)).toEqual({ x: 1, y: 6 });
+  });
+
   it('uses the same move-or-attack rule in the collective enemy resolver', () => {
     const start = corridorFight(2);
     const hp = start.party[0].hp;
