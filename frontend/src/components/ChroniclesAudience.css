@@ -40,6 +40,25 @@
   object-position: center;
   image-rendering: auto;
 }
+/* Ilse: display the bundled SVG immediately; the clean remote panorama only
+   fades in after decoding. The overlay may never affect dialogue hit targets. */
+.chronicles-audience__scene img.chronicles-shop__premium-art {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-out;
+}
+.chronicles-audience__scene img.chronicles-shop__premium-art.is-ready {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-audience__scene img.chronicles-shop__premium-art { transition: none; }
+}
+.chronicles-audience__scene[data-chronicles-audience-room='temple'] img {
+  object-position: 49% 40%;
+}
+
 .chronicles-audience__head,
 .chronicles-audience__dialogue {
   position: relative;

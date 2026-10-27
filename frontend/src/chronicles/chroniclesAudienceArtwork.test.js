@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import ChroniclesAudience from '../components/ChroniclesAudience.jsx';
+import { CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from './chroniclesShopArt.js';
 import { chroniclesNpcDialogueForState } from './chroniclesNpcDialogue.js';
 import { chroniclesContextualContentAction, createChroniclesState } from '../chroniclesOfMatthias.js';
 
@@ -51,17 +52,28 @@ describe('Swordhaven audience premium environment', () => {
     expect(html).toContain('data-chronicles-dialogue-choice="quest"');
   });
 
-  it('keeps Ilse temple unchanged', () => {
-    for (const [x, y, room, who] of [[14, 6, 'temple', 'Sacerdotisa Ilse']]) {
-      const state = { ...createChroniclesState('swordhaven-first-book'), x, y };
-      const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
-      const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
-      // Vite may inline small legacy SVGs as data: URIs, so check the
-      // actual room contract and preserved NPC identity, not a filename.
-      expect(html).toContain('data-chronicles-audience-room="' + room + '"');
-      expect(html).toContain(who);
-      expect(html).toContain('role="dialog"');
-    }
+  it('gives Ilse the approved R2 temple while preserving its local room and authentic dialogue', () => {
+    expect(CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_KEY).toBe('stores/templo-ilse-premium.webp');
+    expect(CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL)
+      .toBe('https://assets.chronicles.shadowops.dpdns.org/stores/templo-ilse-premium.webp');
+    const state = { ...createChroniclesState('swordhaven-first-book'), x: 14, y: 6 };
+    const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
+    const html = renderToStaticMarkup(createElement(ChroniclesAudience, { dialogue, onAction: () => '', onClose: () => {} }));
+    expect(html).toContain('data-chronicles-audience-room="temple"');
+    expect(html).toContain('Sacerdotisa Ilse');
+    expect(html).toContain('data-chronicles-dialogue-choice="wounded"');
+    expect(html).toContain('data-chronicles-dialogue-choice="rookwood"');
+    expect(html).toContain('data-chronicles-dialogue-choice="quest"');
+    expect(html).toContain('data-chronicles-dialogue-choice="leave"');
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(html).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(html).toContain(CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL);
+    // Small Vite SVGs may inline to data URIs: we verify its one accessible
+    // original image, while the remote overlay is visual-only.
+    expect(html).toContain('alt="La sacerdotisa Ilse ante el altar del templo"');
+    expect(html).toContain('aria-hidden="true"');
+    expect((html.match(/alt="La sacerdotisa Ilse ante el altar del templo"/g) || [])).toHaveLength(1);
   });
 });
 
@@ -81,6 +93,13 @@ describe('Cinematic audience layout contracts', () => {
     expect(css).toMatch(/grid-template-areas:\s*'scene' 'head' 'dialogue'/);
     expect(css).toMatch(/\.chronicles-audience__scene\s*\{\s*position:\s*relative;/);
     expect(css).toMatch(/\.chronicles-audience__actions button\s*\{ min-height:\s*44px;/);
+  });
+
+  it('does not let Ilse remote art overlay its dialogue, including reduced motion', () => {
+    expect(css).toMatch(/\.chronicles-audience__scene img\.chronicles-shop__premium-art\s*\{[^}]*position:\s*absolute;[^}]*opacity:\s*0;/s);
+    expect(css).toMatch(/\.chronicles-audience__scene img\.chronicles-shop__premium-art\.is-ready\s*\{[^}]*opacity:\s*1;/s);
+    expect(css).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*chronicles-shop__premium-art\s*\{\s*transition:\s*none;/);
+    expect(css).toContain("data-chronicles-audience-room='temple'");
   });
 
   it('guards the approved scene with its original local fallback on failure', () => {

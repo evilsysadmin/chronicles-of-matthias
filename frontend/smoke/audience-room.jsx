@@ -7,8 +7,9 @@ import { chroniclesNpcDialogueForState } from '../src/chronicles/chroniclesNpcDi
 import ChroniclesAudience from '../src/components/ChroniclesAudience.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
 
-const NPCS = Object.freeze({ aldric: [11, 10], brask: [4, 6] });
-const npc = new URLSearchParams(window.location.search).get('npc') === 'brask' ? 'brask' : 'aldric';
+const NPCS = Object.freeze({ aldric: [11, 10], brask: [4, 6], ilse: [14, 6] });
+const requestedNpc = new URLSearchParams(window.location.search).get('npc');
+const npc = Object.hasOwn(NPCS, requestedNpc) ? requestedNpc : 'aldric';
 const [x, y] = NPCS[npc];
 const state = { ...createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }), x, y };
 const dialogue = chroniclesNpcDialogueForState(state, chroniclesContextualContentAction(state));
