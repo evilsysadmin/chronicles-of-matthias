@@ -24,9 +24,9 @@ export function chroniclesCombatKeyMode(key, { inCombat = false } = {}) {
 // Only plain Tab on the active menu GEM acts as the reverse toggle. Tab inside
 // buttons/forms keeps native keyboard navigation; Shift+Tab stays untouched.
 export function chroniclesAdventureTabClosesMenu(event, summary, {
-  menuOpen = false, confirmExitWithoutSaving = false, feedbackOpen = false,
+  menuOpen = false, confirmExitWithoutSaving = false, confirmLoadSelection = false, feedbackOpen = false,
 } = {}) {
-  return Boolean(menuOpen && !confirmExitWithoutSaving && !feedbackOpen
+  return Boolean(menuOpen && !confirmExitWithoutSaving && !confirmLoadSelection && !feedbackOpen
     && event?.key === 'Tab' && !event.shiftKey && !event.repeat
     && !event.defaultPrevented && !event.ctrlKey && !event.altKey && !event.metaKey
     && event.target === summary);
@@ -37,14 +37,14 @@ export function chroniclesAdventureTabClosesMenu(event, summary, {
 // Do not steal keys from text fields or repeated/composed browser events.
 export function chroniclesAdventureMenuShortcut(event, {
   menuOpen = false, saveBusy = false, confirmExitWithoutSaving = false,
-  subpageOpen = false,
+  confirmLoadSelection = false, subpageOpen = false,
 } = {}) {
   if (!menuOpen || !event || event.repeat || event.defaultPrevented || event.isComposing
     || event.ctrlKey || event.altKey || event.metaKey) return null;
   // Escape is a dialogue-level dismissal even with a range/text control
   // focused. Every other shortcut remains owned by focused form controls.
   if (event.key === 'Escape') return confirmExitWithoutSaving ? 'cancel-exit'
-    : subpageOpen ? 'back-feedback' : 'close';
+    : confirmLoadSelection ? 'cancel-load' : subpageOpen ? 'back-feedback' : 'close';
   // Pages within the adventure folio own their own keyboard interactions.
   // Do not save or request a dangerous exit from feedback navigation buttons
   // or the still-focusable outer summary while the feedback page is visible.
@@ -52,7 +52,7 @@ export function chroniclesAdventureMenuShortcut(event, {
   const target = event.target;
   if (target?.isContentEditable
     || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
-  if (saveBusy || confirmExitWithoutSaving) return null;
+  if (saveBusy || confirmExitWithoutSaving || confirmLoadSelection) return null;
   if (event.key === 's' || event.key === 'S') return 'save';
   if (event.key === 'q' || event.key === 'Q') return 'request-exit';
   return null;
@@ -65,6 +65,7 @@ export function chroniclesAdventureMenuShortcut(event, {
 export function chroniclesFirstPersonEscapeAction({
   menuOpen = false,
   confirmExitWithoutSaving = false,
+  confirmLoadSelection = false,
   feedbackOpen = false,
   spellMenuOpen = false,
   sheetOpen = false,
@@ -78,6 +79,7 @@ export function chroniclesFirstPersonEscapeAction({
   quickStatusOpen = false,
 } = {}) {
   if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
+  if (menuOpen && confirmLoadSelection) return 'cancel-load';
   // Escape and browser Back must first leave the nested feedback page, even
   // when the outer summary (rather than the textarea) owns keyboard focus.
   if (menuOpen && feedbackOpen) return 'back-feedback';
@@ -109,7 +111,7 @@ export function chroniclesContainAdventureMenuTab(event, menuDetails) {
   // remain between "Sí, salir" and the safely focused "Cancelar" rather
   // than reaching the mixer, Save or Continue behind the question.
   const confirmation = menuDetails.querySelector?.(
-    '[role="group"][aria-label="Confirmar salida sin guardar"]',
+    '[role="group"][aria-label="Confirmar salida sin guardar"], [role="group"][aria-label="Confirmar cambio de partida"]',
   );
   const scope = confirmation || menuDetails;
   const controls = Array.from(scope.querySelectorAll(
@@ -152,7 +154,7 @@ export function chroniclesContainAdventureMenuTab(event, menuDetails) {
 export function chroniclesRestoreAdventureMenuFocus(menuDetails, focused) {
   if (!menuDetails?.open || !focused || menuDetails.contains(focused)) return false;
   const question = menuDetails.querySelector?.(
-    '[role="group"][aria-label="Confirmar salida sin guardar"]',
+    '[role="group"][aria-label="Confirmar salida sin guardar"], [role="group"][aria-label="Confirmar cambio de partida"]',
   );
   const safe = question?.querySelector('button:last-of-type')
     || menuDetails.querySelector('summary');
