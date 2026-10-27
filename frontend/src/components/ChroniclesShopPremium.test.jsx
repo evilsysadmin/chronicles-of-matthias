@@ -53,7 +53,9 @@ describe('Chronicles premium shop UI', () => {
     expect(potion).toContain('data-chronicles-shop="first-book-apothecary"');
     expect(potion).toContain('data-chronicles-shop-room="botica-apothecary"');
     expect(potion).toContain('botica-apothecary.svg');
-    expect(potion).not.toContain('data-chronicles-shop-art-layer="premium"');
+    expect(potion).toContain('data-chronicles-shop-art-layer="fallback"');
+    expect(potion).toContain('data-chronicles-shop-art-layer="premium"');
+    expect(potion).toContain('https://assets.chronicles.shadowops.dpdns.org/stores/botica-premium.webp');
     expect(potion).toContain('Poción de curación');
     expect(potion).toContain('Pergamino de llamas');
     for (const id of ['healing-potion', 'mana-potion', 'fire-scroll']) {

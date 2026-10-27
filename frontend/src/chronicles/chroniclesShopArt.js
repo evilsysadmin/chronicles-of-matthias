@@ -33,3 +33,11 @@ export function chroniclesShopArtUrl(logicalId, source = manifest) {
 export const CHRONICLES_ODO_UPLOADED_ART_KEY = 'stores/Odo_Armeria_Premium_Fondo_Limpio_2026.webp';
 export const CHRONICLES_ODO_UPLOADED_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_ODO_UPLOADED_ART_KEY}`;
+
+// Approved clean 1672×941 Swordhaven apothecary illustration, uploaded by
+// the player to the independent Chronicles bucket. This is a mutable key,
+// not an immutable SHA-named Chess Studio asset; never request long-lived
+// immutable cache headers. The bundled SVG remains a fail-safe.
+export const CHRONICLES_BOTICA_PREMIUM_ART_KEY = 'stores/botica-premium.webp';
+export const CHRONICLES_BOTICA_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_BOTICA_PREMIUM_ART_KEY}`;
