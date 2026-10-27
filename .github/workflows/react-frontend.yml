@@ -100,6 +100,8 @@ jobs:
           # Real Swordhaven civic audiences, including portal stacking and
           # full-room artwork geometry at touch/desktop viewports.
           node smoke/run-timed.mjs smoke/audience-room.mjs http://localhost:4174/smoke/audience-room.html
+          # Delayed R2 image must reveal no fallback frames: shop, audience, tavern, offline and cancel.
+          node smoke/run-timed.mjs smoke/interior-art-gate.mjs http://localhost:4174/smoke/shop-room.html
           # Real Swordhaven tavern: independent rest/food/rumor transactions and ESC.
           node smoke/run-timed.mjs smoke/inn-room.mjs http://localhost:4174/smoke/inn-room.html
           # Real expedition journal: truthful region hints, chapter navigation and mobile layout.
