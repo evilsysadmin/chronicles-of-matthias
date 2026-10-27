@@ -1,0 +1,97 @@
+.chronicles-provisions__backdrop {
+  position: fixed; inset: 0; z-index: 10150; color: #f4e4c9;
+  background: #1a1210; font-family: Georgia, serif;
+}
+.chronicles-provisions {
+  position: relative; isolation: isolate; width: 100%; height: 100dvh;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.chronicles-provisions__scene {
+  position: fixed; inset: 0; z-index: -2; overflow: hidden;
+  pointer-events: none; background: #30231d;
+}
+.chronicles-provisions__scene img {
+  position: absolute; inset: 0; display: block; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 45%; pointer-events: none;
+}
+.chronicles-provisions__scene img.chronicles-shop__premium-art {
+  opacity: 0; transition: opacity 180ms ease-out;
+}
+.chronicles-provisions__scene img.chronicles-shop__premium-art.is-ready { opacity: 1; }
+.chronicles-provisions__veil {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(16,12,10,.87), transparent 62%),
+    linear-gradient(0deg, rgba(16,12,10,.9), transparent 70%, rgba(16,12,10,.62));
+}
+.chronicles-provisions__head {
+  /* Keep the exit control visible and clickable in short landscape viewports. */
+  position: sticky; top: 0; z-index: 2; flex-shrink: 0;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; padding: clamp(16px,3vw,42px);
+  background: linear-gradient(90deg, rgba(20,13,11,.95), rgba(22,14,12,.37));
+}
+.chronicles-provisions__head > div { min-width: 0; }
+.chronicles-provisions__head small, .chronicles-provisions__eyebrow {
+  font: 700 .78rem/1.4 system-ui,sans-serif; letter-spacing: .16em; color: #e3b570;
+}
+.chronicles-provisions__head h2 {
+  font-size: clamp(1.8rem,4vw,3.5rem); line-height: 1.1; margin: 8px 0;
+  color: #ffe2ab;
+}
+.chronicles-provisions__head p { margin: 0; line-height: 1.45; }
+.chronicles-provisions button { cursor: pointer; border-radius: 0; }
+.chronicles-provisions button:focus-visible { outline: 3px solid #fff4a8; outline-offset: 3px; }
+.chronicles-provisions__head button {
+  flex-shrink: 0; width: 48px; height: 48px; font-size: 2rem;
+  border: 1px solid #d4ac72; color: #f9e8c7; background: #211611df;
+}
+.chronicles-provisions__counter {
+  flex: 1; display: flex; align-items: center; justify-content: flex-end;
+  min-height: 0; padding: clamp(14px,3vw,42px);
+}
+.chronicles-provisions__offer {
+  width: min(100%,440px); padding: clamp(18px,3vw,30px);
+  background: rgba(25,16,13,.92); border: 1px solid #bc925e;
+  box-shadow: 0 14px 38px #0907077a;
+}
+.chronicles-provisions__offer h3 { font-size: 1.9rem; color: #ffe0a0; margin: 11px 0; }
+.chronicles-provisions__offer p { line-height: 1.48; color: #e8ceb0; }
+.chronicles-provisions__balances { display: flex; flex-wrap: wrap; gap: 12px; font-weight: 700; }
+.chronicles-provisions__balances span { padding: 8px; background: #14100ecc; border: 1px solid #876940; }
+.chronicles-provisions__price { font-weight: bold; }
+.chronicles-provisions__offer button {
+  min-height: 48px; width: 100%; padding: 11px;
+  font: 700 1rem/1.3 system-ui,sans-serif;
+  background: #d2a86b; color: #23160d; border: 1px solid #f3d9a0;
+}
+.chronicles-provisions__offer button:disabled { opacity: .55; cursor: not-allowed; }
+.chronicles-provisions__offer [role=status] { margin-bottom: 12px; line-height: 1.5; }
+.chronicles-provisions__offer [data-provisions-result=success] { color: #eaf6d6; }
+.chronicles-provisions__foot {
+  padding: 14px clamp(16px,3vw,42px); display: flex; align-items: center;
+  justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: #130e0ce8; border-top: 1px solid #9e7649;
+}
+.chronicles-provisions__foot button {
+  min-height: 44px; padding: 9px 16px; background: #24160f;
+  color: #f7dda6; border: 1px solid #bc9463;
+}
+@media (max-width:680px), (max-height:570px) {
+  /* Compact landscape: never let the tall counter overpaint header/close.
+     Scroll the actual room content instead of squeezing the main flex row. */
+  .chronicles-provisions__head, .chronicles-provisions__foot { flex-shrink: 0; }
+  .chronicles-provisions__counter { flex: 0 0 auto; min-height: max-content; }
+  .chronicles-provisions__head { padding: 13px 16px; }
+  .chronicles-provisions__head h2 { font-size: 1.75rem; }
+  .chronicles-provisions__head p { font-size: .86rem; }
+  .chronicles-provisions__head button { width: 44px; height: 44px; }
+  .chronicles-provisions__counter { align-items: flex-end; padding: 12px; }
+  .chronicles-provisions__offer { padding: 14px; }
+  .chronicles-provisions__offer h3 { font-size: 1.5rem; }
+  .chronicles-provisions__offer p { margin: 8px 0; }
+  .chronicles-provisions__foot { padding: 12px; }
+  .chronicles-provisions__foot span { font-size: .8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-provisions__scene img.chronicles-shop__premium-art { transition: none; }
+}

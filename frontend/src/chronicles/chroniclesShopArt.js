@@ -76,3 +76,10 @@ export const CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL =
 export const CHRONICLES_TAVERN_PREMIUM_ART_KEY = 'stores/taberna-premium.webp';
 export const CHRONICLES_TAVERN_PREMIUM_ART_URL =
   `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_TAVERN_PREMIUM_ART_KEY}`;
+
+// Player-approved premium general store, in the separate Chronicles R2 bucket.
+// Mutable URL: no content-addressed/immutable-caching assumptions. A local
+// illustration remains available while CDN artwork loads or fails.
+export const CHRONICLES_PROVISIONS_PREMIUM_ART_KEY = 'stores/tienda-provisiones-premium.webp';
+export const CHRONICLES_PROVISIONS_PREMIUM_ART_URL =
+  `https://assets.chronicles.shadowops.dpdns.org/${CHRONICLES_PROVISIONS_PREMIUM_ART_KEY}`;

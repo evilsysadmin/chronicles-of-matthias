@@ -112,6 +112,7 @@ import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicl
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesInn from './ChroniclesInn.jsx';
+import ChroniclesProvisions, { CHRONICLES_QUARTERMASTER_ID } from './ChroniclesProvisions.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
 import ChroniclesGuild from './ChroniclesGuild.jsx';
 import ChroniclesSpellMenu, { ChroniclesSpellTargetBanner } from './ChroniclesSpellMenu.jsx';
@@ -288,6 +289,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const automapVisitedRef = useRef({});
   const stateRef = useRef(null);
   const [state, setState] = useState(null);
+  // Opening the quartermaster counter is a free presentation transition.
+  const [provisionsOpen, setProvisionsOpen] = useState(false);
+  const provisionsOpenRef = useRef(false);
+  const openProvisions = useCallback(() => {
+    provisionsOpenRef.current = true;
+    setProvisionsOpen(true);
+  }, []);
+  const closeProvisions = useCallback(() => {
+    provisionsOpenRef.current = false;
+    setProvisionsOpen(false);
+  }, []);
+  useEffect(() => {
+    closeProvisions(); // Do not retain a shop across map/run transitions.
+  }, [state?.mapId, entryView, closeProvisions]);
   const [selectedMemberId, setSelectedMemberId] = useState('matthias');
   const [sheetMemberId, setSheetMemberId] = useState(null);
   const [sheetInitialFolio, setSheetInitialFolio] = useState('record');
@@ -659,6 +674,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const dispatch = useCallback((action, acceptedTravel = false) => {
     const current = stateRef.current;
     if (!current) return;
+    // No world input while the counter is open, except the confirmed sale.
+    if (provisionsOpenRef.current && !(action?.type === 'interact'
+      && action?.provisionsPurchase === true)) return current;
     // The pending choice owns movement until it is answered. No turns,
     // encounters or checkpoint may run while the prompt is on screen.
     if (areaTransitionRef.current && !acceptedTravel) return current;
@@ -709,6 +727,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const dialogue = nextTile === '#' ? chroniclesNpcDialogueForState(
         atDoor, chroniclesContextualContentAction(atDoor),
       ) : null;
+      if (atDoor !== current && chroniclesContextualContentAction(atDoor)?.id === CHRONICLES_QUARTERMASTER_ID) {
+        stateRef.current = atDoor;
+        setState(atDoor);
+        openProvisions();
+        return atDoor;
+      }
       if (dialogue) {
         if (atDoor !== current) {
           stateRef.current = atDoor;
@@ -869,7 +893,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }, 1800);
     }
     return next;
-  }, [showHitSplats, showLootNotice, showPortraitLevelUps]);
+  }, [showHitSplats, showLootNotice, showPortraitLevelUps, openProvisions]);
 
   const cancelAreaTravel = useCallback(() => {
     areaTransitionRef.current = null;
@@ -991,8 +1015,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       setAudience(dialogue);
       return;
     }
+    if (contextual?.id === CHRONICLES_QUARTERMASTER_ID) {
+      openProvisions();
+      return;
+    }
     dispatch('interact');
-  }, [dispatch]);
+  }, [dispatch, openProvisions]);
 
   // mode: 'auto' (botón táctil), 'melee' (A · atacar), 'missile' (S · disparar).
   const attackWithSelected = useCallback((mode = 'auto') => {
@@ -1424,6 +1452,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (provisionsOpenRef.current) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeProvisions();
+        } else if (event.key !== 'Tab') event.preventDefault();
+        return;
+      }
       // Form fields retain keyboard input. Shift+Tab navigates normally.
       // Plain Tab on the focused menu gem toggles it; inside folio controls,
       // native Tab still navigates and cannot discard a draft or save.
@@ -1603,7 +1638,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold,
+  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
     confirmExitWithoutSaving, confirmLoadSelection, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget, noticeBoardOpen]);
@@ -2185,8 +2220,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     className="is-contextual"
                     data-chronicles-touch-action="interact"
                     onClick={interactWithContext}
-                    aria-label={exitUnderfoot ? 'Usar salida de la región' : contextualAction?.label || `Hablar con ${npcAtPosition.name}`}
-                  >✦<small>{exitUnderfoot ? 'USAR' : contextualAction?.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID ? 'VOLVER' : npcAtPosition ? 'ENTRAR' : 'USAR'}</small></button>
+                    aria-label={exitUnderfoot ? 'Usar salida de la región'
+                      : contextualAction?.id === CHRONICLES_QUARTERMASTER_ID ? 'Entrar en tienda de provisiones'
+                      : contextualAction?.label || `Hablar con ${npcAtPosition.name}`}
+                  >✦<small>{exitUnderfoot ? 'USAR' : contextualAction?.id === CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID ? 'VOLVER' : npcAtPosition || contextualAction?.id === CHRONICLES_QUARTERMASTER_ID ? 'ENTRAR' : 'USAR'}</small></button>
                 )}
                 <button
                   type="button"
@@ -2287,6 +2324,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       {state.inn && !sheetMember && (
         <ChroniclesInn state={state} onAction={dispatch}
           onClose={() => dispatch({ type: 'inn-close' })} />
+      )}
+
+      {provisionsOpen && !sheetMember && (
+        <ChroniclesProvisions state={state}
+          onBuy={() => {
+            const current = stateRef.current;
+            if (chroniclesContextualContentAction(current)?.id !== CHRONICLES_QUARTERMASTER_ID) return current;
+            return dispatch({ type: 'interact', provisionsPurchase: true });
+          }}
+          onClose={closeProvisions} />
       )}
 
       {state.shop && !sheetMember && (
