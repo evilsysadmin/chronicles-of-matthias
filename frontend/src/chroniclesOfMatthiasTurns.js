@@ -303,10 +303,17 @@ function nearestPartyDistance(state, position) {
 
 function chooseRetreatCardinalStep(state, enemy, from) {
   const currentDistance = nearestPartyDistance(state, from);
+  // A MM3 archer who can fire now should not retreat diagonally or around
+  // a corner and lose their only firing lane. If no retreat preserves a
+  // legal shot, stand and attack instead. Tactics keeps its old movement.
+  const preserveFiringLane = chroniclesUsesMM3Combat(state)
+    && chroniclesEnemyAttackReach(enemy) > 1
+    && chroniclesEnemyCanAttackParty(state, enemy, from);
   return CHRONICLES_DIRECTIONS
     .map((step, index) => ({ x: from.x + step.dx, y: from.y + step.dy, index }))
     .filter((position) => canOccupy(state, enemy, position))
     .filter((position) => nearestPartyDistance(state, position) > currentDistance)
+    .filter((position) => !preserveFiringLane || chroniclesEnemyCanAttackParty(state, enemy, position))
     .sort((left, right) => (
       nearestPartyDistance(state, right) - nearestPartyDistance(state, left)
       || left.index - right.index
