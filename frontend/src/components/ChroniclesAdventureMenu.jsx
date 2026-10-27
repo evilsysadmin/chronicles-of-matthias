@@ -87,9 +87,9 @@ export default function ChroniclesAdventureMenu({
               <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave} disabled={saveBusy}>
                 {saveBusy ? 'Guardando…' : 'Guardar partida · S'}
               </button>
-              <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
               <button type="button" ref={requestLoadRef} className="chronicles-game-menu__load"
                 data-chronicles-menu-load onClick={onRequestLoad} disabled={saveBusy}>Cargar partida</button>
+              <button type="button" className="chronicles-game-menu__save-exit" onClick={onSaveExit} disabled={saveBusy}>Guardar y salir</button>
             </div>
             <div className="chronicles-game-menu__utility-row">
               <button type="button" aria-expanded={soundOpen}
