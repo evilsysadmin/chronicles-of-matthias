@@ -2386,3 +2386,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         state={state}
         target={routeHint?.position || null}
         routeLabel={routeHint?.text || ''}
+        objective={objective}
+        visitedMapIds={Object.keys(automapVisitedByMap)}
+        visitedCells={automapVisitedByMap[state.mapId] || []}
+        onClose={() => setAutomapOpen(false)}
+        onOpenSheet={(memberId) => openMemberSheet(memberId)}
+      />
+    </div>
+  );
+}
