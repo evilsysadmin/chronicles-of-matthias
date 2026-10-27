@@ -108,6 +108,16 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(masonry.count).toBeGreaterThan(30);
       const foliage = building.getObjectByName('window-box-leaf-clusters');
       const vines = building.getObjectByName('window-box-trailing-stems');
+      // The temple uses pointed stained glass instead of merchant planters
+      // in both the classic square and the real First Book campaign town.
+      const lancets = building.getObjectByName('temple-stained-glass-lancets');
+      if (lancets) {
+        expect(lancets.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(lancets.children).toHaveLength(2);
+        expect(foliage).toBeFalsy();
+        expect(vines).toBeFalsy();
+        continue;
+      }
       expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
       expect(vines).toBeInstanceOf(THREE.InstancedMesh);
       expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);

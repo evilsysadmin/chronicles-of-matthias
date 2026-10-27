@@ -482,7 +482,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   // Stone-fronted armorer, guild and botica have no merchant timber lattice.
   // Doors, shop signs, windows and their collision cells remain untouched.
-  if (!isArmor && !isMagic && !isApothecary) {
+  if (!isArmor && !isMagic && !isApothecary && !isTemple) {
     // Repeated timber posts and braces form recognisable half-timbered facades.
     const beamY = [1.02, height - 0.67];
     for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
@@ -537,46 +537,92 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   mesh(root, new THREE.SphereGeometry(0.08, 8, 6), mats.gold,
     'door-handle', [0.58, 1.45, facadeZ + 0.29]);
-  for (const x of [-width * 0.33, width * 0.33]) {
-    const front = facadeZ + 0.16;
-    mesh(root, new THREE.BoxGeometry(1.37, 1.23, 0.11), mats.window,
-      'warm-glass-window', [x, 2.75, front]);
-    for (const dx of [-0.70, 0.70]) mesh(root, new THREE.BoxGeometry(0.10, 1.38, 0.18),
-      mats.timber, 'window-side-frame', [x + dx, 2.75, front + 0.05]);
-    for (const dy of [-0.62, 0, 0.62]) mesh(root, new THREE.BoxGeometry(1.5, 0.10, 0.18),
-      mats.timber, 'window-rail', [x, 2.75 + dy, front + 0.05]);
-    mesh(root, new THREE.BoxGeometry(1.62, 0.15, 0.43), mats.stone,
-      'stone-window-sill', [x, 2.04, front + 0.11]);
-    mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
-      'flower-window-box', [x, 1.83, front + 0.34]);
-  }
-  // Leaded diamond glazing reads at eye level without eight draw calls
-  // per window. All lattice strips share a single per-building batch.
-  const diamondLead = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.035, 0.93, 0.043), mats.steel, 8,
-  );
-  diamondLead.name = 'window-diamond-leadwork';
-  const detail = new THREE.Object3D();
-  let leadIndex = 0;
-  for (const x of [-width * 0.33, width * 0.33]) {
-    for (const slope of [-1, 1]) {
-      for (const shift of [-0.24, 0.24]) {
-        detail.position.set(x + shift, 2.75, facadeZ + 0.39);
-        detail.rotation.set(0, 0, slope * 0.71);
-        detail.scale.set(1, 1, 1);
-        detail.updateMatrix();
-        diamondLead.setMatrixAt(leadIndex++, detail.matrix);
+  // The temple is dressed stone, not another flower-box merchant frontage.
+  // Two pointed blue-glass lancets replace the shared amber shop windows.
+  // Their raised tracery is decorative only: doors, map cells and collision
+  // geometry are still owned by the unchanged authored town footprint.
+  if (isTemple) {
+    const lancets = new THREE.Group();
+    lancets.name = 'temple-stained-glass-lancets';
+    lancets.userData.chroniclesDecorativeOnly = true;
+    lancets.position.z = facadeZ + 0.44;
+    const stainedGlass = material(0x477f96, {
+      emissive: 0x183344, emissiveIntensity: 0.32,
+      roughness: 0.35, metalness: 0.03, side: THREE.DoubleSide,
+    });
+    const stoneArch = new THREE.Shape();
+    stoneArch.moveTo(-0.82, -1.08);
+    stoneArch.lineTo(0.82, -1.08);
+    stoneArch.lineTo(0.82, 0.55);
+    stoneArch.lineTo(0, 1.40);
+    stoneArch.lineTo(-0.82, 0.55);
+    stoneArch.closePath();
+    const pane = new THREE.Shape();
+    pane.moveTo(-0.60, -0.85);
+    pane.lineTo(0.60, -0.85);
+    pane.lineTo(0.60, 0.44);
+    pane.lineTo(0, 1.08);
+    pane.lineTo(-0.60, 0.44);
+    pane.closePath();
+    for (const x of [-width * 0.33, width * 0.33]) {
+      const bay = new THREE.Group();
+      bay.name = 'temple-lancet-bay';
+      bay.position.set(x, 2.75, 0);
+      mesh(bay, new THREE.ShapeGeometry(stoneArch), mats.stone,
+        'temple-lancet-stone-arch', [0, 0, 0], !coarse);
+      mesh(bay, new THREE.ShapeGeometry(pane), stainedGlass,
+        'temple-lancet-stained-glass', [0, 0, 0.055], !coarse);
+      mesh(bay, new THREE.BoxGeometry(0.055, 1.75, 0.07), mats.gold,
+        'temple-lancet-lead-mullion', [0, -0.13, 0.11]);
+      mesh(bay, new THREE.BoxGeometry(1.18, 0.06, 0.07), mats.gold,
+        'temple-lancet-lead-transom', [0, -0.24, 0.11]);
+      mesh(bay, new THREE.BoxGeometry(1.74, 0.18, 0.40), mats.stone,
+        'temple-lancet-stone-sill', [0, -1.14, 0.05]);
+      lancets.add(bay);
+    }
+    root.add(lancets);
+  } else {
+    for (const x of [-width * 0.33, width * 0.33]) {
+      const front = facadeZ + 0.16;
+      mesh(root, new THREE.BoxGeometry(1.37, 1.23, 0.11), mats.window,
+        'warm-glass-window', [x, 2.75, front]);
+      for (const dx of [-0.70, 0.70]) mesh(root, new THREE.BoxGeometry(0.10, 1.38, 0.18),
+        mats.timber, 'window-side-frame', [x + dx, 2.75, front + 0.05]);
+      for (const dy of [-0.62, 0, 0.62]) mesh(root, new THREE.BoxGeometry(1.5, 0.10, 0.18),
+        mats.timber, 'window-rail', [x, 2.75 + dy, front + 0.05]);
+      mesh(root, new THREE.BoxGeometry(1.62, 0.15, 0.43), mats.stone,
+        'stone-window-sill', [x, 2.04, front + 0.11]);
+      mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
+        'flower-window-box', [x, 1.83, front + 0.34]);
+    }
+    // Leaded diamond glazing reads at eye level without eight draw calls
+    // per window. All lattice strips share a single per-building batch.
+    const diamondLead = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.035, 0.93, 0.043), mats.steel, 8,
+    );
+    diamondLead.name = 'window-diamond-leadwork';
+    const detail = new THREE.Object3D();
+    let leadIndex = 0;
+    for (const x of [-width * 0.33, width * 0.33]) {
+      for (const slope of [-1, 1]) {
+        for (const shift of [-0.24, 0.24]) {
+          detail.position.set(x + shift, 2.75, facadeZ + 0.39);
+          detail.rotation.set(0, 0, slope * 0.71);
+          detail.scale.set(1, 1, 1);
+          detail.updateMatrix();
+          diamondLead.setMatrixAt(leadIndex++, detail.matrix);
+        }
       }
     }
+    diamondLead.instanceMatrix.needsUpdate = true;
+    root.add(diamondLead);
+  
+    // Real shaped leaves, petals and hanging stems, four instanced draw calls
+    // per storefront. Far fewer instances on coarse/touch surfaces.
+    dressSwordhavenWindowBoxes(root, {
+      windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
+    });
   }
-  diamondLead.instanceMatrix.needsUpdate = true;
-  root.add(diamondLead);
-
-  // Real shaped leaves, petals and hanging stems, four instanced draw calls
-  // per storefront. Far fewer instances on coarse/touch surfaces.
-  dressSwordhavenWindowBoxes(root, {
-    windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
-  });
   // The former blank side walls now have inset windows and deep stone sills.
   // All facade details remain within the foundation's authored footprint.
   for (const side of [-1, 1]) {
