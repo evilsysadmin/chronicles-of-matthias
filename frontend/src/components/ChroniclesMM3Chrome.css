@@ -336,7 +336,7 @@
 /* ─── Desktop / wide landscape: the full MM3 screen ─────────────────────── */
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
   .chronicles .chronicles-shell {
-    grid-template-columns: minmax(0, 1fr) clamp(244px, 21vw, 304px);
+    grid-template-columns: minmax(0, 1fr) clamp(244px, 21vw, 316px);
     grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
     grid-template-areas:
       'view map'
@@ -346,8 +346,8 @@
       'view help'
       'view .'
       'party party';
-    gap: 10px 12px;
-    padding: 10px 12px 12px;
+    gap: 8px 8px;
+    padding: 4px 5px 4px;
     /* The big stone surface is toned down so the view stays the focus. */
     background: #a3a3a8 var(--mm3-stone) 0 0 / 128px 128px;
     background-blend-mode: multiply;
@@ -812,7 +812,7 @@
     top: auto;
     right: auto;
     width: auto;
-    height: clamp(120px, 21vh, 214px);
+    height: clamp(150px, 29dvh, 272px);
     padding: 8px;
     border: 3px solid;
     border-color: #f0c48a #5a2e12 #5a2e12 #f0c48a;
