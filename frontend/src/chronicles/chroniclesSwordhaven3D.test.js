@@ -212,6 +212,39 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the tavern a stepped brick roofline instead of merchant dormers', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const tavern = scene.getObjectByName('swordhaven-building-swordhaven-tavern');
+      const gable = tavern.getObjectByName('tavern-brick-stepped-gable');
+      expect(gable?.userData.chroniclesDecorativeOnly).toBe(true);
+      const bricks = gable.getObjectByName('tavern-gable-brick-steps');
+      const coping = gable.getObjectByName('tavern-gable-stone-coping');
+      expect(bricks).toBeInstanceOf(THREE.InstancedMesh);
+      expect(coping).toBeInstanceOf(THREE.InstancedMesh);
+      expect(bricks.count).toBe(8);
+      expect(coping.count).toBe(8);
+      expect(bricks.material).toBe(tavern.getObjectByName('timber-and-stone-walls').material);
+      expect(bricks.castShadow).toBe(!coarsePointer);
+      expect(gable.position.z).toBeGreaterThan(tavern.getObjectByName('roof-gable-1').position.z);
+      expect(gable.getObjectByName('tavern-gable-central-crown')).toBeTruthy();
+      const rear = tavern.getObjectByName('tavern-brick-stepped-rear-gable');
+      expect(rear?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(rear.position.z).toBeLessThan(0);
+      expect(rear.getObjectByName('tavern-gable-brick-steps')?.count).toBe(8);
+      expect(tavern.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+      expect(tavern.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+      expect(tavern.getObjectByName('shop-door')).toBeTruthy();
+      expect(tavern.getObjectByName('tavern-double-hearth')).toBeTruthy();
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-tavern')) {
+        expect(scene.getObjectByName('swordhaven-building-' + spec.id)
+          .getObjectByName('tavern-brick-stepped-gable')).toBeFalsy();
+      }
+      expect(createSwordhavenWalkGrid()[15][4]).toBe('.');
+    }
+  });
+
   it('gives the temple a colonnaded stone portico without hiding its door or signs', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
