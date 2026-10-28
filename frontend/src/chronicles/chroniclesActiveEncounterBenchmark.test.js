@@ -221,7 +221,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     }
   });
   it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
-    // Two existing squads in the same map. Walk one real dungeon tile after
+    // Two existing squads in the same map. Walk two real dungeon tiles after
     // the first fight, including actual turns to face north. The remainder
     // of the journey is still a test-only relocation, NOT a full route/attrition
     // benchmark. Reverse d8 order between fights; no resource reset.
@@ -232,19 +232,25 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         });
         let explored = first.state;
         // The west encounter starts at (1,5). Face north through spent
-        // exploration turns, then actually move to the walkable (1,4).
+        // exploration turns, then move through the walkable (1,4) and (1,3).
         // Do not teleport, refill PV/PH, or bypass enemy awareness for this leg.
         const turnActions = {
           0: [], 1: ['turn-left'], 2: ['turn-left', 'turn-left'], 3: ['turn-right'],
         }[explored.direction];
         expect(turnActions).toBeDefined();
-        const actions = [...turnActions, 'forward'];
+        const actions = [...turnActions, 'forward', 'forward'];
+        const expectedTiles = [{ x: 1, y: 4 }, { x: 1, y: 3 }];
+        let walkedTiles = 0;
         for (const action of actions) {
           const before = explored;
           const goblinPositions = Object.fromEntries(chroniclesActiveEnemies(before)
             .filter(({ id }) => CENTRAL_PACK.includes(id))
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
+          if (action === 'forward') {
+            expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
+            walkedTiles += 1;
+          }
           expect(explored.turns, `${action} must spend one exploration turn`).toBe(before.turns + 1);
           expect(explored.explorationEnemySteps, `${action} must advance pursuit exactly once`)
             .toBe((before.explorationEnemySteps || 0) + 1);
@@ -262,6 +268,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
             .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
         }
+        expect(walkedTiles).toBe(expectedTiles.length);
         const travel = {
           from: { x: first.state.x, y: first.state.y },
           to: { x: explored.x, y: explored.y },
@@ -284,7 +291,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(first.phase).toBe('explore');
       expect(first.downed).toBe(0);
       expect(travel.from).toEqual({ x: 1, y: 5 });
-      expect(travel.to).toEqual({ x: 1, y: 4 });
+      expect(travel.to).toEqual({ x: 1, y: 3 });
+      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(2);
       expect(travel.actions.at(-1)).toBe('forward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
