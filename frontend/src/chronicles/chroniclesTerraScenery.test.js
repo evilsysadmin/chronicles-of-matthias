@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
 const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'snowMound', 'ember']);
@@ -102,6 +102,61 @@ describe('Terra scenery', () => {
     expect(compact.children.every((m) => names.includes(m.name))).toBe(true);
     expect(detailed.children.every((m) => m.isInstancedMesh)).toBe(true);
     expect(compact.children.every((m) => m.isInstancedMesh)).toBe(true);
+  });
+
+  it('adds low flowering heather exclusively on B2 solid border cells, never on paths', () => {
+    const b2 = chroniclesMapById('terra-b2');
+    const center = { x: 10, y: 7 };
+    const args = { grid: b2.grid, center, biome: b2.biome, mapId: b2.id, scenery: b2.scenery };
+    const detailed = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const heather = detailed.getObjectByName('chronicles-terra-heather');
+    const reduced = mobile.getObjectByName('chronicles-terra-heather');
+    expect(heather).toBeInstanceOf(THREE.InstancedMesh);
+    expect(reduced).toBeInstanceOf(THREE.InstancedMesh);
+    expect(heather.count).toBeGreaterThan(5);
+    expect(reduced.count).toBeGreaterThan(0);
+    expect(reduced.count).toBeLessThan(heather.count);
+    expect(heather.count).toBeLessThan(70); // Bounded one draw call.
+    expect(heather.castShadow).toBe(false);
+    expect(heather.material.vertexColors).toBe(true);
+    expect(detailed.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    const matrix = new THREE.Matrix4();
+    const world = new THREE.Vector3();
+    for (let i = 0; i < heather.count; i += 1) {
+      heather.getMatrixAt(i, matrix);
+      world.setFromMatrixPosition(matrix);
+      const x = Math.round(world.x / 4) + center.x;
+      const y = Math.round(world.z / 4) + center.y;
+      expect(b2.grid[y][x], `heather at ${x},${y}`).toBe('#');
+      expect(Math.max(Math.abs(world.x - (x - center.x) * 4),
+        Math.abs(world.z - (y - center.y) * 4))).toBeLessThan(1.5);
+      expect([[0, -1], [1, 0], [0, 1], [-1, 0]]
+        .some(([dx, dy]) => b2.grid[y + dy]?.[x + dx] === '.')).toBe(true);
+    }
+    expect(buildTerraScenery({ ...args, mapId: 'terra-e2' })
+      .getObjectByName('chronicles-terra-heather')).toBeUndefined();
+    expect(buildTerraScenery({ ...args, biome: 'plains' })
+      .getObjectByName('chronicles-terra-heather')).toBeUndefined();
+    const again = buildTerraScenery(args).getObjectByName('chronicles-terra-heather');
+    expect(again.count).toBe(heather.count);
+    heather.getMatrixAt(0, matrix);
+    const compare = new THREE.Matrix4();
+    again.getMatrixAt(0, compare);
+    expect(compare.elements).toEqual(matrix.elements);
+  });
+
+  it('uses a small, finite, vertex-coloured heather silhouette without textures', () => {
+    const geometry = chroniclesBrezalHeatherGeometry();
+    const vertices = geometry.getAttribute('position');
+    const color = geometry.getAttribute('color');
+    expect(vertices.count).toBeLessThanOrEqual(60);
+    expect(color.count).toBe(vertices.count);
+    geometry.computeBoundingBox();
+    expect(geometry.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(geometry.boundingBox.max.y).toBeLessThan(0.7);
+    for (const value of vertices.array) expect(Number.isFinite(value)).toBe(true);
+    geometry.dispose();
   });
 
   it('is deterministic', () => {
