@@ -834,6 +834,38 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       [edge + side * 0.17, 2.85, z]);
     }
   }
+  // A shallow, single-sided smithy lean-to gives the forge a working
+  // silhouette from the side street. It sits entirely over the existing
+  // three-by-three blocked house cells, above the side vents and away from
+  // the front door; no new collision geometry or interaction targets.
+  if (isForge) {
+    const leanTo = new THREE.Group();
+    leanTo.name = 'forge-west-side-lean-to';
+    leanTo.userData.chroniclesDecorativeOnly = true;
+    const outerX = -width / 2 - 0.88;
+    const canopy = mesh(leanTo,
+      new THREE.BoxGeometry(1.32, 0.18, depth * 0.82),
+      roof, 'forge-lean-to-pitched-canopy',
+      [-width / 2 - 0.45, height - 0.55, 0], !coarse);
+    canopy.rotation.z = 0.25;
+    mesh(leanTo, new THREE.BoxGeometry(0.19, 0.22, depth * 0.78),
+      mats.timber, 'forge-lean-to-oak-eave',
+      [outerX, height - 0.85, 0], !coarse);
+    for (const z of [-depth * 0.32, depth * 0.32]) {
+      mesh(leanTo, new THREE.BoxGeometry(0.27, 3.82, 0.27),
+        mats.timber, 'forge-lean-to-oak-post',
+        [outerX, 2.40, z], !coarse);
+      mesh(leanTo, new THREE.BoxGeometry(0.47, 0.50, 0.47),
+        mats.stone, 'forge-lean-to-stone-footing',
+        [outerX, 0.25, z]);
+      const brace = mesh(leanTo,
+        new THREE.BoxGeometry(0.16, 1.00, 0.18),
+        mats.timber, 'forge-lean-to-diagonal-brace',
+        [outerX + 0.30, height - 1.25, z], !coarse);
+      brace.rotation.z = -0.62;
+    }
+    root.add(leanTo);
+  }
   // Sage-painted timber shutters give the herb house a botanical side
   // elevation. One instanced draw call, with all leaves attached to the
   // existing solid building; no street tiles, doors or collision change.
