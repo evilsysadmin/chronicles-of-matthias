@@ -515,12 +515,16 @@ try {
           const overlay = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
           assert.equal(await fallback.count(), 1, 'Guild local archive must remain visible');
           assert.equal(await overlay.count(), 1, 'Guild should load uploaded R2 WebP');
+          // R2 is an optional enhancement. A pending request must not block
+          // the bundled archive; if it actually decoded, still require the
+          // React ready marker before asserting the full-size panorama.
           await page.waitForFunction(() => {
             const node = document.querySelector('[data-chronicles-shop-room="guild-sanctum"] img[data-chronicles-shop-art-layer="premium"]');
-            return node?.complete && (!node.naturalWidth || node.classList.contains('is-ready'));
+            return node && (!node.complete || !node.naturalWidth || node.classList.contains('is-ready'));
           }, null, { timeout: 7_000 });
           const artState = await overlay.evaluate(node => ({
-            src: node.currentSrc,
+            src: node.currentSrc || node.src,
+            complete: node.complete,
             width: node.naturalWidth,
             height: node.naturalHeight,
             ready: node.classList.contains('is-ready'),
@@ -529,12 +533,12 @@ try {
           }));
           assert.equal(artState.src, 'https://assets.chronicles.shadowops.dpdns.org/stores/gremio-premium.webp');
           assert.equal(artState.position, 'absolute', 'Guild overlay must not stack beneath the fallback');
-          if (artState.width) {
+          if (artState.complete && artState.width) {
             assert(artState.width >= 1500 && artState.height >= 800 && artState.ready,
               'Decoded Guild painterly panorama must become visible');
           } else {
             assert(!artState.ready && artState.opacity === 0,
-              'Failed R2 Guild art must leave the bundled archive in place');
+              'Pending or failed R2 Guild art must leave the bundled archive in place');
           }
         }
         if (room === 'odo') {
@@ -545,22 +549,23 @@ try {
           if (await overlay.count()) {
             await page.waitForFunction(() => {
               const remote = document.querySelector('[data-chronicles-shop-art-layer="premium"]');
-              return remote?.complete && (!remote.naturalWidth || remote.classList.contains('is-ready'));
+              return remote && (!remote.complete || !remote.naturalWidth || remote.classList.contains('is-ready'));
             }, null, { timeout: 5_000 });
             const checked = await overlay.evaluate((node) => ({
-              src: node.currentSrc, width: node.naturalWidth, height: node.naturalHeight,
+              src: node.currentSrc || node.src, complete: node.complete,
+              width: node.naturalWidth, height: node.naturalHeight,
               ready: node.classList.contains('is-ready'),
               opacity: Number.parseFloat(getComputedStyle(node).opacity),
             }));
             assert.match(checked.src, /^https:\/\/assets\.chronicles\.shadowops\.dpdns\.org\/stores\/Odo_Armeria_Premium_Fondo_Limpio_2026\.webp$/,
               'Only the exact uploaded Chronicles R2 Odo WebP may overlay the room');
-            if (checked.width > 0) {
+            if (checked.complete && checked.width > 0) {
               assert(checked.width >= 1500 && checked.height >= 800,
                 'Approved Odo WebP must be a full-quality panoramic background');
               assert(checked.ready, 'Decoded R2 art must be promoted to the visible layer');
             } else {
               assert(!checked.ready && checked.opacity === 0,
-                'A broken CDN image must remain hidden over the local room');
+                'Pending or broken CDN art must remain hidden over the local room');
             }
           }
 
@@ -855,7 +860,9 @@ try {
       // If it has decoded already, it must be revealed; otherwise it must
       // remain hidden so the fallback is visible without a broken image.
       const remoteArt = await boticaPremium.evaluate(node => ({
-        src: node.currentSrc, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
+        // currentSrc can be empty while R2 is pending: src retains the exact
+        // declared, browser-resolved URL without waiting for remote bytes.
+        src: node.currentSrc || node.src, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
         ready: node.classList.contains('is-ready'),
         opacity: Number.parseFloat(getComputedStyle(node).opacity),
       }));
