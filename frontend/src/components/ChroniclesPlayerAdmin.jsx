@@ -12,6 +12,13 @@ export function chroniclesRosterHeroLabel(user, id, fallback = names[id]) {
   return typeof name === 'string' && name.trim() ? name.trim() : fallback;
 }
 
+// Only show a measured, valid level. Unexpected nested data must not become
+// a React child and crash the whole roster during a rolling API upgrade.
+export function chroniclesRosterHeroLevel(user, id) {
+  const level = user?.levels?.[id];
+  return Number.isInteger(level) && level >= 1 && level <= 12 ? level : '—';
+}
+
 // An unsuccessful request must never look like an empty player database.
 export function chroniclesRosterStatusLabel({ hasLoaded, loading, error, count, hasMore }) {
   if (!hasLoaded) return loading ? 'Consultando censo…' : 'Censo no disponible';
@@ -107,7 +114,7 @@ export default function ChroniclesPlayerAdmin() {
             </p>
             <div className="chronicles-player-admin__levels" aria-label="Niveles de los héroes">
               {Object.entries(names).map(([id, name]) => (
-                <span key={id}>{chroniclesRosterHeroLabel(user, id, name)}: <b>{user.levels?.[id] ?? '—'}</b></span>
+                <span key={id}>{chroniclesRosterHeroLabel(user, id, name)}: <b>{chroniclesRosterHeroLevel(user, id)}</b></span>
               ))}
             </div>
           </li>
