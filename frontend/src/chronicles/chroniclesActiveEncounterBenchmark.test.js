@@ -104,16 +104,14 @@ function playSewerEncounter(rollOffset, {
           state = turned;
         } else if (nearest.distance > 1) {
           const moved = chroniclesReduce(state, 'forward');
-          if (moved.turns === state.turns + 1) {
-            expect(Math.abs(moved.x - state.x) + Math.abs(moved.y - state.y)).toBe(1);
-            metrics.heroMoves += 1;
-            state = moved;
-          } else {
-            const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
-            expect(guarded.turns).toBe(state.turns + 1);
-            metrics.heroBlocks += 1;
-            state = guarded;
-          }
+          // MM3 initiative is stationary: chasing a distant enemy must not
+          // silently move the whole party or consume the active hero's turn.
+          expect(moved.turns).toBe(state.turns);
+          expect({ x: moved.x, y: moved.y }).toEqual({ x: state.x, y: state.y });
+          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
+          expect(guarded.turns).toBe(state.turns + 1);
+          metrics.heroBlocks += 1;
+          state = guarded;
         } else {
           const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
           expect(guarded.turns).toBe(state.turns + 1);
@@ -181,6 +179,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       // or silently end while a still-engaged enemy remains nearby.
       expect(result.phase).toBe('explore');
       expect(result.downed).toBe(0);
+      expect(result.heroMoves).toBe(0);
       const remaining = Object.entries(result.enemyHpLeft)
         .filter(([, hp]) => hp > 0).map(([id]) => id);
       expect(remaining).toEqual(result.legitimateWithdrawals);
@@ -248,6 +247,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(second.finished).toBe(true);
       expect(second.phase).toBe('explore');
       expect(second.downed).toBe(0);
+      expect(first.heroMoves).toBe(0);
+      expect(second.heroMoves).toBe(0);
       const remaining = Object.entries(second.enemyHpLeft)
         .filter(([, hp]) => hp > 0).map(([id]) => id);
       expect(remaining).toEqual(second.legitimateWithdrawals);
