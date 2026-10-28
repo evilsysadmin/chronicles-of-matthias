@@ -450,7 +450,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const streetWallHeight = settlement && Number.isFinite(authoredWallHeight)
     && authoredWallHeight >= 3.2 && authoredWallHeight <= 9.6 ? authoredWallHeight : 1.6;
   const village = settlement ? createSwordhavenMaterials() : null;
-  const earth = material(biome?.ground ?? (forest ? 0xaebc9e : 0xffffff), { map: biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture() });
+  // The B2 heath uses its own peat/lichen surface; neighboring hills keep
+  // their existing grass. One tiled texture and the same single terrain mesh.
+  const heathB2 = scenePlan.mapId === 'terra-b2' && scenePlan.biome === 'hills' && !settlement;
+  const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
+    map: heathB2 ? terraGroundTexture('heath')
+      : biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture(),
+  });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
   // The shared town-only relief adds directional light to weathered paving.
