@@ -266,13 +266,14 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
         }
         expect(walkedTiles).toBe(expectedTiles.length);
-        // Spend one real potion between fights, rather than only asserting
-        // that the untouched stock survives the transition. The first squad
-        // deliberately leaves the initial two-PV wound for this action.
+        // Spend one real potion between fights, rather than merely asserting
+        // that untouched stock survives. Choose the *most depleted* living
+        // hero, not a hard-coded recipient: fixed-facing melee can expose
+        // Matthias more than Hildegard in one of the d8 combat orders.
         const beforePotion = explored;
-        const woundedRook = beforePotion.party.find(({ id }) => id === 'rook');
-        expect(woundedRook.hp).toBeGreaterThan(0);
-        expect(woundedRook.hp).toBeLessThan(woundedRook.maxHp);
+        const woundedHero = beforePotion.party.filter(({ hp, maxHp }) => hp > 0 && hp < maxHp)
+          .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];
+        expect(woundedHero).toBeTruthy();
         const potionsBefore = chroniclesConsumableCount(beforePotion, 'healing-potion');
         expect(potionsBefore).toBeGreaterThan(0);
         // A refused consumable action must not create an invisible exploration
@@ -296,7 +297,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         // Use the same exploration dispatcher as the playable UI. A potion
         // spends time, so nearby pursuers must not get a free frozen turn.
         explored = chroniclesGridExplorationStep(refused, {
-          type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: 'rook',
+          type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: woundedHero.id,
         });
         expect(explored.explorationEnemySteps).toBe((beforePotion.explorationEnemySteps || 0) + 1);
         for (const enemy of chroniclesActiveEnemies(explored).filter(({ id }) => CENTRAL_PACK.includes(id))) {
@@ -305,8 +306,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           expect(Math.abs(next.x - previous.x) + Math.abs(next.y - previous.y),
             `${enemy.id} must pursue cardinally while the party heals`).toBeLessThanOrEqual(1);
         }
-        const healedRook = explored.party.find(({ id }) => id === 'rook');
-        expect(healedRook.hp).toBe(Math.min(woundedRook.maxHp, woundedRook.hp + 15));
+        const healedHero = explored.party.find(({ id }) => id === woundedHero.id);
+        expect(healedHero.hp).toBe(Math.min(woundedHero.maxHp, woundedHero.hp + 15));
         expect(explored.turns).toBe(beforePotion.turns + 1);
         expect(chroniclesConsumableCount(explored, 'healing-potion')).toBe(potionsBefore - 1);
         expect({ x: explored.x, y: explored.y, direction: explored.direction })
@@ -316,7 +317,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
           .toBe(chroniclesMemberSp(beforePotion, beforePotion.party.find(({ id }) => id === 'bishop')));
         const potion = {
-          hpBefore: woundedRook.hp, hpAfter: healedRook.hp,
+          heroId: woundedHero.id, hpBefore: woundedHero.hp, hpAfter: healedHero.hp,
           potionsBefore, potionsAfter: chroniclesConsumableCount(explored, 'healing-potion'),
           turns: explored.turns - beforePotion.turns,
           enemySteps: (explored.explorationEnemySteps || 0) - (beforePotion.explorationEnemySteps || 0),
@@ -348,11 +349,11 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.actions.at(-1)).toBe('forward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
-      expect(potion.hpBefore).toBe(first.finalPartyHp.rook);
+      expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
       expect(potion.hpAfter).toBeGreaterThan(potion.hpBefore);
       expect(potion.turns).toBe(1);
       expect(potion.enemySteps).toBe(1);
-      expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, rook: potion.hpAfter });
+      expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, [potion.heroId]: potion.hpAfter });
       // A real stocked potion survives combat and travel; starting the next
       // encounter cannot silently refill or discard the carried supply.
       expect(first.initialHealingPotions).toBeGreaterThanOrEqual(2);
