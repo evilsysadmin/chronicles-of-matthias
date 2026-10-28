@@ -241,8 +241,21 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         const actions = [...turnActions, 'forward'];
         for (const action of actions) {
           const before = explored;
+          const goblinPositions = Object.fromEntries(chroniclesActiveEnemies(before)
+            .filter(({ id }) => CENTRAL_PACK.includes(id))
+            .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
           expect(explored.turns, `${action} must spend one exploration turn`).toBe(before.turns + 1);
+          expect(explored.explorationEnemySteps, `${action} must advance pursuit exactly once`)
+            .toBe((before.explorationEnemySteps || 0) + 1);
+          // Real travel must not grant goblins knight jumps or multi-tile
+          // teleports: each surviving pursuer may walk at most one cardinal tile.
+          for (const enemy of chroniclesActiveEnemies(explored).filter(({ id }) => CENTRAL_PACK.includes(id))) {
+            const previous = goblinPositions[enemy.id];
+            const next = chroniclesRuntimeEnemyPosition(explored, enemy);
+            expect(Math.abs(next.x - previous.x) + Math.abs(next.y - previous.y),
+              `${enemy.id} must pursue cardinally during ${action}`).toBeLessThanOrEqual(1);
+          }
           expect(explored.phase).toBe('explore');
           expect(explored.initiative).toBeFalsy();
           expect(explored.party).toEqual(before.party);
