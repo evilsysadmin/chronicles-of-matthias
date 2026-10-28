@@ -100,6 +100,40 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(scene.getObjectByName('chronicles-terra-boulder')).toBeInstanceOf(THREE.InstancedMesh);
   });
 
+  it('applies a heath-only peat and lichen ground texture without adding terrain meshes', () => {
+    const plan = {
+      mapId: terraB2.id, biome: terraB2.biome, regionKind: terraB2.regionKind,
+      width: terraB2.grid[0].length, height: terraB2.grid.length,
+      center: { x: 10, y: 7 }, grid: terraB2.grid, scenery: terraB2.scenery,
+      content: [],
+    };
+    const detailed = new THREE.Scene();
+    const mobile = new THREE.Scene();
+    const other = new THREE.Scene();
+    buildChroniclesCampaignExterior(detailed, { scenePlan: plan });
+    buildChroniclesCampaignExterior(mobile, { scenePlan: plan, coarsePointer: true });
+    buildChroniclesCampaignExterior(other, { scenePlan: { ...plan, mapId: 'terra-e2' } });
+    const getFloor = (scene) => scene.getObjectByName('chronicles-campaign-terrain');
+    expect(getFloor(detailed)).toBeInstanceOf(THREE.Mesh);
+    expect(getFloor(detailed).material.map.name).toBe('chronicles-pixel-heath');
+    expect(getFloor(detailed).material.map).toBe(getFloor(mobile).material.map);
+    expect(getFloor(detailed).material.color.getHex()).toBe(0xffffff);
+    expect(getFloor(other).material.map.name).not.toBe('chronicles-pixel-heath');
+    expect(getFloor(other).material.color.getHex()).toBe(0xd8d0a0);
+    expect(detailed.children.filter(obj => obj.name === 'chronicles-campaign-terrain')).toHaveLength(1);
+    const texture = getFloor(detailed).material.map;
+    expect(texture.image.width).toBe(64);
+    expect(texture.image.height).toBe(64);
+    expect(texture.image.data.length).toBe(64 * 64 * 4);
+    const unique = new Set();
+    for (let i = 0; i < texture.image.data.length; i += 4) {
+      expect(texture.image.data[i + 3]).toBe(255);
+      unique.add(Array.from(texture.image.data.slice(i, i + 3)).join(','));
+    }
+    expect(unique.size).toBeGreaterThan(7);
+    expect(texture.userData.chroniclesPixelArt.kind).toBe('heath');
+  });
+
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
     const scene = new THREE.Scene();
     const built = buildChroniclesCampaignExterior(scene, { scenePlan: demo, coarsePointer: true });

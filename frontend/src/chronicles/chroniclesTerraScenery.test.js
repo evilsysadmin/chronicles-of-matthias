@@ -159,6 +159,42 @@ describe('Terra scenery', () => {
     geometry.dispose();
   });
 
+  it('weathers only B2 boulders with deterministic per-instance lichen tones', () => {
+    const b2 = chroniclesMapById('terra-b2');
+    const args = { grid: b2.grid, center: { x: 10, y: 7 },
+      biome: b2.biome, scenery: b2.scenery };
+    const themed = buildTerraScenery({ ...args, mapId: b2.id });
+    const repeat = buildTerraScenery({ ...args, mapId: b2.id });
+    const plain = buildTerraScenery({ ...args, mapId: 'terra-e2' });
+    const rocks = themed.getObjectByName('chronicles-terra-boulder');
+    const matching = repeat.getObjectByName('chronicles-terra-boulder');
+    const unchanged = plain.getObjectByName('chronicles-terra-boulder');
+    expect(rocks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(rocks.count).toBeGreaterThan(20);
+    expect(rocks.instanceColor).toBeTruthy();
+    expect(unchanged.instanceColor).toBeNull();
+    expect(rocks.count).toBe(unchanged.count);
+    expect(rocks.geometry.getAttribute('position').count)
+      .toBe(unchanged.geometry.getAttribute('position').count);
+    expect(rocks.material.map).toBe(unchanged.material.map);
+    const matrix = new THREE.Matrix4();
+    const otherMatrix = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    const otherTint = new THREE.Color();
+    const variations = new Set();
+    for (let i = 0; i < rocks.count; i += 1) {
+      rocks.getMatrixAt(i, matrix);
+      unchanged.getMatrixAt(i, otherMatrix);
+      expect(matrix.elements).toEqual(otherMatrix.elements);
+      rocks.getColorAt(i, tint);
+      matching.getColorAt(i, otherTint);
+      expect(tint.getHex()).toBe(otherTint.getHex());
+      variations.add(tint.getHex());
+    }
+    expect(variations.size).toBeGreaterThan(1);
+    expect(themed.children.length).toBe(plain.children.length + 1); // Heather already exclusive to B2.
+  });
+
   it('is deterministic', () => {
     const map = chroniclesMapById('terra-e2');
     const center = { x: 10, y: 7 };

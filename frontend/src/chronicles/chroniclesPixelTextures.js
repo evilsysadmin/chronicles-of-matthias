@@ -51,13 +51,15 @@ const RAMPS = Object.freeze({
   snow: [0x8f9cb0, 0xb6c2d2, 0xd2dbe6, 0xe6edf4, 0xf6f9fc].map(hex),
   sand: [0x9c8458, 0xbea477, 0xd6c091, 0xe8d6aa, 0xf4e8c6].map(hex),
   ashland: [0x2e2826, 0x463c38, 0x5e524c, 0x786a62, 0x94847a].map(hex),
+  // B2 heath: muted peat, weathered earth and lichen, not bright meadow green.
+  heath: [0x33382e, 0x4c503b, 0x626448, 0x7f7555, 0x999173, 0xb1a587].map(hex),
   // Neutral weathered stone for boulders and crags; materials tint it per biome.
   rock: [0x3c3a38, 0x5e5b56, 0x827e76, 0xa8a399, 0xcbc6ba, 0xe8e4da].map(hex),
 });
 
 const SIZES = Object.freeze({
   grass: 64, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
-  snow: 64, sand: 64, ashland: 64, rock: 32,
+  snow: 64, sand: 64, ashland: 64, heath: 64, rock: 32,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -76,6 +78,18 @@ function sample(kind, x, y, size) {
     const flower = hash(x, y, 17);
     if (flower > 0.9965) return { color: flower > 0.9985 ? 0xf2ead2 : 0xe6c84a };
     return 0.52 + meadow * 0.55 + clover * 0.25 + grain * 0.18;
+  }
+  if (kind === 'heath') {
+    // Four-octave-style deterministic ground breakup: dark peat patches,
+    // olive moss, and sparse lilac heather litter. Tileable without asset I/O.
+    const peat = valueNoise(x, y, size, 4, 44) - 0.5;
+    const grit = valueNoise(x, y, size, 11, 45) - 0.5;
+    const fleck = hash(x, y, 46);
+    if (peat < -0.16 && grit < 0.08) return 0.13;
+    if (peat > 0.10 && grit > -0.06) return { color: 0x707b57 };
+    if (fleck > 0.996) return { color: 0x987c95 };
+    if (fleck < 0.012) return { color: 0x8b8576 };
+    return 0.51 + peat * 0.56 + grit * 0.20 + grain * 0.12;
   }
   if (kind === 'rock') {
     // Lichen-flecked stone with a few dark fissures.

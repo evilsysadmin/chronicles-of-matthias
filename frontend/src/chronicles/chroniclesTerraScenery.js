@@ -379,6 +379,20 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
     matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
     mesh.instanceMatrix.needsUpdate = true;
+    // Weathered grey/olive stone variation, using instance colours instead
+    // of new geometries, materials or draw calls. Other biomes stay identical.
+    if (mapId === 'terra-b2' && biome === 'hills' && part === 'boulder') {
+      const shades = [
+        new THREE.Color('#a4a99b'), new THREE.Color('#b7aa96'),
+        new THREE.Color('#93a08a'), new THREE.Color('#b5b6a5'),
+      ];
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 10), Math.round(e[14] * 10), 159);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1, Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     mesh.name = 'chronicles-terra-' + part;
     const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
