@@ -291,12 +291,27 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         expect(woundedRook.hp).toBeLessThan(woundedRook.maxHp);
         const potionsBefore = chroniclesConsumableCount(beforePotion, 'healing-potion');
         expect(potionsBefore).toBeGreaterThan(0);
+        // A refused consumable action must not create an invisible exploration
+        // turn or move pursuers before the subsequent legitimate healing.
+        expect(chroniclesConsumableCount(beforePotion, 'mana-potion')).toBe(0);
+        const refused = chroniclesGridExplorationStep(beforePotion, {
+          type: 'use-item', memberId: 'matthias', itemId: 'mana-potion', targetId: 'bishop',
+        });
+        expect(refused.message).toMatch(/No queda ningún/i);
+        expect(refused.turns).toBe(beforePotion.turns);
+        expect(refused.explorationEnemySteps).toBe(beforePotion.explorationEnemySteps);
+        expect(refused.enemyPositions).toEqual(beforePotion.enemyPositions);
+        expect(refused.party).toEqual(beforePotion.party);
+        expect(refused.spellPoints).toEqual(beforePotion.spellPoints);
+        expect(refused.inventory).toEqual(beforePotion.inventory);
+        expect(refused.phase).toBe('explore');
+        expect(refused.initiative).toBeFalsy();
         const goblinsBeforePotion = Object.fromEntries(chroniclesActiveEnemies(beforePotion)
           .filter(({ id }) => CENTRAL_PACK.includes(id))
           .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(beforePotion, enemy)]));
         // Use the same exploration dispatcher as the playable UI. A potion
         // spends time, so nearby pursuers must not get a free frozen turn.
-        explored = chroniclesGridExplorationStep(beforePotion, {
+        explored = chroniclesGridExplorationStep(refused, {
           type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: 'rook',
         });
         expect(explored.explorationEnemySteps).toBe((beforePotion.explorationEnemySteps || 0) + 1);
