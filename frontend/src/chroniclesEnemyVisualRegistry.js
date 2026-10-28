@@ -69,6 +69,7 @@ export function buildChroniclesEnemyVisual(visualType, options = {}) {
       // Show the existing procedural spider until the approved R2 atlas is
       // decoded. Tactics continues using its genuine 3D model.
       const fallback = visual.build(options);
+      installChroniclesEnemyMotionArt(fallback, visualType, options);
       return Object.freeze({
         model: buildChroniclesRemoteSpiderBillboard(fallback), scale: 1,
       });
