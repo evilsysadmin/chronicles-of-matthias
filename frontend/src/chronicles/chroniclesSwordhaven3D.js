@@ -666,6 +666,55 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       glazing.add(bay);
     }
     root.add(glazing);
+  } else if (isApothecary) {
+    // The herb house has rounded conservatory glazing at street level,
+    // not the ordinary merchant's amber rectangular windows. Stone arches,
+    // sage glass and slender oak muntins sit over the original solid facade;
+    // the door, planters and collision footprint are untouched.
+    const bays = new THREE.Group();
+    bays.name = 'apothecary-botanical-window-bays';
+    bays.userData.chroniclesDecorativeOnly = true;
+    bays.position.z = facadeZ + 0.43;
+    const sageGlass = material(0x79aa8e, {
+      emissive: 0x183728, emissiveIntensity: 0.20,
+      roughness: 0.40, metalness: 0.02, side: THREE.DoubleSide,
+    });
+    const arch = new THREE.Shape();
+    arch.moveTo(-0.85, -0.77);
+    arch.lineTo(0.85, -0.77);
+    arch.lineTo(0.85, 0.31);
+    arch.quadraticCurveTo(0.85, 0.98, 0, 1.02);
+    arch.quadraticCurveTo(-0.85, 0.98, -0.85, 0.31);
+    arch.closePath();
+    const pane = new THREE.Shape();
+    pane.moveTo(-0.67, -0.60);
+    pane.lineTo(0.67, -0.60);
+    pane.lineTo(0.67, 0.29);
+    pane.quadraticCurveTo(0.67, 0.78, 0, 0.83);
+    pane.quadraticCurveTo(-0.67, 0.78, -0.67, 0.29);
+    pane.closePath();
+    for (const x of [-width * 0.33, width * 0.33]) {
+      const bay = new THREE.Group();
+      bay.name = 'apothecary-botanical-window-bay';
+      bay.position.set(x, 2.75, 0);
+      mesh(bay, new THREE.ShapeGeometry(arch), mats.stone,
+        'apothecary-window-rounded-stone-arch', [0, 0, 0], !coarse);
+      mesh(bay, new THREE.ShapeGeometry(pane), sageGlass,
+        'apothecary-window-sage-glass', [0, 0, 0.07], !coarse);
+      mesh(bay, new THREE.BoxGeometry(0.075, 1.33, 0.09), mats.timber,
+        'apothecary-window-oak-mullion', [0, -0.08, 0.14]);
+      mesh(bay, new THREE.BoxGeometry(1.36, 0.07, 0.09), mats.timber,
+        'apothecary-window-oak-transom', [0, -0.18, 0.14]);
+      mesh(bay, new THREE.BoxGeometry(1.84, 0.16, 0.40), mats.stone,
+        'apothecary-window-stone-sill', [0, -0.88, 0.05]);
+      bays.add(bay);
+      mesh(root, new THREE.BoxGeometry(1.70, 0.36, 0.65), mats.stone,
+        'apothecary-herb-window-box', [x, 1.83, facadeZ + 0.50]);
+    }
+    root.add(bays);
+    dressSwordhavenWindowBoxes(root, {
+      windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
+    });
   } else {
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;

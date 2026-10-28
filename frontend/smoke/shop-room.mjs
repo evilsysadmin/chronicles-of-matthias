@@ -861,9 +861,14 @@ try {
       }));
       assert.equal(remoteArt.src,
         'https://assets.chronicles.shadowops.dpdns.org/stores/botica-premium.webp');
-      if (remoteArt.loaded) assert(remoteArt.ready, 'Decoded Botica premium art must reveal');
-      else assert(!remoteArt.ready && remoteArt.opacity === 0,
-        'Failed R2 download must leave Botica SVG visible without a broken glyph');
+      // naturalWidth can be set before img.decode() settles and React commits
+      // is-ready. Check the rendered state rather than treating bytes as paint.
+      if (remoteArt.ready) {
+        assert(remoteArt.loaded, 'Revealed Botica premium art must be loaded');
+      } else {
+        assert(remoteArt.opacity === 0,
+          'Pending or failed premium decode must leave the Botica SVG visible');
+      }
       assert.equal(await dialog.locator('[data-chronicles-shop-item]').count(), 3,
         'Apothecary must keep all three authored offers');
       for (const id of ['healing-potion', 'mana-potion', 'fire-scroll']) {
