@@ -118,7 +118,10 @@ function partCatalog(coarsePointer) {
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
     reed: () => [new THREE.CylinderGeometry(0.035, 0.05, 1, 4), lit(0xb2a65e)],
-    pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, 14), lit(0x1c2a26, { roughness: 0.18, metalness: 0.1 })],
+    // One batched, opaque water surface per marsh. More rounded on desktop,
+    // original 14-gon on touch devices; never casts an implausible shadow.
+    pool: () => [new THREE.CylinderGeometry(1, 1, 0.06, coarsePointer ? 14 : 24),
+      lit(0xffffff, { map: texture('bogwater'), roughness: 0.28, metalness: 0.06 })],
     dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
@@ -393,8 +396,22 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       });
       mesh.instanceColor.needsUpdate = true;
     }
+    if (biome === 'marsh' && part === 'pool') {
+      // Small colour differences break up identical pools. Reuse the same
+      // geometry/material/draw call; no random colours between reloads.
+      const depths = [
+        new THREE.Color('#ffffff'), new THREE.Color('#e4ede9'),
+        new THREE.Color('#d4e1da'), new THREE.Color('#f1f0e4'),
+      ];
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] / CELL), Math.round(e[14] / CELL), 181);
+        mesh.setColorAt(index, depths[Math.min(depths.length - 1, Math.floor(seed * depths.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
