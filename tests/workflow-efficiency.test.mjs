@@ -114,7 +114,8 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
     assert.match(workflow, /actions\/setup-node@v5/);
     assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
   }
-  assert.match(api, /actions\/setup-go@v6/);
+  // setup-go v6 and v7 both run on Node 24; allow Dependabot's v7 upgrade.
+  assert.match(api, /actions\/setup-go@v[67]\b/);
   // Docker publish actions must use their Node 24 native majors.
   assert.match(api, /uses: docker\/setup-buildx-action@v4/);
   assert.match(api, /uses: docker\/login-action@v4/);
