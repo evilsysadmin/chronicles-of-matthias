@@ -16,6 +16,7 @@ import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js'
 import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFrameGate.js';
 import { createChroniclesFrameScheduler } from './chronicles/chroniclesFrameScheduler.js';
 import { createChroniclesTorchAmbientOverlay } from './chronicles/chroniclesTorchAmbientOverlay.js';
+import { createChroniclesRenderDiagnostics, chroniclesRenderDiagnosticsEnabled } from './chronicles/chroniclesRenderDiagnostics.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
@@ -734,9 +735,14 @@ export function createChroniclesOfMatthiasGame(host, {
   // The 3D world may sleep between actions; a tiny CSS-composited halo layer
   // keeps nearby, unoccluded flames alive without re-rendering the WebGL canvas.
   const ambientTorchGlows = createChroniclesTorchAmbientOverlay(host, camera, scene, dungeon.torches || [], { coarse });
+  // Explicit ?chroniclesPerf=1 only. Normal players get no meter, timer or DOM.
+  const renderDiagnostics = createChroniclesRenderDiagnostics(host, {
+    enabled: chroniclesRenderDiagnosticsEnabled(window.location.search),
+  });
   let destroyed = false;
   const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
+  renderDiagnostics.setVisible(visible);
   let desiredPosition = worldForCell(
     Number(initialState?.x ?? scenePlan?.partyStart?.x ?? 1),
     Number(initialState?.y ?? scenePlan?.partyStart?.y ?? 5),
@@ -1150,6 +1156,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
     renderer.render(scene, camera);
+    renderDiagnostics.recordFrame();
     ambientTorchGlows.update();
     firstFrameGate.markFrameRendered();
   }
@@ -1187,6 +1194,7 @@ export function createChroniclesOfMatthiasGame(host, {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
     ambientTorchGlows.setVisible(visible);
+    renderDiagnostics.setVisible(visible);
   };
   document.addEventListener('visibilitychange', onVisibility);
   resize();
@@ -1203,6 +1211,7 @@ export function createChroniclesOfMatthiasGame(host, {
       reducedHurtTimers.forEach((timeout) => clearTimeout(timeout));
       reducedHurtTimers.clear();
       ambientTorchGlows.dispose();
+      renderDiagnostics.dispose();
       observer?.disconnect();
       if (!observer) window.removeEventListener('resize', onWindowResize);
       document.removeEventListener('visibilitychange', onVisibility);
