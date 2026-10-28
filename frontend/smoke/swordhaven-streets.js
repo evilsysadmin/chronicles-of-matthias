@@ -241,6 +241,9 @@ try {
     distinctStoreHoist: String(Boolean(
       store?.getObjectByName('store-loft-loading-hoist')?.userData.chroniclesDecorativeOnly
       && store?.getObjectByName('store-hoist-oak-boom')
+      && store?.getObjectByName('store-hoist-gantry-crosshead')
+      && store?.getObjectByName('store-loft-loading-hoist')?.children
+        .filter(child => child.name === 'store-hoist-gantry-upright').length === 2
       && store?.getObjectByName('store-hoist-diagonal-brace')
       && store?.getObjectByName('store-hoist-chain')
       && store?.getObjectByName('store-hoist-iron-ring')
