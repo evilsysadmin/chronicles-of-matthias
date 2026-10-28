@@ -69,6 +69,23 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     });
   });
 
+  it('keeps the visible final opponent direction if a restored fight ends during an enemy turn', () => {
+    const initial = enemyFirstEncounter();
+    const enemy = chroniclesActiveEnemies(initial).find(({ id }) => id === WEST);
+    const fight = {
+      ...initial, direction: 0,
+      enemyPositions: { [WEST]: { x: 1, y: 2 } },
+    };
+    const resolved = chroniclesRunPendingEnemyTurn(fight, WEST, (state) => ({
+      ...state, [enemy.hpKey]: 0, turns: state.turns + 1,
+    }));
+    expect(resolved.error).toBeNull();
+    expect(resolved.committed).toMatchObject({
+      phase: 'explore', initiative: null, direction: 2,
+    });
+    expect(resolved.committed.turns).toBe(fight.turns + 1);
+  });
+
   it('refuses a stale timer after the actor has changed, without replaying a turn', () => {
     const state = enemyFirstEncounter();
     const wrong = vi.fn();
