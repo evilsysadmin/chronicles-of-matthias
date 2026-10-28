@@ -1,5 +1,5 @@
 import { resolveChroniclesEnemyBuildDefinition } from './chroniclesEnemyBuilds.js';
-import { chroniclesEnemyAttackReach, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyAttackReach, chroniclesEnemyCanAttackParty, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import {
   chroniclesCollapsePartyAfterCombat,
   chroniclesDeployPartyForCombat,
@@ -169,7 +169,12 @@ export function chroniclesEngagedEnemies(state, enemies) {
     if (!(hasLivingHitPoints(state?.[enemy?.hpKey]))) return false;
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
-      && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition);
+      && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition)
+      // In first-person MM3, detection starts pursuit in exploration, not
+      // initiative. Only a legal attack from the enemy's CURRENT cell starts
+      // automatic combat; otherwise stationary melee would lock the party
+      // before either side can strike. Player-forced attacks are handled below.
+      && (state.combatRules !== 'mm3' || chroniclesEnemyCanAttackParty(state, enemy, enemyPosition));
   });
 }
 
