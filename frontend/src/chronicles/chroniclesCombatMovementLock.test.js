@@ -9,6 +9,8 @@ import { CHRONICLES_DIRECTION_KEYS } from './chroniclesKeyboardBindings.js';
 import { chroniclesChooseEnemyStep, chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
 
 const MOVES = ['forward', 'backward', 'strafe-left', 'strafe-right'];
+const ROTATIONS = ['turn-left', 'turn-right'];
+const FACING_KEYS = ['ArrowLeft', 'ArrowRight'];
 const encounter = (actor = 'party') => ({
   ...createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
   phase: 'combat',
@@ -40,15 +42,23 @@ describe('Chronicles MM3 stationary party during combat', () => {
     }
   });
 
-  it('allows facing changes for targeting without translating the party', () => {
+  it.each(ROTATIONS)('rejects %s throughout combat without changing direction or spending a turn', (action) => {
+    for (const actor of ['party', 'enemy']) {
+      const state = encounter(actor);
+      expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(true);
+      expect(chroniclesCombatPartyStepBlocked(state, { type: action })).toBe(true);
+      expect(chroniclesReduce(state, action)).toBe(state);
+      expect(chroniclesReduce(state, { type: action })).toBe(state);
+      expect(state.initiative.round).toBe(2);
+    }
+  });
+
+  it('also locks left/right keyboard shortcuts in combat', () => {
     const state = encounter();
-    for (const action of ['turn-left', 'turn-right']) {
-      expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(false);
-      const rotated = chroniclesReduce(state, action);
-      expect(rotated).not.toBe(state);
-      expect(rotated.direction).not.toBe(state.direction);
-      expect([rotated.x, rotated.y]).toEqual([state.x, state.y]);
-      expect(rotated.partyPositions).toBe(state.partyPositions);
+    for (const key of FACING_KEYS) {
+      const turn = CHRONICLES_DIRECTION_KEYS[key];
+      expect(ROTATIONS).toContain(turn);
+      expect(chroniclesReduce(state, turn)).toBe(state);
     }
   });
 
@@ -56,13 +66,16 @@ describe('Chronicles MM3 stationary party during combat', () => {
     const combat = encounter();
     const outsideCombat = { ...combat, initiative: null, phase: 'explore' };
     const tactics = { ...combat, combatRules: null };
-    for (const action of MOVES) {
+    for (const action of [...MOVES, ...ROTATIONS]) {
       expect(chroniclesCombatPartyStepBlocked(outsideCombat, action)).toBe(false);
       expect(chroniclesCombatPartyStepBlocked(tactics, action)).toBe(false);
     }
-    // The full reducer should still be able to process a normal turn.
-    expect(chroniclesReduce(outsideCombat, 'turn-right').direction)
-      .not.toBe(outsideCombat.direction);
+    // Explore and Tactics still rotate normally and spend their normal action.
+    for (const state of [outsideCombat, tactics]) {
+      const rotated = chroniclesReduce(state, 'turn-right');
+      expect(rotated.direction).not.toBe(state.direction);
+      expect(rotated.turns).toBe(state.turns + 1);
+    }
   });
 
   it('keeps an alerted sewer goblin chasing beyond detection range, so stationary combat can finish', () => {
@@ -94,7 +107,7 @@ describe('Chronicles MM3 stationary party during combat', () => {
 
   it('does not lock out non-travel combat actions', () => {
     const state = encounter();
-    for (const action of ['attack', 'cast', 'use-item', 'block', 'interact', 'turn-left', 'turn-right']) {
+    for (const action of ['attack', 'cast', 'use-item', 'block', 'interact']) {
       expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(false);
     }
   });
