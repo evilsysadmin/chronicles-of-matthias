@@ -18,10 +18,10 @@ async function gotoReadyShop(page, target) {
   await page.waitForFunction(() => {
     const images = [...document.images].filter((img) => img.getClientRects().length);
     return document.fonts.status === 'loaded'
-      && images.every((img) => (img.complete && img.naturalWidth > 0)
-        || (img.complete && img.dataset.chroniclesShopArtLayer === 'premium'));
-      // An optional remote overlay is allowed to fail; the already-decoded
-      // local artwork must still satisfy the ordinary image-readiness gate.
+      && images.every((img) => img.dataset.chroniclesShopArtLayer === 'premium'
+        || (img.complete && img.naturalWidth > 0));
+      // Optional R2 premium overlays must not block the bundled fallback:
+      // all other visible images and fonts still have to finish loading.
   }, undefined, { timeout: 20_000 });
   await page.locator('[data-chronicles-interior-loading]').waitFor({ state: 'detached', timeout: 16_000 });
 }
@@ -850,10 +850,10 @@ try {
       assert(localArt.loaded && localArt.src.includes('botica-apothecary.svg'),
         'Botica local illustrated room must always decode');
       assert.match(localArt.position, /^50% /, 'Botica shopkeeper must stay in the central aisle');
-      await page.waitForFunction(() => {
-        const img = document.querySelector('[data-chronicles-shop-room="botica-apothecary"] img[data-chronicles-shop-art-layer="premium"]');
-        return img?.complete && (!img.naturalWidth || img.classList.contains('is-ready'));
-      }, null, { timeout: 7_000 });
+      // R2 can remain pending or fail in CI. The bundled fallback is required
+      // above; the optional overlay is inspected without waiting for network.
+      // If it has decoded already, it must be revealed; otherwise it must
+      // remain hidden so the fallback is visible without a broken image.
       const remoteArt = await boticaPremium.evaluate(node => ({
         src: node.currentSrc, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
         ready: node.classList.contains('is-ready'),
