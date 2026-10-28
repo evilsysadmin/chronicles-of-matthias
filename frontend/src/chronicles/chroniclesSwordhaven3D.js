@@ -852,9 +852,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mats.timber, 'forge-lean-to-oak-eave',
       [outerX, height - 0.85, 0], !coarse);
     for (const z of [-depth * 0.32, depth * 0.32]) {
-      mesh(leanTo, new THREE.BoxGeometry(0.27, 3.72, 0.27),
+      mesh(leanTo, new THREE.BoxGeometry(0.27, 3.82, 0.27),
         mats.timber, 'forge-lean-to-oak-post',
-        [outerX, 2.31, z], !coarse);
+        [outerX, 2.40, z], !coarse);
       mesh(leanTo, new THREE.BoxGeometry(0.47, 0.50, 0.47),
         mats.stone, 'forge-lean-to-stone-footing',
         [outerX, 0.25, z]);
