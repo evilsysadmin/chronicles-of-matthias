@@ -33,6 +33,7 @@ import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesS
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
 import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
 import { createChroniclesMeleeSlashRibbon } from './chronicles/chroniclesMeleeSlashFx.js';
+import { chroniclesCombatCameraFacing } from './chronicles/chroniclesCombatCameraFacing.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -758,7 +759,7 @@ export function createChroniclesOfMatthiasGame(host, {
     Number(initialState?.y ?? scenePlan?.partyStart?.y ?? 5),
     dungeon.sceneCenter,
   );
-  const initialDirection = CHRONICLES_DIRECTIONS[initialState?.direction] || CHRONICLES_DIRECTIONS[1];
+  const initialDirection = CHRONICLES_DIRECTIONS[chroniclesCombatCameraFacing(initialState)] || CHRONICLES_DIRECTIONS[1];
   let desiredYaw = Math.atan2(-initialDirection.dx, -initialDirection.dy);
   let latestState = null;
   let attackFxStartedAt = -1;
@@ -801,9 +802,15 @@ export function createChroniclesOfMatthiasGame(host, {
   function syncState(state) {
     const now = clock.getElapsedTime();
     const previousState = latestState;
+    const viewDirection = chroniclesCombatCameraFacing(state);
+    // A stationary MM3 group can be ambushed at its side while looking at
+    // a solid wall. Follow a REAL adjacent target with the camera only;
+    // keep state.direction (and every turn/aiming rule) untouched.
+    const previousViewDirection = previousState && chroniclesCombatCameraFacing(previousState);
     let animateState = !reducedMotion && Boolean(previousState && (
       state.x !== previousState.x || state.y !== previousState.y
       || state.direction !== previousState.direction
+      || viewDirection !== previousViewDirection
     ));
     dungeon.enemyDefinitions.forEach((enemyDefinition) => {
       const previousHp = previousState?.[enemyDefinition.hpKey];
@@ -824,7 +831,7 @@ export function createChroniclesOfMatthiasGame(host, {
       }
     });
     desiredPosition = worldForCell(state.x, state.y, dungeon.sceneCenter);
-    const direction = CHRONICLES_DIRECTIONS[state.direction];
+    const direction = CHRONICLES_DIRECTIONS[viewDirection] || CHRONICLES_DIRECTIONS[state.direction];
     desiredYaw = Math.atan2(-direction.dx, -direction.dy);
     dungeon.enemyDefinitions.forEach((enemyDefinition) => {
       const enemy = dungeon.enemies[enemyDefinition.id];
