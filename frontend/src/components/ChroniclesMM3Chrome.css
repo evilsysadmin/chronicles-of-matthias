@@ -1601,7 +1601,9 @@
   bottom: calc(100% + 8px);
   box-sizing: border-box;
   width: max-content;
-  max-width: min(600px, calc(100vw - 16px));
+  /* The menu sapphire sits at the centre of the view: keep the notice in
+     the left margin even at narrower 1024px desktop widths. */
+  max-width: min(420px, 30vw);
   min-width: 0;
   display: flex;
   align-items: center;
