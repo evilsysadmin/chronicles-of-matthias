@@ -1086,6 +1086,8 @@ export function createChroniclesOfMatthiasGame(host, {
                 ? chroniclesGoblinHitPose({ hitElapsed, hp }).hurt
                 : hitElapsed >= 0 && hitElapsed < 0.42,
               attacking: attackElapsed >= 0 && attackElapsed < 0.5,
+              moving,
+              reducedMotion,
               menace: Boolean(adjacent || latestState?.initiative),
             });
           }
@@ -1173,6 +1175,14 @@ export function createChroniclesOfMatthiasGame(host, {
     draw: render,
   });
   scheduler.setVisible(visible);
+  // R2 may decode after the GPU has parked on an idle frame. Reveal the new
+  // spider painting in a single invalidated frame, not a perpetual render loop.
+  dungeon.enemyDefinitions.forEach((definition) => {
+    const actor = dungeon.enemies[definition.id];
+    if (actor?.userData.chroniclesBillboard?.visualType === 'crypt-spider') {
+      actor.userData.onChroniclesSpiderAtlasReady = () => scheduler.invalidate(0);
+    }
+  });
 
   const onContentPointerUp = (event) => {
     if (typeof onContentClick !== 'function') return;
@@ -1224,6 +1234,7 @@ export function createChroniclesOfMatthiasGame(host, {
       dungeon.materialArt?.userData.chroniclesArtCancel?.();
       dungeon.enemyDefinitions.forEach((definition) => {
         dungeon.enemies[definition.id]?.userData.chroniclesEnemyNameplate?.dispose();
+        dungeon.enemies[definition.id]?.userData.chroniclesDispose?.();
       });
       disposeScene(scene);
       renderer.dispose();
