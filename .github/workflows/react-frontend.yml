@@ -95,6 +95,11 @@ jobs:
           # Targeted healing lives in a dedicated party row, never over the sapphire.
           node smoke/run-timed.mjs smoke/spell-target-banner.mjs http://localhost:4174/smoke/spell-target-banner.html
           node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
+          # Capture the authored Swordhaven facade before optional remote shop art
+          # can time out: PR screenshots remain available even on a flaky fixture.
+          # Actual authored Swordhaven geometry: visual evidence of house-height streets
+          # from reproducible fixed cameras, both mobile and desktop.
+          node smoke/run-timed.mjs smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
           # Real shop scene, filtering, comparing and trade on 360/390/430 + desktop.
           node smoke/run-timed.mjs smoke/shop-room.mjs http://localhost:4174/smoke/shop-room.html
           # Real Swordhaven civic audiences, including portal stacking and
@@ -123,9 +128,6 @@ jobs:
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
           node smoke/run-timed.mjs smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
-          # Actual authored Swordhaven geometry: visual evidence of house-height streets
-          # from reproducible fixed cameras, both mobile and desktop.
-          node smoke/run-timed.mjs smoke/swordhaven-streets.mjs http://localhost:4174/smoke/swordhaven-streets.html
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v7
