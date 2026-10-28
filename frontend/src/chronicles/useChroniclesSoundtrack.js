@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { r2AssetUrl } from '../r2Assets.js';
 import { unlockChroniclesActionAudio } from './chroniclesActionAudio.js';
 import { getAudioContext, getAudioContextState } from '../audioContext.js';
-import { createChroniclesIdleFxSuspension } from './chroniclesIdleFxSuspension.js';
+import { createChroniclesIdleFxSuspension, listenForChroniclesFxActivity } from './chroniclesIdleFxSuspension.js';
 import { chroniclesPerfIsolationFlags } from './chroniclesPerfIsolation.js';
 import {
   getAmbientPlaybackState,
@@ -80,6 +80,7 @@ export function useChroniclesSoundtrack(entryView) {
       },
     });
     idleFx.activity();
+    const stopObservingFx = listenForChroniclesFxActivity(window, idleFx.activity);
 
     const syncPreferences = () => {
       syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
@@ -108,6 +109,7 @@ export function useChroniclesSoundtrack(entryView) {
       window.removeEventListener('pointerdown', retryAfterGesture);
       window.removeEventListener('keydown', retryAfterGesture);
       window.removeEventListener('focus', retryAfterGesture);
+      stopObservingFx();
       idleFx.dispose(); // never park the global radio after leaving Chronicles
       audio.pause();
       audio.removeAttribute('src');
