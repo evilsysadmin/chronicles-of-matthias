@@ -120,6 +120,30 @@ try {
       assert.deepEqual(errors, [], 'Uncaught browser errors');
       assert.ok((await page.locator('#root').innerHTML()).includes('Chronicles'), 'Game did not render');
 
+      // The browser must complete the real roster CORS preflight with the
+      // exact API headers used by the client. A normal account must still be
+      // denied with 403, not a TypeError caused by a blocked OPTIONS request.
+      // No privileged credentials or roster contents are read here.
+      const rosterCors = await page.evaluate(async ({ apiRoot, playerToken, release }) => {
+        try {
+          const response = await fetch(apiRoot + '/chronicles/admin/users', {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+              Authorization: 'Bearer ' + playerToken,
+              'X-Request-ID': 'chronicles-public-staging-smoke',
+              'X-Client-Release': release,
+            },
+          });
+          return { status: response.status };
+        } catch (error) {
+          return { browserError: error?.name || 'FetchError' };
+        }
+      }, { apiRoot: api, playerToken: token, release: expectedSha });
+      assert.deepEqual(rosterCors, { status: 403 },
+        'Admin roster must pass browser CORS and reject an ordinary player');
+      console.log('CHRONICLES_PUBLIC_ADMIN_ROSTER_CORS_OK viewport=' + viewport.width);
+
       // Go beyond the expedition book: inspect the actual Three.js world and
       // both real folios against it. This account exists only for this run
       // and is removed in the finally block, along with its game data.
