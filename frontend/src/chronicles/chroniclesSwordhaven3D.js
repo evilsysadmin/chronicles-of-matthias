@@ -708,25 +708,30 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
     });
   }
-  // The guild's violet side glazing now matches its pointed street windows;
-  // ordinary merchants retain warm amber panes. These decorative reveals
-  // stay within the authored foundation footprint and add no colliders.
+  // Each trade keeps its own side elevation: violet leaded glass for
+  // the guild, dark iron-barred embrasures for the fortified armory, and
+  // warm merchant glazing elsewhere. All pieces remain decorative.
   const sideGlass = isMagic
     ? material(0x7658a9, { emissive: 0x302052, emissiveIntensity: 0.42, roughness: 0.36 })
-    : mats.window;
+    : isArmor ? material(0x28323a, { roughness: 0.97, metalness: 0.08 }) : mats.window;
   for (const side of [-1, 1]) {
     for (const z of [-depth * 0.22, depth * 0.22]) {
       const edge = side * (width / 2 + 0.105);
       mesh(root, new THREE.BoxGeometry(0.13, 1.63, 1.77), mats.stone,
         'side-window-stone-reveal', [edge, 2.79, z]);
       mesh(root, new THREE.BoxGeometry(0.16, 1.27, 1.39), sideGlass,
-        isMagic ? 'side-window-violet-glass' : 'side-window-amber-glass',
+        isMagic ? 'side-window-violet-glass'
+          : isArmor ? 'side-window-armory-dark-recess' : 'side-window-amber-glass',
         [edge + side * 0.09, 2.84, z]);
       mesh(root, new THREE.BoxGeometry(0.26, 0.16, 1.88), mats.stone,
         'side-window-carved-sill', [edge + side * 0.11, 1.95, z]);
-      mesh(root, new THREE.BoxGeometry(0.15, 0.10, 1.4), isMagic ? mats.gold : mats.timber,
-        isMagic ? 'side-window-brass-mullion' : 'side-window-crossbar',
-        [edge + side * 0.17, 2.85, z]);
+      mesh(root, isArmor
+        ? new THREE.BoxGeometry(0.15, 1.19, 0.18)
+        : new THREE.BoxGeometry(0.15, 0.10, 1.4),
+      isMagic ? mats.gold : isArmor ? mats.steel : mats.timber,
+      isMagic ? 'side-window-brass-mullion'
+        : isArmor ? 'side-window-armory-iron-bar' : 'side-window-crossbar',
+      [edge + side * 0.17, 2.85, z]);
     }
   }
   // A single broad merchant's attic loft replaces the ordinary domestic

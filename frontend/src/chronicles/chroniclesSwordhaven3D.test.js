@@ -181,6 +181,27 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the fortified armory dark side embrasures with iron bars', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const armor = scene.getObjectByName('swordhaven-building-swordhaven-armor');
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const recesses = armor.children.filter(child => child.name === 'side-window-armory-dark-recess');
+      const bars = armor.children.filter(child => child.name === 'side-window-armory-iron-bar');
+      expect(recesses).toHaveLength(4);
+      expect(bars).toHaveLength(4);
+      expect(recesses[0].material.color.getHex()).toBe(0x28323a);
+      expect(bars[0].material).toBe(armor.getObjectByName('shop-door-iron-straps').material);
+      expect(bars[0].geometry.parameters.height).toBe(1.19);
+      expect(armor.getObjectByName('side-window-amber-glass')).toBeFalsy();
+      expect(armor.getObjectByName('side-window-crossbar')).toBeFalsy();
+      expect(armor.getObjectByName('shop-door')).toBeTruthy();
+      expect(forge.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(forge.getObjectByName('side-window-armory-iron-bar')).toBeFalsy();
+    }
+  });
+
   it('gives the guild violet side windows while merchants keep amber glazing', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
