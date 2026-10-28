@@ -19,11 +19,12 @@ describe('Swordhaven armorer roof silhouette', () => {
     expect(shoulders.children.filter(child => child.name === 'armor-roof-shoulder-hip')).toHaveLength(2);
     expect(shoulders.children.filter(child => child.name === 'armor-roof-shoulder-slit')).toHaveLength(2);
     expect(piers[0].position.x).toBeCloseTo(-piers[1].position.x);
-    // Roof shoulders must project ahead of the gable and above the ridge:
-    // scene-graph existence alone does not guarantee a street-visible result.
-    const frontGable = armor.getObjectByName('roof-gable-1');
-    expect(piers[0].position.z + 0.46).toBeGreaterThan(frontGable.position.z);
-    expect(caps[0].position.y).toBeGreaterThan(armor.getObjectByName('ridge-timber').position.y);
+    // Roof shoulders must project ahead of the flat ashlar coping and rise
+    // above its surface; mere scene-graph presence is not visual proof.
+    const coping = armor.getObjectByName('armor-flat-roof-coping');
+    expect(coping).toBeTruthy();
+    expect(piers[0].position.z + 0.46).toBeGreaterThan(coping.geometry.parameters.depth / 2);
+    expect(caps[0].position.y).toBeGreaterThan(coping.position.y);
     expect(armor.getObjectByName('armor-roof-crest')).toBeTruthy();
     expect(armor.getObjectByName('armor-stone-gateway')).toBeTruthy();
     expect(armor.getObjectByName('shop-door')).toBeTruthy();
