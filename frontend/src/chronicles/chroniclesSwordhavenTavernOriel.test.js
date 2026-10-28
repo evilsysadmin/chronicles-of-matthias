@@ -37,8 +37,12 @@ describe('Swordhaven tavern east guest oriel', () => {
     // pre-existing three-cell-wide solid footprint, above ground-level windows.
     const bounds = new THREE.Box3().setFromObject(oriel);
     const localBounds = bounds.clone().applyMatrix4(tavern.matrixWorld.clone().invert());
-    expect(localBounds.max.x).toBeGreaterThan(4.05);
-    expect(localBounds.max.x).toBeLessThan(6);
+    // The north-facing tavern is rotated PI: local -X is the east
+    // plaza-facing side. Guard against a gallery hidden on the back wall.
+    expect(tavern.rotation.y).toBeCloseTo(Math.PI);
+    expect(oriel.position.x).toBeLessThan(-4.05);
+    expect(localBounds.min.x).toBeLessThan(-4.05);
+    expect(localBounds.min.x).toBeGreaterThan(-6);
     expect(localBounds.min.y).toBeGreaterThan(3);
     expect(tavern.getObjectByName('side-window-amber-glass')).toBeTruthy();
     expect(tavern.getObjectByName('shop-door')).toBeTruthy();
