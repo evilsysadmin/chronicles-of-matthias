@@ -61,6 +61,43 @@ export function chroniclesOrganicRockGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+// Hand-built heather leaves and dusty lilac flowers share ONE instanced
+// vertex-colour material. No external texture, animation, or transparency sort.
+// Compact crossing triangles suggest branching stems without giant poly cones.
+export function chroniclesBrezalHeatherGeometry() {
+  const positions = [];
+  const colors = [];
+  const foliage = [new THREE.Color('#52664a'), new THREE.Color('#78855d')];
+  const blooms = [new THREE.Color('#937693'), new THREE.Color('#b49aaa')];
+  const add = (a, b, c, tint) => {
+    positions.push(...a, ...b, ...c);
+    for (let i = 0; i < 3; i += 1) colors.push(tint.r, tint.g, tint.b);
+  };
+  for (let stem = 0; stem < 7; stem += 1) {
+    const angle = stem * Math.PI * 2 / 7;
+    const r = stem % 2 ? 0.16 : 0.32;
+    const cx = Math.cos(angle) * r;
+    const cz = Math.sin(angle) * r;
+    const sidewaysX = -Math.sin(angle) * 0.12;
+    const sidewaysZ = Math.cos(angle) * 0.12;
+    const height = 0.35 + (stem % 3) * 0.07;
+    const tip = [cx + Math.cos(angle) * 0.08, height, cz + Math.sin(angle) * 0.08];
+    const left = [cx - sidewaysX, 0.015, cz - sidewaysZ];
+    const right = [cx + sidewaysX, 0.015, cz + sidewaysZ];
+    add(left, right, tip, foliage[stem % foliage.length]);
+    const flowerHeight = height + 0.11;
+    add([tip[0] - sidewaysX * 0.78, height - 0.06, tip[2] - sidewaysZ * 0.78],
+      [tip[0] + sidewaysX * 0.78, height - 0.06, tip[2] + sidewaysZ * 0.78],
+      [tip[0], flowerHeight, tip[2]], blooms[stem % blooms.length]);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -88,6 +125,7 @@ function partCatalog(coarsePointer) {
     tuft: () => [new THREE.ConeGeometry(0.16, 0.42, 4), lit(0x6e9a3e)],
     flower: () => [new THREE.IcosahedronGeometry(0.09, 0), lit(0xe8c84a, { emissive: 0x2a2208 })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
+    heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
     ember: () => [new THREE.BoxGeometry(0.12, 0.06, 0.12), lit(0xff7a2a, { emissive: 0xff5a10, emissiveIntensity: 1.2 })],
     // Camps.
@@ -231,6 +269,23 @@ const DRESS = {
   },
 };
 
+// B2 only: heather follows the boundary from the SOLID side of a rock tile.
+// Even its outermost flower stays within the 4m blocking cell. This creates
+// recognizable purple heath along natural passages without covering foes or
+// silently changing the collision/road grid. No per-frame random placement.
+function addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer) {
+  const openSide = [
+    { dx: 0, dy: -1 }, { dx: 1, dy: 0 },
+    { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
+  ].find(({ dx, dy }) => grid[y + dy]?.[x + dx] === '.');
+  if (!openSide || noise(x, y, 133) < (coarsePointer ? 0.67 : 0.31)) return;
+  const size = 0.83 + noise(x, y, 137) * 0.29;
+  p.add('heather', [wx + openSide.dx * 1.27, 0, wz + openSide.dy * 1.27], {
+    yaw: noise(x, y, 139) * Math.PI * 2,
+    scale: [size, size, size],
+  });
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     p.add('tuft', [wx, 0.2, wz], { yaw: noise(x, y, 70) * 6.28 });
@@ -278,7 +333,7 @@ const SET_PIECES = {
  * @param {object} plan  { grid, center, biome, scenery, coarsePointer }
  * @returns {THREE.Group} the dressing, or an empty group for unknown biomes
  */
-export function buildTerraScenery({ grid = [], center, biome, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [] }) {
+export function buildTerraScenery({ grid = [], center, biome, mapId = null, scenery = [], coarsePointer = false, dressBlocked = true, keepClear = [] }) {
   const group = new THREE.Group();
   group.name = 'chronicles-terra-scenery';
   const height = grid.length;
@@ -308,6 +363,9 @@ export function buildTerraScenery({ grid = [], center, biome, scenery = [], coar
         // Mobile keeps the far ring sparse; the playable edge is always full.
         if (!inside && coarsePointer && noise(x, y, 99) < 0.45) continue;
         dress(p, wx, wz, x, y, !inside);
+        if (inside && biome === 'hills' && mapId === 'terra-b2') {
+          addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
+        }
       } else if (clutter && !coarsePointer && !clear.has(x + ',' + y) && noise(x, y, 77) < 0.28) {
         // Off-centre, so roads and the cell where the camera stands stay clear.
         clutter(p, wx + (noise(x, y, 78) - 0.5) * 3, wz + (noise(y, x, 79) - 0.5) * 3, x, y);
@@ -322,7 +380,7 @@ export function buildTerraScenery({ grid = [], center, biome, scenery = [], coar
     matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
