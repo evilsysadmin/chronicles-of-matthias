@@ -73,6 +73,7 @@ describe('Chronicles player administration', () => {
     [{ hasLoaded: true, loading: false, error: '', count: 1, hasMore: false }, '1 usuario cargado'],
     [{ hasLoaded: true, loading: false, error: '', count: 4, hasMore: true }, '4 usuarios cargados · hay más'],
     [{ hasLoaded: true, loading: true, error: '', count: 2, hasMore: false }, '2 usuarios cargados · actualizando…'],
+    [{ hasLoaded: true, loading: true, loadingMore: true, error: '', count: 40, hasMore: true }, '40 usuarios cargados · hay más · cargando más…'],
     [{ hasLoaded: true, loading: false, error: 'Red caída', count: 2, hasMore: true }, '2 usuarios cargados · hay más · datos de la última consulta correcta'],
   ])('reports honest census state for %j', (state, expected) => {
     expect(chroniclesRosterStatusLabel(state)).toBe(expected);
