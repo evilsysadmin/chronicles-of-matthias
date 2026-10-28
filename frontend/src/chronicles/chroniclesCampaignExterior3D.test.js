@@ -465,6 +465,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(guild.getObjectByName('magic-shop-turret')).toBeTruthy();
     expect(guild.getObjectByName('apothecary-roof-herbarium')).toBeFalsy();
 
+    // The botica's four side panes now read as sage-green herb-house
+    // windows with paired timber shutters, not generic amber shop glazing.
+    const sidePanes = apothecary.children.filter(child =>
+      child.name === 'side-window-apothecary-sage-glass');
+    expect(sidePanes).toHaveLength(4);
+    expect(sidePanes[0].material.color.getHex()).toBe(0x617b54);
+    const shutters = apothecary.getObjectByName('apothecary-side-sage-shutters');
+    expect(shutters).toBeInstanceOf(THREE.InstancedMesh);
+    expect(shutters.count).toBe(8);
+    expect(shutters.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(shutters.material.color.getHex()).toBe(0x526c49);
+    expect(apothecary.getObjectByName('side-window-amber-glass')).toBeFalsy();
+    expect(guild.getObjectByName('apothecary-side-sage-shutters')).toBeFalsy();
+    expect(apothecary.getObjectByName('shop-door')).toBeTruthy();
+
     // Two metalwork merchants must be recognisable by their roofline, not
     // just their signs: a tall forge flue versus an armorer's gable shield.
     const forge = town.children.find(child =>

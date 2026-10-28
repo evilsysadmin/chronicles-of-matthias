@@ -715,7 +715,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const sideGlass = isMagic
     ? material(0x7658a9, { emissive: 0x302052, emissiveIntensity: 0.42, roughness: 0.36 })
     : isArmor ? material(0x28323a, { roughness: 0.97, metalness: 0.08 })
-      : isForge ? material(0x302820, { roughness: 0.99, metalness: 0.02 }) : mats.window;
+      : isForge ? material(0x302820, { roughness: 0.99, metalness: 0.02 })
+        : isApothecary ? material(0x617b54, { roughness: 0.57, emissive: 0x16251a, emissiveIntensity: 0.16 })
+          : mats.window;
   for (const side of [-1, 1]) {
     for (const z of [-depth * 0.22, depth * 0.22]) {
       const edge = side * (width / 2 + 0.105);
@@ -724,7 +726,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mesh(root, new THREE.BoxGeometry(0.16, 1.27, 1.39), sideGlass,
         isMagic ? 'side-window-violet-glass'
           : isArmor ? 'side-window-armory-dark-recess'
-            : isForge ? 'side-window-forge-soot-vent' : 'side-window-amber-glass',
+            : isForge ? 'side-window-forge-soot-vent'
+              : isApothecary ? 'side-window-apothecary-sage-glass' : 'side-window-amber-glass',
         [edge + side * 0.09, 2.84, z]);
       mesh(root, new THREE.BoxGeometry(0.26, 0.16, 1.88), mats.stone,
         'side-window-carved-sill', [edge + side * 0.11, 1.95, z]);
@@ -737,6 +740,31 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
           : isForge ? 'side-window-forge-iron-louver' : 'side-window-crossbar',
       [edge + side * 0.17, 2.85, z]);
     }
+  }
+  // Sage-painted timber shutters give the herb house a botanical side
+  // elevation. One instanced draw call, with all leaves attached to the
+  // existing solid building; no street tiles, doors or collision change.
+  if (isApothecary) {
+    const shutters = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.18, 1.40, 0.48),
+      material(0x526c49, { roughness: 0.96 }), 8,
+    );
+    shutters.name = 'apothecary-side-sage-shutters';
+    shutters.userData.chroniclesDecorativeOnly = true;
+    shutters.castShadow = !coarse;
+    const leaf = new THREE.Object3D();
+    let index = 0;
+    for (const side of [-1, 1]) {
+      for (const z of [-depth * 0.22, depth * 0.22]) {
+        for (const edge of [-1, 1]) {
+          leaf.position.set(side * (width / 2 + 0.30), 2.84, z + edge * 0.99);
+          leaf.updateMatrix();
+          shutters.setMatrixAt(index++, leaf.matrix);
+        }
+      }
+    }
+    shutters.instanceMatrix.needsUpdate = true;
+    root.add(shutters);
   }
   // A single broad merchant's attic loft replaces the ordinary domestic
   // dormers on the general store. The oak gable and glazed loading bay break
