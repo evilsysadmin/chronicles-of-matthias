@@ -10,7 +10,7 @@ import {
   buildChroniclesRemoteOverworldBillboard,
 } from './chroniclesRemoteOverworldSprite.js';
 
-const assets = [["dire-wolf","801e6d33ddbec52f"],["bandit-archer","21ac68ee50536c53"],["harpy","5bb6e2c854cc9477"]];
+const assets = [["dire-wolf","801e6d33ddbec52f"],["bandit-archer","21ac68ee50536c53"],["harpy","5bb6e2c854cc9477"],["troll","70685b89d7e8b264"]];
 
 describe('Chronicles premium overworld enemies', () => {
   it.each(assets)('%s has a pinned, safe R2 URL and eight valid cells', (type, hash) => {
