@@ -12,9 +12,56 @@ import {
   chroniclesSoundtrackGain,
   syncChroniclesSoundtrackPlayback,
   chroniclesSoundtrackIdForView,
+  chroniclesFxIdleDeadlineNeeded,
+  createChroniclesSoundtrackActivityHandlers,
 } from './useChroniclesSoundtrack.js';
 
 describe('Chronicles recorded soundtrack', () => {
+  it('does not schedule FX suspension before a real AudioContext exists', () => {
+    expect(chroniclesFxIdleDeadlineNeeded('uninitialized')).toBe(false);
+    expect(chroniclesFxIdleDeadlineNeeded('closed')).toBe(false);
+    expect(chroniclesFxIdleDeadlineNeeded('running')).toBe(true);
+    expect(chroniclesFxIdleDeadlineNeeded('suspended')).toBe(true);
+  });
+
+  it('browser focus retries the soundtrack without initializing WebAudio', () => {
+    const unlockFx = vi.fn(() => true);
+    const armIdle = vi.fn();
+    const syncSoundtrack = vi.fn();
+    const handlers = createChroniclesSoundtrackActivityHandlers({
+      unlockFx, armIdle, syncSoundtrack,
+    });
+    handlers.focus();
+    expect(syncSoundtrack).toHaveBeenCalledExactlyOnceWith();
+    expect(unlockFx).not.toHaveBeenCalled();
+    expect(armIdle).not.toHaveBeenCalled();
+  });
+
+  it('arms WebAudio idle shutdown after a real sound-enabled gesture', () => {
+    const calls = [];
+    const handlers = createChroniclesSoundtrackActivityHandlers({
+      unlockFx: () => { calls.push('unlock'); return true; },
+      armIdle: () => calls.push('idle'),
+      syncSoundtrack: () => calls.push('music'),
+    });
+    handlers.gesture();
+    expect(calls).toEqual(['unlock', 'idle', 'music']);
+  });
+
+  it('does not create an idle deadline for muted or unavailable sound effects', () => {
+    const unlockFx = vi.fn(() => false);
+    const armIdle = vi.fn();
+    const syncSoundtrack = vi.fn();
+    const handlers = createChroniclesSoundtrackActivityHandlers({
+      unlockFx, armIdle, syncSoundtrack,
+    });
+    handlers.gesture();
+    handlers.gesture();
+    expect(unlockFx).toHaveBeenCalledTimes(2);
+    expect(armIdle).not.toHaveBeenCalled();
+    expect(syncSoundtrack).toHaveBeenCalledTimes(2);
+  });
+
   it('plays the first verse in the expedition menu and character setup', () => {
     expect(chroniclesSoundtrackIdForView('menu')).toBe('chronicles.music.firstVerse');
     expect(chroniclesSoundtrackIdForView('setup')).toBe('chronicles.music.firstVerse');

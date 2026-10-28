@@ -43,6 +43,26 @@ export function syncChroniclesSoundtrackPlayback(audio, volume, muted) {
   if (attempt?.catch) void attempt.catch(() => {});
 }
 
+// Foreground focus alone is not a trusted playback gesture: do not create or
+// wake the shared SFX AudioContext just because the browser tab was focused.
+// Real pointer/keyboard events may unlock SFX; muted/unsupported FX must not
+// schedule an idle WebAudio deadline. Recorded MP3 retry remains unchanged.
+export function createChroniclesSoundtrackActivityHandlers({ unlockFx, armIdle, syncSoundtrack }) {
+  return {
+    gesture() {
+      if (unlockFx()) armIdle();
+      syncSoundtrack();
+    },
+    focus() {
+      syncSoundtrack();
+    },
+  };
+}
+
+export function chroniclesFxIdleDeadlineNeeded(contextState) {
+  return contextState === 'running' || contextState === 'suspended';
+}
+
 // Chronicles owns its own recorded score. The global radio retains its place
 // and resumes only if it was actually playing before entering Chronicles.
 export function useChroniclesSoundtrack(entryView) {
@@ -79,7 +99,9 @@ export function useChroniclesSoundtrack(entryView) {
         } catch { /* Browser may refuse while transitioning. */ }
       },
     });
-    idleFx.activity();
+    // If no procedural sound has ever played, there is no AudioContext to
+    // suspend. Do not create a 10s timer just for entering the menu.
+    if (chroniclesFxIdleDeadlineNeeded(getAudioContextState())) idleFx.activity();
     const stopObservingFx = listenForChroniclesFxActivity(window, idleFx.activity);
 
     const syncPreferences = () => {
@@ -89,26 +111,27 @@ export function useChroniclesSoundtrack(entryView) {
       const status = getAmbientPlaybackState()?.status;
       if (status === 'playing' || status === 'gap') pauseAmbientMusic();
     };
-    const retryAfterGesture = () => {
-      // FX must be unlocked *during* the gesture: enemy responses and React
-      // post-paint hit cues happen later, after transient activation ends.
-      unlockChroniclesActionAudio();
-      idleFx.activity(); // one-shot idle deadline, not a running polling loop
-      // Autoplay is often blocked after F5 until the next real user gesture.
-      // Do not reawaken muted media during pointer/keyboard/focus events.
-      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
-    };
+    const wake = createChroniclesSoundtrackActivityHandlers({
+      // FX must be unlocked during a *real* gesture: later enemy response
+      // cues may arrive after transient browser user activation has expired.
+      unlockFx: unlockChroniclesActionAudio,
+      armIdle: idleFx.activity,
+      // A focus event may retry MP3 playback, but does not touch WebAudio.
+      syncSoundtrack: () => syncChroniclesSoundtrackPlayback(
+        audio, getAmbientVolume(), isMusicMuted() || isolateMusic,
+      ),
+    });
     syncPreferences();
     window.addEventListener('chess-ambient-transport', syncPreferences);
-    window.addEventListener('pointerdown', retryAfterGesture, { passive: true });
-    window.addEventListener('keydown', retryAfterGesture);
-    window.addEventListener('focus', retryAfterGesture);
+    window.addEventListener('pointerdown', wake.gesture, { passive: true });
+    window.addEventListener('keydown', wake.gesture);
+    window.addEventListener('focus', wake.focus);
 
     return () => {
       window.removeEventListener('chess-ambient-transport', syncPreferences);
-      window.removeEventListener('pointerdown', retryAfterGesture);
-      window.removeEventListener('keydown', retryAfterGesture);
-      window.removeEventListener('focus', retryAfterGesture);
+      window.removeEventListener('pointerdown', wake.gesture);
+      window.removeEventListener('keydown', wake.gesture);
+      window.removeEventListener('focus', wake.focus);
       stopObservingFx();
       idleFx.dispose(); // never park the global radio after leaving Chronicles
       audio.pause();
