@@ -161,6 +161,7 @@ function normalizeEnemy(enemy) {
       requiresLineOfSight: Boolean(enemy?.ai?.requiresLineOfSight),
       patrolRoute: Object.freeze((enemy?.ai?.patrolRoute || []).map((point) => Object.freeze(clonePoint(point)))),
     }),
+    attacks: Array.isArray(enemy.attacks) ? Object.freeze([...enemy.attacks]) : undefined,
     onDefeat: enemy?.onDefeat ? Object.freeze({
       ...enemy.onDefeat,
       effects: Object.freeze((enemy.onDefeat.effects || []).map((effect) => Object.freeze({ ...effect }))),
@@ -234,6 +235,11 @@ function assertPatrolRoute(map, enemy) {
 
 function assertEnemyContract(map, enemy) {
   assertWalkablePoint(map, enemy, `enemy ${enemy.id}`);
+  if (enemy.attacks !== undefined && (
+    !Array.isArray(enemy.attacks) || enemy.attacks.length < 1 || enemy.attacks.length > 3
+    || enemy.attacks.some((label) => typeof label !== 'string' || !label.trim()
+      || label.trim() !== label || label.length > 32)
+  )) throw new Error(`Chronicles map ${map.id} enemy ${enemy.id} requires 1..3 named attacks`);
   if (!enemy.hpKey || typeof enemy.hpKey !== 'string') {
     throw new Error(`Chronicles map ${map.id} enemy ${enemy.id} requires hpKey`);
   }

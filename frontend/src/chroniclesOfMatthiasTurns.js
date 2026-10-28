@@ -532,13 +532,14 @@ function appendDownJournal(state, member) {
   };
 }
 
-function damageParty(state, enemy, enemyIndex, events, target = null) {
+function damageParty(state, enemy, enemyIndex, events, target = null, strike = null) {
   const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
   target = target || choosePartyTarget(state, enemy, enemyPosition);
   if (!target) return state;
   const rawDamage = Math.max(1, Number(enemy.retaliation || 1));
   const swing = chroniclesUsesMM3Combat(state)
-    ? chroniclesMM3EnemySwing(state, enemy, target.id, `turn-${enemyIndex}`)
+    ? chroniclesMM3EnemySwing(state, enemy, target.id,
+      strike?.index ? `turn-${enemyIndex}-strike-${strike.index + 1}` : `turn-${enemyIndex}`)
     : null;
   const damage = swing
     ? swing.damage
@@ -557,8 +558,25 @@ function damageParty(state, enemy, enemyIndex, events, target = null) {
     fromHp: previousHp,
     toHp: nextHp,
     ...(swing ? { roll: swing.roll, missed: !swing.hit } : {}),
+    ...(strike ? { attackName: strike.name, attackIndex: strike.index, attackCount: strike.count } : {}),
   });
   if (previousHp > 0 && nextHp === 0) next = appendDownJournal(next, target);
+  return next;
+}
+
+// An authored multi-strike creature still has exactly one initiative action.
+ // Recompute the target after each hit so a fallen hero cannot soak more blows;
+ // movement/paralysis never combine with this attack sequence.
+function damagePartySequence(state, enemy, enemyIndex, events, initialTarget) {
+  const named = Array.isArray(enemy.attacks) && enemy.attacks.length ? enemy.attacks : null;
+  const count = named ? Math.min(3, named.length) : 1;
+  let next = state;
+  for (let index = 0; index < count && !partyDefeated(next); index += 1) {
+    const target = index === 0 ? initialTarget : chroniclesEnemyAttackTarget(next, enemy);
+    if (!target) break;
+    next = damageParty(next, enemy, enemyIndex, events, target,
+      named ? { index, count, name: named[index] } : null);
+  }
   return next;
 }
 
@@ -627,7 +645,7 @@ export function chroniclesResolveEnemyActor(state, enemyId) {
   if (disengageStep) {
     next = moveEnemy(next, enemy, disengageStep, events);
   } else if (target) {
-    next = damageParty(next, enemy, enemyIndex, events, target);
+    next = damagePartySequence(next, enemy, enemyIndex, events, target);
   } else {
     // Movement consumes this actor's entire action. Only an enemy that
     // started its turn in weapon range can make a melee/ranged attack.
@@ -677,7 +695,7 @@ export function chroniclesResolveEnemyTurn(state) {
       return;
     }
     if (target) {
-      next = damageParty(next, enemy, enemyIndex, events, target);
+      next = damagePartySequence(next, enemy, enemyIndex, events, target);
       return;
     }
     // The collective enemy phase follows the same one-action rule as
