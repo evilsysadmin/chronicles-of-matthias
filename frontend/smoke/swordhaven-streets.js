@@ -21,7 +21,7 @@ const VIEWS = Object.freeze({
   'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   // East-side street view reveals the inn's overhanging guest-room oriel.
-  'tavern-oblique': { x: 9, y: 10, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
+  'tavern-oblique': { x: 11, y: 9, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.2 },
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
