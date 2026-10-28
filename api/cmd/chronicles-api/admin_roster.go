@@ -122,7 +122,7 @@ func (h *adminRosterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Presence-Session")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, X-Client-Release, X-Presence-Session")
 		w.Header().Set("Access-Control-Max-Age", "600")
 		w.WriteHeader(http.StatusNoContent)
 		return
