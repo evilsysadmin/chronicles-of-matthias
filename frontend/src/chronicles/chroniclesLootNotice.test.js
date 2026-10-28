@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesLootNotice } from './chroniclesLootNotice.js';
 import { chroniclesActiveEnemies, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesMapById } from './chroniclesMapCatalog.js';
 
 describe('Chronicles visible loot receipts', () => {
   it('announces the actual object granted by an interaction, not the attempted label', () => {
     const before = { inventory: {}, turns: 0 };
     const after = { inventory: { sealed: { name: 'Carta sellada', quantity: 1 } }, turns: 1 };
     expect(chroniclesLootNotice(before, after, 'interact')).toMatchObject({
-      kind: 'pickup', text: 'Recogido: Carta sellada',
+      kind: 'pickup', text: 'Encuentras: Carta sellada',
     });
     expect(chroniclesLootNotice(after, after, 'interact')).toBeNull();
   });
@@ -25,18 +26,41 @@ describe('Chronicles visible loot receipts', () => {
     if (gained > 0) {
       const notice = chroniclesLootNotice(before, resolved, { type: 'attack', memberId: 'matthias' });
       expect(notice.kind).toBe('loot');
-      expect(notice.text).toContain(`${gained} × monedas de oro`);
+      expect(notice.text).toContain(`${gained} monedas de oro`);
     } else {
       // A missed swing is not a guaranteed reward.
       expect(chroniclesLootNotice(before, resolved, { type: 'attack' })).toBeNull();
     }
   });
 
+
+  it.each([
+    ['sewers-dropped-purse', 5, []],
+    ['sewers-contraband-crate', 6, ['2 × Poción de curación']],
+    ['sewers-old-bones', 4, []],
+    ['sewers-smuggler-stash', 10, ['Daga de bronce']],
+  ])('announces a real sewer treasure and does not repeat its reward: %s', (id, gold, items) => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const treasure = chroniclesMapById('swordhaven-sewers').treasures.find((entry) => entry.id === id);
+    expect(treasure).toBeDefined();
+    const before = {
+      ...base, x: treasure.x, y: treasure.y,
+      ...(id === 'sewers-smuggler-stash' ? { sewersSmugglerHp: 0 } : {}),
+    };
+    const after = chroniclesReduce(before, 'interact');
+    const notice = chroniclesLootNotice(before, after, 'interact');
+    expect(notice).toMatchObject({ kind: 'pickup' });
+    expect(notice.text).toContain(`${gold} monedas de oro`);
+    for (const item of items) expect(notice.text).toContain(item);
+    const repeated = chroniclesReduce(after, 'interact');
+    expect(chroniclesLootNotice(after, repeated, 'interact')).toBeNull();
+  });
+
   it('deduplicates by the actual inventory delta and never invents a drop on misses', () => {
     const before = { inventory: { 'crown-gold': { quantity: 8 }, potion: { name: 'Poción', quantity: 2 } } };
     const gained = { inventory: { 'crown-gold': { quantity: 11 }, potion: { name: 'Poción', quantity: 3 } } };
     expect(chroniclesLootNotice(before, gained, { type: 'volley' })).toMatchObject({
-      kind: 'loot', text: 'Botín: 3 × monedas de oro · Poción',
+      kind: 'loot', text: 'Botín: 3 monedas de oro · Poción',
     });
     expect(chroniclesLootNotice(before, { inventory: before.inventory }, 'volley')).toBeNull();
     expect(chroniclesLootNotice(before, gained, { type: 'shop-buy' })).toBeNull();
@@ -49,6 +73,6 @@ describe('Chronicles visible loot receipts', () => {
       c: { name: 'Gema azul', quantity: 1 }, d: { name: 'Pergamino', quantity: 1 },
     } };
     expect(chroniclesLootNotice({ inventory: {} }, next, 'interact').text)
-      .toBe('Recogido: Llave oxidada · 2 × Poción · Gema azul · +1 más');
+      .toBe('Encuentras: Llave oxidada · 2 × Poción · Gema azul · +1 más');
   });
 });
