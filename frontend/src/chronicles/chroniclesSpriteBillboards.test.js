@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
 import spriteManifest from '../assets/chronicles/sprites/sprites.json';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import {
@@ -9,6 +10,14 @@ import {
   CHRONICLES_ASH_GOBLIN_R2_URL,
   chroniclesSpriteFrameIndex,
 } from './chroniclesSpriteBillboards.js';
+import {
+  buildChroniclesRemoteSpiderBillboard,
+  chroniclesSpiderR2Url,
+  chroniclesSpiderAtlasValid,
+  chroniclesSpiderFrameIndex,
+  CHRONICLES_SEWER_SPIDER_R2_URL,
+  CHRONICLES_SEWER_SPIDER_FRAMES,
+} from './chroniclesRemoteSpiderSprite.js';
 
 describe('Chronicles 2.5D billboards', () => {
   it('ships sheets for the bone hound and Edda with the frames the runtime asks for', () => {
@@ -66,7 +75,11 @@ describe('Chronicles 2.5D billboards', () => {
     expect(billboard.model.userData.chroniclesBillboard?.visualType).toBe('bone-hound');
     expect(typeof billboard.model.userData.updateChroniclesSprite).toBe('function');
     expect(buildChroniclesEnemyVisual('bone-hound').model.userData.chroniclesBillboard).toBeUndefined();
-    expect(buildChroniclesEnemyVisual('crypt-spider', { sprites: true }).model.userData.chroniclesBillboard).toBeUndefined();
+    const spider = buildChroniclesEnemyVisual('crypt-spider', { sprites: true });
+    expect(spider.model.userData.chroniclesBillboard?.visualType).toBe('crypt-spider');
+    expect(spider.model.children.length).toBeGreaterThanOrEqual(2); // full 3D fallback + hidden premium sprite
+    expect(buildChroniclesEnemyVisual('crypt-spider').model.userData.chroniclesBillboard).toBeUndefined();
+    spider.model.userData.chroniclesDispose?.();
   });
 });
 
@@ -87,5 +100,51 @@ describe('procedural placeholder creatures', () => {
       expect(spriteManifest[id].frames, id).toEqual(['idle-a', 'idle-b', 'attack', 'hurt', 'dead']);
       expect(chroniclesEnemyVisualSpec(id), id).not.toBeNull();
     });
+  });
+});
+
+describe('premium sewer spider · approved eight-pose R2 atlas', () => {
+  it('uses a versioned, public HTTPS asset path; rejects dashboard, mutable or wrong files', () => {
+    expect(CHRONICLES_SEWER_SPIDER_R2_URL).toBe(
+      'https://assets.chronicles.shadowops.dpdns.org/sprites/sewer-spider-4e1324b3827c789a.webp',
+    );
+    expect(chroniclesSpiderR2Url(CHRONICLES_SEWER_SPIDER_R2_URL)).toBe(CHRONICLES_SEWER_SPIDER_R2_URL);
+    for (const invalid of [
+      'https://dash.cloudflare.com/account/r2/default/buckets/chronicles/objects/sprites/sewer-spider.webp',
+      'http://assets.chronicles.shadowops.dpdns.org/sprites/sewer-spider-4e1324b3827c789a.webp',
+      'https://assets.chronicles.shadowops.dpdns.org/sprites/sewer-spider.webp',
+      CHRONICLES_SEWER_SPIDER_R2_URL + '?cache=0',
+      'https://example.org/sprites/sewer-spider-4e1324b3827c789a.webp',
+    ]) expect(chroniclesSpiderR2Url(invalid)).toBeNull();
+    expect(chroniclesSpiderAtlasValid({ width: 2560, height: 320 })).toBe(true);
+    expect(chroniclesSpiderAtlasValid({ width: 2560, height: 400 })).toBe(false);
+    expect(chroniclesSpiderAtlasValid({ width: 1280, height: 320 })).toBe(false);
+  });
+
+  it('has three distinct walking poses and explicit attack, hurt and dead with priority', () => {
+    expect(CHRONICLES_SEWER_SPIDER_FRAMES).toEqual([
+      'idle-a', 'idle-b', 'walk-a', 'walk-b', 'walk-c', 'attack', 'hurt', 'dead',
+    ]);
+    expect([0, 0.12, 0.24].map(time => chroniclesSpiderFrameIndex({ moving: true, time })))
+      .toEqual([2, 3, 4]);
+    expect(chroniclesSpiderFrameIndex({ moving: true, hurt: true, time: 0.2 })).toBe(6);
+    expect(chroniclesSpiderFrameIndex({ moving: true, attacking: true, time: 0.2 })).toBe(5);
+    expect(chroniclesSpiderFrameIndex({ dead: true, hurt: true, attacking: true })).toBe(7);
+    expect(chroniclesSpiderFrameIndex({ reducedMotion: true, moving: true })).toBe(0);
+    expect(chroniclesSpiderFrameIndex({ reducedMotion: true, hurt: true })).toBe(6);
+    expect(chroniclesSpiderFrameIndex({ reducedMotion: true, dead: true })).toBe(7);
+  });
+
+  it('keeps real procedural spider fully visible until a validated R2 image loads', () => {
+    const oldModel = new THREE.Group();
+    const result = buildChroniclesRemoteSpiderBillboard(oldModel);
+    expect(result.children).toContain(oldModel);
+    expect(oldModel.visible).toBe(true);
+    const premiumSprite = result.userData.chroniclesBillboard.sprite;
+    expect(premiumSprite.visible).toBe(false);
+    expect(typeof result.userData.updateChroniclesSprite).toBe('function');
+    expect(typeof result.userData.setChroniclesSpriteOpacity).toBe('function');
+    result.userData.updateChroniclesSprite(0.35, { moving: true });
+    result.userData.chroniclesDispose();
   });
 });
