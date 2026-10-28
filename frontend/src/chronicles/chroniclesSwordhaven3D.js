@@ -784,8 +784,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       cap.rotation.z = -side * 0.44;
     }
     root.add(vent);
-  } else if (!isTemple && !isTavern && !isMagic) {
-    // Merchant houses retain dormers; the temple, tavern and guild have distinctive rooflines.
+  } else if (!isTemple && !isTavern && !isMagic && !isArmor) {
+    // Merchant houses retain dormers; the temple, tavern, guild and armorer have distinct rooflines.
     for (const side of (coarse ? [-1] : [-1, 1])) {
       const x = side * width * 0.245;
       const z = depth * 0.17;
@@ -805,8 +805,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
   }
   // The forge gets its own industrial stack below; other houses keep
-  // the small domestic chimney, except the guild's observatory. Neither alters the collision grid.
-  if (!isForge && !isTavern && !isTemple && !isMagic) {
+  // the small domestic chimney, except the guild and fortified armorer. Neither alters the collision grid.
+  if (!isForge && !isTavern && !isTemple && !isMagic && !isArmor) {
     mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
       'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
     mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
@@ -1207,6 +1207,29 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'armor-display', [x, 1.12, facadeZ + 0.24]);
   }
   if (isArmor) {
+    // A continuous stone parapet with six spaced merlons connects the two
+    // armorer towers. This fortified street silhouette replaces domestic
+    // dormers/chimney without introducing new colliders or draw calls per tooth.
+    const parapet = new THREE.Group();
+    parapet.name = 'armor-ashlar-parapet';
+    parapet.userData.chroniclesDecorativeOnly = true;
+    parapet.position.z = facadeZ + 0.36;
+    mesh(parapet, new THREE.BoxGeometry(width * 0.78, 0.32, 0.66), mats.stone,
+      'armor-parapet-stone-course', [0, height + 0.43, 0], !coarse);
+    const merlons = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.72, 0.68, 0.70), mats.stone, 6);
+    merlons.name = 'armor-parapet-merlons';
+    merlons.castShadow = !coarse;
+    merlons.receiveShadow = true;
+    const merlon = new THREE.Object3D();
+    for (const [index, x] of [-2.65, -1.70, -0.75, 0.75, 1.70, 2.65].entries()) {
+      merlon.position.set(x, height + 0.91, 0);
+      merlon.updateMatrix();
+      merlons.setMatrixAt(index, merlon.matrix);
+    }
+    merlons.instanceMatrix.needsUpdate = true;
+    parapet.add(merlons);
+    root.add(parapet);
     // Paired ashlar roof shoulders give the armorer a fortified silhouette,
     // distinct from the watchhouse's single battlement tower. They sit in
     // front of the roof gable, above the solid building footprint, and never
