@@ -541,6 +541,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.5);
     expect(forge.getObjectByName('store-market-awning')).toBeFalsy();
     expect(watch?.getObjectByName('store-market-awning')).toBeFalsy();
+    // Warehouse hatches replace the general store's four domestic side
+    // windows. The three timber battens per hatch are batched for mobile.
+    const cargoHatches = store.children.filter(child =>
+      child.name === 'side-window-store-oak-loading-hatch');
+    expect(cargoHatches).toHaveLength(4);
+    expect(cargoHatches[0].material.color.getHex()).toBe(0x614932);
+    const battens = store.getObjectByName('store-side-loading-hatch-battens');
+    expect(battens).toBeInstanceOf(THREE.InstancedMesh);
+    expect(battens.count).toBe(12);
+    expect(battens.material.color.getHex()).toBe(0x997451);
+    expect(battens.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(store.getObjectByName('side-window-amber-glass')).toBeFalsy();
+    expect(store.getObjectByName('shop-door')).toBeTruthy();
+    expect(apothecary.getObjectByName('store-side-loading-hatch-battens')).toBeFalsy();
+    expect(forge.getObjectByName('store-side-loading-hatch-battens')).toBeFalsy();
 
     // From the authored spawn on the plaza, players can walk to the mayor:
     // do not let architectural dressing imply a door behind solid collision.
