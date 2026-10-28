@@ -99,6 +99,30 @@ func TestRosterLevelsAndOnlineAreConservative(t *testing.T) {
 	if rosterActive("",true,now) { t.Fatal("missing activity considered online") }
 }
 
+func TestRosterHeroNamesUseOnlySafeSavedCharacterLabels(t *testing.T) {
+	raw := `{"characterBuild":{"mode":"custom","characters":[
+		{"slotId":"matthias","name":"  Aragorn  "},
+		{"slotId":"rook","name":"Éowyn"},
+		{"slotId":"bishop","name":"  "},
+		{"slotId":"knight","name":"line\\nbreak"},
+		{"slotId":"unknown","name":"Exposed"}
+	]}}`
+	names := rosterHeroNames(raw)
+	if len(names) != 2 || names["matthias"] != "Aragorn" || names["rook"] != "Éowyn" {
+		t.Fatalf("safe custom hero names not extracted: %#v", names)
+	}
+	for _, excluded := range []string{"bishop", "knight", "unknown"} {
+		if _, ok := names[excluded]; ok { t.Fatalf("unsafe or unknown slot exposed: %q", excluded) }
+	}
+	if rosterHeroNames("{") != nil || rosterHeroNames(`{"characterBuild":{}}`) != nil {
+		t.Fatal("legacy or corrupt progression must use UI fallback labels")
+	}
+	if rosterHeroNames(`{"characterBuild":{"characters":[{"slotId":"matthias","name":"` +
+		strings.Repeat("x", 25) + `"}]}}`) != nil {
+		t.Fatal("names longer than the character creation limit must be ignored")
+	}
+}
+
 func TestRosterExplicitAdminIgnoresWildcard(t *testing.T) {
 	t.Setenv("ADMIN_USERNAMES", "*, alice")
 	if explicitRosterAdmin("random-player") { t.Fatal("wildcard grants access to private player roster") }
