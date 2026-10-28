@@ -635,7 +635,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
   });
 
-  it('keeps the apothecary herbarium clear of generic roof furniture in both detail modes', () => {
+  it('keeps specialty merchant roofs distinct in both detail modes', () => {
     const grid = swordhavenFirstBook.grid;
     const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
       .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } }));
@@ -660,7 +660,20 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(botica.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
       expect(botica.getObjectByName('stone-chimney')).toBeFalsy();
       expect(botica.getObjectByName('shop-door')).toBeTruthy();
-      expect(store.getObjectByName('stone-chimney')).toBeTruthy();
+      // Provisions has a warehouse loading boom, not a domestic chimney.
+      // Its hoist is present in both detail modes without blocking the door.
+      expect(store.getObjectByName('stone-chimney')).toBeFalsy();
+      const hoist = store.getObjectByName('store-loft-loading-hoist');
+      expect(hoist).toBeInstanceOf(THREE.Group);
+      expect(hoist.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(hoist.getObjectByName('store-hoist-oak-boom')).toBeInstanceOf(THREE.Mesh);
+      expect(hoist.children.filter(child => child.name === 'store-hoist-gantry-upright')).toHaveLength(2);
+      expect(hoist.getObjectByName('store-hoist-gantry-crosshead')).toBeInstanceOf(THREE.Mesh);
+      expect(hoist.getObjectByName('store-hoist-diagonal-brace')).toBeInstanceOf(THREE.Mesh);
+      expect(hoist.getObjectByName('store-hoist-chain')).toBeInstanceOf(THREE.Mesh);
+      expect(hoist.getObjectByName('store-hoist-iron-ring')).toBeInstanceOf(THREE.Mesh);
+      expect(botica.getObjectByName('store-loft-loading-hoist')).toBeFalsy();
+      expect(store.getObjectByName('shop-door')).toBeTruthy();
     }
   });
 

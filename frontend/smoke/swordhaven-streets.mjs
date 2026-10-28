@@ -81,6 +81,8 @@ try {
           'Tavern must have a unique two-flue brick hearth roofline');
         assert.equal(result.distinctStoreLoft, 'true',
           'General store must have a broad oak attic loft, not generic domestic dormers');
+        assert.equal(result.distinctStoreHoist, 'true',
+          'Provisions must have a roof loading boom rather than a generic chimney');
         assert.equal(result.distinctStoreSideHatches, 'true',
           'Store must have batched oak cargo hatches on its side walls');
         assert.equal(result.distinctMarketStore, 'true',
