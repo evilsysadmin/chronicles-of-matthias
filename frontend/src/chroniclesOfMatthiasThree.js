@@ -841,8 +841,10 @@ export function createChroniclesOfMatthiasGame(host, {
       }
       // With reduced motion we still show one meaningful static pain pose.
       // A fatal hit remains visible briefly before clearing the cell.
-      const goblinHurtNow = reducedMotion && enemyDefinition.visualType === 'ash-goblin'
-        && previousState != null && previousState[enemyDefinition.hpKey] > hp;
+      const goblinHurtNow = reducedMotion && (
+        enemyDefinition.visualType === 'ash-goblin'
+        || enemyDefinition.visualType === 'crypt-spider'
+      ) && previousState != null && previousState[enemyDefinition.hpKey] > hp;
       enemy.visible = active && (hp > 0 || (!reducedMotion && deathStartedAt != null) || goblinHurtNow);
       enemy.userData.chroniclesEnemyNameplate?.update(active ? hp : 0, enemyDefinition.maxHp);
       if (reducedMotion && enemy.userData.updateChroniclesSprite) {
