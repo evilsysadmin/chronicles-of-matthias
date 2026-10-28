@@ -1,6 +1,10 @@
-// Local, opt-in WebGL draw-call meter. This observes renderer.render() calls,
+// Local, opt-in WebGL draw-call meter. It observes renderer.render() calls,
 // NOT process CPU: CSS compositing, decoded music and browser overhead remain
 // outside the counter. Normal play creates no element or sampling timer.
+//
+// A *diagnostic* that wakes the browser every second during idle would bias
+// the very CPU comparison it is meant to support. Sample once after the
+// last drawn frame, report zero WebGL FPS, then park until another render.
 const DISABLED = Object.freeze({
   recordFrame() {}, setVisible() {}, dispose() {},
 });
@@ -12,8 +16,8 @@ export function chroniclesRenderDiagnosticsEnabled(search) {
 export function createChroniclesRenderDiagnostics(host, {
   enabled = false,
   now = () => performance.now(),
-  schedule = (callback, ms) => setInterval(callback, ms),
-  cancel = (handle) => clearInterval(handle),
+  schedule = (callback, ms) => setTimeout(callback, ms),
+  cancel = (handle) => clearTimeout(handle),
 } = {}) {
   if (!enabled) return DISABLED;
 
@@ -37,36 +41,44 @@ export function createChroniclesRenderDiagnostics(host, {
   host.appendChild(element);
 
   let disposed = false;
-  let visible = true;
-  let interval = null;
+  let visible = false;
+  let timer = null;
   let framesInWindow = 0;
   let totalFrames = 0;
   let sampleStart = now();
 
+  function armSample() {
+    if (disposed || !visible || timer !== null) return;
+    sampleStart = now();
+    timer = schedule(sample, 1000);
+  }
+
   function sample() {
+    timer = null;
     if (disposed || !visible) return;
     const elapsed = Math.max(1, now() - sampleStart);
-    const fps = Math.round(framesInWindow * 1000 / elapsed);
-    element.textContent = `WebGL: ${fps} FPS · ${totalFrames} frames · ${fps ? 'activo' : 'en reposo'}`;
+    const frameCount = framesInWindow;
+    const fps = Math.round(frameCount * 1000 / elapsed);
+    element.textContent = `WebGL: ${fps} FPS · ${totalFrames} frames · ${frameCount ? 'activo' : 'en reposo'}`;
     framesInWindow = 0;
-    sampleStart = now();
+    if (frameCount) armSample();
+    // An idle sample has no successor. The next actual WebGL frame re-arms it.
   }
 
   function setVisible(nextVisible) {
     if (disposed) return;
     const target = Boolean(nextVisible);
-    if (target === visible && interval !== null) return;
+    if (target === visible) return;
     visible = target;
     element.hidden = !visible;
-    if (interval !== null) {
-      cancel(interval);
-      interval = null;
+    if (timer !== null) {
+      cancel(timer);
+      timer = null;
     }
     framesInWindow = 0;
-    sampleStart = now();
     if (visible) {
       element.textContent = 'WebGL: midiendo...';
-      interval = schedule(sample, 1000);
+      armSample();
     }
   }
 
@@ -74,13 +86,14 @@ export function createChroniclesRenderDiagnostics(host, {
     if (disposed || !visible) return;
     framesInWindow++;
     totalFrames++;
+    armSample();
   }
 
   function dispose() {
     if (disposed) return;
     disposed = true;
-    if (interval !== null) cancel(interval);
-    interval = null;
+    if (timer !== null) cancel(timer);
+    timer = null;
     element.remove();
   }
 
