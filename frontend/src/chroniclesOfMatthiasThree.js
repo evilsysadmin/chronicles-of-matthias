@@ -15,6 +15,7 @@ import { buildSpectralChapel } from './chroniclesOfMatthiasSpectralBishop.js';
 import { createExperimentalThreeRenderer } from './experimentalThreeRenderer.js';
 import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFrameGate.js';
 import { createChroniclesFrameScheduler } from './chronicles/chroniclesFrameScheduler.js';
+import { chroniclesThreeViewport, chroniclesThreeViewportChanged } from './chronicles/chroniclesViewportResize.js';
 import { createChroniclesTorchAmbientOverlay } from './chronicles/chroniclesTorchAmbientOverlay.js';
 import { createChroniclesRenderDiagnostics, chroniclesRenderDiagnosticsEnabled } from './chronicles/chroniclesRenderDiagnostics.js';
 import { chroniclesPerfIsolationFlags, chroniclesPerfTorchesVisible } from './chronicles/chroniclesPerfIsolation.js';
@@ -624,7 +625,7 @@ function configureRenderer(renderer, { coarsePointer, alpha = false, lightingPro
       ? Math.max(1.14, exposureFloor.exposureCoarse)
       : Math.max(1.08, exposureFloor.exposureDesktop)) * profileExposure;
   renderer.setClearColor(0x080706, alpha ? 0 : 1);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarsePointer ? 1.2 : 1.65));
+  renderer.setPixelRatio(chroniclesThreeViewport(1, 1, window.devicePixelRatio, coarsePointer).pixelRatio);
   renderer.shadowMap.enabled = !coarsePointer;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 }
@@ -773,9 +774,19 @@ export function createChroniclesOfMatthiasGame(host, {
   camera.position.copy(desiredPosition);
   camera.rotation.set(0, desiredYaw, 0);
 
+  let lastViewport = null;
   function resize() {
-    const width = Math.max(1, host.clientWidth || 1);
-    const height = Math.max(1, host.clientHeight || 1);
+    // ResizeObserver may report layout changes whose integer canvas size
+    // did not actually move. Avoid rebuilding the WebGL drawing buffer,
+    // camera projection and shadow maps for duplicate notifications.
+    const nextViewport = chroniclesThreeViewport(
+      host.clientWidth, host.clientHeight, window.devicePixelRatio, coarse,
+    );
+    if (!chroniclesThreeViewportChanged(lastViewport, nextViewport)) return;
+    lastViewport = nextViewport;
+    const { width, height, pixelRatio } = nextViewport;
+    // Browser zoom/display changes can change DPR without a CSS size change.
+    if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.fov = chroniclesFirstPersonFov(camera.aspect);
@@ -1194,7 +1205,10 @@ export function createChroniclesOfMatthiasGame(host, {
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
   observer?.observe(host);
   const onWindowResize = () => resize();
-  if (!observer) window.addEventListener('resize', onWindowResize);
+  // Keep the event path even with ResizeObserver: DPR can change on a
+  // browser zoom / monitor switch while the host CSS size stays identical.
+  // The viewport gate deduplicates both notification sources.
+  window.addEventListener('resize', onWindowResize);
   const onVisibility = () => {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
@@ -1218,7 +1232,7 @@ export function createChroniclesOfMatthiasGame(host, {
       ambientTorchGlows.dispose();
       renderDiagnostics.dispose();
       observer?.disconnect();
-      if (!observer) window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('resize', onWindowResize);
       document.removeEventListener('visibilitychange', onVisibility);
       renderer.domElement.removeEventListener('pointerup', onContentPointerUp);
       dungeon.materialArt?.userData.chroniclesArtCancel?.();

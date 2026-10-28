@@ -31,12 +31,17 @@ try {
           const premium = scene.locator('img[data-chronicles-shop-art-layer="premium"]');
           assert.equal(await fallback.count(), 1, npc + ': previous illustrated room must remain as a fallback');
           assert.equal(await premium.count(), 1, npc + ': should request the approved premium WebP');
+          // The R2 premium art is optional: it can remain pending when CDN
+          // requests stall. The bundled SVG fallback must still be usable.
+          // If decoding has actually completed, require React's ready class
+          // before checking the premium dimensions.
           await page.waitForFunction((room) => {
             const img = document.querySelector('[data-chronicles-audience-room="' + room + '"] img[data-chronicles-shop-art-layer="premium"]');
-            return img?.complete && (!img.naturalWidth || img.classList.contains('is-ready'));
+            return img && (!img.complete || !img.naturalWidth || img.classList.contains('is-ready'));
           }, roomId, { timeout: 7000 });
           const art = await premium.evaluate(img => ({
-            url: img.currentSrc, width: img.naturalWidth, height: img.naturalHeight,
+            url: img.currentSrc || img.src, complete: img.complete,
+            width: img.naturalWidth, height: img.naturalHeight,
             ready: img.classList.contains('is-ready'),
             opacity: Number.parseFloat(getComputedStyle(img).opacity),
             position: getComputedStyle(img).position,
@@ -45,12 +50,12 @@ try {
             : npc === 'aldric' ? 'ayuntamiento-aldric-premium.webp' : 'cuartel-brask-premium.webp';
           assert.equal(art.url, 'https://assets.chronicles.shadowops.dpdns.org/stores/' + expectedAsset);
           assert.equal(art.position, 'absolute', npc + ': WebP must overlay, not push dialogue down');
-          if (art.width > 0) {
+          if (art.complete && art.width > 0) {
             assert(art.width >= 1500 && art.height >= 800 && art.ready,
               npc + ': decoded panoramic art must be displayed');
           } else {
             assert(!art.ready && art.opacity === 0,
-              npc + ': failed CDN image must stay hidden over local SVG');
+              npc + ': pending or failed CDN image must stay hidden over local SVG');
           }
         }
         const geometry = await page.evaluate(() => {
