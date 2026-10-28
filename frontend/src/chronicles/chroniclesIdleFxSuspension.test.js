@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   CHRONICLES_FX_IDLE_SUSPEND_MS,
   createChroniclesIdleFxSuspension,
+  CHRONICLES_FX_ACTIVITY_EVENT,
+  announceChroniclesFxActivity,
+  listenForChroniclesFxActivity,
 } from './chroniclesIdleFxSuspension.js';
 
 function createHarness() {
@@ -63,6 +66,46 @@ describe('Chronicles shared Web Audio idle parking', () => {
     h.controller.activity();
     h.fire();
     expect(h.suspend).toHaveBeenCalledOnce();
+  });
+
+  it('re-arms idle suspension for delayed SFX after an earlier suspension', () => {
+    const bus = new EventTarget();
+    const h = createHarness();
+    const stopObservingFx = listenForChroniclesFxActivity(bus, h.controller.activity);
+    h.controller.activity();
+    h.fire();
+    expect(h.suspend).toHaveBeenCalledOnce();
+    expect(h.pending()).toBe(0);
+
+    // Combat retaliation or a later scripted sound reawakens WebAudio; it
+    // must get its own shutdown deadline even if the player never clicks.
+    expect(announceChroniclesFxActivity(bus)).toBe(true);
+    expect(h.pending()).toBe(1);
+    expect(h.deadlines()).toEqual([CHRONICLES_FX_IDLE_SUSPEND_MS]);
+    h.fire();
+    expect(h.suspend).toHaveBeenCalledTimes(2);
+
+    stopObservingFx();
+    announceChroniclesFxActivity(bus);
+    expect(h.pending()).toBe(0);
+    h.controller.dispose();
+  });
+
+  it('broadcasts only to the subscribed Chronicle listener and disconnects cleanly', () => {
+    const bus = new EventTarget();
+    const h = createHarness();
+    const callback = vi.fn(() => h.controller.activity());
+    const stop = listenForChroniclesFxActivity(bus, callback);
+    expect(CHRONICLES_FX_ACTIVITY_EVENT).toBe('chronicles-fx-audio-activity');
+    expect(announceChroniclesFxActivity(bus)).toBe(true);
+    expect(callback).toHaveBeenCalledOnce();
+    expect(h.pending()).toBe(1);
+    stop();
+    expect(announceChroniclesFxActivity(bus)).toBe(true);
+    expect(callback).toHaveBeenCalledOnce();
+    expect(announceChroniclesFxActivity(null)).toBe(false);
+    h.controller.dispose();
+    expect(h.pending()).toBe(0);
   });
 
   it('cleans the deadline before unmount can restore the global soundtrack', () => {

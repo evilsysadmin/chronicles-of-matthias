@@ -1,4 +1,5 @@
 import { getAudioContext } from '../audioContext.js';
+import { announceChroniclesFxActivity } from './chroniclesIdleFxSuspension.js';
 import { getChroniclesFxVolume } from './chroniclesAudioSettings.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 import { chroniclesVolleyPresentationShooterIds } from './chroniclesVolleyPresentation.js';
@@ -391,6 +392,9 @@ function playCue(cue) {
   if (!cue || volume <= 0) return;
   const ctx = getAudioContext();
   if (!ctx) return;
+  // A delayed retaliation can resume an already parked AudioContext. Re-arm
+  // the one-shot idle deadline for this cue, even with no new user gesture.
+  announceChroniclesFxActivity();
   if (ctx.state === 'suspended') ctx.resume?.().catch(() => {});
 
   // Cap voices and normalize combined energy. Multi-hit turns stay composed.
