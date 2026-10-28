@@ -2,9 +2,38 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
 import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel } from './ChroniclesPlayerAdmin.jsx';
+import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 
 describe('Chronicles player administration', () => {
+  it('accepts genuine empty and populated pages from the Chronicles API', () => {
+    expect(chroniclesValidateAdminRosterPage({ users: [] })).toEqual({ users: [], nextAfter: '' });
+    const users = [
+      { username: 'alice', online: true, levels: { matthias: 3 } },
+      { username: 'bob', online: false },
+    ];
+    expect(chroniclesValidateAdminRosterPage({ users, nextAfter: 'bob' })).toEqual({
+      users, nextAfter: 'bob',
+    });
+  });
+
+  it.each([
+    null,
+    {},
+    { users: null },
+    { users: [null] },
+    { users: ['alice'] },
+    { users: [{ username: '' , online: false }] },
+    { users: [{ username: 22, online: true }] },
+    { users: [{ username: 'alice' }] },
+    { users: [{ username: 'alice', online: 'true' }] },
+    { users: [], nextAfter: null },
+    { users: [], nextAfter: 123 },
+  ])('reports invalid roster payload rather than crashing React for %j', (payload) => {
+    expect(() => chroniclesValidateAdminRosterPage(payload))
+      .toThrow('Respuesta de administración no válida.');
+  });
+
   it('does not render the administrative entry for unverified players', () => {
     const html = renderToStaticMarkup(<ChroniclesSaveMenu saves={[]} onNew={() => {}} />);
     expect(html).toContain('Otras opciones');
