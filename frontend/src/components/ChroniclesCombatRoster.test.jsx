@@ -10,9 +10,13 @@ import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 describe('ChroniclesCombatRoster', () => {
   it('bands health like the MM3 gems: green, yellow, red', () => {
     expect(chroniclesHealthBand(10, 10)).toBe('healthy');
-    expect(chroniclesHealthBand(4, 10)).toBe('hurt');
+    expect(chroniclesHealthBand(9, 10)).toBe('hurt');
+    expect(chroniclesHealthBand(5.1, 10)).toBe('hurt');
+    expect(chroniclesHealthBand(5, 10)).toBe('critical');
+    expect(chroniclesHealthBand(4, 10)).toBe('critical');
     expect(chroniclesHealthBand(2, 10)).toBe('critical');
     expect(chroniclesHealthBand(0, 0)).toBe('critical');
+    expect(chroniclesHealthBand(NaN, 10)).toBe('critical');
   });
 
   it('lists the engaged foes only while initiative runs', () => {
@@ -37,11 +41,18 @@ describe('ChroniclesCombatRoster', () => {
     // The captain is alive elsewhere on the road but not in this fight.
     expect(chroniclesActiveEnemies(hurt).filter((enemy) => Number(hurt[enemy.hpKey] || 0) > 0).length).toBeGreaterThan(1);
     expect(html).toContain('Combate · 1 enemigo');
-    expect(html).toContain(`Objetivo: ${deserter.name}`);
+    expect(html).not.toContain('Objetivo:');
+    expect(html).not.toContain('Sin objetivo frontal');
     expect(html).toContain('aria-label="Enemigos en combate"');
 
     expect(html).toContain(deserter.name);
     expect(html).toContain('data-band="critical"');
+    const freshHtml = renderToStaticMarkup(<ChroniclesCombatRoster state={fighting} />);
+    expect(freshHtml).toContain('data-band="healthy"');
+    const woundedHtml = renderToStaticMarkup(<ChroniclesCombatRoster state={{
+      ...fighting, [deserter.hpKey]: Math.ceil(deserter.maxHp * 0.75),
+    }} />);
+    expect(woundedHtml).toContain('data-band="hurt"');
     expect(html).toContain('data-target="true"');
     // Minimap can remain mounted for short/mobile layouts. Desktop CSS gives
     // the same grid slot to the always-expanded enemy roster during combat.
