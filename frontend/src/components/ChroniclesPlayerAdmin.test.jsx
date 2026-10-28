@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 
@@ -32,6 +32,15 @@ describe('Chronicles player administration', () => {
   ])('reports invalid roster payload rather than crashing React for %j', (payload) => {
     expect(() => chroniclesValidateAdminRosterPage(payload))
       .toThrow('Respuesta de administración no válida.');
+  });
+
+  it('uses a real saved hero name, with safe legacy and malformed-data fallback', () => {
+    const user = { heroNames: { matthias: '  Éowyn  ', bishop: {}, knight: '' } };
+    expect(chroniclesRosterHeroLabel(user, 'matthias')).toBe('Éowyn');
+    expect(chroniclesRosterHeroLabel(user, 'rook')).toBe('Rook');
+    expect(chroniclesRosterHeroLabel(user, 'bishop')).toBe('Bishop');
+    expect(chroniclesRosterHeroLabel(user, 'knight')).toBe('Knight');
+    expect(chroniclesRosterHeroLabel({ heroNames: null }, 'matthias')).toBe('Matthias');
   });
 
   it('does not render the administrative entry for unverified players', () => {

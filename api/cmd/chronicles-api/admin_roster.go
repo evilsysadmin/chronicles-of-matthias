@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -29,6 +30,7 @@ type rosterUser struct {
 	LastActivity string     `json:"lastActivity,omitempty"`
 	Online bool             `json:"online"`
 	Levels map[string]int   `json:"levels,omitempty"`
+	HeroNames map[string]string `json:"heroNames,omitempty"`
 	MapID string            `json:"mapId,omitempty"`
 	SavedAt string          `json:"savedAt,omitempty"`
 	RunStatus string        `json:"runStatus,omitempty"`
@@ -189,6 +191,36 @@ func rosterLevels(raw string) map[string]int {
 	return levels
 }
 
+// Hero names are optional user-chosen display labels from the already-saved
+// progression. Only canonical hero slots and bounded names may reach Admin.
+func rosterHeroNames(raw string) map[string]string {
+	var doc struct {
+		CharacterBuild struct {
+			Characters []struct {
+				SlotID string `json:"slotId"`
+				Name string `json:"name"`
+			} `json:"characters"`
+		} `json:"characterBuild"`
+	}
+	if raw == "" || json.Unmarshal([]byte(raw), &doc) != nil {
+		return nil
+	}
+	names := make(map[string]string)
+	for _, hero := range doc.CharacterBuild.Characters {
+		switch hero.SlotID {
+		case "matthias", "rook", "bishop", "knight":
+			name := strings.TrimSpace(hero.Name)
+			if name != "" && utf8.RuneCountInString(name) <= 24 && !strings.ContainsAny(name, "\r\n\x00") {
+				names[hero.SlotID] = name
+			}
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return names
+}
+
 func readRoster(ctx context.Context, db *mongo.Database, after string, now time.Time) (rosterPage, error) {
 	page := rosterPage{Users: []rosterUser{}}
 	filter := bson.D{}
@@ -257,6 +289,7 @@ func readRoster(ctx context.Context, db *mongo.Database, after string, now time.
 		}
 		if err == nil {
 			entry.Levels = rosterLevels(progression.Document)
+			entry.HeroNames = rosterHeroNames(progression.Document)
 		}
 		page.Users = append(page.Users, entry)
 	}
