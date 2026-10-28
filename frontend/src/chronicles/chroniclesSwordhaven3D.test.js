@@ -209,6 +209,13 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(tower.geometry.parameters.radialSegments).toBeGreaterThanOrEqual(12);
       const magic = scene.getObjectByName('swordhaven-building-swordhaven-magic');
       expect(magic.getObjectByName('magic-shop-turret').geometry.parameters.radialSegments).toBeGreaterThanOrEqual(12);
+      // The observatory and turret, not merchant dormers or a domestic flue,
+      // define the guild silhouette in both normal and coarse render modes.
+      expect(magic.getObjectByName('magic-guild-roof-observatory')?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(magic.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+      expect(magic.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+      expect(magic.getObjectByName('stone-chimney')).toBeFalsy();
+      expect(magic.getObjectByName('shop-door')).toBeTruthy();
     }
   });
 
