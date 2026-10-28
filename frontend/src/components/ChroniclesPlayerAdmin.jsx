@@ -20,12 +20,12 @@ export function chroniclesRosterHeroLevel(user, id) {
 }
 
 // An unsuccessful request must never look like an empty player database.
-export function chroniclesRosterStatusLabel({ hasLoaded, loading, error, count, hasMore }) {
+export function chroniclesRosterStatusLabel({ hasLoaded, loading, loadingMore = false, error, count, hasMore }) {
   if (!hasLoaded) return loading ? 'Consultando censo…' : 'Censo no disponible';
   const noun = count === 1 ? '1 usuario cargado' : `${count} usuarios cargados`;
   const pages = hasMore ? ' · hay más' : '';
   if (error) return `${noun}${pages} · datos de la última consulta correcta`;
-  if (loading) return `${noun}${pages} · actualizando…`;
+  if (loading) return `${noun}${pages} · ${loadingMore ? 'cargando más…' : 'actualizando…'}`;
   return `${noun}${pages}`;
 }
 
@@ -41,10 +41,12 @@ export default function ChroniclesPlayerAdmin() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [nextAfter, setNextAfter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    setLoadingMore(false);
     setLoading(true);
     setError('');
     chroniclesAdminRoster('', { signal: controller.signal }).then((page) => {
@@ -62,6 +64,7 @@ export default function ChroniclesPlayerAdmin() {
 
   async function more() {
     if (!nextAfter || loading) return;
+    setLoadingMore(true);
     setLoading(true);
     setError('');
     try {
@@ -71,6 +74,7 @@ export default function ChroniclesPlayerAdmin() {
     } catch (cause) {
       setError(cause?.message || 'No se pudo continuar la consulta.');
     } finally {
+      setLoadingMore(false);
       setLoading(false);
     }
   }
@@ -87,14 +91,14 @@ export default function ChroniclesPlayerAdmin() {
       </p>
       <div className="chronicles-player-admin__toolbar">
         <span aria-live="polite">{chroniclesRosterStatusLabel({
-          hasLoaded, loading, error, count: users.length, hasMore: Boolean(nextAfter),
+          hasLoaded, loading, loadingMore, error, count: users.length, hasMore: Boolean(nextAfter),
         })}</span>
         <button type="button" onClick={() => setRefresh((value) => value + 1)} disabled={loading}>
           Actualizar
         </button>
       </div>
       {error && <p role="alert" className="chronicles-player-admin__error">{error}</p>}
-      {loading && <p role="status">Consultando jugadores…</p>}
+      {loading && <p role="status">{loadingMore ? 'Cargando más jugadores…' : 'Consultando jugadores…'}</p>}
       {!loading && !error && hasLoaded && users.length === 0 && <p>Aún no hay jugadores en esta instancia.</p>}
       <ul className="chronicles-player-admin__users">
         {users.map((user) => (
