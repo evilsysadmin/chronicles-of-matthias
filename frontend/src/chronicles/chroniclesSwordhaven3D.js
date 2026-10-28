@@ -454,6 +454,33 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(flatRoof, new THREE.BoxGeometry(width + 0.55, 0.20, depth + 1.00), mats.stone,
       'armor-flat-roof-coping', [0, height + 0.22, 0], !coarse);
     root.add(flatRoof);
+    // Complete the fortified silhouette along both side elevations. The
+    // street-facing battlements already exist; low lateral parapets keep the
+    // flat roof legible when the player approaches from an oblique angle.
+    // These sit above the existing solid house cells, without colliders.
+    const sideParapets = new THREE.Group();
+    sideParapets.name = 'armor-roof-side-parapets';
+    sideParapets.userData.chroniclesDecorativeOnly = true;
+    const merlons = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.45, 0.58, 0.76), mats.stone, 10);
+    merlons.name = 'armor-side-parapet-merlons';
+    merlons.castShadow = !coarse;
+    merlons.receiveShadow = true;
+    const merlon = new THREE.Object3D();
+    let merlonIndex = 0;
+    for (const side of [-1, 1]) {
+      const x = side * (width / 2 - 0.05);
+      mesh(sideParapets, new THREE.BoxGeometry(0.42, 0.48, depth + 0.50),
+        mats.stone, 'armor-side-parapet-course', [x, height + 0.47, 0], !coarse);
+      for (const z of [-0.38, -0.19, 0, 0.19, 0.38]) {
+        merlon.position.set(x, height + 0.98, z * depth);
+        merlon.updateMatrix();
+        merlons.setMatrixAt(merlonIndex++, merlon.matrix);
+      }
+    }
+    merlons.instanceMatrix.needsUpdate = true;
+    sideParapets.add(merlons);
+    root.add(sideParapets);
   } else {
     // A proper triangular gable under each pitched roof, not a flat cube roof.
     const gable = new THREE.Shape();
