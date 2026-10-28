@@ -104,7 +104,7 @@ func TestRosterHeroNamesUseOnlySafeSavedCharacterLabels(t *testing.T) {
 		{"slotId":"matthias","name":"  Aragorn  "},
 		{"slotId":"rook","name":"Éowyn"},
 		{"slotId":"bishop","name":"  "},
-		{"slotId":"knight","name":"line\\nbreak"},
+		{"slotId":"knight","name":"line\nbreak"},
 		{"slotId":"unknown","name":"Exposed"}
 	]}}`
 	names := rosterHeroNames(raw)
