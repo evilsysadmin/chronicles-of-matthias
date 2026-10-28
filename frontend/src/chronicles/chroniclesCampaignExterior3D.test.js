@@ -464,6 +464,11 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(apothecary.getObjectByName('magic-shop-turret')).toBeFalsy();
     expect(guild.getObjectByName('magic-shop-turret')).toBeTruthy();
     expect(guild.getObjectByName('apothecary-roof-herbarium')).toBeFalsy();
+    // Keep the glass herbarium legible: the botica no longer shares domestic
+    // roof dormers or a chimney with ordinary shops.
+    expect(apothecary.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+    expect(apothecary.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+    expect(apothecary.getObjectByName('stone-chimney')).toBeFalsy();
 
     // The botica's four side panes now read as sage-green herb-house
     // windows with paired timber shutters, not generic amber shop glazing.
