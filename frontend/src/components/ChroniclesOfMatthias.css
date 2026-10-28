@@ -1622,10 +1622,12 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 .chronicles-worldmap__cell.is-visited.is-forest { background: linear-gradient(160deg, #1f3a22, #122014); }
 
 .chronicles-worldmap__cell.is-here { outline: 2px solid #f4dba8; outline-offset: -2px; }
+/* The goal stays legible without pulsing forever while the game is idle.
+   Three gentle attention cycles, then the static gold border remains. */
 .chronicles-worldmap__cell.is-target {
   border-color: #ffd36a;
   box-shadow: 0 0 0 1px rgba(255, 211, 106, .55), 0 0 16px rgba(255, 196, 80, .35);
-  animation: chronicles-target-pulse 1.8s ease-in-out infinite;
+  animation: chronicles-target-pulse 1.8s ease-in-out 3;
 }
 
 .chronicles-worldmap__icons {
@@ -1674,7 +1676,7 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 .chronicles-automap__target.is-offscreen path,
 .chronicles-minimap__target.is-offscreen path { fill: #ffd36a; stroke: rgba(40, 26, 8, .9); stroke-width: .05; }
 .chronicles-minimap__target,
-.chronicles-automap__target { animation: chronicles-target-pulse 1.8s ease-in-out infinite; }
+.chronicles-automap__target { animation: chronicles-target-pulse 1.8s ease-in-out 3; }
 
 .chronicles-route-hint {
   display: block;
