@@ -20,7 +20,7 @@ import {
 } from '../chroniclesOfMatthias.js';
 import { chroniclesPartyBark } from '../chroniclesOfMatthiasBarks.js';
 import { chroniclesArmsLabel } from '../chronicles/chroniclesWornGear.js';
-import { chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesRunPendingEnemyTurn } from '../chronicles/chroniclesEnemyInitiativeTurn.js';
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
@@ -958,31 +958,37 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const latest = stateRef.current;
       const latestActor = chroniclesCurrentInitiativeActor(latest?.initiative);
       if (!latest?.initiative || latestActor?.kind !== 'enemy' || latestActor.id !== actor.id) return;
-      const acted = chroniclesResolveEnemyActor(latest, actor.id);
-      // Enemy initiative bypasses dispatch; it must share the same post-commit
-      // audio/visual pipeline as player attacks, including actual blood splats.
-      const cue = chroniclesRetaliationCue(latest, acted);
-      if (cue) {
-        const token = retaliationSequenceRef.current + 1;
-        retaliationSequenceRef.current = token;
-        if (retaliationTimerRef.current) clearTimeout(retaliationTimerRef.current);
-        setRetaliationCue({ ...cue, token });
-        retaliationTimerRef.current = setTimeout(() => {
-          setRetaliationCue((active) => active?.token === token ? null : active);
-        }, 1800);
-      }
-      const advanced = acted.phase === 'defeated'
-        ? acted
-        : chroniclesAdvanceCombatInitiative(acted, chroniclesActiveEnemies(acted));
-      showHitSplats(latest, acted);
-      pendingActionSoundRef.current = {
+      const outcome = chroniclesRunPendingEnemyTurn(latest, actor.id);
+      if (!outcome) return;
+      const { acted, committed: advanced, error } = outcome;
+      if (error) console.error('Chronicles enemy turn failed; passing its initiative slot', error);
+      // Commit initiative BEFORE any optional sound, splat or retaliation
+      // presentation. A broken cue must never hold the controls hostage.
+      stateRef.current = advanced;
+      pendingActionSoundRef.current = error ? null : {
         previous: latest,
         resolved: acted,
         committed: advanced,
         action: { type: 'enemy-turn', enemyId: actor.id },
       };
-      stateRef.current = advanced;
       setState(advanced);
+      try {
+        if (!error) {
+          showHitSplats(latest, acted);
+          const cue = chroniclesRetaliationCue(latest, acted);
+          if (cue) {
+            const token = retaliationSequenceRef.current + 1;
+            retaliationSequenceRef.current = token;
+            if (retaliationTimerRef.current) clearTimeout(retaliationTimerRef.current);
+            setRetaliationCue({ ...cue, token });
+            retaliationTimerRef.current = setTimeout(() => {
+              setRetaliationCue((active) => active?.token === token ? null : active);
+            }, 1800);
+          }
+        }
+      } catch (presentationError) {
+        console.error('Chronicles enemy turn presentation failed after initiative advanced', presentationError);
+      }
     }, 280);
     return () => window.clearTimeout(timer);
   }, [sheetMemberId, state?.initiative?.cursor, state?.initiative?.round, state?.phase, showHitSplats]);
