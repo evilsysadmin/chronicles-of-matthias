@@ -283,6 +283,35 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the tavern a pitched timber porch with clear shop plaque and entrance', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const tavern = scene.getObjectByName('swordhaven-building-swordhaven-tavern');
+      const porch = tavern.getObjectByName('tavern-porch-awning');
+      expect(porch?.userData.chroniclesDecorativeOnly).toBe(true);
+      const slopes = porch.children.filter(child => child.name === 'tavern-porch-pitched-slope');
+      expect(slopes).toHaveLength(2);
+      expect(slopes[0].rotation.z).toBeGreaterThan(0);
+      expect(slopes[1].rotation.z).toBeLessThan(0);
+      expect(slopes[0].material).toBe(tavern.getObjectByName('pitched-roof-1').material);
+      expect(slopes[0].castShadow).toBe(!coarsePointer);
+      const ridge = porch.getObjectByName('tavern-porch-ridge');
+      expect(ridge).toBeTruthy();
+      const plaque = tavern.getObjectByName('swordhaven-shop-nameplate');
+      expect(ridge.position.y + ridge.geometry.parameters.height / 2)
+        .toBeLessThan(plaque.position.y
+          - plaque.getObjectByName('shop-nameplate-wood').geometry.parameters.height / 2);
+      expect(porch.position.z).toBeGreaterThan(tavern.getObjectByName('shop-door').position.z);
+      expect(tavern.children.filter(child => child.name === 'porch-timber-support')).toHaveLength(2);
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-tavern')) {
+        expect(scene.getObjectByName('swordhaven-building-' + spec.id)
+          .getObjectByName('tavern-porch-awning')).toBeFalsy();
+      }
+      expect(createSwordhavenWalkGrid()[15][4]).toBe('.');
+    }
+  });
+
   it('gives only the tavern a stepped brick roofline instead of merchant dormers', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();

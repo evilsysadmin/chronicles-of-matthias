@@ -1172,8 +1172,21 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(root, new THREE.OctahedronGeometry(0.42, 0), mats.arcane,
       'arcane-window-lantern', [width * 0.33, height - 0.3, facadeZ + 0.28]);
   } else if (isTavern) {
-    mesh(root, new THREE.BoxGeometry(5.1, 0.21, 2.05), roof,
-      'tavern-porch-awning', [0, 3.35, facadeZ + 1.07], !coarse);
+    // A shallow two-pitch oak porch replaces the flat floating roof slab.
+    // The ridge stays below the shop plaque and the eaves meet the existing
+    // timber posts; this is decoration over the same authored solid cells.
+    const porch = new THREE.Group();
+    porch.name = 'tavern-porch-awning';
+    porch.userData.chroniclesDecorativeOnly = true;
+    porch.position.z = facadeZ + 1.07;
+    for (const side of [-1, 1]) {
+      const slope = mesh(porch, new THREE.BoxGeometry(2.68, 0.15, 2.14), roof,
+        'tavern-porch-pitched-slope', [side * 1.27, 3.18, 0], !coarse);
+      slope.rotation.z = -side * 0.14;
+    }
+    mesh(porch, new THREE.BoxGeometry(0.16, 0.18, 2.22), mats.timber,
+      'tavern-porch-ridge', [0, 3.41, 0], !coarse);
+    root.add(porch);
     for (const x of [-2.35, 2.35]) mesh(root, new THREE.CylinderGeometry(0.11, 0.14, 3.15, 8),
       mats.timber, 'porch-timber-support', [x, 1.63, facadeZ + 1.60], !coarse);
     // A broad twin-flue kitchen hearth, not the small domestic chimney or
