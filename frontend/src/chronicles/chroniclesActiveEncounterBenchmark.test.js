@@ -63,6 +63,13 @@ function playSewerEncounter(rollOffset, {
     expect(actor).toBeTruthy();
     metrics.rounds = Math.max(metrics.rounds, state.initiative.round);
     if (actor.kind === 'party') {
+      // Every translation is forbidden throughout MM3 initiative, whether
+      // dispatched by keyboard/touch as a string or directly as an action.
+      // Identity also guards against hidden turn, resource or state changes.
+      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right']) {
+        expect(chroniclesReduce(state, move), `${move} must not change combat state`).toBe(state);
+        expect(chroniclesReduce(state, { type: move }), `${move} action must not change combat state`).toBe(state);
+      }
       const inFront = chroniclesEnemyTargetAhead(state, 1);
       const living = chroniclesActiveEnemies(state).filter((enemy) => pack.includes(enemy.id));
       const nearest = living.map((enemy) => {
@@ -103,11 +110,8 @@ function playSewerEncounter(rollOffset, {
           metrics.heroRotations += 1;
           state = turned;
         } else if (nearest.distance > 1) {
-          const moved = chroniclesReduce(state, 'forward');
-          // MM3 initiative is stationary: chasing a distant enemy must not
-          // silently move the whole party or consume the active hero's turn.
-          expect(moved.turns).toBe(state.turns);
-          expect({ x: moved.x, y: moved.y }).toEqual({ x: state.x, y: state.y });
+          // The movement invariant is checked above for every hero turn;
+          // distant targets require a legal defensive action instead.
           const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
           expect(guarded.turns).toBe(state.turns + 1);
           metrics.heroBlocks += 1;
