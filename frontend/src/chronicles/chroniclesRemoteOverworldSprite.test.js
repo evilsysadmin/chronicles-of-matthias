@@ -10,7 +10,7 @@ import {
   buildChroniclesRemoteOverworldBillboard,
 } from './chroniclesRemoteOverworldSprite.js';
 
-const assets = [["dire-wolf","801e6d33ddbec52f"],["bandit-archer","21ac68ee50536c53"],["harpy","5bb6e2c854cc9477"],["troll","70685b89d7e8b264"],["skeleton","a393c5251b4bcd4f"],["ghoul","3bc9ee598b9a92f0"],["silent-acolyte","a4ea19664dff0fc0"]];
+const assets = [["dire-wolf","801e6d33ddbec52f"],["bandit-archer","21ac68ee50536c53"],["harpy","5bb6e2c854cc9477"],["troll","70685b89d7e8b264"],["skeleton","a393c5251b4bcd4f"],["ghoul","3bc9ee598b9a92f0"],["silent-acolyte","a4ea19664dff0fc0"],["orc-raider","9bb642b3c535be6e"]];
 
 describe('Chronicles premium overworld enemies', () => {
   it.each(assets)('%s has a pinned, safe R2 URL and eight valid cells', (type, hash) => {
@@ -62,7 +62,18 @@ describe('Chronicles premium overworld enemies', () => {
     expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it.each(assets)('%s uses premium only in first person, keeping Tactics 3D', (type) => {
+  it('keeps a 3D orc visible until its first-person R2 atlas decodes', () => {
+    const firstPerson = buildChroniclesEnemyVisual('orc-raider', { sprites: true });
+    const tactics = buildChroniclesEnemyVisual('orc-raider', {});
+    expect(firstPerson.model.userData.chroniclesBillboard?.visualType).toBe('orc-raider');
+    expect(firstPerson.model.children[0].visible).toBe(true);
+    expect(firstPerson.model.children[0].userData.chroniclesBillboard).toBeUndefined();
+    expect(firstPerson.model.userData.chroniclesBillboard.sprite.visible).toBe(false);
+    expect(tactics.model.userData.chroniclesBillboard).toBeUndefined();
+    firstPerson.model.userData.chroniclesDispose();
+  });
+
+  it.each(assets.filter(([type]) => type !== 'orc-raider'))('%s uses premium only in first person, keeping Tactics 3D', (type) => {
     const firstPerson = buildChroniclesEnemyVisual(type, { sprites: true });
     const tactics = buildChroniclesEnemyVisual(type, {});
     expect(firstPerson.model.userData.chroniclesBillboard.visualType).toBe(type);

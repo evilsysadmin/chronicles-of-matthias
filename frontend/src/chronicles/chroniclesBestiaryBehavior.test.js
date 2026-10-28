@@ -75,6 +75,18 @@ describe('Chronicles Tactics bestiary behavior', () => {
     });
   });
 
+  it('deploys the new hill orc as a real pursuing encounter without changing original goblins', () => {
+    const b2 = chroniclesMapById('terra-b2');
+    const orc = b2.enemies.find((enemy) => enemy.id === 'terra-b2-foe-2');
+    expect(orc?.visualType).toBe('orc-raider');
+    expect(orc?.hpKey).toBe('terra_b2Foe2Hp');
+    expect(orc?.ai).toMatchObject({
+      movement: 'cardinal-chase', engagedMovement: 'cardinal-chase',
+      engageRange: 3, attackReach: 1,
+    });
+    expect(b2.enemies.find((enemy) => enemy.id === 'terra-b2-foe-1')?.visualType).toBe('ash-goblin');
+  });
+
   it('keeps monster-heavy rooms from collapsing into one repeated pursuit pattern', () => {
     chroniclesMapIds().forEach((mapId) => {
       const map = chroniclesMapById(mapId);

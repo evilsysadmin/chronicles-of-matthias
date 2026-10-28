@@ -152,6 +152,15 @@ func reinforceOverworld(m *O, areaCode string) {
 			break
 		}
 		seenBehaviors[signature(foe.Obj("ai"))] = true
+		// B2's first ordinary reinforcement is a hill orc, keeping its stable
+		// slot, HP key, spawn cell and reward. Authored enemies are untouched.
+		if areaCode == "B2" && n == 0 {
+			foe.Set("visualType", "orc-raider")
+			foe.Set("name", "orco saqueador del brezal")
+			foe.Set("ai", aiFor("orc-raider"))
+			foe.Set("agility", 2)
+			foe.Obj("onDefeat").Set("message", "{attacker} acaba con orco saqueador del brezal usando {attack}.")
+		}
 		current = append(current, foe)
 		foePositions = append(foePositions, best)
 		occupied[best] = true

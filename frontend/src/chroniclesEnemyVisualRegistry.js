@@ -49,6 +49,7 @@ const VISUALS = Object.freeze({
   'bandit-archer': Object.freeze({ build: buildScavengerKnight, scale: 0.94 }),
   'dire-wolf': Object.freeze({ build: buildBoneHound, scale: 1.0 }),
   'stone-golem': Object.freeze({ build: buildGateJailer, scale: 1.3 }),
+  'orc-raider': Object.freeze({ build: buildGateJailer, scale: 1.12 }),
   ghoul: Object.freeze({ build: buildScavengerKnight, scale: 0.9 }),
   'name-scribe': Object.freeze({ build: buildSpectralBishop, scale: 1.2 }),
 });
@@ -79,6 +80,14 @@ export function buildChroniclesEnemyVisual(visualType, options = {}) {
       });
     }
     if (billboard) return Object.freeze({ model: billboard, scale: 1 });
+    // An all-new species needs its procedural fallback until the atlas decodes.
+    if (chroniclesOverworldSpriteSpec(visualType)) {
+      const fallback = visual.build(options);
+      installChroniclesEnemyMotionArt(fallback, visualType, options);
+      return Object.freeze({
+        model: buildChroniclesRemoteOverworldBillboard(visualType, fallback), scale: 1,
+      });
+    }
     if (visualType === 'crypt-spider') {
       // Show the existing procedural spider until the approved R2 atlas is
       // decoded. Tactics continues using its genuine 3D model.

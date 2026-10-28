@@ -188,6 +188,8 @@ func aiFor(visual string) *O {
 		return obj("movement", "cardinal-roam", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 5)
 	case "stone-golem": // stands like a statue until you are close enough to crush
 		return obj("movement", "hold", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 2)
+	case "orc-raider": // marauder that hunts on the standard cardinal grid
+		return obj("movement", "cardinal-chase", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 3)
 	case "ghoul": // smells the living and never stops coming
 		return obj("movement", "cardinal-chase", "attackReach", 1, "engagedMovement", "cardinal-chase", "engageRange", 4)
 	case "name-scribe": // writes you out of the world from across the room

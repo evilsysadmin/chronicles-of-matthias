@@ -152,3 +152,28 @@ func TestGeneratedOverworldBytesMatchCommittedFiles(t *testing.T) {
 			code, i, len(want), len(got), want[from:until], got[from:gotUntil])
 	}
 }
+
+func TestB2PremiumOrcPatrolPreservesExistingEnemyIdentities(t *testing.T) {
+	generated := buildAll()[mapID("B2")]
+	baseline := buildArea("B2", story().areas)
+	actual := generated.Arr("enemies")
+	original := baseline.Arr("enemies")
+	if len(actual) != len(original)+3 {
+		t.Fatalf("B2 ordinary encounter count changed: %d", len(actual))
+	}
+	for i, before := range original {
+		if dump(before) != dump(actual[i]) {
+			t.Fatalf("B2 authored foe %d altered, unsafe for existing saves", i)
+		}
+	}
+	orc := actual[len(original)].(*O)
+	if orc.Str("id") != "terra-b2-foe-2" || orc.Str("hpKey") != "terra_b2Foe2Hp" ||
+		orc.Str("visualType") != "orc-raider" || orc.Str("name") != "orco saqueador del brezal" {
+		t.Fatalf("B2 orc patrol identity incorrect: %s", dump(orc))
+	}
+	if orc.Obj("ai").Str("movement") != "cardinal-chase" ||
+		orc.Obj("ai").Str("engagedMovement") != "cardinal-chase" ||
+		orc.Obj("ai").Int("engageRange") != 3 {
+		t.Fatalf("B2 orc should pursue cardinally: %s", dump(orc.Obj("ai")))
+	}
+}
