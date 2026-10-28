@@ -404,6 +404,19 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(armorer.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
       expect(gateway?.userData.chroniclesDecorativeOnly).toBe(true);
       expect(armorer.getObjectByName('armor-roof-crest')).toBeTruthy();
+      // The armorer must read as a fortified workshop, not a domestic shop.
+      const parapet = armorer.getObjectByName('armor-ashlar-parapet');
+      expect(parapet?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(parapet.getObjectByName('armor-parapet-stone-course')).toBeTruthy();
+      const merlons = parapet.getObjectByName('armor-parapet-merlons');
+      expect(merlons).toBeInstanceOf(THREE.InstancedMesh);
+      expect(merlons.count).toBe(6);
+      expect(merlons.castShadow).toBe(!coarsePointer);
+      expect(parapet.position.z).toBeGreaterThan(armorer.getObjectByName('roof-gable-1').position.z);
+      expect(armorer.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+      expect(armorer.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+      expect(armorer.getObjectByName('stone-chimney')).toBeFalsy();
+      expect(armorer.getObjectByName('shop-door')).toBe(door);
       expect(gateway.position.z).toBeGreaterThan(door.position.z);
       const piers = gateway.children.filter(child => child.name === 'armor-gateway-pier');
       expect(piers).toHaveLength(2);
@@ -428,6 +441,7 @@ describe('Swordhaven modular real-time 3D', () => {
         const other = scene.getObjectByName('swordhaven-building-' + spec.id);
         expect(other.getObjectByName('armor-stone-gateway')).toBeFalsy();
         expect(other.getObjectByName('armor-roof-crest')).toBeFalsy();
+        expect(other.getObjectByName('armor-ashlar-parapet')).toBeFalsy();
       }
       expect(createSwordhavenWalkGrid()[7][14]).toBe('.');
     }
