@@ -24,7 +24,7 @@ export function chroniclesRetaliationCue(previousState, nextState) {
       enemyName: enemy?.name || attackEvent.enemyId,
       targetId: damagedMember.id,
       targetName: damagedMember.name,
-      damage: Math.max(0, Number(attackEvent.damage || hpLost)),
+      damage: hpLost, // Entire multi-strike sequence, not its first hit alone.
     };
   }
 
