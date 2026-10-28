@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { r2AssetUrl } from '../r2Assets.js';
 import { unlockChroniclesActionAudio } from './chroniclesActionAudio.js';
+import { getAudioContext, getAudioContextState } from '../audioContext.js';
+import { createChroniclesIdleFxSuspension } from './chroniclesIdleFxSuspension.js';
 import {
   getAmbientPlaybackState,
   getAmbientVolume,
@@ -57,6 +59,24 @@ export function useChroniclesSoundtrack(entryView) {
     const restoreGlobal = globalStatus === 'playing' || globalStatus === 'gap';
     if (restoreGlobal) pauseAmbientMusic();
 
+    // The procedural FX AudioContext is shared with the global radio. While
+    // Chronicles is foregrounded, its recorded score uses HTMLAudioElement;
+    // after SFX settle, park the otherwise silent shared context. Never
+    // suspend while the radio is playing or create a context just to park it.
+    const idleFx = createChroniclesIdleFxSuspension({
+      canSuspend: () => {
+        const status = getAmbientPlaybackState()?.status;
+        return status !== 'playing' && status !== 'gap' && getAudioContextState() === 'running';
+      },
+      suspend: () => {
+        try {
+          const attempt = getAudioContext()?.suspend?.();
+          attempt?.catch?.(() => {});
+        } catch { /* Browser may refuse while transitioning. */ }
+      },
+    });
+    idleFx.activity();
+
     const syncPreferences = () => {
       syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
       // Transport/media-key controls may restart the global station while
@@ -68,6 +88,7 @@ export function useChroniclesSoundtrack(entryView) {
       // FX must be unlocked *during* the gesture: enemy responses and React
       // post-paint hit cues happen later, after transient activation ends.
       unlockChroniclesActionAudio();
+      idleFx.activity(); // one-shot idle deadline, not a running polling loop
       // Autoplay is often blocked after F5 until the next real user gesture.
       // Do not reawaken muted media during pointer/keyboard/focus events.
       syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
@@ -83,6 +104,7 @@ export function useChroniclesSoundtrack(entryView) {
       window.removeEventListener('pointerdown', retryAfterGesture);
       window.removeEventListener('keydown', retryAfterGesture);
       window.removeEventListener('focus', retryAfterGesture);
+      idleFx.dispose(); // never park the global radio after leaving Chronicles
       audio.pause();
       audio.removeAttribute('src');
       audio.load();
