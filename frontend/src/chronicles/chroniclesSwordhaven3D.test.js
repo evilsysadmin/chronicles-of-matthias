@@ -207,7 +207,7 @@ describe('Swordhaven modular real-time 3D', () => {
       const scene = new THREE.Scene();
       buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
       const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
-      const store = scene.getObjectByName('swordhaven-building-swordhaven-store');
+      const tavern = scene.getObjectByName('swordhaven-building-swordhaven-tavern');
       const armor = scene.getObjectByName('swordhaven-building-swordhaven-armor');
       const vents = forge.children.filter(child => child.name === 'side-window-forge-soot-vent');
       const louvers = forge.children.filter(child => child.name === 'side-window-forge-iron-louver');
@@ -219,8 +219,8 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(forge.getObjectByName('side-window-amber-glass')).toBeFalsy();
       expect(forge.getObjectByName('side-window-crossbar')).toBeFalsy();
       expect(forge.getObjectByName('shop-door')).toBeTruthy();
-      expect(store.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
-      expect(store.getObjectByName('side-window-forge-soot-vent')).toBeFalsy();
+      expect(tavern.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(tavern.getObjectByName('side-window-forge-soot-vent')).toBeFalsy();
       expect(armor.getObjectByName('side-window-forge-soot-vent')).toBeFalsy();
     }
   });
