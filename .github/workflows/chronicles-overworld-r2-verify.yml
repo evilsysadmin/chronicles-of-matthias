@@ -16,36 +16,44 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Verify public R2 bytes, MIME, CORS, dimensions and SHA256
+      - name: Verify four public R2 WebP files with the established curl protocol
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import hashlib
-          from urllib.request import Request, urlopen
-          expected = {
-              'dire-wolf': '801e6d33ddbec52f6e56365322511e5f721cc4b18c5012463d45fcedc362715e',
-              'bandit-archer': '21ac68ee50536c53fa3e2d3aab3bde418e0752205a1dfe81b69bee170e959a55',
-              'harpy': '5bb6e2c854cc9477942972d6418624278b83aeab75df5eaac6716396cf5c4041',
-              'troll': '70685b89d7e8b264f7ba44cccf321be4ab4a14134027378c3a2f0cb4d294e11b',
-          }
-          origin = 'https://staging.chronicles.shadowops.dpdns.org'
-          for name, sha in expected.items():
-              url = f'https://assets.chronicles.shadowops.dpdns.org/sprites/{name}-{sha[:16]}.webp'
-              req = Request(url, headers={'Origin': origin})
-              with urlopen(req, timeout=25) as res:
-                  assert res.status == 200, f'{name}: HTTP {res.status}'
-                  mime = res.headers.get('content-type', '').split(';')[0].lower()
-                  assert mime == 'image/webp', f'{name}: wrong MIME {mime}'
-                  cors = res.headers.get('access-control-allow-origin')
-                  assert cors in (origin, '*'), f'{name}: invalid CORS {cors}'
-                  blob = res.read()
-                  cache = res.headers.get('cache-control', '(none)')
-              assert blob[:4] == b'RIFF' and blob[8:16] == b'WEBPVP8X', f'{name}: bad WebP'
-              width = 1 + int.from_bytes(blob[24:27], 'little')
-              height = 1 + int.from_bytes(blob[27:30], 'little')
-              assert (width, height) == (2560, 320), f'{name}: wrong dimensions {width}x{height}'
-              actual = hashlib.sha256(blob).hexdigest()
-              assert actual == sha, f'{name}: wrong SHA256 {actual} != {sha}'
-              print(f'OVERWORLD_R2_OK {name} HTTP=200 CORS=OK MIME={mime} SIZE={width}x{height} SHA256={actual} CACHE={cache}')
+          origin="https://staging.chronicles.shadowops.dpdns.org"
+          while read -r name expected_sha; do
+            url="https://assets.chronicles.shadowops.dpdns.org/sprites/${name}-${expected_sha:0:16}.webp"
+            image="$RUNNER_TEMP/${name}.webp"
+            headers="$RUNNER_TEMP/${name}.headers"
+            curl --fail --location --silent --show-error --max-time 25 --retry 1 \
+              --header "Origin: $origin" \
+              --dump-header "$headers" --output "$image" "$url"
+            python3 - "$name" "$expected_sha" "$image" "$headers" "$origin" <<'PY'
+          import hashlib, pathlib, sys
+          name, expected_sha, image_path, header_path, origin = sys.argv[1:]
+          image = pathlib.Path(image_path).read_bytes()
+          blocks = [part for part in pathlib.Path(header_path).read_text().replace("\r", "").split("\n\n") if part.strip()]
+          lines = blocks[-1].splitlines()
+          headers = {}
+          for line in lines[1:]:
+              if ':' in line:
+                  key, value = line.split(':', 1)
+                  headers[key.strip().lower()] = value.strip()
+          assert lines[0].split()[1] == '200', f'{name}: not HTTP 200'
+          assert headers.get('content-type', '').split(';')[0].lower() == 'image/webp', f'{name}: bad MIME'
+          assert headers.get('access-control-allow-origin') in (origin, '*'), f'{name}: bad CORS'
+          assert image[:4] == b'RIFF' and image[8:16] == b'WEBPVP8X', f'{name}: bad WebP'
+          width = 1 + int.from_bytes(image[24:27], 'little')
+          height = 1 + int.from_bytes(image[27:30], 'little')
+          assert (width, height) == (2560, 320), f'{name}: unexpected {width}x{height}'
+          actual_sha = hashlib.sha256(image).hexdigest()
+          assert actual_sha == expected_sha, f'{name}: unexpected SHA256 {actual_sha}'
+          print(f'OVERWORLD_R2_OK {name} HTTP=200 CORS=OK MIME=image/webp SIZE={width}x{height} SHA256={actual_sha}')
+          print(f'cache-control: {headers.get("cache-control", "(none)")}')
           PY
+          done <<'ASSETS'
+          dire-wolf 801e6d33ddbec52f6e56365322511e5f721cc4b18c5012463d45fcedc362715e
+          bandit-archer 21ac68ee50536c53fa3e2d3aab3bde418e0752205a1dfe81b69bee170e959a55
+          harpy 5bb6e2c854cc9477942972d6418624278b83aeab75df5eaac6716396cf5c4041
+          troll 70685b89d7e8b264f7ba44cccf321be4ab4a14134027378c3a2f0cb4d294e11b
+          ASSETS
