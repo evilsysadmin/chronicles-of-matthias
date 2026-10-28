@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -79,6 +79,8 @@ try {
           'Tavern must have a unique two-flue brick hearth roofline');
         assert.equal(result.distinctStoreLoft, 'true',
           'General store must have a broad oak attic loft, not generic domestic dormers');
+        assert.equal(result.distinctStoreSideHatches, 'true',
+          'Store must have batched oak cargo hatches on its side walls');
         assert.equal(result.distinctMarketStore, 'true',
           'Quartermaster store must have a unique overhead striped awning');
         assert.equal(result.roofRelief, 'true',
