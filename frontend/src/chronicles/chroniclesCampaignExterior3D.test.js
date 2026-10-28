@@ -667,6 +667,8 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(hoist).toBeInstanceOf(THREE.Group);
       expect(hoist.userData.chroniclesDecorativeOnly).toBe(true);
       expect(hoist.getObjectByName('store-hoist-oak-boom')).toBeInstanceOf(THREE.Mesh);
+      expect(hoist.children.filter(child => child.name === 'store-hoist-gantry-upright')).toHaveLength(2);
+      expect(hoist.getObjectByName('store-hoist-gantry-crosshead')).toBeInstanceOf(THREE.Mesh);
       expect(hoist.getObjectByName('store-hoist-diagonal-brace')).toBeInstanceOf(THREE.Mesh);
       expect(hoist.getObjectByName('store-hoist-chain')).toBeInstanceOf(THREE.Mesh);
       expect(hoist.getObjectByName('store-hoist-iron-ring')).toBeInstanceOf(THREE.Mesh);
