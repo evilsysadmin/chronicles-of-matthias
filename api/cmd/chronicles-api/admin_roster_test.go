@@ -104,3 +104,27 @@ func TestRosterExplicitAdminIgnoresWildcard(t *testing.T) {
 	if explicitRosterAdmin("random-player") { t.Fatal("wildcard grants access to private player roster") }
 	if !explicitRosterAdmin("ALICE") { t.Fatal("explicitly nominated admin denied") }
 }
+
+func TestRosterPreflightPermitsClientReleaseHeader(t *testing.T) {
+	const origin = "https://staging.chronicles.shadowops.dpdns.org"
+	h := &adminRosterHandler{origins: map[string]bool{origin: true}}
+	r := httptest.NewRequest(http.MethodOptions, adminRosterPath, nil)
+	r.Header.Set("Origin", origin)
+	r.Header.Set("Access-Control-Request-Method", "GET")
+	r.Header.Set("Access-Control-Request-Headers", "authorization,x-request-id,x-client-release")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("preflight status=%d, want 204", w.Code)
+	}
+	if got := w.Header().Get("Access-Control-Allow-Origin"); got != origin {
+		t.Fatalf("preflight allow-origin=%q, want %q", got, origin)
+	}
+	allowed := strings.ToLower(w.Header().Get("Access-Control-Allow-Headers"))
+	for _, required := range []string{"authorization", "x-request-id", "x-client-release"} {
+		if !strings.Contains(allowed, required) {
+			t.Fatalf("preflight missing %q in allow-headers=%q", required, allowed)
+		}
+	}
+}
