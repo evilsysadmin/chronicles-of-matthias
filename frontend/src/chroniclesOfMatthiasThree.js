@@ -32,6 +32,7 @@ import { chroniclesGoblinHitPose, CHRONICLES_GOBLIN_HURT_SECONDS } from './chron
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
 import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
+import { createChroniclesMeleeSlashRibbon } from './chronicles/chroniclesMeleeSlashFx.js';
 
 const CELL = 4;
 const CAMERA_Y = 1.62;
@@ -45,10 +46,10 @@ const EXIT_GATE_SIDES = Object.freeze([
   Object.freeze({ side: 'west', dx: -1, dy: 0, yaw: Math.PI / 2 }),
 ]);
 const ATTACK_FX = Object.freeze({
-  matthias: Object.freeze({ color: 0xd5aa62, angle: -0.18, width: 0.9, ring: 0.78 }),
-  rook: Object.freeze({ color: 0xc96a3e, angle: 0.04, width: 1.3, ring: 1.18 }),
-  bishop: Object.freeze({ color: 0xf0c66d, angle: 0.72, width: 1.05, ring: 0.92 }),
-  knight: Object.freeze({ color: 0x8da8bd, angle: -0.62, width: 1.12, ring: 0.86 }),
+  matthias: Object.freeze({ color: 0xd5aa62, angle: -0.18, width: 0.9 }),
+  rook: Object.freeze({ color: 0xc96a3e, angle: 0.04, width: 1.3 }),
+  bishop: Object.freeze({ color: 0xf0c66d, angle: 0.72, width: 1.05 }),
+  knight: Object.freeze({ color: 0x8da8bd, angle: -0.62, width: 1.12 }),
 });
 
 export const CHRONICLES_TORCH_PLACEMENTS = Object.freeze([
@@ -643,20 +644,23 @@ export function chroniclesContentIdFromObject(object) {
 function createCombatFx(camera) {
   const group = new THREE.Group();
   group.name = 'chronicles-combat-fx';
+  group.position.set(0, -0.07, -1.15);
   group.visible = false;
-
-  const slashMaterial = new THREE.MeshBasicMaterial({ color: 0xd5aa62, transparent: true, opacity: 0, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending });
-  const ringMaterial = slashMaterial.clone();
-  const slash = new THREE.Mesh(new THREE.BoxGeometry(1, 0.035, 0.035), slashMaterial);
-  slash.position.set(0, -0.12, -1.12);
-  slash.renderOrder = 20;
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.022, 8, 28), ringMaterial);
-  ring.position.set(0, 0.02, -1.18);
-  ring.renderOrder = 20;
-  group.add(slash, ring);
+  const trailMaterial = new THREE.MeshBasicMaterial({
+    color: 0xd5aa62, transparent: true, opacity: 0,
+    depthTest: false, depthWrite: false, side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+  });
+  const edgeMaterial = trailMaterial.clone();
+  const trail = new THREE.Mesh(createChroniclesMeleeSlashRibbon(1.8), trailMaterial);
+  const edge = new THREE.Mesh(createChroniclesMeleeSlashRibbon(0.47), edgeMaterial);
+  trail.position.z = -0.008;
+  edge.position.z = 0.008;
+  trail.renderOrder = 20;
+  edge.renderOrder = 21;
+  group.add(trail, edge);
   camera.add(group);
-
-  return { group, slash, ring, slashMaterial, ringMaterial };
+  return { group, trail, edge, trailMaterial, edgeMaterial };
 }
 
 // Camera-local trajectories are deterministic and independent of FPS: one
@@ -942,13 +946,14 @@ export function createChroniclesOfMatthiasGame(host, {
     if (reducedMotion) return;
     attackFxConfig = ATTACK_FX[memberId] || ATTACK_FX.matthias;
     attackFxStartedAt = clock.getElapsedTime();
-    combatFx.slashMaterial.color.setHex(attackFxConfig.color);
-    combatFx.ringMaterial.color.setHex(attackFxConfig.color);
-    combatFx.slash.rotation.z = attackFxConfig.angle;
-    combatFx.slash.scale.set(attackFxConfig.width, 1, 1);
-    combatFx.ring.scale.setScalar(attackFxConfig.ring);
+    combatFx.trailMaterial.color.setHex(attackFxConfig.color);
+    combatFx.edgeMaterial.color.setHex(attackFxConfig.color);
+    combatFx.edgeMaterial.color.lerp(new THREE.Color(0xfff6e6), 0.65);
+    combatFx.group.rotation.z = attackFxConfig.angle;
+    combatFx.group.position.set(-0.08, -0.11, -1.15);
+    combatFx.group.scale.setScalar(attackFxConfig.width * 0.76);
     combatFx.group.visible = true;
-    scheduler.invalidate(450);
+    scheduler.invalidate(330);
   }
 
   function playVolley(shooterIds = []) {
@@ -1161,14 +1166,16 @@ export function createChroniclesOfMatthiasGame(host, {
       }
 
       const fxElapsed = time - attackFxStartedAt;
-      if (fxElapsed >= 0 && fxElapsed < 0.24) {
-        const progress = fxElapsed / 0.24;
+      if (fxElapsed >= 0 && fxElapsed < 0.28) {
+        const progress = fxElapsed / 0.28;
+        // Wind-up -> fast curved cut -> dissipating edge, without a ring.
+        const sweep = 1 - Math.pow(1 - progress, 3);
+        const fade = Math.pow(1 - progress, 1.4);
         combatFx.group.visible = true;
-        combatFx.slashMaterial.opacity = (1 - progress) * 0.82;
-        combatFx.ringMaterial.opacity = (1 - progress) * 0.54;
-        const ringScale = attackFxConfig.ring * (0.7 + progress * 0.9);
-        combatFx.ring.scale.setScalar(ringScale);
-        combatFx.slash.position.x = (progress - 0.5) * 0.24;
+        combatFx.group.position.set(-0.08 + 0.17 * sweep, -0.11 + 0.10 * sweep, -1.15);
+        combatFx.group.scale.setScalar(attackFxConfig.width * (0.76 + 0.40 * sweep));
+        combatFx.trailMaterial.opacity = 0.32 * fade;
+        combatFx.edgeMaterial.opacity = Math.min(1, progress * 9) * 0.92 * fade;
       } else {
         combatFx.group.visible = false;
       }
