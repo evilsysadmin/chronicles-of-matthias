@@ -1195,7 +1195,7 @@ export function createChroniclesOfMatthiasGame(host, {
     if (actor?.userData.chroniclesBillboard?.visualType === 'crypt-spider') {
       actor.userData.onChroniclesSpiderAtlasReady = () => scheduler.invalidate(0);
     }
-    if (actor?.userData.chroniclesBillboard?.visualType === 'road-bandit') {
+    if (['road-bandit', 'dire-wolf', 'bandit-archer', 'harpy', 'troll'].includes(actor?.userData.chroniclesBillboard?.visualType)) {
       actor.userData.onChroniclesSpriteAtlasReady = () => scheduler.invalidate(0);
     }
   });

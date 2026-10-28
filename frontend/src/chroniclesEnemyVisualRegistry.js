@@ -12,6 +12,7 @@ import { installChroniclesEnemyMotionArt } from './chroniclesEnemyMotionArt.js';
 import { buildChroniclesSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { buildChroniclesRemoteSpiderBillboard } from './chronicles/chroniclesRemoteSpiderSprite.js';
 import { buildChroniclesRemoteSmugglerBillboard } from './chronicles/chroniclesRemoteSmugglerSprite.js';
+import { buildChroniclesRemoteOverworldBillboard, chroniclesOverworldSpriteSpec } from './chronicles/chroniclesRemoteOverworldSprite.js';
 
 const VISUALS = Object.freeze({
   'corrupted-pawn': Object.freeze({ build: buildCorruptedPawn, scale: 0.92 }),
@@ -70,6 +71,11 @@ export function buildChroniclesEnemyVisual(visualType, options = {}) {
       // independent painted R2 replacement has loaded and validated.
       return Object.freeze({
         model: buildChroniclesRemoteSmugglerBillboard(billboard), scale: 1,
+      });
+    }
+    if (billboard && chroniclesOverworldSpriteSpec(visualType)) {
+      return Object.freeze({
+        model: buildChroniclesRemoteOverworldBillboard(visualType, billboard), scale: 1,
       });
     }
     if (billboard) return Object.freeze({ model: billboard, scale: 1 });
