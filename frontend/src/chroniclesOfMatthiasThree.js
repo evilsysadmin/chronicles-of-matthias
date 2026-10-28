@@ -855,7 +855,7 @@ export function createChroniclesOfMatthiasGame(host, {
       const spriteHurtNow = reducedMotion && (
         enemyDefinition.visualType === 'ash-goblin'
         || enemyDefinition.visualType === 'crypt-spider'
-        || ['dire-wolf', 'bandit-archer', 'harpy', 'troll'].includes(enemyDefinition.visualType)
+        || ['dire-wolf', 'bandit-archer', 'harpy', 'troll', 'skeleton', 'ghoul', 'silent-acolyte'].includes(enemyDefinition.visualType)
       ) && previousState != null && previousState[enemyDefinition.hpKey] > hp;
       enemy.visible = active && (hp > 0 || (!reducedMotion && deathStartedAt != null) || spriteHurtNow);
       enemy.userData.chroniclesEnemyNameplate?.update(active ? hp : 0, enemyDefinition.maxHp);
@@ -1196,7 +1196,7 @@ export function createChroniclesOfMatthiasGame(host, {
     if (actor?.userData.chroniclesBillboard?.visualType === 'crypt-spider') {
       actor.userData.onChroniclesSpiderAtlasReady = () => scheduler.invalidate(0);
     }
-    if (['road-bandit', 'dire-wolf', 'bandit-archer', 'harpy', 'troll'].includes(actor?.userData.chroniclesBillboard?.visualType)) {
+    if (['road-bandit', 'dire-wolf', 'bandit-archer', 'harpy', 'troll', 'skeleton', 'ghoul', 'silent-acolyte'].includes(actor?.userData.chroniclesBillboard?.visualType)) {
       actor.userData.onChroniclesSpriteAtlasReady = () => scheduler.invalidate(0);
     }
   });

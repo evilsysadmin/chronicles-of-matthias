@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Verify four public R2 WebP files with the established curl protocol
+      - name: Verify seven public R2 WebP files with the established curl protocol
         shell: bash
         run: |
           set -euo pipefail
@@ -56,4 +56,7 @@ jobs:
           bandit-archer 21ac68ee50536c53fa3e2d3aab3bde418e0752205a1dfe81b69bee170e959a55
           harpy 5bb6e2c854cc9477942972d6418624278b83aeab75df5eaac6716396cf5c4041
           troll 70685b89d7e8b264f7ba44cccf321be4ab4a14134027378c3a2f0cb4d294e11b
+          skeleton a393c5251b4bcd4f1a43155d84a19d31cd67bdcea9029f66cd5e5cfc469259b1
+          ghoul 3bc9ee598b9a92f05218354d26c381a153b0e46e97c628cfe9c01dd71625332c
+          silent-acolyte a4ea19664dff0fc0468dc4c68a84ebf0bd5143378a5d6f3e0cc34ec961ade5ef
           ASSETS

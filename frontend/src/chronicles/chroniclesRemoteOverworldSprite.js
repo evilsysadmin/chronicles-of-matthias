@@ -25,6 +25,18 @@ const ASSETS = Object.freeze({
     url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/troll-70685b89d7e8b264.webp',
     worldHeight: 3.65,
   }),
+  'skeleton': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/skeleton-a393c5251b4bcd4f.webp',
+    worldHeight: 2.9,
+  }),
+  'ghoul': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/ghoul-3bc9ee598b9a92f0.webp',
+    worldHeight: 2.6,
+  }),
+  'silent-acolyte': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/silent-acolyte-a4ea19664dff0fc0.webp',
+    worldHeight: 3,
+  }),
 });
 
 export function chroniclesOverworldSpriteSpec(visualType) {
