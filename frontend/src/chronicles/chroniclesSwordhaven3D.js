@@ -855,8 +855,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       cap.rotation.z = -side * 0.44;
     }
     root.add(vent);
-  } else if (!isTemple && !isTavern && !isMagic && !isArmor) {
-    // Merchant houses retain dormers; the temple, tavern, guild and armorer have distinct rooflines.
+  } else if (!isTemple && !isTavern && !isMagic && !isArmor && !isApothecary) {
+    // Merchant houses retain dormers; the botica's glazed herbarium needs a clear silhouette,
+    // just like the temple, tavern, guild and armorer have distinct rooflines.
     for (const side of (coarse ? [-1] : [-1, 1])) {
       const x = side * width * 0.245;
       const z = depth * 0.17;
@@ -875,9 +876,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       root.add(bay);
     }
   }
-  // The forge gets its own industrial stack below; other houses keep
-  // the small domestic chimney, except the guild and fortified armorer. Neither alters the collision grid.
-  if (!isForge && !isTavern && !isTemple && !isMagic && !isArmor) {
+  // The forge gets its own industrial stack below; merchant houses keep
+  // a domestic chimney. The botica's glass herbarium, guild and fortified
+  // armorer have clear rooflines instead. No collision grid changes.
+  if (!isForge && !isTavern && !isTemple && !isMagic && !isArmor && !isApothecary) {
     mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
       'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
     mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
