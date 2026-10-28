@@ -441,44 +441,59 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   quoins.instanceMatrix.needsUpdate = true;
   if (quoins.instanceColor) quoins.instanceColor.needsUpdate = true;
   root.add(quoins);
-  // A proper triangular gable under each pitched roof, not a flat cube roof.
-  const gable = new THREE.Shape();
-  gable.moveTo(-width / 2, 0);
-  gable.lineTo(width / 2, 0);
-  gable.lineTo(0, 1.85);
-  gable.closePath();
-  for (const face of [-1, 1]) {
-    const g = mesh(root, new THREE.ShapeGeometry(gable), wallMaterial,
-      'roof-gable-' + face, [0, height - 0.06, face * facadeZ]);
-    if (face === -1) g.rotation.y = Math.PI;
-  }
-  for (const side of [-1, 1]) {
-    const slope = mesh(root, new THREE.BoxGeometry(width * 0.59, 0.26, depth + 0.9),
-      roof, 'pitched-roof-' + side, [side * width * 0.245, height + 0.79, 0], !coarse);
-    slope.rotation.z = -side * 0.48;
-    // One instanced draw-call per roof slope instead of individual roof tiles.
-    // Thin cross-seams add depth without a dense triangle mesh on phones.
-    const bands = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(width * 0.55, 0.045, 0.07),
-      mats.roofSeams,
-      coarse ? 7 : 12,
-    );
-    bands.name = 'pitched-roof-shingle-seams';
-    const band = new THREE.Object3D();
-    for (let i = 0; i < bands.count; i += 1) {
-      band.position.set(0, 0.16, -(depth + 0.6) / 2 + (i + 0.5) * (depth + 0.6) / bands.count);
-      band.updateMatrix();
-      bands.setMatrixAt(i, band.matrix);
+  // A low ashlar roof makes the armorer a fortified hall rather than a
+  // merchant house with a tiled gable. The existing battlements and corner
+  // shoulders now form its silhouette; all geometry remains above the same
+  // solid building cells and never changes doors or collision.
+  if (isArmor) {
+    const flatRoof = new THREE.Group();
+    flatRoof.name = 'armor-flat-ashlar-roof';
+    flatRoof.userData.chroniclesDecorativeOnly = true;
+    mesh(flatRoof, new THREE.BoxGeometry(width + 0.36, 0.24, depth + 0.82), mats.stone,
+      'armor-flat-roof-deck', [0, height + 0.08, 0], !coarse);
+    mesh(flatRoof, new THREE.BoxGeometry(width + 0.55, 0.20, depth + 1.00), mats.stone,
+      'armor-flat-roof-coping', [0, height + 0.22, 0], !coarse);
+    root.add(flatRoof);
+  } else {
+    // A proper triangular gable under each pitched roof, not a flat cube roof.
+    const gable = new THREE.Shape();
+    gable.moveTo(-width / 2, 0);
+    gable.lineTo(width / 2, 0);
+    gable.lineTo(0, 1.85);
+    gable.closePath();
+    for (const face of [-1, 1]) {
+      const g = mesh(root, new THREE.ShapeGeometry(gable), wallMaterial,
+        'roof-gable-' + face, [0, height - 0.06, face * facadeZ]);
+      if (face === -1) g.rotation.y = Math.PI;
     }
-    bands.instanceMatrix.needsUpdate = true;
-    slope.add(bands);
-  }
-  mesh(root, new THREE.CylinderGeometry(0.14, 0.14, depth + 0.98, 7), mats.timber,
-    'ridge-timber', [0, roofRidgeY - 0.13, 0]).rotation.x = Math.PI / 2;
-  for (const side of [-1, 1]) {
-    const fascia = mesh(root, new THREE.BoxGeometry(0.25, 0.28, depth + 1.1),
-      mats.timber, 'roof-edge-fascia', [side * width * 0.49, height + 0.02, 0]);
-    fascia.rotation.z = side * 0.16;
+    for (const side of [-1, 1]) {
+      const slope = mesh(root, new THREE.BoxGeometry(width * 0.59, 0.26, depth + 0.9),
+        roof, 'pitched-roof-' + side, [side * width * 0.245, height + 0.79, 0], !coarse);
+      slope.rotation.z = -side * 0.48;
+      // One instanced draw-call per roof slope instead of individual roof tiles.
+      // Thin cross-seams add depth without a dense triangle mesh on phones.
+      const bands = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(width * 0.55, 0.045, 0.07),
+        mats.roofSeams,
+        coarse ? 7 : 12,
+      );
+      bands.name = 'pitched-roof-shingle-seams';
+      const band = new THREE.Object3D();
+      for (let i = 0; i < bands.count; i += 1) {
+        band.position.set(0, 0.16, -(depth + 0.6) / 2 + (i + 0.5) * (depth + 0.6) / bands.count);
+        band.updateMatrix();
+        bands.setMatrixAt(i, band.matrix);
+      }
+      bands.instanceMatrix.needsUpdate = true;
+      slope.add(bands);
+    }
+    mesh(root, new THREE.CylinderGeometry(0.14, 0.14, depth + 0.98, 7), mats.timber,
+      'ridge-timber', [0, roofRidgeY - 0.13, 0]).rotation.x = Math.PI / 2;
+    for (const side of [-1, 1]) {
+      const fascia = mesh(root, new THREE.BoxGeometry(0.25, 0.28, depth + 1.1),
+        mats.timber, 'roof-edge-fascia', [side * width * 0.49, height + 0.02, 0]);
+      fascia.rotation.z = side * 0.16;
+    }
   }
   // Stone-fronted armorer, guild and botica have no merchant timber lattice.
   // Doors, shop signs, windows and their collision cells remain untouched.
