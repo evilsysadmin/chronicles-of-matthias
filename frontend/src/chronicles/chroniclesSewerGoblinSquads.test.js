@@ -94,9 +94,11 @@ describe('Chronicles · sewer goblins attack in low-XP packs', () => {
       .toEqual([...pack.goblins].sort());
   });
 
-  it('alerts a screened packmate only when an already-engaged mate can reach it by sight', () => {
+  it('alerts a screened packmate only when an attack-ready mate can reach it by sight', () => {
     const base = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
-    const state = { ...base, x: 1, y: 4 };
+    // At (1,4) the squad is visible but nobody can strike yet; (1,5)
+    // puts its first goblin in melee range and legitimately starts combat.
+    const state = { ...base, x: 1, y: 5 };
     const active = chroniclesActiveEnemies(state);
     const direct = chroniclesEngagedEnemies(state, active).filter((enemy) => enemy.squadId === PACKS[0].id);
     expect(direct.length).toBeGreaterThan(0);
