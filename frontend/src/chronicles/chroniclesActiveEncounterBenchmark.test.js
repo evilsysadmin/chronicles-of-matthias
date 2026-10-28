@@ -15,36 +15,42 @@ import { chroniclesMemberSp } from './chroniclesMagic.js';
 // No swings at empty air, no free turns.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
+const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewers-goblin-east-culvert'];
 
-function playSewerEncounter(rollOffset, { woundedStart = false } = {}) {
-  const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+function playSewerEncounter(rollOffset, {
+  woundedStart = false, pack = PACK, keepEnemyIds = pack,
+  previousState = null, start = { x: 1, y: 5, direction: 1 }, returnState = false,
+} = {}) {
+  const base = previousState || createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
   const all = chroniclesActiveEnemies(base);
-  const enemies = all.filter((enemy) => PACK.includes(enemy.id));
-  expect(enemies.map((enemy) => enemy.id).sort()).toEqual([...PACK].sort());
-  const inactive = Object.fromEntries(all
-    .filter((enemy) => !PACK.includes(enemy.id))
+  const enemies = all.filter((enemy) => pack.includes(enemy.id));
+  expect(enemies.map((enemy) => enemy.id).sort()).toEqual([...pack].sort());
+  // Preserve the next authored squad in the first encounter; never reset
+  // enemies or resources when continuing from a previous combat state.
+  const inactive = previousState ? {} : Object.fromEntries(all
+    .filter((enemy) => !keepEnemyIds.includes(enemy.id))
     .map((enemy) => [enemy.hpKey, 0]));
   const initial = {
-    ...base, ...inactive, x: 1, y: 5, direction: 1,
+    ...base, ...inactive, ...start,
     runSeed: 'mm3-active-sewer-benchmark',
     // A separate controlled variant starts with a small real wound so the
     // cleric must choose between healing and attacking during initiative.
-    party: woundedStart ? base.party.map((member) => (
+    party: previousState ? base.party : woundedStart ? base.party.map((member) => (
       member.id === 'rook' ? { ...member, hp: Math.max(1, member.maxHp - 2) } : member
     )) : base.party,
-    spellPoints: woundedStart ? { ...base.spellPoints, bishop: 2 } : base.spellPoints,
+    spellPoints: previousState ? base.spellPoints : woundedStart ? { ...base.spellPoints, bishop: 2 } : base.spellPoints,
   };
   const initialHp = Object.fromEntries(initial.party.map(({ id, hp }) => [id, hp]));
   const initialEnemyHp = Object.fromEntries(enemies.map((enemy) => [enemy.id, initial[enemy.hpKey]]));
   const initialBishopSp = chroniclesMemberSp(initial, initial.party.find(({ id }) => id === 'bishop'));
   let rollIndex = rollOffset;
   let state = chroniclesStartInitiativeCombat(initial, chroniclesActiveEnemies(initial), {
-    forceEnemyIds: PACK,
+    forceEnemyIds: pack,
     random: () => ((rollIndex++ % 2) ? 0.999 : 0),
   });
   expect(state.phase).toBe('combat');
   expect(state.initiative.order.filter(({ kind }) => kind === 'enemy').map(({ id }) => id).sort())
-    .toEqual([...PACK].sort());
+    .toEqual([...pack].sort());
 
   const metrics = {
     rollOffset, steps: 0, rounds: 0,
@@ -58,7 +64,7 @@ function playSewerEncounter(rollOffset, { woundedStart = false } = {}) {
     metrics.rounds = Math.max(metrics.rounds, state.initiative.round);
     if (actor.kind === 'party') {
       const inFront = chroniclesEnemyTargetAhead(state, 1);
-      const living = chroniclesActiveEnemies(state).filter((enemy) => PACK.includes(enemy.id));
+      const living = chroniclesActiveEnemies(state).filter((enemy) => pack.includes(enemy.id));
       const nearest = living.map((enemy) => {
         const position = chroniclesRuntimeEnemyPosition(state, enemy);
         const dx = position.x - state.x;
@@ -150,11 +156,14 @@ function playSewerEncounter(rollOffset, { woundedStart = false } = {}) {
     legitimateWithdrawals: enemies.filter((enemy) => state[enemy.hpKey] > 0
       && chroniclesEnemyLostParty(state, enemy)).map((enemy) => enemy.id),
     partyHpLost: Object.fromEntries(state.party.map(({ id, hp }) => [id, initialHp[id] - hp])),
+    initialPartyHp: initialHp,
+    finalPartyHp: Object.fromEntries(state.party.map(({ id, hp }) => [id, hp])),
     initialBishopSp,
     finalBishopSp: chroniclesMemberSp(state, state.party.find(({ id }) => id === 'bishop')),
     downed: state.party.filter(({ hp }) => hp <= 0).length,
     lastMessage: state.message,
     enemyPositions: state.enemyPositions,
+    ...(returnState ? { state } : {}),
   };
 }
 
@@ -207,4 +216,34 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(remaining).toEqual(result.legitimateWithdrawals);
     }
   });
+  it('carries wounds and PH into a second authored sewer squad without a free rest', () => {
+    // Two different existing squads in the same map. Relocate the group
+    // between engagements in the test only: travel attrition is not measured.
+    const first = playSewerEncounter(0, {
+      woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
+    });
+    expect(first.finished).toBe(true);
+    expect(first.phase).toBe('explore');
+    expect(first.downed).toBe(0);
+    const second = playSewerEncounter(1, {
+      pack: CENTRAL_PACK, previousState: first.state,
+      start: { x: 7, y: 3, direction: 1 },
+    });
+    const { state: _state, ...firstMetrics } = first;
+    console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first: firstMetrics, second }));
+
+    expect(second.initialPartyHp).toEqual(first.finalPartyHp);
+    expect(second.initialBishopSp).toBe(first.finalBishopSp);
+    expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
+    expect(second.finalBishopSp).toBeLessThanOrEqual(second.initialBishopSp);
+    expect(second.healingPhSpent).toBe(second.initialBishopSp - second.finalBishopSp);
+    expect(second.finished).toBe(true);
+    expect(second.phase).toBe('explore');
+    expect(second.downed).toBe(0);
+    const remaining = Object.entries(second.enemyHpLeft)
+      .filter(([, hp]) => hp > 0).map(([id]) => id);
+    expect(remaining).toEqual(second.legitimateWithdrawals);
+    expect(second.steps).toBeLessThan(128);
+  });
+
 });
