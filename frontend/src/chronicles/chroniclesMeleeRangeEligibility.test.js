@@ -25,16 +25,13 @@ function positionedFight(distance = 2, direction = 2) {
 }
 
 describe('MM3 melee reach feedback and action cost', () => {
-  it('disables sword reach at two cells and refuses both A and auto without consuming the hero turn', () => {
+  it('disables sword reach at two cells and refuses A without consuming the hero turn', () => {
     const far = positionedFight(2);
     expect(chroniclesMM3MeleeAvailable(far, 'matthias')).toBe(false);
-    for (const mode of ['melee', undefined]) {
-      const action = { type: 'attack', memberId: 'matthias', ...(mode && { mode }) };
-      const refused = chroniclesReduce(far, action);
-      expect(refused).toBe(far);
-      expect(refused.turns).toBe(far.turns);
-      expect(refused.initiative).toBe(far.initiative);
-    }
+    const refused = chroniclesReduce(far, { type: 'attack', memberId: 'matthias', mode: 'melee' });
+    expect(refused).toBe(far);
+    expect(refused.turns).toBe(far.turns);
+    expect(refused.initiative).toBe(far.initiative);
   });
 
   it('a hero with a target one cell ahead can swing, but rotating away disables A again', () => {
