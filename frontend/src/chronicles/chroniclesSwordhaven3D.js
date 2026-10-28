@@ -818,6 +818,23 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     mesh(loft, new THREE.BoxGeometry(2.60, 0.18, 0.24), mats.timber,
       'store-loft-front-beam', [0, -0.75, 0.78]);
+    // A timber loading hoist crowns the merchant loft, giving the
+    // provisions warehouse a recognisable silhouette from the street.
+    // Everything is decorative, attached to the existing roof, and
+    // remains within the solid shop footprint in plan view.
+    const hoist = new THREE.Group();
+    hoist.name = 'store-loft-loading-hoist';
+    hoist.userData.chroniclesDecorativeOnly = true;
+    mesh(hoist, new THREE.BoxGeometry(0.20, 0.19, 2.70), mats.timber,
+      'store-hoist-oak-boom', [0, 1.83, 1.10], !coarse);
+    const brace = mesh(hoist, new THREE.BoxGeometry(0.15, 1.55, 0.16), mats.timber,
+      'store-hoist-diagonal-brace', [0, 1.00, 0.56], !coarse);
+    brace.rotation.x = 0.52;
+    mesh(hoist, new THREE.BoxGeometry(0.075, 0.94, 0.075), mats.steel,
+      'store-hoist-chain', [0, 1.35, 2.22]);
+    mesh(hoist, new THREE.TorusGeometry(0.19, 0.06, 6, coarse ? 8 : 12), mats.steel,
+      'store-hoist-iron-ring', [0, 0.82, 2.22]);
+    loft.add(hoist);
     root.add(loft);
   } else if (isForge) {
     // The smithy has a raised, louvered smoke lantern instead of domestic
@@ -876,10 +893,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       root.add(bay);
     }
   }
-  // The forge gets its own industrial stack below; merchant houses keep
-  // a domestic chimney. The botica's glass herbarium, guild and fortified
-  // armorer have clear rooflines instead. No collision grid changes.
-  if (!isForge && !isTavern && !isTemple && !isMagic && !isArmor && !isApothecary) {
+  // The forge has an industrial stack; the provisions warehouse a loading
+  // hoist. Only ordinary merchant houses keep a domestic chimney. The
+  // botica, guild and armorer retain their own rooflines. No grid changes.
+  if (!isForge && !isTavern && !isTemple && !isMagic && !isArmor && !isApothecary && !isStore) {
     mesh(root, new THREE.BoxGeometry(1.05, 2.3, 0.95), mats.stone,
       'stone-chimney', [width * 0.31, height + 1.04, -depth * 0.25], !coarse);
     mesh(root, new THREE.BoxGeometry(1.38, 0.22, 1.32), mats.stone,
