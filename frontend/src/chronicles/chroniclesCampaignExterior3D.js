@@ -508,7 +508,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // A forest has no paved axes: its paths are the gaps between trees.
   const roadCells = forest ? [] : visibleRoadCells(scenePlan, sceneCenter).filter(({ x, y }) => grid[y]?.[x] === '.');
   if (roadCells.length) {
-    const roads = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL * 0.98, 0.045, CELL * 0.98), paver, roadCells.length);
+    // Stone paving deliberately keeps a narrow mortar joint. B2's
+    // compacted-earth track is continuous: close that 8cm dark gap between
+    // neighboring road tiles without overlapping coplanar faces (z-fighting).
+    // This is only an albedo carrier; movement still follows the saved grid.
+    const roadSpan = heathB2 ? CELL : CELL * 0.98;
+    const roads = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(roadSpan, 0.045, roadSpan), paver, roadCells.length,
+    );
     const dummy = new THREE.Object3D();
     // Per-instance colour distinguishes districts without new geometry,
     // materials, draw calls or independent floor/collision masks.
