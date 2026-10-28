@@ -39,6 +39,26 @@ describe('MM3 exploration: non-moving actions also progress alerted foes', () =>
     expect(advanced[goblin.hpKey]).toBe(hidden[goblin.hpKey]);
   });
 
+  it('never advances a real pursuer after repeated rejected volleys through the exploration entry point', () => {
+    const { goblin, state } = loneGoblin();
+    const unarmed = { ...state, equipment: {} };
+    let refused = unarmed;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const next = chroniclesGridExplorationStep(refused, 'volley');
+      expect(next.turns).toBe(unarmed.turns);
+      expect(next.explorationEnemySteps).toBe(unarmed.explorationEnemySteps);
+      expect(chroniclesRuntimeEnemyPosition(next, goblin))
+        .toEqual(chroniclesRuntimeEnemyPosition(unarmed, goblin));
+      expect(next.party).toEqual(unarmed.party);
+      refused = next;
+    }
+    // The next legal action must tick pursuit once, not replay three
+    // rejected shots as hidden exploration turns.
+    const turned = chroniclesGridExplorationStep(refused, 'turn-right');
+    expect(turned.turns).toBe(unarmed.turns + 1);
+    expect(turned.explorationEnemySteps).toBe((unarmed.explorationEnemySteps || 0) + 1);
+  });
+
   it('moves once per spent action but never for a rejected shot or map transition', () => {
     const { goblin, state } = loneGoblin();
     const unarmed = { ...state, equipment: {} };
