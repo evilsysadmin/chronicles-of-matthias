@@ -238,6 +238,16 @@ try {
       && forge?.getObjectByName('forge-roof-smoke-lantern')
       && !forge?.getObjectByName('pitched-roof-dormer--1')
     )),
+    distinctStoreHoist: String(Boolean(
+      store?.getObjectByName('store-loft-loading-hoist')?.userData.chroniclesDecorativeOnly
+      && store?.getObjectByName('store-hoist-oak-boom')
+      && store?.getObjectByName('store-hoist-diagonal-brace')
+      && store?.getObjectByName('store-hoist-chain')
+      && store?.getObjectByName('store-hoist-iron-ring')
+      && !store?.getObjectByName('stone-chimney')
+      && store?.getObjectByName('shop-door')
+      && !apothecary?.getObjectByName('store-loft-loading-hoist')
+    )),
     distinctForgeLantern: String(Boolean(
       forge?.getObjectByName('forge-roof-smoke-lantern')?.userData.chroniclesDecorativeOnly
       && forge?.getObjectByName('forge-lantern-iron-louver')
@@ -297,7 +307,6 @@ try {
       && !apothecary?.getObjectByName('pitched-roof-dormer--1')
       && !apothecary?.getObjectByName('pitched-roof-dormer-1')
       && !apothecary?.getObjectByName('stone-chimney')
-      && store?.getObjectByName('stone-chimney')
     )),
     distinctShopFacades: String(Boolean(
       apothecary?.getObjectByName('apothecary-roof-herbarium')
