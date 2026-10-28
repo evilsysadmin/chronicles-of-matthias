@@ -519,17 +519,31 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         && zone.minX <= zone.maxX && zone.minY <= zone.maxY)
       .map(zone => ({ ...zone, tint: new THREE.Color(zone.color) }));
     const neutralTint = new THREE.Color(0xffffff);
+    // Contextual pigment variation on B2's dirt track: moss grows next to
+    // rocky banks, while open stretches stay a touch warmer. The road mesh,
+    // matrices, walkable cells, and draw-call count are unchanged.
+    const heathTrackTints = heathB2 ? {
+      edge: ['#e5ebdf', '#e2e9dc', '#edf0e4'].map(hex => new THREE.Color(hex)),
+      open: ['#ffffff', '#faf5e9', '#f3ede2', '#f7f1e7'].map(hex => new THREE.Color(hex)),
+    } : null;
     roadCells.forEach(({ x, y }, index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
-      if (roadTintZones.length) {
+      if (roadTintZones.length || heathTrackTints) {
         const district = roadTintZones.find(zone =>
           x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY);
-        // Initialise every instance, including outside a zone: otherwise
-        // uncoloured slots in an InstancedBufferAttribute become black.
-        roads.setColorAt(index, district?.tint || neutralTint);
+        const nearStone = heathTrackTints && (
+          grid[y - 1]?.[x] === '#' || grid[y + 1]?.[x] === '#'
+          || grid[y]?.[x - 1] === '#' || grid[y]?.[x + 1] === '#'
+        );
+        const shades = heathTrackTints && (nearStone ? heathTrackTints.edge : heathTrackTints.open);
+        const mix = (Math.imul(x + 29, 73856093) ^ Math.imul(y + 17, 19349663)) >>> 0;
+        const naturalTint = shades?.[mix % shades.length];
+        // Initialise every slot once instance colours are enabled, including
+        // those without district zones. Never leave uncoloured black roads.
+        roads.setColorAt(index, district?.tint || naturalTint || neutralTint);
       }
     });
     roads.instanceMatrix.needsUpdate = true;
