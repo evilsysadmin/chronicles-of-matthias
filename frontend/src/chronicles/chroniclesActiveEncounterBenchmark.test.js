@@ -81,7 +81,11 @@ function playSewerEncounter(rollOffset, {
       const inReach = chroniclesCombatMeleeTarget(state);
       const rook = state.party.find(({ id }) => id === 'rook');
       const caster = state.party.find(({ id }) => id === 'bishop');
-      if (woundedStart && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
+      // A carried-over party may take wounds in the SECOND encounter even
+      // without the explicit first-encounter woundedStart fixture. If the
+      // cleric still has PH, spending a genuine healing turn is part of the
+      // playable resource budget, not a synthetic reset or lowered bar.
+      if ((woundedStart || previousState) && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
         && rook.hp < rook.maxHp && chroniclesMemberSp(state, caster) > 0) {
         const beforeSp = chroniclesMemberSp(state, caster);
         const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: 'rook' });
