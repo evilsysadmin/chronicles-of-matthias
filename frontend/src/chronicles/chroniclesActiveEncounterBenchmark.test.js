@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesCombatMeleeTarget, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
@@ -13,9 +13,9 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
-// initiative action. Attack adjacent enemies, turn toward the nearest living
-// opponent, advance on distant stragglers, or BLOCK when movement is blocked.
-// No swings at empty air, no free turns.
+// initiative action. Attack a physically adjacent enemy (even off camera),
+// or BLOCK while stragglers close: MM3 combat locks both tile and facing.
+// No swings at empty air, free turns or impossible camera rotations.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewers-goblin-east-culvert'];
@@ -74,21 +74,18 @@ function playSewerEncounter(rollOffset, {
       // Every translation is forbidden throughout MM3 initiative, whether
       // dispatched by keyboard/touch as a string or directly as an action.
       // Identity also guards against hidden turn, resource or state changes.
-      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right']) {
+      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right', 'turn-left', 'turn-right']) {
         expect(chroniclesReduce(state, move), `${move} must not change combat state`).toBe(state);
         expect(chroniclesReduce(state, { type: move }), `${move} action must not change combat state`).toBe(state);
       }
-      const inFront = chroniclesEnemyTargetAhead(state, 1);
-      const living = chroniclesActiveEnemies(state).filter((enemy) => pack.includes(enemy.id));
-      const nearest = living.map((enemy) => {
-        const position = chroniclesRuntimeEnemyPosition(state, enemy);
-        const dx = position.x - state.x;
-        const dy = position.y - state.y;
-        return { dx, dy, distance: Math.abs(dx) + Math.abs(dy) };
-      }).sort((a, b) => a.distance - b.distance)[0];
+      const inReach = chroniclesCombatMeleeTarget(state);
       const rook = state.party.find(({ id }) => id === 'rook');
       const caster = state.party.find(({ id }) => id === 'bishop');
-      if (woundedStart && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
+      // A carried-over party may take wounds in the SECOND encounter even
+      // without the explicit first-encounter woundedStart fixture. If the
+      // cleric still has PH, spending a genuine healing turn is part of the
+      // playable resource budget, not a synthetic reset or lowered bar.
+      if ((woundedStart || previousState) && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
         && rook.hp < rook.maxHp && chroniclesMemberSp(state, caster) > 0) {
         const beforeSp = chroniclesMemberSp(state, caster);
         const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: 'rook' });
@@ -101,35 +98,12 @@ function playSewerEncounter(rollOffset, {
         metrics.healingPhSpent += beforeSp - afterSp;
         metrics.healedHp += afterRook.hp - rook.hp;
         state = healed;
-      } else if (inFront) {
+      } else if (inReach) {
         const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
         expect(attempted.turns).toBe(state.turns + 1);
         metrics.heroDamage += enemies.reduce((sum, enemy) => sum + Math.max(0, state[enemy.hpKey] - attempted[enemy.hpKey]), 0);
         metrics.heroAttacks += 1;
         state = attempted;
-      } else if (nearest) {
-        const facing = Math.abs(nearest.dx) >= Math.abs(nearest.dy) && nearest.dx !== 0
-          ? nearest.dx > 0 ? 1 : 3
-          : nearest.dy > 0 ? 2 : 0;
-        if (facing !== state.direction) {
-          const delta = (facing - state.direction + 4) % 4;
-          const turned = chroniclesReduce(state, delta === 3 ? 'turn-left' : 'turn-right');
-          expect(turned.turns).toBe(state.turns + 1);
-          metrics.heroRotations += 1;
-          state = turned;
-        } else if (nearest.distance > 1) {
-          // The movement invariant is checked above for every hero turn;
-          // distant targets require a legal defensive action instead.
-          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
-          expect(guarded.turns).toBe(state.turns + 1);
-          metrics.heroBlocks += 1;
-          state = guarded;
-        } else {
-          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
-          expect(guarded.turns).toBe(state.turns + 1);
-          metrics.heroBlocks += 1;
-          state = guarded;
-        }
       } else {
         const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
         expect(guarded.turns, `BLOCK must spend ${actor.id}'s turn`).toBe(state.turns + 1);
@@ -194,6 +168,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(result.phase).toBe('explore');
       expect(result.downed).toBe(0);
       expect(result.heroMoves).toBe(0);
+      expect(result.heroRotations).toBe(0);
       const remaining = Object.entries(result.enemyHpLeft)
         .filter(([, hp]) => hp > 0).map(([id]) => id);
       expect(remaining).toEqual(result.legitimateWithdrawals);
@@ -291,13 +266,14 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
         }
         expect(walkedTiles).toBe(expectedTiles.length);
-        // Spend one real potion between fights, rather than only asserting
-        // that the untouched stock survives the transition. The first squad
-        // deliberately leaves the initial two-PV wound for this action.
+        // Spend one real potion between fights, rather than merely asserting
+        // that untouched stock survives. Choose the *most depleted* living
+        // hero, not a hard-coded recipient: fixed-facing melee can expose
+        // Matthias more than Hildegard in one of the d8 combat orders.
         const beforePotion = explored;
-        const woundedRook = beforePotion.party.find(({ id }) => id === 'rook');
-        expect(woundedRook.hp).toBeGreaterThan(0);
-        expect(woundedRook.hp).toBeLessThan(woundedRook.maxHp);
+        const woundedHero = beforePotion.party.filter(({ hp, maxHp }) => hp > 0 && hp < maxHp)
+          .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];
+        expect(woundedHero).toBeTruthy();
         const potionsBefore = chroniclesConsumableCount(beforePotion, 'healing-potion');
         expect(potionsBefore).toBeGreaterThan(0);
         // A refused consumable action must not create an invisible exploration
@@ -321,7 +297,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         // Use the same exploration dispatcher as the playable UI. A potion
         // spends time, so nearby pursuers must not get a free frozen turn.
         explored = chroniclesGridExplorationStep(refused, {
-          type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: 'rook',
+          type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: woundedHero.id,
         });
         expect(explored.explorationEnemySteps).toBe((beforePotion.explorationEnemySteps || 0) + 1);
         for (const enemy of chroniclesActiveEnemies(explored).filter(({ id }) => CENTRAL_PACK.includes(id))) {
@@ -330,8 +306,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           expect(Math.abs(next.x - previous.x) + Math.abs(next.y - previous.y),
             `${enemy.id} must pursue cardinally while the party heals`).toBeLessThanOrEqual(1);
         }
-        const healedRook = explored.party.find(({ id }) => id === 'rook');
-        expect(healedRook.hp).toBe(Math.min(woundedRook.maxHp, woundedRook.hp + 15));
+        const healedHero = explored.party.find(({ id }) => id === woundedHero.id);
+        expect(healedHero.hp).toBe(Math.min(woundedHero.maxHp, woundedHero.hp + 15));
         expect(explored.turns).toBe(beforePotion.turns + 1);
         expect(chroniclesConsumableCount(explored, 'healing-potion')).toBe(potionsBefore - 1);
         expect({ x: explored.x, y: explored.y, direction: explored.direction })
@@ -341,7 +317,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
           .toBe(chroniclesMemberSp(beforePotion, beforePotion.party.find(({ id }) => id === 'bishop')));
         const potion = {
-          hpBefore: woundedRook.hp, hpAfter: healedRook.hp,
+          heroId: woundedHero.id, hpBefore: woundedHero.hp, hpAfter: healedHero.hp,
           potionsBefore, potionsAfter: chroniclesConsumableCount(explored, 'healing-potion'),
           turns: explored.turns - beforePotion.turns,
           enemySteps: (explored.explorationEnemySteps || 0) - (beforePotion.explorationEnemySteps || 0),
@@ -373,11 +349,11 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.actions.at(-1)).toBe('forward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
-      expect(potion.hpBefore).toBe(first.finalPartyHp.rook);
+      expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
       expect(potion.hpAfter).toBeGreaterThan(potion.hpBefore);
       expect(potion.turns).toBe(1);
       expect(potion.enemySteps).toBe(1);
-      expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, rook: potion.hpAfter });
+      expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, [potion.heroId]: potion.hpAfter });
       // A real stocked potion survives combat and travel; starting the next
       // encounter cannot silently refill or discard the carried supply.
       expect(first.initialHealingPotions).toBeGreaterThanOrEqual(2);

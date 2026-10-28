@@ -215,9 +215,9 @@ export function chroniclesEnemyDistanceAhead(state, maxReach = 2) {
   return chroniclesEnemyTargetAhead(state, maxReach)?.distance ?? null;
 }
 
-// MM3's melee hotkey/touch affordance uses the exact same one-cell ray as
-// attack resolution. A legal swing needs a living hero, a target directly in
-// front of the camera, and (during initiative) ownership of this hero's turn.
+// MM3 melee requires a real adjacent foe. During initiative the foe may
+// occupy any cardinal neighbour, since the company itself cannot turn.
+// A living hero must also own the current initiative slot.
 export function chroniclesMM3MeleeAvailable(state, memberId) {
   if (!chroniclesUsesMM3Combat(state)) return true; // Tactics retains its rules.
   if (!state || state.phase === 'defeated' || state.phase === 'escaped') return false;
@@ -226,7 +226,17 @@ export function chroniclesMM3MeleeAvailable(state, memberId) {
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
     if (actor?.kind !== 'party' || actor.id !== memberId) return false;
   }
-  return Boolean(chroniclesEnemyTargetAhead(state, 1));
+  return Boolean(chroniclesCombatMeleeTarget(state));
+}
+
+// MM3 locks group facing during initiative, but individual heroes may strike
+// any living ENGAGED enemy in a physically adjacent cell. Reuse the existing
+// combat adjacency/sight checks (also used by short-range missiles): no
+// teleporting through walls, no phantom reach and no need to rotate the camera.
+export function chroniclesCombatMeleeTarget(state) {
+  return chroniclesUsesMM3Combat(state) && state?.initiative
+    ? chroniclesCombatMissileTarget(state, 1)
+    : chroniclesEnemyTargetAhead(state, 1);
 }
 
 // In first-person initiative, adjacency may be beside/behind the camera,
@@ -645,7 +655,7 @@ function resolveOpeningVolley(state) {
 export function chroniclesAttackMode(state, memberId) {
   if (!chroniclesUsesMM3Combat(state)) return 'melee';
   const melee = chroniclesPartyAttackStats(state, memberId, 'melee');
-  if (chroniclesEnemyTargetAhead(state, melee.reach)) return 'melee';
+  if (chroniclesCombatMeleeTarget(state)) return 'melee';
   const missile = chroniclesPartyAttackStats(state, memberId, 'missile');
   return chroniclesEquippedItem(state, memberId, 'missile') && chroniclesEnemyTargetAhead(state, missile.reach) ? 'missile' : 'melee';
 }
@@ -677,9 +687,11 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const attackStats = spell ? {
     ...weaponStats, reach: mm3 ? chroniclesMM3MissileSightReach(state) : spell.reach,
   } : weaponStats;
-  const target = mode === 'missile' && mm3 && !spell
-    ? chroniclesCombatMissileTarget(state, attackStats.reach)
-    : chroniclesEnemyTargetAhead(state, attackStats.reach);
+  const target = !spell && mm3 && mode === 'melee'
+    ? chroniclesCombatMeleeTarget(state)
+    : mode === 'missile' && mm3 && !spell
+      ? chroniclesCombatMissileTarget(state, attackStats.reach)
+      : chroniclesEnemyTargetAhead(state, attackStats.reach);
   if (!target) {
     if (mode === 'missile') return withMessage(state, `${attacker.name} tensa ${attacker.attackName.toLowerCase()}, pero no hay enemigo en su línea de tiro.`);
     return withMessage(state, `${attacker.name} ejecuta ${attacker.attackName.toLowerCase()} contra absolutamente nada. La nada resiste.`);
@@ -1132,11 +1144,12 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
-// First-person MM3 combat fixes the company's position for the whole
-// initiative exchange. Camera rotation is still allowed for facing/aiming;
-// enemy tactical movement and the separate Tactics mode are unaffected.
+// First-person MM3 combat fixes both the company's tile and its facing
+// for the entire initiative exchange. No free rotating to retarget a distant
+// foe; exploration and the separate Tactics mode retain normal controls.
 const CHRONICLES_PARTY_STEPS = new Set([
   'forward', 'backward', 'strafe-left', 'strafe-right',
+  'turn-left', 'turn-right',
 ]);
 
 export function chroniclesCombatPartyStepBlocked(state, action) {
@@ -1148,9 +1161,9 @@ export function chroniclesCombatPartyStepBlocked(state, action) {
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
-  // Enforce this in the rules, not only in the input UI: neither a direct
-  // reducer call nor a held touch/keyboard event can move the entire party,
-  // spend initiative or trigger area changes during first-person combat.
+  // Enforce in the reducer: neither direct actions nor held keyboard/touch
+  // input can translate OR rotate the party, spend initiative or trigger a
+  // map transition during first-person combat.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'inn-close') return chroniclesCloseInn(state);

@@ -34,14 +34,19 @@ describe('MM3 melee reach feedback and action cost', () => {
     expect(refused.initiative).toBe(far.initiative);
   });
 
-  it('a hero with a target one cell ahead can swing, but rotating away disables A again', () => {
+  it('attacks an adjacent engaged enemy without rotating the group, including at the side', () => {
     const adjacent = positionedFight(1);
-    expect(chroniclesMM3MeleeAvailable(adjacent, 'matthias')).toBe(true);
-    const swung = chroniclesReduce(adjacent, { type: 'attack', memberId: 'matthias', mode: 'melee' });
-    expect(swung).not.toBe(adjacent);
-    expect(swung.turns).toBe(adjacent.turns + 1);
-    expect(chroniclesMM3MeleeAvailable({ ...adjacent, direction: 1 }, 'matthias')).toBe(false);
-    expect(chroniclesReduce({ ...adjacent, direction: 1 }, { type: 'attack', memberId: 'matthias', mode: 'melee' }).turns).toBe(adjacent.turns);
+    for (const direction of [2, 1]) {
+      const fixed = { ...adjacent, direction };
+      expect(chroniclesMM3MeleeAvailable(fixed, 'matthias')).toBe(true);
+      const swung = chroniclesReduce(fixed, { type: 'attack', memberId: 'matthias', mode: 'melee' });
+      expect(swung).not.toBe(fixed);
+      expect(swung.turns).toBe(fixed.turns + 1);
+      expect(swung.direction).toBe(direction);
+    }
+    // Outside initiative, looking somewhere else does NOT grant side reach.
+    const exploring = { ...adjacent, initiative: null, phase: 'explore', direction: 1 };
+    expect(chroniclesMM3MeleeAvailable(exploring, 'matthias')).toBe(false);
   });
 
   it('does not enable another hero or enemy actor during a different initiative slot', () => {
