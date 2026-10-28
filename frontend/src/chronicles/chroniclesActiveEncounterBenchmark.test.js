@@ -8,6 +8,7 @@ import {
 } from './chroniclesInitiative.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesMemberSp } from './chroniclesMagic.js';
+import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
 // initiative action. Attack adjacent enemies, turn toward the nearest living
@@ -219,30 +220,61 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(remaining).toEqual(result.legitimateWithdrawals);
     }
   });
-  it('carries wounds and PH through two sewer squads under both d8 initiative orders', () => {
-    // Two different existing squads in the same map. Relocate the group
-    // between engagements in the test only: travel attrition is not measured.
-    // Reverse the d8 order between squads, then repeat the entire expedition
-    // with the opposite order. Neither route may reset the party's resources.
+  it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
+    // Two existing squads in the same map. Walk one real dungeon tile after
+    // the first fight, including actual turns to face north. The remainder
+    // of the journey is still a test-only relocation, NOT a full route/attrition
+    // benchmark. Reverse d8 order between fights; no resource reset.
     for (const firstOffset of [0, 1]) {
       const run = () => {
         const first = playSewerEncounter(firstOffset, {
           woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
         });
+        let explored = first.state;
+        // The west encounter starts at (1,5). Face north through spent
+        // exploration turns, then actually move to the walkable (1,4).
+        // Do not teleport, refill PV/PH, or bypass enemy awareness for this leg.
+        const turnActions = {
+          0: [], 1: ['turn-left'], 2: ['turn-left', 'turn-left'], 3: ['turn-right'],
+        }[explored.direction];
+        expect(turnActions).toBeDefined();
+        const actions = [...turnActions, 'forward'];
+        for (const action of actions) {
+          const before = explored;
+          explored = chroniclesGridExplorationStep(before, action);
+          expect(explored.turns, `${action} must spend one exploration turn`).toBe(before.turns + 1);
+          expect(explored.phase).toBe('explore');
+          expect(explored.initiative).toBeFalsy();
+          expect(explored.party).toEqual(before.party);
+          expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
+            .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
+        }
+        const travel = {
+          from: { x: first.state.x, y: first.state.y },
+          to: { x: explored.x, y: explored.y },
+          actions,
+          turns: explored.turns - first.state.turns,
+          enemySteps: (explored.explorationEnemySteps || 0) - (first.state.explorationEnemySteps || 0),
+        };
         const second = playSewerEncounter(1 - firstOffset, {
-          pack: CENTRAL_PACK, previousState: first.state,
+          pack: CENTRAL_PACK, previousState: explored,
           start: { x: 7, y: 3, direction: 1 },
         });
         const { state: _state, ...firstMetrics } = first;
-        return { first: firstMetrics, second };
+        return { first: firstMetrics, travel, second };
       };
-      const { first, second } = run();
-      expect(run()).toEqual({ first, second });
-      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first, second }));
+      const { first, travel, second } = run();
+      expect(run()).toEqual({ first, travel, second });
+      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first, travel, second }));
 
       expect(first.finished).toBe(true);
       expect(first.phase).toBe('explore');
       expect(first.downed).toBe(0);
+      expect(travel.from).toEqual({ x: 1, y: 5 });
+      expect(travel.to).toEqual({ x: 1, y: 4 });
+      expect(travel.actions.at(-1)).toBe('forward');
+      expect(travel.turns).toBe(travel.actions.length);
+      expect(travel.enemySteps).toBe(travel.actions.length);
       expect(second.initialPartyHp).toEqual(first.finalPartyHp);
       expect(second.initialBishopSp).toBe(first.finalBishopSp);
       expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
