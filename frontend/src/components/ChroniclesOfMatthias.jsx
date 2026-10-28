@@ -22,6 +22,7 @@ import {
 import { chroniclesPartyBark } from '../chroniclesOfMatthiasBarks.js';
 import { chroniclesArmsLabel } from '../chronicles/chroniclesWornGear.js';
 import { chroniclesRunPendingEnemyTurn } from '../chronicles/chroniclesEnemyInitiativeTurn.js';
+import { chroniclesKeepVictoryFacing } from '../chronicles/chroniclesCombatCameraFacing.js';
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
@@ -826,6 +827,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         next = chroniclesAdvanceCombatInitiative(next, chroniclesActiveEnemies(next));
       }
     }
+
+    // The camera auto-focused a real enemy during initiative. When that fight
+    // ends, explore in the same direction instead of snapping to the old yaw.
+    // This is a free orientation handoff, not a combat turn.
+    next = chroniclesKeepVictoryFacing(current, next);
 
     // Opening volleys are one action with several real damage contributors.
     // The selected hero might not even carry a bow, so never give them all XP.
