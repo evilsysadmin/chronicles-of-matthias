@@ -292,6 +292,13 @@ try {
       && store?.getObjectByName('vertical-facade-post')
       && store?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-stucco'
     )),
+    distinctApothecaryRoofline: String(Boolean(
+      apothecary?.getObjectByName('apothecary-roof-herbarium')
+      && !apothecary?.getObjectByName('pitched-roof-dormer--1')
+      && !apothecary?.getObjectByName('pitched-roof-dormer-1')
+      && !apothecary?.getObjectByName('stone-chimney')
+      && store?.getObjectByName('stone-chimney')
+    )),
     distinctShopFacades: String(Boolean(
       apothecary?.getObjectByName('apothecary-roof-herbarium')
       && apothecary?.getObjectByName('apothecary-hanging-herbs')

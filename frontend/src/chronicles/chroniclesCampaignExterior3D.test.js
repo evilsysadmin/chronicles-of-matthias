@@ -464,6 +464,11 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(apothecary.getObjectByName('magic-shop-turret')).toBeFalsy();
     expect(guild.getObjectByName('magic-shop-turret')).toBeTruthy();
     expect(guild.getObjectByName('apothecary-roof-herbarium')).toBeFalsy();
+    // Keep the glass herbarium legible: the botica no longer shares domestic
+    // roof dormers or a chimney with ordinary shops.
+    expect(apothecary.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+    expect(apothecary.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+    expect(apothecary.getObjectByName('stone-chimney')).toBeFalsy();
 
     // The botica's four side panes now read as sage-green herb-house
     // windows with paired timber shutters, not generic amber shop glazing.
@@ -628,6 +633,35 @@ describe('Chronicles file-authored exterior renderer', () => {
     // not the old 1.6m parapet with the sky filling half the view.
     expect(urbanWalls.geometry.parameters.height).toBeGreaterThan(1.62 * 3);
     expect(town.getObjectByName('swordhaven-fountain')).toBeTruthy();
+  });
+
+  it('keeps the apothecary herbarium clear of generic roof furniture in both detail modes', () => {
+    const grid = swordhavenFirstBook.grid;
+    const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
+      .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } }));
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, {
+        coarsePointer,
+        scenePlan: {
+          mapId: 'swordhaven-first-book', regionKind: 'settlement',
+          width: grid[0].length, height: grid.length,
+          center: { x: 9, y: 7 }, grid, content,
+          landscape: swordhavenFirstBook.landscape,
+        },
+      });
+      const town = scene.getObjectByName('chronicles-campaign-town');
+      const botica = town.children.find(child =>
+        child.name.startsWith('swordhaven-building-first-book-apothecary-'));
+      const store = town.children.find(child =>
+        child.name.startsWith('swordhaven-building-first-book-store-'));
+      expect(botica.getObjectByName('apothecary-roof-herbarium')).toBeTruthy();
+      expect(botica.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
+      expect(botica.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
+      expect(botica.getObjectByName('stone-chimney')).toBeFalsy();
+      expect(botica.getObjectByName('shop-door')).toBeTruthy();
+      expect(store.getObjectByName('stone-chimney')).toBeTruthy();
+    }
   });
 
   it('rejects overlapping or non-solid roof runs rather than creating floating houses', () => {

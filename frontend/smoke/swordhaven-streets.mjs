@@ -57,6 +57,8 @@ try {
           'Real Swordhaven guild must have a unique roof observatory on desktop and mobile');
         assert.equal(result.distinctApothecaryMasonry, 'true',
           'Botica must have sage masonry walls and gables without merchant timber lattice');
+        assert.equal(result.distinctApothecaryRoofline, 'true',
+          'Botica herbarium must read clearly without domestic dormers or chimney on both viewport sizes');
         assert.equal(result.distinctShopFacades, 'true',
           'Apothecary and guild must have distinct authored silhouettes');
         assert.equal(result.distinctTempleRose, 'true',
