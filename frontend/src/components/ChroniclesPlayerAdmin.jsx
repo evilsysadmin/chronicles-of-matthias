@@ -5,6 +5,13 @@ import './ChroniclesPlayerAdmin.css';
 
 const names = { matthias: 'Matthias', rook: 'Rook', bishop: 'Bishop', knight: 'Knight' };
 
+// Older saved progressions/API versions contain no heroNames; never fabricate
+// a custom label or try to render malformed objects as React children.
+export function chroniclesRosterHeroLabel(user, id, fallback = names[id]) {
+  const name = user?.heroNames?.[id];
+  return typeof name === 'string' && name.trim() ? name.trim() : fallback;
+}
+
 // An unsuccessful request must never look like an empty player database.
 export function chroniclesRosterStatusLabel({ hasLoaded, loading, error, count, hasMore }) {
   if (!hasLoaded) return loading ? 'Consultando censo…' : 'Censo no disponible';
@@ -100,7 +107,7 @@ export default function ChroniclesPlayerAdmin() {
             </p>
             <div className="chronicles-player-admin__levels" aria-label="Niveles de los héroes">
               {Object.entries(names).map(([id, name]) => (
-                <span key={id}>{name}: <b>{user.levels?.[id] ?? '—'}</b></span>
+                <span key={id}>{chroniclesRosterHeroLabel(user, id, name)}: <b>{user.levels?.[id] ?? '—'}</b></span>
               ))}
             </div>
           </li>
