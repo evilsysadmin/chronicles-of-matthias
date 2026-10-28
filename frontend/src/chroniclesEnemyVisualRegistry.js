@@ -10,6 +10,7 @@ import {
 } from './chroniclesFantasyEnemyArt.js';
 import { installChroniclesEnemyMotionArt } from './chroniclesEnemyMotionArt.js';
 import { buildChroniclesSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
+import { buildChroniclesRemoteSpiderBillboard } from './chronicles/chroniclesRemoteSpiderSprite.js';
 
 const VISUALS = Object.freeze({
   'corrupted-pawn': Object.freeze({ build: buildCorruptedPawn, scale: 0.92 }),
@@ -64,6 +65,14 @@ export function buildChroniclesEnemyVisual(visualType, options = {}) {
   if (options.sprites) {
     const billboard = buildChroniclesSpriteBillboard(visualType);
     if (billboard) return Object.freeze({ model: billboard, scale: 1 });
+    if (visualType === 'crypt-spider') {
+      // Show the existing procedural spider until the approved R2 atlas is
+      // decoded. Tactics continues using its genuine 3D model.
+      const fallback = visual.build(options);
+      return Object.freeze({
+        model: buildChroniclesRemoteSpiderBillboard(fallback), scale: 1,
+      });
+    }
   }
   const model = visual.build(options);
   installChroniclesEnemyMotionArt(model, visualType, options);
