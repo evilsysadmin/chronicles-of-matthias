@@ -134,6 +134,54 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(texture.userData.chroniclesPixelArt.kind).toBe('heath');
   });
 
+  it('uses a quiet compacted-earth path exclusively on B2 with identical road cells', () => {
+    const plan = {
+      mapId: terraB2.id, biome: terraB2.biome, regionKind: terraB2.regionKind,
+      width: terraB2.grid[0].length, height: terraB2.grid.length,
+      center: { x: 10, y: 7 }, grid: terraB2.grid, scenery: terraB2.scenery,
+      content: [],
+    };
+    const first = new THREE.Scene();
+    const mobile = new THREE.Scene();
+    const other = new THREE.Scene();
+    buildChroniclesCampaignExterior(first, { scenePlan: plan });
+    buildChroniclesCampaignExterior(mobile, { scenePlan: plan, coarsePointer: true });
+    buildChroniclesCampaignExterior(other, { scenePlan: { ...plan, mapId: 'terra-e2' } });
+    const road = first.getObjectByName('chronicles-campaign-road');
+    const cheap = mobile.getObjectByName('chronicles-campaign-road');
+    const unchanged = other.getObjectByName('chronicles-campaign-road');
+    expect(road).toBeInstanceOf(THREE.InstancedMesh);
+    expect(road.count).toBeGreaterThan(0);
+    expect(road.count).toBe(cheap.count);
+    expect(road.count).toBe(unchanged.count);
+    expect(road.geometry.parameters).toEqual(unchanged.geometry.parameters);
+    expect(road.material.map.name).toBe('chronicles-pixel-heathpath');
+    expect(road.material.map).toBe(cheap.material.map);
+    expect(road.material.normalMap).toBeNull();
+    expect(road.material.color.getHex()).toBe(0xffffff);
+    expect(unchanged.material.map).toBe(swordhavenSurfaceTexture('cobble'));
+    const instance = new THREE.Matrix4();
+    const peer = new THREE.Matrix4();
+    for (let i = 0; i < road.count; i++) {
+      road.getMatrixAt(i, instance);
+      unchanged.getMatrixAt(i, peer);
+      expect(instance.elements).toEqual(peer.elements);
+      const x = Math.round(instance.elements[12] / 4) + plan.center.x;
+      const y = Math.round(instance.elements[14] / 4) + plan.center.y;
+      expect(terraB2.grid[y]?.[x]).toBe('.');
+    }
+    const pathTex = road.material.map;
+    expect(pathTex.userData.chroniclesPixelArt).toMatchObject({ kind: 'heathpath', size: 64 });
+    expect(pathTex.image.data.length).toBe(64 * 64 * 4);
+    const shades = new Set();
+    for (let i = 0; i < pathTex.image.data.length; i += 4) {
+      expect(pathTex.image.data[i + 3]).toBe(255);
+      shades.add(Array.from(pathTex.image.data.slice(i, i + 3)).join(','));
+    }
+    expect(shades.size).toBeGreaterThan(5);
+    expect(first.children.filter(o => o.name === 'chronicles-campaign-road')).toHaveLength(1);
+  });
+
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
     const scene = new THREE.Scene();
     const built = buildChroniclesCampaignExterior(scene, { scenePlan: demo, coarsePointer: true });

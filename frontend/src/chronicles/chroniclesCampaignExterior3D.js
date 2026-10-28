@@ -461,8 +461,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
   // The shared town-only relief adds directional light to weathered paving.
   // Wild roads retain their cheaper albedo-only rendering.
-  const paver = material(roadMap ? 0xcabfa6 : 0xddd3bf, {
-    map: swordhavenSurfaceTexture('cobble'),
+  const paver = material(heathB2 ? 0xffffff : (roadMap ? 0xcabfa6 : 0xddd3bf), {
+    // B2 still uses the exact same authored road cells and one InstancedMesh.
+    // Replacing only its albedo visually joins the peat terrain and stones.
+    map: heathB2 ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
     ...(settlement ? {
       normalMap: swordhavenSurfaceNormalTexture('cobble'),
       normalScale: new THREE.Vector2(0.72, 0.72),

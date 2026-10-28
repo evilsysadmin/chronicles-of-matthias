@@ -53,13 +53,15 @@ const RAMPS = Object.freeze({
   ashland: [0x2e2826, 0x463c38, 0x5e524c, 0x786a62, 0x94847a].map(hex),
   // B2 heath: muted peat, weathered earth and lichen, not bright meadow green.
   heath: [0x33382e, 0x4c503b, 0x626448, 0x7f7555, 0x999173, 0xb1a587].map(hex),
+  // Compacted peat path, quieter and warmer than Swordhaven cobblestones.
+  heathpath: [0x35382f, 0x554e3d, 0x71634b, 0x8c795e, 0xa59378, 0xb7a68a].map(hex),
   // Neutral weathered stone for boulders and crags; materials tint it per biome.
   rock: [0x3c3a38, 0x5e5b56, 0x827e76, 0xa8a399, 0xcbc6ba, 0xe8e4da].map(hex),
 });
 
 const SIZES = Object.freeze({
   grass: 64, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
-  snow: 64, sand: 64, ashland: 64, heath: 64, rock: 32,
+  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, rock: 32,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -90,6 +92,17 @@ function sample(kind, x, y, size) {
     if (fleck > 0.996) return { color: 0x987c95 };
     if (fleck < 0.012) return { color: 0x8b8576 };
     return 0.51 + peat * 0.56 + grit * 0.20 + grain * 0.12;
+  }
+  if (kind === 'heathpath') {
+    // Fine foot-worn earth: muted sediment, sparse pebbles and moss at the
+    // margins. Tileable and deterministic, no raised cobble seams.
+    const soil = valueNoise(x, y, size, 4, 48) - 0.5;
+    const grit = valueNoise(x, y, size, 12, 49) - 0.5;
+    const fleck = hash(x, y, 50);
+    if (soil < -0.23 && grit < 0.04) return 0.12;
+    if (soil > 0.20 && grit > 0.02) return { color: 0x747c58 };
+    if (fleck > 0.994) return { color: 0x8b887b };
+    return 0.54 + soil * 0.48 + grit * 0.19 + grain * 0.1;
   }
   if (kind === 'rock') {
     // Lichen-flecked stone with a few dark fissures.
