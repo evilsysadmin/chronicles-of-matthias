@@ -820,8 +820,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'store-loft-front-beam', [0, -0.75, 0.78]);
     // A timber loading hoist crowns the merchant loft, giving the
     // provisions warehouse a recognisable silhouette from the street.
-    // Everything is decorative, attached to the existing roof, and
-    // remains within the solid shop footprint in plan view.
+    // The boom overhangs high above the street but never changes the
+    // authored building footprint, shop access or collision grid.
     const hoist = new THREE.Group();
     hoist.name = 'store-loft-loading-hoist';
     hoist.userData.chroniclesDecorativeOnly = true;
