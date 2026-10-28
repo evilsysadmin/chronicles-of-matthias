@@ -219,7 +219,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         let explored = first.state;
         // The west encounter starts at (1,5). Follow the authored corridor
         // north via (1,4), (1,3), (1,2), then east via (2,2), (3,2),
-        // south to (3,3), then east to (4,3), turning on real exploration turns.
+        // south to (3,3), then sidestep east to (4,3) without rotating.
+        // This exercises the Q/E exploration path as well as forward steps.
         // Do not teleport, refill PV/PH, or bypass enemy awareness for this leg.
         const turnActions = {
           0: [], 1: ['turn-left'], 2: ['turn-left', 'turn-left'], 3: ['turn-right'],
@@ -228,7 +229,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         const actions = [
           ...turnActions, 'forward', 'forward', 'forward',
           'turn-right', 'forward', 'forward', 'turn-right', 'forward',
-          'turn-left', 'forward', 
+          'strafe-left',
         ];
         const expectedTiles = [
           { x: 1, y: 4 }, { x: 1, y: 3 }, { x: 1, y: 2 },
@@ -242,8 +243,9 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .filter(({ id }) => CENTRAL_PACK.includes(id))
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
-          if (action === 'forward') {
+          if (action === 'forward' || action === 'strafe-left') {
             expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
+            if (action === 'strafe-left') expect(explored.direction, 'sidestep must preserve facing').toBe(before.direction);
             walkedTiles += 1;
           }
           expect(explored.turns, `${action} must spend one exploration turn`).toBe(before.turns + 1);
@@ -345,8 +347,9 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(first.downed).toBe(0);
       expect(travel.from).toEqual({ x: 1, y: 5 });
       expect(travel.to).toEqual({ x: 4, y: 3 });
-      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(7);
-      expect(travel.actions.at(-1)).toBe('forward');
+      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(6);
+      expect(travel.actions.filter((action) => action === 'strafe-left')).toHaveLength(1);
+      expect(travel.actions.at(-1)).toBe('strafe-left');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
       expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
