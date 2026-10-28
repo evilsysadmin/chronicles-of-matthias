@@ -10,6 +10,7 @@ import {
   chroniclesPartyAttackStats,
   chroniclesMM3MissileSightReach,
   chroniclesAttackMode,
+  chroniclesMM3MeleeAvailable,
   chroniclesOpeningVolleyShooters,
   chroniclesOpeningVolleyShots,
   chroniclesJournalEntries,
@@ -1041,6 +1042,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       ? initiativeActor.id
       : selectedMemberIdRef.current;
     const member = current.party.find((candidate) => candidate.id === memberId);
+    const meleeMode = mode === 'melee' || (mode === 'auto' && chroniclesAttackMode(current, memberId) === 'melee');
+    if (current.combatRules === 'mm3' && meleeMode && !chroniclesMM3MeleeAvailable(current, memberId)) {
+      if (mode === 'melee') showMissileNotice('Sin enemigo a distancia de cuerpo a cuerpo. S: disparar · B: bloquear · C: magia.');
+      return;
+    }
     if (mode === 'missile') {
       const refusal = chroniclesMissileRefusal(current, memberId);
       if (refusal) { showMissileNotice(refusal); return; }
@@ -1845,6 +1851,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const actionMenuAvailable = Boolean(caster) && (casterKnowsSpells || carriesItems);
   // Exploring, a fallen hero cannot open the pack: whoever still stands does.
   const itemUser = caster?.hp > 0 ? caster : activeInitiativeActor ? null : state.party.find((member) => member.hp > 0) || null;
+  const meleeReady = chroniclesMM3MeleeAvailable(state, activeInitiativeActor?.kind === 'party'
+    ? activeInitiativeActor.id : selectedMember?.id);
+  const touchAttackDisabled = state.combatRules === 'mm3' && (
+    activeInitiativeActor?.kind === 'enemy' || (!touchWillShoot && !meleeReady)
+  );
+  const touchAttackReason = activeInitiativeActor?.kind === 'enemy'
+    ? 'Turno enemigo: espera tu turno'
+    : 'Sin enemigo delante a distancia de cuerpo a cuerpo. Gira hacia el objetivo o usa S (disparar), B (bloquear) o C (magia).';
 
   return (
     <div
@@ -2127,7 +2141,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 || state.shop || state.guild || state.inn || expeditionOver)}
             />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
-            {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-missile-refusal>{missileNotice}</div>}
+            {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-action-refusal data-chronicles-missile-refusal>{missileNotice}</div>}
             {lootNotice && <div key={lootNotice.text} className="chronicles-quiet-action-notice chronicles-loot-notice" role="status" aria-live="polite" data-chronicles-loot-receipt>{lootNotice.text}</div>}
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
@@ -2204,13 +2218,17 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   className="is-attack"
                   data-chronicles-touch-action="attack"
+                  data-melee-ready={!touchWillShoot ? String(meleeReady) : undefined}
+                  disabled={touchAttackDisabled}
                   onClick={() => touchWillShoot ? shootWithParty() : attackWithSelected()}
-                  aria-label={touchVolley.available
+                  aria-label={touchAttackDisabled ? touchAttackReason : touchVolley.available
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
-                  title="Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar"
-                >{touchWillShoot ? '➶' : '⚔'}<small>{touchVolley.available
-                    ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
+                  title={touchAttackDisabled ? touchAttackReason
+                    : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
+                >{touchWillShoot ? '➶' : '⚔'}<small>{touchAttackDisabled
+                    ? activeInitiativeActor?.kind === 'enemy' ? 'ESPERA' : 'SIN ALCANCE'
+                    : touchVolley.available ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
                 {state.combatRules === 'mm3' && activeInitiativeActor?.kind === 'party' && (
                   <button type="button" className="is-block"
                     data-chronicles-touch-action="block"

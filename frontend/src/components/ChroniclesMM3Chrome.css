@@ -92,6 +92,28 @@
   color: #2a0905;
 }
 .chronicles .chronicles-touch button.is-attack small { color: #3b0f0a; }
+/* No legal adjacent enemy: an engraved but inactive sword, not a phantom swing.
+   Keep its reason in the button label for keyboard-free/touch use. */
+.chronicles .chronicles-touch button.is-attack:disabled {
+  background-color: #949095;
+  border-color: #b4b1b4 #47454b #47454b #b4b1b4;
+  background-blend-mode: multiply;
+  color: #3d393f;
+  opacity: 0.78;
+  cursor: not-allowed;
+  filter: saturate(0.28);
+  transform: none;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, .25);
+}
+.chronicles .chronicles-touch button.is-attack:disabled small {
+  color: #3d393f;
+  font-size: clamp(9px, .7vw, 12px);
+  letter-spacing: 0;
+}
+.chronicles .chronicles-touch button.is-attack:disabled:is(:hover, :active, :focus-visible) {
+  background-color: #949095;
+  transform: none;
+}
 .chronicles .chronicles-touch button.is-magic {
   border-color: #dfe8ff #1e2c5c #1e2c5c #dfe8ff;
   background-color: #b4c6f4;
