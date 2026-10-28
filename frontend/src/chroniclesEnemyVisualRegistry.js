@@ -11,6 +11,7 @@ import {
 import { installChroniclesEnemyMotionArt } from './chroniclesEnemyMotionArt.js';
 import { buildChroniclesSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { buildChroniclesRemoteSpiderBillboard } from './chronicles/chroniclesRemoteSpiderSprite.js';
+import { buildChroniclesRemoteSmugglerBillboard } from './chronicles/chroniclesRemoteSmugglerSprite.js';
 
 const VISUALS = Object.freeze({
   'corrupted-pawn': Object.freeze({ build: buildCorruptedPawn, scale: 0.92 }),
@@ -64,6 +65,13 @@ export function buildChroniclesEnemyVisual(visualType, options = {}) {
   // everything else (and Tactics) keeps the procedural 3D model.
   if (options.sprites) {
     const billboard = buildChroniclesSpriteBillboard(visualType);
+    if (billboard && visualType === 'road-bandit') {
+      // The existing five-frame road bandit stays visible until the
+      // independent painted R2 replacement has loaded and validated.
+      return Object.freeze({
+        model: buildChroniclesRemoteSmugglerBillboard(billboard), scale: 1,
+      });
+    }
     if (billboard) return Object.freeze({ model: billboard, scale: 1 });
     if (visualType === 'crypt-spider') {
       // Show the existing procedural spider until the approved R2 atlas is
