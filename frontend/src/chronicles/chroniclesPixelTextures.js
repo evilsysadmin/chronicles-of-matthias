@@ -57,11 +57,13 @@ const RAMPS = Object.freeze({
   heathpath: [0x35382f, 0x554e3d, 0x71634b, 0x8c795e, 0xa59378, 0xb7a68a].map(hex),
   // Neutral weathered stone for boulders and crags; materials tint it per biome.
   rock: [0x3c3a38, 0x5e5b56, 0x827e76, 0xa8a399, 0xcbc6ba, 0xe8e4da].map(hex),
+  // Cold saline pools with dark peat, grey-green shallows and muted glints.
+  bogwater: [0x11211f, 0x1b302d, 0x29463f, 0x38584e, 0x4a6b5f, 0x688176].map(hex),
 });
 
 const SIZES = Object.freeze({
   grass: 64, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
-  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, rock: 32,
+  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -103,6 +105,18 @@ function sample(kind, x, y, size) {
     if (soil > 0.20 && grit > 0.02) return { color: 0x747c58 };
     if (fleck > 0.994) return { color: 0x8b887b };
     return 0.54 + soil * 0.48 + grit * 0.19 + grain * 0.1;
+  }
+  if (kind === 'bogwater') {
+    // Tileable, static dark-water breakup; concentric-looking ripples are
+    // suggested by overlapping periodic waves, never animated or fetched.
+    // Very sparse silt glints keep water legible without bright neon bands.
+    const depth = valueNoise(x, y, size, 4, 71) - 0.5;
+    const shoal = valueNoise(x, y, size, 9, 72) - 0.5;
+    const phase = (x * 3 + y * 2) * Math.PI * 2 / size;
+    const ripples = Math.sin(phase + shoal * 3) * 0.045
+      + Math.cos((x - y) * Math.PI * 4 / size) * 0.025;
+    if (hash(x, y, 73) > 0.9985) return { color: 0x85988a };
+    return 0.46 + depth * 0.62 + shoal * 0.2 + ripples + grain * 0.08;
   }
   if (kind === 'rock') {
     // Lichen-flecked stone with a few dark fissures.

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
 const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'snowMound', 'ember']);
 
@@ -38,6 +39,64 @@ describe('Terra scenery', () => {
       if (inside) expect(map.grid[y][x], `${part} at ${x},${y}`).toBe('#');
       else expect(x >= -TERRA_SCENERY_MARGIN - 1 && y >= -TERRA_SCENERY_MARGIN - 1).toBe(true);
     });
+  });
+
+  it('renders marisma pools as rounded, textured and deterministic water without blocking roads', () => {
+    const marsh = chroniclesMapById('terra-d5');
+    const args = { grid: marsh.grid, center: { x: 10, y: 7 },
+      biome: marsh.biome, mapId: marsh.id, scenery: marsh.scenery };
+    const desktop = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const reload = buildTerraScenery(args);
+    const pool = desktop.getObjectByName('chronicles-terra-pool');
+    const cheap = mobile.getObjectByName('chronicles-terra-pool');
+    const again = reload.getObjectByName('chronicles-terra-pool');
+    expect(pool).toBeInstanceOf(THREE.InstancedMesh);
+    expect(cheap).toBeInstanceOf(THREE.InstancedMesh);
+    expect(pool.count).toBeGreaterThan(5);
+    expect(cheap.count).toBeGreaterThan(0);
+    expect(pool.count).toBeGreaterThanOrEqual(cheap.count);
+    expect(pool.geometry.parameters.radialSegments).toBe(24);
+    expect(cheap.geometry.parameters.radialSegments).toBe(14);
+    expect(pool.geometry.parameters.height).toBeCloseTo(0.06);
+    expect(pool.material.map).toBe(chroniclesPixelTexture('bogwater'));
+    expect(cheap.material.map).toBe(pool.material.map);
+    expect(pool.material.transparent).toBe(false);
+    expect(pool.material.roughness).toBeCloseTo(0.28);
+    expect(pool.castShadow).toBe(false);
+    expect(pool.instanceColor?.count).toBe(pool.count);
+    expect(desktop.children.filter(child => child.name === 'chronicles-terra-pool')).toHaveLength(1);
+    const matrix = new THREE.Matrix4();
+    const twin = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    const twinTint = new THREE.Color();
+    const colours = new Set();
+    for (let i = 0; i < pool.count; i += 1) {
+      pool.getMatrixAt(i, matrix);
+      again.getMatrixAt(i, twin);
+      expect(twin.elements).toEqual(matrix.elements);
+      pool.getColorAt(i, tint);
+      again.getColorAt(i, twinTint);
+      expect(tint.getHex()).toBe(twinTint.getHex());
+      colours.add(tint.getHex());
+      const x = Math.round(matrix.elements[12] / 4) + args.center.x;
+      const y = Math.round(matrix.elements[14] / 4) + args.center.y;
+      if (x >= 0 && y >= 0 && y < marsh.grid.length && x < marsh.grid[y].length) {
+        expect(marsh.grid[y][x]).toBe('#');
+      }
+    }
+    expect(colours.size).toBeGreaterThan(1);
+    const texture = pool.material.map;
+    expect(texture.userData.chroniclesPixelArt).toMatchObject({ kind: 'bogwater', size: 64 });
+    expect(texture.image.data.length).toBe(64 * 64 * 4);
+    const tones = new Set();
+    for (let i = 0; i < texture.image.data.length; i += 4) {
+      expect(texture.image.data[i + 3]).toBe(255);
+      tones.add(Array.from(texture.image.data.slice(i, i + 3)).join(','));
+    }
+    expect(tones.size).toBeGreaterThan(5);
+    expect(buildTerraScenery({ ...args, biome: 'hills' })
+      .getObjectByName('chronicles-terra-pool')).toBeUndefined();
   });
 
   it('draws camp set pieces and keeps roads clear of clutter', () => {
