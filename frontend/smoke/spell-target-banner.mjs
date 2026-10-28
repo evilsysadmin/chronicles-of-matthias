@@ -14,30 +14,60 @@ try {
         await page.goto(url + '?caster=' + caster, { waitUntil: 'domcontentloaded' });
         const banner = page.locator('[data-chronicles-spell-target-banner]');
         await banner.waitFor({ state: 'visible', timeout: 20000 });
-        const bounds = await page.evaluate(() => {
-          const rect = selector => document.querySelector(selector).getBoundingClientRect();
-          const banner = rect('[data-chronicles-spell-target-banner]');
-          const portraits = [...document.querySelectorAll('.chronicles-party-member')].map(el=>el.getBoundingClientRect());
-          const gem = rect('.chronicles-game-menu > summary');
+        // A real browser layout regression: opening Primeros auxilios must
+        // NOT grow the fixed-height six-portrait row or shrink the view.
+        const measure = () => page.evaluate(() => {
+          const box = el => {
+            const {left, right, top, bottom, height} = el.getBoundingClientRect();
+            return {left, right, top, bottom, height};
+          };
+          const banner = document.querySelector('[data-chronicles-spell-target-banner]');
+          const portraits = [...document.querySelectorAll('.chronicles-party-member')].map(box);
           return {
-            banner: {left:banner.left,right:banner.right,top:banner.top,bottom:banner.bottom},
-            gem:{left:gem.left,right:gem.right,top:gem.top,bottom:gem.bottom},
-            firstPortraitTop:Math.min(...portraits.map(x=>x.top)),
-            horizontalOverflow:document.documentElement.scrollWidth > window.innerWidth+1,
+            banner: banner ? box(banner) : null,
+            gem: box(document.querySelector('.chronicles-game-menu > summary')),
+            party: box(document.querySelector('.chronicles-party')),
+            stage: box(document.querySelector('.chronicles-stage')),
+            portraits,
+            horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
           };
         });
-        const a = bounds.banner, b = bounds.gem;
-        assert.ok(a.bottom <= bounds.firstPortraitTop + 2, 'Prompt must be above portraits: ' + JSON.stringify(bounds));
+        const withPrompt = await measure();
+        const a = withPrompt.banner, b = withPrompt.gem;
+        const firstPortraitTop = Math.min(...withPrompt.portraits.map(x => x.top));
+        const lastPortraitBottom = Math.max(...withPrompt.portraits.map(x => x.bottom));
+        const compact = width <= 800 || (width <= 1024 && height <= 600);
+        assert.ok(compact ? a.top >= lastPortraitBottom - 2 : a.bottom <= firstPortraitTop + 2,
+          'Prompt must sit beside the strip, never cover portraits: ' + JSON.stringify(withPrompt));
         assert.ok(a.left >= -1 && a.right <= width + 1 && a.top >= -1 && a.bottom <= height + 1,
-          'Prompt must fit screen: ' + JSON.stringify(bounds));
+          'Prompt must fit screen: ' + JSON.stringify(withPrompt));
         assert.ok(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom,
-          'Prompt must not cover sapphire menu gem: ' + JSON.stringify(bounds));
-        assert.equal(bounds.horizontalOverflow, false);
-        assert.equal(await banner.getByRole('button', {name:/Cancelar selección/}).count(),1);
+          'Prompt must not cover sapphire menu gem: ' + JSON.stringify(withPrompt));
+        assert.equal(withPrompt.horizontalOverflow, false);
+        assert.equal(await banner.getByRole('button', {name:/Cancelar selección/}).count(), 1);
         if (width === 1760 && caster === 2) await page.screenshot({path:'smoke-spell-target-aziz-desktop.png'});
+        if (width === 390 && caster === 2) await page.screenshot({path:'smoke-spell-target-aziz-mobile.png'});
         await banner.getByRole('button', {name:/Cancelar selección/}).click();
-        assert.equal(await banner.count(),0);
-        assert.equal(await page.locator('[data-cancel-count="1"]').count(),1);
+        assert.equal(await banner.count(), 0);
+        assert.equal(await page.locator('[data-cancel-count="1"]').count(), 1);
+        const withoutPrompt = await measure();
+        assert.equal(withoutPrompt.horizontalOverflow, false);
+        // Reflow is the exact bug in the screenshot: assert geometry before
+        // and after dismissing the selector, not merely that the text fits.
+        const stable = (before, after, label) => {
+          for (const edge of ['left', 'right', 'top', 'bottom', 'height']) {
+            assert.ok(Math.abs(before[edge] - after[edge]) <= 1,
+              label + ' shifted at ' + edge + ': ' + JSON.stringify({before, after, width, caster}));
+          }
+        };
+        stable(withPrompt.party, withoutPrompt.party, 'Party strip');
+        stable(withPrompt.stage, withoutPrompt.stage, 'First-person viewport');
+        assert.equal(withPrompt.portraits.length, withoutPrompt.portraits.length);
+        withPrompt.portraits.forEach((portrait, i) => {
+          stable(portrait, withoutPrompt.portraits[i], 'Hero ' + (i + 1));
+          assert.ok(portrait.top >= -1 && portrait.bottom <= height + 1,
+            'Hero portrait clipped by spell selection: ' + JSON.stringify({portrait, width, caster}));
+        });
       }
       assert.deepEqual(errors,[], 'No JS error at width ' + width);
     } finally { await context.close(); }
