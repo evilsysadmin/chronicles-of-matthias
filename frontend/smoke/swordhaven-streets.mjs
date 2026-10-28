@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'armor', 'armor-oblique', 'temple', 'store', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'tavern', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -67,6 +67,8 @@ try {
           'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
         assert.equal(result.distinctForgeLantern, 'true',
           'Forge must have its own louvered smoke lantern above the street-facing gable');
+        assert.equal(result.distinctForgeSideVents, 'true',
+          'Forge must have soot-darkened side vents, distinct from merchant glazing');
         assert.equal(result.distinctArmorSideGrilles, 'true',
           'Armory side walls must use iron-barred dark embrasures, not merchant amber glazing');
         assert.equal(result.distinctWatchhouse, 'true',

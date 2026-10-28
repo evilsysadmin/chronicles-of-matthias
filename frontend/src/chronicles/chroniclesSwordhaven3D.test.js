@@ -197,12 +197,35 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(armor.getObjectByName('side-window-amber-glass')).toBeFalsy();
       expect(armor.getObjectByName('side-window-crossbar')).toBeFalsy();
       expect(armor.getObjectByName('shop-door')).toBeTruthy();
-      expect(forge.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(forge.children.filter(child => child.name === 'side-window-forge-soot-vent')).toHaveLength(4);
       expect(forge.getObjectByName('side-window-armory-iron-bar')).toBeFalsy();
     }
   });
 
-  it('gives the guild violet side windows while merchants keep amber glazing', () => {
+  it('gives the forge soot-darkened side vents with horizontal iron louvers', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const tavern = scene.getObjectByName('swordhaven-building-swordhaven-tavern');
+      const armor = scene.getObjectByName('swordhaven-building-swordhaven-armor');
+      const vents = forge.children.filter(child => child.name === 'side-window-forge-soot-vent');
+      const louvers = forge.children.filter(child => child.name === 'side-window-forge-iron-louver');
+      expect(vents).toHaveLength(4);
+      expect(louvers).toHaveLength(4);
+      expect(vents[0].material.color.getHex()).toBe(0x302820);
+      expect(louvers[0].material).toBe(forge.getObjectByName('shop-door-iron-straps').material);
+      expect(louvers[0].geometry.parameters.height).toBe(0.16);
+      expect(forge.getObjectByName('side-window-amber-glass')).toBeFalsy();
+      expect(forge.getObjectByName('side-window-crossbar')).toBeFalsy();
+      expect(forge.getObjectByName('shop-door')).toBeTruthy();
+      expect(tavern.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(tavern.getObjectByName('side-window-forge-soot-vent')).toBeFalsy();
+      expect(armor.getObjectByName('side-window-forge-soot-vent')).toBeFalsy();
+    }
+  });
+
+  it('gives the guild violet side windows while other merchants keep amber glazing', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
       buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
@@ -216,7 +239,7 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(violet[0].material.emissive.getHex()).toBe(0x302052);
       expect(guild.getObjectByName('side-window-amber-glass')).toBeFalsy();
       expect(guild.getObjectByName('side-window-crossbar')).toBeFalsy();
-      expect(forge.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(forge.children.filter(child => child.name === 'side-window-forge-soot-vent')).toHaveLength(4);
       expect(forge.getObjectByName('side-window-violet-glass')).toBeFalsy();
       expect(guild.getObjectByName('shop-door')).toBeTruthy();
     }
@@ -229,7 +252,7 @@ describe('Swordhaven modular real-time 3D', () => {
       const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
       expect(forge.getObjectByName('corner-dressed-stone-courses')).toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('corner-dressed-stone-courses').count).toBeGreaterThan(20);
-      expect(forge.getObjectByName('side-window-amber-glass')).toBeTruthy();
+      expect(forge.getObjectByName('side-window-forge-soot-vent')).toBeTruthy();
       expect(forge.getObjectByName('swordhaven-facade-dressed-stones'))
         .toBeInstanceOf(THREE.InstancedMesh);
       expect(forge.getObjectByName('forge-roof-smoke-lantern')).toBeTruthy();

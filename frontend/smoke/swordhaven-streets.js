@@ -12,6 +12,7 @@ const VIEWS = Object.freeze({
   apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 3.2 },
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
+  'forge-oblique': { x: 5, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   // Walkable oblique viewpoint exposes the armory's iron-barred side elevation.
   'armor-oblique': { x: 13, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
@@ -185,11 +186,18 @@ try {
       && !forge?.getObjectByName('armor-ashlar-parapet')
       && !guild?.getObjectByName('armor-ashlar-parapet')
     )),
+    distinctForgeSideVents: String(Boolean(
+      forge?.children.filter(child => child.name === 'side-window-forge-soot-vent').length === 4
+      && forge?.children.filter(child => child.name === 'side-window-forge-iron-louver').length === 4
+      && !forge?.getObjectByName('side-window-amber-glass')
+      && store?.getObjectByName('side-window-amber-glass')
+      && !armorer?.getObjectByName('side-window-forge-soot-vent')
+    )),
     distinctArmorSideGrilles: String(Boolean(
       armorer?.children.filter(child => child.name === 'side-window-armory-dark-recess').length === 4
       && armorer?.children.filter(child => child.name === 'side-window-armory-iron-bar').length === 4
       && !armorer?.getObjectByName('side-window-amber-glass')
-      && forge?.getObjectByName('side-window-amber-glass')
+      && store?.getObjectByName('side-window-amber-glass')
       && !forge?.getObjectByName('side-window-armory-iron-bar')
     )),
     distinctWatchhouse: String(Boolean(

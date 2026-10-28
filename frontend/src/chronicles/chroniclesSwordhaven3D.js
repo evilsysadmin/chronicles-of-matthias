@@ -709,11 +709,13 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     });
   }
   // Each trade keeps its own side elevation: violet leaded glass for
-  // the guild, dark iron-barred embrasures for the fortified armory, and
-  // warm merchant glazing elsewhere. All pieces remain decorative.
+  // the guild, iron-barred embrasures for the armory, soot-darkened
+  // ventilation for the forge, and warm glazing for other merchants.
+  // Decorative only: no footprint or collision changes.
   const sideGlass = isMagic
     ? material(0x7658a9, { emissive: 0x302052, emissiveIntensity: 0.42, roughness: 0.36 })
-    : isArmor ? material(0x28323a, { roughness: 0.97, metalness: 0.08 }) : mats.window;
+    : isArmor ? material(0x28323a, { roughness: 0.97, metalness: 0.08 })
+      : isForge ? material(0x302820, { roughness: 0.99, metalness: 0.02 }) : mats.window;
   for (const side of [-1, 1]) {
     for (const z of [-depth * 0.22, depth * 0.22]) {
       const edge = side * (width / 2 + 0.105);
@@ -721,16 +723,18 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'side-window-stone-reveal', [edge, 2.79, z]);
       mesh(root, new THREE.BoxGeometry(0.16, 1.27, 1.39), sideGlass,
         isMagic ? 'side-window-violet-glass'
-          : isArmor ? 'side-window-armory-dark-recess' : 'side-window-amber-glass',
+          : isArmor ? 'side-window-armory-dark-recess'
+            : isForge ? 'side-window-forge-soot-vent' : 'side-window-amber-glass',
         [edge + side * 0.09, 2.84, z]);
       mesh(root, new THREE.BoxGeometry(0.26, 0.16, 1.88), mats.stone,
         'side-window-carved-sill', [edge + side * 0.11, 1.95, z]);
       mesh(root, isArmor
         ? new THREE.BoxGeometry(0.15, 1.19, 0.18)
-        : new THREE.BoxGeometry(0.15, 0.10, 1.4),
-      isMagic ? mats.gold : isArmor ? mats.steel : mats.timber,
+        : new THREE.BoxGeometry(0.15, isForge ? 0.16 : 0.10, isForge ? 1.36 : 1.4),
+      isMagic ? mats.gold : isArmor || isForge ? mats.steel : mats.timber,
       isMagic ? 'side-window-brass-mullion'
-        : isArmor ? 'side-window-armory-iron-bar' : 'side-window-crossbar',
+        : isArmor ? 'side-window-armory-iron-bar'
+          : isForge ? 'side-window-forge-iron-louver' : 'side-window-crossbar',
       [edge + side * 0.17, 2.85, z]);
     }
   }
