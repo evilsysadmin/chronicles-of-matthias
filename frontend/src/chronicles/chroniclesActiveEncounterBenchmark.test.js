@@ -291,9 +291,21 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         expect(woundedRook.hp).toBeLessThan(woundedRook.maxHp);
         const potionsBefore = chroniclesConsumableCount(beforePotion, 'healing-potion');
         expect(potionsBefore).toBeGreaterThan(0);
-        explored = chroniclesReduce(beforePotion, {
+        const goblinsBeforePotion = Object.fromEntries(chroniclesActiveEnemies(beforePotion)
+          .filter(({ id }) => CENTRAL_PACK.includes(id))
+          .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(beforePotion, enemy)]));
+        // Use the same exploration dispatcher as the playable UI. A potion
+        // spends time, so nearby pursuers must not get a free frozen turn.
+        explored = chroniclesGridExplorationStep(beforePotion, {
           type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: 'rook',
         });
+        expect(explored.explorationEnemySteps).toBe((beforePotion.explorationEnemySteps || 0) + 1);
+        for (const enemy of chroniclesActiveEnemies(explored).filter(({ id }) => CENTRAL_PACK.includes(id))) {
+          const previous = goblinsBeforePotion[enemy.id];
+          const next = chroniclesRuntimeEnemyPosition(explored, enemy);
+          expect(Math.abs(next.x - previous.x) + Math.abs(next.y - previous.y),
+            `${enemy.id} must pursue cardinally while the party heals`).toBeLessThanOrEqual(1);
+        }
         const healedRook = explored.party.find(({ id }) => id === 'rook');
         expect(healedRook.hp).toBe(Math.min(woundedRook.maxHp, woundedRook.hp + 15));
         expect(explored.turns).toBe(beforePotion.turns + 1);
@@ -308,6 +320,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           hpBefore: woundedRook.hp, hpAfter: healedRook.hp,
           potionsBefore, potionsAfter: chroniclesConsumableCount(explored, 'healing-potion'),
           turns: explored.turns - beforePotion.turns,
+          enemySteps: (explored.explorationEnemySteps || 0) - (beforePotion.explorationEnemySteps || 0),
         };
         const travel = {
           from: { x: first.state.x, y: first.state.y },
@@ -339,6 +352,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(potion.hpBefore).toBe(first.finalPartyHp.rook);
       expect(potion.hpAfter).toBeGreaterThan(potion.hpBefore);
       expect(potion.turns).toBe(1);
+      expect(potion.enemySteps).toBe(1);
       expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, rook: potion.hpAfter });
       // A real stocked potion survives combat and travel; starting the next
       // encounter cannot silently refill or discard the carried supply.
