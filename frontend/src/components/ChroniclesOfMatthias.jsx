@@ -1858,7 +1858,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   );
   const touchAttackReason = activeInitiativeActor?.kind === 'enemy'
     ? 'Turno enemigo: espera tu turno'
-    : 'Sin enemigo delante a distancia de cuerpo a cuerpo. Gira hacia el objetivo o usa S (disparar), B (bloquear) o C (magia).';
+    : 'Sin enemigo delante a distancia de cuerpo a cuerpo. En combate no puedes girar: dispara (S), bloquea (B) o usa magia (C).';
 
   return (
     <div
@@ -2195,6 +2195,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="turn-left"
+                  disabled={chroniclesCombatPartyStepBlocked(state, 'turn-left')}
+                  title={chroniclesCombatPartyStepBlocked(state, 'turn-left') ? 'En combate, posición y orientación fijas' : 'Girar a la izquierda'}
                   onPointerDown={(event) => startTouchHold('turn-left', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2225,7 +2227,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     ? `Salva del grupo: ${touchVolley.shooters} tirador${touchVolley.shooters === 1 ? '' : 'es'} (S)`
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
                   title={touchAttackDisabled ? touchAttackReason
-                    : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
+                    : state.initiative && state.combatRules === 'mm3'
+                      ? 'Combate · posición y orientación fijas · A atacar · S disparar · B bloquear'
+                      : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchAttackDisabled
                     ? activeInitiativeActor?.kind === 'enemy' ? 'ESPERA' : 'SIN ALCANCE'
                     : touchVolley.available ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
@@ -2273,6 +2277,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="turn-right"
+                  disabled={chroniclesCombatPartyStepBlocked(state, 'turn-right')}
+                  title={chroniclesCombatPartyStepBlocked(state, 'turn-right') ? 'En combate, posición y orientación fijas' : 'Girar a la derecha'}
                   onPointerDown={(event) => startTouchHold('turn-right', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2284,13 +2290,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
               <div className="chronicles-keyboard-help">
                 {state.initiative && state.combatRules === 'mm3'
-                  ? <span data-chronicles-combat-movement-hint>COMBATE · grupo inmóvil</span>
+                  ? <span data-chronicles-combat-movement-hint>COMBATE · posición y orientación fijas</span>
                   : <>
                     <span><kbd>↑</kbd> avanzar</span>
                     <span><kbd>↓</kbd> retroceder</span>
+                    <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
+                    <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                   </>}
-                <span><kbd>←</kbd>/<kbd>→</kbd> girar</span>
-                <span><kbd>Q</kbd>/<kbd>E</kbd> lateral</span>
                 <span><kbd>A</kbd> atacar</span>
                 <span><kbd>S</kbd> disparar</span>
                 <span><kbd>B</kbd> bloquear (+4 CA)</span>
