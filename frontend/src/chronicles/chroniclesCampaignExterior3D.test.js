@@ -17,6 +17,36 @@ const demo = {
 
 describe('Chronicles file-authored exterior renderer', () => {
 
+  it.each([true, false])('keeps botanical facade exclusive to the botica at coarse=%s', (coarsePointer) => {
+    const grid = swordhavenFirstBook.grid;
+    const scene = new THREE.Scene();
+    const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
+      .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } }));
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+        width: grid[0].length, height: grid.length, center: { x: 9, y: 7 },
+        grid, content, landscape: swordhavenFirstBook.landscape,
+      },
+    });
+    const town = scene.getObjectByName('chronicles-campaign-town');
+    const buildings = town.children.filter(child => child.name.startsWith('swordhaven-building-'));
+    const botica = buildings.find(child => child.name.includes('-apothecary-'));
+    const glazing = botica?.getObjectByName('apothecary-botanical-window-bays');
+    expect(glazing?.children).toHaveLength(2);
+    expect(glazing?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(glazing?.children.every(bay =>
+      bay.getObjectByName('apothecary-window-sage-glass')
+      && bay.getObjectByName('apothecary-window-rounded-stone-arch')
+    )).toBe(true);
+    expect(botica.getObjectByName('shop-door')).toBeTruthy();
+    expect(botica.getObjectByName('window-box-leaf-clusters')).toBeInstanceOf(THREE.InstancedMesh);
+    for (const other of buildings.filter(child => child !== botica)) {
+      expect(other.getObjectByName('apothecary-botanical-window-bays')).toBeFalsy();
+    }
+  });
+
   it('renders F1 as a tall single-cell lighthouse with light driven by activatedRoot', () => {
     const scene = new THREE.Scene();
     const content = [{ id: 'f1-beacon-rescue', kind: 'lore',
@@ -484,6 +514,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(apothecary.getObjectByName('side-window-amber-glass')).toBeFalsy();
     expect(guild.getObjectByName('apothecary-side-sage-shutters')).toBeFalsy();
     expect(apothecary.getObjectByName('shop-door')).toBeTruthy();
+    const botanicalBays = apothecary.getObjectByName('apothecary-botanical-window-bays');
+    expect(botanicalBays).toBeInstanceOf(THREE.Group);
+    expect(botanicalBays.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(botanicalBays.children).toHaveLength(2);
+    expect(botanicalBays.children.every(bay =>
+      bay.getObjectByName('apothecary-window-rounded-stone-arch')
+      && bay.getObjectByName('apothecary-window-oak-mullion')
+      && bay.getObjectByName('apothecary-window-sage-glass')?.material.color.getHex() === 0x79aa8e
+    )).toBe(true);
+    expect(apothecary.getObjectByName('warm-glass-window')).toBeFalsy();
+    expect(apothecary.getObjectByName('apothecary-herb-window-box')).toBeTruthy();
+    expect(apothecary.getObjectByName('window-box-leaf-clusters')).toBeInstanceOf(THREE.InstancedMesh);
+    expect(guild.getObjectByName('apothecary-botanical-window-bays')).toBeFalsy();
+    expect(apothecary.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel)
+      .toBe('BOTICA');
 
     // Two metalwork merchants must be recognisable by their roofline, not
     // just their signs: a tall forge flue versus an armorer's gable shield.
