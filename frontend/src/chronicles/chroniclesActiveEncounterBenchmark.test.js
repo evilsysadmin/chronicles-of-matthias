@@ -7,6 +7,7 @@ import {
   chroniclesStartInitiativeCombat,
 } from './chroniclesInitiative.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesMemberSp } from './chroniclesMagic.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
 // initiative action. Attack adjacent enemies, turn toward the nearest living
@@ -15,7 +16,7 @@ import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 
-function playSewerEncounter(rollOffset) {
+function playSewerEncounter(rollOffset, { woundedStart = false } = {}) {
   const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
   const all = chroniclesActiveEnemies(base);
   const enemies = all.filter((enemy) => PACK.includes(enemy.id));
@@ -26,9 +27,16 @@ function playSewerEncounter(rollOffset) {
   const initial = {
     ...base, ...inactive, x: 1, y: 5, direction: 1,
     runSeed: 'mm3-active-sewer-benchmark',
+    // A separate controlled variant starts with a small real wound so the
+    // cleric must choose between healing and attacking during initiative.
+    party: woundedStart ? base.party.map((member) => (
+      member.id === 'rook' ? { ...member, hp: Math.max(1, member.maxHp - 2) } : member
+    )) : base.party,
+    spellPoints: woundedStart ? { ...base.spellPoints, bishop: 2 } : base.spellPoints,
   };
   const initialHp = Object.fromEntries(initial.party.map(({ id, hp }) => [id, hp]));
   const initialEnemyHp = Object.fromEntries(enemies.map((enemy) => [enemy.id, initial[enemy.hpKey]]));
+  const initialBishopSp = chroniclesMemberSp(initial, initial.party.find(({ id }) => id === 'bishop'));
   let rollIndex = rollOffset;
   let state = chroniclesStartInitiativeCombat(initial, chroniclesActiveEnemies(initial), {
     forceEnemyIds: PACK,
@@ -41,6 +49,7 @@ function playSewerEncounter(rollOffset) {
   const metrics = {
     rollOffset, steps: 0, rounds: 0,
     heroAttacks: 0, heroBlocks: 0, heroRotations: 0, heroMoves: 0, heroDamage: 0,
+    heroHeals: 0, healedHp: 0, healingPhSpent: 0,
     enemyMoves: 0, enemyAttacks: 0, enemyWaits: 0,
   };
   while (state.initiative && metrics.steps < 128) {
@@ -56,7 +65,22 @@ function playSewerEncounter(rollOffset) {
         const dy = position.y - state.y;
         return { dx, dy, distance: Math.abs(dx) + Math.abs(dy) };
       }).sort((a, b) => a.distance - b.distance)[0];
-      if (inFront) {
+      const rook = state.party.find(({ id }) => id === 'rook');
+      const caster = state.party.find(({ id }) => id === 'bishop');
+      if (woundedStart && actor.id === 'bishop' && rook?.hp > 0
+        && rook.hp < rook.maxHp && chroniclesMemberSp(state, caster) > 0) {
+        const beforeSp = chroniclesMemberSp(state, caster);
+        const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: 'rook' });
+        expect(healed.turns).toBe(state.turns + 1);
+        const afterSp = chroniclesMemberSp(healed, healed.party.find(({ id }) => id === 'bishop'));
+        const afterRook = healed.party.find(({ id }) => id === 'rook');
+        expect(afterSp).toBe(beforeSp - 1);
+        expect(afterRook.hp).toBeGreaterThan(rook.hp);
+        metrics.heroHeals += 1;
+        metrics.healingPhSpent += beforeSp - afterSp;
+        metrics.healedHp += afterRook.hp - rook.hp;
+        state = healed;
+      } else if (inFront) {
         const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
         expect(attempted.turns).toBe(state.turns + 1);
         metrics.heroDamage += enemies.reduce((sum, enemy) => sum + Math.max(0, state[enemy.hpKey] - attempted[enemy.hpKey]), 0);
@@ -126,6 +150,8 @@ function playSewerEncounter(rollOffset) {
     legitimateWithdrawals: enemies.filter((enemy) => state[enemy.hpKey] > 0
       && chroniclesEnemyLostParty(state, enemy)).map((enemy) => enemy.id),
     partyHpLost: Object.fromEntries(state.party.map(({ id, hp }) => [id, initialHp[id] - hp])),
+    initialBishopSp,
+    finalBishopSp: chroniclesMemberSp(state, state.party.find(({ id }) => id === 'bishop')),
     downed: state.party.filter(({ hp }) => hp <= 0).length,
     lastMessage: state.message,
     enemyPositions: state.enemyPositions,
@@ -159,5 +185,21 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     // Both d8 orders must remain winnable, but the pack must still pose
     // measurable pressure in at least one of the deterministic orders.
     expect(outcomes.some(({ partyHpLost }) => Object.values(partyHpLost).some((hp) => hp > 0))).toBe(true);
+  });
+
+  it('records real healing and PH spent inside a complete three-goblin encounter', () => {
+    const result = playSewerEncounter(0, { woundedStart: true });
+    expect(playSewerEncounter(0, { woundedStart: true })).toEqual(result);
+    console.info('CHRONICLES_MM3_ACTIVE_HEALING ' + JSON.stringify(result));
+    expect(result.finished).toBe(true);
+    expect(result.phase).toBe('explore');
+    expect(result.downed).toBe(0);
+    expect(result.heroHeals).toBeGreaterThan(0);
+    expect(result.healedHp).toBeGreaterThan(0);
+    expect(result.healingPhSpent).toBe(result.heroHeals);
+    expect(result.initialBishopSp - result.finalBishopSp).toBe(result.healingPhSpent);
+    const remaining = Object.entries(result.enemyHpLeft)
+      .filter(([, hp]) => hp > 0).map(([id]) => id);
+    expect(remaining).toEqual(result.legitimateWithdrawals);
   });
 });
