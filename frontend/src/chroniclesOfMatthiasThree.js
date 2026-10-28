@@ -742,6 +742,7 @@ export function createChroniclesOfMatthiasGame(host, {
   let destroyed = false;
   const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
+  renderDiagnostics.setVisible(visible);
   let desiredPosition = worldForCell(
     Number(initialState?.x ?? scenePlan?.partyStart?.x ?? 1),
     Number(initialState?.y ?? scenePlan?.partyStart?.y ?? 5),
