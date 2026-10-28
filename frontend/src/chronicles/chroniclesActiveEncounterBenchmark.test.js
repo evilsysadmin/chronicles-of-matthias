@@ -8,6 +8,8 @@ import {
 } from './chroniclesInitiative.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesMemberSp } from './chroniclesMagic.js';
+import { chroniclesConsumableCount } from './chroniclesConsumables.js';
+import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
@@ -21,6 +23,7 @@ const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewer
 function playSewerEncounter(rollOffset, {
   woundedStart = false, pack = PACK, keepEnemyIds = pack,
   previousState = null, start = { x: 1, y: 5, direction: 1 }, returnState = false,
+  startingPotions = 0,
 } = {}) {
   const base = previousState || createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
   const all = chroniclesActiveEnemies(base);
@@ -33,6 +36,9 @@ function playSewerEncounter(rollOffset, {
     .map((enemy) => [enemy.hpKey, 0]));
   const initial = {
     ...base, ...inactive, ...start,
+    ...(startingPotions ? { inventory: chroniclesApplyContentEffects(base, [{
+      type: 'grant-item', itemId: 'healing-potion', name: 'Poción de curación', quantity: startingPotions,
+    }]).inventory } : {}),
     runSeed: 'mm3-active-sewer-benchmark',
     // A separate controlled variant starts with a small real wound so the
     // cleric must choose between healing and attacking during initiative.
@@ -44,6 +50,7 @@ function playSewerEncounter(rollOffset, {
   const initialHp = Object.fromEntries(initial.party.map(({ id, hp }) => [id, hp]));
   const initialEnemyHp = Object.fromEntries(enemies.map((enemy) => [enemy.id, initial[enemy.hpKey]]));
   const initialBishopSp = chroniclesMemberSp(initial, initial.party.find(({ id }) => id === 'bishop'));
+  const initialHealingPotions = chroniclesConsumableCount(initial, 'healing-potion');
   let rollIndex = rollOffset;
   let state = chroniclesStartInitiativeCombat(initial, chroniclesActiveEnemies(initial), {
     forceEnemyIds: pack,
@@ -162,6 +169,8 @@ function playSewerEncounter(rollOffset, {
     initialPartyHp: initialHp,
     finalPartyHp: Object.fromEntries(state.party.map(({ id, hp }) => [id, hp])),
     initialBishopSp,
+    initialHealingPotions,
+    finalHealingPotions: chroniclesConsumableCount(state, 'healing-potion'),
     finalBishopSp: chroniclesMemberSp(state, state.party.find(({ id }) => id === 'bishop')),
     downed: state.party.filter(({ hp }) => hp <= 0).length,
     lastMessage: state.message,
@@ -229,6 +238,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       const run = () => {
         const first = playSewerEncounter(firstOffset, {
           woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
+          startingPotions: 2,
         });
         let explored = first.state;
         // The west encounter starts at (1,5). Face north through spent
@@ -265,6 +275,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           expect(explored.phase).toBe('explore');
           expect(explored.initiative).toBeFalsy();
           expect(explored.party).toEqual(before.party);
+          expect(chroniclesConsumableCount(explored, 'healing-potion'))
+            .toBe(chroniclesConsumableCount(before, 'healing-potion'));
           expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
             .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
         }
@@ -297,6 +309,11 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
       expect(second.initialPartyHp).toEqual(first.finalPartyHp);
+      // A real stocked potion survives combat and travel; starting the next
+      // encounter cannot silently refill or discard the carried supply.
+      expect(first.initialHealingPotions).toBeGreaterThanOrEqual(2);
+      expect(second.initialHealingPotions).toBe(first.finalHealingPotions);
+      expect(second.finalHealingPotions).toBeGreaterThanOrEqual(second.initialHealingPotions);
       expect(second.initialBishopSp).toBe(first.finalBishopSp);
       expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
       expect(second.finalBishopSp).toBeLessThanOrEqual(second.initialBishopSp);
