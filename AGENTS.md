@@ -90,6 +90,10 @@
   avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
   Durante iniciativa MM3, **no se puede trasladar ni girar el grupo**:
   las cuatro flechas y Q/E quedan sin acción ni coste de turno.
+  La cámara puede enfocar automáticamente a un enemigo adyacente durante
+  combate, pero al vencer debe **conservar ese último rumbo** como orientación
+  del grupo para exploración y guardados (sin gastar un turno ni volver a
+  mirar hacia la dirección anterior al encuentro).
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
