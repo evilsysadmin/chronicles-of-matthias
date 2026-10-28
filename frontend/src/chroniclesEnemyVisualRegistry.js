@@ -50,6 +50,8 @@ const VISUALS = Object.freeze({
   'dire-wolf': Object.freeze({ build: buildBoneHound, scale: 1.0 }),
   'stone-golem': Object.freeze({ build: buildGateJailer, scale: 1.3 }),
   'orc-raider': Object.freeze({ build: buildGateJailer, scale: 1.12 }),
+  gnoll: Object.freeze({ build: buildScavengerKnight, scale: 1.1 }),
+  hellhound: Object.freeze({ build: buildBoneHound, scale: 1.14 }),
   ghoul: Object.freeze({ build: buildScavengerKnight, scale: 0.9 }),
   'name-scribe': Object.freeze({ build: buildSpectralBishop, scale: 1.2 }),
 });

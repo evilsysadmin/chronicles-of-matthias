@@ -87,6 +87,19 @@ describe('Chronicles Tactics bestiary behavior', () => {
     expect(b2.enemies.find((enemy) => enemy.id === 'terra-b2-foe-1')?.visualType).toBe('ash-goblin');
   });
 
+  it('deploys gnoll and hellhound as distinct exterior encounters without changing their saved slots', () => {
+    for (const [mapId, id, visual, hp] of [
+      ['terra-b2', 'terra-b2-foe-3', 'gnoll', 'terra_b2Foe3Hp'],
+      ['terra-f3', 'terra-f3-foe-3', 'hellhound', 'terra_f3Foe3Hp'],
+    ]) {
+      const foe = chroniclesMapById(mapId).enemies.find((enemy) => enemy.id === id);
+      expect(foe?.visualType).toBe(visual);
+      expect(foe?.hpKey).toBe(hp);
+      expect(foe?.ai?.engagedMovement).toBe('cardinal-chase');
+      expect(foe?.ai?.engageRange).toBe(4);
+    }
+  });
+
   it('keeps monster-heavy rooms from collapsing into one repeated pursuit pattern', () => {
     chroniclesMapIds().forEach((mapId) => {
       const map = chroniclesMapById(mapId);

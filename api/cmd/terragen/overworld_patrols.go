@@ -161,6 +161,22 @@ func reinforceOverworld(m *O, areaCode string) {
 			foe.Set("agility", 2)
 			foe.Obj("onDefeat").Set("message", "{attacker} acaba con orco saqueador del brezal usando {attack}.")
 		}
+		// Independent new species reuse existing ordinary reinforcement slots.
+		// Stable indexes, HP keys, coordinates, stats, gold and quest foes remain unchanged.
+		if areaCode == "B2" && n == 1 {
+			foe.Set("visualType", "gnoll")
+			foe.Set("name", "gnoll merodeador del brezal")
+			foe.Set("ai", aiFor("gnoll"))
+			foe.Set("agility", 3)
+			foe.Obj("onDefeat").Set("message", "{attacker} acaba con gnoll merodeador del brezal usando {attack}.")
+		}
+		if areaCode == "F3" && n == 0 {
+			foe.Set("visualType", "hellhound")
+			foe.Set("name", "sabueso infernal")
+			foe.Set("ai", aiFor("hellhound"))
+			foe.Set("agility", 3)
+			foe.Obj("onDefeat").Set("message", "{attacker} acaba con sabueso infernal usando {attack}.")
+		}
 		current = append(current, foe)
 		foePositions = append(foePositions, best)
 		occupied[best] = true
