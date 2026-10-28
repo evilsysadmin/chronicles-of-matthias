@@ -7,7 +7,7 @@ import {
   CHRONICLES_DIRECTIONS,
   chroniclesActiveEnemies,
   chroniclesEnemyPosition,
-  chroniclesEnemyTargetAhead,
+  chroniclesEnemyTargetAhead, chroniclesCombatMeleeTarget,
   chroniclesPartyArmorClass,
   chroniclesPartyAttackStats,
   chroniclesReduce,
@@ -323,14 +323,23 @@ export class ChroniclesCampaignBot {
       this.potionsUsed = (this.potionsUsed || 0) + 1;
       return { type: 'use-item', memberId, itemId: 'healing-potion' };
     }
+    // An adjacent engaged enemy can be struck without rotating the whole
+    // company. Direction is frozen for the entire MM3 encounter.
+    if (this.state.combatRules === 'mm3' && chroniclesCombatMeleeTarget(this.state)) {
+      return { type: 'attack', memberId, mode: 'melee' };
+    }
     const reach = chroniclesPartyAttackStats(this.state, memberId).reach;
     const attackSpell = ATTACK_SPELLS
       .find((id) => affordable(id) && chroniclesEnemyTargetAhead(this.state, CHRONICLES_SPELLS[id].reach));
     if (attackSpell && !chroniclesEnemyTargetAhead(this.state, reach)) return cast(attackSpell);
     if (chroniclesEnemyTargetAhead(this.state, reach)) return { type: 'attack', memberId };
     if (attackSpell) return cast(attackSpell);
-    // Nobody in reach ahead: close in on the nearest foe by a real path,
-    // then face it. A foe walled off from us is left behind.
+    // MM3 initiative owns the camera orientation. Waiting via a real BLOCK
+    // allows enemies to close without illegal free rotation or phantom turns.
+    if (this.state.initiative && this.state.combatRules === 'mm3') {
+      return { type: 'block', memberId };
+    }
+    // Outside combat the bot may still navigate and turn toward foes.
     const target = this.nearestEnemy({ reachable: true });
     // In MM3 initiative the group cannot move. A legal BLOCK passes the
     // active hero's turn so engaged enemies can approach through real paths.
