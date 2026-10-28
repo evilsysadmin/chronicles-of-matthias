@@ -181,6 +181,26 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives the guild violet side windows while merchants keep amber glazing', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const guild = scene.getObjectByName('swordhaven-building-swordhaven-magic');
+      const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
+      const violet = guild.children.filter(child => child.name === 'side-window-violet-glass');
+      const brass = guild.children.filter(child => child.name === 'side-window-brass-mullion');
+      expect(violet).toHaveLength(4);
+      expect(brass).toHaveLength(4);
+      expect(violet[0].material.color.getHex()).toBe(0x7658a9);
+      expect(violet[0].material.emissive.getHex()).toBe(0x302052);
+      expect(guild.getObjectByName('side-window-amber-glass')).toBeFalsy();
+      expect(guild.getObjectByName('side-window-crossbar')).toBeFalsy();
+      expect(forge.children.filter(child => child.name === 'side-window-amber-glass')).toHaveLength(4);
+      expect(forge.getObjectByName('side-window-violet-glass')).toBeFalsy();
+      expect(guild.getObjectByName('shop-door')).toBeTruthy();
+    }
+  });
+
   it('keeps dressed stone, side windows and distinctive rooflines on the houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
