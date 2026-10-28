@@ -18,6 +18,7 @@ const VIEWS = Object.freeze({
   'armor-oblique': { x: 13, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   temple: { x: 10, y: 6, heading: 'east', target: { x: 15, y: 6 }, cameraHeight: 2.4, lookUp: 2.5 },
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
+  'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
@@ -190,14 +191,14 @@ try {
       forge?.children.filter(child => child.name === 'side-window-forge-soot-vent').length === 4
       && forge?.children.filter(child => child.name === 'side-window-forge-iron-louver').length === 4
       && !forge?.getObjectByName('side-window-amber-glass')
-      && store?.getObjectByName('side-window-amber-glass')
+      && tavern?.getObjectByName('side-window-amber-glass')
       && !armorer?.getObjectByName('side-window-forge-soot-vent')
     )),
     distinctArmorSideGrilles: String(Boolean(
       armorer?.children.filter(child => child.name === 'side-window-armory-dark-recess').length === 4
       && armorer?.children.filter(child => child.name === 'side-window-armory-iron-bar').length === 4
       && !armorer?.getObjectByName('side-window-amber-glass')
-      && store?.getObjectByName('side-window-amber-glass')
+      && tavern?.getObjectByName('side-window-amber-glass')
       && !forge?.getObjectByName('side-window-armory-iron-bar')
     )),
     distinctWatchhouse: String(Boolean(
@@ -243,6 +244,14 @@ try {
       && forge?.getObjectByName('forge-lantern-pitched-cap')
       && !store?.getObjectByName('forge-roof-smoke-lantern')
       && !armorer?.getObjectByName('forge-roof-smoke-lantern')
+    )),
+    distinctStoreSideHatches: String(Boolean(
+      store?.children.filter(child => child.name === 'side-window-store-oak-loading-hatch').length === 4
+      && store?.getObjectByName('store-side-loading-hatch-battens')?.count === 12
+      && store?.getObjectByName('store-side-loading-hatch-battens')?.userData.chroniclesDecorativeOnly
+      && !store?.getObjectByName('side-window-amber-glass')
+      && tavern?.getObjectByName('side-window-amber-glass')
+      && !forge?.getObjectByName('store-side-loading-hatch-battens')
     )),
     distinctMarketStore: String(Boolean(
       store?.getObjectByName('store-market-awning')
