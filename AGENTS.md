@@ -86,8 +86,10 @@
 - Inspiración Might & Magic III / Terra: primera persona, grupo con
   progresión real, salvas colectivas antes de contacto y combate por turnos
   al entrar en contacto. No romper el modo Tactics al mejorar MM3.
-- **Controles de teclado vigentes**: flechas ↑/↓ avanzan/retroceden;
-  ←/→ giran; **Q/E** hacen strafe lateral izquierda/derecha sin girar;
+- **Controles de teclado vigentes**: en exploración, flechas ↑/↓
+  avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
+  Durante iniciativa MM3, **no se puede trasladar ni girar el grupo**:
+  las cuatro flechas y Q/E quedan sin acción ni coste de turno.
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
