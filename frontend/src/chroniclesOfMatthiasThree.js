@@ -17,6 +17,7 @@ import { createChroniclesFirstFrameGate } from './chronicles/chroniclesFirstFram
 import { createChroniclesFrameScheduler } from './chronicles/chroniclesFrameScheduler.js';
 import { createChroniclesTorchAmbientOverlay } from './chronicles/chroniclesTorchAmbientOverlay.js';
 import { createChroniclesRenderDiagnostics, chroniclesRenderDiagnosticsEnabled } from './chronicles/chroniclesRenderDiagnostics.js';
+import { chroniclesPerfIsolationFlags, chroniclesPerfTorchesVisible } from './chronicles/chroniclesPerfIsolation.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
@@ -732,6 +733,9 @@ export function createChroniclesOfMatthiasGame(host, {
     ? new THREE.Group()
     : buildChroniclesDungeonAtmosphere({ coarsePointer: coarse, reducedMotion, scenePlan });
   scene.add(dressing, atmosphere);
+  // Explicit A/B isolation only with ?chroniclesPerf=1. The actual flame
+  // meshes and gameplay lighting remain untouched in both test variants.
+  const perfIsolation = chroniclesPerfIsolationFlags(window.location.search);
   // The 3D world may sleep between actions; a tiny CSS-composited halo layer
   // keeps nearby, unoccluded flames alive without re-rendering the WebGL canvas.
   const ambientTorchGlows = createChroniclesTorchAmbientOverlay(host, camera, scene, dungeon.torches || [], { coarse });
@@ -742,6 +746,7 @@ export function createChroniclesOfMatthiasGame(host, {
   let destroyed = false;
   const firstFrameGate = createChroniclesFirstFrameGate(onFirstFrame);
   let visible = document.visibilityState !== 'hidden';
+  ambientTorchGlows.setVisible(chroniclesPerfTorchesVisible(visible, perfIsolation.disableTorchGlows));
   renderDiagnostics.setVisible(visible);
   let desiredPosition = worldForCell(
     Number(initialState?.x ?? scenePlan?.partyStart?.x ?? 1),
@@ -1193,7 +1198,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const onVisibility = () => {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
-    ambientTorchGlows.setVisible(visible);
+    ambientTorchGlows.setVisible(chroniclesPerfTorchesVisible(visible, perfIsolation.disableTorchGlows));
     renderDiagnostics.setVisible(visible);
   };
   document.addEventListener('visibilitychange', onVisibility);
