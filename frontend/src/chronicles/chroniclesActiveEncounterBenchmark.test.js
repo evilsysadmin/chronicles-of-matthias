@@ -23,7 +23,7 @@ const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewer
 function playSewerEncounter(rollOffset, {
   woundedStart = false, pack = PACK, keepEnemyIds = pack,
   previousState = null, start = { x: 1, y: 5, direction: 1 }, returnState = false,
-  startingPotions = 0,
+  startingPotions = 0, allowSpellHealing = true,
 } = {}) {
   const base = previousState || createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
   const all = chroniclesActiveEnemies(base);
@@ -88,7 +88,7 @@ function playSewerEncounter(rollOffset, {
       }).sort((a, b) => a.distance - b.distance)[0];
       const rook = state.party.find(({ id }) => id === 'rook');
       const caster = state.party.find(({ id }) => id === 'bishop');
-      if (woundedStart && actor.id === 'bishop' && rook?.hp > 0
+      if (woundedStart && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
         && rook.hp < rook.maxHp && chroniclesMemberSp(state, caster) > 0) {
         const beforeSp = chroniclesMemberSp(state, caster);
         const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: 'rook' });
@@ -237,7 +237,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     for (const firstOffset of [0, 1]) {
       const run = () => {
         const first = playSewerEncounter(firstOffset, {
-          woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
+          woundedStart: true, allowSpellHealing: false,
+          keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
           startingPotions: 2,
         });
         let explored = first.state;
@@ -281,23 +282,50 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .toBe(chroniclesMemberSp(before, before.party.find(({ id }) => id === 'bishop')));
         }
         expect(walkedTiles).toBe(expectedTiles.length);
+        // Spend one real potion between fights, rather than only asserting
+        // that the untouched stock survives the transition. The first squad
+        // deliberately leaves the initial two-PV wound for this action.
+        const beforePotion = explored;
+        const woundedRook = beforePotion.party.find(({ id }) => id === 'rook');
+        expect(woundedRook.hp).toBeGreaterThan(0);
+        expect(woundedRook.hp).toBeLessThan(woundedRook.maxHp);
+        const potionsBefore = chroniclesConsumableCount(beforePotion, 'healing-potion');
+        expect(potionsBefore).toBeGreaterThan(0);
+        explored = chroniclesReduce(beforePotion, {
+          type: 'use-item', memberId: 'matthias', itemId: 'healing-potion', targetId: 'rook',
+        });
+        const healedRook = explored.party.find(({ id }) => id === 'rook');
+        expect(healedRook.hp).toBe(Math.min(woundedRook.maxHp, woundedRook.hp + 15));
+        expect(explored.turns).toBe(beforePotion.turns + 1);
+        expect(chroniclesConsumableCount(explored, 'healing-potion')).toBe(potionsBefore - 1);
+        expect({ x: explored.x, y: explored.y, direction: explored.direction })
+          .toEqual({ x: beforePotion.x, y: beforePotion.y, direction: beforePotion.direction });
+        expect(explored.phase).toBe('explore');
+        expect(explored.initiative).toBeFalsy();
+        expect(chroniclesMemberSp(explored, explored.party.find(({ id }) => id === 'bishop')))
+          .toBe(chroniclesMemberSp(beforePotion, beforePotion.party.find(({ id }) => id === 'bishop')));
+        const potion = {
+          hpBefore: woundedRook.hp, hpAfter: healedRook.hp,
+          potionsBefore, potionsAfter: chroniclesConsumableCount(explored, 'healing-potion'),
+          turns: explored.turns - beforePotion.turns,
+        };
         const travel = {
           from: { x: first.state.x, y: first.state.y },
           to: { x: explored.x, y: explored.y },
           actions,
-          turns: explored.turns - first.state.turns,
-          enemySteps: (explored.explorationEnemySteps || 0) - (first.state.explorationEnemySteps || 0),
+          turns: beforePotion.turns - first.state.turns,
+          enemySteps: (beforePotion.explorationEnemySteps || 0) - (first.state.explorationEnemySteps || 0),
         };
         const second = playSewerEncounter(1 - firstOffset, {
           pack: CENTRAL_PACK, previousState: explored,
           start: { x: 7, y: 3, direction: 1 },
         });
         const { state: _state, ...firstMetrics } = first;
-        return { first: firstMetrics, travel, second };
+        return { first: firstMetrics, travel, potion, second };
       };
-      const { first, travel, second } = run();
-      expect(run()).toEqual({ first, travel, second });
-      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first, travel, second }));
+      const { first, travel, potion, second } = run();
+      expect(run()).toEqual({ first, travel, potion, second });
+      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first, travel, potion, second }));
 
       expect(first.finished).toBe(true);
       expect(first.phase).toBe('explore');
@@ -308,11 +336,16 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.actions.at(-1)).toBe('forward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
-      expect(second.initialPartyHp).toEqual(first.finalPartyHp);
+      expect(potion.hpBefore).toBe(first.finalPartyHp.rook);
+      expect(potion.hpAfter).toBeGreaterThan(potion.hpBefore);
+      expect(potion.turns).toBe(1);
+      expect(second.initialPartyHp).toEqual({ ...first.finalPartyHp, rook: potion.hpAfter });
       // A real stocked potion survives combat and travel; starting the next
       // encounter cannot silently refill or discard the carried supply.
       expect(first.initialHealingPotions).toBeGreaterThanOrEqual(2);
-      expect(second.initialHealingPotions).toBe(first.finalHealingPotions);
+      expect(potion.potionsBefore).toBe(first.finalHealingPotions);
+      expect(potion.potionsAfter).toBe(first.finalHealingPotions - 1);
+      expect(second.initialHealingPotions).toBe(potion.potionsAfter);
       expect(second.finalHealingPotions).toBeGreaterThanOrEqual(second.initialHealingPotions);
       expect(second.initialBishopSp).toBe(first.finalBishopSp);
       expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
