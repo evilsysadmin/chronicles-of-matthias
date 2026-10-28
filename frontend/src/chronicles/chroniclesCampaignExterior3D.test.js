@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
+import terraB2 from './maps/terra-b2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 
 const demo = {
@@ -78,6 +79,25 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(lit.children.length).toBeGreaterThanOrEqual(4);
     expect(scene.getObjectByName('chronicles-campaign-visible-blockers').count).toBe(16);
   });
+  it('only decorates the real B2 heath, without altering the exterior grid or walkable roads', () => {
+    const scene = new THREE.Scene();
+    const center = { x: 10, y: 7 };
+    const built = buildChroniclesCampaignExterior(scene, {
+      scenePlan: {
+        mapId: terraB2.id, biome: terraB2.biome, regionKind: terraB2.regionKind,
+        width: terraB2.grid[0].length, height: terraB2.grid.length,
+        center, grid: terraB2.grid, content: [], scenery: terraB2.scenery,
+      },
+      coarsePointer: true,
+    });
+    const heather = scene.getObjectByName('chronicles-terra-heather');
+    expect(heather).toBeInstanceOf(THREE.InstancedMesh);
+    expect(heather.count).toBeGreaterThan(0);
+    expect(built.sceneCenter).toEqual(center);
+    expect(scene.getObjectByName('chronicles-campaign-visible-blockers').count)
+      .toBe(terraB2.grid.join('').split('#').length - 1);
+  });
+
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
     const scene = new THREE.Scene();
     const built = buildChroniclesCampaignExterior(scene, { scenePlan: demo, coarsePointer: true });

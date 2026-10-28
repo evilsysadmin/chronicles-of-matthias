@@ -677,7 +677,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
 
   if (!settlement && (wilds || forest)) {
     scene.add(buildTerraScenery({
-      grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, scenery: scenePlan.scenery,
+      grid, center: sceneCenter, biome: forest ? 'forest' : scenePlan.biome, mapId: scenePlan.mapId, scenery: scenePlan.scenery,
       coarsePointer, keepClear: [...roadCells, ...(scenePlan.content || []).map((entry) => entry.position).filter(Boolean)],
     }));
   }
