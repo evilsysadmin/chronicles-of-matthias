@@ -41,6 +41,22 @@ const ASSETS = Object.freeze({
     url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/orc-raider-9bb642b3c535be6e.webp',
     worldHeight: 3.2,
   }),
+  'gnoll': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/gnoll-4ca6a0e833b86990.webp',
+    worldHeight: 2.85,
+  }),
+  'weaver-spider': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/weaver-spider-6fcda8f00a7e248d.webp',
+    worldHeight: 2.65,
+  }),
+  'hellhound': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/hellhound-d74ac6f0d19dd366.webp',
+    worldHeight: 2.65,
+  }),
+  'ice-wraith': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/ice-wraith-313e4649b3409037.webp',
+    worldHeight: 3,
+  }),
 });
 
 export function chroniclesOverworldSpriteSpec(visualType) {

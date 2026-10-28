@@ -172,8 +172,8 @@
     },
     {
       "id": "terra-b2-foe-3",
-      "visualType": "harpy",
-      "name": "arpía del brezal",
+      "visualType": "gnoll",
+      "name": "gnoll merodeador del brezal",
       "x": 2,
       "y": 2,
       "hpKey": "terra_b2Foe3Hp",
@@ -181,17 +181,17 @@
       "retaliation": 3,
       "toHit": 5,
       "armorClass": 2,
-      "agility": 4,
+      "agility": 3,
       "optional": true,
       "activation": "always",
       "ai": {
         "movement": "cardinal-roam",
         "attackReach": 1,
-        "engagedMovement": "knight-chase",
+        "engagedMovement": "cardinal-chase",
         "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con arpía del brezal usando {attack}.",
+        "message": "{attacker} acaba con gnoll merodeador del brezal usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

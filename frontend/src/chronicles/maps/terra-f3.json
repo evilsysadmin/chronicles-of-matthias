@@ -122,8 +122,8 @@
     },
     {
       "id": "terra-f3-foe-3",
-      "visualType": "ash-goblin",
-      "name": "goblin de ceniza",
+      "visualType": "hellhound",
+      "name": "sabueso infernal",
       "x": 18,
       "y": 2,
       "hpKey": "terra_f3Foe3Hp",
@@ -135,13 +135,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "cardinal-chase",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 4
       },
       "onDefeat": {
-        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
+        "message": "{attacker} acaba con sabueso infernal usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",

@@ -177,3 +177,30 @@ func TestB2PremiumOrcPatrolPreservesExistingEnemyIdentities(t *testing.T) {
 		t.Fatalf("B2 orc should pursue cardinally: %s", dump(orc.Obj("ai")))
 	}
 }
+
+func TestBatch03PremiumOverworldSpeciesPreserveSavedFoeSlots(t *testing.T) {
+  for _, tc := range []struct{ area, id, hp, visual string; reach int } {
+    {"B2", "terra-b2-foe-3", "terra_b2Foe3Hp", "gnoll", 4},
+    {"F3", "terra-f3-foe-3", "terra_f3Foe3Hp", "hellhound", 4},
+  } {
+    actual := buildAll()[mapID(tc.area)].Arr("enemies")
+    original := buildArea(tc.area, story().areas).Arr("enemies")
+    for i := range original {
+      if dump(original[i]) != dump(actual[i]) {
+        t.Fatalf("%s original foe %d changed", tc.area, i)
+      }
+    }
+    var found *O
+    for _, e := range actual {
+      foe := e.(*O)
+      if foe.Str("id") == tc.id { found = foe; break }
+    }
+    if found == nil || found.Str("visualType") != tc.visual || found.Str("hpKey") != tc.hp {
+      t.Fatalf("%s saved reinforcement identity changed", tc.area)
+    }
+    if found.Obj("ai").Str("engagedMovement") != "cardinal-chase" ||
+      found.Obj("ai").Int("engageRange") != tc.reach {
+      t.Fatalf("%s missing deliberate pursuit identity", tc.area)
+    }
+  }
+}
