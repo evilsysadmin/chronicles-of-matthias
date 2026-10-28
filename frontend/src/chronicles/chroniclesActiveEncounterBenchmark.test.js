@@ -187,19 +187,24 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     expect(outcomes.some(({ partyHpLost }) => Object.values(partyHpLost).some((hp) => hp > 0))).toBe(true);
   });
 
-  it('records real healing and PH spent inside a complete three-goblin encounter', () => {
-    const result = playSewerEncounter(0, { woundedStart: true });
-    expect(playSewerEncounter(0, { woundedStart: true })).toEqual(result);
-    console.info('CHRONICLES_MM3_ACTIVE_HEALING ' + JSON.stringify(result));
-    expect(result.finished).toBe(true);
-    expect(result.phase).toBe('explore');
-    expect(result.downed).toBe(0);
-    expect(result.heroHeals).toBeGreaterThan(0);
-    expect(result.healedHp).toBeGreaterThan(0);
-    expect(result.healingPhSpent).toBe(result.heroHeals);
-    expect(result.initialBishopSp - result.finalBishopSp).toBe(result.healingPhSpent);
-    const remaining = Object.entries(result.enemyHpLeft)
-      .filter(([, hp]) => hp > 0).map(([id]) => id);
-    expect(remaining).toEqual(result.legitimateWithdrawals);
+  it('accounts for healing and PH under both reproducible d8 initiative orders', () => {
+    for (const offset of [0, 1]) {
+      const result = playSewerEncounter(offset, { woundedStart: true });
+      expect(playSewerEncounter(offset, { woundedStart: true })).toEqual(result);
+      console.info('CHRONICLES_MM3_ACTIVE_HEALING ' + JSON.stringify(result));
+      expect(result.finished).toBe(true);
+      expect(result.phase).toBe('explore');
+      expect(result.downed).toBe(0);
+      expect(result.heroHeals).toBeGreaterThan(0);
+      expect(result.healedHp).toBeGreaterThan(0);
+      // Neither initiative order may grant free healing, extra PH or a
+      // resource refill between the spell action and encounter resolution.
+      expect(result.healingPhSpent).toBe(result.heroHeals);
+      expect(result.initialBishopSp - result.finalBishopSp).toBe(result.healingPhSpent);
+      expect(result.finalBishopSp).toBeGreaterThanOrEqual(0);
+      const remaining = Object.entries(result.enemyHpLeft)
+        .filter(([, hp]) => hp > 0).map(([id]) => id);
+      expect(remaining).toEqual(result.legitimateWithdrawals);
+    }
   });
 });
