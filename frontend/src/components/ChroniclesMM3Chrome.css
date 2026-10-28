@@ -191,7 +191,7 @@
   list-style: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18px;
-  grid-template-areas: 'heading chevron' 'target chevron';
+  grid-template-areas: 'heading chevron';
   gap: 2px 6px;
   min-height: 52px;
   padding: 5px 10px;
@@ -211,15 +211,6 @@
   grid-area: heading;
   min-width: 0;
   font: 400 1.22rem/1 var(--mm3-pixel-font);
-}
-.chronicles .chronicles-combat-roster__target {
-  grid-area: target;
-  min-width: 0;
-  overflow: hidden;
-  color: #f9e79c;
-  font: 400 1.12rem/1 var(--mm3-pixel-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .chronicles .chronicles-combat-roster__chevron { grid-area: chevron; text-align: center; font-size: 1.2rem; }
 .chronicles .chronicles-combat-roster details[open] .chronicles-combat-roster__chevron { transform: rotate(180deg); }
@@ -909,13 +900,6 @@
     color: #fff6e0;
     font: 400 1.25rem/1.15 var(--mm3-pixel-font);
     text-shadow: 1px 1px 0 #3a1d08;
-  }
-  .chronicles .chronicles-combat-roster__desktop-header small {
-    font: 400 1.1rem/1.1 var(--mm3-pixel-font);
-    color: #f9e79c;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .chronicles .chronicles-combat-roster__desktop ol {
     position: static;
