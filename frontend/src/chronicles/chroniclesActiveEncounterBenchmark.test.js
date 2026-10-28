@@ -216,34 +216,43 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(remaining).toEqual(result.legitimateWithdrawals);
     }
   });
-  it('carries wounds and PH into a second authored sewer squad without a free rest', () => {
+  it('carries wounds and PH through two sewer squads under both d8 initiative orders', () => {
     // Two different existing squads in the same map. Relocate the group
     // between engagements in the test only: travel attrition is not measured.
-    const first = playSewerEncounter(0, {
-      woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
-    });
-    expect(first.finished).toBe(true);
-    expect(first.phase).toBe('explore');
-    expect(first.downed).toBe(0);
-    const second = playSewerEncounter(1, {
-      pack: CENTRAL_PACK, previousState: first.state,
-      start: { x: 7, y: 3, direction: 1 },
-    });
-    const { state: _state, ...firstMetrics } = first;
-    console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first: firstMetrics, second }));
+    // Reverse the d8 order between squads, then repeat the entire expedition
+    // with the opposite order. Neither route may reset the party's resources.
+    for (const firstOffset of [0, 1]) {
+      const run = () => {
+        const first = playSewerEncounter(firstOffset, {
+          woundedStart: true, keepEnemyIds: [...PACK, ...CENTRAL_PACK], returnState: true,
+        });
+        const second = playSewerEncounter(1 - firstOffset, {
+          pack: CENTRAL_PACK, previousState: first.state,
+          start: { x: 7, y: 3, direction: 1 },
+        });
+        const { state: _state, ...firstMetrics } = first;
+        return { first: firstMetrics, second };
+      };
+      const { first, second } = run();
+      expect(run()).toEqual({ first, second });
+      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS ' + JSON.stringify({ first, second }));
 
-    expect(second.initialPartyHp).toEqual(first.finalPartyHp);
-    expect(second.initialBishopSp).toBe(first.finalBishopSp);
-    expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
-    expect(second.finalBishopSp).toBeLessThanOrEqual(second.initialBishopSp);
-    expect(second.healingPhSpent).toBe(second.initialBishopSp - second.finalBishopSp);
-    expect(second.finished).toBe(true);
-    expect(second.phase).toBe('explore');
-    expect(second.downed).toBe(0);
-    const remaining = Object.entries(second.enemyHpLeft)
-      .filter(([, hp]) => hp > 0).map(([id]) => id);
-    expect(remaining).toEqual(second.legitimateWithdrawals);
-    expect(second.steps).toBeLessThan(128);
+      expect(first.finished).toBe(true);
+      expect(first.phase).toBe('explore');
+      expect(first.downed).toBe(0);
+      expect(second.initialPartyHp).toEqual(first.finalPartyHp);
+      expect(second.initialBishopSp).toBe(first.finalBishopSp);
+      expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
+      expect(second.finalBishopSp).toBeLessThanOrEqual(second.initialBishopSp);
+      expect(second.healingPhSpent).toBe(second.initialBishopSp - second.finalBishopSp);
+      expect(second.finished).toBe(true);
+      expect(second.phase).toBe('explore');
+      expect(second.downed).toBe(0);
+      const remaining = Object.entries(second.enemyHpLeft)
+        .filter(([, hp]) => hp > 0).map(([id]) => id);
+      expect(remaining).toEqual(second.legitimateWithdrawals);
+      expect(second.steps).toBeLessThan(128);
+    }
   });
 
 });
