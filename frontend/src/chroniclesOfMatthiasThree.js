@@ -25,6 +25,7 @@ import {
 } from './chronicles/chroniclesDungeonLighting.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chronicles/chroniclesSpriteBillboards.js';
 import { buildChroniclesEnemyNameplate } from './chronicles/chroniclesEnemyNameplate.js';
+import { chroniclesGoblinHitPose, CHRONICLES_GOBLIN_HURT_SECONDS } from './chronicles/chroniclesGoblinHitPose.js';
 import { CHRONICLES_SWORDHAVEN_RETURN_PORTAL_ID } from './chronicles/chroniclesSwordhavenReturnPortal.js';
 import { chroniclesVolleyProjectileKinds, createChroniclesVolleyProjectileArt } from './chronicles/chroniclesVolleyProjectileArt.js';
 import { CHRONICLES_VOLLEY_MAX_DURATION, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chronicles/chroniclesVolleyMotion.js';
@@ -755,6 +756,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const enemyDeathStartedAt = new Map();
   const enemyMoveStartedAt = new Map();
   const enemyMoveFrom = new Map();
+  const reducedHurtTimers = new Map();
   const clock = new THREE.Clock();
 
   camera.position.copy(desiredPosition);
@@ -821,11 +823,32 @@ export function createChroniclesOfMatthiasGame(host, {
       enemy.userData.chroniclesTargetPosition = target;
       enemy.userData.chroniclesBaseYaw = chroniclesEnemyFacingYaw(currentCell, { x: state.x, y: state.y });
       if (reducedMotion) enemy.position.copy(target);
-      enemy.visible = active && (hp > 0 || (!reducedMotion && deathStartedAt != null));
+      const oldTimer = reducedHurtTimers.get(enemyDefinition.id);
+      if (oldTimer != null) {
+        clearTimeout(oldTimer);
+        reducedHurtTimers.delete(enemyDefinition.id);
+      }
+      // With reduced motion we still show one meaningful static pain pose.
+      // A fatal hit remains visible briefly before clearing the cell.
+      const goblinHurtNow = reducedMotion && enemyDefinition.visualType === 'ash-goblin'
+        && previousState != null && previousState[enemyDefinition.hpKey] > hp;
+      enemy.visible = active && (hp > 0 || (!reducedMotion && deathStartedAt != null) || goblinHurtNow);
       enemy.userData.chroniclesEnemyNameplate?.update(active ? hp : 0, enemyDefinition.maxHp);
       if (reducedMotion && enemy.userData.updateChroniclesSprite) {
         const adjacent = Math.abs(currentCell.x - state.x) + Math.abs(currentCell.y - state.y) <= 1;
-        enemy.userData.updateChroniclesSprite(0, { menace: Boolean(adjacent || state.initiative) });
+        const menace = Boolean(adjacent || state.initiative);
+        enemy.userData.updateChroniclesSprite(0, { hurt: goblinHurtNow, menace });
+        if (goblinHurtNow) {
+          const timeout = setTimeout(() => {
+            reducedHurtTimers.delete(enemyDefinition.id);
+            if (destroyed || !latestState) return;
+            const remaining = Number(latestState[enemyDefinition.hpKey] ?? 0);
+            enemy.visible = chroniclesEnemyIsActive(latestState, enemyDefinition) && remaining > 0;
+            if (remaining > 0) enemy.userData.updateChroniclesSprite(0, { menace });
+            scheduler.invalidate(0);
+          }, CHRONICLES_GOBLIN_HURT_SECONDS * 1000);
+          reducedHurtTimers.set(enemyDefinition.id, timeout);
+        }
       }
       const enemyGlow = enemy.userData.chroniclesGlowMaterials || [];
       enemyGlow.forEach((glow) => {
@@ -1036,7 +1059,10 @@ export function createChroniclesOfMatthiasGame(host, {
 
         if (active && hp > 0) {
           const hitElapsed = time - hitStartedAt;
-          const hitKick = hitElapsed >= 0 && hitElapsed < 0.24 ? Math.sin((hitElapsed / 0.24) * Math.PI) : 0;
+          const isGoblin = enemyDefinition.visualType === 'ash-goblin';
+          const recoilSeconds = isGoblin ? 0.38 : 0.24;
+          const hitKick = hitElapsed >= 0 && hitElapsed < recoilSeconds
+            ? Math.sin((hitElapsed / recoilSeconds) * Math.PI) : 0;
           if (enemy.userData.updateChroniclesSprite) {
             // 2.5D billboard: frames carry the motion; menace when engaged
             // next to the party, hurt for a beat after a blow.
@@ -1045,14 +1071,16 @@ export function createChroniclesOfMatthiasGame(host, {
               && Math.abs(cell.x - latestState.x) + Math.abs(cell.y - latestState.y) <= 1;
             const attackElapsed = time - (enemyAttackStartedAt.get(enemyDefinition.id) ?? -10);
             enemy.userData.updateChroniclesSprite(time + index * 0.37, {
-              hurt: hitElapsed >= 0 && hitElapsed < 0.42,
+              hurt: isGoblin
+                ? chroniclesGoblinHitPose({ hitElapsed, hp }).hurt
+                : hitElapsed >= 0 && hitElapsed < 0.42,
               attacking: attackElapsed >= 0 && attackElapsed < 0.5,
               menace: Boolean(adjacent || latestState?.initiative),
             });
           }
           enemy.visible = true;
           enemy.rotation.y = baseYaw + Math.sin(time * 0.9 + index) * 0.1 + hitKick * 0.16 + gaitSway;
-          enemy.rotation.z = hitKick * -0.08;
+          enemy.rotation.z = hitKick * (isGoblin ? -0.14 : -0.08);
           enemy.position.y = 0;
           enemy.scale.setScalar(baseScale + hitKick * 0.07);
         } else if (active && deathStartedAt != null) {
@@ -1061,7 +1089,15 @@ export function createChroniclesOfMatthiasGame(host, {
             // Billboards collapse into their own "dead" frame instead of
             // shrinking geometry, then fade out of the cell.
             enemy.visible = true;
-            enemy.userData.updateChroniclesSprite(time, { dead: true });
+            const isGoblin = enemyDefinition.visualType === 'ash-goblin';
+            const hitElapsed = time - (enemyHitStartedAt.get(enemyDefinition.id) ?? -1);
+            const goblinPose = isGoblin
+              ? chroniclesGoblinHitPose({ hitElapsed, deathElapsed, hp })
+              : null;
+            enemy.userData.updateChroniclesSprite(time, {
+              hurt: Boolean(goblinPose?.hurt),
+              dead: !goblinPose?.hurt,
+            });
             enemy.userData.setChroniclesSpriteOpacity?.(deathElapsed < 0.55 ? 1 : 1 - (deathElapsed - 0.55) / 0.35);
             enemy.position.y = 0;
             enemy.rotation.z = 0;
@@ -1164,6 +1200,8 @@ export function createChroniclesOfMatthiasGame(host, {
       if (destroyed) return;
       destroyed = true;
       scheduler.dispose();
+      reducedHurtTimers.forEach((timeout) => clearTimeout(timeout));
+      reducedHurtTimers.clear();
       ambientTorchGlows.dispose();
       observer?.disconnect();
       if (!observer) window.removeEventListener('resize', onWindowResize);
