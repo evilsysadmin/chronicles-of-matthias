@@ -489,7 +489,12 @@ describe('Swordhaven modular real-time 3D', () => {
       const armorWall = armorer.getObjectByName('timber-and-stone-walls');
       expect(armorWall.material).toBe(temple.getObjectByName('timber-and-stone-walls').material);
       expect(armorWall.material).not.toBe(forge.getObjectByName('timber-and-stone-walls').material);
-      expect(armorer.getObjectByName('roof-gable-1').material).toBe(armorWall.material);
+      expect(armorer.getObjectByName('roof-gable-1')).toBeFalsy();
+      expect(armorer.getObjectByName('pitched-roof-1')).toBeFalsy();
+      const flatRoof = armorer.getObjectByName('armor-flat-ashlar-roof');
+      expect(flatRoof?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(flatRoof.getObjectByName('armor-flat-roof-deck').material).toBe(armorWall.material);
+      expect(flatRoof.getObjectByName('armor-flat-roof-coping').castShadow).toBe(!coarsePointer);
       expect(armorer.getObjectByName('horizontal-facade-beam')).toBeFalsy();
       expect(armorer.getObjectByName('vertical-facade-post')).toBeFalsy();
       expect(armorer.getObjectByName('diagonal-timber-brace')).toBeFalsy();
@@ -505,7 +510,7 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(merlons).toBeInstanceOf(THREE.InstancedMesh);
       expect(merlons.count).toBe(6);
       expect(merlons.castShadow).toBe(!coarsePointer);
-      expect(parapet.position.z).toBeGreaterThan(armorer.getObjectByName('roof-gable-1').position.z);
+      expect(parapet.position.z).toBeGreaterThan(flatRoof.position.z);
       expect(armorer.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
       expect(armorer.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
       expect(armorer.getObjectByName('stone-chimney')).toBeFalsy();
@@ -535,6 +540,8 @@ describe('Swordhaven modular real-time 3D', () => {
         expect(other.getObjectByName('armor-stone-gateway')).toBeFalsy();
         expect(other.getObjectByName('armor-roof-crest')).toBeFalsy();
         expect(other.getObjectByName('armor-ashlar-parapet')).toBeFalsy();
+        expect(other.getObjectByName('armor-flat-ashlar-roof')).toBeFalsy();
+        expect(other.getObjectByName('pitched-roof-1')).toBeTruthy();
       }
       expect(createSwordhavenWalkGrid()[7][14]).toBe('.');
     }
@@ -606,7 +613,7 @@ describe('Swordhaven modular real-time 3D', () => {
     expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));
-    for (const spec of SWORDHAVEN_BUILDINGS) {
+    for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-armor')) {
       const roof = scene.getObjectByName('swordhaven-building-' + spec.id)
         .getObjectByName('pitched-roof-1');
       expect(roof.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
