@@ -171,6 +171,18 @@ try {
       && !armorer?.getObjectByName('forge-roof-smokestack')
       && !forge?.getObjectByName('armor-roof-crest')
     )),
+    distinctArmorParapet: String(Boolean(
+      armorer?.getObjectByName('armor-ashlar-parapet')?.userData.chroniclesDecorativeOnly
+      && armorer?.getObjectByName('armor-parapet-stone-course')
+      && armorer?.getObjectByName('armor-parapet-merlons')?.count === 6
+      && armorer?.getObjectByName('armor-roof-shoulders')
+      && armorer?.getObjectByName('armor-roof-crest')
+      && !armorer?.getObjectByName('pitched-roof-dormer--1')
+      && !armorer?.getObjectByName('pitched-roof-dormer-1')
+      && !armorer?.getObjectByName('stone-chimney')
+      && !forge?.getObjectByName('armor-ashlar-parapet')
+      && !guild?.getObjectByName('armor-ashlar-parapet')
+    )),
     distinctWatchhouse: String(Boolean(
       watch?.getObjectByName('watchhouse-battlement-tower')
       && watch?.getObjectByName('watchhouse-tower-masonry')
