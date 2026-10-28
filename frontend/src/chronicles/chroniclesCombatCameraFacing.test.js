@@ -44,11 +44,9 @@ describe('MM3 encounter camera focuses real melee threats, not masonry', () => {
     const distant = realFlankFight({ distance: 2 });
     expect(chroniclesCombatMeleeTarget(distant)).toBeNull();
     expect(chroniclesCombatCameraFacing(distant)).toBe(0);
-    const dead = { ...facing, 'sewersGoblinWestHp': 0 };
-    // The HP key in the authored map is canonical, not the fake string above.
     const enemy = chroniclesActiveEnemies(facing).find((entry) => entry.id === ID);
-    const deadReal = { ...dead, [enemy.hpKey]: 0 };
-    expect(chroniclesCombatCameraFacing(deadReal)).toBe(2);
+    const dead = { ...facing, [enemy.hpKey]: 0 };
+    expect(chroniclesCombatCameraFacing(dead)).toBe(2);
   });
 
   it('leaves exploration and independent Tactics camera control unchanged', () => {
