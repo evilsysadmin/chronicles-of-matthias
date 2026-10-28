@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 
@@ -41,6 +41,22 @@ describe('Chronicles player administration', () => {
     expect(chroniclesRosterHeroLabel(user, 'bishop')).toBe('Bishop');
     expect(chroniclesRosterHeroLabel(user, 'knight')).toBe('Knight');
     expect(chroniclesRosterHeroLabel({ heroNames: null }, 'matthias')).toBe('Matthias');
+  });
+
+  it.each([
+    [3, 3], [1, 1], [12, 12],
+    [undefined, '—'], [null, '—'], [0, '—'], [13, '—'],
+    [2.5, '—'], ['4', '—'], [{ level: 4 }, '—'], [[4], '—'],
+  ])('only renders valid measured hero levels (input %j)', (value, expected) => {
+    const user = { levels: { matthias: value } };
+    expect(chroniclesRosterHeroLevel(user, 'matthias')).toBe(expected);
+    expect(chroniclesRosterHeroLevel(user, 'rook')).toBe('—');
+  });
+
+  it('keeps the roster display safe when progression is absent or malformed', () => {
+    expect(chroniclesRosterHeroLevel({}, 'matthias')).toBe('—');
+    expect(chroniclesRosterHeroLevel({ levels: null }, 'matthias')).toBe('—');
+    expect(chroniclesRosterHeroLevel({ levels: 'bogus' }, 'matthias')).toBe('—');
   });
 
   it('does not render the administrative entry for unverified players', () => {
