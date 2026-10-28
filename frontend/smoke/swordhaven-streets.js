@@ -20,6 +20,8 @@ const VIEWS = Object.freeze({
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
+  // East-side street view reveals the inn's overhanging guest-room oriel.
+  'tavern-oblique': { x: 9, y: 10, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
@@ -225,6 +227,15 @@ try {
       && tavern?.getObjectByName('tavern-porch-ridge')
       && tavern?.getObjectByName('shop-door')
       && !store?.getObjectByName('tavern-porch-awning')
+    )),
+    distinctTavernOriel: String(Boolean(
+      tavern?.getObjectByName('tavern-east-guest-oriel')?.userData.chroniclesDecorativeOnly
+      && tavern?.getObjectByName('tavern-oriel-timber-body')
+      && tavern?.getObjectByName('tavern-oriel-sloped-roof')?.rotation.z !== 0
+      && tavern?.getObjectByName('tavern-east-guest-oriel')?.children
+        .filter(child => child.name === 'tavern-oriel-guest-window').length === 2
+      && !forge?.getObjectByName('tavern-east-guest-oriel')
+      && tavern?.getObjectByName('shop-door')
     )),
     distinctTavernRoof: String(Boolean(
       tavern?.getObjectByName('tavern-double-hearth')
