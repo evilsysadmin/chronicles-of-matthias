@@ -860,7 +860,9 @@ try {
       // If it has decoded already, it must be revealed; otherwise it must
       // remain hidden so the fallback is visible without a broken image.
       const remoteArt = await boticaPremium.evaluate(node => ({
-        src: node.currentSrc, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
+        // currentSrc can be empty while R2 is pending: src retains the exact
+        // declared, browser-resolved URL without waiting for remote bytes.
+        src: node.currentSrc || node.src, loaded: node.naturalWidth >= 1500 && node.naturalHeight >= 800,
         ready: node.classList.contains('is-ready'),
         opacity: Number.parseFloat(getComputedStyle(node).opacity),
       }));
