@@ -369,7 +369,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     lootTimerRef.current = window.setTimeout(() => {
       lootTimerRef.current = null;
       setLootNotice(null);
-    }, 2400);
+    }, 4800);
   }, []);
   useEffect(() => () => {
     if (lootTimerRef.current) window.clearTimeout(lootTimerRef.current);

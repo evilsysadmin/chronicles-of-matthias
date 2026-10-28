@@ -27,12 +27,19 @@
 
 /* Loot receipts share the quiet toast language, but are legible on busy 3D walls. */
 .chronicles .chronicles-loot-notice {
-  bottom: 42px;
-  max-width: min(88%, 560px);
+  /* Center the actual reward in the scene, clear of the bottom touch controls. */
+  top: 38%;
+  bottom: auto;
+  z-index: 22;
+  max-width: min(90%, 560px);
   width: max-content;
+  padding: 10px 16px;
+  font-size: clamp(14px, 1.35vw, 18px);
+  font-weight: 700;
   white-space: normal;
-  line-height: 1.35;
+  line-height: 1.45;
   text-wrap: balance;
-  border-color: rgba(222, 186, 119, .68);
-  background: rgba(24, 20, 17, .91);
+  border-color: rgba(239, 201, 135, .9);
+  background: rgba(24, 20, 17, .96);
+  box-shadow: 0 5px 24px rgba(0, 0, 0, .65);
 }

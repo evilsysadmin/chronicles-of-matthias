@@ -27,13 +27,13 @@ export function chroniclesLootNotice(before, after, action) {
   if (!entries.length) return null;
   const visible = entries.slice(0, 3);
   const names = visible.map(({ name, quantity, id }) => (
-    id === 'crown-gold' || quantity > 1 ? `${quantity} × ${name}` : name
+    id === 'crown-gold' ? `${quantity} ${name}` : quantity > 1 ? `${quantity} × ${name}` : name
   )).join(' · ');
   const excess = entries.length > visible.length ? ` · +${entries.length - visible.length} más` : '';
   const combat = COMBAT_LOOT_ACTIONS.has(kind);
   return {
     kind: combat ? 'loot' : 'pickup',
-    text: `${combat ? 'Botín' : 'Recogido'}: ${names}${excess}`,
+    text: `${combat ? 'Botín' : 'Encuentras'}: ${names}${excess}`,
     entries,
   };
 }
