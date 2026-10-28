@@ -37,6 +37,10 @@ const ASSETS = Object.freeze({
     url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/silent-acolyte-a4ea19664dff0fc0.webp',
     worldHeight: 3,
   }),
+  'orc-raider': Object.freeze({
+    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/orc-raider-9bb642b3c535be6e.webp',
+    worldHeight: 3.2,
+  }),
 });
 
 export function chroniclesOverworldSpriteSpec(visualType) {

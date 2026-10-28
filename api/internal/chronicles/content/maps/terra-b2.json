@@ -142,8 +142,8 @@
     },
     {
       "id": "terra-b2-foe-2",
-      "visualType": "road-bandit",
-      "name": "bandolero",
+      "visualType": "orc-raider",
+      "name": "orco saqueador del brezal",
       "x": 17,
       "y": 2,
       "hpKey": "terra_b2Foe2Hp",
@@ -155,13 +155,13 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "hold",
+        "movement": "cardinal-chase",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 3
       },
       "onDefeat": {
-        "message": "{attacker} acaba con bandolero usando {attack}.",
+        "message": "{attacker} acaba con orco saqueador del brezal usando {attack}.",
         "effects": [
           {
             "type": "grant-gold",
