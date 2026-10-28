@@ -866,6 +866,42 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     root.add(leanTo);
   }
+  // The inn has an overhanging upper-floor guest oriel on its east side:
+  // a complete timber-and-glass volume, not another merchant window decal.
+  // Book One's north-facing house rotates by PI: local -X faces the east
+  // plaza street, where the gallery is actually visible to players.
+  // It projects only over the already-blocked house cells, clears the lower
+  // side windows and leaves the door, interaction and collision map untouched.
+  if (isTavern) {
+    const oriel = new THREE.Group();
+    oriel.name = 'tavern-east-guest-oriel';
+    oriel.userData.chroniclesDecorativeOnly = true;
+    oriel.position.set(-width / 2 - 0.15, height - 1.02, -depth * 0.04);
+    const oak = material(0x69462f, { roughness: 0.96 });
+    mesh(oriel, new THREE.BoxGeometry(0.96, 1.35, 3.56), oak,
+      'tavern-oriel-timber-body', [-0.10, 0, 0], !coarse);
+    // Two warm guest-room windows face the east street, framed in oak.
+    for (const z of [-0.91, 0.91]) {
+      mesh(oriel, new THREE.BoxGeometry(0.08, 0.79, 1.12), mats.window,
+        'tavern-oriel-guest-window', [-0.63, 0.12, z], !coarse);
+      mesh(oriel, new THREE.BoxGeometry(0.13, 0.09, 1.24), mats.timber,
+        'tavern-oriel-window-sill', [-0.70, -0.34, z]);
+      mesh(oriel, new THREE.BoxGeometry(0.14, 0.78, 0.09), mats.timber,
+        'tavern-oriel-window-mullion', [-0.70, 0.12, z]);
+    }
+    for (const z of [-1.78, 1.78]) {
+      mesh(oriel, new THREE.BoxGeometry(0.16, 1.45, 0.18), mats.timber,
+        'tavern-oriel-corner-post', [-0.62, 0, z], !coarse);
+      const bracket = mesh(oriel, new THREE.BoxGeometry(0.16, 0.84, 0.19),
+        mats.timber, 'tavern-oriel-diagonal-support', [-0.18, -0.98, z], !coarse);
+      bracket.rotation.z = 0.54;
+    }
+    mesh(oriel, new THREE.BoxGeometry(1.42, 0.18, 4.10), roof,
+      'tavern-oriel-sloped-roof', [-0.17, 0.80, 0], !coarse).rotation.z = 0.12;
+    mesh(oriel, new THREE.BoxGeometry(1.04, 0.17, 3.76), mats.timber,
+      'tavern-oriel-floor-beam', [-0.10, -0.72, 0], !coarse);
+    root.add(oriel);
+  }
   // Sage-painted timber shutters give the herb house a botanical side
   // elevation. One instanced draw call, with all leaves attached to the
   // existing solid building; no street tiles, doors or collision change.
