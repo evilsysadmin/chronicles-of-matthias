@@ -19,3 +19,25 @@ export function chroniclesCombatCameraFacing(state) {
   const direction = CHRONICLES_DIRECTIONS.findIndex((step) => step.dx === dx && step.dy === dy);
   return direction >= 0 ? direction : facing;
 }
+
+// When the final opponent falls the visual auto-focus must NOT snap back to
+// the direction from before combat. Commit the last legal combat camera
+// heading as the exploration heading exactly once on a victorious exit.
+// Keeping it in the canonical state also makes movement, save and restore
+// agree with the image on screen. Never turn the party during initiative.
+export function chroniclesKeepVictoryFacing(previous, next) {
+  if (previous?.combatRules !== 'mm3'
+    || !previous.initiative
+    || previous.phase !== 'combat'
+    || next?.initiative
+    || next?.phase !== 'explore'
+    || previous.mapId !== next.mapId) return next;
+
+  const facing = chroniclesCombatCameraFacing(previous);
+  return Number.isInteger(facing)
+    && facing >= 0
+    && facing < CHRONICLES_DIRECTIONS.length
+    && facing !== next.direction
+    ? { ...next, direction: facing }
+    : next;
+}
