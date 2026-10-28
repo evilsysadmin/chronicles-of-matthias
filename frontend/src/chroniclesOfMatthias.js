@@ -1132,11 +1132,12 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
-// First-person MM3 combat fixes the company's position for the whole
-// initiative exchange. Camera rotation is still allowed for facing/aiming;
-// enemy tactical movement and the separate Tactics mode are unaffected.
+// First-person MM3 combat fixes both the company's tile and its facing
+// for the entire initiative exchange. No free rotating to retarget a distant
+// foe; exploration and the separate Tactics mode retain normal controls.
 const CHRONICLES_PARTY_STEPS = new Set([
   'forward', 'backward', 'strafe-left', 'strafe-right',
+  'turn-left', 'turn-right',
 ]);
 
 export function chroniclesCombatPartyStepBlocked(state, action) {
@@ -1148,9 +1149,9 @@ export function chroniclesCombatPartyStepBlocked(state, action) {
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
-  // Enforce this in the rules, not only in the input UI: neither a direct
-  // reducer call nor a held touch/keyboard event can move the entire party,
-  // spend initiative or trigger area changes during first-person combat.
+  // Enforce in the reducer: neither direct actions nor held keyboard/touch
+  // input can translate OR rotate the party, spend initiative or trigger a
+  // map transition during first-person combat.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
