@@ -215,6 +215,20 @@ export function chroniclesEnemyDistanceAhead(state, maxReach = 2) {
   return chroniclesEnemyTargetAhead(state, maxReach)?.distance ?? null;
 }
 
+// MM3's melee hotkey/touch affordance uses the exact same one-cell ray as
+// attack resolution. A legal swing needs a living hero, a target directly in
+// front of the camera, and (during initiative) ownership of this hero's turn.
+export function chroniclesMM3MeleeAvailable(state, memberId) {
+  if (!chroniclesUsesMM3Combat(state)) return true; // Tactics retains its rules.
+  if (!state || state.phase === 'defeated' || state.phase === 'escaped') return false;
+  if (!state.party?.some((member) => member.id === memberId && Number(member.hp) > 0)) return false;
+  if (state.initiative) {
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    if (actor?.kind !== 'party' || actor.id !== memberId) return false;
+  }
+  return Boolean(chroniclesEnemyTargetAhead(state, 1));
+}
+
 // In first-person initiative, adjacency may be beside/behind the camera,
 // or overlap the anchor on a restored/legacy formation. A bow remains usable
 // at melee range: prefer the enemy in the line of fire, then an engaged enemy
@@ -642,6 +656,9 @@ function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   if (member.hp <= 0) return withMessage(state, `${member.name} está fuera de combate. Incluso la épica tiene límites médicos.`);
   const mm3 = chroniclesUsesMM3Combat(state);
   const mode = spell || !mm3 ? 'melee' : requestedMode === 'auto' ? chroniclesAttackMode(state, member.id) : requestedMode;
+  // Invalid MM3 melee is a refusal, not a swing into empty space: no turn,
+  // retaliation, XP or fake animation. Ranged volleys keep their own rules.
+  if (!spell && mm3 && mode === 'melee' && !chroniclesMM3MeleeAvailable(state, member.id)) return state;
   if (mode === 'missile' && !chroniclesEquippedItem(state, member.id, 'missile')) {
     return { ...state, message: 'Sin arma a distancia' }; // Refusal never consumes the action.
   }
