@@ -182,6 +182,55 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(first.children.filter(o => o.name === 'chronicles-campaign-road')).toHaveLength(1);
   });
 
+  it('shades B2 paths near rock banks while preserving every original tile and transform', () => {
+    const plan = {
+      mapId: terraB2.id, biome: terraB2.biome, regionKind: terraB2.regionKind,
+      width: terraB2.grid[0].length, height: terraB2.grid.length,
+      center: { x: 10, y: 7 }, grid: terraB2.grid, scenery: terraB2.scenery, content: [],
+    };
+    const make = (overrides = {}, coarsePointer = false) => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, {
+        scenePlan: { ...plan, ...overrides }, coarsePointer,
+      });
+      return scene.getObjectByName('chronicles-campaign-road');
+    };
+    const heath = make();
+    const again = make({}, true);
+    const elsewhere = make({ mapId: 'terra-e2' });
+    expect(heath).toBeInstanceOf(THREE.InstancedMesh);
+    expect(heath.count).toBe(elsewhere.count);
+    expect(heath.count).toBe(again.count);
+    expect(heath.instanceColor).toBeTruthy();
+    expect(elsewhere.instanceColor).toBeNull();
+    expect(heath.material.map).toBe(again.material.map);
+    expect(heath.geometry.parameters).toEqual(elsewhere.geometry.parameters);
+    const matrix = new THREE.Matrix4();
+    const previous = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    const duplicateTint = new THREE.Color();
+    const edgeTints = new Set();
+    const openTints = new Set();
+    for (let i = 0; i < heath.count; i += 1) {
+      heath.getMatrixAt(i, matrix);
+      elsewhere.getMatrixAt(i, previous);
+      expect(matrix.elements).toEqual(previous.elements);
+      heath.getColorAt(i, tint);
+      again.getColorAt(i, duplicateTint);
+      expect(tint.getHex()).toBe(duplicateTint.getHex());
+      const x = Math.round(matrix.elements[12] / 4) + plan.center.x;
+      const y = Math.round(matrix.elements[14] / 4) + plan.center.y;
+      expect(plan.grid[y]?.[x]).toBe('.');
+      const stoneEdge = plan.grid[y - 1]?.[x] === '#' || plan.grid[y + 1]?.[x] === '#'
+        || plan.grid[y]?.[x - 1] === '#' || plan.grid[y]?.[x + 1] === '#';
+      (stoneEdge ? edgeTints : openTints).add(tint.getHex());
+    }
+    expect(edgeTints.size).toBeGreaterThan(1);
+    expect(openTints.size).toBeGreaterThan(1);
+    expect([...edgeTints].every(hex => !openTints.has(hex))).toBe(true);
+    expect(heath.instanceColor.count).toBe(heath.count);
+  });
+
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
     const scene = new THREE.Scene();
     const built = buildChroniclesCampaignExterior(scene, { scenePlan: demo, coarsePointer: true });
