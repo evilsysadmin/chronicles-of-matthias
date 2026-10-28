@@ -154,7 +154,15 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(road.count).toBeGreaterThan(0);
     expect(road.count).toBe(cheap.count);
     expect(road.count).toBe(unchanged.count);
-    expect(road.geometry.parameters).toEqual(unchanged.geometry.parameters);
+    expect(road.geometry.parameters).toEqual({
+      ...unchanged.geometry.parameters, width: 4, depth: 4,
+    });
+    expect(cheap.geometry.parameters).toEqual(road.geometry.parameters);
+    expect(unchanged.geometry.parameters.width).toBeCloseTo(4 * 0.98);
+    expect(unchanged.geometry.parameters.depth).toBeCloseTo(4 * 0.98);
+    // Earth segments meet exactly. No overlap (z-fighting) or dark seams.
+    expect(road.geometry.parameters.width).toBe(4);
+    expect(road.geometry.parameters.depth).toBe(4);
     expect(road.material.map.name).toBe('chronicles-pixel-heathpath');
     expect(road.material.map).toBe(cheap.material.map);
     expect(road.material.normalMap).toBeNull();
@@ -170,6 +178,22 @@ describe('Chronicles file-authored exterior renderer', () => {
       const y = Math.round(instance.elements[14] / 4) + plan.center.y;
       expect(terraB2.grid[y]?.[x]).toBe('.');
     }
+    // Two adjacent road cells must share a boundary without any tile-sized
+    // gap. Verify the fixture really contains a neighboring pair.
+    let neighboring = false;
+    const cellCenters = new Set();
+    for (let i = 0; i < road.count; i++) {
+      road.getMatrixAt(i, instance);
+      cellCenters.add(`${Math.round(instance.elements[12])},${Math.round(instance.elements[14])}`);
+    }
+    for (const center of cellCenters) {
+      const [x, z] = center.split(',').map(Number);
+      if (cellCenters.has(`${x + 4},${z}`) || cellCenters.has(`${x},${z + 4}`)) {
+        neighboring = true; break;
+      }
+    }
+    expect(neighboring).toBe(true);
+    expect(road.material.transparent).toBe(false);
     const pathTex = road.material.map;
     expect(pathTex.userData.chroniclesPixelArt).toMatchObject({ kind: 'heathpath', size: 64 });
     expect(pathTex.image.data.length).toBe(64 * 64 * 4);
@@ -204,7 +228,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(heath.instanceColor).toBeTruthy();
     expect(elsewhere.instanceColor).toBeNull();
     expect(heath.material.map).toBe(again.material.map);
-    expect(heath.geometry.parameters).toEqual(elsewhere.geometry.parameters);
+    expect(heath.geometry.parameters).toEqual({
+      ...elsewhere.geometry.parameters, width: 4, depth: 4,
+    });
+    expect(again.geometry.parameters).toEqual(heath.geometry.parameters);
     const matrix = new THREE.Matrix4();
     const previous = new THREE.Matrix4();
     const tint = new THREE.Color();
