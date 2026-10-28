@@ -3,6 +3,7 @@ import { r2AssetUrl } from '../r2Assets.js';
 import { unlockChroniclesActionAudio } from './chroniclesActionAudio.js';
 import { getAudioContext, getAudioContextState } from '../audioContext.js';
 import { createChroniclesIdleFxSuspension } from './chroniclesIdleFxSuspension.js';
+import { chroniclesPerfIsolationFlags } from './chroniclesPerfIsolation.js';
 import {
   getAmbientPlaybackState,
   getAmbientVolume,
@@ -46,6 +47,9 @@ export function syncChroniclesSoundtrackPlayback(audio, volume, muted) {
 // and resumes only if it was actually playing before entering Chronicles.
 export function useChroniclesSoundtrack(entryView) {
   const audioRef = useRef(null);
+  // Debug-only A/B test. Preserve the player's mute/volume preferences.
+  const isolateMusic = typeof window !== 'undefined'
+    && chroniclesPerfIsolationFlags(window.location.search).disableMusic;
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof Audio === 'undefined') return undefined;
@@ -78,7 +82,7 @@ export function useChroniclesSoundtrack(entryView) {
     idleFx.activity();
 
     const syncPreferences = () => {
-      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
+      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
       // Transport/media-key controls may restart the global station while
       // Chronicles is foregrounded. Never play both soundtracks together.
       const status = getAmbientPlaybackState()?.status;
@@ -91,7 +95,7 @@ export function useChroniclesSoundtrack(entryView) {
       idleFx.activity(); // one-shot idle deadline, not a running polling loop
       // Autoplay is often blocked after F5 until the next real user gesture.
       // Do not reawaken muted media during pointer/keyboard/focus events.
-      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
+      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
     };
     syncPreferences();
     window.addEventListener('chess-ambient-transport', syncPreferences);
@@ -111,7 +115,7 @@ export function useChroniclesSoundtrack(entryView) {
       if (audioRef.current === audio) audioRef.current = null;
       if (restoreGlobal) startAmbientMusic();
     };
-  }, []);
+  }, [isolateMusic]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -123,6 +127,6 @@ export function useChroniclesSoundtrack(entryView) {
       audio.src = url;
       // play() initiates loading only when audible; no eager load for mute.
     }
-    syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted());
-  }, [entryView]);
+    syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
+  }, [entryView, isolateMusic]);
 }
