@@ -77,6 +77,8 @@ try {
           'Guardhouse must have a raised crenellated lookout distinct from the armorer');
         assert.equal(result.distinctTavernBrick, 'true',
           'Tavern must have warm brick walls and gables, distinct from merchant plaster');
+        assert.equal(result.distinctTavernPorch, 'true',
+          'Tavern must have a supported pitched porch, not a flat slab, on desktop and mobile');
         assert.equal(result.distinctTavernRoof, 'true',
           'Tavern must have a unique two-flue brick hearth roofline');
         assert.equal(result.distinctStoreLoft, 'true',

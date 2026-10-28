@@ -217,6 +217,15 @@ try {
       && tavern?.getObjectByName('shop-door')
       && forge?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-stucco'
     )),
+    distinctTavernPorch: String(Boolean(
+      tavern?.getObjectByName('tavern-porch-awning')?.userData.chroniclesDecorativeOnly
+      && tavern?.getObjectByName('tavern-porch-awning')?.children
+        .filter(child => child.name === 'tavern-porch-pitched-slope').length === 2
+      && tavern?.getObjectByName('tavern-porch-pitched-slope')?.rotation.z !== 0
+      && tavern?.getObjectByName('tavern-porch-ridge')
+      && tavern?.getObjectByName('shop-door')
+      && !store?.getObjectByName('tavern-porch-awning')
+    )),
     distinctTavernRoof: String(Boolean(
       tavern?.getObjectByName('tavern-double-hearth')
       && tavern?.getObjectByName('tavern-hearth-flue-0')
