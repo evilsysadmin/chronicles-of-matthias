@@ -1858,7 +1858,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   );
   const touchAttackReason = activeInitiativeActor?.kind === 'enemy'
     ? 'Turno enemigo: espera tu turno'
-    : 'Sin enemigo delante a distancia de cuerpo a cuerpo. En combate no puedes girar: dispara (S), bloquea (B) o usa magia (C).';
+    : 'Sin enemigo adyacente. En combate no puedes girar: dispara (S), bloquea (B) o usa magia (C).';
 
   return (
     <div
