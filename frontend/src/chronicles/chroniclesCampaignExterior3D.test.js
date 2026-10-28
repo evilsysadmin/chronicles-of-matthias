@@ -94,8 +94,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(heather).toBeInstanceOf(THREE.InstancedMesh);
     expect(heather.count).toBeGreaterThan(0);
     expect(built.sceneCenter).toEqual(center);
-    expect(scene.getObjectByName('chronicles-campaign-visible-blockers').count)
-      .toBe(terraB2.grid.join('').split('#').length - 1);
+    // Wild biomes render obstacles as scenery, not the urban wall mesh.
+    // The authored B2 collision grid remains the only gameplay blocker.
+    expect(scene.getObjectByName('chronicles-campaign-visible-blockers')).toBeUndefined();
+    expect(scene.getObjectByName('chronicles-terra-boulder')).toBeInstanceOf(THREE.InstancedMesh);
   });
 
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {
