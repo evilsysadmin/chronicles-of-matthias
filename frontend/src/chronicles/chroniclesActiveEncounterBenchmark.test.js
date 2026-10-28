@@ -230,9 +230,9 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     }
   });
   it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
-    // Two existing squads in the same map. Walk two real dungeon tiles after
-    // the first fight, including actual turns to face north. The remainder
-    // of the journey is still a test-only relocation, NOT a full route/attrition
+    // Two existing squads in the same map. Walk six real dungeon tiles after
+    // the first fight, including turns around the north-gallery corner.
+    // The remainder is still a test-only relocation, NOT a full route/attrition
     // benchmark. Reverse d8 order between fights; no resource reset.
     for (const firstOffset of [0, 1]) {
       const run = () => {
@@ -242,15 +242,22 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           startingPotions: 2,
         });
         let explored = first.state;
-        // The west encounter starts at (1,5). Face north through spent
-        // exploration turns, then move through the walkable (1,4) and (1,3).
+        // The west encounter starts at (1,5). Follow the authored corridor
+        // north via (1,4), (1,3), (1,2), then east via (2,2), (3,2),
+        // and south to (3,3), turning on real exploration turns.
         // Do not teleport, refill PV/PH, or bypass enemy awareness for this leg.
         const turnActions = {
           0: [], 1: ['turn-left'], 2: ['turn-left', 'turn-left'], 3: ['turn-right'],
         }[explored.direction];
         expect(turnActions).toBeDefined();
-        const actions = [...turnActions, 'forward', 'forward'];
-        const expectedTiles = [{ x: 1, y: 4 }, { x: 1, y: 3 }];
+        const actions = [
+          ...turnActions, 'forward', 'forward', 'forward',
+          'turn-right', 'forward', 'forward', 'turn-right', 'forward',
+        ];
+        const expectedTiles = [
+          { x: 1, y: 4 }, { x: 1, y: 3 }, { x: 1, y: 2 },
+          { x: 2, y: 2 }, { x: 3, y: 2 }, { x: 3, y: 3 },
+        ];
         let walkedTiles = 0;
         for (const action of actions) {
           const before = explored;
@@ -359,8 +366,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(first.phase).toBe('explore');
       expect(first.downed).toBe(0);
       expect(travel.from).toEqual({ x: 1, y: 5 });
-      expect(travel.to).toEqual({ x: 1, y: 3 });
-      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(2);
+      expect(travel.to).toEqual({ x: 3, y: 3 });
+      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(6);
       expect(travel.actions.at(-1)).toBe('forward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
