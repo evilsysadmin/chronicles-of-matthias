@@ -1590,18 +1590,18 @@
   pointer-events: none;
 }
 
-/* One genuine row immediately above the portraits, not a tooltip
-   projected from the caster. The sapphire belongs to the view row and cannot
-   overlap this strip as its height becomes part of the party layout. */
+/* Spell recipient choice is an overlay anchored to the portrait strip,
+   never a real grid row. A row would grow the six-card HUD and push hero
+   portraits below the fixed-height viewport (especially at 1366x768).
+   Position it at the lower-left of the view to leave the sapphire free. */
 .chronicles .chronicles-party .chronicles-spell-target-banner {
-  grid-column: 1 / -1;
-  position: relative;
-  z-index: 16;
-  justify-self: center;
-  align-self: center;
+  position: absolute;
+  z-index: 40;
+  left: 6px;
+  bottom: calc(100% + 8px);
   box-sizing: border-box;
   width: max-content;
-  max-width: 100%;
+  max-width: min(600px, calc(100vw - 16px));
   min-width: 0;
   display: flex;
   align-items: center;
@@ -1651,9 +1651,15 @@
 }
 @media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
   .chronicles .chronicles-party .chronicles-spell-target-banner {
-    width: 100%;
-    gap: 3px;
-    padding: 3px 5px;
+    /* The mobile portraits sit near the top safe area: place the prompt
+       BELOW them instead of above the viewport. Never reflow their row. */
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: 0;
+    width: max-content;
+    max-width: min(340px, calc(100vw - 16px));
+    gap: 3px 8px;
+    padding: 4px 7px;
   }
   .chronicles .chronicles-spell-target-question {
     gap: 2px 6px;
