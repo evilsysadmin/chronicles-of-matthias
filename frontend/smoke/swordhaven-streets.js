@@ -226,6 +226,9 @@ try {
       && guild?.getObjectByName('magic-observatory-stone-drum')
       && guild?.getObjectByName('magic-observatory-steep-roof')
       && guild?.getObjectByName('magic-observatory-violet-window')
+      && !guild?.getObjectByName('pitched-roof-dormer--1')
+      && !guild?.getObjectByName('pitched-roof-dormer-1')
+      && !guild?.getObjectByName('stone-chimney')
       && !temple?.getObjectByName('magic-guild-roof-observatory')
       && !apothecary?.getObjectByName('magic-guild-roof-observatory')
     )),
