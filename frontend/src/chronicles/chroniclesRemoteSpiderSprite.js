@@ -129,6 +129,7 @@ export function buildChroniclesRemoteSpiderBillboard(fallback) {
     // Atomic switch: no transparent spider on slow, bad or offline R2.
     sprite.visible = true;
     fallback.visible = false;
+    group.userData.onChroniclesSpiderAtlasReady?.();
   });
   return group;
 }
