@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesCombatMeleeTarget, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
@@ -13,9 +13,9 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 
 // Unlike the passive pressure benchmark, every living hero spends a real
-// initiative action. Attack adjacent enemies, turn toward the nearest living
-// opponent, advance on distant stragglers, or BLOCK when movement is blocked.
-// No swings at empty air, no free turns.
+// initiative action. Attack a physically adjacent enemy (even off camera),
+// or BLOCK while stragglers close: MM3 combat locks both tile and facing.
+// No swings at empty air, free turns or impossible camera rotations.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewers-goblin-east-culvert'];
@@ -74,18 +74,11 @@ function playSewerEncounter(rollOffset, {
       // Every translation is forbidden throughout MM3 initiative, whether
       // dispatched by keyboard/touch as a string or directly as an action.
       // Identity also guards against hidden turn, resource or state changes.
-      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right']) {
+      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right', 'turn-left', 'turn-right']) {
         expect(chroniclesReduce(state, move), `${move} must not change combat state`).toBe(state);
         expect(chroniclesReduce(state, { type: move }), `${move} action must not change combat state`).toBe(state);
       }
-      const inFront = chroniclesEnemyTargetAhead(state, 1);
-      const living = chroniclesActiveEnemies(state).filter((enemy) => pack.includes(enemy.id));
-      const nearest = living.map((enemy) => {
-        const position = chroniclesRuntimeEnemyPosition(state, enemy);
-        const dx = position.x - state.x;
-        const dy = position.y - state.y;
-        return { dx, dy, distance: Math.abs(dx) + Math.abs(dy) };
-      }).sort((a, b) => a.distance - b.distance)[0];
+      const inReach = chroniclesCombatMeleeTarget(state);
       const rook = state.party.find(({ id }) => id === 'rook');
       const caster = state.party.find(({ id }) => id === 'bishop');
       if (woundedStart && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
@@ -101,35 +94,12 @@ function playSewerEncounter(rollOffset, {
         metrics.healingPhSpent += beforeSp - afterSp;
         metrics.healedHp += afterRook.hp - rook.hp;
         state = healed;
-      } else if (inFront) {
+      } else if (inReach) {
         const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
         expect(attempted.turns).toBe(state.turns + 1);
         metrics.heroDamage += enemies.reduce((sum, enemy) => sum + Math.max(0, state[enemy.hpKey] - attempted[enemy.hpKey]), 0);
         metrics.heroAttacks += 1;
         state = attempted;
-      } else if (nearest) {
-        const facing = Math.abs(nearest.dx) >= Math.abs(nearest.dy) && nearest.dx !== 0
-          ? nearest.dx > 0 ? 1 : 3
-          : nearest.dy > 0 ? 2 : 0;
-        if (facing !== state.direction) {
-          const delta = (facing - state.direction + 4) % 4;
-          const turned = chroniclesReduce(state, delta === 3 ? 'turn-left' : 'turn-right');
-          expect(turned.turns).toBe(state.turns + 1);
-          metrics.heroRotations += 1;
-          state = turned;
-        } else if (nearest.distance > 1) {
-          // The movement invariant is checked above for every hero turn;
-          // distant targets require a legal defensive action instead.
-          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
-          expect(guarded.turns).toBe(state.turns + 1);
-          metrics.heroBlocks += 1;
-          state = guarded;
-        } else {
-          const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
-          expect(guarded.turns).toBe(state.turns + 1);
-          metrics.heroBlocks += 1;
-          state = guarded;
-        }
       } else {
         const guarded = chroniclesReduce(state, { type: 'block', memberId: actor.id });
         expect(guarded.turns, `BLOCK must spend ${actor.id}'s turn`).toBe(state.turns + 1);
@@ -194,6 +164,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(result.phase).toBe('explore');
       expect(result.downed).toBe(0);
       expect(result.heroMoves).toBe(0);
+      expect(result.heroRotations).toBe(0);
       const remaining = Object.entries(result.enemyHpLeft)
         .filter(([, hp]) => hp > 0).map(([id]) => id);
       expect(remaining).toEqual(result.legitimateWithdrawals);
