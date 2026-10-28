@@ -717,7 +717,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     : isArmor ? material(0x28323a, { roughness: 0.97, metalness: 0.08 })
       : isForge ? material(0x302820, { roughness: 0.99, metalness: 0.02 })
         : isApothecary ? material(0x617b54, { roughness: 0.57, emissive: 0x16251a, emissiveIntensity: 0.16 })
-          : mats.window;
+          : isStore ? material(0x614932, { roughness: 0.96 })
+            : mats.window;
   for (const side of [-1, 1]) {
     for (const z of [-depth * 0.22, depth * 0.22]) {
       const edge = side * (width / 2 + 0.105);
@@ -727,7 +728,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         isMagic ? 'side-window-violet-glass'
           : isArmor ? 'side-window-armory-dark-recess'
             : isForge ? 'side-window-forge-soot-vent'
-              : isApothecary ? 'side-window-apothecary-sage-glass' : 'side-window-amber-glass',
+              : isApothecary ? 'side-window-apothecary-sage-glass'
+                : isStore ? 'side-window-store-oak-loading-hatch' : 'side-window-amber-glass',
         [edge + side * 0.09, 2.84, z]);
       mesh(root, new THREE.BoxGeometry(0.26, 0.16, 1.88), mats.stone,
         'side-window-carved-sill', [edge + side * 0.11, 1.95, z]);
@@ -765,6 +767,32 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     shutters.instanceMatrix.needsUpdate = true;
     root.add(shutters);
+  }
+  // Boarded cargo hatches give the provisions store a warehouse-like side
+  // elevation instead of the same glowing domestic windows as other shops.
+  // Three oak battens per hatch share one instanced draw call; the authored
+  // building footprint, shop entrance and walkable tiles remain unchanged.
+  if (isStore) {
+    const battens = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.17, 0.13, 1.33),
+      material(0x997451, { roughness: 0.98 }), 12,
+    );
+    battens.name = 'store-side-loading-hatch-battens';
+    battens.userData.chroniclesDecorativeOnly = true;
+    battens.castShadow = !coarse;
+    const batten = new THREE.Object3D();
+    let index = 0;
+    for (const side of [-1, 1]) {
+      for (const z of [-depth * 0.22, depth * 0.22]) {
+        for (const y of [2.43, 2.84, 3.25]) {
+          batten.position.set(side * (width / 2 + 0.34), y, z);
+          batten.updateMatrix();
+          battens.setMatrixAt(index++, batten.matrix);
+        }
+      }
+    }
+    battens.instanceMatrix.needsUpdate = true;
+    root.add(battens);
   }
   // A single broad merchant's attic loft replaces the ordinary domestic
   // dormers on the general store. The oak gable and glazed loading bay break
