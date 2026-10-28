@@ -21,10 +21,6 @@ const ASSETS = Object.freeze({
     url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/harpy-5bb6e2c854cc9477.webp',
     worldHeight: 2.85,
   }),
-  'troll': Object.freeze({
-    url: 'https://assets.chronicles.shadowops.dpdns.org/sprites/troll-70685b89d7e8b264.webp',
-    worldHeight: 3.65,
-  }),
 });
 
 export function chroniclesOverworldSpriteSpec(visualType) {
