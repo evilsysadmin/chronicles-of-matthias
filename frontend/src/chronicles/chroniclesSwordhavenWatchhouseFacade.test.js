@@ -34,6 +34,7 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(watch.children.filter(child => child.name === 'watchhouse-front-stone-rail')).toHaveLength(6);
     expect(watch.getObjectByName('warm-glass-window')).toBeFalsy();
     expect(watch.getObjectByName('flower-window-box')).toBeFalsy();
+    expect(watch.getObjectByName('armor-display')).toBeFalsy();
     expect(watch.getObjectByName('window-diamond-leadwork')).toBeFalsy();
     expect(watch.getObjectByName('shop-door')).toBeTruthy();
     expect(watch.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
