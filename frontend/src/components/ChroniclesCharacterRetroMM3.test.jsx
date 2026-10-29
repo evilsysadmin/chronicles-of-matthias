@@ -39,7 +39,7 @@ describe('MM3 retro skin and compact record layout', () => {
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
     expect(html).not.toContain('Cambiar equipo');
     expect(html).not.toContain('data-chronicles-worn-gear');
-    expect(inventory).toContain('chronicles-character-sheet__inventory');
+    expect(inventory).toContain('chronicles-character-sheet__backpack');
     // A fresh hero need not start with any equipped slots; the populated
     // equipment fixture is exercised by ChroniclesCharacterInventoryRetro.
   });
