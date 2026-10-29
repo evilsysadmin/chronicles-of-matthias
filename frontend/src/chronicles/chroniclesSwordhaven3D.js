@@ -835,7 +835,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
           material(0xb58c58, { roughness: 0.98 }), 4);
         crates.name = 'store-window-provisions-crates';
         const braces = new THREE.InstancedMesh(
-          new THREE.BoxGeometry(0.085, 0.83, 0.08),
+          new THREE.BoxGeometry(0.075, 0.82, 0.08),
           mats.timber, 8);
         braces.name = 'store-window-crate-crossbraces';
         const parcel = new THREE.Object3D();
@@ -849,7 +849,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
             parcel.scale.set(1, 1, 1);
             parcel.updateMatrix();
             crates.setMatrixAt(crateIndex++, parcel.matrix);
-            for (const angle of [-0.68, 0.68]) {
+            for (const angle of [-0.92, 0.92]) {
               parcel.position.set(crateX, 2.26, facadeZ + 1.055);
               parcel.rotation.z = angle;
               parcel.updateMatrix();
