@@ -711,10 +711,19 @@ try {
         .getByRole('button', { name: /Equipo/ }).click();
       const sword = sheet.locator('[data-inventory-item="bronze-sword"]');
       await sword.click();
+      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
+      await handoff.locator('summary').click();
+      const targets = handoff.locator('button');
+      assert.equal(await targets.count(), 3);
+      assert.equal(await targets.evaluateAll((buttons) => buttons.every((button) => button.disabled)), true,
+        'Combat must disable all explicit transfer destinations');
       await page.keyboard.press('2');
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Hildegard',
+        'Browsing Hildegard is allowed even when transfer is blocked');
+      await page.keyboard.press('1');
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias');
-      assert.equal(await sword.count(), 1, 'A combat-time transfer is not allowed');
-      console.log('MM3_MANUAL_HANDOFF_COMBAT_GUARD_OK');
+      assert.equal(await sword.count(), 1, 'Browsing in combat must not move the sword');
+      console.log('MM3_EXPLICIT_HANDOFF_COMBAT_GUARD_OK');
     } catch (error) {
       failures.push('handoff combat guard: ' + error.message);
     } finally {
