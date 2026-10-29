@@ -152,4 +152,58 @@ describe('Chronicles fresh initiative roster integrity', () => {
     expect(next.initiative.round).toBe(3);
   });
 
+  it('does not repeat a saved enemy turn forever when its initiative slot was duplicated', () => {
+    const state = {
+      phase: 'combat',
+      party: [{ id: 'matthias', hp: 7 }],
+      goblinHp: 3,
+      initiative: {
+        version: 1, die: '1d8', round: 4, cursor: 1,
+        order: [
+          { kind: 'party', id: 'matthias', initiative: 9 },
+          { kind: 'enemy', id: 'goblin', initiative: 7 },
+          { kind: 'enemy', id: 'goblin', initiative: 7 },
+        ],
+      },
+    };
+    const enemies = [{ id: 'goblin', hpKey: 'goblinHp' }];
+    const next = chroniclesAdvanceCombatInitiative(state, enemies);
+    expect(next.initiative.order.map(({ kind, id }) => [kind, id])).toEqual([
+      ['party', 'matthias'], ['enemy', 'goblin'],
+    ]);
+    expect(next.initiative).toMatchObject({ round: 5, cursor: 0 });
+    expect(chroniclesCurrentInitiativeActor(next.initiative)).toMatchObject({
+      kind: 'party', id: 'matthias',
+    });
+    const following = chroniclesAdvanceCombatInitiative(next, enemies);
+    expect(following.initiative).toMatchObject({ round: 5, cursor: 1 });
+    expect(chroniclesCurrentInitiativeActor(following.initiative)).toMatchObject({
+      kind: 'enemy', id: 'goblin',
+    });
+  });
+
+  it('keeps hero and enemy IDs distinct when a restored duplicate is the current slot', () => {
+    const state = {
+      phase: 'combat',
+      party: [{ id: 'shared', hp: 5 }],
+      enemyHp: 4,
+      initiative: {
+        version: 1, die: '1d8', round: 2, cursor: 2,
+        order: [
+          { kind: 'enemy', id: 'shared', initiative: 9 },
+          { kind: 'party', id: 'shared', initiative: 8 },
+          { kind: 'enemy', id: 'shared', initiative: 9 },
+        ],
+      },
+    };
+    const next = chroniclesAdvanceCombatInitiative(state, [{ id: 'shared', hpKey: 'enemyHp' }]);
+    expect(next.initiative.order.map(({ kind, id }) => [kind, id])).toEqual([
+      ['enemy', 'shared'], ['party', 'shared'],
+    ]);
+    expect(next.initiative).toMatchObject({ round: 2, cursor: 1 });
+    expect(chroniclesCurrentInitiativeActor(next.initiative)).toMatchObject({
+      kind: 'party', id: 'shared',
+    });
+  });
+
 });
