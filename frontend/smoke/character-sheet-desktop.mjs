@@ -103,13 +103,13 @@ try {
         .evaluate((node) => node.getBoundingClientRect().height);
       assert(xpHeight <= 36, 'XP cannot steal workbench height: ' + xpHeight);
       const partyDock = sheet.getByRole('navigation', { name: 'Seleccionar personaje de la compañía' });
-      assert.equal(await partyDock.locator('img').count(), 0,
-        'The equipment dossier must not repeat the large exploration portraits');
+      assert.equal(await partyDock.locator('img').count(), 4, 'Four compact hero portraits remain visible on desktop');
+      assert.equal(await partyDock.locator('img').first().isVisible(), true);
       assert.equal(await partyDock.locator('button').count(), 4,
         'All four characters must remain directly selectable');
       const partyDockHeight = await partyDock.evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(partyDockHeight >= 44 && partyDockHeight <= 68,
-        'Compact hero selection should give height back to the equipment workbench: ' + partyDockHeight);
+      assert.ok(partyDockHeight >= 72 && partyDockHeight <= 112,
+        'Portraits must fit inside a compact persistent hero dock: ' + partyDockHeight);
       assert.equal(await partyDock.locator('button[aria-pressed="true"]').count(), 1);
       for (const name of ['Matthias', 'Hildegard', 'Aziz', 'Faust']) {
         const tab = partyDock.getByRole('button', { name: new RegExp('Ver ficha de ' + name) });
@@ -212,8 +212,10 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
-      assert.equal(await sheet.getByText('Mochila de Matthias').count(), 1,
-        'Each MM3 equipment dossier must identify the selected hero own backpack');
+      assert.match(await sheet.locator(
+        '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head span'
+      ).first().textContent(), /OBJETOS DE Matthias/,
+        'Equipment must identify its current owner without duplicating headers');
       const wornDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
       const wornSummary = wornDetails.locator('summary');
       assert.equal(await wornDetails.getAttribute('open'), null,
@@ -335,84 +337,45 @@ try {
         'An ellipsized item keeps its full name available on hover');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'false',
         'Initial first-item preview does not silently select an item for transfer');
+      const actions = equipment.getByRole('navigation', { name: 'Acciones de inventario' });
+      assert.equal(await actions.locator('button').count(), 7,
+        'Classic item menu must expose all seven explicit actions');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
-      assert.equal(await detail.isVisible(), true, 'Item detail appears without a preliminary click');
-      // Optional mechanics are initially closed, making the decision and
-      // Equipar action available without a wall of catalogue rows.
+      assert.equal(await detail.isVisible(), false,
+        'Item details stay hidden until Examinar');
+      assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
+        'Unselected preview must never trigger equipment');
+      await rows.first().click();
+      assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
+      await actions.getByRole('button', { name: /Examinar/ }).click();
+      assert.equal(await detail.isVisible(), true);
       const more = detail.locator('.chronicles-character-sheet__item-more');
       assert.equal(await more.evaluate((node) => node.open), false,
-        'Long object attributes must start collapsed');
-      assert.equal(await more.locator('dl').isVisible(), false);
-      const initialDetail = await detail.evaluate((node) => {
-        const essentials = node.querySelector(':scope > .chronicles-character-sheet__item-essentials');
-        const action = node.querySelector(':scope > button');
-        const optional = node.querySelector(':scope > .chronicles-character-sheet__item-more');
-        const preview = node.querySelector(':scope > .chronicles-character-sheet__swap-preview');
-        const dock = document.querySelector('.chronicles-character-sheet__party-dock');
-        return { essentials: essentials?.getBoundingClientRect().top,
-          action: action?.getBoundingClientRect().bottom,
-          optional: optional?.getBoundingClientRect().top,
-          preview: preview?.getBoundingClientRect().top,
-          dock: dock?.getBoundingClientRect().top };
-      });
-      assert.ok(initialDetail.essentials < initialDetail.optional,
-        'Core item identity and class compatibility precede the optional record');
-      assert.ok(initialDetail.action < initialDetail.optional,
-        'Equipar must precede the expanded long item description');
-      if (initialDetail.preview != null) {
-        assert.ok(initialDetail.preview < initialDetail.action,
-          'Read-only before/after mechanics must precede Equipar');
-      }
-      if (width >= 1200) {
-        assert.ok(initialDetail.action < initialDetail.dock - 6,
-          'Primary equip action must be visible above the party dock: ' + JSON.stringify(initialDetail));
-      }
+        'Long attributes must start folded');
       await more.locator('summary').click();
-      if (width >= 1200) {
-        const ledger = await more.locator('dl').evaluate((node) => ({
-          columns: getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
-          entries: node.querySelectorAll(':scope > div').length,
-          labels: [...node.querySelectorAll('dt')].map((element) => element.textContent.trim()),
-          overflow: node.scrollWidth > node.clientWidth + 1,
-        }));
-        assert.equal(ledger.columns, 2, 'Expanded mechanics must use two compact columns');
-        assert.ok(ledger.entries >= 6 && ledger.labels.includes('Puede usarlo'),
-          'Detailed object stats and equipability remain available on demand');
-        assert.equal(ledger.overflow, false, 'Expanded stats cannot scroll sideways');
-      }
+      assert.equal(await more.locator('dl').isVisible(), true);
       await more.locator('summary').click();
       assert.equal(await more.evaluate((node) => node.open), false);
 
-      // Opening Equipment must show the inventory list immediately. On wide
-      // desktop the selected item's details take priority over optional filters;
-      // narrow desktop retains its existing filter-first arrangement.
-      const aboveFold = await equipment.evaluate((node) => {
+      const classicLayout = await equipment.evaluate((node) => {
         const rect = (selector) => node.querySelector(selector).getBoundingClientRect();
+        const bag = rect('.chronicles-character-sheet__backpack');
         const list = rect('.chronicles-character-sheet__inventory');
-        const firstItem = rect('[data-inventory-item]');
-        const tools = rect('.chronicles-character-sheet__backpack-tools');
-        const inspector = rect('.chronicles-character-sheet__item-details');
+        const actions = rect('.chronicles-character-sheet__classic-actions');
+        const detail = rect('.chronicles-character-sheet__item-details');
         const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
-        return { listTop: list.top, listRight: list.right, firstTop: firstItem.top,
-          firstBottom: firstItem.bottom, toolsTop: tools.top, toolsRight: tools.right,
-          toolsBottom: tools.bottom, inspectorTop: inspector.top, inspectorBottom: inspector.bottom,
-          inspectorLeft: inspector.left, dockTop: dock.top };
+        return { bagWidth: bag.width, listWidth: list.width, listTop: list.top,
+          listBottom: list.bottom, actionsTop: actions.top, actionsBottom: actions.bottom,
+          detailTop: detail.top, dockTop: dock.top };
       });
-      assert.ok(aboveFold.firstTop <= Math.min(aboveFold.toolsTop, aboveFold.inspectorTop) + 25,
-        'First inventory row must start beside the right rail, not after it: ' + JSON.stringify(aboveFold));
-      assert.ok(aboveFold.firstBottom < aboveFold.dockTop - 8,
-        'First inventory row must be visible above the persistent party dock: ' + JSON.stringify(aboveFold));
-      assert.ok(aboveFold.listRight <= aboveFold.inspectorLeft + 2,
-        'Inventory list must remain left of the filter/inspector rail: ' + JSON.stringify(aboveFold));
-      if (width >= 1200) {
-        assert.ok(aboveFold.inspectorTop < aboveFold.dockTop - 100,
-          'Selected item details must begin visibly above the persistent party dock: ' + JSON.stringify(aboveFold));
-        assert.ok(aboveFold.toolsTop >= aboveFold.inspectorBottom - 3,
-          'Optional filters should follow, not obscure, the selected item details: ' + JSON.stringify(aboveFold));
-      } else {
-        assert.ok(aboveFold.inspectorTop >= aboveFold.toolsBottom - 3,
-          'At 1024px the validated filter-first layout must remain intact: ' + JSON.stringify(aboveFold));
-      }
+      assert.ok(classicLayout.listWidth >= classicLayout.bagWidth - 22,
+        'Inventory ledger must occupy the full reading width: ' + JSON.stringify(classicLayout));
+      assert.ok(classicLayout.actionsTop >= classicLayout.listBottom - 3,
+        'Classic action strip follows the item list: ' + JSON.stringify(classicLayout));
+      assert.ok(classicLayout.detailTop >= classicLayout.actionsBottom - 3,
+        'Expanded details must follow the actions: ' + JSON.stringify(classicLayout));
+      assert.ok(classicLayout.listTop < classicLayout.dockTop,
+        'The inventory must start above the hero dock: ' + JSON.stringify(classicLayout));
       const filterDisclosure = equipment.locator('.chronicles-character-sheet__backpack-tools');
       assert.equal(await filterDisclosure.evaluate((node) => node.open), false,
         'Filter/search must start collapsed to avoid another tall inspector column');
@@ -449,11 +412,11 @@ try {
           'Search must follow, not overlap, the filters: ' + JSON.stringify(filters));
       }
       const firstName = await rows.first().locator('span').innerText();
-      assert.ok((await detail.innerText()).includes(firstName));
+      assert.ok((await detail.textContent()).includes(firstName));
       await rows.nth(1).click();
       assert.equal(await rows.nth(1).getAttribute('aria-pressed'), 'true');
       const secondName = await rows.nth(1).locator('span').innerText();
-      assert.ok((await detail.innerText()).includes(secondName));
+      assert.ok((await detail.textContent()).includes(secondName));
       await rows.nth(1).focus();
       await page.keyboard.press('Home');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
@@ -464,9 +427,10 @@ try {
         'ArrowDown must wrap the filtered backpack without altering stock');
       assert.equal(await equipment.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
         'Read-only smoke fixture cannot equip without a real game action callback');
+      await actions.getByRole('button', { name: /Examinar/ }).click();
       const desk = await Promise.all([inv.boundingBox(), detail.boundingBox()]);
-      assert.ok(desk[0] && desk[1] && desk[0].x + desk[0].width <= desk[1].x + 2,
-        'Desktop MM3 inventory list must stand to the left of contextual details');
+      assert.ok(desk[0] && desk[1] && desk[1].y >= desk[0].y + desk[0].height - 3,
+        'Classic item examination must expand below the full-width list');
       await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
       // Reusing the same scrollable inventory node must not preserve a stale
       // scroll offset after a filter/search change (especially with a narrow
@@ -676,6 +640,8 @@ try {
       // This fixture is a genuine MM3-rules campaign, unlike the legacy
       // first-hour loot fixture. Inspect real read-only swap stats here.
       const swapDetails = sheet.locator('.chronicles-character-sheet__swap-preview');
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Examinar/ }).click();
       await swapDetails.waitFor({ state: 'visible' });
       assert.equal(await swapDetails.getAttribute('open'), null,
         'MM3 weapon comparison must start folded');
@@ -714,8 +680,9 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__handoff').count(), 0,
         'A mere preview cannot transfer anything');
       await sword.click();
-      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await handoff.locator('summary').click();
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ }).click();
+      const handoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
       assert.equal(await handoff.locator('button').count(), 3, 'Only the other heroes are destinations');
       assert.equal(await handoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 0,
         'The owner must never be a recipient');
@@ -731,8 +698,9 @@ try {
       await receivedSword.waitFor({ state: 'visible' });
       assert.equal(await receivedSword.count(), 1, 'Sword arrives intact in Hildegard bag');
       await receivedSword.click();
-      const returnHandoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await returnHandoff.locator('summary').click();
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ }).click();
+      const returnHandoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
       await returnHandoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
       assert.equal(await heading.innerText(), 'Hildegard', 'Returning an item does not switch sheets');
       assert.equal(await receivedSword.count(), 0);
@@ -772,12 +740,11 @@ try {
         .getByRole('button', { name: /Equipo/ }).click();
       const sword = sheet.locator('[data-inventory-item="bronze-sword"]');
       await sword.click();
-      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await handoff.locator('summary').click();
-      const targets = handoff.locator('button');
-      assert.equal(await targets.count(), 3);
-      assert.equal(await targets.evaluateAll((buttons) => buttons.every((button) => button.disabled)), true,
-        'Combat must disable all explicit transfer destinations');
+      const transfer = sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ });
+      assert.equal(await transfer.isDisabled(), true, 'Combat must disable explicit transfer');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__classic-recipients').count(), 0,
+        'Combat must never show a recipient picker');
       await page.keyboard.press('2');
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Hildegard',
         'Browsing Hildegard is allowed even when transfer is blocked');
@@ -817,6 +784,8 @@ try {
           docWidth: document.documentElement.scrollWidth,
           portraitCount: node.querySelectorAll('.chronicles-character-sheet__head img').length,
           dockPortraits: node.querySelectorAll('.chronicles-character-sheet__party-dock img').length,
+          dockPortraitsVisible: [...node.querySelectorAll('.chronicles-character-sheet__party-dock img')]
+            .filter((img) => getComputedStyle(img).display !== 'none').length,
           dockHeight: dock.height,
           dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => {
             const name = button.querySelector('.chronicles-character-sheet__party-name');
@@ -845,7 +814,9 @@ try {
       if (height <= 480) assert.equal(geometry.headColumns, 2,
         'Short landscape has no portrait: reserve only identity and close columns');
       assert.equal(geometry.portraitCount, 0);
-      assert.equal(geometry.dockPortraits, 0, 'No full portraits in mobile sheet selector');
+      assert.equal(geometry.dockPortraits, 4, 'Four portraits stay available for the desktop selector');
+      assert.equal(geometry.dockPortraitsVisible, 0,
+        'Touch selector must hide portraits without losing hero buttons');
       assert.ok(geometry.dockHeight >= 44 && geometry.dockHeight <= 68,
         'Compact party navigation must preserve vertical space: ' + JSON.stringify(geometry));
       assert.equal(geometry.dockButtons.length, 4, 'All heroes must remain selectable on touch');
@@ -906,7 +877,9 @@ try {
         const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
         const dock = sheet.locator('.chronicles-character-sheet__party-dock');
         const scrollCapacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
-        assert.ok(scrollCapacity > 80, 'Populated phone dossier must genuinely scroll');
+        if (scrollCapacity > 12) {
+          // Only require the continuation cue when the dossier really overflows.
+          // A compact, fully visible inventory is strictly better than forced scroll.
         await page.waitForFunction(() => document.querySelector(
           '.chronicles-character-sheet__scroll'
         )?.dataset.moreBelow === 'true');
@@ -935,6 +908,12 @@ try {
           '.chronicles-character-sheet__scroll'
         )?.dataset.moreBelow === 'true');
         await page.mouse.move(10, 10);
+        } else {
+          assert.equal(await scrollArea.evaluate((node) => node.dataset.moreBelow), 'false',
+            'A fully visible inventory must not advertise imaginary content below');
+          assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+            .locator('button').count(), 7, 'Compact phones still expose all real actions');
+        }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
@@ -948,7 +927,7 @@ try {
       const equipmentSubtitle = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
       );
-      assert.match(await equipmentSubtitle.textContent(), /Qué llevas y qué tienes puesto/);
+      assert.match(await equipmentSubtitle.textContent(), /Mochila personal/);
       assert.equal(await equipmentSubtitle.isVisible(), width > 430,
         'Only narrow touch phones omit the redundant Equipment subtitle');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');

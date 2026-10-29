@@ -190,18 +190,35 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__backpack-tools').count(), 0,
         'One-item bags must not waste another row on useless filter controls');
       if (width >= 851) {
-        const sparseAlignment = await sheet.locator('.chronicles-character-sheet__backpack')
+        // MM3 now uses a full-width ledger. The inspector is intentionally
+        // closed until Examinar, rather than occupying a permanent second column.
+        const inspector = sheet.locator('.chronicles-character-sheet__item-details');
+        assert.equal(await inspector.isVisible(), false,
+          'The optional inspector must not consume space before Examinar');
+        await sheet.getByRole('button', { name: /Examinar/ }).click();
+        assert.equal(await inspector.isVisible(), true,
+          'Examinar must reveal the selected item without changing equipment');
+        const sparseLedger = await sheet.locator('.chronicles-character-sheet__backpack')
           .evaluate((node) => {
             const list = node.querySelector('.chronicles-character-sheet__inventory').getBoundingClientRect();
-            const inspector = node.querySelector('.chronicles-character-sheet__item-details').getBoundingClientRect();
-            return { listTop: list.top, inspectorTop: inspector.top,
-              horizontal: list.right <= inspector.left + 2 };
+            const actions = node.querySelector('.chronicles-character-sheet__classic-actions').getBoundingClientRect();
+            const details = node.querySelector('.chronicles-character-sheet__item-details').getBoundingClientRect();
+            return {
+              listLeft: list.left, listRight: list.right, listBottom: list.bottom,
+              actionsTop: actions.top, actionsBottom: actions.bottom,
+              inspectorLeft: details.left, inspectorRight: details.right,
+              inspectorTop: details.top,
+            };
           });
-        assert.ok(Math.abs(sparseAlignment.listTop - sparseAlignment.inspectorTop) <= 16,
-          'A sparse backpack must not leave an empty grid row above its inspector: '
-            + JSON.stringify(sparseAlignment));
-        assert.equal(sparseAlignment.horizontal, true,
-          'The bag and item inspector must remain side by side');
+        assert.ok(sparseLedger.actionsTop >= sparseLedger.listBottom - 2,
+          'The command strip must follow the compact inventory list: ' + JSON.stringify(sparseLedger));
+        assert.ok(sparseLedger.inspectorTop >= sparseLedger.actionsBottom - 2,
+          'The opt-in inspector must follow the command strip: ' + JSON.stringify(sparseLedger));
+        assert.ok(Math.abs(sparseLedger.listLeft - sparseLedger.inspectorLeft) <= 16
+          && Math.abs(sparseLedger.listRight - sparseLedger.inspectorRight) <= 16,
+          'The inspector must share the ledger width, not a legacy side column: '
+            + JSON.stringify(sparseLedger));
+        await page.screenshot({ path: 'smoke-first-loot-inspect-' + width + '.png' });
       }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       // This authored first-hour loot fixture uses the default legacy combat

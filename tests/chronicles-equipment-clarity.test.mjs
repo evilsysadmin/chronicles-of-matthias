@@ -17,8 +17,10 @@ test('member hotkeys and party dock are navigation only; transfer is explicit an
   assert.match(dock, /onClick=\{\(\) => viewMember\(hero\.id\)\}/);
   assert.match(dock, /aria-label=\{`Ver ficha de \$\{hero\.name\}/);
   assert.doesNotMatch(dock, /transferableItem/);
-  assert.match(sheet, /className="chronicles-character-sheet__handoff"/);
-  assert.match(sheet, /\{transferableItem && \(/);
+  assert.match(sheet, /className="chronicles-character-sheet__classic-recipients"/);
+  assert.match(sheet, /showRecipients && transferableItem && \(/);
+  assert.match(sheet, /disabled=\{!transferableItem \|\| !canChangeEquipment\}/);
+  assert.match(sheet, /aria-expanded=\{showRecipients\}/);
   assert.match(sheet, /disabled=\{!canChangeEquipment\}/);
   assert.match(sheet, /if \(!transferableItem \|\| !canChangeEquipment \|\| targetId === member\.id\) return;/);
   assert.match(skin, /__handoff-targets > button\s*\{[^}]*min-height: 44px/s);

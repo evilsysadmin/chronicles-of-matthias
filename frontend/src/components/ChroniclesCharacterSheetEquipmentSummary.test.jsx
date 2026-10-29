@@ -76,13 +76,15 @@ describe('Chronicles character sheet combat summary', () => {
     const ownership = { matthias: { 'brass-shield': 1 }, rook: { 'brass-sword': 1 } };
     const matthias = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'matthias');
     const hildegard = render('mm3', 'equipment', { inventory, bagOwners: ownership }, 'rook');
-    expect(matthias).toContain('Mochila de Matthias');
+    expect(matthias).toContain('Objetos de Matthias');
     expect(matthias).toContain('data-inventory-item="brass-shield"');
     expect(matthias).not.toContain('data-inventory-item="brass-sword"');
-    expect(hildegard).toContain('Mochila de Hildegard');
+    expect(hildegard).toContain('Objetos de Hildegard');
     expect(hildegard).toContain('data-inventory-item="brass-sword"');
     expect(hildegard).not.toContain('data-inventory-item="brass-shield"');
     expect(hildegard).toContain('Vista previa · selecciónalo para entregarlo');
+    expect(hildegard).toContain('aria-live="polite" hidden=""');
+    expect(hildegard).toContain('aria-label="Acciones de inventario"');
     expect(hildegard).not.toContain('chronicles-character-sheet__inventory-hint');
     expect(hildegard).toContain('Seleccionar personaje de la compañía');
     expect(hildegard).not.toContain('Pasar objeto');
