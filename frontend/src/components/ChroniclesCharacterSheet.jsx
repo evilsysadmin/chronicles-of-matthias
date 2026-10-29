@@ -10,6 +10,7 @@ import './ChroniclesCharacterInventoryRetro.css';
 import './ChroniclesCharacterTrainingRetro.css';
 import './ChroniclesCharacterRecordV3.css';
 import './ChroniclesCharacterEquipmentDisclosure.css';
+import './ChroniclesCharacterInventoryClassic.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
@@ -120,6 +121,9 @@ export default function ChroniclesCharacterSheet({
   const [selectedBagItem, setSelectedBagItem] = useState(null);
   const [backpackFilter, setBackpackFilter] = useState('all');
   const [backpackSearch, setBackpackSearch] = useState('');
+  const [inspectItem, setInspectItem] = useState(false);
+  const [showRecipients, setShowRecipients] = useState(false);
+  const wornDisclosure = useRef(null);
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
@@ -132,6 +136,8 @@ export default function ChroniclesCharacterSheet({
     if (previousViewedMemberIdRef.current === nextId) return;
     previousViewedMemberIdRef.current = nextId;
     setSelectedBagItem(null);
+    setInspectItem(false);
+    setShowRecipients(false);
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
     if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
@@ -206,12 +212,15 @@ export default function ChroniclesCharacterSheet({
   // belongs to the selected item's details, not to the party dock or keys 1–4.
   const viewMember = (targetId) => {
     setSelectedBagItem(null);
+    setInspectItem(false);
+    setShowRecipients(false);
     onSelectMember?.(targetId);
   };
   const giveSelectedItemTo = (targetId) => {
     if (!transferableItem || !canChangeEquipment || targetId === member.id) return;
     onEquipmentAction?.({ type: 'transfer-item', itemId: transferableItem.id, toMemberId: targetId });
     setSelectedBagItem(null);
+    setShowRecipients(false);
   };
 
   // A modal may lose DOM focus after rerenders. Keep 1–4 available even if
@@ -233,6 +242,19 @@ export default function ChroniclesCharacterSheet({
   // Tactics has no backpack filters and is unaffected.
   const resetBackpackScroll = () => {
     if (inventoryListRef.current) inventoryListRef.current.scrollTop = 0;
+    setInspectItem(false);
+    setShowRecipients(false);
+  };
+
+  // Selection never equips or transfers: the player explicitly chooses a command.
+  const browseBackpack = (step) => {
+    if (!visibleBackpack.length) return;
+    const index = Math.max(0, visibleBackpack.findIndex((item) => item.id === selectedInventoryItem?.id));
+    const next = Math.max(0, Math.min(visibleBackpack.length - 1, index + step));
+    setSelectedBagItem({ memberId: member.id, itemId: visibleBackpack[next].id });
+    setInspectItem(false);
+    setShowRecipients(false);
+    inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[next]?.focus();
   };
 
   // A purely visual continuation cue: the party dock is fixed while the
@@ -294,7 +316,7 @@ export default function ChroniclesCharacterSheet({
   const backpackPanel = (
             <article className="chronicles-character-sheet__backpack">
               <span className="chronicles-character-sheet__backpack-heading">
-                {tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}
+                {tacticsMode ? 'Mochila de expedición' : `Objetos de ${member.name}`}
               </span>
               {!tacticsMode && inventory.length > 0 && showBackpackTools && (
                 <details className="chronicles-character-sheet__backpack-tools">
@@ -335,7 +357,11 @@ export default function ChroniclesCharacterSheet({
                         title={!tacticsMode ? item.name : undefined}
                         className={selectedItemId === item.id ? 'is-selected' : ''}
                         aria-pressed={selectedItemId === item.id}
-                        onClick={() => setSelectedBagItem({ memberId: member.id, itemId: item.id })}
+                        onClick={() => {
+                          setSelectedBagItem({ memberId: member.id, itemId: item.id });
+                          setInspectItem(false);
+                          setShowRecipients(false);
+                        }}
                         onKeyDown={(event) => {
                           if (tacticsMode) return;
                           const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
@@ -343,6 +369,8 @@ export default function ChroniclesCharacterSheet({
                           event.preventDefault();
                           event.stopPropagation();
                           setSelectedBagItem({ memberId: member.id, itemId: nextId });
+                          setInspectItem(false);
+                          setShowRecipients(false);
                           const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
                           inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
                         }}
@@ -359,7 +387,59 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
               )}
-              {!tacticsMode && selectedInventoryItem && (
+              {!tacticsMode && (
+                <nav className="chronicles-character-sheet__classic-actions" aria-label="Acciones de inventario">
+                  <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(-1)}>
+                    <span aria-hidden="true">↑</span> Arriba
+                  </button>
+                  <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(1)}>
+                    <span aria-hidden="true">↓</span> Abajo
+                  </button>
+                  <button type="button" disabled={!selectedEquipment || !canEquipSelected || !canChangeEquipment}
+                    aria-label={selectedEquipment ? `Equipar ${selectedEquipment.name}` : 'Equipar objeto'}
+                    onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
+                    <span aria-hidden="true">⚔</span> Equipar
+                  </button>
+                  <button type="button" onClick={() => {
+                    if (wornDisclosure.current) {
+                      wornDisclosure.current.open = true;
+                      wornDisclosure.current.scrollIntoView?.({ block: 'nearest' });
+                    }
+                  }}>
+                    <span aria-hidden="true">▣</span> Puesto
+                  </button>
+                  <button type="button" disabled={!transferableItem || !canChangeEquipment}
+                    aria-expanded={showRecipients}
+                    onClick={() => { setShowRecipients((open) => !open); setInspectItem(false); }}>
+                    <span aria-hidden="true">⇄</span> Entregar
+                  </button>
+                  <button type="button" disabled={!selectedInventoryItem}
+                    aria-expanded={inspectItem}
+                    onClick={() => { setInspectItem((open) => !open); setShowRecipients(false); }}>
+                    <span aria-hidden="true">⌕</span> Examinar
+                  </button>
+                  <button type="button" onClick={onClose}>
+                    <span aria-hidden="true">×</span> Salir
+                  </button>
+                </nav>
+              )}
+              {!tacticsMode && showRecipients && transferableItem && (
+                <div className="chronicles-character-sheet__classic-recipients" role="group"
+                  aria-label={`Entregar 1 ${transferableItem.name} a otro personaje`}>
+                  <strong>Entregar {transferableItem.name} a…</strong>
+                  <div className="chronicles-character-sheet__handoff-targets">
+                    {chroniclesPartyHotkeySlots(state.party)
+                      .filter(({ member: companion }) => companion.id !== member.id)
+                      .map(({ member: companion }) => (
+                        <button type="button" key={companion.id}
+                          disabled={!canChangeEquipment}
+                          aria-label={`Entregar 1 ${transferableItem.name} a ${companion.name}`}
+                          onClick={() => giveSelectedItemTo(companion.id)}>{companion.name}</button>
+                      ))}
+                  </div>
+                </div>
+              )}
+              {!tacticsMode && inspectItem && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
                   <strong>{selectedInventoryItem.name}</strong>
@@ -389,30 +469,8 @@ export default function ChroniclesCharacterSheet({
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </details>
                     ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
-                    <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
-                      onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
-                      Equipar {selectedEquipment.name}
-                    </button>
+
                   </>}
-                  {transferableItem && (
-                    <details className="chronicles-character-sheet__handoff">
-                      <summary>Entregar 1 a…</summary>
-                      <div className="chronicles-character-sheet__handoff-targets" role="group"
-                        aria-label={`Entregar 1 ${transferableItem.name} a otro personaje`}>
-                        {chroniclesPartyHotkeySlots(state.party)
-                          .filter(({ member: companion }) => companion.id !== member.id)
-                          .map(({ member: companion }) => (
-                            <button type="button" key={companion.id}
-                              disabled={!canChangeEquipment}
-                              aria-label={`Entregar 1 ${transferableItem.name} a ${companion.name}`}
-                              title={!canChangeEquipment ? 'Solo se pueden entregar objetos durante la exploración' : undefined}
-                              onClick={() => giveSelectedItemTo(companion.id)}>
-                              {companion.name}
-                            </button>
-                          ))}
-                      </div>
-                    </details>
-                  )}
                   <details className="chronicles-character-sheet__item-more">
                     <summary>Descripción y atributos</summary>
                     {selectedEquipment && <p>{selectedEquipment.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>}
@@ -623,7 +681,7 @@ export default function ChroniclesCharacterSheet({
           data-chronicles-equipment-folio={!tacticsMode ? member.id : undefined}
           hidden={!tacticsMode && activeFolio !== 'equipment'}>
           <div className="chronicles-character-sheet__section-head">
-            <div><span>EQUIPO Y OBJETOS</span><small>Qué llevas y qué tienes puesto</small></div>
+            <div><span>{tacticsMode ? 'EQUIPO Y OBJETOS' : `OBJETOS DE ${member.name}`}</span><small>{tacticsMode ? 'Qué llevas y qué tienes puesto' : 'Mochila personal · selecciona y actúa'}</small></div>
             {tacticsMode && <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>}
           </div>
           <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
@@ -636,7 +694,7 @@ export default function ChroniclesCharacterSheet({
               </article>
             )}
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
-              <details className="chronicles-character-sheet__equipped-disclosure">
+              <details ref={wornDisclosure} className="chronicles-character-sheet__equipped-disclosure">
                 <summary>
                   <span>Equipo puesto</span>
                   <small title={wornOverview}>{wornOverview}</small>
@@ -795,6 +853,7 @@ export default function ChroniclesCharacterSheet({
                 onClick={() => viewMember(hero.id)}
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
+                <img src={chroniclesPartyPortraitUrl(hero)} alt="" draggable="false" />
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
                 <span className="chronicles-character-sheet__party-hp"><span className="chronicles-character-sheet__party-hp-value">{hero.hp}/{hero.maxHp}</span><span className="chronicles-character-sheet__party-hp-unit"> PV</span></span>
               </button>
