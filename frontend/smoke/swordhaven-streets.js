@@ -211,6 +211,17 @@ try {
       && watch?.getObjectByName('watchhouse-front-merlon')
       && !armorer?.getObjectByName('watchhouse-battlement-tower')
     )),
+    distinctWatchhouseFrontage: String(Boolean(
+      watch?.getObjectByName('watchhouse-front-iron-bars')?.count === 6
+      && watch?.getObjectByName('watchhouse-front-iron-bars')?.userData.chroniclesDecorativeOnly
+      && watch?.children.filter(child => child.name === 'watchhouse-front-dark-recess').length === 2
+      && watch?.children.filter(child => child.name === 'watchhouse-front-stone-jamb').length === 4
+      && !watch?.getObjectByName('flower-window-box')
+      && !watch?.getObjectByName('window-diamond-leadwork')
+      && watch?.getObjectByName('shop-door')
+      && forge?.getObjectByName('flower-window-box')
+      && !forge?.getObjectByName('watchhouse-front-iron-bars')
+    )),
     distinctTavernBrick: String(Boolean(
       tavern?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xb98b70
       && tavern?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
