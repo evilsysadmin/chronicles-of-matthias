@@ -113,6 +113,7 @@ import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesPartyAvatarButton from './ChroniclesPartyAvatarButton.jsx';
+import { chroniclesBlockNonPrimaryClick, chroniclesPreventNativeContextMenu } from '../chronicles/chroniclesPrimaryClick.js';
 import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesInn from './ChroniclesInn.jsx';
@@ -1884,7 +1885,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       data-party-hp-total={state.party.reduce((total, member) => total + Number(member.hp || 0), 0)}
       role="region"
       aria-label="Chronicles of Matthias"
-      onPointerDownCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
+      onContextMenuCapture={chroniclesPreventNativeContextMenu}
+      onPointerDownCapture={(event) => {
+        if (chroniclesBlockNonPrimaryClick(event)) return;
+        chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen);
+      }}
+      onMouseDownCapture={chroniclesBlockNonPrimaryClick}
+      onAuxClickCapture={chroniclesBlockNonPrimaryClick}
       onClickCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
       onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
     >
