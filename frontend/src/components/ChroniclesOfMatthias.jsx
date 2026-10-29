@@ -34,6 +34,7 @@ import { chroniclesPortraitLevelUpEvents } from '../chronicles/chroniclesProgres
 import ChroniclesPortraitLevelUp from './ChroniclesPortraitLevelUp.jsx';
 import './ChroniclesPortraitLevelUp.css';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
+import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
@@ -575,6 +576,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     }, 250);
     return () => clearTimeout(timer);
   }, [ready, state, automapVisitedByMap]);
+
+  useEffect(() => {
+    // Resize the full-screen mobile stage to what Android is actually showing;
+    // a CSS-only 100dvh can lag the visible height after landscape rotation.
+    return attachChroniclesVisualViewport(gameRootRef.current, window.visualViewport);
+  }, [ready]);
 
   useEffect(() => {
     const html = document.documentElement;

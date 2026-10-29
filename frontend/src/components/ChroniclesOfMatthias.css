@@ -943,6 +943,11 @@
   .chronicles {
     padding: 0;
     touch-action: none;
+    /* Android toolbars/rotation may leave 100dvh taller than the visible area.
+       Anchor the game (and its bottom-mounted D-pad) to visualViewport. */
+    top: var(--chronicles-visual-top, 0px);
+    height: var(--chronicles-visual-height, 100dvh);
+    min-height: 0;
   }
 
   /* Mobile owns the viewport. The dungeon never gives layout height away to
