@@ -30,8 +30,10 @@ try {
         await hero.click();
         assert.equal(await hero.getAttribute('aria-pressed'), 'true', 'First click selects');
         assert.equal(await opens.innerText(), '0', 'Single click must not open dossier');
-        await hero.dblclick();
-        await page.getByRole('dialog', { name: 'Ficha de rook' }).waitFor();
+        // Use a different target to avoid the browser counting the preceding
+        // single-click as part of a triple-click sequence.
+        await page.getByRole('button', { name: 'Seleccionar matthias' }).dblclick();
+        await page.getByRole('dialog', { name: 'Ficha de matthias' }).waitFor();
         assert.equal(await opens.innerText(), '1', 'Double click opens once');
       }
       await page.getByRole('button', { name: 'Cerrar ficha' }).click();
