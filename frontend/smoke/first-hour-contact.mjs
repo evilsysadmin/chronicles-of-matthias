@@ -212,9 +212,13 @@ try {
       assert.match(await swapSummary.innerText(), /Daño [+-]?\d+ · Acierto [+-]?\d+/,
         'Weapon changes must be readable without opening the comparison');
       const closedSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
+      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), false,
+        'Collapsed comparisons must hide all before/after rows');
       await swapSummary.click();
       assert.equal(await swapDetails.locator(':scope > div').count(), 2,
         'Opening comparison must expose both real before/after stat rows');
+      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), true,
+        'Opening the comparison must reveal its actual stat rows');
       const openSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
       assert.ok(openSwapHeight >= closedSwapHeight + 30,
         'A collapsed comparison must materially reduce vertical scroll: '
