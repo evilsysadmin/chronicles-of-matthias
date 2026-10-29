@@ -13,6 +13,7 @@ import './ChroniclesCharacterEquipmentDisclosure.css';
 import './ChroniclesCharacterInventoryClassic.css';
 import './ChroniclesCharacterFolioStone.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
+import ChroniclesInventoryItemIcon from './ChroniclesInventoryItemIcon.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
   chroniclesGoldBalance,
@@ -202,6 +203,25 @@ export default function ChroniclesCharacterSheet({
   // loadout must never look like an empty inventory just because the bag is empty.
   const wornGearItems = tacticsMode ? [] : chroniclesWornGear(state, member.id).filter((slot) => !slot.empty);
   const selectedWornItem = wornGearItems.find((slot) => slot.slot === selectedWornSlot) || null;
+  const visibleWornGear = tacticsMode ? [] : wornGearItems.filter((slot) =>
+    chroniclesFilterBackpack([{ ...slot.item, name: slot.name }], backpackFilter, backpackSearch).length > 0);
+  // One display ledger. Equipped identities stay out of bag stock/persistence.
+  const visibleLedger = [
+    ...visibleWornGear.map((slot) => ({ id: `worn:${slot.slot}`, slot })),
+    ...visibleBackpack.map((item) => ({ id: `bag:${item.id}`, item })),
+  ];
+  const selectedLedgerId = selectedWornItem ? `worn:${selectedWornItem.slot}`
+    : selectedItemId ? `bag:${selectedItemId}` : null;
+  const selectLedgerEntry = (id) => {
+    if (id?.startsWith('worn:')) {
+      setSelectedWornSlot(id.slice(5));
+      setSelectedBagItem(null);
+    } else if (id?.startsWith('bag:')) {
+      setSelectedBagItem({ memberId: member.id, itemId: id.slice(4) });
+      setSelectedWornSlot(null);
+    }
+    setInspectItem(false);
+  };
   // Only equipped, named pieces appear in the collapsed line. No fake slots.
   const wornOverview = CHRONICLES_EQUIPMENT_SLOTS
     .map((slot) => {
@@ -269,15 +289,12 @@ export default function ChroniclesCharacterSheet({
     // Share the same wraparound semantics with keyboard navigation. A preview
     // alone is not a selected item: Down starts at the first, Up at the last.
     const nextId = chroniclesBackpackMoveSelection(
-      visibleBackpack, selectedItemId, step < 0 ? 'ArrowUp' : 'ArrowDown'
+      visibleLedger, selectedLedgerId, step < 0 ? 'ArrowUp' : 'ArrowDown'
     );
     if (!nextId) return;
-    setSelectedBagItem({ memberId: member.id, itemId: nextId });
-    setSelectedWornSlot(null);
-    setInspectItem(false);
-
-    const index = visibleBackpack.findIndex((item) => item.id === nextId);
-    inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
+    selectLedgerEntry(nextId);
+    const index = visibleLedger.findIndex((entry) => entry.id === nextId);
+    inventoryListRef.current?.querySelectorAll('[data-ledger-id]')?.[index]?.focus();
   };
 
   // A purely visual continuation cue: the party dock is fixed while the
@@ -339,32 +356,7 @@ export default function ChroniclesCharacterSheet({
               <span className="chronicles-character-sheet__backpack-heading">
                 {tacticsMode ? 'Mochila de expedición' : `Objetos de ${member.name}`}
               </span>
-              {!tacticsMode && wornGearItems.length > 0 && (
-                <section className="chronicles-character-sheet__worn-ledger"
-                  aria-label={`Equipo puesto de ${member.name}`}>
-                  <span className="chronicles-character-sheet__ledger-label">Equipo puesto</span>
-                  <ul>
-                    {wornGearItems.map((slot) => (
-                      <li key={slot.slot} data-worn-slot={slot.slot}>
-                        <button type="button" className={selectedWornItem?.slot === slot.slot ? 'is-selected' : ''}
-                          aria-pressed={selectedWornItem?.slot === slot.slot}
-                          aria-label={`Seleccionar ${slot.name} equipado en ${slot.label}`}
-                          onClick={() => {
-                            setSelectedWornSlot(selectedWornItem?.slot === slot.slot ? null : slot.slot);
-                            setSelectedBagItem(null);
-                            setInspectItem(false);
-                          }}>
-                          <i aria-hidden="true">{slot.glyph}</i>
-                          <span>{slot.name}</span>
-                          <small>{slot.label} · Puesto</small>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-              {!tacticsMode && <span className="chronicles-character-sheet__ledger-label">Mochila</span>}
-              {!tacticsMode && inventory.length > 0 && showBackpackTools && (
+              {!tacticsMode && (inventory.length + wornGearItems.length > 1 || showBackpackTools) && (
                 <details className="chronicles-character-sheet__backpack-tools">
                   <summary>
                     Filtrar y buscar <small>{visibleBackpack.length}/{inventory.length}</small>
@@ -389,17 +381,43 @@ export default function ChroniclesCharacterSheet({
                       />
                     </label>
                     <small className="chronicles-character-sheet__backpack-count" aria-live="polite">
-                      {visibleBackpack.length} de {inventory.length} tipos de objeto
+                      {visibleLedger.length} de {inventory.length + wornGearItems.length} objetos
                     </small>
                   </div>
                 </details>
               )}
-              {inventory.length ? (
-                visibleBackpack.length ? (
+              {(inventory.length || wornGearItems.length) ? (
+                visibleLedger.length ? (
                   <div className="chronicles-character-sheet__inventory" ref={inventoryListRef}
-                    role="group" aria-label="Objetos de la mochila">
+                    role="group" aria-label={`Pertenencias de ${member.name}: equipadas y en mochila`}>
+                    {!tacticsMode && visibleWornGear.map((slot) => (
+                      <button type="button" key={`worn:${slot.slot}`} data-ledger-id={`worn:${slot.slot}`}
+                        data-worn-slot={slot.slot} title={`${slot.name} · ${slot.label} · Equipado`}
+                        className={`chronicles-character-sheet__worn-item${selectedWornItem?.slot === slot.slot ? ' is-selected' : ''}`}
+                        aria-pressed={selectedWornItem?.slot === slot.slot}
+                        aria-label={`Seleccionar ${slot.name}, equipado en ${slot.label}`}
+                        onClick={() => {
+                          if (selectedWornItem?.slot === slot.slot) setSelectedWornSlot(null);
+                          else selectLedgerEntry(`worn:${slot.slot}`);
+                        }}
+                        onKeyDown={(event) => {
+                          const next = chroniclesBackpackMoveSelection(visibleLedger, `worn:${slot.slot}`, event.key);
+                          if (!next) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          selectLedgerEntry(next);
+                          const index = visibleLedger.findIndex((entry) => entry.id === next);
+                          inventoryListRef.current?.querySelectorAll('[data-ledger-id]')?.[index]?.focus();
+                        }}>
+                        <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
+                          <ChroniclesInventoryItemIcon item={slot.item} />
+                        </i>
+                        <span>{slot.name}</span>
+                        <small className="chronicles-character-sheet__equipped-marker">Puesto · {slot.label}</small>
+                      </button>
+                    ))}
                     {visibleBackpack.map((item) => (
-                      <button type="button" key={item.id} data-inventory-item={item.id}
+                      <button type="button" key={item.id} data-ledger-id={`bag:${item.id}`} data-inventory-item={item.id}
                         title={!tacticsMode ? item.name : undefined}
                         className={selectedItemId === item.id ? 'is-selected' : ''}
                         aria-pressed={selectedItemId === item.id}
@@ -412,20 +430,17 @@ export default function ChroniclesCharacterSheet({
                         }}
                         onKeyDown={(event) => {
                           if (tacticsMode) return;
-                          const nextId = chroniclesBackpackMoveSelection(visibleBackpack, item.id, event.key);
+                          const nextId = chroniclesBackpackMoveSelection(visibleLedger, `bag:${item.id}`, event.key);
                           if (!nextId) return;
                           event.preventDefault();
                           event.stopPropagation();
-                          setSelectedBagItem({ memberId: member.id, itemId: nextId });
-                          setSelectedWornSlot(null);
-                          setInspectItem(false);
-                      
-                          const index = visibleBackpack.findIndex((entry) => entry.id === nextId);
-                          inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
+                          selectLedgerEntry(nextId);
+                          const index = visibleLedger.findIndex((entry) => entry.id === nextId);
+                          inventoryListRef.current?.querySelectorAll('[data-ledger-id]')?.[index]?.focus();
                         }}
                       >
                         {!tacticsMode && <i className="chronicles-character-sheet__inventory-glyph" aria-hidden="true">
-                          {{ weapon: '⚔', missile: '➶', armor: '▣', shield: '⬟', other: '◆' }[chroniclesBackpackCategory(item)]}
+                          <ChroniclesInventoryItemIcon item={item} />
                         </i>}
                         <span>{item.name}</span>
                         {item.quantity > 1 && <small>×{item.quantity}</small>}
@@ -434,7 +449,7 @@ export default function ChroniclesCharacterSheet({
                   </div>
                 ) : <small className="chronicles-character-sheet__backpack-empty">Ningún objeto coincide. Cambia el filtro o la búsqueda.</small>
               ) : (
-                <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
+                <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva pertenencias.'}</small>
               )}
               {selectedWornItem && (
                 <small className="chronicles-character-sheet__worn-hint" role="status">
@@ -449,10 +464,10 @@ export default function ChroniclesCharacterSheet({
               )}
               {!tacticsMode && (
                 <nav className="chronicles-character-sheet__classic-actions" aria-label="Acciones de inventario">
-                  <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(-1)}>
+                  <button type="button" disabled={!visibleLedger.length} onClick={() => browseBackpack(-1)}>
                     <span aria-hidden="true">↑</span> Arriba
                   </button>
-                  <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(1)}>
+                  <button type="button" disabled={!visibleLedger.length} onClick={() => browseBackpack(1)}>
                     <span aria-hidden="true">↓</span> Abajo
                   </button>
                   <button type="button"
