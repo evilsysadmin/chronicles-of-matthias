@@ -799,6 +799,26 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
     });
   }
+  // The guild's lateral stone buttresses break up its long, flat side walls.
+  // Their pointed caps rise above the eaves, unlike the merchant timberwork
+  // or the armorer's battlements. Entirely within existing solid town cells.
+  if (isMagic) {
+    const buttresses = new THREE.Group();
+    buttresses.name = 'magic-guild-side-buttresses';
+    buttresses.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      const x = side * (width / 2 + 0.22);
+      mesh(buttresses, new THREE.BoxGeometry(0.88, 0.84, 1.22), mats.stone,
+        'magic-buttress-foot', [x, 0.75, 0], !coarse);
+      mesh(buttresses, new THREE.BoxGeometry(0.64, 3.78, 0.88), mats.stone,
+        'magic-buttress-shaft', [x, 2.80, 0], !coarse);
+      mesh(buttresses, new THREE.BoxGeometry(0.98, 0.22, 1.18), mats.stone,
+        'magic-buttress-coping', [x, 4.81, 0], !coarse);
+      mesh(buttresses, new THREE.ConeGeometry(0.65, 1.04, 4), roof,
+        'magic-buttress-pointed-cap', [x, 5.43, 0], !coarse);
+    }
+    root.add(buttresses);
+  }
   // Each trade keeps its own side elevation: violet leaded glass for
   // the guild, iron-barred embrasures for the armory, soot-darkened
   // ventilation for the forge, and warm glazing for other merchants.
