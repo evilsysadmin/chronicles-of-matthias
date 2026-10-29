@@ -271,3 +271,187 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__classic-actions button { transition: none; }
 }
+
+/* MM3 equipment palette pass: cool stone surrounds a compact parchment ledger.
+   Scoped to the open equipment chapter, leaving record, spells, training and
+   Tactics untouched. Preserve the existing touch layout and actual controls. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"]) {
+  --mm3-equipment-stone: #303b3e;
+  --mm3-equipment-stone-deep: #242d30;
+  --mm3-equipment-paper: #d9ceb5;
+  --mm3-equipment-paper-light: #eee5d1;
+  --mm3-equipment-ink: #26312f;
+  --mm3-equipment-brass: #aa9770;
+  background: var(--mm3-equipment-stone-deep);
+  border-color: #8c887a;
+  color: var(--mm3-equipment-paper-light);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+:is(.chronicles-character-sheet__scroll, .chronicles-character-sheet__folio-layout,
+    .chronicles-character-sheet__folio-content, [data-chronicles-chapter="equipment"]) {
+  background: var(--mm3-equipment-stone);
+  color: var(--mm3-equipment-paper-light);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__scroll {
+  scrollbar-color: #8d8d7b var(--mm3-equipment-stone-deep);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__head {
+  background: #465051;
+  border-color: #797d71;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__head > button {
+  background: var(--mm3-equipment-paper);
+  color: var(--mm3-equipment-ink);
+  border-color: #f5ebd5 #676d64 #676d64 #f5ebd5;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__tabs {
+  background: #313b3d;
+  border-color: #76796a;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__tabs button[aria-pressed='false'] {
+  background: #cfc3aa;
+  color: var(--mm3-equipment-ink);
+  border-color: #f1e6cc #6f756d #6f756d #f1e6cc;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__tabs button[aria-pressed='true'] {
+  background: #435e55;
+  color: #fff4d8;
+  border-color: #253c37 #cbb88a #cbb88a #253c37;
+  box-shadow: inset 3px 0 #d1b87b;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] {
+  background: var(--mm3-equipment-stone) !important;
+  box-shadow: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head {
+  border-bottom-color: var(--mm3-equipment-brass);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head :is(span, small) {
+  color: var(--mm3-equipment-paper-light);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__loadout article {
+  background: var(--mm3-equipment-paper);
+  color: var(--mm3-equipment-ink);
+  border-color: #f6ead1 #778078 #778078 #f6ead1;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__backpack > small {
+  display: block;
+  padding: 13px 15px;
+  background: var(--mm3-equipment-paper);
+  border: 1px solid #a99c82;
+  color: var(--mm3-equipment-ink);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+  background: #252f31;
+  box-shadow: inset 0 0 0 1px #6e7974;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+  background: var(--mm3-equipment-paper);
+  color: var(--mm3-equipment-ink);
+  border-color: #f6ead1 #8e9489 #8e9489 #f6ead1;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > .chronicles-character-sheet__inventory-glyph {
+  background: #b6b29e;
+  color: #30423c;
+  border-color: #7e8777;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > small {
+  color: #47594d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button:is(:hover, .is-selected) {
+  background: #486358;
+  color: #fff5df;
+  border-color: #ddc88b;
+  box-shadow: inset 4px 0 #dfc887;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button:is(:hover, .is-selected) > small {
+  color: #f5dfb6;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] :is(.chronicles-character-sheet__backpack-tools,
+    .chronicles-character-sheet__item-details, .chronicles-character-sheet__classic-recipients) {
+  background: var(--mm3-equipment-paper-light);
+  color: var(--mm3-equipment-ink);
+  border-color: #988e78;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > strong {
+  color: var(--mm3-equipment-ink);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary {
+  background: var(--mm3-equipment-paper);
+  color: var(--mm3-equipment-ink);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary > :is(span, small) {
+  color: var(--mm3-equipment-ink);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary::before {
+  color: #476254;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+  background: transparent;
+  border-color: #7e8276;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+  background: #4a5655;
+  color: #fbefd7;
+  border-color: #a6aa97 #222e30 #222e30 #a6aa97;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button:is(:hover:not(:disabled), [aria-expanded='true']) {
+  background: #466557;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__party-dock {
+  background: var(--mm3-equipment-stone-deep);
+  border-color: #868a7e;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__party-dock button[aria-pressed='true'] {
+  border-color: #dec98a;
+  background: #3d5148;
+}
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="equipment"] {
+    min-height: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+    max-width: 760px;
+    margin: 8px auto 6px;
+    padding: 6px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+    min-height: 48px; /* never reduce to tiny pixel-art-only targets */
+    padding: 3px 2px;
+    font-size: .81rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__tabs button {
+    min-height: 56px;
+  }
+}
