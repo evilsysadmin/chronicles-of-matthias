@@ -6,6 +6,7 @@ import { chroniclesMapById, chroniclesMapContentPosition, chroniclesMapIds } fro
 const DUNGEON_IDS = [
   'crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash', 'swordhaven-sewers',
   'ash-vault', 'blind-king-archive', 'iron-foundry', 'echo-cistern', 'chain-basilica',
+  'hollow-bell-tower', 'black-glass-chapel',
   'salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria',
   'tumulos-primer-pacto', 'cienaga-negra', 'cripta-del-obispo', 'faro-roto',
   'guarida-del-dragon', 'torre-de-los-nombres',
