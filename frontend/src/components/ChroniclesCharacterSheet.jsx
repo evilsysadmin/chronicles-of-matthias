@@ -439,8 +439,8 @@ export default function ChroniclesCharacterSheet({
                   </div>
                 </div>
               )}
-              {!tacticsMode && inspectItem && selectedInventoryItem && (
-                <aside className="chronicles-character-sheet__item-details" aria-live="polite">
+              {!tacticsMode && selectedInventoryItem && (
+                <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}>
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
                   <strong>{selectedInventoryItem.name}</strong>
                   <div className="chronicles-character-sheet__item-essentials">
