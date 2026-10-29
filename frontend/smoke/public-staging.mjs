@@ -331,7 +331,36 @@ try {
         assert.match(await heroFolio.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
           /Equipo/, 'Returning by touch must preserve the Equipment tab');
       }
-      await heroFolio.getByRole('button', { name: 'Cerrar ficha' }).click();
+      // A failed close must reveal whether the button disappeared, lost its
+      // accessible name or became hidden after hero/tab navigation. Keep the
+      // real role-based click: never silently bypass an accessibility defect.
+      try {
+        await heroFolio.getByRole('button', { name: 'Cerrar ficha' }).click({ timeout: 5_000 });
+      } catch (error) {
+        const probe = await page.evaluate(() => {
+          const dialog = document.querySelector('[role="dialog"][data-chronicles-folio="v2"]');
+          const close = dialog?.querySelector('.chronicles-character-sheet__head > button');
+          const style = close ? getComputedStyle(close) : null;
+          const rect = close?.getBoundingClientRect();
+          return {
+            dialogPresent: Boolean(dialog),
+            dialogAriaHidden: dialog?.getAttribute('aria-hidden') ?? null,
+            closePresent: Boolean(close),
+            closeLabel: close?.getAttribute('aria-label') ?? null,
+            closeDisplay: style?.display ?? null,
+            closeVisibility: style?.visibility ?? null,
+            closeRect: rect ? { width: rect.width, height: rect.height } : null,
+            dialogCount: document.querySelectorAll('[role="dialog"]').length,
+            activeTab: dialog?.querySelector('.chronicles-character-sheet__tabs .is-active')?.textContent?.trim() ?? null,
+          };
+        });
+        console.error('CHRONICLES_PUBLIC_HERO_CLOSE_PROBE', JSON.stringify({
+          ...probe,
+          accessibleCloseCount: await heroFolio.getByRole('button', { name: 'Cerrar ficha' }).count(),
+          hiddenInclusiveCloseCount: await heroFolio.getByRole('button', { name: 'Cerrar ficha', includeHidden: true }).count(),
+        }));
+        throw error;
+      }
       await heroFolio.waitFor({ state: 'hidden', timeout: 8_000 });
 
       async function verifyFolio(dialog, label) {
