@@ -455,3 +455,92 @@
     min-height: 56px;
   }
 }
+
+/* A worn item is still an item. Show only genuine equipped pieces in the
+   same MM3 reading flow as the bag, without mutating equip/unequip behavior. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__ledger-label {
+  display: block;
+  margin: 6px 1px 3px;
+  color: #e9e0cb;
+  font: 400 .95rem/1.2 var(--mm3-pixel-font, monospace);
+  letter-spacing: .04em;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger {
+  margin: 0;
+  border: 1px solid #838779;
+  background: #273337;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger > .chronicles-character-sheet__ledger-label {
+  margin: 0;
+  padding: 6px 9px;
+  background: #465450;
+  border-bottom: 1px solid #8f9486;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger ul {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid #a7aa9c;
+  background: #ded5c2;
+  color: #26312f;
+  font: 400 1rem/1.15 var(--mm3-pixel-font, monospace);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > i {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid #838d80;
+  background: #b5b8a8;
+  color: #354d45;
+  font: normal 1.15rem/1 sans-serif;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > small {
+  color: #4e6155;
+  font: inherit;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li {
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 1px 7px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > i {
+    grid-row: 1 / span 2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > small {
+    grid-column: 2;
+    font-size: .74rem;
+  }
+}
