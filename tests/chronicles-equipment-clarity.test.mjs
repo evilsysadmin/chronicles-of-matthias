@@ -20,7 +20,7 @@ test('equipment unequip controls are concise but identify the affected item for 
 
 test('equipment panel is one full-width reading flow with reserved party dock', () => {
   assert.match(skin, /\[data-chronicles-equipment-folio\] \.chronicles-character-sheet__loadout\s*\{\s*grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(skin, /\.chronicles-character-sheet__party-dock\s*\{[^}]*min-height: 78px/s);
+  assert.match(skin, /\.chronicles-character-sheet__party-dock\s*\{[^}]*min-height: 64px/s);
   assert.match(skin, /\.chronicles-character-sheet__head\s*\{\s*padding-left: 28px/s);
   assert.match(skin, /@media \(max-width: 850px\), \(max-height: 580px\)/);
 });
