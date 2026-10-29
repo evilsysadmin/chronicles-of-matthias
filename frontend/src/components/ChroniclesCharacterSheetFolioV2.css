@@ -666,6 +666,12 @@
   outline: 2px solid #e2bc78;
   outline-offset: 2px;
 }
+/* Higher-specificity author styles must not defeat native closed-details
+   hiding when child rows themselves use display: grid. */
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview:not([open]) > div,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview:not([open]) > small {
+  display: none;
+}
 .chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto 45px;
