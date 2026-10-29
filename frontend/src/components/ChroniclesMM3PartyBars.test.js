@@ -5,18 +5,19 @@ import { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
 import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
 
 describe('MM3 party PV/PH display', () => {
-  it('shows one exact value INSIDE each real PV/PH bar, without a second readout', () => {
+  it('shows only numeric values inside each real resource bar, without redundant labels', () => {
     const html = renderToStaticMarkup(React.createElement(ChroniclesPartyVitals, {
       hp: 8, maxHp: 11, sp: 4, maxSp: 4, band: chroniclesHealthBand(8, 11),
     }));
     expect(html).toContain('data-band="hurt"');
     expect(html).toContain('class="is-hp"');
     expect(html).toContain('class="is-sp"');
-    expect(html).toContain('PV 8/11');
-    expect(html).toContain('PH 4/4');
-    expect(html.match(/PV 8\/11/g)).toHaveLength(1);
-    expect(html.match(/PH 4\/4/g)).toHaveLength(1);
+    expect(html).toContain('>8/11</span>');
+    expect(html).toContain('>4/4</span>');
+    expect(html.match(/>8\/11<\/span>/g)).toHaveLength(1);
+    expect(html.match(/>4\/4<\/span>/g)).toHaveLength(1);
     expect(html).toContain('data-member-sp="4"');
+    expect(html).not.toMatch(/>P[HV] /);
   });
 
   it('keeps the PV bar when the hero has no magical resource', () => {
@@ -24,9 +25,9 @@ describe('MM3 party PV/PH display', () => {
       hp: 10, maxHp: 10, maxSp: 0, band: chroniclesHealthBand(10, 10),
     }));
     expect(html).toContain('data-band="healthy"');
-    expect(html).toContain('PV 10/10');
+    expect(html).toContain('>10/10</span>');
     expect(html).not.toContain('is-sp');
-    expect(html).not.toContain('PH ');
+    expect(html).not.toContain('class="is-sp"');
   });
 
   it('passes the critically wounded state to the same responsive vitals element', () => {
@@ -34,8 +35,8 @@ describe('MM3 party PV/PH display', () => {
       hp: 0, maxHp: 11, sp: 2, maxSp: 5, band: chroniclesHealthBand(0, 11),
     }));
     expect(html).toContain('data-band="critical"');
-    expect(html).toContain('PV 0/11');
-    expect(html).toContain('PH 2/5');
+    expect(html).toContain('>0/11</span>');
+    expect(html).toContain('>2/5</span>');
     expect(html).toContain('aria-hidden="true"');
   });
 });
