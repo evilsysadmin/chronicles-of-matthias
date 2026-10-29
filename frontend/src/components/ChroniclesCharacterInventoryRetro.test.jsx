@@ -46,6 +46,18 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('data-slot="missile"');
   });
 
+  it('keeps the equipment chapter in a cool stone and parchment palette with compact desktop actions', () => {
+    expect(classic).toContain(':has([data-chronicles-chapter="equipment"])');
+    expect(classic).toContain('--mm3-equipment-stone: #303b3e;');
+    expect(classic).toContain('--mm3-equipment-paper: #d9ceb5;');
+    expect(classic).toContain('--mm3-equipment-ink: #26312f;');
+    expect(classic).toContain('background: var(--mm3-equipment-stone) !important;');
+    expect(classic).toContain('max-width: 760px;');
+    expect(classic).toMatch(/__classic-actions > button\\s*\\{\\s*min-height: 48px;/);
+    expect(classic).toContain('border-color: #dec98a;');
+    expect(html('tactics')).not.toContain('data-chronicles-equipment-folio');
+  });
+
   it('changes only desktop visual treatment; mobile and Tactics do not inherit extra behavior', () => {
     expect(html('tactics')).not.toContain('chronicles-character-sheet--mm3');
     expect(html('tactics')).not.toContain('Acciones de inventario');
