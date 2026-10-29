@@ -52,7 +52,7 @@ describe('Chronicles character sheet combat summary', () => {
       equipment: { matthias: { weapon: 'brass-sword', shield: 'brass-shield' } },
     });
     expect(html).toContain('class="chronicles-character-sheet__swap-preview"');
-    const summary = html.split('<summary>')[2]?.split('</summary>')[0] || '';
+    const summary = html.match(/class="chronicles-character-sheet__swap-preview"[^>]*>\s*<summary>([\s\S]*?)<\/summary>/)?.[1] || '';
     expect(summary).toContain('Se guardará Escudo de latón en la mochila');
     expect(summary).toMatch(/CA -?\d+/);
   });
