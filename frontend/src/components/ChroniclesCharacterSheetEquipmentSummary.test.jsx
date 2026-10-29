@@ -64,7 +64,8 @@ describe('Chronicles character sheet combat summary', () => {
     expect(hildegard).toContain('Mochila de Hildegard');
     expect(hildegard).toContain('data-inventory-item="brass-sword"');
     expect(hildegard).not.toContain('data-inventory-item="brass-shield"');
-    expect(hildegard).toContain('Selecciona un objeto para poder entregarlo desde sus detalles.');
+    expect(hildegard).toContain('Vista previa · selecciónalo para entregarlo');
+    expect(hildegard).not.toContain('chronicles-character-sheet__inventory-hint');
     expect(hildegard).toContain('Seleccionar personaje de la compañía');
     expect(hildegard).not.toContain('Pasar objeto');
     expect(hildegard).not.toContain('Compañero que recibirá el objeto');
