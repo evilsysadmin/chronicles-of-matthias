@@ -18,6 +18,35 @@ const demo = {
 
 describe('Chronicles file-authored exterior renderer', () => {
 
+  it.each([true, false])('gives the guardhouse its own cold ashlar walls and gable at coarse=%s', (coarsePointer) => {
+    const grid = swordhavenFirstBook.grid;
+    const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
+      .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } }));
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+        width: grid[0].length, height: grid.length, center: { x: 9, y: 7 },
+        grid, content, landscape: swordhavenFirstBook.landscape,
+      },
+    });
+    const buildings = scene.getObjectByName('chronicles-campaign-town').children;
+    const watch = buildings.find(building => building.getObjectByName('watchhouse-front-iron-bars'));
+    const forge = buildings.find(building => building.getObjectByName('forge-window-tool-displays'));
+    expect(watch).toBeTruthy();
+    const walls = watch.getObjectByName('timber-and-stone-walls');
+    const gable = watch.getObjectByName('roof-gable-1');
+    expect(walls.material.color.getHex()).toBe(0x93a3aa);
+    expect(walls.material.map?.name).toBe('chronicles-town-masonry');
+    expect(walls.material.normalMap?.name).toBe('chronicles-town-normal-masonry');
+    expect(gable.material).toBe(walls.material);
+    expect(forge.getObjectByName('timber-and-stone-walls').material.color.getHex())
+      .not.toBe(walls.material.color.getHex());
+    expect(watch.getObjectByName('shop-door')).toBeTruthy();
+    expect(watch.getObjectByName('watchhouse-front-iron-bars')?.count).toBe(6);
+  });
+
   it.each([true, false])('keeps botanical facade exclusive to the botica at coarse=%s', (coarsePointer) => {
     const grid = swordhavenFirstBook.grid;
     const scene = new THREE.Scene();
