@@ -1078,7 +1078,8 @@
     align-self: center;
     width: 100%;
     display: grid;
-    grid-auto-rows: 19px;
+    /* Keep the first PV row in the same place whether PH exists or not. */
+    grid-template-rows: repeat(2, 19px);
     gap: 5px;
     padding: 0 2px;
   }
