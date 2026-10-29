@@ -694,7 +694,7 @@ try {
       assert.match(await itemState.innerText(), /Seleccionado · se puede entregar/,
         'Selection status stays next to the item and remains screen-reader announced');
       assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').getAttribute('aria-live'), 'polite');
-      assert.equal(await dock.getByRole('button', { name: /Ver ficha de Hildegard/ }).count(), 1);
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
       // 1 is the source's own slot: it must not transfer or navigate.
       await page.keyboard.press('1');
       assert.equal(await heading.innerText(), 'Matthias');
