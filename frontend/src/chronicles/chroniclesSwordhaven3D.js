@@ -781,7 +781,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mesh(root, new THREE.BoxGeometry(1.62, 0.15, 0.43), mats.stone,
         'stone-window-sill', [x, 2.04, front + 0.11]);
       if (!isWatch) mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
-        'flower-window-box', [x, 1.83, front + 0.34]);
+        isStore ? 'store-stock-display-trough' : 'flower-window-box',
+        [x, 1.83, front + 0.34]);
     }
     if (isWatch) {
       // One instanced grille for both windows: six iron bars, no extra
@@ -825,11 +826,50 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       diamondLead.instanceMatrix.needsUpdate = true;
       root.add(diamondLead);
 
-      // Real shaped leaves, petals and hanging stems, four instanced draw
-      // calls per merchant storefront; no decorative plants on the barracks.
-      dressSwordhavenWindowBoxes(root, {
-        windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
-      });
+      if (isStore) {
+        // The warehouse displays braced oak supply crates rather than the
+        // inn's flowers. Two instanced batches on the existing raised sills;
+        // no new textures, lights, interaction targets or walk-grid changes.
+        const crates = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.70, 0.50, 0.50),
+          material(0xb58c58, { roughness: 0.98 }), 4);
+        crates.name = 'store-window-provisions-crates';
+        const braces = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.075, 0.82, 0.08),
+          mats.timber, 8);
+        braces.name = 'store-window-crate-crossbraces';
+        const parcel = new THREE.Object3D();
+        let crateIndex = 0;
+        let braceIndex = 0;
+        for (const x of [-width * 0.33, width * 0.33]) {
+          for (const offset of [-0.42, 0.42]) {
+            const crateX = x + offset;
+            parcel.position.set(crateX, 2.26, facadeZ + 0.76);
+            parcel.rotation.set(0, 0, 0);
+            parcel.scale.set(1, 1, 1);
+            parcel.updateMatrix();
+            crates.setMatrixAt(crateIndex++, parcel.matrix);
+            for (const angle of [-0.92, 0.92]) {
+              parcel.position.set(crateX, 2.26, facadeZ + 1.055);
+              parcel.rotation.z = angle;
+              parcel.updateMatrix();
+              braces.setMatrixAt(braceIndex++, parcel.matrix);
+            }
+          }
+        }
+        for (const batch of [crates, braces]) {
+          batch.userData.chroniclesDecorativeOnly = true;
+          batch.castShadow = !coarse;
+          batch.instanceMatrix.needsUpdate = true;
+          root.add(batch);
+        }
+      } else {
+        // Real shaped leaves, petals and hanging stems remain on the inn and
+        // other domestic facades; never add them to the barracks or warehouse.
+        dressSwordhavenWindowBoxes(root, {
+          windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
+        });
+      }
     }
   }
   // The guild's lateral stone buttresses break up its long, flat side walls.
