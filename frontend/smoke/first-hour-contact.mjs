@@ -184,17 +184,11 @@ try {
           'A single item should not reserve the old 180px storage well: ' + JSON.stringify(inventoryGeometry));
       }
 
-      // Numeric input receives digits while the loot is still in the backpack.
-      // Equipping its only item correctly removes the search controls afterward.
-      // Native disclosure keeps search available without dominating the sheet.
-      await sheet.locator('.chronicles-character-sheet__backpack-tools > summary').click();
-      const backpackSearch = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
-      await backpackSearch.fill('');
-      await backpackSearch.press('1');
-      assert.equal(await backpackSearch.inputValue(), '1');
-      assert.equal(await page.getByRole('dialog', { name: 'Matthias' }).count(), 1,
-        'Typing 1 inside backpack search must not switch hero');
-      await backpackSearch.fill('');
+      // A one-type bag does not need a filter or search disclosure. Real
+      // search keyboard isolation remains covered with multiple items in
+      // character-sheet-desktop, where filtering is useful.
+      assert.equal(await sheet.locator('.chronicles-character-sheet__backpack-tools').count(), 0,
+        'One-item bags must not waste another row on useless filter controls');
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The compact summary must reflect the equip immediately without
