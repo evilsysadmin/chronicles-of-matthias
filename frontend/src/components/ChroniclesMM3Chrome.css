@@ -18,6 +18,8 @@
 :root {
   --mm3-sapphire: url('../assets/chronicles/ui/mm3-sapphire.png');
   --mm3-pixel-font: 'Chronicles Pixel', 'Trebuchet MS', sans-serif;
+  /* Crisp text for the six-card party HUD; bitmap lettering remains elsewhere. */
+  --mm3-hud-font: system-ui, -apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif;
   --mm3-stone: url('../assets/chronicles/ui/mm3-stone.png');
   --mm3-sand: url('../assets/chronicles/ui/mm3-sandstone.png');
   --mm3-frame: url('../assets/chronicles/ui/mm3-frame.png');
@@ -1040,10 +1042,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 400 clamp(.95rem, 1.1vw, 1.4rem)/1 var(--mm3-pixel-font);
+    font: 700 clamp(.82rem, .85vw, 1.05rem)/1.25 var(--mm3-hud-font);
+    letter-spacing: .005em;
     color: #0c0c0e;
-    /* VT323 has one weight: a 1px echo thickens the strokes. */
-    text-shadow: 1px 0 0 currentColor, 1px 1px 0 rgba(255, 255, 255, .3);
+    text-shadow: none;
   }
   .chronicles .chronicles-party-member > span:nth-child(2) small,
   .chronicles .chronicles-party-hireling__label small {
@@ -1051,10 +1053,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 400 clamp(.85rem, .8vw, 1rem)/1 var(--mm3-pixel-font);
-    letter-spacing: .02em;
+    font: 500 clamp(.75rem, .72vw, .9rem)/1.25 var(--mm3-hud-font);
+    letter-spacing: 0;
     color: #141418;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, .3);
+    text-shadow: none;
   }
   .chronicles .chronicles-party-member > b {
     grid-area: stats;
@@ -1063,9 +1065,10 @@
     align-items: flex-start;
     gap: 1px;
     padding: 0 2px;
-    font: 400 clamp(1rem, 1vw, 1.25rem)/1.05 var(--mm3-pixel-font);
+    font: 700 clamp(.85rem, .89vw, 1.1rem)/1.25 var(--mm3-hud-font);
+    font-variant-numeric: tabular-nums;
     color: #0b3a0b;
-    text-shadow: 1px 0 0 currentColor, 1px 1px 0 rgba(255, 255, 255, .3);
+    text-shadow: none;
   }
   .chronicles .chronicles-party-member > b::before {
     content: 'PV ';
@@ -1085,7 +1088,7 @@
      background. All four hero slates inherit the identical dark stone. */
   .chronicles .chronicles-party-member > span:nth-child(2) strong {
     color: #f4f1e9;
-    text-shadow: 1px 0 0 currentColor, 1px 1px 0 rgba(0, 0, 0, .75);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .85);
   }
   .chronicles .chronicles-party-member > span:nth-child(2) small {
     color: #dddde5;
@@ -1093,7 +1096,7 @@
   }
   .chronicles .chronicles-party-member > b {
     color: #b8edb3;
-    text-shadow: 1px 0 0 currentColor, 1px 1px 0 rgba(0, 0, 0, .7);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .85);
   }
   .chronicles .chronicles-party-member > b .chronicles-party-sp { color: #c6dfff; }
   .chronicles .chronicles-party-member.is-selected {
@@ -1127,7 +1130,7 @@
     min-width: 0;
     padding: 2px 2px 0;
   }
-  .chronicles .chronicles-party-hireling__label strong { color: #1d1d22; text-shadow: 1px 0 0 currentColor, 1px 1px 0 rgba(255, 255, 255, .3); }
+  .chronicles .chronicles-party-hireling__label strong { color: #1d1d22; text-shadow: none; }
   .chronicles .chronicles-party-hireling__label small { color: #1d1d22; }
 
   /* The chronicle speaks in a sandstone band along the bottom of the view. */

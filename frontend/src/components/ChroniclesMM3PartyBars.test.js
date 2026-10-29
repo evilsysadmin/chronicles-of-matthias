@@ -25,6 +25,20 @@ describe('MM3 party PV bar alignment', () => {
     expect(portraitStrip).not.toMatch(/FRENTE|RETAGUARDIA|member\.row/);
   });
 
+  it('renders the wide party strip with crisp names, levels, and tabular HP/SP numerals', () => {
+    expect(chrome).toContain('--mm3-hud-font: system-ui');
+    const names = desktop.match(/\.chronicles \.chronicles-party-member > span:nth-child\(2\) strong,\s*\.chronicles \.chronicles-party-hireling__label strong\s*\{([^}]+)\}/)?.[1] || '';
+    const levels = desktop.match(/\.chronicles \.chronicles-party-member > span:nth-child\(2\) small,\s*\.chronicles \.chronicles-party-hireling__label small\s*\{([^}]+)\}/)?.[1] || '';
+    const stats = desktop.match(/\.chronicles \.chronicles-party-member > b\s*\{([^}]+)\}/)?.[1] || '';
+    expect(names).toContain('font: 700');
+    expect(names).toContain('var(--mm3-hud-font)');
+    expect(levels).toContain('var(--mm3-hud-font)');
+    expect(stats).toContain('var(--mm3-hud-font)');
+    expect(stats).toContain('font-variant-numeric: tabular-nums;');
+    expect(desktop).not.toContain('VT323 has one weight');
+    expect(chrome).toContain('--mm3-pixel-font:');
+  });
+
   it('still renders PH only for actual spellcasters, not an invented resource bar', () => {
     expect(party).toContain('<i className="is-hp"');
     expect(party).toMatch(/chroniclesMemberMaxSp\(state, member\) > 0 && \(\s*<i className="is-sp"/);
