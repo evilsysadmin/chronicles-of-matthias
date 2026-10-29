@@ -55,6 +55,16 @@ export function chroniclesActiveQuest(state) {
   return chroniclesQuestEntries(state, 'active')[0] || null;
 }
 
+// Numeric gates must never treat missing HP (null/undefined) or malformed
+// legacy values as zero: that would unlock a dungeon exit before its guardian
+// is defeated. Preserve finite numeric strings from older saved campaigns.
+function finiteRequirementNumber(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 export function chroniclesRequirementMet(state, requirement) {
   if (!requirement || typeof requirement !== 'object') return true;
   if (requirement.itemId) {
@@ -68,8 +78,16 @@ export function chroniclesRequirementMet(state, requirement) {
   }
   const value = state?.[requirement.key];
   if (Object.prototype.hasOwnProperty.call(requirement, 'equals')) return value === requirement.equals;
-  if (Object.prototype.hasOwnProperty.call(requirement, 'lte')) return Number(value) <= Number(requirement.lte);
-  if (Object.prototype.hasOwnProperty.call(requirement, 'gte')) return Number(value) >= Number(requirement.gte);
+  if (Object.prototype.hasOwnProperty.call(requirement, 'lte')) {
+    const actual = finiteRequirementNumber(value);
+    const limit = finiteRequirementNumber(requirement.lte);
+    return actual !== null && limit !== null && actual <= limit;
+  }
+  if (Object.prototype.hasOwnProperty.call(requirement, 'gte')) {
+    const actual = finiteRequirementNumber(value);
+    const limit = finiteRequirementNumber(requirement.gte);
+    return actual !== null && limit !== null && actual >= limit;
+  }
   if (requirement.truthy === true) return Boolean(value);
   if (requirement.falsy === true) return !value;
   return true;
