@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById, chroniclesMapContentPosition, chroniclesMapIds } from './chroniclesMapCatalog.js';
 
+// All authored and Terra expedition dungeons, including the multi-exit temple
+// floors. Outdoor regions have separate connectivity/travel contracts.
+const DUNGEON_IDS = [
+  'crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash', 'swordhaven-sewers',
+  'ash-vault', 'blind-king-archive', 'iron-foundry', 'echo-cistern', 'chain-basilica',
+  'hollow-bell-tower', 'black-glass-chapel',
+  'salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria',
+  'tumulos-primer-pacto', 'cienaga-negra', 'cripta-del-obispo', 'faro-roto',
+  'guarida-del-dragon', 'torre-de-los-nombres',
+  'templo-corona-atrio', 'templo-corona-cripta', 'templo-corona-trono',
+];
+
 // Stepping on an exit leaves the map. If the only way between two parts of a
 // map crosses an exit, the player is thrown out every time they try to
 // reach the far side. Content must all lie in one region that never needs an
@@ -45,13 +57,19 @@ describe('Chronicles map connectivity', () => {
     const used = new Set(content.map((entry) => region.get(`${entry.position.x},${entry.position.y}`)));
     expect([...used], content.map((entry) => `${entry.id}→${region.get(`${entry.position.x},${entry.position.y}`)}`).join(' ')).toHaveLength(Math.min(1, used.size));
   });
-  it.each(['crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash', 'swordhaven-sewers'])(
-    '%s keeps every dungeon encounter, pickup and exit walkable from its spawn',
+  it.each(DUNGEON_IDS)(
+    '%s keeps all dungeon content reachable without crossing an exit',
     (mapId) => {
       const map = chroniclesMapById(mapId);
       const start = map.partyStart;
       expect(map.grid[start.y]?.[start.x], `${mapId} spawn must exist`).toBeDefined();
       expect(map.grid[start.y][start.x], `${mapId} spawn must be walkable`).not.toBe('#');
+      // Exits trigger a map transition on entry: they are destinations,
+      // never corridors the party can cross to reach content behind them.
+      const exits = new Set((map.exits || [])
+        .map((entry) => chroniclesMapContentPosition(map, entry))
+        .filter(Boolean)
+        .map(({ x, y }) => `${x},${y}`));
       const reachable = new Set([`${start.x},${start.y}`]);
       const queue = [[start.x, start.y]];
       for (const [x, y] of queue) {
@@ -61,7 +79,7 @@ describe('Chronicles map connectivity', () => {
           const key = `${nx},${ny}`;
           if (map.grid[ny]?.[nx] === undefined || map.grid[ny][nx] === '#' || reachable.has(key)) continue;
           reachable.add(key);
-          queue.push([nx, ny]);
+          if (!exits.has(key)) queue.push([nx, ny]);
         }
       }
       // The general connectivity check must not silently ignore content
@@ -70,8 +88,11 @@ describe('Chronicles map connectivity', () => {
         for (const entry of map[group] || []) {
           const position = chroniclesMapContentPosition(map, entry);
           expect(position, `${mapId}/${group}/${entry.id} needs a real tile`).toBeTruthy();
-          expect(reachable.has(`${position.x},${position.y}`),
+          const key = `${position.x},${position.y}`;
+          expect(reachable.has(key),
             `${mapId}/${group}/${entry.id} must be reachable from spawn`).toBe(true);
+          // A gate guardian may intentionally occupy an exit tile; reaching
+          // that tile is valid, but pathfinding must never continue beyond it.
         }
       }
     },
