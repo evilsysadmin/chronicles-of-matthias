@@ -248,13 +248,17 @@ export default function ChroniclesCharacterSheet({
 
   // Selection never equips or transfers: the player explicitly chooses a command.
   const browseBackpack = (step) => {
-    if (!visibleBackpack.length) return;
-    const index = Math.max(0, visibleBackpack.findIndex((item) => item.id === selectedInventoryItem?.id));
-    const next = Math.max(0, Math.min(visibleBackpack.length - 1, index + step));
-    setSelectedBagItem({ memberId: member.id, itemId: visibleBackpack[next].id });
+    // Share the same wraparound semantics with keyboard navigation. A preview
+    // alone is not a selected item: Down starts at the first, Up at the last.
+    const nextId = chroniclesBackpackMoveSelection(
+      visibleBackpack, selectedItemId, step < 0 ? 'ArrowUp' : 'ArrowDown'
+    );
+    if (!nextId) return;
+    setSelectedBagItem({ memberId: member.id, itemId: nextId });
     setInspectItem(false);
     setShowRecipients(false);
-    inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[next]?.focus();
+    const index = visibleBackpack.findIndex((item) => item.id === nextId);
+    inventoryListRef.current?.querySelectorAll('[data-inventory-item]')?.[index]?.focus();
   };
 
   // A purely visual continuation cue: the party dock is fixed while the
