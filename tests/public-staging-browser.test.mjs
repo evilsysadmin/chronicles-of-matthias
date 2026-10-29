@@ -82,3 +82,11 @@ test('duplicate guides distinguish React-owned and orphan DOM nodes without logg
   assert.ok(!source.includes('JSON.stringify(fiber)'),
     'never serialize component props, local state or tokens');
 });
+
+test('public folio smoke opens a portrait with desktop double-click or two touch taps', () => {
+  // The real UI intentionally reserves a single click/tap for selecting
+  // the hero; treating it as a dossier shortcut blocks staging publication.
+  assert.match(source, /if \(viewport\.width === 390\) \{\s*await partyPortraits\.first\(\)\.tap\(\);\s*await partyPortraits\.first\(\)\.tap\(\);\s*\} else \{\s*await partyPortraits\.first\(\)\.dblclick\(\);/);
+  assert.ok(!source.includes('await partyPortraits.first().click();'),
+    'single click only selects the hero and must not be used to open the folio');
+});
