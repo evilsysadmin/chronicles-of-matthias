@@ -13,11 +13,11 @@ export default function ChroniclesPartyVitals({ hp, maxHp, sp = 0, maxSp = 0, ba
   return (
     <span className="chronicles-party-bars" aria-hidden="true" data-band={band}>
       <i className="is-hp" style={{ '--fill': fraction(hp, maxHp) }}>
-        <span>PV {hp}/{maxHp}</span>
+        <span>{hp}/{maxHp}</span>
       </i>
       {maxSp > 0 && (
         <i className="is-sp" style={{ '--fill': fraction(sp, maxSp) }} data-member-sp={sp}>
-          <span>PH {sp}/{maxSp}</span>
+          <span>{sp}/{maxSp}</span>
         </i>
       )}
     </span>
