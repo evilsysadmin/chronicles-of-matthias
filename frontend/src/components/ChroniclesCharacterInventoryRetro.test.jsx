@@ -34,7 +34,7 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('aria-label="Acciones de inventario"');
     expect(rendered).toContain('aria-label="Equipar Daga de latón"');
     expect(rendered).toContain('Examinar');
-    expect(rendered).toContain('Entregar');
+    expect(rendered).not.toContain('class="chronicles-character-sheet__classic-recipients"');
     expect(rendered).toContain('alt="" draggable="false"');
     expect(rendered).toContain('Equipar Daga de latón');
     expect(rendered).not.toContain('chronicles-character-sheet__handoff-targets');
@@ -65,6 +65,19 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(classic).toContain('min-height: 44px;');
   });
 
+  it('selects direct numeric delivery without rendering the old recipient picker', () => {
+    const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
+    expect(source).toContain("activeFolio === 'equipment'");
+    expect(source).toContain('chroniclesPartyHotkeyMember(event, state.party)');
+    expect(source).toContain("type: 'transfer-item'");
+    expect(source).toContain('data-transfer-target=');
+    expect(source).toContain('chronicles-character-sheet__transfer-hint');
+    expect(source).not.toContain('showRecipients');
+    expect(source).not.toContain('setShowRecipients');
+    expect(classic).toContain("button[data-transfer-target='true']");
+    expect(classic).toContain('.chronicles-character-sheet__transfer-hint');
+  });
+
   it('keeps the equipment chapter in a cool stone and parchment palette with compact desktop actions', () => {
     expect(classic).toContain(':has([data-chronicles-chapter="equipment"])');
     expect(classic).toContain('--mm3-equipment-stone: #303b3e;');
@@ -80,7 +93,7 @@ describe('Chronicles MM3 inventory chapter skin', () => {
   it('changes only desktop visual treatment; mobile and Tactics do not inherit extra behavior', () => {
     expect(html('tactics')).not.toContain('chronicles-character-sheet--mm3');
     expect(html('tactics')).not.toContain('Acciones de inventario');
-    expect(classic).toContain('grid-template-columns: repeat(7, minmax(0, 1fr))');
+    expect(classic).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))');
     expect(classic).toContain('[data-chronicles-chapter="equipment"]');
     expect(classic).toContain('.chronicles-character-sheet__party-dock img');
     expect(css).toContain('@media (min-width: 851px) and (min-height: 581px)');

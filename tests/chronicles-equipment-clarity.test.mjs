@@ -11,19 +11,22 @@ test('MM3 inventory distinguishes preview from an explicitly selected transfer t
   assert.match(sheet, /onEquipmentAction\?\.\(\{ type: 'transfer-item', itemId: transferableItem\.id, toMemberId: targetId \}\)/);
 });
 
-test('member hotkeys and party dock are navigation only; transfer is explicit and guarded', () => {
+test('party slots transfer an explicitly selected item; otherwise they navigate', () => {
   const dock = sheet.split('<nav className="chronicles-character-sheet__party-dock"')[1];
-  assert.ok(dock, 'Member navigation remains visible');
-  assert.match(dock, /onClick=\{\(\) => viewMember\(hero\.id\)\}/);
-  assert.match(dock, /aria-label=\{`Ver ficha de \$\{hero\.name\}/);
-  assert.doesNotMatch(dock, /transferableItem/);
-  assert.match(sheet, /className="chronicles-character-sheet__classic-recipients"/);
-  assert.match(sheet, /showRecipients && transferableItem && \(/);
-  assert.match(sheet, /disabled=\{!transferableItem \|\| !canChangeEquipment\}/);
-  assert.match(sheet, /aria-expanded=\{showRecipients\}/);
-  assert.match(sheet, /disabled=\{!canChangeEquipment\}/);
+  assert.ok(dock, 'Four real portraits remain in the visible dock');
+  assert.match(sheet, /const directTransferMode = !tacticsMode && activeFolio === 'equipment'/);
+  assert.match(sheet, /Boolean\(transferableItem\) && canChangeEquipment/);
+  assert.match(sheet, /chroniclesPartyHotkeyMember\(event, state\.party\)/);
+  assert.match(sheet, /if \(directTransferMode\) \{/);
+  assert.match(sheet, /if \(hero\.id !== member\.id\) giveSelectedItemTo\(hero\.id\)/);
+  assert.match(sheet, /viewMember\(hero\.id\)/);
+  assert.match(dock, /data-transfer-target=/);
+  assert.match(dock, /if \(directTransferMode && hero\.id !== member\.id\) giveSelectedItemTo\(hero\.id\)/);
+  assert.match(dock, /else viewMember\(hero\.id\)/);
   assert.match(sheet, /if \(!transferableItem \|\| !canChangeEquipment \|\| targetId === member\.id\) return;/);
-  assert.match(skin, /__handoff-targets > button\s*\{[^}]*min-height: 44px/s);
+  assert.match(sheet, /setSelectedBagItem\(selectedItemId === item\.id/);
+  assert.doesNotMatch(sheet, /showRecipients|classic-recipients|recipientsRef/);
+  // Actual keyboard, mouse and combat behavior is covered by Chromium smoke.
 });
 
 test('equipment unequip controls are concise but identify the affected item for assistive tech', () => {

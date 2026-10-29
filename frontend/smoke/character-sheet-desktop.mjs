@@ -346,8 +346,8 @@ try {
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'false',
         'Initial first-item preview does not silently select an item for transfer');
       const actions = equipment.getByRole('navigation', { name: 'Acciones de inventario' });
-      assert.equal(await actions.locator('button').count(), 7,
-        'Classic item menu must expose all seven explicit actions');
+      assert.equal(await actions.locator('button').count(), 6,
+        'Classic item menu has six commands: 1–4 now transfers directly');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), false,
         'Item details stay hidden until Examinar');
@@ -657,10 +657,13 @@ try {
       await down.click();
       assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
         'Down from the last item must wrap to the first');
-      // A selected item does not turn the party dock or keys 1–4 into a
-      // hidden transfer command. Navigation must always remain navigation.
-      await sword.click();
+      // Numeric shortcuts are armed ONLY by a deliberate green item
+      // selection. Pressing the same row a second time cancels that mode.
+      if (await sword.getAttribute('aria-pressed') !== 'true') await sword.click();
       assert.equal(await sword.getAttribute('aria-pressed'), 'true');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').isVisible(), true);
+      assert.equal(await sheet.locator('.chronicles-character-sheet__classic-recipients').count(), 0);
+      assert.equal(await itemCommands.getByRole('button', { name: /Entregar/ }).count(), 0);
       // This fixture is a genuine MM3-rules campaign, unlike the legacy
       // first-hour loot fixture. Inspect real read-only swap stats here.
       const swapDetails = sheet.locator('.chronicles-character-sheet__swap-preview');
@@ -691,54 +694,59 @@ try {
       assert.match(await itemState.innerText(), /Seleccionado · se puede entregar/,
         'Selection status stays next to the item and remains screen-reader announced');
       assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').getAttribute('aria-live'), 'polite');
-      assert.equal(await dock.getByRole('button', { name: /Ver ficha de Hildegard/ }).count(), 1);
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
+      // 1 is the source's own slot: it must not transfer or navigate.
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      assert.equal(await sword.getAttribute('aria-pressed'), 'true',
+        'Own party slot cannot be an item recipient');
+      // Clicking the selected item disarms transfer and restores numeric
+      // navigation without moving anything.
+      await sword.click();
+      assert.equal(await sword.getAttribute('aria-pressed'), 'false');
       await page.keyboard.press('2');
-      assert.equal(await heading.innerText(), 'Hildegard', '2 always changes the displayed hero');
-      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 0,
-        'Navigation must not secretly transfer the selected sword');
+      assert.equal(await heading.innerText(), 'Hildegard', '2 navigates when item is deselected');
       await page.keyboard.press('1');
       assert.equal(await heading.innerText(), 'Matthias');
       await sword.waitFor({ state: 'visible' });
       assert.equal(await sword.getAttribute('aria-pressed'), 'false',
-        'Switching heroes clears explicit item selection');
-      assert.equal(await sheet.locator('.chronicles-character-sheet__handoff').count(), 0,
-        'A mere preview cannot transfer anything');
+        'Changing heroes clears item selection');
       await sword.click();
-      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-        .getByRole('button', { name: /Entregar/ }).click();
-      const handoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
-      assert.equal(await handoff.locator('button').count(), 3, 'Only the other heroes are destinations');
-      assert.equal(await handoff.evaluate((picker) => {
-        const viewport = picker.closest('.chronicles-character-sheet__scroll')?.getBoundingClientRect();
-        const rectangle = picker.getBoundingClientRect();
-        return Boolean(viewport && rectangle.top >= viewport.top - 2 && rectangle.bottom <= viewport.bottom + 2);
-      }), true, 'Clicking Entregar must reveal the whole recipient picker without Playwright scrolling it into view');
-      assert.equal(await handoff.evaluate((picker) => document.activeElement === picker), true,
-        'Recipient chooser must receive focus so mouse, keyboard and screen readers notice the action');
-      assert.equal(await handoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 0,
-        'The owner must never be a recipient');
-      const recipient = handoff.getByRole('button', { name: /Entregar 1 .* a Hildegard/ });
-      assert.ok((await recipient.boundingBox()).height >= 44, 'Touch destination must be accessible');
-      await recipient.click();
-      assert.equal(await heading.innerText(), 'Matthias', 'Delivery keeps the current hero visible');
-      assert.equal(await sword.count(), 0, 'Exactly one sword leaves Matthias bag');
+      assert.equal(await sword.getAttribute('aria-pressed'), 'true');
       await page.keyboard.press('2');
-      assert.equal(await heading.innerText(), 'Hildegard', '2 still navigates after delivery');
+      assert.equal(await heading.innerText(), 'Matthias',
+        'Direct transfer does not navigate away from the source hero');
+      assert.equal(await sword.count(), 0, 'Exactly one sword leaves Matthias bag');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Successful transfer disarms numeric delivery');
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Hildegard', '2 navigates after transfer');
       const recipientBag = sheet.locator('.chronicles-character-sheet__inventory');
       const receivedSword = recipientBag.locator('[data-inventory-item="bronze-sword"]');
       await receivedSword.waitFor({ state: 'visible' });
       assert.equal(await receivedSword.count(), 1, 'Sword arrives intact in Hildegard bag');
       await receivedSword.click();
-      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-        .getByRole('button', { name: /Entregar/ }).click();
-      const returnHandoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
-      await returnHandoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
-      assert.equal(await heading.innerText(), 'Hildegard', 'Returning an item does not switch sheets');
-      assert.equal(await receivedSword.count(), 0);
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 1,
+        'Portraits are accessible touch destinations when the item is selected');
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Hildegard', 'Returning by 1 retains source dossier');
+      assert.equal(await receivedSword.count(), 0, 'Hildegard no longer owns the sword');
       await dock.getByRole('button', { name: /Ver ficha de Matthias/ }).click();
-      assert.equal(await heading.innerText(), 'Matthias', 'Party portraits only navigate');
+      assert.equal(await heading.innerText(), 'Matthias', 'Portraits navigate without selected item');
       assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1,
         'The same sword returns without duplication');
+      // Touch/mouse shortcut: tapping another hero portrait directly delivers.
+      await bag.locator('[data-inventory-item="bronze-sword"]').click();
+      await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).click();
+      assert.equal(await heading.innerText(), 'Matthias');
+      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 0);
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Hildegard');
+      await recipientBag.locator('[data-inventory-item="bronze-sword"]').click();
+      await page.keyboard.press('1');
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1);
       // Numbers typed in a search field must never cause a transfer.
       await bag.locator('[data-inventory-item="bronze-sword"]').click();
       // Search is an optional disclosure, not an always-visible tall panel.
@@ -771,11 +779,10 @@ try {
         .getByRole('button', { name: /Equipo/ }).click();
       const sword = sheet.locator('[data-inventory-item="bronze-sword"]');
       await sword.click();
-      const transfer = sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-        .getByRole('button', { name: /Entregar/ });
-      assert.equal(await transfer.isDisabled(), true, 'Combat must disable explicit transfer');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Combat must not arm direct transfer despite a selected row');
       assert.equal(await sheet.locator('.chronicles-character-sheet__classic-recipients').count(), 0,
-        'Combat must never show a recipient picker');
+        'No recipient picker exists in direct-transfer UX');
       await page.keyboard.press('2');
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Hildegard',
         'Browsing Hildegard is allowed even when transfer is blocked');
@@ -943,7 +950,7 @@ try {
           assert.equal(await scrollArea.evaluate((node) => node.dataset.moreBelow), 'false',
             'A fully visible inventory must not advertise imaginary content below');
           assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-            .locator('button').count(), 7, 'Compact phones still expose all real actions');
+            .locator('button').count(), 6, 'Compact phones still expose all six commands; delivery uses party slots');
         }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
