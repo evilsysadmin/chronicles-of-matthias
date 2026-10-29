@@ -371,6 +371,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isForge = spec.emblem === 'swords';
   const isArmor = spec.serviceStyle === 'armor' || spec.id === 'swordhaven-armor';
   const isStore = spec.serviceStyle === 'store';
+  const isWatch = spec.serviceStyle === 'watch';
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
@@ -758,46 +759,78 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
     });
   } else {
+    // The watchhouse is a barracks, not another flower-box merchant home.
+    // Replace its domestic glazing with recessed iron-barred embrasures,
+    // while retaining the original door, solid footprint and interactions.
+    const watchRecess = isWatch
+      ? material(0x293039, { roughness: 0.98, metalness: 0.06 }) : null;
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;
-      mesh(root, new THREE.BoxGeometry(1.37, 1.23, 0.11), mats.window,
-        'warm-glass-window', [x, 2.75, front]);
+      mesh(root, new THREE.BoxGeometry(1.37, 1.23, 0.11),
+        isWatch ? watchRecess : mats.window,
+        isWatch ? 'watchhouse-front-dark-recess' : 'warm-glass-window',
+        [x, 2.75, front]);
       for (const dx of [-0.70, 0.70]) mesh(root, new THREE.BoxGeometry(0.10, 1.38, 0.18),
-        mats.timber, 'window-side-frame', [x + dx, 2.75, front + 0.05]);
+        isWatch ? mats.stone : mats.timber,
+        isWatch ? 'watchhouse-front-stone-jamb' : 'window-side-frame',
+        [x + dx, 2.75, front + 0.05]);
       for (const dy of [-0.62, 0, 0.62]) mesh(root, new THREE.BoxGeometry(1.5, 0.10, 0.18),
-        mats.timber, 'window-rail', [x, 2.75 + dy, front + 0.05]);
+        isWatch ? mats.stone : mats.timber,
+        isWatch ? 'watchhouse-front-stone-rail' : 'window-rail',
+        [x, 2.75 + dy, front + 0.05]);
       mesh(root, new THREE.BoxGeometry(1.62, 0.15, 0.43), mats.stone,
         'stone-window-sill', [x, 2.04, front + 0.11]);
-      mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
+      if (!isWatch) mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
         'flower-window-box', [x, 1.83, front + 0.34]);
     }
-    // Leaded diamond glazing reads at eye level without eight draw calls
-    // per window. All lattice strips share a single per-building batch.
-    const diamondLead = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.035, 0.93, 0.043), mats.steel, 8,
-    );
-    diamondLead.name = 'window-diamond-leadwork';
-    const detail = new THREE.Object3D();
-    let leadIndex = 0;
-    for (const x of [-width * 0.33, width * 0.33]) {
-      for (const slope of [-1, 1]) {
-        for (const shift of [-0.24, 0.24]) {
-          detail.position.set(x + shift, 2.75, facadeZ + 0.39);
-          detail.rotation.set(0, 0, slope * 0.71);
-          detail.scale.set(1, 1, 1);
-          detail.updateMatrix();
-          diamondLead.setMatrixAt(leadIndex++, detail.matrix);
+    if (isWatch) {
+      // One instanced grille for both windows: six iron bars, no extra
+      // lights, textures or colliders. Keep them inside the solid facade.
+      const bars = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.12, 1.13, 0.10), mats.steel, 6);
+      bars.name = 'watchhouse-front-iron-bars';
+      bars.userData.chroniclesDecorativeOnly = true;
+      bars.castShadow = !coarse;
+      const bar = new THREE.Object3D();
+      let index = 0;
+      for (const x of [-width * 0.33, width * 0.33]) {
+        for (const offset of [-0.42, 0, 0.42]) {
+          bar.position.set(x + offset, 2.75, facadeZ + 0.29);
+          bar.updateMatrix();
+          bars.setMatrixAt(index++, bar.matrix);
         }
       }
+      bars.instanceMatrix.needsUpdate = true;
+      root.add(bars);
+    } else {
+      // Leaded diamond glazing reads at eye level without eight draw calls
+      // per window. All lattice strips share a single per-building batch.
+      const diamondLead = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.035, 0.93, 0.043), mats.steel, 8,
+      );
+      diamondLead.name = 'window-diamond-leadwork';
+      const detail = new THREE.Object3D();
+      let leadIndex = 0;
+      for (const x of [-width * 0.33, width * 0.33]) {
+        for (const slope of [-1, 1]) {
+          for (const shift of [-0.24, 0.24]) {
+            detail.position.set(x + shift, 2.75, facadeZ + 0.39);
+            detail.rotation.set(0, 0, slope * 0.71);
+            detail.scale.set(1, 1, 1);
+            detail.updateMatrix();
+            diamondLead.setMatrixAt(leadIndex++, detail.matrix);
+          }
+        }
+      }
+      diamondLead.instanceMatrix.needsUpdate = true;
+      root.add(diamondLead);
+
+      // Real shaped leaves, petals and hanging stems, four instanced draw
+      // calls per merchant storefront; no decorative plants on the barracks.
+      dressSwordhavenWindowBoxes(root, {
+        windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
+      });
     }
-    diamondLead.instanceMatrix.needsUpdate = true;
-    root.add(diamondLead);
-  
-    // Real shaped leaves, petals and hanging stems, four instanced draw calls
-    // per storefront. Far fewer instances on coarse/touch surfaces.
-    dressSwordhavenWindowBoxes(root, {
-      windowXs: [-width * 0.33, width * 0.33], facadeZ, coarse, mats,
-    });
   }
   // The guild's lateral stone buttresses break up its long, flat side walls.
   // Their pointed caps rise above the eaves, unlike the merchant timberwork
