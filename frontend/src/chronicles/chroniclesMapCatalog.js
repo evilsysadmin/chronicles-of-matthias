@@ -448,16 +448,29 @@ export function chroniclesSlainIndices(map, state) {
   ));
 }
 
+// A legacy or damaged save may contain a non-array ledger entry. Only real
+// enemy indices from the authored map may suppress a spawn on re-entry.
+function validSlainIndices(value, mapId) {
+  const enemyCount = chroniclesMapById(mapId).enemies.length;
+  return Array.isArray(value)
+    ? value.filter((index) => Number.isSafeInteger(index) && index >= 0 && index < enemyCount)
+    : [];
+}
+
 export function chroniclesMergeSlain(slainByMap, mapId, indices) {
-  const current = slainByMap && typeof slainByMap === 'object' ? slainByMap : {};
-  if (!mapId || !indices?.length) return current;
-  const merged = [...new Set([...(current[mapId] || []), ...indices])].sort((a, b) => a - b);
+  const current = slainByMap && typeof slainByMap === 'object' && !Array.isArray(slainByMap)
+    ? slainByMap : {};
+  if (!mapId || !Array.isArray(indices) || !indices.length) return current;
+  const merged = [...new Set([
+    ...validSlainIndices(current[mapId], mapId),
+    ...validSlainIndices(indices, mapId),
+  ])].sort((a, b) => a - b);
   return { ...current, [mapId]: merged };
 }
 
 export function chroniclesMapInitialEnemyState(mapId = DEFAULT_CHRONICLES_MAP_ID, world = null) {
   const map = chroniclesMapById(mapId);
-  const slain = new Set(world?.slainEnemies?.[map.id] || []);
+  const slain = new Set(validSlainIndices(world?.slainEnemies?.[map.id], map.id));
   return map.enemies.reduce((state, enemy, index) => {
     // A named foe whose defeat the world remembers stays down on re-entry,
     // and so does anything the company already killed here.

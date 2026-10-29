@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
-import { chroniclesMapById, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
+import { chroniclesMapById, chroniclesMapInitialEnemyState, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 
 describe('Chronicles MM3 explicit area transition safety', () => {
   it('rejects an unknown destination instead of silently sending the party to the default crypt', () => {
@@ -117,6 +117,42 @@ describe('Chronicles MM3 explicit area transition safety', () => {
       expect(arrived.x).toBe(chroniclesMapById('menagerie-of-ash').partyStart.x);
       expect(Object.keys(arrived.mapFlagsById).every((key) => !/^[0-9]+$/.test(key))).toBe(true);
     }
+  });
+
+  it('recovers dungeon travel from non-array or malformed slain enemy ledgers', () => {
+    const source = createChroniclesState('gallery-of-forks');
+    for (const slainEnemies of [
+      'broken-ledger',
+      ['broken-ledger'],
+      { 'gallery-of-forks': 'broken-entry' },
+      { 'gallery-of-forks': { 0: true } },
+      { 'menagerie-of-ash': { 0: true } },
+      { 'menagerie-of-ash': null },
+    ]) {
+      const arrived = chroniclesMapTransitionState({ ...source, slainEnemies }, 'menagerie-of-ash');
+      expect(arrived.mapId).toBe('menagerie-of-ash');
+      expect(arrived.ashGoblinHp).toBeGreaterThan(0);
+      expect(arrived.party).toEqual(source.party);
+    }
+  });
+
+  it('retains real floor kills but never treats invalid indices as slain enemies', () => {
+    const source = createChroniclesState('gallery-of-forks');
+    const saved = {
+      ...source,
+      enemyHp: 0,
+      slainEnemies: { 'menagerie-of-ash': [0, '1', -1, 1.5, 999] },
+    };
+    const next = chroniclesMapTransitionState(saved, 'menagerie-of-ash');
+    expect(next.ashGoblinHp).toBe(0);
+    expect(next.cryptSpiderHp).toBeGreaterThan(0);
+    expect(next.boneHoundHp).toBeGreaterThan(0);
+    expect(chroniclesMapInitialEnemyState('menagerie-of-ash', saved).ashGoblinHp).toBe(0);
+
+    const restored = JSON.parse(JSON.stringify(next));
+    const back = chroniclesMapTransitionState(restored, 'gallery-of-forks');
+    expect(back.enemyHp).toBe(0);
+    expect(back.jailerHp).toBeGreaterThan(0);
   });
 
   it('keeps valid dungeon travel and legacy saved-map lookup behavior unchanged', () => {
