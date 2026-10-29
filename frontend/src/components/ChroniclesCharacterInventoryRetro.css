@@ -326,3 +326,26 @@
     grid-row: 3 !important;
   }
 }
+
+
+/* Hero selection must never chase the pointer. Keep the original rectangular
+   hit target stable; feedback is paint-only rather than scale/translation. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__party-dock button {
+  transform: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__party-dock button:hover:not([aria-pressed='true']) {
+  transform: none;
+  border-color: #d9b16e;
+  box-shadow: inset 0 0 0 1px #a77944;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-character-sheet__party-dock button:focus-visible {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock button { transition: none; }
+}
