@@ -353,12 +353,13 @@ export default function ChroniclesCharacterSheet({
               {!tacticsMode && inventory.length > 0 && (
                 <small className="chronicles-character-sheet__inventory-hint" aria-live="polite">
                   {transferableItem
-                    ? `Seleccionado: ${transferableItem.name}. Pulsa 1–4 o toca el compañero de destino para entregar 1 unidad.`
-                    : 'Elige un objeto y pulsa 1–4 (o toca un compañero) para entregar 1 unidad.'}
+                    ? `Entregar 1 × ${transferableItem.name}: elige destino con 1–4 o toca a un compañero.`
+                    : 'Selecciona un objeto y entrégalo con 1–4 o tocando a un compañero.'}
                 </small>
               )}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
+                  <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
                   <strong>{selectedInventoryItem.name}</strong>
                   <div className="chronicles-character-sheet__item-essentials">
                     <span>×{selectedInventoryItem.quantity}</span>
@@ -597,8 +598,8 @@ export default function ChroniclesCharacterSheet({
           data-chronicles-equipment-folio={!tacticsMode ? member.id : undefined}
           hidden={!tacticsMode && activeFolio !== 'equipment'}>
           <div className="chronicles-character-sheet__section-head">
-            <div><span>EQUIPO Y OBJETOS</span><small>Equipo personal y botín de la expedición</small></div>
-            <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>
+            <div><span>EQUIPO Y OBJETOS</span><small>Qué llevas y qué tienes puesto</small></div>
+            {tacticsMode && <b aria-label={`Oro de la compañía: ${gold}`}>{gold} oro</b>}
           </div>
           <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
             {!tacticsMode && backpackPanel}
@@ -608,7 +609,7 @@ export default function ChroniclesCharacterSheet({
               {relic && <small>{relic.description}</small>}
             </article>
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
-              <span>Armas y armaduras equipadas</span>
+              <span>Equipo puesto</span>
               {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
                 {[
                   { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
@@ -628,8 +629,10 @@ export default function ChroniclesCharacterSheet({
                         </small>
                       )}
                       {worn && <button type="button" disabled={!canChangeEquipment}
+                        aria-label={`Quitar ${worn.name} y guardarlo en la mochila`}
+                        title="Quitar equipo y devolverlo a la mochila"
                         onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
-                        Guardar en mochila
+                        Quitar
                       </button>}
                     </div>
                   );
@@ -645,8 +648,10 @@ export default function ChroniclesCharacterSheet({
                     <small>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
                     <strong>{worn?.name || 'Sin equipar'}</strong>
                     {worn && <button type="button" disabled={!canChangeEquipment}
+                      aria-label={`Quitar ${worn.name} y guardarlo en la mochila`}
+                      title="Quitar equipo y devolverlo a la mochila"
                       onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
-                      Guardar en mochila
+                      Quitar
                     </button>}
                   </div>
                 );
