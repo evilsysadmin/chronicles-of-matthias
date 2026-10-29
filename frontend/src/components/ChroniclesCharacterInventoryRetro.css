@@ -1,6 +1,6 @@
 /* MM3 Items chapter: compact, legible copper-and-parchment inventory.
-   Never claim numeric shortcuts for item rows: 1–4 already transfers an
-   explicitly selected object to a party member. All buttons remain real. */
+   Numeric shortcuts 1–4 change the viewed hero. Explicit item transfers
+   are secondary actions in the selected item's details. */
 @media (min-width: 851px) and (min-height: 581px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] {
@@ -348,4 +348,72 @@
 @media (prefers-reduced-motion: reduce) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__party-dock button { transition: none; }
+}
+
+
+/* The selected item owns delivery. One disclosure, not a second destination
+   panel or a hidden mode on the persistent hero navigation. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff {
+  min-width: 0;
+  border-top: 1px solid #b18b5c;
+  padding: 6px 0 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff > summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: #472d14;
+  font-weight: 700;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff > summary:focus-visible {
+  outline: 2px solid #345b25;
+  outline-offset: -2px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff-targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
+  gap: 6px;
+  padding: 5px 0 8px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff-targets > button {
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 7px 9px;
+  overflow-wrap: anywhere;
+  border: 1px solid #855b31;
+  border-radius: 2px;
+  background: #e1ba85;
+  color: #3e2815;
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff-targets > button:focus-visible {
+  outline: 2px solid #345b25;
+  outline-offset: 1px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__handoff-targets > button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+
+/* On narrow touch screens, keep Equipar first, then the comparison, followed
+   by the secondary hand-off and finally the long object reference. */
+@media (max-width: 520px) and (pointer: coarse) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__handoff {
+    order: 3;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > .chronicles-character-sheet__item-more {
+    order: 4;
+  }
 }
