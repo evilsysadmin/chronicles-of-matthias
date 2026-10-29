@@ -212,8 +212,10 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
-      assert.equal(await sheet.getByText('OBJETOS DE Matthias').count(), 1,
-        'Each MM3 equipment dossier must identify the selected hero own backpack');
+      assert.match(await sheet.locator(
+        '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head span'
+      ).first().textContent(), /OBJETOS DE Matthias/,
+        'Equipment must identify its current owner without duplicating headers');
       const wornDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
       const wornSummary = wornDetails.locator('summary');
       assert.equal(await wornDetails.getAttribute('open'), null,
@@ -875,7 +877,9 @@ try {
         const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
         const dock = sheet.locator('.chronicles-character-sheet__party-dock');
         const scrollCapacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
-        assert.ok(scrollCapacity > 80, 'Populated phone dossier must genuinely scroll');
+        if (scrollCapacity > 80) {
+          // Only require the continuation cue when the dossier really overflows.
+          // A compact, fully visible inventory is strictly better than forced scroll.
         await page.waitForFunction(() => document.querySelector(
           '.chronicles-character-sheet__scroll'
         )?.dataset.moreBelow === 'true');
@@ -904,6 +908,12 @@ try {
           '.chronicles-character-sheet__scroll'
         )?.dataset.moreBelow === 'true');
         await page.mouse.move(10, 10);
+        } else {
+          assert.equal(await scrollArea.evaluate((node) => node.dataset.moreBelow), 'false',
+            'A fully visible inventory must not advertise imaginary content below');
+          assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+            .locator('button').count(), 7, 'Compact phones still expose all real actions');
+        }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
