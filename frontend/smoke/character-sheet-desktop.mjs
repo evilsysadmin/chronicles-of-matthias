@@ -225,7 +225,7 @@ try {
       const actualWornNames = await sheet.locator(
         '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__weapon-card > strong, '
         + '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__gear-slot > strong'
-      ).allInnerTexts();
+      ).allTextContents().then((names) => names.map((name) => name.trim()));
       const occupiedNames = actualWornNames.filter((name) => name !== 'Sin equipar');
       assert.ok(occupiedNames.length
         ? occupiedNames.every((name) => shownWornNames.includes(name))
