@@ -36,6 +36,24 @@ describe('Chronicles semantic material atlas', () => {
     expect(CHRONICLES_MATERIAL_ENVIRONMENTS['cave-water'].floor).toEqual(['N01', 'N05', 'N06']);
   });
 
+  it('keeps deeper town-named dungeons in their specific biome instead of exterior stone', () => {
+    expect(chroniclesMaterialEnvironmentForMapId('swordhaven-sewers-level-2')).toBe('sewer-masonry');
+    expect(chroniclesMaterialEnvironmentForMapId('swordhaven-flooded-sewer-level-3')).toBe('cave-water');
+    expect(chroniclesMaterialEnvironmentForMapId('swordhaven-crypt-level-2')).toBe('dungeon');
+    expect(chroniclesMaterialEnvironmentForMapId('forest-cavern-level-3')).toBe('cave');
+    expect(chroniclesMaterialEnvironmentForMapId('swordhaven-market-square')).toBe('exterior');
+
+    const scene = chroniclesMaterialPlanForScene({
+      mapId: 'swordhaven-sewers-level-2', regionKind: 'dungeon',
+      width: 9, height: 9,
+    });
+    expect(scene.environmentId).toBe('sewer-masonry');
+    scene.wallProfileIds.forEach((id) =>
+      expect(CHRONICLES_MATERIAL_ENVIRONMENTS['sewer-masonry'].wall).toContain(id));
+    scene.floorProfileIds.forEach((id) =>
+      expect(CHRONICLES_MATERIAL_ENVIRONMENTS['sewer-masonry'].floor).toContain(id));
+  });
+
   it('gives Swordhaven sewers damp masonry walls and worn stone floors without cave-rock walls', () => {
     const environment = CHRONICLES_MATERIAL_ENVIRONMENTS['sewer-masonry'];
     expect(environment.wall).toEqual(['D03', 'D04', 'V05']);
