@@ -119,6 +119,21 @@ describe('Chronicles character sheet combat summary', () => {
     expect(tactics).not.toContain('chronicles-character-sheet__equipped-disclosure');
   });
 
+  it('does not waste a row on missing MM3 relics, yet shows a real bound relic', () => {
+    const withoutRelic = render('mm3', 'equipment', {}, 'matthias');
+    expect(withoutRelic).not.toContain('chronicles-character-sheet__relic has-relic');
+    expect(withoutRelic).not.toContain('>Reliquia vinculada<');
+    expect(withoutRelic).not.toContain('>Ninguna<');
+    const withRelic = render('mm3', 'equipment', { spectralLantern: true }, 'bishop');
+    expect(withRelic).toContain('chronicles-character-sheet__relic has-relic');
+    expect(withRelic).toContain('>Reliquia vinculada<');
+    expect(withRelic).toContain('Farol espectral');
+    expect(withRelic).toContain('Su luz sigue ligada al alfil');
+    const tactics = render(null, 'equipment', {}, 'matthias', 'tactics');
+    expect(tactics).toContain('>Reliquia vinculada<');
+    expect(tactics).toContain('>Ninguna<');
+  });
+
   it('retains the distinct legacy damage reduction summary', () => {
     const html = render(null);
     expect(html).toContain('mitigación');
