@@ -78,7 +78,9 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain("onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })");
     expect(sheet).toContain('hidden={!inspectItem}');
     expect(sheet).toContain('Si equipas este objeto');
-    expect(sheet).toContain('setShowRecipients((open) => !open)');
+    expect(sheet).toContain('directTransferMode');
+    expect(sheet).toContain('chroniclesPartyHotkeyMember(event, state.party)');
+    expect(sheet).not.toContain('showRecipients');
   });
 
 });
