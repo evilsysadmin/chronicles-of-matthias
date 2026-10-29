@@ -214,6 +214,28 @@ try {
       await assertNavigationHighlight(nav, 'Equipo');
       assert.equal(await sheet.getByText('Mochila de Matthias').count(), 1,
         'Each MM3 equipment dossier must identify the selected hero own backpack');
+      const wornDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
+      const wornSummary = wornDetails.locator('summary');
+      assert.equal(await wornDetails.getAttribute('open'), null,
+        'Equipped details must start collapsed to preserve reading space');
+      const closedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(closedSize <= 65, 'Equipped gear must occupy one compact row by default: ' + closedSize);
+      assert.match(await wornSummary.innerText(), /Equipo puesto/);
+      const shownWornNames = await wornSummary.innerText();
+      const actualWornNames = await sheet.locator(
+        '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__weapon-card > strong, '
+        + '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__gear-slot > strong'
+      ).allTextContents().then((names) => names.map((name) => name.trim()));
+      const occupiedNames = actualWornNames.filter((name) => name !== 'Sin equipar');
+      assert.ok(occupiedNames.length
+        ? occupiedNames.every((name) => shownWornNames.includes(name))
+        : shownWornNames.includes('Sin piezas equipadas'),
+      'The summary must honestly reflect worn items, including a fully empty loadout: '
+        + JSON.stringify({ shownWornNames, actualWornNames }));
+      await wornSummary.click();
+      const expandedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(expandedSize > closedSize + 80,
+        'The folded view must save actual vertical space: ' + JSON.stringify({ closedSize, expandedSize }));
       const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
       await assertParchmentSurface(meleeCard, 'Equipment weapon card');
@@ -266,6 +288,9 @@ try {
         && Math.abs(emptyRelicLayout.backpackWidth - emptyRelicLayout.equipmentWidth) <= 4,
         'Inventory and worn gear must share one clear full-width reading column: '
         + JSON.stringify(emptyRelicLayout));
+      await wornSummary.click();
+      assert.equal(await wornDetails.getAttribute('open'), null, 'The short summary remains available');
+      assert.equal(await meleeCard.isVisible(), false, 'Closed equipped cards must not paint below the backpack');
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
@@ -899,6 +924,11 @@ try {
       assert.equal(await repeatedEquipmentGold.count(), 0,
         'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
       if (width <= 520) {
+        const mobileWorn = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
+        assert.equal(await mobileWorn.getAttribute('open'), null);
+        assert.ok(await mobileWorn.evaluate((node) => node.getBoundingClientRect().height) <= 75,
+          'Collapsed mobile gear must avoid unnecessary scrolling');
+        await mobileWorn.locator('summary').click();
         const emptyWeapons = await sheet.locator(
           '[data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button))'
         ).evaluateAll((cards) => cards.map((card) => {
@@ -921,6 +951,7 @@ try {
           'Empty mobile weapon slots must fit on two readable rows: ' + JSON.stringify(emptyWeapons));
         assert.ok(emptyWeapons.every(({ value, explanation }) => value === 'Sin equipar' && explanation.length > 0),
           'Compacting empty slots must retain their meaningful status and stats');
+        await mobileWorn.locator('summary').click();
       }
       // Hildegard's longer name exposed a real 844x390 overlap with the close
       // button. Check actual painted rectangles, not only document overflow.
