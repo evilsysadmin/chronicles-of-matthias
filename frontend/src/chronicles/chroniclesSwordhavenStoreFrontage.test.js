@@ -49,6 +49,22 @@ describe('Swordhaven general store frontage', () => {
     // from the street-facing camera, not merely exist in the scene graph.
     expect(loft.position.z + 0.77).toBeGreaterThan(store.getObjectByName('roof-gable-1').position.z);
     expect(loft.children.filter(child => child.name === 'store-loft-roof-slope')).toHaveLength(2);
+    const balcony = loft.getObjectByName('store-loft-loading-balcony');
+    expect(balcony?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(balcony.children.filter(child => child.name === 'store-balcony-loading-deck'))
+      .toHaveLength(1);
+    expect(balcony.children.filter(child => child.name === 'store-balcony-side-rail'))
+      .toHaveLength(2);
+    expect(balcony.children.filter(child => child.name === 'store-balcony-front-rail'))
+      .toHaveLength(2);
+    expect(balcony.children.filter(child => child.name === 'store-balcony-diagonal-brace'))
+      .toHaveLength(2);
+    // The cargo deck projects beyond the attic window and stays high above
+    // the street; it must never introduce a ground-level obstruction.
+    const deck = balcony.getObjectByName('store-balcony-loading-deck');
+    expect(deck.position.z).toBeGreaterThan(loft.getObjectByName('store-loft-window').position.z);
+    expect(loft.position.y + deck.position.y - 0.09).toBeGreaterThan(4.5);
+    expect(forge.getObjectByName('store-loft-loading-balcony')).toBeFalsy();
     expect(store.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
     expect(store.getObjectByName('pitched-roof-dormer-1')).toBeFalsy();
     expect(forge.getObjectByName('store-merchant-loft')).toBeFalsy();

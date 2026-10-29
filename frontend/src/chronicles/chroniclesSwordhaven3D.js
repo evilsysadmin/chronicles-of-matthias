@@ -1030,6 +1030,25 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     mesh(loft, new THREE.BoxGeometry(2.60, 0.18, 0.24), mats.timber,
       'store-loft-front-beam', [0, -0.75, 0.78]);
+    // A projecting cargo balcony makes the attic read as a warehouse rather
+    // than another domestic dormer. Its open middle receives the hoist; all
+    // pieces stay above the existing street and are decorative only.
+    const balcony = new THREE.Group();
+    balcony.name = 'store-loft-loading-balcony';
+    balcony.userData.chroniclesDecorativeOnly = true;
+    mesh(balcony, new THREE.BoxGeometry(2.94, 0.18, 1.10), oak,
+      'store-balcony-loading-deck', [0, -1.02, 1.27], !coarse);
+    for (const side of [-1, 1]) {
+      mesh(balcony, new THREE.BoxGeometry(0.14, 0.70, 1.05), mats.timber,
+        'store-balcony-side-rail', [side * 1.39, -0.59, 1.27], !coarse);
+      mesh(balcony, new THREE.BoxGeometry(0.78, 0.13, 0.14), mats.timber,
+        'store-balcony-front-rail', [side * 1.04, -0.55, 1.83], !coarse);
+      const brace = mesh(balcony, new THREE.BoxGeometry(0.15, 1.30, 0.16),
+        mats.timber, 'store-balcony-diagonal-brace',
+        [side * 1.10, -1.64, 0.94], !coarse);
+      brace.rotation.x = -0.47;
+    }
+    loft.add(balcony);
     // A timber loading hoist crowns the merchant loft, giving the
     // provisions warehouse a recognisable silhouette from the street.
     // The boom overhangs high above the street but never changes the

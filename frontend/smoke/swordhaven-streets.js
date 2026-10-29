@@ -20,7 +20,8 @@ const VIEWS = Object.freeze({
   'armor-oblique': { x: 13, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   temple: { x: 10, y: 6, heading: 'east', target: { x: 15, y: 6 }, cameraHeight: 2.4, lookUp: 2.5 },
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
-  'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
+  // Bias the portrait QA camera toward the cargo loft, not the empty side lane.
+  'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15.8, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   // East-side street view reveals the inn's overhanging guest-room oriel.
   'tavern-oblique': { x: 11, y: 9, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.2 },
