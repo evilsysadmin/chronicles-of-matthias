@@ -877,7 +877,7 @@ try {
         const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
         const dock = sheet.locator('.chronicles-character-sheet__party-dock');
         const scrollCapacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
-        if (scrollCapacity > 80) {
+        if (scrollCapacity > 12) {
           // Only require the continuation cue when the dossier really overflows.
           // A compact, fully visible inventory is strictly better than forced scroll.
         await page.waitForFunction(() => document.querySelector(
