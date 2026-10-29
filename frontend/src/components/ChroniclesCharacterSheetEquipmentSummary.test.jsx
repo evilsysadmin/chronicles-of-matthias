@@ -37,6 +37,13 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toContain('Disparo a dos manos');
     expect(html).toContain('no aporta armadura ni acierto');
     expect(html).toContain('represalia inmediata');
+    expect(html).toContain('class="chronicles-character-sheet__swap-preview"');
+    expect(html).not.toMatch(/class="chronicles-character-sheet__swap-preview"[^>]*\sopen=/);
+    expect(html).toMatch(/<summary>[\s\S]*?Daño [+-]?\d+ · Acierto [+-]?\d+/);
+    expect(html).toContain('Ver comparación antes y después');
+    // Losing a shield is a material consequence and must be visible in the
+    // closed summary; don't bury it among collapsed before/after statistics.
+    expect(html).toMatch(/<summary>[\s\S]*?Se guardará Escudo de latón en la mochila/);
   });
 
   it('keeps the shield benefit explanation for one-handed slings', () => {
