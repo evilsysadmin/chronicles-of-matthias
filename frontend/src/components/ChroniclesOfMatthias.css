@@ -1798,6 +1798,7 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 /* Coordinates belong to the map, in a quiet bottom caption below the tiles.
    Still one keyboard/touch button and one ResizeObserver-driven SVG. */
 .chronicles-minimap {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) 16px 18px;
 }
