@@ -115,7 +115,7 @@ describe('Chronicles MM3 explicit area transition safety', () => {
       expect(arrived.emberCacheOpened).toBe(false);
       expect(arrived.party).toEqual(source.party);
       expect(arrived.x).toBe(chroniclesMapById('menagerie-of-ash').partyStart.x);
-      expect(Object.keys(arrived.mapFlagsById).every((key) => !/^\\d+$/.test(key))).toBe(true);
+      expect(Object.keys(arrived.mapFlagsById).every((key) => !/^[0-9]+$/.test(key))).toBe(true);
     }
   });
 
