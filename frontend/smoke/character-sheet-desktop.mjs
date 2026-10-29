@@ -351,10 +351,10 @@ try {
         'Unselected preview must never trigger equipment');
       // Worn rows are now selectable: one explicit selection changes the
       // Equipar command into Quitar, without mutating gear on selection.
-      const firstWorn = equipment.locator('.chronicles-character-sheet__worn-ledger [data-worn-slot]').first();
+      const firstWorn = inv.locator('[data-worn-slot]').first();
       const wornSlot = await firstWorn.getAttribute('data-worn-slot');
-      const wornName = await firstWorn.locator('button > span').innerText();
-      const wornButton = firstWorn.getByRole('button');
+      const wornName = await firstWorn.locator('span').innerText();
+      const wornButton = firstWorn;
       assert.ok(await wornButton.boundingBox().then((box) => box.height >= 44),
         'Worn gear uses real 44px mouse/touch targets');
       await wornButton.click();
@@ -364,20 +364,18 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
         'Worn gear must not arm item delivery by numeric shortcuts');
       await page.keyboard.press('1');
-      assert.equal(await firstWorn.getByRole('button').getAttribute('aria-pressed'), 'true',
+      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'true',
         'Own number does not mutate worn equipment selection');
       await actions.getByRole('button', { name: /Quitar/ }).click();
-      assert.equal(await firstWorn.count(), 0, 'Unequipping removes the exact worn slot');
+      assert.equal(await firstWorn.count(), 0, 'Unequipping removes the exact worn slot from the single list');
       const reclaimed = inv.locator('[data-inventory-item]').filter({ hasText: wornName }).first();
       await reclaimed.waitFor({ state: 'visible' });
       await reclaimed.click();
       assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isEnabled(), true,
         'A reclaimed item can be equipped again from the backpack');
       await actions.getByRole('button', { name: /Equipar/ }).click();
-      await equipment.locator(`.chronicles-character-sheet__worn-ledger [data-worn-slot="${wornSlot}"]`)
-        .getByRole('button').waitFor({ state: 'visible' });
-      assert.equal(await equipment.locator(`.chronicles-character-sheet__worn-ledger [data-worn-slot="${wornSlot}"] button`)
-        .getAttribute('aria-pressed'), 'false', 'Successful equip leaves no stale selection');
+      await inv.locator(`[data-worn-slot="${wornSlot}"]`).waitFor({ state: 'visible' });
+      assert.equal(await inv.locator(`[data-worn-slot="${wornSlot}"]`).getAttribute('aria-pressed'), 'false', 'Successful equip leaves no stale selection');
 
       await rows.first().click();
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
@@ -674,15 +672,18 @@ try {
       const itemCommands = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
       const down = itemCommands.getByRole('button', { name: /Abajo/ });
       const up = itemCommands.getByRole('button', { name: /Arriba/ });
+      const allRows = bag.locator('[data-ledger-id]');
+      assert.ok(await allRows.count() > await itemRows.count(),
+        'Worn and loose objects must share one numbered/list keyboard flow');
       await down.click();
-      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
-        'Down without explicit selection must select the first item, not skip it');
+      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+        'Down without selection starts at the first equipped or loose item');
       await up.click();
-      assert.equal(await itemRows.last().getAttribute('aria-pressed'), 'true',
-        'Up from the first item must wrap to the last');
+      assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+        'Up from first wraps to last entry in the unified list');
       await down.click();
-      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
-        'Down from the last item must wrap to the first');
+      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+        'Down from last wraps to first entry in the unified list');
       // Numeric shortcuts are armed ONLY by a deliberate green item
       // selection. Pressing the same row a second time cancels that mode.
       if (await sword.getAttribute('aria-pressed') !== 'true') await sword.click();
