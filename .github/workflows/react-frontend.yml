@@ -124,6 +124,8 @@ jobs:
           # Real adventure menu + production S/Q/Esc resolver: save intent,
           # safe exit confirmation, editable controls and mobile/desktop fit.
           node smoke/run-timed.mjs smoke/adventure-menu-shortcuts.mjs http://localhost:4174/smoke/adventure-menu-shortcuts.html
+          # One click selects, double click/tap or Enter opens, spell targeting takes precedence.
+          node smoke/run-timed.mjs smoke/party-avatar-interaction.mjs http://localhost:4174/smoke/party-avatar-interaction.html
           # No viewport jump at Swordhaven X13 Y16 when USAR appears; also covers CAST/BLOCK.
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
@@ -145,4 +147,3 @@ jobs:
           name: chronicles-frontend-dist
           path: frontend/dist
           retention-days: 7
-
