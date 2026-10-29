@@ -50,36 +50,38 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     const equipment = { matthias: { weapon: 'bronze-sword', armor: 'leather-leather' } };
     const emptyBag = { inventory: {}, bagOwners: { matthias: {} }, equipment };
     const rendered = html('chronicles', emptyBag);
-    expect(rendered).toContain('aria-label="Equipo puesto de Matthias"');
+    expect(rendered).toContain('aria-label="Pertenencias de Matthias: equipadas y en mochila"');
     expect(rendered).toContain('data-worn-slot="weapon"');
     expect(rendered).toContain('data-worn-slot="armor"');
+    expect(rendered).toContain('data-item-icon="sword"');
+    expect(rendered).toContain('data-item-icon="armor"');
     expect(rendered).toContain('Espada de bronce');
     expect(rendered).toContain('Coraza de cuero');
-    expect(rendered).toContain('Mochila');
-    expect(rendered).toContain('Este personaje no lleva objetos en su mochila.');
+    expect(rendered).toContain('Puesto · Arma');
+    expect(rendered).not.toContain('Este personaje no lleva objetos en su mochila.');
     expect(rendered).not.toContain('data-worn-slot="missile"');
     expect(html('tactics', emptyBag)).not.toContain('chronicles-character-sheet__worn-ledger');
     expect(html('chronicles', { ...emptyBag, equipment: { matthias: {} } }))
       .not.toContain('data-worn-slot=');
-    expect(classic).toContain('.chronicles-character-sheet__worn-ledger li');
+    expect(classic).toContain('.chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item');
     expect(classic).toContain('min-height: 44px;');
   });
 
   it('makes worn equipment selectable but keeps the change behind explicit Quitar', () => {
     const equipment = { matthias: { weapon: 'bronze-sword', armor: 'leather-leather' } };
     const rendered = html('chronicles', { equipment });
-    expect(rendered).toContain('aria-label="Seleccionar Espada de bronce equipado en');
+    expect(rendered).toContain('aria-label="Seleccionar Espada de bronce, equipado en');
     expect(rendered).toContain('data-worn-slot="weapon"');
     expect(rendered).toContain('aria-pressed="false"');
     expect(rendered).not.toContain('data-chronicles-worn-gear="matthias"');
     expect(rendered).not.toContain('Cambiar equipo');
-    expect(classic).toContain('.chronicles-character-sheet__worn-ledger li > button.is-selected');
-    expect(classic).toContain('.chronicles-character-sheet__worn-ledger li > button:focus-visible');
+    expect(classic).toContain('.chronicles-character-sheet__worn-item.is-selected');
+    expect(classic).toContain('.chronicles-character-sheet__pixel-item-icon');
     const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
     expect(source).toContain("type: 'unequip-item', slot: selectedWornItem.slot");
     expect(source).toContain('setSelectedBagItem(null)');
     expect(source).toContain('setSelectedWornSlot(null)');
-    expect(html('tactics')).not.toContain('chronicles-character-sheet__worn-ledger');
+    expect(html('tactics')).not.toContain('data-worn-slot=');
   });
 
   it('selects direct numeric delivery without rendering the old recipient picker', () => {
