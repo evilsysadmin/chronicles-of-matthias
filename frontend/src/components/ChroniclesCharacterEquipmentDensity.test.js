@@ -74,7 +74,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(classic).toContain('min-height: 54px');
     expect(classic).toContain('.chronicles-character-sheet__classic-actions > button:focus-visible');
     expect(sheet).toContain('aria-label="Acciones de inventario"');
-    expect(sheet).toContain('disabled={!selectedEquipment || !canEquipSelected || !canChangeEquipment}');
+    expect(sheet).toContain('disabled={!transferableItem || !selectedEquipment || !canEquipSelected || !canChangeEquipment}');
     expect(sheet).toContain("onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })");
     expect(sheet).toContain('hidden={!inspectItem}');
     expect(sheet).toContain('Si equipas este objeto');
