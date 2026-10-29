@@ -417,6 +417,15 @@ try {
         'Filter/search must start collapsed to avoid another tall inspector column');
       await filterDisclosure.locator('summary').click();
       assert.equal(await filterDisclosure.evaluate((node) => node.open), true);
+      // Preserve digit typing in a useful multi-item search without firing
+      // party shortcuts, now that one-item bags omit search entirely.
+      const keyboardSearch = filterDisclosure.getByRole('searchbox', { name: 'Buscar en la mochila' });
+      await keyboardSearch.fill('');
+      await keyboardSearch.press('1');
+      assert.equal(await keyboardSearch.inputValue(), '1');
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
+        'Typing in inventory search must not activate party shortcut 1');
+      await keyboardSearch.clear();
       if (width >= 1200) {
         const filters = await equipment.locator('.chronicles-character-sheet__backpack-filters')
           .evaluate((group) => {

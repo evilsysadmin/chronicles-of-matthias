@@ -112,6 +112,18 @@
     grid-template-columns: minmax(0, 1fr) minmax(220px, .82fr);
   }
 }
+/* For sparse bags with no filter disclosure, the inspector can share the
+   first inventory row on narrow desktop instead of keeping an empty row 2. */
+@media (min-width: 851px) and (max-width: 1199px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:not(:has(> .chronicles-character-sheet__backpack-tools))
+  > .chronicles-character-sheet__inventory,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:not(:has(> .chronicles-character-sheet__backpack-tools))
+  > .chronicles-character-sheet__item-details {
+    grid-row: 2;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .chronicles-character-sheet--folio-v2 [data-chronicles-equipment-folio] button { scroll-behavior: auto; transition: none; }
 }
