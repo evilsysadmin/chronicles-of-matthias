@@ -21,6 +21,8 @@ async function measure(page) {
     return {
       party: rect(party),
       portraits: [...party.querySelectorAll('.chronicles-party-member, .chronicles-party-hireling')].map(rect),
+      hpBars: [...party.querySelectorAll('.chronicles-party-member .chronicles-party-bars .is-hp')].map(rect),
+      manaBars: party.querySelectorAll('.chronicles-party-member .chronicles-party-bars .is-sp').length,
       map: rect(document.querySelector('.chronicles-minimap')),
       roster: document.querySelector('.chronicles-combat-roster')
         ? rect(document.querySelector('.chronicles-combat-roster')) : null,
@@ -129,6 +131,15 @@ try {
       await page.goto(url, { waitUntil: 'load' });
       const baseline = await measure(page);
       verifyStable(baseline, baseline, 'baseline', viewport);
+      // A non-caster renders no PH bar, but still reserves its second row:
+      // the PV row must align with all three casters (the original regression).
+      assert.equal(baseline.hpBars.length, 4, 'All four heroes need a PV bar');
+      assert.equal(baseline.manaBars, 3, 'Only the three casters have PH');
+      const hpY = baseline.hpBars[0].y;
+      for (const [index, bar] of baseline.hpBars.entries()) {
+        assert.ok(Math.abs(bar.y - hpY) <= 1,
+          'Hero ' + (index + 1) + ' PV bar is vertically misaligned: ' + JSON.stringify(baseline.hpBars));
+      }
       await page.screenshot({ path: 'smoke-party-hud-before-' + viewport.width + '.png' });
 
       // EXACT screenshot regression: no spells, then USAR appears at X13 Y16.
