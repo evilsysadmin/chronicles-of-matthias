@@ -59,6 +59,10 @@ describe('Chronicles MM3 · explorador de mochila (#134)', () => {
       .toBe(filtered[1].id);
     expect(chroniclesBackpackMoveSelection(filtered, filtered[0].id, 'End'))
       .toBe(filtered[1].id);
+    expect(chroniclesBackpackMoveSelection(filtered, null, 'ArrowDown')).toBe(filtered[0].id);
+    expect(chroniclesBackpackMoveSelection(filtered, null, 'ArrowUp')).toBe(filtered[1].id);
+    expect(chroniclesBackpackMoveSelection(filtered, 'removed-item', 'ArrowDown')).toBe(filtered[0].id);
+    expect(chroniclesBackpackMoveSelection(filtered, 'removed-item', 'ArrowUp')).toBe(filtered[1].id);
     expect(chroniclesBackpackMoveSelection(filtered, filtered[1].id, 'Home'))
       .toBe(filtered[0].id);
     expect(chroniclesBackpackMoveSelection([], null, 'ArrowDown')).toBeNull();

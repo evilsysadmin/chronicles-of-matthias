@@ -21,9 +21,11 @@ export function chroniclesBackpackMoveSelection(items, selectedId, key) {
   const selected = items.findIndex((item) => item.id === selectedId);
   if (key === 'Home') return items[0].id;
   if (key === 'End') return items[items.length - 1].id;
-  const base = selected < 0 ? 0 : selected;
+  // Without explicit selection, the first command should not skip the
+  // previewed item. Keep row-key navigation unchanged for valid selected IDs.
+  if (selected < 0) return key === 'ArrowDown' ? items[0].id : items[items.length - 1].id;
   const delta = key === 'ArrowDown' ? 1 : -1;
-  return items[(base + delta + items.length) % items.length].id;
+  return items[(selected + delta + items.length) % items.length].id;
 }
 
 export function chroniclesBackpackCounts(items) {

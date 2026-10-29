@@ -641,6 +641,22 @@ try {
       await sword.waitFor({ state: 'visible' });
       assert.equal(await sword.getAttribute('aria-pressed'), 'false',
         'A preview alone must not make 2 a transfer command');
+      // The visual MM3 commands must behave like the row keyboard navigation:
+      // start from the first/last real item, then wrap rather than getting stuck.
+      const itemRows = bag.locator('[data-inventory-item]');
+      assert.ok(await itemRows.count() > 1, 'Exercise wraparound with actual different items');
+      const itemCommands = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+      const down = itemCommands.getByRole('button', { name: /Abajo/ });
+      const up = itemCommands.getByRole('button', { name: /Arriba/ });
+      await down.click();
+      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
+        'Down without explicit selection must select the first item, not skip it');
+      await up.click();
+      assert.equal(await itemRows.last().getAttribute('aria-pressed'), 'true',
+        'Up from the first item must wrap to the last');
+      await down.click();
+      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
+        'Down from the last item must wrap to the first');
       // A selected item does not turn the party dock or keys 1–4 into a
       // hidden transfer command. Navigation must always remain navigation.
       await sword.click();
