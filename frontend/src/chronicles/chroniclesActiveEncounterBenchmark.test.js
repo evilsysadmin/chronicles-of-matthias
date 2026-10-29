@@ -237,6 +237,35 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     expect(turned.explorationEnemySteps).toBe(blocked.explorationEnemySteps + 1);
   });
 
+  it('does not walk through a living goblin occupying a traversable north-gallery tile', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const foe = chroniclesActiveEnemies(base).find(({ id }) => id === 'sewers-goblin-upper-gallery');
+    expect(foe).toBeTruthy();
+    const inactive = Object.fromEntries(chroniclesActiveEnemies(base)
+      .filter(({ id }) => id !== foe.id)
+      .map((enemy) => [enemy.hpKey, 0]));
+    // (9,2) is open floor, but an occupying live goblin must prevent entry.
+    // This is the real obstruction discovered when extending the two-fight
+    // benchmark, not a wall and not permission to teleport past the enemy.
+    const before = {
+      ...base, ...inactive, x: 9, y: 1, direction: 2,
+      enemyPositions: { ...(base.enemyPositions || {}), [foe.id]: { x: 9, y: 2 } },
+    };
+    expect(chroniclesRuntimeEnemyPosition(before, foe)).toEqual({ x: 9, y: 2 });
+    const blocked = chroniclesGridExplorationStep(before, 'forward');
+    expect(blocked.message).toMatch(/bloquea el paso/i);
+    expect({ x: blocked.x, y: blocked.y, direction: blocked.direction })
+      .toEqual({ x: before.x, y: before.y, direction: before.direction });
+    expect(blocked.turns).toBe(before.turns + 1);
+    expect(blocked.explorationEnemySteps).toBe((before.explorationEnemySteps || 0) + 1);
+    expect(blocked.phase).toBe('explore');
+    expect(blocked.initiative).toBeFalsy();
+    expect(blocked.party).toEqual(before.party);
+    expect(blocked.inventory).toEqual(before.inventory);
+    expect(blocked.spellPoints).toEqual(before.spellPoints);
+    expect(chroniclesRuntimeEnemyPosition(blocked, foe)).toEqual({ x: 9, y: 2 });
+  });
+
   it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
     // Two existing squads in the same map. Walk fourteen real dungeon tiles after
     // the first fight, including turns around the north-gallery corner.
