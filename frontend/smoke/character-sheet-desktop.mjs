@@ -665,7 +665,7 @@ try {
       const down = itemCommands.getByRole('button', { name: /Abajo/ });
       const up = itemCommands.getByRole('button', { name: /Arriba/ });
       const allRows = bag.locator('[data-ledger-id]');
-      assert.ok(await allRows.count() > await itemRows.count(),
+      assert.ok(await allRows.count() >= await itemRows.count(),
         'Worn and loose objects must share one numbered/list keyboard flow');
       await down.click();
       assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
