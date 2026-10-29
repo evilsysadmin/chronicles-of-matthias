@@ -663,8 +663,12 @@ try {
       // hidden transfer command. Navigation must always remain navigation.
       await sword.click();
       assert.equal(await sword.getAttribute('aria-pressed'), 'true');
-      const hint = sheet.locator('.chronicles-character-sheet__inventory-hint');
-      assert.match(await hint.innerText(), /Usa «Entregar 1 a…»/);
+      assert.equal(await sheet.locator('.chronicles-character-sheet__inventory-hint').count(), 0,
+        'The secondary bag hint must not add another scroll row beneath the list');
+      const itemState = sheet.locator('.chronicles-character-sheet__item-details .chronicles-character-sheet__item-selection-state');
+      assert.match(await itemState.innerText(), /Seleccionado · se puede entregar/,
+        'Selection status stays next to the item and remains screen-reader announced');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').getAttribute('aria-live'), 'polite');
       assert.equal(await dock.getByRole('button', { name: /Ver ficha de Hildegard/ }).count(), 1);
       await page.keyboard.press('2');
       assert.equal(await heading.innerText(), 'Hildegard', '2 always changes the displayed hero');
