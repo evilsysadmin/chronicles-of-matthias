@@ -30,7 +30,8 @@ describe('Swordhaven armorer street-level architecture', () => {
     expect(armor.getObjectByName('shop-door')).toBeTruthy();
     expect(armor.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
     expect(forge.getObjectByName('warm-glass-window')).toBeTruthy();
-    expect(forge.getObjectByName('window-box-leaf-clusters')).toBeTruthy();
+    expect(forge.getObjectByName('forge-window-hammer-heads')?.count).toBe(4);
+    expect(forge.getObjectByName('window-box-leaf-clusters')).toBeFalsy();
     expect(temple.getObjectByName('temple-stained-glass-lancets')).toBeTruthy();
     expect(temple.getObjectByName('armor-forged-display-bays')).toBeFalsy();
     expect(createSwordhavenWalkGrid()[7][14]).toBe('.');
