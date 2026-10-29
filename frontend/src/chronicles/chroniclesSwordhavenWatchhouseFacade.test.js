@@ -36,6 +36,27 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(watch.getObjectByName('flower-window-box')).toBeFalsy();
     expect(watch.getObjectByName('armor-display')).toBeFalsy();
     expect(watch.getObjectByName('window-diamond-leadwork')).toBeFalsy();
+    // The guard now has a visible crossed-halberd crest, not the merchant's
+    // shield or an apparently empty inset. Both use the same existing signs.
+    const watchSign = watch.children.find(child =>
+      child.name.startsWith('swordhaven-interaction-'));
+    expect(watchSign).toBeTruthy();
+    expect(watchSign.children.filter(child => child.name === 'watch-crossed-halberd'))
+      .toHaveLength(2);
+    expect(watchSign.children.filter(child => child.name === 'watch-halberd-tip'))
+      .toHaveLength(2);
+    expect(watch.getObjectByName('shield-emblem')).toBeFalsy();
+    const inset = watchSign.getObjectByName('sign-inset');
+    expect(watchSign.getObjectByName('watch-crossed-halberd').position.z)
+      .toBeGreaterThan(inset.position.z + inset.geometry.parameters.depth / 2);
+    const armorer = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-armor-'));
+    const armorShield = armorer?.getObjectByName('shield-emblem');
+    const armorInset = armorer?.getObjectByName('sign-inset');
+    expect(armorShield).toBeTruthy();
+    expect(armorShield.position.z)
+      .toBeGreaterThan(armorInset.position.z + armorInset.geometry.parameters.depth / 2);
+    expect(armorer.getObjectByName('watch-crossed-halberd')).toBeFalsy();
     expect(watch.getObjectByName('shop-door')).toBeTruthy();
     expect(watch.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
     expect(forge.getObjectByName('warm-glass-window')).toBeTruthy();
