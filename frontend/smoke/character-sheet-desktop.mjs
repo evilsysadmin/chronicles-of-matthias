@@ -209,7 +209,7 @@ try {
       for (const slot of ['weapon', 'missile']) {
         const card = sheet.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
         const hasItem = (await card.locator('strong').innerText()) !== 'Sin equipar';
-        assert.equal(await card.getByRole('button', { name: 'Guardar en mochila' }).count(),
+        assert.equal(await card.getByRole('button', { name: /Quitar .* y guardarlo en la mochila/ }).count(),
           hasItem ? 1 : 0,
           'An equipped ' + slot + ' must have one and only one real unequip action');
       }
@@ -224,9 +224,9 @@ try {
           const packGridArea = getComputedStyle(packNode).gridArea;
           return { columns, packGridArea, relicHeight: relicCard.height, relicWidth: relicCard.width,
             equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
-            equipmentTop: equipmentCard.top, equipmentLeft: equipmentCard.left,
+            equipmentTop: equipmentCard.top, equipmentBottom: equipmentCard.bottom, equipmentLeft: equipmentCard.left, relicTop: relicCard.top,
             backpackLeft: backpack.left, backpackRight: backpack.right,
-            backpackTop: backpack.top, backpackWidth: backpack.width };
+            backpackTop: backpack.top, backpackBottom: backpack.bottom, backpackWidth: backpack.width };
         });
       // The MM3 inventory is now the FIRST readable/actionable chapter,
       // above the secondary equipped-gear summary and the compact relic.
@@ -237,21 +237,16 @@ try {
         'Equipment should open on the playable inventory rather than the empty relic');
       assert.ok(emptyRelicLayout.relicHeight <= 85,
         'A missing relic should occupy a compact row: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.relicBottom - 2,
-        'Equipped gear should appear below the compact empty relic');
-      if (width >= 1200) {
-        assert.ok(emptyRelicLayout.backpackWidth >= 230 && emptyRelicLayout.equipmentWidth >= 290,
-          'Both inventory and equipped gear must have usable widths: ' + JSON.stringify(emptyRelicLayout));
-        assert.ok(emptyRelicLayout.backpackRight <= emptyRelicLayout.equipmentLeft + 2,
-          'On wide desktop, inventory must be left of the equipped-gear panel: ' + JSON.stringify(emptyRelicLayout));
-        assert.ok(Math.abs(emptyRelicLayout.backpackTop - emptyRelicLayout.equipmentTop) <= 2,
-          'Both primary Equipment panels must start on the same row: ' + JSON.stringify(emptyRelicLayout));
-        assert.ok(emptyRelicLayout.backpackTop >= emptyRelicLayout.relicBottom - 2,
-          'The compact relic should remain above both equipment panels');
-      } else {
-        assert.ok(emptyRelicLayout.equipmentWidth >= emptyRelicLayout.relicWidth - 2,
-          'At 1024 the existing safe full-width equipment layout must remain unchanged');
-      }
+      assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.backpackBottom - 2,
+        'Equipped gear must follow the primary backpack, never overlap it: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(emptyRelicLayout.relicTop >= emptyRelicLayout.equipmentBottom - 2,
+        'The secondary relic note must follow the worn gear summary: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(emptyRelicLayout.backpackWidth >= 230 && emptyRelicLayout.equipmentWidth >= 290,
+        'Both inventory and equipped gear must remain readable: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(Math.abs(emptyRelicLayout.backpackLeft - emptyRelicLayout.equipmentLeft) <= 2
+        && Math.abs(emptyRelicLayout.backpackWidth - emptyRelicLayout.equipmentWidth) <= 4,
+        'Inventory and worn gear must share one clear full-width reading column: '
+        + JSON.stringify(emptyRelicLayout));
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
@@ -624,7 +619,7 @@ try {
       assert.equal(await sword.getAttribute('aria-pressed'), 'true');
       assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
       const hint = sheet.locator('.chronicles-character-sheet__inventory-hint');
-      assert.match(await hint.innerText(), /Pulsa 1–4/);
+      assert.match(await hint.innerText(), /elige destino con 1–4/);
       // Pressed key 2 consumes the selection for one handoff, not a hero switch.
       await page.keyboard.press('2');
       assert.equal(await heading.innerText(), 'Matthias', 'Giving an item does not open the recipient sheet');
@@ -844,7 +839,7 @@ try {
       const equipmentSubtitle = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
       );
-      assert.match(await equipmentSubtitle.textContent(), /Equipo personal y botín de la expedición/);
+      assert.match(await equipmentSubtitle.textContent(), /Qué llevas y qué tienes puesto/);
       assert.equal(await equipmentSubtitle.isVisible(), width > 430,
         'Only narrow touch phones omit the redundant Equipment subtitle');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
@@ -853,10 +848,8 @@ try {
       );
       assert.equal(await companyGoldChip.isVisible(), true,
         'The primary company gold balance must remain visible in the identity strip');
-      assert.equal(await repeatedEquipmentGold.isVisible(), width > 430,
-        'Only narrow touch phones may omit the redundant Equipment gold line');
-      assert.match(await repeatedEquipmentGold.getAttribute('aria-label'), /Oro de la compañía/,
-        'The secondary gold value remains in the document for larger layouts');
+      assert.equal(await repeatedEquipmentGold.count(), 0,
+        'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
       if (width <= 520) {
         const emptyWeapons = await sheet.locator(
           '[data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button))'
