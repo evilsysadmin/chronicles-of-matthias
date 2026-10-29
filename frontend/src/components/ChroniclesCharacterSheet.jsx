@@ -9,6 +9,7 @@ import './ChroniclesCharacterRetroMM3.css';
 import './ChroniclesCharacterInventoryRetro.css';
 import './ChroniclesCharacterTrainingRetro.css';
 import './ChroniclesCharacterRecordV3.css';
+import './ChroniclesCharacterEquipmentDisclosure.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
