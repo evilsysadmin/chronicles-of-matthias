@@ -98,7 +98,7 @@ describe('Chronicles MM3 explicit area transition safety', () => {
       phase: 'explore',
       emberCacheOpened: true,
     });
-    expect(arrived.party).toEqual(source.party);
+    expect(arrived.party).toEqual(corrupted.party);
     expect(arrived).not.toHaveProperty('galleryLeverPulled');
     expect(corrupted.mapFlagsById['menagerie-of-ash'].x).toBe(999);
   });
