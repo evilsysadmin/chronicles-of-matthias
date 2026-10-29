@@ -32,7 +32,9 @@ test('party slots transfer an explicitly selected item; otherwise they navigate'
 test('equipment unequip controls are concise but identify the affected item for assistive tech', () => {
   const labels = sheet.match(/aria-label=\{`Quitar \$\{worn\.name\} y guardarlo en la mochila`\}/g) || [];
   assert.equal(labels.length, 2, 'both weapon and armor/shield actions have item-specific labels');
-  assert.equal((sheet.match(/type: 'unequip-item', slot/g) || []).length, 2);
+  assert.equal((sheet.match(/type: 'unequip-item', slot/g) || []).length, 3,
+    'two advanced per-slot controls plus the one contextual Quitar action');
+  assert.match(sheet, /type: 'unequip-item', slot: selectedWornItem\.slot/);
   assert.equal((sheet.match(/>\s*Guardar en mochila\s*</g) || []).length, 0);
 });
 
