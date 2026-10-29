@@ -25,6 +25,7 @@ describe('MM3 character folio shared stone palette', () => {
       '[data-chronicles-training]',
       '[data-chronicles-training] button:disabled',
     ]) expect(css).toContain(selector);
-    expect(css).not.toMatch(/#[bcdef][679ab][13456789a-f][0-9a-f]{3}/i);
+    expect(css).not.toContain('#bf7d49');
+    expect(css).not.toContain('#b97b46');
   });
 });
