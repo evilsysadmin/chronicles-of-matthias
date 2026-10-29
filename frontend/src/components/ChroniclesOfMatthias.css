@@ -111,7 +111,7 @@
     linear-gradient(90deg, rgba(83, 60, 37, .22), rgba(12, 10, 8, .48)),
     linear-gradient(180deg, rgba(255, 255, 255, .02), transparent);
   box-shadow: inset 0 1px 0 rgba(255, 232, 194, .025);
-  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 .chronicles-party-member.is-leader {
   border-color: rgba(211, 161, 82, .42);
@@ -132,7 +132,8 @@
 .chronicles-party-member:focus-visible {
   border-color: rgba(221, 174, 100, .72);
   outline: none;
-  transform: translateX(2px);
+  /* Stable hover geometry: moving the button can repeatedly lose pointer hover. */
+  transform: none;
 }
 .chronicles-party-glyph {
   position: relative;
@@ -1798,53 +1799,3 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
    Still one keyboard/touch button and one ResizeObserver-driven SVG. */
 .chronicles-minimap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) 16px 18px;
-}
-.chronicles-minimap svg { grid-column: 1; grid-row: 1; min-height: 0; }
-.chronicles-minimap__title {
-  position: static;
-  grid-column: 1;
-  grid-row: 2;
-  align-self: center;
-  justify-self: center;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 1px 3px;
-  border-radius: 0;
-  background: transparent;
-  color: #e2c597;
-  font-size: .59rem;
-  line-height: 1.25;
-  letter-spacing: .07em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.chronicles-minimap__location {
-  position: static;
-  z-index: 2;
-  pointer-events: none;
-  grid-column: 1;
-  grid-row: 3;
-  align-self: center;
-  justify-self: center;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  padding: 0 3px;
-  border: 0;
-  background: transparent;
-  color: #e2c597;
-  font: 600 .62rem/1.25 Georgia, serif;
-  letter-spacing: .045em;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-shadow: none;
-}
-.chronicles-minimap__legend { bottom: 37px; }
-
-/* Compact 104px minimaps have room for the place, not a redundant label.
-   Keep the full region name in the button's accessible description. */
-@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
-  .chronicles-minimap__location-prefix { display: none; }
-}
