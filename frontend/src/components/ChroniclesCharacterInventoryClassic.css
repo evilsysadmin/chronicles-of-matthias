@@ -544,3 +544,33 @@
     font-size: .74rem;
   }
 }
+
+/* The recipient decision appears directly above its triggering command.
+   Keep it readable and in the same stone/parchment language as the ledger. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients {
+  margin: 7px 0 3px;
+  padding: 10px;
+  border: 2px solid #ab9870;
+  background: #e4ddc9;
+  color: #25332e;
+  scroll-margin-block: 8px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients:focus-visible {
+  outline: 2px solid #385c50;
+  outline-offset: -4px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients .chronicles-character-sheet__handoff-targets > button {
+  min-height: 44px;
+  border-color: #768477;
+  background: #c9d0bc;
+  color: #263b33;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients .chronicles-character-sheet__handoff-targets > button:hover:not(:disabled) {
+  border-color: #d0b679;
+  background: #49675b;
+  color: #fff3da;
+}
