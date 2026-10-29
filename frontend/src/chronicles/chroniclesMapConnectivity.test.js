@@ -45,4 +45,36 @@ describe('Chronicles map connectivity', () => {
     const used = new Set(content.map((entry) => region.get(`${entry.position.x},${entry.position.y}`)));
     expect([...used], content.map((entry) => `${entry.id}→${region.get(`${entry.position.x},${entry.position.y}`)}`).join(' ')).toHaveLength(Math.min(1, used.size));
   });
+  it.each(['crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash', 'swordhaven-sewers'])(
+    '%s keeps every dungeon encounter, pickup and exit walkable from its spawn',
+    (mapId) => {
+      const map = chroniclesMapById(mapId);
+      const start = map.partyStart;
+      expect(map.grid[start.y]?.[start.x], `${mapId} spawn must exist`).toBeDefined();
+      expect(map.grid[start.y][start.x], `${mapId} spawn must be walkable`).not.toBe('#');
+      const reachable = new Set([`${start.x},${start.y}`]);
+      const queue = [[start.x, start.y]];
+      for (const [x, y] of queue) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx;
+          const ny = y + dy;
+          const key = `${nx},${ny}`;
+          if (map.grid[ny]?.[nx] === undefined || map.grid[ny][nx] === '#' || reachable.has(key)) continue;
+          reachable.add(key);
+          queue.push([nx, ny]);
+        }
+      }
+      // The general connectivity check must not silently ignore content
+      // placed inside walls or disconnected from the actual player spawn.
+      for (const group of ['enemies', 'interactables', 'treasures', 'triggers', 'traps', 'exits']) {
+        for (const entry of map[group] || []) {
+          const position = chroniclesMapContentPosition(map, entry);
+          expect(position, `${mapId}/${group}/${entry.id} needs a real tile`).toBeTruthy();
+          expect(reachable.has(`${position.x},${position.y}`),
+            `${mapId}/${group}/${entry.id} must be reachable from spawn`).toBe(true);
+        }
+      }
+    },
+  );
+
 });
