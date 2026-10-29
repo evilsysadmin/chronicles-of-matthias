@@ -196,6 +196,9 @@ export default function ChroniclesCharacterSheet({
     ? chroniclesGearSwapPreview(state, member.id, selectedEquipment.id)
     : null;
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
+  // Include genuine equipped items in the MM3 item ledger; a full equipment
+  // loadout must never look like an empty inventory just because the bag is empty.
+  const wornGearItems = tacticsMode ? [] : chroniclesWornGear(state, member.id).filter((slot) => !slot.empty);
   // Only equipped, named pieces appear in the collapsed line. No fake slots.
   const wornOverview = CHRONICLES_EQUIPMENT_SLOTS
     .map((slot) => {
@@ -322,6 +325,22 @@ export default function ChroniclesCharacterSheet({
               <span className="chronicles-character-sheet__backpack-heading">
                 {tacticsMode ? 'Mochila de expedición' : `Objetos de ${member.name}`}
               </span>
+              {!tacticsMode && wornGearItems.length > 0 && (
+                <section className="chronicles-character-sheet__worn-ledger"
+                  aria-label={`Equipo puesto de ${member.name}`}>
+                  <span className="chronicles-character-sheet__ledger-label">Equipo puesto</span>
+                  <ul>
+                    {wornGearItems.map((slot) => (
+                      <li key={slot.slot} data-worn-slot={slot.slot}>
+                        <i aria-hidden="true">{slot.glyph}</i>
+                        <span>{slot.name}</span>
+                        <small>{slot.label} · Puesto</small>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {!tacticsMode && <span className="chronicles-character-sheet__ledger-label">Mochila</span>}
               {!tacticsMode && inventory.length > 0 && showBackpackTools && (
                 <details className="chronicles-character-sheet__backpack-tools">
                   <summary>
