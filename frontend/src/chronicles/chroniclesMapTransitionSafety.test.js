@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
-import { chroniclesMapById, chroniclesMapInitialEnemyState, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
+import { chroniclesApplyContentEffects, chroniclesContentInteractions, chroniclesRequirementsMet } from './chroniclesContentRuntime.js';
+import { chroniclesMapById, chroniclesMapInitialEnemyState, chroniclesMapTileAt, chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
 
 describe('Chronicles MM3 explicit area transition safety', () => {
   it('rejects an unknown destination instead of silently sending the party to the default crypt', () => {
@@ -153,6 +153,34 @@ describe('Chronicles MM3 explicit area transition safety', () => {
     const back = chroniclesMapTransitionState(restored, 'gallery-of-forks');
     expect(back.enemyHp).toBe(0);
     expect(back.jailerHp).toBeGreaterThan(0);
+  });
+
+  it('keeps the Gallery exit locked when a guardian HP value is missing or malformed', () => {
+    const map = chroniclesMapById('gallery-of-forks');
+    const gate = map.exits.find((entry) => entry.id === 'gallery-gate');
+    const cleared = {
+      ...createChroniclesState(map.id),
+      x: 3, y: 2,
+      enemyHp: 0, jailerHp: 0, galleryRelicCollected: true,
+    };
+    const tileAt = (x, y) => chroniclesMapTileAt(map, x, y);
+    expect(chroniclesRequirementsMet(cleared, gate.requirements)).toBe(true);
+
+    for (const invalidHp of [undefined, null, '', ' ', false, true, [], {}, 'not-a-number', 'Infinity', NaN, Infinity]) {
+      const damaged = { ...cleared, jailerHp: invalidHp };
+      expect(chroniclesRequirementsMet(damaged, gate.requirements), String(invalidHp)).toBe(false);
+      expect(chroniclesContentInteractions(damaged, map, tileAt)
+        .find((entry) => entry.id === gate.id)).toMatchObject({ locked: true });
+    }
+
+    // Older saves may serialize numeric HP as strings; keep those compatible.
+    expect(chroniclesRequirementsMet({ ...cleared, jailerHp: '0' }, gate.requirements)).toBe(true);
+    expect(chroniclesRequirementsMet({ ...cleared, jailerHp: '1' }, gate.requirements)).toBe(false);
+    for (const invalid of [undefined, null, '', ' ', false, [], {}, 'Infinity']) {
+      expect(chroniclesRequirementsMet({ progress: invalid }, [{ key: 'progress', gte: 0 }])).toBe(false);
+    }
+    expect(chroniclesRequirementsMet({ progress: '2' }, [{ key: 'progress', gte: 2 }])).toBe(true);
+    expect(chroniclesRequirementsMet({ progress: 0 }, [{ key: 'progress', lte: null }])).toBe(false);
   });
 
   it('keeps valid dungeon travel and legacy saved-map lookup behavior unchanged', () => {
