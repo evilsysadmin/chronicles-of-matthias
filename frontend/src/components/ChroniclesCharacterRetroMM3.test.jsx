@@ -28,9 +28,13 @@ describe('MM3 retro skin and compact record layout', () => {
       expect(html).toContain(`data-stat="${key}"`);
       expect(skin).toContain(`[data-stat='${key}']::before`);
     }
-    for (const slot of ['weapon', 'missile', 'armor', 'shield']) {
-      expect(html).toContain(`data-slot="${slot}"`);
+    const inventory = render('chronicles', 'equipment');
+    for (const slot of ['weapon', 'missile']) {
+      expect(inventory).toContain(`data-slot="${slot}"`);
     }
+    expect(inventory).toContain('Armadura');
+    expect(inventory).toContain('Escudo');
+    expect(html).not.toContain('data-chronicles-worn-gear');
     for (const title of ['Estado', 'Equipo', 'Hechizos', 'Mejoras']) expect(html).toContain(title);
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
     expect(html).not.toContain('Cambiar equipo');
