@@ -638,6 +638,8 @@ try {
       // This fixture is a genuine MM3-rules campaign, unlike the legacy
       // first-hour loot fixture. Inspect real read-only swap stats here.
       const swapDetails = sheet.locator('.chronicles-character-sheet__swap-preview');
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Examinar/ }).click();
       await swapDetails.waitFor({ state: 'visible' });
       assert.equal(await swapDetails.getAttribute('open'), null,
         'MM3 weapon comparison must start folded');
@@ -676,8 +678,9 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__handoff').count(), 0,
         'A mere preview cannot transfer anything');
       await sword.click();
-      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await handoff.locator('summary').click();
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ }).click();
+      const handoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
       assert.equal(await handoff.locator('button').count(), 3, 'Only the other heroes are destinations');
       assert.equal(await handoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 0,
         'The owner must never be a recipient');
@@ -693,8 +696,9 @@ try {
       await receivedSword.waitFor({ state: 'visible' });
       assert.equal(await receivedSword.count(), 1, 'Sword arrives intact in Hildegard bag');
       await receivedSword.click();
-      const returnHandoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await returnHandoff.locator('summary').click();
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ }).click();
+      const returnHandoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
       await returnHandoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
       assert.equal(await heading.innerText(), 'Hildegard', 'Returning an item does not switch sheets');
       assert.equal(await receivedSword.count(), 0);
@@ -734,12 +738,11 @@ try {
         .getByRole('button', { name: /Equipo/ }).click();
       const sword = sheet.locator('[data-inventory-item="bronze-sword"]');
       await sword.click();
-      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
-      await handoff.locator('summary').click();
-      const targets = handoff.locator('button');
-      assert.equal(await targets.count(), 3);
-      assert.equal(await targets.evaluateAll((buttons) => buttons.every((button) => button.disabled)), true,
-        'Combat must disable all explicit transfer destinations');
+      const transfer = sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Entregar/ });
+      assert.equal(await transfer.isDisabled(), true, 'Combat must disable explicit transfer');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__classic-recipients').count(), 0,
+        'Combat must never show a recipient picker');
       await page.keyboard.press('2');
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Hildegard',
         'Browsing Hildegard is allowed even when transfer is blocked');
@@ -779,6 +782,8 @@ try {
           docWidth: document.documentElement.scrollWidth,
           portraitCount: node.querySelectorAll('.chronicles-character-sheet__head img').length,
           dockPortraits: node.querySelectorAll('.chronicles-character-sheet__party-dock img').length,
+          dockPortraitsVisible: [...node.querySelectorAll('.chronicles-character-sheet__party-dock img')]
+            .filter((img) => getComputedStyle(img).display !== 'none').length,
           dockHeight: dock.height,
           dockButtons: [...node.querySelectorAll('.chronicles-character-sheet__party-dock button')].map((button) => {
             const name = button.querySelector('.chronicles-character-sheet__party-name');
@@ -807,7 +812,9 @@ try {
       if (height <= 480) assert.equal(geometry.headColumns, 2,
         'Short landscape has no portrait: reserve only identity and close columns');
       assert.equal(geometry.portraitCount, 0);
-      assert.equal(geometry.dockPortraits, 0, 'No full portraits in mobile sheet selector');
+      assert.equal(geometry.dockPortraits, 4, 'Four portraits stay available for the desktop selector');
+      assert.equal(geometry.dockPortraitsVisible, 0,
+        'Touch selector must hide portraits without losing hero buttons');
       assert.ok(geometry.dockHeight >= 44 && geometry.dockHeight <= 68,
         'Compact party navigation must preserve vertical space: ' + JSON.stringify(geometry));
       assert.equal(geometry.dockButtons.length, 4, 'All heroes must remain selectable on touch');
@@ -910,7 +917,7 @@ try {
       const equipmentSubtitle = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
       );
-      assert.match(await equipmentSubtitle.textContent(), /Qué llevas y qué tienes puesto/);
+      assert.match(await equipmentSubtitle.textContent(), /Mochila personal/);
       assert.equal(await equipmentSubtitle.isVisible(), width > 430,
         'Only narrow touch phones omit the redundant Equipment subtitle');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
