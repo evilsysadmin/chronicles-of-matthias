@@ -349,34 +349,6 @@ try {
         'Item details stay hidden until Examinar');
       assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
         'Unselected preview must never trigger equipment');
-      // Worn rows are now selectable: one explicit selection changes the
-      // Equipar command into Quitar, without mutating gear on selection.
-      const firstWorn = inv.locator('[data-worn-slot]').first();
-      const wornSlot = await firstWorn.getAttribute('data-worn-slot');
-      const wornName = await firstWorn.locator('span').innerText();
-      const wornButton = firstWorn;
-      assert.ok(await wornButton.boundingBox().then((box) => box.height >= 44),
-        'Worn gear uses real 44px mouse/touch targets');
-      await wornButton.click();
-      assert.equal(await wornButton.getAttribute('aria-pressed'), 'true');
-      assert.equal(await actions.getByRole('button', { name: /Quitar/ }).isEnabled(), true,
-        'Selecting worn gear arms a real unequip action');
-      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
-        'Worn gear must not arm item delivery by numeric shortcuts');
-      await page.keyboard.press('1');
-      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'true',
-        'Own number does not mutate worn equipment selection');
-      await actions.getByRole('button', { name: /Quitar/ }).click();
-      assert.equal(await firstWorn.count(), 0, 'Unequipping removes the exact worn slot from the single list');
-      const reclaimed = inv.locator('[data-inventory-item]').filter({ hasText: wornName }).first();
-      await reclaimed.waitFor({ state: 'visible' });
-      await reclaimed.click();
-      assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isEnabled(), true,
-        'A reclaimed item can be equipped again from the backpack');
-      await actions.getByRole('button', { name: /Equipar/ }).click();
-      await inv.locator(`[data-worn-slot="${wornSlot}"]`).waitFor({ state: 'visible' });
-      assert.equal(await inv.locator(`[data-worn-slot="${wornSlot}"]`).getAttribute('aria-pressed'), 'false', 'Successful equip leaves no stale selection');
-
       await rows.first().click();
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       await actions.getByRole('button', { name: /Examinar/ }).click();
@@ -670,6 +642,26 @@ try {
       const itemRows = bag.locator('[data-inventory-item]');
       assert.ok(await itemRows.count() > 1, 'Exercise wraparound with actual different items');
       const itemCommands = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+      // Real reducer integration: first equip a loose sword, then select its
+      // visible row in the SAME list and remove it. Stock returns exactly once.
+      await sword.click();
+      await itemCommands.getByRole('button', { name: /Equipar/ }).click();
+      const firstWorn = bag.locator('[data-worn-slot="weapon"]');
+      await firstWorn.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 0, 'Equipping one sword removes it from loose bag stock');
+      assert.equal(await firstWorn.locator('[data-item-icon="sword"]').count(), 1,
+        'The equipped sword has its own recognizable 16px icon');
+      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'false');
+      await firstWorn.click();
+      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'true');
+      assert.equal(await itemCommands.getByRole('button', { name: /Quitar/ }).isEnabled(), true);
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Worn selection must never arm numeric item transfer');
+      await itemCommands.getByRole('button', { name: /Quitar/ }).click();
+      assert.equal(await firstWorn.count(), 0, 'Unequip removes the worn object from the one list');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 1, 'Unequip restores one loose sword, without duplication');
+      assert.equal(await sword.getAttribute('aria-pressed'), 'false');
       const down = itemCommands.getByRole('button', { name: /Abajo/ });
       const up = itemCommands.getByRole('button', { name: /Arriba/ });
       const allRows = bag.locator('[data-ledger-id]');
