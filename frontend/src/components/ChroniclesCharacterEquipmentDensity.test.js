@@ -17,7 +17,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
   });
 
   it('preserves the readable empty-state copy and existing equipment actions', () => {
-    expect(sheet).toContain('Este personaje no lleva objetos en su mochila.');
+    expect(sheet).toContain('Este personaje no lleva pertenencias.');
     expect(sheet).toContain("relic?.name || 'Ninguna'");
     expect(sheet).toContain('chronicles-character-sheet__relic has-relic');
     expect(sheet).toContain('data-chronicles-equipment-folio');
@@ -50,7 +50,8 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(glyphs).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain('aria-hidden="true"');
     expect(sheet).toContain('data-inventory-item={item.id}');
-    expect(sheet).toContain("shield: '⬟'");
+    expect(sheet).toContain('<ChroniclesInventoryItemIcon item={item} />');
+    expect(sheet).toContain('<ChroniclesInventoryItemIcon item={slot.item} />');
   });
 
   it('keeps mobile equipment comparisons complete but vertically tighter', () => {
@@ -74,7 +75,8 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(classic).toContain('min-height: 54px');
     expect(classic).toContain('.chronicles-character-sheet__classic-actions > button:focus-visible');
     expect(sheet).toContain('aria-label="Acciones de inventario"');
-    expect(sheet).toContain('disabled={!transferableItem || !selectedEquipment || !canEquipSelected || !canChangeEquipment}');
+    expect(sheet).toContain("type: 'unequip-item', slot: selectedWornItem.slot");
+    expect(sheet).toContain('!canChangeEquipment || (!selectedWornItem && (!transferableItem || !selectedEquipment || !canEquipSelected))');
     expect(sheet).toContain("onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })");
     expect(sheet).toContain('hidden={!inspectItem}');
     expect(sheet).toContain('Si equipas este objeto');

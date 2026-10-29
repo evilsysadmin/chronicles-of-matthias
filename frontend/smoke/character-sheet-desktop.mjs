@@ -153,10 +153,8 @@ try {
           const content = node.querySelector('[data-chronicles-chapter="record"]');
           const stats = content.querySelector('.chronicles-character-sheet__section--core-stats');
           const battle = content.querySelector('.chronicles-character-sheet__vitals');
-          const gear = content.querySelector('.chronicles-character-sheet__worn');
           const statGrid = content.querySelector('.chronicles-character-sheet__mm3-stats');
-          const gearGrid = gear.querySelector('ul');
-          const columns = (el) => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+          const columns = getComputedStyle(statGrid).gridTemplateColumns.split(' ').filter(Boolean).length;
           const labels = [...statGrid.querySelectorAll('[data-stat]')].map((el) => ({
             name: el.dataset.stat, clipped: el.scrollWidth > el.clientWidth + 2,
           }));
@@ -165,22 +163,20 @@ try {
             return { top: box.top, bottom: box.bottom, width: box.width };
           };
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            gear: rect(gear), statColumns: columns(statGrid),
-            gearColumns: columns(gearGrid), labels };
+            statColumns: columns, labels,
+            duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
         assert.equal(ledger.statColumns, 4,
           'Classic MM3 status must be a full-width four-column ledger: ' + JSON.stringify(ledger));
-        assert.equal(ledger.gearColumns, 4,
-          'Worn gear should be a four-slot horizontal quick reference: ' + JSON.stringify(ledger));
+        assert.equal(ledger.duplicatedEquipment, 0,
+          'Estado must not duplicate equipped gear; all equipment controls live in Equipo');
         assert.equal(ledger.labels.length, 8,
           'All seven MM3 attributes plus the real HP condition must be present');
         assert.deepEqual(ledger.labels.filter((item) => item.clipped), [],
-          'The new attribute cells must not overflow: ' + JSON.stringify(ledger));
+          'The attribute labels must not overflow: ' + JSON.stringify(ledger));
         assert.ok(ledger.stats.width >= ledger.content.width - 40
-          && ledger.stats.bottom <= ledger.battle.top + 2
-          && ledger.battle.bottom <= ledger.gear.top + 2,
-          'The attribute ledger must be ABOVE the combat and equipment strips: '
-          + JSON.stringify(ledger));
+          && ledger.stats.bottom <= ledger.battle.top + 2,
+          'Status must present attributes above the combat strip: ' + JSON.stringify(ledger));
       }
       if (width === 1024) {
         const statsDensity = await sheet.locator('.chronicles-character-sheet__mm3-stats')
@@ -646,17 +642,40 @@ try {
       const itemRows = bag.locator('[data-inventory-item]');
       assert.ok(await itemRows.count() > 1, 'Exercise wraparound with actual different items');
       const itemCommands = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+      // Real reducer integration: first equip a loose sword, then select its
+      // visible row in the SAME list and remove it. Stock returns exactly once.
+      await sword.click();
+      await itemCommands.getByRole('button', { name: /Equipar/ }).click();
+      const firstWorn = bag.locator('[data-worn-slot="weapon"]');
+      await firstWorn.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 0, 'Equipping one sword removes it from loose bag stock');
+      assert.equal(await firstWorn.locator('[data-item-icon="sword"]').count(), 1,
+        'The equipped sword has its own recognizable 16px icon');
+      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'false');
+      await firstWorn.click();
+      assert.equal(await firstWorn.getAttribute('aria-pressed'), 'true');
+      assert.equal(await itemCommands.getByRole('button', { name: /Quitar/ }).isEnabled(), true);
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Worn selection must never arm numeric item transfer');
+      await itemCommands.getByRole('button', { name: /Quitar/ }).click();
+      assert.equal(await firstWorn.count(), 0, 'Unequip removes the worn object from the one list');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 1, 'Unequip restores one loose sword, without duplication');
+      assert.equal(await sword.getAttribute('aria-pressed'), 'false');
       const down = itemCommands.getByRole('button', { name: /Abajo/ });
       const up = itemCommands.getByRole('button', { name: /Arriba/ });
+      const allRows = bag.locator('[data-ledger-id]');
+      assert.ok(await allRows.count() >= await itemRows.count(),
+        'Worn and loose objects must share one numbered/list keyboard flow');
       await down.click();
-      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
-        'Down without explicit selection must select the first item, not skip it');
+      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+        'Down without selection starts at the first equipped or loose item');
       await up.click();
-      assert.equal(await itemRows.last().getAttribute('aria-pressed'), 'true',
-        'Up from the first item must wrap to the last');
+      assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+        'Up from first wraps to last entry in the unified list');
       await down.click();
-      assert.equal(await itemRows.first().getAttribute('aria-pressed'), 'true',
-        'Down from the last item must wrap to the first');
+      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+        'Down from last wraps to first entry in the unified list');
       // Numeric shortcuts are armed ONLY by a deliberate green item
       // selection. Pressing the same row a second time cancels that mode.
       if (await sword.getAttribute('aria-pressed') !== 'true') await sword.click();

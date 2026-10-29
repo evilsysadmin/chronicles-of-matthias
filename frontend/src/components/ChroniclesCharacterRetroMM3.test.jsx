@@ -22,18 +22,26 @@ function render(mode = 'chronicles', folio = 'record') {
 }
 
 describe('MM3 retro skin and compact record layout', () => {
-  it('keeps real attributes, worn slots, full navigation and the permanent party selector', () => {
+  it('keeps real attributes, unified equipment list, navigation and party selector', () => {
     const html = render();
     for (const key of ['might', 'intellect', 'personality', 'endurance', 'speed', 'accuracy', 'luck']) {
       expect(html).toContain(`data-stat="${key}"`);
       expect(skin).toContain(`[data-stat='${key}']::before`);
     }
-    for (const slot of ['weapon', 'missile', 'armor', 'shield']) {
-      expect(html).toContain(`data-slot="${slot}"`);
+    const inventory = render('chronicles', 'equipment');
+    for (const slot of ['weapon', 'missile']) {
+      expect(inventory).toContain(`data-slot="${slot}"`);
     }
+    expect(inventory).toContain('Armadura');
+    expect(inventory).toContain('Escudo');
+    expect(html).not.toContain('data-chronicles-worn-gear');
     for (const title of ['Estado', 'Equipo', 'Hechizos', 'Mejoras']) expect(html).toContain(title);
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
-    expect(html).toContain('Cambiar equipo');
+    expect(html).not.toContain('Cambiar equipo');
+    expect(html).not.toContain('data-chronicles-worn-gear');
+    expect(inventory).toContain('chronicles-character-sheet__backpack');
+    // A fresh hero need not start with any equipped slots; the populated
+    // equipment fixture is exercised by ChroniclesCharacterInventoryRetro.
   });
 
   it('keeps Tactics out of the opt-in retro skin and sizes new grids only on roomy desktop', () => {

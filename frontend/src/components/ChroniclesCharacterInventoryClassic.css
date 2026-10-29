@@ -610,3 +610,149 @@
   font: 700 .82rem/1 sans-serif;
   pointer-events: none;
 }
+
+/* MM3 worn-gear ledger uses the same explicit selection as the backpack.
+   Selecting does not mutate a save: Quitar is a separate, guarded action. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li {
+  display: block;
+  padding: 0;
+  min-height: 44px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 9px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 0;
+  background: #ded5c2;
+  color: #26312f;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > i {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid #838d80;
+  background: #b5b8a8;
+  color: #354d45;
+  font: normal 1.15rem/1 sans-serif;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > small {
+  font: inherit;
+  font-size: .82rem;
+  white-space: nowrap;
+  color: #4e6155;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button:hover {
+  background: #ccd9cb;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button.is-selected {
+  background: #435e55;
+  color: #fff6e5;
+  box-shadow: inset 4px 0 #d4bd84;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button.is-selected > small {
+  color: #f0dfbd;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button:focus-visible {
+  outline: 3px solid #b79b65;
+  outline-offset: -3px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__worn-hint {
+  display: block;
+  padding: 7px 10px;
+  margin: 6px 0 2px;
+  background: #405b50;
+  color: #fff5e3;
+  border-left: 4px solid #d2bc84;
+  font: 400 .84rem/1.35 var(--mm3-pixel-font, monospace);
+}
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button {
+    grid-template-columns: 30px minmax(0,1fr);
+    grid-template-rows: auto auto;
+    gap: 1px 7px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > i { grid-row: 1 / span 2; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > small { grid-column: 2; font-size: .74rem; }
+}
+
+/* Single MM3 object list: worn pieces and bag items share one scroll, row
+   height, navigation and icon family. Green lettering denotes equipped gear,
+   while a green ROW denotes the explicit selection needed for Quitar. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item {
+  color: #38624c;
+  background: #e5dfce;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item > span {
+  color: #365f48;
+  font-weight: 700;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
+  color: #3c6b52;
+  font-weight: 600;
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 150px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item.is-selected {
+  color: #fff5dc;
+  background: #435e55;
+  border-color: #c8b178;
+  box-shadow: inset 4px 0 #d7bd7d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item.is-selected > :is(span,small) {
+  color: #fff5dc;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__pixel-item-icon {
+  display: block;
+  width: 25px;
+  height: 25px;
+  color: #315849;
+  image-rendering: pixelated;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected .chronicles-character-sheet__pixel-item-icon {
+  color: #f3e6bf;
+}
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
+    max-width: 64px;
+    font-size: .7rem;
+  }
+}
