@@ -153,10 +153,8 @@ try {
           const content = node.querySelector('[data-chronicles-chapter="record"]');
           const stats = content.querySelector('.chronicles-character-sheet__section--core-stats');
           const battle = content.querySelector('.chronicles-character-sheet__vitals');
-          const gear = content.querySelector('.chronicles-character-sheet__worn');
           const statGrid = content.querySelector('.chronicles-character-sheet__mm3-stats');
-          const gearGrid = gear.querySelector('ul');
-          const columns = (el) => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length;
+          const columns = getComputedStyle(statGrid).gridTemplateColumns.split(' ').filter(Boolean).length;
           const labels = [...statGrid.querySelectorAll('[data-stat]')].map((el) => ({
             name: el.dataset.stat, clipped: el.scrollWidth > el.clientWidth + 2,
           }));
@@ -165,22 +163,20 @@ try {
             return { top: box.top, bottom: box.bottom, width: box.width };
           };
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            gear: rect(gear), statColumns: columns(statGrid),
-            gearColumns: columns(gearGrid), labels };
+            statColumns: columns, labels,
+            duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
         assert.equal(ledger.statColumns, 4,
           'Classic MM3 status must be a full-width four-column ledger: ' + JSON.stringify(ledger));
-        assert.equal(ledger.gearColumns, 4,
-          'Worn gear should be a four-slot horizontal quick reference: ' + JSON.stringify(ledger));
+        assert.equal(ledger.duplicatedEquipment, 0,
+          'Estado must not duplicate equipped gear; all equipment controls live in Equipo');
         assert.equal(ledger.labels.length, 8,
           'All seven MM3 attributes plus the real HP condition must be present');
         assert.deepEqual(ledger.labels.filter((item) => item.clipped), [],
-          'The new attribute cells must not overflow: ' + JSON.stringify(ledger));
+          'The attribute labels must not overflow: ' + JSON.stringify(ledger));
         assert.ok(ledger.stats.width >= ledger.content.width - 40
-          && ledger.stats.bottom <= ledger.battle.top + 2
-          && ledger.battle.bottom <= ledger.gear.top + 2,
-          'The attribute ledger must be ABOVE the combat and equipment strips: '
-          + JSON.stringify(ledger));
+          && ledger.stats.bottom <= ledger.battle.top + 2,
+          'Status must present attributes above the combat strip: ' + JSON.stringify(ledger));
       }
       if (width === 1024) {
         const statsDensity = await sheet.locator('.chronicles-character-sheet__mm3-stats')
@@ -353,6 +349,36 @@ try {
         'Item details stay hidden until Examinar');
       assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
         'Unselected preview must never trigger equipment');
+      // Worn rows are now selectable: one explicit selection changes the
+      // Equipar command into Quitar, without mutating gear on selection.
+      const firstWorn = equipment.locator('.chronicles-character-sheet__worn-ledger [data-worn-slot]').first();
+      const wornSlot = await firstWorn.getAttribute('data-worn-slot');
+      const wornName = await firstWorn.locator('button > span').innerText();
+      const wornButton = firstWorn.getByRole('button');
+      assert.ok(await wornButton.boundingBox().then((box) => box.height >= 44),
+        'Worn gear uses real 44px mouse/touch targets');
+      await wornButton.click();
+      assert.equal(await wornButton.getAttribute('aria-pressed'), 'true');
+      assert.equal(await actions.getByRole('button', { name: /Quitar/ }).isEnabled(), true,
+        'Selecting worn gear arms a real unequip action');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Worn gear must not arm item delivery by numeric shortcuts');
+      await page.keyboard.press('1');
+      assert.equal(await firstWorn.getByRole('button').getAttribute('aria-pressed'), 'true',
+        'Own number does not mutate worn equipment selection');
+      await actions.getByRole('button', { name: /Quitar/ }).click();
+      assert.equal(await firstWorn.count(), 0, 'Unequipping removes the exact worn slot');
+      const reclaimed = inv.locator('[data-inventory-item]').filter({ hasText: wornName }).first();
+      await reclaimed.waitFor({ state: 'visible' });
+      await reclaimed.click();
+      assert.equal(await actions.getByRole('button', { name: /Equipar/ }).isEnabled(), true,
+        'A reclaimed item can be equipped again from the backpack');
+      await actions.getByRole('button', { name: /Equipar/ }).click();
+      await equipment.locator(`.chronicles-character-sheet__worn-ledger [data-worn-slot="${wornSlot}"]`)
+        .getByRole('button').waitFor({ state: 'visible' });
+      assert.equal(await equipment.locator(`.chronicles-character-sheet__worn-ledger [data-worn-slot="${wornSlot}"] button`)
+        .getAttribute('aria-pressed'), 'false', 'Successful equip leaves no stale selection');
+
       await rows.first().click();
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       await actions.getByRole('button', { name: /Examinar/ }).click();
