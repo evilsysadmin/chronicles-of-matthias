@@ -186,6 +186,15 @@ export default function ChroniclesCharacterSheet({
     ? chroniclesGearSwapPreview(state, member.id, selectedEquipment.id)
     : null;
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
+  // Only equipped, named pieces appear in the collapsed line. No fake slots.
+  const wornOverview = CHRONICLES_EQUIPMENT_SLOTS
+    .map((slot) => {
+      const item = chroniclesEquippedItem(state, member.id, slot);
+      if (!item) return null;
+      const label = { weapon: 'A', missile: 'S', armor: 'Armadura', shield: 'Escudo' }[slot];
+      return `${label}: ${item.name}`;
+    })
+    .filter(Boolean).join(' · ') || 'Sin piezas equipadas';
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
@@ -624,7 +633,12 @@ export default function ChroniclesCharacterSheet({
               {relic && <small>{relic.description}</small>}
             </article>
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
-              <span>Equipo puesto</span>
+              <details className="chronicles-character-sheet__equipped-disclosure">
+                <summary>
+                  <span>Equipo puesto</span>
+                  <small title={wornOverview}>{wornOverview}</small>
+                </summary>
+                <div className="chronicles-character-sheet__equipped-body">
               {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
                 {[
                   { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
@@ -676,6 +690,8 @@ export default function ChroniclesCharacterSheet({
                   ? `CA del equipo +${gearBonus.armorClassBonus}: dificulta impactos, no resta daño. A y S calculan daño y acierto por separado.`
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
+                </div>
+              </details>
             </article>}
             {tacticsMode && backpackPanel}
           </div>
