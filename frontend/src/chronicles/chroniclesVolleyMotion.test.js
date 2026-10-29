@@ -27,6 +27,20 @@ describe('Chronicles · polished projectile flight', () => {
     expect(chroniclesVolleyFlightSample(1, 0, 0.50, 'crossbow')).toBeNull();
     expect(chroniclesVolleyFlightSample(1, 0, 0.50, 'sling')).not.toBeNull();
   });
+  it('shows bow and crossbow shafts in a restrained three-quarter flight profile', () => {
+    for (const kind of ['bow', 'crossbow']) {
+      const first = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
+      const middle = chroniclesVolleyFlightSample(3, 1, 0.08, kind);
+      expect(Math.abs(first.yaw)).toBeGreaterThan(0.2);
+      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.2);
+      expect(first.yaw * middle.yaw).toBeLessThan(0);
+      expect(first.pitch).toBeLessThan(-0.1);
+    }
+    // A sling stone spins, without acquiring fake arrow fletching orientation.
+    const stone = chroniclesVolleyFlightSample(1, 0, 0.1, 'sling');
+    expect(stone.yaw).toBe(0);
+  });
+
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {
     const left = chroniclesVolleyFlightSample(4, 0, 0, 'bow');
     const right = chroniclesVolleyFlightSample(4, 3, 3 * 0.034, 'bow');

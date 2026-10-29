@@ -73,8 +73,12 @@ export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow'
     x: spread * (1 - 0.64 * forward),
     y: -0.33 + 0.24 * forward + (sling ? 0.16 * Math.sin(Math.PI * t) : -0.025 * t * t),
     z: -0.72 - 4.05 * forward,
-    pitch: sling ? -0.16 + 0.27 * t : -0.025 - 0.09 * t,
-    yaw: -spread * 0.09,
+    // A modest three-quarter attitude exposes the wooden shaft and metal tip.
+    // Fully head-on arrows collapse into bright feather/steel diamonds.
+    pitch: sling ? -0.16 + 0.27 * t : kind === 'crossbow'
+      ? -0.11 - 0.06 * t : -0.15 - 0.07 * t,
+    yaw: sling ? -spread * 0.09
+      : (index % 2 === 0 ? -1 : 1) * (kind === 'crossbow' ? 0.27 : 0.32) - spread * 0.09,
     roll: sling ? Math.PI * 2.2 * t : spread * 0.085,
     scale: 1 - 0.20 * t,
   };

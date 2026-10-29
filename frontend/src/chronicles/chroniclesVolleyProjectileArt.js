@@ -26,36 +26,37 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
   group.visible = false;
 
   const material = (color, options = {}) => new THREE.MeshBasicMaterial({
-    color, depthTest: false, depthWrite: false, ...options,
+    // Let scenery occlude real shafts, instead of painting luminous HUD diamonds.
+    color, depthTest: true, depthWrite: false, ...options,
   });
-  const wood = material(0xa97842);
-  const polishedWood = material(0xe7b97a);
-  const brightSteel = material(0xe6eef0);
-  const steelShadow = material(0x667b86);
+  const wood = material(0x90683d);
+  const polishedWood = material(0xb58f5f);
+  const brightSteel = material(0xc7d2d1);
+  const steelShadow = material(0x586a73);
   const darkSteel = material(0x53616a);
-  const paleFeathers = material(0xe9d9b9, { side: THREE.DoubleSide });
-  const darkFeathers = material(0x9a8770, { side: THREE.DoubleSide });
-  const stoneMaterial = material(0xa6a69e);
-  const stoneHighlight = material(0xd1cbb9);
-  const bowTrail = material(0xcfa66d, { transparent: true, opacity: 0.20,
-    blending: THREE.AdditiveBlending });
-  const boltTrail = material(0xb8cbd5, { transparent: true, opacity: 0.18,
-    blending: THREE.AdditiveBlending });
-  const slingTrail = material(0xbcb4a1, { transparent: true, opacity: 0.12,
-    blending: THREE.AdditiveBlending });
+  const paleFeathers = material(0xbba88a, { side: THREE.DoubleSide });
+  const darkFeathers = material(0x897763, { side: THREE.DoubleSide });
+  const stoneMaterial = material(0x91938c);
+  const stoneHighlight = material(0xb4b1a6);
+  // The flight streak is air displacement, not a glowing bolt of magic.
+  const bowTrail = material(0xb79c77, { transparent: true, opacity: 0.10 });
+  const boltTrail = material(0x98a8b0, { transparent: true, opacity: 0.09 });
+  const slingTrail = material(0xaaa394, { transparent: true, opacity: 0.07 });
 
   const arrowShaft = new THREE.CylinderGeometry(0.016, 0.017, 0.74, 8);
   const shaftCore = new THREE.CylinderGeometry(0.019, 0.019, 0.66, 8);
-  const arrowHead = new THREE.ConeGeometry(0.052, 0.14, 5);
+  const arrowHead = new THREE.ConeGeometry(0.043, 0.14, 5);
   const boltShaft = new THREE.CylinderGeometry(0.029, 0.027, 0.42, 8);
-  const boltHead = new THREE.ConeGeometry(0.066, 0.16, 4);
+  const boltHead = new THREE.ConeGeometry(0.052, 0.16, 4);
   const bolster = new THREE.CylinderGeometry(0.037, 0.037, 0.065, 8);
-  // A stylised triangular feather, rather than a rectangular stick-on box.
+  // A tapered vane: local X becomes the shaft axis after its 90° Y turn.
+  // Three narrow radial feathers read as fletching rather than a white diamond.
   const featherShape = new THREE.Shape();
-  featherShape.moveTo(0, -0.115);
-  featherShape.lineTo(0.085, -0.058);
-  featherShape.lineTo(0.105, 0.068);
-  featherShape.lineTo(0.018, 0.105);
+  featherShape.moveTo(-0.14, 0.004);
+  featherShape.lineTo(-0.055, 0.060);
+  featherShape.lineTo(0.085, 0.045);
+  featherShape.lineTo(0.15, 0.008);
+  featherShape.lineTo(0.085, -0.008);
   featherShape.closePath();
   const featherGeometry = new THREE.ShapeGeometry(featherShape);
 
@@ -63,9 +64,9 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
   const stoneGeometry = new THREE.IcosahedronGeometry(0.105, 0);
   stoneGeometry.scale(1.11, 0.91, 1.04);
   const stoneGlint = new THREE.TetrahedronGeometry(0.047, 0);
-  const bowTrailGeometry = new THREE.ConeGeometry(0.026, 0.68, 5);
-  const boltTrailGeometry = new THREE.ConeGeometry(0.034, 0.59, 5);
-  const stoneTrailGeometry = new THREE.ConeGeometry(0.043, 0.35, 5);
+  const bowTrailGeometry = new THREE.ConeGeometry(0.009, 0.44, 3);
+  const boltTrailGeometry = new THREE.ConeGeometry(0.011, 0.36, 3);
+  const stoneTrailGeometry = new THREE.ConeGeometry(0.018, 0.28, 4);
 
   function part(geometry, surface, name) {
     const mesh = new THREE.Mesh(geometry, surface);
@@ -102,15 +103,16 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
 
     for (let fin = 0; fin < 3; fin += 1) {
       const feather = part(featherGeometry, finSurface, kind + '-fletching-' + fin);
-      feather.rotation.set(Math.PI / 2, 0, fin * Math.PI * 2 / 3);
+      // Rotate each vane radially around the longitudinal (local Z) axis.
+      feather.rotation.set(0, Math.PI / 2, fin * Math.PI * 2 / 3);
       feather.scale.setScalar(finSize);
       feather.position.z = tail;
       variant.add(feather);
     }
     const trail = part(trailGeometry, trailSurface, kind + '-trail');
-    // A very thin, low-opacity taper behind the tail, not a glowing laser.
+    // A short, almost transparent motion smear immediately behind the nock.
     trail.rotation.x = Math.PI / 2;
-    trail.position.z = tail + (kind === 'bow' ? 0.31 : 0.26);
+    trail.position.z = tail + (kind === 'bow' ? 0.22 : 0.18);
     variant.add(trail);
     return variant;
   }
@@ -137,7 +139,7 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
     sling.add(glint);
     const dust = part(stoneTrailGeometry, slingTrail, 'sling-trail');
     dust.rotation.x = Math.PI / 2;
-    dust.position.z = 0.28;
+    dust.position.z = 0.20;
     sling.add(dust);
     root.add(bow, crossbow, sling);
     root.userData.volleyVariants = { bow, crossbow, sling };
