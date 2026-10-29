@@ -515,8 +515,13 @@ export function chroniclesMapTransitionState(state, mapId) {
     [previousMap.id]: previousFlags,
   };
   const destinationFlags = { ...map.initialFlags, ...(mapFlagsById[map.id] || {}) };
+  // A floor's switches and treasures are not world-wide flags. Snapshot them
+  // above, then remove them from the active region before loading its flags.
+  // Otherwise a cleared lever remains truthy in unrelated dungeons.
+  const carriedState = { ...state };
+  for (const key of Object.keys(previousMap.initialFlags)) delete carriedState[key];
   return {
-    ...state,
+    ...carriedState,
     ...clearedEnemyState(previousMap),
     slainEnemies,
     mapId: map.id,
