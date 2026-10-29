@@ -353,14 +353,14 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect(vines).toBeFalsy();
         continue;
       }
-      // The provisions store uses actual tied stock sacks in its raised
+      // The provisions store uses braced oak stock crates in its raised
       // window troughs; the inn and homes retain their planted window boxes.
-      const storeSacks = building.getObjectByName('store-window-burlap-sacks');
-      if (storeSacks) {
-        expect(storeSacks).toBeInstanceOf(THREE.InstancedMesh);
-        expect(storeSacks.count).toBe(8);
-        expect(building.getObjectByName('store-window-sack-ties')?.count).toBe(8);
-        expect(storeSacks.userData.chroniclesDecorativeOnly).toBe(true);
+      const storeCrates = building.getObjectByName('store-window-provisions-crates');
+      if (storeCrates) {
+        expect(storeCrates).toBeInstanceOf(THREE.InstancedMesh);
+        expect(storeCrates.count).toBe(4);
+        expect(building.getObjectByName('store-window-crate-crossbraces')?.count).toBe(8);
+        expect(storeCrates.userData.chroniclesDecorativeOnly).toBe(true);
         expect(foliage).toBeFalsy();
         expect(vines).toBeFalsy();
         continue;
