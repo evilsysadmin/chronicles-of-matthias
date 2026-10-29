@@ -181,13 +181,15 @@ export default function ChroniclesCharacterSheet({
     ? chroniclesInventoryEntries(state)
     : chroniclesBagInventoryEntries(state, member.id))
     .filter((item) => item.id !== CHRONICLES_GOLD_ITEM_ID);
+  const wornGearItems = tacticsMode ? [] : chroniclesWornGear(state, member.id).filter((slot) => !slot.empty);
   const selectedItemId = selectedBagItem?.memberId === member.id ? selectedBagItem.itemId : null;
   const gold = chroniclesGoldBalance(state);
-  const backpackCounts = chroniclesBackpackCounts(inventory);
+  const backpackCounts = chroniclesBackpackCounts([...inventory, ...wornGearItems.map((slot) => slot.item)]);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
   // Filtering a single type is needless UI; preserve a way to clear any
   // active filter when changing heroes so a sparse bag cannot get stranded.
-  const showBackpackTools = inventory.length > 1 || backpackFilter !== 'all' || backpackSearch.trim().length > 0;
+  const showBackpackTools = inventory.length + wornGearItems.length > 1
+    || backpackFilter !== 'all' || backpackSearch.trim().length > 0;
   // The first visible item is a safe preview; selection never equips it.
   const transferableItem = !tacticsMode && visibleBackpack.find((item) => item.id === selectedItemId);
   const selectedInventoryItem = transferableItem || (!tacticsMode ? visibleBackpack[0] : null);
@@ -201,7 +203,6 @@ export default function ChroniclesCharacterSheet({
   const gearBonus = chroniclesEquipmentBonuses(state, member.id);
   // Include genuine equipped items in the MM3 item ledger; a full equipment
   // loadout must never look like an empty inventory just because the bag is empty.
-  const wornGearItems = tacticsMode ? [] : chroniclesWornGear(state, member.id).filter((slot) => !slot.empty);
   const selectedWornItem = wornGearItems.find((slot) => slot.slot === selectedWornSlot) || null;
   const visibleWornGear = tacticsMode ? [] : wornGearItems.filter((slot) =>
     chroniclesFilterBackpack([{ ...slot.item, name: slot.name }], backpackFilter, backpackSearch).length > 0);
@@ -356,10 +357,10 @@ export default function ChroniclesCharacterSheet({
               <span className="chronicles-character-sheet__backpack-heading">
                 {tacticsMode ? 'Mochila de expedición' : `Objetos de ${member.name}`}
               </span>
-              {!tacticsMode && (inventory.length + wornGearItems.length > 1 || showBackpackTools) && (
+              {!tacticsMode && showBackpackTools && (
                 <details className="chronicles-character-sheet__backpack-tools">
                   <summary>
-                    Filtrar y buscar <small>{visibleBackpack.length}/{inventory.length}</small>
+                    Filtrar y buscar <small>{visibleLedger.length}/{inventory.length + wornGearItems.length}</small>
                     {(backpackFilter !== 'all' || backpackSearch) && <b>Filtros activos</b>}
                   </summary>
                   <div className="chronicles-character-sheet__backpack-advanced">
