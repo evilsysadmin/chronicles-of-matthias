@@ -282,7 +282,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
           if (action === 'forward' || action === 'strafe-left' || action === 'backward') {
-            expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
+            expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}; action=${action}; facing=${before.direction}; message=${explored.message}; foes=${JSON.stringify(chroniclesActiveEnemies(before).filter(({ id }) => CENTRAL_PACK.includes(id)).map((enemy) => ({ id: enemy.id, pos: chroniclesRuntimeEnemyPosition(before, enemy) })))}`).toEqual(expectedTiles[walkedTiles]);
             if (action === 'strafe-left' || action === 'backward') {
               expect(explored.direction, 'lateral/backward travel must preserve facing').toBe(before.direction);
             }
