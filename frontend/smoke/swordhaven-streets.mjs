@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -53,6 +53,8 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.distinctGuildMasonry, 'true',
           'Guild must have its own slate masonry without merchant timberwork');
+        assert.equal(result.distinctGuildButtresses, 'true',
+          'Guild must have two pointed structural side buttresses, without altering the town grid');
         assert.equal(result.distinctGuildObservatory, 'true',
           'Real Swordhaven guild must have a unique roof observatory on desktop and mobile');
         assert.equal(result.distinctApothecaryMasonry, 'true',

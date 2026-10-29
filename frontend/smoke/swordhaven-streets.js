@@ -11,6 +11,8 @@ const VIEWS = Object.freeze({
   // to show the roof silhouette instead of only the door at eye level.
   apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   guild: { x: 13, y: 8, heading: 'north', target: { x: 15, y: 3 }, cameraHeight: 2.4, lookUp: 3.2 },
+  // Aim closer to the side buttress: portrait viewports otherwise crop it out.
+  'guild-oblique': { x: 12, y: 4, heading: 'north', target: { x: 13.5, y: 3 }, cameraHeight: 2.4, lookUp: 3.2 },
   forge: { x: 7, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   'forge-oblique': { x: 5, y: 8, heading: 'north', target: { x: 7, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
   armor: { x: 11, y: 8, heading: 'north', target: { x: 11, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
@@ -291,6 +293,14 @@ try {
       && store?.getObjectByName('store-awning-cloth')
       && store?.getObjectByName('store-awning-stripe')
       && !forge?.getObjectByName('store-market-awning')
+    )),
+    distinctGuildButtresses: String(Boolean(
+      guild?.getObjectByName('magic-guild-side-buttresses')?.userData.chroniclesDecorativeOnly
+      && guild?.getObjectByName('magic-guild-side-buttresses')?.children
+        .filter(child => child.name === 'magic-buttress-shaft').length === 2
+      && guild?.getObjectByName('magic-guild-side-buttresses')?.children
+        .filter(child => child.name === 'magic-buttress-pointed-cap').length === 2
+      && !forge?.getObjectByName('magic-guild-side-buttresses')
     )),
     distinctGuildObservatory: String(Boolean(
       guild?.getObjectByName('magic-guild-roof-observatory')?.userData.chroniclesDecorativeOnly
