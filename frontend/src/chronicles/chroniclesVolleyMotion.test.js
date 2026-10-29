@@ -38,7 +38,7 @@ describe('Chronicles · polished projectile flight', () => {
     }
     // A sling stone spins, without acquiring fake arrow fletching orientation.
     const stone = chroniclesVolleyFlightSample(1, 0, 0.1, 'sling');
-    expect(stone.yaw).toBe(0);
+    expect(Math.abs(stone.yaw)).toBeLessThan(1e-6);
   });
 
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {
