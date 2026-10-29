@@ -257,31 +257,32 @@ try {
       // Empty relics must not waste half the equipment dossier width.
       const emptyRelicLayout = await sheet.locator('.chronicles-character-sheet__loadout.is-relic-empty')
         .evaluate((node) => {
-          const relicCard = node.querySelector(':scope > .chronicles-character-sheet__relic').getBoundingClientRect();
+          const relicCount = node.querySelectorAll(':scope > .chronicles-character-sheet__relic').length;
           const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
+          const loadoutCard = node.getBoundingClientRect();
           const packNode = node.querySelector(':scope > .chronicles-character-sheet__backpack');
           const backpack = packNode.getBoundingClientRect();
           const columns = getComputedStyle(node).gridTemplateColumns;
           const packGridArea = getComputedStyle(packNode).gridArea;
-          return { columns, packGridArea, relicHeight: relicCard.height, relicWidth: relicCard.width,
-            equipmentWidth: equipmentCard.width, relicBottom: relicCard.bottom,
-            equipmentTop: equipmentCard.top, equipmentBottom: equipmentCard.bottom, equipmentLeft: equipmentCard.left, relicTop: relicCard.top,
+          return { columns, packGridArea, relicCount, loadoutBottom: loadoutCard.bottom,
+            equipmentWidth: equipmentCard.width,
+            equipmentTop: equipmentCard.top, equipmentBottom: equipmentCard.bottom, equipmentLeft: equipmentCard.left,
             backpackLeft: backpack.left, backpackRight: backpack.right,
             backpackTop: backpack.top, backpackBottom: backpack.bottom, backpackWidth: backpack.width };
         });
-      // The MM3 inventory is now the FIRST readable/actionable chapter,
-      // above the secondary equipped-gear summary and the compact relic.
+      // The MM3 inventory is the first actionable chapter. Empty relics do
+      // not render; the equipment summary immediately follows the backpack.
       const firstEquipmentArticle = await sheet.locator(
         '[data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > article'
       ).first().getAttribute('class');
       assert.ok(firstEquipmentArticle.includes('chronicles-character-sheet__backpack'),
         'Equipment should open on the playable inventory rather than the empty relic');
-      assert.ok(emptyRelicLayout.relicHeight <= 85,
-        'A missing relic should occupy a compact row: ' + JSON.stringify(emptyRelicLayout));
+      assert.equal(emptyRelicLayout.relicCount, 0,
+        'MM3 must omit empty relic cards entirely, not leave a blank third row');
       assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.backpackBottom - 2,
         'Equipped gear must follow the primary backpack, never overlap it: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(emptyRelicLayout.relicTop >= emptyRelicLayout.equipmentBottom - 2,
-        'The secondary relic note must follow the worn gear summary: ' + JSON.stringify(emptyRelicLayout));
+      assert.ok(emptyRelicLayout.loadoutBottom - emptyRelicLayout.equipmentBottom <= 16,
+        'Empty relics cannot leave trailing third-row whitespace: ' + JSON.stringify(emptyRelicLayout));
       assert.ok(emptyRelicLayout.backpackWidth >= 230 && emptyRelicLayout.equipmentWidth >= 290,
         'Both inventory and equipped gear must remain readable: ' + JSON.stringify(emptyRelicLayout));
       assert.ok(Math.abs(emptyRelicLayout.backpackLeft - emptyRelicLayout.equipmentLeft) <= 2
