@@ -91,6 +91,20 @@ describe('Chronicles character sheet combat summary', () => {
     expect(tactics).toContain('Mochila de expedición');
   });
 
+  it('offers a compact closed worn-equipment summary before detailed stats and controls', () => {
+    const html = render('mm3', 'equipment', {
+      equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
+    });
+    expect(html).toContain('class="chronicles-character-sheet__equipped-disclosure"');
+    expect(html).not.toMatch(/class="chronicles-character-sheet__equipped-disclosure"[^>]*\sopen=/);
+    expect(html).toContain('class="chronicles-character-sheet__equipped-body"');
+    expect(html).toContain('<span>Equipo puesto</span>');
+    expect(html).toMatch(/<small title="[^"]*A: [^"]*">/);
+    expect(html).toContain('Quitar');
+    const tactics = render(null, 'equipment', {}, null, 'tactics');
+    expect(tactics).not.toContain('chronicles-character-sheet__equipped-disclosure');
+  });
+
   it('retains the distinct legacy damage reduction summary', () => {
     const html = render(null);
     expect(html).toContain('mitigación');
