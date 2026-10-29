@@ -11,6 +11,7 @@ import './ChroniclesCharacterTrainingRetro.css';
 import './ChroniclesCharacterRecordV3.css';
 import './ChroniclesCharacterEquipmentDisclosure.css';
 import './ChroniclesCharacterInventoryClassic.css';
+import './ChroniclesCharacterFolioStone.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
