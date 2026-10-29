@@ -32,7 +32,7 @@ describe('Swordhaven botica greenhouse silhouette', () => {
     expect(rafters).toHaveLength(2);
     expect(roofPanes.map(pane => pane.rotation.z)).toEqual([0.67, -0.67]);
     expect(roofPanes.every(pane => pane.position.y === 1.94)).toBe(true);
-    expect(roofPanes.every(pane => pane.material.transparent && pane.material.opacity === 0.48
+    expect(roofPanes.every(pane => pane.material.transparent && pane.material.opacity === 0.58
       && pane.material.depthWrite === false)).toBe(true);
     expect(rafters.map(rafter => rafter.rotation.z)).toEqual([0.67, -0.67]);
     expect(greenhouse.getObjectByName('herbarium-roof-ridge').position.y).toBe(2.55);
