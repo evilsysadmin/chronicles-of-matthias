@@ -27,6 +27,23 @@ describe('Swordhaven general store frontage', () => {
       child.name.startsWith('swordhaven-building-first-book-forge-'));
     expect(store).toBeTruthy();
     expect(forge).toBeTruthy();
+    const tavern = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-tavern-'));
+    // The warehouse stocks provisions, not the inn's decorative flowers.
+    // All sacks remain on the original raised facade displays on touch/desktop.
+    const sacks = store.getObjectByName('store-window-burlap-sacks');
+    const ties = store.getObjectByName('store-window-sack-ties');
+    expect(sacks?.count).toBe(8);
+    expect(ties?.count).toBe(8);
+    expect(sacks.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(store.children.filter(child => child.name === 'store-stock-display-trough'))
+      .toHaveLength(2);
+    expect(store.getObjectByName('flower-window-box')).toBeFalsy();
+    expect(store.getObjectByName('window-box-blooms')).toBeFalsy();
+    expect(tavern.getObjectByName('window-box-blooms')).toBeTruthy();
+    expect(forge.getObjectByName('store-window-burlap-sacks')).toBeFalsy();
+    expect(store.getObjectByName('shop-door')).toBeTruthy();
     const walls = store.getObjectByName('timber-and-stone-walls');
     expect(walls.material.color.getHex()).toBe(0xd9b98a);
     expect(walls.material.map).toBe(swordhavenSurfaceTexture('stucco'));
