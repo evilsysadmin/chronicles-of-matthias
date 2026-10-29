@@ -204,6 +204,10 @@ try {
           'The bag and item inspector must remain side by side');
       }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
+      // This authored first-hour loot fixture uses the default legacy combat
+      // rules; it exercises the real reward and Equipar, not MM3-only deltas.
+      assert.equal(await sheet.locator('.chronicles-character-sheet__swap-preview').count(), 0,
+        'Never invent MM3 weapon comparisons in a legacy-rules campaign');
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The compact summary must reflect the equip immediately without
       // forcing the player to open the detailed worn-gear cards.

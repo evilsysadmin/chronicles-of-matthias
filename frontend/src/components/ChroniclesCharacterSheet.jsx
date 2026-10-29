@@ -377,13 +377,17 @@ export default function ChroniclesCharacterSheet({
                   )}
                   {selectedEquipment && <>
                     {weaponSwap ? (
-                      <div className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
-                        <b>Si equipas este objeto ({weaponSwap.slot === 'missile' ? 'S' : 'A'})</b>
+                      <details className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
+                        <summary>
+                          <span>Si equipas este objeto (${weaponSwap.slot === 'missile' ? 'S' : 'A'})</span>
+                          <strong>Daño {signed(weaponSwap.delta.damage)} · Acierto {signed(weaponSwap.delta.toHit)}</strong>
+                          {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
+                          <small>Ver comparación antes y después</small>
+                        </summary>
                         <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
-                        {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
-                      </div>
+                      </details>
                     ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
                     <button type="button" disabled={!canChangeEquipment || !canEquipSelected}
                       onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>

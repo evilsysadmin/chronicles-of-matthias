@@ -673,6 +673,28 @@ try {
       // hidden transfer command. Navigation must always remain navigation.
       await sword.click();
       assert.equal(await sword.getAttribute('aria-pressed'), 'true');
+      // This fixture is a genuine MM3-rules campaign, unlike the legacy
+      // first-hour loot fixture. Inspect real read-only swap stats here.
+      const swapDetails = sheet.locator('.chronicles-character-sheet__swap-preview');
+      await swapDetails.waitFor({ state: 'visible' });
+      assert.equal(await swapDetails.getAttribute('open'), null,
+        'MM3 weapon comparison must start folded');
+      const swapSummary = swapDetails.locator('summary');
+      assert.match(await swapSummary.innerText(), /Daño [+-]?\d+ · Acierto [+-]?\d+/,
+        'Real damage and accuracy deltas must be visible before expanding');
+      const closedSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
+      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), false,
+        'Closed details must not paint the hidden before/after stats');
+      await swapSummary.click();
+      assert.equal(await swapDetails.locator(':scope > div').count(), 2);
+      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), true,
+        'Expanding comparison reveals actual before/after rows');
+      const expandedSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
+      assert.ok(expandedSwapHeight >= closedSwapHeight + 30,
+        'Folding the comparison must save visible height: '
+        + JSON.stringify({ closedSwapHeight, expandedSwapHeight }));
+      await swapSummary.click();
+      assert.equal(await swapDetails.getAttribute('open'), null);
       assert.equal(await sheet.locator('.chronicles-character-sheet__inventory-hint').count(), 0,
         'The secondary bag hint must not add another scroll row beneath the list');
       const itemState = sheet.locator('.chronicles-character-sheet__item-details .chronicles-character-sheet__item-selection-state');

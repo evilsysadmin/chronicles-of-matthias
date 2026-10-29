@@ -638,8 +638,39 @@
   border: 1px solid #a08156;
   background: #181d1a;
 }
-.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > b {
+/* Keep the actual gain/loss visible; the before/after ledger is optional.
+   Native summary markers and keyboard activation remain intact. */
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary {
+  min-height: 44px;
+  padding: 3px 2px;
+  cursor: pointer;
   color: #f5d4a3;
+  line-height: 1.2;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary > span,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary > strong,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary > small {
+  display: block;
+  margin-top: 3px;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary > strong {
+  color: #b7e1ab;
+  font-size: .93rem;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary > small {
+  color: #dbc4a1;
+  font-size: .78rem;
+  line-height: 1.25;
+}
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > summary:focus-visible {
+  outline: 2px solid #e2bc78;
+  outline-offset: 2px;
+}
+/* Higher-specificity author styles must not defeat native closed-details
+   hiding when child rows themselves use display: grid. */
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview:not([open]) > div,
+.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview:not([open]) > small {
+  display: none;
 }
 .chronicles-character-sheet--folio-v2 .chronicles-character-sheet__swap-preview > div {
   display: grid;
