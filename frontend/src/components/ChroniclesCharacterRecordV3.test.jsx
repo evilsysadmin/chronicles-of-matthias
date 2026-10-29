@@ -15,7 +15,7 @@ const render = (mode = 'chronicles') => {
   }));
 };
 describe('MM3 character Status layout is a real structural redesign', () => {
-  it('presents attributes before battle strip and gear in the wide chapter with true HP condition', () => {
+  it('presents real attributes and battle strip without duplicating equipment', () => {
     const html = render();
     expect(html).toContain('data-chronicles-chapter="record"');
     for(const name of ['might','intellect','personality','endurance','speed','accuracy','luck','condition']) {
@@ -23,8 +23,8 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     }
     expect(html).toContain('Sano');
     expect(html).toContain('Estado general según los puntos de vida actuales');
-    expect(html).toContain('data-chronicles-worn-gear="matthias"');
-    expect(css).toContain('grid-template-areas: "attributes" "battle" "worn" "footer"');
+    expect(html).not.toContain('data-chronicles-worn-gear="matthias"');
+    expect(css).toContain('grid-template-areas: "attributes" "battle" "footer"');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(6, minmax(0,1fr))');
   });
