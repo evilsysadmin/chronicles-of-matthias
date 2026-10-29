@@ -22,6 +22,7 @@ export default function ChroniclesPartyAvatarButton({
       // Chrome may dispatch click(clickCount=2) before dblclick. Open once.
       if (targetedOnFirstClick.current) {
         targetedOnFirstClick.current = false;
+        openedBySecondClick.current = true;
         return;
       }
       openedBySecondClick.current = true;
