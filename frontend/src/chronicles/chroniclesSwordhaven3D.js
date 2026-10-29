@@ -252,7 +252,19 @@ function emblem(group, kind, mats) {
     const shape = new THREE.Shape();
     shape.moveTo(-0.4, 0.35); shape.lineTo(0.4, 0.35); shape.lineTo(0.32, -0.2);
     shape.lineTo(0, -0.52); shape.lineTo(-0.32, -0.2); shape.closePath();
-    mesh(group, new THREE.ShapeGeometry(shape), gold, 'shield-emblem', [0, 0, 0.1]);
+    mesh(group, new THREE.ShapeGeometry(shape), gold, 'shield-emblem', [0, 0, 0.20]);
+  } else if (kind === 'watch') {
+    // Crossed steel watch-halberds distinguish the guard barracks from the
+    // armorer's shield. Lift the relief clear of the inset's front surface.
+    for (const tilt of [-0.48, 0.48]) {
+      const shaft = mesh(group, new THREE.BoxGeometry(0.10, 0.94, 0.10),
+        mats.steel, 'watch-crossed-halberd', [0, -0.03, 0.22]);
+      shaft.rotation.z = tilt;
+      const tip = mesh(group, new THREE.ConeGeometry(0.14, 0.28, 4),
+        gold, 'watch-halberd-tip',
+        [-Math.sin(tilt) * 0.46, Math.cos(tilt) * 0.46, 0.23]);
+      tip.rotation.z = tilt;
+    }
   } else if (kind === 'mug') {
     mesh(group, new THREE.BoxGeometry(0.57, 0.57, 0.12), gold, 'tankard', [-0.1, 0, 0.1]);
     mesh(group, new THREE.TorusGeometry(0.2, 0.06, 5, 12), gold, 'tankard-handle', [0.31, 0, 0.1]);
@@ -1796,7 +1808,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   sign.position.set(0, height - 0.33, facadeZ + 0.44);
   mesh(sign, new THREE.BoxGeometry(1.8, 1.4, 0.16), mats.timber, 'hanging-sign', [0, 0, 0]);
   mesh(sign, new THREE.BoxGeometry(1.66, 1.26, 0.08), mats.stone, 'sign-inset', [0, 0, 0.1]);
-  emblem(sign, spec.emblem, mats);
+  emblem(sign, isWatch ? 'watch' : spec.emblem, mats);
   root.add(sign);
   // The emblem is heraldry; the shorter engraved plaque below it names the
   // service at real street distance. Both are attached to the same facade.
