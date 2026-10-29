@@ -28,7 +28,7 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(bars).toBeInstanceOf(THREE.InstancedMesh);
     expect(bars.count).toBe(6);
     expect(bars.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(bars.castShadow).toBe(!coarse);
+    expect(bars.castShadow).toBe(!coarsePointer);
     expect(watch.children.filter(child => child.name === 'watchhouse-front-dark-recess')).toHaveLength(2);
     expect(watch.children.filter(child => child.name === 'watchhouse-front-stone-jamb')).toHaveLength(4);
     expect(watch.children.filter(child => child.name === 'watchhouse-front-stone-rail')).toHaveLength(6);
