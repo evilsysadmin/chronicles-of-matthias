@@ -231,6 +231,9 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           ...turnActions, 'forward', 'forward', 'forward',
           'turn-right', 'forward', 'forward', 'turn-right', 'forward',
           'strafe-left', 'strafe-left', 'backward', 'backward',
+          // (4,1) is solid masonry: a wall bump costs time but never
+          // teleports the party or freezes nearby pursuers.
+          'strafe-right',
         ];
         const expectedTiles = [
           { x: 1, y: 4 }, { x: 1, y: 3 }, { x: 1, y: 2 },
@@ -245,6 +248,12 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .filter(({ id }) => CENTRAL_PACK.includes(id))
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
+          if (action === 'strafe-right') {
+            expect({ x: before.x, y: before.y }).toEqual({ x: 5, y: 1 });
+            expect(explored.message).toMatch(/pared/i);
+            expect({ x: explored.x, y: explored.y, direction: explored.direction })
+              .toEqual({ x: before.x, y: before.y, direction: before.direction });
+          }
           if (action === 'forward' || action === 'strafe-left' || action === 'backward') {
             expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
             if (action === 'strafe-left' || action === 'backward') {
@@ -354,7 +363,8 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(6);
       expect(travel.actions.filter((action) => action === 'strafe-left')).toHaveLength(2);
       expect(travel.actions.filter((action) => action === 'backward')).toHaveLength(2);
-      expect(travel.actions.at(-1)).toBe('backward');
+      expect(travel.actions.at(-1)).toBe('strafe-right');
+      expect(travel.actions.filter((action) => action === 'strafe-right')).toHaveLength(1);
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
       expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
