@@ -344,6 +344,15 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect(vines).toBeFalsy();
         continue;
       }
+      // Guard barracks have iron embrasures, not civilian window boxes.
+      const watchBars = building.getObjectByName('watchhouse-front-iron-bars');
+      if (watchBars) {
+        expect(watchBars).toBeInstanceOf(THREE.InstancedMesh);
+        expect(watchBars.count).toBe(6);
+        expect(foliage).toBeFalsy();
+        expect(vines).toBeFalsy();
+        continue;
+      }
       expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
       expect(vines).toBeInstanceOf(THREE.InstancedMesh);
       expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);
