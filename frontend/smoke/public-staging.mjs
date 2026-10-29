@@ -269,10 +269,11 @@ try {
       // returning account may have a valid custom four-hero company.
       const partyPortraits = world.locator('.chronicles-party-member');
       assert.ok(await partyPortraits.count() >= 4, 'An expedition has four selectable heroes');
-      const firstHeroName = (await partyPortraits.nth(0).getAttribute('aria-label'))
-        ?.replace(/^Seleccionar /, '');
-      const fourthHeroName = (await partyPortraits.nth(3).getAttribute('aria-label'))
-        ?.replace(/^Seleccionar /, '');
+      // Accessible labels also include live PV ("Seleccionar Matthias, 20/20 PV").
+      // Read the visible hero names instead: folio titles contain names only.
+      // This is part of the public browser regression, not a mocked UI.
+      const firstHeroName = (await partyPortraits.nth(0).locator('strong').innerText()).trim();
+      const fourthHeroName = (await partyPortraits.nth(3).locator('strong').innerText()).trim();
       assert.ok(firstHeroName && fourthHeroName, 'Missing hero names on actual party portraits');
       // Portraits select on one click/tap; the dossier opens on a desktop
       // double-click or a second quick touch tap (PR #867).
