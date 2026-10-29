@@ -510,11 +510,20 @@ export function chroniclesMapTransitionState(state, mapId) {
     Object.keys(previousMap.initialFlags).filter((key) => Object.hasOwn(state, key))
       .map((key) => [key, state[key]]),
   );
+  const savedFlags = state?.mapFlagsById;
   const mapFlagsById = {
-    ...(state?.mapFlagsById && !Array.isArray(state.mapFlagsById) ? state.mapFlagsById : {}),
+    ...(savedFlags && typeof savedFlags === 'object' && !Array.isArray(savedFlags) ? savedFlags : {}),
     [previousMap.id]: previousFlags,
   };
-  const destinationFlags = { ...map.initialFlags, ...(mapFlagsById[map.id] || {}) };
+  // Floor-local save data may restore only authored flags. A damaged legacy
+  // snapshot must not overwrite the party, spawn coordinates or world state.
+  const savedDestinationFlags = mapFlagsById[map.id];
+  const destinationFlags = { ...map.initialFlags };
+  if (savedDestinationFlags && typeof savedDestinationFlags === 'object' && !Array.isArray(savedDestinationFlags)) {
+    for (const key of Object.keys(map.initialFlags)) {
+      if (Object.hasOwn(savedDestinationFlags, key)) destinationFlags[key] = savedDestinationFlags[key];
+    }
+  }
   // A floor's switches and treasures are not world-wide flags. Snapshot them
   // above, then remove them from the active region before loading its flags.
   // Otherwise a cleared lever remains truthy in unrelated dungeons.

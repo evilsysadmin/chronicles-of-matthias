@@ -73,6 +73,52 @@ describe('Chronicles MM3 explicit area transition safety', () => {
     expect(chroniclesMapTransitionState(gallery, 'crypt-eight-squares').sigilAwake).toBe(false);
   });
 
+  it('restores only authored flags from a damaged destination floor snapshot', () => {
+    const source = createChroniclesState('gallery-of-forks');
+    const corrupted = JSON.parse(JSON.stringify({
+      ...source,
+      mapFlagsById: {
+        'menagerie-of-ash': {
+          emberCacheOpened: true,
+          x: 999, y: 999, direction: 99,
+          mapId: 'crypt-eight-squares',
+          party: [], phase: 'game-over',
+          galleryLeverPulled: true,
+        },
+      },
+    }));
+    const destination = chroniclesMapById('menagerie-of-ash');
+    const arrived = chroniclesMapTransitionState(corrupted, destination.id);
+
+    expect(arrived).toMatchObject({
+      mapId: destination.id,
+      x: destination.partyStart.x,
+      y: destination.partyStart.y,
+      direction: destination.partyStart.direction,
+      phase: 'explore',
+      emberCacheOpened: true,
+    });
+    expect(arrived.party).toEqual(source.party);
+    expect(arrived).not.toHaveProperty('galleryLeverPulled');
+    expect(corrupted.mapFlagsById['menagerie-of-ash'].x).toBe(999);
+  });
+
+  it('ignores malformed legacy floor flag ledgers and snapshots', () => {
+    const source = createChroniclesState('gallery-of-forks');
+    for (const mapFlagsById of [
+      'corrupt-ledger',
+      ['corrupt-ledger'],
+      { 'menagerie-of-ash': ['corrupt-snapshot'] },
+      { 'menagerie-of-ash': 'corrupt-snapshot' },
+    ]) {
+      const arrived = chroniclesMapTransitionState({ ...source, mapFlagsById }, 'menagerie-of-ash');
+      expect(arrived.emberCacheOpened).toBe(false);
+      expect(arrived.party).toEqual(source.party);
+      expect(arrived.x).toBe(chroniclesMapById('menagerie-of-ash').partyStart.x);
+      expect(Object.keys(arrived.mapFlagsById).every((key) => !/^\\d+$/.test(key))).toBe(true);
+    }
+  });
+
   it('keeps valid dungeon travel and legacy saved-map lookup behavior unchanged', () => {
     const state = createChroniclesState('swordhaven-first-book');
     const arrived = chroniclesMapTransitionState(state, 'swordhaven-sewers');
