@@ -1524,7 +1524,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(stack, new THREE.BoxGeometry(0.80, 0.05, 0.70), mats.timber,
       'forge-smokestack-vent', [0, 2.48, 0]);
     root.add(stack);
-  } else if (spec.emblem === 'shield') {
+  } else if (spec.emblem === 'shield' && !isWatch) {
+    // The watchhouse is not an armorer: don't leave oversized steel display
+    // plaques beneath its new iron-barred windows.
     for (const x of [-width * 0.35, width * 0.35]) mesh(root,
       new THREE.BoxGeometry(0.67, 1.48, 0.22), mats.steel,
       'armor-display', [x, 1.12, facadeZ + 0.24]);
