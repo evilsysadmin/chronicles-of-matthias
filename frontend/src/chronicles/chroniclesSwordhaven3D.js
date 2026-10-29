@@ -1395,7 +1395,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // obscured the panes and read as an opaque green roof cube from the street.
     const herbalGlass = material(0xa0cbb4, {
       emissive: 0x12372a, emissiveIntensity: 0.12, metalness: 0.04,
-      roughness: 0.27, transparent: true, opacity: 0.48,
+      roughness: 0.27, transparent: true, opacity: 0.58,
       depthWrite: false, side: THREE.DoubleSide,
     });
     const herbarium = new THREE.Group();
