@@ -16,8 +16,9 @@ const render = (rules, folio = 'equipment', stateOverrides = {}, memberId = null
 describe('Chronicles character sheet combat summary', () => {
   it('labels first-person MM3 equipment A separately from ranged S and never sells numeric damage reduction', () => {
     const html = render('mm3');
-    expect(html).toContain('Equipo A: daño');
-    expect(html).toContain('El disparo S usa sus propios bonos');
+    expect(html).not.toContain('Equipo A: daño');
+    expect(html).not.toContain('data-chronicles-worn-gear');
+    expect(html).toContain('A y S calculan daño y acierto por separado');
     expect(html).not.toMatch(/alcance/i);
     expect(html).toContain('CA del equipo');
     expect(html).toContain('dificulta impactos, no resta daño');
