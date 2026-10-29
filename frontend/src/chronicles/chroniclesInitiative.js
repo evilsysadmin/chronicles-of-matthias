@@ -276,6 +276,34 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
     const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
   }
+  // Legacy/restored initiative orders can contain repeated actor slots. If
+  // left intact, advancing a duplicate can select that same actor again and
+  // map its cursor back to the first copy, trapping combat on one enemy.
+  // Keep the first slot per (kind, id) and map the current actor to it before
+  // calculating turn boundaries. Party and enemy IDs have separate namespaces.
+  const originalSlots = state.initiative.order;
+  const seenSlots = new Set();
+  const uniqueSlots = originalSlots.filter((actor) => {
+    if (!validActorId(actor?.id) || (actor.kind !== 'party' && actor.kind !== 'enemy')) return true;
+    const key = JSON.stringify([actor.kind, actor.id]);
+    if (seenSlots.has(key)) return false;
+    seenSlots.add(key);
+    return true;
+  });
+  if (uniqueSlots.length !== originalSlots.length) {
+    const current = chroniclesCurrentInitiativeActor(state.initiative);
+    const cursor = uniqueSlots.findIndex((actor) => (
+      actor?.kind === current?.kind && actor?.id === current?.id
+    ));
+    state = {
+      ...state,
+      initiative: {
+        ...state.initiative,
+        order: uniqueSlots,
+        cursor: Math.max(0, cursor),
+      },
+    };
+  }
   // Preserve the original turn boundary before leashed enemies are pruned.
   const orderBeforeLeash = state.initiative.order;
   const cursorBeforeLeash = Math.min(orderBeforeLeash.length - 1, nonNegativeInteger(state.initiative.cursor));
