@@ -9,12 +9,12 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 const css = readFileSync(new URL('./ChroniclesCharacterInventoryRetro.css', import.meta.url), 'utf8');
 const classic = readFileSync(new URL('./ChroniclesCharacterInventoryClassic.css', import.meta.url), 'utf8');
 
-function html(mode = 'chronicles') {
+function html(mode = 'chronicles', overrides = {}) {
   const state = createChroniclesState('swordhaven-first-book', null, { rules: mode === 'chronicles' ? 'mm3' : null });
   const inventory = { 'brass-dagger': { id: 'brass-dagger', name: 'Daga de latón', quantity: 2 } };
   const owned = { matthias: { 'brass-dagger': 2 } };
   return renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
-    state: { ...state, inventory, bagOwners: owned },
+    state: { ...state, inventory, bagOwners: owned, ...overrides },
     progression: createChroniclesProgression(),
     member: state.party[0],
     mode,
@@ -44,6 +44,25 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).not.toContain('chronicles-character-sheet__inventory-hint');
     expect(rendered).toContain('data-slot="weapon"');
     expect(rendered).toContain('data-slot="missile"');
+  });
+
+  it('lists genuinely equipped objects even when the personal bag is empty', () => {
+    const equipment = { matthias: { weapon: 'bronze-sword', armor: 'leather-leather' } };
+    const emptyBag = { inventory: {}, bagOwners: { matthias: {} }, equipment };
+    const rendered = html('chronicles', emptyBag);
+    expect(rendered).toContain('aria-label="Equipo puesto de Matthias"');
+    expect(rendered).toContain('data-worn-slot="weapon"');
+    expect(rendered).toContain('data-worn-slot="armor"');
+    expect(rendered).toContain('Espada de bronce');
+    expect(rendered).toContain('Coraza de cuero');
+    expect(rendered).toContain('Mochila');
+    expect(rendered).toContain('Este personaje no lleva objetos en su mochila.');
+    expect(rendered).not.toContain('data-worn-slot="missile"');
+    expect(html('tactics', emptyBag)).not.toContain('chronicles-character-sheet__worn-ledger');
+    expect(html('chronicles', { ...emptyBag, equipment: { matthias: {} } }))
+      .not.toContain('data-worn-slot=');
+    expect(classic).toContain('.chronicles-character-sheet__worn-ledger li');
+    expect(classic).toContain('min-height: 44px;');
   });
 
   it('keeps the equipment chapter in a cool stone and parchment palette with compact desktop actions', () => {
