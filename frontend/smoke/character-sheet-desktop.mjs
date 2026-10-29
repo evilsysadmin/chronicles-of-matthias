@@ -212,6 +212,14 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
+      // The classic equipment skin must not hide the only close button with
+      // its large identity banner. Exercise painted and accessible geometry.
+      const equipmentClose = sheet.getByRole('button', { name: 'Cerrar ficha' });
+      assert.equal(await equipmentClose.count(), 1, 'Equipment needs one accessible close control');
+      const equipmentCloseBox = await equipmentClose.boundingBox();
+      assert.ok(equipmentCloseBox && equipmentCloseBox.width >= 38 && equipmentCloseBox.height >= 38,
+        'Equipment close must be a visible clickable target: ' + JSON.stringify(equipmentCloseBox));
+      assert.equal(await equipmentClose.isEnabled(), true);
       assert.match(await sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head span'
       ).first().textContent(), /OBJETOS DE Matthias/,
