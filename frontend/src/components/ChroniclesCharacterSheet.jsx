@@ -624,11 +624,13 @@ export default function ChroniclesCharacterSheet({
           </div>
           <div className={`chronicles-character-sheet__loadout${!relic ? ' is-relic-empty' : ''}`}>
             {!tacticsMode && backpackPanel}
-            <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
-              <span>Reliquia vinculada</span>
-              <b>{relic?.name || 'Ninguna'}</b>
-              {relic && <small>{relic.description}</small>}
-            </article>
+            {(tacticsMode || relic) && (
+              <article className={relic ? 'chronicles-character-sheet__relic has-relic' : 'chronicles-character-sheet__relic'}>
+                <span>Reliquia vinculada</span>
+                <b>{relic?.name || 'Ninguna'}</b>
+                {relic && <small>{relic.description}</small>}
+              </article>
+            )}
             {!tacticsMode && <article className="chronicles-character-sheet__equipment">
               <details className="chronicles-character-sheet__equipped-disclosure">
                 <summary>
