@@ -77,9 +77,8 @@ describe('Chronicles character sheet combat summary', () => {
       inventory: { 'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' } },
       bagOwners: { matthias: { 'brass-sling': 1 } },
     });
-    expect(html).toMatch(/<details class="chronicles-character-sheet__backpack-tools">\s*<summary>/);
-    expect(html).toContain('Filtrar y buscar');
-    expect(html).toContain('chronicles-character-sheet__backpack-advanced');
+    expect(html).not.toContain('chronicles-character-sheet__backpack-tools');
+    expect(html).not.toContain('Filtrar y buscar');
     expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Descripción y atributos<\/summary>/);
     expect(html).toMatch(/Puede equiparlo|Clase incompatible/);
     expect(html).toContain('Equipar Honda de latón');
@@ -90,6 +89,20 @@ describe('Chronicles character sheet combat summary', () => {
     const tactics = render(null, 'equipment', {}, null, 'tactics');
     expect(tactics).not.toContain('chronicles-character-sheet__backpack-advanced');
     expect(tactics).toContain('Mochila de expedición');
+  });
+
+  it('keeps filtering available for multiple owned item types', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: {
+        'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' },
+        'brass-shield': { id: 'brass-shield', quantity: 1, name: 'Escudo de latón' },
+      },
+      bagOwners: { matthias: { 'brass-sling': 1, 'brass-shield': 1 } },
+    });
+    expect(html).toMatch(/<details class="chronicles-character-sheet__backpack-tools">\s*<summary>/);
+    expect(html).toContain('Filtrar y buscar');
+    expect(html).toContain('chronicles-character-sheet__backpack-advanced');
+    expect(html).toContain('Buscar en la mochila');
   });
 
   it('offers a compact closed worn-equipment summary before detailed stats and controls', () => {
