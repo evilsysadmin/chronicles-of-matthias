@@ -112,6 +112,7 @@ import { useEscapeToClose } from '../useEscapeToClose.js';
 import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
+import ChroniclesPartyAvatarButton from './ChroniclesPartyAvatarButton.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesInn from './ChroniclesInn.jsx';
 import ChroniclesProvisions, { CHRONICLES_QUARTERMASTER_ID } from './ChroniclesProvisions.jsx';
@@ -1898,14 +1899,22 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           )}
           {state.party.map((member, index) => {
             return (
-              <button
-                type="button"
+              <ChroniclesPartyAvatarButton
                 key={member.id}
                 className={`chronicles-party-member ${member.id === 'matthias' ? 'is-leader' : ''} ${member.id === selectedMemberId ? 'is-selected' : ''} ${member.hp <= 0 ? 'is-down' : ''} ${pendingSpellTarget && chroniclesHealTargetStatus(member) === 'wounded' ? 'is-spell-target-valid' : ''}`}
-                onClick={() => pendingSpellTarget ? chooseSpellTarget(member.id) : openMemberSheet(member.id)}
+                targeting={Boolean(pendingSpellTarget)}
+                onTarget={() => chooseSpellTarget(member.id)}
+                onSelect={() => {
+                  const actor = chroniclesCurrentInitiativeActor(stateRef.current?.initiative);
+                  if (actor?.kind !== 'party' || actor.id === member.id) {
+                    selectedMemberIdRef.current = member.id;
+                    setSelectedMemberId(member.id);
+                  }
+                }}
+                onOpen={() => openMemberSheet(member.id)}
                 disabled={expeditionOver}
                 aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}`}
-                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: ficha`}
+                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
@@ -1941,7 +1950,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   <ChroniclesPortraitLevelUp key={portraitLevelUps[member.id].token}
                     heroName={member.name} toLevel={portraitLevelUps[member.id].toLevel} />
                 )}
-              </button>
+              </ChroniclesPartyAvatarButton>
             );
           })}
           {/* MM3 keeps two places beside the company for hired hands. */}
