@@ -328,7 +328,9 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
     const at = Math.min(original.length - 1, nonNegativeInteger(state.initiative.cursor));
     let cursor = order.length - 1;
     for (let index = at; index >= 0; index -= 1) {
-      const kept = order.findIndex((actor) => actor.kind === original[index]?.kind && actor.id === original[index]?.id);
+      const previous = original[index];
+      if (!validActorId(previous?.id) || (previous.kind !== 'party' && previous.kind !== 'enemy')) continue;
+      const kept = order.findIndex((actor) => actor?.kind === previous.kind && actor?.id === previous.id);
       if (kept >= 0) { cursor = kept; break; }
     }
     state = {
