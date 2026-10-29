@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesMapById, chroniclesMapContentPosition, chroniclesMapIds } from './chroniclesMapCatalog.js';
 
-// All authored and Terra expedition dungeons, including the multi-exit temple
-// floors. Outdoor regions have separate connectivity/travel contracts.
-const DUNGEON_IDS = [
-  'crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash', 'swordhaven-sewers',
-  'ash-vault', 'blind-king-archive', 'iron-foundry', 'echo-cistern', 'chain-basilica',
-  'hollow-bell-tower', 'black-glass-chapel',
-  'salinas-hundidas', 'cueva-contrabandistas', 'minas-de-escoria',
-  'tumulos-primer-pacto', 'cienaga-negra', 'cripta-del-obispo', 'faro-roto',
-  'guarida-del-dragon', 'torre-de-los-nombres',
-  'templo-corona-atrio', 'templo-corona-cripta', 'templo-corona-trono',
+// The earliest authored dungeons predate regionKind metadata. Keep them
+// explicitly covered, and discover every newer dungeon from the map catalog
+// so a future Terra floor cannot silently miss the spawn-to-content check.
+const LEGACY_DUNGEON_IDS = [
+  'crypt-eight-squares', 'gallery-of-forks', 'menagerie-of-ash',
+  'ash-vault', 'blind-king-archive', 'iron-foundry', 'echo-cistern',
+  'chain-basilica', 'hollow-bell-tower', 'black-glass-chapel',
 ];
+const DUNGEON_IDS = [...new Set([
+  ...LEGACY_DUNGEON_IDS,
+  ...chroniclesMapIds().filter((id) => chroniclesMapById(id).regionKind === 'dungeon'),
+])];
 
 // Stepping on an exit leaves the map. If the only way between two parts of a
 // map crosses an exit, the player is thrown out every time they try to
@@ -47,6 +48,14 @@ function regions(map) {
 }
 
 describe('Chronicles map connectivity', () => {
+  it('includes all established dungeons and newly cataloged dungeon regions', () => {
+    // Never allow a metadata edit to quietly reduce the 23-map baseline.
+    expect(DUNGEON_IDS.length).toBeGreaterThanOrEqual(23);
+    expect(DUNGEON_IDS).toEqual(expect.arrayContaining([
+      'swordhaven-sewers', 'templo-corona-atrio', 'templo-corona-cripta', 'templo-corona-trono',
+    ]));
+  });
+
   it.each(chroniclesMapIds())('%s keeps its content reachable without crossing an exit', (mapId) => {
     const map = chroniclesMapById(mapId);
     const region = regions(map);
