@@ -237,8 +237,37 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
     expect(turned.explorationEnemySteps).toBe(blocked.explorationEnemySteps + 1);
   });
 
+  it('does not walk through a living goblin occupying a traversable north-gallery tile', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const foe = chroniclesActiveEnemies(base).find(({ id }) => id === 'sewers-goblin-upper-gallery');
+    expect(foe).toBeTruthy();
+    const inactive = Object.fromEntries(chroniclesActiveEnemies(base)
+      .filter(({ id }) => id !== foe.id)
+      .map((enemy) => [enemy.hpKey, 0]));
+    // (9,2) is open floor, but an occupying live goblin must prevent entry.
+    // This is the real obstruction discovered when extending the two-fight
+    // benchmark, not a wall and not permission to teleport past the enemy.
+    const before = {
+      ...base, ...inactive, x: 9, y: 1, direction: 2,
+      enemyPositions: { ...(base.enemyPositions || {}), [foe.id]: { x: 9, y: 2 } },
+    };
+    expect(chroniclesRuntimeEnemyPosition(before, foe)).toEqual({ x: 9, y: 2 });
+    const blocked = chroniclesGridExplorationStep(before, 'forward');
+    expect(blocked.message).toMatch(/bloquea el paso/i);
+    expect({ x: blocked.x, y: blocked.y, direction: blocked.direction })
+      .toEqual({ x: before.x, y: before.y, direction: before.direction });
+    expect(blocked.turns).toBe(before.turns + 1);
+    expect(blocked.explorationEnemySteps).toBe((before.explorationEnemySteps || 0) + 1);
+    expect(blocked.phase).toBe('explore');
+    expect(blocked.initiative).toBeFalsy();
+    expect(blocked.party).toEqual(before.party);
+    expect(blocked.inventory).toEqual(before.inventory);
+    expect(blocked.spellPoints).toEqual(before.spellPoints);
+    expect(chroniclesRuntimeEnemyPosition(blocked, foe)).toEqual({ x: 9, y: 2 });
+  });
+
   it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
-    // Two existing squads in the same map. Walk fifteen real dungeon tiles after
+    // Two existing squads in the same map. Walk fourteen real dungeon tiles after
     // the first fight, including turns around the north-gallery corner.
     // The remainder is still a test-only relocation, NOT a full route/attrition
     // benchmark. Reverse d8 order between fights; no resource reset.
@@ -253,7 +282,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
         // The west encounter starts at (1,5). Follow the authored corridor
         // north via (1,4), (1,3), (1,2), then east via (2,2), (3,2),
         // south to (3,3), sidestep twice east to (5,3), then backtrack
-        // north to (5,1), then east to (9,1) and south to (9,2), preserving southward facing.
+        // north to (5,1), then east to (9,1), preserving southward facing.
         // This exercises the Q/E exploration path as well as forward steps.
         // Do not teleport, refill PV/PH, or bypass enemy awareness for this leg.
         const turnActions = {
@@ -264,7 +293,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           ...turnActions, 'forward', 'forward', 'forward',
           'turn-right', 'forward', 'forward', 'turn-right', 'forward',
           'strafe-left', 'strafe-left', 'backward', 'backward',
-          'strafe-left', 'strafe-left', 'strafe-left', 'strafe-left', 'forward',
+          'strafe-left', 'strafe-left', 'strafe-left', 'strafe-left',
         ];
         const expectedTiles = [
           { x: 1, y: 4 }, { x: 1, y: 3 }, { x: 1, y: 2 },
@@ -272,7 +301,6 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           { x: 4, y: 3 }, { x: 5, y: 3 },
           { x: 5, y: 2 }, { x: 5, y: 1 },
           { x: 6, y: 1 }, { x: 7, y: 1 }, { x: 8, y: 1 }, { x: 9, y: 1 },
-          { x: 9, y: 2 },
         ];
         let walkedTiles = 0;
         for (const action of actions) {
@@ -282,7 +310,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
           if (action === 'forward' || action === 'strafe-left' || action === 'backward') {
-            expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}; action=${action}; facing=${before.direction}; message=${explored.message}; foes=${JSON.stringify(chroniclesActiveEnemies(before).filter(({ id }) => CENTRAL_PACK.includes(id)).map((enemy) => ({ id: enemy.id, pos: chroniclesRuntimeEnemyPosition(before, enemy) })))}`).toEqual(expectedTiles[walkedTiles]);
+            expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
             if (action === 'strafe-left' || action === 'backward') {
               expect(explored.direction, 'lateral/backward travel must preserve facing').toBe(before.direction);
             }
@@ -386,11 +414,11 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(first.phase).toBe('explore');
       expect(first.downed).toBe(0);
       expect(travel.from).toEqual({ x: 1, y: 5 });
-      expect(travel.to).toEqual({ x: 9, y: 2 });
-      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(7);
+      expect(travel.to).toEqual({ x: 9, y: 1 });
+      expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(6);
       expect(travel.actions.filter((action) => action === 'strafe-left')).toHaveLength(6);
       expect(travel.actions.filter((action) => action === 'backward')).toHaveLength(2);
-      expect(travel.actions.at(-1)).toBe('forward');
+      expect(travel.actions.at(-1)).toBe('strafe-left');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
       expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
