@@ -356,13 +356,6 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
               )}
-              {!tacticsMode && inventory.length > 0 && (
-                <small className="chronicles-character-sheet__inventory-hint" aria-live="polite">
-                  {transferableItem
-                    ? `Seleccionado: ${transferableItem.name}. Usa «Entregar 1 a…» en los detalles.`
-                    : 'Selecciona un objeto para poder entregarlo desde sus detalles.'}
-                </small>
-              )}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite">
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>

@@ -32,7 +32,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('Mochila de Matthias');
     expect(rendered).toContain('Equipar Daga de latón');
     expect(rendered).not.toContain('chronicles-character-sheet__handoff-targets');
-    expect(rendered).toContain('Selecciona un objeto para poder entregarlo desde sus detalles.');
+    expect(rendered).toContain('Vista previa · selecciónalo para entregarlo');
+    expect(rendered).toContain('class="chronicles-character-sheet__item-details" aria-live="polite"');
+    expect(rendered).not.toContain('chronicles-character-sheet__inventory-hint');
     expect(rendered).toContain('data-slot="weapon"');
     expect(rendered).toContain('data-slot="missile"');
   });
