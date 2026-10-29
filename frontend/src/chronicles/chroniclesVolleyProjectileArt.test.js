@@ -79,6 +79,20 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
       .toBeGreaterThan(0.1);
   });
 
+  it('keeps bow/bolt shafts readable against the world without oversized luminous vanes', () => {
+    const fx = createChroniclesVolleyProjectileArt(THREE, new THREE.Group());
+    fx.setFamilies(['bow', 'crossbow', 'sling']);
+    const bow = fx.projectiles[0];
+    expect(bow.getObjectByName('bow-shaft').material.depthTest).toBe(true);
+    expect(bow.getObjectByName('bow-head').geometry.parameters.radius).toBeLessThan(0.05);
+    expect(bow.getObjectByName('bow-fletching-0').rotation.y).toBeCloseTo(Math.PI / 2);
+    expect(bow.getObjectByName('bow-trail').geometry.parameters.radius).toBeLessThan(0.02);
+    expect(bow.getObjectByName('bow-trail').material.blending).toBe(THREE.NormalBlending);
+    expect(fx.projectiles[1].getObjectByName('crossbow-trail').geometry.parameters.radius)
+      .toBeLessThan(0.02);
+    expect(fx.projectiles[2].getObjectByName('sling-trail').material.opacity).toBeLessThan(0.1);
+  });
+
   it('switches between three genuinely distinct geometry families and clears old visual state', () => {
     const camera = new THREE.Group();
     const fx = createChroniclesVolleyProjectileArt(THREE, camera);
