@@ -395,7 +395,7 @@ export default function ChroniclesCharacterSheet({
                   <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(1)}>
                     <span aria-hidden="true">↓</span> Abajo
                   </button>
-                  <button type="button" disabled={!selectedEquipment || !canEquipSelected || !canChangeEquipment}
+                  <button type="button" disabled={!transferableItem || !selectedEquipment || !canEquipSelected || !canChangeEquipment}
                     aria-label={selectedEquipment ? `Equipar ${selectedEquipment.name}` : 'Equipar objeto'}
                     onClick={() => onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id })}>
                     <span aria-hidden="true">⚔</span> Equipar
