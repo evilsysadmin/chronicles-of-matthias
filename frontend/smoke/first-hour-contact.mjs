@@ -204,28 +204,10 @@ try {
           'The bag and item inspector must remain side by side');
       }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
-      const swapDetails = sheet.locator('.chronicles-character-sheet__swap-preview');
-      await swapDetails.waitFor({ state: 'visible' });
-      assert.equal(await swapDetails.getAttribute('open'), null,
-        'The full before/after ledger should start folded');
-      const swapSummary = swapDetails.locator('summary');
-      assert.match(await swapSummary.innerText(), /Daño [+-]?\d+ · Acierto [+-]?\d+/,
-        'Weapon changes must be readable without opening the comparison');
-      const closedSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
-      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), false,
-        'Collapsed comparisons must hide all before/after rows');
-      await swapSummary.click();
-      assert.equal(await swapDetails.locator(':scope > div').count(), 2,
-        'Opening comparison must expose both real before/after stat rows');
-      assert.equal(await swapDetails.locator(':scope > div').first().isVisible(), true,
-        'Opening the comparison must reveal its actual stat rows');
-      const openSwapHeight = await swapDetails.evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(openSwapHeight >= closedSwapHeight + 30,
-        'A collapsed comparison must materially reduce vertical scroll: '
-        + JSON.stringify({ closedSwapHeight, openSwapHeight }));
-      await swapSummary.click();
-      assert.equal(await swapDetails.getAttribute('open'), null,
-        'The compact delta summary remains usable after closing');
+      // This authored first-hour loot fixture uses the default legacy combat
+      // rules; it exercises the real reward and Equipar, not MM3-only deltas.
+      assert.equal(await sheet.locator('.chronicles-character-sheet__swap-preview').count(), 0,
+        'Never invent MM3 weapon comparisons in a legacy-rules campaign');
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The compact summary must reflect the equip immediately without
       // forcing the player to open the detailed worn-gear cards.
