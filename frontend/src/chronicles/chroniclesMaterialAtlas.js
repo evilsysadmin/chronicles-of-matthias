@@ -110,8 +110,10 @@ export function chroniclesMaterialEnvironment(environmentId) {
 export function chroniclesMaterialEnvironmentForMapId(mapId = '') {
   const id = String(mapId || '').trim().toLowerCase();
   if (MAP_ENVIRONMENT[id]) return MAP_ENVIRONMENT[id];
-  if (/(swordhaven|village|hamlet|town|settlement|outskirts|forest|road|woodland)/.test(id)) return 'exterior';
-  if (/(cistern|sewer|water|flood|canal)/.test(id)) return 'cave-water';
+  // A map named after a town can still be a crypt, mine or sewer floor.
+  // Match specific biomes before broad settlement/wilderness place names.
+  if (/(cistern|water|flood|canal)/.test(id)) return 'cave-water';
+  if (/(sewer)/.test(id)) return 'sewer-masonry';
   if (/(cave|cavern|grotto|mine|mountain|tunnel|underground)/.test(id)) return 'cave';
   if (/(foundry|forge|iron|smelter)/.test(id)) return 'iron-foundry';
   if (/(glass|obsidian)/.test(id)) return 'black-glass';
@@ -119,6 +121,7 @@ export function chroniclesMaterialEnvironmentForMapId(mapId = '') {
   if (/(tower|rampart|courtyard|exterior|wall|battlement)/.test(id)) return 'exterior';
   if (/(archive|basilica|gallery|castle|palace|chapel|keep|hall|library)/.test(id)) return 'castle-interior';
   if (/(crypt|dungeon|vault|tomb|catacomb)/.test(id)) return 'dungeon';
+  if (/(swordhaven|village|hamlet|town|settlement|outskirts|forest|road|woodland)/.test(id)) return 'exterior';
   return 'dungeon';
 }
 
