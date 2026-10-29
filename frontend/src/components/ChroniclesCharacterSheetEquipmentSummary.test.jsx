@@ -41,9 +41,20 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toMatch(/class="chronicles-character-sheet__swap-preview"[^>]*\sopen=/);
     expect(html).toMatch(/<summary>[\s\S]*?Daño [+-]?\d+ · Acierto [+-]?\d+/);
     expect(html).toContain('Ver comparación antes y después');
-    // Losing a shield is a material consequence and must be visible in the
-    // closed summary; don't bury it among collapsed before/after statistics.
-    expect(html).toMatch(/<summary>[\s\S]*?Se guardará Escudo de latón en la mochila/);
+
+  });
+
+  it('warns about a real two-handed weapon displacing a shield before expanding', () => {
+    const html = render('mm3', 'equipment', {
+      inventory: {
+        'brass-staff': { id: 'brass-staff', quantity: 1, name: 'Bastón de latón' },
+      },
+      equipment: { matthias: { weapon: 'brass-sword', shield: 'brass-shield' } },
+    });
+    expect(html).toContain('class="chronicles-character-sheet__swap-preview"');
+    const summary = html.split('<summary>')[2]?.split('</summary>')[0] || '';
+    expect(summary).toContain('Se guardará Escudo de latón en la mochila');
+    expect(summary).toMatch(/CA -?\d+/);
   });
 
   it('keeps the shield benefit explanation for one-handed slings', () => {
