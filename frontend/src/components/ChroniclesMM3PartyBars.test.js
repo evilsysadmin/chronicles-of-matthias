@@ -1,48 +1,41 @@
-import { readFileSync } from 'node:fs';
+import React from 'react';
 import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { chroniclesHealthBand } from './ChroniclesCombatRoster.jsx';
+import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
 
-const chrome = readFileSync(new URL('./ChroniclesMM3Chrome.css', import.meta.url), 'utf8');
-const party = readFileSync(new URL('./ChroniclesOfMatthias.jsx', import.meta.url), 'utf8');
-const desktop = chrome.split('/* ─── Isles of Terra details')[1]
-  ?.split('/* Tall screens keep')[0] || '';
-
-describe('MM3 party PV bar alignment', () => {
-  it('reserves both desktop bar rows at the same pixel height for every hero', () => {
-    expect(desktop).toContain('@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px)');
-    const bars = desktop.match(/\.chronicles \.chronicles-party-member \.chronicles-party-bars\s*\{([^}]+)\}/)?.[1] || '';
-    expect(bars).toContain('grid-area: bars;');
-    expect(bars).toContain('align-self: end;');
-    expect(bars).toContain('grid-template-rows: repeat(2, 9px);');
-    expect(desktop).toContain('.chronicles .chronicles-party-bars i { height: 9px; }');
+describe('MM3 party PV/PH display', () => {
+  it('shows one exact value INSIDE each real PV/PH bar, without a second readout', () => {
+    const html = renderToStaticMarkup(<ChroniclesPartyVitals
+      hp={8} maxHp={11} sp={4} maxSp={4} band={chroniclesHealthBand(8, 11)}
+    />);
+    expect(html).toContain('data-band="hurt"');
+    expect(html).toContain('class="is-hp"');
+    expect(html).toContain('class="is-sp"');
+    expect(html).toContain('PV 8/11');
+    expect(html).toContain('PH 4/4');
+    expect(html.match(/PV 8\/11/g)).toHaveLength(1);
+    expect(html.match(/PH 4\/4/g)).toHaveLength(1);
+    expect(html).toContain('data-member-sp="4"');
   });
 
-  it('keeps the portrait HUD focused on name, level, PV and PH without front/rear jargon', () => {
-    const portraitStrip = party.split('<aside className="chronicles-party"')[1]
-      ?.split('<main className="chronicles-stage-wrap">')[0] || '';
-    expect(portraitStrip).toContain('{index + 1}. {member.name}');
-    expect(portraitStrip).toContain('<small>Nv {chroniclesHeroProgress(progression, member.id).level}</small>');
-    expect(portraitStrip).toContain('{member.hp}/{member.maxHp}');
-    expect(portraitStrip).not.toMatch(/FRENTE|RETAGUARDIA|member\.row/);
+  it('keeps the PV bar when the hero has no magical resource', () => {
+    const html = renderToStaticMarkup(<ChroniclesPartyVitals
+      hp={10} maxHp={10} maxSp={0} band={chroniclesHealthBand(10, 10)}
+    />);
+    expect(html).toContain('data-band="healthy"');
+    expect(html).toContain('PV 10/10');
+    expect(html).not.toContain('is-sp');
+    expect(html).not.toContain('PH ');
   });
 
-  it('renders the wide party strip with crisp names, levels, and tabular HP/SP numerals', () => {
-    expect(chrome).toContain('--mm3-hud-font: system-ui');
-    const names = desktop.match(/\.chronicles \.chronicles-party-member > span:nth-child\(2\) strong,\s*\.chronicles \.chronicles-party-hireling__label strong\s*\{([^}]+)\}/)?.[1] || '';
-    const levels = desktop.match(/\.chronicles \.chronicles-party-member > span:nth-child\(2\) small,\s*\.chronicles \.chronicles-party-hireling__label small\s*\{([^}]+)\}/)?.[1] || '';
-    const stats = desktop.match(/\.chronicles \.chronicles-party-member > b\s*\{([^}]+)\}/)?.[1] || '';
-    expect(names).toContain('font: 700');
-    expect(names).toContain('var(--mm3-hud-font)');
-    expect(levels).toContain('var(--mm3-hud-font)');
-    expect(stats).toContain('var(--mm3-hud-font)');
-    expect(stats).toContain('font-variant-numeric: tabular-nums;');
-    expect(desktop).not.toContain('VT323 has one weight');
-    expect(chrome).toContain('--mm3-pixel-font:');
-  });
-
-  it('still renders PH only for actual spellcasters, not an invented resource bar', () => {
-    expect(party).toContain('<i className="is-hp"');
-    expect(party).toMatch(/chroniclesMemberMaxSp\(state, member\) > 0 && \(\s*<i className="is-sp"/);
-    expect(chrome).toContain('.chronicles .chronicles-party-bars .is-hp { --bar: #3cc63f; }');
-    expect(chrome).toContain('.chronicles .chronicles-party-bars .is-sp { --bar: #4f8df0; }');
+  it('passes the critically wounded state to the same responsive vitals element', () => {
+    const html = renderToStaticMarkup(<ChroniclesPartyVitals
+      hp={0} maxHp={11} sp={2} maxSp={5} band={chroniclesHealthBand(0, 11)}
+    />);
+    expect(html).toContain('data-band="critical"');
+    expect(html).toContain('PV 0/11');
+    expect(html).toContain('PH 2/5');
+    expect(html).toContain('aria-hidden="true"');
   });
 });
