@@ -660,6 +660,16 @@ describe('Swordhaven modular real-time 3D', () => {
         }
         expect(lead).toBeInstanceOf(THREE.InstancedMesh);
         expect(lead.count).toBe(8);
+        if (spec.id === 'swordhaven-forge') {
+          const tools = facade.getObjectByName('forge-window-tool-displays');
+          expect(tools?.userData.chroniclesDecorativeOnly).toBe(true);
+          expect(tools.getObjectByName('forge-window-hammer-heads')?.count).toBe(4);
+          expect(tools.getObjectByName('forge-window-hammer-handles')?.count).toBe(4);
+          expect(leaves).toBeFalsy();
+          expect(flowers).toBeFalsy();
+          expect(straps.count).toBe(2);
+          continue;
+        }
         const centers = facade.getObjectByName('window-box-flower-centers');
         const stems = facade.getObjectByName('window-box-trailing-stems');
         expect(leaves).toBeInstanceOf(THREE.InstancedMesh);
@@ -710,6 +720,14 @@ describe('Swordhaven modular real-time 3D', () => {
         expect(building.getObjectByName('magic-guild-violet-glazing')).toBeTruthy();
         expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
         expect(building.getObjectByName('flower-window-box')).toBeFalsy();
+        continue;
+      }
+      if (spec.id === 'swordhaven-forge') {
+        expect(building.getObjectByName('forge-window-tool-displays')).toBeTruthy();
+        expect(building.getObjectByName('window-box-flower-centers')).toBeFalsy();
+        expect(building.getObjectByName('flower-window-box')).toBeFalsy();
+        expect(building.children.filter(child => child.name === 'forge-window-tool-trough'))
+          .toHaveLength(2);
         continue;
       }
       const center = building.getObjectByName('window-box-flower-centers');

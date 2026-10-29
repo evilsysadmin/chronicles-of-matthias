@@ -365,6 +365,16 @@ describe('Chronicles file-authored exterior renderer', () => {
         expect(vines).toBeFalsy();
         continue;
       }
+      // The smithy now exhibits iron tools rather than civilian flowers.
+      const forgeTools = building.getObjectByName('forge-window-tool-displays');
+      if (forgeTools) {
+        expect(forgeTools.userData.chroniclesDecorativeOnly).toBe(true);
+        expect(forgeTools.getObjectByName('forge-window-hammer-heads')?.count).toBe(4);
+        expect(forgeTools.getObjectByName('forge-window-hammer-handles')?.count).toBe(4);
+        expect(foliage).toBeFalsy();
+        expect(vines).toBeFalsy();
+        continue;
+      }
       expect(foliage).toBeInstanceOf(THREE.InstancedMesh);
       expect(vines).toBeInstanceOf(THREE.InstancedMesh);
       expect(foliage.userData.chroniclesDecorativeOnly).toBe(true);

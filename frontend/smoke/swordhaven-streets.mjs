@@ -71,6 +71,8 @@ try {
           'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
         assert.equal(result.distinctForgeLantern, 'true',
           'Forge must have its own louvered smoke lantern above the street-facing gable');
+        assert.equal(result.distinctForgeToolDisplays, 'true',
+          'Forge windows must show iron smithing tools instead of inn flowers');
         assert.equal(result.distinctForgeSideVents, 'true',
           'Forge must have soot-darkened side vents, distinct from merchant glazing');
         assert.equal(result.distinctArmorSideGrilles, 'true',

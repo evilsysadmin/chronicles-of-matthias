@@ -788,7 +788,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       mesh(root, new THREE.BoxGeometry(1.62, 0.15, 0.43), mats.stone,
         'stone-window-sill', [x, 2.04, front + 0.11]);
       if (!isWatch) mesh(root, new THREE.BoxGeometry(1.7, 0.36, 0.65), mats.stone,
-        isStore ? 'store-stock-display-trough' : 'flower-window-box',
+        isStore ? 'store-stock-display-trough' : isForge ? 'forge-window-tool-trough' : 'flower-window-box',
         [x, 1.83, front + 0.34]);
     }
     if (isWatch) {
@@ -870,6 +870,41 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
           batch.instanceMatrix.needsUpdate = true;
           root.add(batch);
         }
+      } else if (isForge) {
+        // Smithing hammers on the two raised stone window troughs replace
+        // domestic flowers. Batched oak handles and iron heads are decorative
+        // only, above the existing solid building footprint.
+        const tools = new THREE.Group();
+        tools.name = 'forge-window-tool-displays';
+        tools.userData.chroniclesDecorativeOnly = true;
+        const handles = new THREE.InstancedMesh(
+          new THREE.CylinderGeometry(0.055, 0.065, 0.68, 6), mats.timber, 4);
+        handles.name = 'forge-window-hammer-handles';
+        const heads = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.43, 0.19, 0.22),
+          material(0x9da5a1, { roughness: 0.42, metalness: 0.58 }), 4);
+        heads.name = 'forge-window-hammer-heads';
+        const tool = new THREE.Object3D();
+        let index = 0;
+        for (const x of [-width * 0.33, width * 0.33]) {
+          for (const offset of [-0.42, 0.42]) {
+            const lean = offset < 0 ? -0.13 : 0.13;
+            tool.rotation.set(0, 0, lean);
+            tool.position.set(x + offset, 2.30, facadeZ + 0.82);
+            tool.updateMatrix();
+            handles.setMatrixAt(index, tool.matrix);
+            tool.position.set(x + offset, 2.64, facadeZ + 0.84);
+            tool.updateMatrix();
+            heads.setMatrixAt(index++, tool.matrix);
+          }
+        }
+        for (const batch of [handles, heads]) {
+          batch.userData.chroniclesDecorativeOnly = true;
+          batch.castShadow = false;
+          batch.instanceMatrix.needsUpdate = true;
+          tools.add(batch);
+        }
+        root.add(tools);
       } else {
         // Real shaped leaves, petals and hanging stems remain on the inn and
         // other domestic facades; never add them to the barracks or warehouse.

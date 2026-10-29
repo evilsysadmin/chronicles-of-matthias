@@ -192,6 +192,15 @@ try {
       && !forge?.getObjectByName('armor-ashlar-parapet')
       && !guild?.getObjectByName('armor-ashlar-parapet')
     )),
+    distinctForgeToolDisplays: String(Boolean(
+      forge?.getObjectByName('forge-window-tool-displays')?.userData.chroniclesDecorativeOnly
+      && forge?.getObjectByName('forge-window-hammer-handles')?.count === 4
+      && forge?.getObjectByName('forge-window-hammer-heads')?.count === 4
+      && forge?.children.filter(child => child.name === 'forge-window-tool-trough').length === 2
+      && !forge?.getObjectByName('window-box-blooms')
+      && tavern?.getObjectByName('window-box-blooms')
+      && forge?.getObjectByName('shop-door')
+    )),
     distinctForgeSideVents: String(Boolean(
       forge?.children.filter(child => child.name === 'side-window-forge-soot-vent').length === 4
       && forge?.children.filter(child => child.name === 'side-window-forge-iron-louver').length === 4
@@ -221,7 +230,7 @@ try {
       && !watch?.getObjectByName('armor-display')
       && !watch?.getObjectByName('window-diamond-leadwork')
       && watch?.getObjectByName('shop-door')
-      && forge?.getObjectByName('flower-window-box')
+      && forge?.getObjectByName('forge-window-tool-displays')
       && !forge?.getObjectByName('watchhouse-front-iron-bars')
     )),
     distinctTavernBrick: String(Boolean(

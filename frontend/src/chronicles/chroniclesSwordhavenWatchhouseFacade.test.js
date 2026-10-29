@@ -39,7 +39,8 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(watch.getObjectByName('shop-door')).toBeTruthy();
     expect(watch.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
     expect(forge.getObjectByName('warm-glass-window')).toBeTruthy();
-    expect(forge.getObjectByName('flower-window-box')).toBeTruthy();
+    expect(forge.getObjectByName('forge-window-hammer-heads')?.count).toBe(4);
+    expect(forge.getObjectByName('flower-window-box')).toBeFalsy();
     expect(forge.getObjectByName('watchhouse-front-iron-bars')).toBeFalsy();
     // All ironwork remains inside the existing facade, never a new blocker.
     const matrix = new THREE.Matrix4();

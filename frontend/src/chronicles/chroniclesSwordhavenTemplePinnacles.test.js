@@ -57,7 +57,8 @@ describe('Swordhaven temple roof silhouette', () => {
     expect(temple.getObjectByName('shop-door-iron-straps')).toBeTruthy();
     expect(temple.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
     expect(forge.getObjectByName('warm-glass-window')).toBeTruthy();
-    expect(forge.getObjectByName('flower-window-box')).toBeTruthy();
+    expect(forge.getObjectByName('forge-window-tool-trough')).toBeTruthy();
+    expect(forge.getObjectByName('flower-window-box')).toBeFalsy();
     expect(armorer.getObjectByName('temple-stained-glass-lancets')).toBeFalsy();
   });
 
