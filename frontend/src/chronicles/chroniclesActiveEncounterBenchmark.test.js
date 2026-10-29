@@ -204,6 +204,39 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(remaining).toEqual(result.legitimateWithdrawals);
     }
   });
+  it('spends one real pursuit turn on a blocked lateral move into the north-gallery wall', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const inactive = Object.fromEntries(chroniclesActiveEnemies(base)
+      .filter(({ id }) => !CENTRAL_PACK.includes(id))
+      .map((enemy) => [enemy.hpKey, 0]));
+    // Authored map: (5,1) is walkable but (4,1) is a wall. Facing south,
+    // strafe-right bumps west into masonry without changing the party tile.
+    const before = { ...base, ...inactive, x: 5, y: 1, direction: 2 };
+    const goblinPositions = Object.fromEntries(chroniclesActiveEnemies(before)
+      .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
+    const blocked = chroniclesGridExplorationStep(before, 'strafe-right');
+    expect(blocked.message).toMatch(/pared/i);
+    expect({ x: blocked.x, y: blocked.y, direction: blocked.direction })
+      .toEqual({ x: before.x, y: before.y, direction: before.direction });
+    expect(blocked.turns).toBe(before.turns + 1);
+    expect(blocked.explorationEnemySteps).toBe((before.explorationEnemySteps || 0) + 1);
+    expect(blocked.phase).toBe('explore');
+    expect(blocked.initiative).toBeFalsy();
+    expect(blocked.party).toEqual(before.party);
+    expect(blocked.inventory).toEqual(before.inventory);
+    expect(blocked.spellPoints).toEqual(before.spellPoints);
+    for (const enemy of chroniclesActiveEnemies(blocked)) {
+      const previous = goblinPositions[enemy.id];
+      const next = chroniclesRuntimeEnemyPosition(blocked, enemy);
+      expect(Math.abs(next.x - previous.x) + Math.abs(next.y - previous.y),
+        `${enemy.id} must pursue cardinally during a wall bump`).toBeLessThanOrEqual(1);
+    }
+    // The next legal action must tick exactly once, not replay the wall bump.
+    const turned = chroniclesGridExplorationStep(blocked, 'turn-left');
+    expect(turned.turns).toBe(blocked.turns + 1);
+    expect(turned.explorationEnemySteps).toBe(blocked.explorationEnemySteps + 1);
+  });
+
   it('carries wounds and PH through a real exploration step and two sewer squads under both d8 orders', () => {
     // Two existing squads in the same map. Walk ten real dungeon tiles after
     // the first fight, including turns around the north-gallery corner.
@@ -231,9 +264,6 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
           ...turnActions, 'forward', 'forward', 'forward',
           'turn-right', 'forward', 'forward', 'turn-right', 'forward',
           'strafe-left', 'strafe-left', 'backward', 'backward',
-          // (4,1) is solid masonry: a wall bump costs time but never
-          // teleports the party or freezes nearby pursuers.
-          'strafe-right',
         ];
         const expectedTiles = [
           { x: 1, y: 4 }, { x: 1, y: 3 }, { x: 1, y: 2 },
@@ -248,12 +278,6 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .filter(({ id }) => CENTRAL_PACK.includes(id))
             .map((enemy) => [enemy.id, chroniclesRuntimeEnemyPosition(before, enemy)]));
           explored = chroniclesGridExplorationStep(before, action);
-          if (action === 'strafe-right') {
-            expect({ x: before.x, y: before.y }).toEqual({ x: 5, y: 1 });
-            expect(explored.message).toMatch(/pared/i);
-            expect({ x: explored.x, y: explored.y, direction: explored.direction })
-              .toEqual({ x: before.x, y: before.y, direction: before.direction });
-          }
           if (action === 'forward' || action === 'strafe-left' || action === 'backward') {
             expect({ x: explored.x, y: explored.y }, `real tile ${walkedTiles + 1}`).toEqual(expectedTiles[walkedTiles]);
             if (action === 'strafe-left' || action === 'backward') {
@@ -363,8 +387,7 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(travel.actions.filter((action) => action === 'forward')).toHaveLength(6);
       expect(travel.actions.filter((action) => action === 'strafe-left')).toHaveLength(2);
       expect(travel.actions.filter((action) => action === 'backward')).toHaveLength(2);
-      expect(travel.actions.at(-1)).toBe('strafe-right');
-      expect(travel.actions.filter((action) => action === 'strafe-right')).toHaveLength(1);
+      expect(travel.actions.at(-1)).toBe('backward');
       expect(travel.turns).toBe(travel.actions.length);
       expect(travel.enemySteps).toBe(travel.actions.length);
       expect(potion.hpBefore).toBe(first.finalPartyHp[potion.heroId]);
