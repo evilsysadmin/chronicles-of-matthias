@@ -221,8 +221,17 @@ try {
       const closedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
       assert.ok(closedSize <= 65, 'Equipped gear must occupy one compact row by default: ' + closedSize);
       assert.match(await wornSummary.innerText(), /Equipo puesto/);
-      assert.match(await wornSummary.innerText(), /A:|S:|Armadura:|Escudo:/,
-        'The summary must show real worn item names before expanding');
+      const shownWornNames = await wornSummary.innerText();
+      const actualWornNames = await sheet.locator(
+        '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__weapon-card > strong, '
+        + '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__gear-slot > strong'
+      ).allInnerTexts();
+      const occupiedNames = actualWornNames.filter((name) => name !== 'Sin equipar');
+      assert.ok(occupiedNames.length
+        ? occupiedNames.every((name) => shownWornNames.includes(name))
+        : shownWornNames.includes('Sin piezas equipadas'),
+      'The summary must honestly reflect worn items, including a fully empty loadout: '
+        + JSON.stringify({ shownWornNames, actualWornNames }));
       await wornSummary.click();
       const expandedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
       assert.ok(expandedSize > closedSize + 80,
