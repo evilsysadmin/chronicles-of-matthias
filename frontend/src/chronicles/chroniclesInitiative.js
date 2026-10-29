@@ -228,6 +228,8 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
     chroniclesEngagedEnemies(state, candidates).map((enemy) => [enemy.id, enemy]),
   );
   candidates.forEach((enemy) => {
+    // A malformed legacy roster may contain null slots; never crash combat startup.
+    if (!enemy) return;
     if (forceEnemyIds.has(enemy.id) && hasLivingHitPoints(state?.[enemy.hpKey])) {
       engagedById.set(enemy.id, enemy);
     }
@@ -242,6 +244,7 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
       typeof enemy.squadId === 'string' && enemy.squadId.length > 0
     ));
     candidates.forEach((enemy) => {
+      if (!enemy) return;
       if (!enemy.squadId || engagedById.has(enemy.id) || !hasLivingHitPoints(state?.[enemy.hpKey])) return;
       const position = chroniclesRuntimeEnemyPosition(state, enemy);
       if (alerted.some((mate) => {
