@@ -29,20 +29,20 @@ describe('Swordhaven general store frontage', () => {
     expect(forge).toBeTruthy();
     const tavern = town.children.find(child =>
       child.name.startsWith('swordhaven-building-first-book-tavern-'));
-    // The warehouse stocks provisions, not the inn's decorative flowers.
-    // All sacks remain on the original raised facade displays on touch/desktop.
-    const sacks = store.getObjectByName('store-window-burlap-sacks');
-    const ties = store.getObjectByName('store-window-sack-ties');
-    expect(sacks?.count).toBe(8);
-    expect(ties?.count).toBe(8);
-    expect(sacks.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    // The warehouse stocks provisions in crates, not the inn's decorative flowers.
+    // All crates remain on the original raised facade displays on touch/desktop.
+    const crates = store.getObjectByName('store-window-provisions-crates');
+    const braces = store.getObjectByName('store-window-crate-crossbraces');
+    expect(crates?.count).toBe(4);
+    expect(braces?.count).toBe(8);
+    expect(crates.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(braces.userData.chroniclesDecorativeOnly).toBe(true);
     expect(store.children.filter(child => child.name === 'store-stock-display-trough'))
       .toHaveLength(2);
     expect(store.getObjectByName('flower-window-box')).toBeFalsy();
     expect(store.getObjectByName('window-box-blooms')).toBeFalsy();
     expect(tavern.getObjectByName('window-box-blooms')).toBeTruthy();
-    expect(forge.getObjectByName('store-window-burlap-sacks')).toBeFalsy();
+    expect(forge.getObjectByName('store-window-provisions-crates')).toBeFalsy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     const walls = store.getObjectByName('timber-and-stone-walls');
     expect(walls.material.color.getHex()).toBe(0xd9b98a);
