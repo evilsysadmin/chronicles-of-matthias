@@ -314,19 +314,21 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // rather than letting a later dead duplicate erase an actionable actor.
   const enemyById = new Map(uniqueLivingCombatants(enemies, (enemy) => state?.[enemy.hpKey])
     .map((enemy) => [enemy.id, enemy]));
+  // Legacy JSON may contain null initiative slots. Skip them without
+  // shifting the turn boundary or granting another actor an extra action.
   const lost = state.initiative.order.filter((actor) => (
-    actor.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
+    actor?.kind === 'enemy' && actorIsAlive(state, enemyById, actor) && chroniclesEnemyLostParty(state, enemyById.get(actor.id))
   ));
   if (lost.length) {
     const lostIds = new Set(lost.map((actor) => actor.id));
-    const order = state.initiative.order.filter((actor) => actor.kind !== 'enemy' || !lostIds.has(actor.id));
+    const order = state.initiative.order.filter((actor) => actor?.kind !== 'enemy' || !lostIds.has(actor?.id));
     // Keep the cursor on the last remaining actor at or before the current
     // one, so whoever comes next still gets their turn.
     const original = state.initiative.order;
     const at = Math.min(original.length - 1, nonNegativeInteger(state.initiative.cursor));
     let cursor = order.length - 1;
     for (let index = at; index >= 0; index -= 1) {
-      const kept = order.findIndex((actor) => actor.kind === original[index].kind && actor.id === original[index].id);
+      const kept = order.findIndex((actor) => actor.kind === original[index]?.kind && actor.id === original[index]?.id);
       if (kept >= 0) { cursor = kept; break; }
     }
     state = {
@@ -367,7 +369,7 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // A removed first actor can make the shortened list wrap without ending the
   // original round. Count a new round only across the original turn boundary.
   const nextOriginalIndex = orderBeforeLeash.findIndex((actor) => (
-    actor.kind === nextActor.kind && actor.id === nextActor.id
+    actor?.kind === nextActor.kind && actor?.id === nextActor.id
   ));
   const wrapped = nextOriginalIndex <= cursorBeforeLeash;
 
