@@ -22,7 +22,7 @@ function render(mode = 'chronicles', folio = 'record') {
 }
 
 describe('MM3 retro skin and compact record layout', () => {
-  it('keeps real attributes, worn slots, full navigation and the permanent party selector', () => {
+  it('keeps real attributes, unified equipment list, navigation and party selector', () => {
     const html = render();
     for (const key of ['might', 'intellect', 'personality', 'endurance', 'speed', 'accuracy', 'luck']) {
       expect(html).toContain(`data-stat="${key}"`);
@@ -33,7 +33,9 @@ describe('MM3 retro skin and compact record layout', () => {
     }
     for (const title of ['Estado', 'Equipo', 'Hechizos', 'Mejoras']) expect(html).toContain(title);
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
-    expect(html).toContain('Cambiar equipo');
+    expect(html).not.toContain('Cambiar equipo');
+    expect(html).not.toContain('data-chronicles-worn-gear');
+    expect(render('chronicles', 'equipment')).toContain('data-worn-slot=');
   });
 
   it('keeps Tactics out of the opt-in retro skin and sizes new grids only on roomy desktop', () => {
