@@ -1,13 +1,13 @@
 /* MM3 Status record V3: this is a layout replacement, not another tint.
    Keep a full-width attribute ledger, a compact combat strip and an
-   equipment shortcut. Inventory actions stay on the Equipment chapter.
+   equipment details live in the Equipment chapter only.
    Only apply on roomy desktops; preserve tested 1024px, short and mobile UI. */
 @media (min-width: 1200px) and (min-height: 700px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] {
     display: grid;
     grid-template-columns: minmax(0,1fr);
-    grid-template-areas: "attributes" "battle" "worn" "footer";
+    grid-template-areas: "attributes" "battle" "footer";
     align-content: start;
     row-gap: 0;
     background: #b97b46;
