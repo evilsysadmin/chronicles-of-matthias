@@ -708,6 +708,13 @@ try {
         .getByRole('button', { name: /Entregar/ }).click();
       const handoff = sheet.locator('.chronicles-character-sheet__classic-recipients');
       assert.equal(await handoff.locator('button').count(), 3, 'Only the other heroes are destinations');
+      assert.equal(await handoff.evaluate((picker) => {
+        const viewport = picker.closest('.chronicles-character-sheet__scroll')?.getBoundingClientRect();
+        const rectangle = picker.getBoundingClientRect();
+        return Boolean(viewport && rectangle.top >= viewport.top - 2 && rectangle.bottom <= viewport.bottom + 2);
+      }), true, 'Clicking Entregar must reveal the whole recipient picker without Playwright scrolling it into view');
+      assert.equal(await handoff.evaluate((picker) => document.activeElement === picker), true,
+        'Recipient chooser must receive focus so mouse, keyboard and screen readers notice the action');
       assert.equal(await handoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 0,
         'The owner must never be a recipient');
       const recipient = handoff.getByRole('button', { name: /Entregar 1 .* a Hildegard/ });
