@@ -950,7 +950,7 @@ try {
           assert.equal(await scrollArea.evaluate((node) => node.dataset.moreBelow), 'false',
             'A fully visible inventory must not advertise imaginary content below');
           assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-            .locator('button').count(), 7, 'Compact phones still expose all real actions');
+            .locator('button').count(), 6, 'Compact phones still expose all six commands; delivery uses party slots');
         }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
