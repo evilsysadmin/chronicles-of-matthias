@@ -176,12 +176,17 @@ try {
       await backpackSearch.fill('');
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
-      // The MM3 double-weapon summary is optional in the test fixture; the
-      // actual equipment-slot row is common to both character-sheet variants.
-      const wornMeleeWeapon = sheet.locator('.chronicles-character-sheet__gear-slot')
+      // The compact summary must reflect the equip immediately without
+      // forcing the player to open the detailed worn-gear cards.
+      const equippedDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
+      assert.equal(await equippedDetails.getAttribute('open'), null);
+      assert.match(await equippedDetails.locator('summary').innerText(), /A: Espada de bronce/,
+        'The real equip action must update the compact active melee weapon summary');
+      await equippedDetails.locator('summary').click();
+      const wornMeleeWeapon = equippedDetails.locator('.chronicles-character-sheet__gear-slot')
         .filter({ hasText: 'Arma · A' }).locator('strong');
       assert.match(await wornMeleeWeapon.innerText(), /Espada de bronce/,
-        'The real equip action must update the active melee weapon');
+        'Expanding details must still expose the real equipped melee weapon');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
@@ -202,9 +207,15 @@ try {
       await restoredSheet.waitFor({ state: 'visible' });
       assert.match(await restoredSheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
         /Equipo/, 'Returning to Matthias must keep equipment folio');
-      assert.match(await restoredSheet.locator('.chronicles-character-sheet__gear-slot')
+      const restoredGear = restoredSheet.locator('.chronicles-character-sheet__equipped-disclosure');
+      assert.match(await restoredGear.locator('summary').innerText(), /A: Espada de bronce/,
+        'Inspecting Faust must never equip/unequip Matthias');
+      if (await restoredGear.getAttribute('open') === null) {
+        await restoredGear.locator('summary').click();
+      }
+      assert.match(await restoredGear.locator('.chronicles-character-sheet__gear-slot')
         .filter({ hasText: 'Arma · A' }).locator('strong').innerText(), /Espada de bronce/,
-      'Inspecting Faust must never equip/unequip Matthias');
+        'Returning to Matthias must expose the actual equipped item after expanding details');
 
       // Regression: the real sheet must display the SAME hotkey numbering
       // even when a view adapter or initiative reverses party state.
