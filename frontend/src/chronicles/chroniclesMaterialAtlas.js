@@ -110,6 +110,11 @@ export function chroniclesMaterialEnvironment(environmentId) {
 export function chroniclesMaterialEnvironmentForMapId(mapId = '') {
   const id = String(mapId || '').trim().toLowerCase();
   if (MAP_ENVIRONMENT[id]) return MAP_ENVIRONMENT[id];
+  // Deeper floors of a known map inherit its authored biome. Without this,
+  // names such as torre-de-los-nombres-level-2 fall back to generic dungeon
+  // stone instead of retaining the library's castle-interior palette.
+  const parentId = id.replace(/-(?:level|floor)-[1-9]\d*$/, '');
+  if (parentId !== id && MAP_ENVIRONMENT[parentId]) return MAP_ENVIRONMENT[parentId];
   // A map named after a town can still be a crypt, mine or sewer floor.
   // Match specific biomes before broad settlement/wilderness place names.
   if (/(cistern|water|flood|canal)/.test(id)) return 'cave-water';
