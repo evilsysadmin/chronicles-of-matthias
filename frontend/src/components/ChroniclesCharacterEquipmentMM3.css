@@ -49,8 +49,10 @@
   .chronicles-character-sheet__inventory {
     display: grid; grid-template-columns: minmax(0, 1fr);
     grid-column: 1; grid-row: 2 / span 2;
-    gap: 3px; padding: 5px; max-height: 320px; min-height: 180px;
-    overflow-y: auto; align-content: start; scrollbar-gutter: stable;
+    gap: 3px; padding: 5px; max-height: 320px; min-height: 0;
+    /* A one-item bag should not masquerade as a 180px empty storage well.
+       Start-sized content still scrolls naturally when the list exceeds 320px. */
+    align-self: start; overflow-y: auto; align-content: start; scrollbar-gutter: stable;
     border: 2px solid #b48b58; background: #ecd2a6;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
