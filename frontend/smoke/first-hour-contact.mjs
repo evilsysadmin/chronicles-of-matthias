@@ -189,6 +189,20 @@ try {
       // character-sheet-desktop, where filtering is useful.
       assert.equal(await sheet.locator('.chronicles-character-sheet__backpack-tools').count(), 0,
         'One-item bags must not waste another row on useless filter controls');
+      if (width >= 851) {
+        const sparseAlignment = await sheet.locator('.chronicles-character-sheet__backpack')
+          .evaluate((node) => {
+            const list = node.querySelector('.chronicles-character-sheet__inventory').getBoundingClientRect();
+            const inspector = node.querySelector('.chronicles-character-sheet__item-details').getBoundingClientRect();
+            return { listTop: list.top, inspectorTop: inspector.top,
+              horizontal: list.right <= inspector.left + 2 };
+          });
+        assert.ok(Math.abs(sparseAlignment.listTop - sparseAlignment.inspectorTop) <= 16,
+          'A sparse backpack must not leave an empty grid row above its inspector: '
+            + JSON.stringify(sparseAlignment));
+        assert.equal(sparseAlignment.horizontal, true,
+          'The bag and item inspector must remain side by side');
+      }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
       // The compact summary must reflect the equip immediately without
