@@ -17,7 +17,7 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
   });
 
   it('preserves the readable empty-state copy and existing equipment actions', () => {
-    expect(sheet).toContain('Este personaje no lleva objetos en su mochila.');
+    expect(sheet).toContain('Este personaje no lleva pertenencias.');
     expect(sheet).toContain("relic?.name || 'Ninguna'");
     expect(sheet).toContain('chronicles-character-sheet__relic has-relic');
     expect(sheet).toContain('data-chronicles-equipment-folio');
@@ -50,7 +50,8 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(glyphs).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     expect(sheet).toContain('aria-hidden="true"');
     expect(sheet).toContain('data-inventory-item={item.id}');
-    expect(sheet).toContain("shield: '⬟'");
+    expect(sheet).toContain('<ChroniclesInventoryItemIcon item={item} />');
+    expect(sheet).toContain('<ChroniclesInventoryItemIcon item={slot.item} />');
   });
 
   it('keeps mobile equipment comparisons complete but vertically tighter', () => {
