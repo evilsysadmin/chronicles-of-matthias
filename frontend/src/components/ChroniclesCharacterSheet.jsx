@@ -189,35 +189,31 @@ export default function ChroniclesCharacterSheet({
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
-  // The 1–4 party targets double as hand-off destinations only after the
-  // player explicitly selects an inventory object. Transfers remain one copy
-  // at a time, via the existing save-backed reducer.
-  const handOffTo = (targetId) => {
-    if (activeFolio === 'equipment' && transferableItem) {
-      if (canChangeEquipment && targetId !== member.id) {
-        onEquipmentAction?.({ type: 'transfer-item', itemId: transferableItem.id, toMemberId: targetId });
-        setSelectedBagItem(null);
-      }
-      // Same-hero and locked/in-combat actions do not change the active sheet.
-      return;
-    }
+  // Hero navigation always changes the viewed dossier. Explicit item transfer
+  // belongs to the selected item's details, not to the party dock or keys 1–4.
+  const viewMember = (targetId) => {
     setSelectedBagItem(null);
     onSelectMember?.(targetId);
+  };
+  const giveSelectedItemTo = (targetId) => {
+    if (!transferableItem || !canChangeEquipment || targetId === member.id) return;
+    onEquipmentAction?.({ type: 'transfer-item', itemId: transferableItem.id, toMemberId: targetId });
+    setSelectedBagItem(null);
   };
 
   // A modal may lose DOM focus after rerenders. Keep 1–4 available even if
   // focus falls to <body>; the sheet itself stops bubbling events below.
   useEffect(() => {
-    if (!state?.party || !member || (!onSelectMember && !onEquipmentAction)) return undefined;
+    if (!state?.party || !member || !onSelectMember) return undefined;
     const onWindowPartyKey = (event) => {
       const hero = chroniclesPartyHotkeyMember(event, state.party);
       if (!hero) return;
       event.preventDefault();
-      handOffTo(hero.id);
+      viewMember(hero.id);
     };
     window.addEventListener('keydown', onWindowPartyKey);
     return () => window.removeEventListener('keydown', onWindowPartyKey);
-  }, [state?.party, member, onSelectMember, onEquipmentAction, activeFolio, transferableItem, canChangeEquipment]);
+  }, [state?.party, member, onSelectMember]);
 
   // Filtering/searching invalidates the old list position. Without resetting
   // the nested scroll, the first matching object can stay outside the viewport.
@@ -273,10 +269,10 @@ export default function ChroniclesCharacterSheet({
     // Switch the displayed dossier, never the initiative actor. Tactics and
     // first-person share this binding; text fields keep their own numbers.
     const hero = chroniclesPartyHotkeyMember(event, state.party);
-    if (hero && (onSelectMember || onEquipmentAction)) {
+    if (hero && onSelectMember) {
       event.preventDefault();
       event.stopPropagation();
-      handOffTo(hero.id);
+      viewMember(hero.id);
     }
   };
 
@@ -353,8 +349,8 @@ export default function ChroniclesCharacterSheet({
               {!tacticsMode && inventory.length > 0 && (
                 <small className="chronicles-character-sheet__inventory-hint" aria-live="polite">
                   {transferableItem
-                    ? `Entregar 1 × ${transferableItem.name}: elige destino con 1–4 o toca a un compañero.`
-                    : 'Selecciona un objeto y entrégalo con 1–4 o tocando a un compañero.'}
+                    ? `Seleccionado: ${transferableItem.name}. Usa «Entregar 1 a…» en los detalles.`
+                    : 'Selecciona un objeto para poder entregarlo desde sus detalles.'}
                 </small>
               )}
               {!tacticsMode && selectedInventoryItem && (
@@ -388,6 +384,25 @@ export default function ChroniclesCharacterSheet({
                       Equipar {selectedEquipment.name}
                     </button>
                   </>}
+                  {transferableItem && (
+                    <details className="chronicles-character-sheet__handoff">
+                      <summary>Entregar 1 a…</summary>
+                      <div className="chronicles-character-sheet__handoff-targets" role="group"
+                        aria-label={`Entregar 1 ${transferableItem.name} a otro personaje`}>
+                        {chroniclesPartyHotkeySlots(state.party)
+                          .filter(({ member: companion }) => companion.id !== member.id)
+                          .map(({ member: companion }) => (
+                            <button type="button" key={companion.id}
+                              disabled={!canChangeEquipment}
+                              aria-label={`Entregar 1 ${transferableItem.name} a ${companion.name}`}
+                              title={!canChangeEquipment ? 'Solo se pueden entregar objetos durante la exploración' : undefined}
+                              onClick={() => giveSelectedItemTo(companion.id)}>
+                              {companion.name}
+                            </button>
+                          ))}
+                      </div>
+                    </details>
+                  )}
                   <details className="chronicles-character-sheet__item-more">
                     <summary>Descripción y atributos</summary>
                     {selectedEquipment && <p>{selectedEquipment.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>}
@@ -755,12 +770,10 @@ export default function ChroniclesCharacterSheet({
           <nav className="chronicles-character-sheet__party-dock" aria-label="Seleccionar personaje de la compañía">
             {chroniclesPartyHotkeySlots(state.party).map(({ member: hero, slot }) => (
               <button type="button" key={hero.id}
-                disabled={!onSelectMember && !canChangeEquipment}
-                aria-label={activeFolio === 'equipment' && transferableItem && canChangeEquipment && hero.id !== member.id
-                  ? `Entregar 1 ${transferableItem.name} a ${hero.name} · ${slot}`
-                  : `Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
+                disabled={!onSelectMember}
+                aria-label={`Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
-                onClick={() => handOffTo(hero.id)}
+                onClick={() => viewMember(hero.id)}
               >
                 <span className="chronicles-character-sheet__party-number" aria-hidden="true">{slot}</span>
                 <span className="chronicles-character-sheet__party-name">{hero.name}</span>
