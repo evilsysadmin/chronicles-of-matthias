@@ -200,7 +200,9 @@ function actorIsAlive(state, enemyById, actor) {
   // A restored order may contain actors whose IDs were rejected by the fresh
   // initiative roller. They cannot take a turn, even if a malformed roster
   // entry with the same empty ID still has positive HP.
-  if (!validActorId(actor?.id)) return false;
+  // A malformed saved actor kind must never masquerade as a living enemy
+  // merely because its id matches one in the runtime roster.
+  if (!validActorId(actor?.id) || (actor.kind !== 'party' && actor.kind !== 'enemy')) return false;
   if (actor.kind === 'party') {
     return (state?.party || []).some((member) => member.id === actor.id && hasLivingHitPoints(member.hp));
   }
