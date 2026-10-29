@@ -38,6 +38,33 @@ describe('Chronicles MM3 explicit area transition safety', () => {
     expect(revisitNextFloor.emberCacheOpened).toBe(true);
   });
 
+  it('does not carry a cleared floor switch into an unrelated dungeon', () => {
+    const gallery = chroniclesApplyContentEffects(createChroniclesState('gallery-of-forks'), [
+      { type: 'set', key: 'galleryLeverPulled', value: true },
+      { type: 'set', key: 'galleryRelicCollected', value: true },
+    ]);
+    const menagerie = chroniclesMapTransitionState(gallery, 'menagerie-of-ash');
+    expect(menagerie).not.toHaveProperty('galleryLeverPulled');
+    expect(menagerie).not.toHaveProperty('galleryRelicCollected');
+    expect(menagerie.mapFlagsById['gallery-of-forks']).toMatchObject({
+      galleryLeverPulled: true,
+      galleryRelicCollected: true,
+    });
+    expect(menagerie.party).toEqual(gallery.party);
+
+    const clearedMenagerie = { ...menagerie, emberCacheOpened: true };
+    const returned = chroniclesMapTransitionState(
+      JSON.parse(JSON.stringify(clearedMenagerie)), 'gallery-of-forks',
+    );
+    expect(returned.galleryLeverPulled).toBe(true);
+    expect(returned.galleryRelicCollected).toBe(true);
+    expect(returned).not.toHaveProperty('emberCacheOpened');
+
+    const revisited = chroniclesMapTransitionState(returned, 'menagerie-of-ash');
+    expect(revisited.emberCacheOpened).toBe(true);
+    expect(revisited).not.toHaveProperty('galleryLeverPulled');
+  });
+
   it('isolates identical flag names across different dungeon maps', () => {
     const crypt = createChroniclesState('crypt-eight-squares');
     expect(crypt.sigilAwake).toBe(false);
