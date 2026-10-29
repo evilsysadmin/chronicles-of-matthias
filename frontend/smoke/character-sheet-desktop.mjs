@@ -606,9 +606,9 @@ try {
       console.error('CHRONICLES_CHARACTER_DESKTOP_FAIL', width, error);
     } finally { await ctx.close(); }
   }
-  // MM3's 1–4 handoff on a real mounted React sheet + actual campaign
-  // reducer: preview != selection, keyboard and touch transfer exactly one
-  // item, no switching heroes by accident, no inventory multiplication.
+  // MM3's explicit handoff on a real mounted React sheet + actual campaign
+  // reducer: preview != selection, 1–4 always navigates, and contextual
+  // controls transfer exactly one item without inventory multiplication.
   for (const [width, height] of [[1280,800],[390,844]]) {
     const ctx = await browser.newContext({
       viewport: { width, height }, isMobile: width < 500, hasTouch: width < 500, deviceScaleFactor: 1,
@@ -634,29 +634,49 @@ try {
       await sword.waitFor({ state: 'visible' });
       assert.equal(await sword.getAttribute('aria-pressed'), 'false',
         'A preview alone must not make 2 a transfer command');
+      // A selected item does not turn the party dock or keys 1–4 into a
+      // hidden transfer command. Navigation must always remain navigation.
       await sword.click();
       assert.equal(await sword.getAttribute('aria-pressed'), 'true');
-      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
       const hint = sheet.locator('.chronicles-character-sheet__inventory-hint');
-      assert.match(await hint.innerText(), /elige destino con 1–4/);
-      // Pressed key 2 consumes the selection for one handoff, not a hero switch.
+      assert.match(await hint.innerText(), /Usa «Entregar 1 a…»/);
+      assert.equal(await dock.getByRole('button', { name: /Ver ficha de Hildegard/ }).count(), 1);
       await page.keyboard.press('2');
-      assert.equal(await heading.innerText(), 'Matthias', 'Giving an item does not open the recipient sheet');
+      assert.equal(await heading.innerText(), 'Hildegard', '2 always changes the displayed hero');
+      assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 0,
+        'Navigation must not secretly transfer the selected sword');
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.getAttribute('aria-pressed'), 'false',
+        'Switching heroes clears explicit item selection');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__handoff').count(), 0,
+        'A mere preview cannot transfer anything');
+      await sword.click();
+      const handoff = sheet.locator('.chronicles-character-sheet__handoff');
+      await handoff.locator('summary').click();
+      assert.equal(await handoff.locator('button').count(), 3, 'Only the other heroes are destinations');
+      assert.equal(await handoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).count(), 0,
+        'The owner must never be a recipient');
+      const recipient = handoff.getByRole('button', { name: /Entregar 1 .* a Hildegard/ });
+      assert.ok((await recipient.boundingBox()).height >= 44, 'Touch destination must be accessible');
+      await recipient.click();
+      assert.equal(await heading.innerText(), 'Matthias', 'Delivery keeps the current hero visible');
       assert.equal(await sword.count(), 0, 'Exactly one sword leaves Matthias bag');
-      assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').count(), 1);
       await page.keyboard.press('2');
-      assert.equal(await heading.innerText(), 'Hildegard', 'After handoff, number keys navigate again');
+      assert.equal(await heading.innerText(), 'Hildegard', '2 still navigates after delivery');
       const recipientBag = sheet.locator('.chronicles-character-sheet__inventory');
       const receivedSword = recipientBag.locator('[data-inventory-item="bronze-sword"]');
       await receivedSword.waitFor({ state: 'visible' });
       assert.equal(await receivedSword.count(), 1, 'Sword arrives intact in Hildegard bag');
       await receivedSword.click();
-      // A tap/click on slot 1 is the other supported transfer path.
-      await dock.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
-      assert.equal(await heading.innerText(), 'Hildegard');
+      const returnHandoff = sheet.locator('.chronicles-character-sheet__handoff');
+      await returnHandoff.locator('summary').click();
+      await returnHandoff.getByRole('button', { name: /Entregar 1 .* a Matthias/ }).click();
+      assert.equal(await heading.innerText(), 'Hildegard', 'Returning an item does not switch sheets');
       assert.equal(await receivedSword.count(), 0);
-      await page.keyboard.press('1');
-      assert.equal(await heading.innerText(), 'Matthias');
+      await dock.getByRole('button', { name: /Ver ficha de Matthias/ }).click();
+      assert.equal(await heading.innerText(), 'Matthias', 'Party portraits only navigate');
       assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1,
         'The same sword returns without duplication');
       // Numbers typed in a search field must never cause a transfer.
