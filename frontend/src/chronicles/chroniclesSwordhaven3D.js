@@ -549,6 +549,28 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   mesh(root, new THREE.BoxGeometry(1.75, 3.12, 0.16), mats.timber,
     'shop-door', [0, 1.56, facadeZ + 0.16]);
+  // A substantial oak entrance makes the inn legible at street level, not
+  // just by its roof silhouette. It frames the existing door beneath the
+  // porch without adding blockers, changing interactions or hiding the sign.
+  if (isTavern) {
+    const entrance = new THREE.Group();
+    entrance.name = 'tavern-oak-entrance';
+    entrance.userData.chroniclesDecorativeOnly = true;
+    const oak = material(0x5d3d29, { roughness: 0.96 });
+    for (const side of [-1, 1]) {
+      mesh(entrance, new THREE.BoxGeometry(0.30, 3.08, 0.34), oak,
+        'tavern-entry-oak-jamb', [side * 1.14, 1.58, facadeZ + 0.32], !coarse);
+      mesh(entrance, new THREE.BoxGeometry(0.43, 0.36, 0.46), mats.stone,
+        'tavern-entry-stone-plinth', [side * 1.14, 0.18, facadeZ + 0.32]);
+      const brace = mesh(entrance, new THREE.BoxGeometry(0.17, 0.76, 0.22),
+        mats.timber, 'tavern-entry-oak-brace',
+        [side * 0.90, 3.00, facadeZ + 0.39], !coarse);
+      brace.rotation.z = side * 0.55;
+    }
+    mesh(entrance, new THREE.BoxGeometry(2.70, 0.26, 0.38), oak,
+      'tavern-entry-oak-lintel', [0, 3.25, facadeZ + 0.32], !coarse);
+    root.add(entrance);
+  }
   // Two batched wrought-iron straps give the previously flat door depth.
   const doorIronwork = new THREE.InstancedMesh(
     new THREE.BoxGeometry(1.61, 0.072, 0.055), mats.steel, 2,
