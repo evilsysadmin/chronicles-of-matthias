@@ -176,6 +176,9 @@ export default function ChroniclesCharacterSheet({
   const gold = chroniclesGoldBalance(state);
   const backpackCounts = chroniclesBackpackCounts(inventory);
   const visibleBackpack = tacticsMode ? inventory : chroniclesFilterBackpack(inventory, backpackFilter, backpackSearch);
+  // Filtering a single type is needless UI; preserve a way to clear any
+  // active filter when changing heroes so a sparse bag cannot get stranded.
+  const showBackpackTools = inventory.length > 1 || backpackFilter !== 'all' || backpackSearch.trim().length > 0;
   // The first visible item is a safe preview; selection never equips it.
   const transferableItem = !tacticsMode && visibleBackpack.find((item) => item.id === selectedItemId);
   const selectedInventoryItem = transferableItem || (!tacticsMode ? visibleBackpack[0] : null);
@@ -293,7 +296,7 @@ export default function ChroniclesCharacterSheet({
               <span className="chronicles-character-sheet__backpack-heading">
                 {tacticsMode ? 'Mochila de expedición' : `Mochila de ${member.name}`}
               </span>
-              {!tacticsMode && inventory.length > 0 && (
+              {!tacticsMode && inventory.length > 0 && showBackpackTools && (
                 <details className="chronicles-character-sheet__backpack-tools">
                   <summary>
                     Filtrar y buscar <small>{visibleBackpack.length}/{inventory.length}</small>
