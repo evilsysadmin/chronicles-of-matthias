@@ -296,3 +296,33 @@
     min-height: 44px;
   }
 }
+
+
+/* Override the older wide-desktop named grid and its explicit !important
+   backpack column. These are deliberately scoped to MM3 Equipment only.
+   Without this, the obsolete relic-first two-column desk wins the cascade. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout {
+    grid-template-areas: none !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > .chronicles-character-sheet__backpack {
+    grid-area: auto !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > .chronicles-character-sheet__equipment {
+    grid-area: auto !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > .chronicles-character-sheet__relic {
+    grid-area: auto !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+  }
+}
