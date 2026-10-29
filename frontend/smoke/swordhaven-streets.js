@@ -217,6 +217,7 @@ try {
       && watch?.children.filter(child => child.name === 'watchhouse-front-dark-recess').length === 2
       && watch?.children.filter(child => child.name === 'watchhouse-front-stone-jamb').length === 4
       && !watch?.getObjectByName('flower-window-box')
+      && !watch?.getObjectByName('armor-display')
       && !watch?.getObjectByName('window-diamond-leadwork')
       && watch?.getObjectByName('shop-door')
       && forge?.getObjectByName('flower-window-box')
