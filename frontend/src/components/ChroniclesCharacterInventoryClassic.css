@@ -703,3 +703,56 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__worn-ledger li > button > small { grid-column: 2; font-size: .74rem; }
 }
+
+/* Single MM3 object list: worn pieces and bag items share one scroll, row
+   height, navigation and icon family. Green lettering denotes equipped gear,
+   while a green ROW denotes the explicit selection needed for Quitar. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item {
+  color: #38624c;
+  background: #e5dfce;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item > span {
+  color: #365f48;
+  font-weight: 700;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
+  color: #3c6b52;
+  font-weight: 600;
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 150px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item.is-selected {
+  color: #fff5dc;
+  background: #435e55;
+  border-color: #c8b178;
+  box-shadow: inset 4px 0 #d7bd7d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__worn-item.is-selected > :is(span,small) {
+  color: #fff5dc;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__pixel-item-icon {
+  display: block;
+  width: 25px;
+  height: 25px;
+  color: #315849;
+  image-rendering: pixelated;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected .chronicles-character-sheet__pixel-item-icon {
+  color: #f3e6bf;
+}
+@media (max-width: 620px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
+    max-width: 64px;
+    font-size: .7rem;
+  }
+}
