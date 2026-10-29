@@ -11,25 +11,39 @@ export default function ChroniclesPartyAvatarButton({
 }) {
   const targetedOnFirstClick = useRef(false);
   const openedBySecondClick = useRef(false);
+  const pointerType = useRef('');
+  const lastTouchClickAt = useRef(0);
+  const targetClickAt = useRef(0);
 
   const handleClick = (event) => {
+    const touch = pointerType.current === 'touch' && event.detail > 0;
+    pointerType.current = '';
     if (targeting) {
       targetedOnFirstClick.current = true;
+      targetClickAt.current = event.timeStamp;
+      lastTouchClickAt.current = 0;
       onTarget?.();
       return;
     }
-    if (event.detail >= 2) {
-      // Chrome may dispatch click(clickCount=2) before dblclick. Open once.
-      if (targetedOnFirstClick.current) {
-        targetedOnFirstClick.current = false;
-        openedBySecondClick.current = true;
-        return;
-      }
+    // A fast second click after choosing a spell target belongs to the spell,
+    // not to an unrelated character sheet opened by its subsequent dblclick.
+    if (targetedOnFirstClick.current && event.timeStamp - targetClickAt.current < 750) {
+      targetedOnFirstClick.current = false;
+      openedBySecondClick.current = true;
+      return;
+    }
+    targetedOnFirstClick.current = false;
+
+    const touchDoubleTap = touch && lastTouchClickAt.current > 0
+      && event.timeStamp - lastTouchClickAt.current < 600;
+    if (touch) lastTouchClickAt.current = event.timeStamp;
+    if (event.detail >= 2 || touchDoubleTap) {
+      // Browsers may dispatch click(clickCount=2) before dblclick; open once.
+      lastTouchClickAt.current = 0;
       openedBySecondClick.current = true;
       onOpen?.();
       return;
     }
-    targetedOnFirstClick.current = false;
     openedBySecondClick.current = false;
     onSelect?.();
   };
@@ -52,6 +66,7 @@ export default function ChroniclesPartyAvatarButton({
 
   return (
     <button type="button" {...props}
+      onPointerDown={(event) => { pointerType.current = event.pointerType; }}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
