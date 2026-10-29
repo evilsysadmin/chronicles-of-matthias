@@ -11,6 +11,19 @@ test('MM3 inventory distinguishes preview from an explicitly selected transfer t
   assert.match(sheet, /onEquipmentAction\?\.\(\{ type: 'transfer-item', itemId: transferableItem\.id, toMemberId: targetId \}\)/);
 });
 
+test('member hotkeys and party dock are navigation only; transfer is explicit and guarded', () => {
+  const dock = sheet.split('<nav className="chronicles-character-sheet__party-dock"')[1];
+  assert.ok(dock, 'Member navigation remains visible');
+  assert.match(dock, /onClick=\{\(\) => viewMember\(hero\.id\)\}/);
+  assert.match(dock, /aria-label=\{`Ver ficha de \$\{hero\.name\}/);
+  assert.doesNotMatch(dock, /transferableItem/);
+  assert.match(sheet, /className="chronicles-character-sheet__handoff"/);
+  assert.match(sheet, /\{transferableItem && \(/);
+  assert.match(sheet, /disabled=\{!canChangeEquipment\}/);
+  assert.match(sheet, /if \(!transferableItem \|\| !canChangeEquipment \|\| targetId === member\.id\) return;/);
+  assert.match(skin, /__handoff-targets > button\s*\{[^}]*min-height: 44px/s);
+});
+
 test('equipment unequip controls are concise but identify the affected item for assistive tech', () => {
   const labels = sheet.match(/aria-label=\{`Quitar \$\{worn\.name\} y guardarlo en la mochila`\}/g) || [];
   assert.equal(labels.length, 2, 'both weapon and armor/shield actions have item-specific labels');
