@@ -50,7 +50,7 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(watchSign.getObjectByName('watch-crossed-halberd').position.z)
       .toBeGreaterThan(inset.position.z + inset.geometry.parameters.depth / 2);
     const armorer = town.children.find(child =>
-      child.name.startsWith('swordhaven-building-first-book-armorer'));
+      child.name.startsWith('swordhaven-building-first-book-armor-'));
     const armorShield = armorer?.getObjectByName('shield-emblem');
     const armorInset = armorer?.getObjectByName('sign-inset');
     expect(armorShield).toBeTruthy();
