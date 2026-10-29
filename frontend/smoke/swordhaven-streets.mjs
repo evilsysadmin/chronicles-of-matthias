@@ -77,6 +77,8 @@ try {
           'Armory side walls must use iron-barred dark embrasures, not merchant amber glazing');
         assert.equal(result.distinctWatchhouse, 'true',
           'Guardhouse must have a raised crenellated lookout distinct from the armorer');
+        assert.equal(result.distinctWatchhouseFrontage, 'true',
+          'Guardhouse must have iron-barred dark windows instead of domestic flower boxes');
         assert.equal(result.distinctTavernBrick, 'true',
           'Tavern must have warm brick walls and gables, distinct from merchant plaster');
         assert.equal(result.distinctTavernPorch, 'true',
