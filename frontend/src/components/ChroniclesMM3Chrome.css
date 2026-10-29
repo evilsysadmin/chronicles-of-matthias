@@ -445,11 +445,10 @@
     flex: 1 1 0;
     min-width: 0;
     grid-template-columns: 58px minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       'portrait name'
-      'portrait stats'
-      'bars bars';
+      'portrait bars';
     gap: 3px 9px;
     padding: 6px 7px 7px;
   }
@@ -1015,10 +1014,9 @@
     min-width: 0;
     display: grid;
     grid-template-columns: var(--face-w) minmax(0, 1fr);
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       'portrait name'
-      'portrait stats'
       'portrait bars';
     align-items: start;
     gap: 3px 8px;
@@ -1077,13 +1075,26 @@
   .chronicles .chronicles-party-member > b .chronicles-party-sp { font: inherit; color: #0a2470; }
   .chronicles .chronicles-party-member .chronicles-party-bars {
     grid-area: bars;
-    align-self: end;
+    align-self: center;
     width: 100%;
-    /* Keep the PH row reserved for non-casters, aligning every PV bar. */
-    grid-template-rows: repeat(2, 9px);
-    padding: 0 2px 2px;
+    display: grid;
+    grid-auto-rows: 19px;
+    gap: 5px;
+    padding: 0 2px;
   }
-  .chronicles .chronicles-party-bars i { height: 9px; }
+  .chronicles .chronicles-party-bars i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 19px;
+    color: #fff;
+    font: 700 clamp(.55rem, .64vw, .72rem)/1 var(--mm3-hud-font);
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px #000, 1px 0 1px #000;
+  }
   /* Wider MM3 strip keeps its proportions but not the old pale selected
      background. All four hero slates inherit the identical dark stone. */
   .chronicles .chronicles-party-member > span:nth-child(2) strong {
@@ -1726,4 +1737,32 @@
     outline-offset: 2px;
   }
   .chronicles .chronicles-chronicle-trigger kbd { display: none; }
+}
+/* One vitals readout per hero: the exact PV/PH value is INSIDE its fill bar.
+   The compact mobile tiles use the same data rather than a second numeric badge. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-party .chronicles-party-bars {
+    position: absolute;
+    z-index: 2;
+    inset: auto 2px 2px;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0;
+    pointer-events: none;
+  }
+  .chronicles .chronicles-party .chronicles-party-bars i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 10px;
+    min-width: 0;
+    color: #fff;
+    font: 700 .44rem/1 var(--mm3-hud-font);
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px #000, 1px 0 1px #000;
+  }
 }
