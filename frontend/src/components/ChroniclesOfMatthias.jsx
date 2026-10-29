@@ -113,6 +113,7 @@ import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesPartyAvatarButton from './ChroniclesPartyAvatarButton.jsx';
+import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
 import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesInn from './ChroniclesInn.jsx';
 import ChroniclesProvisions, { CHRONICLES_QUARTERMASTER_ID } from './ChroniclesProvisions.jsx';
@@ -1898,6 +1899,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               }} />
           )}
           {state.party.map((member, index) => {
+            const maxSp = chroniclesMemberMaxSp(state, member);
+            const sp = maxSp > 0 ? chroniclesMemberSp(state, member) : 0;
+            const vitals = `${member.hp}/${member.maxHp} PV${maxSp > 0 ? ` · ${sp}/${maxSp} PH` : ''}`;
             return (
               <ChroniclesPartyAvatarButton
                 key={member.id}
@@ -1913,8 +1917,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}
                 onOpen={() => openMemberSheet(member.id)}
                 disabled={expeditionOver}
-                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}`}
-                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${member.hp}/${member.maxHp} PV${chroniclesMemberMaxSp(state, member) > 0 ? ` · ${chroniclesMemberSp(state, member)}/${chroniclesMemberMaxSp(state, member)} PH` : ''} · clic: seleccionar · doble clic / Enter: ficha`}
+                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}, ${vitals}`}
+                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
@@ -1931,21 +1935,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
                   ))}
                 </span>
-                <span><strong>{index + 1}. {member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level}</small></span>
-                <span className="chronicles-party-bars" aria-hidden="true" data-band={chroniclesHealthBand(member.hp, member.maxHp)}>
-                  <i className="is-hp" style={{ '--fill': member.maxHp ? Math.max(0, member.hp) / member.maxHp : 0 }} />
-                  {chroniclesMemberMaxSp(state, member) > 0 && (
-                    <i className="is-sp" style={{ '--fill': chroniclesMemberSp(state, member) / chroniclesMemberMaxSp(state, member) }} />
-                  )}
-                </span>
-                <b>
-                  {member.hp}/{member.maxHp}
-                  {chroniclesMemberMaxSp(state, member) > 0 && (
-                    <i className="chronicles-party-sp" data-member-sp={chroniclesMemberSp(state, member)}>
-                      {chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)} PH
-                    </i>
-                  )}
-                </b>
+                <span><strong>{member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level}</small></span>
+                <ChroniclesPartyVitals hp={member.hp} maxHp={member.maxHp}
+                  sp={sp} maxSp={maxSp} band={chroniclesHealthBand(member.hp, member.maxHp)} />
                 {portraitLevelUps[member.id] && (
                   <ChroniclesPortraitLevelUp key={portraitLevelUps[member.id].token}
                     heroName={member.name} toLevel={portraitLevelUps[member.id].toLevel} />
