@@ -53,7 +53,7 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(classic).toContain('--mm3-equipment-ink: #26312f;');
     expect(classic).toContain('background: var(--mm3-equipment-stone) !important;');
     expect(classic).toContain('max-width: 760px;');
-    expect(classic).toMatch(/__classic-actions > button\\s*\\{\\s*min-height: 48px;/);
+    expect(classic).toMatch(/__classic-actions > button\s*\{\s*min-height: 48px;/);
     expect(classic).toContain('border-color: #dec98a;');
     expect(html('tactics')).not.toContain('data-chronicles-equipment-folio');
   });
