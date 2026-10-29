@@ -126,13 +126,13 @@ export function chroniclesRollInitiative(
 }
 
 export function chroniclesCurrentInitiativeActor(initiative) {
-  if (!initiative?.order?.length) return null;
+  if (!Array.isArray(initiative?.order) || !initiative.order.length) return null;
   const cursor = Math.max(0, Math.min(initiative.order.length - 1, nonNegativeInteger(initiative.cursor)));
   return initiative.order[cursor] || null;
 }
 
 export function chroniclesAdvanceInitiative(initiative) {
-  if (!initiative?.order?.length) return initiative;
+  if (!Array.isArray(initiative?.order) || !initiative.order.length) return initiative;
   const nextCursor = nonNegativeInteger(initiative.cursor) + 1;
   if (nextCursor < initiative.order.length) return { ...initiative, cursor: nextCursor };
   return {
@@ -269,7 +269,7 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 }
 
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
-  if (!state?.initiative?.order?.length) return state;
+  if (!state?.initiative) return state;
   // A party wiped during an active round must end in defeat, even if
   // enemies survive or the final enemy fell at the same time.
   if (!Array.isArray(state.party) || !state.party.some((member) => (
@@ -277,6 +277,14 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   ))) {
     const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
+  }
+  // An interrupted save can contain a missing, empty or non-array order.
+  // Never iterate a string/object as actors or strand the party in combat.
+  // End this invalid round without granting anyone an action; a nearby living
+  // enemy may engage again normally on the next exploration turn.
+  if (!Array.isArray(state.initiative.order) || !state.initiative.order.length) {
+    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    return { ...collapsed, phase: state.phase === 'defeated' ? 'defeated' : 'explore', turnPhase: 'party', initiative: null };
   }
   // Legacy/restored initiative orders can contain repeated actor slots. If
   // left intact, advancing a duplicate can select that same actor again and
