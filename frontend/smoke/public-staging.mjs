@@ -274,7 +274,14 @@ try {
       const fourthHeroName = (await partyPortraits.nth(3).getAttribute('aria-label'))
         ?.replace(/^Seleccionar /, '');
       assert.ok(firstHeroName && fourthHeroName, 'Missing hero names on actual party portraits');
-      await partyPortraits.first().click();
+      // Portraits select on one click/tap; the dossier opens on a desktop
+      // double-click or a second quick touch tap (PR #867).
+      if (viewport.width === 390) {
+        await partyPortraits.first().tap();
+        await partyPortraits.first().tap();
+      } else {
+        await partyPortraits.first().dblclick();
+      }
       const heroFolio = page.locator('[role="dialog"][data-chronicles-folio="v2"]');
       await heroFolio.waitFor({ state: 'visible', timeout: 12_000 });
       // The state folio also has a "Cambiar equipo ›" action. Scope this
