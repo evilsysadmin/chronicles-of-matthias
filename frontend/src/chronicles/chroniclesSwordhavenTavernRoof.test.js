@@ -33,6 +33,15 @@ describe('Swordhaven tavern architectural identity', () => {
     expect(flues[0].material.normalMap).toBeTruthy();
     expect(flues[0].geometry.parameters.height).toBeGreaterThan(flues[1].geometry.parameters.height);
     expect(tavern.getObjectByName('tavern-porch-awning')).toBeTruthy();
+    const entrance = tavern.getObjectByName('tavern-oak-entrance');
+    expect(entrance).toBeInstanceOf(THREE.Group);
+    expect(entrance.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(entrance.children.filter(child => child.name === 'tavern-entry-oak-jamb')).toHaveLength(2);
+    expect(entrance.children.filter(child => child.name === 'tavern-entry-stone-plinth')).toHaveLength(2);
+    expect(entrance.children.filter(child => child.name === 'tavern-entry-oak-brace')).toHaveLength(2);
+    expect(entrance.getObjectByName('tavern-entry-oak-lintel')).toBeTruthy();
+    expect(tavern.getObjectByName('shop-door')).toBeTruthy();
+    expect(forge.getObjectByName('tavern-oak-entrance')).toBeUndefined();
     expect(tavern.getObjectByName('stone-chimney')).toBeUndefined();
     expect(forge.getObjectByName('tavern-double-hearth')).toBeUndefined();
     expect(forge.getObjectByName('forge-roof-smokestack')).toBeTruthy();
