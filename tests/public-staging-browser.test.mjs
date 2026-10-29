@@ -90,3 +90,11 @@ test('public folio smoke opens a portrait with desktop double-click or two touch
   assert.ok(!source.includes('await partyPortraits.first().click();'),
     'single click only selects the hero and must not be used to open the folio');
 });
+
+test('save, reload and resume compare the visible hero name rather than the PV-bearing aria-label', () => {
+  assert.ok(source.includes("const firstHeroName = (await partyPortraits.nth(0).locator('strong').innerText()).trim();"));
+  assert.ok(source.includes("const resumedFirstName = (await partyPortraits.first().locator('strong').innerText()).trim();"));
+  const resumed = source.slice(source.indexOf('const resumedFirstName ='), source.indexOf('assert.equal(resumedFirstName'));
+  assert.ok(!resumed.includes("getAttribute('aria-label')"), 'live PV must not enter the saved hero identity comparison');
+  assert.ok(source.includes('The same lead hero must survive server save, exit, F5 and resume'));
+});

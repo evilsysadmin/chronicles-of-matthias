@@ -487,8 +487,9 @@ try {
         .click({ timeout: 30_000 });
       await world.waitFor({ state: 'visible', timeout: 90_000 });
       await canvas.waitFor({ state: 'visible', timeout: 45_000 });
-      const resumedFirstName = (await world.locator('.chronicles-party-member').first()
-        .getAttribute('aria-label'))?.replace(/^Seleccionar /, '');
+      // Match the same visible hero name used before saving. The portrait's
+      // aria-label also contains live PV, which may change across recovery.
+      const resumedFirstName = (await partyPortraits.first().locator('strong').innerText()).trim();
       assert.equal(resumedFirstName, firstHeroName,
         'The same lead hero must survive server save, exit, F5 and resume');
       assert.deepEqual(errors, [], 'Browser errors during public save / exit / resume');
