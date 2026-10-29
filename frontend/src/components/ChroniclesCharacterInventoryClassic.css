@@ -1,0 +1,251 @@
+/* MM3 inventory: wide ledger, explicit command strip, old-school portraits.
+   Pure presentation; no changes to equipability, saves, Tactics or combat. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__head,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__progression { display: none; }
+
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="equipment"] { min-height: 430px; background: #bd7b48; }
+
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] {
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    border: 0 !important;
+    background: #bc7a48 !important;
+    box-shadow: inset 0 2px #e6ad78, inset 0 -2px #864b27;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head {
+    padding: 4px 5px 9px;
+    border-bottom: 2px solid #754424;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    grid-template-areas: none !important;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px 0 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-heading { display: none; }
+
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 180px;
+    max-height: min(43vh, 375px);
+    margin: 0;
+    padding: 5px;
+    gap: 1px;
+    overflow-y: auto;
+    align-content: start;
+    border: 0;
+    background: #b77847;
+    box-shadow: inset 0 0 0 1px #a46639;
+    scrollbar-gutter: stable;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 43px;
+    height: auto;
+    padding: 5px 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #fff0dc;
+    box-shadow: none;
+    text-align: left;
+    font: 400 clamp(.95rem, 1.3vw, 1.21rem)/1.17 var(--mm3-pixel-font, monospace);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button:hover,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected {
+    border-color: #f4d573;
+    background: #93562c;
+    color: #fffbe7;
+    box-shadow: inset 3px 0 #f4d573;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory-glyph {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: #db9e67;
+    border: 2px solid #82502b;
+    color: #4b260d;
+    font: normal 1.16rem/1 sans-serif;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > span {
+    font-size: inherit;
+    font-weight: 400;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools {
+    order: 2;
+    display: block;
+    align-self: stretch;
+    margin: 2px 0;
+    padding: 5px 9px;
+    border: 1px solid #945f36;
+    background: #dfa977;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment {
+    display: block;
+    margin: 0;
+    padding: 2px 5px;
+    border: 0;
+    background: transparent;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details {
+    display: flex;
+    flex-direction: column;
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 9px;
+    border: 2px solid #925c35;
+    background: #efd0a2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details > strong { color: #482811; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__foot { display: none; }
+
+  /* Portraits always remain in the dock while browsing any MM3 folio. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock { padding: 4px 8px; background: #62626a; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock button {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: 'portrait name' 'portrait hp';
+    gap: 2px 7px;
+    min-height: 76px;
+    height: 78px;
+    padding: 4px;
+    border: 2px solid #b4b3ad;
+    background: #2b2929;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock img {
+    display: block;
+    grid-area: portrait;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 52px;
+    height: 62px;
+    object-fit: cover;
+    border: 2px solid #9f9690;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-number { display: none; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-name { grid-area: name; font-size: 1rem; }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-hp { grid-area: hp; font-size: .92rem; }
+}
+/* Command bar owns the actions; examination and recipient panel are optional. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 8px 4px;
+  border-top: 2px solid #8f512a;
+  border-bottom: 2px solid #8f512a;
+  background: #d99a69;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 4px 2px;
+  border: 2px solid;
+  border-color: #f8ca98 #75421e #75421e #f8ca98;
+  background: #bd7d4a;
+  color: #fff8e7;
+  font: 400 .86rem/1.1 var(--mm3-pixel-font, monospace);
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button > span {
+  font: 700 1.2rem/1 sans-serif;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button:hover:not(:disabled),
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button[aria-expanded="true"] {
+  background: #935328;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button:focus-visible {
+  outline: 3px solid #fff1b0;
+  outline-offset: 2px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients {
+  padding: 7px;
+  border: 1px solid #8d5933;
+  background: #f1d6ae;
+  color: #472a13;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-recipients strong {
+  display: block;
+  margin-bottom: 6px;
+}
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__party-dock img { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__classic-actions button { transition: none; }
+}
