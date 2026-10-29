@@ -1395,7 +1395,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // obscured the panes and read as an opaque green roof cube from the street.
     const herbalGlass = material(0xa0cbb4, {
       emissive: 0x12372a, emissiveIntensity: 0.12, metalness: 0.04,
-      roughness: 0.27, transparent: true, opacity: 0.74,
+      roughness: 0.27, transparent: true, opacity: 0.48,
       depthWrite: false, side: THREE.DoubleSide,
     });
     const herbarium = new THREE.Group();
@@ -1434,16 +1434,18 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     for (const side of [-1, 1]) {
       const pane = mesh(herbarium, new THREE.BoxGeometry(1.72, 0.095, 2.46),
-        herbalGlass, 'herbarium-glazed-roof', [side * 0.72, 1.62, 0], !coarse);
-      pane.rotation.z = -side * 0.50;
+        herbalGlass, 'herbarium-glazed-roof', [side * 0.72, 1.94, 0], !coarse);
+      pane.rotation.z = -side * 0.67;
+      // A steeper glass pitch gives the botica a readable conservatory crown
+      // at street level; eaves still meet the existing frame, without new blockers.
       // Exposed rafters make the pitched greenhouse silhouette legible even
       // when the translucent panes blend into the sky on a small screen.
       const rafter = mesh(herbarium, new THREE.BoxGeometry(1.77, 0.14, 0.15),
-        mats.timber, 'herbarium-roof-rafter', [side * 0.72, 1.70, 1.15], !coarse);
-      rafter.rotation.z = -side * 0.50;
+        mats.timber, 'herbarium-roof-rafter', [side * 0.72, 2.00, 1.15], !coarse);
+      rafter.rotation.z = -side * 0.67;
     }
     mesh(herbarium, new THREE.BoxGeometry(0.17, 0.19, 2.54), mats.timber,
-      'herbarium-roof-ridge', [0, 2.05, 0], !coarse);
+      'herbarium-roof-ridge', [0, 2.55, 0], !coarse);
     root.add(herbarium);
     // Drying herbs distinguish the street-level frontage even on a phone.
     // Batch all four bunches; never add an obstacle or a light source.
