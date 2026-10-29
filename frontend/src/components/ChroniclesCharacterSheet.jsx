@@ -125,6 +125,7 @@ export default function ChroniclesCharacterSheet({
   const [showRecipients, setShowRecipients] = useState(false);
   const wornDisclosure = useRef(null);
   const inventoryListRef = useRef(null);
+  const recipientsRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
 
@@ -225,6 +226,17 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setShowRecipients(false);
   };
+
+  // The delivery picker lives above the command row, and must actually be
+  // visible to the player (Playwright clicking an offscreen button hid this bug).
+  // Focus its labelled group for keyboard/screen-reader feedback, then reveal it
+  // inside the same scrollable folio without moving the fixed party portraits.
+  useLayoutEffect(() => {
+    if (!showRecipients || !transferableItem || activeFolio !== 'equipment') return;
+    const panel = recipientsRef.current;
+    panel?.focus({ preventScroll: true });
+    panel?.scrollIntoView?.({ block: 'nearest' });
+  }, [showRecipients, transferableItem?.id, activeFolio, member?.id]);
 
   // A modal may lose DOM focus after rerenders. Keep 1–4 available even if
   // focus falls to <body>; the sheet itself stops bubbling events below.
@@ -410,6 +422,23 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva objetos en su mochila.'}</small>
               )}
+              {!tacticsMode && showRecipients && transferableItem && (
+                <div className="chronicles-character-sheet__classic-recipients" role="group"
+                  tabIndex={-1} ref={recipientsRef}
+                  aria-label={`Entregar 1 ${transferableItem.name} a otro personaje`}>
+                  <strong>Entregar {transferableItem.name} a…</strong>
+                  <div className="chronicles-character-sheet__handoff-targets">
+                    {chroniclesPartyHotkeySlots(state.party)
+                      .filter(({ member: companion }) => companion.id !== member.id)
+                      .map(({ member: companion }) => (
+                        <button type="button" key={companion.id}
+                          disabled={!canChangeEquipment}
+                          aria-label={`Entregar 1 ${transferableItem.name} a ${companion.name}`}
+                          onClick={() => giveSelectedItemTo(companion.id)}>{companion.name}</button>
+                      ))}
+                  </div>
+                </div>
+              )}
               {!tacticsMode && (
                 <nav className="chronicles-character-sheet__classic-actions" aria-label="Acciones de inventario">
                   <button type="button" disabled={!visibleBackpack.length} onClick={() => browseBackpack(-1)}>
@@ -445,22 +474,6 @@ export default function ChroniclesCharacterSheet({
                     <span aria-hidden="true">×</span> Salir
                   </button>
                 </nav>
-              )}
-              {!tacticsMode && showRecipients && transferableItem && (
-                <div className="chronicles-character-sheet__classic-recipients" role="group"
-                  aria-label={`Entregar 1 ${transferableItem.name} a otro personaje`}>
-                  <strong>Entregar {transferableItem.name} a…</strong>
-                  <div className="chronicles-character-sheet__handoff-targets">
-                    {chroniclesPartyHotkeySlots(state.party)
-                      .filter(({ member: companion }) => companion.id !== member.id)
-                      .map(({ member: companion }) => (
-                        <button type="button" key={companion.id}
-                          disabled={!canChangeEquipment}
-                          aria-label={`Entregar 1 ${transferableItem.name} a ${companion.name}`}
-                          onClick={() => giveSelectedItemTo(companion.id)}>{companion.name}</button>
-                      ))}
-                  </div>
-                </div>
               )}
               {!tacticsMode && selectedInventoryItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}>
