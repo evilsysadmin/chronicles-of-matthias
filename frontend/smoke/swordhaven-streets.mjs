@@ -80,7 +80,7 @@ try {
         assert.equal(result.distinctWatchhouseFrontage, 'true',
           'Guardhouse must have iron-barred dark windows instead of domestic flower boxes');
         assert.equal(result.distinctTavernBrick, 'true',
-          'Tavern must have warm brick walls and gables, distinct from merchant plaster');
+          'Tavern brick must contrast with smoke-darkened forge masonry');
         assert.equal(result.distinctTavernPorch, 'true',
           'Tavern must have a supported pitched porch, not a flat slab, on desktop and mobile');
         assert.equal(result.distinctTavernRoof, 'true',

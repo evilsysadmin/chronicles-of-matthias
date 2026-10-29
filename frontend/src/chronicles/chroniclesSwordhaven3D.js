@@ -398,6 +398,13 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.97,
   }) : null;
+  // The smithy has smoke-darkened dressed stone instead of the guardhouse's
+  // pale limewash. Reuse cached town masonry maps; no extra textures or lights.
+  const forgeMasonry = isForge ? material(0x958171, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.98,
+  }) : null;
   // The botica is a sage-coloured stone herb house, not another half-timbered
   // merchant frontage. Its roof herbarium, hanging herbs and doorway survive.
   const apothecaryStone = isApothecary ? material(0xa8b9a0, {
@@ -412,7 +419,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('stucco'),
     normalScale: new THREE.Vector2(0.38, 0.38), roughness: 0.96,
   }) : null;
-  const wallMaterial = guildStone || tavernBrick || apothecaryStone || storeOchre
+  const wallMaterial = guildStone || tavernBrick || forgeMasonry || apothecaryStone || storeOchre
     || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);

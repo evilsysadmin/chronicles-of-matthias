@@ -125,12 +125,12 @@ describe('Swordhaven modular real-time 3D', () => {
   });
 
 
-  it('uses reusable masonry, stucco, oak and tile maps on real shop meshes', () => {
+  it('uses reusable masonry, oak and tile maps on real shop meshes', () => {
     const scene = new THREE.Scene();
     buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer: true });
     const house = scene.getObjectByName('swordhaven-building-swordhaven-forge');
     expect(house.getObjectByName('timber-and-stone-walls').material.map)
-      .toBe(swordhavenSurfaceTexture('stucco'));
+      .toBe(swordhavenSurfaceTexture('masonry'));
     expect(house.getObjectByName('stone-foundations').material.map)
       .toBe(swordhavenSurfaceTexture('masonry'));
     expect(house.getObjectByName('vertical-facade-post').material.map)
@@ -426,7 +426,7 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(guild.getObjectByName('horizontal-facade-beam')).toBeFalsy();
       expect(forge.getObjectByName('vertical-facade-post')).toBeTruthy();
       expect(forge.getObjectByName('timber-and-stone-walls').material.map)
-        .toBe(swordhavenSurfaceTexture('stucco'));
+        .toBe(swordhavenSurfaceTexture('masonry'));
       expect(armorer.getObjectByName('timber-and-stone-walls').material).not.toBe(walls.material);
       expect(guild.getObjectByName('shop-door')).toBeTruthy();
       expect(guild.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel)
@@ -608,8 +608,8 @@ describe('Swordhaven modular real-time 3D', () => {
       .toBe(swordhavenSurfaceNormalTexture('masonry'));
     const forgeWall = scene.getObjectByName('swordhaven-building-swordhaven-forge')
       .getObjectByName('timber-and-stone-walls').material;
-    expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
-    expect(forgeWall.normalScale.toArray()).toEqual([0.50, 0.50]);
+    expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
+    expect(forgeWall.normalScale.toArray()).toEqual([0.45, 0.45]);
     expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));

@@ -33,8 +33,9 @@ describe('Swordhaven tavern brick frontage', () => {
     expect(walls.material.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
     expect(tavern.getObjectByName('roof-gable-1').material).toBe(walls.material);
     expect(tavern.getObjectByName('roof-gable--1').material).toBe(walls.material);
-    expect(forge.getObjectByName('timber-and-stone-walls').material.map)
-      .toBe(swordhavenSurfaceTexture('stucco'));
+    const forgeWalls = forge.getObjectByName('timber-and-stone-walls').material;
+    expect(forgeWalls.map).toBe(swordhavenSurfaceTexture('masonry'));
+    expect(forgeWalls.color.getHex()).not.toBe(walls.material.color.getHex());
     // The brick inn keeps its timber framing and original entrance.
     expect(tavern.getObjectByName('vertical-facade-post')).toBeTruthy();
     expect(tavern.getObjectByName('diagonal-timber-brace')).toBeTruthy();
