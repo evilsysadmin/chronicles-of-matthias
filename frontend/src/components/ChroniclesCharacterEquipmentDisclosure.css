@@ -1,0 +1,103 @@
+/* Equipment only: retain the equipped summary without stacking four tall
+   cards below every backpack. Expanding exposes the original live actions.
+   No nested scroll container: the folio remains the sole scrollable page. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipment {
+  min-height: 0;
+  padding: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure {
+  display: block;
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary {
+  display: grid;
+  grid-template-columns: 16px auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary::before {
+  content: '▸';
+  color: #80512b;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure[open] > summary::before {
+  content: '▾';
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary > span {
+  font: 700 1.02rem/1.2 var(--mm3-pixel-font, 'Trebuchet MS', sans-serif);
+  color: #3e2914;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary > small {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  color: #654528;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary:focus-visible {
+  outline: 3px solid #336528;
+  outline-offset: -3px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px 12px;
+  padding: 4px 12px 12px;
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-body > .chronicles-character-sheet__dual-weapons,
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-body > small {
+  grid-column: 1 / -1;
+}
+@media (max-width: 1090px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 2px 8px;
+    min-height: 54px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary::before {
+    grid-row: 1 / span 2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure > summary > small {
+    grid-column: 2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-body {
+    padding-inline: 8px;
+  }
+}
