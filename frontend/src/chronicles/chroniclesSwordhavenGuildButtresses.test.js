@@ -40,6 +40,6 @@ describe('Swordhaven guild structural side buttresses', () => {
     expect(guild.getObjectByName('shop-door')).toBeTruthy();
     expect(forge?.getObjectByName('magic-guild-side-buttresses')).toBeFalsy();
     // The authored map, including the walkable camera approach, is untouched.
-    expect(swordhaven.grid[8][17]).toBe('.');
+    expect(swordhaven.grid[4][12]).toBe('.');
   });
 });
