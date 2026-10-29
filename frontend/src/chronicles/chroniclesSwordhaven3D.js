@@ -1289,7 +1289,15 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const herbarium = new THREE.Group();
     herbarium.name = 'apothecary-roof-herbarium';
     herbarium.userData.chroniclesDecorativeOnly = true;
-    herbarium.position.set(0, height + 1.72, -depth * 0.12);
+    // A wider, slightly taller glazed conservatory now reads as a true roof
+    // volume from the street, rather than a tiny green box on the ridge.
+    // Its stone terrace intersects the existing solid roof, never a walk tile.
+    const terrace = mesh(root, new THREE.BoxGeometry(4.22, 0.60, 3.02),
+      apothecaryStone, 'apothecary-herbarium-stone-terrace',
+      [0, height + 1.44, -depth * 0.12], !coarse);
+    terrace.userData.chroniclesDecorativeOnly = true;
+    herbarium.position.set(0, height + 1.74, -depth * 0.12);
+    herbarium.scale.set(1.32, 1.15, 1.15);
     // Slender posts and continuous sills/eaves frame actual glass panels.
     // The building's authored solid footprint and entrance are unchanged.
     for (const x of [-1.38, 1.38]) {

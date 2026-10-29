@@ -41,6 +41,18 @@ describe('Swordhaven apothecary sage masonry', () => {
     const herbarium = botica.getObjectByName('apothecary-roof-herbarium');
     expect(herbarium).toBeTruthy();
     expect(herbarium.userData.chroniclesDecorativeOnly).toBe(true);
+    const terrace = botica.getObjectByName('apothecary-herbarium-stone-terrace');
+    expect(terrace?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(terrace.material).toBe(walls.material);
+    expect(terrace.geometry.parameters.width).toBeLessThan(8.1);
+    expect(terrace.geometry.parameters.depth).toBeLessThan(7.1);
+    expect(terrace.position.y - terrace.geometry.parameters.height / 2).toBeGreaterThan(5.25);
+    expect(herbarium.scale.x).toBeGreaterThan(1.25);
+    expect(herbarium.scale.y).toBeGreaterThan(1.1);
+    expect(herbarium.scale.z).toBeGreaterThan(1.1);
+    expect(herbarium.position.y).toBeCloseTo(
+      terrace.position.y + terrace.geometry.parameters.height / 2);
+    expect(store.getObjectByName('apothecary-herbarium-stone-terrace')).toBeFalsy();
     // The old opaque timber box concealed the greenhouse glazing. It must
     // remain an open post-and-rail frame, including on coarse touch devices.
     expect(herbarium.getObjectByName('herbarium-timber-frame')).toBeFalsy();
