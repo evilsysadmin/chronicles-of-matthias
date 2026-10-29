@@ -117,6 +117,25 @@ try {
         assert.equal(await tab.locator('.chronicles-character-sheet__party-hp').isVisible(), true,
           'Live HP remains visible in compact selector: ' + name);
       }
+      // A hero button must never move under the cursor or flicker at its edge.
+      // Test painted geometry, not only declarations in the CSS source.
+      if (width === 1280) {
+        for (const button of await partyDock.locator('button').all()) {
+          const before = await button.boundingBox();
+          await button.hover({ position: { x: 3, y: Math.max(3, before.height / 2) } });
+          await page.waitForTimeout(200);
+          const after = await button.boundingBox();
+          assert.ok(after && Math.abs(after.x - before.x) < .3
+            && Math.abs(after.y - before.y) < .3
+            && Math.abs(after.width - before.width) < .3
+            && Math.abs(after.height - before.height) < .3,
+          'Hover must not move or resize hero hit targets: '
+            + JSON.stringify({ before, after }));
+          const transform = await button.evaluate((node) => getComputedStyle(node).transform);
+          assert.equal(transform, 'none', 'Hero hover must not use transform-based movement');
+        }
+        await page.mouse.move(0, 0);
+      }
       assert(metrics.dockTop > metrics.top && metrics.dockBottom <= metrics.bottom + 2,
         'Party dock must remain visible and contained: ' + JSON.stringify(metrics));
       assert(metrics.documentWidth <= width + 1 && metrics.left >= -1 && metrics.right <= width + 1,
