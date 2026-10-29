@@ -419,8 +419,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('stucco'),
     normalScale: new THREE.Vector2(0.38, 0.38), roughness: 0.96,
   }) : null;
+  // Cold, weathered blue-grey ashlar gives the guard barracks a military
+  // facade rather than the same limewash as nearby domestic houses. Reuse
+  // the town's masonry relief; this changes neither meshes nor collisions.
+  const watchAshlar = isWatch ? material(0x93a3aa, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.98,
+  }) : null;
   const wallMaterial = guildStone || tavernBrick || forgeMasonry || apothecaryStone || storeOchre
-    || (isTemple || isArmor ? mats.stone : mats.plaster);
+    || watchAshlar || (isTemple || isArmor ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
