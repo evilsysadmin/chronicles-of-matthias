@@ -163,6 +163,27 @@ try {
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
         'Character sheet must fit vertically: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
+      // A sparse one-item bag must not reserve a tall, empty inventory well.
+      // This measures real Chromium geometry before selecting or equipping.
+      const inventoryGeometry = await sheet.locator('.chronicles-character-sheet__inventory')
+        .evaluate((node) => {
+          const box = node.getBoundingClientRect();
+          const items = [...node.querySelectorAll('[data-inventory-item]')];
+          return {
+            height: box.height,
+            count: items.length,
+            firstRow: items[0]?.getBoundingClientRect().height || 0,
+            overflowX: node.scrollWidth > node.clientWidth + 1,
+          };
+        });
+      assert.equal(inventoryGeometry.count, 1, 'Loot fixture should exercise a single inventory row');
+      assert.ok(inventoryGeometry.firstRow >= 44, 'Inventory controls stay touch-sized');
+      assert.equal(inventoryGeometry.overflowX, false, 'Sparse inventory cannot overflow horizontally');
+      if (width >= 851) {
+        assert.ok(inventoryGeometry.height <= 90,
+          'A single item should not reserve the old 180px storage well: ' + JSON.stringify(inventoryGeometry));
+      }
+
       // Numeric input receives digits while the loot is still in the backpack.
       // Equipping its only item correctly removes the search controls afterward.
       // Native disclosure keeps search available without dominating the sheet.
