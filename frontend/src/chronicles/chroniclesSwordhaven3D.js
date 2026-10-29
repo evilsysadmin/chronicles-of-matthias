@@ -827,38 +827,39 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       root.add(diamondLead);
 
       if (isStore) {
-        // A provisions warehouse displays tied burlap sacks rather than the
-        // tavern's ornamental flowers. Two instanced batches, no new textures,
-        // lights, interaction targets or changes to the solid town footprint.
-        const sackCloth = material(0xc4a77b, { roughness: 1, metalness: 0 });
-        const sacks = new THREE.InstancedMesh(
-          new THREE.SphereGeometry(0.28, coarse ? 8 : 12, coarse ? 6 : 9),
-          sackCloth, 8);
-        sacks.name = 'store-window-burlap-sacks';
-        const ties = new THREE.InstancedMesh(
-          new THREE.CylinderGeometry(0.055, 0.095, 0.15, 6),
+        // The warehouse displays braced oak supply crates rather than the
+        // inn's flowers. Two instanced batches on the existing raised sills;
+        // no new textures, lights, interaction targets or walk-grid changes.
+        const crates = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.70, 0.50, 0.50),
+          material(0xb58c58, { roughness: 0.98 }), 4);
+        crates.name = 'store-window-provisions-crates';
+        const braces = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.085, 0.83, 0.08),
           mats.timber, 8);
-        ties.name = 'store-window-sack-ties';
+        braces.name = 'store-window-crate-crossbraces';
         const parcel = new THREE.Object3D();
-        let index = 0;
+        let crateIndex = 0;
+        let braceIndex = 0;
         for (const x of [-width * 0.33, width * 0.33]) {
-          for (const offset of [-0.55, -0.18, 0.18, 0.55]) {
-            parcel.position.set(x + offset, 2.25, facadeZ + 0.76);
-            parcel.rotation.set(0, 0, (index % 3 - 1) * 0.10);
-            parcel.scale.set(0.92, 1.12, 0.74);
-            parcel.updateMatrix();
-            sacks.setMatrixAt(index, parcel.matrix);
-            parcel.position.y = 2.57;
+          for (const offset of [-0.42, 0.42]) {
+            const crateX = x + offset;
+            parcel.position.set(crateX, 2.26, facadeZ + 0.76);
             parcel.rotation.set(0, 0, 0);
             parcel.scale.set(1, 1, 1);
             parcel.updateMatrix();
-            ties.setMatrixAt(index, parcel.matrix);
-            index += 1;
+            crates.setMatrixAt(crateIndex++, parcel.matrix);
+            for (const angle of [-0.68, 0.68]) {
+              parcel.position.set(crateX, 2.26, facadeZ + 1.055);
+              parcel.rotation.z = angle;
+              parcel.updateMatrix();
+              braces.setMatrixAt(braceIndex++, parcel.matrix);
+            }
           }
         }
-        for (const batch of [sacks, ties]) {
+        for (const batch of [crates, braces]) {
           batch.userData.chroniclesDecorativeOnly = true;
-          batch.castShadow = false;
+          batch.castShadow = !coarse;
           batch.instanceMatrix.needsUpdate = true;
           root.add(batch);
         }
