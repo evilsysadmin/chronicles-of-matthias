@@ -423,8 +423,15 @@ try {
         'Read-only smoke fixture cannot equip without a real game action callback');
       await actions.getByRole('button', { name: /Examinar/ }).click();
       const desk = await Promise.all([inv.boundingBox(), detail.boundingBox()]);
-      assert.ok(desk[0] && desk[1] && desk[1].y >= desk[0].y + desk[0].height - 3,
-        'Classic item examination must expand below the full-width list');
+      assert.ok(desk[0] && desk[1], 'Both inventory and inspector must have painted geometry');
+      if (width >= 1200) {
+        assert.ok(desk[1].x >= desk[0].x + desk[0].width + 4
+          && Math.abs(desk[1].y - desk[0].y) <= 5,
+          'Wide desk inspection must expand beside the ledger, not beneath it: ' + JSON.stringify(desk));
+      } else {
+        assert.ok(desk[1].y >= desk[0].y + desk[0].height - 3,
+          'Narrow desk inspection must expand below the full-width list: ' + JSON.stringify(desk));
+      }
       await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
       // The unfiltered list survives chapter navigation without losing items.
       const visibleIds = await inv.locator('[data-ledger-id]')
