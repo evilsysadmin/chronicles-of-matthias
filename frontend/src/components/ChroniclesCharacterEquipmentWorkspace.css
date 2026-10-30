@@ -139,58 +139,111 @@
   }
 }
 
-/* On a wide desk, Examinar uses the previously wasted right-hand area next
-   to the inventory, never a full-height card beneath the action buttons.
-   A single scroll belongs to each region, with commands always beneath. */
-@media (min-width: 1200px) and (min-height: 581px) {
+/* Examinar is a self-contained modal instead of a second inventory column.
+   The underlying ledger never shrinks when the information window opens. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 3vw, 28px);
+  box-sizing: border-box;
+  background: rgba(15, 21, 22, .76);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim[hidden] {
+  display: none !important;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details:not([hidden]) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: min(610px, 100%);
+  max-width: 100%;
+  height: auto;
+  max-height: min(78dvh, 700px);
+  min-height: 0;
+  margin: 0;
+  padding: 18px 20px 16px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 3px solid #d2b57c;
+  outline: 2px solid #384947;
+  background: #eee0c4;
+  color: #293632;
+  box-shadow: 0 18px 65px #070b0cbb, inset 0 0 0 2px #8f784f;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details > * {
+  order: 0 !important;
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details > .chronicles-character-sheet__inspection-close {
+  order: -2 !important;
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0 0 -28px;
+  padding: 0;
+  z-index: 1;
+  border: 2px solid #8d7650;
+  background: #435a54;
+  color: #fff0d2;
+  font: 700 1.5rem/1 var(--mm3-pixel-font, monospace);
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details > strong {
+  padding-right: 54px;
+  font-size: 1.22rem;
+  line-height: 1.4;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details > .chronicles-character-sheet__drop-button {
+  order: 10 !important;
+  align-self: flex-start;
+  margin: 7px 0 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__item-more dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+}
+@media (max-width: 620px), (max-height: 580px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden])) {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(285px, .95fr);
-    grid-template-rows: minmax(0, 1fr) auto auto auto;
-    gap: 5px 12px;
-    align-items: stretch;
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim {
+    padding: 10px;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
-  > .chronicles-character-sheet__inventory {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 0;
-    max-height: none;
-    height: 100%;
-    align-self: stretch;
-    overflow-y: auto;
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+  > .chronicles-character-sheet__item-details:not([hidden]) {
+    width: min(100%, 530px);
+    max-height: calc(100dvh - 20px);
+    padding: 13px 12px;
   }
+}
+@media (max-width: 430px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
-  > .chronicles-character-sheet__item-details {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: stretch;
-    min-height: 0;
-    height: 100%;
-    max-height: none;
-    overflow-y: auto;
-    box-sizing: border-box;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
-  > :is(.chronicles-character-sheet__worn-hint, .chronicles-character-sheet__transfer-hint) {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
-  > .chronicles-character-sheet__shortcuts {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
-  > .chronicles-character-sheet__classic-actions {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    margin-top: 0;
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+  .chronicles-character-sheet__item-more dl {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
