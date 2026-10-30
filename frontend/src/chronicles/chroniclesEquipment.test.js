@@ -140,7 +140,7 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(chroniclesEquipmentBonuses(removed, 'matthias').damageReduction).toBe(0);
   });
 
-  it('does not let a two-handed bow borrow a shield to hit or parry during its shot', () => {
+  it('preserves shield accuracy and armor while shooting a bow and receiving retaliation', () => {
     const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     const bare = {
       ...initial, equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
@@ -154,13 +154,14 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(chroniclesPartyArmorClass(shielded, 'matthias'))
       .toBe(chroniclesPartyArmorClass(bare, 'matthias') + shield.armorClassBonus);
     expect(chroniclesPartyAttackStats(shielded, 'matthias', 'missile').toHit)
-      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'missile').toHit);
+      .toBe(chroniclesPartyAttackStats(bare, 'matthias', 'missile').toHit + shield.toHitBonus);
     expect(chroniclesPartyArmorClass(shielded, 'matthias', { mode: 'missile' }))
-      .toBe(chroniclesPartyArmorClass(bare, 'matthias'));
+      .toBe(chroniclesPartyArmorClass(bare, 'matthias') + shield.armorClassBonus);
     const foe = { id: 'test-bow-retaliation', toHit: 8, retaliation: 2 };
     const swing = chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation', 'missile');
-    expect(swing.hit).toBe(chroniclesMM3EnemySwing(bare, foe, 'matthias', 'retaliation').hit);
     expect(chroniclesMM3EnemySwing(shielded, foe, 'matthias', 'retaliation').roll).toBe(swing.roll);
+    expect(chroniclesPartyArmorClass(shielded, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(shielded, 'matthias'));
 
     const sling = {
       ...shielded, equipment: { matthias: { ...shielded.equipment.matthias, missile: 'brass-sling' } },
@@ -173,10 +174,43 @@ describe('Chronicles First Book · real purchased gear', () => {
     expect(chroniclesPartyArmorClass(sling, 'matthias', { mode: 'missile' }))
       .toBe(chroniclesPartyArmorClass(sling, 'matthias'));
 
-    // Legacy mode must preserve its historical shield calculation.
+    // Legacy mode already counted the shield and remains unchanged.
     const legacy = { ...shielded, combatRules: 'legacy' };
-    expect(chroniclesEquipmentBonuses(legacy, 'matthias', { mode: 'missile' }).toHitBonus)
-      .toBe(chroniclesEquipmentBonuses(shielded, 'matthias', { mode: 'missile' }).toHitBonus + shield.toHitBonus);
+    expect(chroniclesEquipmentBonuses(legacy, 'matthias', { mode: 'missile' }))
+      .toEqual(chroniclesEquipmentBonuses(shielded, 'matthias', { mode: 'missile' }));
+  });
+
+
+  it('allows melee weapon, bow and shield together through real equip actions and saves', () => {
+    const initial = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const ids = ['bronze-sword', 'bronze-shield', 'wooden-bow'];
+    const stocked = chroniclesApplyContentEffects(initial, ids.map((itemId) => ({
+      type: 'grant-item', itemId, name: CHRONICLES_EQUIPMENT[itemId].name,
+    })));
+    const owned = { ...stocked, bagOwners: { matthias: Object.fromEntries(ids.map(id => [id, 1])) } };
+    const sword = chroniclesEquipItem(owned, 'matthias', 'bronze-sword');
+    const shield = chroniclesEquipItem(sword, 'matthias', 'bronze-shield');
+    const armed = chroniclesEquipItem(shield, 'matthias', 'wooden-bow');
+    for (const [slot, id] of [['weapon', 'bronze-sword'], ['shield', 'bronze-shield'], ['missile', 'wooden-bow']]) {
+      expect(chroniclesEquippedItem(armed, 'matthias', slot)?.id).toBe(id);
+      expect(armed.inventory[id]).toBeUndefined();
+    }
+    expect(chroniclesPartyArmorClass(armed, 'matthias', { mode: 'missile' }))
+      .toBe(chroniclesPartyArmorClass(armed, 'matthias'));
+    const reloaded = chroniclesApplyRunCheckpoint(initial, chroniclesRunCheckpointPayload(armed, 3));
+    for (const [slot, id] of [['weapon', 'bronze-sword'], ['shield', 'bronze-shield'], ['missile', 'wooden-bow']]) {
+      expect(chroniclesEquippedItem(reloaded, 'matthias', slot)?.id).toBe(id);
+    }
+    // The only true shield conflict is a two-handed melee weapon.
+    const withStaff = chroniclesApplyContentEffects(armed, [{
+      type: 'grant-item', itemId: 'wooden-staff', name: CHRONICLES_EQUIPMENT['wooden-staff'].name,
+    }]);
+    const staffOwned = { ...withStaff, bagOwners: {
+      ...withStaff.bagOwners, matthias: { ...withStaff.bagOwners.matthias, 'wooden-staff': 1 },
+    } };
+    const melee = chroniclesEquipItem(staffOwned, 'matthias', 'wooden-staff');
+    expect(chroniclesEquippedItem(melee, 'matthias', 'shield')).toBeNull();
+    expect(chroniclesEquippedItem(melee, 'matthias', 'missile')?.id).toBe('wooden-bow');
   });
 
   it('lets MM3 classes, not hero names, decide gear and turns armor into real AC', () => {

@@ -69,11 +69,9 @@ const BASE_WEAPONS = Object.freeze({
   axe: { name: 'Hacha', family: 'axe', basePrice: 7, baseDamageBonus: 3, baseToHitBonus: -1, allowed: LEGACY_MARTIAL },
   bow: { name: 'Arco corto', family: 'bow', basePrice: 8, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: LEGACY_ALL },
   // Ranged arms of Terra's third wave: the long bow reaches farthest, the
-  // crossbow hits harder, the sling is a one-hand option for slingers who
-  // keep a shield (barbarians, druids, robbers). Reach is paid in damage: a
-  // steel crossbow hits like a steel axe, a long bow like a sword, and both
-  // take the shield hand (campaign bot, 2026-10: at axe+2 every hero
-  // carried a crossbow).
+  // crossbow hits harder, and the sling offers accurate, lower-damage shots.
+  // All ranged weapons use the independent missile slot and leave the shield
+  // hand free. Only two-handed MELEE prevents an equipped shield.
   longbow: { name: 'Arco largo', family: 'bow', basePrice: 14, baseDamageBonus: 2, twoHanded: true, reach: 4, allowed: ['knight'] },
   crossbow: { name: 'Ballesta', family: 'crossbow', basePrice: 12, baseDamageBonus: 3, twoHanded: true, reach: 3, allowed: ['knight'] },
   sling: { name: 'Honda', family: 'sling', basePrice: 2, baseDamageBonus: 1, baseToHitBonus: 2, reach: 2, allowed: LEGACY_ALL },
@@ -145,9 +143,8 @@ function signed(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
-// MM3 carries one melee and one missile slot. Two-handed bows/crossbows
-// remain equipped alongside a shield, but shield bonuses are suspended
-// while firing; slings use one hand and preserve the shield's benefits.
+// MM3 has separate melee, missile and shield slots. A bow/crossbow is
+// independent of the shield hand; only two-handed melee conflicts with it.
 export const CHRONICLES_MISSILE_FAMILIES = Object.freeze(['bow', 'crossbow', 'sling']);
 
 function weaponItem(baseId, materialId) {
@@ -303,15 +300,12 @@ export function chroniclesEquippedItem(state, memberId, slot) {
   return CHRONICLES_EQUIPMENT[equippedId(state, memberId, slot)] || null;
 }
 
-// Attack bonuses use the weapon in hand. A two-handed bow/crossbow cannot
-// borrow a shield's accuracy *during the shot* in MM3. The shield stays
-// equipped for melee/guard, so old saves and player loadouts stay intact.
-// A one-handed sling retains the shield bonus; legacy combat is unchanged.
+// MM3 equips melee, missile and shield independently. A two-handed missile
+// does not suppress shield bonuses during the shot or immediate retaliation.
+// The active attack weapon changes with mode, not the equipped protection.
 export function chroniclesEquipmentBonuses(state, memberId, { mode = 'melee' } = {}) {
   const attackSlot = mode === 'missile' ? 'missile' : 'weapon';
-  const missile = mode === 'missile' ? chroniclesEquippedItem(state, memberId, 'missile') : null;
-  const shieldBusy = state?.combatRules === 'mm3' && Boolean(missile?.twoHanded);
-  const items = [attackSlot, 'armor', ...(shieldBusy ? [] : ['shield'])]
+  const items = [attackSlot, 'armor', 'shield']
     .map((slot) => chroniclesEquippedItem(state, memberId, slot))
     .filter(Boolean);
   return {

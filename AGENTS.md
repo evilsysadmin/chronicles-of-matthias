@@ -142,6 +142,9 @@
 - Inventario MM3, solo en Equipo: **E** equipa la pieza seleccionada, **U** desequipa la pieza puesta, **T** inicia entrega con destinatario 1–4/retrato, **I** inspecciona atributos, **D** pide confirmación explícita para desechar una unidad suelta. Nunca borrar oro ni objetos marcados de misión, ni consumir letras desde formularios, otras pestañas o durante la confirmación.
 - Equipo MM3: arma de mano **A**, proyectiles **S**, armadura y escudo;
   seguir clases, ranuras, stock, bonificaciones *reales* y reglas de manos.
+  Arma a una mano, proyectiles (arco, ballesta u honda) y escudo pueden
+  equiparse simultáneamente: el disparo no anula la CA ni los bonus del
+  escudo. Solo un arma **cuerpo a cuerpo** a dos manos ocupa la mano del escudo.
   Una vista previa no debe mutar inventario, campaña ni persistencia.
   Objetos de misión/desconocidos no deben desaparecer al filtrar.
 - Persistencia: el servidor/saves y los checkpoints de área/manual son
