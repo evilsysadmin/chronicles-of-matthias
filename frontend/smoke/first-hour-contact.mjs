@@ -152,10 +152,10 @@ try {
       });
       assert.equal(skin.backdropPosition, 'fixed',
         'The real game character-sheet overlay must be viewport-fixed');
-      assert.equal(skin.scrollDisplay, 'block',
-        'The folio scroll viewport remains a single bounded region');
-      assert.equal(skin.contentDisplay, width <= 850 ? 'contents' : 'grid',
-        'The real content keeps a flowing mobile page and two-column desktop dossier');
+      assert.equal(skin.scrollDisplay, width <= 850 ? 'block' : 'flex',
+        'Desktop Equipment lays out as a flex workspace; mobile keeps the original bounded scroller');
+      assert.equal(skin.contentDisplay, width <= 850 ? 'contents' : 'flex',
+        'Mobile keeps one flowing page while desktop uses an expanded Equipment column');
       if (width > 850) assert.ok(skin.menuLeft >= skin.contentRight - 2,
         'Desktop navigation must remain to the right of the content: ' + JSON.stringify(skin));
       assert.ok(skin.left >= -1 && skin.right <= width + 1,
@@ -226,17 +226,23 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__swap-preview').count(), 0,
         'Never invent MM3 weapon comparisons in a legacy-rules campaign');
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
-      // The compact summary must reflect the equip immediately without
-      // forcing the player to open the detailed worn-gear cards.
-      const equippedDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
-      assert.equal(await equippedDetails.getAttribute('open'), null);
-      assert.match(await equippedDetails.locator('summary').innerText(), /A: Espada de bronce/,
-        'The real equip action must update the compact active melee weapon summary');
-      await equippedDetails.locator('summary').click();
-      const wornMeleeWeapon = equippedDetails.locator('.chronicles-character-sheet__gear-slot')
+      // The one visible inventory list reports real equipped gear immediately;
+      // technical slots are mounted only when the player opens Details.
+      const equippedRow = sheet.locator('[data-chronicles-equipment-folio] [data-worn-slot="weapon"]');
+      await equippedRow.waitFor({ state: 'visible' });
+      assert.match(await equippedRow.innerText(), /Espada de bronce/);
+      const technicalPanel = sheet.locator('#chronicles-equipment-technical-details');
+      const technicalButton = sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: 'Detalles', exact: true });
+      assert.equal(await technicalPanel.count(), 0,
+        'Technical details must not duplicate already visible equipped rows');
+      await technicalButton.click();
+      await technicalPanel.waitFor({ state: 'visible' });
+      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'true');
+      const wornMeleeWeapon = technicalPanel.locator('.chronicles-character-sheet__gear-slot')
         .filter({ hasText: 'Arma · A' }).locator('strong');
       assert.match(await wornMeleeWeapon.innerText(), /Espada de bronce/,
-        'Expanding details must still expose the real equipped melee weapon');
+        'On-demand details must retain the real equipped melee weapon');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
@@ -257,15 +263,17 @@ try {
       await restoredSheet.waitFor({ state: 'visible' });
       assert.match(await restoredSheet.locator('.chronicles-character-sheet__tabs .is-active').innerText(),
         /Equipo/, 'Returning to Matthias must keep equipment folio');
-      const restoredGear = restoredSheet.locator('.chronicles-character-sheet__equipped-disclosure');
-      assert.match(await restoredGear.locator('summary').innerText(), /A: Espada de bronce/,
+      const restoredRow = restoredSheet.locator('[data-chronicles-equipment-folio] [data-worn-slot="weapon"]');
+      await restoredRow.waitFor({ state: 'visible' });
+      assert.match(await restoredRow.innerText(), /Espada de bronce/,
         'Inspecting Faust must never equip/unequip Matthias');
-      if (await restoredGear.getAttribute('open') === null) {
-        await restoredGear.locator('summary').click();
-      }
-      assert.match(await restoredGear.locator('.chronicles-character-sheet__gear-slot')
+      assert.equal(await restoredSheet.locator('#chronicles-equipment-technical-details').count(), 0,
+        'Changing heroes closes technical details but never changes their actual equipped inventory');
+      await restoredSheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: 'Detalles', exact: true }).click();
+      assert.match(await restoredSheet.locator('#chronicles-equipment-technical-details .chronicles-character-sheet__gear-slot')
         .filter({ hasText: 'Arma · A' }).locator('strong').innerText(), /Espada de bronce/,
-        'Returning to Matthias must expose the actual equipped item after expanding details');
+        'On-demand technical slots remain accurate after switching characters');
 
       // Regression: the real sheet must display the SAME hotkey numbering
       // even when a view adapter or initiative reverses party state.
