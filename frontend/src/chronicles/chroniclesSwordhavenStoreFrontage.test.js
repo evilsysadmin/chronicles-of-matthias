@@ -167,7 +167,10 @@ describe('Swordhaven general store frontage', () => {
     expect(awningBraces.every(brace => brace.rotation.x < -0.4)).toBe(true);
     expect(forge.getObjectByName('store-awning-scalloped-hem')).toBeFalsy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
-    expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
+    const storeNameplate = store.getObjectByName('swordhaven-shop-nameplate');
+    expect(storeNameplate?.userData.shopLabel).toBe('PROVISIONES');
+    expect(forge.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel)
+      .toBe('ARMERIA');
     // Warehouse side framing reads as exposed structural cedar without
     // covering the existing hatches or adding any physical obstacles.
     const sideFrame = store.getObjectByName('store-warehouse-side-frame');

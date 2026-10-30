@@ -979,7 +979,7 @@ const TOWN_BUILDING_STYLES = Object.freeze({
   armor: Object.freeze({ roof: 0x4a657e, emblem: 'shield', label: 'ARMADURAS' }),
   tavern: Object.freeze({ roof: 0x995e37, emblem: 'mug', label: 'TABERNA' }),
   temple: Object.freeze({ roof: 0x65758a, emblem: 'sun', label: 'TEMPLO' }),
-  store: Object.freeze({ roof: 0x7a6a3c, emblem: 'sack', label: 'TIENDA' }),
+  store: Object.freeze({ roof: 0x7a6a3c, emblem: 'sack', label: 'PROVISIONES' }),
   apothecary: Object.freeze({ roof: 0x554481, emblem: 'crystal', label: 'BOTICA' }),
   guild: Object.freeze({ roof: 0x3f4f8a, emblem: 'crystal', label: 'GREMIO' }),
   watch: Object.freeze({ roof: 0x5c3b38, emblem: 'shield', label: 'GUARDIA' }),

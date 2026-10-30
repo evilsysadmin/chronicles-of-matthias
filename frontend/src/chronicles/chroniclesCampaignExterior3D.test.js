@@ -684,7 +684,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     // Named facades are readable objects, never generic pavement monoliths.
     const labels = { forge: 'ARMERIA', armor: 'ARMADURAS', tavern: 'TABERNA',
-      temple: 'TEMPLO', store: 'TIENDA', watch: 'GUARDIA' };
+      temple: 'TEMPLO', store: 'PROVISIONES', watch: 'GUARDIA' };
     for (const [style, expected] of Object.entries(labels)) {
       const building = town.children.find(child =>
         child.name.startsWith('swordhaven-building-first-book-' + style + '-'));
