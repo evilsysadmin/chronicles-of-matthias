@@ -1,6 +1,6 @@
 {
   "id": "blind-king-archive",
-  "version": 3,
+  "version": 4,
   "progressionKey": "blind-king-archive-01",
   "title": "Archivo del Rey Ciego",
   "grid": [
@@ -298,6 +298,7 @@
           },
           { "type": "heal-party", "amount": 1 },
           { "type": "refill-class-abilities" },
+          { "type": "restore-spell-points" },
           {
             "type": "complete-quest",
             "questId": "blind-kings-index",
@@ -307,7 +308,7 @@
             "order": 50
           }
         ],
-        "message": "El volumen negro se abre sin páginas: sólo placas móviles, nombres borrados y un Sello del Rey Ciego. Matthias lo llama biblioteca minimalista para no decir maldita.",
+        "message": "El volumen negro se abre sin páginas: placas móviles, nombres borrados y un Sello del Rey Ciego. Un pulso arcano devuelve los PH gastados. Matthias lo llama biblioteca minimalista para no decir maldita.",
         "journal": {
           "id": "blind-index-recovered",
           "title": "El libro sin páginas",
