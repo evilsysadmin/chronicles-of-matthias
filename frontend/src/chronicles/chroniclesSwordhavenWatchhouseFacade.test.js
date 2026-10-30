@@ -36,6 +36,22 @@ describe('Swordhaven watchhouse military frontage', () => {
     expect(watch.getObjectByName('flower-window-box')).toBeFalsy();
     expect(watch.getObjectByName('armor-display')).toBeFalsy();
     expect(watch.getObjectByName('window-diamond-leadwork')).toBeFalsy();
+    // Expose the cold ashlar rather than dressing the barracks as a merchant
+    // half-timber house. A stone entry frames, but never covers, its real door.
+    for (const beam of ['horizontal-facade-beam', 'vertical-facade-post', 'diagonal-timber-brace']) {
+      expect(watch.getObjectByName(beam)).toBeFalsy();
+      expect(forge.getObjectByName(beam)).toBeTruthy();
+    }
+    const entry = watch.getObjectByName('watchhouse-ashlar-entry');
+    expect(entry?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(entry.children.filter(child => child.name === 'watchhouse-entry-stone-jamb')).toHaveLength(2);
+    expect(entry.children.filter(child => child.name === 'watchhouse-entry-stone-footing')).toHaveLength(2);
+    expect(entry.getObjectByName('watchhouse-entry-stone-lintel')).toBeTruthy();
+    expect(entry.getObjectByName('watchhouse-entry-iron-band')).toBeTruthy();
+    expect(forge.getObjectByName('watchhouse-ashlar-entry')).toBeFalsy();
+    expect(entry.getObjectByName('watchhouse-entry-stone-lintel').position.y)
+      .toBeGreaterThan(watch.getObjectByName('shop-door').geometry.parameters.height);
+
     // The guard now has a visible crossed-halberd crest, not the merchant's
     // shield or an apparently empty inset. Both use the same existing signs.
     const watchSign = watch.children.find(child =>

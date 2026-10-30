@@ -552,7 +552,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   // Stone-fronted armorer, guild and botica have no merchant timber lattice.
   // Doors, shop signs, windows and their collision cells remain untouched.
-  if (!isArmor && !isMagic && !isApothecary && !isTemple) {
+  if (!isArmor && !isMagic && !isApothecary && !isTemple && !isWatch) {
     // Repeated timber posts and braces form recognisable half-timbered facades.
     const beamY = [1.02, height - 0.67];
     for (const y of beamY) mesh(root, new THREE.BoxGeometry(width, 0.22, 0.23),
@@ -590,6 +590,25 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(entrance, new THREE.BoxGeometry(2.70, 0.26, 0.38), oak,
       'tavern-entry-oak-lintel', [0, 3.25, facadeZ + 0.32], !coarse);
     root.add(entrance);
+  }
+  // The watchhouse is dressed military ashlar, not a half-timbered
+  // merchant shop. Its shallow stone portal frames the unchanged oak door;
+  // all relief is decorative and never enters the authored collision grid.
+  if (isWatch) {
+    const entry = new THREE.Group();
+    entry.name = 'watchhouse-ashlar-entry';
+    entry.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      mesh(entry, new THREE.BoxGeometry(0.42, 3.06, 0.40), mats.stone,
+        'watchhouse-entry-stone-jamb', [side * 1.22, 1.57, facadeZ + 0.32], !coarse);
+      mesh(entry, new THREE.BoxGeometry(0.62, 0.27, 0.51), mats.stone,
+        'watchhouse-entry-stone-footing', [side * 1.22, 0.17, facadeZ + 0.32]);
+    }
+    mesh(entry, new THREE.BoxGeometry(2.90, 0.32, 0.46), mats.stone,
+      'watchhouse-entry-stone-lintel', [0, 3.27, facadeZ + 0.32], !coarse);
+    mesh(entry, new THREE.BoxGeometry(2.44, 0.11, 0.07), mats.steel,
+      'watchhouse-entry-iron-band', [0, 3.27, facadeZ + 0.59]);
+    root.add(entry);
   }
   // Two batched wrought-iron straps give the previously flat door depth.
   const doorIronwork = new THREE.InstancedMesh(
