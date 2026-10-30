@@ -25,8 +25,8 @@ describe('Swordhaven armorer lead barrel vault', () => {
     expect(ribs.count).toBe(coarsePointer ? 3 : 5);
     expect(shell.castShadow).toBe(!coarsePointer);
     expect(ribs.castShadow).toBe(!coarsePointer);
-    expect(vault.scale.y).toBeGreaterThan(0.45);
-    expect(vault.scale.y).toBeLessThan(0.60);
+    expect(vault.scale.y).toBeGreaterThan(0.70);
+    expect(vault.scale.y).toBeLessThan(0.82);
 
     // The curved roof stays behind the front battlements and below the
     // existing paired tower caps, without altering entrances or walk cells.
