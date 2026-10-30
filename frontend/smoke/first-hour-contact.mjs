@@ -201,32 +201,21 @@ try {
         assert.equal(await inspector.locator('.chronicles-character-sheet__item-more')
           .evaluate((node) => node.open), true,
           'Examinar must reveal attributes immediately, without a second click');
-        const sparseLedger = await sheet.locator('.chronicles-character-sheet__backpack')
-          .evaluate((node) => {
-            const list = node.querySelector('.chronicles-character-sheet__inventory').getBoundingClientRect();
-            const actions = node.querySelector('.chronicles-character-sheet__classic-actions').getBoundingClientRect();
-            const details = node.querySelector('.chronicles-character-sheet__item-details').getBoundingClientRect();
-            return {
-              listLeft: list.left, listRight: list.right, listBottom: list.bottom,
-              actionsTop: actions.top, actionsBottom: actions.bottom,
-              inspectorLeft: details.left, inspectorRight: details.right,
-              inspectorTop: details.top,
-            };
-          });
-        if (width >= 1200) {
-          assert.ok(sparseLedger.inspectorLeft >= sparseLedger.listRight + 4
-            && sparseLedger.inspectorTop <= sparseLedger.listBottom - 44
-            && sparseLedger.actionsTop >= sparseLedger.listBottom - 2,
-            'Wide-screen Examinar must sit next to the ledger, above commands: '
-              + JSON.stringify(sparseLedger));
-        } else {
-          assert.ok(sparseLedger.actionsTop >= sparseLedger.listBottom - 2
-            && sparseLedger.inspectorTop >= sparseLedger.actionsBottom - 2
-            && Math.abs(sparseLedger.listLeft - sparseLedger.inspectorLeft) <= 16,
-            'Narrow-screen Examinar must follow commands without overlapping: '
-              + JSON.stringify(sparseLedger));
-        }
+        const sparseModal = await sheet.evaluate((node) => {
+          const list = node.querySelector('.chronicles-character-sheet__inventory').getBoundingClientRect();
+          const bag = node.querySelector('.chronicles-character-sheet__backpack').getBoundingClientRect();
+          const modal = node.querySelector('.chronicles-character-sheet__item-details').getBoundingClientRect();
+          return { listWidth: list.width, bagWidth: bag.width, listHeight: list.height,
+            modalWidth: modal.width, modalHeight: modal.height,
+            modalX: modal.x, modalY: modal.y };
+        });
+        assert.ok(sparseModal.listWidth >= sparseModal.bagWidth - 22
+          && sparseModal.modalWidth <= 640 && sparseModal.modalHeight > 100
+          && sparseModal.modalX >= 0 && sparseModal.modalY >= 0,
+          'Examinar must float over a full-width sparse inventory: ' + JSON.stringify(sparseModal));
         await page.screenshot({ path: 'smoke-first-loot-inspect-' + width + '.png' });
+        await page.keyboard.press('Escape');
+        assert.equal(await inspector.isVisible(), false);
       }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
       // This authored first-hour loot fixture uses the default legacy combat
@@ -248,6 +237,9 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
+      await page.keyboard.press('Escape');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').isVisible(), false,
+        'Escape closes inspection before the next inventory action');
       // Selecting equipped gear arms direct 1–4 delivery. Cancel the selection
       // explicitly before checking ordinary party navigation; otherwise 4
       // correctly transfers this sword instead of switching the dossier.
