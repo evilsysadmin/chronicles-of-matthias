@@ -1,6 +1,6 @@
 {
   "id": "menagerie-of-ash",
-  "version": 6,
+  "version": 7,
   "progressionKey": "menagerie-01",
   "title": "Menagerie de Ceniza",
   "grid": [
@@ -20,7 +20,8 @@
   "initialFlags": {
     "emberClueRead": false,
     "emberCacheOpened": false,
-    "ashDoorFound": false
+    "ashDoorFound": false,
+    "menagerieEmberVentSpent": false
   },
   "enemies": [
     {
@@ -353,7 +354,36 @@
       }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "menagerie-ember-vent",
+      "kind": "trap",
+      "visualType": "slag-vent",
+      "x": 5,
+      "y": 3,
+      "label": "Respiradero de brasa",
+      "when": [
+        {
+          "key": "menagerieEmberVentSpent",
+          "equals": false
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "menagerieEmberVentSpent",
+            "value": true
+          },
+          {
+            "type": "damage-party",
+            "amount": 1
+          }
+        ],
+        "message": "El suelo exhala una llamarada de ceniza: la compañía pierde 1 PV por aventurero vivo. El respiradero se apaga."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "menagerie-gate",

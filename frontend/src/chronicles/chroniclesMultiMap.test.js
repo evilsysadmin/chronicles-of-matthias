@@ -27,7 +27,7 @@ describe('Chronicles multi-map campaign', () => {
     const menagerie = chroniclesMapById('menagerie-of-ash');
     const wisp = menagerie.enemies.find((enemy) => enemy.id === 'ember-wisp');
     const gate = menagerie.exits.find((entry) => entry.id === 'menagerie-gate');
-    expect(menagerie.version).toBe(6);
+    expect(menagerie.version).toBe(7);
     expect(menagerie.enemies).toHaveLength(4);
     expect(wisp).toMatchObject({ optional: true, x: 5, y: 2 });
     expect(menagerie.interactables.map((entry) => entry.id)).toEqual(expect.arrayContaining([
