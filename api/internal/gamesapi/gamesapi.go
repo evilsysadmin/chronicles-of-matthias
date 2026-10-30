@@ -28,6 +28,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/corspolicy"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamecore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamestore"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
 )
@@ -106,6 +107,9 @@ type Config struct {
 	// SSO accepts ShadowOps account tokens (Chess Studio as identity
 	// provider) besides local sessions; nil keeps local sessions only.
 	SSO *ssoauth.Verifier
+	// Identity is an explicit staging-only independent IdP verifier. It checks
+	// live freshness on every protected request; nil keeps that issuer disabled.
+	Identity *identityauth.Verifier
 }
 
 type Handler struct {
@@ -118,6 +122,7 @@ type Handler struct {
 	now      func() time.Time
 	trustCF  bool
 	sso      *ssoauth.Verifier
+	identity *identityauth.Verifier
 }
 
 func New(cfg Config) (*Handler, error) {
@@ -152,6 +157,7 @@ func New(cfg Config) (*Handler, error) {
 		trustCF:  cfg.TrustCloudflare,
 		now:      now,
 		sso:      cfg.SSO,
+		identity: cfg.Identity,
 	}, nil
 }
 
@@ -210,20 +216,42 @@ func (h *Handler) verify(r *http.Request) (string, int64, error) {
 		return "", 0, errMissingToken
 	}
 	raw := header[len("Bearer "):]
+	if identityauth.Recognizes(raw) {
+		if h.identity == nil {
+			return "", 0, identityauth.ErrInvalid
+		}
+		claims, err := h.identity.Verify(r.Context(), raw, h.now())
+		if err != nil {
+			return "", 0, err
+		}
+		return claims.ProfileKey(), identitySessionVersion, nil
+	}
 	if h.sso != nil && ssoauth.IsToken(raw) {
 		claims, err := h.sso.Verify(r.Context(), raw, h.now())
 		if err != nil {
 			return "", 0, err
 		}
+		if identityauth.IsReservedProfileKey(claims.Subject) {
+			return "", 0, identityauth.ErrInvalid
+		}
 		return claims.Subject, ssoSessionVersion, nil
 	}
-	return sessionauth.VerifySession(raw, h.secret, h.now())
+	subject, version, err := sessionauth.VerifySession(raw, h.secret, h.now())
+	if identityauth.IsReservedProfileKey(subject) {
+		return "", 0, identityauth.ErrInvalid
+	}
+	return subject, version, err
 }
 
 // ssoSessionVersion marks a subject vouched for by the identity provider:
 // the IdP checked its own session version when it issued the token (it
 // lives an hour), so the local one does not apply.
 const ssoSessionVersion int64 = -1
+const identitySessionVersion int64 = -2
+
+type IdentityAccounts interface {
+	EnsureIdentityUser(ctx context.Context, issuer, subject, createdAt string) (string, error)
+}
 
 // SSOAccounts creates the local record of a ShadowOps account the first
 // time it plays here (no password: it signs in through the IdP).
@@ -239,7 +267,22 @@ func (h *Handler) currentUser(r *http.Request, subject string, version int64, to
 		return "", http.StatusUnauthorized, "Falta el token de sesión."
 	}
 	if tokenErr != nil {
+		if errors.Is(tokenErr, identityauth.ErrUnavailable) {
+			return "", http.StatusServiceUnavailable, "No se puede verificar tu sesión ShadowOps temporalmente."
+		}
 		return "", http.StatusUnauthorized, "Sesión inválida o expirada. Inicia sesión de nuevo."
+	}
+	if version == identitySessionVersion {
+		ensure, capable := h.accounts.(IdentityAccounts)
+		centralSubject, valid := identityauth.SubjectForProfileKey(subject)
+		if !capable || !valid {
+			return "", http.StatusUnauthorized, "Cuenta ShadowOps no admitida aquí."
+		}
+		profile, err := ensure.EnsureIdentityUser(r.Context(), identityauth.Issuer, centralSubject, h.now().UTC().Format(time.RFC3339))
+		if err != nil || profile != subject {
+			return "", http.StatusServiceUnavailable, "No se puede verificar el perfil temporalmente."
+		}
+		return profile, 0, ""
 	}
 	if version == ssoSessionVersion {
 		ensure, ok := h.accounts.(SSOAccounts)

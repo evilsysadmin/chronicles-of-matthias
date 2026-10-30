@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -258,6 +260,35 @@ func (s *Store) EnsureSSOUser(ctx context.Context, username, createdAt string) e
 		return nil // created concurrently
 	}
 	return err
+}
+
+// EnsureIdentityUser initializes product data, not another identity/password.
+// It never binds by login name or adopts an existing unbound/legacy record.
+func (s *Store) EnsureIdentityUser(ctx context.Context, issuer, subject, createdAt string) (string, error) {
+	key := identityauth.ProfilePrefix + subject
+	if _, valid := identityauth.SubjectForProfileKey(key); !valid || issuer != identityauth.Issuer || s == nil || s.users == nil {
+		return "", errors.New("invalid central Identity profile")
+	}
+	queryCtx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	binding := bson.M{"_id": key, "sso_issuer": issuer, "sso_subject": subject}
+	_, err := s.users.UpdateOne(queryCtx, binding, bson.M{"$setOnInsert": bson.D{
+		{Key: "password_hash", Value: ""}, {Key: "session_version", Value: int32(0)},
+		{Key: "created_at", Value: createdAt}, {Key: "last_activity", Value: createdAt},
+		{Key: "sso", Value: true}, {Key: "sso_issuer", Value: issuer}, {Key: "sso_subject", Value: subject},
+	}}, options.UpdateOne().SetUpsert(true))
+	if mongo.IsDuplicateKeyError(err) {
+		// A concurrent first visit is idempotent only if the exact immutable
+		// binding is already present. An unbound/legacy collision stays denied.
+		if lookupErr := s.users.FindOne(queryCtx, binding).Err(); lookupErr == nil {
+			return key, nil
+		}
+		return "", errors.New("central Identity profile ownership conflict")
+	}
+	if err != nil {
+		return "", err // Duplicate _id with another binding is an ownership conflict.
+	}
+	return key, nil
 }
 
 func (s *Store) Delete(ctx context.Context, username string) (bool, error) {

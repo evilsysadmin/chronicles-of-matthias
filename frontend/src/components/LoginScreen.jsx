@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { forgotPassword, login, register, resetPassword, wakeBackend } from '../auth.js';
-import { ssoEnabled } from '../shadowopsIdentity.js';
+import { centralIdentityActive, centralIdentityLoginUrl, ssoEnabled } from '../shadowopsIdentity.js';
 import { SUPPORTED_UI_LANGUAGES } from '../userPreferences.js';
 import { connectionErrorCopy } from '../networkErrorCopy.js';
 import { addressWithoutAuthParams, authParamsFromLocation } from '../authUrlParams.js';
@@ -130,6 +130,23 @@ export default function LoginScreen({ onLoggedIn, initialNotice = null }) {
 
   const text = COPY[language];
   const sso = ssoEnabled();
+  const centralUrl = centralIdentityLoginUrl();
+  if (centralIdentityActive()) {
+    return (
+      <div className="app-shell">
+        <div className="menu" style={{ maxWidth: 420 }}>
+          <div className="menu-section">
+            <span className="eyebrow">Chronicles of Matthias</span>
+            <h2>Acceder con ShadowOps</h2>
+            <p className="hint-text" style={{ marginBottom: '1rem' }}>Inicia sesión o crea tu cuenta en ShadowOps y vuelve aquí para jugar.</p>
+            {initialNotice && <p className="hint-text" role="status">{initialNotice}</p>}
+            <a className="primary-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }} href={centralUrl}>Continuar a ShadowOps</a>
+            <p><a className="backup-link" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44 }} href="/">Usar mi acceso anterior</a></p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const title = mode === 'register'
     ? text.register
     : mode === 'forgot'
@@ -150,6 +167,8 @@ export default function LoginScreen({ onLoggedIn, initialNotice = null }) {
             {mode === 'forgot' && text.forgotHint}
             {mode === 'reset' && text.resetHint}
           </p>
+
+          {centralUrl && <p><a className="backup-link" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44 }} href={centralUrl}>Probar el acceso compartido de ShadowOps</a></p>}
 
           <form onSubmit={handleSubmit} aria-busy={loading}>
             {(mode === 'login' || mode === 'register') && (

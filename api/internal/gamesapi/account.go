@@ -27,6 +27,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/accountstore"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/authcrypto"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/authguard"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/presence"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/userdata"
@@ -365,6 +366,9 @@ func (h *AccountHandler) register(ctx context.Context, w http.ResponseWriter, r 
 		}
 	}
 	username := strings.ToLower(strings.TrimSpace(get(values, "username")))
+	if identityauth.IsReservedProfileKey(username) {
+		return badRequest(w, "Ese nombre está reservado para perfiles ShadowOps.")
+	}
 	password := get(values, "password")
 	if utf8.RuneCountInString(username) < 3 {
 		return badRequest(w, "El usuario tiene que tener al menos 3 caracteres.")

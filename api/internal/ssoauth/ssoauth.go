@@ -95,6 +95,11 @@ func NewStaticVerifier(issuer string, keys map[string]ed25519.PublicKey) *Verifi
 var ErrInvalid = errors.New("invalid ShadowOps token")
 
 func (v *Verifier) Verify(ctx context.Context, raw string, now time.Time) (Claims, error) {
+	// The independent IdP requires a different, live-freshness verifier. A
+	// legacy SSO_ISSUER override must never accept it by signature alone.
+	if v.issuer == "https://id-staging.shadowops.dpdns.org" || v.issuer == "https://id.shadowops.dpdns.org" {
+		return Claims{}, ErrInvalid
+	}
 	parts := strings.Split(raw, ".")
 	if len(parts) != 3 {
 		return Claims{}, ErrInvalid

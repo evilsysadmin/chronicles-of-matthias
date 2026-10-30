@@ -35,6 +35,7 @@ import (
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesprogression"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/chroniclesrun"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/gamesapi"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/legacyimport"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/mongoruntime"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/presence"
@@ -122,6 +123,17 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	// ShadowOps account: Chess Studio of the same environment is the identity
 	// provider (SSO_ISSUER overrides it, e.g. a local Chess Studio).
 	var sso *ssoauth.Verifier
+	var central *identityauth.Verifier
+	if flag := os.Getenv("ENABLE_SHADOWOPS_IDENTITY"); flag != "" && flag != "false" {
+		if flag != "true" {
+			return nil, errors.New("invalid central Identity opt-in")
+		}
+		var err error
+		central, err = identityauth.NewStagingVerifier(os.Getenv("ENVIRONMENT"), os.Getenv("SHADOWOPS_IDENTITY_SERVICE_CREDENTIAL"))
+		if err != nil {
+			return nil, errors.New("central Identity requires staging and its dedicated service credential")
+		}
+	}
 	if issuer := ssoauth.IssuerFor(os.Getenv("ENVIRONMENT"), os.Getenv("SSO_ISSUER")); issuer != "" {
 		sso = ssoauth.NewVerifier(issuer)
 		log.Printf("ShadowOps SSO: trusting %s", issuer)
@@ -129,7 +141,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	base := func() gamesapi.Config {
 		return gamesapi.Config{
 			Accounts: accountstore.New(db, timeout), Presence: toucher, JWTSecret: jwtSecret,
-			AllowedOrigins: origins, TrustCloudflare: tel.TrustCloudflare, SSO: sso,
+			AllowedOrigins: origins, TrustCloudflare: tel.TrustCloudflare, SSO: sso, Identity: central,
 		}
 	}
 	guardTimeout := envDurationMS("AUTH_GUARD_MONGO_TIMEOUT_MS", 2000*time.Millisecond)
@@ -176,8 +188,8 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 			return userdata.Purge(ctx, purgeStore, username)
 		},
 		IPGuard: ipGuard, Touch: sessions,
-		AllowRegistration: registrationAllowed(environment, pythonFlag("ALLOW_REGISTRATION", "true"), inviteCode),
-		InviteCode: inviteCode,
+		AllowRegistration:    registrationAllowed(environment, pythonFlag("ALLOW_REGISTRATION", "true"), inviteCode),
+		InviteCode:           inviteCode,
 		EmailRecoveryEnabled: emailRecovery, Environment: environment, SyntheticSecret: synthetic,
 	})
 	if err != nil {

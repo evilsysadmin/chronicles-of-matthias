@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/accountstore"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/sessionauth"
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/ssoauth"
 )
@@ -75,13 +76,13 @@ func rosterAuthorization(r *http.Request, secret []byte, sso *ssoauth.Verifier, 
 	var username string
 	if sso != nil && ssoauth.IsToken(token) {
 		claims, err := sso.Verify(r.Context(), token, time.Now())
-		if err != nil {
+		if err != nil || identityauth.IsReservedProfileKey(claims.Subject) {
 			return http.StatusUnauthorized
 		}
 		username = claims.Subject
 	} else {
 		versionedUsername, version, err := sessionauth.VerifySession(token, secret, time.Now())
-		if err != nil {
+		if err != nil || identityauth.IsReservedProfileKey(versionedUsername) {
 			return http.StatusUnauthorized
 		}
 		username = versionedUsername

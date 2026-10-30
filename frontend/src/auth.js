@@ -27,6 +27,7 @@ const AUTH_STORAGE_KEYS = Object.freeze([TOKEN_KEY, USERNAME_KEY]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 const SSO_EXPIRY_KEY = 'chronicles-sso-expires-at';
+let sessionEpoch = 0;
 
 const AUTH_REQUEST_TIMEOUT_MS = 65000; // deja margen al cold-start de Render, pero nunca bloquea para siempre
 const BACKGROUND_REQUEST_TIMEOUT_MS = 7000;
@@ -124,6 +125,7 @@ function clearSessionRuntimeState() {
 }
 
 function saveSession(token, username) {
+  sessionEpoch += 1;
   // El login acaba de confirmar una identidad nueva. Borramos la caché del
   // usuario anterior ANTES de guardar la nueva sesión; Mongo la rellenará en
   // el arranque autenticado. Esto evita la herencia Alice -> Bob.
@@ -173,6 +175,7 @@ export function reportPageLeavePresence() {
 }
 
 export function logout() {
+  sessionEpoch += 1;
   clearAmbientThemeSessionStorage();
   clearSessionRuntimeState();
   clearLocalUserState();
@@ -203,7 +206,9 @@ let refreshInFlight = null;
 // no ShadowOps session or it belongs to someone else now.
 export function refreshSsoToken() {
   if (!ssoEnabled()) return Promise.resolve(null);
+  const epoch = sessionEpoch;
   refreshInFlight ||= ssoSilentToken().then((session) => {
+    if (epoch !== sessionEpoch) return null;
     if (!session || (getUsername() && session.username !== getUsername())) return null;
     saveSsoSession(session);
     return session.token;
@@ -216,8 +221,9 @@ setSessionRefresher(refreshSsoToken);
 // earlier here): no form at all.
 export async function restoreSsoSession({ signal } = {}) {
   if (!ssoEnabled() || signal?.aborted) return false;
+  const epoch = sessionEpoch;
   const session = await ssoSilentToken({ signal });
-  if (!session || signal?.aborted) return false;
+  if (!session || signal?.aborted || epoch !== sessionEpoch) return false;
   // A late SSO response must never replace the identity after the loading
   // deadline or after App unmounts (e.g. explicit login on the fallback).
   saveSsoSession(session);

@@ -11,7 +11,7 @@ import {
   fetchMeStatus, isLoggedIn, logout, refreshSsoToken, reportLogoutPresence, restoreSsoSession, startSsoRefresh,
   watchSessionIdentity,
 } from '../auth.js';
-import { ssoEnabled } from '../shadowopsIdentity.js';
+import { centralIdentityActive, ssoEnabled } from '../shadowopsIdentity.js';
 import { onSessionExpired } from '../sessionExpiry.js';
 import {
   releaseChroniclesLandscape,
@@ -29,7 +29,7 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
   // Already signed in to ShadowOps (Chess Studio or another game)? Then
   // there is no form: ask the identity provider silently first.
-  const [checkingSso, setCheckingSso] = useState(() => !isLoggedIn() && ssoEnabled());
+  const [checkingSso, setCheckingSso] = useState(() => (!isLoggedIn() || centralIdentityActive()) && ssoEnabled());
   useEffect(() => {
     if (!checkingSso) return;
     return beginSilentSsoRestore(restoreSsoSession, (result) => {
@@ -50,6 +50,7 @@ export default function App() {
   // drop to the login screen whenever any request answers 401.
   const [expiredNotice, setExpiredNotice] = useState(null);
   useEffect(() => {
+    if (checkingSso) return undefined;
     const expire = () => {
       logout();
       setExpiredNotice('Tu sesión ha caducado. Vuelve a entrar para seguir tu expedición.');
@@ -65,7 +66,7 @@ export default function App() {
       });
     }
     return stop;
-  }, []);
+  }, [checkingSso]);
 
   useEffect(() => watchSessionIdentity?.(() => setLoggedIn(isLoggedIn())), []);
   useEffect(() => {
