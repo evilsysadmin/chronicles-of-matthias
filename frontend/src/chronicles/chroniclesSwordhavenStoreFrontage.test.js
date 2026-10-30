@@ -77,7 +77,10 @@ describe('Swordhaven general store frontage', () => {
       sacks.getMatrixAt(index, sackTransform.matrix);
       sackTransform.matrix.decompose(sackTransform.position, sackTransform.quaternion, sackTransform.scale);
       expect(Math.abs(sackTransform.position.x)).toBeGreaterThan(1.75);
-      expect(sackTransform.position.y).toBeGreaterThan(0.4);
+      // Lathe profile starts at the ground (unlike the old centred cylinder).
+      expect(sackTransform.position.y).toBeGreaterThan(0);
+      expect(sackTransform.position.y + profile.at(-1).y * sackTransform.scale.y)
+        .toBeGreaterThan(0.8);
       expect(sackTransform.position.z).toBeLessThan(5.5);
     }
     const loft = store.getObjectByName('store-merchant-loft');
