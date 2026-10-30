@@ -1030,6 +1030,65 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       [edge + side * 0.17, 2.85, z]);
     }
   }
+  // The guild's side elevations should read as a school of magic from the
+  // alley too, not as ordinary rectangular merchant windows tinted purple.
+  // Pointed slate surrounds and violet lancets cover the existing side panes
+  // without moving the original wall, sill, collision grid or entrance.
+  // Three instanced batches serve all four bays on both pointer classes.
+  if (isMagic) {
+    const lancets = new THREE.Group();
+    lancets.name = 'magic-guild-side-lancets';
+    lancets.userData.chroniclesDecorativeOnly = true;
+    const surround = new THREE.Shape();
+    surround.moveTo(-0.83, -0.94);
+    surround.lineTo(0.83, -0.94);
+    surround.lineTo(0.83, 0.38);
+    surround.lineTo(0, 1.22);
+    surround.lineTo(-0.83, 0.38);
+    surround.closePath();
+    const glass = new THREE.Shape();
+    glass.moveTo(-0.64, -0.76);
+    glass.lineTo(0.64, -0.76);
+    glass.lineTo(0.64, 0.29);
+    glass.lineTo(0, 0.98);
+    glass.lineTo(-0.64, 0.29);
+    glass.closePath();
+    const frames = new THREE.InstancedMesh(
+      new THREE.ShapeGeometry(surround), mats.stone, 4);
+    frames.name = 'magic-side-lancet-stone-frames';
+    frames.userData.chroniclesDecorativeOnly = true;
+    frames.castShadow = !coarse;
+    const panes = new THREE.InstancedMesh(
+      new THREE.ShapeGeometry(glass), sideGlass, 4);
+    panes.name = 'magic-side-lancet-violet-panes';
+    panes.userData.chroniclesDecorativeOnly = true;
+    const lead = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.065, 1.45, 0.065), mats.gold, 4);
+    lead.name = 'magic-side-lancet-brass-mullions';
+    lead.userData.chroniclesDecorativeOnly = true;
+    const dummy = new THREE.Object3D();
+    let index = 0;
+    for (const side of [-1, 1]) {
+      for (const z of [-depth * 0.22, depth * 0.22]) {
+        dummy.rotation.set(0, side * Math.PI / 2, 0);
+        dummy.position.set(side * (width / 2 + 0.30), 2.82, z);
+        dummy.updateMatrix();
+        frames.setMatrixAt(index, dummy.matrix);
+        dummy.position.x = side * (width / 2 + 0.33);
+        dummy.updateMatrix();
+        panes.setMatrixAt(index, dummy.matrix);
+        dummy.position.x = side * (width / 2 + 0.36);
+        dummy.position.y = 2.62;
+        dummy.updateMatrix();
+        lead.setMatrixAt(index++, dummy.matrix);
+      }
+    }
+    for (const batch of [frames, panes, lead]) {
+      batch.instanceMatrix.needsUpdate = true;
+      lancets.add(batch);
+    }
+    root.add(lancets);
+  }
   // A shallow, single-sided smithy lean-to gives the forge a working
   // silhouette from the side street. It sits entirely over the existing
   // three-by-three blocked house cells, above the side vents and away from
