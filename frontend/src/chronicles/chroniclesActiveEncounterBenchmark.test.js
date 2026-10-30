@@ -51,6 +51,10 @@ function playSewerEncounter(rollOffset, {
   const initialEnemyHp = Object.fromEntries(enemies.map((enemy) => [enemy.id, initial[enemy.hpKey]]));
   const initialBishopSp = chroniclesMemberSp(initial, initial.party.find(({ id }) => id === 'bishop'));
   const initialHealingPotions = chroniclesConsumableCount(initial, 'healing-potion');
+  // Keep gross enemy pressure separate from healing and net HP loss. Otherwise
+  // a well-timed First Aid can conceal a dangerous focus on one hero.
+  const enemyDamageByHero = Object.fromEntries(initial.party.map(({ id }) => [id, 0]));
+  const healingByHero = Object.fromEntries(initial.party.map(({ id }) => [id, 0]));
   let rollIndex = rollOffset;
   let state = chroniclesStartInitiativeCombat(initial, chroniclesActiveEnemies(initial), {
     forceEnemyIds: pack,
@@ -97,6 +101,7 @@ function playSewerEncounter(rollOffset, {
         metrics.heroHeals += 1;
         metrics.healingPhSpent += beforeSp - afterSp;
         metrics.healedHp += afterRook.hp - rook.hp;
+        healingByHero.rook += afterRook.hp - rook.hp;
         state = healed;
       } else if (inReach) {
         const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
@@ -113,6 +118,11 @@ function playSewerEncounter(rollOffset, {
     } else {
       const beforeHp = state.party.map(({ hp }) => hp);
       const next = chroniclesResolveEnemyActor(state, actor.id);
+      for (const [index, member] of next.party.entries()) {
+        const damage = beforeHp[index] - member.hp;
+        expect(damage, `enemy ${actor.id} must not heal ${member.id}`).toBeGreaterThanOrEqual(0);
+        enemyDamageByHero[member.id] += damage;
+      }
       const events = next.enemyTurnEvents || [];
       // A creature can move OR attack per initiative action, never both.
       expect(events.length).toBeLessThanOrEqual(1);
@@ -140,6 +150,8 @@ function playSewerEncounter(rollOffset, {
     legitimateWithdrawals: enemies.filter((enemy) => state[enemy.hpKey] > 0
       && chroniclesEnemyLostParty(state, enemy)).map((enemy) => enemy.id),
     partyHpLost: Object.fromEntries(state.party.map(({ id, hp }) => [id, initialHp[id] - hp])),
+    enemyDamageByHero,
+    healingByHero,
     initialPartyHp: initialHp,
     finalPartyHp: Object.fromEntries(state.party.map(({ id, hp }) => [id, hp])),
     initialBishopSp,
@@ -178,6 +190,10 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(result.steps).toBeLessThan(128);
       expect(Object.values(result.enemyHpLeft).every((hp) => Number.isFinite(hp) && hp >= 0)).toBe(true);
       expect(Object.values(result.partyHpLost).every((hp) => hp >= 0)).toBe(true);
+      for (const [id, netLoss] of Object.entries(result.partyHpLost)) {
+        expect(netLoss, `${id} net HP must reconcile with gross damage and healing`)
+          .toBe(result.enemyDamageByHero[id] - result.healingByHero[id]);
+      }
     }
     // Both d8 orders must remain winnable, but the pack must still pose
     // measurable pressure in at least one of the deterministic orders.
@@ -197,6 +213,12 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       // Neither initiative order may grant free healing, extra PH or a
       // resource refill between the spell action and encounter resolution.
       expect(result.healingPhSpent).toBe(result.heroHeals);
+      expect(Object.values(result.healingByHero).reduce((sum, hp) => sum + hp, 0))
+        .toBe(result.healedHp);
+      for (const [id, netLoss] of Object.entries(result.partyHpLost)) {
+        expect(netLoss, `${id} gross enemy pressure must survive First Aid accounting`)
+          .toBe(result.enemyDamageByHero[id] - result.healingByHero[id]);
+      }
       expect(result.initialBishopSp - result.finalBishopSp).toBe(result.healingPhSpent);
       expect(result.finalBishopSp).toBeGreaterThanOrEqual(0);
       const remaining = Object.entries(result.enemyHpLeft)
@@ -437,6 +459,14 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
       expect(second.finalBishopSp).toBeGreaterThanOrEqual(0);
       expect(second.finalBishopSp).toBeLessThanOrEqual(second.initialBishopSp);
       expect(second.healingPhSpent).toBe(second.initialBishopSp - second.finalBishopSp);
+      for (const encounter of [first, second]) {
+        expect(Object.values(encounter.healingByHero).reduce((sum, hp) => sum + hp, 0))
+          .toBe(encounter.healedHp);
+        for (const [id, netLoss] of Object.entries(encounter.partyHpLost)) {
+          expect(netLoss, `${id} must reconcile across consecutive encounters`)
+            .toBe(encounter.enemyDamageByHero[id] - encounter.healingByHero[id]);
+        }
+      }
       expect(second.finished).toBe(true);
       expect(second.phase).toBe('explore');
       expect(second.downed).toBe(0);
