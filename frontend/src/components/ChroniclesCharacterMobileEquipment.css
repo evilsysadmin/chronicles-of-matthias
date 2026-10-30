@@ -1,0 +1,122 @@
+/* MM3 mobile equipment: first useful item on the first fold.
+   Scoped to the authenticated character sheet's Equipment chapter only.
+   The fixed party dock remains visible; the dossier above owns the scroll. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__scroll {
+    min-width: 0;
+    scrollbar-gutter: auto;
+    scroll-padding-top: 4px;
+  }
+  /* Gold is in the identity, XP in Estado. On Equipment avoid a second band
+     that used a whole extra mobile row before the actual inventory. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__progression {
+    display: none;
+  }
+  /* Compact four-way navigation; preserve at least 44px touch targets.
+     Old mobile CSS stacked huge symbols over labels (two full text lines). */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    padding: 2px;
+    margin: 0;
+    min-width: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__tabs button,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__tabs button.is-active {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 44px;
+    height: 44px;
+    padding: 3px 2px;
+    font-size: clamp(.72rem, 2.2vw, .94rem);
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__tabs button > span {
+    flex: 0 0 auto;
+    font-size: .91rem;
+    line-height: 1;
+  }
+  /* The name is already in the persistent top identity and 'Equipo' is in
+     the navigation. Three repeated titles pushed the FIRST item offscreen. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="equipment"] > [data-chronicles-equipment-folio] {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 5px 7px 9px !important;
+    overflow: visible;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head,
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-heading {
+    display: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__loadout {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack-tools {
+    margin: 0 0 5px;
+  }
+  /* One scroll owner on touch. A second clipped inventory scroller concealed
+     controls and prevented a useful first fold in short landscape. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    margin: 0;
+    padding: 3px;
+    scrollbar-gutter: auto;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+    margin: 5px 0 2px;
+    padding: 5px 2px;
+  }
+}
+@media (max-height: 480px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__head {
+    min-height: 44px;
+    padding: 3px 7px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__identity p {
+    display: none;
+  }
+  /* The hero dock already communicates current/max PV in this very short
+     landscape view; keep gold in the identity and all data in Estado. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+  .chronicles-character-sheet__quick [data-resource="health"] {
+    display: none;
+  }
+}
