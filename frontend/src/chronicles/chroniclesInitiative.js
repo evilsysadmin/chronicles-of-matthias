@@ -159,15 +159,22 @@ function manhattanDistance(left, right) {
   return Math.abs(left.x - right.x) + Math.abs(left.y - right.y);
 }
 
+function configuredEngagementRange(value) {
+  // Numeric strings remain valid for legacy saves, but Number([2]) and
+  // Number(true) must not invent a detection radius from malformed data.
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && !value.trim()) return null;
+  const range = Number(value);
+  return Number.isFinite(range) && range >= 1 ? range : null;
+}
+
 function enemyEngagementRange(enemy) {
   // Corrupt or legacy reach values must neither disable engagement (NaN)
   // nor grant an unlimited sightline range (Infinity).
   // Engagement and real attacks must agree on the same bounded reach.
   const attackReach = chroniclesEnemyAttackReach(enemy);
-  const configured = Number(enemy?.ai?.engageRange);
-  return Number.isFinite(configured) && configured >= 1
-    ? Math.max(attackReach, configured)
-    : attackReach;
+  const configured = configuredEngagementRange(enemy?.ai?.engageRange);
+  return configured !== null ? Math.max(attackReach, configured) : attackReach;
 }
 
 // A creature joins a fight only if it is close AND can see the party: a
@@ -199,9 +206,8 @@ export const CHRONICLES_COMBAT_LEASH = 2;
 // forever while the party walked off.
 export function chroniclesEnemyLostParty(state, enemy) {
   // Legacy null/blank ranges mean "not configured", not a zero-tile leash.
-  const rawRange = enemy?.ai?.engageRange;
-  const range = Number(rawRange);
-  if (rawRange == null || !Number.isFinite(range) || range < 1) return false;
+  const range = configuredEngagementRange(enemy?.ai?.engageRange);
+  if (range === null) return false;
   const partyPosition = { x: state.x, y: state.y };
   const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
   return manhattanDistance(partyPosition, enemyPosition) > enemyEngagementRange(enemy) + CHRONICLES_COMBAT_LEASH

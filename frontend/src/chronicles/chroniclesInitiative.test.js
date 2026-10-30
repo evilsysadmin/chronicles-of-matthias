@@ -4,6 +4,7 @@ import {
   chroniclesAdvanceInitiative,
   chroniclesCurrentInitiativeActor,
   chroniclesEnemyInitiativeAgility,
+  chroniclesEnemyLostParty,
   chroniclesEngagedEnemies,
   chroniclesPartyInitiativeAgility,
   chroniclesRollInitiative,
@@ -467,6 +468,25 @@ describe('Chronicles combat engagement and leash', () => {
   const tobias = { id: 'tobias', name: 'Tobías', hpKey: 'tobiasHp', x: 9, y: 17, ai: { engageRange: 2, attackReach: 1 } };
   const party = [{ id: 'matthias', name: 'Matthias', hp: 8, agility: 3 }];
   const base = { mapId: 'swordhaven-sewers', party, tobiasHp: 5, rpgModifiers: {}, phase: 'explore' };
+
+  it.each([{ value: [2] }, { value: ['2'] }, { value: true }, { value: { radius: 2 } }])(
+    'rejects malformed legacy engageRange $value without inventing a combat radius or leash',
+    ({ value: engageRange }) => {
+      // A clear corridor separates the company and Tobías by two tiles.
+      const state = { ...base, x: 11, y: 17 };
+      const enemy = { ...tobias, ai: { attackReach: 1, engageRange } };
+      expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([]);
+      expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+      // An invalid saved range must not become a fabricated pursuit leash.
+      expect(chroniclesEnemyLostParty({ ...base, x: 1, y: 15 }, enemy)).toBe(false);
+    },
+  );
+
+  it('preserves numeric-string engageRange from older saves', () => {
+    const state = { ...base, x: 11, y: 17 };
+    const enemy = { ...tobias, ai: { attackReach: 1, engageRange: '2' } };
+    expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([enemy]);
+  });
 
   it('bounds invalid legacy attack reach while preserving valid engage distance', () => {
     // Sewer corridor has clear sightline between x=9 and x=11 on row 17.
