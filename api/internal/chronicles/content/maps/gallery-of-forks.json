@@ -1,6 +1,6 @@
 {
   "id": "gallery-of-forks",
-  "version": 4,
+  "version": 5,
   "progressionKey": "gallery-01",
   "title": "Galería de las Horquillas",
   "grid": [
@@ -16,7 +16,8 @@
   "initialFlags": {
     "sigilAwake": true,
     "galleryLeverPulled": false,
-    "galleryRelicCollected": false
+    "galleryRelicCollected": false,
+    "galleryCounterweightPlateSpent": false
   },
   "enemies": [
     {
@@ -97,7 +98,26 @@
       }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "gallery-counterweight-plate",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 5,
+      "y": 3,
+      "label": "Losa del contrapeso",
+      "when": [
+        { "key": "galleryCounterweightPlateSpent", "equals": false }
+      ],
+      "action": {
+        "effects": [
+          { "type": "set", "key": "galleryCounterweightPlateSpent", "value": true },
+          { "type": "damage-party", "amount": 1 }
+        ],
+        "message": "La losa cede y una cadena barre el corredor. Un punto de daño para cada aventurero vivo; el mecanismo queda inmóvil."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "gallery-gate",
