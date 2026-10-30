@@ -248,6 +248,13 @@ try {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
+      // Selecting equipped gear arms direct 1–4 delivery. Cancel the selection
+      // explicitly before checking ordinary party navigation; otherwise 4
+      // correctly transfers this sword instead of switching the dossier.
+      await equippedRow.click();
+      assert.equal(await equippedRow.getAttribute('aria-pressed'), 'false',
+        'Deselecting the inspected object restores numeric party navigation');
+      await page.locator('.chronicles-character-sheet__tabs .is-active').focus();
       // Actual rendered sheet, not just the pure keyboard helper:
       // 4 switches Matthias → Faust without closing the equipment folio.
       await page.keyboard.press('4');
