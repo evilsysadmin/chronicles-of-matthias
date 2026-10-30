@@ -43,11 +43,17 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     max-height: none;
     align-content: start;
     overflow-y: auto;
+  }
+  /* One or two objects should never become a huge empty well. Populated
+     rosters receive the extra scroll height without stretching each row. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory:has(> button:nth-child(3)) {
+    flex: 1 1 auto;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
