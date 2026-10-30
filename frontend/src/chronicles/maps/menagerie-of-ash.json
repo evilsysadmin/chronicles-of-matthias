@@ -1,6 +1,6 @@
 {
   "id": "menagerie-of-ash",
-  "version": 7,
+  "version": 8,
   "progressionKey": "menagerie-01",
   "title": "Menagerie de Ceniza",
   "grid": [
@@ -327,6 +327,9 @@
           },
           {
             "type": "refill-class-abilities"
+          },
+          {
+            "type": "restore-spell-points"
           },
           {
             "type": "grant-item",

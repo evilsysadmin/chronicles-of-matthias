@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesTacticsUse } from '../chroniclesOfMatthiasTactics.js';
+import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 import {
   chroniclesMapById,
   chroniclesMapIds,
@@ -27,7 +28,7 @@ describe('Chronicles multi-map campaign', () => {
     const menagerie = chroniclesMapById('menagerie-of-ash');
     const wisp = menagerie.enemies.find((enemy) => enemy.id === 'ember-wisp');
     const gate = menagerie.exits.find((entry) => entry.id === 'menagerie-gate');
-    expect(menagerie.version).toBe(7);
+    expect(menagerie.version).toBe(8);
     expect(menagerie.enemies).toHaveLength(4);
     expect(wisp).toMatchObject({ optional: true, x: 5, y: 2 });
     expect(menagerie.interactables.map((entry) => entry.id)).toEqual(expect.arrayContaining([
@@ -133,6 +134,37 @@ describe('Chronicles multi-map campaign', () => {
     expect(next.emberWispHp).toBe(4);
     expect(next.boneHoundHp).toBe(6);
     expect(next.journal.at(-1)?.id).toBe('gallery-menagerie-crossing');
+  });
+
+  it('restores real MM3 spell points at the one-shot Menagerie ember cache without losing Tactics refills', () => {
+    const map = chroniclesMapById('menagerie-of-ash');
+    const fresh = createChroniclesState(map.id, null, { rules: 'mm3' });
+    const caster = fresh.party.find((member) => chroniclesMemberMaxSp(fresh, member) > 0);
+    expect(caster).toBeDefined();
+    const spent = {
+      ...fresh,
+      x: 3, y: 1,
+      party: fresh.party.map((member) => ({ ...member, hp: Math.max(1, member.hp - 2) })),
+      spellPoints: { [caster.id]: 0 },
+      classAbilityCharges: Object.fromEntries(fresh.party.map((member) => [member.id, 0])),
+      inventory: { 'ember-shard': { id: 'ember-shard', name: 'Fragmento de Brasa', quantity: 1 } },
+    };
+    expect(chroniclesMemberSp(spent, caster)).toBe(0);
+
+    const opened = chroniclesTacticsUse(spent, 'ember-cache');
+    expect(opened.emberCacheOpened).toBe(true);
+    expect(chroniclesMemberSp(opened, caster)).toBe(chroniclesMemberMaxSp(opened, caster));
+    expect(opened.classAbilityCharges[caster.id]).toBe(1);
+    expect(opened.party.map((member) => member.hp)).toEqual(fresh.party.map((member) => member.hp));
+    expect(opened.inventory['ember-shard']).toBeUndefined();
+    expect(opened.inventory['cinder-key']?.quantity).toBe(1);
+    expect(chroniclesTacticsUse(opened, 'ember-cache')).toBe(opened);
+
+    const away = chroniclesMapTransitionState(opened, 'gallery-of-forks');
+    const restored = chroniclesMapTransitionState(JSON.parse(JSON.stringify(away)), map.id);
+    expect(restored.emberCacheOpened).toBe(true);
+    expect(chroniclesMemberSp(restored, caster)).toBe(chroniclesMemberMaxSp(restored, caster));
+    expect(restored.inventory['cinder-key']?.quantity).toBe(1);
   });
 
   it('continues from Menagerie while both optional side routes remain untouched', () => {
