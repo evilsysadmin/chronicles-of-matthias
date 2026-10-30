@@ -1502,6 +1502,42 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   if (isTemple) {
     mesh(root, new THREE.CylinderGeometry(1.19, 1.38, 3.2, coarse ? 12 : 20), mats.stone,
       'temple-bell-tower', [0, height + 2.5, -depth * 0.11], !coarse);
+    // Four open-looking belfry arches interrupt the formerly featureless
+    // limestone drum. Dark recesses and small bronze bells are visual only;
+    // they sit above the existing solid roof, without new lights or colliders.
+    const belfry = new THREE.Group();
+    belfry.name = 'temple-belfry-openings';
+    belfry.userData.chroniclesDecorativeOnly = true;
+    const recess = material(0x202c31, { roughness: 1, side: THREE.DoubleSide });
+    const bellBronze = material(0xb7954e, { roughness: 0.52, metalness: 0.48 });
+    const opening = new THREE.Shape();
+    opening.moveTo(-0.38, -0.60);
+    opening.lineTo(0.38, -0.60);
+    opening.lineTo(0.38, 0.24);
+    opening.quadraticCurveTo(0.38, 0.57, 0, 0.67);
+    opening.quadraticCurveTo(-0.38, 0.57, -0.38, 0.24);
+    opening.closePath();
+    for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      const bay = new THREE.Group();
+      bay.name = 'temple-belfry-arched-bay';
+      bay.position.set(Math.sin(angle) * 1.27, height + 3.05,
+        -depth * 0.11 + Math.cos(angle) * 1.27);
+      bay.rotation.y = angle;
+      mesh(bay, new THREE.ShapeGeometry(opening), recess,
+        'temple-belfry-dark-arch', [0, 0, 0], !coarse);
+      for (const side of [-1, 1]) {
+        mesh(bay, new THREE.BoxGeometry(0.12, 0.93, 0.15), mats.stone,
+          'temple-belfry-limestone-jamb', [side * 0.44, -0.17, 0.055], !coarse);
+      }
+      mesh(bay, new THREE.TorusGeometry(0.44, 0.075, 6, coarse ? 12 : 20, Math.PI),
+        mats.stone, 'temple-belfry-limestone-arch', [0, 0.28, 0.06], !coarse);
+      mesh(bay, new THREE.CylinderGeometry(0.13, 0.25, 0.40, 8), bellBronze,
+        'temple-belfry-bronze-bell', [0, -0.13, 0.14], !coarse);
+      mesh(bay, new THREE.SphereGeometry(0.08, 8, 6), bellBronze,
+        'temple-belfry-bell-clapper', [0, -0.38, 0.15]);
+      belfry.add(bay);
+    }
+    root.add(belfry);
     mesh(root, new THREE.ConeGeometry(1.48, 2.8, coarse ? 12 : 20), roof,
       'temple-spire', [0, height + 5.5, -depth * 0.11], !coarse);
     // Two slender limestone pinnacles lift the temple's gable shoulders
