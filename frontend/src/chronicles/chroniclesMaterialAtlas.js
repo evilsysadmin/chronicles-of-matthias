@@ -113,7 +113,9 @@ export function chroniclesMaterialEnvironmentForMapId(mapId = '') {
   // Deeper floors of a known map inherit its authored biome. Without this,
   // names such as torre-de-los-nombres-level-2 fall back to generic dungeon
   // stone instead of retaining the library's castle-interior palette.
-  const parentId = id.replace(/-(?:level|floor)-[1-9]\d*$/, '');
+  // Procedural descendants may stack suffixes (e.g. -level-2-floor-3).
+  // Strip the whole chain before consulting the canonical authored biome.
+  const parentId = id.replace(/(?:-(?:level|floor)-[1-9]\d*)+$/, '');
   if (parentId !== id && MAP_ENVIRONMENT[parentId]) return MAP_ENVIRONMENT[parentId];
   // A map named after a town can still be a crypt, mine or sewer floor.
   // Match specific biomes before broad settlement/wilderness place names.
