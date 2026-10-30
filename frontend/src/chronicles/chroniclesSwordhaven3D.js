@@ -388,11 +388,14 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
   const facadeZ = depth / 2 + 0.10;
-  const roof = material(spec.roof, {
-    map: swordhavenSurfaceTexture('roof'),
-    normalMap: swordhavenSurfaceNormalTexture('roof'),
+  // The provisions warehouse uses weathered cedar boards, not the red
+  // ceramic tiles of its neighbours. Reuse the cached timber atlas for both
+  // main slopes and the loading loft: no extra geometry, assets or colliders.
+  const roof = material(isStore ? 0x8c7357 : spec.roof, {
+    map: swordhavenSurfaceTexture(isStore ? 'timber' : 'roof'),
+    normalMap: isStore ? null : swordhavenSurfaceNormalTexture('roof'),
     normalScale: new THREE.Vector2(0.35, 0.35),
-    roughness: 0.95,
+    roughness: isStore ? 0.98 : 0.95,
   });
   const roofRidgeY = height + 1.8;
   // The guild's slate-violet masonry is a real architectural finish, not a

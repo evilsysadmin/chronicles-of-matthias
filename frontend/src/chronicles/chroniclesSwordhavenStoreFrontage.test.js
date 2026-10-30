@@ -52,6 +52,19 @@ describe('Swordhaven general store frontage', () => {
     expect(store.getObjectByName('roof-gable--1').material).toBe(walls.material);
     expect(forge.getObjectByName('timber-and-stone-walls').material.color.getHex())
       .not.toBe(walls.material.color.getHex());
+    // A cedar-clad warehouse roof must read differently from the tavern's
+    // ceramic tiles in both desktop and coarse/touch rendering.
+    for (const side of [-1, 1]) {
+      const storeRoof = store.getObjectByName('pitched-roof-' + side);
+      const tavernRoof = tavern.getObjectByName('pitched-roof-' + side);
+      expect(storeRoof.material.color.getHex()).toBe(0x8c7357);
+      expect(storeRoof.material.map).toBe(swordhavenSurfaceTexture('timber'));
+      expect(storeRoof.material.normalMap).toBeNull();
+      expect(tavernRoof.material.map).toBe(swordhavenSurfaceTexture('roof'));
+      expect(tavernRoof.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+      expect(storeRoof.getObjectByName('pitched-roof-shingle-seams')?.count)
+        .toBe(coarsePointer ? 7 : 12);
+    }
     const frontage = store.getObjectByName('store-oak-frontage');
     expect(frontage?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(frontage.children.filter(child => child.name === 'store-oak-panel')).toHaveLength(2);
