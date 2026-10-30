@@ -31,11 +31,11 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
   });
   const wood = material(0x90683d);
   const polishedWood = material(0xb58f5f);
-  const brightSteel = material(0xc7d2d1);
+  const brightSteel = material(0xabb9ba);
   const steelShadow = material(0x586a73);
   const darkSteel = material(0x53616a);
-  const paleFeathers = material(0xbba88a, { side: THREE.DoubleSide });
-  const darkFeathers = material(0x897763, { side: THREE.DoubleSide });
+  const paleFeathers = material(0x93856f, { side: THREE.DoubleSide });
+  const darkFeathers = material(0x756b5b, { side: THREE.DoubleSide });
   const stoneMaterial = material(0x91938c);
   const stoneHighlight = material(0xb4b1a6);
   // The flight streak is air displacement, not a glowing bolt of magic.
@@ -45,18 +45,18 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
 
   const arrowShaft = new THREE.CylinderGeometry(0.016, 0.017, 0.74, 8);
   const shaftCore = new THREE.CylinderGeometry(0.019, 0.019, 0.66, 8);
-  const arrowHead = new THREE.ConeGeometry(0.043, 0.14, 5);
+  const arrowHead = new THREE.ConeGeometry(0.034, 0.12, 5);
   const boltShaft = new THREE.CylinderGeometry(0.029, 0.027, 0.42, 8);
-  const boltHead = new THREE.ConeGeometry(0.052, 0.16, 4);
+  const boltHead = new THREE.ConeGeometry(0.043, 0.14, 4);
   const bolster = new THREE.CylinderGeometry(0.037, 0.037, 0.065, 8);
-  // A tapered vane: local X becomes the shaft axis after its 90° Y turn.
-  // Three narrow radial feathers read as fletching rather than a white diamond.
+  // Slim quill silhouette: length follows the shaft, width rises only a
+  // little above it. The previous broad vanes filled the screen like stars.
   const featherShape = new THREE.Shape();
-  featherShape.moveTo(-0.14, 0.004);
-  featherShape.lineTo(-0.055, 0.060);
-  featherShape.lineTo(0.085, 0.045);
-  featherShape.lineTo(0.15, 0.008);
-  featherShape.lineTo(0.085, -0.008);
+  featherShape.moveTo(-0.11, 0.006);
+  featherShape.lineTo(-0.065, 0.024);
+  featherShape.lineTo(0.070, 0.020);
+  featherShape.lineTo(0.10, 0.006);
+  featherShape.lineTo(0.065, 0.006);
   featherShape.closePath();
   const featherGeometry = new THREE.ShapeGeometry(featherShape);
 
@@ -102,12 +102,18 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
     }
 
     for (let fin = 0; fin < 3; fin += 1) {
+      const featherMount = new THREE.Group();
+      featherMount.name = kind + '-fletching-mount-' + fin;
+      featherMount.position.z = tail;
+      // Rotate the already shaft-aligned vane around the actual flight axis.
+      // Putting Z in a single XYZ Euler first turned the long vane diagonally
+      // away from the shaft and made the three fins look like a giant star.
+      featherMount.rotation.z = fin * Math.PI * 2 / 3;
       const feather = part(featherGeometry, finSurface, kind + '-fletching-' + fin);
-      // Rotate each vane radially around the longitudinal (local Z) axis.
-      feather.rotation.set(0, Math.PI / 2, fin * Math.PI * 2 / 3);
+      feather.rotation.y = Math.PI / 2;
       feather.scale.setScalar(finSize);
-      feather.position.z = tail;
-      variant.add(feather);
+      featherMount.add(feather);
+      variant.add(featherMount);
     }
     const trail = part(trailGeometry, trailSurface, kind + '-trail');
     // A short, almost transparent motion smear immediately behind the nock.
@@ -123,12 +129,12 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
     const bow = flightRod('bow', {
       shaftGeometry: arrowShaft, headGeometry: arrowHead,
       shaftSurface: wood, headSurface: brightSteel, finSurface: paleFeathers,
-      tip: -0.425, tail: 0.29, finSize: 1, trailGeometry: bowTrailGeometry, trailSurface: bowTrail,
+      tip: -0.425, tail: 0.29, finSize: 0.86, trailGeometry: bowTrailGeometry, trailSurface: bowTrail,
     });
     const crossbow = flightRod('crossbow', {
       shaftGeometry: boltShaft, headGeometry: boltHead,
       shaftSurface: darkSteel, headSurface: brightSteel, finSurface: darkFeathers,
-      tip: -0.268, tail: 0.165, finSize: 0.68,
+      tip: -0.268, tail: 0.165, finSize: 0.58,
       trailGeometry: boltTrailGeometry, trailSurface: boltTrail,
     });
     const sling = new THREE.Group();

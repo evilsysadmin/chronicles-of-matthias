@@ -93,6 +93,37 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
     expect(fx.projectiles[2].getObjectByName('sling-trail').material.opacity).toBeLessThan(0.1);
   });
 
+
+  it('keeps all three slender fletchings aligned with the shaft, not splayed as stars', () => {
+    const fx = createChroniclesVolleyProjectileArt(THREE, new THREE.Group());
+    fx.setFamilies(['bow', 'crossbow']);
+    fx.group.updateMatrixWorld(true);
+    for (const [index, kind] of ['bow', 'crossbow'].entries()) {
+      const root = fx.projectiles[index];
+      const vaneAxes = [];
+      const radialAxes = [];
+      for (let fin = 0; fin < 3; fin += 1) {
+        const vane = root.getObjectByName(kind + '-fletching-' + fin);
+        const mount = vane.parent;
+        expect(mount.name).toBe(kind + '-fletching-mount-' + fin);
+        expect(mount.rotation.z).toBeCloseTo(fin * Math.PI * 2 / 3);
+        const rotation = vane.getWorldQuaternion(new THREE.Quaternion());
+        vaneAxes.push(new THREE.Vector3(1, 0, 0).applyQuaternion(rotation));
+        radialAxes.push(new THREE.Vector3(0, 1, 0).applyQuaternion(rotation));
+        expect(vane.scale.x).toBeLessThan(0.9);
+        vane.geometry.computeBoundingBox();
+        expect(vane.geometry.boundingBox.max.y).toBeLessThan(0.03);
+      }
+      vaneAxes.forEach((axis) => {
+        expect(axis.x).toBeCloseTo(0, 6);
+        expect(axis.y).toBeCloseTo(0, 6);
+        expect(axis.z).toBeCloseTo(-1, 6);
+      });
+      expect(radialAxes[0].dot(radialAxes[1])).toBeCloseTo(-0.5, 6);
+      expect(radialAxes[1].dot(radialAxes[2])).toBeCloseTo(-0.5, 6);
+    }
+  });
+
   it('switches between three genuinely distinct geometry families and clears old visual state', () => {
     const camera = new THREE.Group();
     const fx = createChroniclesVolleyProjectileArt(THREE, camera);

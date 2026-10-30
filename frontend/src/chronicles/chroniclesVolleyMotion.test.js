@@ -41,6 +41,18 @@ describe('Chronicles · polished projectile flight', () => {
     expect(Math.abs(stone.yaw)).toBeLessThan(1e-6);
   });
 
+
+  it('progressively points physical arrows along the forward flight path', () => {
+    for (const kind of ['bow', 'crossbow']) {
+      const early = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
+      const late = chroniclesVolleyFlightSample(3, 0, 0.35, kind);
+      expect(Math.abs(early.yaw)).toBeGreaterThan(0.18);
+      expect(Math.abs(late.yaw)).toBeLessThan(Math.abs(early.yaw));
+      expect(Math.abs(late.yaw)).toBeLessThan(0.18);
+      expect(late.z).toBeLessThan(early.z);
+    }
+  });
+
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {
     const left = chroniclesVolleyFlightSample(4, 0, 0, 'bow');
     const right = chroniclesVolleyFlightSample(4, 3, 3 * 0.034, 'bow');
