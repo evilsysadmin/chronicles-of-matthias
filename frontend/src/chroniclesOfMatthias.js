@@ -1193,6 +1193,20 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'transfer-item') {
     return chroniclesTransferBagItem(state, action.memberId, action.toMemberId, action.itemId, action.quantity ?? 1);
   }
+  if (actionType === 'transfer-equipped-item') {
+    // The visible MM3 inventory combines worn pieces and bag items. Giving a
+    // worn piece must be one atomic reducer action: never persist an
+    // intermediate unequip if the recipient/stock validation rejects it.
+    if (state.combatRules !== 'mm3' || state.phase !== 'explore' || state.initiative
+      || action.memberId === action.toMemberId
+      || !(state.party || []).some((hero) => hero.id === action.toMemberId)) return state;
+    const worn = chroniclesEquippedItem(state, action.memberId, action.slot);
+    if (!worn) return state;
+    const loose = chroniclesUnequipItem(state, action.memberId, action.slot);
+    if (loose === state) return state; // e.g. incapacitated source or stock limit
+    const delivered = chroniclesTransferBagItem(loose, action.memberId, action.toMemberId, worn.id, 1);
+    return delivered === loose ? state : delivered;
+  }
   if (actionType === 'share-party-loot') return chroniclesSharePartyLoot(state);
   // Any other action (moving, turning, fighting) walks away from the counter.
   if ((state.shop || state.guild || state.inn) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
