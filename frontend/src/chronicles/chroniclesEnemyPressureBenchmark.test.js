@@ -222,7 +222,8 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(state.initiative?.order).toHaveLength(5);
     const initialRound = state.initiative.round;
     const initialHp = Object.fromEntries(state.party.map(({ id, hp }) => [id, hp]));
-    const actions = { attacks: 0, attackDamage: 0, blocks: 0, heals: 0, spSpent: 0, enemyTurns: 0, enemyEvents: [] };
+    const actions = { attacks: 0, attackDamage: 0, blocks: 0, heals: 0, healing: 0,
+      enemyDamage: 0, spSpent: 0, enemyTurns: 0, enemyEvents: [] };
 
     for (let turn = 0; turn < 5; turn += 1) {
       const actor = chroniclesCurrentInitiativeActor(state.initiative);
@@ -230,7 +231,11 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
       let acted;
       if (actor.kind === 'enemy') {
         expect(actor.id).toBe(WEST);
+        const hpBeforeEnemy = state.party.reduce((total, { hp }) => total + hp, 0);
         acted = chroniclesResolveEnemyActor(state, actor.id);
+        const hpAfterEnemy = acted.party.reduce((total, { hp }) => total + hp, 0);
+        expect(hpAfterEnemy).toBeLessThanOrEqual(hpBeforeEnemy);
+        actions.enemyDamage += hpBeforeEnemy - hpAfterEnemy;
         actions.enemyTurns += 1;
         actions.enemyEvents.push(...(acted.enemyTurnEvents || []).map(({ type, missed, damage }) => ({
           type, ...(type === 'attack' ? { missed, damage } : {}),
@@ -255,8 +260,10 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
           type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'rook',
         });
         expect(acted.turns).toBe(state.turns + 1);
-        expect(acted.party.find(({ id }) => id === 'rook').hp)
-          .toBe(Math.min(target.maxHp, target.hp + 6));
+        const healedHp = acted.party.find(({ id }) => id === 'rook').hp;
+        expect(healedHp).toBe(Math.min(target.maxHp, target.hp + 6));
+        expect(healedHp).toBeGreaterThan(target.hp);
+        actions.healing += healedHp - target.hp;
         const spent = beforeSp - chroniclesMemberSp(acted, caster);
         expect(spent).toBe(1);
         actions.spSpent += spent;
@@ -278,10 +285,20 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(actions).toMatchObject({ attacks: 1, blocks: 2, heals: 1, spSpent: 1, enemyTurns: 1 });
     expect(ready[goblin.hpKey] - state[goblin.hpKey]).toBe(actions.attackDamage);
     expect(state.spellPoints.bishop).toBe(1);
+    // Reconcile actual HP changes against enemy damage and spell healing.
+    // A future encounter-balancing test must not count healed HP as avoided damage.
+    const hpAfter = Object.fromEntries(state.party.map(({ id, hp }) => [id, hp]));
+    const hpBeforeTotal = Object.values(initialHp).reduce((total, hp) => total + hp, 0);
+    const hpAfterTotal = Object.values(hpAfter).reduce((total, hp) => total + hp, 0);
+    const reportedEnemyDamage = actions.enemyEvents
+      .filter(({ type }) => type === 'attack')
+      .reduce((total, { damage }) => total + damage, 0);
+    expect(actions.enemyDamage).toBe(reportedEnemyDamage);
+    expect(hpBeforeTotal - hpAfterTotal).toBe(actions.enemyDamage - actions.healing);
     console.info('CHRONICLES_MM3_ACTIVE_PRESSURE_BENCHMARK ' + JSON.stringify({
       encounter: 'single-goblin', actions,
-      hpBefore: initialHp,
-      hpAfter: Object.fromEntries(state.party.map(({ id, hp }) => [id, hp])),
+      hpBefore: initialHp, hpAfter,
+      netHpLoss: hpBeforeTotal - hpAfterTotal,
     }));
   });
 
