@@ -1827,21 +1827,21 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // without smoke particles, extra lights or any change to the walk grid.
     // Instancing keeps the twin flues and caps to two draw calls.
     const flues = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.44, 1.20, 0.52), mats.steel, 2);
+      new THREE.CylinderGeometry(0.33, 0.36, 1.44, 8), mats.steel, 2);
     flues.name = 'forge-smokestack-twin-iron-flues';
     flues.userData.chroniclesDecorativeOnly = true;
     flues.castShadow = !coarse;
     const caps = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.64, 0.18, 0.72), mats.steel, 2);
+      new THREE.CylinderGeometry(0.45, 0.42, 0.18, 8), mats.steel, 2);
     caps.name = 'forge-smokestack-twin-rain-caps';
     caps.userData.chroniclesDecorativeOnly = true;
     caps.castShadow = !coarse;
     const outlet = new THREE.Object3D();
-    for (const [index, x] of [-0.37, 0.37].entries()) {
-      outlet.position.set(x, 3.01, 0);
+    for (const [index, x] of [-0.46, 0.46].entries()) {
+      outlet.position.set(x, 3.13, 0);
       outlet.updateMatrix();
       flues.setMatrixAt(index, outlet.matrix);
-      outlet.position.set(x, 3.67, 0);
+      outlet.position.set(x, 3.92, 0);
       outlet.updateMatrix();
       caps.setMatrixAt(index, outlet.matrix);
     }
