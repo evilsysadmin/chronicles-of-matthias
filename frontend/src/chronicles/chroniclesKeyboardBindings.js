@@ -185,6 +185,18 @@ export function chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen = fa
   return true;
 }
 
+// Keyboard letters act only within the MM3 equipment chapter.
+// Never consume movement, typing, held keys or browser modifier shortcuts.
+export function chroniclesInventoryShortcut(event, { open = false, confirmingDrop = false } = {}) {
+  if (!open || confirmingDrop || !event || event.defaultPrevented || event.repeat
+    || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  const target = event.target;
+  if (target?.isContentEditable
+    || target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  const key = String(event.key || '').toLowerCase();
+  return ['e', 't', 'u', 'd', 'i'].includes(key) ? key : null;
+}
+
 // The physical 1–4 keys identify these four heroes by stable IDs, not by
 // array position (which can change in view adapters and initiative ordering).
 export const CHRONICLES_PARTY_SLOT_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);

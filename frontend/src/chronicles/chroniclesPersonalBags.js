@@ -136,3 +136,29 @@ export function chroniclesBagAfterEquipment(state, memberId, removedId, returned
     bagOwners: { ...bags, [memberId]: own },
   });
 }
+
+// D discards one loose copy, never worn gear or pooled gold. The mutation
+// stays atomic across the canonical stock and personal bag ownership ledger.
+export function chroniclesDropBagItem(state, memberId, itemId) {
+  if (state?.combatRules !== 'mm3' || state.phase !== 'explore' || state.initiative
+    || typeof itemId !== 'string' || itemId === GOLD) return state;
+  const hero = (state.party || []).find((member) => member.id === memberId && member.hp > 0);
+  const item = state.inventory?.[itemId];
+  if (!hero || !item || item.questItem || item.questId || item.isQuestItem
+    || item.kind === 'quest' || item.category === 'quest'
+    || !Number.isSafeInteger(item.quantity) || item.quantity < 1) return state;
+  const owners = chroniclesBagOwnership(state);
+  const held = owners[memberId]?.[itemId] || 0;
+  if (!held) return state;
+  const inventory = { ...state.inventory };
+  if (item.quantity === 1) delete inventory[itemId];
+  else inventory[itemId] = { ...item, quantity: item.quantity - 1 };
+  const bagOwners = { ...owners, [memberId]: { ...owners[memberId] } };
+  if (held === 1) delete bagOwners[memberId][itemId];
+  else bagOwners[memberId][itemId] = held - 1;
+  return {
+    ...state, inventory,
+    bagOwners: chroniclesBagOwnership({ ...state, inventory, bagOwners }),
+    message: `${hero.name} desecha 1 × ${item.name || itemId}.`,
+  };
+}
