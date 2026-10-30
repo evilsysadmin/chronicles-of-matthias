@@ -1619,6 +1619,36 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       const rib = mesh(awning, new THREE.BoxGeometry(0.13, 0.13, 1.46), mats.timber,
         'store-awning-side-rib', [x, 0, 0]);
       rib.rotation.x = 0.16;
+      // Real diagonal oak struts support the projecting canopy. Their lower
+      // ends join the solid facade, well to either side of the shop entrance.
+      const brace = mesh(awning, new THREE.BoxGeometry(0.16, 0.16, 1.35), mats.timber,
+        'store-awning-diagonal-support', [x, -0.30, 0.08], !coarse);
+      brace.rotation.x = -0.48;
+    }
+    // The flat striped slab previously read as a wooden shelf from the street.
+    // Six alternating scalloped canvas hems make the merchant canopy legible
+    // at eye level and on mobile. Two small batches share one geometry and
+    // the existing fabric materials; no textures, lights or colliders.
+    const valanceOutline = new THREE.Shape();
+    valanceOutline.moveTo(-0.50, 0.04);
+    valanceOutline.lineTo(0.50, 0.04);
+    valanceOutline.lineTo(0.50, -0.16);
+    valanceOutline.quadraticCurveTo(0, -0.48, -0.50, -0.16);
+    valanceOutline.closePath();
+    const valanceGeometry = new THREE.ShapeGeometry(valanceOutline, coarse ? 4 : 8);
+    const panel = new THREE.Object3D();
+    for (const [offset, fabric] of [[0, canvas], [1, stripe]]) {
+      const hem = new THREE.InstancedMesh(valanceGeometry, fabric, 3);
+      hem.name = 'store-awning-scalloped-hem';
+      hem.userData.chroniclesDecorativeOnly = true;
+      hem.castShadow = false;
+      for (let i = 0; i < 3; i += 1) {
+        panel.position.set(-2.5 + i * 2 + offset, -0.17, 0.86);
+        panel.updateMatrix();
+        hem.setMatrixAt(i, panel.matrix);
+      }
+      hem.instanceMatrix.needsUpdate = true;
+      awning.add(hem);
     }
     root.add(awning);
     // An oak-clad merchant frontage beneath the canopy distinguishes the

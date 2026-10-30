@@ -130,7 +130,29 @@ describe('Swordhaven general store frontage', () => {
     expect(forge.getObjectByName('store-merchant-loft')).toBeFalsy();
     expect(forge.getObjectByName('forge-roof-smoke-lantern')).toBeTruthy();
     expect(forge.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();
-    expect(store.getObjectByName('store-market-awning')).toBeTruthy();
+    const awning = store.getObjectByName('store-market-awning');
+    expect(awning?.userData.chroniclesDecorativeOnly).toBe(true);
+    const hems = awning.children.filter(child => child.name === 'store-awning-scalloped-hem');
+    expect(hems).toHaveLength(2);
+    expect(hems.every(hem => hem.isInstancedMesh && hem.count === 3)).toBe(true);
+    expect(hems.every(hem => hem.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(hems[0].geometry).toBe(hems[1].geometry);
+    expect(hems[0].material.color.getHex()).not.toBe(hems[1].material.color.getHex());
+    const hemPosition = new THREE.Matrix4();
+    hems[0].getMatrixAt(0, hemPosition);
+    expect(new THREE.Vector3().setFromMatrixPosition(hemPosition).z)
+      .toBeGreaterThan(awning.getObjectByName('store-awning-front-rail').position.z);
+    // The shop is parented under the rotated/translated town; update ancestor
+    // transforms before checking world-space clearance above the street.
+    store.updateWorldMatrix(true, true);
+    const hemBounds = new THREE.Box3().setFromObject(hems[0]);
+    expect(hemBounds.min.y).toBeGreaterThan(2.7);
+    const awningBraces = awning.children.filter(child =>
+      child.name === 'store-awning-diagonal-support');
+    expect(awningBraces).toHaveLength(2);
+    expect(awningBraces[0].position.x).toBeCloseTo(-awningBraces[1].position.x);
+    expect(awningBraces.every(brace => brace.rotation.x < -0.4)).toBe(true);
+    expect(forge.getObjectByName('store-awning-scalloped-hem')).toBeFalsy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
     // No authored map tiles or interaction contracts are changed.
