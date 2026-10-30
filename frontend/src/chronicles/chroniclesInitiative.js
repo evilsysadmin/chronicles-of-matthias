@@ -23,6 +23,11 @@ function nonNegativeInteger(value, fallback = 0) {
 // Legacy or computed HP may be non-finite. Infinity is not a living
 // combatant: admitting it can leave an unkillable actor in initiative.
 function hasLivingHitPoints(value) {
+  // JS coerces true and [3] to positive HP. A malformed legacy save must
+  // not revive a hero or enemy or grant a phantom initiative action.
+  // Numeric strings remain supported for old save compatibility.
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
   const hp = Number(value);
   return Number.isFinite(hp) && hp > 0;
 }

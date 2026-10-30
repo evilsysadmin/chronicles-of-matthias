@@ -151,7 +151,7 @@ describe('Chronicles initiative', () => {
     expect(forced.initiative.order.map((actor) => actor.id).sort()).toEqual(['far', 'matthias']);
   });
 
-  it.each(['invalid-hp', NaN])('does not start party-only combat for an enemy with invalid HP (%s)', (enemyHp) => {
+  it.each(['invalid-hp', NaN, true, [3], ['3'], { hp: 3 }])('does not start party-only combat for an enemy with invalid HP (%s)', (enemyHp) => {
     const state = {
       phase: 'explore',
       x: 2, y: 2,
@@ -167,6 +167,40 @@ describe('Chronicles initiative', () => {
     // while the initiative roller discarded it (NaN > 0 is false).
     expect(chroniclesEngagedEnemies(state, [enemy])).toEqual([]);
     expect(chroniclesStartInitiativeCombat(state, [enemy], { random: () => 0 })).toBe(state);
+    // An explicit projectile hit must not resurrect malformed enemy HP either.
+    expect(chroniclesStartInitiativeCombat(state, [enemy], {
+      forceEnemyIds: ['broken'], random: () => 0,
+    })).toBe(state);
+  });
+
+  it.each([true, [7], ['7'], { hp: 7 }])(
+    'rejects malformed hero HP (%s) from both initiative rolls and forced encounters',
+    (hp) => {
+      const state = {
+        phase: 'explore', x: 2, y: 2,
+        party: [{ id: 'matthias', hp, agility: 4 }],
+        enemyHp: 3,
+      };
+      const enemy = {
+        id: 'enemy', hpKey: 'enemyHp', x: 2, y: 3,
+        ai: { engageRange: 1, movement: 'hold' },
+      };
+      expect(chroniclesRollInitiative(state, [enemy], { random: () => 0 })
+        .order.map((actor) => actor.id)).toEqual(['enemy']);
+      expect(chroniclesStartInitiativeCombat(state, [enemy], {
+        forceEnemyIds: ['enemy'], random: () => 0,
+      })).toBe(state);
+    },
+  );
+
+  it('preserves numeric-string HP from legacy saves for living combatants', () => {
+    const state = {
+      party: [{ id: 'matthias', hp: '7', agility: 4 }],
+      enemyHp: '3',
+    };
+    const enemy = { id: 'enemy', hpKey: 'enemyHp', agility: 2 };
+    expect(chroniclesRollInitiative(state, [enemy], { random: () => 0 })
+      .order.map((actor) => actor.id)).toEqual(['matthias', 'enemy']);
   });
 
   it('never starts enemy-only initiative after the entire company has fallen', () => {
