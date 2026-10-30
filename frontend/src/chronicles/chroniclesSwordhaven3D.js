@@ -1644,24 +1644,44 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // recognisable ground-floor stock display, distinct from the forge and
     // tavern. Four low-poly instances stay in front of the oak bays, clear
     // of the real door and wholly inside the existing blocked house cells.
+    // A rounded, pinched neck and twine make these read as grain sacks,
+    // rather than traffic cones or miniature barrels at normal camera zoom.
+    const sackProfile = [
+      [0.21, 0], [0.34, 0.04], [0.43, 0.19], [0.47, 0.43],
+      [0.43, 0.62], [0.29, 0.77], [0.17, 0.83],
+      [0.22, 0.91], [0.12, 0.96], [0, 0.97],
+    ].map(([radius, y]) => new THREE.Vector2(radius, y));
     const sacks = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.26, 0.42, 0.90, coarse ? 7 : 10),
+      new THREE.LatheGeometry(sackProfile, coarse ? 9 : 12),
       material(0xc2a780, { roughness: 1, metalness: 0 }), 4,
     );
     sacks.name = 'store-front-provisions-sacks';
     sacks.userData.chroniclesDecorativeOnly = true;
     sacks.castShadow = !coarse;
     sacks.receiveShadow = true;
+    const ties = new THREE.InstancedMesh(
+      new THREE.TorusGeometry(0.175, 0.029, 4, coarse ? 9 : 12),
+      material(0x765a38, { roughness: 1 }), 4,
+    );
+    ties.name = 'store-front-sack-twine';
+    ties.userData.chroniclesDecorativeOnly = true;
     const sack = new THREE.Object3D();
     for (const [index, x] of [-2.92, -2.05, 2.05, 2.92].entries()) {
-      sack.position.set(x, 0.56, facadeZ + 0.77);
-      sack.rotation.z = index % 2 ? 0.10 : -0.08;
-      sack.scale.set(1, index % 2 ? 0.88 : 1.05, 1);
+      const scaleY = index % 2 ? 0.91 : 1.05;
+      sack.position.set(x, 0.05, facadeZ + 0.77);
+      sack.rotation.set(0, 0, index % 2 ? 0.035 : -0.025);
+      sack.scale.set(1, scaleY, 1);
       sack.updateMatrix();
       sacks.setMatrixAt(index, sack.matrix);
+      sack.position.y = 0.05 + 0.83 * scaleY;
+      sack.rotation.set(Math.PI / 2, 0, 0);
+      sack.scale.set(1, 1, 1);
+      sack.updateMatrix();
+      ties.setMatrixAt(index, sack.matrix);
     }
     sacks.instanceMatrix.needsUpdate = true;
-    root.add(sacks);
+    ties.instanceMatrix.needsUpdate = true;
+    root.add(sacks, ties);
   } else if (isForge) {
     mesh(root, new THREE.CylinderGeometry(0.52, 0.59, 1.3, 10), mats.stone,
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
