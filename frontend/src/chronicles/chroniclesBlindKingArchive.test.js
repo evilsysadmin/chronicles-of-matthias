@@ -19,7 +19,7 @@ describe('Chronicles Blind King Archive', () => {
   it('continues the main campaign from Menagerie into a larger fifth map', () => {
     expect(chroniclesMapIds()).toContain('blind-king-archive');
     const archive = chroniclesMapById('blind-king-archive');
-    expect(archive.version).toBe(2);
+    expect(archive.version).toBe(3);
     expect(archive.title).toBe('Archivo del Rey Ciego');
     expect(archive.grid).toHaveLength(9);
     expect(archive.grid[0]).toHaveLength(11);
