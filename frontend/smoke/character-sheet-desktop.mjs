@@ -614,20 +614,37 @@ try {
       await sword.waitFor({ state: 'visible' });
       assert.equal(await sword.count(), 1, 'Unequip restores one loose sword, without duplication');
       assert.equal(await sword.getAttribute('aria-pressed'), 'false');
-      const down = itemCommands.getByRole('button', { name: /Abajo/ });
-      const up = itemCommands.getByRole('button', { name: /Arriba/ });
       const allRows = bag.locator('[data-ledger-id]');
       assert.ok(await allRows.count() >= await itemRows.count(),
         'Worn and loose objects must share one numbered/list keyboard flow');
-      await down.click();
-      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
-        'Down without selection starts at the first equipped or loose item');
-      await up.click();
-      assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
-        'Up from first wraps to last entry in the unified list');
-      await down.click();
-      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
-        'Down from last wraps to first entry in the unified list');
+      if (width < 500) {
+        // Up/Down are hidden from the touch toolbar, not removed from real
+        // keyboard navigation. Mouse/touch can always tap a row directly.
+        assert.equal(await itemCommands.getByRole('button', { name: /Abajo/ }).count(), 0);
+        await allRows.first().focus();
+        await page.keyboard.press('ArrowDown');
+        assert.equal(await allRows.nth(1).getAttribute('aria-pressed'), 'true',
+          'Touch layouts retain keyboard navigation between inventory rows');
+        await page.keyboard.press('ArrowUp');
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true');
+        await page.keyboard.press('ArrowUp');
+        assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+          'Keyboard Up wraps to last item without a visible arrow button');
+        await page.keyboard.press('ArrowDown');
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true');
+      } else {
+        const down = itemCommands.getByRole('button', { name: /Abajo/ });
+        const up = itemCommands.getByRole('button', { name: /Arriba/ });
+        await down.click();
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+          'Down without selection starts at the first equipped or loose item');
+        await up.click();
+        assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+          'Up from first wraps to last entry in the unified list');
+        await down.click();
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+          'Down from last wraps to first entry in the unified list');
+      }
       // Numeric shortcuts are armed ONLY by a deliberate green item
       // selection. Pressing the same row a second time cancels that mode.
       if (await sword.getAttribute('aria-pressed') !== 'true') await sword.click();
