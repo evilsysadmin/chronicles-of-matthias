@@ -82,6 +82,7 @@ function runPressure(caseData, rounds = 4) {
       round,
       initiative: { ...state.initiative, round },
     };
+    const roundStartHp = Object.fromEntries(state.party.map(({ id, hp }) => [id, hp]));
     const observedRound = { round, attacks: 0, hits: 0, moves: 0, blocked: 0, damage: 0 };
     for (const enemyId of participants) {
       if (state.phase === 'defeated') break;
@@ -101,6 +102,12 @@ function runPressure(caseData, rounds = 4) {
       }
       state = next;
     }
+    // Damage concentration matters as much as total exposure: a single
+    // wounded hero may be at risk even when group-wide HP remains healthy.
+    observedRound.heroDamage = Object.fromEntries(state.party.map(({ id, hp }) => [id, roundStartHp[id] - hp]));
+    observedRound.peakHeroDamage = Math.max(0, ...Object.values(observedRound.heroDamage));
+    expect(Object.values(observedRound.heroDamage).reduce((sum, damage) => sum + damage, 0))
+      .toBe(observedRound.damage);
     timeline.push(observedRound);
   }
   const total = (field) => Object.values(actionsByEnemy).reduce((sum, enemy) => sum + enemy[field], 0);
@@ -115,6 +122,8 @@ function runPressure(caseData, rounds = 4) {
     hits: total('hits'),
     blocked: total('blocked'),
     damage: total('damage'),
+    peakRoundDamage: Math.max(0, ...timeline.map(({ damage }) => damage)),
+    peakHeroRoundDamage: Math.max(0, ...timeline.map(({ peakHeroDamage }) => peakHeroDamage)),
     hpLost,
     downed: state.party.filter(({ hp }) => hp <= 0).length,
     byEnemy: actionsByEnemy,
@@ -315,6 +324,19 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
       hpBefore: initialHp, hpAfter, enemyDamageByHero, healingByHero,
       netHpLoss: hpBeforeTotal - hpAfterTotal,
     }));
+  });
+
+  it('reports real round-by-round damage bursts and focus without inventing HP loss', () => {
+    for (const encounter of cases) {
+      const measured = runPressure(encounter);
+      expect(measured.timeline.reduce((sum, { damage }) => sum + damage, 0)).toBe(measured.damage);
+      expect(measured.peakRoundDamage).toBe(Math.max(...measured.timeline.map(({ damage }) => damage)));
+      expect(measured.peakHeroRoundDamage).toBe(Math.max(...measured.timeline.map(({ peakHeroDamage }) => peakHeroDamage)));
+      expect(measured.peakHeroRoundDamage).toBeLessThanOrEqual(measured.peakRoundDamage);
+      for (const [id, lost] of Object.entries(measured.hpLost)) {
+        expect(measured.timeline.reduce((sum, { heroDamage }) => sum + heroDamage[id], 0), id).toBe(lost);
+      }
+    }
   });
 
   it('reports measured physical pressure to CI to inform the next encounter-design PR', () => {
