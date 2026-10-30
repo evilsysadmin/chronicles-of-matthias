@@ -163,8 +163,8 @@ try {
       assert.ok(skin.top >= -1 && skin.bottom <= height + 1,
         'Character sheet must fit vertically: ' + JSON.stringify(skin));
       await page.screenshot({ path: 'smoke-first-loot-sheet-open-' + width + '.png' });
-      // A sparse one-item bag must not reserve a tall, empty inventory well.
-      // This measures real Chromium geometry before selecting or equipping.
+      // Even a one-item bag must use the available desktop height; the row
+      // stays compact and the remaining ledger can accept future loot.
       const inventoryGeometry = await sheet.locator('.chronicles-character-sheet__inventory')
         .evaluate((node) => {
           const box = node.getBoundingClientRect();
@@ -180,8 +180,8 @@ try {
       assert.ok(inventoryGeometry.firstRow >= 44, 'Inventory controls stay touch-sized');
       assert.equal(inventoryGeometry.overflowX, false, 'Sparse inventory cannot overflow horizontally');
       if (width >= 851) {
-        assert.ok(inventoryGeometry.height <= 90,
-          'A single item should not reserve the old 180px storage well: ' + JSON.stringify(inventoryGeometry));
+        assert.ok(inventoryGeometry.height >= inventoryGeometry.firstRow + 80,
+          'One item must still leave a usable, full-height desktop ledger: ' + JSON.stringify(inventoryGeometry));
       }
 
       // A one-type bag does not need a filter or search disclosure. Real
@@ -198,6 +198,9 @@ try {
         await sheet.getByRole('button', { name: /Examinar/ }).click();
         assert.equal(await inspector.isVisible(), true,
           'Examinar must reveal the selected item without changing equipment');
+        assert.equal(await inspector.locator('.chronicles-character-sheet__item-more')
+          .evaluate((node) => node.open), true,
+          'Examinar must reveal attributes immediately, without a second click');
         const sparseLedger = await sheet.locator('.chronicles-character-sheet__backpack')
           .evaluate((node) => {
             const list = node.querySelector('.chronicles-character-sheet__inventory').getBoundingClientRect();

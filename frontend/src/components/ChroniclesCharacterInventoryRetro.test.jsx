@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
+import { chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 
 const css = readFileSync(new URL('./ChroniclesCharacterInventoryRetro.css', import.meta.url), 'utf8');
 const classic = readFileSync(new URL('./ChroniclesCharacterInventoryClassic.css', import.meta.url), 'utf8');
@@ -49,6 +50,31 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).not.toContain('data-slot="weapon"');
     expect(rendered).not.toContain('data-slot="missile"');
     expect(rendered).toContain('aria-controls="chronicles-equipment-technical-details"');
+  });
+
+  it('fills the desktop ledger even with one item and keeps the inspector genuinely hidden', () => {
+    const rendered = html();
+    expect(rendered).toContain('class="chronicles-character-sheet__item-details" aria-live="polite" hidden=""');
+    expect(workspace).toContain('.chronicles-character-sheet__item-details[hidden]');
+    expect(workspace).toContain('display: none !important;');
+    expect(workspace).toContain('.chronicles-character-sheet__inventory {\n    flex: 1 1 auto;');
+    expect(workspace).not.toContain(':has(> button:nth-child(3))');
+    expect(workspace).toContain('max-height: min(36vh, 320px)');
+  });
+
+  it('includes real simulated damage and hit chance on the first Examinar view', () => {
+    const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const preview = chroniclesGearSwapPreview(state, state.party[0].id, 'brass-dagger');
+    expect(preview).not.toBeNull();
+    const rendered = html();
+    expect(rendered).toContain(`data-chronicles-item-stat="damage"><dt>Daño base al equipar</dt><dd>${preview.after.damage}</dd>`);
+    expect(rendered).toContain(`data-chronicles-item-stat="hit"><dt>Acierto total al equipar</dt><dd>+${preview.after.toHit}</dd>`);
+    expect(rendered).toContain('Daño adicional');
+    expect(rendered).toContain('Armadura');
+    const sheet = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
+    expect(sheet).toContain('setExpandItemAttributes(!inspectItem)');
+    expect(sheet).toContain('open={expandItemAttributes && inspectItem}');
+    expect(html('tactics')).not.toContain('data-chronicles-item-stat="damage"');
   });
 
   it('always displays every possession without category filters or a searchbox', () => {

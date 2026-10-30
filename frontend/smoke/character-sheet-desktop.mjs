@@ -354,12 +354,14 @@ try {
       await actions.getByRole('button', { name: /Examinar/ }).click();
       assert.equal(await detail.isVisible(), true);
       const more = detail.locator('.chronicles-character-sheet__item-more');
-      assert.equal(await more.evaluate((node) => node.open), false,
-        'Long attributes must start folded');
-      await more.locator('summary').click();
+      assert.equal(await more.evaluate((node) => node.open), true,
+        'Examinar must expose real damage and bonuses without another disclosure');
       assert.equal(await more.locator('dl').isVisible(), true);
       await more.locator('summary').click();
-      assert.equal(await more.evaluate((node) => node.open), false);
+      assert.equal(await more.evaluate((node) => node.open), false,
+        'Players can still fold the long details');
+      await more.locator('summary').click();
+      assert.equal(await more.evaluate((node) => node.open), true);
 
       const classicLayout = await equipment.evaluate((node) => {
         const rect = (selector) => node.querySelector(selector).getBoundingClientRect();
