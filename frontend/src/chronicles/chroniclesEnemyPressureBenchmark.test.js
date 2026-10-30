@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActiveEnemies, createChroniclesState, chroniclesTileAt } from '../chroniclesOfMatthias.js';
-import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesActiveEnemies, chroniclesPartyArmorClass, chroniclesReduce, createChroniclesState, chroniclesTileAt } from '../chroniclesOfMatthias.js';
+import { chroniclesAdvanceCombatInitiative, chroniclesCurrentInitiativeActor, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
 // A reproducible four-round *passive exposure* measurement: real authored
@@ -196,6 +197,76 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(mixed.byEnemy[ROAD_THUG].attempts).toBe(4);
     // The ranged threat targets backliners without granting phantom melee reach.
     expect(mixed.hits).toBeLessThanOrEqual(mixed.attacks);
+  });
+
+  it('measures a real initiative round with BLOCK and First Aid, including their action/PH cost', () => {
+    // The passive benchmark above intentionally gives the heroes no turns.
+    // This companion scenario uses the real reducer and initiative cursor:
+    // no manually assigned damage, free healing, or invented enemy attacks.
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const enemies = chroniclesActiveEnemies(base);
+    const goblin = enemies.find(({ id }) => id === WEST);
+    expect(goblin).toBeTruthy();
+    const removed = Object.fromEntries(enemies
+      .filter(({ id }) => id !== WEST).map(({ hpKey }) => [hpKey, 0]));
+    const ready = {
+      ...base, ...removed, ...cases[0].party,
+      spellPoints: { ...base.spellPoints, bishop: 2 },
+      party: base.party.map((member) => member.id === 'rook'
+        ? { ...member, hp: Math.max(1, member.maxHp - 2) }
+        : member),
+    };
+    let state = chroniclesStartInitiativeCombat(ready, [goblin], {
+      forceEnemyIds: [WEST], random: () => 0,
+    });
+    expect(state.initiative?.order).toHaveLength(5);
+    const initialRound = state.initiative.round;
+    const initialHp = Object.fromEntries(state.party.map(({ id, hp }) => [id, hp]));
+    const actions = { blocks: 0, heals: 0, spSpent: 0, enemyTurns: 0, enemyEvents: [] };
+
+    for (let turn = 0; turn < 5; turn += 1) {
+      const actor = chroniclesCurrentInitiativeActor(state.initiative);
+      expect(actor).toBeTruthy();
+      let acted;
+      if (actor.kind === 'enemy') {
+        expect(actor.id).toBe(WEST);
+        acted = chroniclesResolveEnemyActor(state, actor.id);
+        actions.enemyTurns += 1;
+        actions.enemyEvents.push(...(acted.enemyTurnEvents || []).map(({ type, missed, damage }) => ({
+          type, ...(type === 'attack' ? { missed, damage } : {}),
+        })));
+      } else if (actor.id === 'bishop') {
+        const caster = state.party.find(({ id }) => id === 'bishop');
+        const target = state.party.find(({ id }) => id === 'rook');
+        const beforeSp = chroniclesMemberSp(state, caster);
+        acted = chroniclesReduce(state, {
+          type: 'cast', memberId: 'bishop', spellId: 'first-aid', targetId: 'rook',
+        });
+        expect(acted.turns).toBe(state.turns + 1);
+        expect(acted.party.find(({ id }) => id === 'rook').hp)
+          .toBe(Math.min(target.maxHp, target.hp + 6));
+        const spent = beforeSp - chroniclesMemberSp(acted, caster);
+        expect(spent).toBe(1);
+        actions.spSpent += spent;
+        actions.heals += 1;
+      } else {
+        const beforeAc = chroniclesPartyArmorClass(state, actor.id);
+        acted = chroniclesReduce(state, { type: 'block', memberId: actor.id });
+        expect(acted.turns).toBe(state.turns + 1);
+        expect(chroniclesPartyArmorClass(acted, actor.id)).toBe(beforeAc + 4);
+        actions.blocks += 1;
+      }
+      state = chroniclesAdvanceCombatInitiative(acted, chroniclesActiveEnemies(acted));
+    }
+
+    expect(state.initiative?.round).toBe(initialRound + 1);
+    expect(actions).toMatchObject({ blocks: 3, heals: 1, spSpent: 1, enemyTurns: 1 });
+    expect(state.spellPoints.bishop).toBe(1);
+    console.info('CHRONICLES_MM3_ACTIVE_PRESSURE_BENCHMARK ' + JSON.stringify({
+      encounter: 'single-goblin', actions,
+      hpBefore: initialHp,
+      hpAfter: Object.fromEntries(state.party.map(({ id, hp }) => [id, hp])),
+    }));
   });
 
   it('reports measured physical pressure to CI to inform the next encounter-design PR', () => {
