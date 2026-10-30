@@ -385,12 +385,18 @@ try {
           listBottom: list.bottom, actionsTop: actions.top, actionsBottom: actions.bottom,
           detailTop: detail.top, dockTop: dock.top };
       });
-      assert.ok(classicLayout.listWidth >= classicLayout.bagWidth - 22,
-        'Inventory ledger must occupy the full reading width: ' + JSON.stringify(classicLayout));
+      if (width >= 1200) {
+        assert.ok(classicLayout.listWidth >= classicLayout.bagWidth * .45
+          && classicLayout.listWidth <= classicLayout.bagWidth * .75
+          && Math.abs(classicLayout.detailTop - classicLayout.listTop) <= 5,
+          'Wide-screen Examinar shares the desk beside the list: ' + JSON.stringify(classicLayout));
+      } else {
+        assert.ok(classicLayout.listWidth >= classicLayout.bagWidth - 22
+          && classicLayout.detailTop >= classicLayout.actionsBottom - 3,
+          'Narrow-screen Examinar follows the full-width list: ' + JSON.stringify(classicLayout));
+      }
       assert.ok(classicLayout.actionsTop >= classicLayout.listBottom - 3,
-        'Classic action strip follows the item list: ' + JSON.stringify(classicLayout));
-      assert.ok(classicLayout.detailTop >= classicLayout.actionsBottom - 3,
-        'Expanded details must follow the actions: ' + JSON.stringify(classicLayout));
+        'Classic actions must stay beneath the inventory: ' + JSON.stringify(classicLayout));
       assert.ok(classicLayout.listTop < classicLayout.dockTop,
         'The inventory must start above the hero dock: ' + JSON.stringify(classicLayout));
       // No second inspector panel: MM3 always shows every owned item,
