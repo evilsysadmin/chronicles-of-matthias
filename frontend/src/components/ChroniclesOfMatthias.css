@@ -690,6 +690,12 @@
   stroke-width: .035;
 }
 
+/* Unexplored territory is uniform fog: its extent is known, its geometry isn't. */
+.chronicles-automap__cell.is-unknown {
+  fill: #14120f;
+  stroke: #242019;
+  stroke-width: .028;
+}
 .chronicles-automap__cell.is-wall {
   fill: #35261d;
   stroke: #17110e;
