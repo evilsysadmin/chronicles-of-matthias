@@ -11,6 +11,15 @@ export function chroniclesAutomapCellKey(x, y) {
   return `${Number(x)}:${Number(y)}`;
 }
 
+// Fix the automap's camera to the whole area. Exploration changes which
+// cells are painted, never the zoom or the party's on-screen position.
+// Padding is in tile units, so all edges fit on desktop and narrow phones.
+export function chroniclesAutomapFullViewport(map) {
+  const width = Math.max(1, Number(map?.grid?.[0]?.length) || 0);
+  const height = Math.max(1, Number(map?.grid?.length) || 0);
+  return { x: -0.5, y: -0.5, width: width + 1, height: height + 1 };
+}
+
 function parseCellKey(key) {
   const [rawX, rawY] = String(key || '').split(':');
   const x = Number(rawX);
