@@ -210,6 +210,13 @@ export default function ChroniclesCharacterSheet({
   const detailEquipment = selectedWornItem ? CHRONICLES_EQUIPMENT[selectedWornItem.item.id] : selectedEquipment;
   const detailCanEquip = selectedWornItem ? true : canEquipSelected;
   const detailEquipped = detailEquipment ? chroniclesEquippedItem(state, member.id, detailEquipment.slot) : null;
+  // Show the real character's damage with this weapon, not the catalog's
+  // material modifier mislabelled as damage. A loose MM3 weapon uses the
+  // existing read-only swap preview; worn arms use live combat stats.
+  const detailAttack = detailEquipment && detailCanEquip
+    && (detailEquipment.slot === 'weapon' || detailEquipment.slot === 'missile')
+    ? (selectedWornItem ? weaponModes?.[detailEquipment.slot] : weaponSwap?.after)
+    : null;
   const visibleWornGear = wornGearItems;
   // One display ledger. Equipped identities stay out of bag stock/persistence.
   const visibleLedger = [
@@ -537,7 +544,7 @@ export default function ChroniclesCharacterSheet({
                   </button>
                   <button type="button" disabled={!detailItem}
                     aria-expanded={inspectItem} aria-keyshortcuts="I"
-                    onClick={() => { setExpandItemAttributes(false); setInspectItem((open) => !open); }}>
+                    onClick={() => { setExpandItemAttributes(!inspectItem); setInspectItem((open) => !open); }}>
                     <span aria-hidden="true">⌕</span> Examinar
                   </button>
                   <button type="button" onClick={onClose}>
@@ -578,7 +585,7 @@ export default function ChroniclesCharacterSheet({
 
                   </>}
                   <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
-                    <summary>Descripción y atributos</summary>
+                    <summary>Estadísticas y descripción</summary>
                     {detailEquipment && <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>}
                     {detailEquipment && chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
                       <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
@@ -589,6 +596,10 @@ export default function ChroniclesCharacterSheet({
                       <div><dt>Cantidad</dt><dd>{detailItem.quantity}</dd></div>
                       {detailEquipment && <>
                         <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</dd></div>
+                        {detailAttack && <>
+                          <div data-chronicles-item-stat="damage"><dt>Daño base {selectedWornItem ? 'actual' : 'al equipar'}</dt><dd>{detailAttack.damage}</dd></div>
+                          <div data-chronicles-item-stat="hit"><dt>Acierto total {selectedWornItem ? 'actual' : 'al equipar'}</dt><dd>{signed(detailAttack.toHit)}</dd></div>
+                        </>}
                         <div><dt>Daño adicional</dt><dd>{signed(detailEquipment.attackDamageBonus)}</dd></div>
                         <div><dt>Acierto</dt><dd>{signed(detailEquipment.toHitBonus)}</dd></div>
                         <div><dt>Armadura</dt><dd>{signed(detailEquipment.armorClassBonus)}</dd></div>
