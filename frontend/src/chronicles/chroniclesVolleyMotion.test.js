@@ -31,14 +31,27 @@ describe('Chronicles · polished projectile flight', () => {
     for (const kind of ['bow', 'crossbow']) {
       const first = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
       const middle = chroniclesVolleyFlightSample(3, 1, 0.08, kind);
-      expect(Math.abs(first.yaw)).toBeGreaterThan(0.2);
-      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.2);
+      // A restrained three-quarter launch need not retain the old broad yaw.
+      expect(Math.abs(first.yaw)).toBeGreaterThan(0.16);
+      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.16);
       expect(first.yaw * middle.yaw).toBeLessThan(0);
       expect(first.pitch).toBeLessThan(-0.1);
     }
     // A sling stone spins, without acquiring fake arrow fletching orientation.
     const stone = chroniclesVolleyFlightSample(1, 0, 0.1, 'sling');
     expect(Math.abs(stone.yaw)).toBeLessThan(1e-6);
+  });
+
+
+  it('progressively points physical arrows along the forward flight path', () => {
+    for (const kind of ['bow', 'crossbow']) {
+      const early = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
+      const late = chroniclesVolleyFlightSample(3, 0, 0.35, kind);
+      expect(Math.abs(early.yaw)).toBeGreaterThan(0.18);
+      expect(Math.abs(late.yaw)).toBeLessThan(Math.abs(early.yaw));
+      expect(Math.abs(late.yaw)).toBeLessThan(0.18);
+      expect(late.z).toBeLessThan(early.z);
+    }
   });
 
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {

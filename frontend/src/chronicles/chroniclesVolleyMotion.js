@@ -69,6 +69,9 @@ export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow'
   const forward = Math.pow(t, 0.88);
   const spread = (index - (total - 1) / 2) * 0.38;
   const sling = kind === 'sling';
+  // Show a little side profile at launch, then align the tip with its actual
+  // forward travel as it recedes. No sideways-looking, frozen arrow silhouettes.
+  const shaftYaw = (kind === 'crossbow' ? 0.24 : 0.28) * (1 - 0.62 * forward);
   return {
     x: spread * (1 - 0.64 * forward),
     y: -0.33 + 0.24 * forward + (sling ? 0.16 * Math.sin(Math.PI * t) : -0.025 * t * t),
@@ -78,7 +81,7 @@ export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow'
     pitch: sling ? -0.16 + 0.27 * t : kind === 'crossbow'
       ? -0.11 - 0.06 * t : -0.15 - 0.07 * t,
     yaw: sling ? -spread * 0.09
-      : (index % 2 === 0 ? -1 : 1) * (kind === 'crossbow' ? 0.27 : 0.32) - spread * 0.09,
+      : (index % 2 === 0 ? -1 : 1) * shaftYaw - spread * 0.06 * (1 - forward),
     roll: sling ? Math.PI * 2.2 * t : spread * 0.085,
     scale: 1 - 0.20 * t,
   };
