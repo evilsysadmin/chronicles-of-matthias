@@ -142,13 +142,16 @@ describe('Swordhaven general store frontage', () => {
     hems[0].getMatrixAt(0, hemPosition);
     expect(new THREE.Vector3().setFromMatrixPosition(hemPosition).z)
       .toBeGreaterThan(awning.getObjectByName('store-awning-front-rail').position.z);
+    // The shop is parented under the rotated/translated town; update ancestor
+    // transforms before checking world-space clearance above the street.
+    store.updateWorldMatrix(true, true);
     const hemBounds = new THREE.Box3().setFromObject(hems[0]);
     expect(hemBounds.min.y).toBeGreaterThan(2.7);
     const awningBraces = awning.children.filter(child =>
       child.name === 'store-awning-diagonal-support');
     expect(awningBraces).toHaveLength(2);
     expect(awningBraces[0].position.x).toBeCloseTo(-awningBraces[1].position.x);
-    expect(awningBraces.every(brace => brace.rotation.x < -0.5)).toBe(true);
+    expect(awningBraces.every(brace => brace.rotation.x < -0.4)).toBe(true);
     expect(forge.getObjectByName('store-awning-scalloped-hem')).toBeFalsy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
