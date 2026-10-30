@@ -29,13 +29,15 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
     // Let scenery occlude real shafts, instead of painting luminous HUD diamonds.
     color, depthTest: true, depthWrite: false, ...options,
   });
-  const wood = material(0x90683d);
-  const polishedWood = material(0xb58f5f);
-  const brightSteel = material(0xabb9ba);
-  const steelShadow = material(0x586a73);
-  const darkSteel = material(0x53616a);
-  const paleFeathers = material(0x93856f, { side: THREE.DoubleSide });
-  const darkFeathers = material(0x756b5b, { side: THREE.DoubleSide });
+  // Matte, contrast-controlled metal and quills. BasicMaterial's previous
+  // pale steel rendered as a conspicuous white square from behind the arrow.
+  const wood = material(0x755333);
+  const polishedWood = material(0x95714b);
+  const brightSteel = material(0x677477);
+  const steelShadow = material(0x414d4e);
+  const darkSteel = material(0x515554);
+  const paleFeathers = material(0xa29377, { side: THREE.DoubleSide });
+  const darkFeathers = material(0x72634f, { side: THREE.DoubleSide });
   const stoneMaterial = material(0x91938c);
   const stoneHighlight = material(0xb4b1a6);
   // The flight streak is air displacement, not a glowing bolt of magic.
@@ -43,20 +45,24 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
   const boltTrail = material(0x98a8b0, { transparent: true, opacity: 0.09 });
   const slingTrail = material(0xaaa394, { transparent: true, opacity: 0.07 });
 
-  const arrowShaft = new THREE.CylinderGeometry(0.016, 0.017, 0.74, 8);
-  const shaftCore = new THREE.CylinderGeometry(0.019, 0.019, 0.66, 8);
-  const arrowHead = new THREE.ConeGeometry(0.034, 0.12, 5);
-  const boltShaft = new THREE.CylinderGeometry(0.029, 0.027, 0.42, 8);
-  const boltHead = new THREE.ConeGeometry(0.043, 0.14, 4);
-  const bolster = new THREE.CylinderGeometry(0.037, 0.037, 0.065, 8);
-  // Slim quill silhouette: length follows the shaft, width rises only a
-  // little above it. The previous broad vanes filled the screen like stars.
+  // Arrowheads should read as *points* from this camera, not white beads
+  // glued onto drumsticks. Realistic slender shafts also stay legible up close.
+  const arrowShaft = new THREE.CylinderGeometry(0.010, 0.011, 0.82, 6);
+  const shaftCore = new THREE.CylinderGeometry(0.014, 0.014, 0.73, 6);
+  const arrowHead = new THREE.ConeGeometry(0.019, 0.105, 4);
+  const boltShaft = new THREE.CylinderGeometry(0.017, 0.018, 0.48, 6);
+  const boltHead = new THREE.ConeGeometry(0.024, 0.115, 4);
+  const bolster = new THREE.CylinderGeometry(0.023, 0.023, 0.042, 6);
+  // Long, narrow feather flags on the rear third of the shaft. Their
+  // distinctive tapered outline is visible from a glancing angle, while
+  // their radial reach stays much smaller than the old ninja-star blades.
   const featherShape = new THREE.Shape();
-  featherShape.moveTo(-0.11, 0.006);
-  featherShape.lineTo(-0.065, 0.024);
-  featherShape.lineTo(0.070, 0.020);
-  featherShape.lineTo(0.10, 0.006);
-  featherShape.lineTo(0.065, 0.006);
+  featherShape.moveTo(-0.145, 0.007);
+  featherShape.lineTo(-0.095, 0.027);
+  featherShape.lineTo(-0.030, 0.047);
+  featherShape.lineTo(0.080, 0.037);
+  featherShape.lineTo(0.145, 0.008);
+  featherShape.lineTo(0.060, 0.011);
   featherShape.closePath();
   const featherGeometry = new THREE.ShapeGeometry(featherShape);
 
@@ -93,7 +99,7 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
 
     if (kind === 'bow') {
       const grain = noseForward(part(shaftCore, polishedWood, 'bow-grain'));
-      grain.scale.set(0.37, 0.74, 0.37);
+      grain.scale.set(0.36, 0.77, 0.36);
       variant.add(grain);
     } else {
       const collar = noseForward(part(bolster, steelShadow, 'crossbow-collar'));
@@ -129,12 +135,12 @@ export function createChroniclesVolleyProjectileArt(THREE, camera, worldScene = 
     const bow = flightRod('bow', {
       shaftGeometry: arrowShaft, headGeometry: arrowHead,
       shaftSurface: wood, headSurface: brightSteel, finSurface: paleFeathers,
-      tip: -0.425, tail: 0.29, finSize: 0.86, trailGeometry: bowTrailGeometry, trailSurface: bowTrail,
+      tip: -0.438, tail: 0.31, finSize: 0.88, trailGeometry: bowTrailGeometry, trailSurface: bowTrail,
     });
     const crossbow = flightRod('crossbow', {
       shaftGeometry: boltShaft, headGeometry: boltHead,
       shaftSurface: darkSteel, headSurface: brightSteel, finSurface: darkFeathers,
-      tip: -0.268, tail: 0.165, finSize: 0.58,
+      tip: -0.296, tail: 0.19, finSize: 0.64,
       trailGeometry: boltTrailGeometry, trailSurface: boltTrail,
     });
     const sling = new THREE.Group();

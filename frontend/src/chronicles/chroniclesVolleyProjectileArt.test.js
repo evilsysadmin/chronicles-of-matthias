@@ -124,6 +124,32 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
     }
   });
 
+
+  it('projects a slender dark arrowhead and readable tapered tail, never a white drumstick cap', () => {
+    const fx = createChroniclesVolleyProjectileArt(THREE, new THREE.Group());
+    fx.setFamilies(['bow', 'crossbow']);
+    for (const [index, kind] of ['bow', 'crossbow'].entries()) {
+      const projectile = fx.projectiles[index];
+      const shaft = projectile.getObjectByName(kind + '-shaft');
+      const point = projectile.getObjectByName(kind + '-head');
+      const feather = projectile.getObjectByName(kind + '-fletching-0');
+      const collar = projectile.getObjectByName(kind + '-collar');
+      expect(shaft.geometry.parameters.radiusTop).toBeLessThanOrEqual(kind === 'bow' ? 0.012 : 0.019);
+      expect(point.geometry.parameters.radius).toBeLessThanOrEqual(kind === 'bow' ? 0.02 : 0.025);
+      expect(point.geometry.parameters.radialSegments).toBe(4);
+      expect(point.geometry.parameters.height / point.geometry.parameters.radius).toBeGreaterThan(4);
+      // Neutral metal cannot appear as a luminous white rectangle in daylight.
+      const metal = point.material.color;
+      expect(Math.max(metal.r, metal.g, metal.b)).toBeLessThan(0.19);
+      feather.geometry.computeBoundingBox();
+      expect(feather.geometry.boundingBox.max.y).toBeGreaterThan(0.04);
+      expect(feather.geometry.boundingBox.max.y).toBeLessThan(0.055);
+      expect(feather.geometry.boundingBox.max.x - feather.geometry.boundingBox.min.x)
+        .toBeGreaterThan(0.27);
+      if (collar) expect(collar.geometry.parameters.radiusTop).toBeLessThan(0.025);
+    }
+  });
+
   it('switches between three genuinely distinct geometry families and clears old visual state', () => {
     const camera = new THREE.Group();
     const fx = createChroniclesVolleyProjectileArt(THREE, camera);
