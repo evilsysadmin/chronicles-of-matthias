@@ -46,15 +46,8 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
-    grid-auto-rows: minmax(54px, auto);
     align-content: start;
     overflow-y: auto;
-  }
-  /* With three or more objects, distribute spare height amongst actual
-     object rows rather than leaving an unused patch below the list. */
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory:has(> button:nth-child(3)) {
-    align-content: stretch;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
