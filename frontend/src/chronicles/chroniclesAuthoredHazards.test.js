@@ -75,4 +75,48 @@ describe('Chronicles authored environmental hazards', () => {
       tacticsBefore.party.map((member) => (member.hp > 0 ? Math.max(0, member.hp - 2) : member.hp)),
     );
   });
+
+  it('adds a weaker, avoidable one-shot pressure plate to Gallery before Menagerie', () => {
+    const map = chroniclesMapById('gallery-of-forks');
+    expect(map.traps).toEqual([
+      expect.objectContaining({ id: 'gallery-counterweight-plate', visualType: 'chain-plate', x: 5, y: 3 }),
+    ]);
+    expect(map.grid[3][4]).toBe('.');
+    expect(map.grid[3][5]).toBe('.');
+
+    const defeatedEnemies = Object.fromEntries(map.enemies.map((enemy) => [enemy.hpKey, 0]));
+    const fresh = createChroniclesState(map.id, null, { rules: 'mm3' });
+    const before = { ...fresh, ...defeatedEnemies, x: 4, y: 3, direction: 1 };
+    const hp = before.party.map((member) => member.hp);
+    const triggered = chroniclesReduce(before, 'forward');
+    expect({ x: triggered.x, y: triggered.y }).toEqual({ x: 5, y: 3 });
+    expect(triggered.galleryCounterweightPlateSpent).toBe(true);
+    // MM3 Luck can negate one point of damage, unlike the fixed Tactics trap.
+    triggered.party.forEach((member, index) => {
+      expect(member.hp).toBeGreaterThanOrEqual(Math.max(0, hp[index] - 1));
+      expect(member.hp).toBeLessThanOrEqual(hp[index]);
+    });
+
+    const avoided = chroniclesReduce({ ...fresh, ...defeatedEnemies, x: 4, y: 5, direction: 1 }, 'forward');
+    expect(avoided.galleryCounterweightPlateSpent).toBe(false);
+    expect(avoided.party).toEqual(fresh.party);
+
+    const again = chroniclesReduce({ ...triggered, x: 4, y: 3, direction: 1 }, 'forward');
+    expect(again.party).toEqual(triggered.party);
+    const away = chroniclesMapTransitionState(again, 'menagerie-of-ash');
+    expect(away.menagerieEmberVentSpent).toBe(false);
+    const restored = chroniclesMapTransitionState(JSON.parse(JSON.stringify(away)), map.id);
+    expect(restored.galleryCounterweightPlateSpent).toBe(true);
+    expect(restored.party).toEqual(triggered.party);
+
+    const tacticsBefore = {
+      ...createChroniclesState(map.id), ...defeatedEnemies, x: 4, y: 3,
+    };
+    const tactics = chroniclesTacticsMove(tacticsBefore, { x: 5, y: 3 });
+    expect(tactics.galleryCounterweightPlateSpent).toBe(true);
+    expect(tactics.party.map((member) => member.hp)).toEqual(
+      tacticsBefore.party.map((member) => (member.hp > 0 ? Math.max(0, member.hp - 1) : member.hp)),
+    );
+  });
+
 });

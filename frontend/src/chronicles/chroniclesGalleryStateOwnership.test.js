@@ -18,10 +18,11 @@ describe('Chronicles Gallery authored state ownership', () => {
   it('owns its lever and relic state without Crypt compatibility aliases', () => {
     const gallery = chroniclesMapById('gallery-of-forks');
 
-    expect(gallery.version).toBe(4);
+    expect(gallery.version).toBe(5);
     expect(gallery.initialFlags).toMatchObject({
       galleryLeverPulled: false,
       galleryRelicCollected: false,
+      galleryCounterweightPlateSpent: false,
     });
     expect(gallery.initialFlags).not.toHaveProperty('runeCacheOpened');
     expect(gallery.initialFlags).not.toHaveProperty('runeCoreCollected');

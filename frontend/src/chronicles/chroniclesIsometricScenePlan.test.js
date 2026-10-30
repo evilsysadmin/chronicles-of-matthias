@@ -48,6 +48,7 @@ describe('Chronicles isometric scene plan', () => {
     expect(gallery.content.map((entry) => entry.id)).toEqual([
       'gallery-lever',
       'gallery-relic',
+      'gallery-counterweight-plate',
       'gallery-gate',
     ]);
   });

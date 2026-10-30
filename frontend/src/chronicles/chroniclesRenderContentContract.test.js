@@ -21,6 +21,13 @@ describe('Chronicles generic render content contract', () => {
         position: { x: 5, y: 4 },
       },
       {
+        id: 'gallery-counterweight-plate',
+        kind: 'trap',
+        group: 'traps',
+        visualType: 'chain-plate',
+        position: { x: 5, y: 3 },
+      },
+      {
         id: 'gallery-gate',
         kind: 'exit',
         group: 'exits',

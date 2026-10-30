@@ -39,6 +39,7 @@ describe('Chronicles isometric dungeon geometry plan', () => {
     expect(gallery.content.map((entry) => entry.id)).toEqual([
       'gallery-lever',
       'gallery-relic',
+      'gallery-counterweight-plate',
       'gallery-gate',
     ]);
     expect(gallery.content.find((entry) => entry.id === 'gallery-lever')?.world).toEqual({ x: 4.9, y: 0, z: 4.9 });
@@ -57,6 +58,7 @@ describe('Chronicles isometric dungeon geometry plan', () => {
     expect(chroniclesIsometricContentByKind(gallery, 'trigger')).toBeNull();
     expect(chroniclesIsometricContentByKind(gallery, 'lever')?.id).toBe('gallery-lever');
     expect(chroniclesIsometricContentByKind(gallery, 'pickup')?.id).toBe('gallery-relic');
+    expect(chroniclesIsometricContentByKind(gallery, 'trap')?.id).toBe('gallery-counterweight-plate');
 
     expect(chroniclesIsometricContentByKind(menagerie, 'trigger')).toBeNull();
     expect(chroniclesIsometricContentByKind(menagerie, 'lever')).toBeNull();
