@@ -241,88 +241,67 @@ try {
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head span'
       ).first().textContent(), /OBJETOS DE Matthias/,
         'Equipment must identify its current owner without duplicating headers');
-      const wornDetails = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
-      const wornSummary = wornDetails.locator('summary');
-      assert.equal(await wornDetails.getAttribute('open'), null,
-        'Equipped details must start collapsed to preserve reading space');
-      const closedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(closedSize <= 65, 'Equipped gear must occupy one compact row by default: ' + closedSize);
-      assert.match(await wornSummary.innerText(), /Equipo puesto/);
-      const shownWornNames = await wornSummary.innerText();
-      const actualWornNames = await sheet.locator(
-        '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__weapon-card > strong, '
-        + '.chronicles-character-sheet__equipped-body .chronicles-character-sheet__gear-slot > strong'
-      ).allTextContents().then((names) => names.map((name) => name.trim()));
-      const occupiedNames = actualWornNames.filter((name) => name !== 'Sin equipar');
-      assert.ok(occupiedNames.length
-        ? occupiedNames.every((name) => shownWornNames.includes(name))
-        : shownWornNames.includes('Sin piezas equipadas'),
-      'The summary must honestly reflect worn items, including a fully empty loadout: '
-        + JSON.stringify({ shownWornNames, actualWornNames }));
-      await wornSummary.click();
-      const expandedSize = await wornDetails.evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(expandedSize > closedSize + 80,
-        'The folded view must save actual vertical space: ' + JSON.stringify({ closedSize, expandedSize }));
-      const meleeCard = sheet.locator('.chronicles-character-sheet__weapon-card').first();
+      const equipment = sheet.locator('[data-chronicles-equipment-folio]');
+      const technicalButton = equipment.getByRole('button', { name: 'Detalles' });
+      const technicalPanel = equipment.locator('#chronicles-equipment-technical-details');
+      assert.equal(await technicalPanel.count(), 0,
+        'Equipped gear already has visible icons; no permanent worn summary may consume space');
+      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'false');
+      assert.equal(await equipment.getByText('Equipo puesto', { exact: true }).count(), 0);
+      const geometry = await sheet.evaluate((node) => {
+        const parent = node.querySelector('[data-chronicles-equipment-folio]');
+        const loadout = parent.querySelector('.chronicles-character-sheet__loadout');
+        const bag = parent.querySelector('.chronicles-character-sheet__backpack');
+        const list = parent.querySelector('.chronicles-character-sheet__inventory');
+        const actions = parent.querySelector('.chronicles-character-sheet__classic-actions');
+        const dock = node.querySelector('.chronicles-character-sheet__party-dock');
+        const rect = (el) => {
+          const box = el.getBoundingClientRect();
+          return { top: box.top, bottom: box.bottom, left: box.left, right: box.right,
+            width: box.width, height: box.height };
+        };
+        return { parent: rect(parent), loadout: rect(loadout), bag: rect(bag),
+          list: rect(list), actions: rect(actions), dock: rect(dock),
+          relicCount: loadout.querySelectorAll(':scope > .chronicles-character-sheet__relic').length,
+          extraArticleCount: loadout.querySelectorAll(':scope > .chronicles-character-sheet__equipment').length };
+      });
+      assert.equal(geometry.relicCount, 0,
+        'Empty relic should never insert blank space into the equipment ledger');
+      assert.equal(geometry.extraArticleCount, 0,
+        'Advanced gear section is absent until explicitly requested');
+      assert.ok(geometry.list.width >= geometry.parent.width - 50
+        && geometry.actions.width >= geometry.bag.width - 20,
+        'Inventory and the SIX actions must fill the reading column: ' + JSON.stringify(geometry));
+      assert.ok(geometry.list.height >= 240
+        && geometry.list.bottom <= geometry.actions.top + 3
+        && geometry.actions.bottom <= geometry.dock.top + 4
+        && geometry.loadout.bottom >= geometry.dock.top - 55,
+        'The list must grow into the free height without hiding the actions or dock: '
+          + JSON.stringify(geometry));
+      await technicalButton.click();
+      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'true');
+      await technicalPanel.waitFor({ state: 'visible' });
+      const meleeCard = technicalPanel.locator('.chronicles-character-sheet__weapon-card').first();
       await meleeCard.waitFor({ state: 'visible' });
-      await assertParchmentSurface(meleeCard, 'Equipment weapon card');
-      // Weapons A/S appear exactly once: no repeated gear slots below.
-      // Their real unequip controls live inside the matching weapon cards.
-      const weaponCards = sheet.locator('.chronicles-character-sheet__weapon-card');
-      assert.equal(await weaponCards.count(), 2);
-      assert.deepEqual(await sheet.locator(
-        '.chronicles-character-sheet__equipment .chronicles-character-sheet__gear-slot > small'
-      ).allInnerTexts(), ['Armadura', 'Escudo'],
-      'MM3 keeps only armour and shield as separate slots');
+      await assertParchmentSurface(meleeCard, 'Optional technical weapon card');
+      assert.equal(await technicalPanel.locator('.chronicles-character-sheet__weapon-card').count(), 2);
+      assert.deepEqual(await technicalPanel.locator('.chronicles-character-sheet__gear-slot > small')
+        .allInnerTexts(), ['Armadura', 'Escudo'],
+        'Technical details preserve the A/S and armour/shield readings on demand');
       for (const slot of ['weapon', 'missile']) {
-        const card = sheet.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
+        const card = technicalPanel.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
         const hasItem = (await card.locator('strong').innerText()) !== 'Sin equipar';
         assert.equal(await card.getByRole('button', { name: /Quitar .* y guardarlo en la mochila/ }).count(),
-          hasItem ? 1 : 0,
-          'An equipped ' + slot + ' must have one and only one real unequip action');
+          hasItem ? 1 : 0, 'Optional ' + slot + ' card keeps its real unequip operation');
       }
-      // Empty relics must not waste half the equipment dossier width.
-      const emptyRelicLayout = await sheet.locator('.chronicles-character-sheet__loadout.is-relic-empty')
-        .evaluate((node) => {
-          const relicCount = node.querySelectorAll(':scope > .chronicles-character-sheet__relic').length;
-          const equipmentCard = node.querySelector(':scope > .chronicles-character-sheet__equipment').getBoundingClientRect();
-          const loadoutCard = node.getBoundingClientRect();
-          const packNode = node.querySelector(':scope > .chronicles-character-sheet__backpack');
-          const backpack = packNode.getBoundingClientRect();
-          const columns = getComputedStyle(node).gridTemplateColumns;
-          const packGridArea = getComputedStyle(packNode).gridArea;
-          return { columns, packGridArea, relicCount, loadoutBottom: loadoutCard.bottom,
-            equipmentWidth: equipmentCard.width,
-            equipmentTop: equipmentCard.top, equipmentBottom: equipmentCard.bottom, equipmentLeft: equipmentCard.left,
-            backpackLeft: backpack.left, backpackRight: backpack.right,
-            backpackTop: backpack.top, backpackBottom: backpack.bottom, backpackWidth: backpack.width };
-        });
-      // The MM3 inventory is the first actionable chapter. Empty relics do
-      // not render; the equipment summary immediately follows the backpack.
-      const firstEquipmentArticle = await sheet.locator(
-        '[data-chronicles-equipment-folio] .chronicles-character-sheet__loadout > article'
-      ).first().getAttribute('class');
-      assert.ok(firstEquipmentArticle.includes('chronicles-character-sheet__backpack'),
-        'Equipment should open on the playable inventory rather than the empty relic');
-      assert.equal(emptyRelicLayout.relicCount, 0,
-        'MM3 must omit empty relic cards entirely, not leave a blank third row');
-      assert.ok(emptyRelicLayout.equipmentTop >= emptyRelicLayout.backpackBottom - 2,
-        'Equipped gear must follow the primary backpack, never overlap it: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(emptyRelicLayout.loadoutBottom - emptyRelicLayout.equipmentBottom <= 16,
-        'Empty relics cannot leave trailing third-row whitespace: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(emptyRelicLayout.backpackWidth >= 230 && emptyRelicLayout.equipmentWidth >= 290,
-        'Both inventory and equipped gear must remain readable: ' + JSON.stringify(emptyRelicLayout));
-      assert.ok(Math.abs(emptyRelicLayout.backpackLeft - emptyRelicLayout.equipmentLeft) <= 2
-        && Math.abs(emptyRelicLayout.backpackWidth - emptyRelicLayout.equipmentWidth) <= 4,
-        'Inventory and worn gear must share one clear full-width reading column: '
-        + JSON.stringify(emptyRelicLayout));
-      await wornSummary.click();
-      assert.equal(await wornDetails.getAttribute('open'), null, 'The short summary remains available');
-      assert.equal(await meleeCard.isVisible(), false, 'Closed equipped cards must not paint below the backpack');
+      await technicalPanel.getByRole('button', { name: 'Cerrar detalles técnicos' }).click();
+      assert.equal(await technicalPanel.count(), 0,
+        'Closing the optional technical view gives all the space back to the inventory');
+      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'false');
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
-      const equipment = sheet.locator('[data-chronicles-equipment-folio]');
+
       assert.equal(await equipment.locator('.chronicles-character-sheet__bag-transfer').count(), 0,
         'Manual handoff must not duplicate the 1–4 party dock with a recipient form');
       assert.equal(await equipment.getByRole('button', { name: 'Repartir botín' }).count(), 0,
