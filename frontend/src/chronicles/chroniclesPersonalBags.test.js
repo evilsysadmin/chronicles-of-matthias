@@ -102,6 +102,56 @@ describe('MM3 personal backpacks', () => {
     expect(returned.inventory['brass-sword'].quantity).toBe(2);
   });
 
+  it('delivers an equipped MM3 weapon in one atomic reducer step without duplicating it', () => {
+    const initial = stocked();
+    const worn = chroniclesReduce(initial, { type: 'equip-item', memberId: 'matthias', itemId: 'brass-sword' });
+    expect(chroniclesEquippedItem(worn, 'matthias', 'weapon')?.id).toBe('brass-sword');
+    expect(chroniclesBagQuantity(worn, 'matthias', 'brass-sword')).toBe(1);
+    const delivered = chroniclesReduce(worn, {
+      type: 'transfer-equipped-item', memberId: 'matthias', toMemberId: 'rook', slot: 'weapon',
+    });
+    expect(chroniclesEquippedItem(delivered, 'matthias', 'weapon')).toBe(null);
+    expect(delivered.inventory['brass-sword'].quantity).toBe(2);
+    expect(chroniclesBagQuantity(delivered, 'matthias', 'brass-sword')).toBe(1);
+    expect(chroniclesBagQuantity(delivered, 'rook', 'brass-sword')).toBe(1);
+    expect(chroniclesBagQuantity(delivered, 'bishop', 'brass-sword')).toBe(0);
+    expect(delivered.message).toContain('entrega 1 × Espada de latón a Hildegard');
+    expect(chroniclesRunCheckpointFingerprint(delivered)).not.toBe(chroniclesRunCheckpointFingerprint(worn));
+    const checkpoint = chroniclesRunCheckpointPayload(delivered, 13);
+    const recovered = chroniclesApplyRunCheckpoint(
+      createChroniclesState(delivered.mapId, null, { rules: 'mm3' }), checkpoint,
+    );
+    expect(chroniclesEquippedItem(recovered, 'matthias', 'weapon')).toBe(null);
+    expect(chroniclesBagQuantity(recovered, 'rook', 'brass-sword')).toBe(1);
+  });
+
+  it('refuses invalid worn transfers atomically with no partial unequip', () => {
+    const initial = stocked();
+    const worn = chroniclesReduce(initial, { type: 'equip-item', memberId: 'matthias', itemId: 'brass-sword' });
+    const bad = [
+      { toMemberId: 'matthias', slot: 'weapon' },
+      { toMemberId: 'missing', slot: 'weapon' },
+      { toMemberId: 'rook', slot: 'shield' },
+      { toMemberId: 'rook', slot: 'unknown' },
+    ];
+    for (const action of bad) {
+      expect(chroniclesReduce(worn, {
+        type: 'transfer-equipped-item', memberId: 'matthias', ...action,
+      })).toBe(worn);
+    }
+    for (const blocked of [
+      { ...worn, phase: 'combat' },
+      { ...worn, initiative: { order: [] } },
+      { ...worn, combatRules: 'tactics' },
+      { ...worn, party: worn.party.map((hero) => hero.id === 'matthias' ? { ...hero, hp: 0 } : hero) },
+      { ...worn, inventory: { ...worn.inventory, 'brass-sword': { ...worn.inventory['brass-sword'], quantity: 9999 } } },
+    ]) {
+      expect(chroniclesReduce(blocked, {
+        type: 'transfer-equipped-item', memberId: 'matthias', toMemberId: 'rook', slot: 'weapon',
+      })).toBe(blocked);
+    }
+  });
+
   it('rejects invalid transfers, overdrawn bags and fighting-time trades', () => {
     const base = stocked();
     for (const action of [
