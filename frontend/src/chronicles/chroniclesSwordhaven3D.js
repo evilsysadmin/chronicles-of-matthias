@@ -529,7 +529,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         18, 1, true, Math.PI / 2, Math.PI),
       lead, 'armor-vault-curved-lead-shell', [0, 0, 0], !coarse);
     shell.rotation.x = Math.PI / 2;
-    // Filled semicircular ends keep the roof from looking like a hollow pipe
+    // Lead-clad semicircular ends keep the roof from looking like a hollow pipe
     // when seen from the street or the rear alley.
     const tympanum = new THREE.Shape();
     tympanum.moveTo(-vaultRadius, 0);
@@ -537,8 +537,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     tympanum.absarc(0, 0, vaultRadius, 0, Math.PI, false);
     tympanum.closePath();
     for (const end of [-1, 1]) {
-      const cap = mesh(vault, new THREE.ShapeGeometry(tympanum), mats.stone,
-        'armor-vault-stone-tympanum', [0, 0, end * vaultLength / 2], !coarse);
+      const cap = mesh(vault, new THREE.ShapeGeometry(tympanum), lead,
+        'armor-vault-lead-tympanum', [0, 0, end * vaultLength / 2], !coarse);
       if (end < 0) cap.rotation.y = Math.PI;
     }
     // One instanced batch for the transverse wrought-iron roof ribs.
@@ -550,7 +550,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     ribs.receiveShadow = true;
     const rib = new THREE.Object3D();
     for (let i = 0; i < ribs.count; i += 1) {
-      rib.position.z = -vaultLength / 2 + (i + 1) * vaultLength / (ribs.count + 1);
+      rib.position.z = -vaultLength / 2 + i * vaultLength / (ribs.count - 1);
       rib.updateMatrix();
       ribs.setMatrixAt(i, rib.matrix);
     }
