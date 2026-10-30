@@ -125,6 +125,7 @@ export default function ChroniclesCharacterSheet({
   const [selectedBagItem, setSelectedBagItem] = useState(null);
   const [selectedWornSlot, setSelectedWornSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(false);
+  const [expandItemAttributes, setExpandItemAttributes] = useState(false);
   const [showEquipmentDetails, setShowEquipmentDetails] = useState(false);
   const [pendingDrop, setPendingDrop] = useState(null);
   const dropCancelRef = useRef(null);
@@ -303,7 +304,10 @@ export default function ChroniclesCharacterSheet({
         if (command === 'd' && canChangeEquipment && transferableItem) {
           setPendingDrop({ memberId: member.id, itemId: transferableItem.id, name: transferableItem.name });
         }
-        if (command === 'i' && (selectedWornItem || selectedInventoryItem)) setInspectItem((shown) => !shown);
+        if (command === 'i' && (selectedWornItem || selectedInventoryItem)) {
+          setExpandItemAttributes(!inspectItem);
+          setInspectItem((shown) => !shown);
+        }
         if (command === 't' && canChangeEquipment) {
           if (!transferSelection) {
             if (selectedInventoryItem) setSelectedBagItem({ memberId: member.id, itemId: selectedInventoryItem.id });
@@ -533,7 +537,7 @@ export default function ChroniclesCharacterSheet({
                   </button>
                   <button type="button" disabled={!detailItem}
                     aria-expanded={inspectItem} aria-keyshortcuts="I"
-                    onClick={() => { setInspectItem((open) => !open);  }}>
+                    onClick={() => { setExpandItemAttributes(false); setInspectItem((open) => !open); }}>
                     <span aria-hidden="true">⌕</span> Examinar
                   </button>
                   <button type="button" onClick={onClose}>
@@ -573,7 +577,7 @@ export default function ChroniclesCharacterSheet({
                     ) : !selectedWornItem && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
 
                   </>}
-                  <details className="chronicles-character-sheet__item-more" open={inspectItem}>
+                  <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
                     <summary>Descripción y atributos</summary>
                     {detailEquipment && <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>}
                     {detailEquipment && chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
