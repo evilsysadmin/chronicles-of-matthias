@@ -91,9 +91,11 @@ describe('Chronicles authored environmental hazards', () => {
     const triggered = chroniclesReduce(before, 'forward');
     expect({ x: triggered.x, y: triggered.y }).toEqual({ x: 5, y: 3 });
     expect(triggered.galleryCounterweightPlateSpent).toBe(true);
-    expect(triggered.party.map((member) => member.hp)).toEqual(
-      hp.map((value) => (value > 0 ? Math.max(0, value - 1) : value)),
-    );
+    // MM3 Luck can negate one point of damage, unlike the fixed Tactics trap.
+    triggered.party.forEach((member, index) => {
+      expect(member.hp).toBeGreaterThanOrEqual(Math.max(0, hp[index] - 1));
+      expect(member.hp).toBeLessThanOrEqual(hp[index]);
+    });
 
     const avoided = chroniclesReduce({ ...fresh, ...defeatedEnemies, x: 4, y: 5, direction: 1 }, 'forward');
     expect(avoided.galleryCounterweightPlateSpent).toBe(false);

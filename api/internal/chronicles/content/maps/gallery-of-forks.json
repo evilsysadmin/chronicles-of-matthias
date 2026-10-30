@@ -114,7 +114,7 @@
           { "type": "set", "key": "galleryCounterweightPlateSpent", "value": true },
           { "type": "damage-party", "amount": 1 }
         ],
-        "message": "La losa cede y una cadena barre el corredor. Un punto de daño para cada aventurero vivo; el mecanismo queda inmóvil."
+        "message": "La losa cede y una cadena barre el corredor. La Suerte puede amortiguar el golpe; el mecanismo queda inmóvil."
       }
     }
   ],
