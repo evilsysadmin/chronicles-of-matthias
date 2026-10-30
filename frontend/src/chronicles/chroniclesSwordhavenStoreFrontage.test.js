@@ -63,7 +63,14 @@ describe('Swordhaven general store frontage', () => {
     const sacks = store.getObjectByName('store-front-provisions-sacks');
     expect(sacks?.count).toBe(4);
     expect(sacks.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(sacks.geometry.parameters.radiusTop).toBeLessThan(sacks.geometry.parameters.radiusBottom);
+    expect(sacks.geometry.type).toBe('LatheGeometry');
+    const profile = sacks.geometry.parameters.points;
+    expect(Math.max(...profile.map(point => point.x))).toBeGreaterThan(profile[0].x);
+    expect(profile.at(-2).x).toBeLessThan(profile[3].x);
+    const ties = store.getObjectByName('store-front-sack-twine');
+    expect(ties?.count).toBe(4);
+    expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-front-sack-twine')).toBeFalsy();
     expect(forge.getObjectByName('store-front-provisions-sacks')).toBeFalsy();
     const sackTransform = new THREE.Object3D();
     for (let index = 0; index < sacks.count; index += 1) {
