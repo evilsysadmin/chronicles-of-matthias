@@ -1,5 +1,7 @@
 # Chronicles of Matthias
 
+Staging account integration: [independent ShadowOps Identity opt-in](docs/SHADOWOPS-IDENTITY-STAGING.md).
+
 Juego de rol en primera persona estilo Might and Magic III, con su modo Tactics.
 Nació dentro de [Chess Studio](https://github.com/evilsysadmin/chess-studio) y
 desde octubre de 2026 vive aquí: **este repo es la única fuente de verdad del

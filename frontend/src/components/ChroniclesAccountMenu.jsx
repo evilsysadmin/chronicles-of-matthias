@@ -81,7 +81,7 @@ export default function ChroniclesAccountMenu({ onLogout }) {
         <div className="chronicles-account__popover" role="dialog" aria-label="Cuenta y ajustes">
           <p className="chronicles-account__who">
             <span aria-hidden="true">♙</span>
-            <span><small>Sesión iniciada como</small><b>{username || 'aventurero'}</b></span>
+            <span><small>Sesión iniciada como</small><b>{username?.startsWith('shadowops:') ? 'Cuenta ShadowOps' : username || 'aventurero'}</b></span>
           </p>
           <ChroniclesAudioControls
             idPrefix="chronicles-account"
