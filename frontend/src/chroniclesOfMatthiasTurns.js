@@ -84,6 +84,16 @@ function lineIsClear(state, from, to) {
   return true;
 }
 
+// Saved hero HP must match the initiative roster's living-actor contract.
+// JS would otherwise treat true, [3] or Infinity as an attackable hero,
+// wasting enemy turns and skewing target rotation on damaged legacy saves.
+function hasLivingPartyHitPoints(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
+  const hp = Number(value);
+  return Number.isFinite(hp) && hp > 0;
+}
+
 function livingPartyTargetsWithPositions(state) {
   // In first-person MM3 every hero fights from the visible party anchor.
   // The deployed per-hero cells are an internal formation and must not extend
@@ -96,7 +106,7 @@ function livingPartyTargetsWithPositions(state) {
     chroniclesLivingPartyPositions(state).map(({ memberId, position }) => [memberId, position]),
   );
   return (state?.party || [])
-    .filter((member) => Number(member.hp || 0) > 0 && (anchor || positions.has(member.id)))
+    .filter((member) => hasLivingPartyHitPoints(member.hp) && (anchor || positions.has(member.id)))
     .map((member) => ({ member, position: anchor || positions.get(member.id) }));
 }
 
@@ -125,7 +135,7 @@ function enemyCanAttackCell(state, enemy, position, partyPosition) {
 }
 
 export function chroniclesEnemyAttackTarget(state, enemy, position = chroniclesRuntimeEnemyPosition(state, enemy)) {
-  const livingOrder = (state?.party || []).filter((member) => Number(member.hp || 0) > 0);
+  const livingOrder = (state?.party || []).filter((member) => hasLivingPartyHitPoints(member.hp));
   const enemyIndex = Math.max(0, chroniclesActiveEnemies(state).findIndex((candidate) => candidate.id === enemy?.id));
   // In MM3 initiative combat, each enemy acts separately and the legacy
   // exploration round stays unchanged. Rotate targets on the actual combat

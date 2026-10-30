@@ -77,6 +77,23 @@ describe('MM3 first-book ranged pressure on the rear row', () => {
     return { state: { ...base, ...adjacent }, archer };
   }
 
+  it('never targets phantom heroes with corrupt saved HP, while retaining numeric-string survivors', () => {
+    const { state, archer } = archerFight();
+    const corrupt = {
+      ...state,
+      party: state.party.map((hero) => ({
+        ...hero,
+        hp: ({ matthias: true, rook: [3], bishop: '2', knight: Infinity })[hero.id],
+      })),
+    };
+    expect(chroniclesEnemyAttackTarget(corrupt, archer)?.id).toBe('bishop');
+    const noSurvivors = {
+      ...corrupt,
+      party: corrupt.party.map((hero) => hero.id === 'bishop' ? { ...hero, hp: '  ' } : hero),
+    };
+    expect(chroniclesEnemyAttackTarget(noSurvivors, archer)).toBeNull();
+  });
+
   it('lets authored archers threaten living backliners without bypassing line of sight', () => {
     const { state, archer } = archerFight();
     const target = chroniclesEnemyAttackTarget(state, archer);
