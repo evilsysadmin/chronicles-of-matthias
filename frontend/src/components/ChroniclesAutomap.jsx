@@ -9,6 +9,7 @@ import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBin
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
+  chroniclesAutomapFullViewport,
   chroniclesAutomapRouteEdge,
   chroniclesAutomapRevealedCells,
   chroniclesMapCoordinatesLabel,
@@ -137,12 +138,15 @@ export default function ChroniclesAutomap({
     () => chroniclesAutomapRevealedCells(map, Array.from(visited)),
     [map, visited],
   );
-  const viewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
+  // The SVG always fits the ENTIRE area. The explored viewport is kept only
+  // for directional hints: an undiscovered target must not expose the map.
+  const viewport = useMemo(() => chroniclesAutomapFullViewport(map), [map]);
+  const exploredViewport = useMemo(() => automapViewport(revealed, state), [revealed, state]);
   const markers = useMemo(() => chroniclesDiscoveredPois(map, revealed, chroniclesMapContentPosition), [map, revealed]);
   const targetOverPoi = chroniclesRouteTargetOverlapsPoi(target, markers);
   const targetOverParty = Boolean(target && target.x === state?.x && target.y === state?.y);
   const targetCornerBadge = targetOverPoi || targetOverParty;
-  const routeEdge = chroniclesAutomapRouteEdge(viewport, state, target);
+  const routeEdge = chroniclesAutomapRouteEdge(exploredViewport, state, target);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -198,6 +202,7 @@ export default function ChroniclesAutomap({
             role="img"
             aria-label={`Mapa explorado de ${map.title || 'la zona'}`}
             preserveAspectRatio="xMidYMid meet"
+            data-chronicles-map-fit="full-area"
           >
             <defs>
               <pattern id="chronicles-automap-wall-hatch" patternUnits="userSpaceOnUse" width=".24" height=".24">
@@ -207,7 +212,14 @@ export default function ChroniclesAutomap({
             </defs>
             {map.grid.flatMap((row, y) => Array.from(row).map((tile, x) => {
               const key = chroniclesAutomapCellKey(x, y);
-              if (!revealed.has(key)) return null;
+              if (!revealed.has(key)) {
+                // Uniform fog displays the complete grid footprint without
+                // leaking whether its still-unknown tiles are walls or floor.
+                return <rect key={key} className="chronicles-automap__cell is-unknown"
+                  data-chronicles-fog-cell={key}
+                  x={x + 0.03} y={y + 0.03} width="0.94" height="0.94"
+                  rx="0.07" aria-hidden="true" />;
+              }
               const wall = tile === '#';
               return (
                 <g key={key}>
