@@ -906,7 +906,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         banner.position.set(side * 1.25 + 0.34 * side, 3.18, 0);
         root.add(banner);
       }
-    } else if (!village || !String(entry.visualType || '').startsWith('building-')) {
+    } else if ((!village || !String(entry.visualType || '').startsWith('building-'))
+      && !(scenePlan.mapId === 'swordhaven-first-book' && entry.id === 'sealed-order')) {
+      // Swordhaven's sealed order is a quest interaction anchor outside the
+      // armeria, not a freestanding monument. Keep its root registered below
+      // without planting a blank stone pedestal in the shop approach.
       // Town services already have authored shopfronts, doorways and emblems
       // on their buildings. Do not plant the generic stone debug-like marker
       // directly in front of an otherwise recognizable establishment.
