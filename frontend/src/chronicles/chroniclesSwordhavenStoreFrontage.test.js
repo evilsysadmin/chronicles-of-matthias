@@ -58,6 +58,21 @@ describe('Swordhaven general store frontage', () => {
     expect(frontage.children.filter(child => child.name === 'store-oak-batten')).toHaveLength(6);
     expect(frontage.children.filter(child => child.name === 'store-oak-rail')).toHaveLength(2);
     expect(forge.getObjectByName('store-oak-frontage')).toBeFalsy();
+    // Ground-floor provisions sacks are a decorative, batched stock display
+    // outside the oak bays, never a new obstacle or an obscured entrance.
+    const sacks = store.getObjectByName('store-front-provisions-sacks');
+    expect(sacks?.count).toBe(4);
+    expect(sacks.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(sacks.geometry.parameters.radiusTop).toBeLessThan(sacks.geometry.parameters.radiusBottom);
+    expect(forge.getObjectByName('store-front-provisions-sacks')).toBeFalsy();
+    const sackTransform = new THREE.Object3D();
+    for (let index = 0; index < sacks.count; index += 1) {
+      sacks.getMatrixAt(index, sackTransform.matrix);
+      sackTransform.matrix.decompose(sackTransform.position, sackTransform.quaternion, sackTransform.scale);
+      expect(Math.abs(sackTransform.position.x)).toBeGreaterThan(1.75);
+      expect(sackTransform.position.y).toBeGreaterThan(0.4);
+      expect(sackTransform.position.z).toBeLessThan(5.5);
+    }
     const loft = store.getObjectByName('store-merchant-loft');
     expect(loft?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(loft.getObjectByName('store-loft-oak-gable')).toBeTruthy();
