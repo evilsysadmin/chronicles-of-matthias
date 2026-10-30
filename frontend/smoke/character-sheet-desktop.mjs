@@ -242,11 +242,9 @@ try {
       ).first().textContent(), /OBJETOS DE Matthias/,
         'Equipment must identify its current owner without duplicating headers');
       const equipment = sheet.locator('[data-chronicles-equipment-folio]');
-      const technicalButton = equipment.getByRole('button', { name: 'Detalles', exact: true });
-      const technicalPanel = equipment.locator('#chronicles-equipment-technical-details');
-      assert.equal(await technicalPanel.count(), 0,
-        'Equipped gear already has visible icons; no permanent worn summary may consume space');
-      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'false');
+      assert.equal(await equipment.getByRole('button', { name: 'Detalles', exact: true }).count(), 0,
+        'Single Examinar owns object stats; duplicate Detalles no longer exists');
+      assert.equal(await equipment.locator('#chronicles-equipment-technical-details').count(), 0);
       assert.equal(await equipment.getByText('Equipo puesto', { exact: true }).count(), 0);
       const geometry = await sheet.evaluate((node) => {
         const parent = node.querySelector('[data-chronicles-equipment-folio]');
@@ -271,33 +269,26 @@ try {
         'Advanced gear section is absent until explicitly requested');
       assert.ok(geometry.list.width >= geometry.parent.width - 50
         && geometry.actions.width >= geometry.bag.width - 20,
-        'Inventory and the SIX actions must fill the reading column: ' + JSON.stringify(geometry));
+        'Inventory and five commands must fill the reading column: ' + JSON.stringify(geometry));
       assert.ok(geometry.list.height >= 240
         && geometry.list.bottom <= geometry.actions.top + 3
         && geometry.actions.bottom <= geometry.dock.top + 4
         && geometry.loadout.bottom >= geometry.dock.top - 55,
         'The list must grow into the free height without hiding the actions or dock: '
           + JSON.stringify(geometry));
-      await technicalButton.click();
-      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'true');
-      await technicalPanel.waitFor({ state: 'visible' });
-      const meleeCard = technicalPanel.locator('.chronicles-character-sheet__weapon-card').first();
-      await meleeCard.waitFor({ state: 'visible' });
-      await assertParchmentSurface(meleeCard, 'Optional technical weapon card');
-      assert.equal(await technicalPanel.locator('.chronicles-character-sheet__weapon-card').count(), 2);
-      assert.deepEqual(await technicalPanel.locator('.chronicles-character-sheet__gear-slot > small')
-        .allInnerTexts(), ['Armadura', 'Escudo'],
-        'Technical details preserve the A/S and armour/shield readings on demand');
-      for (const slot of ['weapon', 'missile']) {
-        const card = technicalPanel.locator('.chronicles-character-sheet__weapon-card[data-slot="' + slot + '"]');
-        const hasItem = (await card.locator('strong').innerText()) !== 'Sin equipar';
-        assert.equal(await card.getByRole('button', { name: /Quitar .* y guardarlo en la mochila/ }).count(),
-          hasItem ? 1 : 0, 'Optional ' + slot + ' card keeps its real unequip operation');
-      }
-      await technicalPanel.getByRole('button', { name: 'Cerrar detalles técnicos' }).click();
-      assert.equal(await technicalPanel.count(), 0,
-        'Closing the optional technical view gives all the space back to the inventory');
-      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'false');
+      // The right navigation rail must extend to the bottom of the available
+      // workbench, while the outer frame nearly reaches the viewport edge.
+      const rail = await sheet.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        const nav = node.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect();
+        const folio = node.querySelector('.chronicles-character-sheet__folio-layout').getBoundingClientRect();
+        return { outerLeft: box.left, outerRight: box.right,
+          navBottom: nav.bottom, folioBottom: folio.bottom, navWidth: nav.width };
+      });
+      assert.ok(rail.outerLeft <= 12 && rail.outerRight >= width - 12,
+        'Equipment frame must reclaim black outer gutters: ' + JSON.stringify(rail));
+      assert.ok(rail.navBottom >= rail.folioBottom - 4 && rail.navWidth <= 200,
+        'Equipment rail must fill its height without wasting reading width: ' + JSON.stringify(rail));
       await page.screenshot({ path: 'smoke-character-sheet-equipment-' + width + '.png' });
 
       // MM3 inventory desk with real catalog items from the campaign reducer.
@@ -342,8 +333,8 @@ try {
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'false',
         'Initial first-item preview does not silently select an item for transfer');
       const actions = equipment.getByRole('navigation', { name: 'Acciones de inventario' });
-      assert.equal(await actions.locator('button').count(), 6,
-        'Classic item menu has six commands: 1–4 now transfers directly');
+      assert.equal(await actions.locator('button').count(), 5,
+        'Classic item menu has five commands; 1–4 still transfers directly');
       const detail = equipment.locator('.chronicles-character-sheet__item-details');
       assert.equal(await detail.isVisible(), false,
         'Item details stay hidden until Examinar');
@@ -352,7 +343,27 @@ try {
       await rows.first().click();
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       await actions.getByRole('button', { name: /Examinar/ }).click();
+      // Inspection must share the available desk beside the list, never
+      // push controls under the fixed party dock or squeeze rows to zero.
       assert.equal(await detail.isVisible(), true);
+      if (width >= 1200) {
+        const opened = await equipment.evaluate((node) => {
+          const rect = (sel) => node.querySelector(sel).getBoundingClientRect();
+          const list = rect('.chronicles-character-sheet__inventory');
+          const inspector = rect('.chronicles-character-sheet__item-details');
+          const actions = rect('.chronicles-character-sheet__classic-actions');
+          const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
+          return { listLeft: list.left, listRight: list.right, listHeight: list.height,
+            inspectorLeft: inspector.left, inspectorTop: inspector.top, listTop: list.top,
+            inspectorBottom: inspector.bottom, actionsTop: actions.top, actionsBottom: actions.bottom,
+            dockTop: dock.top };
+        });
+        assert.ok(opened.inspectorLeft >= opened.listRight + 4
+          && Math.abs(opened.inspectorTop - opened.listTop) <= 5
+          && opened.listHeight >= 100 && opened.inspectorBottom <= opened.actionsTop + 4
+          && opened.actionsBottom <= opened.dockTop + 4,
+          'Examinar must occupy the spare side rail without overlays: ' + JSON.stringify(opened));
+      }
       const more = detail.locator('.chronicles-character-sheet__item-more');
       assert.equal(await more.evaluate((node) => node.open), true,
         'Examinar must expose real damage and bonuses without another disclosure');
@@ -1008,8 +1019,8 @@ try {
         && r.nameLeft >= r.iconRight + 2 && !r.overflow),
         'Mobile inventory must read as one compact icon/name row per item: ' + JSON.stringify(mobileLayout));
       assert.deepEqual(mobileLayout.commands.map(({ visible }) => visible),
-        [false, false, true, true, true, false],
-        'Touch shows only Equipar/Quitar, Detalles and Examinar; desktop keeps six commands');
+        [false, false, true, true, false],
+        'Touch shows only Equipar/Quitar and Examinar; desktop keeps five commands');
       assert.ok(mobileLayout.commands.filter(({ visible }) => visible)
         .every(({ height: hitHeight }) => hitHeight >= 44),
         'All visible commands remain usable 44px touch targets');
@@ -1078,7 +1089,7 @@ try {
           assert.equal(await scrollArea.evaluate((node) => node.dataset.moreBelow), 'false',
             'A fully visible inventory must not advertise imaginary content below');
           assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-            .locator('button').count(), 6, 'Compact phones still expose all six commands; delivery uses party slots');
+            .locator('button').count(), 5, 'Compact phones retain five commands; delivery uses party slots');
         }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
@@ -1106,36 +1117,10 @@ try {
         'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
       if (width <= 520) {
         const controls = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
-        const details = controls.getByRole('button', { name: 'Detalles', exact: true });
-        const advanced = sheet.locator('#chronicles-equipment-technical-details');
-        assert.equal(await advanced.count(), 0,
-          'No permanent equipment summary can steal a mobile inventory row');
-        await details.click();
-        await advanced.waitFor({ state: 'visible' });
-        assert.equal(await details.getAttribute('aria-expanded'), 'true');
-        const emptyWeapons = await advanced.locator('.chronicles-character-sheet__weapon-card:not(:has(> button))')
-          .evaluateAll((cards) => cards.map((card) => {
-            const label = card.querySelector('b');
-            const value = card.querySelector('strong');
-            const explanation = card.querySelector('small');
-            return {
-              slot: card.dataset.slot,
-              height: card.getBoundingClientRect().height,
-              sameRow: Math.abs(label.getBoundingClientRect().top - value.getBoundingClientRect().top) <= 4,
-              clipped: [card, label, value, explanation].some((el) => el.scrollWidth > el.clientWidth + 1),
-              value: value.textContent.trim(),
-              explanation: explanation.textContent.trim(),
-            };
-          }));
-        assert.deepEqual(emptyWeapons.map(({ slot }) => slot), ['weapon', 'missile'],
-          'Optional technical details still show both empty A/S slots');
-        assert.ok(emptyWeapons.every(({ sameRow, height, clipped }) => sameRow && height <= 110 && !clipped),
-          'Empty technical weapon slots remain readable on touch: ' + JSON.stringify(emptyWeapons));
-        assert.ok(emptyWeapons.every(({ value, explanation }) => value === 'Sin equipar' && explanation.length > 0),
-          'Technical expansion must retain real state and meaningful stats');
-        await details.click();
-        assert.equal(await advanced.count(), 0,
-          'Closing technical details must restore a clean mobile inventory');
+        assert.equal(await controls.getByRole('button', { name: 'Detalles', exact: true }).count(), 0);
+        assert.equal(await controls.getByRole('button', { name: 'Examinar', exact: true }).count(), 1,
+          'Touch must have exactly one meaningful inspect action');
+        assert.equal(await sheet.locator('#chronicles-equipment-technical-details').count(), 0);
       }
       // Hildegard's longer name exposed a real 844x390 overlap with the close
       // button. Check actual painted rectangles, not only document overflow.
