@@ -693,7 +693,7 @@ export default function ChroniclesCharacterSheet({
             )}
             {!tacticsMode && showEquipmentDetails && <article className="chronicles-character-sheet__equipment"
               id="chronicles-equipment-technical-details">
-              <section className="chronicles-character-sheet__equipped-disclosure"
+              <section className="chronicles-character-sheet__equipped-disclosure" data-expanded="true"
                 aria-label="Detalles técnicos del equipo">
                 <div className="chronicles-character-sheet__technical-heading">
                   <strong>Detalles técnicos</strong>
