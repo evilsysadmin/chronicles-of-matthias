@@ -83,6 +83,11 @@ describe('Swordhaven general store frontage', () => {
     const ties = store.getObjectByName('store-front-sack-twine');
     expect(ties?.count).toBe(4);
     expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    const creases = store.getObjectByName('store-front-sack-cloth-creases');
+    expect(creases?.count).toBe(4);
+    expect(creases.geometry.type).toBe('TubeGeometry');
+    expect(creases.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-front-sack-cloth-creases')).toBeFalsy();
     expect(forge.getObjectByName('store-front-sack-twine')).toBeFalsy();
     expect(forge.getObjectByName('store-front-provisions-sacks')).toBeFalsy();
     const sackTransform = new THREE.Object3D();
