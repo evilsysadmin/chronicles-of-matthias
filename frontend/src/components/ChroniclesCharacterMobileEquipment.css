@@ -120,3 +120,73 @@
     display: none;
   }
 }
+
+/* Pocket-first MM3 equipment: the inventory is the principal interaction.
+   Keep desktop's six commands, but on touch the list itself scrolls and the
+   top-right X already exits. Leave just the three useful object actions. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    height: auto;
+    padding: 4px 6px;
+    text-align: left;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > small {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    max-width: none;
+    margin: 4px 0;
+    padding: 4px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+    min-height: 44px;
+    height: 44px;
+    padding: 3px 4px;
+    gap: 4px;
+    flex-direction: row;
+    font-size: clamp(.72rem, 1.8vw, .9rem);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button:is(:nth-child(1), :nth-child(2), :nth-child(6)) {
+    display: none;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button > span {
+    font-size: 1rem;
+  }
+}
+@media (max-width: 430px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 4px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
+    max-width: 70px;
+  }
+}
