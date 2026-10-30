@@ -1640,6 +1640,28 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'store-oak-rail', [x, 1.66, facadeZ + 0.42]);
     }
     root.add(storefront);
+    // A few bundled flour/grain sacks give the provisions merchant a
+    // recognisable ground-floor stock display, distinct from the forge and
+    // tavern. Four low-poly instances stay in front of the oak bays, clear
+    // of the real door and wholly inside the existing blocked house cells.
+    const sacks = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.26, 0.42, 0.90, coarse ? 7 : 10),
+      material(0xc2a780, { roughness: 1, metalness: 0 }), 4,
+    );
+    sacks.name = 'store-front-provisions-sacks';
+    sacks.userData.chroniclesDecorativeOnly = true;
+    sacks.castShadow = !coarse;
+    sacks.receiveShadow = true;
+    const sack = new THREE.Object3D();
+    for (const [index, x] of [-2.92, -2.05, 2.05, 2.92].entries()) {
+      sack.position.set(x, 0.56, facadeZ + 0.77);
+      sack.rotation.z = index % 2 ? 0.10 : -0.08;
+      sack.scale.set(1, index % 2 ? 0.88 : 1.05, 1);
+      sack.updateMatrix();
+      sacks.setMatrixAt(index, sack.matrix);
+    }
+    sacks.instanceMatrix.needsUpdate = true;
+    root.add(sacks);
   } else if (isForge) {
     mesh(root, new THREE.CylinderGeometry(0.52, 0.59, 1.3, 10), mats.stone,
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
