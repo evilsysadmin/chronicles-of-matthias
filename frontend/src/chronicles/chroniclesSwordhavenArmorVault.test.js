@@ -12,7 +12,7 @@ describe('Swordhaven armorer lead barrel vault', () => {
     const vault = armor?.getObjectByName('armor-lead-barrel-vault');
     const shell = vault?.getObjectByName('armor-vault-curved-lead-shell');
     const ribs = vault?.getObjectByName('armor-vault-iron-ribs');
-    const caps = vault?.children.filter(child => child.name === 'armor-vault-stone-tympanum');
+    const caps = vault?.children.filter(child => child.name === 'armor-vault-lead-tympanum');
 
     expect(vault?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(shell?.geometry.type).toBe('CylinderGeometry');
@@ -20,6 +20,7 @@ describe('Swordhaven armorer lead barrel vault', () => {
     expect(shell.rotation.x).toBeCloseTo(Math.PI / 2);
     expect(shell.material.side).toBe(THREE.DoubleSide);
     expect(caps).toHaveLength(2);
+    for (const cap of caps) expect(cap.material).toBe(shell.material);
     expect(caps.map(cap => Math.sign(cap.position.z))).toEqual([-1, 1]);
     expect(ribs?.isInstancedMesh).toBe(true);
     expect(ribs.count).toBe(coarsePointer ? 3 : 5);
