@@ -901,9 +901,44 @@ try {
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
       const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
       const equipmentTab = nav.getByRole('button', { name: /Equipo/ });
-      await equipmentTab.click();
+      // Reproduce the original bug: a long Estado scroll carried into the
+      // Equipment tab. Use native click to avoid Playwright's auto-scroll
+      // masking the mistake.
+      await sheet.locator('.chronicles-character-sheet__scroll')
+        .evaluate((scroll) => { scroll.scrollTop = scroll.scrollHeight; });
+      await equipmentTab.evaluate((button) => button.click());
       await sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]').first()
         .waitFor({ state: 'visible' });
+      const fold = await sheet.evaluate((node) => {
+        const scroll = node.querySelector('.chronicles-character-sheet__scroll');
+        const dock = node.querySelector('.chronicles-character-sheet__party-dock');
+        const first = node.querySelector('[data-chronicles-equipment-folio] [data-ledger-id]');
+        const title = node.querySelector('[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head');
+        const name = node.querySelector('.chronicles-character-sheet__identity h3');
+        const tabs = node.querySelector('.chronicles-character-sheet__tabs');
+        const headBox = name.getBoundingClientRect();
+        const scrollBox = scroll.getBoundingClientRect();
+        const rowBox = first.getBoundingClientRect();
+        return {
+          scrollTop: scroll.scrollTop,
+          rowTop: rowBox.top, rowBottom: rowBox.bottom, rowLeft: rowBox.left,
+          dockTop: dock.getBoundingClientRect().top,
+          scrollTopEdge: scrollBox.top,
+          tabHeight: tabs.getBoundingClientRect().height,
+          titleHidden: getComputedStyle(title).display === 'none',
+          nameTop: headBox.top, nameLeft: headBox.left, scrollLeftEdge: scrollBox.left,
+        };
+      });
+      assert.ok(fold.scrollTop <= 2 && fold.nameTop >= fold.scrollTopEdge - 2,
+        'Switching to Equipo must reveal the real hero identity, not preserve the old scroll: '
+          + JSON.stringify(fold));
+      assert.ok(fold.titleHidden && fold.tabHeight <= 55,
+        'One compact tab row and no duplicate item heading on mobile: ' + JSON.stringify(fold));
+      assert.ok(fold.rowTop >= fold.scrollTopEdge && fold.rowBottom <= fold.dockTop - 2,
+        'The first inventory item must be fully visible on the first fold, ABOVE the fixed party dock: '
+          + JSON.stringify(fold));
+      assert.ok(fold.rowLeft >= fold.scrollLeftEdge - 2 && fold.nameLeft >= fold.scrollLeftEdge - 2,
+        'Equipment rows and identity cannot be cropped by the left frame: ' + JSON.stringify(fold));
       // Photograph a genuinely populated hero backpack before switching to
       // the empty Hildegard fixture. This is the mobile inventory golden path.
       if (width <= 430) {
@@ -985,8 +1020,8 @@ try {
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
       );
       assert.match(await equipmentSubtitle.textContent(), /Mochila personal/);
-      assert.equal(await equipmentSubtitle.isVisible(), width > 430,
-        'Only narrow touch phones omit the redundant Equipment subtitle');
+      assert.equal(await equipmentSubtitle.isVisible(), false,
+        'The mobile Equipment subtitle is redundant on phones and short landscape alike');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
       const repeatedEquipmentGold = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
@@ -1044,6 +1079,7 @@ try {
           overflow: wrapper.scrollWidth - wrapper.clientWidth,
           titleText: title.textContent.trim(),
           classText: description.textContent.trim(),
+          descriptionVisible: getComputedStyle(description).display !== 'none',
           columns: getComputedStyle(wrapper).gridTemplateColumns,
         };
       });
@@ -1063,11 +1099,11 @@ try {
           key + ' must remain inside the header: ' + JSON.stringify(identity));
       }
       if (height <= 480) {
-        assert.ok(identity.title.right <= identity.description.left + 1
-          || identity.title.bottom <= identity.description.top + 1,
-        'Landscape hero name and class must not collide: ' + JSON.stringify(identity));
-        assert.ok(identity.resources.top >= Math.max(identity.title.bottom, identity.description.bottom) - 1,
-          'Landscape resource chips must sit below identity text: ' + JSON.stringify(identity));
+        assert.equal(identity.descriptionVisible, false,
+          'In short-landscape Equipo, redundant class/level text must free space for the inventory');
+        assert.ok(identity.resources.top >= identity.title.bottom - 1,
+          'Landscape gold/resources must sit below the hero name without overlap: '
+            + JSON.stringify(identity));
       }
       await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
       assert.deepEqual(errors, []);

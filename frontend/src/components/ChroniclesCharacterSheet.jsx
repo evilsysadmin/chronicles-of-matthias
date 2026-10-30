@@ -12,6 +12,7 @@ import './ChroniclesCharacterRecordV3.css';
 import './ChroniclesCharacterEquipmentDisclosure.css';
 import './ChroniclesCharacterInventoryClassic.css';
 import './ChroniclesCharacterFolioStone.css';
+import './ChroniclesCharacterMobileEquipment.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import ChroniclesInventoryItemIcon from './ChroniclesInventoryItemIcon.jsx';
 import {
@@ -241,6 +242,9 @@ export default function ChroniclesCharacterSheet({
     setSelectedWornSlot(null);
     setSelectedBagItem(null);
     setInspectItem(false);
+    // The next hero always opens at the beginning of the dossier, including
+    // short landscape: do not strand their inventory behind the party dock.
+    if (targetId !== member.id && folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
     onSelectMember?.(targetId);
   };
   const giveSelectedItemTo = (targetId) => {
@@ -332,11 +336,11 @@ export default function ChroniclesCharacterSheet({
       setSelectedBagItem(null);
       setInspectItem(false);
     }
-    // A new desktop dossier section starts at the top; otherwise a long
-    // backpack/training scroll can leave the next page opening halfway down.
-    // Deliberately preserve the existing mobile and Tactics scroll behavior.
-    if (!tacticsMode && window.matchMedia('(min-width: 851px) and (min-height: 581px)').matches) {
-      if (folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
+    // Always begin the newly selected MM3 page at its top. On phones the
+    // previously preserved scroll was hiding the header, inventory and actions
+    // underneath the fixed hero dock when returning from another chapter.
+    if (!tacticsMode && folio !== activeFolio && folioScrollRef.current) {
+      folioScrollRef.current.scrollTop = 0;
     }
   };
 
