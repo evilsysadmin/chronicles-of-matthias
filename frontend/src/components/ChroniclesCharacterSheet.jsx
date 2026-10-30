@@ -13,6 +13,7 @@ import './ChroniclesCharacterEquipmentDisclosure.css';
 import './ChroniclesCharacterInventoryClassic.css';
 import './ChroniclesCharacterFolioStone.css';
 import './ChroniclesCharacterMobileEquipment.css';
+import './ChroniclesCharacterEquipmentWorkspace.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import ChroniclesInventoryItemIcon from './ChroniclesInventoryItemIcon.jsx';
 import {
@@ -124,7 +125,7 @@ export default function ChroniclesCharacterSheet({
   const [selectedBagItem, setSelectedBagItem] = useState(null);
   const [selectedWornSlot, setSelectedWornSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(false);
-  const wornDisclosure = useRef(null);
+  const [showEquipmentDetails, setShowEquipmentDetails] = useState(false);
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
@@ -139,6 +140,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setSelectedWornSlot(null);
     setInspectItem(false);
+    setShowEquipmentDetails(false);
 
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
@@ -218,15 +220,6 @@ export default function ChroniclesCharacterSheet({
     }
     setInspectItem(false);
   };
-  // Only equipped, named pieces appear in the collapsed line. No fake slots.
-  const wornOverview = CHRONICLES_EQUIPMENT_SLOTS
-    .map((slot) => {
-      const item = chroniclesEquippedItem(state, member.id, slot);
-      if (!item) return null;
-      const label = { weapon: 'A', missile: 'S', armor: 'Armadura', shield: 'Escudo' }[slot];
-      return `${label}: ${item.name}`;
-    })
-    .filter(Boolean).join(' · ') || 'Sin piezas equipadas';
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
@@ -239,6 +232,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedWornSlot(null);
     setSelectedBagItem(null);
     setInspectItem(false);
+    setShowEquipmentDetails(false);
     // The next hero always opens at the beginning of the dossier, including
     // short landscape: do not strand their inventory behind the party dock.
     if (targetId !== member.id && folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
@@ -328,6 +322,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedWornSlot(null);
       setSelectedBagItem(null);
       setInspectItem(false);
+      setShowEquipmentDetails(false);
     }
     // Always begin the newly selected MM3 page at its top. On phones the
     // previously preserved scroll was hiding the header, inventory and actions
@@ -451,13 +446,10 @@ export default function ChroniclesCharacterSheet({
                     }}>
                     <span aria-hidden="true">⚔</span> {selectedWornItem ? 'Quitar' : 'Equipar'}
                   </button>
-                  <button type="button" onClick={() => {
-                    if (wornDisclosure.current) {
-                      wornDisclosure.current.open = true;
-                      wornDisclosure.current.scrollIntoView?.({ block: 'nearest' });
-                    }
-                  }}>
-                    <span aria-hidden="true">▣</span> Puesto
+                  <button type="button" aria-expanded={showEquipmentDetails}
+                    aria-controls="chronicles-equipment-technical-details"
+                    onClick={() => setShowEquipmentDetails((shown) => !shown)}>
+                    <span aria-hidden="true">▣</span> Detalles
                   </button>
                   <button type="button" disabled={!selectedInventoryItem}
                     aria-expanded={inspectItem}
@@ -699,12 +691,15 @@ export default function ChroniclesCharacterSheet({
                 {relic && <small>{relic.description}</small>}
               </article>
             )}
-            {!tacticsMode && <article className="chronicles-character-sheet__equipment">
-              <details ref={wornDisclosure} className="chronicles-character-sheet__equipped-disclosure">
-                <summary>
-                  <span>Equipo puesto</span>
-                  <small title={wornOverview}>{wornOverview}</small>
-                </summary>
+            {!tacticsMode && showEquipmentDetails && <article className="chronicles-character-sheet__equipment"
+              id="chronicles-equipment-technical-details">
+              <section className="chronicles-character-sheet__equipped-disclosure" data-expanded="true"
+                aria-label="Detalles técnicos del equipo">
+                <div className="chronicles-character-sheet__technical-heading">
+                  <strong>Detalles técnicos</strong>
+                  <button type="button" onClick={() => setShowEquipmentDetails(false)}
+                    aria-label="Cerrar detalles técnicos">Cerrar</button>
+                </div>
                 <div className="chronicles-character-sheet__equipped-body">
               {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
                 {[
@@ -758,7 +753,7 @@ export default function ChroniclesCharacterSheet({
                   : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
               </small>
                 </div>
-              </details>
+              </section>
             </article>}
             {tacticsMode && backpackPanel}
           </div>

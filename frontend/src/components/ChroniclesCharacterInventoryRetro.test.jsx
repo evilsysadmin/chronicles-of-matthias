@@ -8,6 +8,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 
 const css = readFileSync(new URL('./ChroniclesCharacterInventoryRetro.css', import.meta.url), 'utf8');
 const classic = readFileSync(new URL('./ChroniclesCharacterInventoryClassic.css', import.meta.url), 'utf8');
+const workspace = readFileSync(new URL('./ChroniclesCharacterEquipmentWorkspace.css', import.meta.url), 'utf8');
 
 function html(mode = 'chronicles', overrides = {}) {
   const state = createChroniclesState('swordhaven-first-book', null, { rules: mode === 'chronicles' ? 'mm3' : null });
@@ -42,8 +43,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('class="chronicles-character-sheet__item-details" aria-live="polite" hidden=""');
     expect(rendered).not.toContain('chronicles-character-sheet__classic-recipients');
     expect(rendered).not.toContain('chronicles-character-sheet__inventory-hint');
-    expect(rendered).toContain('data-slot="weapon"');
-    expect(rendered).toContain('data-slot="missile"');
+    expect(rendered).not.toContain('data-slot="weapon"');
+    expect(rendered).not.toContain('data-slot="missile"');
+    expect(rendered).toContain('aria-controls="chronicles-equipment-technical-details"');
   });
 
   it('always displays every possession without category filters or a searchbox', () => {
@@ -133,7 +135,13 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(classic).toContain('--mm3-equipment-paper: #d9ceb5;');
     expect(classic).toContain('--mm3-equipment-ink: #26312f;');
     expect(classic).toContain('background: var(--mm3-equipment-stone) !important;');
-    expect(classic).toContain('max-width: 760px;');
+    expect(workspace).toContain('max-width: none;');
+    expect(workspace).toContain('flex: 1 1 auto;');
+    expect(workspace).toContain('align-content: start;');
+    expect(workspace).not.toContain('grid-auto-rows: minmax(54px, auto)');
+    expect(workspace).toContain('.chronicles-character-sheet__classic-actions');
+    expect(workspace).toContain('@media (min-width: 851px) and (min-height: 581px)');
+    expect(workspace).toContain('chronicles-character-sheet__technical-heading');
     expect(classic).toMatch(/__classic-actions > button\s*\{\s*min-height: 48px;/);
     expect(classic).toContain('border-color: #dec98a;');
     expect(html('tactics')).not.toContain('data-chronicles-equipment-folio');

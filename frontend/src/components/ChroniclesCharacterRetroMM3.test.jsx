@@ -29,11 +29,13 @@ describe('MM3 retro skin and compact record layout', () => {
       expect(skin).toContain(`[data-stat='${key}']::before`);
     }
     const inventory = render('chronicles', 'equipment');
-    for (const slot of ['weapon', 'missile']) {
-      expect(inventory).toContain(`data-slot="${slot}"`);
-    }
-    expect(inventory).toContain('Armadura');
-    expect(inventory).toContain('Escudo');
+    expect(inventory).toContain('chronicles-character-sheet__backpack');
+    expect(inventory).toContain('aria-label="Acciones de inventario"');
+    expect(inventory).toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(inventory).not.toContain('class="chronicles-character-sheet__equipped-disclosure"');
+    // Advanced slot-by-slot rows are available after explicitly opening
+    // Details, not in the first-fold inventory. The populated worn-item
+    // fixture verifies the ordinary visible equipped ledger separately.
     expect(html).not.toContain('data-chronicles-worn-gear');
     for (const title of ['Estado', 'Equipo', 'Hechizos', 'Mejoras']) expect(html).toContain(title);
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
