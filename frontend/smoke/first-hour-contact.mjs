@@ -417,6 +417,31 @@ try {
         const automap = page.getByRole('dialog', { name: 'Automapa de Chronicles' });
         await automap.waitFor({ state: 'visible' });
         assert.match(await automap.locator('footer').innerText(), /1–4/);
+        const areaFit = await automap.locator('.chronicles-automap__canvas').evaluate((canvas) => {
+          const svg = canvas.querySelector('svg[data-chronicles-map-fit="full-area"]');
+          const bounds = canvas.getBoundingClientRect();
+          const topLeft = svg?.querySelector('[data-chronicles-fog-cell="0:0"]')?.getBoundingClientRect();
+          const bottomRight = svg?.querySelector('[data-chronicles-fog-cell="18:22"]')?.getBoundingClientRect();
+          return { viewBox: svg?.getAttribute('viewBox'),
+            fogCount: svg?.querySelectorAll('.chronicles-automap__cell.is-unknown').length,
+            bounds: { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom },
+            first: topLeft && { left: topLeft.left, top: topLeft.top },
+            last: bottomRight && { right: bottomRight.right, bottom: bottomRight.bottom },
+            party: Boolean(svg?.querySelector('[data-chronicles-map-facing]')),
+          };
+        });
+        assert.equal(areaFit.viewBox, '-0.5 -0.5 20 24',
+          'The whole 19×23 Swordhaven zone must fit without exploration-dependent zoom');
+        assert.equal(areaFit.fogCount, 19 * 23 - 1,
+          'Unexplored cells must remain uniform fog, not reveal map geometry');
+        assert.ok(areaFit.party && areaFit.first && areaFit.last
+          && areaFit.first.left >= areaFit.bounds.left - 2
+          && areaFit.first.top >= areaFit.bounds.top - 2
+          && areaFit.last.right <= areaFit.bounds.right + 2
+          && areaFit.last.bottom <= areaFit.bounds.bottom + 2,
+          'All map corners and the party must fit inside the real painted viewport: '
+            + JSON.stringify(areaFit));
+        await page.screenshot({ path: 'smoke-automap-full-area-' + width + '.png' });
         await page.getByRole('tab', { name: 'Terra' }).click();
         await page.locator('[data-chronicles-worldmap="open"]').waitFor({ state: 'visible' });
         await page.keyboard.press('Control+4');
