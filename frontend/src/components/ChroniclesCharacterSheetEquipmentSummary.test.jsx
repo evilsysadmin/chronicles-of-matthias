@@ -112,7 +112,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(tactics).toContain('Mochila de expedición');
   });
 
-  it('keeps filtering available for multiple owned item types', () => {
+  it('shows every owned type together without a filter/search inspector', () => {
     const html = render('mm3', 'equipment', {
       inventory: {
         'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' },
@@ -120,10 +120,13 @@ describe('Chronicles character sheet combat summary', () => {
       },
       bagOwners: { matthias: { 'brass-sling': 1, 'brass-shield': 1 } },
     });
-    expect(html).toMatch(/<details class="chronicles-character-sheet__backpack-tools">\s*<summary>/);
-    expect(html).toContain('Filtrar y buscar');
-    expect(html).toContain('chronicles-character-sheet__backpack-advanced');
-    expect(html).toContain('Buscar en la mochila');
+    expect(html).toContain('data-inventory-item="brass-sling"');
+    expect(html).toContain('data-inventory-item="brass-shield"');
+    expect(html).toContain('Honda de latón');
+    expect(html).toContain('Escudo de latón');
+    expect(html).not.toContain('chronicles-character-sheet__backpack-tools');
+    expect(html).not.toContain('Filtrar y buscar');
+    expect(html).not.toContain('Buscar en la mochila');
   });
 
   it('offers a compact closed worn-equipment summary before detailed stats and controls', () => {

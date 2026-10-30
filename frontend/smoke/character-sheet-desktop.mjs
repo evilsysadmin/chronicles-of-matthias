@@ -380,41 +380,12 @@ try {
         'Expanded details must follow the actions: ' + JSON.stringify(classicLayout));
       assert.ok(classicLayout.listTop < classicLayout.dockTop,
         'The inventory must start above the hero dock: ' + JSON.stringify(classicLayout));
-      const filterDisclosure = equipment.locator('.chronicles-character-sheet__backpack-tools');
-      assert.equal(await filterDisclosure.evaluate((node) => node.open), false,
-        'Filter/search must start collapsed to avoid another tall inspector column');
-      await filterDisclosure.locator('summary').click();
-      assert.equal(await filterDisclosure.evaluate((node) => node.open), true);
-      // Preserve digit typing in a useful multi-item search without firing
-      // party shortcuts, now that one-item bags omit search entirely.
-      const keyboardSearch = filterDisclosure.getByRole('searchbox', { name: 'Buscar en la mochila' });
-      await keyboardSearch.fill('');
-      await keyboardSearch.press('1');
-      assert.equal(await keyboardSearch.inputValue(), '1');
-      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
-        'Typing in inventory search must not activate party shortcut 1');
-      await keyboardSearch.clear();
-      if (width >= 1200) {
-        const filters = await equipment.locator('.chronicles-character-sheet__backpack-filters')
-          .evaluate((group) => {
-            const buttons = [...group.querySelectorAll('button')];
-            const boxes = buttons.map((button) => button.getBoundingClientRect());
-            const rows = new Set(boxes.map((rect) => Math.round(rect.top))).size;
-            const search = group.closest('.chronicles-character-sheet__backpack-tools')
-              .querySelector('.chronicles-character-sheet__backpack-search').getBoundingClientRect();
-            return { buttons: buttons.length,
-              columns: getComputedStyle(group).gridTemplateColumns.split(' ').filter(Boolean).length,
-              rows, minimumHeight: Math.min(...boxes.map((box) => box.height)),
-              groupBottom: group.getBoundingClientRect().bottom, searchTop: search.top };
-          });
-        assert.equal(filters.columns, 2, 'Wide desktop filters must show two real columns');
-        assert.ok(filters.buttons >= 3 && filters.rows <= Math.ceil(filters.buttons / 2),
-          'All inventory categories must fit a compact filter grid: ' + JSON.stringify(filters));
-        assert.ok(filters.minimumHeight >= 44,
-          'Compact filter chips must still provide 44px hit targets: ' + JSON.stringify(filters));
-        assert.ok(filters.searchTop >= filters.groupBottom - 2,
-          'Search must follow, not overlap, the filters: ' + JSON.stringify(filters));
-      }
+      // No second inspector panel: MM3 always shows every owned item,
+      // including equipped gear, without hidden category/search state.
+      assert.equal(await equipment.locator('.chronicles-character-sheet__backpack-tools').count(), 0);
+      assert.equal(await equipment.locator('input[type="search"]').count(), 0);
+      assert.ok(await inv.locator('[data-ledger-id]').count() >= await rows.count(),
+        'Unified ledger preserves all bag rows along with real equipped objects');
       const firstName = await rows.first().locator('span').innerText();
       assert.ok((await detail.textContent()).includes(firstName));
       await rows.nth(1).click();
@@ -428,7 +399,7 @@ try {
       assert.equal(await rows.last().getAttribute('aria-pressed'), 'true');
       await page.keyboard.press('ArrowDown');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true',
-        'ArrowDown must wrap the filtered backpack without altering stock');
+        'ArrowDown must wrap the complete inventory without altering stock');
       assert.equal(await equipment.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
         'Read-only smoke fixture cannot equip without a real game action callback');
       await actions.getByRole('button', { name: /Examinar/ }).click();
@@ -436,34 +407,15 @@ try {
       assert.ok(desk[0] && desk[1] && desk[1].y >= desk[0].y + desk[0].height - 3,
         'Classic item examination must expand below the full-width list');
       await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
-      // Reusing the same scrollable inventory node must not preserve a stale
-      // scroll offset after a filter/search change (especially with a narrow
-      // inspector rail). Force a small visible list to exercise real scrolling.
-      const filters = equipment.getByRole('group', { name: 'Filtrar objetos por ranura' });
-      const search = equipment.getByRole('searchbox', { name: 'Buscar en la mochila' });
-      await inv.evaluate((node) => {
-        node.style.minHeight = '0px';
-        node.style.maxHeight = '55px';
-        node.scrollTop = node.scrollHeight;
-      });
-      assert.ok(await inv.evaluate((node) => node.scrollTop) > 0,
-        'Fixture must genuinely scroll before exercising a filter change');
-      await filters.getByRole('button', { name: /Escudos/ }).click();
-      assert.ok(await rows.count() >= 1, 'The real inventory includes a shield');
-      assert.equal(await inv.evaluate((node) => node.scrollTop), 0,
-        'Changing backpack category must reset stale list scroll');
-      await filters.getByRole('button', { name: /Todos/ }).click();
-      await inv.evaluate((node) => { node.scrollTop = node.scrollHeight; });
-      assert.ok(await inv.evaluate((node) => node.scrollTop) > 0);
-      await search.fill('bronce');
-      assert.ok(await rows.count() >= 1, 'Real equipment includes bronze items');
-      assert.equal(await inv.evaluate((node) => node.scrollTop), 0,
-        'Searching backpack must reset the scroll to the first matching object');
-      await search.clear();
-      await inv.evaluate((node) => {
-        node.style.removeProperty('min-height');
-        node.style.removeProperty('max-height');
-      });
+      // The unfiltered list survives chapter navigation without losing items.
+      const visibleIds = await inv.locator('[data-ledger-id]')
+        .evaluateAll((entries) => entries.map((entry) => entry.dataset.ledgerId));
+      assert.ok(visibleIds.length >= 3, 'The actual bag has more than one category of object');
+      await nav.getByRole('button', { name: /Estado/ }).click();
+      await nav.getByRole('button', { name: /Equipo/ }).click();
+      assert.deepEqual(await inv.locator('[data-ledger-id]')
+        .evaluateAll((entries) => entries.map((entry) => entry.dataset.ledgerId)), visibleIds,
+      'Switching folios must not filter, hide or reorder real possessions');
 
       await nav.getByRole('button', { name: /Hechizos/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
@@ -662,20 +614,37 @@ try {
       await sword.waitFor({ state: 'visible' });
       assert.equal(await sword.count(), 1, 'Unequip restores one loose sword, without duplication');
       assert.equal(await sword.getAttribute('aria-pressed'), 'false');
-      const down = itemCommands.getByRole('button', { name: /Abajo/ });
-      const up = itemCommands.getByRole('button', { name: /Arriba/ });
       const allRows = bag.locator('[data-ledger-id]');
       assert.ok(await allRows.count() >= await itemRows.count(),
         'Worn and loose objects must share one numbered/list keyboard flow');
-      await down.click();
-      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
-        'Down without selection starts at the first equipped or loose item');
-      await up.click();
-      assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
-        'Up from first wraps to last entry in the unified list');
-      await down.click();
-      assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
-        'Down from last wraps to first entry in the unified list');
+      if (width < 500) {
+        // Up/Down are hidden from the touch toolbar, not removed from real
+        // keyboard navigation. Mouse/touch can always tap a row directly.
+        assert.equal(await itemCommands.getByRole('button', { name: /Abajo/ }).count(), 0);
+        await allRows.first().focus();
+        await page.keyboard.press('ArrowDown');
+        assert.equal(await allRows.nth(1).getAttribute('aria-pressed'), 'true',
+          'Touch layouts retain keyboard navigation between inventory rows');
+        await page.keyboard.press('ArrowUp');
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true');
+        await page.keyboard.press('ArrowUp');
+        assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+          'Keyboard Up wraps to last item without a visible arrow button');
+        await page.keyboard.press('ArrowDown');
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true');
+      } else {
+        const down = itemCommands.getByRole('button', { name: /Abajo/ });
+        const up = itemCommands.getByRole('button', { name: /Arriba/ });
+        await down.click();
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+          'Down without selection starts at the first equipped or loose item');
+        await up.click();
+        assert.equal(await allRows.last().getAttribute('aria-pressed'), 'true',
+          'Up from first wraps to last entry in the unified list');
+        await down.click();
+        assert.equal(await allRows.first().getAttribute('aria-pressed'), 'true',
+          'Down from last wraps to first entry in the unified list');
+      }
       // Numeric shortcuts are armed ONLY by a deliberate green item
       // selection. Pressing the same row a second time cancels that mode.
       if (await sword.getAttribute('aria-pressed') !== 'true') await sword.click();
@@ -766,16 +735,17 @@ try {
       await page.keyboard.press('1');
       assert.equal(await heading.innerText(), 'Matthias');
       assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1);
-      // Numbers typed in a search field must never cause a transfer.
+      // No searchbox: pressing the source's own number must not deliver
+      // the selected item, but selecting another party slot does.
       await bag.locator('[data-inventory-item="bronze-sword"]').click();
-      // Search is an optional disclosure, not an always-visible tall panel.
-      await sheet.locator('.chronicles-character-sheet__backpack-tools > summary').click();
-      const search = sheet.getByRole('searchbox', { name: 'Buscar en la mochila' });
-      await search.focus();
-      await page.keyboard.press('2');
-      assert.equal(await heading.innerText(), 'Matthias');
-      await search.clear();
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias',
+        'Pressing the source slot while an item is selected keeps the current owner');
       assert.equal(await bag.locator('[data-inventory-item="bronze-sword"]').count(), 1);
+      await bag.locator('[data-inventory-item="bronze-sword"]').click();
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
+        'Clicking a selected item a second time disarms direct delivery');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__backpack-tools').count(), 0);
       assert.deepEqual(errors, [], 'No React or handler errors during item transfers');
       await page.screenshot({ path: `smoke-mm3-manual-handoff-${width}.png` });
       console.log(`MM3_MANUAL_HANDOFF_OK ${width}x${height}`);
@@ -939,6 +909,37 @@ try {
           + JSON.stringify(fold));
       assert.ok(fold.rowLeft >= fold.scrollLeftEdge - 2 && fold.nameLeft >= fold.scrollLeftEdge - 2,
         'Equipment rows and identity cannot be cropped by the left frame: ' + JSON.stringify(fold));
+      assert.equal(await sheet.locator('.chronicles-character-sheet__backpack-tools').count(), 0,
+        'Filtrar y buscar must not consume equipment space on Android');
+      const mobileLayout = await sheet.evaluate((node) => {
+        const inventory = node.querySelector('[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory');
+        const commands = [...node.querySelectorAll('[data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button')];
+        const rows = [...inventory.querySelectorAll('[data-ledger-id]')];
+        return {
+          totalRows: rows.length,
+          rows: rows.map((row) => {
+            const rect = row.getBoundingClientRect();
+            const name = row.querySelector('span')?.getBoundingClientRect();
+            const icon = row.querySelector('.chronicles-character-sheet__inventory-glyph')?.getBoundingClientRect();
+            return { height: rect.height, iconRight: icon?.right, nameLeft: name?.left,
+              overflow: row.scrollWidth > row.clientWidth + 2 };
+          }),
+          commands: commands.map((button) => ({
+            visible: getComputedStyle(button).display !== 'none',
+            height: button.getBoundingClientRect().height,
+          })),
+        };
+      });
+      assert.ok(mobileLayout.totalRows >= 3, 'All real items must remain in the unfiltered inventory');
+      assert.ok(mobileLayout.rows.every((r) => r.height >= 44 && r.height <= 54
+        && r.nameLeft >= r.iconRight + 2 && !r.overflow),
+        'Mobile inventory must read as one compact icon/name row per item: ' + JSON.stringify(mobileLayout));
+      assert.deepEqual(mobileLayout.commands.map(({ visible }) => visible),
+        [false, false, true, true, true, false],
+        'Touch shows only Equipar/Quitar, Puesto and Examinar; desktop keeps six commands');
+      assert.ok(mobileLayout.commands.filter(({ visible }) => visible)
+        .every(({ height: hitHeight }) => hitHeight >= 44),
+        'All visible commands remain usable 44px touch targets');
       // Photograph a genuinely populated hero backpack before switching to
       // the empty Hildegard fixture. This is the mobile inventory golden path.
       if (width <= 430) {
