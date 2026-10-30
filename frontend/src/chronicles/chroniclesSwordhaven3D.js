@@ -1304,6 +1304,46 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     battens.instanceMatrix.needsUpdate = true;
     root.add(battens);
+
+    // Exposed cedar framing breaks up the otherwise flat ochre warehouse
+    // elevations. The uprights sit between the existing cargo hatches and
+    // both horizontal rails clear their stone reveals. Two instanced batches,
+    // decorative only: no new map geometry, colliders or interaction targets.
+    const frame = new THREE.Group();
+    frame.name = 'store-warehouse-side-frame';
+    frame.userData.chroniclesDecorativeOnly = true;
+    const posts = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.24, 4.70, 0.28), mats.timber, 6,
+    );
+    posts.name = 'store-side-cedar-uprights';
+    posts.userData.chroniclesDecorativeOnly = true;
+    posts.castShadow = !coarse;
+    const rails = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.25, 0.22, depth + 0.15), mats.timber, 4,
+    );
+    rails.name = 'store-side-cedar-rails';
+    rails.userData.chroniclesDecorativeOnly = true;
+    rails.castShadow = !coarse;
+    const timber = new THREE.Object3D();
+    let postIndex = 0;
+    let railIndex = 0;
+    for (const side of [-1, 1]) {
+      const x = side * (width / 2 + 0.15);
+      for (const z of [-depth * 0.44, 0, depth * 0.44]) {
+        timber.position.set(x, 2.35, z);
+        timber.updateMatrix();
+        posts.setMatrixAt(postIndex++, timber.matrix);
+      }
+      for (const y of [1.45, 4.60]) {
+        timber.position.set(x, y, 0);
+        timber.updateMatrix();
+        rails.setMatrixAt(railIndex++, timber.matrix);
+      }
+    }
+    posts.instanceMatrix.needsUpdate = true;
+    rails.instanceMatrix.needsUpdate = true;
+    frame.add(posts, rails);
+    root.add(frame);
   }
   // A single broad merchant's attic loft replaces the ordinary domestic
   // dormers on the general store. The oak gable and glazed loading bay break

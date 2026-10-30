@@ -168,6 +168,35 @@ describe('Swordhaven general store frontage', () => {
     expect(forge.getObjectByName('store-awning-scalloped-hem')).toBeFalsy();
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
+    // Warehouse side framing reads as exposed structural cedar without
+    // covering the existing hatches or adding any physical obstacles.
+    const sideFrame = store.getObjectByName('store-warehouse-side-frame');
+    const posts = sideFrame?.getObjectByName('store-side-cedar-uprights');
+    const rails = sideFrame?.getObjectByName('store-side-cedar-rails');
+    expect(sideFrame?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(posts?.isInstancedMesh && posts.count === 6).toBe(true);
+    expect(rails?.isInstancedMesh && rails.count === 4).toBe(true);
+    expect(posts.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(rails.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(posts.castShadow).toBe(!coarsePointer);
+    expect(rails.castShadow).toBe(!coarsePointer);
+    const transform = new THREE.Matrix4();
+    const postPositions = [];
+    for (let index = 0; index < posts.count; index += 1) {
+      posts.getMatrixAt(index, transform);
+      postPositions.push(new THREE.Vector3().setFromMatrixPosition(transform));
+    }
+    expect(postPositions.filter(position => Math.abs(position.z) < 0.01)).toHaveLength(2);
+    expect(postPositions.every(position => Math.abs(position.x) > 4.0)).toBe(true);
+    expect(postPositions.every(position => position.y > 2.0)).toBe(true);
+    const railHeights = [];
+    for (let index = 0; index < rails.count; index += 1) {
+      rails.getMatrixAt(index, transform);
+      railHeights.push(new THREE.Vector3().setFromMatrixPosition(transform).y);
+    }
+    expect(railHeights.filter(y => y < 2)).toHaveLength(2);
+    expect(railHeights.filter(y => y > 4)).toHaveLength(2);
+    expect(forge.getObjectByName('store-warehouse-side-frame')).toBeFalsy();
     // No authored map tiles or interaction contracts are changed.
     expect(swordhaven.grid[4][5]).toBe('.');
   });
