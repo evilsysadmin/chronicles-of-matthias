@@ -220,3 +220,47 @@ describe('MM3 personal backpacks', () => {
     expect(chroniclesBagQuantity(legacy, 'rook', 'brass-shield')).toBe(1);
   });
 });
+
+describe('MM3 confirmed bag deletion reducer', () => {
+  it('drops exactly one loose copy, preserving all other owners and pooled gold', () => {
+    const base = stocked();
+    const transferred = chroniclesReduce(base, {
+      type: 'transfer-item', memberId: 'matthias', toMemberId: 'rook', itemId: 'brass-sword',
+    });
+    const dropped = chroniclesReduce(transferred, { type: 'drop-item', memberId: 'rook', itemId: 'brass-sword' });
+    expect(dropped).not.toBe(transferred);
+    expect(dropped.inventory['brass-sword'].quantity).toBe(1);
+    expect(chroniclesBagQuantity(dropped, 'rook', 'brass-sword')).toBe(0);
+    expect(chroniclesBagQuantity(dropped, 'matthias', 'brass-sword')).toBe(1);
+    expect(dropped.inventory['crown-gold'].quantity).toBe(transferred.inventory['crown-gold'].quantity);
+    expect(dropped.equipment).toBe(transferred.equipment);
+    expect(dropped.message).toContain('desecha 1 × Espada');
+    expect(chroniclesRunCheckpointFingerprint(dropped)).not.toBe(chroniclesRunCheckpointFingerprint(transferred));
+    const last = chroniclesReduce(dropped, { type: 'drop-item', memberId: 'matthias', itemId: 'brass-sword' });
+    expect(last.inventory['brass-sword']).toBeUndefined();
+    expect(chroniclesBagQuantity(last, 'matthias', 'brass-sword')).toBe(0);
+  });
+  it('refuses deleting gold, missing, quest, dead, combat or other heroes’ items', () => {
+    const base = stocked();
+    for (const [state, memberId, itemId] of [
+      [base, 'matthias', 'crown-gold'],
+      [base, 'rook', 'brass-sword'],
+      [base, 'matthias', 'missing'],
+      [{ ...base, phase: 'combat' }, 'matthias', 'brass-sword'],
+      [{ ...base, initiative: { order: [] } }, 'matthias', 'brass-sword'],
+      [{ ...base, combatRules: 'tactics' }, 'matthias', 'brass-sword'],
+      [{ ...base, party: base.party.map((m) => m.id === 'matthias' ? { ...m, hp: 0 } : m) }, 'matthias', 'brass-sword'],
+      [{ ...base, inventory: { ...base.inventory, 'brass-sword': { ...base.inventory['brass-sword'], questItem: true } } }, 'matthias', 'brass-sword'],
+    ]) expect(chroniclesReduce(state, { type: 'drop-item', memberId, itemId })).toBe(state);
+  });
+  it('cannot delete a worn weapon unless it has first been returned to the owner’s bag', () => {
+    const base = stocked();
+    const wearing = chroniclesReduce(base, { type: 'equip-item', memberId: 'matthias', itemId: 'brass-sword' });
+    const allOtherStock = {
+      ...wearing,
+      bagOwners: { matthias: {}, rook: { 'brass-sword': 1 } },
+    };
+    expect(chroniclesReduce(allOtherStock, { type: 'drop-item', memberId: 'matthias', itemId: 'brass-sword' }))
+      .toBe(allOtherStock);
+  });
+});

@@ -35,6 +35,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('aria-label="Acciones de inventario"');
     expect(rendered).toContain('aria-label="Equipar Daga de latón"');
     expect(rendered).toContain('Examinar');
+    expect(rendered).toContain('E equipar · U quitar · T entregar · D tirar · I información');
+    expect(rendered).toContain('aria-keyshortcuts="I"');
+    expect(rendered).toContain('Tirar 1 objeto (D)');
     expect(rendered).not.toContain('class="chronicles-character-sheet__classic-recipients"');
     expect(rendered).toContain('alt="" draggable="false"');
     expect(rendered).toContain('Equipar Daga de latón');

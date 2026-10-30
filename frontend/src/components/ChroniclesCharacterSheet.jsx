@@ -48,7 +48,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
@@ -125,7 +125,10 @@ export default function ChroniclesCharacterSheet({
   const [selectedBagItem, setSelectedBagItem] = useState(null);
   const [selectedWornSlot, setSelectedWornSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(false);
+  const [expandItemAttributes, setExpandItemAttributes] = useState(false);
   const [showEquipmentDetails, setShowEquipmentDetails] = useState(false);
+  const [pendingDrop, setPendingDrop] = useState(null);
+  const dropCancelRef = useRef(null);
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
@@ -141,6 +144,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedWornSlot(null);
     setInspectItem(false);
     setShowEquipmentDetails(false);
+    setPendingDrop(null);
 
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
@@ -202,6 +206,10 @@ export default function ChroniclesCharacterSheet({
   // Include genuine equipped items in the MM3 item ledger; a full equipment
   // loadout must never look like an empty inventory just because the bag is empty.
   const selectedWornItem = wornGearItems.find((slot) => slot.slot === selectedWornSlot) || null;
+  const detailItem = selectedWornItem ? { ...selectedWornItem.item, quantity: 1 } : selectedInventoryItem;
+  const detailEquipment = selectedWornItem ? CHRONICLES_EQUIPMENT[selectedWornItem.item.id] : selectedEquipment;
+  const detailCanEquip = selectedWornItem ? true : canEquipSelected;
+  const detailEquipped = detailEquipment ? chroniclesEquippedItem(state, member.id, detailEquipment.slot) : null;
   const visibleWornGear = wornGearItems;
   // One display ledger. Equipped identities stay out of bag stock/persistence.
   const visibleLedger = [
@@ -219,6 +227,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedWornSlot(null);
     }
     setInspectItem(false);
+    setPendingDrop(null);
   };
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
@@ -233,6 +242,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setInspectItem(false);
     setShowEquipmentDetails(false);
+    setPendingDrop(null);
     // The next hero always opens at the beginning of the dossier, including
     // short landscape: do not strand their inventory behind the party dock.
     if (targetId !== member.id && folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
@@ -250,6 +260,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setSelectedWornSlot(null);
     setInspectItem(false);
+    setPendingDrop(null);
   };
   const directTransferMode = !tacticsMode && activeFolio === 'equipment'
     && Boolean(transferSelection) && canChangeEquipment;
@@ -268,13 +279,56 @@ export default function ChroniclesCharacterSheet({
     viewMember(hero.id);
     return true;
   };
+  // The button and U shortcut must share one validated equipment operation.
+  const unequipSelected = () => {
+    if (!canChangeEquipment || !selectedWornItem) return;
+    onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
+    setSelectedWornSlot(null);
+    setInspectItem(false);
+  };
   useEffect(() => {
     if (!state?.party || !member) return undefined;
-    const onWindowPartyKey = (event) => { handlePartyKey(event); };
-    window.addEventListener('keydown', onWindowPartyKey);
-    return () => window.removeEventListener('keydown', onWindowPartyKey);
-  }, [state?.party, member, onSelectMember, onEquipmentAction,
-    activeFolio, selectedItemId, selectedWornSlot, canChangeEquipment, transferSelection?.itemId]);
+    const onWindowKey = (event) => {
+      const command = chroniclesInventoryShortcut(event, {
+        open: !tacticsMode && activeFolio === 'equipment', confirmingDrop: Boolean(pendingDrop),
+      });
+      if (command) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (command === 'e' && canChangeEquipment && transferableItem && selectedEquipment && canEquipSelected) {
+          onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id });
+          setSelectedBagItem(null);
+          setInspectItem(false);
+        }
+        if (command === 'u') unequipSelected();
+        if (command === 'd' && canChangeEquipment && transferableItem) {
+          setPendingDrop({ memberId: member.id, itemId: transferableItem.id, name: transferableItem.name });
+        }
+        if (command === 'i' && (selectedWornItem || selectedInventoryItem)) {
+          setExpandItemAttributes(!inspectItem);
+          setInspectItem((shown) => !shown);
+        }
+        if (command === 't' && canChangeEquipment) {
+          if (!transferSelection) {
+            if (selectedInventoryItem) setSelectedBagItem({ memberId: member.id, itemId: selectedInventoryItem.id });
+            else if (visibleWornGear[0]) setSelectedWornSlot(visibleWornGear[0].slot);
+          }
+          const recipient = Array.from(document.querySelectorAll(
+            '.chronicles-character-sheet__party-dock button:not(:disabled)'
+          )).find((button) => button.getAttribute('aria-pressed') !== 'true');
+          recipient?.focus();
+        }
+        return;
+      }
+      if (!pendingDrop) handlePartyKey(event);
+    };
+    window.addEventListener('keydown', onWindowKey);
+    return () => window.removeEventListener('keydown', onWindowKey);
+  }, [state, member, onSelectMember, onEquipmentAction, activeFolio, selectedBagItem,
+    selectedWornSlot, pendingDrop, inspectItem, canChangeEquipment, transferSelection?.itemId]);
+  useEffect(() => {
+    if (pendingDrop) dropCancelRef.current?.focus();
+  }, [pendingDrop]);
 
   // Selection never equips or transfers: the player explicitly chooses a command.
   const browseBackpack = (step) => {
@@ -323,6 +377,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedBagItem(null);
       setInspectItem(false);
       setShowEquipmentDetails(false);
+      setPendingDrop(null);
     }
     // Always begin the newly selected MM3 page at its top. On phones the
     // previously preserved scroll was hiding the header, inventory and actions
@@ -333,6 +388,18 @@ export default function ChroniclesCharacterSheet({
   };
 
   const closeOnEscape = (event) => {
+    if (pendingDrop) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setPendingDrop(null);
+      } else if (/^[1-4etudi]$/i.test(event.key)) {
+        // A pending destructive decision blocks party transfers and item actions.
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
@@ -414,14 +481,31 @@ export default function ChroniclesCharacterSheet({
               )}
               {selectedWornItem && !directTransferMode && (
                 <small className="chronicles-character-sheet__worn-hint" role="status">
-                  {selectedWornItem.name} seleccionado · Pulsa 1–4 o toca un retrato para entregarlo, o Quitar para guardarlo.
+                  {selectedWornItem.name} seleccionado · T para entregar a 1–4, U para quitarlo, I para información.
                 </small>
               )}
               {directTransferMode && (
                 <small className="chronicles-character-sheet__transfer-hint" role="status">
-                  {transferSelection.name} seleccionado · Pulsa 1–4 o toca un retrato para entregar uno.
+                  {transferSelection.name} seleccionado · T y luego 1–4, o toca un retrato para entregar uno.
                   Vuelve a pulsar el objeto para cancelar.
                 </small>
+              )}
+              {!tacticsMode && <small className="chronicles-character-sheet__shortcuts">E equipar · U quitar · T entregar · D tirar · I información</small>}
+              {pendingDrop && !tacticsMode && (
+                <div className="chronicles-character-sheet__drop-confirmation" role="group"
+                  aria-label={`Confirmar eliminación de ${pendingDrop.name}`}>
+                  <span>¿Eliminar 1 × {pendingDrop.name} de la mochila? No se podrá recuperar.</span>
+                  <button type="button" onClick={() => {
+                    if (canChangeEquipment && pendingDrop.memberId === member.id
+                      && transferableItem?.id === pendingDrop.itemId) {
+                      onEquipmentAction?.({ type: 'drop-item', itemId: pendingDrop.itemId });
+                      setSelectedBagItem(null);
+                      setInspectItem(false);
+                    }
+                    setPendingDrop(null);
+                  }}>Sí, eliminar</button>
+                  <button type="button" ref={dropCancelRef} onClick={() => setPendingDrop(null)}>Cancelar</button>
+                </div>
               )}
               {!tacticsMode && (
                 <nav className="chronicles-character-sheet__classic-actions" aria-label="Acciones de inventario">
@@ -435,10 +519,10 @@ export default function ChroniclesCharacterSheet({
                     disabled={!canChangeEquipment || (!selectedWornItem && (!transferableItem || !selectedEquipment || !canEquipSelected))}
                     aria-label={selectedWornItem ? `Quitar ${selectedWornItem.name} y guardarlo en la mochila`
                       : selectedEquipment ? `Equipar ${selectedEquipment.name}` : 'Equipar objeto'}
+                    aria-keyshortcuts={selectedWornItem ? "U" : "E"}
                     onClick={() => {
                       if (selectedWornItem) {
-                        onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
-                        setSelectedWornSlot(null);
+                        unequipSelected();
                       } else if (transferableItem && selectedEquipment && canEquipSelected) {
                         onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id });
                         setSelectedBagItem(null);
@@ -451,9 +535,9 @@ export default function ChroniclesCharacterSheet({
                     onClick={() => setShowEquipmentDetails((shown) => !shown)}>
                     <span aria-hidden="true">▣</span> Detalles
                   </button>
-                  <button type="button" disabled={!selectedInventoryItem}
-                    aria-expanded={inspectItem}
-                    onClick={() => { setInspectItem((open) => !open);  }}>
+                  <button type="button" disabled={!detailItem}
+                    aria-expanded={inspectItem} aria-keyshortcuts="I"
+                    onClick={() => { setExpandItemAttributes(false); setInspectItem((open) => !open); }}>
                     <span aria-hidden="true">⌕</span> Examinar
                   </button>
                   <button type="button" onClick={onClose}>
@@ -461,24 +545,24 @@ export default function ChroniclesCharacterSheet({
                   </button>
                 </nav>
               )}
-              {!tacticsMode && selectedInventoryItem && (
+              {!tacticsMode && detailItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}>
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
-                  <strong>{selectedInventoryItem.name}</strong>
+                  <strong>{detailItem.name}</strong>
                   <div className="chronicles-character-sheet__item-essentials">
-                    <span>×{selectedInventoryItem.quantity}</span>
-                    {selectedEquipment && <>
-                      <span>{{ weapon: 'Arma A', missile: 'Proyectiles S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</span>
-                      <span className={canEquipSelected ? 'can-equip' : 'cannot-equip'}>
-                        {canEquipSelected ? 'Puede equiparlo' : 'Clase incompatible'}
+                    <span>×{detailItem.quantity}</span>
+                    {detailEquipment && <>
+                      <span>{{ weapon: 'Arma A', missile: 'Proyectiles S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</span>
+                      <span className={detailCanEquip ? 'can-equip' : 'cannot-equip'}>
+                        {detailCanEquip ? 'Puede equiparlo' : 'Clase incompatible'}
                       </span>
                     </>}
                   </div>
-                  {!selectedEquipment && (
-                    <p>{selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  {!detailEquipment && (
+                    <p>{detailItem.description || 'Objeto de expedición.'}</p>
                   )}
-                  {selectedEquipment && <>
-                    {weaponSwap ? (
+                  {detailEquipment && <>
+                    {!selectedWornItem && weaponSwap ? (
                       <details className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
                         <summary>
                           <span>Si equipas este objeto (${weaponSwap.slot === 'missile' ? 'S' : 'A'})</span>
@@ -490,30 +574,35 @@ export default function ChroniclesCharacterSheet({
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </details>
-                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
+                    ) : !selectedWornItem && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
 
                   </>}
-                  <details className="chronicles-character-sheet__item-more">
+                  <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
                     <summary>Descripción y atributos</summary>
-                    {selectedEquipment && <p>{selectedEquipment.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>}
-                    {selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
+                    {detailEquipment && <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>}
+                    {detailEquipment && chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
                       <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
-                        {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
+                        {chroniclesShopHandlingNote(detailEquipment, state?.combatRules)}
                       </small>
                     )}
                     <dl>
-                      <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
-                      {selectedEquipment && <>
-                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
-                        <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
-                        <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
-                        <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
-                        <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
-                        <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                      <div><dt>Cantidad</dt><dd>{detailItem.quantity}</dd></div>
+                      {detailEquipment && <>
+                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</dd></div>
+                        <div><dt>Daño adicional</dt><dd>{signed(detailEquipment.attackDamageBonus)}</dd></div>
+                        <div><dt>Acierto</dt><dd>{signed(detailEquipment.toHitBonus)}</dd></div>
+                        <div><dt>Armadura</dt><dd>{signed(detailEquipment.armorClassBonus)}</dd></div>
+                        <div><dt>Valor</dt><dd>{detailEquipment.price} oro</dd></div>
+                        <div><dt>Puede usarlo</dt><dd>{detailCanEquip ? 'Sí' : 'No, clase incompatible'}</dd></div>
                       </>}
                     </dl>
-                    {selectedEquipment && <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>}
+                    {detailEquipment && <small>Actualmente: {detailEquipped?.name || 'Sin equipar'}.</small>}
                   </details>
+                  <button type="button" className="chronicles-character-sheet__drop-button"
+                    disabled={!canChangeEquipment || !transferableItem || Boolean(selectedWornItem)}
+                    onClick={() => setPendingDrop({
+                      memberId: member.id, itemId: transferableItem.id, name: transferableItem.name,
+                    })}>Tirar 1 objeto (D)</button>
                 </aside>
               )}
             </article>

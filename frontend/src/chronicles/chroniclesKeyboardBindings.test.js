@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
@@ -512,6 +512,30 @@ describe('Chronicles TAB toggle on the menu gem', () => {
     for (const active of [{ confirmExitWithoutSaving: true }, { feedbackOpen: true }]) {
       expect(chroniclesAdventureTabClosesMenu(event(), gem,
         { menuOpen: true, ...active })).toBe(false);
+    }
+  });
+});
+
+describe('MM3 modal inventory letter shortcuts', () => {
+  const event = (key, patch = {}) => ({
+    key, target: { isContentEditable: false, closest: () => null }, ...patch,
+  });
+  it('maps E/T/U/D/I only when the equipment chapter is active', () => {
+    for (const [key, command] of [['e','e'],['T','t'],['u','u'],['D','d'],['i','i']]) {
+      expect(chroniclesInventoryShortcut(event(key), { open: true })).toBe(command);
+      expect(chroniclesInventoryShortcut(event(key), { open: false })).toBeNull();
+      expect(chroniclesInventoryShortcut(event(key), { open: true, confirmingDrop: true })).toBeNull();
+    }
+    for (const key of ['1', '4', 'Escape', 'ArrowUp', 'q', 's', ' ']) {
+      expect(chroniclesInventoryShortcut(event(key), { open: true })).toBeNull();
+    }
+  });
+  it('never consumes held keys, modifiers, composition or typing into inputs', () => {
+    for (const guard of ['defaultPrevented', 'repeat', 'isComposing', 'ctrlKey', 'altKey', 'metaKey', 'shiftKey']) {
+      expect(chroniclesInventoryShortcut(event('d', { [guard]: true }), { open: true })).toBeNull();
+    }
+    for (const target of [{ isContentEditable: true }, { closest: () => ({}) }]) {
+      expect(chroniclesInventoryShortcut(event('d', { target }), { open: true })).toBeNull();
     }
   });
 });
