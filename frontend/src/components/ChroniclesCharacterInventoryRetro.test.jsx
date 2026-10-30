@@ -137,7 +137,8 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(classic).toContain('background: var(--mm3-equipment-stone) !important;');
     expect(workspace).toContain('max-width: none;');
     expect(workspace).toContain('flex: 1 1 auto;');
-    expect(workspace).toContain('grid-auto-rows: minmax(54px, auto)');
+    expect(workspace).toContain('align-content: start;');
+    expect(workspace).not.toContain('grid-auto-rows: minmax(54px, auto)');
     expect(workspace).toContain('.chronicles-character-sheet__classic-actions');
     expect(workspace).toContain('@media (min-width: 851px) and (min-height: 581px)');
     expect(workspace).toContain('chronicles-character-sheet__technical-heading');
