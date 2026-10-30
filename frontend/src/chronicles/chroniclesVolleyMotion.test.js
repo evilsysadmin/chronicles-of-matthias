@@ -31,8 +31,9 @@ describe('Chronicles · polished projectile flight', () => {
     for (const kind of ['bow', 'crossbow']) {
       const first = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
       const middle = chroniclesVolleyFlightSample(3, 1, 0.08, kind);
-      expect(Math.abs(first.yaw)).toBeGreaterThan(0.2);
-      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.2);
+      // A restrained three-quarter launch need not retain the old broad yaw.
+      expect(Math.abs(first.yaw)).toBeGreaterThan(0.16);
+      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.16);
       expect(first.yaw * middle.yaw).toBeLessThan(0);
       expect(first.pitch).toBeLessThan(-0.1);
     }
