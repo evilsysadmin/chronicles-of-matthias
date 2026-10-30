@@ -77,9 +77,11 @@ export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow'
   const travelY = 0.24;
   const travelZ = -4.05;
   // The models' positive longitudinal direction is local -Z.
-  // With Three's YXZ Euler order these angles align that axis with travel.
-  const arrowYaw = Math.atan2(-travelX, -travelZ);
-  const arrowPitch = Math.atan2(travelY, Math.hypot(travelX, travelZ));
+  // Match the renderer's existing XYZ Euler order (no scene refactor):
+  // yaw controls the sideways -Z component; pitch fixes the vertical one.
+  // Together they rotate local -Z exactly onto the normalized velocity.
+  const arrowYaw = Math.asin(-travelX / Math.hypot(travelX, travelY, travelZ));
+  const arrowPitch = Math.atan2(travelY, -travelZ);
   return {
     x: spread * (1 - 0.64 * forward),
     y: -0.33 + 0.24 * forward + (sling ? 0.16 * Math.sin(Math.PI * t) : 0),

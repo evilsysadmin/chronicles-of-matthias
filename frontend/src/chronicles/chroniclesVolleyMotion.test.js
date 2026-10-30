@@ -29,7 +29,7 @@ describe('Chronicles · polished projectile flight', () => {
     expect(chroniclesVolleyFlightSample(1, 0, 0.50, 'sling')).not.toBeNull();
   });
   it('points the real -Z nose in the direction of travel at every stage', () => {
-    // The geometry was originally aligned to local -Z. Three's YXZ order
+    // The geometry was originally aligned to local -Z. Three's XYZ order
     // must carry that axis onto the actual world-space flight tangent.
     for (const kind of ['bow', 'crossbow']) {
       const duration = kind === 'bow' ? 0.49 : 0.43;
@@ -41,7 +41,7 @@ describe('Chronicles · polished projectile flight', () => {
             const next = chroniclesVolleyFlightSample(count, index, stagger + duration * (t + 0.01), kind);
             const velocity = new THREE.Vector3(next.x - now.x, next.y - now.y, next.z - now.z).normalize();
             const nose = new THREE.Vector3(0, 0, -1).applyEuler(
-              new THREE.Euler(now.pitch, now.yaw, now.roll, 'YXZ'),
+              new THREE.Euler(now.pitch, now.yaw, now.roll, 'XYZ'),
             );
             expect(nose.dot(velocity), `${kind}/${count}/${index} at ${t}`)
               .toBeGreaterThan(0.999999);
