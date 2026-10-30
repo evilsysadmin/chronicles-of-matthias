@@ -3,6 +3,7 @@ import { clearStorageMemoryFallback } from '../safeStorage.js';
 import {
   chroniclesAutomapCellKey,
   chroniclesAutomapFacingDegrees,
+  chroniclesAutomapFullViewport,
   chroniclesAutomapRouteEdge,
   chroniclesAutomapTouchedCells,
   chroniclesAutomapMarkVisited,
@@ -20,6 +21,23 @@ describe('Chronicles automap', () => {
     clearStorageMemoryFallback();
     clearChroniclesAutomapVisited(runId);
   });
+  it('fits the ENTIRE real zone into one stable viewBox, independent of exploration', () => {
+    const swordhaven = { grid: Array.from({ length: 23 }, () => '.'.repeat(19)) };
+    const viewport = chroniclesAutomapFullViewport(swordhaven);
+    expect(viewport).toEqual({ x: -0.5, y: -0.5, width: 20, height: 24 });
+    for (const point of [{ x: 0, y: 0 }, { x: 18, y: 22 }]) {
+      expect(point.x).toBeGreaterThan(viewport.x);
+      expect(point.x + 1).toBeLessThan(viewport.x + viewport.width);
+      expect(point.y).toBeGreaterThan(viewport.y);
+      expect(point.y + 1).toBeLessThan(viewport.y + viewport.height);
+    }
+    expect(chroniclesAutomapFullViewport(swordhaven)).toEqual(viewport);
+    expect(chroniclesAutomapFullViewport({ grid: ['####', '#..#', '####'] }))
+      .toEqual({ x: -0.5, y: -0.5, width: 5, height: 4 });
+    expect(chroniclesAutomapFullViewport(null))
+      .toEqual({ x: -0.5, y: -0.5, width: 2, height: 2 });
+  });
+
   it('tracks visited cells per map without mutating the previous ledger', () => {
     const empty = {};
     const first = chroniclesAutomapMarkVisited(empty, { mapId: 'crypt', x: 2, y: 3 });
