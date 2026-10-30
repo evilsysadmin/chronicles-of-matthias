@@ -47,8 +47,16 @@ describe('Swordhaven botica greenhouse silhouette', () => {
       .toBe(true);
     expect(mullions.every(bar => bar.geometry.parameters.depth === 2.34)).toBe(true);
     expect(greenhouse.getObjectByName('herbarium-roof-ridge').position.y).toBe(2.55);
-    expect(botica.getObjectByName('apothecary-herbarium-stone-terrace')
-      ?.userData.chroniclesDecorativeOnly).toBe(true);
+    const terrace = botica.getObjectByName('apothecary-herbarium-stone-terrace');
+    expect(terrace?.userData.chroniclesDecorativeOnly).toBe(true);
+    // The greenhouse must read as a substantial roof volume on mobile,
+    // but its terrace and timber posts stay within the authored solid house.
+    expect(greenhouse.scale.x).toBeGreaterThan(1.6);
+    expect(greenhouse.scale.y).toBeGreaterThan(1.2);
+    expect(terrace.geometry.parameters.width).toBeGreaterThan(2 * 1.38 * greenhouse.scale.x);
+    expect(terrace.geometry.parameters.depth).toBeGreaterThan(2 * 1.07 * greenhouse.scale.z);
+    expect(terrace.geometry.parameters.width).toBeLessThan(8.1);
+    expect(terrace.geometry.parameters.depth).toBeLessThan(7.1);
     expect(botica.getObjectByName('shop-door')).toBeTruthy();
   });
 });
