@@ -47,7 +47,8 @@ describe('Chronicles · polished projectile flight', () => {
     for (const kind of ['bow', 'crossbow']) {
       const early = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
       const late = chroniclesVolleyFlightSample(3, 0, 0.35, kind);
-      expect(Math.abs(early.yaw)).toBeGreaterThan(0.18);
+      expect(Math.abs(early.yaw)).toBeGreaterThan(0.16);
+      expect(Math.abs(early.yaw)).toBeLessThan(0.25);
       expect(Math.abs(late.yaw)).toBeLessThan(Math.abs(early.yaw));
       expect(Math.abs(late.yaw)).toBeLessThan(0.18);
       expect(late.z).toBeLessThan(early.z);
