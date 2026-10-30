@@ -1651,9 +1651,31 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       [0.43, 0.62], [0.29, 0.77], [0.17, 0.83],
       [0.22, 0.91], [0.12, 0.96], [0, 0.97],
     ].map(([radius, y]) => new THREE.Vector2(radius, y));
+    // Break the lathe's pottery-like rotational symmetry into soft fabric
+    // folds. Vertex tints make the creases readable even without cast shadows
+    // on touch devices; one shared geometry/material still serves all sacks.
+    const sackGeometry = new THREE.LatheGeometry(sackProfile, coarse ? 9 : 12);
+    const sackPositions = sackGeometry.getAttribute('position');
+    const sackCanvas = new THREE.Color(0xc2a780);
+    const sackColors = [];
+    for (let index = 0; index < sackPositions.count; index += 1) {
+      const x = sackPositions.getX(index);
+      const y = sackPositions.getY(index);
+      const z = sackPositions.getZ(index);
+      const angle = Math.atan2(z, x);
+      const fullness = Math.sin(Math.PI * y / 0.97);
+      const crease = Math.sin(3 * angle + y * 1.4);
+      const ripple = Math.sin(6 * angle - y * 2.2);
+      const radius = 1 + fullness * (0.10 * crease + 0.035 * ripple);
+      sackPositions.setXYZ(index, x * radius, y, z * radius * 0.9);
+      const shade = 0.94 + fullness * (0.10 * crease + 0.025 * ripple);
+      sackColors.push(sackCanvas.r * shade, sackCanvas.g * shade, sackCanvas.b * shade);
+    }
+    sackGeometry.setAttribute('color', new THREE.Float32BufferAttribute(sackColors, 3));
+    sackGeometry.computeVertexNormals();
     const sacks = new THREE.InstancedMesh(
-      new THREE.LatheGeometry(sackProfile, coarse ? 9 : 12),
-      material(0xc2a780, { roughness: 1, metalness: 0 }), 4,
+      sackGeometry,
+      material(0xffffff, { roughness: 1, metalness: 0, vertexColors: true }), 4,
     );
     sacks.name = 'store-front-provisions-sacks';
     sacks.userData.chroniclesDecorativeOnly = true;
