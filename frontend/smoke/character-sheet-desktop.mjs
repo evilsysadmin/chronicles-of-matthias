@@ -1079,6 +1079,7 @@ try {
           overflow: wrapper.scrollWidth - wrapper.clientWidth,
           titleText: title.textContent.trim(),
           classText: description.textContent.trim(),
+          descriptionVisible: getComputedStyle(description).display !== 'none',
           columns: getComputedStyle(wrapper).gridTemplateColumns,
         };
       });
@@ -1098,11 +1099,11 @@ try {
           key + ' must remain inside the header: ' + JSON.stringify(identity));
       }
       if (height <= 480) {
-        assert.ok(identity.title.right <= identity.description.left + 1
-          || identity.title.bottom <= identity.description.top + 1,
-        'Landscape hero name and class must not collide: ' + JSON.stringify(identity));
-        assert.ok(identity.resources.top >= Math.max(identity.title.bottom, identity.description.bottom) - 1,
-          'Landscape resource chips must sit below identity text: ' + JSON.stringify(identity));
+        assert.equal(identity.descriptionVisible, false,
+          'In short-landscape Equipo, redundant class/level text must free space for the inventory');
+        assert.ok(identity.resources.top >= identity.title.bottom - 1,
+          'Landscape gold/resources must sit below the hero name without overlap: '
+            + JSON.stringify(identity));
       }
       await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
       assert.deepEqual(errors, []);
