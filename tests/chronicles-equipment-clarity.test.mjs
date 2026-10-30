@@ -33,12 +33,12 @@ test('party slots transfer an explicitly selected item; otherwise they navigate'
   // Actual keyboard, mouse and combat behavior is covered by Chromium smoke.
 });
 
-test('equipment unequip controls are concise but identify the affected item for assistive tech', () => {
-  const labels = sheet.match(/aria-label=\{`Quitar \$\{worn\.name\} y guardarlo en la mochila`\}/g) || [];
-  assert.equal(labels.length, 2, 'both weapon and armor/shield actions have item-specific labels');
-  assert.equal((sheet.match(/type: 'unequip-item', slot/g) || []).length, 3,
-    'two advanced per-slot controls plus the one contextual Quitar action');
+test('one contextual unequip control names the selected worn item for assistive tech', () => {
+  assert.match(sheet, /aria-label=\{selectedWornItem \? `Quitar \$\{selectedWornItem\.name\} y guardarlo en la mochila`/);
+  assert.equal((sheet.match(/type: 'unequip-item', slot/g) || []).length, 1,
+    'only the contextual Quitar action survives; no duplicate technical cards');
   assert.match(sheet, /type: 'unequip-item', slot: selectedWornItem\.slot/);
+  assert.doesNotMatch(sheet, /showEquipmentDetails|chronicles-equipment-technical-details/);
   assert.equal((sheet.match(/>\s*Guardar en mochila\s*</g) || []).length, 0);
 });
 
