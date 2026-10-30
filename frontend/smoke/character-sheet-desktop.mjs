@@ -1007,7 +1007,7 @@ try {
         'Mobile inventory must read as one compact icon/name row per item: ' + JSON.stringify(mobileLayout));
       assert.deepEqual(mobileLayout.commands.map(({ visible }) => visible),
         [false, false, true, true, true, false],
-        'Touch shows only Equipar/Quitar, Puesto and Examinar; desktop keeps six commands');
+        'Touch shows only Equipar/Quitar, Detalles and Examinar; desktop keeps six commands');
       assert.ok(mobileLayout.commands.filter(({ visible }) => visible)
         .every(({ height: hitHeight }) => hitHeight >= 44),
         'All visible commands remain usable 44px touch targets');
@@ -1103,34 +1103,37 @@ try {
       assert.equal(await repeatedEquipmentGold.count(), 0,
         'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
       if (width <= 520) {
-        const mobileWorn = sheet.locator('.chronicles-character-sheet__equipped-disclosure');
-        assert.equal(await mobileWorn.getAttribute('open'), null);
-        assert.ok(await mobileWorn.evaluate((node) => node.getBoundingClientRect().height) <= 75,
-          'Collapsed mobile gear must avoid unnecessary scrolling');
-        await mobileWorn.locator('summary').click();
-        const emptyWeapons = await sheet.locator(
-          '[data-chronicles-equipment-folio] .chronicles-character-sheet__weapon-card:not(:has(> button))'
-        ).evaluateAll((cards) => cards.map((card) => {
-          const label = card.querySelector('b');
-          const value = card.querySelector('strong');
-          const explanation = card.querySelector('small');
-          return {
-            slot: card.dataset.slot,
-            height: card.getBoundingClientRect().height,
-            sameRow: Math.abs(label.getBoundingClientRect().top - value.getBoundingClientRect().top) <= 4,
-            clipped: [card, label, value, explanation].some((el) => el.scrollWidth > el.clientWidth + 1),
-            label: label.textContent.trim(),
-            value: value.textContent.trim(),
-            explanation: explanation.textContent.trim(),
-          };
-        }));
+        const controls = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+        const details = controls.getByRole('button', { name: 'Detalles' });
+        const advanced = sheet.locator('#chronicles-equipment-technical-details');
+        assert.equal(await advanced.count(), 0,
+          'No permanent equipment summary can steal a mobile inventory row');
+        await details.click();
+        await advanced.waitFor({ state: 'visible' });
+        assert.equal(await details.getAttribute('aria-expanded'), 'true');
+        const emptyWeapons = await advanced.locator('.chronicles-character-sheet__weapon-card:not(:has(> button))')
+          .evaluateAll((cards) => cards.map((card) => {
+            const label = card.querySelector('b');
+            const value = card.querySelector('strong');
+            const explanation = card.querySelector('small');
+            return {
+              slot: card.dataset.slot,
+              height: card.getBoundingClientRect().height,
+              sameRow: Math.abs(label.getBoundingClientRect().top - value.getBoundingClientRect().top) <= 4,
+              clipped: [card, label, value, explanation].some((el) => el.scrollWidth > el.clientWidth + 1),
+              value: value.textContent.trim(),
+              explanation: explanation.textContent.trim(),
+            };
+          }));
         assert.deepEqual(emptyWeapons.map(({ slot }) => slot), ['weapon', 'missile'],
-          'Fixture must exercise both genuinely empty A/S slots');
+          'Optional technical details still show both empty A/S slots');
         assert.ok(emptyWeapons.every(({ sameRow, height, clipped }) => sameRow && height <= 110 && !clipped),
-          'Empty mobile weapon slots must fit on two readable rows: ' + JSON.stringify(emptyWeapons));
+          'Empty technical weapon slots remain readable on touch: ' + JSON.stringify(emptyWeapons));
         assert.ok(emptyWeapons.every(({ value, explanation }) => value === 'Sin equipar' && explanation.length > 0),
-          'Compacting empty slots must retain their meaningful status and stats');
-        await mobileWorn.locator('summary').click();
+          'Technical expansion must retain real state and meaningful stats');
+        await details.click();
+        assert.equal(await advanced.count(), 0,
+          'Closing technical details must restore a clean mobile inventory');
       }
       // Hildegard's longer name exposed a real 844x390 overlap with the close
       // button. Check actual painted rectangles, not only document overflow.
