@@ -1216,16 +1216,37 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         mats.timber, 'tavern-oriel-diagonal-support', [-0.18, -0.98, z], !coarse);
       bracket.rotation.z = 0.54;
     }
-    // The guest gallery needs a real ridge and two roof pitches: the former
-    // single tilted slab read as a flat lid from the east plaza. Both slopes
-    // sit over the existing elevated oriel, never over walkable street cells.
+    // A steeper cross-gable makes the guest wing read as a second storey
+    // from the east plaza, rather than a low box attached to the inn.
+    // The entire roof stays over the existing elevated decorative oriel.
     for (const side of [-1, 1]) {
       const slope = mesh(oriel, new THREE.BoxGeometry(1.52, 0.16, 2.22), roof,
-        'tavern-oriel-pitched-roof-slope', [-0.17, 0.88, side * 1.02], !coarse);
-      slope.rotation.x = side * 0.31;
+        'tavern-oriel-pitched-roof-slope', [-0.17, 0.95, side * 1.02], !coarse);
+      slope.rotation.x = side * 0.44;
     }
     mesh(oriel, new THREE.BoxGeometry(1.60, 0.16, 0.16), mats.timber,
-      'tavern-oriel-roof-ridge', [-0.17, 1.23, 0], !coarse);
+      'tavern-oriel-roof-ridge', [-0.17, 1.43, 0], !coarse);
+    // Close the plaza-facing gable with actual brick infill and oak rakes.
+    // The little amber roundel belongs to the guest rooms, not a UI decal.
+    const guestGable = new THREE.Shape();
+    guestGable.moveTo(-1.69, 0.66);
+    guestGable.lineTo(1.69, 0.66);
+    guestGable.lineTo(0, 1.41);
+    guestGable.closePath();
+    const gableFace = mesh(oriel, new THREE.ShapeGeometry(guestGable), tavernBrick,
+      'tavern-oriel-east-brick-gable', [-1.01, 0, 0], !coarse);
+    gableFace.rotation.y = -Math.PI / 2;
+    for (const side of [-1, 1]) {
+      const rake = mesh(oriel, new THREE.BoxGeometry(0.13, 0.12, 2.16), mats.timber,
+        'tavern-oriel-east-oak-rake', [-1.04, 0.96, side * 0.99], !coarse);
+      rake.rotation.x = side * 0.44;
+    }
+    const roundel = mesh(oriel, new THREE.CircleGeometry(0.21, 16), mats.window,
+      'tavern-oriel-east-amber-roundel', [-1.05, 0.96, 0], !coarse);
+    roundel.rotation.y = -Math.PI / 2;
+    const roundelFrame = mesh(oriel, new THREE.TorusGeometry(0.25, 0.055, 6, 16), mats.timber,
+      'tavern-oriel-east-oak-roundel-frame', [-1.07, 0.96, 0], !coarse);
+    roundelFrame.rotation.y = -Math.PI / 2;
     mesh(oriel, new THREE.BoxGeometry(1.04, 0.17, 3.76), mats.timber,
       'tavern-oriel-floor-beam', [-0.10, -0.72, 0], !coarse);
     root.add(oriel);
