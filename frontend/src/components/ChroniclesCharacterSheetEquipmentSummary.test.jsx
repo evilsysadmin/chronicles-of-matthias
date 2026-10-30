@@ -105,7 +105,7 @@ describe('Chronicles character sheet combat summary', () => {
     });
     expect(html).not.toContain('chronicles-character-sheet__backpack-tools');
     expect(html).not.toContain('Filtrar y buscar');
-    expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Descripción y atributos<\/summary>/);
+    expect(html).toMatch(/<details class="chronicles-character-sheet__item-more">\s*<summary>Estadísticas y descripción<\/summary>/);
     expect(html).toMatch(/Puede equiparlo|Clase incompatible/);
     expect(html).toContain('Equipar Honda de latón');
     expect(html).not.toMatch(/alcance/i);
