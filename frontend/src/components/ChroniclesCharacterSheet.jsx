@@ -12,6 +12,7 @@ import './ChroniclesCharacterRecordV3.css';
 import './ChroniclesCharacterEquipmentDisclosure.css';
 import './ChroniclesCharacterInventoryClassic.css';
 import './ChroniclesCharacterFolioStone.css';
+import './ChroniclesCharacterMobileEquipment.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import ChroniclesInventoryItemIcon from './ChroniclesInventoryItemIcon.jsx';
 import {
