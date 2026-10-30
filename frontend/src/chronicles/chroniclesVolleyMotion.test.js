@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
 import { CHRONICLES_VOLLEY_MAX_DURATION, CHRONICLES_VOLLEY_NOSE_REACH, chroniclesVolleyFlightSample, chroniclesVolleyMatchesLaunchPose, chroniclesVolleyObstacleDistance, chroniclesVolleyVisibleFlight } from './chroniclesVolleyMotion.js';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
@@ -27,44 +28,53 @@ describe('Chronicles · polished projectile flight', () => {
     expect(chroniclesVolleyFlightSample(1, 0, 0.50, 'crossbow')).toBeNull();
     expect(chroniclesVolleyFlightSample(1, 0, 0.50, 'sling')).not.toBeNull();
   });
-  it('shows bow and crossbow shafts in a restrained three-quarter flight profile', () => {
+  it('points the real -Z nose in the direction of travel at every stage', () => {
+    // The geometry was originally aligned to local -Z. Three's XYZ order
+    // must carry that axis onto the actual world-space flight tangent.
     for (const kind of ['bow', 'crossbow']) {
-      const first = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
-      const middle = chroniclesVolleyFlightSample(3, 1, 0.08, kind);
-      // A restrained three-quarter launch need not retain the old broad yaw.
-      expect(Math.abs(first.yaw)).toBeGreaterThan(0.16);
-      expect(Math.abs(middle.yaw)).toBeGreaterThan(0.16);
-      expect(first.yaw * middle.yaw).toBeLessThan(0);
-      expect(first.pitch).toBeLessThan(-0.1);
+      const duration = kind === 'bow' ? 0.49 : 0.43;
+      for (const count of [1, 3, 6]) {
+        for (let index = 0; index < count; index += 1) {
+          const stagger = index * 0.034;
+          for (const t of [0.02, 0.25, 0.55, 0.9]) {
+            const now = chroniclesVolleyFlightSample(count, index, stagger + duration * t, kind);
+            const next = chroniclesVolleyFlightSample(count, index, stagger + duration * (t + 0.01), kind);
+            const velocity = new THREE.Vector3(next.x - now.x, next.y - now.y, next.z - now.z).normalize();
+            const nose = new THREE.Vector3(0, 0, -1).applyEuler(
+              new THREE.Euler(now.pitch, now.yaw, now.roll, 'XYZ'),
+            );
+            expect(nose.dot(velocity), `${kind}/${count}/${index} at ${t}`)
+              .toBeGreaterThan(0.999999);
+            expect(now.roll).toBe(0);
+            expect(now.z).toBeGreaterThan(next.z);
+          }
+        }
+      }
     }
-    // A sling stone spins, without acquiring fake arrow fletching orientation.
+  });
+
+  it('keeps every arrow on a straight line rather than dipping or tumbling', () => {
+    for (const kind of ['bow', 'crossbow']) {
+      const duration = kind === 'bow' ? 0.49 : 0.43;
+      for (const index of [0, 2, 4]) {
+        const delay = index * 0.034;
+        const samples = [0.03, 0.33, 0.72, 0.98].map((t) => (
+          chroniclesVolleyFlightSample(5, index, delay + duration * t, kind)
+        ));
+        const positions = samples.map((p) => new THREE.Vector3(p.x, p.y, p.z));
+        const direction = positions[1].clone().sub(positions[0]).normalize();
+        for (let i = 1; i < positions.length - 1; i += 1) {
+          const step = positions[i + 1].clone().sub(positions[i]).normalize();
+          expect(direction.dot(step)).toBeGreaterThan(0.999999);
+          expect(samples[i].pitch).toBeCloseTo(samples[0].pitch, 12);
+          expect(samples[i].yaw).toBeCloseTo(samples[0].yaw, 12);
+        }
+      }
+    }
+    // Stones remain a different physical family with a spinning lobbed arc.
     const stone = chroniclesVolleyFlightSample(1, 0, 0.1, 'sling');
-    expect(Math.abs(stone.yaw)).toBeLessThan(1e-6);
-  });
-
-
-  it('progressively points physical arrows along the forward flight path', () => {
-    for (const kind of ['bow', 'crossbow']) {
-      const early = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
-      const late = chroniclesVolleyFlightSample(3, 0, 0.35, kind);
-      expect(Math.abs(early.yaw)).toBeGreaterThan(0.16);
-      expect(Math.abs(early.yaw)).toBeLessThan(0.25);
-      expect(Math.abs(late.yaw)).toBeLessThan(Math.abs(early.yaw));
-      expect(Math.abs(late.yaw)).toBeLessThan(0.18);
-      expect(late.z).toBeLessThan(early.z);
-    }
-  });
-
-
-  it('keeps early shafts near their actual travel line, without a sideways baton pose', () => {
-    const left = chroniclesVolleyFlightSample(2, 0, 0.06, 'bow');
-    const right = chroniclesVolleyFlightSample(2, 1, 0.06, 'crossbow');
-    const late = chroniclesVolleyFlightSample(2, 0, 0.33, 'bow');
-    expect(Math.abs(left.yaw)).toBeLessThan(0.25);
-    expect(Math.abs(right.yaw)).toBeLessThan(0.25);
-    expect(left.yaw * right.yaw).toBeLessThan(0);
-    expect(Math.abs(late.yaw)).toBeLessThan(0.14);
-    expect(late.z).toBeLessThan(left.z);
+    expect(stone.roll).toBeGreaterThan(0);
+    expect(stone.yaw).toBeCloseTo(0);
   });
 
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {
