@@ -11,6 +11,10 @@ export const CHRONICLES_INITIATIVE_DIE_SIDES = 8;
 const MAX_SAFE_INITIATIVE_AGILITY = Number.MAX_SAFE_INTEGER - CHRONICLES_INITIATIVE_DIE_SIDES;
 
 function nonNegativeInteger(value, fallback = 0) {
+  // Number(true) and Number([7]) fabricate AGI from malformed saved data.
+  // Keep legacy numeric strings, but never coerce structured values or booleans.
+  if (typeof value !== 'number' && typeof value !== 'string') return fallback;
+  if (typeof value === 'string' && !value.trim()) return fallback;
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(0, Math.floor(number));
@@ -37,11 +41,14 @@ export function chroniclesPartyInitiativeAgility(state, member) {
   const base = nonNegativeInteger(member.agility);
   const progressionBonus = nonNegativeInteger(state?.rpgModifiers?.[member.id]?.initiativeBonus);
   // MM Speed: its bonus (negative for slow heroes) moves the hero in the order.
-  const rawSpeedBonus = Number(member.mm3?.bonuses?.speed ?? 0);
-  // Corrupt legacy MM3 bonuses must not turn AGI or initiative into NaN/Infinity.
-  // Only whole, safely representable MM3 bonuses can affect AGI + 1d8.
-  // Fractional/unsafe legacy values would break the integer initiative contract.
-  const speedBonus = Number.isSafeInteger(rawSpeedBonus) ? rawSpeedBonus : 0;
+  const rawSpeedBonus = member.mm3?.bonuses?.speed ?? 0;
+  // Corrupt legacy MM3 bonuses must not fabricate AGI through JS coercion
+  // (e.g. true -> 1, [4] -> 4). Keep safe integer numeric strings for saves.
+  const numericSpeedBonus = typeof rawSpeedBonus === 'number'
+    || (typeof rawSpeedBonus === 'string' && rawSpeedBonus.trim())
+    ? Number(rawSpeedBonus)
+    : NaN;
+  const speedBonus = Number.isSafeInteger(numericSpeedBonus) ? numericSpeedBonus : 0;
   return Math.min(MAX_SAFE_INITIATIVE_AGILITY, Math.max(0, base + progressionBonus + speedBonus));
 }
 
