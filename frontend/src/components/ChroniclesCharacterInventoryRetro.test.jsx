@@ -43,8 +43,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('class="chronicles-character-sheet__item-details" aria-live="polite" hidden=""');
     expect(rendered).not.toContain('chronicles-character-sheet__classic-recipients');
     expect(rendered).not.toContain('chronicles-character-sheet__inventory-hint');
-    expect(rendered).toContain('data-slot="weapon"');
-    expect(rendered).toContain('data-slot="missile"');
+    expect(rendered).not.toContain('data-slot="weapon"');
+    expect(rendered).not.toContain('data-slot="missile"');
+    expect(rendered).toContain('aria-controls="chronicles-equipment-technical-details"');
   });
 
   it('always displays every possession without category filters or a searchbox', () => {
