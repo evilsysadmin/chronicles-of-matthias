@@ -46,6 +46,33 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('data-slot="missile"');
   });
 
+  it('always displays every possession without category filters or a searchbox', () => {
+    const equipment = { matthias: { weapon: 'bronze-sword', armor: 'leather-leather' } };
+    const rendered = html('chronicles', { equipment });
+    expect(rendered).toContain('data-ledger-id="worn:weapon"');
+    expect(rendered).toContain('data-ledger-id="worn:armor"');
+    expect(rendered).toContain('data-ledger-id="bag:brass-dagger"');
+    expect(rendered).not.toContain('Filtrar y buscar');
+    expect(rendered).not.toContain('backpack-tools');
+    expect(rendered).not.toContain('backpack-search');
+    expect(rendered).not.toContain('type="search"');
+    expect(html('tactics')).not.toContain('Filtrar y buscar');
+    const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
+    expect(source).not.toContain('chroniclesFilterBackpack(');
+    expect(source).not.toContain('setBackpackSearch');
+    expect(source).not.toContain('setBackpackFilter');
+  });
+
+  it('makes landscape mobile actions compact without removing desktop commands', () => {
+    const mobile = readFileSync(new URL('./ChroniclesCharacterMobileEquipment.css', import.meta.url), 'utf8');
+    expect(mobile).toContain('Pocket-first MM3 equipment');
+    expect(mobile).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))');
+    expect(mobile).toContain(':nth-child(1), :nth-child(2), :nth-child(6)');
+    expect(mobile).toContain('min-height: 44px');
+    expect(mobile).toContain('white-space: nowrap');
+    expect(classic).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))');
+  });
+
   it('lists genuinely equipped objects even when the personal bag is empty', () => {
     const equipment = { matthias: { weapon: 'bronze-sword', armor: 'leather-leather' } };
     const emptyBag = { inventory: {}, bagOwners: { matthias: {} }, equipment };
