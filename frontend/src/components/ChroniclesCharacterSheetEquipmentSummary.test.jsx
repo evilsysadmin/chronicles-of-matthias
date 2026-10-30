@@ -129,18 +129,19 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('Buscar en la mochila');
   });
 
-  it('offers a compact closed worn-equipment summary before detailed stats and controls', () => {
+  it('shows equipped gear in one list and keeps technical details optional', () => {
     const html = render('mm3', 'equipment', {
       equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
     });
-    expect(html).toContain('class="chronicles-character-sheet__equipped-disclosure"');
-    expect(html).not.toMatch(/class="chronicles-character-sheet__equipped-disclosure"[^>]*\sopen=/);
-    expect(html).toContain('class="chronicles-character-sheet__equipped-body"');
-    expect(html).toContain('<span>Equipo puesto</span>');
-    expect(html).toMatch(/<small title="[^"]*A: [^"]*">/);
-    expect(html).toContain('Quitar');
+    expect(html).toContain('data-worn-slot="weapon"');
+    expect(html).toContain('data-worn-slot="missile"');
+    expect(html).toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('<span>Equipo puesto</span>');
+    expect(html).not.toContain('chronicles-character-sheet__equipped-disclosure');
+    expect(html).not.toContain('id="chronicles-equipment-technical-details"');
     const tactics = render(null, 'equipment', {}, null, 'tactics');
-    expect(tactics).not.toContain('chronicles-character-sheet__equipped-disclosure');
+    expect(tactics).not.toContain('chronicles-equipment-technical-details');
   });
 
   it('does not waste a row on missing MM3 relics, yet shows a real bound relic', () => {
