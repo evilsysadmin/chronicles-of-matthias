@@ -1647,9 +1647,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // A rounded, pinched neck and twine make these read as grain sacks,
     // rather than traffic cones or miniature barrels at normal camera zoom.
     const sackProfile = [
-      [0.21, 0], [0.34, 0.04], [0.43, 0.19], [0.47, 0.43],
-      [0.43, 0.62], [0.29, 0.77], [0.17, 0.83],
-      [0.22, 0.91], [0.12, 0.96], [0, 0.97],
+      [0.22, 0], [0.34, 0.04], [0.43, 0.19], [0.48, 0.43],
+      [0.44, 0.62], [0.29, 0.77], [0.16, 0.83], [0.15, 0.87],
+      // The gathered cloth flares above the cord instead of a pottery lid.
+      [0.23, 0.93], [0.16, 0.97], [0.06, 1.03], [0, 1.04],
     ].map(([radius, y]) => new THREE.Vector2(radius, y));
     // Break the lathe's pottery-like rotational symmetry into soft fabric
     // folds. Vertex tints make the creases readable even without cast shadows
@@ -1663,7 +1664,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       const y = sackPositions.getY(index);
       const z = sackPositions.getZ(index);
       const angle = Math.atan2(z, x);
-      const fullness = Math.sin(Math.PI * y / 0.97);
+      const fullness = 0.2 + 0.8 * Math.sin(Math.PI * y / 1.04);
       const crease = Math.sin(3 * angle + y * 1.4);
       const ripple = Math.sin(6 * angle - y * 2.2);
       const radius = 1 + fullness * (0.10 * crease + 0.035 * ripple);
@@ -1687,6 +1688,20 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     );
     ties.name = 'store-front-sack-twine';
     ties.userData.chroniclesDecorativeOnly = true;
+    // A stitched fold follows the front of the canvas; unlike a painted
+    // stripe it curves with the belly and dies away at the gathered neck.
+    const fold = new THREE.InstancedMesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.16, 0.11, 0.36),
+        new THREE.Vector3(-0.18, 0.32, 0.44),
+        new THREE.Vector3(-0.14, 0.52, 0.46),
+        new THREE.Vector3(-0.12, 0.70, 0.34),
+        new THREE.Vector3(-0.09, 0.80, 0.21),
+      ]), 8, 0.017, 4, false),
+      material(0x8b7355, { roughness: 1 }), 4,
+    );
+    fold.name = 'store-front-sack-cloth-creases';
+    fold.userData.chroniclesDecorativeOnly = true;
     const sack = new THREE.Object3D();
     for (const [index, x] of [-2.92, -2.05, 2.05, 2.92].entries()) {
       const scaleY = index % 2 ? 0.91 : 1.05;
@@ -1695,6 +1710,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       sack.scale.set(1, scaleY, 1);
       sack.updateMatrix();
       sacks.setMatrixAt(index, sack.matrix);
+      fold.setMatrixAt(index, sack.matrix);
       sack.position.y = 0.05 + 0.83 * scaleY;
       sack.rotation.set(Math.PI / 2, 0, 0);
       sack.scale.set(1, 1, 1);
@@ -1703,7 +1719,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     sacks.instanceMatrix.needsUpdate = true;
     ties.instanceMatrix.needsUpdate = true;
-    root.add(sacks, ties);
+    fold.instanceMatrix.needsUpdate = true;
+    root.add(sacks, ties, fold);
   } else if (isForge) {
     mesh(root, new THREE.CylinderGeometry(0.52, 0.59, 1.3, 10), mats.stone,
       'forge-brazier', [-width * 0.40, 0.65, facadeZ + 0.23]);
