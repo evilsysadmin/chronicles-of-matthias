@@ -127,6 +127,8 @@ export default function ChroniclesCharacterSheet({
   const [expandItemAttributes, setExpandItemAttributes] = useState(false);
   const [pendingDrop, setPendingDrop] = useState(null);
   const dropCancelRef = useRef(null);
+  const inspectTriggerRef = useRef(null);
+  const inspectCloseRef = useRef(null);
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
@@ -333,6 +335,38 @@ export default function ChroniclesCharacterSheet({
   useEffect(() => {
     if (pendingDrop) dropCancelRef.current?.focus();
   }, [pendingDrop]);
+  useEffect(() => {
+    if (inspectItem) inspectCloseRef.current?.focus();
+  }, [inspectItem]);
+
+  const closeInspection = () => {
+    setInspectItem(false);
+    inspectTriggerRef.current?.focus();
+  };
+  const handleInspectionKey = (event) => {
+    // The inspection is its own modal: no inventory shortcuts, party transfer
+    // or parent Escape action may fire while reading an item's stats.
+    event.stopPropagation();
+    if (event.key === 'Escape' || event.key.toLowerCase() === 'i') {
+      event.preventDefault();
+      closeInspection();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const tabbables = [...event.currentTarget.querySelectorAll(
+      'button:not(:disabled), summary, a[href], [tabindex]:not([tabindex="-1"])'
+    )].filter((node) => node.getClientRects().length > 0);
+    if (!tabbables.length) { event.preventDefault(); return; }
+    const first = tabbables[0];
+    const last = tabbables[tabbables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   // Selection never equips or transfers: the player explicitly chooses a command.
   const browseBackpack = (step) => {
@@ -533,8 +567,8 @@ export default function ChroniclesCharacterSheet({
                     }}>
                     <span aria-hidden="true">⚔</span> {selectedWornItem ? 'Quitar' : 'Equipar'}
                   </button>
-                  <button type="button" disabled={!detailItem}
-                    aria-expanded={inspectItem} aria-keyshortcuts="I"
+                  <button type="button" ref={inspectTriggerRef} disabled={!detailItem}
+                    aria-haspopup="dialog" aria-expanded={inspectItem} aria-keyshortcuts="I"
                     onClick={() => { setExpandItemAttributes(!inspectItem); setInspectItem((open) => !open); }}>
                     <span aria-hidden="true">⌕</span> Examinar
                   </button>
@@ -544,7 +578,16 @@ export default function ChroniclesCharacterSheet({
                 </nav>
               )}
               {!tacticsMode && detailItem && (
-                <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}>
+                <div className="chronicles-character-sheet__inspection-scrim" hidden={!inspectItem}
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) closeInspection();
+                  }}>
+                <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}
+                  role="dialog" aria-modal="true" aria-label={`Examinar ${detailItem.name}`}
+                  onKeyDown={handleInspectionKey}>
+                  <button type="button" ref={inspectCloseRef}
+                    className="chronicles-character-sheet__inspection-close"
+                    aria-label="Cerrar inspección" onClick={closeInspection}>×</button>
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
                   <strong>{detailItem.name}</strong>
                   <div className="chronicles-character-sheet__item-essentials">
@@ -602,10 +645,14 @@ export default function ChroniclesCharacterSheet({
                   </details>
                   <button type="button" className="chronicles-character-sheet__drop-button"
                     disabled={!canChangeEquipment || !transferableItem || Boolean(selectedWornItem)}
-                    onClick={() => setPendingDrop({
-                      memberId: member.id, itemId: transferableItem.id, name: transferableItem.name,
-                    })}>Tirar 1 objeto (D)</button>
+                    onClick={() => {
+                      closeInspection();
+                      setPendingDrop({
+                        memberId: member.id, itemId: transferableItem.id, name: transferableItem.name,
+                      });
+                    }}>Tirar 1 objeto (D)</button>
                 </aside>
+                </div>
               )}
             </article>
   );
