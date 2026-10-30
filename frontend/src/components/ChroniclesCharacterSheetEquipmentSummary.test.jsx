@@ -134,13 +134,14 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('Buscar en la mochila');
   });
 
-  it('shows equipped gear in one list and keeps technical details optional', () => {
+  it('shows equipped gear in one list with one inspection command', () => {
     const html = render('mm3', 'equipment', {
       equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
     });
     expect(html).toContain('data-worn-slot="weapon"');
     expect(html).toContain('data-worn-slot="missile"');
-    expect(html).toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(html).not.toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(html).toContain('> Examinar</button>');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('<span>Equipo puesto</span>');
     expect(html).not.toContain('chronicles-character-sheet__equipped-disclosure');
