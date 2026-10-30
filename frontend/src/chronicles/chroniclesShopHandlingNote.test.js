@@ -14,16 +14,15 @@ describe('Chronicles merchant · actual equipment hand usage', () => {
     expect(note('brass-sword')).toBe('');
   });
 
-  it('does not promise shield accuracy or parry during two-handed bow and crossbow shots', () => {
-    for (const id of ['wooden-bow', 'wooden-longbow', 'brass-crossbow']) {
+  it('describes independent bow/crossbow/sling and shield slots without fake penalties', () => {
+    for (const id of ['wooden-bow', 'wooden-longbow', 'brass-crossbow', 'brass-sling']) {
       expect(CHRONICLES_EQUIPMENT[id].slot).toBe('missile');
-      expect(CHRONICLES_EQUIPMENT[id].twoHanded).toBe(true);
-      expect(note(id)).toContain('no aporta armadura ni acierto');
-      expect(note(id)).toContain('represalia inmediata');
+      expect(note(id)).toContain('arma de mano y escudo a la vez');
+      expect(note(id)).toContain('mantiene sus bonificaciones');
+      expect(note(id)).not.toContain('no aporta armadura');
     }
-    expect(CHRONICLES_EQUIPMENT['brass-sling'].twoHanded).toBe(false);
-    expect(note('brass-sling')).toContain('mantiene las ventajas del escudo');
-    expect(note('bronze-shield')).toContain('no aporta armadura ni acierto');
+    expect(note('bronze-shield')).toContain('arco, ballesta u honda');
+    expect(note('bronze-shield')).toContain('arma cuerpo a cuerpo a dos manos');
   });
 
   it('does not invent MM3 handling rules for legacy or consumables', () => {
