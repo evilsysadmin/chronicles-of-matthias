@@ -517,7 +517,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     vault.name = 'armor-lead-barrel-vault';
     vault.userData.chroniclesDecorativeOnly = true;
     vault.position.y = height + 0.31;
-    vault.scale.y = 0.53;
+    vault.scale.y = 0.78;
     const vaultRadius = 3.06;
     const vaultLength = depth - 1.30;
     const lead = material(0x687b82, {
