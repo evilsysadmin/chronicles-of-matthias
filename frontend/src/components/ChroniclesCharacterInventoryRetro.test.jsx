@@ -63,6 +63,21 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(workspace).toContain('max-height: min(32vh, 260px)');
   });
 
+  it('offers one small accessible inspection dialog without reducing the ledger', () => {
+    const rendered = html();
+    expect(rendered).toContain('aria-haspopup="dialog"');
+    expect(rendered).toContain('class="chronicles-character-sheet__inspection-scrim" hidden=""');
+    expect(rendered).toContain('role="dialog" aria-modal="true" aria-label="Examinar Daga de latón"');
+    expect(rendered).toContain('aria-label="Cerrar inspección"');
+    expect(workspace).toContain('width: min(610px, 100%);');
+    expect(workspace).toContain('max-height: min(78dvh, 700px);');
+    expect(workspace).toContain('.chronicles-character-sheet__inspection-scrim[hidden]');
+    expect(workspace).not.toContain(':has(> .chronicles-character-sheet__item-details:not([hidden]))');
+    const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
+    expect(source).toContain('handleInspectionKey');
+    expect(source).toContain('inspectTriggerRef.current?.focus()');
+  });
+
   it('includes real simulated damage and hit chance on the first Examinar view', () => {
     const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     const preview = chroniclesGearSwapPreview(state, state.party[0].id, 'brass-dagger');
