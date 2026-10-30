@@ -377,10 +377,10 @@
           },
           {
             "type": "damage-party",
-            "amount": 1
+            "amount": 2
           }
         ],
-        "message": "El suelo exhala una llamarada de ceniza: la compañía pierde 1 PV por aventurero vivo. El respiradero se apaga."
+        "message": "El suelo exhala una llamarada de brasa. Los más afortunados amortiguan el golpe; el respiradero se apaga."
       }
     }
   ],

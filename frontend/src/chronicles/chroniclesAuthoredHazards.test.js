@@ -40,16 +40,21 @@ describe('Chronicles authored environmental hazards', () => {
     expect(map.grid[3][4]).toBe('.');
     expect(map.grid[3][5]).toBe('.');
 
-    const fresh = chroniclesMapTransitionState(createChroniclesState(), map.id);
+    const fresh = createChroniclesState(map.id, null, { rules: 'mm3' });
     const defeatedEnemies = Object.fromEntries(map.enemies.map((enemy) => [enemy.hpKey, 0]));
     const before = { ...fresh, ...defeatedEnemies, x: 4, y: 3, direction: 1 };
     const hp = before.party.map((member) => member.hp);
     const scorched = chroniclesReduce(before, 'forward');
     expect({ x: scorched.x, y: scorched.y }).toEqual({ x: 5, y: 3 });
     expect(scorched.menagerieEmberVentSpent).toBe(true);
-    expect(scorched.party.map((member) => member.hp)).toEqual(
-      hp.map((value) => (value > 0 ? Math.max(0, value - 1) : value)),
-    );
+    // MM3 Luck can halve the two-point trap; it cannot negate it entirely.
+    scorched.party.forEach((member, index) => {
+      if (hp[index] <= 0) expect(member.hp).toBe(hp[index]);
+      else {
+        expect(member.hp).toBeLessThan(hp[index]);
+        expect(member.hp).toBeGreaterThanOrEqual(Math.max(0, hp[index] - 2));
+      }
+    });
 
     const again = chroniclesReduce({ ...scorched, x: 4, y: 3, direction: 1 }, 'forward');
     expect(again.party).toEqual(scorched.party);
@@ -59,10 +64,15 @@ describe('Chronicles authored environmental hazards', () => {
     expect(restored.party).toEqual(scorched.party);
 
     // The same authored hazard must also work in the Tactics movement path.
-    const tactics = chroniclesTacticsMove(before, { x: 5, y: 3 });
+    const tacticsBefore = {
+      ...createChroniclesState(map.id),
+      ...defeatedEnemies,
+      x: 4, y: 3,
+    };
+    const tactics = chroniclesTacticsMove(tacticsBefore, { x: 5, y: 3 });
     expect(tactics.menagerieEmberVentSpent).toBe(true);
     expect(tactics.party.map((member) => member.hp)).toEqual(
-      hp.map((value) => (value > 0 ? Math.max(0, value - 1) : value)),
+      tacticsBefore.party.map((member) => (member.hp > 0 ? Math.max(0, member.hp - 2) : member.hp)),
     );
   });
 });
