@@ -30,6 +30,16 @@ function positiveQuantity(value, fallback = 1) {
   return Number.isFinite(numeric) && numeric > 0 ? Math.floor(numeric) : fallback;
 }
 
+// Saved inventory counts may be malformed. A boolean, array or fractional
+// value is not proof that the party owns a real key to a dungeon gate.
+// Preserve whole numeric strings from legacy checkpoints.
+function itemQuantityForRequirement(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return 0;
+  if (typeof value === 'string' && !value.trim()) return 0;
+  const quantity = Number(value);
+  return Number.isSafeInteger(quantity) && quantity > 0 ? quantity : 0;
+}
+
 // Party currency uses the existing CAS-persisted expedition inventory until
 // the dedicated gold wallet schema is introduced. Never infer gold from XP.
 export const CHRONICLES_GOLD_ITEM_ID = 'crown-gold';
@@ -68,7 +78,7 @@ function finiteRequirementNumber(value) {
 export function chroniclesRequirementMet(state, requirement) {
   if (!requirement || typeof requirement !== 'object') return true;
   if (requirement.itemId) {
-    const quantity = positiveQuantity(inventoryFor(state)[requirement.itemId]?.quantity, 0);
+    const quantity = itemQuantityForRequirement(inventoryFor(state)[requirement.itemId]?.quantity);
     return quantity >= positiveQuantity(requirement.quantity, 1);
   }
   if (requirement.questId) {
