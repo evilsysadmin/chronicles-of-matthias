@@ -183,7 +183,7 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
     grid-template-columns: 28px minmax(0, 1fr) auto;
-    gap: 4px;
+    gap: 6px;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory .chronicles-character-sheet__equipped-marker {
