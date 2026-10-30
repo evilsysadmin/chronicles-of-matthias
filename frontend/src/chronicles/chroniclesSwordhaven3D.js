@@ -1501,7 +1501,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   // Each hero building has a distinctive readable silhouette.
   if (isTemple) {
     mesh(root, new THREE.CylinderGeometry(1.19, 1.38, 3.2, coarse ? 12 : 20), mats.stone,
-      'temple-bell-tower', [0, height + 2.5, -depth * 0.11], !coarse);
+      'temple-bell-tower', [0, height + 3.15, -depth * 0.11], !coarse);
     // Four open-looking belfry arches interrupt the formerly featureless
     // limestone drum. Dark recesses and small bronze bells are visual only;
     // they sit above the existing solid roof, without new lights or colliders.
@@ -1520,7 +1520,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
       const bay = new THREE.Group();
       bay.name = 'temple-belfry-arched-bay';
-      bay.position.set(Math.sin(angle) * 1.27, height + 3.05,
+      bay.position.set(Math.sin(angle) * 1.27, height + 3.70,
         -depth * 0.11 + Math.cos(angle) * 1.27);
       bay.rotation.y = angle;
       mesh(bay, new THREE.ShapeGeometry(opening), recess,
@@ -1539,7 +1539,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     root.add(belfry);
     mesh(root, new THREE.ConeGeometry(1.48, 2.8, coarse ? 12 : 20), roof,
-      'temple-spire', [0, height + 5.5, -depth * 0.11], !coarse);
+      'temple-spire', [0, height + 6.15, -depth * 0.11], !coarse);
     // Two slender limestone pinnacles lift the temple's gable shoulders
     // above the roofline. Unlike the armorer's square iron-capped towers,
     // these are narrow octagonal stone spires with small gilded finials.
