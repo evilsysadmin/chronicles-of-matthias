@@ -1,6 +1,6 @@
 {
   "id": "echo-cistern",
-  "version": 2,
+  "version": 3,
   "progressionKey": "echo-cistern-01",
   "title": "Cisterna de los Ecos",
   "grid": [
@@ -26,7 +26,8 @@
     "eastSluiceSet": false,
     "echoSealClaimed": false,
     "prismCacheRevealed": false,
-    "prismCacheOpened": false
+    "prismCacheOpened": false,
+    "cisternPressurePlateSpent": false
   },
   "enemies": [
     {
@@ -532,7 +533,27 @@
       }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "cistern-pressure-plate",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 8,
+      "y": 6,
+      "label": "Placa de presión hidráulica",
+      "when": [
+        { "key": "cisternPressurePlateSpent", "equals": false },
+        { "key": "westSluiceSet", "equals": false }
+      ],
+      "action": {
+        "effects": [
+          { "type": "set", "key": "cisternPressurePlateSpent", "value": true },
+          { "type": "damage-party", "amount": 2 }
+        ],
+        "message": "Una placa libera una descarga de agua a presión. La compuerta oeste habría aliviado la tubería; ahora ya es tarde."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "cistern-upper-gate",
