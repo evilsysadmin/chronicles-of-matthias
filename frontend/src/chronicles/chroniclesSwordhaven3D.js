@@ -509,6 +509,54 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     merlons.instanceMatrix.needsUpdate = true;
     sideParapets.add(merlons);
     root.add(sideParapets);
+    // A shallow lead-clad barrel vault rises behind the armorer's battlements.
+    // Unlike the forge's tiled gable or the guardhouse's lookout, this single
+    // curved roof volume gives the armory a recognisable arsenal silhouette.
+    // It stays wholly within the existing solid building cells: no collider.
+    const vault = new THREE.Group();
+    vault.name = 'armor-lead-barrel-vault';
+    vault.userData.chroniclesDecorativeOnly = true;
+    vault.position.y = height + 0.31;
+    vault.scale.y = 0.53;
+    const vaultRadius = 3.06;
+    const vaultLength = depth - 1.30;
+    const lead = material(0x687b82, {
+      roughness: 0.82, metalness: 0.23, side: THREE.DoubleSide,
+    });
+    const iron = material(0x35464d, { roughness: 0.78, metalness: 0.27 });
+    const shell = mesh(vault,
+      new THREE.CylinderGeometry(vaultRadius, vaultRadius, vaultLength,
+        18, 1, true, Math.PI / 2, Math.PI),
+      lead, 'armor-vault-curved-lead-shell', [0, 0, 0], !coarse);
+    shell.rotation.x = Math.PI / 2;
+    // Filled semicircular ends keep the roof from looking like a hollow pipe
+    // when seen from the street or the rear alley.
+    const tympanum = new THREE.Shape();
+    tympanum.moveTo(-vaultRadius, 0);
+    tympanum.lineTo(vaultRadius, 0);
+    tympanum.absarc(0, 0, vaultRadius, 0, Math.PI, false);
+    tympanum.closePath();
+    for (const end of [-1, 1]) {
+      const cap = mesh(vault, new THREE.ShapeGeometry(tympanum), mats.stone,
+        'armor-vault-stone-tympanum', [0, 0, end * vaultLength / 2], !coarse);
+      if (end < 0) cap.rotation.y = Math.PI;
+    }
+    // One instanced batch for the transverse wrought-iron roof ribs.
+    const ribs = new THREE.InstancedMesh(
+      new THREE.TorusGeometry(vaultRadius + 0.035, 0.085, 6, 24, Math.PI),
+      iron, coarse ? 3 : 5);
+    ribs.name = 'armor-vault-iron-ribs';
+    ribs.castShadow = !coarse;
+    ribs.receiveShadow = true;
+    const rib = new THREE.Object3D();
+    for (let i = 0; i < ribs.count; i += 1) {
+      rib.position.z = -vaultLength / 2 + (i + 1) * vaultLength / (ribs.count + 1);
+      rib.updateMatrix();
+      ribs.setMatrixAt(i, rib.matrix);
+    }
+    ribs.instanceMatrix.needsUpdate = true;
+    vault.add(ribs);
+    root.add(vault);
     // Four shallow ashlar buttresses break up the armorer's long, flat side
     // elevations. They stand between the existing barred window bays, wholly
     // within the authored solid building cells; no collider or light is added.
