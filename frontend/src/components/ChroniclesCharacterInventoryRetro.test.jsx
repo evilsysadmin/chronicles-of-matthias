@@ -187,7 +187,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(workspace).toContain('.chronicles-character-sheet__classic-actions');
     expect(workspace).toContain('@media (min-width: 851px) and (min-height: 581px)');
     expect(workspace).not.toContain('chronicles-character-sheet__technical-heading');
-    expect(workspace).toContain('grid-template-columns: minmax(0, 1.35fr) minmax(285px, .95fr)');
+    expect(workspace).toContain('width: min(610px, 100%);');
+    expect(workspace).toContain('.chronicles-character-sheet__inspection-scrim');
+    expect(workspace).not.toContain('grid-template-columns: minmax(0, 1.35fr) minmax(285px, .95fr)');
     expect(workspace).toContain('padding: 6px;');
     expect(classic).toMatch(/__classic-actions > button\s*\{\s*min-height: 48px;/);
     expect(classic).toContain('border-color: #dec98a;');
