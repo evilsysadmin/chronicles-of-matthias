@@ -365,7 +365,7 @@ try {
         && modalGeometry.popupX >= 0 && modalGeometry.popupY >= 0,
         'Centered inspection must preserve the full inventory and fit the viewport: '
           + JSON.stringify(modalGeometry));
-      assert.equal(await detail.getByRole('button', { name: 'Cerrar inspección' }).isFocused(), true,
+      assert.equal(await detail.getByRole('button', { name: 'Cerrar inspección' }).evaluate((node) => document.activeElement === node), true,
         'Modal entry must focus its own close button');
       const more = detail.locator('.chronicles-character-sheet__item-more');
       assert.equal(await more.evaluate((node) => node.open), true,
@@ -383,7 +383,7 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await detail.isVisible(), false,
         'Escape closes only the inspection, leaving the character sheet intact');
-      assert.equal(await actions.getByRole('button', { name: /Examinar/ }).isFocused(), true,
+      assert.equal(await actions.getByRole('button', { name: /Examinar/ }).evaluate((node) => document.activeElement === node), true,
         'Closing inspection restores the previous inventory command');
       assert.equal(await sheet.isVisible(), true);
       // No second inspector panel: MM3 always shows every owned item,
