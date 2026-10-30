@@ -71,7 +71,11 @@ describe('Chronicles shop · preview equipment against party', () => {
     expect(metric(spear, 'reach')).toBeUndefined();
     const bow = memberPreview(state, 'matthias', 'wooden-longbow');
     expect(metric(bow, 'toHit').after)
-      .toBe(item('wooden-longbow').toHitBonus);
+      .toBe(item('wooden-longbow').toHitBonus + item('bronze-shield').toHitBonus);
+    expect(metric(bow, 'toHit').before)
+      .toBe(item('wooden-bow').toHitBonus + item('bronze-shield').toHitBonus);
+    expect(metric(bow, 'toHit').delta)
+      .toBe(item('wooden-longbow').toHitBonus - item('wooden-bow').toHitBonus);
     const sling = memberPreview(state, 'matthias', 'brass-sling');
     expect(metric(sling, 'toHit').after)
       .toBe(item('brass-sling').toHitBonus + item('bronze-shield').toHitBonus);

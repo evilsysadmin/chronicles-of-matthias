@@ -29,7 +29,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('mitigación');
   });
 
-  it('shows one consistent two-handed missile warning in the backpack and equipped ranged slot', () => {
+  it('shows the independent missile slot contract in both preview and equipped loadouts', () => {
     const html = render('mm3', 'equipment', {
       inventory: {
         'wooden-bow': { id: 'wooden-bow', quantity: 1, name: 'Arco corto de madera' },
@@ -39,9 +39,10 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toContain('data-chronicles-equipment-handling');
     expect(html).not.toContain('data-chronicles-worn-handling');
     expect(source).toContain('data-chronicles-equipment-handling');
-    expect(html).toContain('Disparo a dos manos');
-    expect(html).toContain('no aporta armadura ni acierto');
-    expect(html).toContain('represalia inmediata');
+    expect(html).toContain('arma de mano y escudo a la vez');
+    expect(html).toContain('el escudo mantiene sus bonificaciones');
+    expect(html).not.toContain('no aporta armadura ni acierto');
+    expect(html).not.toContain('represalia inmediata');
     expect(html).toContain('class="chronicles-character-sheet__swap-preview"');
     expect(html).not.toMatch(/class="chronicles-character-sheet__swap-preview"[^>]*\sopen=/);
     expect(html).toMatch(/<summary>[\s\S]*?Daño [+-]?\d+ · Acierto [+-]?\d+/);
@@ -62,15 +63,16 @@ describe('Chronicles character sheet combat summary', () => {
     expect(summary).toMatch(/CA -?\d+/);
   });
 
-  it('keeps the shield benefit explanation for one-handed slings', () => {
+  it('also explains that a one-handed sling shares the independent missile slot', () => {
     const html = render('mm3', 'equipment', {
       inventory: {
         'brass-sling': { id: 'brass-sling', quantity: 1, name: 'Honda de latón' },
       },
       equipment: { matthias: { missile: 'brass-sling', shield: 'brass-shield' } },
     });
-    expect(html).toContain('Disparo a una mano');
-    expect(html).toContain('mantiene las ventajas del escudo');
+    expect(html).toContain('arma de mano y escudo a la vez');
+    expect(html).toContain('el escudo mantiene sus bonificaciones');
+    expect(html).not.toContain('no aporta armadura ni acierto');
   });
 
   it('keeps individual backpacks and reserves 1–4 for navigation', () => {
