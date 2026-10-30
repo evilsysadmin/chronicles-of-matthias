@@ -10,6 +10,9 @@ import {
 // A faulty enemy action must cost that enemy its action, never trap the entire
 // party behind "TURNO ENEMIGO". The next actor is still selected by initiative.
 export function chroniclesRunPendingEnemyTurn(state, expectedEnemyId, resolveActor = chroniclesResolveEnemyActor) {
+  // A timer queued before victory, defeat or escape must never resurrect an
+  // enemy turn from a stale initiative snapshot after combat has ended.
+  if (state?.phase !== 'combat') return null;
   const actor = chroniclesCurrentInitiativeActor(state?.initiative);
   if (actor?.kind !== 'enemy' || actor.id !== expectedEnemyId) return null;
 
