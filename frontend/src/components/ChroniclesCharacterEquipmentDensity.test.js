@@ -21,7 +21,9 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain("relic?.name || 'Ninguna'");
     expect(sheet).toContain('chronicles-character-sheet__relic has-relic');
     expect(sheet).toContain('data-chronicles-equipment-folio');
-    expect(sheet).toContain('<span>Equipo puesto</span>');
+    expect(sheet).not.toContain('<span>Equipo puesto</span>');
+    expect(sheet).toContain('showEquipmentDetails && <article');
+    expect(sheet).toContain('Detalles técnicos');
   });
   it('keeps empty A/S weapon cards readable and compact only on touch phones', () => {
     const compact = css.split('/* Empty A/S weapon cards waste two tall rows on phones')[1];
