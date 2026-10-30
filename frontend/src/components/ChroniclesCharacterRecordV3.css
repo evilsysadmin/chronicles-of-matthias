@@ -7,7 +7,7 @@
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] {
     display: grid;
     grid-template-columns: minmax(0,1fr);
-    grid-template-areas: "attributes" "battle" "footer";
+    grid-template-areas: "battle" "attributes" "footer";
     align-content: start;
     row-gap: 0;
     background: #b97b46;
@@ -16,10 +16,14 @@
   /* The seven MM3 stats plus the actual HP-based condition form two clean
      four-column rows; no half-empty second statistics card. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-chapter="record"] .chronicles-character-sheet__section--core-stats {
+  .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats {
+    /* Beat the old two-column desktop folio's grid-column:2. Otherwise
+       CSS creates an implicit right column and a huge empty left half. */
     grid-area: attributes;
-    grid-column: 1;
+    grid-column: 1 / -1;
     min-width: 0;
+    width: auto;
+    box-sizing: border-box;
     margin: 0;
     padding: 5px 11px 11px;
     border: 0;
@@ -47,7 +51,7 @@
     grid-template-columns: 42px minmax(0,1fr) auto;
     grid-template-rows: minmax(26px,auto) minmax(20px,auto);
     min-width: 0;
-    min-height: 79px;
+    min-height: clamp(91px, 12dvh, 117px);
     gap: 2px 5px;
     align-content: center;
     padding: 9px 5px;
@@ -105,11 +109,13 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] [data-stat="condition"]::before { content: '✚'; }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals {
+  .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__vitals {
     grid-area: battle;
-    grid-column: 1;
-    grid-template-columns: repeat(6, minmax(0,1fr));
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(5, minmax(0,1fr));
     min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     margin: 8px 0 0;
     border: 2px solid #7f4c29;
     background: #a76a39;
@@ -181,9 +187,9 @@
     color: #55351c;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-chapter="record"] .chronicles-character-sheet__foot {
+  .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__foot {
     grid-area: footer;
-    grid-column: 1;
+    grid-column: 1 / -1;
     margin: 4px 0 0;
     padding: 5px 7px;
     font-size: .74rem;

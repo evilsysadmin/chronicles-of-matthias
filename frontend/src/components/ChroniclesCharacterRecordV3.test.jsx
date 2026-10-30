@@ -24,9 +24,11 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(html).toContain('Sano');
     expect(html).toContain('Estado general según los puntos de vida actuales');
     expect(html).not.toContain('data-chronicles-worn-gear="matthias"');
-    expect(css).toContain('grid-template-areas: "attributes" "battle" "footer"');
+    expect(css).toContain('grid-template-areas: "battle" "attributes" "footer"');
+    expect(css).toContain('.chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats');
+    expect(css).toContain('grid-column: 1 / -1');
+    expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr))');
-    expect(css).toContain('grid-template-columns: repeat(6, minmax(0,1fr))');
   });
   it('keeps non-record chapters, Tactics and mobile outside the new layout', () => {
     expect(render('tactics')).not.toContain('data-chronicles-chapter="record"');

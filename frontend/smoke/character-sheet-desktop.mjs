@@ -158,12 +158,21 @@ try {
           const labels = [...statGrid.querySelectorAll('[data-stat]')].map((el) => ({
             name: el.dataset.stat, clipped: el.scrollWidth > el.clientWidth + 2,
           }));
+          const battleColumns = getComputedStyle(battle).gridTemplateColumns.split(' ').filter(Boolean).length;
           const rect = (el) => {
             const box = el.getBoundingClientRect();
-            return { top: box.top, bottom: box.bottom, width: box.width };
+            return { top: box.top, bottom: box.bottom, left: box.left, right: box.right, width: box.width };
           };
+          const battleCells = [...battle.children].map((el) => {
+            const box = el.getBoundingClientRect();
+            const text = [...el.querySelectorAll('span,b')].map((label) => ({
+              value: label.textContent.trim(), clipped: label.scrollWidth > label.clientWidth + 1,
+              left: label.getBoundingClientRect().left, right: label.getBoundingClientRect().right,
+            }));
+            return { left: box.left, right: box.right, text };
+          });
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            statColumns: columns, labels,
+            statColumns: columns, battleColumns, battleCells, labels,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
         assert.equal(ledger.statColumns, 4,
@@ -175,8 +184,20 @@ try {
         assert.deepEqual(ledger.labels.filter((item) => item.clipped), [],
           'The attribute labels must not overflow: ' + JSON.stringify(ledger));
         assert.ok(ledger.stats.width >= ledger.content.width - 40
-          && ledger.stats.bottom <= ledger.battle.top + 2,
-          'Status must present attributes above the combat strip: ' + JSON.stringify(ledger));
+          && ledger.battle.width >= ledger.content.width - 40,
+          'Both statistics and combat must fill the whole dossier, not a half-width implicit grid: '
+            + JSON.stringify(ledger));
+        assert.ok(ledger.battle.bottom <= ledger.stats.top + 2,
+          'Combat strip comes first, then full-width attribute ledger: ' + JSON.stringify(ledger));
+        assert.equal(ledger.battleColumns, 5,
+          'The five visible combat metrics must occupy five equal columns, not leave a phantom sixth');
+        assert.equal(ledger.battleCells.length, 5);
+        assert.ok(ledger.battleCells.every((item) => item.left >= ledger.content.left - 2
+          && item.right <= ledger.content.right + 2
+          && item.text.every((label) => !label.clipped && label.left >= ledger.content.left - 2
+            && label.right <= ledger.content.right + 2)),
+          'HP, initiative, damage, hit and armor must be fully legible within the left and right edges: '
+            + JSON.stringify(ledger));
       }
       if (width === 1024) {
         const statsDensity = await sheet.locator('.chronicles-character-sheet__mm3-stats')
