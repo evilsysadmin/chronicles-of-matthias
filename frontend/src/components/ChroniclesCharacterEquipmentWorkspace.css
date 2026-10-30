@@ -105,3 +105,17 @@
 [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details[hidden] {
   display: none !important;
 }
+
+/* A glance at real combat stats should beat long flavour text. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl > div {
+    min-width: 0;
+  }
+}
