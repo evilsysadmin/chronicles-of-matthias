@@ -343,27 +343,30 @@ try {
       await rows.first().click();
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
       await actions.getByRole('button', { name: /Examinar/ }).click();
-      // Inspection must share the available desk beside the list, never
-      // push controls under the fixed party dock or squeeze rows to zero.
+      // A separate small modal must not resize the underlying full-width
+      // ledger or obscure an actual stats row in its own scrollable card.
       assert.equal(await detail.isVisible(), true);
-      if (width >= 1200) {
-        const opened = await equipment.evaluate((node) => {
-          const rect = (sel) => node.querySelector(sel).getBoundingClientRect();
-          const list = rect('.chronicles-character-sheet__inventory');
-          const inspector = rect('.chronicles-character-sheet__item-details');
-          const actions = rect('.chronicles-character-sheet__classic-actions');
-          const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
-          return { listLeft: list.left, listRight: list.right, listHeight: list.height,
-            inspectorLeft: inspector.left, inspectorTop: inspector.top, listTop: list.top,
-            inspectorBottom: inspector.bottom, actionsTop: actions.top, actionsBottom: actions.bottom,
-            dockTop: dock.top };
-        });
-        assert.ok(opened.inspectorLeft >= opened.listRight + 4
-          && Math.abs(opened.inspectorTop - opened.listTop) <= 5
-          && opened.listHeight >= 100 && opened.inspectorBottom <= opened.actionsTop + 4
-          && opened.actionsBottom <= opened.dockTop + 4,
-          'Examinar must occupy the spare side rail without overlays: ' + JSON.stringify(opened));
-      }
+      assert.equal(await detail.getAttribute('role'), 'dialog');
+      assert.equal(await detail.getAttribute('aria-modal'), 'true');
+      const modalGeometry = await equipment.evaluate((node) => {
+        const rect = (sel) => node.querySelector(sel).getBoundingClientRect();
+        const list = rect('.chronicles-character-sheet__inventory');
+        const bag = rect('.chronicles-character-sheet__backpack');
+        const popup = rect('.chronicles-character-sheet__item-details');
+        const scrim = rect('.chronicles-character-sheet__inspection-scrim');
+        return { listWidth: list.width, bagWidth: bag.width, listHeight: list.height,
+          popupWidth: popup.width, popupHeight: popup.height, popupX: popup.x,
+          popupY: popup.y, scrimWidth: scrim.width, scrimHeight: scrim.height };
+      });
+      assert.ok(modalGeometry.listWidth >= modalGeometry.bagWidth - 22
+        && modalGeometry.listHeight >= 100
+        && modalGeometry.popupWidth <= 640
+        && modalGeometry.popupHeight < modalGeometry.scrimHeight
+        && modalGeometry.popupX >= 0 && modalGeometry.popupY >= 0,
+        'Centered inspection must preserve the full inventory and fit the viewport: '
+          + JSON.stringify(modalGeometry));
+      assert.equal(await detail.getByRole('button', { name: 'Cerrar inspección' }).isFocused(), true,
+        'Modal entry must focus its own close button');
       const more = detail.locator('.chronicles-character-sheet__item-more');
       assert.equal(await more.evaluate((node) => node.open), true,
         'Examinar must expose real damage and bonuses without another disclosure');
@@ -374,31 +377,15 @@ try {
       await more.locator('summary').click();
       assert.equal(await more.evaluate((node) => node.open), true);
 
-      const classicLayout = await equipment.evaluate((node) => {
-        const rect = (selector) => node.querySelector(selector).getBoundingClientRect();
-        const bag = rect('.chronicles-character-sheet__backpack');
-        const list = rect('.chronicles-character-sheet__inventory');
-        const actions = rect('.chronicles-character-sheet__classic-actions');
-        const detail = rect('.chronicles-character-sheet__item-details');
-        const dock = document.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();
-        return { bagWidth: bag.width, listWidth: list.width, listTop: list.top,
-          listBottom: list.bottom, actionsTop: actions.top, actionsBottom: actions.bottom,
-          detailTop: detail.top, dockTop: dock.top };
-      });
-      if (width >= 1200) {
-        assert.ok(classicLayout.listWidth >= classicLayout.bagWidth * .45
-          && classicLayout.listWidth <= classicLayout.bagWidth * .75
-          && Math.abs(classicLayout.detailTop - classicLayout.listTop) <= 5,
-          'Wide-screen Examinar shares the desk beside the list: ' + JSON.stringify(classicLayout));
-      } else {
-        assert.ok(classicLayout.listWidth >= classicLayout.bagWidth - 22
-          && classicLayout.detailTop >= classicLayout.actionsBottom - 3,
-          'Narrow-screen Examinar follows the full-width list: ' + JSON.stringify(classicLayout));
-      }
-      assert.ok(classicLayout.actionsTop >= classicLayout.listBottom - 3,
-        'Classic actions must stay beneath the inventory: ' + JSON.stringify(classicLayout));
-      assert.ok(classicLayout.listTop < classicLayout.dockTop,
-        'The inventory must start above the hero dock: ' + JSON.stringify(classicLayout));
+      await page.keyboard.press('Tab');
+      assert.equal(await detail.evaluate((node) => node.contains(document.activeElement)), true,
+        'Tab must remain inside the inspection modal');
+      await page.keyboard.press('Escape');
+      assert.equal(await detail.isVisible(), false,
+        'Escape closes only the inspection, leaving the character sheet intact');
+      assert.equal(await actions.getByRole('button', { name: /Examinar/ }).isFocused(), true,
+        'Closing inspection restores the previous inventory command');
+      assert.equal(await sheet.isVisible(), true);
       // No second inspector panel: MM3 always shows every owned item,
       // including equipped gear, without hidden category/search state.
       assert.equal(await equipment.locator('.chronicles-character-sheet__backpack-tools').count(), 0);
@@ -406,11 +393,16 @@ try {
       assert.ok(await inv.locator('[data-ledger-id]').count() >= await rows.count(),
         'Unified ledger preserves all bag rows along with real equipped objects');
       const firstName = await rows.first().locator('span').innerText();
+      await actions.getByRole('button', { name: /Examinar/ }).click();
       assert.ok((await detail.textContent()).includes(firstName));
+      await detail.getByRole('button', { name: 'Cerrar inspección' }).click();
       await rows.nth(1).click();
       assert.equal(await rows.nth(1).getAttribute('aria-pressed'), 'true');
       const secondName = await rows.nth(1).locator('span').innerText();
+      await actions.getByRole('button', { name: /Examinar/ }).click();
       assert.ok((await detail.textContent()).includes(secondName));
+      await page.keyboard.press('i');
+      assert.equal(await detail.isVisible(), false, 'I toggles off only the inspection');
       await rows.nth(1).focus();
       await page.keyboard.press('Home');
       assert.equal(await rows.first().getAttribute('aria-pressed'), 'true');
@@ -422,17 +414,11 @@ try {
       assert.equal(await equipment.getByRole('button', { name: /Equipar/ }).isDisabled(), true,
         'Read-only smoke fixture cannot equip without a real game action callback');
       await actions.getByRole('button', { name: /Examinar/ }).click();
-      const desk = await Promise.all([inv.boundingBox(), detail.boundingBox()]);
-      assert.ok(desk[0] && desk[1], 'Both inventory and inspector must have painted geometry');
-      if (width >= 1200) {
-        assert.ok(desk[1].x >= desk[0].x + desk[0].width + 4
-          && Math.abs(desk[1].y - desk[0].y) <= 5,
-          'Wide desk inspection must expand beside the ledger, not beneath it: ' + JSON.stringify(desk));
-      } else {
-        assert.ok(desk[1].y >= desk[0].y + desk[0].height - 3,
-          'Narrow desk inspection must expand below the full-width list: ' + JSON.stringify(desk));
-      }
+      assert.equal(await detail.isVisible(), true);
+      assert.ok((await detail.boundingBox()).width <= 640,
+        'Keyboard-opened inspection is still a compact floating window');
       await page.screenshot({ path: 'smoke-character-sheet-inventory-' + width + '.png' });
+      await detail.getByRole('button', { name: 'Cerrar inspección' }).click();
       // The unfiltered list survives chapter navigation without losing items.
       const visibleIds = await inv.locator('[data-ledger-id]')
         .evaluateAll((entries) => entries.map((entry) => entry.dataset.ledgerId));
@@ -711,6 +697,9 @@ try {
       assert.match(await itemState.innerText(), /Seleccionado · se puede entregar/,
         'Selection status stays next to the item and remains screen-reader announced');
       assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').getAttribute('aria-live'), 'polite');
+      await page.keyboard.press('Escape');
+      assert.equal(await swapDetails.isVisible(), false,
+        'Inspection must close without dismissing the parent or moving gear');
       assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
       // 1 is the source's own slot: it must not transfer or navigate.
       await page.keyboard.press('1');
