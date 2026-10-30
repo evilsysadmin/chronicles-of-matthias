@@ -112,7 +112,8 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
         radialAxes.push(new THREE.Vector3(0, 1, 0).applyQuaternion(rotation));
         expect(vane.scale.x).toBeLessThan(0.9);
         vane.geometry.computeBoundingBox();
-        expect(vane.geometry.boundingBox.max.y).toBeLessThan(0.03);
+        // Narrow relative to the shaft length, but visible at normal zoom.
+        expect(vane.geometry.boundingBox.max.y).toBeLessThan(0.055);
       }
       vaneAxes.forEach((axis) => {
         expect(axis.x).toBeCloseTo(0, 6);
@@ -121,6 +122,32 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
       });
       expect(radialAxes[0].dot(radialAxes[1])).toBeCloseTo(-0.5, 6);
       expect(radialAxes[1].dot(radialAxes[2])).toBeCloseTo(-0.5, 6);
+    }
+  });
+
+
+  it('projects a slender dark arrowhead and readable tapered tail, never a white drumstick cap', () => {
+    const fx = createChroniclesVolleyProjectileArt(THREE, new THREE.Group());
+    fx.setFamilies(['bow', 'crossbow']);
+    for (const [index, kind] of ['bow', 'crossbow'].entries()) {
+      const projectile = fx.projectiles[index];
+      const shaft = projectile.getObjectByName(kind + '-shaft');
+      const point = projectile.getObjectByName(kind + '-head');
+      const feather = projectile.getObjectByName(kind + '-fletching-0');
+      const collar = projectile.getObjectByName(kind + '-collar');
+      expect(shaft.geometry.parameters.radiusTop).toBeLessThanOrEqual(kind === 'bow' ? 0.012 : 0.019);
+      expect(point.geometry.parameters.radius).toBeLessThanOrEqual(kind === 'bow' ? 0.02 : 0.025);
+      expect(point.geometry.parameters.radialSegments).toBe(4);
+      expect(point.geometry.parameters.height / point.geometry.parameters.radius).toBeGreaterThan(4);
+      // Neutral metal cannot appear as a luminous white rectangle in daylight.
+      const metal = point.material.color;
+      expect(Math.max(metal.r, metal.g, metal.b)).toBeLessThan(0.19);
+      feather.geometry.computeBoundingBox();
+      expect(feather.geometry.boundingBox.max.y).toBeGreaterThan(0.04);
+      expect(feather.geometry.boundingBox.max.y).toBeLessThan(0.055);
+      expect(feather.geometry.boundingBox.max.x - feather.geometry.boundingBox.min.x)
+        .toBeGreaterThan(0.27);
+      if (collar) expect(collar.geometry.parameters.radiusTop).toBeLessThan(0.025);
     }
   });
 

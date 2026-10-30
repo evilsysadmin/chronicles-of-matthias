@@ -47,11 +47,24 @@ describe('Chronicles · polished projectile flight', () => {
     for (const kind of ['bow', 'crossbow']) {
       const early = chroniclesVolleyFlightSample(3, 0, 0.05, kind);
       const late = chroniclesVolleyFlightSample(3, 0, 0.35, kind);
-      expect(Math.abs(early.yaw)).toBeGreaterThan(0.18);
+      expect(Math.abs(early.yaw)).toBeGreaterThan(0.16);
+      expect(Math.abs(early.yaw)).toBeLessThan(0.25);
       expect(Math.abs(late.yaw)).toBeLessThan(Math.abs(early.yaw));
       expect(Math.abs(late.yaw)).toBeLessThan(0.18);
       expect(late.z).toBeLessThan(early.z);
     }
+  });
+
+
+  it('keeps early shafts near their actual travel line, without a sideways baton pose', () => {
+    const left = chroniclesVolleyFlightSample(2, 0, 0.06, 'bow');
+    const right = chroniclesVolleyFlightSample(2, 1, 0.06, 'crossbow');
+    const late = chroniclesVolleyFlightSample(2, 0, 0.33, 'bow');
+    expect(Math.abs(left.yaw)).toBeLessThan(0.25);
+    expect(Math.abs(right.yaw)).toBeLessThan(0.25);
+    expect(left.yaw * right.yaw).toBeLessThan(0);
+    expect(Math.abs(late.yaw)).toBeLessThan(0.14);
+    expect(late.z).toBeLessThan(left.z);
   });
 
   it('keeps mirror symmetry on left/right start positions and resets on replay', () => {
