@@ -165,7 +165,11 @@ function configuredEngagementRange(value) {
   if (typeof value !== 'number' && typeof value !== 'string') return null;
   if (typeof value === 'string' && !value.trim()) return null;
   const range = Number(value);
-  return Number.isFinite(range) && range >= 1 ? range : null;
+  // Engagement is a tile count, not a fractional radius. Corrupt saves with
+  // enormous values must not give enemies map-wide detection in Tactics.
+  // The 64-tile ceiling is above authored dungeon sightlines while bounding
+  // accidental or malicious legacy values; missing ranges stay unconfigured.
+  return Number.isSafeInteger(range) && range >= 1 && range <= 64 ? range : null;
 }
 
 function enemyEngagementRange(enemy) {
