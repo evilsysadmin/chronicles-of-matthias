@@ -1,9 +1,11 @@
+import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
+const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
 
 const render = (rules, folio = 'equipment', stateOverrides = {}, memberId = null, mode = 'chronicles') => {
   const state = { ...createChroniclesState('swordhaven-first-book', null, { rules }), ...stateOverrides };
@@ -18,10 +20,12 @@ describe('Chronicles character sheet combat summary', () => {
     const html = render('mm3');
     expect(html).not.toContain('Equipo A: daño');
     expect(html).not.toContain('data-chronicles-worn-gear');
-    expect(html).toContain('A y S calculan daño y acierto por separado');
+    expect(html).not.toContain('A y S calculan daño y acierto por separado');
+    expect(source).toContain('A y S calculan daño y acierto por separado');
     expect(html).not.toMatch(/alcance/i);
-    expect(html).toContain('CA del equipo');
-    expect(html).toContain('dificulta impactos, no resta daño');
+    expect(html).not.toContain('CA del equipo');
+    expect(source).toContain('CA del equipo');
+    expect(source).toContain('dificulta impactos, no resta daño');
     expect(html).not.toMatch(/CA \+\d+ · reducción \d+/);
     expect(html).not.toContain('mitigación');
   });
@@ -34,7 +38,8 @@ describe('Chronicles character sheet combat summary', () => {
       equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow', shield: 'brass-shield' } },
     });
     expect(html).toContain('data-chronicles-equipment-handling');
-    expect(html).toContain('data-chronicles-worn-handling');
+    expect(html).not.toContain('data-chronicles-worn-handling');
+    expect(source).toContain('data-chronicles-worn-handling');
     expect(html).toContain('Disparo a dos manos');
     expect(html).toContain('no aporta armadura ni acierto');
     expect(html).toContain('represalia inmediata');
@@ -161,7 +166,8 @@ describe('Chronicles character sheet combat summary', () => {
 
   it('retains the distinct legacy damage reduction summary', () => {
     const html = render(null);
-    expect(html).toContain('mitigación');
+    expect(html).not.toContain('mitigación');
+    expect(source).toContain('mitigación');
     expect(html).not.toContain('CA del equipo');
     expect(html).not.toContain('El disparo S usa sus propios bonos');
   });
