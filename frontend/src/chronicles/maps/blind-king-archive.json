@@ -1,6 +1,6 @@
 {
   "id": "blind-king-archive",
-  "version": 2,
+  "version": 3,
   "progressionKey": "blind-king-archive-01",
   "title": "Archivo del Rey Ciego",
   "grid": [
@@ -19,7 +19,8 @@
     "archivePlaqueRead": false,
     "archiveIndexUnlocked": false,
     "archiveIndexRead": false,
-    "obsidianCacheOpened": false
+    "obsidianCacheOpened": false,
+    "archiveShelfPlateSpent": false
   },
   "enemies": [
     {
@@ -348,7 +349,26 @@
       }
     }
   ],
-  "traps": [],
+  "traps": [
+    {
+      "id": "archive-shelf-plate",
+      "kind": "trap",
+      "visualType": "chain-plate",
+      "x": 4,
+      "y": 5,
+      "label": "Losa de los anaqueles",
+      "when": [
+        { "key": "archiveShelfPlateSpent", "equals": false }
+      ],
+      "action": {
+        "effects": [
+          { "type": "set", "key": "archiveShelfPlateSpent", "value": true },
+          { "type": "damage-party", "amount": 3 }
+        ],
+        "message": "Una losa hundida desploma un anaquel de hierro. La Suerte amortigua el golpe; el mecanismo queda agotado."
+      }
+    }
+  ],
   "exits": [
     {
       "id": "archive-east-gate",
