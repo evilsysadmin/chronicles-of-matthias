@@ -585,11 +585,15 @@ export default function ChroniclesCharacterSheet({
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}
                   role="dialog" aria-modal="true" aria-label={`Examinar ${detailItem.name}`}
                   onKeyDown={handleInspectionKey}>
-                  <button type="button" ref={inspectCloseRef}
-                    className="chronicles-character-sheet__inspection-close"
-                    aria-label="Cerrar inspección" onClick={closeInspection}>×</button>
-                  <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
-                  <strong>{detailItem.name}</strong>
+                  <header className="chronicles-character-sheet__inspection-head">
+                    <div>
+                      <small className="chronicles-character-sheet__item-selection-state">{selectedWornItem ? 'Objeto equipado' : transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
+                      <strong>{detailItem.name}</strong>
+                    </div>
+                    <button type="button" ref={inspectCloseRef}
+                      className="chronicles-character-sheet__inspection-close"
+                      aria-label="Cerrar inspección" onClick={closeInspection}>×</button>
+                  </header>
                   <div className="chronicles-character-sheet__item-essentials">
                     <span>×{detailItem.quantity}</span>
                     {detailEquipment && <>
@@ -618,12 +622,9 @@ export default function ChroniclesCharacterSheet({
                     ) : !selectedWornItem && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
 
                   </>}
-                  <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
+                  {detailEquipment && <details className="chronicles-character-sheet__item-more" open={expandItemAttributes && inspectItem}>
                     <summary>Estadísticas y descripción</summary>
                     <dl>
-                      <div><dt>Cantidad</dt><dd>{detailItem.quantity}</dd></div>
-                      {detailEquipment && <>
-                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</dd></div>
                         {detailAttack && <>
                           <div data-chronicles-item-stat="damage"><dt>{selectedWornItem ? 'Daño base actual' : 'Daño base al equipar'}</dt><dd>{detailAttack.damage}</dd></div>
                           <div data-chronicles-item-stat="hit"><dt>{selectedWornItem ? 'Acierto total actual' : 'Acierto total al equipar'}</dt><dd>{signed(detailAttack.toHit)}</dd></div>
@@ -632,17 +633,15 @@ export default function ChroniclesCharacterSheet({
                         <div><dt>Acierto</dt><dd>{signed(detailEquipment.toHitBonus)}</dd></div>
                         <div><dt>Armadura</dt><dd>{signed(detailEquipment.armorClassBonus)}</dd></div>
                         <div><dt>Valor</dt><dd>{detailEquipment.price} oro</dd></div>
-                        <div><dt>Puede usarlo</dt><dd>{detailCanEquip ? 'Sí' : 'No, clase incompatible'}</dd></div>
-                      </>}
                     </dl>
-                    {detailEquipment && <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>}
-                    {detailEquipment && chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
+                    <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>
+                    {chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
                       <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
                         {chroniclesShopHandlingNote(detailEquipment, state?.combatRules)}
                       </small>
                     )}
-                    {detailEquipment && <small>Actualmente: {detailEquipped?.name || 'Sin equipar'}.</small>}
-                  </details>
+                    <small>Actualmente: {detailEquipped?.name || 'Sin equipar'}.</small>
+                  </details>}
                   <button type="button" className="chronicles-character-sheet__drop-button"
                     disabled={!canChangeEquipment || !transferableItem || Boolean(selectedWornItem)}
                     onClick={() => {

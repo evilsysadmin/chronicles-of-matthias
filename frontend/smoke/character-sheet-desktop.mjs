@@ -354,9 +354,12 @@ try {
         const bag = rect('.chronicles-character-sheet__backpack');
         const popup = rect('.chronicles-character-sheet__item-details');
         const scrim = rect('.chronicles-character-sheet__inspection-scrim');
+        const dialog = node.querySelector('.chronicles-character-sheet__item-details');
         return { listWidth: list.width, bagWidth: bag.width, listHeight: list.height,
           popupWidth: popup.width, popupHeight: popup.height, popupX: popup.x,
-          popupY: popup.y, scrimWidth: scrim.width, scrimHeight: scrim.height };
+          popupY: popup.y, scrimWidth: scrim.width, scrimHeight: scrim.height,
+          contentScroll: dialog.scrollHeight > dialog.clientHeight + 2,
+          headerColor: getComputedStyle(dialog.querySelector('.chronicles-character-sheet__inspection-head')).backgroundColor };
       });
       assert.ok(modalGeometry.listWidth >= modalGeometry.bagWidth - 22
         && modalGeometry.listHeight >= 100
@@ -365,6 +368,11 @@ try {
         && modalGeometry.popupX >= 0 && modalGeometry.popupY >= 0,
         'Centered inspection must preserve the full inventory and fit the viewport: '
           + JSON.stringify(modalGeometry));
+      assert.equal(modalGeometry.contentScroll, false,
+        'Desktop Examinar must show all real attributes without internal scrolling: '
+          + JSON.stringify(modalGeometry));
+      assert.equal(modalGeometry.headerColor, 'rgb(57, 75, 76)',
+        'The object dossier must use the same slate/sage visual language as the character sheet');
       assert.equal(await detail.getByRole('button', { name: 'Cerrar inspección' }).evaluate((node) => document.activeElement === node), true,
         'Modal entry must focus its own close button');
       const more = detail.locator('.chronicles-character-sheet__item-more');
