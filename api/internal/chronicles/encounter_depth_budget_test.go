@@ -26,6 +26,12 @@ func TestShippedCryptEncounterBudgetTracksRouteDepth(t *testing.T) {
 			depth: 0,
 		},
 		{
+			name:  "second floor",
+			ids:   []string{"gallery-of-forks", mapID, "echo-cistern"},
+			exits: map[string]string{"gallery-of-forks": "gallery-gate", mapID: "black-gate"},
+			depth: 1,
+		},
+		{
 			name:  "third floor",
 			ids:   []string{"gallery-of-forks", "menagerie-of-ash", mapID, "echo-cistern"},
 			exits: map[string]string{"gallery-of-forks": "gallery-gate", "menagerie-of-ash": "menagerie-gate", mapID: "black-gate"},
@@ -90,23 +96,30 @@ func TestShippedCryptEncounterBudgetTracksRouteDepth(t *testing.T) {
 			budgets = append(budgets, byID)
 		})
 	}
-	if len(budgets) != 2 {
-		t.Fatalf("measured %d floors, want 2", len(budgets))
+	if len(budgets) != 3 {
+		t.Fatalf("measured %d floors, want 3", len(budgets))
 	}
-	if len(budgets[0]) != len(budgets[1]) {
-		t.Fatalf("enemy count changed between depths: %d -> %d", len(budgets[0]), len(budgets[1]))
+	// Checking only the first and third floors can hide a temporary
+	// difficulty dip on the intermediate floor.
+	for floor := 1; floor < len(budgets); floor++ {
+		shallow, deep := budgets[floor-1], budgets[floor]
+		if len(shallow) != len(deep) {
+			t.Errorf("enemy count changed at depth %d: %d -> %d", floor, len(shallow), len(deep))
+		}
+		for id, first := range shallow {
+			deeper, ok := deep[id]
+			if !ok {
+				t.Errorf("depth %d lost enemy %s", floor, id)
+				continue
+			}
+			if deeper.hp < first.hp || deeper.retaliation < first.retaliation || deeper.level < first.level {
+				t.Errorf("%s became weaker at depth %d: %+v -> %+v", id, floor, first, deeper)
+			}
+		}
 	}
 	strengthened := 0
 	for id, first := range budgets[0] {
-		deep, ok := budgets[1][id]
-		if !ok {
-			t.Errorf("third floor lost enemy %s", id)
-			continue
-		}
-		if deep.hp < first.hp || deep.retaliation < first.retaliation || deep.level < first.level {
-			t.Errorf("%s became weaker with depth: %+v -> %+v", id, first, deep)
-		}
-		if deep.hp > first.hp {
+		if deep, ok := budgets[2][id]; ok && deep.hp > first.hp {
 			strengthened++
 		}
 	}
