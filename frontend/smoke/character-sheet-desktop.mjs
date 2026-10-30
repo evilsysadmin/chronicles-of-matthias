@@ -242,7 +242,7 @@ try {
       ).first().textContent(), /OBJETOS DE Matthias/,
         'Equipment must identify its current owner without duplicating headers');
       const equipment = sheet.locator('[data-chronicles-equipment-folio]');
-      const technicalButton = equipment.getByRole('button', { name: 'Detalles' });
+      const technicalButton = equipment.getByRole('button', { name: 'Detalles', exact: true });
       const technicalPanel = equipment.locator('#chronicles-equipment-technical-details');
       assert.equal(await technicalPanel.count(), 0,
         'Equipped gear already has visible icons; no permanent worn summary may consume space');
@@ -1104,7 +1104,7 @@ try {
         'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
       if (width <= 520) {
         const controls = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
-        const details = controls.getByRole('button', { name: 'Detalles' });
+        const details = controls.getByRole('button', { name: 'Detalles', exact: true });
         const advanced = sheet.locator('#chronicles-equipment-technical-details');
         assert.equal(await advanced.count(), 0,
           'No permanent equipment summary can steal a mobile inventory row');
