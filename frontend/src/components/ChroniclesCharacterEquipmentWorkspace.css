@@ -43,18 +43,14 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
     max-height: none;
     align-content: start;
     overflow-y: auto;
   }
-  /* One or two objects should never become a huge empty well. Populated
-     rosters receive the extra scroll height without stretching each row. */
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory:has(> button:nth-child(3)) {
-    flex: 1 1 auto;
-  }
+  /* The ledger uses the free space with any number of possessions.
+     align-content:start keeps rows compact, even for a single item. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
     flex: 0 0 auto;
@@ -63,6 +59,13 @@
     box-sizing: border-box;
     margin: 6px 0 0;
     padding: 6px 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details:not([hidden]) {
+    flex: 0 1 auto;
+    max-height: min(36vh, 320px);
+    overflow-y: auto;
+    box-sizing: border-box;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__equipment {
@@ -94,4 +97,11 @@
   border: 1px solid #8a9c8b;
   background: #435e55;
   cursor: pointer;
+}
+
+/* The legacy desktop inspector has author-level display:flex rules; these
+   must never override React's hidden state (also on mobile/short landscape). */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__item-details[hidden] {
+  display: none !important;
 }
