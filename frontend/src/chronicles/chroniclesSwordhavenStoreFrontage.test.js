@@ -67,9 +67,27 @@ describe('Swordhaven general store frontage', () => {
     const profile = sacks.geometry.parameters.points;
     expect(Math.max(...profile.map(point => point.x))).toBeGreaterThan(profile[0].x);
     expect(profile.at(-2).x).toBeLessThan(profile[3].x);
+    // The stock must read as creased canvas rather than round pottery, on
+    // both coarse and desktop geometry without adding individual draw calls.
+    const sackVertices = sacks.geometry.getAttribute('position');
+    const sackTints = sacks.geometry.getAttribute('color');
+    expect(sacks.material.vertexColors).toBe(true);
+    expect(sackTints?.count).toBe(sackVertices.count);
+    const waistRadii = [];
+    for (let vertex = 0; vertex < sackVertices.count; vertex += 1) {
+      if (Math.abs(sackVertices.getY(vertex) - 0.43) < 0.001) {
+        waistRadii.push(Math.hypot(sackVertices.getX(vertex), sackVertices.getZ(vertex) / 0.9));
+      }
+    }
+    expect(Math.max(...waistRadii) - Math.min(...waistRadii)).toBeGreaterThan(0.03);
     const ties = store.getObjectByName('store-front-sack-twine');
     expect(ties?.count).toBe(4);
     expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    const creases = store.getObjectByName('store-front-sack-cloth-creases');
+    expect(creases?.count).toBe(4);
+    expect(creases.geometry.type).toBe('TubeGeometry');
+    expect(creases.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-front-sack-cloth-creases')).toBeFalsy();
     expect(forge.getObjectByName('store-front-sack-twine')).toBeFalsy();
     expect(forge.getObjectByName('store-front-provisions-sacks')).toBeFalsy();
     const sackTransform = new THREE.Object3D();
