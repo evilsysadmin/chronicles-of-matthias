@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import {
+  chroniclesTacticsMove,
   chroniclesTacticsInteractions,
   chroniclesTacticsUse,
 } from '../chroniclesOfMatthiasTactics.js';
@@ -20,7 +21,7 @@ describe('Chronicles Echo Cistern', () => {
     expect(chroniclesMapIds()).toContain('echo-cistern');
     const cistern = chroniclesMapById('echo-cistern');
 
-    expect(cistern.version).toBe(2);
+    expect(cistern.version).toBe(3);
     expect(cistern.grid).toHaveLength(10);
     expect(cistern.grid[0]).toHaveLength(13);
     expect(cistern.enemies.map((enemy) => enemy.id)).toEqual([
@@ -172,4 +173,61 @@ describe('Chronicles Echo Cistern', () => {
     expect(state.westSluiceSet).toBe(false);
     expect(state.eastSluiceSet).toBe(false);
   });
+
+  it('adds an avoidable water-pressure plate that the west sluice safely disables', () => {
+    const map = chroniclesMapById('echo-cistern');
+    expect(map.traps).toEqual([
+      expect.objectContaining({
+        id: 'cistern-pressure-plate', visualType: 'chain-plate', x: 8, y: 6,
+      }),
+    ]);
+
+    // A longer path through the lower gallery reaches the eastern wheel
+    // without crossing the pressure plate; it is a choice, not a toll.
+    const seen = new Set([`${map.partyStart.x},${map.partyStart.y}`]);
+    const queue = [map.partyStart];
+    for (const point of queue) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const x = point.x + dx;
+        const y = point.y + dy;
+        const key = `${x},${y}`;
+        if (key === '8,6' || seen.has(key) || !map.grid[y]?.[x] || map.grid[y][x] === '#') continue;
+        seen.add(key);
+        queue.push({ x, y });
+      }
+    }
+    expect(seen.has('9,5')).toBe(true);
+
+    const defeated = Object.fromEntries(map.enemies.map((enemy) => [enemy.hpKey, 0]));
+    const fresh = createChroniclesState(map.id, null, { rules: 'mm3' });
+    const before = { ...fresh, ...defeated, x: 7, y: 6, direction: 1 };
+    const originalHp = before.party.map((member) => member.hp);
+    const hit = chroniclesReduce(before, 'forward');
+    expect({ x: hit.x, y: hit.y }).toEqual({ x: 8, y: 6 });
+    expect(hit.cisternPressurePlateSpent).toBe(true);
+    hit.party.forEach((member, index) => {
+      expect(member.hp).toBeGreaterThanOrEqual(Math.max(0, originalHp[index] - 2));
+      expect(member.hp).toBeLessThanOrEqual(originalHp[index]);
+    });
+
+    const again = chroniclesReduce({ ...hit, x: 7, y: 6, direction: 1 }, 'forward');
+    expect(again.party).toEqual(hit.party);
+    const safe = chroniclesReduce({ ...before, westSluiceSet: true }, 'forward');
+    expect(safe.cisternPressurePlateSpent).toBe(false);
+    expect(safe.party).toEqual(before.party);
+
+    const away = chroniclesMapTransitionState(hit, 'iron-foundry');
+    const restored = chroniclesMapTransitionState(JSON.parse(JSON.stringify(away)), map.id);
+    expect(restored.cisternPressurePlateSpent).toBe(true);
+    expect(restored.party).toEqual(hit.party);
+
+    // The same authored trap also works in the separate Tactics move path.
+    const tacticsBefore = { ...createChroniclesState(map.id), ...defeated, x: 7, y: 6 };
+    const tactics = chroniclesTacticsMove(tacticsBefore, { x: 8, y: 6 });
+    expect(tactics.cisternPressurePlateSpent).toBe(true);
+    expect(tactics.party.map((member) => member.hp)).toEqual(
+      tacticsBefore.party.map((member) => (member.hp > 0 ? Math.max(0, member.hp - 2) : member.hp)),
+    );
+  });
+
 });
