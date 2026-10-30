@@ -306,8 +306,19 @@ function enterTile(state, x, y, { deferAreaTransition = false } = {}) {
     next = chroniclesApplyContentAction(next, explorationAction(trigger), { appendJournal });
   }
 
+  // First-person exploration must resolve the same authored pressure plates
+  // as Tactics. Apply them only after a successful tile entry, not on turns,
+  // rejected moves, or transitions into another map.
+  const trap = contentEntryAt(state, 'traps', x, y);
+  if (trap?.action && next.mapId === state.mapId && next.phase === 'explore'
+      && chroniclesRequirementsMet(next, trap.when)) {
+    next = chroniclesApplyContentAction(next, trap.action, { appendJournal });
+  }
+
   const exit = contentEntryAt(state, 'exits', x, y);
-  if (exit && chroniclesRequirementsMet(state, exit.requirements) && !deferAreaTransition) {
+  // A lethal trap cannot be bypassed by a gate on the same cell.
+  if (exit && next.phase !== 'defeated'
+      && chroniclesRequirementsMet(state, exit.requirements) && !deferAreaTransition) {
     next = runAreaExit(next, exit);
   }
   return next;
