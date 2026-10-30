@@ -1482,6 +1482,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       const rafter = mesh(herbarium, new THREE.BoxGeometry(1.77, 0.14, 0.15),
         mats.timber, 'herbarium-roof-rafter', [side * 0.72, 2.00, 1.15], !coarse);
       rafter.rotation.z = -side * 0.67;
+      // Two slender cross-purlins divide each glass slope into believable
+      // conservatory bays. They follow the existing pitch, sit above the
+      // panes and remain wholly above the original roof/solid footprint.
+      for (const offset of [0.38, 1.06]) {
+        const crossbar = mesh(herbarium, new THREE.BoxGeometry(0.12, 0.12, 2.34),
+          mats.timber, 'herbarium-roof-glazing-mullion',
+          [side * offset, 2.02 + (0.72 - offset) * Math.tan(0.67), 0], !coarse);
+        crossbar.rotation.z = -side * 0.67;
+        crossbar.userData.chroniclesDecorativeOnly = true;
+      }
     }
     mesh(herbarium, new THREE.BoxGeometry(0.17, 0.19, 2.54), mats.timber,
       'herbarium-roof-ridge', [0, 2.55, 0], !coarse);
