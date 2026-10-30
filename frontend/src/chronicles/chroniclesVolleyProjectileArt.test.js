@@ -112,7 +112,8 @@ describe('Chronicles · physical missile family rendering (#134)', () => {
         radialAxes.push(new THREE.Vector3(0, 1, 0).applyQuaternion(rotation));
         expect(vane.scale.x).toBeLessThan(0.9);
         vane.geometry.computeBoundingBox();
-        expect(vane.geometry.boundingBox.max.y).toBeLessThan(0.03);
+        // Narrow relative to the shaft length, but visible at normal zoom.
+        expect(vane.geometry.boundingBox.max.y).toBeLessThan(0.055);
       }
       vaneAxes.forEach((axis) => {
         expect(axis.x).toBeCloseTo(0, 6);
