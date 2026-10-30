@@ -116,6 +116,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(source).toContain("activeFolio === 'equipment'");
     expect(source).toContain('chroniclesPartyHotkeyMember(event, state.party)');
     expect(source).toContain("type: 'transfer-item'");
+    expect(source).toContain("type: 'transfer-equipped-item'");
+    expect(source).toContain('selectedWornItem.name');
+    expect(source).toContain('Boolean(transferSelection) && canChangeEquipment');
     expect(source).toContain('data-transfer-target=');
     expect(source).toContain('chronicles-character-sheet__transfer-hint');
     expect(source).not.toContain('showRecipients');

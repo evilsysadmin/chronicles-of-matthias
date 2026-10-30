@@ -230,8 +230,11 @@ export default function ChroniclesCharacterSheet({
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
 
-  // A selected item is a direct MM3 transfer: 1–4 delivers one copy to
-  // the matching party slot; without selection numbers just switch dossier.
+  // A selected item, worn or loose, can be given with a party number or
+  // portrait. Without selection, those same controls navigate the dossier.
+  const transferSelection = selectedWornItem
+    ? { name: selectedWornItem.name, slot: selectedWornItem.slot }
+    : transferableItem ? { name: transferableItem.name, itemId: transferableItem.id } : null;
   const viewMember = (targetId) => {
     setSelectedWornSlot(null);
     setSelectedBagItem(null);
@@ -242,14 +245,20 @@ export default function ChroniclesCharacterSheet({
     onSelectMember?.(targetId);
   };
   const giveSelectedItemTo = (targetId) => {
-    if (!transferableItem || !canChangeEquipment || targetId === member.id) return;
-    onEquipmentAction?.({ type: 'transfer-item', itemId: transferableItem.id, toMemberId: targetId });
+    if (!transferSelection || !canChangeEquipment || targetId === member.id) return;
+    if (transferSelection.slot) {
+      onEquipmentAction?.({ type: 'transfer-equipped-item',
+        slot: transferSelection.slot, toMemberId: targetId });
+    } else {
+      onEquipmentAction?.({ type: 'transfer-item',
+        itemId: transferSelection.itemId, toMemberId: targetId });
+    }
     setSelectedBagItem(null);
     setSelectedWornSlot(null);
     setInspectItem(false);
   };
   const directTransferMode = !tacticsMode && activeFolio === 'equipment'
-    && Boolean(transferableItem) && canChangeEquipment;
+    && Boolean(transferSelection) && canChangeEquipment;
   const handlePartyKey = (event) => {
     const hero = chroniclesPartyHotkeyMember(event, state.party);
     if (!hero) return false;
@@ -271,7 +280,7 @@ export default function ChroniclesCharacterSheet({
     window.addEventListener('keydown', onWindowPartyKey);
     return () => window.removeEventListener('keydown', onWindowPartyKey);
   }, [state?.party, member, onSelectMember, onEquipmentAction,
-    activeFolio, selectedItemId, canChangeEquipment, transferableItem?.id]);
+    activeFolio, selectedItemId, selectedWornSlot, canChangeEquipment, transferSelection?.itemId]);
 
   // Selection never equips or transfers: the player explicitly chooses a command.
   const browseBackpack = (step) => {
@@ -408,14 +417,14 @@ export default function ChroniclesCharacterSheet({
               ) : (
                 <small>{tacticsMode ? 'Sin objetos recuperados en esta expedición.' : 'Este personaje no lleva pertenencias.'}</small>
               )}
-              {selectedWornItem && (
+              {selectedWornItem && !directTransferMode && (
                 <small className="chronicles-character-sheet__worn-hint" role="status">
-                  {selectedWornItem.name} seleccionado · Pulsa Quitar para devolverlo a la mochila.
+                  {selectedWornItem.name} seleccionado · Pulsa 1–4 o toca un retrato para entregarlo, o Quitar para guardarlo.
                 </small>
               )}
               {directTransferMode && (
                 <small className="chronicles-character-sheet__transfer-hint" role="status">
-                  {transferableItem.name} seleccionado · Pulsa 1–4 o toca un retrato para entregar uno.
+                  {transferSelection.name} seleccionado · Pulsa 1–4 o toca un retrato para entregar uno.
                   Vuelve a pulsar el objeto para cancelar.
                 </small>
               )}
@@ -846,7 +855,7 @@ export default function ChroniclesCharacterSheet({
               <button type="button" key={hero.id}
                 disabled={!onSelectMember && !(directTransferMode && hero.id !== member.id)}
                 aria-label={directTransferMode && hero.id !== member.id
-                  ? `Entregar 1 ${transferableItem.name} a ${hero.name} (tecla ${slot})`
+                  ? `Entregar 1 ${transferSelection.name} a ${hero.name} (tecla ${slot})`
                   : `Ver ficha de ${hero.name}, ${hero.hp} de ${hero.maxHp} PV`}
                 aria-pressed={hero.id === member.id}
                 data-transfer-target={directTransferMode && hero.id !== member.id ? 'true' : undefined}

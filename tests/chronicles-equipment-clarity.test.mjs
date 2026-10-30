@@ -8,14 +8,16 @@ const skin = readFileSync(new URL('../frontend/src/components/ChroniclesCharacte
 test('MM3 inventory distinguishes preview from an explicitly selected transfer target', () => {
   assert.match(sheet, /transferableItem \|\| \(!tacticsMode \? visibleBackpack\[0\] : null\)/);
   assert.match(sheet, /transferableItem \? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'/);
-  assert.match(sheet, /onEquipmentAction\?\.\(\{ type: 'transfer-item', itemId: transferableItem\.id, toMemberId: targetId \}\)/);
+  assert.match(sheet, /type: 'transfer-item'/);
+  assert.match(sheet, /type: 'transfer-equipped-item'/);
+  assert.match(sheet, /transferSelection = selectedWornItem/);
 });
 
 test('party slots transfer an explicitly selected item; otherwise they navigate', () => {
   const dock = sheet.split('<nav className="chronicles-character-sheet__party-dock"')[1];
   assert.ok(dock, 'Four real portraits remain in the visible dock');
   assert.match(sheet, /const directTransferMode = !tacticsMode && activeFolio === 'equipment'/);
-  assert.match(sheet, /Boolean\(transferableItem\) && canChangeEquipment/);
+  assert.match(sheet, /Boolean\(transferSelection\) && canChangeEquipment/);
   assert.match(sheet, /chroniclesPartyHotkeyMember\(event, state\.party\)/);
   assert.match(sheet, /if \(directTransferMode\) \{/);
   assert.match(sheet, /if \(hero\.id !== member\.id\) giveSelectedItemTo\(hero\.id\)/);
@@ -23,7 +25,9 @@ test('party slots transfer an explicitly selected item; otherwise they navigate'
   assert.match(dock, /data-transfer-target=/);
   assert.match(dock, /if \(directTransferMode && hero\.id !== member\.id\) giveSelectedItemTo\(hero\.id\)/);
   assert.match(dock, /else viewMember\(hero\.id\)/);
-  assert.match(sheet, /if \(!transferableItem \|\| !canChangeEquipment \|\| targetId === member\.id\) return;/);
+  assert.match(sheet, /if \(!transferSelection \|\| !canChangeEquipment \|\| targetId === member\.id\) return;/);
+  assert.match(sheet, /if \(transferSelection\.slot\)/);
+  assert.match(sheet, /slot: transferSelection\.slot, toMemberId: targetId/);
   assert.match(sheet, /setSelectedBagItem\(selectedItemId === item\.id/);
   assert.doesNotMatch(sheet, /showRecipients|classic-recipients|recipientsRef/);
   // Actual keyboard, mouse and combat behavior is covered by Chromium smoke.

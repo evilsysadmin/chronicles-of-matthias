@@ -607,8 +607,11 @@ try {
       await firstWorn.click();
       assert.equal(await firstWorn.getAttribute('aria-pressed'), 'true');
       assert.equal(await itemCommands.getByRole('button', { name: /Quitar/ }).isEnabled(), true);
-      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').count(), 0,
-        'Worn selection must never arm numeric item transfer');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__transfer-hint').isVisible(), true,
+        'Worn selection must arm portrait/1–4 transfer like any bag item');
+      assert.equal(await sheet.getByRole('navigation', { name: 'Seleccionar personaje de la compañía' })
+        .getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1,
+      'Equipped gear offers direct handoff without needing Quitar first');
       await itemCommands.getByRole('button', { name: /Quitar/ }).click();
       assert.equal(await firstWorn.count(), 0, 'Unequip removes the worn object from the one list');
       await sword.waitFor({ state: 'visible' });
@@ -752,6 +755,74 @@ try {
     } catch (error) {
       failures.push(`handoff ${width}: ${error.message}`);
       console.error('MM3_MANUAL_HANDOFF_FAIL', width, error);
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  // Regression: a selected WORN item in the single MM3 list must transfer
+  // directly via portrait OR numeric hotkey, not navigate to the recipient.
+  // Use the actual campaign reducer and inspect both owners' inventory.
+  for (const [width, height] of [[1280, 800], [390, 844]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, isMobile: width < 500, hasTouch: width < 500,
+      deviceScaleFactor: 1,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      await page.goto(url + '?interactive=1', { waitUntil: 'networkidle' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      const heading = sheet.locator('#chronicles-character-sheet-title');
+      await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
+        .getByRole('button', { name: /Equipo/ }).click();
+      const bag = sheet.locator('.chronicles-character-sheet__inventory');
+      const actions = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+      const dock = sheet.getByRole('navigation', { name: 'Seleccionar personaje de la compañía' });
+      const sword = bag.locator('[data-inventory-item="bronze-sword"]');
+      await sword.click();
+      await actions.getByRole('button', { name: /Equipar/ }).click();
+      const worn = bag.locator('[data-worn-slot="weapon"]');
+      await worn.waitFor({ state: 'visible' });
+      await worn.click();
+      assert.equal(await worn.getAttribute('aria-pressed'), 'true');
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).count(), 1);
+      await dock.getByRole('button', { name: /Entregar 1 .* a Hildegard/ }).click();
+      assert.equal(await heading.innerText(), 'Matthias',
+        'Giving equipped sword from portrait must NOT switch the open hero');
+      assert.equal(await worn.count(), 0, 'Given sword leaves the equipped weapon slot');
+      assert.equal(await sword.count(), 0, 'Given sword is not duplicated in source bag');
+      await page.keyboard.press('2');
+      assert.equal(await heading.innerText(), 'Hildegard');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 1, 'Recipient carries the same sword in bag, not auto-equipped');
+      await sword.click();
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Hildegard',
+        'Recipient can return the sword directly with the numeric shortcut');
+      assert.equal(await sword.count(), 0);
+      await page.keyboard.press('1');
+      assert.equal(await heading.innerText(), 'Matthias');
+      await sword.waitFor({ state: 'visible' });
+      await sword.click();
+      await actions.getByRole('button', { name: /Equipar/ }).click();
+      await worn.waitFor({ state: 'visible' });
+      await worn.click();
+      assert.equal(await dock.getByRole('button', { name: /Entregar 1 .* a Aziz/ }).count(), 1);
+      await page.keyboard.press('3');
+      assert.equal(await heading.innerText(), 'Matthias',
+        'Numeric 3 transfers the worn sword and preserves the source dossier');
+      assert.equal(await worn.count(), 0);
+      await page.keyboard.press('3');
+      assert.equal(await heading.innerText(), 'Aziz');
+      await sword.waitFor({ state: 'visible' });
+      assert.equal(await sword.count(), 1, 'Numeric recipient obtains exactly one item');
+      assert.deepEqual(errors, [], 'No browser exceptions while transferring equipped weapons');
+      console.log(`MM3_WORN_HANDOFF_OK ${width}x${height}`);
+    } catch (error) {
+      failures.push(`worn handoff ${width}: ${error.message}`);
+      console.error('MM3_WORN_HANDOFF_FAIL', width, error);
     } finally {
       await ctx.close();
     }
