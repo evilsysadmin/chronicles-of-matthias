@@ -1020,8 +1020,8 @@ try {
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > div > small'
       );
       assert.match(await equipmentSubtitle.textContent(), /Mochila personal/);
-      assert.equal(await equipmentSubtitle.isVisible(), width > 430,
-        'Only narrow touch phones omit the redundant Equipment subtitle');
+      assert.equal(await equipmentSubtitle.isVisible(), false,
+        'The mobile Equipment subtitle is redundant on phones and short landscape alike');
       const companyGoldChip = sheet.locator('.chronicles-character-sheet__quick [data-resource="gold"]');
       const repeatedEquipmentGold = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
