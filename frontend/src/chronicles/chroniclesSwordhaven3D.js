@@ -1338,6 +1338,40 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       cap.rotation.z = -side * 0.44;
     }
     root.add(vent);
+    // The weaponsmith's street gable now has a full-size oak roof truss and
+    // a dark iron smoke louver. These make the workshop legible by its
+    // architecture rather than the shared merchant plaque alone. Both sit
+    // over the existing solid building cells, without lights or colliders.
+    const gableTruss = new THREE.Group();
+    gableTruss.name = 'forge-front-oak-gable-truss';
+    gableTruss.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      const rafter = mesh(gableTruss, new THREE.BoxGeometry(0.23, 4.46, 0.23),
+        mats.timber, 'forge-gable-raking-oak-rafter',
+        [side * 2.03, height + 0.87, facadeZ + 0.35], !coarse);
+      rafter.rotation.z = side * 1.16;
+    }
+    root.add(gableTruss);
+    const gableLouver = new THREE.Group();
+    gableLouver.name = 'forge-front-gable-smoke-louver';
+    gableLouver.userData.chroniclesDecorativeOnly = true;
+    gableLouver.position.set(0, height + 0.80, facadeZ + 0.43);
+    mesh(gableLouver, new THREE.BoxGeometry(1.72, 0.60, 0.08),
+      material(0x241c18, { roughness: 1 }), 'forge-gable-dark-vent', [0, 0, 0]);
+    for (const y of [-0.21, 0, 0.21]) {
+      const slat = mesh(gableLouver, new THREE.BoxGeometry(1.60, 0.10, 0.12),
+        mats.steel, 'forge-gable-iron-louver-slat', [0, y, 0.12], !coarse);
+      slat.rotation.x = -0.20;
+    }
+    for (const side of [-1, 1]) {
+      mesh(gableLouver, new THREE.BoxGeometry(0.13, 0.78, 0.20),
+        mats.steel, 'forge-gable-iron-jamb', [side * 0.91, 0, 0.08], !coarse);
+    }
+    for (const y of [-0.36, 0.36]) {
+      mesh(gableLouver, new THREE.BoxGeometry(1.94, 0.12, 0.20),
+        mats.steel, 'forge-gable-iron-lintel', [0, y, 0.08], !coarse);
+    }
+    root.add(gableLouver);
   } else if (!isTemple && !isTavern && !isMagic && !isArmor && !isApothecary) {
     // Merchant houses retain dormers; the botica's glazed herbarium needs a clear silhouette,
     // just like the temple, tavern, guild and armorer have distinct rooflines.
