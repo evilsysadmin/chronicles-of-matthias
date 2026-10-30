@@ -33,7 +33,6 @@ import {
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import {
   CHRONICLES_EQUIPMENT,
-  CHRONICLES_EQUIPMENT_SLOTS,
   chroniclesEquippedItem,
   chroniclesEquipmentBonuses,
   chroniclesMemberCanEquip,
@@ -49,7 +48,7 @@ import {
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
-import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
+import { chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
 import { chroniclesBackpackMoveSelection } from '../chronicles/chroniclesBackpackFilters.js';
@@ -126,7 +125,6 @@ export default function ChroniclesCharacterSheet({
   const [selectedWornSlot, setSelectedWornSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(false);
   const [expandItemAttributes, setExpandItemAttributes] = useState(false);
-  const [showEquipmentDetails, setShowEquipmentDetails] = useState(false);
   const [pendingDrop, setPendingDrop] = useState(null);
   const dropCancelRef = useRef(null);
   const inventoryListRef = useRef(null);
@@ -143,7 +141,6 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setSelectedWornSlot(null);
     setInspectItem(false);
-    setShowEquipmentDetails(false);
     setPendingDrop(null);
 
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
@@ -198,7 +195,6 @@ export default function ChroniclesCharacterSheet({
   const selectedEquipment = selectedInventoryItem && CHRONICLES_EQUIPMENT[selectedInventoryItem.id];
   const currentlyEquipped = selectedEquipment ? chroniclesEquippedItem(state, member.id, selectedEquipment.slot) : null;
   const canEquipSelected = selectedEquipment && chroniclesMemberCanEquip(member, selectedEquipment);
-  const weaponModes = !tacticsMode ? chroniclesGearAttackModes(state, member.id) : null;
   const weaponSwap = selectedEquipment && mm3
     ? chroniclesGearSwapPreview(state, member.id, selectedEquipment.id)
     : null;
@@ -215,7 +211,9 @@ export default function ChroniclesCharacterSheet({
   // existing read-only swap preview; worn arms use live combat stats.
   const detailAttack = detailEquipment && detailCanEquip
     && (detailEquipment.slot === 'weapon' || detailEquipment.slot === 'missile')
-    ? (selectedWornItem ? weaponModes?.[detailEquipment.slot] : weaponSwap?.after)
+    ? (selectedWornItem
+      ? chroniclesPartyAttackStats(state, member.id, detailEquipment.slot === 'missile' ? 'missile' : 'melee')
+      : weaponSwap?.after)
     : null;
   const visibleWornGear = wornGearItems;
   // One display ledger. Equipped identities stay out of bag stock/persistence.
@@ -248,7 +246,6 @@ export default function ChroniclesCharacterSheet({
     setSelectedWornSlot(null);
     setSelectedBagItem(null);
     setInspectItem(false);
-    setShowEquipmentDetails(false);
     setPendingDrop(null);
     // The next hero always opens at the beginning of the dossier, including
     // short landscape: do not strand their inventory behind the party dock.
@@ -383,8 +380,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedWornSlot(null);
       setSelectedBagItem(null);
       setInspectItem(false);
-      setShowEquipmentDetails(false);
-      setPendingDrop(null);
+        setPendingDrop(null);
     }
     // Always begin the newly selected MM3 page at its top. On phones the
     // previously preserved scroll was hiding the header, inventory and actions
@@ -536,11 +532,6 @@ export default function ChroniclesCharacterSheet({
                       }
                     }}>
                     <span aria-hidden="true">⚔</span> {selectedWornItem ? 'Quitar' : 'Equipar'}
-                  </button>
-                  <button type="button" aria-expanded={showEquipmentDetails}
-                    aria-controls="chronicles-equipment-technical-details"
-                    onClick={() => setShowEquipmentDetails((shown) => !shown)}>
-                    <span aria-hidden="true">▣</span> Detalles
                   </button>
                   <button type="button" disabled={!detailItem}
                     aria-expanded={inspectItem} aria-keyshortcuts="I"
@@ -791,70 +782,6 @@ export default function ChroniclesCharacterSheet({
                 {relic && <small>{relic.description}</small>}
               </article>
             )}
-            {!tacticsMode && showEquipmentDetails && <article className="chronicles-character-sheet__equipment"
-              id="chronicles-equipment-technical-details">
-              <section className="chronicles-character-sheet__equipped-disclosure" data-expanded="true"
-                aria-label="Detalles técnicos del equipo">
-                <div className="chronicles-character-sheet__technical-heading">
-                  <strong>Detalles técnicos</strong>
-                  <button type="button" onClick={() => setShowEquipmentDetails(false)}
-                    aria-label="Cerrar detalles técnicos">Cerrar</button>
-                </div>
-                <div className="chronicles-character-sheet__equipped-body">
-              {mm3 && <div className="chronicles-character-sheet__dual-weapons" aria-label="Armas disponibles: A cuerpo a cuerpo, S proyectiles">
-                {[
-                  { slot: 'weapon', label: 'A · Cuerpo a cuerpo', stats: weaponModes.weapon },
-                  { slot: 'missile', label: 'S · Proyectiles', stats: weaponModes.missile },
-                ].map(({ slot, label, stats }) => {
-                  const worn = chroniclesEquippedItem(state, member.id, slot);
-                  return (
-                    <div className="chronicles-character-sheet__weapon-card" key={slot} data-slot={slot}>
-                      <b>{label}</b>
-                      <strong>{worn?.name || 'Sin equipar'}</strong>
-                      <small>{slot === 'weapon' || worn
-                        ? `Daño ${stats.damage} · Acierto ${signed(stats.toHit)}`
-                        : 'Sin arma de proyectiles · no puede disparar'}</small>
-                      {slot === 'missile' && worn && chroniclesShopHandlingNote(worn, state?.combatRules) && (
-                        <small className="chronicles-character-sheet__handling-note" data-chronicles-worn-handling>
-                          {chroniclesShopHandlingNote(worn, state?.combatRules)}
-                        </small>
-                      )}
-                      {worn && <button type="button" disabled={!canChangeEquipment}
-                        aria-label={`Quitar ${worn.name} y guardarlo en la mochila`}
-                        title="Quitar equipo y devolverlo a la mochila"
-                        onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
-                        Quitar
-                      </button>}
-                    </div>
-                  );
-                })}
-              </div>}
-              {/* In MM3, A/S already include the same unequip action above.
-                  Do not render duplicate weapon slots below the weapon cards. */}
-              {CHRONICLES_EQUIPMENT_SLOTS.filter((slot) => !mm3
-                || (slot !== 'weapon' && slot !== 'missile')).map((slot) => {
-                const worn = chroniclesEquippedItem(state, member.id, slot);
-                return (
-                  <div className="chronicles-character-sheet__gear-slot" key={slot}>
-                    <small>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[slot]}</small>
-                    <strong>{worn?.name || 'Sin equipar'}</strong>
-                    {worn && <button type="button" disabled={!canChangeEquipment}
-                      aria-label={`Quitar ${worn.name} y guardarlo en la mochila`}
-                      title="Quitar equipo y devolverlo a la mochila"
-                      onClick={() => onEquipmentAction?.({ type: 'unequip-item', slot })}>
-                      Quitar
-                    </button>}
-                  </div>
-                );
-              })}
-              <small>
-                {mm3
-                  ? `CA del equipo +${gearBonus.armorClassBonus}: dificulta impactos, no resta daño. A y S calculan daño y acierto por separado.`
-                  : `Daño +${gearBonus.attackDamageBonus} · mitigación ${gearBonus.damageReduction}. Sólo cuenta el equipo puesto.`}
-              </small>
-                </div>
-              </section>
-            </article>}
             {tacticsMode && backpackPanel}
           </div>
         </div>
