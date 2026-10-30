@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesActiveEnemies, chroniclesPartyArmorClass, chroniclesReduce, createChroniclesState, chroniclesTileAt } from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesMM3MeleeAvailable, chroniclesPartyArmorClass, chroniclesReduce, createChroniclesState, chroniclesTileAt } from '../chroniclesOfMatthias.js';
 import { chroniclesAdvanceCombatInitiative, chroniclesCurrentInitiativeActor, chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
@@ -199,7 +199,7 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(mixed.hits).toBeLessThanOrEqual(mixed.attacks);
   });
 
-  it('measures a real initiative round with BLOCK and First Aid, including their action/PH cost', () => {
+  it('measures a real initiative round with melee, BLOCK and First Aid, including action/PH costs', () => {
     // The passive benchmark above intentionally gives the heroes no turns.
     // This companion scenario uses the real reducer and initiative cursor:
     // no manually assigned damage, free healing, or invented enemy attacks.
@@ -222,7 +222,7 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     expect(state.initiative?.order).toHaveLength(5);
     const initialRound = state.initiative.round;
     const initialHp = Object.fromEntries(state.party.map(({ id, hp }) => [id, hp]));
-    const actions = { blocks: 0, heals: 0, spSpent: 0, enemyTurns: 0, enemyEvents: [] };
+    const actions = { attacks: 0, attackDamage: 0, blocks: 0, heals: 0, spSpent: 0, enemyTurns: 0, enemyEvents: [] };
 
     for (let turn = 0; turn < 5; turn += 1) {
       const actor = chroniclesCurrentInitiativeActor(state.initiative);
@@ -235,6 +235,18 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
         actions.enemyEvents.push(...(acted.enemyTurnEvents || []).map(({ type, missed, damage }) => ({
           type, ...(type === 'attack' ? { missed, damage } : {}),
         })));
+      } else if (actor.id === 'matthias') {
+        // The western goblin starts one walkable cardinal cell away. Use the
+        // real MM3 attack reducer and measure actual HP loss, including misses.
+        expect(chroniclesMM3MeleeAvailable(state, actor.id)).toBe(true);
+        const enemyHpBefore = state[goblin.hpKey];
+        acted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
+        expect(acted).not.toBe(state);
+        expect(acted.turns).toBe(state.turns + 1);
+        expect(acted[goblin.hpKey]).toBeGreaterThanOrEqual(0);
+        expect(acted[goblin.hpKey]).toBeLessThanOrEqual(enemyHpBefore);
+        actions.attacks += 1;
+        actions.attackDamage += enemyHpBefore - acted[goblin.hpKey];
       } else if (actor.id === 'bishop') {
         const caster = state.party.find(({ id }) => id === 'bishop');
         const target = state.party.find(({ id }) => id === 'rook');
@@ -263,7 +275,8 @@ describe('MM3 enemy pressure · same real engine, controlled four-round exposure
     }
 
     expect(state.initiative?.round).toBe(initialRound + 1);
-    expect(actions).toMatchObject({ blocks: 3, heals: 1, spSpent: 1, enemyTurns: 1 });
+    expect(actions).toMatchObject({ attacks: 1, blocks: 2, heals: 1, spSpent: 1, enemyTurns: 1 });
+    expect(ready[goblin.hpKey] - state[goblin.hpKey]).toBe(actions.attackDamage);
     expect(state.spellPoints.bishop).toBe(1);
     console.info('CHRONICLES_MM3_ACTIVE_PRESSURE_BENCHMARK ' + JSON.stringify({
       encounter: 'single-goblin', actions,
