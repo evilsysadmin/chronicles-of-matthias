@@ -278,6 +278,13 @@ export default function ChroniclesCharacterSheet({
     viewMember(hero.id);
     return true;
   };
+  // The button and U shortcut must share one validated equipment operation.
+  const unequipSelected = () => {
+    if (!canChangeEquipment || !selectedWornItem) return;
+    onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
+    setSelectedWornSlot(null);
+    setInspectItem(false);
+  };
   useEffect(() => {
     if (!state?.party || !member) return undefined;
     const onWindowKey = (event) => {
@@ -292,11 +299,7 @@ export default function ChroniclesCharacterSheet({
           setSelectedBagItem(null);
           setInspectItem(false);
         }
-        if (command === 'u' && canChangeEquipment && selectedWornItem) {
-          onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
-          setSelectedWornSlot(null);
-          setInspectItem(false);
-        }
+        if (command === 'u') unequipSelected();
         if (command === 'd' && canChangeEquipment && transferableItem) {
           setPendingDrop({ memberId: member.id, itemId: transferableItem.id, name: transferableItem.name });
         }
@@ -515,8 +518,7 @@ export default function ChroniclesCharacterSheet({
                     aria-keyshortcuts={selectedWornItem ? "U" : "E"}
                     onClick={() => {
                       if (selectedWornItem) {
-                        onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
-                        setSelectedWornSlot(null);
+                        unequipSelected();
                       } else if (transferableItem && selectedEquipment && canEquipSelected) {
                         onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id });
                         setSelectedBagItem(null);
