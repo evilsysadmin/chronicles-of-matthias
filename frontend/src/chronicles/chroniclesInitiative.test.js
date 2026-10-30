@@ -469,9 +469,9 @@ describe('Chronicles combat engagement and leash', () => {
   const party = [{ id: 'matthias', name: 'Matthias', hp: 8, agility: 3 }];
   const base = { mapId: 'swordhaven-sewers', party, tobiasHp: 5, rpgModifiers: {}, phase: 'explore' };
 
-  it.each([[2], ['2'], true, { radius: 2 }])(
-    'rejects malformed legacy engageRange %s without inventing a combat radius or leash',
-    (engageRange) => {
+  it.each([{ value: [2] }, { value: ['2'] }, { value: true }, { value: { radius: 2 } }])(
+    'rejects malformed legacy engageRange $value without inventing a combat radius or leash',
+    ({ value: engageRange }) => {
       // A clear corridor separates the company and Tobías by two tiles.
       const state = { ...base, x: 11, y: 17 };
       const enemy = { ...tobias, ai: { attackReach: 1, engageRange } };
