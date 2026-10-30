@@ -205,6 +205,10 @@ export default function ChroniclesCharacterSheet({
   // Include genuine equipped items in the MM3 item ledger; a full equipment
   // loadout must never look like an empty inventory just because the bag is empty.
   const selectedWornItem = wornGearItems.find((slot) => slot.slot === selectedWornSlot) || null;
+  const detailItem = selectedWornItem ? { ...selectedWornItem.item, quantity: 1 } : selectedInventoryItem;
+  const detailEquipment = selectedWornItem ? CHRONICLES_EQUIPMENT[selectedWornItem.item.id] : selectedEquipment;
+  const detailCanEquip = selectedWornItem ? true : canEquipSelected;
+  const detailEquipped = detailEquipment ? chroniclesEquippedItem(state, member.id, detailEquipment.slot) : null;
   const visibleWornGear = wornGearItems;
   // One display ledger. Equipped identities stay out of bag stock/persistence.
   const visibleLedger = [
@@ -518,7 +522,7 @@ export default function ChroniclesCharacterSheet({
                     onClick={() => setShowEquipmentDetails((shown) => !shown)}>
                     <span aria-hidden="true">▣</span> Detalles
                   </button>
-                  <button type="button" disabled={!selectedInventoryItem}
+                  <button type="button" disabled={!detailItem}
                     aria-expanded={inspectItem}
                     onClick={() => { setInspectItem((open) => !open);  }}>
                     <span aria-hidden="true">⌕</span> Examinar
@@ -528,24 +532,24 @@ export default function ChroniclesCharacterSheet({
                   </button>
                 </nav>
               )}
-              {!tacticsMode && selectedInventoryItem && (
+              {!tacticsMode && detailItem && (
                 <aside className="chronicles-character-sheet__item-details" aria-live="polite" hidden={!inspectItem}>
                   <small className="chronicles-character-sheet__item-selection-state">{transferableItem ? 'Seleccionado · se puede entregar' : 'Vista previa · selecciónalo para entregarlo'}</small>
-                  <strong>{selectedInventoryItem.name}</strong>
+                  <strong>{detailItem.name}</strong>
                   <div className="chronicles-character-sheet__item-essentials">
-                    <span>×{selectedInventoryItem.quantity}</span>
-                    {selectedEquipment && <>
-                      <span>{{ weapon: 'Arma A', missile: 'Proyectiles S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</span>
-                      <span className={canEquipSelected ? 'can-equip' : 'cannot-equip'}>
-                        {canEquipSelected ? 'Puede equiparlo' : 'Clase incompatible'}
+                    <span>×{detailItem.quantity}</span>
+                    {detailEquipment && <>
+                      <span>{{ weapon: 'Arma A', missile: 'Proyectiles S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</span>
+                      <span className={detailCanEquip ? 'can-equip' : 'cannot-equip'}>
+                        {detailCanEquip ? 'Puede equiparlo' : 'Clase incompatible'}
                       </span>
                     </>}
                   </div>
-                  {!selectedEquipment && (
-                    <p>{selectedInventoryItem.description || 'Objeto de expedición.'}</p>
+                  {!detailEquipment && (
+                    <p>{detailItem.description || 'Objeto de expedición.'}</p>
                   )}
-                  {selectedEquipment && <>
-                    {weaponSwap ? (
+                  {detailEquipment && <>
+                    {!selectedWornItem && weaponSwap ? (
                       <details className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
                         <summary>
                           <span>Si equipas este objeto (${weaponSwap.slot === 'missile' ? 'S' : 'A'})</span>
@@ -557,30 +561,35 @@ export default function ChroniclesCharacterSheet({
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
                         <small>La otra arma no cambia. Comparación informativa: nada se equipa hasta confirmar.</small>
                       </details>
-                    ) : currentlyEquipped && <small>Diferencia respecto al equipo actual: daño {signed(selectedEquipment.attackDamageBonus - currentlyEquipped.attackDamageBonus)}, acierto {signed(selectedEquipment.toHitBonus - currentlyEquipped.toHitBonus)}, armadura {signed(selectedEquipment.armorClassBonus - currentlyEquipped.armorClassBonus)}.</small>}
+                    ) : !selectedWornItem && detailEquipped && <small>Diferencia respecto al equipo actual: daño {signed(detailEquipment.attackDamageBonus - detailEquipped.attackDamageBonus)}, acierto {signed(detailEquipment.toHitBonus - detailEquipped.toHitBonus)}, armadura {signed(detailEquipment.armorClassBonus - detailEquipped.armorClassBonus)}.</small>}
 
                   </>}
                   <details className="chronicles-character-sheet__item-more">
                     <summary>Descripción y atributos</summary>
-                    {selectedEquipment && <p>{selectedEquipment.description || selectedInventoryItem.description || 'Objeto de expedición.'}</p>}
-                    {selectedEquipment && chroniclesShopHandlingNote(selectedEquipment, state?.combatRules) && (
+                    {detailEquipment && <p>{detailEquipment.description || detailItem.description || 'Objeto de expedición.'}</p>}
+                    {detailEquipment && chroniclesShopHandlingNote(detailEquipment, state?.combatRules) && (
                       <small className="chronicles-character-sheet__handling-note" data-chronicles-equipment-handling>
-                        {chroniclesShopHandlingNote(selectedEquipment, state?.combatRules)}
+                        {chroniclesShopHandlingNote(detailEquipment, state?.combatRules)}
                       </small>
                     )}
                     <dl>
-                      <div><dt>Cantidad</dt><dd>{selectedInventoryItem.quantity}</dd></div>
-                      {selectedEquipment && <>
-                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[selectedEquipment.slot]}</dd></div>
-                        <div><dt>Daño adicional</dt><dd>{signed(selectedEquipment.attackDamageBonus)}</dd></div>
-                        <div><dt>Acierto</dt><dd>{signed(selectedEquipment.toHitBonus)}</dd></div>
-                        <div><dt>Armadura</dt><dd>{signed(selectedEquipment.armorClassBonus)}</dd></div>
-                        <div><dt>Valor</dt><dd>{selectedEquipment.price} oro</dd></div>
-                        <div><dt>Puede usarlo</dt><dd>{canEquipSelected ? 'Sí' : 'No, clase incompatible'}</dd></div>
+                      <div><dt>Cantidad</dt><dd>{detailItem.quantity}</dd></div>
+                      {detailEquipment && <>
+                        <div><dt>Tipo</dt><dd>{{ weapon: 'Arma · A', missile: 'Proyectiles · S', armor: 'Armadura', shield: 'Escudo' }[detailEquipment.slot]}</dd></div>
+                        <div><dt>Daño adicional</dt><dd>{signed(detailEquipment.attackDamageBonus)}</dd></div>
+                        <div><dt>Acierto</dt><dd>{signed(detailEquipment.toHitBonus)}</dd></div>
+                        <div><dt>Armadura</dt><dd>{signed(detailEquipment.armorClassBonus)}</dd></div>
+                        <div><dt>Valor</dt><dd>{detailEquipment.price} oro</dd></div>
+                        <div><dt>Puede usarlo</dt><dd>{detailCanEquip ? 'Sí' : 'No, clase incompatible'}</dd></div>
                       </>}
                     </dl>
-                    {selectedEquipment && <small>Actualmente: {currentlyEquipped?.name || 'Sin equipar'}.</small>}
+                    {detailEquipment && <small>Actualmente: {detailEquipped?.name || 'Sin equipar'}.</small>}
                   </details>
+                  <button type="button" className="chronicles-character-sheet__drop-button"
+                    disabled={!canChangeEquipment || !transferableItem || Boolean(selectedWornItem)}
+                    onClick={() => setPendingDrop({
+                      memberId: member.id, itemId: transferableItem.id, name: transferableItem.name,
+                    })}>Tirar 1 objeto (D)</button>
                 </aside>
               )}
             </article>
