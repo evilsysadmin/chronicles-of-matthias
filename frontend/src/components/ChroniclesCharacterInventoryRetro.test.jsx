@@ -49,7 +49,8 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).not.toContain('chronicles-character-sheet__inventory-hint');
     expect(rendered).not.toContain('data-slot="weapon"');
     expect(rendered).not.toContain('data-slot="missile"');
-    expect(rendered).toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(rendered).not.toContain('chronicles-equipment-technical-details');
+    expect(rendered).not.toContain('> Detalles</button>');
   });
 
   it('fills the desktop ledger even with one item and keeps the inspector genuinely hidden', () => {
@@ -57,9 +58,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('class="chronicles-character-sheet__item-details" aria-live="polite" hidden=""');
     expect(workspace).toContain('.chronicles-character-sheet__item-details[hidden]');
     expect(workspace).toContain('display: none !important;');
-    expect(workspace).toContain('.chronicles-character-sheet__inventory {\n    flex: 1 1 auto;');
+    expect(workspace).toContain('.chronicles-character-sheet__inventory {\n    flex: 1 1 0;');
     expect(workspace).not.toContain(':has(> button:nth-child(3))');
-    expect(workspace).toContain('max-height: min(36vh, 320px)');
+    expect(workspace).toContain('max-height: min(32vh, 260px)');
   });
 
   it('includes real simulated damage and hit chance on the first Examinar view', () => {
@@ -97,11 +98,11 @@ describe('Chronicles MM3 inventory chapter skin', () => {
   it('makes landscape mobile actions compact without removing desktop commands', () => {
     const mobile = readFileSync(new URL('./ChroniclesCharacterMobileEquipment.css', import.meta.url), 'utf8');
     expect(mobile).toContain('Pocket-first MM3 equipment');
-    expect(mobile).toContain('grid-template-columns: repeat(3, minmax(0, 1fr))');
-    expect(mobile).toContain(':nth-child(1), :nth-child(2), :nth-child(6)');
+    expect(mobile).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
+    expect(mobile).toContain(':nth-child(1), :nth-child(2), :nth-child(5)');
     expect(mobile).toContain('min-height: 44px');
     expect(mobile).toContain('white-space: nowrap');
-    expect(classic).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))');
+    expect(classic).toContain('grid-template-columns: repeat(5, minmax(0, 1fr))');
   });
 
   it('lists genuinely equipped objects even when the personal bag is empty', () => {
@@ -170,7 +171,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(workspace).not.toContain('grid-auto-rows: minmax(54px, auto)');
     expect(workspace).toContain('.chronicles-character-sheet__classic-actions');
     expect(workspace).toContain('@media (min-width: 851px) and (min-height: 581px)');
-    expect(workspace).toContain('chronicles-character-sheet__technical-heading');
+    expect(workspace).not.toContain('chronicles-character-sheet__technical-heading');
+    expect(workspace).toContain('grid-template-columns: minmax(0, 1.35fr) minmax(285px, .95fr)');
+    expect(workspace).toContain('padding: 6px;');
     expect(classic).toMatch(/__classic-actions > button\s*\{\s*min-height: 48px;/);
     expect(classic).toContain('border-color: #dec98a;');
     expect(html('tactics')).not.toContain('data-chronicles-equipment-folio');
@@ -179,7 +182,7 @@ describe('Chronicles MM3 inventory chapter skin', () => {
   it('changes only desktop visual treatment; mobile and Tactics do not inherit extra behavior', () => {
     expect(html('tactics')).not.toContain('chronicles-character-sheet--mm3');
     expect(html('tactics')).not.toContain('Acciones de inventario');
-    expect(classic).toContain('grid-template-columns: repeat(6, minmax(0, 1fr))');
+    expect(classic).toContain('grid-template-columns: repeat(5, minmax(0, 1fr))');
     expect(classic).toContain('[data-chronicles-chapter="equipment"]');
     expect(classic).toContain('.chronicles-character-sheet__party-dock img');
     expect(css).toContain('@media (min-width: 851px) and (min-height: 581px)');
