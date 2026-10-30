@@ -509,6 +509,23 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     merlons.instanceMatrix.needsUpdate = true;
     sideParapets.add(merlons);
     root.add(sideParapets);
+    // Four shallow ashlar buttresses break up the armorer's long, flat side
+    // elevations. They stand between the existing barred window bays, wholly
+    // within the authored solid building cells; no collider or light is added.
+    const buttresses = new THREE.Group();
+    buttresses.name = 'armor-side-ashlar-buttresses';
+    buttresses.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      for (const end of [-1, 1]) {
+        const x = side * (width / 2 + 0.12);
+        const z = end * depth * 0.41;
+        mesh(buttresses, new THREE.BoxGeometry(0.52, 3.92, 0.70), mats.stone,
+          'armor-side-buttress-pier', [x, 2.13, z], !coarse);
+        mesh(buttresses, new THREE.BoxGeometry(0.68, 0.24, 0.90), mats.stone,
+          'armor-side-buttress-coping', [x, 4.22, z], !coarse);
+      }
+    }
+    root.add(buttresses);
   } else {
     // A proper triangular gable under each pitched roof, not a flat cube roof.
     const gable = new THREE.Shape();
