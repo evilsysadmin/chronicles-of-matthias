@@ -213,14 +213,19 @@ try {
               inspectorTop: details.top,
             };
           });
-        assert.ok(sparseLedger.actionsTop >= sparseLedger.listBottom - 2,
-          'The command strip must follow the compact inventory list: ' + JSON.stringify(sparseLedger));
-        assert.ok(sparseLedger.inspectorTop >= sparseLedger.actionsBottom - 2,
-          'The opt-in inspector must follow the command strip: ' + JSON.stringify(sparseLedger));
-        assert.ok(Math.abs(sparseLedger.listLeft - sparseLedger.inspectorLeft) <= 16
-          && Math.abs(sparseLedger.listRight - sparseLedger.inspectorRight) <= 16,
-          'The inspector must share the ledger width, not a legacy side column: '
-            + JSON.stringify(sparseLedger));
+        if (width >= 1200) {
+          assert.ok(sparseLedger.inspectorLeft >= sparseLedger.listRight + 4
+            && sparseLedger.inspectorTop <= sparseLedger.listBottom - 44
+            && sparseLedger.actionsTop >= sparseLedger.listBottom - 2,
+            'Wide-screen Examinar must sit next to the ledger, above commands: '
+              + JSON.stringify(sparseLedger));
+        } else {
+          assert.ok(sparseLedger.actionsTop >= sparseLedger.listBottom - 2
+            && sparseLedger.inspectorTop >= sparseLedger.actionsBottom - 2
+            && Math.abs(sparseLedger.listLeft - sparseLedger.inspectorLeft) <= 16,
+            'Narrow-screen Examinar must follow commands without overlapping: '
+              + JSON.stringify(sparseLedger));
+        }
         await page.screenshot({ path: 'smoke-first-loot-inspect-' + width + '.png' });
       }
       await sheet.getByRole('button', { name: 'Espada de bronce', exact: true }).click();
@@ -229,26 +234,27 @@ try {
       assert.equal(await sheet.locator('.chronicles-character-sheet__swap-preview').count(), 0,
         'Never invent MM3 weapon comparisons in a legacy-rules campaign');
       await sheet.getByRole('button', { name: 'Equipar Espada de bronce' }).click();
-      // The one visible inventory list reports real equipped gear immediately;
-      // technical slots are mounted only when the player opens Details.
+      // The worn weapon lives in the same unified inventory. Inspection
+      // shows its own stats; there is no second equipment-details screen.
       const equippedRow = sheet.locator('[data-chronicles-equipment-folio] [data-worn-slot="weapon"]');
       await equippedRow.waitFor({ state: 'visible' });
       assert.match(await equippedRow.innerText(), /Espada de bronce/);
-      const technicalPanel = sheet.locator('#chronicles-equipment-technical-details');
-      const technicalButton = sheet.getByRole('navigation', { name: 'Acciones de inventario' })
-        .getByRole('button', { name: 'Detalles', exact: true });
-      assert.equal(await technicalPanel.count(), 0,
-        'Technical details must not duplicate already visible equipped rows');
-      await technicalButton.click();
-      await technicalPanel.waitFor({ state: 'visible' });
-      assert.equal(await technicalButton.getAttribute('aria-expanded'), 'true');
-      const wornMeleeWeapon = technicalPanel.locator('.chronicles-character-sheet__gear-slot')
-        .filter({ hasText: 'Arma · A' }).locator('strong');
-      assert.match(await wornMeleeWeapon.innerText(), /Espada de bronce/,
-        'On-demand details must retain the real equipped melee weapon');
+      assert.equal(await sheet.getByRole('button', { name: 'Detalles', exact: true }).count(), 0);
+      await equippedRow.click();
+      await sheet.getByRole('button', { name: 'Examinar', exact: true }).click();
+      assert.equal(await sheet.locator('.chronicles-character-sheet__item-details').isVisible(), true);
+      assert.match(await sheet.locator('.chronicles-character-sheet__item-details').innerText(),
+        /Espada de bronce/, 'Examinar must show the selected real worn weapon');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Loot equipment sheet must not cause horizontal overflow');
       await page.screenshot({ path: 'smoke-first-loot-equipped-' + width + '.png' });
+      // Selecting equipped gear arms direct 1–4 delivery. Cancel the selection
+      // explicitly before checking ordinary party navigation; otherwise 4
+      // correctly transfers this sword instead of switching the dossier.
+      await equippedRow.click();
+      assert.equal(await equippedRow.getAttribute('aria-pressed'), 'false',
+        'Deselecting the inspected object restores numeric party navigation');
+      await page.locator('.chronicles-character-sheet__tabs .is-active').focus();
       // Actual rendered sheet, not just the pure keyboard helper:
       // 4 switches Matthias → Faust without closing the equipment folio.
       await page.keyboard.press('4');
@@ -270,14 +276,13 @@ try {
       await restoredRow.waitFor({ state: 'visible' });
       assert.match(await restoredRow.innerText(), /Espada de bronce/,
         'Inspecting Faust must never equip/unequip Matthias');
-      assert.equal(await restoredSheet.locator('#chronicles-equipment-technical-details').count(), 0,
-        'Changing heroes closes technical details but never changes their actual equipped inventory');
-      await restoredSheet.getByRole('navigation', { name: 'Acciones de inventario' })
-        .getByRole('button', { name: 'Detalles', exact: true }).click();
-      assert.match(await restoredSheet.locator('#chronicles-equipment-technical-details .chronicles-character-sheet__gear-slot')
-        .filter({ hasText: 'Arma · A' }).locator('strong').innerText(), /Espada de bronce/,
-        'On-demand technical slots remain accurate after switching characters');
-
+      assert.equal(await restoredSheet.locator('.chronicles-character-sheet__item-details').isVisible(), false,
+        'Changing heroes must reset inspection state');
+      await restoredRow.click();
+      await restoredSheet.getByRole('button', { name: 'Examinar', exact: true }).click();
+      assert.match(await restoredSheet.locator('.chronicles-character-sheet__item-details').innerText(),
+        /Espada de bronce/,
+        'Returning to Matthias must allow inspecting the same real equipment');
       // Regression: the real sheet must display the SAME hotkey numbering
       // even when a view adapter or initiative reverses party state.
       if (width === 390) {

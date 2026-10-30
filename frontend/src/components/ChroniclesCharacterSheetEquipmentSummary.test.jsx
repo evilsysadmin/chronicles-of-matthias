@@ -21,11 +21,10 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('Equipo A: daño');
     expect(html).not.toContain('data-chronicles-worn-gear');
     expect(html).not.toContain('A y S calculan daño y acierto por separado');
-    expect(source).toContain('A y S calculan daño y acierto por separado');
+    expect(source).toContain("detailEquipment.slot === 'missile' ? 'missile' : 'melee'");
     expect(html).not.toMatch(/alcance/i);
     expect(html).not.toContain('CA del equipo');
-    expect(source).toContain('CA del equipo');
-    expect(source).toContain('dificulta impactos, no resta daño');
+    expect(source).toContain('chroniclesPartyArmorClass(state, member.id)');
     expect(html).not.toMatch(/CA \+\d+ · reducción \d+/);
     expect(html).not.toContain('mitigación');
   });
@@ -39,7 +38,7 @@ describe('Chronicles character sheet combat summary', () => {
     });
     expect(html).toContain('data-chronicles-equipment-handling');
     expect(html).not.toContain('data-chronicles-worn-handling');
-    expect(source).toContain('data-chronicles-worn-handling');
+    expect(source).toContain('data-chronicles-equipment-handling');
     expect(html).toContain('Disparo a dos manos');
     expect(html).toContain('no aporta armadura ni acierto');
     expect(html).toContain('represalia inmediata');
@@ -134,13 +133,14 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).not.toContain('Buscar en la mochila');
   });
 
-  it('shows equipped gear in one list and keeps technical details optional', () => {
+  it('shows equipped gear in one list with one inspection command', () => {
     const html = render('mm3', 'equipment', {
       equipment: { matthias: { weapon: 'brass-sword', missile: 'wooden-bow' } },
     });
     expect(html).toContain('data-worn-slot="weapon"');
     expect(html).toContain('data-worn-slot="missile"');
-    expect(html).toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(html).not.toContain('aria-controls="chronicles-equipment-technical-details"');
+    expect(html).toContain('</span> Examinar</button>');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('<span>Equipo puesto</span>');
     expect(html).not.toContain('chronicles-character-sheet__equipped-disclosure');
@@ -167,7 +167,7 @@ describe('Chronicles character sheet combat summary', () => {
   it('retains the distinct legacy damage reduction summary', () => {
     const html = render(null);
     expect(html).not.toContain('mitigación');
-    expect(source).toContain('mitigación');
+    expect(source).toContain('gearBonus.damageReduction');
     expect(html).not.toContain('CA del equipo');
     expect(html).not.toContain('El disparo S usa sus propios bonos');
   });

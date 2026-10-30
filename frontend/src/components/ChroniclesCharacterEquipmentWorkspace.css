@@ -41,9 +41,22 @@
     flex: 1 1 auto;
     min-height: 0;
   }
+  /* Obsolete MM3 named-grid coordinates must not pin the ledger at the
+     top of an invisible row or stop it filling the flex workspace. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    align-self: stretch;
+    overflow: hidden;
+  }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory {
-    flex: 1 1 auto;
+    flex: 1 1 0;
+    grid-column: auto;
+    grid-row: auto;
+    align-self: stretch;
     min-height: 0;
     max-height: none;
     align-content: start;
@@ -63,7 +76,7 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-details:not([hidden]) {
     flex: 0 1 auto;
-    max-height: min(36vh, 320px);
+    max-height: min(32vh, 260px);
     overflow-y: auto;
     box-sizing: border-box;
   }
@@ -76,29 +89,6 @@
     padding: 0;
   }
 }
-/* Technical equipment data is optional: the primary list already identifies
-   equipped pieces. Opening Details reveals the original A/S/armor breakdown. */
-.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-[data-chronicles-equipment-folio] .chronicles-character-sheet__technical-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 10px;
-  color: #263c32;
-  background: #d9ceb5;
-  border-bottom: 1px solid #97a391;
-}
-.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-[data-chronicles-equipment-folio] .chronicles-character-sheet__technical-heading button {
-  min-height: 44px;
-  padding: 4px 12px;
-  color: #fff4da;
-  border: 1px solid #8a9c8b;
-  background: #435e55;
-  cursor: pointer;
-}
-
 /* The legacy desktop inspector has author-level display:flex rules; these
    must never override React's hidden state (also on mobile/short landscape). */
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -117,5 +107,90 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-equipment-folio] .chronicles-character-sheet__item-more dl > div {
     min-width: 0;
+  }
+}
+
+/* Equipment alone can use the safe-area viewport rather than inheriting the
+   spacious generic dialog gutter. Keep the frame and permanent hero dock. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet__backdrop:has(.chronicles-character-sheet--mm3
+    [data-chronicles-chapter="equipment"]) {
+    padding: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="equipment"]) {
+    grid-template-columns: minmax(0, 1fr) clamp(152px, 11vw, 188px);
+    align-items: stretch;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="equipment"])
+  > .chronicles-character-sheet__tabs {
+    align-self: stretch;
+    min-height: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__shortcuts {
+    align-self: stretch;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid #8d927e;
+    background: #43534f;
+    color: #f0e5ce;
+  }
+}
+
+/* On a wide desk, Examinar uses the previously wasted right-hand area next
+   to the inventory, never a full-height card beneath the action buttons.
+   A single scroll belongs to each region, with commands always beneath. */
+@media (min-width: 1200px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(285px, .95fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    gap: 5px 12px;
+    align-items: stretch;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
+  > .chronicles-character-sheet__inventory {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+    align-self: stretch;
+    overflow-y: auto;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
+  > .chronicles-character-sheet__item-details {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: stretch;
+    min-height: 0;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
+  > :is(.chronicles-character-sheet__worn-hint, .chronicles-character-sheet__transfer-hint) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
+  > .chronicles-character-sheet__shortcuts {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__backpack:has(> .chronicles-character-sheet__item-details:not([hidden]))
+  > .chronicles-character-sheet__classic-actions {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 0;
   }
 }

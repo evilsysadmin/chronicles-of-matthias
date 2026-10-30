@@ -201,7 +201,7 @@
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 5px;
   width: 100%;
   margin: 8px 0 4px;
