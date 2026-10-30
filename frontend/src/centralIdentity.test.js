@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { centralIdentityActive, centralIdentityAvailable, centralIdentityLoginUrl, identityProviderUrl, ssoLogin, ssoRegister, ssoSilentToken } from './shadowopsIdentity.js';
+import { centralIdentityActive, centralIdentityAvailable, centralIdentityLoginUrl, identityProviderUrl, ssoLogin, ssoRegister, ssoSilentToken, ssoLogout } from './shadowopsIdentity.js';
 import { getToken, logout, refreshSsoToken } from './auth.js';
 
 const origin = 'https://staging.chronicles.shadowops.dpdns.org';
@@ -44,7 +44,11 @@ describe('central Identity opt-in', () => {
     const session = await ssoSilentToken();
     expect(session).toMatchObject({ token, username: `shadowops:staging:${subject}` });
     expect(fetch).toHaveBeenCalledWith(`${issuer}/api/identity/token`, expect.objectContaining({ credentials: 'include', body: '{}' }));
-    expect(fetch.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    expect(fetch.mock.calls[0][1].headers).toEqual({ 'Content-Type': 'application/json' });
+    await ssoLogout();
+    expect(fetch.mock.calls[1][0]).toBe(`${issuer}/api/identity/logout`);
+    expect(fetch.mock.calls[1][1].headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(fetch.mock.calls[1][1].includeRequestMetadata).toBeUndefined();
   });
 
   it('declines a wrong realm/audience or expired transport payload', async () => {

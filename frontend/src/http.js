@@ -41,11 +41,12 @@ export async function request(url, options = {}) {
     headers = {},
     timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
     signal: externalSignal,
+    includeRequestMetadata = true,
     ...rest
   } = options;
   const guard = requestAbortGuard(externalSignal, timeoutMs);
   try {
-    return await fetch(url, { ...rest, headers: withRequestId(headers), signal: guard.signal });
+    return await fetch(url, { ...rest, headers: includeRequestMetadata ? withRequestId(headers) : headers, signal: guard.signal });
   } catch (cause) {
     const timeoutCause = guard.timedOut()
       ? new Error(`Request timeout after ${Math.round(Number(timeoutMs))} ms`)
