@@ -610,10 +610,10 @@ export default function ChroniclesCharacterSheet({
                     {!selectedWornItem && weaponSwap ? (
                       <details className="chronicles-character-sheet__swap-preview" aria-label={`Comparación de arma ${weaponSwap.slot === 'missile' ? 'de proyectiles' : 'cuerpo a cuerpo'}`}>
                         <summary>
-                          <span>Al equipar · ${weaponSwap.slot === 'missile' ? 'S' : 'A'}</span>
+                          <span>Si equipas este objeto (${weaponSwap.slot === 'missile' ? 'S' : 'A'})</span>
                           <strong>Daño {signed(weaponSwap.delta.damage)} · Acierto {signed(weaponSwap.delta.toHit)}</strong>
                           {weaponSwap.displacedShieldName && <small>Se guardará {weaponSwap.displacedShieldName} en la mochila · CA {signed(weaponSwap.armorClassDelta)}.</small>}
-                          <small>Comparar</small>
+                          <small>Ver comparación antes y después</small>
                         </summary>
                         <div><span>Daño</span><strong>{weaponSwap.before.damage} → {weaponSwap.after.damage}</strong><em>{signed(weaponSwap.delta.damage)}</em></div>
                         <div><span>Acierto</span><strong>{signed(weaponSwap.before.toHit)} → {signed(weaponSwap.after.toHit)}</strong><em>{signed(weaponSwap.delta.toHit)}</em></div>
