@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, chroniclesTileAt, createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesEnemyAttackTarget, chroniclesEnemyThreatCells } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyAttackReach, chroniclesEnemyAttackTarget, chroniclesEnemyThreatCells } from '../chroniclesOfMatthiasTurns.js';
 
 const GOBLIN = 'sewers-goblin-west';
 
@@ -29,6 +29,32 @@ describe('MM3 enemy attack reach and threat previews', () => {
       expect(threatened.every(({ x, y }) => Math.abs(x - 1) + Math.abs(y - 4) === 1)).toBe(true);
     },
   );
+
+  it.each([
+    ['numeric array', [3]],
+    ['string array', ['3']],
+    ['object', { reach: 3 }],
+    ['boolean', true],
+  ])('rejects malformed %s attack reach without fabricating distant attacks', (_kind, attackReach) => {
+    const { state, enemy } = corridorEnemy(attackReach);
+    expect(chroniclesEnemyAttackReach(enemy)).toBe(1);
+    expect(chroniclesEnemyAttackTarget(state, enemy)).toBeNull();
+    const threatened = chroniclesEnemyThreatCells(state, enemy);
+    expect(threatened.length).toBeLessThanOrEqual(4);
+    expect(threatened.every(({ x, y }) => Math.abs(x - 1) + Math.abs(y - 4) === 1)).toBe(true);
+  });
+
+  it('rejects a structured legacy retaliationReach while preserving numeric-string reach', () => {
+    const { state, enemy } = corridorEnemy(null);
+    const { attackReach: _unused, ...ai } = enemy.ai;
+    const malformed = { ...enemy, ai, retaliationReach: [3] };
+    expect(chroniclesEnemyAttackReach(malformed)).toBe(1);
+    expect(chroniclesEnemyAttackTarget(state, malformed)).toBeNull();
+
+    const valid = { ...malformed, retaliationReach: '3' };
+    expect(chroniclesEnemyAttackReach(valid)).toBe(3);
+    expect(chroniclesEnemyAttackTarget(state, valid)).toBeTruthy();
+  });
 
   it('preserves authored two-cell ranged reach for both attacks and previews', () => {
     const { state, enemy } = corridorEnemy(2);

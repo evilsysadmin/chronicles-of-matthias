@@ -106,8 +106,13 @@ function livingPartyTargetsWithPositions(state) {
 const MAX_ENEMY_ATTACK_REACH = 16;
 
 export function chroniclesEnemyAttackReach(enemy) {
-  const raw = Number(enemy.ai?.attackReach ?? enemy.retaliationReach ?? 1);
-  return Number.isSafeInteger(raw) && raw >= 1 && raw <= MAX_ENEMY_ATTACK_REACH ? raw : 1;
+  const configured = enemy?.ai?.attackReach ?? enemy?.retaliationReach ?? 1;
+  // Number([3]) and Number(true) can fabricate attack reach from damaged saves.
+  // Accept numeric strings from legacy saves, but never structured values.
+  if (typeof configured !== 'number' && typeof configured !== 'string') return 1;
+  if (typeof configured === 'string' && !configured.trim()) return 1;
+  const reach = Number(configured);
+  return Number.isSafeInteger(reach) && reach >= 1 && reach <= MAX_ENEMY_ATTACK_REACH ? reach : 1;
 }
 
 function enemyCanAttackCell(state, enemy, position, partyPosition) {
