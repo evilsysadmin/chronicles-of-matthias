@@ -467,6 +467,20 @@ describe('MM3 active encounter baseline · real actions and initiative', () => {
             .toBe(encounter.enemyDamageByHero[id] - encounter.healingByHero[id]);
         }
       }
+      // Reconcile the entire expedition, including the potion between fights.
+      // This is cumulative pressure, not an assertion that either pack is harder.
+      const cumulativePressure = Object.fromEntries(Object.keys(first.initialPartyHp).map((id) => {
+        const gross = first.enemyDamageByHero[id] + second.enemyDamageByHero[id];
+        const spellHealing = first.healingByHero[id] + second.healingByHero[id];
+        const potionHealing = potion.heroId === id ? potion.hpAfter - potion.hpBefore : 0;
+        const net = first.initialPartyHp[id] - second.finalPartyHp[id];
+        expect(net, `${id} expedition HP must reconcile across fights and potion`)
+          .toBe(gross - spellHealing - potionHealing);
+        return [id, { gross, spellHealing, potionHealing, net }];
+      }));
+      console.info('CHRONICLES_MM3_TWO_ENCOUNTERS_CUMULATIVE_PRESSURE ' + JSON.stringify({
+        firstOffset, cumulativePressure,
+      }));
       expect(second.finished).toBe(true);
       expect(second.phase).toBe('explore');
       expect(second.downed).toBe(0);
