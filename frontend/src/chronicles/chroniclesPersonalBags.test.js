@@ -125,6 +125,30 @@ describe('MM3 personal backpacks', () => {
     expect(chroniclesBagQuantity(recovered, 'rook', 'brass-sword')).toBe(1);
   });
 
+  it('hands off Faust’s equipped short bow to Matthias without first stowing it', () => {
+    const base = stocked();
+    const startingBowStock = base.inventory['wooden-bow']?.quantity || 0;
+    const startingMatthiasBow = chroniclesBagQuantity(base, 'matthias', 'wooden-bow');
+    const wearing = {
+      ...base,
+      equipment: {
+        ...base.equipment,
+        knight: { ...base.equipment?.knight, missile: 'wooden-bow' },
+      },
+    };
+    expect(chroniclesEquippedItem(wearing, 'knight', 'missile')?.name).toContain('Arco corto');
+    const given = chroniclesReduce(wearing, {
+      type: 'transfer-equipped-item', memberId: 'knight', toMemberId: 'matthias', slot: 'missile',
+    });
+    expect(chroniclesEquippedItem(given, 'knight', 'missile')).toBe(null);
+    expect(given.inventory['wooden-bow'].quantity).toBe(startingBowStock + 1);
+    expect(chroniclesBagQuantity(given, 'matthias', 'wooden-bow')).toBe(startingMatthiasBow + 1);
+    expect(chroniclesBagQuantity(given, 'knight', 'wooden-bow')).toBe(
+      chroniclesBagQuantity(base, 'knight', 'wooden-bow'),
+    );
+    expect(given.message).toContain('Faust entrega 1 × Arco corto de madera a Matthias');
+  });
+
   it('refuses invalid worn transfers atomically with no partial unequip', () => {
     const initial = stocked();
     const worn = chroniclesReduce(initial, { type: 'equip-item', memberId: 'matthias', itemId: 'brass-sword' });
