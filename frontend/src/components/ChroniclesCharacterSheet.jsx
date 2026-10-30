@@ -48,7 +48,7 @@ import {
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
-import { chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearAttackModes, chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
 import { chroniclesShopHandlingNote } from '../chronicles/chroniclesShopHandlingNote.js';
 import { chroniclesBagInventoryEntries } from '../chronicles/chroniclesPersonalBags.js';
@@ -126,6 +126,8 @@ export default function ChroniclesCharacterSheet({
   const [selectedWornSlot, setSelectedWornSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(false);
   const [showEquipmentDetails, setShowEquipmentDetails] = useState(false);
+  const [pendingDrop, setPendingDrop] = useState(null);
+  const dropCancelRef = useRef(null);
   const inventoryListRef = useRef(null);
   const folioScrollRef = useRef(null);
   const previousViewedMemberIdRef = useRef(member?.id);
@@ -141,6 +143,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedWornSlot(null);
     setInspectItem(false);
     setShowEquipmentDetails(false);
+    setPendingDrop(null);
 
     if (!nextId || mode === 'tactics' || typeof window === 'undefined'
       || !window.matchMedia?.('(min-width: 851px) and (min-height: 581px)').matches) return;
@@ -219,6 +222,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedWornSlot(null);
     }
     setInspectItem(false);
+    setPendingDrop(null);
   };
   const canChangeEquipment = !tacticsMode && state.phase === 'explore' && !state.initiative
     && member.hp > 0 && typeof onEquipmentAction === 'function';
@@ -233,6 +237,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setInspectItem(false);
     setShowEquipmentDetails(false);
+    setPendingDrop(null);
     // The next hero always opens at the beginning of the dossier, including
     // short landscape: do not strand their inventory behind the party dock.
     if (targetId !== member.id && folioScrollRef.current) folioScrollRef.current.scrollTop = 0;
@@ -250,6 +255,7 @@ export default function ChroniclesCharacterSheet({
     setSelectedBagItem(null);
     setSelectedWornSlot(null);
     setInspectItem(false);
+    setPendingDrop(null);
   };
   const directTransferMode = !tacticsMode && activeFolio === 'equipment'
     && Boolean(transferSelection) && canChangeEquipment;
@@ -270,11 +276,48 @@ export default function ChroniclesCharacterSheet({
   };
   useEffect(() => {
     if (!state?.party || !member) return undefined;
-    const onWindowPartyKey = (event) => { handlePartyKey(event); };
-    window.addEventListener('keydown', onWindowPartyKey);
-    return () => window.removeEventListener('keydown', onWindowPartyKey);
-  }, [state?.party, member, onSelectMember, onEquipmentAction,
-    activeFolio, selectedItemId, selectedWornSlot, canChangeEquipment, transferSelection?.itemId]);
+    const onWindowKey = (event) => {
+      const command = chroniclesInventoryShortcut(event, {
+        open: !tacticsMode && activeFolio === 'equipment', confirmingDrop: Boolean(pendingDrop),
+      });
+      if (command) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (command === 'e' && canChangeEquipment && transferableItem && selectedEquipment && canEquipSelected) {
+          onEquipmentAction?.({ type: 'equip-item', itemId: selectedEquipment.id });
+          setSelectedBagItem(null);
+          setInspectItem(false);
+        }
+        if (command === 'u' && canChangeEquipment && selectedWornItem) {
+          onEquipmentAction?.({ type: 'unequip-item', slot: selectedWornItem.slot });
+          setSelectedWornSlot(null);
+          setInspectItem(false);
+        }
+        if (command === 'd' && canChangeEquipment && transferableItem) {
+          setPendingDrop({ memberId: member.id, itemId: transferableItem.id, name: transferableItem.name });
+        }
+        if (command === 'i' && (selectedWornItem || selectedInventoryItem)) setInspectItem((shown) => !shown);
+        if (command === 't' && canChangeEquipment) {
+          if (!transferSelection) {
+            if (selectedInventoryItem) setSelectedBagItem({ memberId: member.id, itemId: selectedInventoryItem.id });
+            else if (visibleWornGear[0]) setSelectedWornSlot(visibleWornGear[0].slot);
+          }
+          const recipient = Array.from(document.querySelectorAll(
+            '.chronicles-character-sheet__party-dock button:not(:disabled)'
+          )).find((button) => button.getAttribute('aria-pressed') !== 'true');
+          recipient?.focus();
+        }
+        return;
+      }
+      if (!pendingDrop) handlePartyKey(event);
+    };
+    window.addEventListener('keydown', onWindowKey);
+    return () => window.removeEventListener('keydown', onWindowKey);
+  }, [state, member, onSelectMember, onEquipmentAction, activeFolio, selectedBagItem,
+    selectedWornSlot, pendingDrop, inspectItem, canChangeEquipment, transferSelection?.itemId]);
+  useEffect(() => {
+    if (pendingDrop) dropCancelRef.current?.focus();
+  }, [pendingDrop]);
 
   // Selection never equips or transfers: the player explicitly chooses a command.
   const browseBackpack = (step) => {
@@ -323,6 +366,7 @@ export default function ChroniclesCharacterSheet({
       setSelectedBagItem(null);
       setInspectItem(false);
       setShowEquipmentDetails(false);
+      setPendingDrop(null);
     }
     // Always begin the newly selected MM3 page at its top. On phones the
     // previously preserved scroll was hiding the header, inventory and actions
@@ -333,6 +377,12 @@ export default function ChroniclesCharacterSheet({
   };
 
   const closeOnEscape = (event) => {
+    if (pendingDrop && event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingDrop(null);
+      return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
@@ -414,14 +464,31 @@ export default function ChroniclesCharacterSheet({
               )}
               {selectedWornItem && !directTransferMode && (
                 <small className="chronicles-character-sheet__worn-hint" role="status">
-                  {selectedWornItem.name} seleccionado · Pulsa 1–4 o toca un retrato para entregarlo, o Quitar para guardarlo.
+                  {selectedWornItem.name} seleccionado · T para entregar a 1–4, U para quitarlo, I para información.
                 </small>
               )}
               {directTransferMode && (
                 <small className="chronicles-character-sheet__transfer-hint" role="status">
-                  {transferSelection.name} seleccionado · Pulsa 1–4 o toca un retrato para entregar uno.
+                  {transferSelection.name} seleccionado · T y luego 1–4, o toca un retrato para entregar uno.
                   Vuelve a pulsar el objeto para cancelar.
                 </small>
+              )}
+              {!tacticsMode && <small className="chronicles-character-sheet__shortcuts">E equipar · U quitar · T entregar · D tirar · I información</small>}
+              {pendingDrop && !tacticsMode && (
+                <div className="chronicles-character-sheet__drop-confirmation" role="group"
+                  aria-label={`Confirmar eliminación de ${pendingDrop.name}`}>
+                  <span>¿Eliminar 1 × {pendingDrop.name} de la mochila? No se podrá recuperar.</span>
+                  <button type="button" onClick={() => {
+                    if (canChangeEquipment && pendingDrop.memberId === member.id
+                      && transferableItem?.id === pendingDrop.itemId) {
+                      onEquipmentAction?.({ type: 'drop-item', itemId: pendingDrop.itemId });
+                      setSelectedBagItem(null);
+                      setInspectItem(false);
+                    }
+                    setPendingDrop(null);
+                  }}>Sí, eliminar</button>
+                  <button type="button" ref={dropCancelRef} onClick={() => setPendingDrop(null)}>Cancelar</button>
+                </div>
               )}
               {!tacticsMode && (
                 <nav className="chronicles-character-sheet__classic-actions" aria-label="Acciones de inventario">
