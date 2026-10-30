@@ -1621,9 +1621,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       rib.rotation.x = 0.16;
       // Real diagonal oak struts support the projecting canopy. Their lower
       // ends join the solid facade, well to either side of the shop entrance.
-      const brace = mesh(awning, new THREE.BoxGeometry(0.16, 0.16, 1.70), mats.timber,
-        'store-awning-diagonal-support', [x, -0.57, 0], !coarse);
-      brace.rotation.x = -0.56;
+      const brace = mesh(awning, new THREE.BoxGeometry(0.16, 0.16, 1.35), mats.timber,
+        'store-awning-diagonal-support', [x, -0.30, 0.08], !coarse);
+      brace.rotation.x = -0.48;
     }
     // The flat striped slab previously read as a wooden shelf from the street.
     // Six alternating scalloped canvas hems make the merchant canopy legible
