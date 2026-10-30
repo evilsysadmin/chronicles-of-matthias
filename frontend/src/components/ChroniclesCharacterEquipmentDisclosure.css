@@ -61,7 +61,7 @@
   outline-offset: -3px;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure:not([open]) > .chronicles-character-sheet__equipped-body {
+[data-chronicles-equipment-folio] .chronicles-character-sheet__equipped-disclosure:not([open]):not([data-expanded]) > .chronicles-character-sheet__equipped-body {
   display: none;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
