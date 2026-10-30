@@ -22,21 +22,13 @@ describe('MM3 empty equipment cards — touch-only presentation', () => {
     expect(sheet).toContain('chronicles-character-sheet__relic has-relic');
     expect(sheet).toContain('data-chronicles-equipment-folio');
     expect(sheet).not.toContain('<span>Equipo puesto</span>');
-    expect(sheet).toContain('showEquipmentDetails && <article');
-    expect(sheet).toContain('Detalles técnicos');
+    expect(sheet).toContain('aria-keyshortcuts="I"');
+    expect(sheet).not.toContain('showEquipmentDetails');
   });
-  it('keeps empty A/S weapon cards readable and compact only on touch phones', () => {
-    const compact = css.split('/* Empty A/S weapon cards waste two tall rows on phones')[1];
-    expect(compact).toBeTruthy();
-    expect(compact).toContain('@media (max-width: 520px) and (pointer: coarse)');
-    expect(compact).toContain('.chronicles-character-sheet__weapon-card:not(:has(> button))');
-    expect(compact).toContain('grid-template-columns: minmax(0, 1fr) auto');
-    expect(compact).toContain('grid-column: 1 / -1');
-    expect(compact).not.toMatch(/display:\s*none|visibility:\s*hidden/);
-    expect(sheet).toContain("worn?.name || 'Sin equipar'");
-    expect(sheet).toContain('Daño ${stats.damage} · Acierto ${signed(stats.toHit)}');
-    expect(sheet).not.toContain('· Alcance ${stats.reach}');
-    expect(sheet).toContain("'Sin arma de proyectiles · no puede disparar'");
+  it('does not mount duplicate empty A/S cards below the touch inventory', () => {
+    expect(sheet).not.toContain('chronicles-equipment-technical-details');
+    expect(sheet).not.toContain('chronicles-character-sheet__dual-weapons');
+    expect(sheet).toContain('chronicles-character-sheet__item-more');
   });
 
   it('aligns populated mobile backpack glyphs without shrinking touch rows or changing desktop', () => {
