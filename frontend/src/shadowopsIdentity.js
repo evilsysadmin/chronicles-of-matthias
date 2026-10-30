@@ -76,6 +76,9 @@ function failure(response, body) {
 async function idpPost(path, { token = null, body, timeoutMs = AUTH_TIMEOUT_MS, signal, keepalive = false } = {}) {
   const response = await request(`${identityProviderUrl()}${path}`, {
     method: 'POST',
+    // Central Identity deliberately permits only Content-Type in its browser
+    // contract; product diagnostics must not change its CORS preflight.
+    includeRequestMetadata: !centralIdentityActive(),
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(body ?? (centralIdentityActive() ? {} : { audience: SSO_AUDIENCE })),
