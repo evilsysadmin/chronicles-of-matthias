@@ -15,6 +15,9 @@ describe('Swordhaven forge twin-flue roof silhouette', () => {
     expect(stack.userData.chroniclesDecorativeOnly).toBe(true);
     expect(flues).toBeInstanceOf(THREE.InstancedMesh);
     expect(caps).toBeInstanceOf(THREE.InstancedMesh);
+    expect(flues.geometry.type).toBe('CylinderGeometry');
+    expect(caps.geometry.type).toBe('CylinderGeometry');
+    expect(flues.geometry.parameters.radiusTop).toBeGreaterThan(0.3);
     expect(flues.count).toBe(2);
     expect(caps.count).toBe(2);
     expect(flues.userData.chroniclesDecorativeOnly).toBe(true);
