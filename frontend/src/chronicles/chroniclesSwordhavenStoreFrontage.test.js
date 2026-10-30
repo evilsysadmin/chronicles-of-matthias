@@ -58,6 +58,31 @@ describe('Swordhaven general store frontage', () => {
     expect(frontage.children.filter(child => child.name === 'store-oak-batten')).toHaveLength(6);
     expect(frontage.children.filter(child => child.name === 'store-oak-rail')).toHaveLength(2);
     expect(forge.getObjectByName('store-oak-frontage')).toBeFalsy();
+    // Ground-floor provisions sacks are a decorative, batched stock display
+    // outside the oak bays, never a new obstacle or an obscured entrance.
+    const sacks = store.getObjectByName('store-front-provisions-sacks');
+    expect(sacks?.count).toBe(4);
+    expect(sacks.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(sacks.geometry.type).toBe('LatheGeometry');
+    const profile = sacks.geometry.parameters.points;
+    expect(Math.max(...profile.map(point => point.x))).toBeGreaterThan(profile[0].x);
+    expect(profile.at(-2).x).toBeLessThan(profile[3].x);
+    const ties = store.getObjectByName('store-front-sack-twine');
+    expect(ties?.count).toBe(4);
+    expect(ties.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-front-sack-twine')).toBeFalsy();
+    expect(forge.getObjectByName('store-front-provisions-sacks')).toBeFalsy();
+    const sackTransform = new THREE.Object3D();
+    for (let index = 0; index < sacks.count; index += 1) {
+      sacks.getMatrixAt(index, sackTransform.matrix);
+      sackTransform.matrix.decompose(sackTransform.position, sackTransform.quaternion, sackTransform.scale);
+      expect(Math.abs(sackTransform.position.x)).toBeGreaterThan(1.75);
+      // Lathe profile starts at the ground (unlike the old centred cylinder).
+      expect(sackTransform.position.y).toBeGreaterThan(0);
+      expect(sackTransform.position.y + profile.at(-1).y * sackTransform.scale.y)
+        .toBeGreaterThan(0.8);
+      expect(sackTransform.position.z).toBeLessThan(5.5);
+    }
     const loft = store.getObjectByName('store-merchant-loft');
     expect(loft?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(loft.getObjectByName('store-loft-oak-gable')).toBeTruthy();
