@@ -69,8 +69,11 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain('class="chronicles-character-sheet__inspection-scrim" hidden=""');
     expect(rendered).toContain('role="dialog" aria-modal="true" aria-label="Examinar Daga de latón"');
     expect(rendered).toContain('aria-label="Cerrar inspección"');
+    expect(rendered).toContain('class="chronicles-character-sheet__inspection-head"');
+    expect(rendered).toContain('data-chronicles-item-stat="damage"');
     expect(workspace).toContain('width: min(610px, 100%);');
-    expect(workspace).toContain('max-height: min(78dvh, 700px);');
+    expect(workspace).toContain('max-height: calc(100dvh - 28px);');
+    expect(rendered).toContain('class="chronicles-character-sheet__inspection-head"');
     expect(workspace).toContain('.chronicles-character-sheet__inspection-scrim[hidden]');
     expect(workspace).not.toContain(':has(> .chronicles-character-sheet__item-details:not([hidden]))');
     const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
@@ -87,6 +90,9 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(rendered).toContain(`data-chronicles-item-stat="hit"><dt>Acierto total al equipar</dt><dd>+${preview.after.toHit}</dd>`);
     expect(rendered).toContain('Daño adicional');
     expect(rendered).toContain('Armadura');
+    expect(rendered).not.toContain('<dt>Cantidad</dt>');
+    expect(rendered).not.toContain('<dt>Tipo</dt>');
+    expect(rendered).not.toContain('<dt>Puede usarlo</dt>');
     const sheet = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
     expect(sheet).toContain('setExpandItemAttributes(!inspectItem)');
     expect(sheet).toContain('open={expandItemAttributes && inspectItem}');
