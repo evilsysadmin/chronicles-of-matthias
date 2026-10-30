@@ -1092,8 +1092,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         mats.timber, 'tavern-oriel-diagonal-support', [-0.18, -0.98, z], !coarse);
       bracket.rotation.z = 0.54;
     }
-    mesh(oriel, new THREE.BoxGeometry(1.42, 0.18, 4.10), roof,
-      'tavern-oriel-sloped-roof', [-0.17, 0.80, 0], !coarse).rotation.z = 0.12;
+    // The guest gallery needs a real ridge and two roof pitches: the former
+    // single tilted slab read as a flat lid from the east plaza. Both slopes
+    // sit over the existing elevated oriel, never over walkable street cells.
+    for (const side of [-1, 1]) {
+      const slope = mesh(oriel, new THREE.BoxGeometry(1.52, 0.16, 2.22), roof,
+        'tavern-oriel-pitched-roof-slope', [-0.17, 0.88, side * 1.02], !coarse);
+      slope.rotation.x = side * 0.31;
+    }
+    mesh(oriel, new THREE.BoxGeometry(1.60, 0.16, 0.16), mats.timber,
+      'tavern-oriel-roof-ridge', [-0.17, 1.23, 0], !coarse);
     mesh(oriel, new THREE.BoxGeometry(1.04, 0.17, 3.76), mats.timber,
       'tavern-oriel-floor-beam', [-0.10, -0.72, 0], !coarse);
     root.add(oriel);

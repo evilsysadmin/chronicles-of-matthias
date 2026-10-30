@@ -30,9 +30,17 @@ describe('Swordhaven tavern east guest oriel', () => {
       .toHaveLength(2);
     expect(oriel.children.filter(child => child.name === 'tavern-oriel-diagonal-support'))
       .toHaveLength(2);
-    const roof = oriel.getObjectByName('tavern-oriel-sloped-roof');
-    expect(roof.rotation.z).not.toBe(0);
-    expect(roof.castShadow).toBe(!coarsePointer);
+    const pitches = oriel.children.filter(child =>
+      child.name === 'tavern-oriel-pitched-roof-slope');
+    expect(pitches).toHaveLength(2);
+    expect(pitches[0].position.z).toBeCloseTo(-pitches[1].position.z);
+    expect(pitches[0].rotation.x).toBeCloseTo(-pitches[1].rotation.x);
+    expect(Math.abs(pitches[0].rotation.x)).toBeGreaterThan(0.25);
+    expect(pitches.every(pitch => pitch.castShadow === !coarsePointer)).toBe(true);
+    const ridge = oriel.getObjectByName('tavern-oriel-roof-ridge');
+    expect(ridge).toBeTruthy();
+    expect(ridge.position.y).toBeGreaterThan(pitches[0].position.y);
+    expect(oriel.getObjectByName('tavern-oriel-sloped-roof')).toBeFalsy();
     // The upper bay projects from the east wall, but remains inside the
     // pre-existing three-cell-wide solid footprint, above ground-level windows.
     const bounds = new THREE.Box3().setFromObject(oriel);
