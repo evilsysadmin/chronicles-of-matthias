@@ -86,6 +86,19 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     expect(resolved.committed.turns).toBe(fight.turns + 1);
   });
 
+  it.each(['explore', 'defeated', 'escaped'])(
+    'ignores a stale enemy timer after the phase changes to %s',
+    (phase) => {
+      // Restored saves or a delayed browser callback may still carry the
+      // old initiative order even though the encounter has ended.
+      const state = { ...enemyFirstEncounter(), phase };
+      const resolve = vi.fn(() => { throw new Error('stale turn must not run'); });
+      expect(chroniclesRunPendingEnemyTurn(state, WEST, resolve)).toBeNull();
+      expect(resolve).not.toHaveBeenCalled();
+      expect(state.initiative.cursor).toBe(0);
+    },
+  );
+
   it('refuses a stale timer after the actor has changed, without replaying a turn', () => {
     const state = enemyFirstEncounter();
     const wrong = vi.fn();
