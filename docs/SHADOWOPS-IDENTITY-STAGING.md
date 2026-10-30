@@ -36,7 +36,12 @@ legacy SSO cannot claim it. A pre-existing record without the exact binding is
 a conflict, not an account link. Existing username-based games/progress remain
 separate, and central login never grants admin permissions. Before rollout,
 Infra must verify no legacy accounts occupy the newly reserved namespace;
-any such account requires an explicit ownership-preserving migration.
+any such account requires an explicit ownership-preserving migration. Enabling
+the backend now runs that read-only preflight against the actual game database
+before wiring routes. It rejects case-insensitive reserved names, malformed or
+cross-environment bindings and local password credentials in that namespace.
+Correctly bound passwordless profiles pass on subsequent restarts. An unavailable
+database also stops activation; the preflight never renames, links or deletes rows.
 
 Frontend opt-in is a staging-only build setting:
 

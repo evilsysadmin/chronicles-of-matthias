@@ -2,6 +2,7 @@ package accountstore
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -38,6 +39,9 @@ func TestCentralIdentityProfilesPreserveLegacyOwnershipAndInitializeOnce(t *test
 		_ = client.Disconnect(cleanup)
 	})
 	s := New(db, 2*time.Second)
+	if err := s.CheckIdentityNamespace(ctx); err != nil {
+		t.Fatal("empty namespace did not pass", err)
+	}
 	const subject = "11111111-1111-4111-8111-111111111111"
 	key := identityauth.ProfilePrefix + subject
 	_, err = db.Collection("users").InsertMany(ctx, []any{
@@ -46,6 +50,9 @@ func TestCentralIdentityProfilesPreserveLegacyOwnershipAndInitializeOnce(t *test
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := s.CheckIdentityNamespace(ctx); !errors.Is(err, ErrIdentityNamespaceConflict) {
+		t.Fatal("legacy namespace reservation was accepted", err)
 	}
 	if profile, err := s.EnsureIdentityUser(ctx, identityauth.Issuer, subject, "fixture-time"); err == nil || profile != "" {
 		t.Fatal("adopted unbound local profile")
@@ -84,5 +91,41 @@ func TestCentralIdentityProfilesPreserveLegacyOwnershipAndInitializeOnce(t *test
 	}
 	if err := db.Collection("users").FindOne(ctx, bson.M{"_id": "alice"}).Decode(&row); err != nil || row["saved_marker"] != "legacy-owned" {
 		t.Fatal("legacy user data changed", err)
+	}
+	// The reservation is removed only in this disposable fixture; preflight
+	// itself must never delete, rename or adopt an account.
+	if _, err := db.Collection("users").DeleteOne(ctx, bson.M{"_id": key}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CheckIdentityNamespace(ctx); err != nil {
+		t.Fatal("ordinary legacy account and valid native profile rejected", err)
+	}
+	for _, reserved := range []string{"ShAdOwOpS:legacy", "shadowops:production:reserved", "shadowops:staging:invalid"} {
+		if _, err := db.Collection("users").InsertOne(ctx, bson.M{"_id": reserved}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.CheckIdentityNamespace(ctx); !errors.Is(err, ErrIdentityNamespaceConflict) {
+			t.Fatal("reserved legacy namespace accepted", err)
+		}
+		if _, err := db.Collection("users").DeleteOne(ctx, bson.M{"_id": reserved}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	profileKey := identityauth.ProfilePrefix + other
+	for _, change := range []bson.M{{"sso_issuer": "https://id.shadowops.dpdns.org"}, {"sso_subject": subject}, {"password_hash": "legacy-fixture-hash"}, {"sso": false}} {
+		if _, err := db.Collection("users").UpdateOne(ctx, bson.M{"_id": profileKey}, bson.M{"$set": change}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.CheckIdentityNamespace(ctx); !errors.Is(err, ErrIdentityNamespaceConflict) {
+			t.Fatal("corrupt native binding accepted", err)
+		}
+		if _, err := db.Collection("users").UpdateOne(ctx, bson.M{"_id": profileKey}, bson.M{"$set": bson.M{"sso_issuer": identityauth.Issuer, "sso_subject": other, "password_hash": "", "sso": true}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	canceled, stop := context.WithCancel(ctx)
+	stop()
+	if err := s.CheckIdentityNamespace(canceled); !errors.Is(err, ErrIdentityNamespaceUnavailable) {
+		t.Fatal("unavailable preflight was accepted", err)
 	}
 }

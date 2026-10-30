@@ -133,6 +133,12 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 		if err != nil {
 			return nil, errors.New("central Identity requires staging and its dedicated service credential")
 		}
+		preflight, cancel := context.WithTimeout(context.Background(), timeout)
+		err = accountstore.New(db, timeout).CheckIdentityNamespace(preflight)
+		cancel()
+		if err != nil {
+			return nil, errors.New("central Identity namespace preflight failed")
+		}
 	}
 	if issuer := ssoauth.IssuerFor(os.Getenv("ENVIRONMENT"), os.Getenv("SSO_ISSUER")); issuer != "" {
 		sso = ssoauth.NewVerifier(issuer)
