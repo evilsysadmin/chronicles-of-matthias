@@ -14,12 +14,13 @@ import {
   chroniclesMapIds,
   chroniclesMapTransitionState,
 } from './chroniclesMapCatalog.js';
+import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 
 describe('Chronicles Blind King Archive', () => {
   it('continues the main campaign from Menagerie into a larger fifth map', () => {
     expect(chroniclesMapIds()).toContain('blind-king-archive');
     const archive = chroniclesMapById('blind-king-archive');
-    expect(archive.version).toBe(3);
+    expect(archive.version).toBe(4);
     expect(archive.title).toBe('Archivo del Rey Ciego');
     expect(archive.grid).toHaveLength(9);
     expect(archive.grid[0]).toHaveLength(11);
@@ -126,6 +127,37 @@ describe('Chronicles Blind King Archive', () => {
     expect(foundry.emberArtificerHp).toBe(6);
     expect(foundry.scrapGoblinHp).toBe(5);
     expect(foundry.journal.at(-1)?.id).toBe('blind-archive-cleared');
+  });
+
+
+  it('restores spent MM3 spell points on the real Index reward, only once', () => {
+    const base = createChroniclesState('blind-king-archive', null, { rules: 'mm3' });
+    const spent = {
+      ...base,
+      x: 8, y: 4,
+      archiveIndexUnlocked: true,
+      ledgerWardenHp: 0, blindArchivistHp: 0, inkHoundHp: 0, catalogueSpiderHp: 0,
+      spellPoints: { bishop: 1, rook: 0, knight: 1 },
+    };
+    expect(chroniclesTacticsInteractions(spent)).toContainEqual(expect.objectContaining({
+      id: 'blind-index',
+    }));
+
+    const rewarded = chroniclesTacticsUse(spent, 'blind-index');
+    expect(rewarded.archiveIndexRead).toBe(true);
+    for (const id of ['bishop', 'rook', 'knight']) {
+      const hero = rewarded.party.find((entry) => entry.id === id);
+      expect(chroniclesMemberSp(rewarded, hero)).toBe(chroniclesMemberMaxSp(rewarded, hero));
+    }
+    const noncaster = rewarded.party.find((entry) => entry.id === 'matthias');
+    expect(chroniclesMemberSp(rewarded, noncaster)).toBe(0);
+    expect(chroniclesInventoryEntries(rewarded).filter((item) => item.id === 'blind-king-seal'))
+      .toHaveLength(1);
+
+    const again = chroniclesTacticsUse(rewarded, 'blind-index');
+    expect(again.spellPoints).toEqual(rewarded.spellPoints);
+    expect(again.party).toEqual(rewarded.party);
+    expect(chroniclesInventoryEntries(again)).toEqual(chroniclesInventoryEntries(rewarded));
   });
 
   it('rewards the previous secret route without making its trophy mandatory', () => {
