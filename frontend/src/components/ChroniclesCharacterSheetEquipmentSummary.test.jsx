@@ -141,7 +141,7 @@ describe('Chronicles character sheet combat summary', () => {
     expect(html).toContain('data-worn-slot="weapon"');
     expect(html).toContain('data-worn-slot="missile"');
     expect(html).not.toContain('aria-controls="chronicles-equipment-technical-details"');
-    expect(html).toContain('> Examinar</button>');
+    expect(html).toContain('</span> Examinar</button>');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('<span>Equipo puesto</span>');
     expect(html).not.toContain('chronicles-character-sheet__equipped-disclosure');
