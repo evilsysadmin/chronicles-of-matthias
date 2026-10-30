@@ -1822,8 +1822,32 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'forge-smokestack-masonry', [0, 0, 0], !coarse);
     mesh(stack, new THREE.BoxGeometry(1.66, 0.30, 1.56), mats.steel,
       'forge-smokestack-iron-crown', [0, 2.30, 0]);
-    mesh(stack, new THREE.BoxGeometry(0.80, 0.05, 0.70), mats.timber,
-      'forge-smokestack-vent', [0, 2.48, 0]);
+    // Two raised iron exhausts replace the former flat wooden vent. Their
+    // paired silhouette identifies the working smithy above the roofline,
+    // without smoke particles, extra lights or any change to the walk grid.
+    // Instancing keeps the twin flues and caps to two draw calls.
+    const flues = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.44, 1.20, 0.52), mats.steel, 2);
+    flues.name = 'forge-smokestack-twin-iron-flues';
+    flues.userData.chroniclesDecorativeOnly = true;
+    flues.castShadow = !coarse;
+    const caps = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.64, 0.18, 0.72), mats.steel, 2);
+    caps.name = 'forge-smokestack-twin-rain-caps';
+    caps.userData.chroniclesDecorativeOnly = true;
+    caps.castShadow = !coarse;
+    const outlet = new THREE.Object3D();
+    for (const [index, x] of [-0.37, 0.37].entries()) {
+      outlet.position.set(x, 3.01, 0);
+      outlet.updateMatrix();
+      flues.setMatrixAt(index, outlet.matrix);
+      outlet.position.set(x, 3.67, 0);
+      outlet.updateMatrix();
+      caps.setMatrixAt(index, outlet.matrix);
+    }
+    flues.instanceMatrix.needsUpdate = true;
+    caps.instanceMatrix.needsUpdate = true;
+    stack.add(flues, caps);
     root.add(stack);
   } else if (spec.emblem === 'shield' && !isWatch) {
     // The watchhouse is not an armorer: don't leave oversized steel display
