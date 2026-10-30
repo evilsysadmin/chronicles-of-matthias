@@ -69,20 +69,26 @@ export function chroniclesVolleyFlightSample(count, index, elapsed, kind = 'bow'
   const forward = Math.pow(t, 0.88);
   const spread = (index - (total - 1) / 2) * 0.46;
   const sling = kind === 'sling';
-  // The broad side-on launch made even the correct shaft look like a floating
-  // stick. Keep a slight readable profile, then point near-directly downrange.
-  const shaftYaw = (kind === 'crossbow' ? 0.22 : 0.24) * (1 - 0.65 * forward);
+  // Bow and crossbow projectiles fly along an actual straight 3D line.
+  // This derivative is independent of the time-easing factor: an arrow
+  // points from its fletching toward its *next* position, never sideways
+  // toward the player just to expose the shaft's silhouette.
+  const travelX = -0.64 * spread;
+  const travelY = 0.24;
+  const travelZ = -4.05;
+  // The models' positive longitudinal direction is local -Z.
+  // With Three's YXZ Euler order these angles align that axis with travel.
+  const arrowYaw = Math.atan2(-travelX, -travelZ);
+  const arrowPitch = Math.atan2(travelY, Math.hypot(travelX, travelZ));
   return {
     x: spread * (1 - 0.64 * forward),
-    y: -0.33 + 0.24 * forward + (sling ? 0.16 * Math.sin(Math.PI * t) : -0.025 * t * t),
+    y: -0.33 + 0.24 * forward + (sling ? 0.16 * Math.sin(Math.PI * t) : 0),
     z: -0.72 - 4.05 * forward,
-    // A modest three-quarter attitude exposes the wooden shaft and metal tip.
-    // Fully head-on arrows collapse into bright feather/steel diamonds.
-    pitch: sling ? -0.16 + 0.27 * t : kind === 'crossbow'
-      ? -0.11 - 0.06 * t : -0.15 - 0.07 * t,
-    yaw: sling ? -spread * 0.09
-      : (index % 2 === 0 ? -1 : 1) * shaftYaw - spread * 0.06 * (1 - forward),
-    roll: sling ? Math.PI * 2.2 * t : spread * 0.085,
+    // The tip faces the velocity vector throughout flight. No cinematic
+    // banking, side profile or end-over-end rotation for physical arrows.
+    pitch: sling ? -0.16 + 0.27 * t : arrowPitch,
+    yaw: sling ? -spread * 0.09 : arrowYaw,
+    roll: sling ? Math.PI * 2.2 * t : 0,
     scale: 1 - 0.20 * t,
   };
 }
