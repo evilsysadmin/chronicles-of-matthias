@@ -21,6 +21,26 @@ test('source dispatch requires completed trusted main push and never checks out 
 });
 
 
+test('obsolete source completion is skipped at job admission without consuming a runner', () => {
+  const signal = workflow.split('\n  signal:\n', 2)[1].split('\n  dispatch:\n', 1)[0];
+  const condition = signal.split('    if: >-\n', 2)[1].split('\n    runs-on:', 1)[0];
+  assert.ok(condition, 'the source signal must have a job-level admission');
+  // For workflow_run, github.sha is the default branch tip (GitHub documented).
+  // Check this BEFORE making the expensive live GitHub requests.
+  assert.match(condition, /github\.event\.workflow_run\.head_sha == github\.sha/);
+  assert.ok(condition.indexOf('github.event.workflow_run.head_sha == github.sha') <
+    condition.indexOf("workflow_run.conclusion == 'success'"));
+  assert.ok(condition.includes("workflow_run.event == 'push'"));
+  assert.ok(condition.includes("workflow_run.head_branch == 'main'"));
+  assert.ok(condition.includes("head_repository.full_name == 'evilsysadmin/chronicles-of-matthias'"));
+  assert.ok(signal.indexOf('github.event.workflow_run.head_sha == github.sha') <
+    signal.indexOf('repos/evilsysadmin/chronicles-of-matthias/commits/main'));
+  // A commit may advance after event delivery: keep the mandatory live
+  // exact-SHA comparison and independent three-CI-ready admission.
+  assert.match(signal, /if \[\[ "\$sha" != "\$head" \]\]; then/);
+  assert.match(signal, /385763056,386812503,387132683/);
+});
+
 test('handoff retries whichever of the three required checks completes last', () => {
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
   const match = workflow.match(/    workflows:\n((?:      - .+\n)+)    types: \[completed\]/);

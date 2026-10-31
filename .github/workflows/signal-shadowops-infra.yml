@@ -31,7 +31,12 @@ jobs:
     name: Verify source CI (not a deployment)
     outputs:
       ready: ${{ steps.admit.outputs.ready }}
+    # For workflow_run GitHub sets GITHUB_SHA to the default-branch tip,
+    # not the triggering workflow's SHA. Older CI completions may arrive
+    # after a newer main commit: skip them BEFORE allocating a runner.
+    # The authenticated live main check below still guards later races.
     if: >-
+      github.event.workflow_run.head_sha == github.sha &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main' &&
