@@ -152,46 +152,61 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   town.add(frames, panes);
 }
 
-// Warm limewash infill converts monolithic stone walls into house fronts.
-// Leave the masonry plinth and parapet visible; place the revoco strictly on
-// the SOLID side of the 4m tile boundary, between the existing window panes
-// and timber strips. All street-facing panels share one material/draw call.
+// Make long medieval facades read as TWO inhabited storeys instead of a
+// single monotonous wall. The existing oak band at 3.25m separates muted,
+// weathered ground-floor limewash from paler upper-floor plaster. Both floors
+// share ONE instanced mesh, the original stucco atlas, and the same world
+// face depth: no extra draw call, light, collision or walkable obstruction.
 function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wallHeight }) {
   if (wallHeight < 4) return;
   const faces = settlementStreetFacingFaces({ grid, blocked, zones });
   if (!faces.length) return;
-  const height = wallHeight - 0.52;
+  // Keep the real masonry plinth below 0.29m and parapet above wallHeight
+  // - 0.25m visible. The oak storey beam covers the 3.18–3.33m seam.
+  const seam = 3.25;
+  const layers = [
+    { bottom: 0.29, top: seam - 0.07 },
+    { bottom: seam + 0.08, top: wallHeight - 0.25 },
+  ];
   const panels = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(CELL * 0.935, height, 0.012),
-    // House-specific tint stays in instanceColor; a shared, restrained
-    // stucco normal map adds light response without more geometry or batches.
+    new THREE.BoxGeometry(CELL * 0.935, 1, 0.012),
     material(0xffffff, {
       map: swordhavenSurfaceTexture('stucco'),
       normalMap: swordhavenSurfaceNormalTexture('stucco'),
       normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
     }),
-    faces.length,
+    faces.length * layers.length,
   );
   const dummy = new THREE.Object3D();
-  const lime = [
-    new THREE.Color('#d8c8ac'),
-    new THREE.Color('#c7b59c'),
-    new THREE.Color('#ddd0b8'),
+  const groundLime = [
+    new THREE.Color('#c6b398'),
+    new THREE.Color('#b9a68e'),
+    new THREE.Color('#d1bda4'),
+  ];
+  const upperLime = [
+    new THREE.Color('#e5d4b9'),
+    new THREE.Color('#d8c6af'),
+    new THREE.Color('#ecdbc3'),
   ];
   faces.forEach(({ x, y, dx, dy, yaw }, i) => {
     const [wx, wz] = gridToWorld(x, y, center);
-    dummy.rotation.y = yaw;
-    dummy.position.set(wx + dx * 1.974, wallHeight / 2 + 0.03, wz + dy * 1.974);
-    dummy.updateMatrix();
-    panels.setMatrixAt(i, dummy.matrix);
-    // House-sized colour groups rather than a random patchwork per window.
-    panels.setColorAt(i, lime[(Math.floor(x / 3) + Math.floor(y / 2)) % lime.length]);
+    const houseShade = (Math.floor(x / 3) + Math.floor(y / 2)) % groundLime.length;
+    for (const [floor, { bottom, top }] of layers.entries()) {
+      const index = i * layers.length + floor;
+      dummy.rotation.set(0, yaw, 0);
+      dummy.scale.set(1, top - bottom, 1);
+      dummy.position.set(wx + dx * 1.974, (bottom + top) / 2, wz + dy * 1.974);
+      dummy.updateMatrix();
+      panels.setMatrixAt(index, dummy.matrix);
+      panels.setColorAt(index, (floor === 0 ? groundLime : upperLime)[houseShade]);
+    }
   });
   panels.instanceMatrix.needsUpdate = true;
   panels.instanceColor.needsUpdate = true;
   panels.name = 'chronicles-town-street-limewash-fronts';
   panels.castShadow = false;
   panels.receiveShadow = true;
+  panels.userData.chroniclesDecorativeOnly = true;
   town.add(panels);
 }
 
