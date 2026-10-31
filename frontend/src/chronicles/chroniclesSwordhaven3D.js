@@ -488,7 +488,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const flatRoof = new THREE.Group();
     flatRoof.name = 'armor-flat-ashlar-roof';
     flatRoof.userData.chroniclesDecorativeOnly = true;
-    mesh(flatRoof, new THREE.BoxGeometry(width + 0.36, 0.24, depth + 0.82), mats.stone,
+    mesh(flatRoof, new THREE.BoxGeometry(width + 0.36, 0.24, depth + 0.82), armorAshlar,
       'armor-flat-roof-deck', [0, height + 0.08, 0], !coarse);
     mesh(flatRoof, new THREE.BoxGeometry(width + 0.55, 0.20, depth + 1.00), mats.stone,
       'armor-flat-roof-coping', [0, height + 0.22, 0], !coarse);
