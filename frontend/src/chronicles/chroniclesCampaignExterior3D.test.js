@@ -827,7 +827,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(awning.userData.chroniclesDecorativeOnly).toBe(true);
     expect(awning.getObjectByName('store-awning-cloth')).toBeInstanceOf(THREE.Mesh);
     expect(awning.getObjectByName('store-awning-front-rail')).toBeInstanceOf(THREE.Mesh);
-    expect(awning.children.filter(child => child.name === 'store-awning-stripe')).toHaveLength(6);
+    const stripes = awning.getObjectByName('store-awning-stripe');
+    expect(stripes).toBeInstanceOf(THREE.InstancedMesh);
+    expect(stripes.count).toBe(6);
     expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.5);
     expect(forge.getObjectByName('store-market-awning')).toBeFalsy();
     expect(watch?.getObjectByName('store-market-awning')).toBeFalsy();
