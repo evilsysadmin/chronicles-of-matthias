@@ -133,8 +133,28 @@ describe('Swordhaven authored terrace roofline dressing', () => {
       expect(mesh.frustumCulled).toBe(false);
       expect(mesh.receiveShadow).toBe(true);
     }
-    expect(shafts.geometry.index.count).toBe(3 * 36); // Body, foot, crown.
+    expect(shafts.geometry.index.count).toBe(7 * 36); // Body, foot, crown and four rim stones.
+    const shaftBounds = new THREE.Box3().setFromBufferAttribute(
+      shafts.geometry.getAttribute('position'));
+    expect(shaftBounds.max.y).toBeCloseTo(0.6525);
+    expect(shaftBounds.min.y).toBeCloseTo(-0.5);
+    const brickBond = shafts.material.map;
+    expect(brickBond).toBeInstanceOf(THREE.DataTexture);
+    expect(brickBond.name).toBe('chronicles-town-residential-chimney-brick-bond');
+    expect(brickBond.image.width).toBe(64);
+    expect(brickBond.image.height).toBe(64);
+    expect(brickBond.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(brickBond.magFilter).toBe(THREE.NearestFilter);
+    const pixel = (x, y) => brickBond.image.data[(y * 64 + x) * 4];
+    expect(pixel(0, 1)).toBe(105); // Even row: vertical joint at x=0.
+    expect(pixel(0, 9)).toBeGreaterThan(200); // Odd row shifts the brick bond.
+    expect(pixel(10, 9)).toBe(105); // Offset joint.
+    expect(pixel(5, 8)).toBe(105); // Horizontal mortar course.
+    expect(pixel(5, 9)).toBeGreaterThan(200);
+    expect(shafts.material.emissive.getHex()).toBe(0);
     expect(flues.geometry.index.count).toBe(36);
+    expect(flues.geometry.parameters.width).toBeCloseTo(0.64);
+    expect(flues.geometry.parameters.depth).toBeCloseTo(0.48);
     expect(shafts.instanceColor).toBeTruthy();
     const colors = new Set();
     const matrix = new THREE.Matrix4();
@@ -157,7 +177,7 @@ describe('Swordhaven authored terrace roofline dressing', () => {
       flues.getMatrixAt(index, matrix);
       matrix.decompose(position, new THREE.Quaternion(), scale);
       expect(position.x).toBeCloseTo(entry.x);
-      expect(position.y).toBeCloseTo(entry.roofY - 0.16 + entry.height * 1.061);
+      expect(position.y).toBeCloseTo(entry.roofY - 0.16 + entry.height * 1.117);
       expect(position.z).toBeCloseTo(entry.z);
     }
     expect(colors.size).toBe(3);
