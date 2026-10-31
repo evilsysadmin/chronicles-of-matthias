@@ -18,6 +18,7 @@ import {
   FROST_FOUNTAIN_BOON,
   LIGHTHOUSE_FOUNTAIN_BOON,
   LAVA_FOUNTAIN_BOON,
+  MILL_FOUNTAIN_BOON,
 } from './chroniclesTemporaryFountainBoon.js';
 
 function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
@@ -50,6 +51,14 @@ function lavaFountainStart(progression = createChroniclesProgression(), rules = 
     progression,
   );
   return { ...base, x: 5, y: 4, direction: 0, runProgression: progression };
+}
+
+function millFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-b5', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 5, y: 10, direction: 0, runProgression: progression };
 }
 
 function act(state, progression, action) {
@@ -386,6 +395,110 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(returned.terra_a6ShrineUsed).toBe(true);
     expect(act({ ...returned, x: 15, y: 4, direction: 0 },
       lava.progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('grants +4 Endurance at the Mill for ten actions, raising actual max HP without free healing', () => {
+    const progression = createChroniclesProgression();
+    const start = millFountainStart(progression);
+    expect(chroniclesContextualContentAction(start)?.id).toBe(MILL_FOUNTAIN_BOON.sourceId);
+    const result = act(start, progression, { type: 'interact' });
+    expect(result.granted).toBe(true);
+    expect(result.state.terra_b5ShrineUsed).toBe(true);
+    expect(result.state.message).toContain('Fuente del Molino');
+    expect(result.state.message).toContain('+4 Resistencia');
+    expect(result.state.message).toContain('10 acciones');
+    expect(result.progression.mm3TemporaryBoon).toEqual({
+      sourceId: MILL_FOUNTAIN_BOON.sourceId, stat: 'endurance', amount: 4,
+      expiresAtTurn: result.state.turns + 10,
+    });
+    expect(result.progression.claimedTemporaryWorldSources).toEqual([MILL_FOUNTAIN_BOON.sourceId]);
+    const boostedMax = result.state.party.map((hero, i) => {
+      expect(hero.mm3.stats.endurance).toBe(start.party[i].mm3.stats.endurance + 4);
+      expect(hero.characterBuild.stats.endurance).toBe(start.party[i].characterBuild.stats.endurance);
+      expect(hero.mm3.worldBonuses.endurance).toBe(0);
+      expect(hero.maxHp).toBeGreaterThan(start.party[i].maxHp);
+      // Existing fountain healing remains real, but temporary maximum HP
+      // never converts itself into extra current HP on a healthy party.
+      expect(hero.hp).toBe(start.party[i].hp);
+      return hero.maxHp;
+    });
+    const reconciledTwice = reconcileChroniclesProgressionInTacticsState(
+      reconcileChroniclesProgressionInTacticsState(result.state, result.progression),
+      result.progression,
+    );
+    expect(reconciledTwice.party.map((hero) => hero.maxHp)).toEqual(boostedMax);
+    expect(reconciledTwice.party.map((hero) => hero.hp))
+      .toEqual(start.party.map((hero) => hero.hp));
+
+    const payload = chroniclesRunCheckpointPayload(result.state, 6);
+    const savedProgression = chroniclesCheckpointRunProgression(payload);
+    expect(savedProgression.claimedTemporaryWorldSources).toContain(MILL_FOUNTAIN_BOON.sourceId);
+    const loaded = reconcileChroniclesProgressionInTacticsState(
+      chroniclesApplyRunCheckpoint(createChroniclesState('terra-b5',
+        progression.characterBuild, { rules: 'mm3' }), payload),
+      savedProgression,
+    );
+    expect(loaded.party.map((hero) => hero.maxHp)).toEqual(boostedMax);
+    expect(act(loaded, savedProgression, { type: 'interact' }).granted).toBe(false);
+
+    // Injuries during the blessing must remain injuries after it expires:
+    // expiry may cap HP to the normal maximum, but never heal.
+    let current = {
+      ...loaded,
+      party: loaded.party.map((hero, i) => i === 0
+        ? { ...hero, hp: Math.max(1, hero.hp - 3) }
+        : hero),
+    };
+    const injuredHp = current.party[0].hp;
+    for (let i = 0; i < 10; i += 1) {
+      const previous = current;
+      const move = act(previous, savedProgression, { type: 'turn-right' });
+      expect(move.state.turns).toBe(previous.turns + 1);
+      expect(move.expiredNotice).toBe(i === 9
+        ? 'Se desvanece la bendición de la Fuente del Molino (+4 Resistencia).'
+        : null);
+      current = move.state;
+    }
+    expect(current.party.map((hero) => hero.maxHp))
+      .toEqual(start.party.map((hero) => hero.maxHp));
+    expect(current.party.map((hero) => hero.mm3.stats.endurance))
+      .toEqual(start.party.map((hero) => hero.mm3.stats.endurance));
+    expect(current.party[0].hp).toBe(injuredHp);
+    expect(current.party.every((hero) => hero.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, savedProgression).expiredNotice).toBeNull();
+    expect(act(millFountainStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('replaces an active Lava strength blessing at the Mill without damage stacking', () => {
+    const progression = createChroniclesProgression();
+    const start = lavaFountainStart(progression);
+    const baselineDamage = start.party.map((hero) => chroniclesPartyAttackStats(start, hero.id, 'melee').damage);
+    const lava = act(start, progression, { type: 'interact' });
+    expect(lava.granted).toBe(true);
+    const traveled = chroniclesMapTransitionState(lava.state, 'terra-b5');
+    const atMill = { ...traveled, x: 5, y: 10, direction: 0, runProgression: lava.progression };
+    expect(chroniclesContextualContentAction(atMill)?.id).toBe(MILL_FOUNTAIN_BOON.sourceId);
+    const mill = act(atMill, lava.progression, { type: 'interact' });
+    expect(mill.granted).toBe(true);
+    expect(mill.expiredNotice).toBeNull();
+    expect(mill.state.message).toContain('Sustituye a la bendición anterior');
+    expect(mill.progression.claimedTemporaryWorldSources)
+      .toEqual([LAVA_FOUNTAIN_BOON.sourceId, MILL_FOUNTAIN_BOON.sourceId]);
+    expect(mill.progression.mm3TemporaryBoon.sourceId).toBe(MILL_FOUNTAIN_BOON.sourceId);
+    expect(mill.state.party.map((hero) => chroniclesPartyAttackStats(mill.state, hero.id, 'melee').damage))
+      .toEqual(baselineDamage);
+    mill.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.might).toBe(start.party[i].mm3.stats.might);
+      expect(hero.mm3.stats.endurance).toBe(start.party[i].mm3.stats.endurance + 4);
+      expect(hero.maxHp).toBeGreaterThan(start.party[i].maxHp);
+    });
+    expect(grantChroniclesMM3TemporaryBoon(
+      mill.progression, LAVA_FOUNTAIN_BOON.sourceId, 'might', 4, 100,
+    ).granted).toBe(false);
+    const returned = chroniclesMapTransitionState(mill.state, 'terra-f3');
+    expect(returned.terra_f3ShrineUsed).toBe(true);
+    expect(act({ ...returned, x: 5, y: 4, direction: 0 },
+      mill.progression, { type: 'interact' }).granted).toBe(false);
   });
 
   it('notifies once when an enemy action passes the expiry boundary, but never on reload or invalid turns', () => {
