@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
