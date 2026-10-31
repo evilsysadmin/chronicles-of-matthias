@@ -63,6 +63,8 @@ try {
           'Closed residential oak entries need shared frame and iron batches on real blind facades');
         assert.equal(result.domesticJoinery, 'true',
           'Raised oak boards and forged straps must fit the original door batches inside blocked cells');
+        assert.equal(result.domesticPediments, 'true',
+          'All oak residential doors need raised twin-pitched lintels below the storey beam');
         assert.equal(result.windowDetail, 'true',
           'Rendered street windows must have merged mullions and sills inside solid cells');
         assert.equal(result.plasterRelief, 'true',
