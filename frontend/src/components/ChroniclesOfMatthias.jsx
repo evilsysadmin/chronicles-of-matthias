@@ -1973,7 +1973,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
                   ))}
                 </span>
-                <span><strong>{member.name}</strong><small>Nv {chroniclesHeroProgress(progression, member.id).level}</small></span>
+                <span><strong>{member.name}</strong></span>
                 <ChroniclesPartyVitals hp={member.hp} maxHp={member.maxHp}
                   sp={sp} maxSp={maxSp} band={chroniclesHealthBand(member.hp, member.maxHp)} />
                 {portraitLevelUps[member.id] && (
@@ -2224,7 +2224,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
           <ChroniclesQuickStatus
             open={quickStatusOpen}
-            rows={quickStatusOpen ? chroniclesQuickStatusRows(state, (memberId) => chroniclesHeroProgress(progression, memberId).level) : []}
+            rows={quickStatusOpen ? chroniclesQuickStatusRows(state) : []}
             gold={chroniclesGoldBalance(state)}
             onClose={() => setQuickStatusOpen(false)}
             onOpenSheet={(memberId) => { setQuickStatusOpen(false); openMemberSheet(memberId); }}
