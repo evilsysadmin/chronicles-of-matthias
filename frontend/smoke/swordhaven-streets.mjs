@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'juliet', 'roofline', 'chimney']) {
+      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'juliet', 'laundry', 'roofline', 'chimney']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -46,6 +46,10 @@ try {
           'Authored houses must display an upper attic vent and cached limewash without false shop signs');
         assert.equal(result.premiumStreetWindows, 'true',
           'Swordhaven streets need actual batched oak hoods and planted window ledges');
+        assert.equal(result.alleyLaundry, 'true',
+          'Four walkable residential passages should carry batched overhead lines and folded cloth');
+        assert.equal(result.laundryMobileFraming, 'true',
+          'The dedicated clothesline view must include every folded sheet in the mobile frustum');
         assert.equal(result.upperJulietGuards, 'true',
           'Eight south-facing upper windows need sparse wrought-iron Juliet guards with no street collision');
         assert.equal(result.julietMobileFraming, 'true',
