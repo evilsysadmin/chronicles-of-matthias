@@ -47,7 +47,6 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
           <div role="row" className="is-head">
             <span role="columnheader">#</span>
             <span role="columnheader">Héroe</span>
-            <span role="columnheader">Nv</span>
             <span role="columnheader">PV</span>
             <span role="columnheader">PH</span>
             <span role="columnheader">CA</span>
@@ -59,7 +58,6 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
               aria-label={`Tecla ${row.slot}: ${row.name}: ${row.hp} de ${row.maxHp} PV. Abrir ficha`} onClick={() => onOpenSheet(row.id)}>
               <span role="cell">{row.slot}</span>
               <span role="cell" className="is-name"><b>{row.name}</b><small>{row.classLabel}</small></span>
-              <span role="cell">{row.level}</span>
               <span role="cell" className="is-hp">{row.hp}/{row.maxHp}</span>
               <span role="cell" className="is-sp">{row.maxSp === null ? '—' : `${row.sp}/${row.maxSp}`}</span>
               <span role="cell">{row.armorClass}</span>
