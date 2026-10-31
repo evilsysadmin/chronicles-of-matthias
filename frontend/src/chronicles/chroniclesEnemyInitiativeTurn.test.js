@@ -108,6 +108,24 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     });
   });
 
+  it.each(['explore', 'escaped', 'defeated'])(
+    'preserves %s when an enemy action itself ends combat',
+    (phase) => {
+      const state = enemyFirstEncounter();
+      const terminal = { ...state, phase, message: 'Encounter finished' };
+      const resolve = vi.fn(() => terminal);
+      const result = chroniclesRunPendingEnemyTurn(state, WEST, resolve);
+
+      expect(resolve).toHaveBeenCalledTimes(1);
+      expect(result.error).toBeNull();
+      expect(result.acted).toBe(terminal);
+      expect(result.committed).toBe(terminal);
+      expect(result.committed.phase).toBe(phase);
+      expect(result.committed.initiative).toBe(state.initiative);
+      expect(result.committed.initiative.cursor).toBe(0);
+    },
+  );
+
   it.each(['explore', 'defeated', 'escaped'])(
     'ignores a stale enemy timer after the phase changes to %s',
     (phase) => {
