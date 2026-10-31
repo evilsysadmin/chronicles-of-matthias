@@ -1014,7 +1014,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         shutters.userData.chroniclesDecorativeOnly = true;
         const panels = new THREE.InstancedMesh(
           new THREE.BoxGeometry(0.43, 1.28, 0.10),
-          material(0x62432d, { roughness: 0.98 }), 4);
+          material(0x946c45, { roughness: 0.98 }), 4);
         panels.name = 'tavern-oak-shutter-panel';
         const hinges = new THREE.InstancedMesh(
           new THREE.BoxGeometry(0.36, 0.07, 0.05), mats.steel, 8);
@@ -1189,6 +1189,32 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
           : isForge ? 'side-window-forge-iron-louver' : 'side-window-crossbar',
       [edge + side * 0.17, 2.85, z]);
     }
+  }
+  // The inn's side windows also receive oak leaves: the large east-facing
+  // elevation is the one players actually see from the market plaza. Keep
+  // the guest oriel above, and leave the side panes and walk grid untouched.
+  if (isTavern) {
+    const sideShutters = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.20, 1.42, 0.47),
+      material(0x946c45, { roughness: 0.98 }), 8);
+    sideShutters.name = 'tavern-side-oak-shutters';
+    sideShutters.userData.chroniclesDecorativeOnly = true;
+    sideShutters.castShadow = !coarse;
+    sideShutters.receiveShadow = true;
+    const leaf = new THREE.Object3D();
+    let index = 0;
+    for (const side of [-1, 1]) {
+      for (const z of [-depth * 0.22, depth * 0.22]) {
+        for (const edge of [-1, 1]) {
+          leaf.position.set(side * (width / 2 + 0.32), 2.84, z + edge * 0.99);
+          leaf.rotation.set(0, side * edge * 0.14, 0);
+          leaf.updateMatrix();
+          sideShutters.setMatrixAt(index++, leaf.matrix);
+        }
+      }
+    }
+    sideShutters.instanceMatrix.needsUpdate = true;
+    root.add(sideShutters);
   }
   // The guild's side elevations should read as a school of magic from the
   // alley too, not as ordinary rectangular merchant windows tinted purple.
