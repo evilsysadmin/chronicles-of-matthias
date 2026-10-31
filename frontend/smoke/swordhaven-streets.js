@@ -36,7 +36,8 @@ const VIEWS = Object.freeze({
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
   // Real walkable southern lane: one Juliet guard framed at street level.
-  juliet: { x: 3, y: 21, heading: 'north', target: { x: 4, y: 20 }, cameraHeight: 2.4, lookUp: 2.0 },
+  juliet: { x: 4, y: 21, heading: 'north', target: { x: 4, y: 20 },
+    cameraHeight: 2.4, lookUp: 3.1, cameraOffsetZ: 1.6 },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
   // eye-level view hides the shingles behind 6.4m facades.
   roofline: { x: 9, y: 14, heading: 'south', cameraHeight: 10, lookUp: -1.5 },
@@ -80,7 +81,13 @@ try {
   const worldZ = (chosen.y - center.y) * 4;
   const [dx, dy] = direction[chosen.heading];
   const eye = chosen.cameraHeight || 1.62;
-  camera.position.set(worldX, eye, worldZ);
+  // Back up within the same walkable 4m tile: the original Juliet QA shot
+  // pressed the portrait camera against an adjacent masonry corner.
+  // No game camera is affected; this belongs exclusively to the smoke fixture.
+  if (Math.abs(chosen.cameraOffsetZ || 0) >= 2) {
+    throw new Error('QA camera offset must remain inside its walkable tile');
+  }
+  camera.position.set(worldX, eye, worldZ + (chosen.cameraOffsetZ || 0));
   camera.lookAt(
     chosen.target ? (chosen.target.x - center.x) * 4 : worldX + dx * 4,
     eye + (chosen.lookUp || 0),
@@ -204,6 +211,26 @@ try {
         && gable.children.filter(part => part.name === 'home-attic-vent-louver').length === 2
         && !home.getObjectByName('swordhaven-shop-nameplate');
     }) && !hall?.getObjectByName('home-authored-attic-vent')),
+    julietMobileFraming: String((() => {
+      if (name !== 'juliet') return true;
+      if (!julietGuards || Math.abs(camera.position.z - worldZ - 1.6) > 0.001) return false;
+      const matrix = new THREE.Matrix4();
+      for (let i = 0; i < julietGuards.count; i += 1) {
+        julietGuards.getMatrixAt(i, matrix);
+        const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
+        if (Math.abs(pos.x - (4 - center.x) * 4) > 0.01
+          || Math.abs(pos.z - ((20 - center.y) * 4 + 2.07)) > 0.01) continue;
+        // The actual upper-window railing, not a guessed target marker,
+        // must fit inside portrait 390px bounds with space on both sides.
+        const projected = pos.clone().project(camera);
+        const left = pos.clone().add(new THREE.Vector3(-0.8, 0, 0)).project(camera);
+        const right = pos.clone().add(new THREE.Vector3(0.8, 0, 0)).project(camera);
+        return Math.abs(projected.x) < 0.15 && Math.abs(projected.y) < 0.45
+          && left.x > -0.92 && right.x < 0.92
+          && projected.z > -1 && projected.z < 1;
+      }
+      return false;
+    })()),
     upperJulietGuards: String((() => {
       if (julietGuards?.count !== 8 || !julietGuards.userData.chroniclesDecorativeOnly
         || julietGuards.castShadow || julietGuards.frustumCulled
