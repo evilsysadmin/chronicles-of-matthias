@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
-import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
+import { swordhavenRoofRise, planSwordhavenRoofChimneys } from './chroniclesSwordhavenRoofTrim.js';
+import { planSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import swordhaven from './maps/swordhaven-first-book.json';
 
 function townScene(mapId = swordhaven.id, coarsePointer = false) {
@@ -73,11 +74,76 @@ describe('Swordhaven authored terrace roofline dressing', () => {
     expect(town.getObjectByName('chronicles-campaign-town-perimeter')).toBeFalsy();
   });
 
+  it.each([true, false])('draws four non-overlapping inhabited roof flues in two batches at coarse=%s', (coarse) => {
+    const center = { x: 9, y: 11 };
+    const runs = swordhaven.landscape.roofRuns;
+    const chimneyPlan = planSwordhavenRoofChimneys(runs, center, 6.4);
+    expect(chimneyPlan).toEqual(planSwordhavenRoofChimneys(runs, center, 6.4));
+    expect(chimneyPlan.map(({ xCell, yCell, width }) => [xCell, yCell, width])).toEqual([
+      [2, 16, 4], [13, 20, 4], [7, 16, 5], [4, 18, 2],
+    ]);
+    expect(new Set(chimneyPlan.map(entry => entry.variant))).toEqual(new Set([0, 1, 2]));
+    const dormers = planSwordhavenDormers(runs, swordhaven.grid, center, 6.4);
+    for (const entry of chimneyPlan) {
+      const rise = swordhavenRoofRise({ x: entry.xCell, y: entry.yCell, width: entry.width });
+      const roofCenterZ = (entry.yCell - center.y) * 4;
+      const actualSurface = 6.36 + rise * (1 - Math.abs(entry.z - roofCenterZ) / 2.22);
+      expect(entry.roofY).toBeCloseTo(actualSurface);
+      expect(swordhaven.grid[entry.yCell].slice(entry.xCell, entry.xCell + entry.width))
+        .toBe('#'.repeat(entry.width));
+      // Dormers occupy other bay positions: do not put a chimney through glass.
+      expect(dormers.every(window =>
+        Math.hypot(entry.x - window.x, entry.z - window.z) > 1.25)).toBe(true);
+    }
+    const town = townScene(swordhaven.id, coarse);
+    const shafts = town.getObjectByName('chronicles-town-residential-chimney-shafts');
+    const flues = town.getObjectByName('chronicles-town-residential-chimney-flues');
+    expect(shafts).toBeInstanceOf(THREE.InstancedMesh);
+    expect(flues).toBeInstanceOf(THREE.InstancedMesh);
+    for (const mesh of [shafts, flues]) {
+      expect(mesh.count).toBe(4);
+      expect(mesh.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(mesh.castShadow).toBe(false);
+      expect(mesh.frustumCulled).toBe(false);
+      expect(mesh.receiveShadow).toBe(true);
+    }
+    expect(shafts.geometry.index.count).toBe(3 * 36); // Body, foot, crown.
+    expect(flues.geometry.index.count).toBe(36);
+    expect(shafts.instanceColor).toBeTruthy();
+    const colors = new Set();
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    for (const [index, entry] of chimneyPlan.entries()) {
+      shafts.getMatrixAt(index, matrix);
+      matrix.decompose(position, new THREE.Quaternion(), scale);
+      expect(position.x).toBeCloseTo(entry.x);
+      expect(position.z).toBeCloseTo(entry.z);
+      expect(position.y).toBeCloseTo(entry.roofY - 0.16 + entry.height / 2);
+      expect(scale.y).toBeCloseTo(entry.height);
+      // Foot embeds in the roof, but the crown clears its ridge.
+      expect(position.y - entry.height / 2).toBeLessThan(entry.roofY);
+      expect(position.y + entry.height * 0.56)
+        .toBeGreaterThan(6.36 + swordhavenRoofRise({ x: entry.xCell, y: entry.yCell, width: entry.width }));
+      const color = new THREE.Color();
+      shafts.getColorAt(index, color);
+      colors.add(color.getHexString());
+      flues.getMatrixAt(index, matrix);
+      matrix.decompose(position, new THREE.Quaternion(), scale);
+      expect(position.x).toBeCloseTo(entry.x);
+      expect(position.y).toBeCloseTo(entry.roofY - 0.16 + entry.height * 1.061);
+      expect(position.z).toBeCloseTo(entry.z);
+    }
+    expect(colors.size).toBe(3);
+  });
+
   it('does not decorate other settlements that happen to have roof runs', () => {
     const town = townScene('other-authored-settlement', true);
     expect(town.getObjectByName('chronicles-town-south-pitched-roofs')).toBeTruthy();
     expect(town.getObjectByName('chronicles-town-south-roof-oak-eaves')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-south-roof-oak-ridges')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-south-roof-oak-verges')).toBeFalsy();
+    expect(town.getObjectByName('chronicles-town-residential-chimney-shafts')).toBeFalsy();
+    expect(town.getObjectByName('chronicles-town-residential-chimney-flues')).toBeFalsy();
   });
 });

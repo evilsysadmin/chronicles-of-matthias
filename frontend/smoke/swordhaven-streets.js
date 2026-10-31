@@ -117,6 +117,8 @@ try {
       && Math.abs(groundPos.x - upperPos.x) < 0.001;
   })();
   const roofs = town?.getObjectByName('chronicles-town-south-pitched-roofs');
+  const residentialChimneys = town?.getObjectByName('chronicles-town-residential-chimney-shafts');
+  const chimneyFlues = town?.getObjectByName('chronicles-town-residential-chimney-flues');
   const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
   const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
   const oakVerges = town?.getObjectByName('chronicles-town-south-roof-oak-verges');
@@ -260,6 +262,42 @@ try {
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
+    inhabitedChimneys: String((() => {
+      if (residentialChimneys?.count !== 4 || chimneyFlues?.count !== 4
+        || !residentialChimneys.userData.chroniclesDecorativeOnly
+        || !chimneyFlues.userData.chroniclesDecorativeOnly
+        || residentialChimneys.castShadow || chimneyFlues.castShadow
+        || residentialChimneys.frustumCulled || chimneyFlues.frustumCulled
+        || residentialChimneys.geometry.index.count !== 108) return false;
+      const matrix = new THREE.Matrix4();
+      const position = new THREE.Vector3();
+      const scale = new THREE.Vector3();
+      const colors = new Set();
+      const authored = [
+        { x: 2, y: 16, width: 4 }, { x: 13, y: 20, width: 4 },
+        { x: 7, y: 16, width: 5 }, { x: 4, y: 18, width: 2 },
+      ];
+      for (const [index, run] of authored.entries()) {
+        const slot = run.width === 5 ? run.width - 1.10 : 0.5;
+        const roofZ = (run.y - 11) * 4;
+        const z = roofZ + ((run.x + run.y) % 2 ? -0.72 : 0.72);
+        const rise = run.width === 2 ? 1.46
+          : run.width === 4 ? ((run.x + run.y) % 2 === 0 ? 0.78 : 1.25) : 0.92;
+        const roofY = swordhaven.landscape.streetWallHeight - 0.04
+          + rise * (1 - Math.abs(z - roofZ) / 2.22);
+        residentialChimneys.getMatrixAt(index, matrix);
+        matrix.decompose(position, new THREE.Quaternion(), scale);
+        if (Math.abs(position.x - ((run.x + slot - 9) * 4)) > 0.01
+          || Math.abs(position.z - z) > 0.01
+          || Math.abs((position.y - scale.y / 2) - (roofY - 0.16)) > 0.01) return false;
+        const color = new THREE.Color();
+        residentialChimneys.getColorAt(index, color);
+        colors.add(color.getHexString());
+        chimneyFlues.getMatrixAt(index, matrix);
+        if (Math.abs(new THREE.Vector3().setFromMatrixPosition(matrix).z - z) > 0.01) return false;
+      }
+      return colors.size === 3;
+    })()),
     variedRoofPitches: String((() => {
       const expected = [0.78, 1.25, 0.78, 1.25, 0.92, 1.46, 1.46];
       if (roofs.count !== expected.length || oakRidges?.count !== expected.length

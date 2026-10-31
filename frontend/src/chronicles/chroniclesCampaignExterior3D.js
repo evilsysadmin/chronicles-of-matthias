@@ -10,7 +10,7 @@ import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js'
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
-import { dressSwordhavenRoofRuns, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
+import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
@@ -586,6 +586,9 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
       runs: valid, grid, center, wallHeight, eave,
       timber: trimTimber, plaster: trimStucco, roofMaterial: roofs.material,
     });
+    // Only some of these already-authorized house roofs have flues; keep the
+    // draw-call budget fixed at two batches for all residential chimneys.
+    dressSwordhavenRoofChimneys(town, { runs: valid, center, wallHeight, eave });
   }
 }
 
