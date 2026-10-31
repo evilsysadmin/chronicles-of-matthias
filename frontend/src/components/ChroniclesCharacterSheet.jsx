@@ -762,10 +762,12 @@ export default function ChroniclesCharacterSheet({
             </div>
             <div className="chronicles-character-sheet__mm3-stats">
               {CHRONICLES_MM3_STATS.map((key) => (
-                <div key={key} data-stat={key} title={CHRONICLES_MM3_STAT_EFFECTS[key]}>
+                <div key={key} data-stat={key}
+                  title={`${CHRONICLES_MM3_STAT_EFFECTS[key]} · Base ${member.characterBuild?.stats?.[key] ?? mm3.stats[key]}`}>
                   <span>{CHRONICLES_MM3_STAT_LABELS[key]}</span>
                   <b>{mm3.stats[key]} <em>({signed(mm3.bonuses[key])})</em></b>
-                  <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}</small>
+                  <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
+                    ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}</small>
                 </div>
               ))}
               <div data-stat="condition" title="Estado general según los puntos de vida actuales">
