@@ -127,6 +127,7 @@ try {
   const dormerWindows = town?.getObjectByName('chronicles-town-residential-dormer-glass');
   const dormerCasements = town?.getObjectByName('chronicles-town-residential-dormer-window-casements');
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
+  const timberBeams = town?.getObjectByName('chronicles-town-timber-storey-beams');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
   const streetHoods = town?.getObjectByName('chronicles-town-street-oak-window-hoods');
@@ -213,6 +214,20 @@ try {
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     twoStoreyLimewash: String(twoStoreyLimewash),
+    upperTrussCount: String(timberBeams.count - windowFrames.count),
+    upperStoreyTimber: String((() => {
+      const count = timberBeams.count - windowFrames.count;
+      if (count < 2 || count % 2 || posts.count < count) return false;
+      const matrix = new THREE.Matrix4();
+      posts.getMatrixAt(posts.count - count, matrix);
+      const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
+      const scale = new THREE.Vector3().setFromMatrixScale(matrix);
+      const expectedY = (3.25 + swordhaven.landscape.streetWallHeight - 0.21) / 2;
+      return Math.abs(pos.y - expectedY) < 0.01
+        && Math.abs(scale.y - 0.55) < 0.01
+        && Math.abs(matrix.elements[1]) > 0.1
+        && 1.973 + posts.geometry.parameters.depth / 2 < 2;
+    })()),
     domesticDoorCount: String(town.getObjectByName('chronicles-town-residential-door-panels')?.count ?? 0),
     domesticJoinery: String((() => {
       const oak = town.getObjectByName('chronicles-town-residential-door-panels');
