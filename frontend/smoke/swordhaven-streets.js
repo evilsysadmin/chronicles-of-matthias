@@ -307,6 +307,15 @@ try {
       && !armorer?.getObjectByName('temple-limestone-portico')
       && !guild?.getObjectByName('temple-limestone-portico')
     )),
+    distinctArmorGate: String(Boolean(
+      armorer?.getObjectByName('armor-fortified-iron-gate')?.userData.chroniclesDecorativeOnly
+      && armorer?.getObjectByName('armor-gate-forged-crossbands')?.count === 3
+      && armorer?.getObjectByName('armor-gate-steel-rivets')?.count === 18
+      && armorer?.getObjectByName('armor-gate-raised-shield')
+      && armorer?.getObjectByName('shop-door')
+      && !forge?.getObjectByName('armor-fortified-iron-gate')
+      && !guild?.getObjectByName('armor-fortified-iron-gate')
+    )),
     distinctForgeDoor: String(Boolean(
       forge?.getObjectByName('forge-ironbound-oak-entry')?.userData.chroniclesDecorativeOnly
       && forge?.getObjectByName('forge-door-charred-oak-leaf')
