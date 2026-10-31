@@ -730,26 +730,25 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'tavern-entry-oak-lintel', [0, 3.25, facadeZ + 0.32], !coarse);
     root.add(entrance);
   }
-  // A pointed stone portal gives the guild a recognisable ceremonial
-  // entrance rather than the shared merchant doorway. The paired archivolts
-  // sit proud of the existing door, with a restrained brass keystone.
-  // Every piece remains inside the authored solid building footprint.
+  // The guild's original pointed stone portal stays untouched. Two dark
+  // violet oak leaves with restrained brass fittings distinguish its door
+  // from the shared merchant entrance without changing any interaction.
   if (isMagic) {
-    const entry = new THREE.Group();
-    entry.name = 'magic-guild-pointed-entry';
-    entry.userData.chroniclesDecorativeOnly = true;
+    const doors = new THREE.Group();
+    doors.name = 'magic-guild-brass-inlaid-door';
+    doors.userData.chroniclesDecorativeOnly = true;
+    const darkOak = material(0x34283e, { roughness: 0.91 });
     for (const side of [-1, 1]) {
-      mesh(entry, new THREE.BoxGeometry(0.34, 2.93, 0.48), mats.stone,
-        'magic-entry-ashlar-jamb', [side * 1.11, 1.55, facadeZ + 0.39], !coarse);
-      mesh(entry, new THREE.BoxGeometry(0.48, 0.25, 0.56), guildStone,
-        'magic-entry-violet-plinth', [side * 1.11, 0.16, facadeZ + 0.39], !coarse);
-      const arch = mesh(entry, new THREE.BoxGeometry(0.28, 1.36, 0.48), mats.stone,
-        'magic-entry-pointed-arch', [side * 0.56, 3.37, facadeZ + 0.39], !coarse);
-      arch.rotation.z = side * 0.91;
+      mesh(doors, new THREE.BoxGeometry(0.74, 2.79, 0.085), darkOak,
+        'magic-door-violet-oak-leaf', [side * 0.42, 1.57, facadeZ + 0.30], !coarse);
+      mesh(doors, new THREE.BoxGeometry(0.045, 2.35, 0.045), mats.gold,
+        'magic-door-brass-stile', [side * 0.72, 1.57, facadeZ + 0.365]);
+      mesh(doors, new THREE.SphereGeometry(0.075, 8, 6), mats.gold,
+        'magic-door-brass-pull', [side * 0.19, 1.48, facadeZ + 0.39]);
     }
-    mesh(entry, new THREE.OctahedronGeometry(0.22, 0), mats.gold,
-      'magic-entry-brass-keystone', [0, 3.85, facadeZ + 0.44], !coarse);
-    root.add(entry);
+    mesh(doors, new THREE.OctahedronGeometry(0.22, 0), mats.arcane,
+      'magic-door-arcane-sigil', [0, 2.04, facadeZ + 0.39], !coarse);
+    root.add(doors);
   }
   // The watchhouse is dressed military ashlar, not a half-timbered
   // merchant shop. Its shallow stone portal frames the unchanged oak door;
