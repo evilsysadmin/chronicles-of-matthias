@@ -1475,6 +1475,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     finials.instanceMatrix.needsUpdate = true;
     gallery.add(finials);
+    // mesh() is shared by interactive houses, so mark this whole subtree
+    // explicitly as presentation-only rather than modifying that helper.
+    gallery.traverse((part) => {
+      part.userData.chroniclesDecorativeOnly = true;
+    });
     oriel.add(gallery);
     root.add(oriel);
   }
