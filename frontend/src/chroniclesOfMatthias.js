@@ -880,6 +880,13 @@ function resolveCast(state, memberId, spellId, targetId = null) {
   const caster = partyMember(state, memberId);
   const spell = CHRONICLES_SPELLS[spellId];
   if (!caster || !spell) return state;
+  // A spell is one hero's initiative action. Direct reducer dispatches must
+  // not heal, paralyze or spend PH during an enemy's or ally's turn.
+  // Exploration casts and legacy Tactics combat retain their own semantics.
+  if (chroniclesUsesMM3Combat(state) && state.initiative) {
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    if (actor?.kind !== 'party' || actor.id !== caster.id) return state;
+  }
   if (caster.hp <= 0) return refuse(`${caster.name} está fuera de combate y no puede conjurar.`);
   if (!chroniclesMemberKnowsSpell(state, caster, spellId)) return refuse(`${caster.name} no conoce ${spell.name}.`);
   if (chroniclesMemberSp(state, caster) < spell.cost) {
