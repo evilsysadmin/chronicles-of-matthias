@@ -23,6 +23,7 @@ import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import { buildChroniclesWitchCauldron3D } from './chronicles/chroniclesWitchCauldron3D.js';
+import { buildChroniclesRestorativeFountain3D } from './chronicles/chroniclesRestorativeFountain3D.js';
 import {
   chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements,
   chroniclesStableTorchLightAssignments, chroniclesTorchLightGain,
@@ -406,6 +407,13 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
       glow.position.y = 0.58;
       root.add(cradle, core, glow);
       contentProps.push({ id: entry.id, kind: entry.kind, root, core, glow, phase: index * 1.17 });
+    } else if (entry.kind === 'lore' && entry.visualType === 'restorative-fountain') {
+      const fountain = buildChroniclesRestorativeFountain3D({ coarsePointer });
+      root.add(fountain.group);
+      contentProps.push({
+        id: entry.id, kind: entry.kind, root, waterRoot: fountain.water,
+        phase: index * 1.17,
+      });
     } else if (entry.kind === 'lore' && chroniclesHasSpriteBillboard(entry.visualType)) {
       // A character in the dungeon (a ghost, a king of stone) is a painted
       // billboard, like the creatures; a plain lore entry stays a plaque.
@@ -941,6 +949,8 @@ export function createChroniclesOfMatthiasGame(host, {
       if (prop.activatedRoot) prop.activatedRoot.visible = Boolean(visual?.activated);
       // A used cauldron remains in the forest; only its brew disappears.
       if (prop.contentsRoot) prop.contentsRoot.visible = Boolean(visual?.available);
+      // A depleted spring remains an actual stone fountain in the landscape.
+      if (prop.waterRoot) prop.waterRoot.visible = Boolean(visual?.available);
       if (prop.kind === 'lever' && prop.pivot) {
         prop.pivot.rotation.z = visual?.activated ? -0.86 : 0.48;
       }
