@@ -99,6 +99,8 @@ try {
   const dormerGlass = town?.getObjectByName('chronicles-town-residential-dormer-glass');
   const dormerCheeks = town?.getObjectByName('chronicles-town-residential-dormer-cheeks');
   const dormerRoofs = town?.getObjectByName('chronicles-town-residential-dormer-pitched-roofs');
+  const dormerWindows = town?.getObjectByName('chronicles-town-residential-dormer-glass');
+  const dormerCasements = town?.getObjectByName('chronicles-town-residential-dormer-window-casements');
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
@@ -210,6 +212,15 @@ try {
         part.userData.chroniclesDecorativeOnly
         && part.castShadow === false
         && part.frustumCulled === false))),
+    readableDormerWindows: String(Boolean(dormerWindows?.count === 6
+      && dormerCasements?.count === dormerWindows.count
+      && dormerWindows.geometry.parameters.width >= 0.8
+      && dormerWindows.geometry.parameters.height >= 0.5
+      && dormerCasements.geometry.index.count === 108
+      && dormerCasements.userData.chroniclesDecorativeOnly
+      && dormerCasements.material === dormerCheeks.material
+      && dormerCasements.castShadow === false
+      && dormerCasements.frustumCulled === false)),
     roofRelief: String(roofs.material.normalMap?.name === 'chronicles-town-normal-roof'
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
