@@ -35,6 +35,8 @@ const VIEWS = Object.freeze({
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
+  // Real walkable southern lane: one Juliet guard framed at street level.
+  juliet: { x: 3, y: 21, heading: 'north', target: { x: 4, y: 20 }, cameraHeight: 2.4, lookUp: 2.0 },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
   // eye-level view hides the shingles behind 6.4m facades.
   roofline: { x: 9, y: 14, heading: 'south', cameraHeight: 10, lookUp: -1.5 },
