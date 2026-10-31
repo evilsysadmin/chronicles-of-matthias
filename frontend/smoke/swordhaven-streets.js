@@ -7,6 +7,8 @@ import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCam
 
 const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
+  // Golden shot: the mayor's real door from a walkable plaza cell.
+  'mayor-square': { x: 11, y: 8, heading: 'south', target: { x: 11, y: 10 }, cameraHeight: 1.85, lookUp: 1.8 },
   // Both facades from matching walkable oblique positions, far enough away
   // to show the roof silhouette instead of only the door at eye level.
   apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
@@ -107,6 +109,10 @@ try {
     child.name.startsWith('swordhaven-building-first-book-tavern-'));
   const watch = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-watch-'));
+  const hall = town?.children.find(child =>
+    child.name.startsWith('swordhaven-building-first-book-hall-'));
+  const homes = town?.children.filter(child =>
+    child.name.startsWith('swordhaven-building-first-book-home-')) || [];
   if (!wall || !perimeter || !battlements || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
     throw new Error('Real Swordhaven architecture batches are missing');
   }
@@ -127,6 +133,17 @@ try {
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
     mapId: swordhaven.id,
+    premiumCivic: String(Boolean(
+      hall?.getObjectByName('swordhaven-civic-premium-frontage')
+      && hall.getObjectByName('civic-portal-carved-lintel')
+      && hall.getObjectByName('premium-oak-window-shutters')?.count === 4
+      && hall.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel === 'AYUNTAMIENTO'
+    )),
+    premiumHomes: String(homes.length > 0 && homes.every(home =>
+      home.getObjectByName('swordhaven-home-premium-frontage')
+      && home.getObjectByName('premium-oak-window-shutters')?.count === 4
+      && !home.getObjectByName('swordhaven-shop-nameplate')
+    )),
     streetView: name,
     cameraCell: chosen.x + ',' + chosen.y,
     wallHeight: String(wall.geometry.parameters.height),
