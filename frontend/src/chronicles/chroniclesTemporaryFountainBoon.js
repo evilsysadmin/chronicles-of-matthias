@@ -78,6 +78,12 @@ const TEMPORARY_FOUNTAINS = Object.freeze([
   LAVA_FOUNTAIN_BOON, MILL_FOUNTAIN_BOON, BISHOP_FONT_BOON,
 ]);
 
+// Names are resolved from the same validated source catalog as the awards.
+// Do not trust a saved/foreign source ID as UI text.
+export function chroniclesTemporaryFountainName(sourceId) {
+  return TEMPORARY_FOUNTAINS.find((source) => source.sourceId === sourceId)?.name || null;
+}
+
 // Reconcile only while a prior blessing was active, or when it expires.
 // That way walking/turning/combat doesn't need an extra engine or timer.
 export function chroniclesResolveTemporaryFountainBoon(previous, next, progression) {
