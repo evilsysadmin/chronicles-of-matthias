@@ -2101,6 +2101,19 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     bands.instanceMatrix.needsUpdate = true;
     awning.add(bands);
+    // The street camera looks up at the canopy: mirror the woven stripes
+    // onto its underside, otherwise the cloth reads as a blank beige shelf.
+    // Both faces share the same draped geometry and stripe material.
+    const underside = new THREE.InstancedMesh(bands.geometry, stripe, 6);
+    underside.name = 'store-awning-underside-stripe';
+    underside.userData.chroniclesDecorativeOnly = true;
+    for (const [index, x] of [-2.45, -1.47, -0.49, 0.49, 1.47, 2.45].entries()) {
+      band.position.set(x, -0.065, 0.025);
+      band.updateMatrix();
+      underside.setMatrixAt(index, band.matrix);
+    }
+    underside.instanceMatrix.needsUpdate = true;
+    awning.add(underside);
     mesh(awning, new THREE.BoxGeometry(6.42, 0.14, 0.16), mats.timber,
       'store-awning-front-rail', [0, -0.14, 0.77]);
     for (const x of [-2.85, 2.85]) {
