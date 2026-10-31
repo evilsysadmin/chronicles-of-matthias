@@ -245,6 +245,16 @@ try {
         && oakBounds.max.z + 1.983 < 2
         && brassBounds.max.z + 1.998 < 2;
     })()),
+    domesticPediments: String((() => {
+      const frame = town.getObjectByName('chronicles-town-residential-door-frames');
+      if (frame?.count < 5 || frame.geometry.index.count !== 7 * 36
+        || !frame.userData.chroniclesDecorativeOnly || frame.castShadow) return false;
+      const bounds = new THREE.Box3()
+        .setFromBufferAttribute(frame.geometry.getAttribute('position'));
+      return bounds.max.y + 1.46 > 3.08
+        && bounds.max.y + 1.46 < 3.175
+        && bounds.max.z + 1.988 < 2;
+    })()),
     domesticDoors: String((() => {
       const doors = town.getObjectByName('chronicles-town-residential-door-panels');
       const frames = town.getObjectByName('chronicles-town-residential-door-frames');
