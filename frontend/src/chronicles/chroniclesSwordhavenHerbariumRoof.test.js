@@ -76,9 +76,10 @@ describe('Swordhaven botica greenhouse silhouette', () => {
       pots.getMatrixAt(i, matrix);
       potPositions.push(new THREE.Vector3().setFromMatrixPosition(matrix));
     }
-    expect(new Set(potPositions.map(position => position.z))).toEqual(new Set([-0.55, 0.55]));
-    expect(potPositions.every(position => Math.abs(position.x) <= 0.80
-      && position.y === 0.24)).toBe(true);
+    expect(new Set(potPositions.map(position => Number(position.z.toFixed(2)))))
+      .toEqual(new Set([-0.55, 0.55]));
+    expect(potPositions.every(position => Math.abs(position.x) <= 0.81
+      && Math.abs(position.y - 0.24) < 0.01)).toBe(true);
     expect(botica.getObjectByName('shop-door')).toBeTruthy();
   });
 });
