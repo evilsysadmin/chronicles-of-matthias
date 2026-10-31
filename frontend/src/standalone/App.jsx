@@ -94,6 +94,12 @@ export default function App() {
 
   const exit = () => {
     void releaseChroniclesLandscape();
+    if (mode === 'chronicles-tactics') {
+      // Leaving the tactical game returns to the existing expedition book,
+      // not a second mount of the tactical character setup.
+      window.location.hash = '';
+      setMode('chronicles');
+    }
     setMountKey((k) => k + 1);
   };
   // The book's cog: tell the server this session is leaving, then forget it.

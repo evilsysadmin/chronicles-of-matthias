@@ -18,6 +18,27 @@ function menu(saves, props = {}) {
 }
 
 describe('Chronicles expedition entry', () => {
+
+  it('links to Tactics from the expedition home without changing MM3 save actions', () => {
+    const saved = [{ id: 'one', active: true, title: 'La torre' }];
+    const html = menu(saved);
+    expect(html).toContain('data-chronicles-tactics-entry="true"');
+    expect(html).toContain('href="#tactics"');
+    expect(html).toContain('Combate táctico por casillas');
+    expect(html.indexOf('Continuar expedición')).toBeLessThan(html.indexOf('data-chronicles-tactics-entry'));
+    expect(html).toContain('data-chronicles-primary-action="continue"');
+    expect(menu([], { initialScreen: 'load' })).not.toContain('data-chronicles-tactics-entry');
+  });
+
+  it('keeps Tactics reachable while the MM3 save catalog is unavailable', () => {
+    for (const props of [{ loading: true }, { error: 'Error de sincronización' }, { busyRunId: 'one' }]) {
+      const html = menu([], props);
+      expect(html).toContain('data-chronicles-tactics-entry="true"');
+      const entry = html.match(/<a class="chronicles-save-menu__tactics-link"[^>]*>/)?.[0];
+      expect(entry).toContain('href="#tactics"');
+      expect(entry).not.toContain('disabled');
+    }
+  });
   it('prioritizes a first expedition without creating a run on mount', () => {
     const onNew = vi.fn();
     const html = menu([], { onNew });
