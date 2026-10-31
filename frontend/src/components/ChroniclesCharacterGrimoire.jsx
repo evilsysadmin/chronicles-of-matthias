@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './ChroniclesCharacterGrimoire.css';
 import './ChroniclesCharacterGrimoireRetro.css';
 
@@ -42,9 +42,40 @@ export function chroniclesGrimoireNextSelection(shown, selectedId, key) {
 export default function ChroniclesCharacterGrimoire({ spells = [], availableSp = 0, maxSp = 0, schoolLabel = '' }) {
   const [filter, setFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
+  const [inspecting, setInspecting] = useState(false);
   const listRef = useRef(null);
+  const inspectTriggerRef = useRef(null);
+  const closeRef = useRef(null);
   const shown = spells.filter((spell) => filter === 'all' || spellType(spell) === filter);
   const selected = shown.find((spell) => spell.id === selectedId) || shown[0] || null;
+  useEffect(() => {
+    if (inspecting) closeRef.current?.focus();
+  }, [inspecting]);
+  const closeInspection = () => {
+    setInspecting(false);
+    inspectTriggerRef.current?.focus();
+  };
+  const handleInspectionKeys = (event) => {
+    // Never leak modal keyboard actions to the parent character sheet or game.
+    event.stopPropagation();
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeInspection();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const available = [...event.currentTarget.querySelectorAll(
+      'button:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+    )].filter((node) => node.getClientRects().length > 0);
+    if (!available.length) { event.preventDefault(); return; }
+    if (event.shiftKey && document.activeElement === available[0]) {
+      event.preventDefault();
+      available.at(-1).focus();
+    } else if (!event.shiftKey && document.activeElement === available.at(-1)) {
+      event.preventDefault();
+      available[0].focus();
+    }
+  };
 
   const chooseByKeyboard = (event, id) => {
     const nextId = chroniclesGrimoireNextSelection(shown, id, event.key);
@@ -66,9 +97,15 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
         <div className="chronicles-sheet-grimoire__filter" role="group" aria-label="Filtrar hechizos">
           {FILTERS.map((item) => (
             <button type="button" key={item.id} aria-pressed={filter === item.id}
-              onClick={() => setFilter(item.id)}>{item.label}</button>
+              onClick={() => { setInspecting(false); setFilter(item.id); }}>{item.label}</button>
           ))}
         </div>
+        <button ref={inspectTriggerRef} type="button"
+          className="chronicles-sheet-grimoire__inspect-trigger"
+          aria-haspopup="dialog" aria-expanded={inspecting}
+          disabled={!selected} onClick={() => setInspecting(true)}>
+          ⌕ Examinar
+        </button>
       </div>
       <div className="chronicles-sheet-grimoire__body">
         <section className="chronicles-sheet-grimoire__catalog" aria-label="Lista de hechizos conocidos">
@@ -92,7 +129,16 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
             </div>
           ) : <p className="chronicles-sheet-grimoire__empty">No hay hechizos de este tipo en el libro.</p>}
         </section>
-        <section className="chronicles-sheet-grimoire__detail" aria-label="Detalle del hechizo seleccionado">
+        <div className="chronicles-sheet-grimoire__inspection-scrim" hidden={!inspecting}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeInspection();
+          }}>
+        <section className="chronicles-sheet-grimoire__detail" hidden={!inspecting}
+          role="dialog" aria-modal="true"
+          aria-label={selected ? `Examinar ${selected.name}` : 'Examinar hechizo'}
+          onKeyDown={handleInspectionKeys}>
+          <button ref={closeRef} type="button" className="chronicles-sheet-grimoire__inspection-close"
+            aria-label="Cerrar inspección de hechizo" onClick={closeInspection}>×</button>
           {selected ? (
             <>
               <div className="chronicles-sheet-grimoire__detail-head">
@@ -121,8 +167,9 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
             </>
           ) : <p>Elige un tipo de hechizo para consultar sus detalles.</p>}
         </section>
+        </div>
       </div>
-      <p className="chronicles-sheet-grimoire__hint">Tab · entrar/salir de la lista · ↑ ↓ / Inicio / Fin · seleccionar · Para lanzar hechizos, vuelve a la aventura y abre Magia (C).</p>
+      <p className="chronicles-sheet-grimoire__hint">↑ ↓ / Inicio / Fin · seleccionar · Examinar abre la ficha · Para lanzar, vuelve a la aventura y abre Magia (C).</p>
     </div>
   );
 }
