@@ -1180,6 +1180,25 @@ try {
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
         >= (height <= 480 ? 34 : 44), 'Touch equipment tab must remain usable');
       await nav.getByRole('button', { name: /Hechizos/ }).click();
+      if (width === 390) {
+        // Capture the actual populated mobile spell catalogue and its floating
+        // inspection, not an empty spellbook from a non-caster.
+        await sheet.getByRole('button', { name: 'Ver ficha de Aziz' }).click();
+        const mobileGrimoire = sheet.locator('[data-chronicles-grimoire]');
+        await mobileGrimoire.waitFor({ state: 'visible' });
+        assert.ok(await mobileGrimoire.locator('[data-grimoire-spell]').count() >= 1,
+          'Mobile spellbook evidence must show a caster with learned spells');
+        await page.screenshot({ path: 'smoke-character-sheet-spells-390.png' });
+        await mobileGrimoire.getByRole('button', { name: /Examinar/ }).click();
+        const mobileInspector = mobileGrimoire.getByRole('dialog');
+        assert.equal(await mobileInspector.isVisible(), true);
+        const mobilePopup = await mobileInspector.boundingBox();
+        assert.ok(mobilePopup && mobilePopup.left >= 0
+          && mobilePopup.right <= width + 1,
+          'Mobile spell inspector must remain inside the viewport');
+        await page.screenshot({ path: 'smoke-character-sheet-spell-inspect-390.png' });
+        await mobileInspector.getByRole('button', { name: 'Cerrar inspección de hechizo' }).click();
+      }
       await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true',
         'Changing party member must retain chosen folio on touch devices');
