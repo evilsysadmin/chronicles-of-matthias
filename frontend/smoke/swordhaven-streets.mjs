@@ -56,7 +56,9 @@ try {
         assert.equal(result.perimeterUnculled, 'true',
           'The town enclosure must not vanish under camera frustum culling');
         assert.ok(Number(result.roadCount) > 100);
-        assert.equal(Number(result.plasterCount), 94);
+        assert.equal(Number(result.plasterCount), 188);
+        assert.equal(result.twoStoreyLimewash, 'true',
+          'Upper-floor limewash must be paler than the weathered ground floor, with no extra meshes');
         assert.equal(result.windowDetail, 'true',
           'Rendered street windows must have merged mullions and sills inside solid cells');
         assert.equal(result.plasterRelief, 'true',

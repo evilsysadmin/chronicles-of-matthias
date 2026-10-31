@@ -91,6 +91,31 @@ try {
   const road = scene.getObjectByName('chronicles-campaign-road');
   const town = scene.getObjectByName('chronicles-campaign-town');
   const plaster = town?.getObjectByName('chronicles-town-street-limewash-fronts');
+  const twoStoreyLimewash = (() => {
+    if (!plaster || plaster.count !== 188 || !plaster.userData.chroniclesDecorativeOnly) return false;
+    const lower = new THREE.Matrix4();
+    const upper = new THREE.Matrix4();
+    plaster.getMatrixAt(0, lower);
+    plaster.getMatrixAt(1, upper);
+    const groundPos = new THREE.Vector3().setFromMatrixPosition(lower);
+    const upperPos = new THREE.Vector3().setFromMatrixPosition(upper);
+    const lowerScale = new THREE.Vector3();
+    const upperScale = new THREE.Vector3();
+    lower.decompose(new THREE.Vector3(), new THREE.Quaternion(), lowerScale);
+    upper.decompose(new THREE.Vector3(), new THREE.Quaternion(), upperScale);
+    const groundColor = new THREE.Color();
+    const upperColor = new THREE.Color();
+    plaster.getColorAt(0, groundColor);
+    plaster.getColorAt(1, upperColor);
+    return Math.abs(groundPos.y - 1.735) < 0.01
+      && Math.abs(upperPos.y - 4.74) < 0.01
+      && Math.abs(lowerScale.y - 2.89) < 0.01
+      && Math.abs(upperScale.y - 2.82) < 0.01
+      && upperColor.getHSL({ h: 0, s: 0, l: 0 }).l
+        > groundColor.getHSL({ h: 0, s: 0, l: 0 }).l
+      && Math.abs(groundPos.z - upperPos.z) < 0.001
+      && Math.abs(groundPos.x - upperPos.x) < 0.001;
+  })();
   const roofs = town?.getObjectByName('chronicles-town-south-pitched-roofs');
   const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
   const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
@@ -187,6 +212,7 @@ try {
     perimeterUnculled: String(!perimeter.frustumCulled && !battlements.frustumCulled),
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
+    twoStoreyLimewash: String(twoStoreyLimewash),
     windowDetail: String(windowFrames.count === windowPanes.count
       && windowFrames.geometry.index.count === 36 * 12
       && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.x >= 0.99

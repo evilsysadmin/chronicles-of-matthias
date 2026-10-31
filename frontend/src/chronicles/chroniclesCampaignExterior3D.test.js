@@ -516,11 +516,11 @@ describe('Chronicles file-authored exterior renderer', () => {
     // 4cm depth plus its inset is strictly within the blocked 4m cell.
     expect(1.973 + 0.04 / 2).toBeLessThan(2);
     expect(beams.count).toBe(188);
-    // Warm plaster between the timbers makes the blocked cells read as
-    // actual houses. Every open street-facing side shares ONE extra batch.
+    // Ground and first-floor plaster tones separate the long facades into
+    // actual houses, still within ONE shared stucco draw call.
     const plaster = town.getObjectByName('chronicles-town-street-limewash-fronts');
     expect(plaster).toBeInstanceOf(THREE.InstancedMesh);
-    expect(plaster.count).toBe(94);
+    expect(plaster.count).toBe(188); // 94 real facades × 2 floors, same draw call.
     expect(plaster.instanceColor).toBeTruthy();
     expect(plaster.material.map).toBe(swordhavenSurfaceTexture('stucco'));
     expect(plaster.material.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
@@ -529,14 +529,29 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(plaster.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(plaster.material.map.wrapS).toBe(THREE.RepeatWrapping);
     expect(plaster.castShadow).toBe(false);
-    expect(plaster.geometry.parameters.height).toBeCloseTo(6.4 - 0.52);
+    expect(plaster.geometry.parameters.height).toBeCloseTo(1); // Instanced y-scale per storey.
+    expect(plaster.userData.chroniclesDecorativeOnly).toBe(true);
     expect(plaster.geometry.parameters.width).toBeCloseTo(4 * 0.935);
     const plasterMatrix = new THREE.Matrix4();
     plaster.getMatrixAt(0, plasterMatrix);
     const firstPlaster = new THREE.Vector3().setFromMatrixPosition(plasterMatrix);
     expect(firstPlaster.x).toBeCloseTo((2 - center.x) * 4);
     expect(firstPlaster.z).toBeCloseTo((16 - center.y) * 4 + 1.974);
-    expect(firstPlaster.y).toBeCloseTo(6.4 / 2 + 0.03);
+    expect(firstPlaster.y).toBeCloseTo((0.29 + 3.18) / 2);
+    const lowerScale = new THREE.Vector3();
+    plasterMatrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), lowerScale);
+    expect(lowerScale.y).toBeCloseTo(3.18 - 0.29);
+    plaster.getMatrixAt(1, plasterMatrix);
+    const upperPlaster = new THREE.Vector3().setFromMatrixPosition(plasterMatrix);
+    expect(upperPlaster.x).toBeCloseTo(firstPlaster.x);
+    expect(upperPlaster.z).toBeCloseTo(firstPlaster.z);
+    expect(upperPlaster.y).toBeCloseTo((3.33 + 6.15) / 2);
+    const upperScale = new THREE.Vector3();
+    plasterMatrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), upperScale);
+    expect(upperScale.y).toBeCloseTo(6.15 - 3.33);
+    // The physical gap is behind the preexisting 3.25m storey beam.
+    expect(firstPlaster.y + lowerScale.y / 2).toBeCloseTo(3.18);
+    expect(upperPlaster.y - upperScale.y / 2).toBeCloseTo(3.33);
     // Keep the limewash in front of the masonry, behind the dark window
     // frames and timber beams, but never over the neighbouring road tile.
     const wallSurface = 4 * 0.98 / 2;
@@ -547,9 +562,11 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(windowSurface).toBeGreaterThan(plasterSurface);
     expect(timberSurface).toBeGreaterThan(plasterSurface);
     expect(plasterSurface).toBeLessThan(2);
-    // Three gentle limewash variants group a few walls per house; no
-    // additional materials/draw calls for each colour.
-    const shades = new Set();
+    // Three deterministic house palettes × two consistent floor treatments.
+    // A darker ground floor and lighter upper floor give depth without a
+    // patchwork of materials, new meshes or random values on reload.
+    const groundShades = new Set();
+    const upperShades = new Set();
     for (let i = 0; i < plaster.count; i += 1) {
       plaster.getMatrixAt(i, plasterMatrix);
       const panel = new THREE.Vector3().setFromMatrixPosition(plasterMatrix);
@@ -558,9 +575,17 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(grid[gy]?.[gx]).toBe('#');
       const shade = new THREE.Color();
       plaster.getColorAt(i, shade);
-      shades.add(shade.getHexString());
+      (i % 2 === 0 ? groundShades : upperShades).add(shade.getHexString());
+      if (i % 2 === 1) {
+        const lowerTint = new THREE.Color();
+        plaster.getColorAt(i - 1, lowerTint);
+        expect(shade.getHSL({ h: 0, s: 0, l: 0 }).l)
+          .toBeGreaterThan(lowerTint.getHSL({ h: 0, s: 0, l: 0 }).l);
+      }
     }
-    expect(shades.size).toBe(3);
+    expect(groundShades.size).toBe(3);
+    expect(upperShades.size).toBe(3);
+    expect([...groundShades].some(color => upperShades.has(color))).toBe(false);
     expect(beams.castShadow).toBe(false);
     expect(uprights.castShadow).toBe(false);
     expect(beams.geometry.parameters.depth).toBe(0.04);
