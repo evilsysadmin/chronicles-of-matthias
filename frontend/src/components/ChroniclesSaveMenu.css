@@ -448,3 +448,31 @@
   gap: 8px;
   padding-top: 7px;
 }
+
+/* The tactical mode shares the expedition book as its discoverable entry.
+   It is navigation, not a save action: it remains usable during MM3 sync. */
+.chronicles-save-menu__actions > .chronicles-save-menu__tactics-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 15px;
+  border: 1px solid rgba(218, 168, 100, .38);
+  border-radius: 7px;
+  color: #f0daba;
+  font: inherit;
+  font-size: .88rem;
+  text-align: left;
+  text-decoration: none;
+  background: rgba(30, 33, 33, .8);
+  transition: border-color .16s ease, background .16s ease;
+}
+.chronicles-save-menu__tactics-link:hover,
+.chronicles-save-menu__tactics-link:focus-visible {
+  border-color: #e6bb78;
+  background: rgba(86, 64, 37, .62);
+  outline: 2px solid rgba(230, 187, 120, .2);
+  outline-offset: 1px;
+}
+.chronicles-save-menu__tactics-link .chronicles-save-menu__action-copy { flex: 1; }
+.chronicles-save-menu__tactics-link small { display: block; font-size: .7rem; opacity: .78; margin-top: 3px; }
