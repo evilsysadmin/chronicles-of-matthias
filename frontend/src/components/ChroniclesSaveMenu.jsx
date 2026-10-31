@@ -142,7 +142,7 @@ export default function ChroniclesSaveMenu({
                 <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
               </button>
             )}
-            <a className="chronicles-save-menu__tactics-link" data-chronicles-tactics-entry href="#tactics">
+            <a className="chronicles-save-menu__tactics-link" data-chronicles-tactics-entry="true" href="#tactics">
               <ExpeditionMenuIcon kind="swords" />
               <span className="chronicles-save-menu__action-copy">
                 Tactics <small>Combate táctico por casillas · Vista isométrica</small>
