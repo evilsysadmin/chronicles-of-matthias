@@ -912,7 +912,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const bays = new THREE.Group();
     bays.name = 'apothecary-botanical-window-bays';
     bays.userData.chroniclesDecorativeOnly = true;
-    bays.position.z = facadeZ + 0.43;
+    bays.position.z = facadeZ + 0.72;
     const sageGlass = material(0x79aa8e, {
       emissive: 0x183728, emissiveIntensity: 0.20,
       roughness: 0.40, metalness: 0.02, side: THREE.DoubleSide,
@@ -931,10 +931,35 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     pane.quadraticCurveTo(0.67, 0.78, 0, 0.83);
     pane.quadraticCurveTo(-0.67, 0.78, -0.67, 0.29);
     pane.closePath();
+    // The botica's two glazed bays project from the stone frontage. Their
+    // deep side returns and verdigris hoods create a genuine window volume
+    // rather than another pair of flat panes painted on the wall. Both bays
+    // remain decorative, above the original solid house footprint.
+    const patinatedCopper = material(0x2c5c4c, { roughness: 0.88, metalness: 0.12 });
     for (const x of [-width * 0.33, width * 0.33]) {
       const bay = new THREE.Group();
       bay.name = 'apothecary-botanical-window-bay';
       bay.position.set(x, 2.75, 0);
+      bay.userData.chroniclesDecorativeOnly = true;
+      for (const side of [-1, 1]) {
+        mesh(bay, new THREE.BoxGeometry(0.12, 1.57, 0.60), mats.stone,
+          'apothecary-bay-stone-return', [side * 0.86, -0.04, -0.23], !coarse);
+        mesh(bay, new THREE.BoxGeometry(0.055, 1.24, 0.45), sageGlass,
+          'apothecary-bay-side-glass', [side * 0.77, -0.06, -0.25], !coarse);
+      }
+      // A full pitched copper canopy projects above each glazed bay. The
+      // green eave is legible from street level without hiding the arch or sign.
+      const hood = mesh(bay, new THREE.BoxGeometry(2.20, 0.12, 1.15), patinatedCopper,
+        'apothecary-bay-verdigris-hood', [0, 1.35, 0.02], !coarse);
+      hood.rotation.x = 0.40;
+      // Oak knee braces physically tie each canopy back into the stone
+      // reveals; without these, the shallow copper eave reads as a floating shelf.
+      for (const side of [-1, 1]) {
+        const brace = mesh(bay, new THREE.BoxGeometry(0.13, 0.13, 1.10),
+          mats.timber, 'apothecary-bay-oak-knee-brace',
+          [side * 0.96, 0.77, -0.20], !coarse);
+        brace.rotation.x = -0.58;
+      }
       mesh(bay, new THREE.ShapeGeometry(arch), mats.stone,
         'apothecary-window-rounded-stone-arch', [0, 0, 0], !coarse);
       mesh(bay, new THREE.ShapeGeometry(pane), sageGlass,
@@ -943,11 +968,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'apothecary-window-oak-mullion', [0, -0.08, 0.14]);
       mesh(bay, new THREE.BoxGeometry(1.36, 0.07, 0.09), mats.timber,
         'apothecary-window-oak-transom', [0, -0.18, 0.14]);
-      mesh(bay, new THREE.BoxGeometry(1.84, 0.16, 0.40), mats.stone,
-        'apothecary-window-stone-sill', [0, -0.88, 0.05]);
+      mesh(bay, new THREE.BoxGeometry(1.90, 0.16, 0.78), mats.stone,
+        'apothecary-window-stone-sill', [0, -0.88, -0.18]);
       bays.add(bay);
       mesh(root, new THREE.BoxGeometry(1.70, 0.36, 0.65), mats.stone,
-        'apothecary-herb-window-box', [x, 1.83, facadeZ + 0.50]);
+        'apothecary-herb-window-box', [x, 1.83, facadeZ + 0.79]);
     }
     root.add(bays);
     dressSwordhavenWindowBoxes(root, {
