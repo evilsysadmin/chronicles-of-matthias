@@ -750,6 +750,62 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'magic-door-arcane-sigil', [0, 2.04, facadeZ + 0.39], !coarse);
     root.add(doors);
   }
+  // The smith's blackened single oak leaf is bound by broad forged-iron
+  // straps. Unlike the warehouse's cedar double doors or the guild's brass
+  // portal, this reads as a working forge entrance at street distance.
+  // Overlay only: the original shop door, interaction and map grid remain.
+  if (isForge) {
+    const entrance = new THREE.Group();
+    entrance.name = 'forge-ironbound-oak-entry';
+    entrance.userData.chroniclesDecorativeOnly = true;
+    const charredOak = material(0x594437, {
+      map: swordhavenSurfaceTexture('timber'), roughness: 0.97,
+    });
+    mesh(entrance, new THREE.BoxGeometry(1.68, 2.94, 0.12), charredOak,
+      'forge-door-charred-oak-leaf', [0, 1.56, facadeZ + 0.35], !coarse);
+    const seams = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.035, 2.72, 0.045), mats.timber, 5);
+    seams.name = 'forge-door-oak-board-seams';
+    seams.castShadow = !coarse;
+    const seam = new THREE.Object3D();
+    for (const [i, x] of [-0.55, -0.28, 0, 0.28, 0.55].entries()) {
+      seam.position.set(x, 1.56, facadeZ + 0.43);
+      seam.updateMatrix();
+      seams.setMatrixAt(i, seam.matrix);
+    }
+    seams.instanceMatrix.needsUpdate = true;
+    entrance.add(seams);
+    const straps = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1.76, 0.16, 0.075), mats.steel, 3);
+    straps.name = 'forge-door-iron-straps';
+    straps.castShadow = !coarse;
+    const strap = new THREE.Object3D();
+    for (const [i, y] of [0.72, 1.56, 2.48].entries()) {
+      strap.position.set(0, y, facadeZ + 0.465);
+      strap.updateMatrix();
+      straps.setMatrixAt(i, strap.matrix);
+    }
+    straps.instanceMatrix.needsUpdate = true;
+    entrance.add(straps);
+    const studs = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(0.055, 7, 5), mats.steel, 12);
+    studs.name = 'forge-door-iron-rivets';
+    const stud = new THREE.Object3D();
+    let studIndex = 0;
+    for (const y of [0.72, 1.56, 2.48]) {
+      for (const x of [-0.68, -0.34, 0.34, 0.68]) {
+        stud.position.set(x, y, facadeZ + 0.52);
+        stud.updateMatrix();
+        studs.setMatrixAt(studIndex++, stud.matrix);
+      }
+    }
+    studs.instanceMatrix.needsUpdate = true;
+    entrance.add(studs);
+    mesh(entrance, new THREE.TorusGeometry(0.12, 0.035, 6, 12), mats.steel,
+      'forge-door-iron-ring', [0.42, 1.33, facadeZ + 0.54]);
+    entrance.traverse(part => { part.userData.chroniclesDecorativeOnly = true; });
+    root.add(entrance);
+  }
   // The watchhouse is dressed military ashlar, not a half-timbered
   // merchant shop. Its shallow stone portal frames the unchanged oak door;
   // all relief is decorative and never enters the authored collision grid.

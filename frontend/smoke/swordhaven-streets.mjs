@@ -92,6 +92,8 @@ try {
           'Temple must have its own rose gable without domestic dormers or chimney');
         assert.equal(result.distinctTemplePortico, 'true',
           'Temple must have its own colonnaded stone entrance');
+        assert.equal(result.distinctForgeDoor, 'true',
+          'Forge needs its own ironbound oak door, not another generic merchant entrance');
         assert.equal(result.distinctMetalworkFacades, 'true',
           'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
         assert.equal(result.deepForgeWorkshop, 'true',

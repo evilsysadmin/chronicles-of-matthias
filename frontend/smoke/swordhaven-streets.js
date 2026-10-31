@@ -307,6 +307,17 @@ try {
       && !armorer?.getObjectByName('temple-limestone-portico')
       && !guild?.getObjectByName('temple-limestone-portico')
     )),
+    distinctForgeDoor: String(Boolean(
+      forge?.getObjectByName('forge-ironbound-oak-entry')?.userData.chroniclesDecorativeOnly
+      && forge?.getObjectByName('forge-door-charred-oak-leaf')
+      && forge?.getObjectByName('forge-door-oak-board-seams')?.count === 5
+      && forge?.getObjectByName('forge-door-iron-straps')?.count === 3
+      && forge?.getObjectByName('forge-door-iron-rivets')?.count === 12
+      && forge?.getObjectByName('forge-door-iron-ring')
+      && forge?.getObjectByName('shop-door')
+      && !store?.getObjectByName('forge-ironbound-oak-entry')
+      && !guild?.getObjectByName('forge-ironbound-oak-entry')
+    )),
     distinctMetalworkFacades: String(Boolean(
       forge?.getObjectByName('forge-stone-workshop-bay')
       && forge?.getObjectByName('forge-workshop-stone-lintel')
