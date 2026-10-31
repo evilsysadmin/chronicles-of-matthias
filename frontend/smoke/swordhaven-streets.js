@@ -294,13 +294,32 @@ try {
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
+    inhabitedChimneyMasonry: String((() => {
+      const shafts = residentialChimneys;
+      const flues = chimneyFlues;
+      if (!shafts || !flues || shafts.count !== 4 || flues.count !== 4
+        || shafts.geometry.index.count !== 252
+        || flues.geometry.parameters.width !== 0.64) return false;
+      const map = shafts.material.map;
+      if (map?.name !== 'chronicles-town-residential-chimney-brick-bond'
+        || !(map instanceof THREE.DataTexture)
+        || map.image.width !== 64 || map.image.height !== 64
+        || map.colorSpace !== THREE.SRGBColorSpace) return false;
+      const color = (x, y) => map.image.data[(y * 64 + x) * 4];
+      const bounds = new THREE.Box3()
+        .setFromBufferAttribute(shafts.geometry.getAttribute('position'));
+      return color(0, 1) === 105 && color(0, 9) > 200
+        && color(10, 9) === 105 && color(5, 8) === 105
+        && Math.abs(bounds.max.y - 0.6525) < 0.001
+        && shafts.material.emissive.getHex() === 0;
+    })()),
     inhabitedChimneys: String((() => {
       if (residentialChimneys?.count !== 4 || chimneyFlues?.count !== 4
         || !residentialChimneys.userData.chroniclesDecorativeOnly
         || !chimneyFlues.userData.chroniclesDecorativeOnly
         || residentialChimneys.castShadow || chimneyFlues.castShadow
         || residentialChimneys.frustumCulled || chimneyFlues.frustumCulled
-        || residentialChimneys.geometry.index.count !== 108) return false;
+        || residentialChimneys.geometry.index.count !== 252) return false;
       const matrix = new THREE.Matrix4();
       const position = new THREE.Vector3();
       const scale = new THREE.Vector3();
