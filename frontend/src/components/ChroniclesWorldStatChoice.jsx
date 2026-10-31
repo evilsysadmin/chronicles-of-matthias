@@ -1,5 +1,24 @@
 import { useEffect } from 'react';
+import {
+  CHRONICLES_MM3_STATS,
+  chroniclesMM3StatBonus,
+} from '../chronicles/chroniclesMM3Rules.js';
 import './ChroniclesWorldStatChoice.css';
+
+// The preview uses the hero's current *effective* MM3 attribute and the same
+// modifier bands as combat and magic, never a speculative reward or stat roll.
+export function chroniclesWorldStatChoicePreview(offer, hero) {
+  const stat = offer?.stat;
+  const before = hero?.mm3?.stats?.[stat];
+  if (!CHRONICLES_MM3_STATS.includes(stat) || !Number.isSafeInteger(before)) return null;
+  const previousBonus = chroniclesMM3StatBonus(before);
+  const nextBonus = chroniclesMM3StatBonus(before + 1);
+  const formatBonus = (value) => value >= 0 ? `+${value}` : String(value);
+  const effect = nextBonus === previousBonus
+    ? 'bonificador igual'
+    : `bonif. ${formatBonus(previousBonus)} → ${formatBonus(nextBonus)}`;
+  return `${offer.statLabel || stat} ${before} → ${before + 1} · ${effect}`;
+}
 
 // Choice is explicit and cancelable. No stat is awarded by merely opening the
 // discovery, and the fallen cannot be selected as its beneficiary.
@@ -40,7 +59,7 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
             <button type="button" key={hero.id} disabled={hero.hp <= 0}
               onClick={() => onSelect(hero.id)}>
               <strong>{hero.name}</strong>
-              <span>{hero.hp > 0 ? `${hero.hp}/${hero.maxHp} PV · +1 ${statLabel}` : 'Fuera de combate'}</span>
+              <span>{hero.hp > 0 ? `${hero.hp}/${hero.maxHp} PV · ${chroniclesWorldStatChoicePreview(offer, hero) || `+1 ${statLabel}`}` : 'Fuera de combate'}</span>
             </button>
           ))}
         </div>
