@@ -32,6 +32,8 @@ const ATTRIBUTE_KEYS = Object.freeze(['vigor', 'power', 'precision', 'will', 'ag
 // Keep the non-evicting source ledger bounded: a full ledger refuses new awards.
 const MM3_WORLD_STAT_CAP = 12;
 const MM3_WORLD_SOURCE_LIMIT = 128;
+const MM3_TEMPORARY_BONUS_CAP = 4;
+const MM3_TEMPORARY_TURN_CAP = 1000000000;
 
 export const CHRONICLES_ATTRIBUTE_DEFINITIONS = Object.freeze({
   vigor: Object.freeze({ label: 'Vigor', shortLabel: 'VIG', effect: '+1 vida máxima por punto' }),
@@ -376,6 +378,21 @@ function normalizeWorldStatSources(raw) {
     && id.length <= 80).map((id) => id.trim()))].slice(0, MM3_WORLD_SOURCE_LIMIT);
 }
 
+// Temporary blessings are scoped to one expedition and expire by its durable
+// turn counter, not wall-clock time (offline saves can never reset the timer).
+function normalizeMm3TemporaryBoon(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const sourceId = typeof raw.sourceId === 'string' ? raw.sourceId.trim() : '';
+  const stat = CHRONICLES_MM3_STATS.includes(raw.stat) ? raw.stat : null;
+  const amount = Number(raw.amount);
+  const expiresAtTurn = Number(raw.expiresAtTurn);
+  if (!sourceId || sourceId.length > 80 || !stat
+    || !Number.isSafeInteger(amount) || amount < 1 || amount > MM3_TEMPORARY_BONUS_CAP
+    || !Number.isSafeInteger(expiresAtTurn) || expiresAtTurn < 1
+    || expiresAtTurn > MM3_TEMPORARY_TURN_CAP) return null;
+  return { sourceId, stat, amount, expiresAtTurn };
+}
+
 function normalizeHero(raw) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const maxXp = chroniclesXpThresholdForLevel(CHRONICLES_MAX_LEVEL);
@@ -400,6 +417,8 @@ export function createChroniclesProgression() {
     heroes: Object.fromEntries(HERO_IDS.map((id) => [id, defaultHero()])),
     claimedAwards: [],
     claimedWorldStatSources: [],
+    claimedTemporaryWorldSources: [],
+    mm3TemporaryBoon: null,
   };
 }
 
@@ -423,6 +442,8 @@ export function normalizeChroniclesProgression(raw) {
     heroes,
     claimedAwards,
     claimedWorldStatSources: normalizeWorldStatSources(source.claimedWorldStatSources),
+    claimedTemporaryWorldSources: normalizeWorldStatSources(source.claimedTemporaryWorldSources),
+    mm3TemporaryBoon: normalizeMm3TemporaryBoon(source.mm3TemporaryBoon),
   };
 }
 
@@ -504,6 +525,25 @@ export function grantChroniclesMM3WorldStat(progression, memberId, statKey, sour
     },
     granted: true,
     reason: '',
+  };
+}
+
+// A bounded, never-evicted receipt prevents reusing a depleted well after
+// F5 or map travel, even if the ordinary authored flag is absent in old saves.
+export function grantChroniclesMM3TemporaryBoon(progression, sourceId, stat, amount, expiresAtTurn) {
+  const current = normalizeChroniclesProgression(progression);
+  const boon = normalizeMm3TemporaryBoon({ sourceId, stat, amount, expiresAtTurn });
+  if (!boon || current.claimedTemporaryWorldSources.includes(boon.sourceId)
+    || current.claimedTemporaryWorldSources.length >= MM3_WORLD_SOURCE_LIMIT) {
+    return { progression: current, granted: false };
+  }
+  return {
+    granted: true,
+    progression: {
+      ...current,
+      claimedTemporaryWorldSources: [...current.claimedTemporaryWorldSources, boon.sourceId],
+      mm3TemporaryBoon: boon,
+    },
   };
 }
 
@@ -627,22 +667,27 @@ export function chroniclesTacticsModifiers(progression, memberId) {
   };
 }
 
-function effectiveMm3WorldSheet(progression, member) {
+function effectiveMm3WorldSheet(progression, member, turns = 0) {
   if (!member.mm3?.classId) return null;
   const base = member.characterBuild?.stats || member.mm3.stats || {};
   const worldBonuses = normalizeMm3WorldBonuses(progression?.heroes?.[member.id]?.mm3WorldBonuses);
+  const temporary = normalizeMm3TemporaryBoon(progression?.mm3TemporaryBoon);
+  const activeTemporary = temporary && Number.isSafeInteger(turns) && turns < temporary.expiresAtTurn
+    ? temporary : null;
   const stats = Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [
-    key, Number(base[key] || 0) + worldBonuses[key],
+    key, Number(base[key] || 0) + worldBonuses[key]
+      + (activeTemporary?.stat === key ? activeTemporary.amount : 0),
   ]));
   const raceId = member.mm3.raceId;
   const level = chroniclesHeroProgress(progression, member.id).level;
   const derived = chroniclesMM3Derived(member.mm3.classId, stats, { raceId, level });
   const creatorBase = chroniclesMM3Derived(member.mm3.classId, base, { raceId });
-  return { stats, worldBonuses, derived, hpDelta: derived.maxHp - creatorBase.maxHp };
+  return { stats, worldBonuses, temporaryBoon: activeTemporary, derived,
+    hpDelta: derived.maxHp - creatorBase.maxHp };
 }
 
-function refreshMm3Member(member, progression) {
-  const sheet = effectiveMm3WorldSheet(progression, member);
+function refreshMm3Member(member, progression, turns) {
+  const sheet = effectiveMm3WorldSheet(progression, member, turns);
   if (!sheet) return member; // Tactics has no MM3 character sheet.
   return {
     ...member,
@@ -662,17 +707,18 @@ function refreshMm3Member(member, progression) {
       stats: sheet.stats,
       bonuses: sheet.derived.bonuses,
       worldBonuses: sheet.worldBonuses,
+      temporaryBoon: sheet.temporaryBoon,
     },
   };
 }
 
-function effectiveTacticsModifiers(progression, member) {
+function effectiveTacticsModifiers(progression, member, turns) {
   const progressionModifiers = chroniclesTacticsModifiers(progression, member.id);
   const creatorModifiers = member.characterBuild?.creatorModifiers || {};
   // The rolled creator sheet is immutable. Discoveries modify the *effective*
   // MM3 stats only; comparing with the base level-1 value avoids stacking
   // bonuses across saves, level-ups and repeated reconciliation.
-  const mm3Sheet = effectiveMm3WorldSheet(progression, member);
+  const mm3Sheet = effectiveMm3WorldSheet(progression, member, turns);
   const mm3Growth = mm3Sheet?.hpDelta || 0;
   return {
     ...progressionModifiers,
@@ -689,7 +735,7 @@ export function applyChroniclesProgressionToTacticsState(state, progression) {
   const classAbilityCharges = {};
   const rpgModifiers = {};
   const party = (state.party || []).map((member) => {
-    const modifiers = effectiveTacticsModifiers(progression, member);
+    const modifiers = effectiveTacticsModifiers(progression, member, state.turns);
     rpgModifiers[member.id] = modifiers;
     classAbilityCharges[member.id] = modifiers.abilityCharges;
     const baseMaxHp = Math.max(1, nonNegativeInteger(member.maxHp, 1));
@@ -699,7 +745,7 @@ export function applyChroniclesProgressionToTacticsState(state, progression) {
       ...member,
       maxHp,
       hp: Math.min(maxHp, baseHp + modifiers.bonusMaxHp),
-    }, progression);
+    }, progression, state.turns);
   });
   return {
     ...state,
@@ -715,7 +761,7 @@ export function reconcileChroniclesProgressionInTacticsState(state, progression)
   const classAbilityCharges = { ...(state.classAbilityCharges || {}) };
   const party = (state.party || []).map((member) => {
     const previousModifiers = state.rpgModifiers?.[member.id] || {};
-    const modifiers = effectiveTacticsModifiers(progression, member);
+    const modifiers = effectiveTacticsModifiers(progression, member, state.turns);
     rpgModifiers[member.id] = modifiers;
 
     const previousMaxCharges = Math.max(0, nonNegativeInteger(previousModifiers.abilityCharges));
@@ -730,7 +776,7 @@ export function reconcileChroniclesProgressionInTacticsState(state, progression)
       ...member,
       maxHp,
       hp: Math.min(maxHp, Math.max(0, nonNegativeInteger(member.hp))),
-    }, progression);
+    }, progression, state.turns);
   });
   return {
     ...state,
