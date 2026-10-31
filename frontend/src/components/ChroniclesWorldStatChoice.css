@@ -1,0 +1,60 @@
+.chronicles-world-stat-choice__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgb(8 15 19 / 82%);
+}
+
+.chronicles-world-stat-choice {
+  box-sizing: border-box;
+  width: min(600px, 100%);
+  max-height: min(760px, 92dvh);
+  overflow: auto;
+  color: #273a34;
+  border: 7px ridge #ac9565;
+  background: #e9ddbf;
+  padding: clamp(14px, 3vw, 26px);
+  box-shadow: 0 16px 55px #000b;
+  font-family: inherit;
+}
+
+.chronicles-world-stat-choice header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.chronicles-world-stat-choice__sigil { font-size: 36px; color: #885b2c; }
+.chronicles-world-stat-choice h2 { margin: 0 0 5px; font-size: clamp(20px, 4vw, 29px); }
+.chronicles-world-stat-choice p { margin: 0; line-height: 1.45; }
+.chronicles-world-stat-choice__party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.chronicles-world-stat-choice button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #847456;
+  color: #253b32;
+  background: #f7efd9;
+  min-height: 48px;
+  padding: 12px;
+}
+.chronicles-world-stat-choice__party button { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; text-align: left; }
+.chronicles-world-stat-choice__party button strong { font-size: 16px; }
+.chronicles-world-stat-choice__party button span { font-size: 12px; }
+.chronicles-world-stat-choice button:disabled { opacity: .48; cursor: not-allowed; }
+.chronicles-world-stat-choice button:not(:disabled):hover { background: #e3d09b; }
+.chronicles-world-stat-choice button:focus-visible { outline: 3px solid #1b756b; outline-offset: 2px; }
+.chronicles-world-stat-choice footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.chronicles-world-stat-choice footer small { line-height: 1.4; }
+.chronicles-world-stat-choice footer button { flex-shrink: 0; }
+@media (max-width: 430px) {
+  .chronicles-world-stat-choice__party { grid-template-columns: 1fr; }
+  .chronicles-world-stat-choice footer { flex-direction: column; align-items: stretch; }
+  .chronicles-world-stat-choice footer button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-world-stat-choice { scroll-behavior: auto; }
+}
