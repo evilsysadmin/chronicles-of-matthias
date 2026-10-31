@@ -69,8 +69,12 @@ describe('Swordhaven apothecary sage masonry', () => {
     expect(herbarium.getObjectByName('herbarium-roof-ridge')).toBeTruthy();
     const glazing = herbarium.getObjectByName('herbarium-green-glazing').material;
     expect(glazing.transparent).toBe(true);
-    expect(glazing.opacity).toBeGreaterThan(0.5);
-    expect(glazing.opacity).toBeLessThan(1);
+    // Clearer greenhouse panes expose the existing foliage without losing
+    // the double-sided transparent glass contract on touch or desktop.
+    expect(glazing.opacity).toBeCloseTo(0.42);
+    expect(glazing.color.getHex()).toBe(0xc1e2d2);
+    expect(glazing.roughness).toBeCloseTo(0.19);
+    expect(glazing.side).toBe(THREE.DoubleSide);
     expect(glazing.depthWrite).toBe(false);
     expect(herbarium.getObjectByName('herbarium-glazed-roof').material).toBe(glazing);
     expect(botica.getObjectByName('apothecary-hanging-herbs')).toBeTruthy();
