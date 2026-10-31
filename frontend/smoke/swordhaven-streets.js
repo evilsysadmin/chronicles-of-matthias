@@ -278,7 +278,7 @@ try {
         { x: 7, y: 16, width: 5 }, { x: 4, y: 18, width: 2 },
       ];
       for (const [index, run] of authored.entries()) {
-        const slot = run.width === 5 ? run.width - 0.45 : 0.5;
+        const slot = run.width === 5 ? run.width - 1.10 : 0.5;
         const roofZ = (run.y - 11) * 4;
         const z = roofZ + ((run.x + run.y) % 2 ? -0.72 : 0.72);
         const rise = run.width === 2 ? 1.46
