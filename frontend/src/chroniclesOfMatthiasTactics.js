@@ -28,6 +28,7 @@ import {
   chroniclesTacticsEffectiveProfile,
   chroniclesTacticsProfile,
 } from './tactics/tacticsProfiles.js';
+import { tacticsAttackDistance, tacticsLineIsClear } from './tactics/tacticsTargetGeometry.js';
 
 // Compatibility facade while Tactics and first-person Chronicles share the app.
 export {
@@ -66,26 +67,11 @@ function occupiedByEnemy(state, position) {
 }
 
 function lineIsClear(state, from, to, ignoredEnemyId = null) {
-  const spanX = Math.abs(to.x - from.x);
-  const spanY = Math.abs(to.y - from.y);
-  const straight = spanX === 0 || spanY === 0;
-  const diagonal = spanX === spanY;
-  if (!straight && !diagonal) return false;
-
-  const dx = Math.sign(to.x - from.x);
-  const dy = Math.sign(to.y - from.y);
-  let x = from.x + dx;
-  let y = from.y + dy;
-  while (x !== to.x || y !== to.y) {
-    if (chroniclesTileAt(x, y, state) === '#') return false;
-    const blocked = activeEnemiesWithPositions(state).some(({ enemy, position }) => (
-      enemy.id !== ignoredEnemyId && position.x === x && position.y === y
-    ));
-    if (blocked) return false;
-    x += dx;
-    y += dy;
-  }
-  return true;
+  return tacticsLineIsClear(from, to, {
+    tileAt: (x, y) => chroniclesTileAt(x, y, state),
+    positionedEnemies: activeEnemiesWithPositions(state),
+    ignoredEnemyId,
+  });
 }
 
 function memberFor(state, memberId) {
@@ -106,21 +92,6 @@ function actionOrigin(state, memberId = null) {
   return { x: Number(state?.x), y: Number(state?.y) };
 }
 
-function attackDistance(origin, position, profile) {
-  const dx = Math.abs(position.x - origin.x);
-  const dy = Math.abs(position.y - origin.y);
-  if (profile.attackPattern === 'adjacent') return dx + dy === 1 ? 1 : null;
-  if (profile.attackPattern === 'orthogonal') {
-    if (dx !== 0 && dy !== 0) return null;
-    return dx + dy;
-  }
-  if (profile.attackPattern === 'diagonal') return dx === dy && dx > 0 ? dx : null;
-  if (profile.attackPattern === 'line') {
-    if (!(dx === 0 || dy === 0 || dx === dy)) return null;
-    return Math.max(dx, dy);
-  }
-  return null;
-}
 
 function appendJournal(state, entry) {
   const journal = Array.isArray(state.journal) ? state.journal : [];
@@ -283,7 +254,7 @@ export function chroniclesTacticsTargets(state, memberId) {
 
   return activeEnemiesWithPositions(state)
     .flatMap(({ enemy, position }) => {
-      const distance = attackDistance(origin, position, profile);
+      const distance = tacticsAttackDistance(origin, position, profile);
       if (distance === null || distance < 1 || distance > reach) return [];
       if (!lineIsClear(state, origin, position, enemy.id)) return [];
       return [{
