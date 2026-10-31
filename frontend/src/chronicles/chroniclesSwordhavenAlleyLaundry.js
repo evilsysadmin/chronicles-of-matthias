@@ -17,15 +17,29 @@ function hangingLinenGeometry() {
   // Each small vertex bend is static: no animation or per-frame CPU work.
   const fabric = new THREE.PlaneGeometry(0.9, 0.98, 4, 5);
   const positions = fabric.getAttribute('position');
+  const shading = new Float32Array(positions.count * 3);
+  // Not banner rectangles: narrow sides towards the bottom, an uneven
+  // hemline and two deep longitudinal folds. Per-vertex tonal variation
+  // catches the existing daylight without textures or another draw call.
+  const pleats = [0.94, 0.99, 0.89, 1, 0.93];
+  const hem = [0.065, -0.035, 0.025, -0.075, 0.045];
   for (let i = 0; i < positions.count; i += 1) {
     const x = positions.getX(i);
     const y = positions.getY(i);
+    const column = i % 5;
+    const drop = (0.49 - y) / 0.98;
+    const edge = column === 0 ? 0.085 * drop
+      : column === 4 ? -0.085 * drop : 0;
+    const hemLift = y < -0.48 ? hem[column] : 0;
     positions.setXYZ(i,
-      x + 0.035 * Math.sin((y + 0.49) * Math.PI * 1.4),
-      y,
-      0.045 * Math.sin((x + 0.45) / 0.9 * Math.PI * 2)
+      x + edge + 0.025 * Math.sin((y + 0.49) * Math.PI * 1.4),
+      y + hemLift,
+      0.12 * Math.sin((x + 0.45) / 0.9 * Math.PI * 2) * (0.6 + drop * 0.4)
         + 0.025 * Math.cos((y + 0.49) / 0.98 * Math.PI));
+    const light = pleats[column] * (0.96 + (1 - drop) * 0.04);
+    shading.set([light, light, light], i * 3);
   }
+  fabric.setAttribute('color', new THREE.Float32BufferAttribute(shading, 3));
   positions.needsUpdate = true;
   fabric.computeVertexNormals();
   fabric.computeBoundingBox();
@@ -45,7 +59,7 @@ export function dressSwordhavenAlleyLaundry(town, { grid, center }) {
   const cloths = new THREE.InstancedMesh(
     hangingLinenGeometry(),
     new THREE.MeshStandardMaterial({
-      color: 0xffffff, roughness: 0.97, side: THREE.DoubleSide,
+      color: 0xffffff, roughness: 0.97, side: THREE.DoubleSide, vertexColors: true,
     }),
     passages.length * 3);
   cloths.name = 'chronicles-town-alley-hanging-linen';
@@ -62,7 +76,7 @@ export function dressSwordhavenAlleyLaundry(town, { grid, center }) {
     ropes.setMatrixAt(index, dummy.matrix);
     for (const [piece, offset] of [-1.12, 0, 1.12].entries()) {
       const scale = [0.89, 1.04, 0.95][(index + piece) % 3];
-      dummy.scale.set(1, scale, 1);
+      dummy.scale.set([0.88, 1.04, 0.94][piece], scale, 1);
       dummy.position.set(wx + offset,
         ropeHeight - 0.49 * scale, wz + (piece % 2 === 0 ? 0.02 : -0.02));
       dummy.updateMatrix();
