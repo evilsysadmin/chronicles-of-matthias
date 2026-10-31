@@ -453,6 +453,29 @@ describe('Chronicles file-authored exterior renderer', () => {
     // Sill, leadwork and two three-plank shutters with diagonal braces share
     // ONE instanced frame batch: twelve boxes, no extra per-window draw calls.
     expect(frames.geometry.index.count).toBe(36 * 12);
+    // Different residential shutters/frames and leaded window tones use the
+    // SAME two instances. Most glazing stays blue-grey; a sparse amber
+    // reflection makes the terraces feel inhabited without emissive lamps.
+    expect(frames.instanceColor).toBeTruthy();
+    expect(panes.instanceColor).toBeTruthy();
+    expect(panes.material.color.getHex()).toBe(0xffffff);
+    expect(panes.material.emissive?.getHex() || 0).toBe(0);
+    const frameShades = new Set();
+    const paneShades = new Set();
+    let warmPanes = 0;
+    const paneTint = new THREE.Color();
+    for (let index = 0; index < frames.count; index += 1) {
+      frames.getColorAt(index, paneTint);
+      frameShades.add(paneTint.getHexString());
+      panes.getColorAt(index, paneTint);
+      const shade = paneTint.getHexString();
+      paneShades.add(shade);
+      if (shade === '947553') warmPanes += 1;
+    }
+    expect(frameShades.size).toBe(3);
+    expect(paneShades.size).toBe(4);
+    expect(warmPanes).toBeGreaterThan(0);
+    expect(warmPanes).toBeLessThan(frames.count / 3);
     const frameBounds = new THREE.Box3()
       .setFromBufferAttribute(frames.geometry.getAttribute('position'));
     expect(frameBounds.min.y).toBeCloseTo(-0.51);
