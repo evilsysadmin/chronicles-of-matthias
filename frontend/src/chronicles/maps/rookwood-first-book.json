@@ -780,6 +780,34 @@
           "sigil": "✦"
         }
       }
+    },
+    {
+      "id": "rookwood-memory-crystal",
+      "kind": "pickup",
+      "x": 18,
+      "y": 11,
+      "label": "Cristal de la memoria · +1 Intelecto",
+      "mm3WorldStat": "intellect",
+      "when": [
+        {
+          "key": "combatRules",
+          "equals": "mm3"
+        },
+        {
+          "key": "rookwoodMemoryCrystalClaimed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "rookwoodMemoryCrystalClaimed",
+            "value": true
+          }
+        ],
+        "message": "El cristal de Rookwood cede su brillo y queda inmóvil."
+      }
     }
   ],
   "treasures": [],

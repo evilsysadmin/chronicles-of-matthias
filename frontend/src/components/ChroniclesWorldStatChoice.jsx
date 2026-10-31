@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import './ChroniclesWorldStatChoice.css';
 
 // Choice is explicit and cancelable. No stat is awarded by merely opening the
-// crystal, and the fallen cannot be selected as its beneficiary.
+// discovery, and the fallen cannot be selected as its beneficiary.
 export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onClose }) {
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -19,6 +19,8 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
   }, [onClose]);
 
   if (!offer) return null;
+  const title = offer.label?.split(' · ')[0] || 'Hallazgo mágico';
+  const statLabel = offer.statLabel || 'atributo';
   return (
     <div className="chronicles-world-stat-choice__backdrop">
       <section className="chronicles-world-stat-choice" role="dialog" aria-modal="true"
@@ -26,8 +28,8 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
         <header>
           <span className="chronicles-world-stat-choice__sigil" aria-hidden="true">✧</span>
           <div>
-            <h2 id="chronicles-world-stat-title">Cristal de la fortaleza</h2>
-            <p id="chronicles-world-stat-description">Su poder concede +1 Resistencia permanente. ¿Quién lo recibirá?</p>
+            <h2 id="chronicles-world-stat-title">{title}</h2>
+            <p id="chronicles-world-stat-description">Su poder concede +1 {statLabel} permanente. ¿Quién lo recibirá?</p>
           </div>
         </header>
         <div className="chronicles-world-stat-choice__party" role="group" aria-label="Elegir beneficiario">
@@ -35,7 +37,7 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
             <button type="button" key={hero.id} disabled={hero.hp <= 0}
               onClick={() => onSelect(hero.id)}>
               <strong>{hero.name}</strong>
-              <span>{hero.hp > 0 ? `${hero.hp}/${hero.maxHp} PV · +1 Resistencia` : 'Fuera de combate'}</span>
+              <span>{hero.hp > 0 ? `${hero.hp}/${hero.maxHp} PV · +1 ${statLabel}` : 'Fuera de combate'}</span>
             </button>
           ))}
         </div>

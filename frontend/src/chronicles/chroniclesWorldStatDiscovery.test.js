@@ -7,6 +7,7 @@ import { chroniclesContentInteractions } from './chroniclesContentRuntime.js';
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 
 const SOURCE = 'swordhaven-endurance-crystal';
+const ROOKWOOD_SOURCE = 'rookwood-memory-crystal';
 function atCrystal(progression = createChroniclesProgression()) {
   const initial = applyChroniclesProgressionToTacticsState(
     createChroniclesState('swordhaven-first-book', progression.characterBuild, { rules: 'mm3' }),
@@ -61,6 +62,35 @@ describe('MM3 first real Swordhaven world-stat crystal', () => {
     // The ledger blocks a second claim even if a corrupted runtime flag is absent.
     const missingFlag = { ...state, runProgression: awarded.progression };
     expect(chroniclesClaimMM3WorldStat(missingFlag, awarded.progression, SOURCE, 'matthias').granted).toBe(false);
+  });
+
+  it('supports a second map with a distinct permanent attribute, separate source and spell-relevant stats', () => {
+    const base = createChroniclesProgression();
+    const initial = applyChroniclesProgressionToTacticsState(
+      createChroniclesState('rookwood-first-book', base.characterBuild, { rules: 'mm3' }), base,
+    );
+    const state = { ...initial, x: 18, y: 11, direction: 0, runProgression: base };
+    const offer = chroniclesMM3WorldStatOffer(state);
+    expect(offer).toEqual(expect.objectContaining({
+      id: ROOKWOOD_SOURCE, stat: 'intellect', statLabel: 'Intelecto',
+    }));
+    const result = chroniclesClaimMM3WorldStat(state, base, ROOKWOOD_SOURCE, 'knight');
+    expect(result.granted).toBe(true);
+    expect(result.state.message).toContain('+1 Intelecto');
+    expect(result.state.message).toContain('Cristal de la memoria');
+    const archer = result.state.party.find(({ id }) => id === 'knight');
+    expect(archer.mm3.stats.intellect).toBe(archer.characterBuild.stats.intellect + 1);
+    expect(result.progression.claimedWorldStatSources).toEqual([ROOKWOOD_SOURCE]);
+    expect(result.state.rookwoodMemoryCrystalClaimed).toBe(true);
+    expect(chroniclesMM3WorldStatOffer(result.state)).toBeNull();
+    const other = { ...state, x: 9, y: 14, mapId: 'swordhaven-first-book', runProgression: result.progression };
+    expect(chroniclesMM3WorldStatOffer(other)?.id).toBe(SOURCE);
+    const checkpoint = chroniclesRunCheckpointPayload(result.state, 0);
+    const restored = chroniclesCheckpointRunProgression(checkpoint);
+    expect(restored.claimedWorldStatSources).toEqual([ROOKWOOD_SOURCE]);
+    expect(chroniclesApplyRunCheckpoint(atCrystal(restored), checkpoint).runProgression?.claimedWorldStatSources)
+      .toContain(ROOKWOOD_SOURCE);
+    expect(chroniclesMM3WorldStatOffer({ ...state, combatRules: null })).toBeNull();
   });
 
   it('survives a server checkpoint and never respawns for another hero after F5', () => {
