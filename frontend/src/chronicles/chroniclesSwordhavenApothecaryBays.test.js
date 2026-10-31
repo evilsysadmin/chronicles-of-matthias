@@ -43,8 +43,9 @@ describe('Swordhaven Botica projecting botanical windows', () => {
       expect(glass.every(part => part.geometry.parameters.depth === 0.45)).toBe(true);
       const hood = bay.getObjectByName('apothecary-bay-verdigris-hood');
       expect(hood.material.color.getHex()).toBe(0x5c806e);
-      expect(hood.geometry.parameters.depth).toBe(0.78);
-      expect(hood.position.y).toBeGreaterThan(1);
+      expect(hood.geometry.parameters.depth).toBe(1.52);
+      expect(hood.position.y).toBeGreaterThan(1.4);
+      expect(hood.rotation.x).toBeCloseTo(0.26);
       expect(bay.getObjectByName('apothecary-window-stone-sill')
         .geometry.parameters.depth).toBe(0.78);
       for (const part of [...returns, ...glass, hood]) {
