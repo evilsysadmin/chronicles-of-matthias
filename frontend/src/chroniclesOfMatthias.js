@@ -1189,6 +1189,21 @@ export function chroniclesCombatPartyStepBlocked(state, action) {
     && CHRONICLES_PARTY_STEPS.has(type));
 }
 
+// One successful attack, spell, item or BLOCK consumes the hero's entire
+// initiative slot. The UI normally advances immediately, but duplicate/stale
+// dispatches must not grant extra actions before that advancement.
+const MM3_TURN_ACTIONS = new Set(['attack', 'cast', 'use-item', 'block']);
+
+function chroniclesRecordMM3TurnAction(previous, next) {
+  const actor = previous.initiative?.order?.[previous.initiative.cursor ?? 0];
+  if (previous.combatRules !== 'mm3' || actor?.kind !== 'party'
+    || !next?.initiative || next.turns <= previous.turns) return next;
+  return {
+    ...next,
+    combatActionSpent: { ...(next.combatActionSpent || {}), [actor.id]: true },
+  };
+}
+
 export function chroniclesReduce(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
@@ -1196,6 +1211,12 @@ export function chroniclesReduce(state, action) {
   // input can translate OR rotate the party, spend initiative or trigger a
   // map transition during first-person combat.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
+  if (state.combatRules === 'mm3' && state.initiative && MM3_TURN_ACTIONS.has(actionType)) {
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    if (actor?.kind === 'party'
+      && (state.combatActionSpent?.[actor.id] === true
+        || state.combatBlock?.[actor.id] === true)) return state;
+  }
   // A stale F/interact or confirmed exit must not activate world content or
   // change floors during MM3 initiative. Travel resumes after combat ends.
   if (state.combatRules === 'mm3' && state.initiative
@@ -1248,21 +1269,24 @@ export function chroniclesReduce(state, action) {
     const member = state.party.find((hero) => hero.id === action.memberId && hero.hp > 0);
     if (actor?.kind !== 'party' || actor.id !== action.memberId || !member
       || state.combatBlock?.[member.id] === true) return state;
-    return {
+    return chroniclesRecordMM3TurnAction(state, {
       ...state,
       turns: state.turns + 1,
       combatBlock: { ...state.combatBlock, [member.id]: true },
       message: `${member.name} se cubre: +${CHRONICLES_BLOCK_AC_BONUS} CA hasta su próximo turno.`,
-    };
+    });
   }
   if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };
   if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
   if (actionType === 'attack') {
     const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
-    return resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode);
+    return chroniclesRecordMM3TurnAction(state,
+      resolveAttack(state, typeof action === 'object' ? action.memberId : 'matthias', null, mode));
   }
-  if (actionType === 'cast') return resolveCast(state, action.memberId, action.spellId, action.targetId || null);
-  if (actionType === 'use-item') return resolveUseItem(state, action.memberId, action.itemId, action.targetId || null);
+  if (actionType === 'cast') return chroniclesRecordMM3TurnAction(state,
+    resolveCast(state, action.memberId, action.spellId, action.targetId || null));
+  if (actionType === 'use-item') return chroniclesRecordMM3TurnAction(state,
+    resolveUseItem(state, action.memberId, action.itemId, action.targetId || null));
   if (actionType === 'interact') return chroniclesArriveOnTransition(state, resolveContextualContentAction(state));
   if (actionType === 'cross-area-threshold') return crossAreaThreshold(state, action.exitId);
 

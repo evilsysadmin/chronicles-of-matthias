@@ -284,7 +284,8 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   const deployedState = chroniclesDeployPartyForCombat(state);
   const initiative = chroniclesRollInitiative(deployedState, engaged, options);
   if (!initiative.order.length) return state;
-  const { combatWard: _staleWard, combatBlock: _staleBlock, ...fresh } = deployedState;
+  const { combatWard: _staleWard, combatBlock: _staleBlock,
+    combatActionSpent: _staleAction, ...fresh } = deployedState;
   return {
     ...fresh,
     phase: 'combat',
@@ -300,7 +301,8 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!Array.isArray(state.party) || !state.party.some((member) => (
     validActorId(member?.id) && hasLivingHitPoints(member?.hp)
   ))) {
-    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    const { combatWard: _ward, combatBlock: _block, combatActionSpent: _spent,
+      enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: 'defeated', turnPhase: 'party', initiative: null };
   }
   // An interrupted save can contain a missing, empty or non-array order.
@@ -308,7 +310,8 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // End this invalid round without granting anyone an action; a nearby living
   // enemy may engage again normally on the next exploration turn.
   if (!Array.isArray(state.initiative.order) || !state.initiative.order.length) {
-    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    const { combatWard: _ward, combatBlock: _block, combatActionSpent: _spent,
+      enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return { ...collapsed, phase: state.phase === 'defeated' ? 'defeated' : 'explore', turnPhase: 'party', initiative: null };
   }
   // Legacy/restored initiative orders can contain repeated actor slots. If
@@ -376,7 +379,8 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   const enemiesRemain = livingOrder.some((actor) => actor.kind === 'enemy');
   if (!enemiesRemain) {
     // Escudo de fe and any paralysis end with the fight.
-    const { combatWard: _ward, combatBlock: _block, enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    const { combatWard: _ward, combatBlock: _block, combatActionSpent: _spent,
+      enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
     return {
       ...collapsed,
       phase: state.phase === 'defeated' ? 'defeated' : 'explore',
@@ -414,10 +418,15 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // BLOCK protects a hero until (not through) the start of their NEXT turn.
   // Clear only that hero's guard: an enemy or another ally must not cancel it.
   const combatBlock = { ...(state.combatBlock || {}) };
-  if (nextActor.kind === 'party') delete combatBlock[nextActor.id];
+  const combatActionSpent = { ...(state.combatActionSpent || {}) };
+  if (nextActor.kind === 'party') {
+    delete combatBlock[nextActor.id];
+    delete combatActionSpent[nextActor.id];
+  }
   return {
     ...state,
     combatBlock: Object.keys(combatBlock).length ? combatBlock : undefined,
+    combatActionSpent: Object.keys(combatActionSpent).length ? combatActionSpent : undefined,
     initiative: {
       ...state.initiative,
       order: livingOrder,
