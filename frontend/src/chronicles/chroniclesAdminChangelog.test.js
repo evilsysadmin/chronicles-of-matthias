@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CHRONICLES_ADMIN_CHANGELOG_LIMIT,
+  CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES,
   chroniclesAdminChangelogBuildSha,
   chroniclesAdminChangelogUrl,
   chroniclesAdminCommitUrl,
@@ -8,6 +9,7 @@ import {
   chroniclesNormalizeAdminCommits,
   chroniclesAdminCommitCategory,
   chroniclesVisibleAdminCommits,
+  chroniclesMergeAdminCommits,
 } from './chroniclesAdminChangelog.js';
 
 const deployed = 'b654709d068424a979ff73d0fd3b2b072b2609b3';
@@ -82,14 +84,56 @@ describe('admin changelog of the deployed bundle', () => {
       calls.push({ url, options });
       return { ok: true, json: async () => commits };
     };
-    expect(await chroniclesFetchAdminChangelog({ buildId: deployed, fetchImpl })).toEqual(
-      chroniclesNormalizeAdminCommits(commits),
-    );
+    expect(await chroniclesFetchAdminChangelog({ buildId: deployed, fetchImpl })).toEqual({
+      entries: chroniclesNormalizeAdminCommits(commits), hasMore: false,
+    });
     expect(calls).toHaveLength(1);
-    expect(calls[0].url).toContain(`?sha=${deployed}&per_page=${CHRONICLES_ADMIN_CHANGELOG_LIMIT}`);
+    expect(calls[0].url).toContain(`?sha=${deployed}&per_page=${CHRONICLES_ADMIN_CHANGELOG_LIMIT}&page=1`);
     expect(calls[0].options.method).toBe('GET');
     expect(calls[0].options.headers.Accept).toBe('application/vnd.github+json');
   });
+
+  it('loads older pages against the same deployed SHA and stops at the bounded final page', async () => {
+    const requests = [];
+    const full = Array.from({ length: CHRONICLES_ADMIN_CHANGELOG_LIMIT }, (_, index) => ({
+      sha: index.toString(16).padStart(40, 'a'),
+      commit: { message: `feat: item ${index}` },
+    }));
+    const fetchImpl = async (url) => {
+      requests.push(url);
+      return { ok: true, json: async () => full };
+    };
+    const second = await chroniclesFetchAdminChangelog({ buildId: deployed, page: 2, fetchImpl });
+    expect(second.entries).toHaveLength(CHRONICLES_ADMIN_CHANGELOG_LIMIT);
+    expect(second.hasMore).toBe(true);
+    const last = await chroniclesFetchAdminChangelog({
+      buildId: deployed, page: CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES, fetchImpl,
+    });
+    expect(last.entries).toHaveLength(CHRONICLES_ADMIN_CHANGELOG_LIMIT);
+    expect(last.hasMore).toBe(false);
+    expect(requests).toEqual([
+      `https://api.github.com/repos/evilsysadmin/chronicles-of-matthias/commits?sha=${deployed}&per_page=20&page=2`,
+      `https://api.github.com/repos/evilsysadmin/chronicles-of-matthias/commits?sha=${deployed}&per_page=20&page=${CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES}`,
+    ]);
+  });
+
+  it('deduplicates overlapping pages without reversing old history', () => {
+    const first = [{ sha: deployed, title: 'feat: 1' }, { sha: newer, title: 'ci: 2' }];
+    const second = [{ sha: newer, title: 'ci: duplicate' }, { sha: 'a'.repeat(40), title: 'fix: 3' }];
+    expect(chroniclesMergeAdminCommits(first, second)).toEqual([...first, second[1]]);
+    expect(chroniclesMergeAdminCommits(null, second)).toEqual(second);
+    expect(chroniclesMergeAdminCommits(first, [])).toEqual(first);
+  });
+
+  it.each([0, -1, 1.2, '2', NaN, CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES + 1])(
+    'rejects out-of-bounds page %s before reaching GitHub', async (page) => {
+      let called = false;
+      await expect(chroniclesFetchAdminChangelog({
+        buildId: deployed, page, fetchImpl: async () => { called = true; },
+      })).rejects.toThrow('Página de historial no válida');
+      expect(called).toBe(false);
+    },
+  );
 
   it('fails visibly on no build identity and GitHub errors, rather than showing a fabricated empty history', async () => {
     let fetched = false;
