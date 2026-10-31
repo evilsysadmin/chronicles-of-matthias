@@ -767,7 +767,10 @@ export default function ChroniclesCharacterSheet({
                   <span>{CHRONICLES_MM3_STAT_LABELS[key]}</span>
                   <b>{mm3.stats[key]} <em>({signed(mm3.bonuses[key])})</em></b>
                   <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
-                    ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}</small>
+                    ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}
+                    {mm3.temporaryBoon?.stat === key
+                      ? ` · Bendición +${mm3.temporaryBoon.amount} (${Math.max(0, mm3.temporaryBoon.expiresAtTurn - (state?.turns || 0))} acciones)`
+                      : ''}</small>
                 </div>
               ))}
               <div data-stat="condition" title="Estado general según los puntos de vida actuales">

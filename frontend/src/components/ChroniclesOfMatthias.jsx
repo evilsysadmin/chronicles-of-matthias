@@ -38,6 +38,7 @@ import {
   chroniclesClaimMM3WorldStat,
 } from '../chronicles/chroniclesWorldStatDiscovery.js';
 import './ChroniclesPortraitLevelUp.css';
+import { chroniclesResolveTemporaryFountainBoon } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
@@ -894,6 +895,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       };
     }
 
+    // The first once-only Terra well has an expedition-turn blessing. Apply
+    // after XP so it survives both actions and cannot overwrite level gains.
+    // Every subsequent real turn also reconciles expiry, including travel.
+    const temporary = chroniclesResolveTemporaryFountainBoon(current, next, progressionRef.current);
+    if (temporary.updated) {
+      next = temporary.state;
+      if (temporary.granted) {
+        progressionRef.current = temporary.progression;
+        setProgression(temporary.progression);
+      }
+    }
+
     if (progressResult.levelUps.length) showPortraitLevelUps(progressResult.levelUps, next.party, next);
     if (next !== current) pendingActionSoundRef.current = {
       previous: current, resolved: next, committed: next, action,
@@ -999,14 +1012,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (error) console.error('Chronicles enemy turn failed; passing its initiative slot', error);
       // Commit initiative BEFORE any optional sound, splat or retaliation
       // presentation. A broken cue must never hold the controls hostage.
-      stateRef.current = advanced;
+      // Enemy initiative can advance the same durable turn counter as the
+      // player's actions. Never let a blessing survive extra enemy turns.
+      const temporal = chroniclesResolveTemporaryFountainBoon(
+        latest, advanced, progressionRef.current,
+      );
+      const committed = temporal.updated ? temporal.state : advanced;
+      stateRef.current = committed;
       pendingActionSoundRef.current = error ? null : {
         previous: latest,
         resolved: acted,
-        committed: advanced,
+        committed,
         action: { type: 'enemy-turn', enemyId: actor.id },
       };
-      setState(advanced);
+      setState(committed);
       try {
         if (!error) {
           showHitSplats(latest, acted);
