@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
@@ -60,6 +60,33 @@ describe('Chronicles player administration', () => {
     expect(chroniclesRosterHeroLevel({ levels: 'bogus' }, 'matthias')).toBe('—');
   });
 
+  it('distinguishes technical IDs from player names without inventing an Identity alias', () => {
+    expect(chroniclesRosterPlayerLabel({ username: 'alice' })).toBe('alice');
+    expect(chroniclesRosterPlayerLabel({ username: 'browser-journey-75bb33628d' }))
+      .toBe('Navegador · 75bb33628d');
+    expect(chroniclesRosterPlayerLabel({ username: 'shadowops:staging:11111111-1111-4111-8111-111111111111' }))
+      .toBe('ShadowOps ID · 11111111');
+    expect(chroniclesRosterPlayerLabel({ username: '' })).toBe('Cuenta sin nombre');
+  });
+
+  it('searches by account and genuine saved hero names, not invented labels', () => {
+    const user = { username: 'alice', heroNames: { matthias: 'Éowyn' } };
+    expect(chroniclesRosterMatches(user, ' ALI ')).toBe(true);
+    expect(chroniclesRosterMatches(user, 'éOW')).toBe(true);
+    expect(chroniclesRosterMatches(user, 'no-existe')).toBe(false);
+    expect(chroniclesRosterMatches({ username: 'bob', heroNames: { rook: {} } }, 'bob')).toBe(true);
+  });
+
+  it('reports only documented latest run status, not an imagined live position', () => {
+    expect(chroniclesRosterRunLabel({})).toBe('Sin expedición guardada');
+    expect(chroniclesRosterRunLabel({ mapId: 'swordhaven', runStatus: 'active' }))
+      .toBe('Expedición en curso');
+    expect(chroniclesRosterRunLabel({ mapId: 'swordhaven', runStatus: 'completed' }))
+      .toBe('Expedición completada');
+    expect(chroniclesRosterRunLabel({ mapId: 'swordhaven', runStatus: 'unknown' }))
+      .toBe('Última expedición guardada');
+  });
+
   it('does not render the administrative entry for unverified players', () => {
     const html = renderToStaticMarkup(<ChroniclesSaveMenu saves={[]} onNew={() => {}} />);
     expect(html).toContain('Otras opciones');
@@ -87,6 +114,9 @@ describe('Chronicles player administration', () => {
     expect(html).toContain('último guardado, no a una posición en vivo');
     expect(html).toContain('Consultando jugadores');
     expect(html).toContain('Cambios de versión');
+    expect(html).toContain('Buscar jugador o héroe');
+    expect(html).toContain('Ver ficha del jugador') === false;
+
     expect(html).not.toContain('data-chronicles-admin-changelog');
     expect(html).toContain('Consultando censo');
     expect(html).not.toContain('0 usuarios cargados');
