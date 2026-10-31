@@ -37,7 +37,11 @@ describe('MM3 retro skin and compact record layout', () => {
     // Equipped objects remain in the single selectable ledger. Examinar
     // shows the chosen object's actual mechanics rather than duplicate slots.
     expect(html).not.toContain('data-chronicles-worn-gear');
-    for (const title of ['Estado', 'Equipo', 'Hechizos', 'Mejoras']) expect(html).toContain(title);
+    for (const title of ['Estado', 'Equipo', 'Hechizos']) expect(html).toContain(title);
+    expect(html).not.toContain('Mejoras');
+    expect(html).not.toContain('data-chronicles-training');
+    expect(render('tactics')).toContain('data-chronicles-training="attributes"');
+    expect(render('tactics')).toContain('data-chronicles-training="skills"');
     expect(html).toContain('aria-label="Seleccionar personaje de la compañía"');
     expect(html).not.toContain('Cambiar equipo');
     expect(html).not.toContain('data-chronicles-worn-gear');
