@@ -148,7 +148,7 @@ export function dressSwordhavenRoofChimneys(town, { runs, center, wallHeight, ea
     shafts.setMatrixAt(i, dummy.matrix);
     shafts.setColorAt(i, tint.setHex(palette[variant]));
     dummy.scale.set(width, 1, width);
-    dummy.position.y = roofY - 0.16 + height * 1.067;
+    dummy.position.y = roofY - 0.16 + height * 1.061;
     dummy.updateMatrix();
     mouths.setMatrixAt(i, dummy.matrix);
   });
