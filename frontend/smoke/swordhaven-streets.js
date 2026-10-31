@@ -92,6 +92,9 @@ try {
   const town = scene.getObjectByName('chronicles-campaign-town');
   const plaster = town?.getObjectByName('chronicles-town-street-limewash-fronts');
   const roofs = town?.getObjectByName('chronicles-town-south-pitched-roofs');
+  const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
+  const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
+  const oakVerges = town?.getObjectByName('chronicles-town-south-roof-oak-verges');
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
@@ -185,6 +188,15 @@ try {
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
+    premiumRoofline: String(Boolean(oakEaves?.count === roofs.count * 2
+      && oakRidges?.count === roofs.count
+      && oakVerges?.count === roofs.count * 4
+      && [oakEaves, oakRidges, oakVerges].every(part =>
+        part.userData.chroniclesDecorativeOnly
+        && part.castShadow === false
+        && part.frustumCulled === false)
+      && oakEaves.material === oakRidges.material
+      && oakRidges.material === oakVerges.material)),
     roofRelief: String(roofs.material.normalMap?.name === 'chronicles-town-normal-roof'
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
