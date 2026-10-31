@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline', 'chimney']) {
+      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'juliet', 'roofline', 'chimney']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
