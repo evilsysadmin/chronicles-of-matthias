@@ -36,6 +36,9 @@ export function chroniclesContentActivated(state, entry) {
 
 export function chroniclesContentVisualVisible(state, entry) {
   if (!entry) return false;
+  // Permanent MM3 discoveries remain as empty landmarks only in MM3.
+  // A persistent prop must not bypass its mode gate in shared Tactics maps.
+  if (entry.mm3WorldStat && state?.combatRules !== 'mm3') return false;
   // Landmarks (an NPC, a great tree) stay in the world after their
   // interaction is spent; only their interaction availability changes.
   if (PERSISTENT_VISUAL_KINDS.has(entry.kind) || entry.persistentVisual === true) return true;
