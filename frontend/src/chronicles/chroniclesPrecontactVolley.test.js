@@ -159,6 +159,51 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
 });
 
 describe('S / melee-range missile contract', () => {
+  it.each([
+    ['enemy', 2],
+    ['another hero', 1],
+  ])('rejects a missile attack during the %s initiative slot without changing combat', (_label, cursor) => {
+    const base = rangedCompany();
+    const enemy = chroniclesEnemyTargetAhead(base, 3)?.enemy;
+    expect(enemy).toBeTruthy();
+    const state = {
+      ...base,
+      phase: 'combat',
+      initiative: {
+        round: 1, cursor,
+        order: [
+          { kind: 'party', id: 'matthias' },
+          { kind: 'party', id: 'rook' },
+          { kind: 'enemy', id: enemy.id },
+        ],
+      },
+    };
+    expect(chroniclesCombatMissileTarget(state, 3)?.enemy.id).toBe(enemy.id);
+
+    const refused = chroniclesReduce(state, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+
+    expect(refused).toBe(state);
+    expect(refused.turns).toBe(state.turns);
+    expect(refused[enemy.hpKey]).toBe(state[enemy.hpKey]);
+    expect(refused.initiative).toBe(state.initiative);
+  });
+
+  it('still spends exactly one action for the active ranged hero', () => {
+    const base = rangedCompany();
+    const enemy = chroniclesEnemyTargetAhead(base, 3)?.enemy;
+    expect(enemy).toBeTruthy();
+    const state = {
+      ...base,
+      phase: 'combat',
+      initiative: { round: 1, cursor: 0, order: [
+        { kind: 'party', id: 'matthias' },
+        { kind: 'enemy', id: enemy.id },
+      ] },
+    };
+    const fired = chroniclesReduce(state, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+    expect(fired.turns).toBe(state.turns + 1);
+  });
+
   it('refuses a company volley without any legal weapon: no turn, HP, XP or animation source', () => {
     const base = { ...rangedCompany(), equipment: {} };
     expect(chroniclesMissileRefusal(base)).toBe('Sin arma a distancia');
