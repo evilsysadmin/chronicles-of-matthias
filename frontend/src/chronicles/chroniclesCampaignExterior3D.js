@@ -11,6 +11,7 @@ import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
 import { dressSwordhavenRoofRuns } from './chroniclesSwordhavenRoofTrim.js';
+import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
 // File-authored exterior topology: no independent collision map or invisible
@@ -362,7 +363,7 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
 // Pitched roof silhouettes on authored 2–6-cell solid wall runs. The six
 // triangles are shared by ONE instanced mesh regardless of span width. High
 // eaves may overhang the road visually but never alter collision geometry. Saved party cells never change.
-function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6, trimTimber = null }) {
+function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight = 1.6, trimTimber = null, trimStucco = null }) {
   if (!Array.isArray(runs) || !runs.length) return;
   const solid = new Set(blocked.map(({ x, y }) => x + ',' + y));
   const claimedCells = new Set();
@@ -439,6 +440,12 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   if (trimTimber) {
     dressSwordhavenRoofRuns(town, {
       runs: valid, center, wallHeight, eave, timber: trimTimber,
+    });
+    // Decorative roof windows face only existing traversable streets.
+    // They share the same verified runs; the collision/route grid is intact.
+    dressSwordhavenDormers(town, {
+      runs: valid, grid, center, wallHeight, eave,
+      timber: trimTimber, plaster: trimStucco, roofMaterial: roofs.material,
     });
   }
 }
@@ -688,6 +695,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       runs: scenePlan.landscape?.roofRuns,
       trimTimber: scenePlan.mapId === 'swordhaven-first-book' ? village.timber : null,
+      trimStucco: scenePlan.mapId === 'swordhaven-first-book' ? village.plaster : null,
     });
     // Trees stand outside the town wall so no walkable cell gains a blocker.
     TOWN_TREE_CELLS(width, height).forEach(([x, y], index) => {
