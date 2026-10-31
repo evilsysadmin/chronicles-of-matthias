@@ -1414,6 +1414,68 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     roundelFrame.rotation.y = -Math.PI / 2;
     mesh(oriel, new THREE.BoxGeometry(1.04, 0.17, 3.76), mats.timber,
       'tavern-oriel-floor-beam', [-0.10, -0.72, 0], !coarse);
+    // A narrow Juliet gallery follows the existing guest-room oriel. The
+    // open rail is below the amber glazing, rather than hiding the windows
+    // behind another opaque upper-storey box. It does not create walkable
+    // space: every child is decorative and mounted well above the street.
+    // Keep the projected eastmost point within the house's ornamental
+    // frontage and preserve the real plaza-side street/collision grid.
+    const gallery = new THREE.Group();
+    gallery.name = 'tavern-east-guest-gallery';
+    gallery.userData.chroniclesDecorativeOnly = true;
+    mesh(gallery, new THREE.BoxGeometry(0.86, 0.14, 3.74), oak,
+      'tavern-gallery-oak-deck', [-0.96, -0.85, 0], !coarse);
+    mesh(gallery, new THREE.BoxGeometry(0.12, 0.13, 3.56), mats.timber,
+      'tavern-gallery-oak-toprail', [-1.33, -0.43, 0], !coarse);
+    mesh(gallery, new THREE.BoxGeometry(0.10, 0.09, 3.56), mats.timber,
+      'tavern-gallery-lowerrail', [-1.33, -0.76, 0]);
+    const balusters = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.11, 0.30, 0.11), mats.timber, 7);
+    balusters.name = 'tavern-gallery-carved-balusters';
+    balusters.userData.chroniclesDecorativeOnly = true;
+    balusters.castShadow = !coarse;
+    balusters.receiveShadow = true;
+    const rail = new THREE.Object3D();
+    for (let i = 0; i < balusters.count; i += 1) {
+      rail.position.set(-1.33, -0.60, -1.53 + i * 0.51);
+      rail.updateMatrix();
+      balusters.setMatrixAt(i, rail.matrix);
+    }
+    balusters.instanceMatrix.needsUpdate = true;
+    gallery.add(balusters);
+    // Return rails visibly terminate the balcony at both ends; diagonal
+    // knee braces physically connect the deck to the original oak oriel.
+    const supports = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.17, 0.98, 0.17), mats.timber, 2);
+    supports.name = 'tavern-gallery-knee-supports';
+    supports.userData.chroniclesDecorativeOnly = true;
+    supports.castShadow = !coarse;
+    supports.receiveShadow = true;
+    for (const [i, z] of [-1.36, 1.36].entries()) {
+      rail.position.set(-0.76, -1.17, z);
+      rail.rotation.z = 0.95;
+      rail.updateMatrix();
+      supports.setMatrixAt(i, rail.matrix);
+      mesh(gallery, new THREE.BoxGeometry(0.67, 0.12, 0.11), mats.timber,
+        'tavern-gallery-end-rail', [-1.02, -0.43, Math.sign(z) * 1.80], !coarse);
+    }
+    supports.instanceMatrix.needsUpdate = true;
+    gallery.add(supports);
+    // Two modest brass ridge finials complete the guest wing roofline.
+    // No glow, animation or shadow-heavy extra light source is needed.
+    const finials = new THREE.InstancedMesh(
+      new THREE.ConeGeometry(0.13, 0.30, coarse ? 5 : 8), mats.gold, 2);
+    finials.name = 'tavern-oriel-brass-roof-finials';
+    finials.userData.chroniclesDecorativeOnly = true;
+    for (const [i, z] of [-1.65, 1.65].entries()) {
+      rail.rotation.set(0, 0, 0);
+      rail.position.set(-0.17, 1.65, z);
+      rail.updateMatrix();
+      finials.setMatrixAt(i, rail.matrix);
+    }
+    finials.instanceMatrix.needsUpdate = true;
+    gallery.add(finials);
+    oriel.add(gallery);
     root.add(oriel);
   }
   // Sage-painted timber shutters give the herb house a botanical side
