@@ -243,7 +243,7 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 
 	// The administrative census reads only this environment's MongoDB.
 	// It has independent server-side authorization; frontend visibility is cosmetic.
-	roster := newAdminRoster(db, jwtSecret, sso, timeout, origins)
+	roster := newAdminRoster(db, jwtSecret, sso, central, timeout, origins)
 
 	// Reuse native authenticated feedback validation and rate limits. Both
 	// player and admin inboxes persist ONLY in Chronicles' own Mongo DB;
