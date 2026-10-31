@@ -1193,8 +1193,8 @@ try {
         const mobileInspector = mobileGrimoire.getByRole('dialog');
         assert.equal(await mobileInspector.isVisible(), true);
         const mobilePopup = await mobileInspector.boundingBox();
-        assert.ok(mobilePopup && mobilePopup.left >= 0
-          && mobilePopup.right <= width + 1,
+        assert.ok(mobilePopup && mobilePopup.x >= 0
+          && mobilePopup.x + mobilePopup.width <= width + 1,
           'Mobile spell inspector must remain inside the viewport');
         await page.screenshot({ path: 'smoke-character-sheet-spell-inspect-390.png' });
         await mobileInspector.getByRole('button', { name: 'Cerrar inspección de hechizo' }).click();
