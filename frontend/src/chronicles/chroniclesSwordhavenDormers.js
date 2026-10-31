@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
 // Only raised 4+ cell residential roof runs receive dormers. The short
 // two-cell roofs remain plain, preserving variety rather than cloning a
@@ -23,7 +24,10 @@ export function planSwordhavenDormers(runs, grid, center, wallHeight, eave = 0.2
     const slots = width >= 5 ? [1.15, width - 2.15] : [(width - 1) / 2];
     for (const slot of slots) {
       const z = side * 1.58;
-      const baseY = wallHeight - 0.04 + 0.92 * (1 - Math.abs(z) / (2 + eave));
+      // Follow the precise sloping roof height for this authored run so
+      // dormers never float above a shallow roof or sink into a steeper one.
+      const rise = swordhavenRoofRise(run);
+      const baseY = wallHeight - 0.04 + rise * (1 - Math.abs(z) / (2 + eave));
       output.push({
         x: (x + slot - center.x) * 4, y: baseY,
         z: (y - center.y) * 4 + z, side,
