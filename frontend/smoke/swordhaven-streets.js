@@ -505,6 +505,16 @@ try {
       && !temple?.getObjectByName('magic-guild-roof-observatory')
       && !apothecary?.getObjectByName('magic-guild-roof-observatory')
     )),
+    distinctGuildDoor: String(Boolean(
+      guild?.getObjectByName('magic-guild-pointed-entry')?.userData.chroniclesDecorativeOnly
+      && guild?.getObjectByName('magic-guild-brass-inlaid-door')?.userData.chroniclesDecorativeOnly
+      && guild.getObjectByName('magic-guild-brass-inlaid-door').children
+        .filter(part => part.name === 'magic-door-violet-oak-leaf').length === 2
+      && guild.getObjectByName('magic-guild-brass-inlaid-door').children
+        .filter(part => part.name === 'magic-door-brass-pull').length === 2
+      && guild.getObjectByName('magic-door-arcane-sigil')
+      && !temple?.getObjectByName('magic-guild-brass-inlaid-door')
+    )),
     distinctGuildMasonry: String(Boolean(
       guild?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0x9d8aa9
       && guild?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
