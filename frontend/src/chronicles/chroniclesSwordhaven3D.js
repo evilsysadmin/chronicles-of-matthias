@@ -947,8 +947,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         mesh(bay, new THREE.BoxGeometry(0.055, 1.24, 0.45), sageGlass,
           'apothecary-bay-side-glass', [side * 0.77, -0.06, -0.25], !coarse);
       }
-      mesh(bay, new THREE.BoxGeometry(1.99, 0.16, 0.78), patinatedCopper,
-        'apothecary-bay-verdigris-hood', [0, 1.08, -0.21], !coarse);
+      // A full pitched copper canopy projects above each glazed bay. The
+      // green eave is legible from street level without hiding the arch or sign.
+      const hood = mesh(bay, new THREE.BoxGeometry(2.32, 0.16, 1.52), patinatedCopper,
+        'apothecary-bay-verdigris-hood', [0, 1.43, 0.12], !coarse);
+      hood.rotation.x = 0.26;
       mesh(bay, new THREE.ShapeGeometry(arch), mats.stone,
         'apothecary-window-rounded-stone-arch', [0, 0, 0], !coarse);
       mesh(bay, new THREE.ShapeGeometry(pane), sageGlass,
