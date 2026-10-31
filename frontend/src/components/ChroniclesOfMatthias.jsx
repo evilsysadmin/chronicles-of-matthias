@@ -1012,14 +1012,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       if (error) console.error('Chronicles enemy turn failed; passing its initiative slot', error);
       // Commit initiative BEFORE any optional sound, splat or retaliation
       // presentation. A broken cue must never hold the controls hostage.
-      stateRef.current = advanced;
+      // Enemy initiative can advance the same durable turn counter as the
+      // player's actions. Never let a blessing survive extra enemy turns.
+      const temporal = chroniclesResolveTemporaryFountainBoon(
+        latest, advanced, progressionRef.current,
+      );
+      const committed = temporal.updated ? temporal.state : advanced;
+      stateRef.current = committed;
       pendingActionSoundRef.current = error ? null : {
         previous: latest,
         resolved: acted,
-        committed: advanced,
+        committed,
         action: { type: 'enemy-turn', enemyId: actor.id },
       };
-      setState(advanced);
+      setState(committed);
       try {
         if (!error) {
           showHitSplats(latest, acted);
