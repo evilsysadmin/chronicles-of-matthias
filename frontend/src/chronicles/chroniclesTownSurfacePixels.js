@@ -1,11 +1,14 @@
 // Deterministic, self-contained surface detail for Swordhaven facades and roads.
 // Keep the classic pixel atlas for the overworld; these close-up town surfaces
 // need finer mortar, weathering and grain. Shared DataTextures: no downloads.
-export const CHRONICLES_TOWN_SURFACE_KINDS = Object.freeze(['stucco', 'masonry', 'roof', 'timber', 'cobble']);
+export const CHRONICLES_TOWN_SURFACE_KINDS = Object.freeze(['stucco', 'masonry', 'brick', 'roof', 'timber', 'cobble']);
 
 const SURFACES = Object.freeze({
   stucco: { size: 128, base: [240, 231, 215] },
   masonry: { size: 256, base: [221, 215, 204], width: 64, height: 32 },
+  // Long, shallow fired-clay courses: four bricks across and sixteen rows
+  // repeat seamlessly, including the half-brick bond on alternate courses.
+  brick: { size: 256, base: [226, 172, 148], width: 64, height: 16 },
   roof: { size: 128, base: [205, 195, 184], width: 32, height: 16 },
   timber: { size: 128, base: [206, 179, 151] },
   cobble: { size: 256, base: [217, 211, 197], width: 32, height: 16 },
@@ -66,20 +69,21 @@ function surfaceDetail(kind, x, y, spec) {
   const dx = Math.min(lx, width - 1 - lx);
   const dy = Math.min(ly, height - 1 - ly);
   const cobble = kind === 'cobble';
-  const seamX = (cobble ? 1.9 : 1.25)
-    + Math.sin(ly * 0.51 + row * 1.13 + column * 2.17) * (cobble ? 0.83 : 0.40);
-  const seamY = (cobble ? 1.45 : 1.1)
-    + Math.sin(lx * 0.36 + row * 1.71 + column * 0.42) * (cobble ? 0.57 : 0.3);
+  const brick = kind === 'brick';
+  const seamX = (cobble ? 1.9 : brick ? 1.25 : 1.25)
+    + Math.sin(ly * 0.51 + row * 1.13 + column * 2.17) * (cobble ? 0.83 : brick ? 0.18 : 0.40);
+  const seamY = (cobble ? 1.45 : brick ? 1.2 : 1.1)
+    + Math.sin(lx * 0.36 + row * 1.71 + column * 0.42) * (cobble ? 0.57 : brick ? 0.15 : 0.3);
   const corner = cobble && dx < 4.5 && dy < 3.8
     && ((4.5 - dx) / 4.5) ** 2 + ((3.8 - dy) / 3.8) ** 2 > 0.92;
   const mortar = dx <= seamX || dy <= seamY || corner;
   const rounding = Math.min(1, Math.max(0,
-    Math.min(dx - seamX, dy - seamY) / (cobble ? 4 : 5)));
-  const stone = hash(column, row, cobble ? 41 : kind === 'roof' ? 43 : 47);
+    Math.min(dx - seamX, dy - seamY) / (cobble ? 4 : brick ? 2.5 : 5)));
+  const stone = hash(column, row, cobble ? 41 : kind === 'roof' ? 43 : brick ? 67 : 47);
   const pit = hash(Math.floor(x / 3), Math.floor(y / 3), 61) > 0.988 ? -0.13 : 0;
-  const shade = 0.98 + (stone - 0.5) * (cobble ? 0.37 : 0.30)
-    + erosion * 0.24 + fine * 0.13 + grain * 0.08 + pit
-    + (rounding - 0.5) * (cobble ? 0.23 : 0.17);
+  const shade = 0.98 + (stone - 0.5) * (cobble ? 0.37 : brick ? 0.24 : 0.30)
+    + erosion * (brick ? 0.17 : 0.24) + fine * 0.13 + grain * 0.08 + pit
+    + (rounding - 0.5) * (cobble ? 0.23 : brick ? 0.11 : 0.17);
   // Elevation feeds a tangent-space normal map: actual light direction makes
   // the mortar sink and the weathered stone rise, without extra triangles.
   const elevation = mortar ? 0.10
@@ -100,7 +104,7 @@ export function chroniclesTownSurfacePixels(kind) {
   const pixels = new Uint8Array(size * size * 4);
   // One shared normal atlas per material: stone joints, roof shingles and
   // fine limewash pores all respond to light without extra polygons.
-  const stoneRelief = kind === 'masonry' || kind === 'cobble'
+  const stoneRelief = kind === 'masonry' || kind === 'brick' || kind === 'cobble'
     || kind === 'roof' || kind === 'stucco';
   const heights = stoneRelief ? new Float32Array(size * size) : null;
   for (let y = 0; y < size; y += 1) {
@@ -115,7 +119,7 @@ export function chroniclesTownSurfacePixels(kind) {
       if (heights) heights[index] = detail.elevation;
       for (let channel = 0; channel < 3; channel += 1) {
         const pigment = detail.mortar
-          ? (moss ? [76, 98, 55] : [95, 89, 80])[channel]
+          ? (moss ? [76, 98, 55] : kind === 'brick' ? [163, 150, 137] : [95, 89, 80])[channel]
           : lichen ? [130, 137, 100][channel]
           : base[channel] * detail.shade
             + (channel === 0 ? 1 : channel === 2 ? -1 : 0) * ((detail.stone ?? 0.5) - 0.5) * 13;
