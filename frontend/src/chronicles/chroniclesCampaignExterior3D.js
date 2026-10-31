@@ -326,9 +326,20 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
 function addSettlementResidentialDoors(town, { doorFaces, center }) {
   if (!doorFaces.length) return;
   const doorHeight = 1.46;
+  // A single merged door leaf provides four raised, tongue-and-groove oak
+  // boards. Shallow seams catch street lighting without another material,
+  // texture, mesh, batch, or per-frame work. All relief ends before z=2m.
+  const leafParts = [new THREE.BoxGeometry(1.16, 2.22, 0.014)];
+  for (const x of [-0.432, -0.144, 0.144, 0.432]) {
+    const plank = new THREE.BoxGeometry(0.258, 2.12, 0.006);
+    plank.translate(x, 0, 0.010);
+    leafParts.push(plank);
+  }
+  const leafGeometry = mergeGeometries(leafParts, false);
+  leafParts.forEach(part => part.dispose());
+  if (!leafGeometry) throw new Error('Swordhaven oak door leaf could not be merged');
   const panel = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.16, 2.22, 0.014),
-    material(0x453122, { roughness: 0.96 }), doorFaces.length);
+    leafGeometry, material(0x453122, { roughness: 0.96 }), doorFaces.length);
   panel.name = 'chronicles-town-residential-door-panels';
   const frameParts = [];
   for (const side of [-1, 1]) {
@@ -348,10 +359,22 @@ function addSettlementResidentialDoors(town, { doorFaces, center }) {
   const frames = new THREE.InstancedMesh(
     frameGeometry, material(0x896747, { roughness: 0.94 }), doorFaces.length);
   frames.name = 'chronicles-town-residential-door-frames';
+  // The original ring and two modest horizontal metal straps share the
+  // original knocker batch. Strap geometry is offset because the instance is
+  // anchored at the ring (+0.34m from door centre), not the door centre.
+  const ironParts = [new THREE.RingGeometry(0.066, 0.093, 12)];
+  for (const y of [-0.70, 0.70]) {
+    const strap = new THREE.BoxGeometry(0.98, 0.075, 0.006);
+    strap.translate(-0.34, y, -0.004);
+    ironParts.push(strap);
+  }
+  const ironGeometry = mergeGeometries(ironParts, false);
+  ironParts.forEach(part => part.dispose());
+  if (!ironGeometry) throw new Error('Swordhaven door ironwork could not be merged');
   const knockers = new THREE.InstancedMesh(
-    new THREE.RingGeometry(0.066, 0.093, 12),
-    material(0xb9a17c, { metalness: 0.48, roughness: 0.58, side: THREE.DoubleSide }),
-    doorFaces.length);
+    ironGeometry, material(0xb9a17c, {
+      metalness: 0.48, roughness: 0.58, side: THREE.DoubleSide,
+    }), doorFaces.length);
   knockers.name = 'chronicles-town-residential-door-knockers';
   const dummy = new THREE.Object3D();
   doorFaces.forEach(({ x, y, dx, dy, yaw }, index) => {

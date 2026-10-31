@@ -531,7 +531,21 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(domesticPanels.count).toBeLessThan(frames.count / 2);
     // Every domestic opening removes only its two formerly crossing braces.
     expect(uprights.count + domesticPanels.count * 2).toBe(318);
-    expect(doorFrames.geometry.index.count).toBe(4 * 36);
+    // Real raised oak planks and two forged straps share the original
+    // THREE door batches. No per-door meshes, new material or draw calls.
+    expect(domesticPanels.geometry.index.count).toBe(5 * 36); // Leaf + 4 boards.
+    expect(doorFrames.geometry.index.count).toBe(4 * 36); // 2 jambs, head, sill.
+    expect(knockers.geometry.index.count).toBe(12 * 6 + 2 * 36); // Ring + 2 bands.
+    const leafBounds = new THREE.Box3()
+      .setFromBufferAttribute(domesticPanels.geometry.getAttribute('position'));
+    const ironBounds = new THREE.Box3()
+      .setFromBufferAttribute(knockers.geometry.getAttribute('position'));
+    expect(leafBounds.max.x).toBeCloseTo(0.58);
+    expect(leafBounds.max.z).toBeCloseTo(0.013);
+    expect(ironBounds.min.y).toBeLessThan(-0.70);
+    expect(ironBounds.max.y).toBeGreaterThan(0.70);
+    expect(1.983 + leafBounds.max.z).toBeLessThan(2);
+    expect(1.998 + ironBounds.max.z).toBeLessThan(2);
     expect(doorFrames.material.color.getHex()).not.toBe(domesticPanels.material.color.getHex());
     const doorFrameBounds = new THREE.Box3()
       .setFromBufferAttribute(doorFrames.geometry.getAttribute('position'));

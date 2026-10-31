@@ -61,6 +61,8 @@ try {
           'Upper-floor limewash must be paler than the weathered ground floor, with no extra meshes');
         assert.equal(result.domesticDoors, 'true',
           'Closed residential oak entries need shared frame and iron batches on real blind facades');
+        assert.equal(result.domesticJoinery, 'true',
+          'Raised oak boards and forged straps must fit the original door batches inside blocked cells');
         assert.equal(result.windowDetail, 'true',
           'Rendered street windows must have merged mullions and sills inside solid cells');
         assert.equal(result.plasterRelief, 'true',
