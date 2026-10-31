@@ -39,6 +39,28 @@ export function chroniclesNormalizeAdminCommits(payload) {
   });
 }
 
+// Summaries are derived only from real commit subjects. Do not imply that a
+// refactor, dependency bump or CI change is a user-facing improvement.
+const INTERNAL_SCOPES = /^(?:ci|build|deps?(?:-.+)?|dependency|infra|workflows?|tests?|docs|security|tooling|release)$/i;
+const CHANGE_TYPES = Object.freeze({
+  feat: Object.freeze({ label: 'Novedad', userFacing: true }),
+  fix: Object.freeze({ label: 'Corrección', userFacing: true }),
+  perf: Object.freeze({ label: 'Rendimiento', userFacing: true }),
+});
+const TECHNICAL_CHANGE = Object.freeze({ label: 'Técnico', userFacing: false });
+
+export function chroniclesAdminCommitCategory(title) {
+  if (typeof title !== 'string') return TECHNICAL_CHANGE;
+  const match = /^(feat|fix|perf)(?:\(([^)]+)\))?!?:\s/i.exec(title.trim());
+  if (!match || (match[2] && INTERNAL_SCOPES.test(match[2]))) return TECHNICAL_CHANGE;
+  return CHANGE_TYPES[match[1].toLowerCase()] || TECHNICAL_CHANGE;
+}
+
+export function chroniclesVisibleAdminCommits(entries, showAll = false) {
+  if (!Array.isArray(entries)) return [];
+  return showAll ? entries : entries.filter((entry) => chroniclesAdminCommitCategory(entry?.title).userFacing);
+}
+
 export async function chroniclesFetchAdminChangelog({
   buildId = APP_BUILD_ID, fetchImpl = globalThis.fetch, signal,
 } = {}) {
