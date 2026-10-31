@@ -7,6 +7,7 @@ import {
   reconcileChroniclesProgressionInTacticsState,
 } from '../chroniclesOfMatthiasProgression.js';
 import { chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
+import { chroniclesMemberMaxSp, chroniclesMemberSp, chroniclesSpendSp } from './chroniclesMagic.js';
 import {
   chroniclesApplyRunCheckpoint,
   chroniclesCheckpointRunProgression,
@@ -19,6 +20,7 @@ import {
   LIGHTHOUSE_FOUNTAIN_BOON,
   LAVA_FOUNTAIN_BOON,
   MILL_FOUNTAIN_BOON,
+  BISHOP_FONT_BOON,
 } from './chroniclesTemporaryFountainBoon.js';
 
 function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
@@ -59,6 +61,14 @@ function millFountainStart(progression = createChroniclesProgression(), rules = 
     progression,
   );
   return { ...base, x: 5, y: 10, direction: 0, runProgression: progression };
+}
+
+function bishopFontStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-e6', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 15, y: 4, direction: 0, runProgression: progression };
 }
 
 function act(state, progression, action) {
@@ -499,6 +509,105 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(returned.terra_f3ShrineUsed).toBe(true);
     expect(act({ ...returned, x: 5, y: 4, direction: 0 },
       mill.progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('blesses the Bishop Font with +4 Personality: real clerical PH cap, not free PH after expiry', () => {
+    const progression = createChroniclesProgression();
+    const original = bishopFontStart(progression);
+    expect(chroniclesContextualContentAction(original)?.id).toBe(BISHOP_FONT_BOON.sourceId);
+    const casterIds = ['rook', 'bishop'];
+    const baseCaps = Object.fromEntries(casterIds.map((id) => {
+      const hero = original.party.find((entry) => entry.id === id);
+      return [id, chroniclesMemberMaxSp(original, hero)];
+    }));
+    const drinking = act(original, progression, { type: 'interact' });
+    expect(drinking.granted).toBe(true);
+    expect(drinking.state.terra_e6ShrineUsed).toBe(true);
+    expect(drinking.state.message).toContain('Pila del Obispo');
+    expect(drinking.state.message).toContain('+4 Personalidad');
+    expect(drinking.progression.mm3TemporaryBoon).toEqual({
+      sourceId: BISHOP_FONT_BOON.sourceId, stat: 'personality',
+      amount: 4, expiresAtTurn: drinking.state.turns + 10,
+    });
+    expect(drinking.progression.claimedTemporaryWorldSources).toEqual([BISHOP_FONT_BOON.sourceId]);
+    drinking.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.personality).toBe(original.party[i].mm3.stats.personality + 4);
+      expect(hero.characterBuild.stats.personality).toBe(original.party[i].characterBuild.stats.personality);
+      expect(hero.mm3.worldBonuses.personality).toBe(0);
+      expect(hero.maxHp).toBe(original.party[i].maxHp);
+    });
+    for (const id of casterIds) {
+      const hero = drinking.state.party.find((entry) => entry.id === id);
+      expect(chroniclesMemberMaxSp(drinking.state, hero)).toBeGreaterThan(baseCaps[id]);
+      expect(chroniclesMemberSp(drinking.state, hero)).toBe(chroniclesMemberMaxSp(drinking.state, hero));
+    }
+    // Spend boosted PH before saving: when the blessing expires, the spent
+    // spell points remain spent instead of being silently replenished.
+    const spent = chroniclesSpendSp(drinking.state, 'bishop', 3);
+    const bishopWithBoon = spent.party.find((hero) => hero.id === 'bishop');
+    const spentPh = chroniclesMemberSp(spent, bishopWithBoon);
+    expect(spentPh).toBeLessThan(baseCaps.bishop);
+
+    const checkpoint = chroniclesRunCheckpointPayload(spent, 6);
+    const savedProgression = chroniclesCheckpointRunProgression(checkpoint);
+    const restored = reconcileChroniclesProgressionInTacticsState(
+      chroniclesApplyRunCheckpoint(createChroniclesState('terra-e6',
+        progression.characterBuild, { rules: 'mm3' }), checkpoint),
+      savedProgression,
+    );
+    expect(savedProgression.claimedTemporaryWorldSources).toContain(BISHOP_FONT_BOON.sourceId);
+    expect(chroniclesMemberSp(restored, restored.party.find((hero) => hero.id === 'bishop'))).toBe(spentPh);
+    expect(act(restored, savedProgression, { type: 'interact' }).granted).toBe(false);
+
+    let current = restored;
+    for (let i = 0; i < 10; i += 1) {
+      const previous = current;
+      const result = act(previous, savedProgression, { type: 'turn-right' });
+      expect(result.state.turns).toBe(previous.turns + 1);
+      expect(result.expiredNotice).toBe(i === 9
+        ? 'Se desvanece la bendición de la Pila del Obispo (+4 Personalidad).'
+        : null);
+      current = result.state;
+    }
+    expect(current.party.map((hero) => hero.mm3.stats.personality))
+      .toEqual(original.party.map((hero) => hero.mm3.stats.personality));
+    for (const id of casterIds) {
+      const hero = current.party.find((entry) => entry.id === id);
+      expect(chroniclesMemberMaxSp(current, hero)).toBe(baseCaps[id]);
+    }
+    expect(chroniclesMemberSp(current, current.party.find((hero) => hero.id === 'bishop'))).toBe(spentPh);
+    expect(current.party.every((hero) => hero.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, savedProgression).expiredNotice).toBeNull();
+    expect(act(bishopFontStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('replaces a Mill Endurance blessing with Bishop Personality without retaining extra HP', () => {
+    const progression = createChroniclesProgression();
+    const original = millFountainStart(progression);
+    const mill = act(original, progression, { type: 'interact' });
+    expect(mill.granted).toBe(true);
+    const traveled = chroniclesMapTransitionState(mill.state, 'terra-e6');
+    const atFont = { ...traveled, x: 15, y: 4, direction: 0, runProgression: mill.progression };
+    expect(chroniclesContextualContentAction(atFont)?.id).toBe(BISHOP_FONT_BOON.sourceId);
+    const font = act(atFont, mill.progression, { type: 'interact' });
+    expect(font.granted).toBe(true);
+    expect(font.expiredNotice).toBeNull();
+    expect(font.state.message).toContain('Sustituye a la bendición anterior');
+    expect(font.progression.claimedTemporaryWorldSources)
+      .toEqual([MILL_FOUNTAIN_BOON.sourceId, BISHOP_FONT_BOON.sourceId]);
+    expect(font.progression.mm3TemporaryBoon.sourceId).toBe(BISHOP_FONT_BOON.sourceId);
+    font.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.endurance).toBe(original.party[i].mm3.stats.endurance);
+      expect(hero.mm3.stats.personality).toBe(original.party[i].mm3.stats.personality + 4);
+      expect(hero.maxHp).toBe(original.party[i].maxHp);
+    });
+    expect(grantChroniclesMM3TemporaryBoon(
+      font.progression, MILL_FOUNTAIN_BOON.sourceId, 'endurance', 4, 99,
+    ).granted).toBe(false);
+    const returned = chroniclesMapTransitionState(font.state, 'terra-b5');
+    expect(returned.terra_b5ShrineUsed).toBe(true);
+    expect(act({ ...returned, x: 5, y: 10, direction: 0 },
+      font.progression, { type: 'interact' }).granted).toBe(false);
   });
 
   it('notifies once when an enemy action passes the expiry boundary, but never on reload or invalid turns', () => {
