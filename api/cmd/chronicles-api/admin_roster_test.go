@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestRosterPolicyAndDataDisclosure(t *testing.T) {
@@ -150,5 +152,26 @@ func TestRosterPreflightPermitsClientReleaseHeader(t *testing.T) {
 		if !strings.Contains(allowed, required) {
 			t.Fatalf("preflight missing %q in allow-headers=%q", required, allowed)
 		}
+	}
+}
+
+func TestRosterQuestSummaryOnlyPublishesBoundedAuthoredProgress(t *testing.T) {
+	quests := bson.M{
+		"lost-king": bson.D{{Key: "status", Value: "active"}, {Key: "objective", Value: "Busca al alcalde de Swordhaven."}, {Key: "privateFlag", Value: "secret"}},
+		"side-quest": bson.M{"status": "completed", "objective": "No publicarlo"},
+		"not-started": bson.M{"status": "locked"},
+		"malformed": "not-an-object",
+	}
+	active, completed, objective := rosterQuestSummary(quests)
+	if active != 1 || completed != 1 || objective != "Busca al alcalde de Swordhaven." {
+		t.Fatalf("unexpected bounded quest summary: %d %d %q", active, completed, objective)
+	}
+	if a, b, title := rosterQuestSummary(nil); a != 0 || b != 0 || title != "" {
+		t.Fatalf("missing quest data is not an empty summary: %d %d %q", a, b, title)
+	}
+	for _, invalid := range []string{"line\nbreak", strings.Repeat("x", 181), "   "} {
+		quests["lost-king"] = bson.M{"status": "active", "objective": invalid}
+		_, _, got := rosterQuestSummary(quests)
+		if got != "" { t.Fatalf("unsafe quest objective returned: %q", got) }
 	}
 }
