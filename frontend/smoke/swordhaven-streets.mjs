@@ -74,6 +74,8 @@ try {
         assert.equal(Number(result.roofCount), 7);
         assert.equal(result.premiumRoofline, 'true',
           'Seven Swordhaven terrace roofs must show coherent batched oak eaves, ridges and gable verges');
+        assert.equal(result.eaveKneeBraces, 'true',
+          'Seven authored terraces need paired oak knee braces beneath each real eave, well above the street');
         assert.equal(result.premiumResidentialDormers, 'true',
           'Residential roof runs must have real raised dormers and roof windows without extra lighting or colliders');
         assert.equal(result.readableDormerWindows, 'true',
