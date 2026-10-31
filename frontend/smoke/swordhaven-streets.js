@@ -141,6 +141,7 @@ try {
   const streetBraces = town?.getObjectByName('chronicles-town-street-hood-knee-braces');
   const streetBoxes = town?.getObjectByName('chronicles-town-street-terracotta-window-boxes');
   const streetFoliage = town?.getObjectByName('chronicles-town-street-window-box-foliage');
+  const julietGuards = town?.getObjectByName('chronicles-town-street-upper-juliet-guards');
   const apothecary = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-apothecary-'));
   const guild = town?.children.find(child =>
