@@ -55,7 +55,9 @@ describe('Swordhaven occupied narrow alleys', () => {
     for (const [index, x] of [3, 6, 12, 15].entries()) {
       ropes.getMatrixAt(index, matrix);
       at.setFromMatrixPosition(matrix);
-      expect(at.toArray()).toEqual([(x - 9) * 4, 3.9, (18 - 11) * 4]);
+      expect(at.x).toBeCloseTo((x - 9) * 4);
+      expect(at.y).toBeCloseTo(3.9);
+      expect(at.z).toBeCloseTo((18 - 11) * 4);
       for (const [slot, lateral] of [-1.12, 0, 1.12].entries()) {
         const i = index * 3 + slot;
         linen.getMatrixAt(i, matrix);
