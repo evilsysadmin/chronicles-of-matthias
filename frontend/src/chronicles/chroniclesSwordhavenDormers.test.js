@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import swordhaven from './maps/swordhaven-first-book.json';
 import { planSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
+import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 
 function buildTown(mapId = swordhaven.id, coarsePointer = false) {
@@ -30,6 +31,20 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
     expect(plan()).toEqual(entries);
     const points = new Set(entries.map(item => item.x + ':' + item.z));
     expect(points.size).toBe(entries.length);
+    // Six real dormers track shallow, steep and normal roof planes, while
+    // the narrow high-pitch cottages remain without dormers by design.
+    const roofHeights = new Set();
+    for (const run of swordhaven.landscape.roofRuns.filter(item => item.width >= 4)) {
+      const each = planSwordhavenDormers([run], swordhaven.grid, { x: 9, y: 11 }, 6.4);
+      expect(each.length).toBeGreaterThan(0);
+      const rise = swordhavenRoofRise(run);
+      roofHeights.add(rise);
+      for (const dormer of each) {
+        expect(dormer.y).toBeCloseTo(6.36 + rise * (1 - 1.58 / 2.22));
+        expect(entries).toContainEqual(dormer);
+      }
+    }
+    expect([...roofHeights].sort((a, b) => a - b)).toEqual([0.78, 0.92, 1.25]);
     for (const entry of entries) {
       expect([-1, 1]).toContain(entry.side);
       expect(entry.y).toBeGreaterThan(6.5);
@@ -112,7 +127,11 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
 
   it('leaves other settlements without Swordhaven-only dormers', () => {
     const town = buildTown('other-authored-settlement', true);
-    expect(town.getObjectByName('chronicles-town-south-pitched-roofs')).toBeTruthy();
+    const roofs = town.getObjectByName('chronicles-town-south-pitched-roofs');
+    expect(roofs).toBeTruthy();
+    const originalMatrix = new THREE.Matrix4();
+    roofs.getMatrixAt(0, originalMatrix);
+    expect(new THREE.Vector3().setFromMatrixScale(originalMatrix).y).toBeCloseTo(1);
     expect(town.getObjectByName('chronicles-town-residential-dormer-plaster')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-pitched-roofs')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-window-casements')).toBeFalsy();
