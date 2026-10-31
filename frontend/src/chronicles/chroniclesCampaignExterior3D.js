@@ -383,6 +383,19 @@ function addSettlementResidentialDoors(town, { doorFaces, center }) {
   const threshold = new THREE.BoxGeometry(1.47, 0.10, 0.018);
   threshold.translate(0, -1.19, 0);
   frameParts.push(threshold);
+  // A shallow pitched oak pediment gives each residence an unmistakable
+  // street-facing entrance. Two rafters and a keystone are merged into the
+  // existing door-frame draw call, below the 3.25m storey beam and wholly
+  // inside the blocked cell (frame origin at z=1.988m).
+  for (const side of [-1, 1]) {
+    const rafter = new THREE.BoxGeometry(0.74, 0.095, 0.016);
+    rafter.rotateZ(-side * 0.26);
+    rafter.translate(side * 0.35, 1.48, 0.002);
+    frameParts.push(rafter);
+  }
+  const keystone = new THREE.BoxGeometry(0.16, 0.18, 0.016);
+  keystone.translate(0, 1.58, 0);
+  frameParts.push(keystone);
   const frameGeometry = mergeGeometries(frameParts, false);
   frameParts.forEach(part => part.dispose());
   if (!frameGeometry) throw new Error('Swordhaven residential door frame could not be merged');
