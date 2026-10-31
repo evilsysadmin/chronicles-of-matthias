@@ -368,6 +368,9 @@ function runtimeCheckpointFlags(state) {
       if (memberId && member.hp > 0 && source.combatBlock?.[memberId] === true) {
         flags[runtimeKey('block', memberId)] = true;
       }
+      if (memberId && member.hp > 0 && source.combatActionSpent?.[memberId] === true) {
+        flags[runtimeKey('spent', memberId)] = true;
+      }
     });
   }
   Object.entries(source.enemyStatus || {}).forEach(([enemyId, status]) => {
@@ -448,7 +451,7 @@ const NON_AUTHORED_WORLD_FLAG_KEYS = new Set([
   'mapFlagsById', 'slainEnemies', 'equipment', 'inventory', 'quests',
   'consumedContentIds', 'claimedRewards', 'runProgression',
   'spellPoints', 'spellbook', 'bagOwners', 'guildMemberships',
-  'classAbilityCharges', 'enemyStatus', 'combatWard', 'combatBlock',
+  'classAbilityCharges', 'enemyStatus', 'combatWard', 'combatBlock', 'combatActionSpent',
 ]);
 
 function authoredWorldFlags(flags) {
@@ -598,6 +601,10 @@ function applyRuntimeCheckpoint(state, flags) {
       .filter((member) => member.hp > 0 && flags[runtimeKey('block', member.id)] === true)
       .map((member) => [member.id, true]));
     if (Object.keys(guards).length) next.combatBlock = guards;
+    const spent = Object.fromEntries(next.party
+      .filter((member) => member.hp > 0 && flags[runtimeKey('spent', member.id)] === true)
+      .map((member) => [member.id, true]));
+    if (Object.keys(spent).length) next.combatActionSpent = spent;
   }
   const enemyStatus = {};
   (map?.enemies || []).forEach((enemy) => {
