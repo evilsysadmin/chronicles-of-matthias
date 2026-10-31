@@ -1,0 +1,32 @@
+name: Chronicles R2 sprite atlases · public integrity gate
+on:
+  pull_request:
+    paths:
+      - 'frontend/src/chronicles/chroniclesRemoteSpiderSprite.js'
+      - 'frontend/src/chronicles/chroniclesRemoteSmugglerSprite.js'
+      - 'frontend/src/chronicles/chroniclesRemoteOverworldSprite.js'
+      - 'frontend/src/chronicles/chroniclesSpriteBillboards.test.js'
+      - 'frontend/src/chronicles/chroniclesRemoteSmugglerSprite.test.js'
+      - 'frontend/src/chronicles/chroniclesRemoteOverworldSprite.test.js'
+      - 'frontend/src/chroniclesEnemyVisualRegistry.js'
+      - 'frontend/src/chroniclesOfMatthiasThree.js'
+      - '.github/workflows/chronicles-r2-verify.yml'
+      - 'scripts/chronicles-r2-sprites.json'
+      - 'scripts/verify_chronicles_r2_assets.py'
+      - 'tests/test_chronicles_r2_assets.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pinned-public-webp:
+    name: public-webp-integrity-and-cors
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Verify R2 verifier offline contracts
+        run: python3 -m unittest discover -s tests -p 'test_chronicles_r2_assets.py' -v
+      - name: Validate all 14 pinned R2 sprites on the public hostname
+        run: python3 scripts/verify_chronicles_r2_assets.py
