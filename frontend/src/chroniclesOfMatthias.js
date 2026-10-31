@@ -1196,6 +1196,10 @@ export function chroniclesReduce(state, action) {
   // input can translate OR rotate the party, spend initiative or trigger a
   // map transition during first-person combat.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
+  // A stale F/interact or confirmed exit must not activate world content or
+  // change floors during MM3 initiative. Travel resumes after combat ends.
+  if (state.combatRules === 'mm3' && state.initiative
+    && (actionType === 'interact' || actionType === 'cross-area-threshold')) return state;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
   if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
