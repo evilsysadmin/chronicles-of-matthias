@@ -15,6 +15,7 @@ import {
 import {
   chroniclesResolveTemporaryFountainBoon,
   WOLF_FOUNTAIN_BOON,
+  FROST_FOUNTAIN_BOON,
 } from './chroniclesTemporaryFountainBoon.js';
 
 function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
@@ -23,6 +24,14 @@ function wolfFountainStart(progression = createChroniclesProgression(), rules = 
     progression,
   );
   return { ...base, x: 5, y: 4, direction: 0, runProgression: progression };
+}
+
+function frostFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-e1', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 5, y: 10, direction: 0, runProgression: progression };
 }
 
 function act(state, progression, action) {
@@ -112,6 +121,78 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
       progression.characterBuild, { rules: 'mm3' }), expired);
     const refreshed = reconcileChroniclesProgressionInTacticsState(saved, expiredProgression);
     expect(refreshed.party.map((hero) => hero.mm3.stats.luck)).toEqual(initialLuck);
+  });
+
+  it('grants the authentic Frost Fountain +2 Speed for ten actions, never an unlisted well', () => {
+    const progression = createChroniclesProgression();
+    const initial = frostFountainStart(progression);
+    expect(chroniclesContextualContentAction(initial)?.id).toBe(FROST_FOUNTAIN_BOON.sourceId);
+    const claimed = act(initial, progression, { type: 'interact' });
+    expect(claimed.granted).toBe(true);
+    expect(claimed.state.terra_e1ShrineUsed).toBe(true);
+    expect(claimed.state.message).toContain('+2 Velocidad');
+    expect(claimed.state.message).toContain('10 acciones');
+    expect(claimed.progression.mm3TemporaryBoon).toEqual({
+      sourceId: FROST_FOUNTAIN_BOON.sourceId,
+      stat: 'speed', amount: 2,
+      expiresAtTurn: claimed.state.turns + 10,
+    });
+    claimed.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.speed).toBe(initial.party[i].mm3.stats.speed + 2);
+      expect(hero.mm3.stats.luck).toBe(initial.party[i].mm3.stats.luck);
+      expect(hero.mm3.worldBonuses.speed).toBe(0);
+      expect(hero.characterBuild.stats.speed).toBe(initial.party[i].characterBuild.stats.speed);
+    });
+    const saved = chroniclesRunCheckpointPayload(claimed.state, 9);
+    const restoredProgression = chroniclesCheckpointRunProgression(saved);
+    expect(restoredProgression.claimedTemporaryWorldSources).toEqual([FROST_FOUNTAIN_BOON.sourceId]);
+    const resumed = reconcileChroniclesProgressionInTacticsState(
+      chroniclesApplyRunCheckpoint(createChroniclesState('terra-e1',
+        progression.characterBuild, { rules: 'mm3' }), saved),
+      restoredProgression,
+    );
+    expect(resumed.party[0].mm3.stats.speed).toBe(initial.party[0].mm3.stats.speed + 2);
+    expect(chroniclesResolveTemporaryFountainBoon(resumed, resumed, restoredProgression).granted).toBe(false);
+
+    let current = resumed;
+    for (let i = 0; i < 10; i += 1) {
+      const result = act(current, restoredProgression, { type: 'turn-right' });
+      expect(result.state.turns).toBe(current.turns + 1);
+      current = result.state;
+    }
+    expect(current.party.map((hero) => hero.mm3.stats.speed))
+      .toEqual(initial.party.map((hero) => hero.mm3.stats.speed));
+    expect(current.party.every((hero) => hero.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, restoredProgression).granted).toBe(false);
+    expect(act(frostFountainStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('replaces an active Wolf blessing at the Frost Fountain, never stacks them or restores the old one', () => {
+    const base = createChroniclesProgression();
+    const original = wolfFountainStart(base);
+    const wolf = act(original, base, { type: 'interact' });
+    expect(wolf.granted).toBe(true);
+    const traveled = chroniclesMapTransitionState(wolf.state, 'terra-e1');
+    const atFrost = { ...traveled, x: 5, y: 10, direction: 0,
+      runProgression: wolf.progression };
+    expect(chroniclesContextualContentAction(atFrost)?.id).toBe(FROST_FOUNTAIN_BOON.sourceId);
+    const frost = act(atFrost, wolf.progression, { type: 'interact' });
+    expect(frost.granted).toBe(true);
+    expect(frost.progression.claimedTemporaryWorldSources)
+      .toEqual([WOLF_FOUNTAIN_BOON.sourceId, FROST_FOUNTAIN_BOON.sourceId]);
+    expect(frost.progression.mm3TemporaryBoon.sourceId).toBe(FROST_FOUNTAIN_BOON.sourceId);
+    expect(frost.state.message).toContain('Sustituye a la bendición anterior');
+    frost.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.luck).toBe(original.party[i].mm3.stats.luck);
+      expect(hero.mm3.stats.speed).toBe(original.party[i].mm3.stats.speed + 2);
+    });
+    expect(chroniclesResolveTemporaryFountainBoon(
+      { ...atFrost, terra_e1ShrineUsed: true },
+      { ...frost.state, terra_e1ShrineUsed: true }, frost.progression,
+    ).granted).toBe(false);
+    expect(grantChroniclesMM3TemporaryBoon(
+      frost.progression, WOLF_FOUNTAIN_BOON.sourceId, 'luck', 2, 99,
+    ).granted).toBe(false);
   });
 
   it('refuses duplicates, malformed blessings, rewards in Tactics, and failed interactions', () => {
