@@ -34,10 +34,10 @@ describe('Swordhaven guild slate turret', () => {
     for (const bay of lancets.children) {
       expect(bay.userData.chroniclesDecorativeOnly).toBe(true);
       expect(bay.getObjectByName('magic-turret-lancet-violet-pane')).toBeTruthy();
-      expect(bay.children.filter(child =>
-        child.name === 'magic-turret-lancet-brass-jamb')).toHaveLength(2);
-      expect(bay.children.filter(child =>
-        child.name === 'magic-turret-lancet-brass-rail')).toHaveLength(2);
+      expect(bay.getObjectByName('magic-turret-lancet-pointed-frame')).toBeTruthy();
+      expect(bay.getObjectByName('magic-turret-lancet-brass-mullion')).toBeTruthy();
+      expect(bay.getObjectByName('magic-turret-lancet-stone-sill')).toBeTruthy();
+      expect(bay.children).toHaveLength(4);
       for (const part of bay.children) {
         expect(part.userData.chroniclesDecorativeOnly).toBe(true);
         expect(part.castShadow).toBe(!coarsePointer);
