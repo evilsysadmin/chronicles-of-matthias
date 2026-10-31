@@ -60,8 +60,10 @@ describe('Swordhaven tavern east guest oriel', () => {
     const balusters = gallery.getObjectByName('tavern-gallery-carved-balusters');
     const supports = gallery.getObjectByName('tavern-gallery-knee-supports');
     const finials = gallery.getObjectByName('tavern-oriel-brass-roof-finials');
-    expect([deck, toprail, lowerrail].every(part =>
+    expect([deck, toprail].every(part =>
       part?.isMesh && part.castShadow === !coarsePointer)).toBe(true);
+    expect(lowerrail).toBeInstanceOf(THREE.Mesh);
+    expect(lowerrail.castShadow).toBe(false); // Tiny trim needs no extra shadow.
     expect(gallery.children.filter(part => part.name === 'tavern-gallery-end-rail')).toHaveLength(2);
     expect(balusters).toBeInstanceOf(THREE.InstancedMesh);
     expect(balusters.count).toBe(7);
