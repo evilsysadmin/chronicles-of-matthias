@@ -11,8 +11,9 @@ export function swordhavenRoofRise({ x, y, width }) {
 }
 
 // Swordhaven's authored south-ward roof runs already own the triangle mesh.
-// These three instanced batches supply visible oak eaves, ridge beams and
-// sloping verge boards without inventing buildings or changing walkable cells.
+// Four instanced batches supply visible oak eaves, ridge beams, sloping
+// verge boards and diagonal knee braces under the overhang. No roof cells,
+// game collision or authored path is changed.
 export function dressSwordhavenRoofRuns(town, {
   runs, center, wallHeight, eave = 0.22, timber,
 }) {
@@ -27,9 +28,15 @@ export function dressSwordhavenRoofRuns(town, {
     new THREE.BoxGeometry(CELL, 0.17, 0.19), timber, runs.length);
   const verges = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.15, 0.17, baseVergeLength), timber, runs.length * 4);
+  // Two supports at each street-side eave per existing roof. They meet the
+  // oak edge from underneath, making long plaster facades feel load-bearing
+  // without creating dozens of per-house meshes or runtime lights.
+  const corbels = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.16, 0.58, 0.13), timber, runs.length * 4);
   eaves.name = 'chronicles-town-south-roof-oak-eaves';
   ridges.name = 'chronicles-town-south-roof-oak-ridges';
   verges.name = 'chronicles-town-south-roof-oak-verges';
+  corbels.name = 'chronicles-town-south-roof-oak-corbels';
 
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
@@ -69,10 +76,21 @@ export function dressSwordhavenRoofRuns(town, {
         dummy.updateMatrix();
         verges.setMatrixAt(index, dummy.matrix);
         verges.setColorAt(index, tint.setHex(color));
+        // The knee timber slants outward as it rises. Its upper tip meets
+        // the eave while the foot stays against the existing solid wall;
+        // every part is more than 5.8m above the traversable floor.
+        dummy.scale.set(1, 1, 1);
+        dummy.position.set(wx + end * (span / 2 - 1.10),
+          roofBaseY - 0.22, wz + side * (roofDepth / 2 - 0.22));
+        dummy.rotation.set(side * 0.42, 0, 0);
+        dummy.updateMatrix();
+        corbels.setMatrixAt(index, dummy.matrix);
+        corbels.setColorAt(index, tint.setHex(color));
+        dummy.scale.set(1, 1, vergeLength / baseVergeLength);
       }
     }
   }
-  for (const part of [eaves, ridges, verges]) {
+  for (const part of [eaves, ridges, verges, corbels]) {
     part.instanceMatrix.needsUpdate = true;
     part.instanceColor.needsUpdate = true;
     part.castShadow = false;
@@ -81,7 +99,7 @@ export function dressSwordhavenRoofRuns(town, {
     part.userData.chroniclesDecorativeOnly = true;
     town.add(part);
   }
-  return { eaves, ridges, verges };
+  return { eaves, ridges, verges, corbels };
 }
 
 

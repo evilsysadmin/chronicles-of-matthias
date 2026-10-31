@@ -124,6 +124,7 @@ try {
   const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
   const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
   const oakVerges = town?.getObjectByName('chronicles-town-south-roof-oak-verges');
+  const oakCorbels = town?.getObjectByName('chronicles-town-south-roof-oak-corbels');
   const dormerFronts = town?.getObjectByName('chronicles-town-residential-dormer-plaster');
   const dormerGlass = town?.getObjectByName('chronicles-town-residential-dormer-glass');
   const dormerCheeks = town?.getObjectByName('chronicles-town-residential-dormer-cheeks');
@@ -349,6 +350,36 @@ try {
         matrix.decompose(position, new THREE.Quaternion(), scale);
         if (Math.abs(position.y - (baseY + rise / 2 + 0.035)) > 0.002
           || Math.abs(scale.z - Math.hypot(2.22, rise) / Math.hypot(2.22, 0.92)) > 0.002) return false;
+      }
+      return true;
+    })()),
+    eaveKneeBraces: String((() => {
+      if (!oakCorbels || oakCorbels.count !== roofs.count * 4
+        || oakCorbels.material !== oakEaves?.material
+        || !oakCorbels.userData.chroniclesDecorativeOnly
+        || oakCorbels.castShadow || oakCorbels.frustumCulled
+        || oakCorbels.geometry.parameters.height !== 0.58) return false;
+      const matrix = new THREE.Matrix4();
+      const roofMatrix = new THREE.Matrix4();
+      for (let index = 0; index < roofs.count; index += 1) {
+        roofs.getMatrixAt(index, roofMatrix);
+        const center = new THREE.Vector3().setFromMatrixPosition(roofMatrix);
+        const width = swordhaven.landscape.roofRuns[index].width;
+        for (const [endIndex, end] of [-1, 1].entries()) {
+          for (const [sideIndex, side] of [-1, 1].entries()) {
+            oakCorbels.getMatrixAt(index * 4 + endIndex * 2 + sideIndex, matrix);
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            matrix.decompose(position, rotation, scale);
+            if (Math.abs(position.x - center.x - end * ((width * 4 + 0.44) / 2 - 1.10)) > 0.01
+              || Math.abs(position.y - center.y + 0.22) > 0.01
+              || Math.abs(position.z - center.z - side * 2) > 0.01
+              || position.y - 0.36 < 5.7
+              || Math.abs(new THREE.Vector3(0, 1, 0).applyQuaternion(rotation).z - side * Math.sin(0.42)) > 0.01
+              || Math.abs(scale.y - 1) > 0.01) return false;
+          }
+        }
       }
       return true;
     })()),
