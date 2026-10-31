@@ -503,7 +503,52 @@ try {
         nodes.map((node) => node.tabIndex)),
         Array.from({ length: actualCount }, (_, index) => index === 0 ? 0 : -1),
         'Exactly one spell should be reachable by Tab, with arrows navigating the rest');
-      assert.match(await grimoire.getByRole('region', { name: 'Detalle del hechizo seleccionado' }).innerText(), /PH/);
+      const spellInspector = grimoire.locator('.chronicles-sheet-grimoire__detail');
+      const inspectSpell = grimoire.getByRole('button', { name: /Examinar/ });
+      assert.equal(await spellInspector.isVisible(), false,
+        'Spell details must not take half the catalogue until Examinar is requested');
+      const spellGeometry = await grimoire.evaluate((node) => {
+        const bounds = (selector) => node.querySelector(selector).getBoundingClientRect();
+        const panel = bounds('.chronicles-sheet-grimoire');
+        const list = bounds('.chronicles-sheet-grimoire__list');
+        const catalog = bounds('.chronicles-sheet-grimoire__catalog');
+        const nav = document.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect();
+        return { panelWidth: panel.width, listWidth: list.width,
+          catalogWidth: catalog.width, listHeight: list.height, navWidth: nav.width };
+      });
+      assert.ok(spellGeometry.listWidth >= spellGeometry.panelWidth - 22
+        && spellGeometry.catalogWidth >= spellGeometry.panelWidth - 8
+        && spellGeometry.listHeight >= 110
+        && spellGeometry.navWidth <= 200,
+        'Spellbook must fill its workbench, like Equipment: ' + JSON.stringify(spellGeometry));
+      await inspectSpell.click();
+      assert.equal(await spellInspector.isVisible(), true);
+      assert.equal(await spellInspector.getAttribute('role'), 'dialog');
+      assert.equal(await spellInspector.getAttribute('aria-modal'), 'true');
+      assert.match(await spellInspector.innerText(), /PH/);
+      assert.equal(await spellInspector.getByRole('button', { name: 'Cerrar inspección de hechizo' })
+        .evaluate((node) => document.activeElement === node), true,
+        'Inspect must focus its close button');
+      const opened = await grimoire.evaluate((node) => {
+        const list = node.querySelector('.chronicles-sheet-grimoire__list').getBoundingClientRect();
+        const popup = node.querySelector('.chronicles-sheet-grimoire__detail').getBoundingClientRect();
+        return { listWidth: list.width, listHeight: list.height, popupWidth: popup.width, popupHeight: popup.height,
+          popupLeft: popup.left, popupTop: popup.top };
+      });
+      assert.ok(opened.listWidth >= spellGeometry.listWidth - 2
+        && opened.popupWidth <= 640 && opened.popupHeight > 100
+        && opened.popupLeft >= 0 && opened.popupTop >= 0,
+        'Inspect must float over the unchanged full-width catalogue: ' + JSON.stringify(opened));
+      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spell-inspect-' + width + '.png' });
+      await page.keyboard.press('Tab');
+      assert.equal(await spellInspector.evaluate((node) => node.contains(document.activeElement)), true,
+        'Tab must stay inside the spell inspector');
+      await page.keyboard.press('Escape');
+      assert.equal(await spellInspector.isVisible(), false,
+        'Escape closes only the spell inspector');
+      assert.equal(await inspectSpell.evaluate((node) => node === document.activeElement), true,
+        'Closing the inspection restores the Examinar button');
+      assert.equal(await sheet.isVisible(), true);
       await grimoire.getByRole('button', { name: 'Ataque' }).click();
       assert.ok((await spellRows.count()) <= actualCount, 'Filtering cannot invent spellbook entries');
       await grimoire.getByRole('button', { name: 'Todos' }).click();
