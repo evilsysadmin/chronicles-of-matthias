@@ -129,6 +129,38 @@ export function planSwordhavenRoofChimneys(runs, center, wallHeight, eave = 0.22
   return result;
 }
 
+// Small deterministic brick-bond albedo made once per town build. The previous
+// uniform-colour chimney shafts read as smooth concrete blocks in the actual
+// 390px and desktop Chromium screenshots. Alternating courses with restrained
+// mortar restore a legible medieval masonry scale without an external asset.
+export function swordhavenChimneyMasonryTexture() {
+  const size = 64;
+  const pixels = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    const course = Math.floor(y / 8);
+    for (let x = 0; x < size; x += 1) {
+      const shiftedX = x + (course % 2) * 10;
+      const joint = (shiftedX % 20) === 0 || y % 8 === 0;
+      const variation = (x * 13 + y * 17 + course * 7) % 15;
+      const shade = joint ? 105 : 206 + variation * 2;
+      const offset = (y * size + x) * 4;
+      pixels[offset] = shade;
+      pixels[offset + 1] = shade;
+      pixels[offset + 2] = shade;
+      pixels[offset + 3] = 255;
+    }
+  }
+  const texture = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+  texture.name = 'chronicles-town-residential-chimney-brick-bond';
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 // Two instanced batches for all chimney silhouettes: stone/brick shafts
 // with an integrated foot and projecting crown, and dark open flues. No smoke
 // particle emitters, cast shadows, lights or independent collision volumes.
@@ -142,14 +174,26 @@ export function dressSwordhavenRoofChimneys(town, { runs, center, wallHeight, ea
   const crown = new THREE.BoxGeometry(0.94, 0.12, 0.82);
   crown.translate(0, 0.50, 0);
   shaftParts.push(crown);
+  // Four low masonry lips frame the dark flue rather than leaving a flat
+  // featureless top. They share the shaft geometry and its single draw call.
+  for (const side of [-1, 1]) {
+    const front = new THREE.BoxGeometry(0.94, 0.075, 0.12);
+    front.translate(0, 0.615, side * 0.33);
+    shaftParts.push(front);
+    const end = new THREE.BoxGeometry(0.12, 0.075, 0.56);
+    end.translate(side * 0.41, 0.615, 0);
+    shaftParts.push(end);
+  }
   const geometry = mergeGeometries(shaftParts, false);
   shaftParts.forEach(part => part.dispose());
   if (!geometry) throw new Error('Swordhaven chimney shaft could not be merged');
 
   const shafts = new THREE.InstancedMesh(geometry,
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.97 }), entries.length);
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff, roughness: 0.97, map: swordhavenChimneyMasonryTexture(),
+    }), entries.length);
   shafts.name = 'chronicles-town-residential-chimney-shafts';
-  const mouths = new THREE.InstancedMesh(new THREE.BoxGeometry(0.48, 0.013, 0.37),
+  const mouths = new THREE.InstancedMesh(new THREE.BoxGeometry(0.64, 0.013, 0.48),
     new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.98 }), entries.length);
   mouths.name = 'chronicles-town-residential-chimney-flues';
   const dummy = new THREE.Object3D();
@@ -166,7 +210,8 @@ export function dressSwordhavenRoofChimneys(town, { runs, center, wallHeight, ea
     shafts.setMatrixAt(i, dummy.matrix);
     shafts.setColorAt(i, tint.setHex(palette[variant]));
     dummy.scale.set(width, 1, width);
-    dummy.position.y = roofY - 0.16 + height * 1.061;
+    // Recess the dark opening just below the four raised rim stones.
+    dummy.position.y = roofY - 0.16 + height * 1.117;
     dummy.updateMatrix();
     mouths.setMatrixAt(i, dummy.matrix);
   });
