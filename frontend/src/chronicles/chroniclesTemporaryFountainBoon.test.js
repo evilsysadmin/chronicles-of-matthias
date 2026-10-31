@@ -84,6 +84,7 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     let current = wolfFountainStart(progression);
     const started = act(current, progression, { type: 'interact' });
     expect(started.granted).toBe(true);
+    expect(started.expiredNotice).toBeNull();
     progression = started.progression;
     current = started.state;
     const initialLuck = wolfFountainStart().party.map((h) => h.mm3.stats.luck);
@@ -116,6 +117,9 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
       const previous = current;
       const result = act(current, progression, { type: 'turn-left' });
       expect(result.state.turns).toBe(previous.turns + 1);
+      expect(result.expiredNotice).toBe(i === 6
+        ? 'Se desvanece la bendición de la Fuente de los Lobos (+2 Suerte).'
+        : null);
       current = result.state;
     }
     expect(current.turns).toBe(progression.mm3TemporaryBoon.expiresAtTurn);
@@ -172,6 +176,7 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(current.party.map((hero) => hero.mm3.stats.speed))
       .toEqual(initial.party.map((hero) => hero.mm3.stats.speed));
     expect(current.party.every((hero) => hero.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, restoredProgression).expiredNotice).toBeNull();
     expect(chroniclesResolveTemporaryFountainBoon(current, current, restoredProgression).granted).toBe(false);
     expect(act(frostFountainStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
   });
@@ -247,6 +252,9 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     for (let i = 0; i < 8; i += 1) {
       const result = act(current, stored, { type: 'turn-right' });
       expect(result.state.turns).toBe(current.turns + 1);
+      expect(result.expiredNotice).toBe(i === 7
+        ? 'Se desvanece la bendición de la Fuente del Faro (+3 Precisión).'
+        : null);
       current = result.state;
     }
     expect(current.turns).toBe(stored.mm3TemporaryBoon.expiresAtTurn);
@@ -271,6 +279,7 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
       .toEqual([FROST_FOUNTAIN_BOON.sourceId, LIGHTHOUSE_FOUNTAIN_BOON.sourceId]);
     expect(claimed.progression.mm3TemporaryBoon.sourceId).toBe(LIGHTHOUSE_FOUNTAIN_BOON.sourceId);
     expect(claimed.state.message).toContain('Sustituye a la bendición anterior');
+    expect(claimed.expiredNotice).toBeNull();
     claimed.state.party.forEach((member, i) => {
       expect(member.mm3.stats.speed).toBe(before.party[i].mm3.stats.speed);
       expect(member.mm3.stats.accuracy).toBe(before.party[i].mm3.stats.accuracy + 3);
@@ -282,6 +291,39 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(returned.terra_e1ShrineUsed).toBe(true);
     expect(act({ ...returned, x: 5, y: 10, direction: 0 },
       claimed.progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('notifies once when an enemy action passes the expiry boundary, but never on reload or invalid turns', () => {
+    const progression = createChroniclesProgression();
+    const awarded = act(wolfFountainStart(progression), progression, { type: 'interact' });
+    expect(awarded.granted).toBe(true);
+    const before = {
+      ...awarded.state,
+      turns: awarded.progression.mm3TemporaryBoon.expiresAtTurn - 1,
+    };
+    const expired = chroniclesResolveTemporaryFountainBoon(
+      before, { ...before, turns: before.turns + 1 }, awarded.progression,
+    );
+    expect(expired.expiredNotice).toContain('Fuente de los Lobos');
+    expect(expired.state.party[0].mm3.temporaryBoon).toBeNull();
+    const again = chroniclesResolveTemporaryFountainBoon(
+      expired.state, { ...expired.state, turns: expired.state.turns + 1 }, awarded.progression,
+    );
+    expect(again.expiredNotice).toBeNull();
+    expect(chroniclesResolveTemporaryFountainBoon(
+      before, before, awarded.progression,
+    ).expiredNotice).toBeNull();
+    expect(chroniclesResolveTemporaryFountainBoon(
+      { ...before, turns: before.turns + 1 }, before, awarded.progression,
+    ).expiredNotice).toBeNull();
+    expect(chroniclesResolveTemporaryFountainBoon(
+      { ...before, combatRules: null },
+      { ...before, turns: before.turns + 1, combatRules: null },
+      awarded.progression,
+    ).expiredNotice).toBeNull();
+    // No narratorial event or durable receipt changes when the toast appears.
+    expect(expired.state.message).toBe(before.message);
+    expect(expired.progression).toBe(awarded.progression);
   });
 
   it('refuses duplicates, malformed blessings, rewards in Tactics, and failed interactions', () => {
