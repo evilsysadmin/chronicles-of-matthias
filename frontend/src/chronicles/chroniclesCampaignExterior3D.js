@@ -239,16 +239,19 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
       }
     }
   }
-  // Only the windowless faces need extra structure: diagonal timber braces
-  // break up large blank plaster panels without crowding the shuttered ones.
+  // Not every blind bay is a blind wall: a handful are closed domestic
+  // entrances. Reserve these BEFORE placing diagonals so no timber brace
+  // crosses a door. Stable face ordering avoids per-load randomness.
   const blankFaces = faces.filter(({ x, y }) => (x + y) % 2 !== 0);
+  const doorFaces = blankFaces.filter((_, index) => index % 5 === 3);
+  const bracedFaces = blankFaces.filter((_, index) => index % 5 !== 3);
   const wood = material(0x66503a, { roughness: 0.93 });
   const beams = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
   );
   const posts = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood,
-    faces.length * 2 + cornerJoints.length + blankFaces.length * 2,
+    faces.length * 2 + cornerJoints.length + bracedFaces.length * 2,
   );
   const dummy = new THREE.Object3D();
   faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
@@ -283,7 +286,7 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   // Mirror a pair of short diagonal braces on each blind frontage. Reuse the
   // existing upright geometry, material and draw call via scaled instances.
   // The 4cm-deep timber stays entirely on the blocked side of the tile.
-  blankFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
+  bracedFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
     const [wx, wz] = gridToWorld(x, y, center);
     for (const [sideIndex, side] of [-1, 1].entries()) {
       // Structural A-braces: meet the storey beam at the centre and
@@ -308,6 +311,66 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   beams.castShadow = false;
   posts.castShadow = false;
   town.add(beams, posts);
+  addSettlementResidentialDoors(town, { doorFaces, center });
+}
+
+// Closed oak doors make intermittent blank bays read as inhabited homes,
+// without introducing false interaction targets or touching the authored grid.
+// All doors share THREE instanced batches rather than one mesh per house.
+function addSettlementResidentialDoors(town, { doorFaces, center }) {
+  if (!doorFaces.length) return;
+  const doorHeight = 1.46;
+  const panel = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(1.16, 2.22, 0.014),
+    material(0x453122, { roughness: 0.96 }), doorFaces.length);
+  panel.name = 'chronicles-town-residential-door-panels';
+  const frameParts = [];
+  for (const side of [-1, 1]) {
+    const jamb = new THREE.BoxGeometry(0.15, 2.38, 0.016);
+    jamb.translate(side * 0.66, 0, 0);
+    frameParts.push(jamb);
+  }
+  const lintel = new THREE.BoxGeometry(1.47, 0.15, 0.018);
+  lintel.translate(0, 1.24, 0);
+  frameParts.push(lintel);
+  const threshold = new THREE.BoxGeometry(1.47, 0.10, 0.018);
+  threshold.translate(0, -1.19, 0);
+  frameParts.push(threshold);
+  const frameGeometry = mergeGeometries(frameParts, false);
+  frameParts.forEach(part => part.dispose());
+  if (!frameGeometry) throw new Error('Swordhaven residential door frame could not be merged');
+  const frames = new THREE.InstancedMesh(
+    frameGeometry, material(0x896747, { roughness: 0.94 }), doorFaces.length);
+  frames.name = 'chronicles-town-residential-door-frames';
+  const knockers = new THREE.InstancedMesh(
+    new THREE.RingGeometry(0.066, 0.093, 12),
+    material(0xb9a17c, { metalness: 0.48, roughness: 0.58, side: THREE.DoubleSide }),
+    doorFaces.length);
+  knockers.name = 'chronicles-town-residential-door-knockers';
+  const dummy = new THREE.Object3D();
+  doorFaces.forEach(({ x, y, dx, dy, yaw }, index) => {
+    const [wx, wz] = gridToWorld(x, y, center);
+    dummy.rotation.set(0, yaw, 0);
+    dummy.position.set(wx + dx * 1.983, doorHeight, wz + dy * 1.983);
+    dummy.updateMatrix();
+    panel.setMatrixAt(index, dummy.matrix);
+    dummy.position.set(wx + dx * 1.988, doorHeight, wz + dy * 1.988);
+    dummy.updateMatrix();
+    frames.setMatrixAt(index, dummy.matrix);
+    // The ring lies just beyond the oak front but still within the 2m
+    // blocked half-cell. It cannot create an invisible street obstruction.
+    dummy.position.set(wx + dx * 1.998 + Math.cos(yaw) * 0.34,
+      doorHeight, wz + dy * 1.998 - Math.sin(yaw) * 0.34);
+    dummy.updateMatrix();
+    knockers.setMatrixAt(index, dummy.matrix);
+  });
+  for (const batch of [panel, frames, knockers]) {
+    batch.instanceMatrix.needsUpdate = true;
+    batch.castShadow = false;
+    batch.receiveShadow = true;
+    batch.userData.chroniclesDecorativeOnly = true;
+    town.add(batch);
+  }
 }
 
 // Sparse district landmarks on EXISTING wall cells. Shallow fixtures sit
