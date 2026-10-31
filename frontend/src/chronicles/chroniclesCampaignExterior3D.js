@@ -980,7 +980,8 @@ const TOWN_BUILDING_STYLES = Object.freeze({
   tavern: Object.freeze({ roof: 0x995e37, emblem: 'mug', label: 'TABERNA' }),
   temple: Object.freeze({ roof: 0x65758a, emblem: 'sun', label: 'TEMPLO' }),
   store: Object.freeze({ roof: 0x7a6a3c, emblem: 'sack', label: 'PROVISIONES' }),
-  apothecary: Object.freeze({ roof: 0x554481, emblem: 'crystal', label: 'BOTICA' }),
+  // Sage-glazed tiles distinguish the herbalist from the violet-roofed arcane guild.
+  apothecary: Object.freeze({ roof: 0x5d8570, emblem: 'crystal', label: 'BOTICA' }),
   guild: Object.freeze({ roof: 0x3f4f8a, emblem: 'crystal', label: 'GREMIO' }),
   watch: Object.freeze({ roof: 0x5c3b38, emblem: 'shield', label: 'GUARDIA' }),
   // Civic silhouette and seal are distinct from the temple's sun and spire.
