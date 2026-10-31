@@ -2073,28 +2073,29 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // A tensioned, gently sagging cloth canopy, not a rigid timber shelf.
     // The six stripes follow the same curve as the base canvas, sharing one
     // instanced draw call. No canvas textures, physics or new collision cells.
-    const drapedCanvas = (width, segments) => {
-      const geometry = new THREE.PlaneGeometry(width, 1.48, segments, 6);
-      geometry.rotateX(-Math.PI / 2);
+    const drapedCanvas = (width, thickness, depth, segments) => {
+      // Keep a thin visible fabric edge: a zero-thickness plane disappears
+      // edge-on in the street-facing/mobile camera.
+      const geometry = new THREE.BoxGeometry(width, thickness, depth, segments, 1, 6);
       const vertices = geometry.getAttribute('position');
       for (let i = 0; i < vertices.count; i += 1) {
         const t = (vertices.getZ(i) + 0.74) / 1.48;
-        vertices.setY(i, -0.12 * t - 0.20 * Math.sin(Math.PI * t));
+        vertices.setY(i, vertices.getY(i) - 0.12 * t - 0.20 * Math.sin(Math.PI * t));
       }
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
       return geometry;
     };
-    const cloth = mesh(awning, drapedCanvas(6.20, 12), canvas,
+    const cloth = mesh(awning, drapedCanvas(6.20, 0.10, 1.48, 12), canvas,
       'store-awning-cloth', [0, 0, 0]);
     cloth.userData.chroniclesDecorativeOnly = true;
-    const bands = new THREE.InstancedMesh(drapedCanvas(0.48, 2), stripe, 6);
+    const bands = new THREE.InstancedMesh(drapedCanvas(0.48, 0.018, 1.46, 2), stripe, 6);
     bands.name = 'store-awning-stripe';
     bands.userData.chroniclesDecorativeOnly = true;
     bands.receiveShadow = true;
     const band = new THREE.Object3D();
     for (const [index, x] of [-2.45, -1.47, -0.49, 0.49, 1.47, 2.45].entries()) {
-      band.position.set(x, 0.015, 0);
+      band.position.set(x, 0.065, 0);
       band.updateMatrix();
       bands.setMatrixAt(index, band.matrix);
     }
