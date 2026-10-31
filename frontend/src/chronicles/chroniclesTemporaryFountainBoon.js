@@ -61,11 +61,21 @@ export const MILL_FOUNTAIN_BOON = Object.freeze({
   name: 'Fuente del Molino',
 });
 
+export const BISHOP_FONT_BOON = Object.freeze({
+  mapId: 'terra-e6',
+  sourceId: 'terra-e6-shrine',
+  receipt: 'terra_e6ShrineUsed',
+  stat: 'personality',
+  amount: 4,
+  duration: 10,
+  name: 'Pila del Obispo',
+});
+
 // Only deliberately authored sources grant buffs; other restorative wells
 // keep their existing heal/PH effects without gaining incidental stat boosts.
 const TEMPORARY_FOUNTAINS = Object.freeze([
   WOLF_FOUNTAIN_BOON, FROST_FOUNTAIN_BOON, LIGHTHOUSE_FOUNTAIN_BOON,
-  LAVA_FOUNTAIN_BOON, MILL_FOUNTAIN_BOON,
+  LAVA_FOUNTAIN_BOON, MILL_FOUNTAIN_BOON, BISHOP_FONT_BOON,
 ]);
 
 // Reconcile only while a prior blessing was active, or when it expires.
