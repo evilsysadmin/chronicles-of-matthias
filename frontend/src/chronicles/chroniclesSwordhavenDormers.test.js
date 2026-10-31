@@ -46,10 +46,11 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
 
   it.each([true, false])('draws real dormers in six instanced batches on coarse=%s', (coarse) => {
     const town = buildTown(swordhaven.id, coarse);
-    const names = ['plaster', 'glass', 'cheeks', 'posts', 'lintels', 'pitched-roofs'];
+    const names = ['plaster', 'glass', 'cheeks', 'posts', 'lintels',
+      'pitched-roofs', 'window-casements'];
     const batches = names.map(name =>
       town.getObjectByName('chronicles-town-residential-dormer-' + name));
-    const [front, glass, cheeks, posts, lintels, roofs] = batches;
+    const [front, glass, cheeks, posts, lintels, roofs, casements] = batches;
     for (const batch of batches) {
       expect(batch).toBeInstanceOf(THREE.InstancedMesh);
       expect(batch.userData.chroniclesDecorativeOnly).toBe(true);
@@ -63,6 +64,21 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
     expect(posts.count).toBe(12);
     expect(lintels.count).toBe(12);
     expect(roofs.count).toBe(12);
+    expect(casements.count).toBe(6);
+    // Three box components, one draw call for all six windows. Glass is
+    // larger and blue-grey rather than an opaque or glowing square.
+    expect(glass.geometry.parameters.width).toBeCloseTo(0.82);
+    expect(glass.geometry.parameters.height).toBeCloseTo(0.50);
+    expect(glass.material.color.getHex()).toBe(0x48565e);
+    expect(glass.material.emissiveIntensity).toBeLessThan(0.10);
+    expect(casements.material).toBe(cheeks.material);
+    expect(casements.geometry.index.count).toBe(3 * 36);
+    const silhouette = new THREE.Box3().setFromBufferAttribute(
+      casements.geometry.getAttribute('position'));
+    expect(silhouette.min.x).toBeLessThan(-0.55);
+    expect(silhouette.max.x).toBeGreaterThan(0.55);
+    expect(silhouette.min.y).toBeLessThan(-0.36);
+    expect(silhouette.max.y).toBeGreaterThan(0.23);
     expect(front.instanceColor).toBeTruthy();
     expect(roofs.instanceColor).toBeTruthy();
     expect(roofs.material).toBe(town.getObjectByName('chronicles-town-south-pitched-roofs').material);
@@ -80,6 +96,12 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
       glass.getMatrixAt(index, matrix);
       location.setFromMatrixPosition(matrix);
       expect(location.z).toBeCloseTo(entry.z + entry.side * 0.092);
+      casements.getMatrixAt(index, matrix);
+      location.setFromMatrixPosition(matrix);
+      expect(location.x).toBeCloseTo(entry.x);
+      expect(location.y).toBeCloseTo(entry.y + 0.54);
+      // Timber sits proud of the glazing on both street-facing slopes.
+      expect((location.z - entry.z) * entry.side).toBeGreaterThan(0.12);
       roofs.getMatrixAt(index * 2, matrix);
       location.setFromMatrixPosition(matrix);
       expect(location.y).toBeCloseTo(entry.y + 1.075);
@@ -93,5 +115,6 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
     expect(town.getObjectByName('chronicles-town-south-pitched-roofs')).toBeTruthy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-plaster')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-pitched-roofs')).toBeFalsy();
+    expect(town.getObjectByName('chronicles-town-residential-dormer-window-casements')).toBeFalsy();
   });
 });
