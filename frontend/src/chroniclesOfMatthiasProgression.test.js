@@ -172,18 +172,20 @@ describe('Chronicles Tactics · progression', () => {
       createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }), progression,
     );
     const rook = state.party.find((hero) => hero.id === 'rook');
-    progression = grantChroniclesMM3WorldStat(progression, 'rook', 'endurance', 'crystal-endurance').progression;
+    progression = grantChroniclesMM3WorldStat(progression, 'rook', 'endurance', 'crystal-endurance-1').progression;
+    progression = grantChroniclesMM3WorldStat(progression, 'rook', 'endurance', 'crystal-endurance-2').progression;
     const buffed = reconcileChroniclesProgressionInTacticsState(state, progression);
     const stronger = buffed.party.find((hero) => hero.id === 'rook');
-    expect(stronger.maxHp).toBe(rook.maxHp + 2); // Level 2 and 15→16 Endurance crosses a band.
+    expect(stronger.maxHp).toBe(rook.maxHp + 2); // Level 2 and 15→17 Endurance crosses the bonus band.
     expect(stronger.hp).toBe(rook.hp);
-    expect(stronger.mm3.stats.endurance).toBe(16);
-    expect(stronger.mm3.worldBonuses.endurance).toBe(1);
+    expect(stronger.mm3.stats.endurance).toBe(17);
+    expect(stronger.mm3.worldBonuses.endurance).toBe(2);
     expect(stronger.characterBuild.stats.endurance).toBe(15);
     const twice = reconcileChroniclesProgressionInTacticsState(buffed, progression);
     expect(twice.party.find((hero) => hero.id === 'rook')).toEqual(stronger);
 
-    let matthiasProgress = grantChroniclesMM3WorldStat(progression, 'matthias', 'might', 'stone-might').progression;
+    let matthiasProgress = grantChroniclesMM3WorldStat(progression, 'matthias', 'might', 'stone-might-1').progression;
+    matthiasProgress = grantChroniclesMM3WorldStat(matthiasProgress, 'matthias', 'might', 'stone-might-2').progression;
     let attackState = reconcileChroniclesProgressionInTacticsState(twice, matthiasProgress);
     expect(chroniclesPartyAttackStats(attackState, 'matthias').damage)
       .toBe(chroniclesPartyAttackStats(twice, 'matthias').damage + 1);
