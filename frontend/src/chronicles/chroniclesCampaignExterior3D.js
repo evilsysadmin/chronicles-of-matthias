@@ -214,7 +214,7 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
 // recognizable house fronts. Continuous storey beams and upright timbers sit
 // on the solid side of every authored street-facing wall. Two shared batches,
 // never a mesh per facade, and no geometry touches the walkable floor.
-function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wallHeight }) {
+function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wallHeight, lanterns = [] }) {
   if (wallHeight < 4) return;
   const faces = settlementStreetFacingFaces({ grid, blocked, zones });
   if (!faces.length) return;
@@ -243,8 +243,14 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   // entrances. Reserve these BEFORE placing diagonals so no timber brace
   // crosses a door. Stable face ordering avoids per-load randomness.
   const blankFaces = faces.filter(({ x, y }) => (x + y) % 2 !== 0);
-  const doorFaces = blankFaces.filter((_, index) => index % 5 === 3);
-  const bracedFaces = blankFaces.filter((_, index) => index % 5 !== 3);
+  // Don't turn an authored wall sconce into a door knocker: these positions
+  // are named in the map, never guessed from rendered props.
+  const litCells = new Set((Array.isArray(lanterns) ? lanterns : [])
+    .map(({ x, y }) => x + ',' + y));
+  const doorFaces = blankFaces.filter(({ x, y }, index) =>
+    index % 5 === 3 && !litCells.has(x + ',' + y));
+  const doorSet = new Set(doorFaces);
+  const bracedFaces = blankFaces.filter(face => !doorSet.has(face));
   const wood = material(0x66503a, { roughness: 0.93 });
   const beams = new THREE.InstancedMesh(
     new THREE.BoxGeometry(CELL * 0.92, 0.15, 0.04), wood, faces.length * 2,
@@ -764,6 +770,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     addSettlementTimberFrontages(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
+      lanterns: scenePlan.landscape?.wallLanterns,
     });
     addSettlementWallLanterns(town, {
       grid, blocked, center: sceneCenter,
