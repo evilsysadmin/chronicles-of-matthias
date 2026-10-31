@@ -540,7 +540,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     // Real raised oak planks and two forged straps share the original
     // THREE door batches. No per-door meshes, new material or draw calls.
     expect(domesticPanels.geometry.index.count).toBe(5 * 36); // Leaf + 4 boards.
-    expect(doorFrames.geometry.index.count).toBe(4 * 36); // 2 jambs, head, sill.
+    expect(doorFrames.geometry.index.count).toBe(7 * 36); // Jambs, lintel, sill, twin rafters, keystone.
     expect(knockers.geometry.index.count).toBe(12 * 6 + 2 * 36); // Ring + 2 bands.
     const leafBounds = new THREE.Box3()
       .setFromBufferAttribute(domesticPanels.geometry.getAttribute('position'));
@@ -556,6 +556,20 @@ describe('Chronicles file-authored exterior renderer', () => {
     const doorFrameBounds = new THREE.Box3()
       .setFromBufferAttribute(doorFrames.geometry.getAttribute('position'));
     expect(1.988 + doorFrameBounds.max.z).toBeLessThan(2);
+    // The raised double-pitch entry cap is visible above the flat lintel but
+    // never reaches the timber storey beam or the walkable street boundary.
+    expect(doorFrameBounds.max.y + 1.46).toBeGreaterThan(3.08);
+    expect(doorFrameBounds.max.y + 1.46).toBeLessThan(3.25 - 0.075);
+    // Verify the new two rafters are actually diagonal, not just extra flat
+    // triangles or a large floating slab.
+    const frameVertices = doorFrames.geometry.getAttribute('position');
+    const rafterFirst = 4 * 24; // Four original box geometries, 24 verts each.
+    const leftY = new Set();
+    const rightY = new Set();
+    for (let i = rafterFirst; i < rafterFirst + 24; i++) leftY.add(frameVertices.getY(i).toFixed(3));
+    for (let i = rafterFirst + 24; i < rafterFirst + 48; i++) rightY.add(frameVertices.getY(i).toFixed(3));
+    expect(leftY.size).toBeGreaterThan(2);
+    expect(rightY.size).toBeGreaterThan(2);
     const doorMatrix = new THREE.Matrix4();
     const doorPosition = new THREE.Vector3();
     const orientation = new THREE.Quaternion();
