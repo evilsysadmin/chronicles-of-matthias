@@ -3,6 +3,8 @@ import { createChroniclesState, chroniclesContextualContentAction } from '../chr
 import { createChroniclesProgression, applyChroniclesProgressionToTacticsState } from '../chroniclesOfMatthiasProgression.js';
 import { chroniclesRunCheckpointPayload, chroniclesCheckpointRunProgression, chroniclesApplyRunCheckpoint } from './chroniclesRunCheckpoint.js';
 import { chroniclesMM3WorldStatOffer, chroniclesClaimMM3WorldStat } from './chroniclesWorldStatDiscovery.js';
+import { chroniclesContentInteractions } from './chroniclesContentRuntime.js';
+import { chroniclesMapForState } from './chroniclesMapCatalog.js';
 
 const SOURCE = 'swordhaven-endurance-crystal';
 function atCrystal(progression = createChroniclesProgression()) {
@@ -26,6 +28,10 @@ describe('MM3 first real Swordhaven world-stat crystal', () => {
     expect(chroniclesMM3WorldStatOffer({ ...state, x: 9, y: 15 })).toBeNull();
     expect(chroniclesMM3WorldStatOffer({ ...state, initiative: { cursor: 0 } })).toBeNull();
     expect(chroniclesMM3WorldStatOffer({ ...state, combatRules: null })).toBeNull();
+    const tactics = { ...state, combatRules: null };
+    const map = chroniclesMapForState(tactics);
+    expect(chroniclesContentInteractions(tactics, map, (cx, cy) => map.grid[cy]?.[cx])
+      .some((entry) => entry.id === SOURCE)).toBe(false);
   });
 
   it('awards the explicitly selected living hero exactly once, without healing, XP or Tactics points', () => {
