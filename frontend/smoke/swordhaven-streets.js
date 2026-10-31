@@ -213,6 +213,17 @@ try {
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     twoStoreyLimewash: String(twoStoreyLimewash),
+    domesticDoorCount: String(town.getObjectByName('chronicles-town-residential-door-panels')?.count ?? 0),
+    domesticDoors: String((() => {
+      const doors = town.getObjectByName('chronicles-town-residential-door-panels');
+      const frames = town.getObjectByName('chronicles-town-residential-door-frames');
+      const iron = town.getObjectByName('chronicles-town-residential-door-knockers');
+      return doors?.count >= 5
+        && doors.count === frames?.count && doors.count === iron?.count
+        && [doors, frames, iron].every(part =>
+          part.userData.chroniclesDecorativeOnly && !part.castShadow)
+        && !hall?.getObjectByName('chronicles-town-residential-door-panels');
+    })()),
     windowDetail: String(windowFrames.count === windowPanes.count
       && windowFrames.geometry.index.count === 36 * 12
       && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.x >= 0.99

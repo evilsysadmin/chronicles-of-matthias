@@ -515,6 +515,63 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(Math.abs(braceMatrix.elements[1])).toBeGreaterThan(0.1); // Actually diagonal.
     // 4cm depth plus its inset is strictly within the blocked 4m cell.
     expect(1.973 + 0.04 / 2).toBeLessThan(2);
+    // A few blind street bays are now genuine-looking CLOSED residential
+    // entrances. No diagonal brace cuts across a door, no window is hidden,
+    // and every front stays within a solid authored cell.
+    const domesticPanels = town.getObjectByName('chronicles-town-residential-door-panels');
+    const doorFrames = town.getObjectByName('chronicles-town-residential-door-frames');
+    const knockers = town.getObjectByName('chronicles-town-residential-door-knockers');
+    for (const batch of [domesticPanels, doorFrames, knockers]) {
+      expect(batch).toBeInstanceOf(THREE.InstancedMesh);
+      expect(batch.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(batch.castShadow).toBe(false);
+      expect(batch.count).toBe(domesticPanels.count);
+    }
+    expect(domesticPanels.count).toBeGreaterThan(4);
+    expect(domesticPanels.count).toBeLessThan(frames.count / 2);
+    // Every domestic opening removes only its two formerly crossing braces.
+    expect(uprights.count + domesticPanels.count * 2).toBe(318);
+    expect(doorFrames.geometry.index.count).toBe(4 * 36);
+    expect(doorFrames.material.color.getHex()).not.toBe(domesticPanels.material.color.getHex());
+    const doorFrameBounds = new THREE.Box3()
+      .setFromBufferAttribute(doorFrames.geometry.getAttribute('position'));
+    expect(1.988 + doorFrameBounds.max.z).toBeLessThan(2);
+    const doorMatrix = new THREE.Matrix4();
+    const doorPosition = new THREE.Vector3();
+    const orientation = new THREE.Quaternion();
+    const doorScale = new THREE.Vector3();
+    const windowCells = new Set();
+    for (let i = 0; i < frames.count; i += 2) {
+      frames.getMatrixAt(i, facadeMatrix);
+      const pos = new THREE.Vector3();
+      facadeMatrix.decompose(pos, orientation, doorScale);
+      const outward = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation);
+      windowCells.add([Math.round(pos.x / 4 + center.x),
+        Math.round(pos.z / 4 + center.y),
+        Math.round(outward.x), Math.round(outward.z)].join(':'));
+    }
+    const sconceCells = new Set(swordhavenFirstBook.landscape.wallLanterns
+      .map(({ x, y }) => x + ':' + y));
+    for (let i = 0; i < domesticPanels.count; i += 1) {
+      domesticPanels.getMatrixAt(i, doorMatrix);
+      doorMatrix.decompose(doorPosition, orientation, doorScale);
+      const dx = Math.round(new THREE.Vector3(0, 0, 1).applyQuaternion(orientation).x);
+      const dy = Math.round(new THREE.Vector3(0, 0, 1).applyQuaternion(orientation).z);
+      const gx = Math.round(doorPosition.x / 4 + center.x);
+      const gy = Math.round(doorPosition.z / 4 + center.y);
+      expect(grid[gy]?.[gx]).toBe('#');
+      expect(grid[gy + dy]?.[gx + dx]).toBe('.');
+      expect(windowCells.has([gx, gy, dx, dy].join(':'))).toBe(false);
+      expect(sconceCells.has(gx + ':' + gy)).toBe(false);
+      expect(doorPosition.y).toBeCloseTo(1.46);
+      doorFrames.getMatrixAt(i, doorMatrix);
+      const doorFramePos = new THREE.Vector3().setFromMatrixPosition(doorMatrix);
+      expect(doorFramePos.y).toBeCloseTo(doorPosition.y);
+      knockers.getMatrixAt(i, doorMatrix);
+      const knockerPos = new THREE.Vector3().setFromMatrixPosition(doorMatrix);
+      expect(knockerPos.y).toBeCloseTo(doorPosition.y);
+      expect(knockerPos.distanceTo(doorPosition)).toBeLessThan(0.40);
+    }
     expect(beams.count).toBe(188);
     // Ground and first-floor plaster tones separate the long facades into
     // actual houses, still within ONE shared stucco draw call.
