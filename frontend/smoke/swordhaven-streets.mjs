@@ -67,6 +67,8 @@ try {
           'All oak residential doors need raised twin-pitched lintels below the storey beam');
         assert.equal(result.windowDetail, 'true',
           'Rendered street windows must have merged mullions and sills inside solid cells');
+        assert.equal(result.inhabitedWindowTints, 'true',
+          'Residential windows must vary oak and reflected glass colours without extra lights or draw calls');
         assert.equal(result.plasterRelief, 'true',
           'Real street facades must use aligned, shared limewash relief');
         assert.equal(Number(result.roofCount), 7);
