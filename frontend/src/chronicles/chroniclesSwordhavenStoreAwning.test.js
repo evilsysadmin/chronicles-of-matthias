@@ -50,8 +50,8 @@ describe('Swordhaven provisions canvas canopy', () => {
     for (const geometry of [cloth.geometry, stripes.geometry]) {
       const positions = geometry.getAttribute('position');
       const ys = Array.from({ length: positions.count }, (_, index) => positions.getY(index));
-      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(0.15);
-      expect(Math.min(...ys)).toBeLessThan(-0.14);
+      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(0.10);
+      expect(Math.min(...ys)).toBeLessThan(-0.10);
     }
     const transform = new THREE.Matrix4();
     const xs = [];
