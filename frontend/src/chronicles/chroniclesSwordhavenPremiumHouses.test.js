@@ -72,7 +72,7 @@ describe('Swordhaven approved town-square house treatment', () => {
       expect(Boolean(vent.getObjectByName('home-attic-diamond-oak-trim')))
         .toBe(Boolean(vent.getObjectByName('home-attic-diamond-recess')));
       expect(Boolean(group.getObjectByName('home-oak-ridge-finial')))
-        .toBe(((x * 7 + 11 * 11) % 4) % 2 === 1);
+        .toBe(((Math.round(x * 17 + 11 * 29) % 4 + 4) % 4) % 2 === 1);
       // A vent remains in the triangular wall, above the entry but below
       // the roof ridge; no glass, door, interaction or walkable cell changes.
       expect(vent.position.y).toBeGreaterThan(5.4);
