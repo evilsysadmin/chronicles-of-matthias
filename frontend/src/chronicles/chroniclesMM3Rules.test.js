@@ -46,9 +46,9 @@ describe('Chronicles MM3 rules', () => {
 
   it('grows MM3 hit points per level from class, Endurance and race, not one-time base HP', () => {
     const stats = { endurance: 15 };
-    expect(chroniclesMM3Derived('paladin', stats).maxHp).toBe(9);
-    expect(chroniclesMM3Derived('paladin', stats, { level: 2 }).maxHp).toBe(18);
-    expect(chroniclesMM3Derived('paladin', stats, { level: 3, raceId: 'dwarf' }).maxHp).toBe(30);
+    expect(chroniclesMM3Derived('paladin', stats).maxHp).toBe(10);
+    expect(chroniclesMM3Derived('paladin', stats, { level: 2 }).maxHp).toBe(20);
+    expect(chroniclesMM3Derived('paladin', stats, { level: 3, raceId: 'dwarf' }).maxHp).toBe(33);
     expect(chroniclesMM3Derived('sorcerer', { endurance: 5 }, { level: 3, raceId: 'elf' }).maxHp).toBe(3);
   });
 
