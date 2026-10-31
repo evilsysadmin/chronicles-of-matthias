@@ -44,6 +44,14 @@ describe('Chronicles MM3 rules', () => {
     expect(chroniclesMM3MaxSpellPoints('archer', s, 'elf', 2)).toBe(7);
   });
 
+  it('grows MM3 hit points per level from class, Endurance and race, not one-time base HP', () => {
+    const stats = { endurance: 15 };
+    expect(chroniclesMM3Derived('paladin', stats).maxHp).toBe(9);
+    expect(chroniclesMM3Derived('paladin', stats, { level: 2 }).maxHp).toBe(18);
+    expect(chroniclesMM3Derived('paladin', stats, { level: 3, raceId: 'dwarf' }).maxHp).toBe(30);
+    expect(chroniclesMM3Derived('sorcerer', { endurance: 5 }, { level: 3, raceId: 'elf' }).maxHp).toBe(3);
+  });
+
   it('rolls a deterministic d20 per moment: natural 20 hits, natural 1 misses', () => {
     const state = { runSeed: 'run-1', mapId: 'banner-road-first-book', turns: 4 };
     const roll = chroniclesMM3Roll(state, 'party', 'matthias');
