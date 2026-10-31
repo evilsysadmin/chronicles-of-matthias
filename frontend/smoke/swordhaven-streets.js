@@ -124,6 +124,7 @@ try {
   const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
   const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
   const oakVerges = town?.getObjectByName('chronicles-town-south-roof-oak-verges');
+  const oakCorbels = town?.getObjectByName('chronicles-town-south-roof-oak-corbels');
   const dormerFronts = town?.getObjectByName('chronicles-town-residential-dormer-plaster');
   const dormerGlass = town?.getObjectByName('chronicles-town-residential-dormer-glass');
   const dormerCheeks = town?.getObjectByName('chronicles-town-residential-dormer-cheeks');
