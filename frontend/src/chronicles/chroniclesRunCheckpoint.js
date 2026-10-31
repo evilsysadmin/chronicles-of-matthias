@@ -3,6 +3,7 @@ import { chroniclesApplyStartingKit } from './chroniclesStartingKit.js';
 import { chroniclesBagOwnership } from './chroniclesPersonalBags.js';
 import { chroniclesSpellAvailableTo } from './chroniclesMagic.js';
 import { normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
+import { chroniclesAutomapCheckpointFlags, chroniclesCheckpointAutomapVisited } from './chroniclesAutomapCheckpoint.js';
 import {
   chroniclesMapById,
   chroniclesMergeSlain,
@@ -416,7 +417,13 @@ function runtimeCheckpointFlags(state) {
     if (list.length && mapId.length <= 64) flags[runtimeKey('slain', mapId)] = list.join(',').slice(0, 256);
   });
 
-  return { ...flags, ...checkpointMapFlagParts(source), ...runProgressionFlags(source.runProgression) };
+  return {
+    ...flags,
+    ...checkpointMapFlagParts(source),
+    ...runProgressionFlags(source.runProgression),
+    ...(source.automapVisitedByMap === undefined ? {}
+      : chroniclesAutomapCheckpointFlags(source.automapVisitedByMap)),
+  };
 }
 
 function slainFromFlags(flags) {
@@ -449,7 +456,7 @@ const NON_AUTHORED_WORLD_FLAG_KEYS = new Set([
   'x', 'y', 'direction', 'turns', 'round', 'explorationEnemySteps',
   'party', 'partyPositions', 'enemyPositions', 'enemyAwareness',
   'mapFlagsById', 'slainEnemies', 'equipment', 'inventory', 'quests',
-  'consumedContentIds', 'claimedRewards', 'runProgression',
+  'consumedContentIds', 'claimedRewards', 'runProgression', 'automapVisitedByMap',
   'spellPoints', 'spellbook', 'bagOwners', 'guildMemberships',
   'classAbilityCharges', 'enemyStatus', 'combatWard', 'combatBlock', 'combatActionSpent',
 ]);
@@ -738,6 +745,8 @@ export function chroniclesApplyRunCheckpoint(state, run) {
     claimedRewards: normalizedLedger(run.claimedRewards),
   };
   const restored = chroniclesApplyStartingKit(applyRuntimeCheckpoint(durable, worldFlags), run);
+  const automap = chroniclesCheckpointAutomapVisited(run);
+  if (automap !== null) restored.automapVisitedByMap = automap;
   const savedProgression = chroniclesCheckpointRunProgression(run);
   if (savedProgression) restored.runProgression = savedProgression;
   const runStatus = run.runStatus || run.status || 'active';
