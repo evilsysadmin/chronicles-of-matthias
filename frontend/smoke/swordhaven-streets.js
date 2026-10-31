@@ -35,6 +35,8 @@ const VIEWS = Object.freeze({
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
+  // Real walkable southern lane: one Juliet guard framed at street level.
+  juliet: { x: 3, y: 21, heading: 'north', target: { x: 4, y: 20 }, cameraHeight: 2.4, lookUp: 2.0 },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
   // eye-level view hides the shingles behind 6.4m facades.
   roofline: { x: 9, y: 14, heading: 'south', cameraHeight: 10, lookUp: -1.5 },
@@ -139,6 +141,7 @@ try {
   const streetBraces = town?.getObjectByName('chronicles-town-street-hood-knee-braces');
   const streetBoxes = town?.getObjectByName('chronicles-town-street-terracotta-window-boxes');
   const streetFoliage = town?.getObjectByName('chronicles-town-street-window-box-foliage');
+  const julietGuards = town?.getObjectByName('chronicles-town-street-upper-juliet-guards');
   const apothecary = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-apothecary-'));
   const guild = town?.children.find(child =>
@@ -201,6 +204,30 @@ try {
         && gable.children.filter(part => part.name === 'home-attic-vent-louver').length === 2
         && !home.getObjectByName('swordhaven-shop-nameplate');
     }) && !hall?.getObjectByName('home-authored-attic-vent')),
+    upperJulietGuards: String((() => {
+      if (julietGuards?.count !== 8 || !julietGuards.userData.chroniclesDecorativeOnly
+        || julietGuards.castShadow || julietGuards.frustumCulled
+        || julietGuards.geometry.index.count !== 396
+        || julietGuards.material.metalness < 0.4) return false;
+      const bounds = new THREE.Box3().setFromBufferAttribute(
+        julietGuards.geometry.getAttribute('position'));
+      if (3.96 + bounds.min.y < 3.7 || 3.96 + bounds.max.y >= 4.21
+        || bounds.min.z >= -0.12 || bounds.max.z <= 0.15) return false;
+      const matrix = new THREE.Matrix4();
+      const locations = new Set();
+      for (let i = 0; i < julietGuards.count; i += 1) {
+        julietGuards.getMatrixAt(i, matrix);
+        const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
+        const x = Math.round(pos.x / 4 + 9);
+        const y = Math.round((pos.z - 2.07) / 4 + 11);
+        if (Math.abs(pos.y - 3.96) > 0.001
+          || swordhaven.grid[y]?.[x] !== '#'
+          || swordhaven.grid[y + 1]?.[x] !== '.'
+          || (x * 3 + y * 5) % 8 >= 3) return false;
+        locations.add(x + ':' + y);
+      }
+      return locations.size === 8;
+    })()),
     premiumStreetWindows: String(Boolean(streetHoods
       && streetHoods.count === windowFrames.count
       && streetBraces?.count === streetHoods.count * 2

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Restrained, batched ornament for Swordhaven's long authored street walls.
 // Does not participate in raycasting, collision, doors or game interactions.
@@ -99,7 +100,48 @@ export function dressSwordhavenStreetWindows(town, { faces, center, wallHeight, 
     }
   });
 
-  const pieces = [hoods, braces, pots, leaves, petals];
+  // A few upper-storey, south-facing casements have real wrought-iron Juliet
+  // guards. The street is still fully walkable below: a guard has no platform,
+  // climbing target, light or collider. Sparse deterministic authored tiles,
+  // not the same rail pasted across every second-floor window.
+  const guarded = windows.filter(({ x, y, dy }) =>
+    dy === 1 && (x * 3 + y * 5) % 8 < 3);
+  const ironParts = [];
+  for (const y of [-0.17, 0.19]) {
+    const rail = new THREE.BoxGeometry(1.55, 0.065, 0.075);
+    rail.translate(0, y, 0.12);
+    ironParts.push(rail);
+  }
+  for (const x of [-0.63, -0.42, -0.21, 0, 0.21, 0.42, 0.63]) {
+    const baluster = new THREE.BoxGeometry(0.044, 0.36, 0.044);
+    baluster.translate(x, 0.01, 0.12);
+    ironParts.push(baluster);
+  }
+  for (const side of [-1, 1]) {
+    const returnPost = new THREE.BoxGeometry(0.065, 0.39, 0.26);
+    returnPost.translate(side * 0.75, 0, -0.01);
+    ironParts.push(returnPost);
+  }
+  const ironGeometry = mergeGeometries(ironParts, false);
+  ironParts.forEach(part => part.dispose());
+  if (!ironGeometry) throw new Error('Swordhaven Juliet guard could not be merged');
+  const julietGuards = new THREE.InstancedMesh(ironGeometry,
+    new THREE.MeshStandardMaterial({ color: 0x41342d, metalness: 0.48, roughness: 0.76 }),
+    guarded.length);
+  julietGuards.name = 'chronicles-town-street-upper-juliet-guards';
+  guarded.forEach(({ x, y, dx, dy, yaw }, index) => {
+    const [wx, wz] = toWorld({ x, y });
+    dummy.scale.set(1, 1, 1);
+    dummy.rotation.set(0, yaw, 0);
+    // Guard handrail ends below the real upper pane at y≈4.19m.
+    // Return posts key into the blocked wall; all visible iron is >3.7m
+    // above the cobbled walkable surface.
+    dummy.position.set(wx + dx * 2.07, 3.96, wz + dy * 2.07);
+    dummy.updateMatrix();
+    julietGuards.setMatrixAt(index, dummy.matrix);
+  });
+
+  const pieces = [hoods, braces, pots, leaves, petals, julietGuards];
   for (const object of pieces) {
     object.userData.chroniclesDecorativeOnly = true;
     object.castShadow = false;
@@ -110,5 +152,5 @@ export function dressSwordhavenStreetWindows(town, { faces, center, wallHeight, 
     if (object.count > 0) town.add(object);
     else { object.geometry.dispose(); object.material.dispose(); }
   }
-  return { hoodCount: hoods.count, planterCount: pots.count };
+  return { hoodCount: hoods.count, planterCount: pots.count, julietGuardCount: julietGuards.count };
 }
