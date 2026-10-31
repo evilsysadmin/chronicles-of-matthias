@@ -115,7 +115,7 @@ describe('Chronicles player administration', () => {
     expect(html).toContain('Consultando jugadores');
     expect(html).toContain('Cambios de versión');
     expect(html).toContain('Buscar jugador o héroe');
-    expect(html).toContain('Ver ficha del jugador') === false;
+    expect(html).not.toContain('Ver ficha del jugador');
 
     expect(html).not.toContain('data-chronicles-admin-changelog');
     expect(html).toContain('Consultando censo');
