@@ -88,6 +88,8 @@ try {
           'Temple must have its own colonnaded stone entrance');
         assert.equal(result.distinctMetalworkFacades, 'true',
           'Forge must have a unique street-level ironwork bay and chimney, distinct from armorer');
+        assert.equal(result.deepForgeWorkshop, 'true',
+          'Forge workshop must have deeper stone jamb returns and a real iron-lipped hearth');
         assert.equal(result.distinctForgeLantern, 'true',
           'Forge must have its own louvered smoke lantern above the street-facing gable');
         assert.equal(result.distinctForgeToolDisplays, 'true',

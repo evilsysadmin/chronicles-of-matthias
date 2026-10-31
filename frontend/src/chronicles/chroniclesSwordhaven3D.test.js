@@ -478,6 +478,8 @@ describe('Swordhaven modular real-time 3D', () => {
       const nameplate = forge.getObjectByName('swordhaven-shop-nameplate');
       expect(bay?.userData.chroniclesDecorativeOnly).toBe(true);
       expect(bay.children.filter(child => child.name === 'forge-workshop-stone-pier')).toHaveLength(2);
+      const returns = bay.children.filter(child => child.name === 'forge-workshop-jamb-return');
+      expect(returns).toHaveLength(2);
       expect(bay.children.filter(child => child.name === 'forge-workshop-cross-brace')).toHaveLength(2);
       expect(bay.getObjectByName('forge-workshop-iron-keystone')).toBeTruthy();
       const recess = bay.getObjectByName('forge-workshop-soot-recess');
@@ -489,6 +491,23 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(coals.userData.chroniclesDecorativeOnly).toBe(true);
       expect(coals.castShadow).toBe(false);
       const piers = bay.children.filter(child => child.name === 'forge-workshop-stone-pier');
+      const hearth = bay.getObjectByName('forge-workshop-stone-hearth');
+      const lip = bay.getObjectByName('forge-workshop-forged-hearth-lip');
+      expect(hearth.material).toBe(piers[0].material);
+      expect(lip.material).toBe(bay.getObjectByName('forge-workshop-cross-brace').material);
+      expect(returns.every(stone => stone.material === piers[0].material
+        && stone.geometry.parameters.depth > piers[0].geometry.parameters.depth
+        && stone.position.z > piers[0].position.z)).toBe(true);
+      const coalMatrix = new THREE.Matrix4();
+      coals.getMatrixAt(0, coalMatrix);
+      const firstCoalY = new THREE.Vector3().setFromMatrixPosition(coalMatrix).y;
+      expect(hearth.position.y + hearth.geometry.parameters.height / 2).toBeLessThan(firstCoalY);
+      expect(hearth.position.z).toBeGreaterThan(recess.position.z);
+      expect(lip.position.z).toBeGreaterThan(hearth.position.z);
+      expect(bay.position.z + lip.position.z + lip.geometry.parameters.depth / 2)
+        .toBeLessThan(7.1 / 2 + 1.2);
+      expect(returns.every(stone => bay.position.x + stone.position.x
+        - stone.geometry.parameters.width / 2 > door.geometry.parameters.width / 2)).toBe(true);
       const leftEdge = bay.position.x + piers[0].position.x
         - piers[0].geometry.parameters.width / 2;
       expect(leftEdge).toBeGreaterThan(door.geometry.parameters.width / 2);

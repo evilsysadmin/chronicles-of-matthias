@@ -286,6 +286,18 @@ try {
       && !armorer?.getObjectByName('forge-roof-smokestack')
       && !forge?.getObjectByName('armor-roof-crest')
     )),
+    deepForgeWorkshop: String(Boolean(
+      forge?.getObjectByName('forge-stone-workshop-bay')?.userData.chroniclesDecorativeOnly
+      && forge.getObjectByName('forge-stone-workshop-bay').children
+        .filter(part => part.name === 'forge-workshop-jamb-return').length === 2
+      && forge.getObjectByName('forge-workshop-stone-hearth')?.material
+        === forge.getObjectByName('forge-workshop-stone-pier')?.material
+      && forge.getObjectByName('forge-workshop-forged-hearth-lip')?.material
+        === forge.getObjectByName('forge-workshop-cross-brace')?.material
+      && forge.getObjectByName('forge-workshop-embers')?.count === 3
+      && forge.getObjectByName('shop-door')
+      && !armorer?.getObjectByName('forge-workshop-jamb-return')
+    )),
     distinctArmorParapet: String(Boolean(
       armorer?.getObjectByName('armor-ashlar-parapet')?.userData.chroniclesDecorativeOnly
       && armorer?.getObjectByName('armor-parapet-stone-course')
