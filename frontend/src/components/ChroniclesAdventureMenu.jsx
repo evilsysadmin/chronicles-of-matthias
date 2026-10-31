@@ -9,9 +9,9 @@ import { CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolic
 export default function ChroniclesAdventureMenu({
   onClose, onContinue, onJournal, onQuickStatus, onSave,
   onSaveExit, onRequestLoad, onSaveBeforeLoad, onLoadWithoutSave, onCancelLoad,
-  onAdmin, onRequestExit, onDiscardExit, onCancelExit,
+  onAdmin, onRetryAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, confirmLoadSelection = false,
-  saveNotice = '', saveBusy = false, inCombat = false, isAdmin = false,
+  saveNotice = '', saveBusy = false, inCombat = false, isAdmin = false, adminStatus = 'verified',
   feedbackOpen = false, onFeedbackOpenChange,
 }) {
   // Keep both unsent fields across Escape/Back; a re-entry must not silently
@@ -109,7 +109,14 @@ export default function ChroniclesAdventureMenu({
                 aria-label="Buzón de feedback"
                 onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
               {isAdmin && (
-                <button type="button" className="chronicles-game-menu__admin" onClick={onAdmin}>Modo admin</button>
+                <button type="button" className="chronicles-game-menu__admin" data-chronicles-menu-admin
+                  onClick={onAdmin}>Modo admin</button>
+              )}
+              {!isAdmin && adminStatus === 'unavailable' && (
+                <button type="button" className="chronicles-game-menu__admin-retry"
+                  data-chronicles-menu-admin-retry onClick={onRetryAdmin}>
+                  Reintentar verificación de permisos
+                </button>
               )}
             </div>
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>

@@ -150,7 +150,7 @@ import ChroniclesBookOneEpilogue from './ChroniclesBookOneEpilogue.jsx';
 import ChroniclesCampaignEpilogue from './ChroniclesCampaignEpilogue.jsx';
 import ChroniclesAdminPanel from './ChroniclesAdminPanel.jsx';
 import { CHRONICLES_ADMIN_TRAVEL_KEY } from '../chronicles/chroniclesAdmin.js';
-import { fetchMe } from '../auth.js';
+import { useChroniclesAdminAccess } from '../chronicles/useChroniclesAdminAccess.js';
 import {
   CHRONICLES_EPILOGUE_SEEN_KEY,
   chroniclesCampaignEnding,
@@ -421,14 +421,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // Parent owns the nested folio so global Escape/Back uses the same state.
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [firstStepsOpen, setFirstStepsOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
-  // Admin tools appear only for accounts the API reports as admins.
-  useEffect(() => {
-    let alive = true;
-    fetchMe().then((user) => { if (alive) setIsAdmin(Boolean(user?.isAdmin)); }).catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  // Recheck on each menu opening. A timed-out /auth/me must not permanently
+  // hide the admin panel; only a verified server role can enable it.
+  const { isAdmin, status: adminStatus, retry: retryAdminAccess } = useChroniclesAdminAccess(menuOpen);
   const menuSummaryRef = useRef(null);
   const [journalOpen, setJournalOpen] = useState(false);
   const [narrationLog, setNarrationLog] = useState([]);
@@ -2099,6 +2095,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 saveNotice={saveNotice}
                 saveBusy={saveBusy}
                 isAdmin={isAdmin}
+                adminStatus={adminStatus}
+                onRetryAdmin={retryAdminAccess}
               />
             </details>
 
