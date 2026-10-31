@@ -10,6 +10,10 @@ const DIRECTIONS = Object.freeze([
 
 export function chroniclesTownCounterInReach(state, entry, map) {
   if (!state || !entry || !map || !Number.isInteger(entry.x) || !Number.isInteger(entry.y)) return false;
+  // A counter left open by a stale UI callback is not a combat action.
+  // Check the shared transaction authority, not just the dialog: direct
+  // reducer calls must not buy, sell, rest or learn during MM3 initiative.
+  if (state.combatRules === 'mm3' && (state.phase !== 'explore' || state.initiative)) return false;
   // Stores have one physical entrance: do not open or trade from the street
   // tile behind it. Other counters retain their existing proximity rules.
   if (entry.shop) {
