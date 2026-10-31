@@ -1,0 +1,210 @@
+/* MM3 spellbook shares the same full-height workbench as Equipment.
+   Keep other character chapters, Tactics, and adventure CAST unchanged. */
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet__backdrop:has(.chronicles-character-sheet--mm3 [data-chronicles-chapter="spells"]) {
+    padding: 6px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="spells"])
+  .chronicles-character-sheet__scroll {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="spells"]) {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) clamp(152px, 11vw, 188px);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="spells"])
+  > .chronicles-character-sheet__tabs {
+    align-self: stretch;
+    min-height: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-content[data-chronicles-chapter="spells"] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] > [data-chronicles-spellbook] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0 10px 7px;
+    box-sizing: border-box;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__catalog {
+    flex: 1 1 auto;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 0;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 9px;
+  }
+}
+@media (min-width: 851px) and (max-width: 1199px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Consistent MM3 sage/stone/parchment commands and a single selected-spell
+   inspection dialog. It never changes spell legality, PH or the cast flow. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__toolbar {
+  box-sizing: border-box;
+  align-items: center;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspect-trigger {
+  flex: 0 0 auto;
+  min-height: 44px;
+  min-width: 120px;
+  padding: 6px 12px;
+  border: 2px solid #c8b68d;
+  background: #435e55;
+  color: #fff0d8;
+  font: 700 .95rem/1.2 var(--mm3-pixel-font, monospace);
+  cursor: pointer;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspect-trigger:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 3vw, 28px);
+  box-sizing: border-box;
+  background: rgba(15, 21, 22, .77);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim[hidden],
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__detail[hidden] {
+  display: none !important;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim > .chronicles-sheet-grimoire__detail:not([hidden]) {
+  position: relative;
+  width: min(610px, 100%);
+  max-width: 100%;
+  max-height: min(78dvh, 700px);
+  min-height: 0;
+  margin: 0;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  display: block;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 3px solid #d2b57c;
+  outline: 2px solid #384947;
+  background: #eee5d1;
+  color: #26312f;
+  box-shadow: 0 18px 65px #070b0cbb, inset 0 0 0 2px #8f947d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-close {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: block;
+  float: right;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0 0 4px 10px;
+  border: 2px solid #8d7650;
+  background: #435e55;
+  color: #fff0d2;
+  cursor: pointer;
+  font: 700 1.5rem/1 var(--mm3-pixel-font, monospace);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail-head {
+  clear: none;
+  padding-top: 4px;
+  padding-right: 2px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail dl div {
+  min-width: 0;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+.chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__availability {
+  clear: both;
+}
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-sheet-grimoire__inspection-scrim {
+    padding: 8px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-sheet-grimoire__inspection-scrim > .chronicles-sheet-grimoire__detail:not([hidden]) {
+    max-height: calc(100dvh - 16px);
+    padding: 12px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-sheet-grimoire__list {
+    max-height: min(45dvh, 370px);
+  }
+}
+@media (max-width: 430px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-sheet-grimoire__inspect-trigger {
+    flex: 1 1 100%;
+  }
+}
