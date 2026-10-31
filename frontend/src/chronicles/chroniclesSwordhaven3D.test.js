@@ -345,6 +345,39 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives only the tavern narrow fired-brick courses across walls, gables and hearth', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const tavern = scene.getObjectByName('swordhaven-building-swordhaven-tavern');
+      const wall = tavern.getObjectByName('timber-and-stone-walls');
+      const brick = swordhavenSurfaceTexture('brick');
+      const normal = swordhavenSurfaceNormalTexture('brick');
+      expect(wall.material.map).toBe(brick);
+      expect(wall.material.normalMap).toBe(normal);
+      expect(wall.material.map.repeat.toArray()).toEqual(normal.repeat.toArray());
+      expect(tavern.getObjectByName('roof-gable-1').material).toBe(wall.material);
+      expect(tavern.getObjectByName('tavern-gable-brick-steps').material).toBe(wall.material);
+      expect(tavern.getObjectByName('tavern-hearth-brick-breast').material.map).toBe(brick);
+      expect(tavern.getObjectByName('shop-door')).toBeTruthy();
+      expect(tavern.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel).toBe('TABERNA');
+      for (const spec of SWORDHAVEN_BUILDINGS.filter(spec => spec.id !== 'swordhaven-tavern')) {
+        const other = scene.getObjectByName('swordhaven-building-' + spec.id);
+        expect(other.getObjectByName('timber-and-stone-walls').material.map).not.toBe(brick);
+      }
+      expect(createSwordhavenWalkGrid()[15][4]).toBe('.');
+    }
+    // Running bond repeats exactly: 64px-long bricks, 16px-high courses,
+    // half-brick stagger on alternate rows and matching relief.
+    const { size, pixels, normals } = chroniclesTownSurfacePixels('brick');
+    expect(size).toBe(256);
+    expect(normals).toHaveLength(pixels.length);
+    const red = (x, y) => pixels[(y * size + x) * 4];
+    expect(red(16, 8)).toBeGreaterThan(red(0, 0));
+    expect(red(48, 8)).toBeGreaterThan(red(32, 16));
+    expect(red(16, 8)).toBe(red(16, 8));
+  });
+
   it('gives the temple a colonnaded stone portico without hiding its door or signs', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
@@ -548,7 +581,7 @@ describe('Swordhaven modular real-time 3D', () => {
   });
 
   it('uses deterministic, fine-grained town textures without changing the pixelated meadow', () => {
-    for (const kind of ['stucco', 'masonry', 'roof', 'timber', 'cobble']) {
+    for (const kind of ['stucco', 'masonry', 'brick', 'roof', 'timber', 'cobble']) {
       const texture = swordhavenSurfaceTexture(kind);
       expect(texture).toBe(swordhavenSurfaceTexture(kind)); // No regeneration at remount.
       expect(texture).toBeInstanceOf(THREE.DataTexture);
@@ -577,7 +610,7 @@ describe('Swordhaven modular real-time 3D', () => {
 
 
   it('adds periodic, linear normal maps to stone, cobbles, roof and limewash', () => {
-    for (const kind of ['masonry', 'cobble', 'roof', 'stucco']) {
+    for (const kind of ['masonry', 'brick', 'cobble', 'roof', 'stucco']) {
       const albedo = swordhavenSurfaceTexture(kind);
       const normal = swordhavenSurfaceNormalTexture(kind);
       expect(normal).toBe(swordhavenSurfaceNormalTexture(kind));
