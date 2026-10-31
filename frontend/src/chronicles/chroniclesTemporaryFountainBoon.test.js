@@ -17,6 +17,7 @@ import {
   WOLF_FOUNTAIN_BOON,
   FROST_FOUNTAIN_BOON,
   LIGHTHOUSE_FOUNTAIN_BOON,
+  LAVA_FOUNTAIN_BOON,
 } from './chroniclesTemporaryFountainBoon.js';
 
 function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
@@ -41,6 +42,14 @@ function lighthouseFountainStart(progression = createChroniclesProgression(), ru
     progression,
   );
   return { ...base, x: 15, y: 4, direction: 0, runProgression: progression };
+}
+
+function lavaFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-f3', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 5, y: 4, direction: 0, runProgression: progression };
 }
 
 function act(state, progression, action) {
@@ -291,6 +300,92 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(returned.terra_e1ShrineUsed).toBe(true);
     expect(act({ ...returned, x: 5, y: 10, direction: 0 },
       claimed.progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('grants +4 real Might for eight actions and increases the actual MM3 attack damage', () => {
+    const progression = createChroniclesProgression();
+    const initial = lavaFountainStart(progression);
+    expect(chroniclesContextualContentAction(initial)?.id).toBe(LAVA_FOUNTAIN_BOON.sourceId);
+    const previousDamage = initial.party.map((hero) => chroniclesPartyAttackStats(initial, hero.id, 'melee').damage);
+    const drinking = act(initial, progression, { type: 'interact' });
+    expect(drinking.granted).toBe(true);
+    expect(drinking.updated).toBe(true);
+    expect(drinking.expiredNotice).toBeNull();
+    expect(drinking.state.terra_f3ShrineUsed).toBe(true);
+    expect(drinking.state.message).toContain('Fuente de Lava Dormida');
+    expect(drinking.state.message).toContain('+4 Fuerza');
+    expect(drinking.progression.mm3TemporaryBoon).toEqual({
+      sourceId: LAVA_FOUNTAIN_BOON.sourceId, stat: 'might',
+      amount: 4, expiresAtTurn: drinking.state.turns + 8,
+    });
+    expect(drinking.progression.claimedTemporaryWorldSources).toEqual([LAVA_FOUNTAIN_BOON.sourceId]);
+    const boostedDamage = drinking.state.party.map((hero, i) => {
+      expect(hero.mm3.stats.might).toBe(initial.party[i].mm3.stats.might + 4);
+      expect(hero.characterBuild.stats.might).toBe(initial.party[i].characterBuild.stats.might);
+      expect(hero.mm3.worldBonuses.might).toBe(0);
+      expect(hero.hp).toBe(initial.party[i].hp);
+      return chroniclesPartyAttackStats(drinking.state, hero.id, 'melee').damage;
+    });
+    expect(boostedDamage.every((damage, i) => damage > previousDamage[i])).toBe(true);
+
+    const checkpoint = chroniclesRunCheckpointPayload(drinking.state, 3);
+    const restoredProgression = chroniclesCheckpointRunProgression(checkpoint);
+    const restoredState = reconcileChroniclesProgressionInTacticsState(
+      chroniclesApplyRunCheckpoint(
+        createChroniclesState('terra-f3', progression.characterBuild, { rules: 'mm3' }),
+        checkpoint,
+      ),
+      restoredProgression,
+    );
+    expect(restoredState.party[0].mm3.stats.might).toBe(initial.party[0].mm3.stats.might + 4);
+    expect(chroniclesPartyAttackStats(restoredState, 'matthias', 'melee').damage)
+      .toBe(boostedDamage[0]);
+    expect(act(restoredState, restoredProgression, { type: 'interact' }).granted).toBe(false);
+
+    let current = restoredState;
+    for (let i = 0; i < 8; i += 1) {
+      const previous = current;
+      const result = act(current, restoredProgression, { type: 'turn-right' });
+      expect(result.state.turns).toBe(previous.turns + 1);
+      expect(result.expiredNotice).toBe(i === 7
+        ? 'Se desvanece la bendición de la Fuente de Lava Dormida (+4 Fuerza).'
+        : null);
+      current = result.state;
+    }
+    expect(current.party.map((hero) => hero.mm3.stats.might))
+      .toEqual(initial.party.map((hero) => hero.mm3.stats.might));
+    expect(current.party.map((hero) => chroniclesPartyAttackStats(current, hero.id, 'melee').damage))
+      .toEqual(previousDamage);
+    expect(current.party.every((hero) => hero.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, restoredProgression).expiredNotice).toBeNull();
+    expect(act(lavaFountainStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('replaces Lighthouse Accuracy after crossing Terra and prevents returning to claim it again', () => {
+    const progression = createChroniclesProgression();
+    const lighthouse = act(lighthouseFountainStart(progression), progression, { type: 'interact' });
+    expect(lighthouse.granted).toBe(true);
+    const traveled = chroniclesMapTransitionState(lighthouse.state, 'terra-f3');
+    const atLava = { ...traveled, x: 5, y: 4, direction: 0, runProgression: lighthouse.progression };
+    expect(chroniclesContextualContentAction(atLava)?.id).toBe(LAVA_FOUNTAIN_BOON.sourceId);
+    const lava = act(atLava, lighthouse.progression, { type: 'interact' });
+    expect(lava.granted).toBe(true);
+    expect(lava.expiredNotice).toBeNull();
+    expect(lava.state.message).toContain('Sustituye a la bendición anterior');
+    expect(lava.progression.claimedTemporaryWorldSources)
+      .toEqual([LIGHTHOUSE_FOUNTAIN_BOON.sourceId, LAVA_FOUNTAIN_BOON.sourceId]);
+    expect(lava.progression.mm3TemporaryBoon.sourceId).toBe(LAVA_FOUNTAIN_BOON.sourceId);
+    lava.state.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.accuracy).toBe(lighthouseFountainStart().party[i].mm3.stats.accuracy);
+      expect(hero.mm3.stats.might).toBe(lighthouseFountainStart().party[i].mm3.stats.might + 4);
+    });
+    expect(grantChroniclesMM3TemporaryBoon(
+      lava.progression, LIGHTHOUSE_FOUNTAIN_BOON.sourceId, 'accuracy', 3, 100,
+    ).granted).toBe(false);
+    const returned = chroniclesMapTransitionState(lava.state, 'terra-a6');
+    expect(returned.terra_a6ShrineUsed).toBe(true);
+    expect(act({ ...returned, x: 15, y: 4, direction: 0 },
+      lava.progression, { type: 'interact' }).granted).toBe(false);
   });
 
   it('notifies once when an enemy action passes the expiry boundary, but never on reload or invalid turns', () => {
