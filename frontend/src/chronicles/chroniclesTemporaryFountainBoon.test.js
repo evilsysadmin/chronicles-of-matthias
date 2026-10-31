@@ -1,0 +1,132 @@
+import { describe, expect, it } from 'vitest';
+import { chroniclesContextualContentAction, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
+import {
+  applyChroniclesProgressionToTacticsState,
+  createChroniclesProgression,
+  grantChroniclesMM3TemporaryBoon,
+  reconcileChroniclesProgressionInTacticsState,
+} from '../chroniclesOfMatthiasProgression.js';
+import { chroniclesMapTransitionState } from './chroniclesMapCatalog.js';
+import {
+  chroniclesApplyRunCheckpoint,
+  chroniclesCheckpointRunProgression,
+  chroniclesRunCheckpointPayload,
+} from './chroniclesRunCheckpoint.js';
+import {
+  chroniclesResolveTemporaryFountainBoon,
+  WOLF_FOUNTAIN_BOON,
+} from './chroniclesTemporaryFountainBoon.js';
+
+function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-b2', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 5, y: 4, direction: 0, runProgression: progression };
+}
+
+function act(state, progression, action) {
+  const reduced = chroniclesReduce(state, action);
+  return chroniclesResolveTemporaryFountainBoon(state, reduced, progression);
+}
+
+describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
+  it('awards +2 real Luck to the group only after the authored one-time healing action', () => {
+    const progression = createChroniclesProgression();
+    const state = wolfFountainStart(progression);
+    expect(chroniclesContextualContentAction(state)?.id).toBe(WOLF_FOUNTAIN_BOON.sourceId);
+    expect(state.party[0].mm3.temporaryBoon).toBeNull();
+    expect(state.terra_b2ShrineUsed).not.toBe(true);
+    const action = act(state, progression, { type: 'interact' });
+    expect(action.granted).toBe(true);
+    expect(action.updated).toBe(true);
+    expect(action.state.terra_b2ShrineUsed).toBe(true);
+    expect(action.state.turns).toBe(state.turns + 1);
+    expect(action.state.message).toContain('+2 Suerte');
+    expect(action.progression.mm3TemporaryBoon).toEqual({
+      sourceId: WOLF_FOUNTAIN_BOON.sourceId, stat: 'luck', amount: 2,
+      expiresAtTurn: action.state.turns + 12,
+    });
+    expect(action.progression.claimedTemporaryWorldSources).toEqual([WOLF_FOUNTAIN_BOON.sourceId]);
+    for (const [index, hero] of action.state.party.entries()) {
+      expect(hero.mm3.stats.luck).toBe(state.party[index].mm3.stats.luck + 2);
+      expect(hero.mm3.temporaryBoon.amount).toBe(2);
+      expect(hero.characterBuild.stats.luck).toBe(state.party[index].characterBuild.stats.luck);
+      expect(hero.hp).toBe(state.party[index].hp);
+      expect(hero.maxHp).toBe(state.party[index].maxHp);
+    }
+    expect(action.progression.heroes.matthias.mm3WorldBonuses.luck).toBe(0);
+    expect(action.progression.heroes.rook.attributes).toEqual(progression.heroes.rook.attributes);
+    // Neither walking into a well nor opening a sheet grants the blessing.
+    expect(chroniclesResolveTemporaryFountainBoon(state, state, progression).granted).toBe(false);
+  });
+
+  it('expires after exactly twelve real actions, survives transitions and save/resume', () => {
+    let progression = createChroniclesProgression();
+    let current = wolfFountainStart(progression);
+    const started = act(current, progression, { type: 'interact' });
+    expect(started.granted).toBe(true);
+    progression = started.progression;
+    current = started.state;
+    const initialLuck = wolfFountainStart().party.map((h) => h.mm3.stats.luck);
+
+    for (let i = 0; i < 5; i += 1) {
+      const result = act(current, progression, { type: 'turn-right' });
+      expect(result.granted).toBe(false);
+      expect(result.updated).toBe(true);
+      current = result.state;
+    }
+    expect(current.party[0].mm3.stats.luck).toBe(initialLuck[0] + 2);
+
+    // The same turn counter is preserved when crossing into a different region.
+    const traveled = chroniclesMapTransitionState(current, 'terra-e1');
+    expect(traveled.turns).toBe(current.turns);
+    current = traveled;
+
+    const checkpoint = chroniclesRunCheckpointPayload(current, 4);
+    const loadedProgression = chroniclesCheckpointRunProgression(checkpoint);
+    expect(loadedProgression.mm3TemporaryBoon).toEqual(progression.mm3TemporaryBoon);
+    expect(loadedProgression.claimedTemporaryWorldSources).toEqual([WOLF_FOUNTAIN_BOON.sourceId]);
+    const resumed = chroniclesApplyRunCheckpoint(createChroniclesState('terra-e1',
+      progression.characterBuild, { rules: 'mm3' }), checkpoint);
+    current = reconcileChroniclesProgressionInTacticsState(resumed, loadedProgression);
+    expect(current.turns).toBe(traveled.turns);
+    expect(current.party[0].mm3.stats.luck).toBe(initialLuck[0] + 2);
+    progression = loadedProgression;
+
+    for (let i = 0; i < 7; i += 1) {
+      const previous = current;
+      const result = act(current, progression, { type: 'turn-left' });
+      expect(result.state.turns).toBe(previous.turns + 1);
+      current = result.state;
+    }
+    expect(current.turns).toBe(progression.mm3TemporaryBoon.expiresAtTurn);
+    current.party.forEach((hero, i) => {
+      expect(hero.mm3.stats.luck).toBe(initialLuck[i]);
+      expect(hero.mm3.temporaryBoon).toBeNull();
+    });
+
+    const expired = chroniclesRunCheckpointPayload(current, 5);
+    const expiredProgression = chroniclesCheckpointRunProgression(expired);
+    const saved = chroniclesApplyRunCheckpoint(createChroniclesState('terra-e1',
+      progression.characterBuild, { rules: 'mm3' }), expired);
+    const refreshed = reconcileChroniclesProgressionInTacticsState(saved, expiredProgression);
+    expect(refreshed.party.map((hero) => hero.mm3.stats.luck)).toEqual(initialLuck);
+  });
+
+  it('refuses duplicates, malformed blessings, rewards in Tactics, and failed interactions', () => {
+    const original = createChroniclesProgression();
+    expect(grantChroniclesMM3TemporaryBoon(original, '', 'luck', 2, 12).granted).toBe(false);
+    expect(grantChroniclesMM3TemporaryBoon(original, 'source-1', 'unknown', 2, 12).granted).toBe(false);
+    expect(grantChroniclesMM3TemporaryBoon(original, 'source-1', 'luck', 30, 12).granted).toBe(false);
+    expect(grantChroniclesMM3TemporaryBoon(original, 'source-1', 'luck', 2, -1).granted).toBe(false);
+    const one = grantChroniclesMM3TemporaryBoon(original, 'source-1', 'luck', 2, 12);
+    expect(one.granted).toBe(true);
+    expect(grantChroniclesMM3TemporaryBoon(one.progression, 'source-1', 'luck', 2, 50).granted).toBe(false);
+    const tactics = wolfFountainStart(original, null);
+    expect(act(tactics, original, { type: 'interact' }).granted).toBe(false);
+    expect(act(wolfFountainStart(original), original, { type: 'look' }).granted).toBe(false);
+    const marked = { ...wolfFountainStart(one.progression), terra_b2ShrineUsed: true };
+    expect(act(marked, one.progression, { type: 'interact' }).granted).toBe(false);
+  });
+});
