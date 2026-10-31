@@ -1,9 +1,16 @@
 import * as THREE from 'three';
 
+// Shared dark backing for attic vents: no added texture, decal or light.
+const HOME_ATTIC_RECESS = new THREE.MeshStandardMaterial({
+  color: 0x252521, roughness: 1, side: THREE.DoubleSide,
+});
+
 // Procedural, shared-material dressing for the residential and civic facades.
 // All meshes stay decorative, above the existing house footprint. The authored
 // grid still owns collision, doors, NPC interactions and walkable streets.
-export function dressSwordhavenPremiumHouse(root, { civic = false, width, height, facadeZ, mats, coarse }) {
+export function dressSwordhavenPremiumHouse(root, {
+  civic = false, width, height, facadeZ, mats, coarse, homeStyle = 0,
+}) {
   const dressing = new THREE.Group();
   dressing.name = civic ? 'swordhaven-civic-premium-frontage' : 'swordhaven-home-premium-frontage';
   dressing.userData.chroniclesDecorativeOnly = true;
@@ -138,6 +145,58 @@ export function dressSwordhavenPremiumHouse(root, { civic = false, width, height
     piece('civic-door-ring-knocker', new THREE.TorusGeometry(0.16, 0.038, 6, 12),
       mats.gold, 0.49, 1.47, facadeZ + 0.35);
   } else {
+    // Attic vents are recessed into the existing front gable triangle. A
+    // round oculus and a diamond-shaped louvred vent alternate by authored
+    // house position, so all four roof colours no longer share one blank
+    // upper wall. Both sit above the door/sign area and below the ridge.
+    const attic = new THREE.Group();
+    attic.name = 'home-authored-attic-vent';
+    attic.userData.chroniclesDecorativeOnly = true;
+    attic.position.set(0, height + 0.86, facadeZ + 0.34);
+    const round = homeStyle % 2 === 0;
+    const aperture = new THREE.Mesh(
+      new THREE.CircleGeometry(round ? 0.32 : 0.30, round ? (coarse ? 12 : 20) : 4),
+      HOME_ATTIC_RECESS);
+    aperture.name = round ? 'home-attic-round-recess' : 'home-attic-diamond-recess';
+    aperture.rotation.z = round ? 0 : Math.PI / 4;
+    aperture.userData.chroniclesDecorativeOnly = true;
+    attic.add(aperture);
+    if (round) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.065, 5, coarse ? 12 : 20),
+        mats.timber);
+      rim.name = 'home-attic-oak-oculus-rim';
+      rim.position.z = 0.055;
+      rim.userData.chroniclesDecorativeOnly = true;
+      attic.add(rim);
+    } else {
+      const diamond = new THREE.Mesh(
+        new THREE.RingGeometry(0.30, 0.39, 4), mats.timber);
+      diamond.name = 'home-attic-diamond-oak-trim';
+      diamond.rotation.z = Math.PI / 4;
+      diamond.position.z = 0.055;
+      diamond.userData.chroniclesDecorativeOnly = true;
+      attic.add(diamond);
+    }
+    // Two dark wooden louvers keep both openings recognisable as vents
+    // rather than another lit living-room window.
+    for (const index of [-1, 1]) {
+      const louver = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.055, 0.065),
+        mats.timber);
+      louver.name = 'home-attic-vent-louver';
+      louver.position.set(0, index * 0.12, 0.08);
+      louver.userData.chroniclesDecorativeOnly = true;
+      attic.add(louver);
+    }
+    dressing.add(attic);
+    // Every other house gets one modest roof-end finial. It intersects the
+    // EXISTING ridge, stays in the blocked building footprint and does not
+    // become a new elevated silhouette taller than the commercial roofs.
+    if (homeStyle % 2 === 1) {
+      const finial = piece('home-clay-ridge-finial',
+        new THREE.ConeGeometry(0.19, 0.37, coarse ? 5 : 8),
+        mats.timber, 0, height + 1.91, facadeZ - 0.10);
+      finial.castShadow = false;
+    }
     // Small domestic threshold and layered lintel. These houses have no
     // government coat of arms, extra storefront signs or artificial lighting.
     piece('home-carved-door-hood', new THREE.BoxGeometry(2.43, 0.20, 0.40),
