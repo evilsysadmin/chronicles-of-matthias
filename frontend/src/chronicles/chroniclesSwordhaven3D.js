@@ -59,14 +59,14 @@ export function swordhavenGrassTexture() {
   return texture;
 }
 
-const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, roof: 3, timber: 3, cobble: 1 });
+const SURFACE_REPEAT = Object.freeze({ stucco: 2, masonry: 3, brick: 3, roof: 3, timber: 3, cobble: 1 });
 const surfaceCache = new Map();
 const surfaceNormalCache = new Map();
 
 // Cached tangent-space relief for masonry, cobbles, roof and limewash.
 // Axes/repeat match the albedo; detail needs no extra geometry.
 export function swordhavenSurfaceNormalTexture(kind) {
-  if (kind !== 'masonry' && kind !== 'cobble' && kind !== 'roof' && kind !== 'stucco') {
+  if (kind !== 'masonry' && kind !== 'brick' && kind !== 'cobble' && kind !== 'roof' && kind !== 'stucco') {
     throw new Error('Unsupported Swordhaven relief: ' + kind);
   }
   if (surfaceNormalCache.has(kind)) return surfaceNormalCache.get(kind);
@@ -405,12 +405,12 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.94,
   }) : null;
-  // The inn is a warm, brick-built public house rather than another limewashed
-  // merchant shop. Its timber frame, door and windows remain in place; the
-  // masonry relief also continues across both roof gables without new assets.
-  const tavernBrick = isTavern ? material(0xb98b70, {
-    map: swordhavenSurfaceTexture('masonry'),
-    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+  // Fired-clay running-bond courses give the inn real brick proportions rather
+  // than the large ashlar blocks shared by the other town buildings. Both
+  // gables reuse this cached atlas and relief; no meshes or assets are added.
+  const tavernBrick = isTavern ? material(0xc69b84, {
+    map: swordhavenSurfaceTexture('brick'),
+    normalMap: swordhavenSurfaceNormalTexture('brick'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.97,
   }) : null;
   // The smithy has smoke-darkened dressed stone instead of the guardhouse's
@@ -1951,8 +1951,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     hearth.userData.chroniclesDecorativeOnly = true;
     hearth.position.set(-width * 0.28, height + 2.12, -depth * 0.21);
     const hearthBrick = material(0x866251, {
-      map: swordhavenSurfaceTexture('masonry'),
-      normalMap: swordhavenSurfaceNormalTexture('masonry'),
+      map: swordhavenSurfaceTexture('brick'),
+      normalMap: swordhavenSurfaceNormalTexture('brick'),
       normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.98,
     });
     mesh(hearth, new THREE.BoxGeometry(2.45, 2.15, 1.62), hearthBrick,
