@@ -74,6 +74,8 @@ try {
           'Residential roof runs must have real raised dormers and roof windows without extra lighting or colliders');
         assert.equal(result.readableDormerWindows, 'true',
           'All residential dormers must have real oak casements and legible leaded glass from the streets');
+        assert.equal(result.distinctGuildDoor, 'true',
+          'Guild door must have its own violet oak leaves and brass fittings behind the existing portal');
         assert.equal(result.distinctGuildMasonry, 'true',
           'Guild must have its own slate masonry without merchant timberwork');
         assert.equal(result.distinctGuildButtresses, 'true',
