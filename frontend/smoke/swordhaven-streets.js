@@ -234,14 +234,16 @@ try {
       && !forge?.getObjectByName('watchhouse-front-iron-bars')
     )),
     distinctTavernBrick: String(Boolean(
-      tavern?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xb98b70
-      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
-      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.normalMap?.name === 'chronicles-town-normal-masonry'
+      tavern?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xc69b84
+      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-brick'
+      && tavern?.getObjectByName('timber-and-stone-walls')?.material?.normalMap?.name === 'chronicles-town-normal-brick'
       && tavern?.getObjectByName('roof-gable-1')?.material
         === tavern?.getObjectByName('timber-and-stone-walls')?.material
       && tavern?.getObjectByName('vertical-facade-post')
       && tavern?.getObjectByName('shop-door')
       && forge?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
+      && forge?.getObjectByName('timber-and-stone-walls')?.material?.map
+        !== tavern?.getObjectByName('timber-and-stone-walls')?.material?.map
       && forge?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0x958171
     )),
     distinctTavernPorch: String(Boolean(
