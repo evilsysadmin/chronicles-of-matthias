@@ -758,3 +758,12 @@
     grid-column: 1 / -1;
   }
 }
+
+/* A failed permission check is recoverable, without impersonating an admin.
+   Keep the recovery action legible even in the two-column mobile folio. */
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row > .chronicles-game-menu__admin-retry {
+  grid-column: 1 / -1;
+  white-space: normal;
+  text-align: left;
+  color: #f0d3a3;
+}
