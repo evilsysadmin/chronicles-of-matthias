@@ -38,6 +38,10 @@ const VIEWS = Object.freeze({
   // Real walkable southern lane: one Juliet guard framed at street level.
   juliet: { x: 4, y: 21, heading: 'north', target: { x: 4, y: 20 },
     cameraHeight: 2.4, lookUp: 3.1, cameraOffsetZ: 1.6 },
+  // Two real walkable tiles back from the x=6 residential washing line:
+  // the portrait camera sees the whole cloth silhouette, not only the hem.
+  laundry: { x: 6, y: 16, heading: 'south', target: { x: 6, y: 18 },
+    cameraHeight: 2.4, lookUp: 1.25 },
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
   // eye-level view hides the shingles behind 6.4m facades.
   roofline: { x: 9, y: 14, heading: 'south', cameraHeight: 10, lookUp: -1.5 },
@@ -148,6 +152,8 @@ try {
   const streetBraces = town?.getObjectByName('chronicles-town-street-hood-knee-braces');
   const streetBoxes = town?.getObjectByName('chronicles-town-street-terracotta-window-boxes');
   const streetFoliage = town?.getObjectByName('chronicles-town-street-window-box-foliage');
+  const laundryRopes = town?.getObjectByName('chronicles-town-alley-laundry-ropes');
+  const laundryLinen = town?.getObjectByName('chronicles-town-alley-hanging-linen');
   const julietGuards = town?.getObjectByName('chronicles-town-street-upper-juliet-guards');
   const apothecary = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-apothecary-'));
@@ -230,6 +236,49 @@ try {
           && projected.z > -1 && projected.z < 1;
       }
       return false;
+    })()),
+    alleyLaundry: String((() => {
+      if (!laundryRopes || !laundryLinen
+        || laundryRopes.count !== 4 || laundryLinen.count !== 12
+        || !laundryRopes.userData.chroniclesDecorativeOnly
+        || !laundryLinen.userData.chroniclesDecorativeOnly
+        || laundryRopes.castShadow || laundryLinen.castShadow
+        || laundryLinen.frustumCulled
+        || laundryLinen.material.side !== THREE.DoubleSide) return false;
+      const matrix = new THREE.Matrix4();
+      const pos = new THREE.Vector3();
+      for (const [index, x] of [3, 6, 12, 15].entries()) {
+        if (swordhaven.grid[18]?.[x] !== '.' ||
+          swordhaven.grid[18]?.[x - 1] !== '#' ||
+          swordhaven.grid[18]?.[x + 1] !== '#') return false;
+        laundryRopes.getMatrixAt(index, matrix);
+        pos.setFromMatrixPosition(matrix);
+        if (Math.abs(pos.x - (x - 9) * 4) > 0.01
+          || Math.abs(pos.y - 3.9) > 0.01
+          || Math.abs(pos.z - 28) > 0.01) return false;
+        for (let piece = 0; piece < 3; piece += 1) {
+          laundryLinen.getMatrixAt(index * 3 + piece, matrix);
+          pos.setFromMatrixPosition(matrix);
+          if (pos.y < 3.2 || pos.y > 3.55) return false;
+        }
+      }
+      return true;
+    })()),
+    laundryMobileFraming: String((() => {
+      if (name !== 'laundry' || !laundryLinen) return true;
+      const matrix = new THREE.Matrix4();
+      // Three genuine folded sheets on the central x=6 washing line must
+      // all fit within the mobile portrait frustum, not just the rope.
+      for (let piece = 3; piece < 6; piece += 1) {
+        laundryLinen.getMatrixAt(piece, matrix);
+        const center = new THREE.Vector3().setFromMatrixPosition(matrix);
+        for (const horizontal of [-0.50, 0, 0.50]) {
+          const pixel = center.clone().add(new THREE.Vector3(horizontal, 0, 0)).project(camera);
+          if (Math.abs(pixel.x) >= 0.94 || Math.abs(pixel.y) >= 0.9
+            || pixel.z <= -1 || pixel.z >= 1) return false;
+        }
+      }
+      return true;
     })()),
     upperJulietGuards: String((() => {
       if (julietGuards?.count !== 8 || !julietGuards.userData.chroniclesDecorativeOnly
