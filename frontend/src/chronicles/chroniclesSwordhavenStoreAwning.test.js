@@ -41,6 +41,11 @@ describe('Swordhaven provisions canvas canopy', () => {
     expect(underside.geometry).toBe(stripes.geometry);
     expect(underside.material).toBe(stripes.material);
     expect(underside.userData.chroniclesDecorativeOnly).toBe(true);
+    // Retain the street-visible pitch; a horizontal drape hides the stripes
+    // behind the front valance in both desktop and mobile views.
+    for (const surface of [cloth, stripes, underside]) {
+      expect(surface.rotation.x).toBeCloseTo(0.16);
+    }
     // Both thin-edged fabrics sag in the middle without vanishing edge-on.
     for (const geometry of [cloth.geometry, stripes.geometry]) {
       const positions = geometry.getAttribute('position');
