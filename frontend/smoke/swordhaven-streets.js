@@ -213,6 +213,7 @@ try {
     roadCount: String(road.count),
     plasterCount: String(plaster.count),
     twoStoreyLimewash: String(twoStoreyLimewash),
+    domesticDoorCount: String(town.getObjectByName('chronicles-town-residential-door-panels')?.count ?? 0),
     domesticDoors: String((() => {
       const doors = town.getObjectByName('chronicles-town-residential-door-panels');
       const frames = town.getObjectByName('chronicles-town-residential-door-frames');
