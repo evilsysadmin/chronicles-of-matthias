@@ -2080,7 +2080,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       const vertices = geometry.getAttribute('position');
       for (let i = 0; i < vertices.count; i += 1) {
         const t = (vertices.getZ(i) + 0.74) / 1.48;
-        vertices.setY(i, vertices.getY(i) - 0.12 * t - 0.20 * Math.sin(Math.PI * t));
+        vertices.setY(i, vertices.getY(i) - 0.20 * Math.sin(Math.PI * t));
       }
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
@@ -2088,6 +2088,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     };
     const cloth = mesh(awning, drapedCanvas(6.20, 0.10, 1.48, 12), canvas,
       'store-awning-cloth', [0, 0, 0]);
+    // Keep the old outward pitch so the striped upper surface remains
+    // legible from the street, while the center now sags like fabric.
+    cloth.rotation.x = 0.16;
     cloth.userData.chroniclesDecorativeOnly = true;
     const bands = new THREE.InstancedMesh(drapedCanvas(0.48, 0.018, 1.46, 2), stripe, 6);
     bands.name = 'store-awning-stripe';
@@ -2100,6 +2103,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       bands.setMatrixAt(index, band.matrix);
     }
     bands.instanceMatrix.needsUpdate = true;
+    bands.rotation.x = 0.16;
     awning.add(bands);
     // The street camera looks up at the canopy: mirror the woven stripes
     // onto its underside, otherwise the cloth reads as a blank beige shelf.
@@ -2113,6 +2117,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       underside.setMatrixAt(index, band.matrix);
     }
     underside.instanceMatrix.needsUpdate = true;
+    underside.rotation.x = 0.16;
     awning.add(underside);
     mesh(awning, new THREE.BoxGeometry(6.42, 0.14, 0.16), mats.timber,
       'store-awning-front-rail', [0, -0.14, 0.77]);
