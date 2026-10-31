@@ -31,10 +31,20 @@ export const FROST_FOUNTAIN_BOON = Object.freeze({
   name: 'Fuente de Escarcha',
 });
 
+export const LIGHTHOUSE_FOUNTAIN_BOON = Object.freeze({
+  mapId: 'terra-a6',
+  sourceId: 'terra-a6-shrine',
+  receipt: 'terra_a6ShrineUsed',
+  stat: 'accuracy',
+  amount: 3,
+  duration: 8,
+  name: 'Fuente del Faro',
+});
+
 // Only deliberately authored sources grant buffs; other restorative wells
 // keep their existing heal/PH effects without gaining incidental stat boosts.
 const TEMPORARY_FOUNTAINS = Object.freeze([
-  WOLF_FOUNTAIN_BOON, FROST_FOUNTAIN_BOON,
+  WOLF_FOUNTAIN_BOON, FROST_FOUNTAIN_BOON, LIGHTHOUSE_FOUNTAIN_BOON,
 ]);
 
 // Reconcile only while a prior blessing was active, or when it expires.
