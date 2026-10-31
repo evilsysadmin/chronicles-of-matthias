@@ -155,7 +155,7 @@ function addSettlementStreetFacades(town, {
       dummy.updateMatrix();
       panes.setMatrixAt(index, dummy.matrix);
       if (swordhavenWindows) {
-        const tone = (x * 7 + y * 11 + storeyIndex * 3) % 7;
+        const tone = (x * 3 + y * 5 + storeyIndex * 2) % 7;
         panes.setColorAt(index, glass.setHex(glassTints[tone === 0 ? 3 : tone % 3]));
       }
     });
