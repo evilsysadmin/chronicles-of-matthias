@@ -49,9 +49,14 @@ describe('MM3 world-stat discoveries across regions and a checkpoint', () => {
     const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(intellect.state, 1)));
     const savedProgression = chroniclesCheckpointRunProgression(payload);
     expect(savedProgression.claimedWorldStatSources).toEqual([SWORDHAVEN, ROOKWOOD]);
-    const resumed = chroniclesApplyRunCheckpoint(
-      createChroniclesState('rookwood-first-book', null, { rules: 'mm3' }), payload,
+    // The playable F5 path first applies the saved progression to a fresh
+    // party, then restores the checkpoint. A raw checkpoint alone is not the
+    // complete character-stat rehydration contract.
+    const bootstrapped = applyChroniclesProgressionToTacticsState(
+      createChroniclesState(null, savedProgression.characterBuild, { rules: 'mm3' }),
+      savedProgression,
     );
+    const resumed = chroniclesApplyRunCheckpoint(bootstrapped, payload);
     expect(resumed.runProgression.claimedWorldStatSources).toEqual([SWORDHAVEN, ROOKWOOD]);
     expect(hero(resumed, 'rook').mm3.worldBonuses.endurance).toBe(1);
     expect(hero(resumed, 'bishop').mm3.worldBonuses.intellect).toBe(1);
