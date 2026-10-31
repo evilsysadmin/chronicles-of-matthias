@@ -9,6 +9,7 @@ import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
+import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
 // File-authored exterior topology: no independent collision map or invisible
@@ -656,6 +657,17 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
     });
+    // Only Swordhaven gets the mock-inspired hooded windows and planted
+    // residential sills; use the same grid-derived faces as the real windows.
+    // Geometry is instanced and elevated, with no collision or new lights.
+    if (scenePlan.mapId === 'swordhaven-first-book') {
+      dressSwordhavenStreetWindows(town, {
+        faces: settlementStreetFacingFaces({
+          grid, blocked, zones: scenePlan.landscape?.facadeZones,
+        }),
+        center: sceneCenter, wallHeight: streetWallHeight, coarsePointer,
+      });
+    }
     addSettlementTimberFrontages(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,

@@ -93,6 +93,10 @@ try {
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
+  const streetHoods = town?.getObjectByName('chronicles-town-street-oak-window-hoods');
+  const streetBraces = town?.getObjectByName('chronicles-town-street-hood-knee-braces');
+  const streetBoxes = town?.getObjectByName('chronicles-town-street-terracotta-window-boxes');
+  const streetFoliage = town?.getObjectByName('chronicles-town-street-window-box-foliage');
   const apothecary = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-apothecary-'));
   const guild = town?.children.find(child =>
@@ -144,6 +148,13 @@ try {
       && home.getObjectByName('premium-oak-window-shutters')?.count === 4
       && !home.getObjectByName('swordhaven-shop-nameplate')
     )),
+    premiumStreetWindows: String(Boolean(streetHoods
+      && streetHoods.count === windowFrames.count
+      && streetBraces?.count === streetHoods.count * 2
+      && streetBoxes?.count > 0 && streetBoxes.count < streetHoods.count / 2
+      && streetFoliage?.count === streetBoxes.count * 3
+      && [streetHoods, streetBraces, streetBoxes, streetFoliage]
+        .every(part => part.userData.chroniclesDecorativeOnly && !part.castShadow))),
     streetView: name,
     cameraCell: chosen.x + ',' + chosen.y,
     wallHeight: String(wall.geometry.parameters.height),

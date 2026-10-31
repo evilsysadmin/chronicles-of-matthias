@@ -37,6 +37,8 @@ try {
         assert.equal(result.mapId, 'swordhaven-first-book');
         assert.equal(result.premiumCivic, 'true', 'The real mayor hall needs its carved civic facade');
         assert.equal(result.premiumHomes, 'true', 'Residential houses need the premium shuttered facade');
+        assert.equal(result.premiumStreetWindows, 'true',
+          'Swordhaven streets need actual batched oak hoods and planted window ledges');
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
