@@ -38,6 +38,9 @@ const VIEWS = Object.freeze({
   // Fixed elevated QA camera over a genuinely walkable cell: the player's
   // eye-level view hides the shingles behind 6.4m facades.
   roofline: { x: 9, y: 14, heading: 'south', cameraHeight: 10, lookUp: -1.5 },
+  // Dedicated elevated QA angle centers a real residential flue in portrait
+  // instead of cropping both chimney clusters outside the 390px viewport.
+  chimney: { x: 9, y: 14, heading: 'south', target: { x: 10.9, y: 16 }, cameraHeight: 10, lookUp: -1.5 },
 });
 const direction = {
   north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0],
