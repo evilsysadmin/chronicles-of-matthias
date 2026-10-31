@@ -95,6 +95,10 @@ try {
   const oakEaves = town?.getObjectByName('chronicles-town-south-roof-oak-eaves');
   const oakRidges = town?.getObjectByName('chronicles-town-south-roof-oak-ridges');
   const oakVerges = town?.getObjectByName('chronicles-town-south-roof-oak-verges');
+  const dormerFronts = town?.getObjectByName('chronicles-town-residential-dormer-plaster');
+  const dormerGlass = town?.getObjectByName('chronicles-town-residential-dormer-glass');
+  const dormerCheeks = town?.getObjectByName('chronicles-town-residential-dormer-cheeks');
+  const dormerRoofs = town?.getObjectByName('chronicles-town-residential-dormer-pitched-roofs');
   const posts = town?.getObjectByName('chronicles-town-timber-uprights');
   const windowFrames = town?.getObjectByName('chronicles-town-street-window-frames');
   const windowPanes = town?.getObjectByName('chronicles-town-street-window-panes');
@@ -197,6 +201,15 @@ try {
         && part.frustumCulled === false)
       && oakEaves.material === oakRidges.material
       && oakRidges.material === oakVerges.material)),
+    premiumResidentialDormers: String(Boolean(dormerFronts?.count === 6
+      && dormerGlass?.count === 6
+      && dormerCheeks?.count === 12
+      && dormerRoofs?.count === 12
+      && dormerRoofs.material === roofs.material
+      && [dormerFronts, dormerGlass, dormerCheeks, dormerRoofs].every(part =>
+        part.userData.chroniclesDecorativeOnly
+        && part.castShadow === false
+        && part.frustumCulled === false))),
     roofRelief: String(roofs.material.normalMap?.name === 'chronicles-town-normal-roof'
       && roofs.material.normalMap.repeat.equals(roofs.material.map.repeat)),
     cornerUprights: String(posts.count),
