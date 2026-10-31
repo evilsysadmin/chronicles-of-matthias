@@ -64,6 +64,47 @@ describe('Swordhaven tavern east guest oriel', () => {
     expect(localBounds.min.y).toBeGreaterThan(3);
     expect(tavern.getObjectByName('side-window-amber-glass')).toBeTruthy();
     expect(tavern.getObjectByName('shop-door')).toBeTruthy();
+    // Both ground-floor guest windows have real, open oak shutters. The
+    // batches remain decorative and outside the existing amber panes.
+    const shutters = tavern.getObjectByName('tavern-inn-oak-shutters');
+    expect(shutters).toBeInstanceOf(THREE.Group);
+    expect(shutters.userData.chroniclesDecorativeOnly).toBe(true);
+    const panels = shutters.getObjectByName('tavern-oak-shutter-panel');
+    const hinges = shutters.getObjectByName('tavern-shutter-iron-hinges');
+    const braces = shutters.getObjectByName('tavern-shutter-oak-brace');
+    expect(panels).toBeInstanceOf(THREE.InstancedMesh);
+    expect(panels.count).toBe(4);
+    expect(hinges.count).toBe(8);
+    expect(braces.count).toBe(4);
+    expect([panels, hinges, braces].every(batch =>
+      batch.userData.chroniclesDecorativeOnly && batch.castShadow === !coarsePointer))
+      .toBe(true);
+    const instance = new THREE.Matrix4();
+    const positions = [];
+    for (let i = 0; i < panels.count; i += 1) {
+      panels.getMatrixAt(i, instance);
+      positions.push(new THREE.Vector3().setFromMatrixPosition(instance));
+    }
+    expect(positions[0].x).toBeCloseTo(-positions[3].x);
+    expect(positions[1].x).toBeCloseTo(-positions[2].x);
+    expect(positions.every(position =>
+      Math.abs(position.x) > 1.40 && Math.abs(position.x) < 4.05
+      && position.y > 2.10 && position.y < 3.40)).toBe(true);
+    expect(forge.getObjectByName('tavern-inn-oak-shutters')).toBeFalsy();
+    const sideShutters = tavern.getObjectByName('tavern-side-oak-shutters');
+    expect(sideShutters).toBeInstanceOf(THREE.InstancedMesh);
+    expect(sideShutters.count).toBe(8);
+    expect(sideShutters.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(sideShutters.castShadow).toBe(!coarsePointer);
+    const sidePositions = [];
+    for (let i = 0; i < sideShutters.count; i += 1) {
+      sideShutters.getMatrixAt(i, instance);
+      sidePositions.push(new THREE.Vector3().setFromMatrixPosition(instance));
+    }
+    expect(sidePositions.every(position =>
+      Math.abs(position.x) > 4.05 && Math.abs(position.x) < 4.60
+      && position.y > 2.10 && position.y < 3.60)).toBe(true);
+    expect(forge.getObjectByName('tavern-side-oak-shutters')).toBeFalsy();
     expect(tavern.getObjectByName('tavern-double-hearth')).toBeTruthy();
     expect(forge?.getObjectByName('tavern-east-guest-oriel')).toBeFalsy();
     expect(swordhaven.grid[10][7]).toBe('.');
