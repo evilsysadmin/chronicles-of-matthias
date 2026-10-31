@@ -35,6 +35,10 @@ const VIEWS = Object.freeze({
   watch: { x: 7, y: 6, heading: 'west', target: { x: 3, y: 6 }, cameraHeight: 2.4, lookUp: 3.8 },
   alley: { x: 9, y: 17, heading: 'east' },
   ward: { x: 4, y: 19, heading: 'east' },
+  // Frontal view of the real inner-ward lamp at (9,20), from its west street.
+  // The mobile camera must see wrought-iron silhouette, not an orange card.
+  lantern: { x: 8, y: 20, heading: 'east', target: { x: 9, y: 20 },
+    cameraHeight: 1.75, lookUp: 0.38 },
   // Real walkable southern lane: one Juliet guard framed at street level.
   juliet: { x: 4, y: 21, heading: 'north', target: { x: 4, y: 20 },
     cameraHeight: 2.4, lookUp: 3.1, cameraOffsetZ: 1.6 },
@@ -155,6 +159,9 @@ try {
   const laundryRopes = town?.getObjectByName('chronicles-town-alley-laundry-ropes');
   const laundryLinen = town?.getObjectByName('chronicles-town-alley-hanging-linen');
   const julietGuards = town?.getObjectByName('chronicles-town-street-upper-juliet-guards');
+  const lanternMounts = town?.getObjectByName('chronicles-town-wall-lantern-mounts');
+  const lanternGlass = town?.getObjectByName('chronicles-town-wall-lantern-glass');
+  const lanternCaps = town?.getObjectByName('chronicles-town-wall-lantern-caps');
   const apothecary = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-apothecary-'));
   const guild = town?.children.find(child =>
@@ -217,6 +224,44 @@ try {
         && gable.children.filter(part => part.name === 'home-attic-vent-louver').length === 2
         && !home.getObjectByName('swordhaven-shop-nameplate');
     }) && !hall?.getObjectByName('home-authored-attic-vent')),
+    wroughtIronLanterns: String((() => {
+      if (lanternMounts?.count !== 3 || lanternGlass?.count !== 3
+        || lanternCaps?.count !== 3
+        || lanternMounts.geometry.index.count !== 8 * 36
+        || lanternCaps.geometry.index.count !== 3 * 36
+        || lanternMounts.material !== lanternCaps.material
+        || lanternGlass.material.emissive.getHex() !== 0x98521b
+        || [lanternMounts, lanternGlass, lanternCaps].some(part =>
+          !part.userData.chroniclesDecorativeOnly || part.castShadow
+          || part.frustumCulled)) return false;
+      const ironBounds = new THREE.Box3()
+        .setFromBufferAttribute(lanternMounts.geometry.getAttribute('position'));
+      const capBounds = new THREE.Box3()
+        .setFromBufferAttribute(lanternCaps.geometry.getAttribute('position'));
+      return ironBounds.min.x < -0.23 && ironBounds.max.x > 0.23
+        && capBounds.max.y + 2.14 > 2.34
+        && 1.974 + ironBounds.max.z < 2
+        && 1.974 + capBounds.max.z < 2;
+    })()),
+    lanternMobileFraming: String((() => {
+      if (name !== 'lantern') return true;
+      if (!lanternCaps || !lanternGlass || !lanternMounts) return false;
+      const matrix = new THREE.Matrix4();
+      lanternGlass.getMatrixAt(2, matrix);
+      const center = new THREE.Vector3().setFromMatrixPosition(matrix);
+      const bounds = new THREE.Box3()
+        .setFromBufferAttribute(lanternCaps.geometry.getAttribute('position'));
+      // Project real cage and cap edges, not a decorative camera marker.
+      for (const localX of [-0.30, 0.30]) {
+        for (const localY of [bounds.min.y + 0.26, bounds.max.y + 0.26]) {
+          const point = center.clone().add(new THREE.Vector3(0, localY, localX))
+            .project(camera);
+          if (Math.abs(point.x) >= 0.90 || Math.abs(point.y) >= 0.88
+            || point.z <= -1 || point.z >= 1) return false;
+        }
+      }
+      return true;
+    })()),
     julietMobileFraming: String((() => {
       if (name !== 'juliet') return true;
       if (!julietGuards || Math.abs(camera.position.z - worldZ - 1.6) > 0.001) return false;
