@@ -19,9 +19,15 @@ const script = source.slice(begin, end).split('\n').map((line) =>
 
 const sha = 'a'.repeat(40);
 const ids = [385763056, 386812503, 387132683];
+const identities = [
+  { name: 'Chronicles CI', path: '.github/workflows/ci.yml' },
+  { name: 'Chronicles frontend', path: '.github/workflows/react-frontend.yml' },
+  { name: 'Chronicles API', path: '.github/workflows/api.yml' },
+];
 const greenRuns = () => ids.map((workflow_id, index) => ({
   id: 100 + index,
   workflow_id,
+  ...identities[index],
   head_sha: sha,
   updated_at: `2026-10-22T11:00:0${index}Z`,
   event: 'push',
@@ -155,6 +161,14 @@ test('schema errors and truncation fail visibly instead of appearing pending', (
       i === 2 ? { ...run, head_sha: 'not-a-git-sha' } : run) },
     { ...response(), workflow_runs: greenRuns().map((run, i) =>
       i === 2 ? { ...run, head_branch: null } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 0 ? { ...run, name: 'Other CI' } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 1 ? { ...run, path: '.github/workflows/fake.yml' } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 2 ? { ...run, path: null } : run) },
+    { ...response(), workflow_runs: greenRuns().map((run, i) =>
+      i === 1 ? { ...run, name: null } : run) },
     'invalid-json',
   ];
   for (const payload of samples) {
@@ -173,6 +187,22 @@ test('malformed newest official run cannot be ignored in favour of older success
   assert.equal(result.status, 66, result.stderr);
   assert.match(result.stderr, /CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD/);
   assert.doesNotMatch(result.output, /ready=true|ready=false/);
+});
+
+test('newest mismatched source workflow cannot borrow an older green identity', () => {
+  for (const altered of [
+    { name: 'Chronicles CI spoofed' },
+    { path: '.github/workflows/untrusted-ci.yml' },
+  ]) {
+    const valid = greenRuns();
+    // A lower-ID run is valid and green. Newer evidence using the same
+    // immutable workflow ID must fail closed rather than be ignored.
+    const newer = { ...valid[0], id: 200, ...altered };
+    const result = check(response([...valid, newer]), '102');
+    assert.equal(result.status, 66, JSON.stringify(altered) + ': ' + result.stderr);
+    assert.match(result.stderr, /CHRONICLES_SIGNAL_INVALID_RUNS_PAYLOAD/);
+    assert.doesNotMatch(result.output, /ready=true|ready=false/);
+  }
 });
 
 test('real handoff enforces schema before interpreting any missing checks', () => {

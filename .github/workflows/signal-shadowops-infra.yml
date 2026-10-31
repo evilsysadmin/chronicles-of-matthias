@@ -72,10 +72,14 @@ jobs:
           fi
           runs="$(gh api -X GET repos/evilsysadmin/chronicles-of-matthias/actions/runs \
             -f head_sha="$sha" -f event=push -f per_page=100)"
+          # Match the exact name/path of the three immutable workflow IDs.
+          # Infra has the same full-identity policy: inconsistent evidence
+          # must fail closed here rather than trigger redundant CD dispatches.
+          required='[{"id":385763056,"name":"Chronicles CI","path":".github/workflows/ci.yml"},{"id":386812503,"name":"Chronicles frontend","path":".github/workflows/react-frontend.yml"},{"id":387132683,"name":"Chronicles API","path":".github/workflows/api.yml"}]'
           # Distinguish genuine waiting-for-CI from an untrustworthy API
           # response. The REST query is limited to one page of 100 runs:
           # truncated, malformed or schema-invalid responses must fail closed.
-          if ! jq -e '
+          if ! jq -e --argjson required "$required" '
             . as $p |
             ($p | type == "object") and
             ($p.total_count | type == "number") and
@@ -88,6 +92,15 @@ jobs:
               # an older green run when max_by(.id) selects the latest one.
               (.id | if type == "number" then (. > 0 and . == floor) else false end) and
               (.workflow_id | if type == "number" then (. > 0 and . == floor) else false end) and
+              (.name | type == "string") and
+              (.path | type == "string") and
+              # A known workflow ID with a foreign name or file path is
+              # untrusted even if an older run for that ID was green.
+              (. as $run |
+                [$required[] | select(.id == $run.workflow_id)] as $expected |
+                (($expected | length) == 0 or
+                  ($run.name == $expected[0].name and $run.path == $expected[0].path))
+              ) and
               (.head_sha | if type == "string" then test("^[0-9a-f]{40}$") else false end) and
               (.head_branch | type == "string") and
               (.updated_at | if type == "string" then test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T") else false end) and
