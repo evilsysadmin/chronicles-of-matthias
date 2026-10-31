@@ -487,7 +487,7 @@ describe('Swordhaven modular real-time 3D', () => {
       const forge = scene.getObjectByName('swordhaven-building-swordhaven-forge');
       const temple = scene.getObjectByName('swordhaven-building-swordhaven-temple');
       const armorWall = armorer.getObjectByName('timber-and-stone-walls');
-      expect(armorWall.material).toBe(temple.getObjectByName('timber-and-stone-walls').material);
+      expect(armorWall.material).not.toBe(temple.getObjectByName('timber-and-stone-walls').material);
       expect(armorWall.material).not.toBe(forge.getObjectByName('timber-and-stone-walls').material);
       expect(armorer.getObjectByName('roof-gable-1')).toBeFalsy();
       expect(armorer.getObjectByName('pitched-roof-1')).toBeFalsy();
