@@ -32,6 +32,11 @@ import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficulty
 import { playChroniclesActionSound, playChroniclesLevelUpChime } from '../chronicles/chroniclesActionAudio.js';
 import { chroniclesPortraitLevelUpEvents } from '../chronicles/chroniclesProgressionFeedback.js';
 import ChroniclesPortraitLevelUp from './ChroniclesPortraitLevelUp.jsx';
+import ChroniclesWorldStatChoice from './ChroniclesWorldStatChoice.jsx';
+import {
+  chroniclesMM3WorldStatOffer,
+  chroniclesClaimMM3WorldStat,
+} from '../chronicles/chroniclesWorldStatDiscovery.js';
 import './ChroniclesPortraitLevelUp.css';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
@@ -238,6 +243,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const partyBarkSequenceRef = useRef(0);
   const [progression, setProgression] = useState(() => loadChroniclesProgression());
   const progressionRef = useRef(progression);
+  const worldStatOfferRef = useRef(null);
+  const [worldStatOffer, setWorldStatOffer] = useState(null);
   const runProgressionActiveRef = useRef(false);
   // The heroes' progression also lives on the server (it follows the account
   // between devices). Runs bootstrap only once it has been pulled, or the
@@ -684,6 +691,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const dispatch = useCallback((action, acceptedTravel = false) => {
     const current = stateRef.current;
     if (!current) return;
+    // Picking a crystal beneficiary is an explicit modal choice. Gameplay
+    // cannot advance behind it, and simply opening the modal awards nothing.
+    if (worldStatOfferRef.current) return current;
+    const requestedAction = typeof action === 'string' ? action : action?.type;
+    if (requestedAction === 'interact') {
+      const offer = chroniclesMM3WorldStatOffer(current);
+      if (offer) {
+        worldStatOfferRef.current = offer;
+        setWorldStatOffer(offer);
+        return current;
+      }
+    }
     // Never open a doorway/area prompt for a combat step. Enforce before
     // transition detection, not only in the reducer below.
     if (chroniclesCombatPartyStepBlocked(current, action)) return current;
@@ -2435,6 +2454,31 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             return next?.message || 'Aldric asiente.';
           }}
           onClose={() => { audienceRef.current = null; setAudience(null); }}
+        />
+      )}
+
+      {worldStatOffer && (
+        <ChroniclesWorldStatChoice
+          offer={worldStatOffer}
+          party={state.party}
+          onClose={() => {
+            worldStatOfferRef.current = null;
+            setWorldStatOffer(null);
+          }}
+          onSelect={(memberId) => {
+            const latest = stateRef.current;
+            if (worldStatOfferRef.current?.id !== worldStatOffer.id) return;
+            const result = chroniclesClaimMM3WorldStat(latest, progressionRef.current, worldStatOffer.id, memberId);
+            if (result.granted) {
+              // Update refs first: a rapid second click cannot claim twice.
+              progressionRef.current = result.progression;
+              stateRef.current = result.state;
+              setProgression(result.progression);
+              setState(result.state);
+            }
+            worldStatOfferRef.current = null;
+            setWorldStatOffer(null);
+          }}
         />
       )}
 
