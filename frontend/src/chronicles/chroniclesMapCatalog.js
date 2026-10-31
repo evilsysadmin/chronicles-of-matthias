@@ -13,6 +13,7 @@ import hollowBellTower from './maps/hollow-bell-tower.json';
 import blackGlassChapel from './maps/black-glass-chapel.json';
 import echoCistern from './maps/echo-cistern.json';
 import { CHRONICLES_MATERIAL_ATLAS } from './chroniclesMaterialAtlas.js';
+import { chroniclesIsRestorativeFountain } from './chroniclesRestorativeFountain.js';
 
 const TERRA_MAP_IDS = new Set([
   'puerto-de-hollin', 'vado-de-sal', 'ascuafria', 'vigilia-del-norte', 'corte-de-bronce',
@@ -586,7 +587,7 @@ function chroniclesMapRenderContent(map) {
       id: entry.id,
       kind: entry.kind,
       group,
-      visualType: entry.visualType || entry.kind,
+      visualType: chroniclesIsRestorativeFountain(entry) ? 'restorative-fountain' : (entry.visualType || entry.kind),
       ...(Number.isInteger(entry.visualFacing) ? { visualFacing: entry.visualFacing } : {}),
       position: position ? Object.freeze(position) : null,
     });
