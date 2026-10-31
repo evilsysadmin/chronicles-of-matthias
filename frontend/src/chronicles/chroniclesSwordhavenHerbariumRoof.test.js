@@ -32,8 +32,12 @@ describe('Swordhaven botica greenhouse silhouette', () => {
     expect(rafters).toHaveLength(2);
     expect(roofPanes.map(pane => pane.rotation.z)).toEqual([0.67, -0.67]);
     expect(roofPanes.every(pane => pane.position.y === 1.94)).toBe(true);
-    expect(roofPanes.every(pane => pane.material.transparent && pane.material.opacity === 0.58
-      && pane.material.depthWrite === false)).toBe(true);
+    expect(roofPanes.every(pane => pane.material.transparent
+      && pane.material.opacity === 0.42
+      && pane.material.color.getHex() === 0xc1e2d2
+      && pane.material.roughness === 0.19
+      && pane.material.depthWrite === false
+      && pane.material.side === THREE.DoubleSide)).toBe(true);
     expect(rafters.map(rafter => rafter.rotation.z)).toEqual([0.67, -0.67]);
     const mullions = greenhouse.children.filter(child =>
       child.name === 'herbarium-roof-glazing-mullion');
