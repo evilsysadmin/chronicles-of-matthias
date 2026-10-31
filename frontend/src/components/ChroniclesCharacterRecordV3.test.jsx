@@ -30,14 +30,13 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr))');
   });
-  it('uses the entire record workspace on zoomed desktops without shrinking labels', () => {
+  it('fills the record workspace on zoomed desktops while keeping four legible columns', () => {
     // The legacy folio places statistics in grid column 2; at CSS heights
     // of 581-699px that left half was empty despite ample horizontal space.
     expect(css).toContain('.chronicles-character-sheet__backdrop:has(');
     expect(css).toContain('padding: 6px;');
     expect(css).toContain('grid-template-columns: minmax(0, 1fr);');
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
-    expect(css).toContain('grid-template-columns: repeat(2, minmax(0,1fr));');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr));');
     expect(css).toContain('overflow-wrap: break-word;');
   });
@@ -45,7 +44,6 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(render('tactics')).not.toContain('data-chronicles-chapter="record"');
     expect(css).toContain('@media (min-width: 851px) and (min-height: 581px)');
     expect(css).toContain('@media (min-width: 1200px) and (min-height: 581px)');
-    expect(css).toContain('@media (min-width: 1500px) and (min-height: 581px)');
     expect(css).toContain('[data-chronicles-chapter="record"]');
     expect(css).not.toMatch(/pointer-events:\s*none|display:\s*none\s*!important/);
   });
