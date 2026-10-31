@@ -22,6 +22,7 @@ import { chroniclesPerfIsolationFlags, chroniclesPerfTorchesVisible } from './ch
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
+import { buildChroniclesWitchCauldron3D } from './chronicles/chroniclesWitchCauldron3D.js';
 import {
   chroniclesBrazierPlacements, chroniclesNearestLightSources, chroniclesSpreadTorchPlacements,
   chroniclesStableTorchLightAssignments, chroniclesTorchLightGain,
@@ -387,6 +388,13 @@ function createDungeonScene(scene, { coarsePointer = false, scenePlan = null } =
       pivot.add(stem, knob);
       root.add(base, pivot);
       contentProps.push({ id: entry.id, kind: entry.kind, root, pivot, phase: index * 1.17 });
+    } else if (entry.kind === 'pickup' && entry.visualType === 'witch-cauldron') {
+      const cauldron = buildChroniclesWitchCauldron3D({ coarsePointer });
+      root.add(cauldron.group);
+      contentProps.push({
+        id: entry.id, kind: entry.kind, root, contentsRoot: cauldron.contents,
+        phase: index * 1.17,
+      });
     } else if (entry.kind === 'pickup') {
       const cradle = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.055, 8, coarsePointer ? 16 : 24), contentMaterial);
       cradle.rotation.x = -Math.PI / 2;
@@ -931,6 +939,8 @@ export function createChroniclesOfMatthiasGame(host, {
         if (reducedMotion) prop.root.userData.updateChroniclesSprite(0, prop.root.userData.chroniclesSpriteCues);
       }
       if (prop.activatedRoot) prop.activatedRoot.visible = Boolean(visual?.activated);
+      // A used cauldron remains in the forest; only its brew disappears.
+      if (prop.contentsRoot) prop.contentsRoot.visible = Boolean(visual?.available);
       if (prop.kind === 'lever' && prop.pivot) {
         prop.pivot.rotation.z = visual?.activated ? -0.86 : 0.48;
       }
