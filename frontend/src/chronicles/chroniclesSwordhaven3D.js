@@ -2023,6 +2023,24 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const glass = material(0x695398, {
       emissive: 0x241739, emissiveIntensity: 0.25, roughness: 0.40,
     });
+    // Pointed limestone tracery matches the guild's existing Gothic windows.
+    // Share both shapes across the four bays; no rectangular gold frames.
+    const outer = new THREE.Shape();
+    outer.moveTo(-0.31, -0.57);
+    outer.lineTo(0.31, -0.57);
+    outer.lineTo(0.31, 0.24);
+    outer.lineTo(0, 0.66);
+    outer.lineTo(-0.31, 0.24);
+    outer.closePath();
+    const inner = new THREE.Shape();
+    inner.moveTo(-0.23, -0.46);
+    inner.lineTo(0.23, -0.46);
+    inner.lineTo(0.23, 0.20);
+    inner.lineTo(0, 0.51);
+    inner.lineTo(-0.23, 0.20);
+    inner.closePath();
+    const outerGeometry = new THREE.ShapeGeometry(outer);
+    const innerGeometry = new THREE.ShapeGeometry(inner);
     for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
       const bay = new THREE.Group();
       bay.name = 'magic-turret-lancet-bay';
@@ -2030,18 +2048,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       bay.position.set(turretX + Math.sin(angle) * 1.18,
         height + 1.90, turretZ + Math.cos(angle) * 1.18);
       bay.rotation.y = angle;
-      for (const side of [-1, 1]) {
-        const jamb = mesh(bay, new THREE.BoxGeometry(0.10, 1.02, 0.13), mats.gold,
-          'magic-turret-lancet-brass-jamb', [side * 0.25, 0, 0.02], !coarse);
-        jamb.userData.chroniclesDecorativeOnly = true;
-      }
-      const pane = mesh(bay, new THREE.BoxGeometry(0.40, 0.87, 0.08), glass,
-        'magic-turret-lancet-violet-pane', [0, 0, 0.03], !coarse);
-      pane.userData.chroniclesDecorativeOnly = true;
-      for (const y of [-0.51, 0.51]) {
-        const rail = mesh(bay, new THREE.BoxGeometry(0.61, 0.10, 0.14), mats.gold,
-          'magic-turret-lancet-brass-rail', [0, y, 0.02], !coarse);
-        rail.userData.chroniclesDecorativeOnly = true;
+      for (const [geometry, mat, name, position] of [
+        [outerGeometry, mats.stone, 'magic-turret-lancet-pointed-frame', [0, 0, 0]],
+        [innerGeometry, glass, 'magic-turret-lancet-violet-pane', [0, 0, 0.06]],
+        [new THREE.BoxGeometry(0.045, 0.78, 0.07), mats.gold,
+          'magic-turret-lancet-brass-mullion', [0, -0.16, 0.12]],
+        [new THREE.BoxGeometry(0.68, 0.10, 0.18), mats.stone,
+          'magic-turret-lancet-stone-sill', [0, -0.61, 0.06]],
+      ]) {
+        const part = mesh(bay, geometry, mat, name, position, !coarse);
+        part.userData.chroniclesDecorativeOnly = true;
       }
       turretLancets.add(bay);
     }
