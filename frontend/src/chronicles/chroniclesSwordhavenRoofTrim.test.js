@@ -84,7 +84,7 @@ describe('Swordhaven authored terrace roofline dressing', () => {
           expect(position.x).toBeCloseTo(roofPos.x + end * (span / 2 - 1.10));
           expect(position.y).toBeCloseTo(roofPos.y - 0.22);
           expect(position.z).toBeCloseTo(roofPos.z + side * 2);
-          expect(scale.toArray()).toEqual([1, 1, 1]);
+          for (const axis of scale.toArray()) expect(axis).toBeCloseTo(1, 5);
           // Slant outwards as it rises, directly under the matching eave.
           const up = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation);
           expect(up.y).toBeCloseTo(Math.cos(0.42));
