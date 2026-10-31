@@ -117,7 +117,7 @@ export const CHRONICLES_MM3_CLASSES = Object.freeze({
   robber: cls({
     id: 'robber', label: 'Ladrón', hpBase: 8, requirements: { luck: 13 },
     maxArmorTier: 5, shield: true, weapons: ['sword', 'dagger', 'mace', 'axe', 'crossbow', 'sling'], spellStat: null,
-    summary: 'Ladronería: cerraduras y trampas; hasta cota de malla.',
+    summary: 'Sin magia; armas variadas, escudo y hasta cota de malla.',
   }),
   ninja: cls({
     id: 'ninja', label: 'Ninja', hpBase: 7, requirements: { speed: 13, accuracy: 13 },

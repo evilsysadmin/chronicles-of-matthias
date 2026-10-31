@@ -9,6 +9,7 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesPartyInitiativeAgility } from './chroniclesInitiative.js';
 import {
   CHRONICLES_MM3_CLASS_IDS,
+  CHRONICLES_MM3_CLASSES,
   CHRONICLES_MM3_RACE_IDS,
   chroniclesMM3MaxSpellPoints,
   chroniclesMM3AttackHits,
@@ -21,6 +22,16 @@ import {
 describe('Chronicles MM3 rules', () => {
   it('uses the MM3 stat-bonus bands', () => {
     expect([3, 5, 7, 9, 11, 13, 15, 17, 18].map(chroniclesMM3StatBonus)).toEqual([-4, -3, -2, -1, 0, 1, 2, 3, 3]);
+  });
+
+  it('describes the robber using implemented abilities rather than promising locks or disarming', () => {
+    const robber = CHRONICLES_MM3_CLASSES.robber;
+    expect(robber.summary).toBe('Sin magia; armas variadas, escudo y hasta cota de malla.');
+    expect(robber.summary).not.toMatch(/cerradur|tramp|desarm/i);
+    expect(robber.spellStat).toBeNull();
+    expect(robber.shield).toBe(true);
+    expect(robber.maxArmorTier).toBe(5);
+    expect(robber.weapons).toContain('crossbow');
   });
 
   it('ships the ten MM3 classes with their minimums and HP per level', () => {
