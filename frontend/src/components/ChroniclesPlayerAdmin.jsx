@@ -30,6 +30,33 @@ export function chroniclesRosterStatusLabel({ hasLoaded, loading, loadingMore = 
   return `${noun}${pages}`;
 }
 
+// Technical IDs are useful for support, not as the primary visual name.
+// Central Identity does not yet provide a trusted human-readable alias here.
+export function chroniclesRosterPlayerLabel(user) {
+  const username = typeof user?.username === 'string' ? user.username : '';
+  if (username.startsWith('browser-journey-')) return `Navegador · ${username.slice(-10)}`;
+  if (/^shadowops:staging:[0-9a-f-]{36}$/.test(username)) {
+    return `ShadowOps ID · ${username.slice(-8)}`;
+  }
+  return username || 'Cuenta sin nombre';
+}
+
+export function chroniclesRosterRunLabel(user) {
+  if (!user?.mapId) return 'Sin expedición guardada';
+  if (user.runStatus === 'active') return 'Expedición en curso';
+  if (user.runStatus === 'completed') return 'Expedición completada';
+  return 'Última expedición guardada';
+}
+
+export function chroniclesRosterMatches(user, query) {
+  const term = String(query || '').trim().toLocaleLowerCase('es');
+  if (!term) return true;
+  const labels = Object.values(user?.heroNames && typeof user.heroNames === 'object'
+    && !Array.isArray(user.heroNames) ? user.heroNames : {});
+  return [user?.username, ...labels].some((value) =>
+    typeof value === 'string' && value.toLocaleLowerCase('es').includes(term));
+}
+
 function dateLabel(raw) {
   const date = new Date(raw);
   return raw && Number.isFinite(date.getTime())
@@ -39,6 +66,7 @@ function dateLabel(raw) {
 
 export default function ChroniclesPlayerAdmin() {
   const [section, setSection] = useState('players');
+  const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [nextAfter, setNextAfter] = useState('');
@@ -81,6 +109,8 @@ export default function ChroniclesPlayerAdmin() {
     }
   }
 
+  const visibleUsers = users.filter((user) => chroniclesRosterMatches(user, query));
+
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const environment = hostname.startsWith('staging.') ? 'STAGING'
     : hostname === 'chronicles.shadowops.dpdns.org' ? 'PRODUCCIÓN' : 'LOCAL';
@@ -112,33 +142,65 @@ export default function ChroniclesPlayerAdmin() {
       {error && <p role="alert" className="chronicles-player-admin__error">{error}</p>}
       {loading && <p role="status">{loadingMore ? 'Cargando más jugadores…' : 'Consultando jugadores…'}</p>}
       {!loading && !error && hasLoaded && users.length === 0 && <p>Aún no hay jugadores en esta instancia.</p>}
+      <label className="chronicles-player-admin__search">
+        Buscar jugador o héroe
+        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+          placeholder="Nombre o identificador…" />
+      </label>
+      {hasLoaded && query.trim() && <p className="chronicles-player-admin__metadata" role="status">
+        {visibleUsers.length} coincidencias entre {users.length} usuarios cargados
+        {nextAfter ? ' · puede haber más usuarios sin cargar' : ''}
+      </p>}
       <ul className="chronicles-player-admin__users">
-        {users.map((user) => (
+        {visibleUsers.map((user) => (
           <li key={user.username}>
             <div className="chronicles-player-admin__identity">
-              <strong>{user.username}</strong>
+              <strong>{chroniclesRosterPlayerLabel(user)}</strong>
               <span className={user.online ? 'is-online' : ''}>
                 {user.online ? 'En línea' : 'Sin conexión'}
               </span>
             </div>
             <p className="chronicles-player-admin__metadata">
-              Última actividad: {dateLabel(user.lastActivity)} · Alta: {dateLabel(user.createdAt)}
+              {chroniclesRosterRunLabel(user)}
+              {user.mapId ? ` · ${chroniclesSavedExpeditionArea({ currentMapId: user.mapId })}` : ''}
             </p>
+            {typeof user.mainObjective === 'string' && user.mainObjective.trim() && (
+              <p className="chronicles-player-admin__objective">
+                <strong>Historia:</strong> {user.mainObjective}
+              </p>
+            )}
             <p className="chronicles-player-admin__metadata">
-              Última zona guardada: {user.mapId ? chroniclesSavedExpeditionArea({ currentMapId: user.mapId }) : 'Sin expedición guardada'}
-              {user.savedAt ? ` · ${dateLabel(user.savedAt)}` : ''}
+              Última actividad: {dateLabel(user.lastActivity)}
+              {user.savedAt ? ` · Guardado: ${dateLabel(user.savedAt)}` : ''}
             </p>
-            <div className="chronicles-player-admin__levels" aria-label="Niveles de los héroes">
-              {Object.entries(names).map(([id, name]) => (
-                <span key={id}>{chroniclesRosterHeroLabel(user, id, name)}: <b>{chroniclesRosterHeroLevel(user, id)}</b></span>
-              ))}
-            </div>
+            <details className="chronicles-player-admin__details">
+              <summary>Ver ficha del jugador</summary>
+              <div className="chronicles-player-admin__detail-body">
+                <p className="chronicles-player-admin__metadata">
+                  Cuenta: <code>{user.username}</code>
+                </p>
+                <p className="chronicles-player-admin__metadata">
+                  Alta: {dateLabel(user.createdAt)}
+                  {user.runStatus ? ` · Estado guardado: ${chroniclesRosterRunLabel(user)}` : ''}
+                </p>
+                {(Number.isInteger(user.activeQuests) || Number.isInteger(user.completedQuests)) && (
+                  <p className="chronicles-player-admin__metadata">
+                    Encargos del último guardado: {user.activeQuests || 0} activos · {user.completedQuests || 0} completados
+                  </p>
+                )}
+                <div className="chronicles-player-admin__levels" aria-label="Niveles de los héroes">
+                  {Object.entries(names).map(([id, name]) => (
+                    <span key={id}>{chroniclesRosterHeroLabel(user, id, name)}: <b>{chroniclesRosterHeroLevel(user, id)}</b></span>
+                  ))}
+                </div>
+              </div>
+            </details>
           </li>
         ))}
       </ul>
       {nextAfter && <button type="button" onClick={more} disabled={loading}>Cargar más jugadores</button>}
       <p className="chronicles-player-admin__note">
-        Los niveles son la última progresión sincronizada de la cuenta; una expedición sin guardar puede llevar cambios pendientes.
+        Zona y encargos: último guardado, no posición en vivo. Niveles: última progresión sincronizada; pueden existir cambios sin guardar.
       </p>
         </>
       )}
