@@ -47,6 +47,44 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(root.getObjectByName('shop-door')).toBeTruthy();
   });
 
+  it.each([true, false])('gives four authored homes distinct stucco and two upper-gable vents on coarse=%s', (coarse) => {
+    const mats = createSwordhavenMaterials();
+    const finishes = new Set();
+    const kinds = new Set();
+    for (const x of [8, 9, 10, 11]) {
+      const { root, interactive, sign } = buildSwordhavenHouse({
+        id: 'home-style-' + x, x, y: 11, roof: 0x7d4a36, emblem: 'home',
+      }, mats, coarse, new Set(), { x: 9, y: 11 });
+      expect(interactive).toBe(false);
+      expect(sign).toBeNull();
+      const walls = root.getObjectByName('timber-and-stone-walls');
+      finishes.add(walls.material.color.getHex());
+      expect(walls.material.map).toBe(mats.plaster.map);
+      expect(walls.material.normalMap).toBe(mats.plaster.normalMap);
+      const group = root.getObjectByName('swordhaven-home-premium-frontage');
+      const vent = group.getObjectByName('home-authored-attic-vent');
+      expect(vent?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(vent.children.filter(child => child.name === 'home-attic-vent-louver'))
+        .toHaveLength(2);
+      kinds.add(Boolean(vent.getObjectByName('home-attic-round-recess')) ? 'round' : 'diamond');
+      expect(Boolean(vent.getObjectByName('home-attic-oak-oculus-rim')))
+        .toBe(Boolean(vent.getObjectByName('home-attic-round-recess')));
+      expect(Boolean(vent.getObjectByName('home-attic-diamond-oak-trim')))
+        .toBe(Boolean(vent.getObjectByName('home-attic-diamond-recess')));
+      expect(Boolean(group.getObjectByName('home-oak-ridge-finial')))
+        .toBe(((x * 7 + 11 * 11) % 4) % 2 === 1);
+      // A vent remains in the triangular wall, above the entry but below
+      // the roof ridge; no glass, door, interaction or walkable cell changes.
+      expect(vent.position.y).toBeGreaterThan(5.4);
+      expect(vent.position.y).toBeLessThan(6.9);
+      expect(vent.position.z).toBeGreaterThan(3.65);
+      expect(root.getObjectByName('warm-glass-window')).toBeTruthy();
+      expect(root.getObjectByName('shop-door')).toBeTruthy();
+    }
+    expect(finishes.size).toBe(4);
+    expect(kinds).toEqual(new Set(['round', 'diamond']));
+  });
+
   it('gives the mayor a carved stone entrance and heraldry, without covering the real sign', () => {
     const { root, sign } = build('civic', false);
     const facade = root.getObjectByName('swordhaven-civic-premium-frontage');
@@ -56,6 +94,7 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(facade.getObjectByName('civic-door-ring-knocker')).toBeTruthy();
     expect(facade.children.filter(node => node.name === 'civic-pennant-gold-tower')).toHaveLength(2);
     expect(facade.getObjectByName('home-carved-door-hood')).toBeFalsy();
+    expect(facade.getObjectByName('home-authored-attic-vent')).toBeFalsy();
     expect(sign).toBeTruthy();
     expect(root.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel).toBe('AYUNTAMIENTO');
     expect(root.getObjectByName('shop-door')).toBeTruthy();
