@@ -48,11 +48,11 @@ export function dressSwordhavenDormers(town, {
     emissive: 0x372b1c, emissiveIntensity: 0.18,
   });
   const front = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(1.47, 0.73, 0.12), plaster, count);
+    new THREE.BoxGeometry(1.47, 0.87, 0.12), plaster, count);
   const panes = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.66, 0.46, 0.06), glass, count);
   const cheeks = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.10, 0.72, 1.18), timber, count * 2);
+    new THREE.BoxGeometry(0.10, 0.82, 1.18), timber, count * 2);
   const posts = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.10, 0.65, 0.10), timber, count * 2);
   const lintels = new THREE.InstancedMesh(
@@ -75,7 +75,7 @@ export function dressSwordhavenDormers(town, {
     const { x, y, z, side, variant } = entry;
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(1, 1, 1);
-    dummy.position.set(x, y + 0.52, z);
+    dummy.position.set(x, y + 0.50, z);
     dummy.updateMatrix();
     front.setMatrixAt(index, dummy.matrix);
     front.setColorAt(index, color.setHex(variants[variant]));
@@ -85,7 +85,7 @@ export function dressSwordhavenDormers(town, {
     dummy.updateMatrix();
     panes.setMatrixAt(index, dummy.matrix);
     for (const [i, dx] of [-1, 1].entries()) {
-      dummy.position.set(x + dx * 0.66, y + 0.52, z - side * 0.50);
+      dummy.position.set(x + dx * 0.66, y + 0.50, z - side * 0.50);
       dummy.updateMatrix();
       cheeks.setMatrixAt(index * 2 + i, dummy.matrix);
       dummy.position.set(x + dx * 0.43, y + 0.54, z + side * 0.14);
