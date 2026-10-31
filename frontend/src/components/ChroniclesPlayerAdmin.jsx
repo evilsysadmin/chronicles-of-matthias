@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { chroniclesAdminRoster } from '../chronicles/chroniclesAdminRosterClient.js';
+import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
 import { chroniclesSavedExpeditionArea } from '../chronicles/chroniclesSavedExpeditionArea.js';
 import './ChroniclesPlayerAdmin.css';
 
@@ -37,6 +38,7 @@ function dateLabel(raw) {
 }
 
 export default function ChroniclesPlayerAdmin() {
+  const [section, setSection] = useState('players');
   const [users, setUsers] = useState([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [nextAfter, setNextAfter] = useState('');
@@ -89,6 +91,16 @@ export default function ChroniclesPlayerAdmin() {
         <strong>{environment} · Solo lectura</strong>
         <span>Datos de esta instancia. La zona corresponde al último guardado, no a una posición en vivo.</span>
       </p>
+      <div className="chronicles-player-admin__tabs" role="tablist" aria-label="Secciones de administración">
+        <button type="button" role="tab" aria-selected={section === 'players'}
+          onClick={() => setSection('players')}>Jugadores</button>
+        <button type="button" role="tab" aria-selected={section === 'changes'}
+          onClick={() => setSection('changes')}>Cambios de versión</button>
+      </div>
+      {section === 'changes' ? (
+        <ChroniclesAdminChangelog />
+      ) : (
+        <>
       <div className="chronicles-player-admin__toolbar">
         <span aria-live="polite">{chroniclesRosterStatusLabel({
           hasLoaded, loading, loadingMore, error, count: users.length, hasMore: Boolean(nextAfter),
@@ -128,6 +140,8 @@ export default function ChroniclesPlayerAdmin() {
       <p className="chronicles-player-admin__note">
         Los niveles son la última progresión sincronizada de la cuenta; una expedición sin guardar puede llevar cambios pendientes.
       </p>
+        </>
+      )}
     </section>
   );
 }

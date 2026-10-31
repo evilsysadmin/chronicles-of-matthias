@@ -4,6 +4,7 @@ import React from 'react';
 import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
+import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
 
 describe('Chronicles player administration', () => {
   it('accepts genuine empty and populated pages from the Chronicles API', () => {
@@ -85,9 +86,19 @@ describe('Chronicles player administration', () => {
     expect(html).toContain('Solo lectura');
     expect(html).toContain('último guardado, no a una posición en vivo');
     expect(html).toContain('Consultando jugadores');
+    expect(html).toContain('Cambios de versión');
+    expect(html).not.toContain('data-chronicles-admin-changelog');
     expect(html).toContain('Consultando censo');
     expect(html).not.toContain('0 usuarios cargados');
     expect(html).not.toContain('Eliminar usuario');
     expect(html).not.toContain('lastClientIp');
   });
+  it('keeps the version-history feature inside admin and does not guess a build SHA in dev', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdminChangelog />);
+    expect(html).toContain('data-chronicles-admin-changelog');
+    expect(html).toContain('Cambios de esta versión');
+    expect(html).toContain('sin SHA');
+    expect(html).not.toContain('Ver historial completo en GitHub');
+  });
+
 });
