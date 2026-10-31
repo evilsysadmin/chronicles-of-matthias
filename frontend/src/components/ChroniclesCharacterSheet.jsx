@@ -46,6 +46,7 @@ import {
   CHRONICLES_MM3_STAT_LABELS,
 } from '../chronicles/chroniclesMM3Rules.js';
 import { chroniclesTacticsEffectiveProfile } from '../chroniclesOfMatthiasTactics.js';
+import { chroniclesTemporaryFountainName } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesInventoryShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots } from '../chronicles/chroniclesKeyboardBindings.js';
 import { chroniclesGearSwapPreview } from '../chronicles/chroniclesGearCompare.js';
@@ -769,7 +770,7 @@ export default function ChroniclesCharacterSheet({
                   <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
                     ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}
                     {mm3.temporaryBoon?.stat === key
-                      ? ` · Bendición +${mm3.temporaryBoon.amount} (${Math.max(0, mm3.temporaryBoon.expiresAtTurn - (state?.turns || 0))} acciones)`
+                      ? ` · ${chroniclesTemporaryFountainName(mm3.temporaryBoon.sourceId) || 'Bendición'} +${mm3.temporaryBoon.amount} (${Math.max(0, mm3.temporaryBoon.expiresAtTurn - (state?.turns || 0))} acciones)`
                       : ''}</small>
                 </div>
               ))}
