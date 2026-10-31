@@ -360,6 +360,16 @@ function runtimeCheckpointFlags(state) {
   if (trackedQuestId) flags[runtimeKey('trackedQuest')] = trackedQuestId;
   const ward = integerOrNull(source.combatWard?.armorClass, 1, 9);
   if (ward !== null && source.initiative) flags[runtimeKey('ward')] = ward;
+  // BLOCK is a per-hero guard until their next initiative slot. Persist only
+  // active combat guards so F5 cannot silently remove their defense.
+  if (source.phase === 'combat' && initiative) {
+    (source.party || []).forEach((member) => {
+      const memberId = shortStringOrNull(member?.id, 40);
+      if (memberId && member.hp > 0 && source.combatBlock?.[memberId] === true) {
+        flags[runtimeKey('block', memberId)] = true;
+      }
+    });
+  }
   Object.entries(source.enemyStatus || {}).forEach(([enemyId, status]) => {
     const safeEnemyId = shortStringOrNull(enemyId, 64);
     const paralyzed = integerOrNull(status?.paralyzed, 1, 9);
@@ -582,6 +592,13 @@ function applyRuntimeCheckpoint(state, flags) {
   if (trackedQuestId) next.trackedQuestId = trackedQuestId;
   const ward = integerOrNull(flags[runtimeKey('ward')], 1, 9);
   if (ward !== null && next.initiative) next.combatWard = { armorClass: ward };
+  // Older checkpoints have no BLOCK flags; malformed/foreign IDs are ignored.
+  if (next.phase === 'combat' && next.initiative && Array.isArray(next.party)) {
+    const guards = Object.fromEntries(next.party
+      .filter((member) => member.hp > 0 && flags[runtimeKey('block', member.id)] === true)
+      .map((member) => [member.id, true]));
+    if (Object.keys(guards).length) next.combatBlock = guards;
+  }
   const enemyStatus = {};
   (map?.enemies || []).forEach((enemy) => {
     const paralyzed = integerOrNull(flags[runtimeKey('enemy', enemy.id, 'paralyzed')], 1, 9);
