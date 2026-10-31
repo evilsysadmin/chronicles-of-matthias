@@ -10,6 +10,7 @@ import {
 } from './chronicles/chroniclesInitiative.js';
 import { chroniclesRuntimeEnemyPosition } from './chroniclesOfMatthiasTurns.js';
 import { chroniclesAdvanceExplorationEnemies } from './chronicles/chroniclesExplorationEnemyActivity.js';
+import { tacticsResolvePlayerAction } from './tactics/tacticsTurnResolution.js';
 
 function manhattanDistance(left, right) {
   return Math.abs(left.x - right.x) + Math.abs(left.y - right.y);
@@ -137,66 +138,17 @@ export function chroniclesTacticsPartyCanAct(state, memberId = null) {
 export function chroniclesTacticsResolvePlayerAction(
   previous,
   next,
-  {
-    forceCombat = false,
-    forceEnemyIds = [],
-    random = Math.random,
-  } = {},
+  options = {},
 ) {
-  if (!previous || !next) return previous || next;
-  if (previous?.mapId && next?.mapId && previous.mapId !== next.mapId) {
-    return chroniclesTacticsPrepareExplorationSpawn({
-      ...next,
-      explorationEnemySteps: 0,
-    });
-  }
-  if (previous.phase === 'escaped' || previous.phase === 'defeated') return previous;
-
-  if (previous.initiative?.order?.length) {
-    if (next === previous) return previous;
-    return chroniclesAdvanceCombatInitiative(next, chroniclesActiveEnemies(next));
-  }
-
-  const alreadyEngaged = chroniclesTacticsCombatActive(previous);
-  const movedIntoEngagement = chroniclesTacticsCombatActive(next);
-  const explorationNext = (!forceCombat && !alreadyEngaged && !movedIntoEngagement)
-    ? chroniclesAdvanceExplorationEnemies(previous, next)
-    : next;
-  const shouldStartCombat = forceCombat
-    || alreadyEngaged
-    || chroniclesTacticsCombatActive(explorationNext);
-  if (!shouldStartCombat) return explorationNext;
-
-  // Entering combat is a boundary, not a free attack. A move that newly enters
-  // engagement completes before initiative starts; an already-engaged legacy
-  // state or an explicit ranged attack rolls before committing the action.
-  // Enemies may take one exploration step first; if that step closes contact,
-  // initiative starts immediately and no exploration damage is dealt.
-  const entryState = (forceCombat || alreadyEngaged) ? previous : explorationNext;
-  const activeEnemies = chroniclesActiveEnemies(entryState);
-  const roomEnemyIds = activeEnemies.map((enemy) => enemy.id);
-  const started = chroniclesStartInitiativeCombat(
-    entryState,
-    activeEnemies,
-    {
-      // Tactics is a room-scale battle board. Once contact freezes exploration,
-      // every living enemy on that board must belong to the same scheduler;
-      // otherwise a distant patrol could wander into range without ever owning
-      // an initiative turn.
-      forceEnemyIds: [...new Set([...roomEnemyIds, ...forceEnemyIds])],
-      random,
+  return tacticsResolvePlayerAction(previous, next, {
+    ...options,
+    ports: {
+      prepareExplorationSpawn: chroniclesTacticsPrepareExplorationSpawn,
+      advanceCombatInitiative: chroniclesAdvanceCombatInitiative,
+      activeEnemies: chroniclesActiveEnemies,
+      combatActive: chroniclesTacticsCombatActive,
+      advanceExplorationEnemies: chroniclesAdvanceExplorationEnemies,
+      startInitiativeCombat: chroniclesStartInitiativeCombat,
     },
-  );
-  if (
-    started !== entryState
-    && entryState === explorationNext
-    && typeof explorationNext.message === 'string'
-    && explorationNext.message
-  ) {
-    return {
-      ...started,
-      message: `${explorationNext.message} ${started.message}`,
-    };
-  }
-  return started;
+  });
 }
