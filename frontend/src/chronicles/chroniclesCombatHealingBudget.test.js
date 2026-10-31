@@ -69,4 +69,22 @@ describe('MM3 sewer initiative · healing costs a real action and PH', () => {
     expect(rook(next).hp).toBe(rook(state).hp);
     expect(chroniclesMemberSp(next, bishop(next))).toBe(0);
   });
+
+  it.each([
+    ['enemy', (actor) => actor.kind === 'enemy'],
+    ['another hero', (actor) => actor.kind === 'party' && actor.id === 'matthias'],
+  ])('rejects First Aid on the %s initiative slot without spending PH or a turn', (_label, matches) => {
+    const base = bishopTurn();
+    const cursor = base.initiative.order.findIndex(matches);
+    expect(cursor).toBeGreaterThanOrEqual(0);
+    const state = { ...base, initiative: { ...base.initiative, cursor } };
+    const beforePh = chroniclesMemberSp(state, bishop(state));
+
+    const next = chroniclesReduce(state, firstAid);
+
+    expect(next.turns).toBe(state.turns);
+    expect(chroniclesMemberSp(next, bishop(next))).toBe(beforePh);
+    expect(rook(next).hp).toBe(rook(state).hp);
+    expect(next.initiative).toEqual(state.initiative);
+  });
 });
