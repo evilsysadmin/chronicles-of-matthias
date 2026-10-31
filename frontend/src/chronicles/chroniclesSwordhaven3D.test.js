@@ -375,7 +375,6 @@ describe('Swordhaven modular real-time 3D', () => {
     const red = (x, y) => pixels[(y * size + x) * 4];
     expect(red(16, 8)).toBeGreaterThan(red(0, 0));
     expect(red(48, 8)).toBeGreaterThan(red(32, 16));
-    expect(red(16, 8)).toBe(red(16, 8));
   });
 
   it('gives the temple a colonnaded stone portico without hiding its door or signs', () => {
