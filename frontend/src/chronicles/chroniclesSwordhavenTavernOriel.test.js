@@ -51,6 +51,34 @@ describe('Swordhaven tavern east guest oriel', () => {
     expect(ridge).toBeTruthy();
     expect(ridge.position.y).toBeGreaterThan(pitches[0].position.y);
     expect(oriel.getObjectByName('tavern-oriel-sloped-roof')).toBeFalsy();
+    const gallery = oriel.getObjectByName('tavern-east-guest-gallery');
+    expect(gallery).toBeInstanceOf(THREE.Group);
+    expect(gallery.userData.chroniclesDecorativeOnly).toBe(true);
+    const deck = gallery.getObjectByName('tavern-gallery-oak-deck');
+    const toprail = gallery.getObjectByName('tavern-gallery-oak-toprail');
+    const lowerrail = gallery.getObjectByName('tavern-gallery-lowerrail');
+    const balusters = gallery.getObjectByName('tavern-gallery-carved-balusters');
+    const supports = gallery.getObjectByName('tavern-gallery-knee-supports');
+    const finials = gallery.getObjectByName('tavern-oriel-brass-roof-finials');
+    expect([deck, toprail, lowerrail].every(part =>
+      part?.isMesh && part.castShadow === !coarsePointer)).toBe(true);
+    expect(gallery.children.filter(part => part.name === 'tavern-gallery-end-rail')).toHaveLength(2);
+    expect(balusters).toBeInstanceOf(THREE.InstancedMesh);
+    expect(balusters.count).toBe(7);
+    expect(supports.count).toBe(2);
+    expect(finials.count).toBe(2);
+    expect(gallery.children.every(child => child.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(balusters.castShadow).toBe(!coarsePointer);
+    expect(supports.castShadow).toBe(!coarsePointer);
+    // The top rail ends beneath the real amber panes; no opaque railing
+    // should cross the guest windows, door or shop nameplate.
+    const guestPane = oriel.getObjectByName('tavern-oriel-guest-window');
+    expect(toprail.position.y + toprail.geometry.parameters.height / 2)
+      .toBeLessThan(guestPane.position.y - guestPane.geometry.parameters.height / 2);
+    expect(deck.position.y).toBeLessThan(guestPane.position.y - 0.5);
+    expect(finials.geometry.parameters.height).toBeLessThanOrEqual(0.30);
+    expect(tavern.getObjectByName('shop-nameplate-lettering')).toBeTruthy();
+    expect(forge.getObjectByName('tavern-east-guest-gallery')).toBeFalsy();
     // The upper bay projects from the east wall, but remains inside the
     // pre-existing three-cell-wide solid footprint, above ground-level windows.
     const bounds = new THREE.Box3().setFromObject(oriel);
