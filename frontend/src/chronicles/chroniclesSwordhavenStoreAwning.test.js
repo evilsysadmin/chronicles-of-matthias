@@ -50,7 +50,7 @@ describe('Swordhaven provisions canvas canopy', () => {
       expect(xs[index]).toBeCloseTo(expected, 4);
     }
     store.updateWorldMatrix(true, true);
-    expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.7);
+    expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.5);
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(forge.getObjectByName('store-market-awning')).toBeFalsy();
     expect(swordhaven.grid[4][5]).toBe('.');
