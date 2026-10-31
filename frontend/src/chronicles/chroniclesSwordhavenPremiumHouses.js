@@ -158,7 +158,8 @@ export function dressSwordhavenPremiumHouse(root, {
       new THREE.CircleGeometry(round ? 0.32 : 0.30, round ? (coarse ? 12 : 20) : 4),
       HOME_ATTIC_RECESS);
     aperture.name = round ? 'home-attic-round-recess' : 'home-attic-diamond-recess';
-    aperture.rotation.z = round ? 0 : Math.PI / 4;
+    // Four segments already form the diamond: do not rotate into a square.
+    aperture.rotation.z = 0;
     aperture.userData.chroniclesDecorativeOnly = true;
     attic.add(aperture);
     if (round) {
@@ -172,7 +173,7 @@ export function dressSwordhavenPremiumHouse(root, {
       const diamond = new THREE.Mesh(
         new THREE.RingGeometry(0.30, 0.39, 4), mats.timber);
       diamond.name = 'home-attic-diamond-oak-trim';
-      diamond.rotation.z = Math.PI / 4;
+      diamond.rotation.z = 0;
       diamond.position.z = 0.055;
       diamond.userData.chroniclesDecorativeOnly = true;
       attic.add(diamond);
@@ -192,7 +193,7 @@ export function dressSwordhavenPremiumHouse(root, {
     // EXISTING ridge, stays in the blocked building footprint and does not
     // become a new elevated silhouette taller than the commercial roofs.
     if (homeStyle % 2 === 1) {
-      const finial = piece('home-clay-ridge-finial',
+      const finial = piece('home-oak-ridge-finial',
         new THREE.ConeGeometry(0.19, 0.37, coarse ? 5 : 8),
         mats.timber, 0, height + 1.91, facadeZ - 0.10);
       finial.castShadow = false;
