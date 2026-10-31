@@ -918,6 +918,67 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     entrance.traverse(part => { part.userData.chroniclesDecorativeOnly = true; });
     root.add(entrance);
   }
+  // A full-height riveted steel gateway makes the armourer's fortified hall
+  // identifiable at street level, not merely by its barrel-vault roof.
+  // This cladding sits in front of the original shop door on blocked house
+  // cells: no new collider, click target, map edit or interaction contract.
+  if (isArmor) {
+    const gate = new THREE.Group();
+    gate.name = 'armor-fortified-iron-gate';
+    gate.userData.chroniclesDecorativeOnly = true;
+    const ironPlate = material(0x384b55, { roughness: 0.72, metalness: 0.32 });
+    const shieldSteel = material(0x879ca6, { roughness: 0.47, metalness: 0.40 });
+    for (const side of [-1, 1]) {
+      mesh(gate, new THREE.BoxGeometry(0.82, 2.91, 0.12), ironPlate,
+        'armor-gate-steel-leaf', [side * 0.42, 1.56, facadeZ + 0.35], !coarse);
+      mesh(gate, new THREE.BoxGeometry(0.11, 2.73, 0.10), mats.steel,
+        'armor-gate-vertical-iron-stile', [side * 0.75, 1.56, facadeZ + 0.45], !coarse);
+      mesh(gate, new THREE.BoxGeometry(0.34, 3.20, 0.41), mats.stone,
+        'armor-gate-ashlar-jamb', [side * 1.10, 1.62, facadeZ + 0.30], !coarse);
+    }
+    mesh(gate, new THREE.BoxGeometry(2.58, 0.31, 0.45), mats.stone,
+      'armor-gate-ashlar-lintel', [0, 3.28, facadeZ + 0.32], !coarse);
+    const bands = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1.77, 0.14, 0.075), mats.steel, 3);
+    bands.name = 'armor-gate-forged-crossbands';
+    bands.castShadow = !coarse;
+    const part = new THREE.Object3D();
+    for (const [index, y] of [0.64, 1.56, 2.48].entries()) {
+      part.position.set(0, y, facadeZ + 0.46);
+      part.updateMatrix();
+      bands.setMatrixAt(index, part.matrix);
+    }
+    bands.instanceMatrix.needsUpdate = true;
+    gate.add(bands);
+    const rivets = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(0.065, 7, 5), shieldSteel, 18);
+    rivets.name = 'armor-gate-steel-rivets';
+    let rivetIndex = 0;
+    for (const y of [0.64, 1.56, 2.48]) {
+      for (const x of [-0.70, -0.44, -0.19, 0.19, 0.44, 0.70]) {
+        part.position.set(x, y, facadeZ + 0.52);
+        part.updateMatrix();
+        rivets.setMatrixAt(rivetIndex++, part.matrix);
+      }
+    }
+    rivets.instanceMatrix.needsUpdate = true;
+    gate.add(rivets);
+    // The large central shield is legible from the street without another
+    // hanging sign or any new light source.
+    const shield = new THREE.Shape();
+    shield.moveTo(-0.35, 0.43);
+    shield.lineTo(0.35, 0.43);
+    shield.lineTo(0.29, -0.20);
+    shield.lineTo(0, -0.56);
+    shield.lineTo(-0.29, -0.20);
+    shield.closePath();
+    mesh(gate, new THREE.ShapeGeometry(shield), shieldSteel,
+      'armor-gate-raised-shield', [0, 1.68, facadeZ + 0.54], !coarse);
+    mesh(gate, new THREE.BoxGeometry(0.075, 0.68, 0.045), mats.gold,
+      'armor-gate-shield-spine', [0, 1.73, facadeZ + 0.59]);
+    gate.traverse(part => { part.userData.chroniclesDecorativeOnly = true; });
+    root.add(gate);
+  }
   // The temple is dressed stone, not another flower-box merchant frontage.
   // Two pointed blue-glass lancets replace the shared amber shop windows.
   // Their raised tracery is decorative only: doors, map cells and collision
