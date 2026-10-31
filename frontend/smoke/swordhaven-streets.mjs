@@ -48,6 +48,8 @@ try {
           'Swordhaven streets need actual batched oak hoods and planted window ledges');
         assert.equal(result.upperJulietGuards, 'true',
           'Eight south-facing upper windows need sparse wrought-iron Juliet guards with no street collision');
+        assert.equal(result.julietMobileFraming, 'true',
+          'The dedicated Juliet shot must visibly frame the actual wrought-iron upper guard in portrait');
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
