@@ -10,7 +10,7 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
+    for (const view of ['oldtown', 'mayor-square', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
       const context = await browser.newContext({
         viewport: { width, height: width === 1280 ? 800 : 844 },
         deviceScaleFactor: 1,
@@ -35,6 +35,8 @@ try {
         assert.equal(result.sceneError, undefined, JSON.stringify(result));
         assert.equal(result.sceneReady, 'true');
         assert.equal(result.mapId, 'swordhaven-first-book');
+        assert.equal(result.premiumCivic, 'true', 'The real mayor hall needs its carved civic facade');
+        assert.equal(result.premiumHomes, 'true', 'Residential houses need the premium shuttered facade');
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
