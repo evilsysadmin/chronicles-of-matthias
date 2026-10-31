@@ -913,7 +913,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     stateRef.current = next;
     setState(next);
-    showLootNotice(chroniclesLootNotice(current, next, action));
+    // Quiet receipts share one slot: a real pickup wins over an expiry on
+    // the same action. No modal, banner or chronicle entry is created.
+    showLootNotice(chroniclesLootNotice(current, next, action) || (
+      temporary.expiredNotice
+        ? { kind: 'boon-expiry', text: temporary.expiredNotice }
+        : null
+    ));
 
     const bark = chroniclesPartyBark(current, next);
     if (bark) {
@@ -1018,6 +1024,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         latest, advanced, progressionRef.current,
       );
       const committed = temporal.updated ? temporal.state : advanced;
+      if (temporal.expiredNotice) {
+        showLootNotice({ kind: 'boon-expiry', text: temporal.expiredNotice });
+      }
       stateRef.current = committed;
       pendingActionSoundRef.current = error ? null : {
         previous: latest,
@@ -1045,7 +1054,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [sheetMemberId, state?.initiative, state?.phase, showHitSplats]);
+  }, [sheetMemberId, state?.initiative, state?.phase, showHitSplats, showLootNotice]);
 
   useEffect(() => {
     const actor = chroniclesCurrentInitiativeActor(state?.initiative);
@@ -2204,7 +2213,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             />
             <ChroniclesEnemyRetaliationFx key={`retaliation:${retaliationCue?.token || 'none'}`} cue={retaliationCue} />
             {missileNotice && <div className="chronicles-quiet-action-notice" role="status" aria-live="polite" data-chronicles-action-refusal data-chronicles-missile-refusal>{missileNotice}</div>}
-            {lootNotice && <div key={lootNotice.text} className="chronicles-quiet-action-notice chronicles-loot-notice" role="status" aria-live="polite" data-chronicles-loot-receipt>{lootNotice.text}</div>}
+            {lootNotice && <div key={lootNotice.text}
+              className={`chronicles-quiet-action-notice ${lootNotice.kind === 'boon-expiry' ? 'chronicles-boon-expiry-notice' : 'chronicles-loot-notice'}`}
+              role="status" aria-live="polite"
+              data-chronicles-loot-receipt={lootNotice.kind === 'boon-expiry' ? undefined : ''}
+              data-chronicles-boon-expired={lootNotice.kind === 'boon-expiry' ? '' : undefined}
+            >{lootNotice.text}</div>}
             {rendererError && <div className="chronicles-renderer-error" role="alert">{rendererError}</div>}
             {state.phase === 'defeated' && <ChroniclesDefeatOverlay onRestart={restart} onExit={exitChronicles} />}
             {state.phase === 'escaped' && !chroniclesCampaignEnding(state) && <ChroniclesBookOneEpilogue state={state} onRestart={restart} />}

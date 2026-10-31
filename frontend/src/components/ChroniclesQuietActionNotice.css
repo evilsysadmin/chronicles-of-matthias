@@ -43,3 +43,17 @@
   background: rgba(24, 20, 17, .96);
   box-shadow: 0 5px 24px rgba(0, 0, 0, .65);
 }
+
+/* Blessing expiry is feedback, not a loot reward or cinematic event.
+   Keep it readable above mobile controls and share the same single toast slot. */
+.chronicles .chronicles-boon-expiry-notice {
+  top: 38%;
+  bottom: auto;
+  max-width: min(86%, 440px);
+  width: max-content;
+  padding: 7px 12px;
+  font-size: clamp(12px, 1.2vw, 14px);
+  white-space: normal;
+  line-height: 1.4;
+  text-wrap: balance;
+}

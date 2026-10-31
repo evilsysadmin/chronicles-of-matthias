@@ -50,7 +50,7 @@ const TEMPORARY_FOUNTAINS = Object.freeze([
 // Reconcile only while a prior blessing was active, or when it expires.
 // That way walking/turning/combat doesn't need an extra engine or timer.
 export function chroniclesResolveTemporaryFountainBoon(previous, next, progression) {
-  const unchanged = { state: next, progression, granted: false, updated: false };
+  const unchanged = { state: next, progression, granted: false, updated: false, expiredNotice: null };
   if (previous?.combatRules !== 'mm3' || next?.combatRules !== 'mm3') return unchanged;
   const currentTurn = Number(previous.turns);
   const nextTurn = Number(next.turns);
@@ -86,6 +86,16 @@ export function chroniclesResolveTemporaryFountainBoon(previous, next, progressi
 
   const effectiveProgression = awarded?.granted ? awarded.progression : progression;
   const refreshed = reconcileChroniclesProgressionInTacticsState(next, effectiveProgression);
+  // Announce exactly when the final valid action consumes the blessing.
+  // Never announce during reload, a rejected action, or replacement by a
+  // different fountain. Keep this out of the narrative journal and saves.
+  const expiredSource = !awarded?.granted && boon
+    && currentTurn < boon.expiresAtTurn && nextTurn >= boon.expiresAtTurn
+    ? TEMPORARY_FOUNTAINS.find((candidate) => candidate.sourceId === boon.sourceId)
+    : null;
+  const expiredNotice = expiredSource
+    ? `Se desvanece la bendición de la ${expiredSource.name} (+${boon.amount} ${CHRONICLES_MM3_STAT_LABELS[boon.stat]}).`
+    : null;
   const replacesActive = awardedSource && boon && currentTurn < boon.expiresAtTurn;
   const blessingMessage = awardedSource
     ? `La ${awardedSource.name} concede +${awardedSource.amount} ${CHRONICLES_MM3_STAT_LABELS[awardedSource.stat]} al grupo durante ${awardedSource.duration} acciones.${replacesActive ? ' Sustituye a la bendición anterior.' : ''}`
@@ -93,6 +103,7 @@ export function chroniclesResolveTemporaryFountainBoon(previous, next, progressi
   return {
     updated: true,
     granted: Boolean(awarded?.granted),
+    expiredNotice,
     progression: effectiveProgression,
     state: {
       ...refreshed,
