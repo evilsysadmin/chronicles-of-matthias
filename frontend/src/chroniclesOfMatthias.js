@@ -674,6 +674,13 @@ export function chroniclesAttackMode(state, memberId) {
 function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
   const member = partyMember(state, memberId);
   if (!member) return state;
+  // A direct missile attack must obey the same active-hero slot as melee,
+  // BLOCK and spells. Otherwise a stale UI action can shoot during an enemy
+  // turn or let another hero attack for free. Tactics keeps its own rules.
+  if (chroniclesUsesMM3Combat(state) && state.initiative) {
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    if (actor?.kind !== 'party' || actor.id !== member.id) return state;
+  }
   if (member.hp <= 0) return withMessage(state, `${member.name} está fuera de combate. Incluso la épica tiene límites médicos.`);
   const mm3 = chroniclesUsesMM3Combat(state);
   const mode = spell || !mm3 ? 'melee' : requestedMode === 'auto' ? chroniclesAttackMode(state, member.id) : requestedMode;
