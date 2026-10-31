@@ -10,15 +10,20 @@ const browser = await chromium.launch({
 const failures = [];
 try {
   for (const width of [390, 1280]) {
-    for (const view of ['oldtown', 'mayor-square', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
-      const context = await browser.newContext({
-        viewport: { width, height: width === 1280 ? 800 : 844 },
-        deviceScaleFactor: 1,
-      });
-      const page = await context.newPage();
-      const pageErrors = [];
-      page.on('pageerror', error => pageErrors.push(error.message));
-      try {
+    // This fixture has no cookies or storage state. A fresh navigation recreates
+    // the real WebGL scene, while reusing the browser context avoids 19 GPU/
+    // renderer initializations per viewport. Keep all 38 visual assertions.
+    const context = await browser.newContext({
+      viewport: { width, height: width === 1280 ? 800 : 844 },
+      deviceScaleFactor: 1,
+    });
+    const page = await context.newPage();
+    try {
+      for (const view of ['oldtown', 'mayor-square', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
+        const pageErrors = [];
+        const onPageError = error => pageErrors.push(error.message);
+        page.on('pageerror', onPageError);
+        try {
         await page.goto(url + '?view=' + view, { waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() =>
           document.body.dataset.sceneReady === 'true'
@@ -115,12 +120,15 @@ try {
         assert.equal(result.overflowing, false);
         assert.deepEqual(pageErrors, []);
         console.log('OK real Swordhaven 3D ' + view + ' ' + width + 'px');
-      } catch (error) {
-        failures.push(view + '/' + width + ': ' + error.message);
-        console.error('FAIL Swordhaven 3D smoke', view, width, error);
-      } finally {
-        await context.close();
+        } catch (error) {
+          failures.push(view + '/' + width + ': ' + error.message);
+          console.error('FAIL Swordhaven 3D smoke', view, width, error);
+        } finally {
+          page.off('pageerror', onPageError);
+        }
       }
+    } finally {
+      await context.close();
     }
   }
 } finally {
