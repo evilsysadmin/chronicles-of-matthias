@@ -645,6 +645,39 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   mesh(root, new THREE.BoxGeometry(1.75, 3.12, 0.16), mats.timber,
     'shop-door', [0, 1.56, facadeZ + 0.16]);
+  // A shallow limestone arch gives the herb house a distinct, recessed-looking
+  // entrance instead of the shared square merchant doorway. The nine dressed
+  // voussoirs and two piers remain on the existing solid facade, below the
+  // nameplate and clear of the authored walk grid. Decorative only.
+  if (isApothecary) {
+    const portal = new THREE.Group();
+    portal.name = 'apothecary-stone-arch-portal';
+    portal.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      mesh(portal, new THREE.BoxGeometry(0.34, 2.76, 0.38), mats.stone,
+        'apothecary-entry-stone-jamb', [side * 1.08, 1.43, facadeZ + 0.38], !coarse);
+      mesh(portal, new THREE.BoxGeometry(0.53, 0.25, 0.46), mats.stone,
+        'apothecary-entry-stone-footing', [side * 1.08, 0.14, facadeZ + 0.39]);
+    }
+    const arch = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.35, 0.22, 0.42), mats.stone, 9);
+    arch.name = 'apothecary-entry-arch-voussoirs';
+    arch.userData.chroniclesDecorativeOnly = true;
+    arch.castShadow = !coarse;
+    arch.receiveShadow = true;
+    const stone = new THREE.Object3D();
+    for (let index = 0; index < arch.count; index += 1) {
+      const angle = Math.PI * index / (arch.count - 1);
+      stone.position.set(0.84 * Math.cos(angle), 2.52 + 0.84 * Math.sin(angle),
+        facadeZ + 0.38);
+      stone.rotation.z = angle + Math.PI / 2;
+      stone.updateMatrix();
+      arch.setMatrixAt(index, stone.matrix);
+    }
+    arch.instanceMatrix.needsUpdate = true;
+    portal.add(arch);
+    root.add(portal);
+  }
   // A substantial oak entrance makes the inn legible at street level, not
   // just by its roof silhouette. It frames the existing door beneath the
   // porch without adding blockers, changing interactions or hiding the sign.

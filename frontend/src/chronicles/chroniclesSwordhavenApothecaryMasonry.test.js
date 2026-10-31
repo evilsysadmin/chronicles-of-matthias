@@ -89,7 +89,23 @@ describe('Swordhaven apothecary sage masonry', () => {
     expect(herbarium.getObjectByName('herbarium-glazed-roof').material).toBe(glazing);
     expect(botica.getObjectByName('apothecary-hanging-herbs')).toBeTruthy();
     expect(botica.getObjectByName('shop-door')).toBeTruthy();
-    expect(botica.getObjectByName('swordhaven-shop-nameplate')).toBeTruthy();
+    const portal = botica.getObjectByName('apothecary-stone-arch-portal');
+    const nameplate = botica.getObjectByName('swordhaven-shop-nameplate');
+    expect(portal?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(portal.children.filter(part => part.name === 'apothecary-entry-stone-jamb'))
+      .toHaveLength(2);
+    expect(portal.children.filter(part => part.name === 'apothecary-entry-stone-footing'))
+      .toHaveLength(2);
+    const arch = portal.getObjectByName('apothecary-entry-arch-voussoirs');
+    expect(arch).toBeInstanceOf(THREE.InstancedMesh);
+    expect(arch.count).toBe(9);
+    expect(arch.castShadow).toBe(!coarsePointer);
+    // The portal must not cover the shop lettering, even on touch devices.
+    botica.updateWorldMatrix(true, true);
+    expect(new THREE.Box3().setFromObject(portal).max.y)
+      .toBeLessThan(new THREE.Box3().setFromObject(nameplate).min.y);
+    expect(store.getObjectByName('apothecary-stone-arch-portal')).toBeFalsy();
+    expect(nameplate).toBeTruthy();
     // The authored walk grid is unchanged; no new obstacle is introduced.
     expect(swordhaven.grid[4][5]).toBe('.');
   });
