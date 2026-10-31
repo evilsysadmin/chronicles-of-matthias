@@ -9,6 +9,7 @@ import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 
 const source = readFileSync(new URL('./ChroniclesCharacterSheet.jsx', import.meta.url), 'utf8');
 const levelCss = readFileSync(new URL('./ChroniclesCharacterLevelMM3.css', import.meta.url), 'utf8');
+const archiveCss = readFileSync(new URL('./ChroniclesCharacterSheetArchive.css', import.meta.url), 'utf8');
 
 function renderSheet({ memberId = 'matthias', rules = 'mm3', mode = 'chronicles', progression = createChroniclesProgression() } = {}) {
   const state = createChroniclesState('swordhaven-first-book', progression.characterBuild, { rules });
@@ -54,6 +55,7 @@ describe('MM3 individual character folio · restrained level and non-magic state
     expect(source).toContain('Este personaje no practica magia.');
     expect(source).not.toContain('Ver hechizos de ');
     expect(source).not.toContain('chronicles-character-sheet__spell-companion');
+    expect(archiveCss).not.toContain('chronicles-character-sheet__spell-companion');
     expect( knight ).not.toContain('data-chronicles-spellbook="matthias"');
     const { html: caster } = renderSheet({ memberId: 'rook' });
     expect(chroniclesMemberSchool(state.party.find((hero) => hero.id === 'rook'))).toBeTruthy();
