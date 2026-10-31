@@ -353,6 +353,36 @@ try {
       }
       return true;
     })()),
+    eaveKneeBraces: String((() => {
+      if (!oakCorbels || oakCorbels.count !== roofs.count * 4
+        || oakCorbels.material !== oakEaves?.material
+        || !oakCorbels.userData.chroniclesDecorativeOnly
+        || oakCorbels.castShadow || oakCorbels.frustumCulled
+        || oakCorbels.geometry.parameters.height !== 0.58) return false;
+      const matrix = new THREE.Matrix4();
+      const roofMatrix = new THREE.Matrix4();
+      for (let index = 0; index < roofs.count; index += 1) {
+        roofs.getMatrixAt(index, roofMatrix);
+        const center = new THREE.Vector3().setFromMatrixPosition(roofMatrix);
+        const width = swordhaven.landscape.roofRuns[index].width;
+        for (const [endIndex, end] of [-1, 1].entries()) {
+          for (const [sideIndex, side] of [-1, 1].entries()) {
+            oakCorbels.getMatrixAt(index * 4 + endIndex * 2 + sideIndex, matrix);
+            const position = new THREE.Vector3();
+            const rotation = new THREE.Quaternion();
+            const scale = new THREE.Vector3();
+            matrix.decompose(position, rotation, scale);
+            if (Math.abs(position.x - center.x - end * ((width * 4 + 0.44) / 2 - 1.10)) > 0.01
+              || Math.abs(position.y - center.y + 0.22) > 0.01
+              || Math.abs(position.z - center.z - side * 2) > 0.01
+              || position.y - 0.36 < 5.7
+              || Math.abs(new THREE.Vector3(0, 1, 0).applyQuaternion(rotation).z - side * Math.sin(0.42)) > 0.01
+              || Math.abs(scale.y - 1) > 0.01) return false;
+          }
+        }
+      }
+      return true;
+    })()),
     premiumRoofline: String(Boolean(oakEaves?.count === roofs.count * 2
       && oakRidges?.count === roofs.count
       && oakVerges?.count === roofs.count * 4
