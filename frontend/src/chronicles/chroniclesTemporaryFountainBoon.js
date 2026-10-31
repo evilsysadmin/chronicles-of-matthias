@@ -51,11 +51,21 @@ export const LAVA_FOUNTAIN_BOON = Object.freeze({
   name: 'Fuente de Lava Dormida',
 });
 
+export const MILL_FOUNTAIN_BOON = Object.freeze({
+  mapId: 'terra-b5',
+  sourceId: 'terra-b5-shrine',
+  receipt: 'terra_b5ShrineUsed',
+  stat: 'endurance',
+  amount: 4,
+  duration: 10,
+  name: 'Fuente del Molino',
+});
+
 // Only deliberately authored sources grant buffs; other restorative wells
 // keep their existing heal/PH effects without gaining incidental stat boosts.
 const TEMPORARY_FOUNTAINS = Object.freeze([
   WOLF_FOUNTAIN_BOON, FROST_FOUNTAIN_BOON, LIGHTHOUSE_FOUNTAIN_BOON,
-  LAVA_FOUNTAIN_BOON,
+  LAVA_FOUNTAIN_BOON, MILL_FOUNTAIN_BOON,
 ]);
 
 // Reconcile only while a prior blessing was active, or when it expires.
