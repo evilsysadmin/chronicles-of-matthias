@@ -110,7 +110,9 @@ function settlementWindowFrameGeometry() {
   return geometry;
 }
 
-function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHeight = 1.6 }) {
+function addSettlementStreetFacades(town, {
+  grid, blocked, center, zones, wallHeight = 1.6, swordhavenWindows = false,
+}) {
   // Windows alternate along the block; timber beams cover every street edge.
   const facades = settlementStreetFacingFaces({ grid, blocked, zones })
     .filter(({ x, y }) => (x + y) % 2 === 0);
@@ -126,9 +128,17 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
   );
   const panes = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.77, 0.52, 0.014),
-    material(0x34444b, { metalness: 0.07, roughness: 0.8 }),
+    material(swordhavenWindows ? 0xffffff : 0x34444b, { metalness: 0.07, roughness: 0.8 }),
     count,
   );
+  // Tinted oak and leaded glass make the terrace look inhabited without
+  // duplicate shutters, new glass materials, emissive lights or draw calls.
+  // Most panes remain blue-grey, with a few subdued amber reflections.
+  // Colour is determined by authored wall coordinates, never per load.
+  const oakTints = [0xffffff, 0xddcbb3, 0xc0a58d];
+  const glassTints = [0x34444b, 0x445760, 0x58707a, 0x947553];
+  const oak = new THREE.Color();
+  const glass = new THREE.Color();
   const dummy = new THREE.Object3D();
   facades.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
     const [wx, wz] = gridToWorld(x, y, center);
@@ -138,13 +148,22 @@ function addSettlementStreetFacades(town, { grid, blocked, center, zones, wallHe
       dummy.position.set(wx + dx * 1.972, windowY, wz + dy * 1.972);
       dummy.updateMatrix();
       frames.setMatrixAt(index, dummy.matrix);
+      if (swordhavenWindows) {
+        frames.setColorAt(index, oak.setHex(oakTints[(Math.floor(x / 3) + y + storeyIndex) % 3]));
+      }
       dummy.position.set(wx + dx * 1.988, windowY + 0.02, wz + dy * 1.988);
       dummy.updateMatrix();
       panes.setMatrixAt(index, dummy.matrix);
+      if (swordhavenWindows) {
+        const tone = (x * 7 + y * 11 + storeyIndex * 3) % 7;
+        panes.setColorAt(index, glass.setHex(glassTints[tone === 0 ? 3 : tone % 3]));
+      }
     });
   });
   frames.instanceMatrix.needsUpdate = true;
   panes.instanceMatrix.needsUpdate = true;
+  if (frames.instanceColor) frames.instanceColor.needsUpdate = true;
+  if (panes.instanceColor) panes.instanceColor.needsUpdate = true;
   frames.name = 'chronicles-town-street-window-frames';
   panes.name = 'chronicles-town-street-window-panes';
   frames.castShadow = false;
@@ -826,6 +845,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     addSettlementStreetFacades(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
+      swordhavenWindows: scenePlan.mapId === 'swordhaven-first-book',
     });
     // Only Swordhaven gets the mock-inspired hooded windows and planted
     // residential sills; use the same grid-derived faces as the real windows.
