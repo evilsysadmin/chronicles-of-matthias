@@ -406,7 +406,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   // Authored coordinates, not random/session state, determine the four
   // residential finishes. Reuse one cached stucco texture and normal map.
   const homeStyle = spec.emblem === 'home'
-    ? ((spec.x * 7 + spec.y * 11) % 4 + 4) % 4 : null;
+    ? ((Math.round(spec.x * 17 + spec.y * 29) % 4) + 4) % 4 : null;
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
