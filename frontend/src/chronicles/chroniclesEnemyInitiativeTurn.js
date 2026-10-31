@@ -9,10 +9,12 @@ import {
 // An enemy turn belongs to the game, not to a visual cue or a browser timer.
 // A faulty enemy action must cost that enemy its action, never trap the entire
 // party behind "TURNO ENEMIGO". The next actor is still selected by initiative.
-export function chroniclesRunPendingEnemyTurn(state, expectedEnemyId, resolveActor = chroniclesResolveEnemyActor) {
+export function chroniclesRunPendingEnemyTurn(state, expectedEnemyId, resolveActor = chroniclesResolveEnemyActor, expectedInitiative = null) {
   // A timer queued before victory, defeat or escape must never resurrect an
   // enemy turn from a stale initiative snapshot after combat has ended.
-  if (state?.phase !== 'combat') return null;
+  // A new encounter can reuse the same enemy ID, round and cursor: a timer
+  // from the previous encounter must not consume its first enemy action.
+  if (state?.phase !== 'combat' || (expectedInitiative && state.initiative !== expectedInitiative)) return null;
   const actor = chroniclesCurrentInitiativeActor(state?.initiative);
   if (actor?.kind !== 'enemy' || actor.id !== expectedEnemyId) return null;
 

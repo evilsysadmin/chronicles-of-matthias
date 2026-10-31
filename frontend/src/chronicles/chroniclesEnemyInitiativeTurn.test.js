@@ -86,6 +86,28 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     expect(resolved.committed.turns).toBe(fight.turns + 1);
   });
 
+  it('does not replay an old timer in a new encounter with the same enemy ID and turn slot', () => {
+    const previous = enemyFirstEncounter();
+    // New combat, but the first actor, round and cursor all happen to match.
+    const restarted = {
+      ...previous,
+      initiative: { ...previous.initiative, order: [...previous.initiative.order] },
+    };
+    const resolve = vi.fn((state) => state);
+    expect(chroniclesRunPendingEnemyTurn(restarted, WEST, resolve, previous.initiative)).toBeNull();
+    expect(resolve).not.toHaveBeenCalled();
+    expect(restarted.initiative.cursor).toBe(0);
+
+    // Its own newly scheduled callback must still advance the encounter.
+    const fresh = chroniclesRunPendingEnemyTurn(restarted, WEST, resolve, restarted.initiative);
+    expect(fresh).not.toBeNull();
+    expect(fresh.error).toBeNull();
+    expect(resolve).toHaveBeenCalledTimes(1);
+    expect(chroniclesCurrentInitiativeActor(fresh.committed.initiative)).toMatchObject({
+      kind: 'party', id: 'matthias',
+    });
+  });
+
   it.each(['explore', 'defeated', 'escaped'])(
     'ignores a stale enemy timer after the phase changes to %s',
     (phase) => {
