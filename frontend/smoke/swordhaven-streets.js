@@ -9,6 +9,8 @@ const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
   // Golden shot: the mayor's real door from a walkable plaza cell.
   'mayor-square': { x: 11, y: 8, heading: 'south', target: { x: 11, y: 10 }, cameraHeight: 1.85, lookUp: 1.8 },
+  // Walkable street looking at the only generic residential house's gable.
+  'home-gable': { x: 3, y: 8, heading: 'south', target: { x: 3, y: 11.5 }, cameraHeight: 2.4, lookUp: 2.9 },
   // Both facades from matching walkable oblique positions, far enough away
   // to show the roof silhouette instead of only the door at eye level.
   apothecary: { x: 5, y: 8, heading: 'north', target: { x: 3, y: 3 }, cameraHeight: 2.4, lookUp: 2.5 },
@@ -148,6 +150,17 @@ try {
       && home.getObjectByName('premium-oak-window-shutters')?.count === 4
       && !home.getObjectByName('swordhaven-shop-nameplate')
     )),
+    premiumHomeGables: String(homes.length > 0 && homes.every(home => {
+      const wall = home.getObjectByName('timber-and-stone-walls');
+      const gable = home.getObjectByName('home-authored-attic-vent');
+      const round = gable?.getObjectByName('home-attic-round-recess');
+      const diamond = gable?.getObjectByName('home-attic-diamond-recess');
+      return wall?.material?.map?.name === 'chronicles-town-stucco'
+        && gable?.userData.chroniclesDecorativeOnly
+        && Boolean(round) !== Boolean(diamond)
+        && gable.children.filter(part => part.name === 'home-attic-vent-louver').length === 2
+        && !home.getObjectByName('swordhaven-shop-nameplate');
+    }) && !hall?.getObjectByName('home-authored-attic-vent')),
     premiumStreetWindows: String(Boolean(streetHoods
       && streetHoods.count === windowFrames.count
       && streetBraces?.count === streetHoods.count * 2
