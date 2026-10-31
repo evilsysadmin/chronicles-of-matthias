@@ -10,6 +10,7 @@ import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js'
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
+import { dressSwordhavenAlleyLaundry } from './chroniclesSwordhavenAlleyLaundry.js';
 import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
@@ -857,6 +858,10 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         }),
         center: sceneCenter, wallHeight: streetWallHeight, coarsePointer,
       });
+      // Four narrow, genuinely walkable southern passages have clotheslines
+      // anchored to their real opposing walls. Fabric clears player height,
+      // stays non-interactive, and adds only two batched draw calls.
+      dressSwordhavenAlleyLaundry(town, { grid, center: sceneCenter });
     }
     addSettlementTimberFrontages(town, {
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
