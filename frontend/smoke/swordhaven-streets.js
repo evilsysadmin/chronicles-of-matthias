@@ -214,6 +214,20 @@ try {
     plasterCount: String(plaster.count),
     twoStoreyLimewash: String(twoStoreyLimewash),
     domesticDoorCount: String(town.getObjectByName('chronicles-town-residential-door-panels')?.count ?? 0),
+    domesticJoinery: String((() => {
+      const oak = town.getObjectByName('chronicles-town-residential-door-panels');
+      const brass = town.getObjectByName('chronicles-town-residential-door-knockers');
+      if (!oak || !brass) return false;
+      const oakBounds = new THREE.Box3()
+        .setFromBufferAttribute(oak.geometry.getAttribute('position'));
+      const brassBounds = new THREE.Box3()
+        .setFromBufferAttribute(brass.geometry.getAttribute('position'));
+      return oak.geometry.index.count === 36 * 5
+        && brass.geometry.index.count === 12 * 6 + 36 * 2
+        && oak.count === brass.count
+        && oakBounds.max.z + 1.983 < 2
+        && brassBounds.max.z + 1.998 < 2;
+    })()),
     domesticDoors: String((() => {
       const doors = town.getObjectByName('chronicles-town-residential-door-panels');
       const frames = town.getObjectByName('chronicles-town-residential-door-frames');
