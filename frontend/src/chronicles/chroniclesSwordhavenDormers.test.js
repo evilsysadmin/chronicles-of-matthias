@@ -135,5 +135,10 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
     expect(town.getObjectByName('chronicles-town-residential-dormer-plaster')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-pitched-roofs')).toBeFalsy();
     expect(town.getObjectByName('chronicles-town-residential-dormer-window-casements')).toBeFalsy();
+    const otherWindows = town.getObjectByName('chronicles-town-street-window-panes');
+    const otherFrames = town.getObjectByName('chronicles-town-street-window-frames');
+    expect(otherWindows.material.color.getHex()).toBe(0x34444b);
+    expect(otherWindows.instanceColor).toBeNull();
+    expect(otherFrames.instanceColor).toBeNull();
   });
 });

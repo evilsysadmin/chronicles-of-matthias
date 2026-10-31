@@ -267,6 +267,25 @@ try {
           part.userData.chroniclesDecorativeOnly && !part.castShadow)
         && !hall?.getObjectByName('chronicles-town-residential-door-panels');
     })()),
+    inhabitedWindowTints: String((() => {
+      if (windowFrames.count !== windowPanes.count || !windowFrames.instanceColor
+        || !windowPanes.instanceColor || windowPanes.material.color.getHex() !== 0xffffff
+        || windowPanes.material.emissive.getHex() !== 0) return false;
+      const oak = new Set();
+      const glass = new Set();
+      const tint = new THREE.Color();
+      let amber = 0;
+      for (let i = 0; i < windowFrames.count; i += 1) {
+        windowFrames.getColorAt(i, tint);
+        oak.add(tint.getHexString());
+        windowPanes.getColorAt(i, tint);
+        const shade = tint.getHexString();
+        glass.add(shade);
+        if (shade === '947553') amber += 1;
+      }
+      return oak.size === 3 && glass.size === 4
+        && amber > 0 && amber < windowPanes.count / 3;
+    })()),
     windowDetail: String(windowFrames.count === windowPanes.count
       && windowFrames.geometry.index.count === 36 * 12
       && new THREE.Box3().setFromBufferAttribute(windowFrames.geometry.getAttribute('position')).max.x >= 0.99
