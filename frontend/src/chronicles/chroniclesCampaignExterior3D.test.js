@@ -518,19 +518,19 @@ describe('Chronicles file-authored exterior renderer', () => {
     // A few blind street bays are now genuine-looking CLOSED residential
     // entrances. No diagonal brace cuts across a door, no window is hidden,
     // and every front stays within a solid authored cell.
-    const doors = town.getObjectByName('chronicles-town-residential-door-panels');
+    const domesticPanels = town.getObjectByName('chronicles-town-residential-door-panels');
     const doorFrames = town.getObjectByName('chronicles-town-residential-door-frames');
     const knockers = town.getObjectByName('chronicles-town-residential-door-knockers');
-    for (const batch of [doors, doorFrames, knockers]) {
+    for (const batch of [domesticPanels, doorFrames, knockers]) {
       expect(batch).toBeInstanceOf(THREE.InstancedMesh);
       expect(batch.userData.chroniclesDecorativeOnly).toBe(true);
       expect(batch.castShadow).toBe(false);
-      expect(batch.count).toBe(doors.count);
+      expect(batch.count).toBe(domesticPanels.count);
     }
-    expect(doors.count).toBeGreaterThan(4);
-    expect(doors.count).toBeLessThan(frames.count / 2);
+    expect(domesticPanels.count).toBeGreaterThan(4);
+    expect(domesticPanels.count).toBeLessThan(frames.count / 2);
     expect(doorFrames.geometry.index.count).toBe(4 * 36);
-    expect(doorFrames.material.color.getHex()).not.toBe(doors.material.color.getHex());
+    expect(doorFrames.material.color.getHex()).not.toBe(domesticPanels.material.color.getHex());
     const doorFrameBounds = new THREE.Box3()
       .setFromBufferAttribute(doorFrames.geometry.getAttribute('position'));
     expect(1.988 + doorFrameBounds.max.z).toBeLessThan(2);
@@ -550,8 +550,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     const sconceCells = new Set(swordhavenFirstBook.landscape.wallLanterns
       .map(({ x, y }) => x + ':' + y));
-    for (let i = 0; i < doors.count; i += 1) {
-      doors.getMatrixAt(i, doorMatrix);
+    for (let i = 0; i < domesticPanels.count; i += 1) {
+      domesticPanels.getMatrixAt(i, doorMatrix);
       doorMatrix.decompose(doorPosition, orientation, doorScale);
       const dx = Math.round(new THREE.Vector3(0, 0, 1).applyQuaternion(orientation).x);
       const dy = Math.round(new THREE.Vector3(0, 0, 1).applyQuaternion(orientation).z);
