@@ -85,7 +85,7 @@ describe('Swordhaven authored terrace roofline dressing', () => {
     expect(new Set(chimneyPlan.map(entry => entry.variant))).toEqual(new Set([0, 1, 2]));
     const dormers = planSwordhavenDormers(runs, swordhaven.grid, center, 6.4);
     for (const entry of chimneyPlan) {
-      const rise = swordhavenRoofRise(entry);
+      const rise = swordhavenRoofRise({ x: entry.xCell, y: entry.yCell, width: entry.width });
       const roofCenterZ = (entry.yCell - center.y) * 4;
       const actualSurface = 6.36 + rise * (1 - Math.abs(entry.z - roofCenterZ) / 2.22);
       expect(entry.roofY).toBeCloseTo(actualSurface);
@@ -124,7 +124,7 @@ describe('Swordhaven authored terrace roofline dressing', () => {
       // Foot embeds in the roof, but the crown clears its ridge.
       expect(position.y - entry.height / 2).toBeLessThan(entry.roofY);
       expect(position.y + entry.height * 0.56)
-        .toBeGreaterThan(6.36 + swordhavenRoofRise(entry));
+        .toBeGreaterThan(6.36 + swordhavenRoofRise({ x: entry.xCell, y: entry.yCell, width: entry.width }));
       const color = new THREE.Color();
       shafts.getColorAt(index, color);
       colors.add(color.getHexString());
