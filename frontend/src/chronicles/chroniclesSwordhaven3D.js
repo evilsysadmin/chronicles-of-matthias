@@ -2473,10 +2473,21 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     for (const side of [-1, 1]) {
       mesh(bay, new THREE.BoxGeometry(0.22, 1.52, 0.30), mats.stone,
         'forge-workshop-stone-pier', [side * 0.87, 2.75, 0], !coarse);
+      // Turn the stone jamb into the recess. From the street this reveals a
+      // proper deep masonry opening rather than a flat frame on the wall.
+      mesh(bay, new THREE.BoxGeometry(0.18, 1.32, 0.42), mats.stone,
+        'forge-workshop-jamb-return', [side * 0.76, 2.75, 0.18], !coarse);
       const brace = mesh(bay, new THREE.BoxGeometry(0.085, 1.20, 0.10), mats.steel,
         'forge-workshop-cross-brace', [side * 0.25, 2.75, 0.22]);
       brace.rotation.z = side * 0.45;
     }
+    // The existing three embers remain visible behind a solid hearth sill
+    // and a slim forged retaining lip. Both sit within the blocked forge
+    // frontage; the original shop door, sign and interaction cells are free.
+    mesh(bay, new THREE.BoxGeometry(1.50, 0.16, 0.40), mats.stone,
+      'forge-workshop-stone-hearth', [0, 2.19, 0.27], !coarse);
+    mesh(bay, new THREE.BoxGeometry(1.52, 0.09, 0.12), mats.steel,
+      'forge-workshop-forged-hearth-lip', [0, 2.31, 0.47]);
     mesh(bay, new THREE.BoxGeometry(1.92, 0.23, 0.36), mats.stone,
       'forge-workshop-stone-lintel', [0, 3.59, 0], !coarse);
     mesh(bay, new THREE.BoxGeometry(0.18, 0.30, 0.11), mats.steel,
