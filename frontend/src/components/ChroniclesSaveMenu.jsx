@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetchMe } from '../auth.js';
+import { useState } from 'react';
+import { useChroniclesAdminAccess } from '../chronicles/useChroniclesAdminAccess.js';
 import ChroniclesPlayerAdmin from './ChroniclesPlayerAdmin.jsx';
 import './ChroniclesSaveMenu.css';
 import { chroniclesSavedExpeditionArea } from '../chronicles/chroniclesSavedExpeditionArea.js';
@@ -47,16 +47,7 @@ export default function ChroniclesSaveMenu({
   loading = false, error = '', busyRunId = null, onRetrySync, initialScreen = 'home',
 }) {
   const [screen, setScreen] = useState(initialScreen === 'load' ? 'load' : 'home');
-  const [mayViewAdmin, setMayViewAdmin] = useState(false);
-  useEffect(() => {
-    let mounted = true;
-    fetchMe().then((user) => {
-      if (mounted) setMayViewAdmin(Boolean(user?.isAdmin));
-    }).catch(() => {
-      if (mounted) setMayViewAdmin(false);
-    });
-    return () => { mounted = false; };
-  }, []);
+  const { isAdmin: mayViewAdmin, status: adminStatus, retry: retryAdminAccess } = useChroniclesAdminAccess();
   const [editing, setEditing] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [confirmForget, setConfirmForget] = useState(null);
@@ -161,6 +152,15 @@ export default function ChroniclesSaveMenu({
                   <button type="button" data-chronicles-admin-link onClick={() => openList('admin')}>
                     <ExpeditionMenuIcon kind="books" />
                     <span className="chronicles-save-menu__action-copy">Administrar jugadores <small>Censo de esta instancia · solo lectura</small></span>
+                    <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
+                  </button>
+                )}
+                {adminStatus === 'unavailable' && (
+                  <button type="button" data-chronicles-admin-check-retry onClick={retryAdminAccess}>
+                    <ExpeditionMenuIcon kind="books" />
+                    <span className="chronicles-save-menu__action-copy">Reintentar comprobación de permisos
+                      <small>El servidor no respondió al verificar tu cuenta</small>
+                    </span>
                     <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
                   </button>
                 )}
