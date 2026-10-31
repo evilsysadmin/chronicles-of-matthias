@@ -46,6 +46,8 @@ try {
           'Authored houses must display an upper attic vent and cached limewash without false shop signs');
         assert.equal(result.premiumStreetWindows, 'true',
           'Swordhaven streets need actual batched oak hoods and planted window ledges');
+        assert.equal(result.upperJulietGuards, 'true',
+          'Eight south-facing upper windows need sparse wrought-iron Juliet guards with no street collision');
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
