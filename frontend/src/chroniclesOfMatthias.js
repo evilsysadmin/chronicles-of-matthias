@@ -822,6 +822,12 @@ function resolveUseItem(state, memberId, itemId, targetId = null) {
   const user = partyMember(state, memberId);
   const item = CHRONICLES_CONSUMABLES[itemId];
   if (!user || !item) return state;
+  // Potions, elixirs and scrolls all spend the acting hero's MM3 turn.
+  // A direct/stale action must not heal or consume stock on another slot.
+  if (chroniclesUsesMM3Combat(state) && state.initiative) {
+    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+    if (actor?.kind !== 'party' || actor.id !== user.id) return state;
+  }
   if (chroniclesConsumableCount(state, itemId) < 1) return refuse(`No queda ningún ${item.name.toLowerCase()} en la mochila.`);
   if (user.hp <= 0) return refuse(`${user.name} está fuera de combate y no puede usar objetos.`);
   const consume = (next) => chroniclesApplyContentEffects(next, [{ type: 'consume-item', itemId, quantity: 1 }]);
