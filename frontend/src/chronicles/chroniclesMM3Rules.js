@@ -196,7 +196,8 @@ export function chroniclesMM3RollStats(random = Math.random) {
   return Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [key, d6() + d6() + d6()]));
 }
 
-// Level-1 derived sheet. HP, AC and to-hit are the numbers combat uses.
+// Derived MM3 sheet. Class, Endurance and race determine HP *per level*;
+// multiplying that value by level keeps level-1 saves unchanged.
 export function chroniclesMM3Derived(classId, stats, { level = 1, armorClassBonus = 0, toHitBonus = 0, raceId = 'human' } = {}) {
   const definition = chroniclesMM3Class(classId) || CHRONICLES_MM3_CLASSES.knight;
   const bonuses = Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [key, chroniclesMM3StatBonus(stats?.[key])]));
@@ -205,7 +206,7 @@ export function chroniclesMM3Derived(classId, stats, { level = 1, armorClassBonu
     classId: definition.id,
     classLabel: definition.label,
     bonuses,
-    maxHp: Math.max(1, definition.hpBase + bonuses.endurance + chroniclesMM3Race(raceId).hpPerLevel * safeLevel),
+    maxHp: Math.max(1, definition.hpBase + bonuses.endurance + chroniclesMM3Race(raceId).hpPerLevel) * safeLevel,
     armorClass: Math.max(0, bonuses.speed + Number(armorClassBonus || 0)),
     toHit: safeLevel + bonuses.accuracy + Number(toHitBonus || 0),
     damageBonus: bonuses.might,

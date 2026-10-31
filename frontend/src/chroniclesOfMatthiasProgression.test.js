@@ -25,6 +25,7 @@ import {
   unlockChroniclesSkill,
 } from './chroniclesOfMatthiasProgression.js';
 import { clearStorageMemoryFallback } from './safeStorage.js';
+import { chroniclesMemberMaxSp } from './chronicles/chroniclesMagic.js';
 
 function tacticsStateFor(mapId, overrides = {}) {
   return {
@@ -117,6 +118,24 @@ describe('Chronicles Tactics · progression', () => {
     expect(after.maxHp).toBe(before.maxHp + 1);
     expect(after.hp).toBe(before.hp);
     expect(reconciled.rpgModifiers.rook.bonusMaxHp).toBe(initial.rpgModifiers.rook.bonusMaxHp + 1);
+  });
+
+  it('automatically raises MM3 HP and PH by class and level, without healing wounds or changing Tactics', () => {
+    const raw = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const initial = applyChroniclesProgressionToTacticsState(raw, createChroniclesProgression());
+    const paladin = initial.party.find((member) => member.id === 'rook');
+    expect(paladin.mm3.classId).toBe('paladin');
+    const baseSp = chroniclesMemberMaxSp(initial, paladin);
+    const gained = grantChroniclesXp(createChroniclesProgression(), 'rook', chroniclesXpThresholdForLevel(2), 'mm3:level2');
+    const leveled = reconcileChroniclesProgressionInTacticsState(initial, gained.progression);
+    const grown = leveled.party.find((member) => member.id === 'rook');
+    expect(grown.maxHp).toBe(paladin.maxHp * 2);
+    expect(grown.hp).toBe(paladin.hp); // Leveling alone never heals existing damage.
+    expect(chroniclesMemberMaxSp(leveled, grown)).toBeGreaterThan(baseSp);
+    // Reconciliation is idempotent and does not double count level growth.
+    expect(reconcileChroniclesProgressionInTacticsState(leveled, gained.progression).party.find((member) => member.id === 'rook').maxHp).toBe(grown.maxHp);
+    const tactics = applyChroniclesProgressionToTacticsState(tacticsState(), gained.progression);
+    expect(tactics.party.find((member) => member.id === 'rook').maxHp).toBe(tacticsState().party.find((member) => member.id === 'rook').maxHp);
   });
 
   it('adds newly unlocked ability capacity without refilling charges already spent', () => {

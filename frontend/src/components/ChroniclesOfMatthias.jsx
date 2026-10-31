@@ -1121,12 +1121,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, []);
 
   const allocateAttribute = useCallback((memberId, attributeKey) => {
+    if (stateRef.current?.combatRules === 'mm3') return;
     const result = spendChroniclesAttributePoint(progressionRef.current, memberId, attributeKey);
     if (!result.spent) return;
     applyLiveProgression(result.progression);
   }, [applyLiveProgression]);
 
   const learnSkill = useCallback((memberId, skillId) => {
+    if (stateRef.current?.combatRules === 'mm3') return;
     const result = unlockChroniclesSkill(progressionRef.current, memberId, skillId);
     if (!result.unlocked) return;
     applyLiveProgression(result.progression);

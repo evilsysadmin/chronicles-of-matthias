@@ -19,20 +19,24 @@ function render(mode = 'chronicles') {
     onClose: () => {},
   }));
 }
-describe('Chronicles classic MM3 training ledger', () => {
-  it('presents two real, separately labeled progression chapters without inventing XP or unlocked techniques', () => {
+describe('Chronicles MM3 progression split from Tactics training', () => {
+  it('shows only classic MM3 attributes and chapters, even for an old training deep link', () => {
     const html = render();
-    expect(html).toContain('data-chronicles-training="attributes"');
-    expect(html).toContain('data-chronicles-training="skills"');
-    expect(html).toContain('ATRIBUTOS');
-    expect(html).toContain('TÉCNICAS Y GRIMORIO');
-    expect(html).toContain('puntos libres');
-    expect(html).toContain('Requiere Nv');
+    expect(html).not.toContain('data-chronicles-training');
+    expect(html).not.toContain('TÉCNICAS Y GRIMORIO');
+    expect(html).not.toContain('puntos libres');
+    expect(html).not.toContain('Mejoras');
+    expect(html).toContain('data-stat="endurance"');
+    expect(html).toContain('Estado');
+    expect(html).toContain('Hechizos');
     expect(html).toContain('aria-pressed="true"');
   });
-  it('does not change rules, Tactics, mobile controls or keyboard accessibility', () => {
+  it('keeps Tactics training, mobile controls and keyboard accessibility', () => {
     const tactics = render('tactics');
     expect(tactics).not.toContain('chronicles-character-sheet--mm3');
+    expect(tactics).toContain('data-chronicles-training="attributes"');
+    expect(tactics).toContain('data-chronicles-training="skills"');
+    expect(tactics).toContain('TÉCNICAS Y GRIMORIO');
     expect(skin).toContain('@media (min-width: 851px) and (min-height: 581px)');
     expect(skin).toContain('min-height: 58px');
     expect(skin).toContain("button.is-learned");

@@ -10,6 +10,7 @@ import {
   normalizeChroniclesCharacterBuild,
   validateChroniclesCharacterBuild,
 } from './chronicles/chroniclesCharacterBuilds.js';
+import { chroniclesMM3Derived } from './chronicles/chroniclesMM3Rules.js';
 import {
   beginChroniclesRun,
   ensureChroniclesRun,
@@ -570,8 +571,19 @@ export function chroniclesTacticsModifiers(progression, memberId) {
 function effectiveTacticsModifiers(progression, member) {
   const progressionModifiers = chroniclesTacticsModifiers(progression, member.id);
   const creatorModifiers = member.characterBuild?.creatorModifiers || {};
+  // First-person MM3 grows maximum HP from the hero's actual class, racial
+  // adjustment and Endurance. Tactics retains its original point-based rules.
+  // Use a delta from level 1 so legacy saves and trained Vigor retain value.
+  const mm3Growth = member.mm3?.classId
+    ? chroniclesMM3Derived(member.mm3.classId, member.mm3.stats, {
+      raceId: member.mm3.raceId, level: progressionModifiers.level,
+    }).maxHp - chroniclesMM3Derived(member.mm3.classId, member.mm3.stats, {
+      raceId: member.mm3.raceId,
+    }).maxHp
+    : 0;
   return {
     ...progressionModifiers,
+    bonusMaxHp: progressionModifiers.bonusMaxHp + mm3Growth,
     attackDamageBonus: progressionModifiers.attackDamageBonus + nonNegativeInteger(creatorModifiers.attackDamageBonus),
     reachBonus: progressionModifiers.reachBonus + nonNegativeInteger(creatorModifiers.reachBonus),
     abilityPotencyBonus: progressionModifiers.abilityPotencyBonus + nonNegativeInteger(creatorModifiers.abilityPotencyBonus),

@@ -713,7 +713,6 @@ export default function ChroniclesCharacterSheet({
               { id: 'record', symbol: '◆', label: 'Estado' },
               { id: 'equipment', symbol: '⚔', label: 'Equipo' },
               { id: 'spells', symbol: '✧', label: 'Hechizos' },
-              { id: 'training', symbol: '✦', label: 'Mejoras' },
             ].map((tab) => (
               <button type="button" key={tab.id}
                 className={activeFolio === tab.id ? 'is-active' : ''}
@@ -759,7 +758,7 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__section chronicles-character-sheet__section--core-stats"
             hidden={activeFolio !== 'record'}>
             <div className="chronicles-character-sheet__section-head">
-              <div><span>ESTADÍSTICAS</span><small>Tiradas de creación · bonificador MM3 entre paréntesis</small></div>
+              <div><span>ESTADÍSTICAS</span><small>Bonificador entre paréntesis · PV/PH crecen con el nivel</small></div>
             </div>
             <div className="chronicles-character-sheet__mm3-stats">
               {CHRONICLES_MM3_STATS.map((key) => (
@@ -832,9 +831,8 @@ export default function ChroniclesCharacterSheet({
           </div>
         </div>
 
-        <div className="chronicles-character-sheet__section"
-          data-chronicles-training="attributes"
-          hidden={!tacticsMode && activeFolio !== 'training'}>
+        {tacticsMode && <div className="chronicles-character-sheet__section"
+          data-chronicles-training="attributes">
           <div className="chronicles-character-sheet__section-head">
             <div><span>ATRIBUTOS</span><small>Bonificadores persistentes entre niveles y expediciones</small></div>
             <b>{progress.attributePoints} punto{progress.attributePoints === 1 ? '' : 's'} libre{progress.attributePoints === 1 ? '' : 's'}</b>
@@ -864,11 +862,10 @@ export default function ChroniclesCharacterSheet({
               );
             })}
           </div>
-        </div>
+        </div>}
 
-        <div className="chronicles-character-sheet__section"
-          data-chronicles-training="skills"
-          hidden={!tacticsMode && activeFolio !== 'training'}>
+        {tacticsMode && <div className="chronicles-character-sheet__section"
+          data-chronicles-training="skills">
           <div className="chronicles-character-sheet__section-head">
             <div><span>TÉCNICAS Y GRIMORIO</span><small>Doctrinas aprendidas y caminos de especialización</small></div>
             <b>{progress.skillPoints} punto{progress.skillPoints === 1 ? '' : 's'} libre{progress.skillPoints === 1 ? '' : 's'}</b>
@@ -908,7 +905,7 @@ export default function ChroniclesCharacterSheet({
               );
             })}
           </div>
-        </div>
+        </div>}
 
         <footer className="chronicles-character-sheet__foot">
           <span>{member.attackName || profile.attackName} · daño {damage}{mm3 ? '' : ` · alcance ${reach}`}</span>
