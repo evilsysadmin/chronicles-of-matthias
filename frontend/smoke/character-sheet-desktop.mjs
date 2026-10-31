@@ -262,7 +262,9 @@ try {
         assert.deepEqual(statsDensity.collisions, [],
           'Attribute labels must not collide with numerical values: ' + JSON.stringify(statsDensity));
       }
-      assert.equal(await nav.getByRole('button').count(), 4);
+      assert.equal(await nav.getByRole('button').count(), 3);
+      assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).count(), 0,
+        'MM3 has three classic chapters; its old Tactics training tree is gone');
       assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Estado');
@@ -536,34 +538,23 @@ try {
       await sheet.getByText('Este personaje no practica ninguna escuela de magia.').waitFor({ state: 'visible' });
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-' + width + '.png' });
 
-      await nav.getByRole('button', { name: /Mejoras/ }).click();
-      assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).getAttribute('aria-pressed'), 'true');
-      await page.mouse.move(10, 10);
-      await assertNavigationHighlight(nav, 'Mejoras');
-      const attributeCard = sheet.locator('.chronicles-character-sheet__attribute-grid > button').first();
-      const skillCard = sheet.locator('.chronicles-character-sheet__skill-grid > button').first();
-      await attributeCard.waitFor({ state: 'visible' });
-      await skillCard.waitFor({ state: 'visible' });
-      await assertParchmentSurface(attributeCard, 'Training attribute card');
-      await assertParchmentSurface(skillCard, 'Training skill card');
-      if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-training-' + width + '.png' });
-
-      // The compact MM3 training ledger can now fit without scrolling on
-      // every tested desktop. Still exercise restoration with a genuinely long
-      // dossier: duplicate *real* skill cards only inside the browser smoke
-      // fixture, marked inert/aria-hidden, not in production or game state.
+      // No Tactics-style talent tree in first-person MM3. Preserve scroll
+      // restoration coverage on the actual Estado sheet instead: insert
+      // inert duplicate stat rows only into this browser fixture, not game data.
+      await nav.getByRole('button', { name: /Estado/ }).click();
+      await assertNavigationHighlight(nav, 'Estado');
+      assert.equal(await sheet.locator('[data-chronicles-training]').count(), 0);
       const scrollArea = sheet.locator('.chronicles-character-sheet__scroll');
-      const ensureLongTrainingFixture = async () => {
+      const ensureLongStatusFixture = async () => {
         const capacity = await scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
         if (capacity > 120 || width !== 1280) return capacity;
-        await sheet.locator('[data-chronicles-training="skills"] .chronicles-character-sheet__skill-grid')
+        await sheet.locator('[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats')
           .evaluate((grid) => {
-            const cards = [...grid.querySelectorAll(':scope > button:not([data-smoke-overflow])')];
+            const rows = [...grid.querySelectorAll(':scope > [data-stat]:not([data-smoke-overflow])')];
             for (let batch = 0; batch < 12; batch += 1) {
-              for (const card of cards) {
-                const clone = card.cloneNode(true);
-                clone.disabled = true;
-                clone.tabIndex = -1;
+              for (const row of rows) {
+                const clone = row.cloneNode(true);
+                clone.removeAttribute('data-stat');
                 clone.setAttribute('aria-hidden', 'true');
                 clone.dataset.smokeOverflow = 'true';
                 grid.appendChild(clone);
@@ -572,30 +563,25 @@ try {
           });
         return scrollArea.evaluate((node) => node.scrollHeight - node.clientHeight);
       };
-      const availableScroll = await ensureLongTrainingFixture();
+      const availableScroll = await ensureLongStatusFixture();
       if (availableScroll > 120) {
         exercisedScrollableDossier = true;
         await scrollArea.evaluate((node) => { node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight); });
         const before = await scrollArea.evaluate((node) => node.scrollTop);
-        assert.ok(before > 60, 'Fixture must actually scroll before testing reset');
-        // Native click avoids Playwright scrolling the sticky menu on our behalf.
+        assert.ok(before > 60, 'The long Status fixture must actually scroll');
         await nav.getByRole('button', { name: /Equipo/ }).evaluate((node) => node.click());
         await page.waitForFunction(() => document.querySelector(
           '.chronicles-character-sheet__tabs button[aria-pressed="true"]'
         )?.textContent?.includes('Equipo'));
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
-          'Changing to Equipment must return the desktop dossier to its beginning');
-        await nav.getByRole('button', { name: /Mejoras/ }).click();
-        await ensureLongTrainingFixture();
-
-        // A hero switch is not a folio change: the React modal remains mounted.
-        // Force scroll again and use a native dock click, avoiding Playwright
-        // autoscroll so only the production hero-change effect can reset it.
+          'Changing to Equipment must restore the start of the dossier');
+        await nav.getByRole('button', { name: /Estado/ }).click();
+        await ensureLongStatusFixture();
         await scrollArea.evaluate((node) => {
           node.scrollTop = Math.min(220, node.scrollHeight - node.clientHeight);
         });
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) > 60,
-          'Training must really be scrolled before switching the viewed hero');
+          'Status must really be scrolled before switching the viewed hero');
         await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' })
           .evaluate((node) => node.click());
         await page.waitForFunction(() => document.querySelector(
@@ -603,7 +589,7 @@ try {
         )?.textContent === 'Hildegard');
         assert.ok(await scrollArea.evaluate((node) => node.scrollTop) <= 2,
           'A new hero must not inherit the previous hero desktop folio offset');
-        assert.equal(await nav.getByRole('button', { name: /Mejoras/ }).getAttribute('aria-pressed'), 'true',
+        assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true',
           'Switching heroes must preserve the chosen folio');
         await sheet.getByRole('button', { name: 'Ver ficha de Matthias' })
           .evaluate((node) => node.click());
