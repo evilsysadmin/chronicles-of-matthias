@@ -486,9 +486,19 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Hechizos');
-      const casterShortcut = sheet.getByRole('button', { name: /Ver hechizos de/ });
-      await casterShortcut.waitFor({ state: 'visible' });
-      await casterShortcut.click();
+      // Non-casters remain on their own sheet: no cross-hero magic CTA.
+      const nonCaster = sheet.locator('.chronicles-character-sheet__no-spells');
+      await nonCaster.waitFor({ state: 'visible' });
+      assert.match(await nonCaster.innerText(), /Este personaje no practica magia/);
+      assert.equal(await sheet.getByRole('button', { name: /Ver hechizos de/ }).count(), 0);
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias');
+      const visibleLevel = sheet.locator('[data-chronicles-character-level]');
+      await visibleLevel.waitFor({ state: 'visible' });
+      assert.equal(await visibleLevel.getAttribute('aria-label'), 'Nivel 1');
+      // Change heroes explicitly through the persistent party dock, as MM3 does.
+      await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
+      assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Hildegard');
+      assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       const spellbook = sheet.locator('[data-chronicles-spellbook]');
       await spellbook.waitFor({ state: 'visible' });
       const grimoire = spellbook.locator('[data-chronicles-grimoire]');
@@ -574,13 +584,13 @@ try {
         'Tab must leave the grimoire instead of walking every spell');
       await grimoire.getByRole('button', { name: 'Todos' }).focus();
       assert.notEqual(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias',
-        'The shortcut must open a real spellcaster, never create spells for Matthias');
+        'The explicitly selected caster has her own spellbook, never spells for Matthias');
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true',
         'Switching hero should preserve the spellbook section');
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-caster-' + width + '.png' });
       await sheet.getByRole('button', { name: 'Ver ficha de Matthias' }).click();
       assert.equal(await sheet.locator('#chronicles-character-sheet-title').innerText(), 'Matthias');
-      await sheet.getByText('Este personaje no practica ninguna escuela de magia.').waitFor({ state: 'visible' });
+      await sheet.getByText('Este personaje no practica magia.').waitFor({ state: 'visible' });
       if (width === 1280) await page.screenshot({ path: 'smoke-character-sheet-spells-' + width + '.png' });
 
       // No Tactics-style talent tree in first-person MM3. Preserve scroll

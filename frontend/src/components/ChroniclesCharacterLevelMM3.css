@@ -1,0 +1,47 @@
+/* Character level belongs to the MM3 dossier, never to the in-game HUD.
+   Give the actual level its own legible typographic anchor instead of burying
+   it in tiny class metadata. No card, badge or additional vertical band. */
+.chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 3px;
+  min-width: 0;
+  line-height: 1.35;
+}
+.chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta .chronicles-character-sheet__class-label {
+  color: inherit;
+  font-size: clamp(12px, 1.15vw, 14px);
+  letter-spacing: .015em;
+  text-transform: none;
+}
+.chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta .chronicles-character-sheet__level {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid currentColor;
+  color: inherit;
+  font-size: clamp(14px, 1.3vw, 16px);
+  font-weight: 600;
+  letter-spacing: .01em;
+  line-height: 1.25;
+  text-transform: none;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3 .chronicles-character-sheet__level strong {
+  color: inherit;
+  font-size: 1.22em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 430px) {
+  .chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta {
+    column-gap: 8px;
+  }
+  .chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta .chronicles-character-sheet__level {
+    padding-left: 8px;
+    font-size: 14px;
+  }
+}
