@@ -509,7 +509,7 @@ try {
         'Spell details must not take half the catalogue until Examinar is requested');
       const spellGeometry = await grimoire.evaluate((node) => {
         const bounds = (selector) => node.querySelector(selector).getBoundingClientRect();
-        const panel = bounds('.chronicles-sheet-grimoire');
+        const panel = node.getBoundingClientRect();
         const list = bounds('.chronicles-sheet-grimoire__list');
         const catalog = bounds('.chronicles-sheet-grimoire__catalog');
         const nav = document.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect();
