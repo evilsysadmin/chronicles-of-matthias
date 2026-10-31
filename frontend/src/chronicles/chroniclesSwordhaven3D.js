@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import { dressSwordhavenWindowBoxes } from './chroniclesSwordhavenFoliage.js';
+import { dressSwordhavenPremiumHouse } from './chroniclesSwordhavenPremiumHouses.js';
 
 // Authored in grid coordinates: future map collision must reserve these footprints.
 export const SWORDHAVEN_BUILDINGS = Object.freeze([
@@ -2583,6 +2584,14 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(tower, new THREE.BoxGeometry(0.15, 0.84, 0.08), mats.steel,
       'watchhouse-arrow-slit', [0, 1.60, 1.22]);
     root.add(tower);
+  }
+  // The approved Swordhaven town-square treatment: richer oak, shutters,
+  // wrought-iron lantern cages and a distinct municipal stone entrance.
+  // Decorative children have no colliders and do not affect NPC interactions.
+  if (isTownHall || spec.emblem === 'home') {
+    dressSwordhavenPremiumHouse(root, {
+      civic: isTownHall, width, height, facadeZ, mats, coarse,
+    });
   }
   // Homes carry no shop sign.
   if (spec.emblem === 'home') return { root, sign: null, interactive: false };
