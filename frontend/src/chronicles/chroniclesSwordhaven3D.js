@@ -189,6 +189,21 @@ const SHOP_LETTERS = Object.freeze({
   Y: [17,17,10,4,4,4,4], Z: [31,1,2,4,8,16,31],
 });
 const SHOP_SIGN_TEXTURES = new Map();
+// Service-specific paint makes the otherwise shared wooden nameplates legible
+// as distinct trades from street level. Three high-contrast colours per sign;
+// the same cached 256x64 atlas, geometry and interaction contract are retained.
+const SHOP_SIGN_THEMES = Object.freeze({
+  default: { border: [165, 116, 55], background: [43, 30, 20], letters: [247, 219, 164] },
+  swords: { border: [159, 113, 80], background: [42, 36, 32], letters: [250, 218, 161] },
+  shield: { border: [147, 172, 184], background: [34, 50, 64], letters: [238, 243, 239] },
+  mug: { border: [181, 126, 74], background: [75, 40, 30], letters: [255, 225, 162] },
+  crystal: { border: [159, 130, 197], background: [45, 32, 76], letters: [237, 220, 255] },
+  sun: { border: [203, 177, 114], background: [55, 52, 55], letters: [255, 239, 179] },
+  apothecary: { border: [141, 175, 127], background: [36, 65, 49], letters: [238, 245, 208] },
+  store: { border: [179, 137, 80], background: [72, 52, 35], letters: [250, 228, 178] },
+  watch: { border: [146, 164, 171], background: [40, 52, 61], letters: [238, 240, 229] },
+  civic: { border: [182, 158, 116], background: [58, 55, 47], letters: [250, 229, 184] },
+});
 const SHOP_EMBLEM_LABELS = Object.freeze({
   swords: 'ARMERIA', shield: 'ARMADURAS', mug: 'TABERNA',
   crystal: 'MAGIA', sun: 'TEMPLO', sack: 'TIENDA',
@@ -202,8 +217,10 @@ function swordhavenShopName(spec) {
 
 // A tiny deterministic pixel-font atlas: no web fonts, canvas or per-frame
 // texture generation. Shared by houses with the same service label.
-function swordhavenShopLabelTexture(label) {
-  if (SHOP_SIGN_TEXTURES.has(label)) return SHOP_SIGN_TEXTURES.get(label);
+function swordhavenShopLabelTexture(label, theme = 'default') {
+  const key = theme + ':' + label;
+  if (SHOP_SIGN_TEXTURES.has(key)) return SHOP_SIGN_TEXTURES.get(key);
+  const palette = SHOP_SIGN_THEMES[theme] || SHOP_SIGN_THEMES.default;
   const width = 256;
   const height = 64;
   const pixels = new Uint8Array(width * height * 4);
@@ -214,7 +231,7 @@ function swordhavenShopLabelTexture(label) {
   }
   for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) {
     const edge = x < 4 || y < 4 || x >= width - 4 || y >= height - 4;
-    paint(x, y, edge ? [165, 116, 55] : [43, 30, 20]);
+    paint(x, y, edge ? palette.border : palette.background);
   }
   const scale = Math.max(2, Math.min(4, Math.floor(236 / (Math.max(1, label.length) * 6))));
   const startX = Math.floor((width - (label.length * 6 - 1) * scale) / 2);
@@ -226,7 +243,7 @@ function swordhavenShopLabelTexture(label) {
         if (!(bits & (1 << (4 - col)))) continue;
         for (let dy = 0; dy < scale; dy += 1) for (let dx = 0; dx < scale; dx += 1) {
           paint(startX + (charIndex * 6 + col) * scale + dx,
-            startY + (6 - row) * scale + dy, [247, 219, 164]);
+            startY + (6 - row) * scale + dy, palette.letters);
         }
       }
     });
@@ -237,7 +254,8 @@ function swordhavenShopLabelTexture(label) {
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
-  SHOP_SIGN_TEXTURES.set(label, texture);
+  texture.name = 'swordhaven-shop-sign-' + theme + '-' + label;
+  SHOP_SIGN_TEXTURES.set(key, texture);
   return texture;
 }
 
@@ -2437,6 +2455,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   // Residential buildings must never display a fictitious shop sign.
   if (spec.label || SHOP_EMBLEM_LABELS[spec.emblem]) {
     const name = swordhavenShopName(spec);
+    const signTheme = isApothecary ? 'apothecary'
+      : isStore ? 'store' : isWatch ? 'watch' : spec.emblem;
     const nameplate = new THREE.Group();
     nameplate.name = 'swordhaven-shop-nameplate';
     nameplate.userData.shopLabel = name;
@@ -2446,7 +2466,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(nameplate, new THREE.BoxGeometry(3.14, 0.47, 0.08), mats.gold,
       'shop-nameplate-brass', [0, 0, 0.085]);
     mesh(nameplate, new THREE.PlaneGeometry(3.02, 0.40),
-      new THREE.MeshBasicMaterial({ map: swordhavenShopLabelTexture(name), toneMapped: false }),
+      new THREE.MeshBasicMaterial({ map: swordhavenShopLabelTexture(name, signTheme), toneMapped: false }),
       'shop-nameplate-lettering', [0, 0, 0.132]);
     root.add(nameplate);
   }
