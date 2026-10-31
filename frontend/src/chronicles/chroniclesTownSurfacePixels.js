@@ -70,7 +70,7 @@ function surfaceDetail(kind, x, y, spec) {
   const dy = Math.min(ly, height - 1 - ly);
   const cobble = kind === 'cobble';
   const brick = kind === 'brick';
-  const seamX = (cobble ? 1.9 : brick ? 1.25 : 1.25)
+  const seamX = (cobble ? 1.9 : 1.25)
     + Math.sin(ly * 0.51 + row * 1.13 + column * 2.17) * (cobble ? 0.83 : brick ? 0.18 : 0.40);
   const seamY = (cobble ? 1.45 : brick ? 1.2 : 1.1)
     + Math.sin(lx * 0.36 + row * 1.71 + column * 0.42) * (cobble ? 0.57 : brick ? 0.15 : 0.3);
