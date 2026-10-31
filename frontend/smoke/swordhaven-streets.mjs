@@ -142,6 +142,8 @@ try {
           'Seven authored rooflines need four heights with matching oak ridges and angled verges');
         assert.equal(result.inhabitedChimneys, 'true',
           'Sparse residential chimney shafts and dark flues must sit in real varied roof slopes');
+        assert.equal(result.inhabitedChimneyMasonry, 'true',
+          'Residential chimney shafts need a staggered mortar bond and raised four-sided flue surround');
         // Two upper-storey braces on every blind face, including above the
         // closed doorways, reuse the current timber batch and remain inside
         // the originally blocked walls. Lower doorway braces stay removed.
