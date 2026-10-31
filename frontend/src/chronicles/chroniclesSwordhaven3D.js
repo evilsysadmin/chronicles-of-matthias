@@ -2008,10 +2008,62 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         mats.arcane, 'magic-observatory-violet-window', [x, 0.24, 1.71], !coarse);
     }
     root.add(observatory);
-    mesh(root, new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), mats.plaster,
-      'magic-shop-turret', [-width * 0.40, height + 1.62, -depth * 0.28], !coarse);
+    // The guild's formerly bare, beige turret now shares the violet-slate
+    // ashlar of its observatory and carries four narrow glazed lancets. These
+    // sit on the existing elevated cylinder: no collision, light or interaction.
+    const turretX = -width * 0.40;
+    const turretZ = -depth * 0.28;
+    const turret = mesh(root,
+      new THREE.CylinderGeometry(1.11, 1.20, 3.35, coarse ? 12 : 20), guildStone,
+      'magic-shop-turret', [turretX, height + 1.62, turretZ], !coarse);
+    turret.userData.chroniclesDecorativeOnly = true;
+    const turretLancets = new THREE.Group();
+    turretLancets.name = 'magic-turret-slate-lancets';
+    turretLancets.userData.chroniclesDecorativeOnly = true;
+    const glass = material(0x695398, {
+      emissive: 0x241739, emissiveIntensity: 0.25, roughness: 0.40,
+    });
+    // Pointed limestone tracery matches the guild's existing Gothic windows.
+    // Share both shapes across the four bays; no rectangular gold frames.
+    const outer = new THREE.Shape();
+    outer.moveTo(-0.31, -0.57);
+    outer.lineTo(0.31, -0.57);
+    outer.lineTo(0.31, 0.24);
+    outer.lineTo(0, 0.66);
+    outer.lineTo(-0.31, 0.24);
+    outer.closePath();
+    const inner = new THREE.Shape();
+    inner.moveTo(-0.23, -0.46);
+    inner.lineTo(0.23, -0.46);
+    inner.lineTo(0.23, 0.20);
+    inner.lineTo(0, 0.51);
+    inner.lineTo(-0.23, 0.20);
+    inner.closePath();
+    const outerGeometry = new THREE.ShapeGeometry(outer);
+    const innerGeometry = new THREE.ShapeGeometry(inner);
+    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      const bay = new THREE.Group();
+      bay.name = 'magic-turret-lancet-bay';
+      bay.userData.chroniclesDecorativeOnly = true;
+      bay.position.set(turretX + Math.sin(angle) * 1.18,
+        height + 1.90, turretZ + Math.cos(angle) * 1.18);
+      bay.rotation.y = angle;
+      for (const [geometry, mat, name, position] of [
+        [outerGeometry, mats.stone, 'magic-turret-lancet-pointed-frame', [0, 0, 0]],
+        [innerGeometry, glass, 'magic-turret-lancet-violet-pane', [0, 0, 0.06]],
+        [new THREE.BoxGeometry(0.045, 0.78, 0.07), mats.gold,
+          'magic-turret-lancet-brass-mullion', [0, -0.16, 0.12]],
+        [new THREE.BoxGeometry(0.68, 0.10, 0.18), mats.stone,
+          'magic-turret-lancet-stone-sill', [0, -0.61, 0.06]],
+      ]) {
+        const part = mesh(bay, geometry, mat, name, position, !coarse);
+        part.userData.chroniclesDecorativeOnly = true;
+      }
+      turretLancets.add(bay);
+    }
+    root.add(turretLancets);
     mesh(root, new THREE.ConeGeometry(1.52, 3.5, coarse ? 12 : 20), roof,
-      'magic-turret-roof', [-width * 0.40, height + 5.02, -depth * 0.28], !coarse);
+      'magic-turret-roof', [turretX, height + 5.02, turretZ], !coarse);
     // A pointed slate portal and luminous gable oculus give the mage guild
     // its own street-level architecture, not just another merchant sign.
     // The piers flank (never cover) the existing door; all parts stay inside
