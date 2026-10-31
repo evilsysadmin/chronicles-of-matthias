@@ -38,6 +38,7 @@ import {
   chroniclesClaimMM3WorldStat,
 } from '../chronicles/chroniclesWorldStatDiscovery.js';
 import './ChroniclesPortraitLevelUp.css';
+import { chroniclesResolveTemporaryFountainBoon } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
@@ -892,6 +893,18 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         ...reconcileChroniclesProgressionInTacticsState(next, progressResult.progression),
         runProgression: progressResult.progression,
       };
+    }
+
+    // The first once-only Terra well has an expedition-turn blessing. Apply
+    // after XP so it survives both actions and cannot overwrite level gains.
+    // Every subsequent real turn also reconciles expiry, including travel.
+    const temporary = chroniclesResolveTemporaryFountainBoon(current, next, progressionRef.current);
+    if (temporary.updated) {
+      next = temporary.state;
+      if (temporary.granted) {
+        progressionRef.current = temporary.progression;
+        setProgression(temporary.progression);
+      }
     }
 
     if (progressResult.levelUps.length) showPortraitLevelUps(progressResult.levelUps, next.party, next);
