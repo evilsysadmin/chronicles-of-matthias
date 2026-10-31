@@ -126,6 +126,31 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     },
   );
 
+  it('settles a party wipe during an enemy callback without granting another turn', () => {
+    const state = {
+      ...enemyFirstEncounter(),
+      combatBlock: { matthias: true },
+    };
+    // A restored encounter may still report combat until the initiative
+    // advance processes the last hero falling. The pending enemy callback
+    // must settle defeat, not leave a ghost turn or a surviving BLOCK bonus.
+    const resolve = vi.fn((current) => ({
+      ...current,
+      party: current.party.map((member) => ({ ...member, hp: 0 })),
+    }));
+    const result = chroniclesRunPendingEnemyTurn(state, WEST, resolve, state.initiative);
+
+    expect(resolve).toHaveBeenCalledTimes(1);
+    expect(result.error).toBeNull();
+    expect(result.committed.phase).toBe('defeated');
+    expect(result.committed.initiative).toBeNull();
+    expect(result.committed.turnPhase).toBe('party');
+    expect(result.committed.combatBlock).toBeUndefined();
+    expect(result.committed.party.every(({ hp }) => hp === 0)).toBe(true);
+    expect(chroniclesRunPendingEnemyTurn(result.committed, WEST, resolve, state.initiative)).toBeNull();
+    expect(resolve).toHaveBeenCalledTimes(1);
+  });
+
   it.each(['explore', 'defeated', 'escaped'])(
     'ignores a stale enemy timer after the phase changes to %s',
     (phase) => {
