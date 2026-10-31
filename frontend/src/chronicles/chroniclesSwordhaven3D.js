@@ -935,7 +935,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // deep side returns and verdigris hoods create a genuine window volume
     // rather than another pair of flat panes painted on the wall. Both bays
     // remain decorative, above the original solid house footprint.
-    const patinatedCopper = material(0x5c806e, { roughness: 0.73, metalness: 0.25 });
+    const patinatedCopper = material(0x2c5c4c, { roughness: 0.88, metalness: 0.12 });
     for (const x of [-width * 0.33, width * 0.33]) {
       const bay = new THREE.Group();
       bay.name = 'apothecary-botanical-window-bay';
@@ -949,9 +949,17 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       }
       // A full pitched copper canopy projects above each glazed bay. The
       // green eave is legible from street level without hiding the arch or sign.
-      const hood = mesh(bay, new THREE.BoxGeometry(2.32, 0.16, 1.52), patinatedCopper,
-        'apothecary-bay-verdigris-hood', [0, 1.43, 0.12], !coarse);
-      hood.rotation.x = 0.26;
+      const hood = mesh(bay, new THREE.BoxGeometry(2.20, 0.12, 1.15), patinatedCopper,
+        'apothecary-bay-verdigris-hood', [0, 1.35, 0.02], !coarse);
+      hood.rotation.x = 0.40;
+      // Oak knee braces physically tie each canopy back into the stone
+      // reveals; without these, the shallow copper eave reads as a floating shelf.
+      for (const side of [-1, 1]) {
+        const brace = mesh(bay, new THREE.BoxGeometry(0.13, 0.13, 1.10),
+          mats.timber, 'apothecary-bay-oak-knee-brace',
+          [side * 0.96, 0.77, -0.20], !coarse);
+        brace.rotation.x = -0.58;
+      }
       mesh(bay, new THREE.ShapeGeometry(arch), mats.stone,
         'apothecary-window-rounded-stone-arch', [0, 0, 0], !coarse);
       mesh(bay, new THREE.ShapeGeometry(pane), sageGlass,
