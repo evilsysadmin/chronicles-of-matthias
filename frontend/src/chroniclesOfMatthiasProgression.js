@@ -10,7 +10,7 @@ import {
   normalizeChroniclesCharacterBuild,
   validateChroniclesCharacterBuild,
 } from './chronicles/chroniclesCharacterBuilds.js';
-import { chroniclesMM3Derived } from './chronicles/chroniclesMM3Rules.js';
+import { CHRONICLES_MM3_STATS, chroniclesMM3Derived } from './chronicles/chroniclesMM3Rules.js';
 import {
   beginChroniclesRun,
   ensureChroniclesRun,
@@ -28,6 +28,10 @@ export const CHRONICLES_ATTRIBUTE_CAP = 5;
 const HERO_IDS = Object.freeze(['matthias', 'rook', 'bishop', 'knight']);
 const CLAIM_LIMIT = 256;
 const ATTRIBUTE_KEYS = Object.freeze(['vigor', 'power', 'precision', 'will', 'agility']);
+// MM3 discoveries are separate from Tactics skills and the rolled creator build.
+// Keep the non-evicting source ledger bounded: a full ledger refuses new awards.
+const MM3_WORLD_STAT_CAP = 12;
+const MM3_WORLD_SOURCE_LIMIT = 128;
 
 export const CHRONICLES_ATTRIBUTE_DEFINITIONS = Object.freeze({
   vigor: Object.freeze({ label: 'Vigor', shortLabel: 'VIG', effect: '+1 vida máxima por punto' }),
@@ -347,6 +351,7 @@ function defaultHero() {
     skillPoints: 0,
     attributes: defaultAttributes(),
     skills: [],
+    mm3WorldBonuses: Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [key, 0])),
   };
 }
 
@@ -356,6 +361,19 @@ function normalizeAttributes(raw) {
     result[key] = Math.min(CHRONICLES_ATTRIBUTE_CAP, nonNegativeInteger(source[key]));
     return result;
   }, {});
+}
+
+function normalizeMm3WorldBonuses(raw) {
+  const source = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  return Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [
+    key, Math.min(MM3_WORLD_STAT_CAP, nonNegativeInteger(source[key])),
+  ]));
+}
+
+function normalizeWorldStatSources(raw) {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.filter((id) => typeof id === 'string' && id.trim()
+    && id.length <= 80).map((id) => id.trim()))].slice(0, MM3_WORLD_SOURCE_LIMIT);
 }
 
 function normalizeHero(raw) {
@@ -368,6 +386,7 @@ function normalizeHero(raw) {
     attributePoints: Math.min(99, nonNegativeInteger(source.attributePoints)),
     skillPoints: Math.min(99, nonNegativeInteger(source.skillPoints)),
     attributes: normalizeAttributes(source.attributes),
+    mm3WorldBonuses: normalizeMm3WorldBonuses(source.mm3WorldBonuses),
     skills: Array.isArray(source.skills)
       ? [...new Set(source.skills.filter((skill) => typeof skill === 'string' && skill.trim()).map((skill) => skill.trim()))].slice(0, 64)
       : [],
@@ -380,6 +399,7 @@ export function createChroniclesProgression() {
     characterBuild: createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY),
     heroes: Object.fromEntries(HERO_IDS.map((id) => [id, defaultHero()])),
     claimedAwards: [],
+    claimedWorldStatSources: [],
   };
 }
 
@@ -402,6 +422,7 @@ export function normalizeChroniclesProgression(raw) {
     characterBuild: normalizeChroniclesCharacterBuild(source.characterBuild, CHRONICLES_PARTY),
     heroes,
     claimedAwards,
+    claimedWorldStatSources: normalizeWorldStatSources(source.claimedWorldStatSources),
   };
 }
 
@@ -446,6 +467,44 @@ export function resetChroniclesCharacterBuild(progression) {
 export function chroniclesHeroProgress(progression, memberId) {
   const normalized = normalizeChroniclesProgression(progression);
   return normalized.heroes[memberId] || defaultHero();
+}
+
+// One permanent MM3 stat point per genuine world source, for one explicit hero.
+// Never spend Tactics points, mutate the creator's 3d6 rolls or allow a source
+// to be claimed again by another hero. The source receipt persists in the run.
+export function grantChroniclesMM3WorldStat(progression, memberId, statKey, sourceId) {
+  const current = normalizeChroniclesProgression(progression);
+  const source = typeof sourceId === 'string' ? sourceId.trim() : '';
+  if (!HERO_IDS.includes(memberId) || !CHRONICLES_MM3_STATS.includes(statKey)
+    || !source || source.length > 80) return { progression: current, granted: false, reason: 'Fuente o personaje inválido' };
+  if (current.claimedWorldStatSources.includes(source)) {
+    return { progression: current, granted: false, reason: 'Fuente ya utilizada' };
+  }
+  if (current.claimedWorldStatSources.length >= MM3_WORLD_SOURCE_LIMIT) {
+    return { progression: current, granted: false, reason: 'Registro de hallazgos lleno' };
+  }
+  const hero = current.heroes[memberId];
+  if (hero.mm3WorldBonuses[statKey] >= MM3_WORLD_STAT_CAP) {
+    return { progression: current, granted: false, reason: 'Atributo al máximo' };
+  }
+  return {
+    progression: {
+      ...current,
+      heroes: {
+        ...current.heroes,
+        [memberId]: {
+          ...hero,
+          mm3WorldBonuses: {
+            ...hero.mm3WorldBonuses,
+            [statKey]: hero.mm3WorldBonuses[statKey] + 1,
+          },
+        },
+      },
+      claimedWorldStatSources: [...current.claimedWorldStatSources, source],
+    },
+    granted: true,
+    reason: '',
+  };
 }
 
 export function chroniclesHasUnspentProgression(progression, memberId) {
@@ -568,19 +627,53 @@ export function chroniclesTacticsModifiers(progression, memberId) {
   };
 }
 
+function effectiveMm3WorldSheet(progression, member) {
+  if (!member.mm3?.classId) return null;
+  const base = member.characterBuild?.stats || member.mm3.stats || {};
+  const worldBonuses = normalizeMm3WorldBonuses(progression?.heroes?.[member.id]?.mm3WorldBonuses);
+  const stats = Object.fromEntries(CHRONICLES_MM3_STATS.map((key) => [
+    key, Number(base[key] || 0) + worldBonuses[key],
+  ]));
+  const raceId = member.mm3.raceId;
+  const level = chroniclesHeroProgress(progression, member.id).level;
+  const derived = chroniclesMM3Derived(member.mm3.classId, stats, { raceId, level });
+  const creatorBase = chroniclesMM3Derived(member.mm3.classId, base, { raceId });
+  return { stats, worldBonuses, derived, hpDelta: derived.maxHp - creatorBase.maxHp };
+}
+
+function refreshMm3Member(member, progression) {
+  const sheet = effectiveMm3WorldSheet(progression, member);
+  if (!sheet) return member; // Tactics has no MM3 character sheet.
+  return {
+    ...member,
+    // The base attack already contains the rolled Might modifier. Apply only
+    // the *difference* from the previous effective modifier.
+    // Reconstruct the clamped MM3 baseline before applying the new Might
+    // bonus. A delta added to already-clamped 1 damage would create phantom
+    // damage for weak heroes (e.g. Might 6 -> 7).
+    damage: (() => {
+      const templateDamage = Number(CHRONICLES_PARTY.find(({ id }) => id === member.id)?.damage || 1);
+      const oldBase = Math.max(1, templateDamage + Number(member.mm3.bonuses?.might || 0));
+      const nextBase = Math.max(1, templateDamage + sheet.derived.bonuses.might);
+      return Math.max(1, nextBase + Number(member.damage || 1) - oldBase);
+    })(),
+    mm3: {
+      ...member.mm3,
+      stats: sheet.stats,
+      bonuses: sheet.derived.bonuses,
+      worldBonuses: sheet.worldBonuses,
+    },
+  };
+}
+
 function effectiveTacticsModifiers(progression, member) {
   const progressionModifiers = chroniclesTacticsModifiers(progression, member.id);
   const creatorModifiers = member.characterBuild?.creatorModifiers || {};
-  // First-person MM3 grows maximum HP from the hero's actual class, racial
-  // adjustment and Endurance. Tactics retains its original point-based rules.
-  // Use a delta from level 1 so legacy saves and trained Vigor retain value.
-  const mm3Growth = member.mm3?.classId
-    ? chroniclesMM3Derived(member.mm3.classId, member.mm3.stats, {
-      raceId: member.mm3.raceId, level: progressionModifiers.level,
-    }).maxHp - chroniclesMM3Derived(member.mm3.classId, member.mm3.stats, {
-      raceId: member.mm3.raceId,
-    }).maxHp
-    : 0;
+  // The rolled creator sheet is immutable. Discoveries modify the *effective*
+  // MM3 stats only; comparing with the base level-1 value avoids stacking
+  // bonuses across saves, level-ups and repeated reconciliation.
+  const mm3Sheet = effectiveMm3WorldSheet(progression, member);
+  const mm3Growth = mm3Sheet?.hpDelta || 0;
   return {
     ...progressionModifiers,
     bonusMaxHp: progressionModifiers.bonusMaxHp + mm3Growth,
@@ -602,11 +695,11 @@ export function applyChroniclesProgressionToTacticsState(state, progression) {
     const baseMaxHp = Math.max(1, nonNegativeInteger(member.maxHp, 1));
     const baseHp = Math.max(0, nonNegativeInteger(member.hp));
     const maxHp = baseMaxHp + modifiers.bonusMaxHp;
-    return {
+    return refreshMm3Member({
       ...member,
       maxHp,
       hp: Math.min(maxHp, baseHp + modifiers.bonusMaxHp),
-    };
+    }, progression);
   });
   return {
     ...state,
@@ -633,11 +726,11 @@ export function reconcileChroniclesProgressionInTacticsState(state, progression)
     const previousBonusMaxHp = Math.max(0, nonNegativeInteger(previousModifiers.bonusMaxHp));
     const nextBonusMaxHp = Math.max(0, nonNegativeInteger(modifiers.bonusMaxHp));
     const maxHp = Math.max(1, nonNegativeInteger(member.maxHp, 1) - previousBonusMaxHp + nextBonusMaxHp);
-    return {
+    return refreshMm3Member({
       ...member,
       maxHp,
       hp: Math.min(maxHp, Math.max(0, nonNegativeInteger(member.hp))),
-    };
+    }, progression);
   });
   return {
     ...state,

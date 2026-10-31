@@ -16,6 +16,7 @@ import {
   ensureChroniclesTacticsRun,
   finishChroniclesTacticsRun,
   grantChroniclesXp,
+  grantChroniclesMM3WorldStat,
   loadChroniclesProgression,
   reconcileChroniclesProgressionInTacticsState,
   renewChroniclesTacticsRun,
@@ -26,6 +27,7 @@ import {
 } from './chroniclesOfMatthiasProgression.js';
 import { clearStorageMemoryFallback } from './safeStorage.js';
 import { chroniclesMemberMaxSp } from './chronicles/chroniclesMagic.js';
+import { chroniclesPartyAttackStats } from './chroniclesOfMatthias.js';
 
 function tacticsStateFor(mapId, overrides = {}) {
   return {
@@ -136,6 +138,72 @@ describe('Chronicles Tactics · progression', () => {
     expect(reconcileChroniclesProgressionInTacticsState(leveled, gained.progression).party.find((member) => member.id === 'rook').maxHp).toBe(grown.maxHp);
     const tactics = applyChroniclesProgressionToTacticsState(tacticsState(), gained.progression);
     expect(tactics.party.find((member) => member.id === 'rook').maxHp).toBe(tacticsState().party.find((member) => member.id === 'rook').maxHp);
+  });
+
+  it('keeps discovered MM3 stats separate from the creator sheet and Tactics, and refuses replay/farming', () => {
+    const base = createChroniclesProgression();
+    expect(base.heroes.rook.mm3WorldBonuses.endurance).toBe(0);
+    expect(grantChroniclesMM3WorldStat(base, 'rook', 'strength', 'crystal-1').granted).toBe(false);
+    expect(grantChroniclesMM3WorldStat(base, 'unknown', 'endurance', 'crystal-1').granted).toBe(false);
+    expect(grantChroniclesMM3WorldStat(base, 'rook', 'endurance', '').granted).toBe(false);
+    const found = grantChroniclesMM3WorldStat(base, 'rook', 'endurance', 'crystal-1');
+    expect(found.granted).toBe(true);
+    expect(found.progression.characterBuild).toEqual(base.characterBuild);
+    expect(found.progression.heroes.rook.attributes).toEqual(base.heroes.rook.attributes);
+    expect(found.progression.heroes.rook.mm3WorldBonuses.endurance).toBe(1);
+    expect(found.progression.claimedWorldStatSources).toEqual(['crystal-1']);
+    expect(grantChroniclesMM3WorldStat(found.progression, 'matthias', 'might', 'crystal-1').granted).toBe(false);
+    const saved = saveChroniclesProgression(found.progression);
+    expect(loadChroniclesProgression().heroes.rook.mm3WorldBonuses.endurance).toBe(1);
+    expect(loadChroniclesProgression().claimedWorldStatSources).toEqual(['crystal-1']);
+    const tacticsBefore = applyChroniclesProgressionToTacticsState(tacticsState(), base);
+    const tacticsAfter = applyChroniclesProgressionToTacticsState(tacticsState(), saved);
+    expect(tacticsAfter.party).toEqual(tacticsBefore.party);
+    expect(tacticsAfter.rpgModifiers).toEqual(tacticsBefore.rpgModifiers);
+    const invalid = { ...saved, heroes: { ...saved.heroes, rook: {
+      ...saved.heroes.rook, mm3WorldBonuses: { ...saved.heroes.rook.mm3WorldBonuses, endurance: 99999 },
+    } } };
+    expect(chroniclesHeroProgress(invalid, 'rook').mm3WorldBonuses.endurance).toBe(12);
+  });
+
+  it('applies MM3 discoveries to actual PV, damage, PH and initiative without compounding or healing', () => {
+    let progression = grantChroniclesXp(createChroniclesProgression(), 'rook', chroniclesXpThresholdForLevel(2), 'level-2').progression;
+    const state = applyChroniclesProgressionToTacticsState(
+      createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }), progression,
+    );
+    const rook = state.party.find((hero) => hero.id === 'rook');
+    progression = grantChroniclesMM3WorldStat(progression, 'rook', 'endurance', 'crystal-endurance-1').progression;
+    progression = grantChroniclesMM3WorldStat(progression, 'rook', 'endurance', 'crystal-endurance-2').progression;
+    const buffed = reconcileChroniclesProgressionInTacticsState(state, progression);
+    const stronger = buffed.party.find((hero) => hero.id === 'rook');
+    expect(stronger.maxHp).toBe(rook.maxHp + 2); // Level 2 and 15→17 Endurance crosses the bonus band.
+    expect(stronger.hp).toBe(rook.hp);
+    expect(stronger.mm3.stats.endurance).toBe(17);
+    expect(stronger.mm3.worldBonuses.endurance).toBe(2);
+    expect(stronger.characterBuild.stats.endurance).toBe(15);
+    const twice = reconcileChroniclesProgressionInTacticsState(buffed, progression);
+    expect(twice.party.find((hero) => hero.id === 'rook')).toEqual(stronger);
+
+    let matthiasProgress = grantChroniclesMM3WorldStat(progression, 'matthias', 'might', 'stone-might-1').progression;
+    matthiasProgress = grantChroniclesMM3WorldStat(matthiasProgress, 'matthias', 'might', 'stone-might-2').progression;
+    let attackState = reconcileChroniclesProgressionInTacticsState(twice, matthiasProgress);
+    expect(chroniclesPartyAttackStats(attackState, 'matthias').damage)
+      .toBe(chroniclesPartyAttackStats(twice, 'matthias').damage + 1);
+    matthiasProgress = grantChroniclesMM3WorldStat(matthiasProgress, 'matthias', 'speed', 'stone-speed').progression;
+    attackState = reconcileChroniclesProgressionInTacticsState(attackState, matthiasProgress);
+    expect(attackState.party.find((hero) => hero.id === 'matthias').mm3.stats.speed).toBe(13);
+
+    let casterProgress = matthiasProgress;
+    for (let i = 0; i < 3; i += 1) {
+      casterProgress = grantChroniclesMM3WorldStat(casterProgress, 'bishop', 'personality', `font-personality-${i}`).progression;
+    }
+    const withMagic = reconcileChroniclesProgressionInTacticsState(attackState, casterProgress);
+    const beforeCleric = attackState.party.find((hero) => hero.id === 'bishop');
+    const afterCleric = withMagic.party.find((hero) => hero.id === 'bishop');
+    expect(chroniclesMemberMaxSp(withMagic, afterCleric))
+      .toBeGreaterThan(chroniclesMemberMaxSp(attackState, beforeCleric));
+    expect(reconcileChroniclesProgressionInTacticsState(withMagic, casterProgress).party.find((hero) => hero.id === 'bishop').maxHp)
+      .toBe(afterCleric.maxHp);
   });
 
   it('adds newly unlocked ability capacity without refilling charges already spent', () => {

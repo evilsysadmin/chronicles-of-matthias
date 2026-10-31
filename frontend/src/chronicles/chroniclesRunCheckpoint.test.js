@@ -690,6 +690,8 @@ describe('Chronicles per-expedition progression isolation', () => {
       expect(Object.values(hero.attributes).every((amount) => amount === 0)).toBe(true);
     }
     expect(fresh.claimedAwards).toEqual([]);
+    expect(fresh.claimedWorldStatSources).toEqual([]);
+    expect(fresh.heroes.matthias.mm3WorldBonuses.might).toBe(0);
     expect(chroniclesCheckpointRunProgression(oldCheckpoint).heroes.matthias.level).toBe(9);
     expect(veteran.heroes.matthias.level).toBe(9);
   });
@@ -719,6 +721,21 @@ describe('Chronicles per-expedition progression isolation', () => {
     }
     expect(chroniclesRunCheckpointFingerprint({ ...createChroniclesState(), runProgression: invested }))
       .not.toBe(chroniclesRunCheckpointFingerprint({ ...createChroniclesState(), runProgression: base }));
+  });
+
+  it('round-trips MM3 world-stat receipts in the authoritative run checkpoint', async () => {
+    const { createChroniclesProgression, grantChroniclesMM3WorldStat } = await import('../chroniclesOfMatthiasProgression.js');
+    const base = createChroniclesProgression();
+    const gained = grantChroniclesMM3WorldStat(base, 'bishop', 'personality', 'swordhaven-crystal-01');
+    expect(gained.granted).toBe(true);
+    const state = { ...createChroniclesState(), runProgression: gained.progression };
+    const payload = chroniclesRunCheckpointPayload(state, 3);
+    const restored = chroniclesCheckpointRunProgression(payload);
+    expect(restored.heroes.bishop.mm3WorldBonuses.personality).toBe(1);
+    expect(restored.claimedWorldStatSources).toEqual(['swordhaven-crystal-01']);
+    expect(chroniclesRunCheckpointFingerprint(state))
+      .not.toBe(chroniclesRunCheckpointFingerprint({ ...state, runProgression: base }));
+    expect(grantChroniclesMM3WorldStat(restored, 'matthias', 'might', 'swordhaven-crystal-01').granted).toBe(false);
   });
 
   it('keeps legacy saves readable and declines truncated run progression', async () => {
