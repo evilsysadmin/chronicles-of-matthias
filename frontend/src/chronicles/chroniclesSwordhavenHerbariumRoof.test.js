@@ -57,6 +57,29 @@ describe('Swordhaven botica greenhouse silhouette', () => {
     expect(terrace.geometry.parameters.depth).toBeGreaterThan(2 * 1.07 * greenhouse.scale.z);
     expect(terrace.geometry.parameters.width).toBeLessThan(8.1);
     expect(terrace.geometry.parameters.depth).toBeLessThan(7.1);
+    // Botanical beds must be visible through the glass without becoming
+    // walkable geometry or expensive per-plant draw calls.
+    const nursery = greenhouse.getObjectByName('apothecary-herbarium-botanical-beds');
+    expect(nursery?.userData.chroniclesDecorativeOnly).toBe(true);
+    const pots = nursery.getObjectByName('herbarium-terracotta-pots');
+    const stems = nursery.getObjectByName('herbarium-botanical-stems');
+    const crowns = nursery.getObjectByName('herbarium-botanical-leaf-clusters');
+    expect([pots.count, stems.count, crowns.count]).toEqual([6, 6, 18]);
+    for (const batch of [pots, stems, crowns]) {
+      expect(batch.isInstancedMesh).toBe(true);
+      expect(batch.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(batch.castShadow).toBe(false);
+    }
+    const matrix = new THREE.Matrix4();
+    const potPositions = [];
+    for (let i = 0; i < pots.count; i += 1) {
+      pots.getMatrixAt(i, matrix);
+      potPositions.push(new THREE.Vector3().setFromMatrixPosition(matrix));
+    }
+    expect(new Set(potPositions.map(position => Number(position.z.toFixed(2)))))
+      .toEqual(new Set([-0.55, 0.55]));
+    expect(potPositions.every(position => Math.abs(position.x) <= 0.81
+      && Math.abs(position.y - 0.24) < 0.01)).toBe(true);
     expect(botica.getObjectByName('shop-door')).toBeTruthy();
   });
 });

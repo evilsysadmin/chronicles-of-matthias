@@ -1753,6 +1753,56 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     mesh(herbarium, new THREE.BoxGeometry(0.17, 0.19, 2.54), mats.timber,
       'herbarium-roof-ridge', [0, 2.55, 0], !coarse);
+    // The conservatory contains real botanical silhouettes, not an empty
+    // tinted glass box. Two rows of terracotta pots and leafy crowns remain
+    // behind the glazing, within the original solid roof footprint. Three
+    // instanced batches keep the detail inexpensive even on mobile.
+    const nursery = new THREE.Group();
+    nursery.name = 'apothecary-herbarium-botanical-beds';
+    nursery.userData.chroniclesDecorativeOnly = true;
+    const pots = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.20, 0.16, 0.32, 8),
+      material(0xa76847, { roughness: 0.94 }), 6);
+    pots.name = 'herbarium-terracotta-pots';
+    const stems = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.035, 0.05, 0.65, 6),
+      material(0x416c43, { roughness: 0.96 }), 6);
+    stems.name = 'herbarium-botanical-stems';
+    const crowns = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(0.23, 8, 6),
+      material(0x78a66a, { roughness: 0.95 }), 18);
+    crowns.name = 'herbarium-botanical-leaf-clusters';
+    const plant = new THREE.Object3D();
+    let potIndex = 0;
+    let leafIndex = 0;
+    for (const z of [-0.55, 0.55]) {
+      for (const x of [-0.80, 0, 0.80]) {
+        plant.position.set(x, 0.24, z);
+        plant.scale.set(1, 1, 1);
+        plant.updateMatrix();
+        pots.setMatrixAt(potIndex, plant.matrix);
+        plant.position.y = 0.70;
+        plant.updateMatrix();
+        stems.setMatrixAt(potIndex++, plant.matrix);
+        for (const [dx, y, dz, size] of [
+          [-0.16, 0.96, 0, 0.94],
+          [0.16, 1.06, 0.05, 1.06],
+          [0, 1.19, -0.08, 0.87],
+        ]) {
+          plant.position.set(x + dx, y, z + dz);
+          plant.scale.set(size, size * 0.90, size);
+          plant.updateMatrix();
+          crowns.setMatrixAt(leafIndex++, plant.matrix);
+        }
+      }
+    }
+    for (const batch of [pots, stems, crowns]) {
+      batch.userData.chroniclesDecorativeOnly = true;
+      batch.castShadow = false;
+      batch.instanceMatrix.needsUpdate = true;
+      nursery.add(batch);
+    }
+    herbarium.add(nursery);
     root.add(herbarium);
     // Drying herbs distinguish the street-level frontage even on a phone.
     // Batch all four bunches; never add an obstacle or a light source.
