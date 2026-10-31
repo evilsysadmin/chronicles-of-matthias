@@ -730,6 +730,26 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'tavern-entry-oak-lintel', [0, 3.25, facadeZ + 0.32], !coarse);
     root.add(entrance);
   }
+  // The guild's original pointed stone portal stays untouched. Two dark
+  // violet oak leaves with restrained brass fittings distinguish its door
+  // from the shared merchant entrance without changing any interaction.
+  if (isMagic) {
+    const doors = new THREE.Group();
+    doors.name = 'magic-guild-brass-inlaid-door';
+    doors.userData.chroniclesDecorativeOnly = true;
+    const darkOak = material(0x34283e, { roughness: 0.91 });
+    for (const side of [-1, 1]) {
+      mesh(doors, new THREE.BoxGeometry(0.74, 2.79, 0.085), darkOak,
+        'magic-door-violet-oak-leaf', [side * 0.42, 1.57, facadeZ + 0.30], !coarse);
+      mesh(doors, new THREE.BoxGeometry(0.045, 2.35, 0.045), mats.gold,
+        'magic-door-brass-stile', [side * 0.72, 1.57, facadeZ + 0.365]);
+      mesh(doors, new THREE.SphereGeometry(0.075, 8, 6), mats.gold,
+        'magic-door-brass-pull', [side * 0.19, 1.48, facadeZ + 0.39]);
+    }
+    mesh(doors, new THREE.OctahedronGeometry(0.22, 0), mats.arcane,
+      'magic-door-arcane-sigil', [0, 2.04, facadeZ + 0.39], !coarse);
+    root.add(doors);
+  }
   // The watchhouse is dressed military ashlar, not a half-timbered
   // merchant shop. Its shallow stone portal frames the unchanged oak door;
   // all relief is decorative and never enters the authored collision grid.
