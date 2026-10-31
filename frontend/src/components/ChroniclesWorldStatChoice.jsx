@@ -21,6 +21,9 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
   if (!offer) return null;
   const title = offer.label?.split(' · ')[0] || 'Hallazgo mágico';
   const statLabel = offer.statLabel || 'atributo';
+  const description = offer.visualType === 'witch-cauldron'
+    ? `El brebaje concede +1 ${statLabel} permanente. ¿Quién lo beberá?`
+    : `Su poder concede +1 ${statLabel} permanente. ¿Quién lo recibirá?`;
   return (
     <div className="chronicles-world-stat-choice__backdrop">
       <section className="chronicles-world-stat-choice" role="dialog" aria-modal="true"
@@ -29,7 +32,7 @@ export default function ChroniclesWorldStatChoice({ offer, party, onSelect, onCl
           <span className="chronicles-world-stat-choice__sigil" aria-hidden="true">✧</span>
           <div>
             <h2 id="chronicles-world-stat-title">{title}</h2>
-            <p id="chronicles-world-stat-description">Su poder concede +1 {statLabel} permanente. ¿Quién lo recibirá?</p>
+            <p id="chronicles-world-stat-description">{description}</p>
           </div>
         </header>
         <div className="chronicles-world-stat-choice__party" role="group" aria-label="Elegir beneficiario">

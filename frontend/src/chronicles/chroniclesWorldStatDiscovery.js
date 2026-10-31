@@ -24,7 +24,8 @@ export function chroniclesMM3WorldStatOffer(state) {
     || effect?.type !== 'set' || effect.value !== true
     || !definition.when?.some((requirement) => requirement.key === effect.key && requirement.falsy === true)) return null;
   if (state.runProgression?.claimedWorldStatSources?.includes(definition.id)) return null;
-  return { id: definition.id, label: definition.label, stat, statLabel: CHRONICLES_MM3_STAT_LABELS[stat] };
+  return { id: definition.id, label: definition.label, visualType: definition.visualType || null,
+    stat, statLabel: CHRONICLES_MM3_STAT_LABELS[stat] };
 }
 
 export function chroniclesClaimMM3WorldStat(state, progression, sourceId, memberId) {
