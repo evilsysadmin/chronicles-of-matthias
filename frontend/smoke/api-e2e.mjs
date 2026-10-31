@@ -24,6 +24,20 @@ function expect(cond, message) {
   if (!cond) throw new Error(`E2E: ${message}\ncalls:\n${calls.join('\n')}\nerrors: ${JSON.stringify(errors)}`);
 }
 
+async function learnedAutomap(page) {
+  await page.getByRole('button', { name: /^Minimapa local/ }).click();
+  const map = page.getByRole('dialog', { name: 'Automapa de Chronicles' });
+  await map.waitFor();
+  const learned = await map.locator('.chronicles-automap__cell:not(.is-unknown)').evaluateAll((tiles) =>
+    tiles.map((tile) => ({
+      x: Math.round(Number(tile.getAttribute('x'))),
+      y: Math.round(Number(tile.getAttribute('y'))),
+      visited: tile.classList.contains('is-visited'),
+    })).sort((a, b) => a.y - b.y || a.x - b.x));
+  await map.getByRole('button', { name: 'Cerrar automapa' }).click();
+  return learned;
+}
+
 try {
   let ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   let page = await ctx.newPage();
@@ -47,6 +61,19 @@ try {
     await firstSteps.getByRole('button', { name: 'Entendido' }).click();
     await firstSteps.waitFor({ state: 'hidden' });
   }
+  // Walk one safe plaza tile north, then return to the spawn. The extra
+  // footprint cannot be reconstructed merely from the saved party position.
+  const writesBeforeExploring = calls.filter((call) => call.startsWith('PUT /api/chronicles/runs/')).length;
+  await page.keyboard.press('ArrowUp');
+  const movedMap = await learnedAutomap(page);
+  expect(movedMap.some((cell) => cell.x === 9 && cell.y === 6 && cell.visited),
+    'actual movement must reveal the northern plaza tile');
+  await page.keyboard.press('ArrowDown');
+  const savedAutomap = await learnedAutomap(page);
+  expect(savedAutomap.some((cell) => cell.x === 9 && cell.y === 7 && cell.visited),
+    'party returns to spawn while retaining the previous footprint');
+  expect(calls.filter((call) => call.startsWith('PUT /api/chronicles/runs/')).length === writesBeforeExploring,
+    'exploring and opening the map must not introduce per-action autosaves');
   // Real authenticated HUD: no duplicated objective plaque; Crónica owns
   // the quest text and opens as an accessible dialog. Preserve four hero
   // shortcuts and the right-side sapphire across portrait/landscape phones.
@@ -162,6 +189,9 @@ try {
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.getByRole('button', { name: /Continuar expedición/ }).click({ timeout: 20000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30000 });
+  expect(JSON.stringify(await learnedAutomap(page)) === JSON.stringify(savedAutomap),
+    'a clean browser must recover visited cells and observed geometry from the real API/Mongo save');
+  console.log('REMOTE_AUTOMAP_RESTORE_OK');
   await page.screenshot({ path: 'api-e2e-resumed.png' });
   await ctx.close();
 

@@ -1286,7 +1286,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           setProgression(resumedProgression);
         }
         checkpointMapRef.current = next.mapId;
-        setAutomapVisitedByMap(resumed?.automap || loadChroniclesAutomapVisited(confirmedId));
+        const visited = resumed?.automap || restored.automapVisitedByMap
+          || loadChroniclesAutomapVisited(confirmedId);
+        automapVisitedRef.current = visited;
+        setAutomapVisitedByMap(visited);
         stateRef.current = next;
         staleRunRecoveryAttemptedRef.current = false;
         setSelectedMemberId('matthias');
@@ -1399,12 +1402,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // Snapshot progression alongside world state, not in the shared profile.
     // Including it in the fingerprint makes leveling a durable change.
     const stagedProgression = progressionRef.current;
-    const stagedSnapshot = { ...snapshot, runProgression: stagedProgression };
-    const fingerprint = chroniclesRunCheckpointFingerprint(stagedSnapshot);
-    if (!fingerprint) return Promise.resolve(false);
     const visited = chroniclesAutomapMarkSeen(
       automapVisitedRef.current, chroniclesMapForState(snapshot), snapshot,
     );
+    const stagedSnapshot = {
+      ...snapshot, runProgression: stagedProgression, automapVisitedByMap: visited,
+    };
+    const fingerprint = chroniclesRunCheckpointFingerprint(stagedSnapshot);
+    if (!fingerprint) return Promise.resolve(false);
     checkpointPendingRef.current += 1;
     setSaveBusy(true);
     setSaveNotice('');
