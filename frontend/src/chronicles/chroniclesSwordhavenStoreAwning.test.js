@@ -35,6 +35,12 @@ describe('Swordhaven provisions canvas canopy', () => {
     expect(stripes.geometry.parameters.height).toBeCloseTo(0.018);
     expect(stripes.material.color.getHex()).not.toBe(cloth.material.color.getHex());
     expect(stripes.userData.chroniclesDecorativeOnly).toBe(true);
+    const underside = awning.getObjectByName('store-awning-underside-stripe');
+    expect(underside).toBeInstanceOf(THREE.InstancedMesh);
+    expect(underside.count).toBe(6);
+    expect(underside.geometry).toBe(stripes.geometry);
+    expect(underside.material).toBe(stripes.material);
+    expect(underside.userData.chroniclesDecorativeOnly).toBe(true);
     // Both thin-edged fabrics sag in the middle without vanishing edge-on.
     for (const geometry of [cloth.geometry, stripes.geometry]) {
       const positions = geometry.getAttribute('position');
