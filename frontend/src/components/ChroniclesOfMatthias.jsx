@@ -970,13 +970,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   useEffect(() => {
     const current = stateRef.current;
     const actor = chroniclesCurrentInitiativeActor(current?.initiative);
-    if (sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase === 'defeated') return undefined;
+    if (sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase !== 'combat') return undefined;
 
     const timer = window.setTimeout(() => {
       const latest = stateRef.current;
       const latestActor = chroniclesCurrentInitiativeActor(latest?.initiative);
       if (!latest?.initiative || latestActor?.kind !== 'enemy' || latestActor.id !== actor.id) return;
-      const outcome = chroniclesRunPendingEnemyTurn(latest, actor.id);
+      // The enemy ID can recur after a new encounter begins. Bind this timer
+      // to the initiative snapshot that actually scheduled it.
+      const outcome = chroniclesRunPendingEnemyTurn(latest, actor.id, undefined, current.initiative);
       if (!outcome) return;
       const { acted, committed: advanced, error } = outcome;
       if (error) console.error('Chronicles enemy turn failed; passing its initiative slot', error);
@@ -1009,7 +1011,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [sheetMemberId, state?.initiative?.cursor, state?.initiative?.round, state?.phase, showHitSplats]);
+  }, [sheetMemberId, state?.initiative, state?.phase, showHitSplats]);
 
   useEffect(() => {
     const actor = chroniclesCurrentInitiativeActor(state?.initiative);
