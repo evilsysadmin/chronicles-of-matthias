@@ -140,6 +140,17 @@ export default function ChroniclesSaveMenu({
               </span>
               <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
             </a>
+            {mayViewAdmin && (
+              <button type="button" className="chronicles-save-menu__admin-shortcut"
+                data-chronicles-admin-link data-chronicles-admin-shortcut
+                onClick={() => openList('admin')}>
+                <ExpeditionMenuIcon kind="castle" />
+                <span className="chronicles-save-menu__action-copy">
+                  Administración <small>Jugadores · Progreso · Cambios de versión</small>
+                </span>
+                <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
+              </button>
+            )}
             <details className="chronicles-save-menu__more">
               <summary>Otras opciones</summary>
               <div className="chronicles-save-menu__more-actions">
@@ -148,13 +159,6 @@ export default function ChroniclesSaveMenu({
                   <span className="chronicles-save-menu__action-copy">Gestionar partidas</span>
                   <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
                 </button>
-                {mayViewAdmin && (
-                  <button type="button" data-chronicles-admin-link onClick={() => openList('admin')}>
-                    <ExpeditionMenuIcon kind="books" />
-                    <span className="chronicles-save-menu__action-copy">Administrar jugadores <small>Censo de esta instancia · solo lectura</small></span>
-                    <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
-                  </button>
-                )}
                 {adminStatus === 'unavailable' && (
                   <button type="button" data-chronicles-admin-check-retry onClick={retryAdminAccess}>
                     <ExpeditionMenuIcon kind="books" />
