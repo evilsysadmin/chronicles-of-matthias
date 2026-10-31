@@ -808,6 +808,36 @@
         ],
         "message": "El cristal de Rookwood cede su brillo y queda inmóvil."
       }
+    },
+    {
+      "id": "rookwood-witch-cauldron",
+      "kind": "pickup",
+      "visualType": "witch-cauldron",
+      "x": 4,
+      "y": 11,
+      "persistentVisual": true,
+      "label": "Caldero de la bruja · +1 Suerte",
+      "mm3WorldStat": "luck",
+      "when": [
+        {
+          "key": "combatRules",
+          "equals": "mm3"
+        },
+        {
+          "key": "rookwoodWitchCauldronUsed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "rookwoodWitchCauldronUsed",
+            "value": true
+          }
+        ],
+        "message": "El caldero queda vacío: la mezcla de hierbas ha entregado su poder."
+      }
     }
   ],
   "treasures": [],
