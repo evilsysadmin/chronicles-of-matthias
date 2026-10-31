@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
+      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'roofline']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -42,6 +42,8 @@ try {
         assert.equal(result.mapId, 'swordhaven-first-book');
         assert.equal(result.premiumCivic, 'true', 'The real mayor hall needs its carved civic facade');
         assert.equal(result.premiumHomes, 'true', 'Residential houses need the premium shuttered facade');
+        assert.equal(result.premiumHomeGables, 'true',
+          'Authored houses must display an upper attic vent and cached limewash without false shop signs');
         assert.equal(result.premiumStreetWindows, 'true',
           'Swordhaven streets need actual batched oak hoods and planted window ledges');
         assert.equal(result.streetView, view);
