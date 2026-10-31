@@ -1480,6 +1480,32 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     rails.instanceMatrix.needsUpdate = true;
     frame.add(posts, rails);
     root.add(frame);
+
+    // A sheltered side loading dock makes Provisiones read as a working
+    // warehouse from the market's oblique approach. The raised timber platform,
+    // two oak posts and pitched cedar roof occupy only the existing blocked
+    // 3x3 building footprint (local x < 6); the cargo hatches remain visible.
+    // Decorative geometry only: no map, collision or interaction changes.
+    const dock = new THREE.Group();
+    dock.name = 'store-side-loading-dock';
+    dock.userData.chroniclesDecorativeOnly = true;
+    const deck = mesh(dock, new THREE.BoxGeometry(1.68, 0.24, 5.18), mats.timber,
+      'store-loading-dock-oak-deck', [4.96, 0.24, 0], !coarse);
+    deck.userData.chroniclesDecorativeOnly = true;
+    const canopy = mesh(dock, new THREE.BoxGeometry(1.88, 0.17, 5.42), roof,
+      'store-loading-dock-cedar-roof', [4.96, 3.79, 0], !coarse);
+    canopy.rotation.z = -0.32;
+    canopy.userData.chroniclesDecorativeOnly = true;
+    for (const z of [-2.38, 2.38]) {
+      const post = mesh(dock, new THREE.BoxGeometry(0.25, 3.24, 0.25), mats.timber,
+        'store-loading-dock-oak-post', [5.48, 1.81, z], !coarse);
+      post.userData.chroniclesDecorativeOnly = true;
+      const brace = mesh(dock, new THREE.BoxGeometry(0.16, 0.94, 0.18), mats.timber,
+        'store-loading-dock-knee-brace', [5.24, 3.16, z], !coarse);
+      brace.rotation.z = -0.56;
+      brace.userData.chroniclesDecorativeOnly = true;
+    }
+    root.add(dock);
   }
   // A single broad merchant's attic loft replaces the ordinary domestic
   // dormers on the general store. The oak gable and glazed loading bay break
