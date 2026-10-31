@@ -2080,7 +2080,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       const vertices = geometry.getAttribute('position');
       for (let i = 0; i < vertices.count; i += 1) {
         const t = (vertices.getZ(i) + 0.74) / 1.48;
-        vertices.setY(i, vertices.getY(i) - 0.20 * Math.sin(Math.PI * t));
+        vertices.setY(i, vertices.getY(i) - 0.10 * Math.sin(Math.PI * t));
       }
       vertices.needsUpdate = true;
       geometry.computeVertexNormals();
