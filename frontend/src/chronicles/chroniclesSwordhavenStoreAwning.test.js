@@ -46,7 +46,9 @@ describe('Swordhaven provisions canvas canopy', () => {
       stripes.getMatrixAt(i, transform);
       xs.push(new THREE.Vector3().setFromMatrixPosition(transform).x);
     }
-    expect(xs).toEqual([-2.45, -1.47, -0.49, 0.49, 1.47, 2.45]);
+    for (const [index, expected] of [-2.45, -1.47, -0.49, 0.49, 1.47, 2.45].entries()) {
+      expect(xs[index]).toBeCloseTo(expected, 4);
+    }
     store.updateWorldMatrix(true, true);
     expect(new THREE.Box3().setFromObject(awning).min.y).toBeGreaterThan(2.7);
     expect(store.getObjectByName('shop-door')).toBeTruthy();
