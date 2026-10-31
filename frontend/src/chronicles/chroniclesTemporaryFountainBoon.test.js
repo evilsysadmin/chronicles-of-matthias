@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesContextualContentAction, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesContextualContentAction, chroniclesPartyAttackStats, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import {
   applyChroniclesProgressionToTacticsState,
   createChroniclesProgression,
@@ -16,6 +16,7 @@ import {
   chroniclesResolveTemporaryFountainBoon,
   WOLF_FOUNTAIN_BOON,
   FROST_FOUNTAIN_BOON,
+  LIGHTHOUSE_FOUNTAIN_BOON,
 } from './chroniclesTemporaryFountainBoon.js';
 
 function wolfFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
@@ -32,6 +33,14 @@ function frostFountainStart(progression = createChroniclesProgression(), rules =
     progression,
   );
   return { ...base, x: 5, y: 10, direction: 0, runProgression: progression };
+}
+
+function lighthouseFountainStart(progression = createChroniclesProgression(), rules = 'mm3') {
+  const base = applyChroniclesProgressionToTacticsState(
+    createChroniclesState('terra-a6', progression.characterBuild, { rules }),
+    progression,
+  );
+  return { ...base, x: 15, y: 4, direction: 0, runProgression: progression };
 }
 
 function act(state, progression, action) {
@@ -193,6 +202,86 @@ describe('MM3: twelve-action Luck blessing at the real Wolf Fountain', () => {
     expect(grantChroniclesMM3TemporaryBoon(
       frost.progression, WOLF_FOUNTAIN_BOON.sourceId, 'luck', 2, 99,
     ).granted).toBe(false);
+  });
+
+  it('gives all heroes +3 Accuracy for 8 turns at the Lighthouse, affecting actual hit rolls', () => {
+    const progression = createChroniclesProgression();
+    const original = lighthouseFountainStart(progression);
+    expect(chroniclesContextualContentAction(original)?.id).toBe(LIGHTHOUSE_FOUNTAIN_BOON.sourceId);
+    const beforeHit = original.party.map((member) => chroniclesPartyAttackStats(original, member.id).toHit);
+    const claimed = act(original, progression, { type: 'interact' });
+    expect(claimed.granted).toBe(true);
+    expect(claimed.updated).toBe(true);
+    expect(claimed.state.terra_a6ShrineUsed).toBe(true);
+    expect(claimed.state.message).toContain('Fuente del Faro');
+    expect(claimed.state.message).toContain('+3 Precisión');
+    expect(claimed.state.message).toContain('8 acciones');
+    expect(claimed.progression.mm3TemporaryBoon).toEqual({
+      sourceId: LIGHTHOUSE_FOUNTAIN_BOON.sourceId, stat: 'accuracy',
+      amount: 3, expiresAtTurn: claimed.state.turns + 8,
+    });
+    expect(claimed.progression.claimedTemporaryWorldSources).toEqual([LIGHTHOUSE_FOUNTAIN_BOON.sourceId]);
+
+    claimed.state.party.forEach((member, i) => {
+      expect(member.mm3.stats.accuracy).toBe(original.party[i].mm3.stats.accuracy + 3);
+      expect(member.mm3.worldBonuses.accuracy).toBe(0);
+      expect(member.characterBuild.stats.accuracy).toBe(original.party[i].characterBuild.stats.accuracy);
+      expect(member.hp).toBe(original.party[i].hp);
+      expect(member.maxHp).toBe(original.party[i].maxHp);
+      // The derived bonus is consumed by the existing MM3 attack resolver,
+      // not merely displayed in a character-sheet badge.
+      expect(chroniclesPartyAttackStats(claimed.state, member.id).toHit).toBeGreaterThan(beforeHit[i]);
+    });
+
+    const saved = chroniclesRunCheckpointPayload(claimed.state, 7);
+    const stored = chroniclesCheckpointRunProgression(saved);
+    expect(stored.claimedTemporaryWorldSources).toContain(LIGHTHOUSE_FOUNTAIN_BOON.sourceId);
+    const reloaded = reconcileChroniclesProgressionInTacticsState(
+      chroniclesApplyRunCheckpoint(createChroniclesState('terra-a6',
+        progression.characterBuild, { rules: 'mm3' }), saved), stored,
+    );
+    expect(reloaded.party[0].mm3.stats.accuracy).toBe(original.party[0].mm3.stats.accuracy + 3);
+    expect(act(reloaded, stored, { type: 'interact' }).granted).toBe(false);
+
+    let current = reloaded;
+    for (let i = 0; i < 8; i += 1) {
+      const result = act(current, stored, { type: 'turn-right' });
+      expect(result.state.turns).toBe(current.turns + 1);
+      current = result.state;
+    }
+    expect(current.turns).toBe(stored.mm3TemporaryBoon.expiresAtTurn);
+    expect(current.party.map((member) => member.mm3.stats.accuracy))
+      .toEqual(original.party.map((member) => member.mm3.stats.accuracy));
+    expect(current.party.every((member) => member.mm3.temporaryBoon === null)).toBe(true);
+    expect(chroniclesResolveTemporaryFountainBoon(current, current, stored).updated).toBe(false);
+    expect(act(lighthouseFountainStart(progression, null), progression, { type: 'interact' }).granted).toBe(false);
+  });
+
+  it('replaces Frost Speed with Lighthouse Accuracy after interregional travel without stacking', () => {
+    const initialProgression = createChroniclesProgression();
+    const before = frostFountainStart(initialProgression);
+    const frost = act(before, initialProgression, { type: 'interact' });
+    expect(frost.granted).toBe(true);
+    const afterTravel = chroniclesMapTransitionState(frost.state, 'terra-a6');
+    const next = { ...afterTravel, x: 15, y: 4, direction: 0, runProgression: frost.progression };
+    expect(chroniclesContextualContentAction(next)?.id).toBe(LIGHTHOUSE_FOUNTAIN_BOON.sourceId);
+    const claimed = act(next, frost.progression, { type: 'interact' });
+    expect(claimed.granted).toBe(true);
+    expect(claimed.progression.claimedTemporaryWorldSources)
+      .toEqual([FROST_FOUNTAIN_BOON.sourceId, LIGHTHOUSE_FOUNTAIN_BOON.sourceId]);
+    expect(claimed.progression.mm3TemporaryBoon.sourceId).toBe(LIGHTHOUSE_FOUNTAIN_BOON.sourceId);
+    expect(claimed.state.message).toContain('Sustituye a la bendición anterior');
+    claimed.state.party.forEach((member, i) => {
+      expect(member.mm3.stats.speed).toBe(before.party[i].mm3.stats.speed);
+      expect(member.mm3.stats.accuracy).toBe(before.party[i].mm3.stats.accuracy + 3);
+    });
+    expect(grantChroniclesMM3TemporaryBoon(
+      claimed.progression, FROST_FOUNTAIN_BOON.sourceId, 'speed', 2, 90,
+    ).granted).toBe(false);
+    const returned = chroniclesMapTransitionState(claimed.state, 'terra-e1');
+    expect(returned.terra_e1ShrineUsed).toBe(true);
+    expect(act({ ...returned, x: 5, y: 10, direction: 0 },
+      claimed.progression, { type: 'interact' }).granted).toBe(false);
   });
 
   it('refuses duplicates, malformed blessings, rewards in Tactics, and failed interactions', () => {
