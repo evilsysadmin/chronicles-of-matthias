@@ -23,6 +23,10 @@ function ExpeditionMenuIcon({ kind }) {
           <path d="M5 5h8v22H5zM14 8h7v19h-7zM22 4l6 2-3 21-6-2z" />
           <path d="M7 11h4M16 14h3M23 11l3 1" />
         </>}
+        {kind === 'swords' && <>
+          <path d="M6 6l20 20M26 6L6 26M5 4l5 2-4 4-2-5zM27 4l-5 2 4 4 2-5z" />
+          <path d="M19 23l4-4M13 23l-4-4" />
+        </>}
         {kind === 'castle' && <>
           <path d="M4 27V9l4 3V7l4 3 4-3 4 3 4-3v20zM2 27h28" />
           <path d="M13 27v-9h6v9M7 15h2M23 15h2" />
@@ -138,6 +142,13 @@ export default function ChroniclesSaveMenu({
                 <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
               </button>
             )}
+            <a className="chronicles-save-menu__tactics-link" data-chronicles-tactics-entry href="#tactics">
+              <ExpeditionMenuIcon kind="swords" />
+              <span className="chronicles-save-menu__action-copy">
+                Tactics <small>Combate táctico por casillas · Vista isométrica</small>
+              </span>
+              <span className="chronicles-save-menu__chevron" aria-hidden="true">›</span>
+            </a>
             <details className="chronicles-save-menu__more">
               <summary>Otras opciones</summary>
               <div className="chronicles-save-menu__more-actions">
