@@ -132,6 +132,8 @@ try {
           'Quartermaster store must have a unique overhead striped awning');
         assert.equal(result.roofRelief, 'true',
           'Real street roofs must use aligned, shared shingle relief');
+        assert.equal(result.variedRoofPitches, 'true',
+          'Seven authored rooflines need four heights with matching oak ridges and angled verges');
         // Two upper-storey braces on every blind face, including above the
         // closed doorways, reuse the current timber batch and remain inside
         // the originally blocked walls. Lower doorway braces stay removed.

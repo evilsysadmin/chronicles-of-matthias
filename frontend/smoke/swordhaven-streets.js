@@ -260,6 +260,29 @@ try {
     plasterRelief: String(plaster.material.normalMap?.name === 'chronicles-town-normal-stucco'
       && plaster.material.normalMap.repeat.equals(plaster.material.map.repeat)),
     roofCount: String(roofs.count),
+    variedRoofPitches: String((() => {
+      const expected = [0.78, 1.25, 0.78, 1.25, 0.92, 1.46, 1.46];
+      if (roofs.count !== expected.length || oakRidges?.count !== expected.length
+        || oakVerges?.count !== expected.length * 4) return false;
+      const matrix = new THREE.Matrix4();
+      const position = new THREE.Vector3();
+      const scale = new THREE.Vector3();
+      const baseY = swordhaven.landscape.streetWallHeight - 0.04;
+      for (let index = 0; index < expected.length; index += 1) {
+        const rise = expected[index];
+        roofs.getMatrixAt(index, matrix);
+        matrix.decompose(position, new THREE.Quaternion(), scale);
+        if (Math.abs(scale.y * 0.92 - rise) > 0.002) return false;
+        oakRidges.getMatrixAt(index, matrix);
+        position.setFromMatrixPosition(matrix);
+        if (Math.abs(position.y - (baseY + rise + 0.035)) > 0.002) return false;
+        oakVerges.getMatrixAt(index * 4, matrix);
+        matrix.decompose(position, new THREE.Quaternion(), scale);
+        if (Math.abs(position.y - (baseY + rise / 2 + 0.035)) > 0.002
+          || Math.abs(scale.z - Math.hypot(2.22, rise) / Math.hypot(2.22, 0.92)) > 0.002) return false;
+      }
+      return true;
+    })()),
     premiumRoofline: String(Boolean(oakEaves?.count === roofs.count * 2
       && oakRidges?.count === roofs.count
       && oakVerges?.count === roofs.count * 4

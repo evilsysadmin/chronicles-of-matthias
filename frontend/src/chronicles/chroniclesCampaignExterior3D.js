@@ -10,7 +10,7 @@ import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js'
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
-import { dressSwordhavenRoofRuns } from './chroniclesSwordhavenRoofTrim.js';
+import { dressSwordhavenRoofRuns, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 
@@ -558,9 +558,11 @@ function addSettlementRoofRuns(town, { grid, blocked, center, runs, wallHeight =
   ];
   valid.forEach(({ x, y, width }, index) => {
     const [wx, wz] = gridToWorld(x + (width - 1) / 2, y, center);
-    // X-scale alters only span length, not roof pitch/height: a pair of
-    // cottages and a five-cell terrace share the same triangle budget.
-    dummy.scale.set((CELL * width + eave * 2) / length, 1, 1);
+    // The shared six-vertex roof shell supports per-run roof pitch through
+    // its instance Y scale; the roof cap, eaves and authored collision grid
+    // stay unchanged. Non-Swordhaven settlements retain the original rise.
+    const rise = trimTimber ? swordhavenRoofRise({ x, y, width }) : 0.92;
+    dummy.scale.set((CELL * width + eave * 2) / length, rise / 0.92, 1);
     dummy.position.set(wx, wallHeight - 0.04, wz);
     dummy.updateMatrix();
     roofs.setMatrixAt(index, dummy.matrix);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
+import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import swordhaven from './maps/swordhaven-first-book.json';
 
 function townScene(mapId = swordhaven.id, coarsePointer = false) {
@@ -46,13 +47,14 @@ describe('Swordhaven authored terrace roofline dressing', () => {
     const roofPos = new THREE.Vector3();
     const trimPos = new THREE.Vector3();
     for (let i = 0; i < roofs.count; i += 1) {
+      const rise = swordhavenRoofRise(swordhaven.landscape.roofRuns[i]);
       roofs.getMatrixAt(i, roofMatrix);
       ridges.getMatrixAt(i, trimMatrix);
       roofPos.setFromMatrixPosition(roofMatrix);
       trimPos.setFromMatrixPosition(trimMatrix);
       expect(trimPos.x).toBeCloseTo(roofPos.x);
       expect(trimPos.z).toBeCloseTo(roofPos.z);
-      expect(trimPos.y).toBeCloseTo(roofPos.y + 0.92 + 0.035);
+      expect(trimPos.y).toBeCloseTo(roofPos.y + rise + 0.035);
       eaves.getMatrixAt(i * 2, trimMatrix);
       trimPos.setFromMatrixPosition(trimMatrix);
       expect(trimPos.y).toBeGreaterThan(6.0);
@@ -62,8 +64,9 @@ describe('Swordhaven authored terrace roofline dressing', () => {
       expect(opposite.z - trimPos.z).toBeCloseTo(4.44);
       verges.getMatrixAt(i * 4, trimMatrix);
       trimPos.setFromMatrixPosition(trimMatrix);
-      expect(trimPos.y).toBeGreaterThan(6.75);
-      expect(trimPos.y).toBeLessThan(7.0);
+      expect(trimPos.y).toBeCloseTo(roofPos.y + rise / 2 + 0.035);
+      const slopeScale = new THREE.Vector3().setFromMatrixScale(trimMatrix);
+      expect(slopeScale.z).toBeCloseTo(Math.hypot(2.22, rise) / Math.hypot(2.22, 0.92));
     }
     // No new roof paths, game interactions or blockers.
     expect(town.getObjectByName('chronicles-town-street-window-panes')).toBeTruthy();

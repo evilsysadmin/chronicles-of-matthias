@@ -5,6 +5,7 @@ import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
 import terraB2 from './maps/terra-b2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
+import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
 const demo = {
   mapId: 'banner-road', regionKind: 'wilderness', width: 5, height: 5,
@@ -776,6 +777,12 @@ describe('Chronicles file-authored exterior renderer', () => {
       new THREE.Color('#e0d4cb'),
     ];
     const roofShades = new Set();
+    const roofHeights = new Set();
+    const ridgeTimbers = town.getObjectByName('chronicles-town-south-roof-oak-ridges');
+    const vergeTimbers = town.getObjectByName('chronicles-town-south-roof-oak-verges');
+    expect(ridgeTimbers.count).toBe(roofs.count);
+    expect(vergeTimbers.count).toBe(roofs.count * 4);
+    expect(ridgeTimbers.material).toBe(vergeTimbers.material);
     expect(roofs.castShadow).toBe(false);
     expect(roofs.geometry.getAttribute('position').count).toBe(6);
     expect(roofs.geometry.index.count).toBe(18);
@@ -805,8 +812,26 @@ describe('Chronicles file-authored exterior renderer', () => {
       const actualRoofLength = (4 * 4 + 0.44) * scale.x;
       expect(actualRoofLength).toBeCloseTo(run.width * 4 + 0.44);
       expect(actualRoofLength - run.width * 4).toBeCloseTo(0.44);
-      expect(scale.y).toBeCloseTo(1);
+      const rise = swordhavenRoofRise(run);
+      roofHeights.add(rise);
+      // One roof mesh, four distinct roofline profiles. The actual tip of
+      // the shell matches the shared rise used by oak trim and dormers.
+      expect(scale.y).toBeCloseTo(rise / 0.92);
       expect(scale.z).toBeCloseTo(1);
+      const ridgeMatrix = new THREE.Matrix4();
+      ridgeTimbers.getMatrixAt(index, ridgeMatrix);
+      const ridge = new THREE.Vector3().setFromMatrixPosition(ridgeMatrix);
+      expect(ridge.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04 + rise + 0.035);
+      const vergeMatrix = new THREE.Matrix4();
+      vergeTimbers.getMatrixAt(index * 4, vergeMatrix);
+      const pos = new THREE.Vector3();
+      const quat = new THREE.Quaternion();
+      const vergeScale = new THREE.Vector3();
+      vergeMatrix.decompose(pos, quat, vergeScale);
+      expect(pos.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04 + rise / 2 + 0.035);
+      expect(vergeScale.z).toBeCloseTo(Math.hypot(2.22, rise) / Math.hypot(2.22, 0.92));
+      expect(Math.abs(new THREE.Euler().setFromQuaternion(quat).x))
+        .toBeCloseTo(Math.atan2(rise, 2.22));
       expect(roof.y).toBeCloseTo(swordhavenFirstBook.landscape.streetWallHeight - 0.04);
       expect(roof.z).toBeCloseTo((run.y - center.y) * 4);
       const actualTint = new THREE.Color();
@@ -818,6 +843,7 @@ describe('Chronicles file-authored exterior renderer', () => {
       roofShades.add(actualTint.getHexString());
     }
     expect(roofShades.size).toBe(3);
+    expect([...roofHeights].sort((a, b) => a - b)).toEqual([0.78, 0.92, 1.25, 1.46]);
     for (const style of ['forge', 'armor', 'tavern', 'temple', 'store', 'watch']) {
       expect(names.some(name => name.startsWith('swordhaven-building-first-book-' + style + '-'))).toBe(true);
     }
