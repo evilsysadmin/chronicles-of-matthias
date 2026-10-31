@@ -204,6 +204,30 @@ try {
         && gable.children.filter(part => part.name === 'home-attic-vent-louver').length === 2
         && !home.getObjectByName('swordhaven-shop-nameplate');
     }) && !hall?.getObjectByName('home-authored-attic-vent')),
+    upperJulietGuards: String((() => {
+      if (julietGuards?.count !== 8 || !julietGuards.userData.chroniclesDecorativeOnly
+        || julietGuards.castShadow || julietGuards.frustumCulled
+        || julietGuards.geometry.index.count !== 396
+        || julietGuards.material.metalness < 0.4) return false;
+      const bounds = new THREE.Box3().setFromBufferAttribute(
+        julietGuards.geometry.getAttribute('position'));
+      if (3.96 + bounds.min.y < 3.7 || 3.96 + bounds.max.y >= 4.21
+        || bounds.min.z >= -0.12 || bounds.max.z <= 0.15) return false;
+      const matrix = new THREE.Matrix4();
+      const locations = new Set();
+      for (let i = 0; i < julietGuards.count; i += 1) {
+        julietGuards.getMatrixAt(i, matrix);
+        const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
+        const x = Math.round(pos.x / 4 + 9);
+        const y = Math.round((pos.z - 2.07) / 4 + 11);
+        if (Math.abs(pos.y - 3.96) > 0.001
+          || swordhaven.grid[y]?.[x] !== '#'
+          || swordhaven.grid[y + 1]?.[x] !== '.'
+          || (x * 3 + y * 5) % 8 >= 3) return false;
+        locations.add(x + ':' + y);
+      }
+      return locations.size === 8;
+    })()),
     premiumStreetWindows: String(Boolean(streetHoods
       && streetHoods.count === windowFrames.count
       && streetBraces?.count === streetHoods.count * 2
