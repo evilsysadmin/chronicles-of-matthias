@@ -22,6 +22,9 @@ const VIEWS = Object.freeze({
   store: { x: 15, y: 8, heading: 'south', target: { x: 15, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
   // Bias the portrait QA camera toward the cargo loft, not the empty side lane.
   'store-oblique': { x: 13, y: 8, heading: 'south', target: { x: 15.8, y: 12 }, cameraHeight: 2.4, lookUp: 2.5 },
+  // Dedicated east-side evidence: the portrait frontal camera cannot see the
+  // sheltered warehouse loading dock at all. Use a real walkable street cell.
+  'store-side': { x: 17, y: 12, heading: 'west', target: { x: 15.6, y: 12 }, cameraHeight: 2.4, lookUp: 1.1 },
   tavern: { x: 7, y: 8, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.0 },
   // East-side street view reveals the inn's overhanging guest-room oriel.
   'tavern-oblique': { x: 11, y: 9, heading: 'south', target: { x: 7, y: 12 }, cameraHeight: 2.4, lookUp: 3.2 },
