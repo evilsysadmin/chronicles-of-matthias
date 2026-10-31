@@ -170,7 +170,7 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
         </section>
         </div>
       </div>
-      <p className="chronicles-sheet-grimoire__hint">↑ ↓ / Inicio / Fin · seleccionar · Examinar abre la ficha · Para lanzar, vuelve a la aventura y abre Magia (C).</p>
+      <p className="chronicles-sheet-grimoire__hint">Tab · entrar/salir de la lista · ↑ ↓ / Inicio / Fin · seleccionar · Examinar abre la ficha · Para lanzar, vuelve a la aventura y abre Magia (C).</p>
     </div>
   );
 }
