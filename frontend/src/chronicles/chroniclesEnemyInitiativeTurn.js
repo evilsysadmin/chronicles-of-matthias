@@ -27,7 +27,10 @@ export function chroniclesRunPendingEnemyTurn(state, expectedEnemyId, resolveAct
     // Do not grant damage, movement or an extra action after a failed turn.
     // Just pass this single enemy's initiative slot and keep the encounter.
   }
-  const advanced = acted.phase === 'defeated'
+  // The resolver may already have ended the encounter (victory, escape or
+  // defeat). Advancing a terminal state can reopen combat or overwrite its
+  // outcome; only a still-active encounter has another initiative slot.
+  const advanced = acted.phase !== 'combat'
     ? acted
     : chroniclesAdvanceCombatInitiative(acted, chroniclesActiveEnemies(acted));
   // Also cover a restored/legacy encounter that finishes during an enemy
