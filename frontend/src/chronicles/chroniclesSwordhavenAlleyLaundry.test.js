@@ -46,6 +46,19 @@ describe('Swordhaven occupied narrow alleys', () => {
     expect(linen.material.side).toBe(THREE.DoubleSide);
     expect(linen.geometry.getAttribute('position').count).toBe(30); // 4 × 5 subdivisions.
     expect(linen.geometry.getAttribute('position').getZ(0)).not.toBe(0);
+    expect(linen.material.vertexColors).toBe(true);
+    const clothVertices = linen.geometry.getAttribute('position');
+    const vertexColours = linen.geometry.getAttribute('color');
+    expect(vertexColours.count).toBe(clothVertices.count);
+    const hems = Array.from({ length: 5 }, (_, col) => clothVertices.getY(25 + col));
+    expect(Math.max(...hems) - Math.min(...hems)).toBeGreaterThan(0.12);
+    expect(clothVertices.getX(25)).toBeGreaterThan(-0.4);
+    expect(clothVertices.getX(29)).toBeLessThan(0.4);
+    const foldBounds = new THREE.Box3().setFromBufferAttribute(clothVertices);
+    expect(foldBounds.max.z - foldBounds.min.z).toBeGreaterThan(0.19);
+    const pleatTones = new Set(Array.from({ length: 5 }, (_, col) =>
+      vertexColours.getX(col).toFixed(3)));
+    expect(pleatTones.size).toBeGreaterThanOrEqual(4);
     expect(linen.instanceColor).toBeTruthy();
     const colors = new Set();
     const matrix = new THREE.Matrix4();
@@ -65,6 +78,7 @@ describe('Swordhaven occupied narrow alleys', () => {
         const scale = new THREE.Vector3();
         matrix.decompose(at, rotation, scale);
         expect(at.x).toBeCloseTo((x - 9) * 4 + lateral);
+        expect(scale.x).toBeCloseTo([0.88, 1.04, 0.94][slot]);
         expect(at.z).toBeCloseTo((18 - 11) * 4 + (slot % 2 === 0 ? 0.02 : -0.02));
         expect(at.y + clothBounds.max.y * scale.y).toBeCloseTo(3.9);
         expect(at.y + clothBounds.min.y * scale.y).toBeGreaterThan(2.8);

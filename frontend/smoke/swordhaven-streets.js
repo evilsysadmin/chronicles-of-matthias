@@ -244,7 +244,14 @@ try {
         || !laundryLinen.userData.chroniclesDecorativeOnly
         || laundryRopes.castShadow || laundryLinen.castShadow
         || laundryLinen.frustumCulled
-        || laundryLinen.material.side !== THREE.DoubleSide) return false;
+        || laundryLinen.material.side !== THREE.DoubleSide
+        || !laundryLinen.material.vertexColors) return false;
+      const fabricPos = laundryLinen.geometry.getAttribute('position');
+      const fabricTint = laundryLinen.geometry.getAttribute('color');
+      if (fabricPos.count !== fabricTint?.count
+        || Math.max(...[25, 26, 27, 28, 29].map(i => fabricPos.getY(i)))
+          - Math.min(...[25, 26, 27, 28, 29].map(i => fabricPos.getY(i))) < 0.12)
+        return false;
       const matrix = new THREE.Matrix4();
       const pos = new THREE.Vector3();
       for (const [index, x] of [3, 6, 12, 15].entries()) {
