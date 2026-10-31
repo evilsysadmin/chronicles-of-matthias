@@ -775,6 +775,30 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(mesh.castShadow).toBe(false);
     }
     expect(glass.material.emissive.getHex()).toBe(0x98521b);
+    // More detailed ironwork uses the SAME three batches, anchored to the
+    // original authored solid cells, with no new lights or collider volumes.
+    expect(mounts.geometry.index.count).toBe(8 * 36);
+    expect(caps.geometry.index.count).toBe(3 * 36);
+    expect(glass.geometry.index.count).toBe(36);
+    expect(glass.geometry.parameters.depth).toBeCloseTo(0.035);
+    for (const mesh of [mounts, glass, caps]) {
+      expect(mesh.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(mesh.frustumCulled).toBe(false);
+      expect(mesh.receiveShadow).toBe(false);
+    }
+    expect(mounts.material).toBe(caps.material);
+    const cageBounds = new THREE.Box3()
+      .setFromBufferAttribute(mounts.geometry.getAttribute('position'));
+    const capBounds = new THREE.Box3()
+      .setFromBufferAttribute(caps.geometry.getAttribute('position'));
+    expect(cageBounds.min.x).toBeLessThan(-0.23);
+    expect(cageBounds.max.x).toBeGreaterThan(0.23);
+    expect(cageBounds.max.y + 1.68).toBeGreaterThan(2.16);
+    expect(cageBounds.min.y + 1.68).toBeGreaterThan(1.4);
+    expect(capBounds.max.y + 2.14).toBeGreaterThan(2.34);
+    expect(capBounds.min.y + 2.14).toBeGreaterThan(2.08);
+    expect(1.974 + cageBounds.max.z).toBeLessThan(2);
+    expect(1.974 + capBounds.max.z).toBeLessThan(2);
     const directions = { east: [1, 0], west: [-1, 0], north: [0, -1], south: [0, 1] };
     for (const [index, lamp] of lamps.entries()) {
       const [dx, dy] = directions[lamp.side];
@@ -789,7 +813,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     // Lantern depth stays within the 4m solid cell, not the walkable street.
     expect(1.974 + glass.geometry.parameters.depth / 2).toBeLessThan(2);
     expect(1.974 + glass.geometry.parameters.depth / 2).toBeGreaterThan(1.974 + 0.012 / 2); // Outside limewash surface.
-    expect(1.974 + caps.geometry.parameters.depth / 2).toBeLessThan(2);
+    expect(1.974 + capBounds.max.z).toBeLessThan(2);
     // Street-wall runs of varying sizes now read as several houses instead of
     // one flat-topped fortification. Roofs share a six-triangle base mesh.
     const roofRuns = swordhavenFirstBook.landscape.roofRuns;

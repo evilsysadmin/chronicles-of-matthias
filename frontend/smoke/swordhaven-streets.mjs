@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'juliet', 'laundry', 'roofline', 'chimney']) {
+      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -50,6 +50,10 @@ try {
           'Four walkable residential passages should carry batched overhead lines and folded cloth');
         assert.equal(result.laundryMobileFraming, 'true',
           'The dedicated clothesline view must include every folded sheet in the mobile frustum');
+        assert.equal(result.wroughtIronLanterns, 'true',
+          'Three wall sconces must have iron cages, gabled hoods and amber glass in their original batches');
+        assert.equal(result.lanternMobileFraming, 'true',
+          'The portrait lantern shot must contain the whole genuine iron-framed sconce');
         assert.equal(result.upperJulietGuards, 'true',
           'Eight south-facing upper windows need sparse wrought-iron Juliet guards with no street collision');
         assert.equal(result.julietMobileFraming, 'true',

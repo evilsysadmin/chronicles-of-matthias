@@ -494,15 +494,56 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
   const amber = material(0xf2b967, {
     emissive: 0x98521b, emissiveIntensity: 0.7, roughness: 0.36,
   });
-  const mounts = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.22, 0.95, 0.035), iron, valid.length,
-  );
+  // Keep the same THREE instanced batches and placement transforms, but
+  // replace flat orange rectangles with readable wrought-iron casements:
+  // side stiles, upper/lower rails, a fine mullion and a small lower finial.
+  // Every vertex stays within the existing '#' cell (outward <2.0m).
+  const cageParts = [];
+  const plate = new THREE.BoxGeometry(0.13, 0.78, 0.014);
+  plate.translate(0, 0.12, -0.026);
+  cageParts.push(plate);
+  for (const side of [-1, 1]) {
+    const stile = new THREE.BoxGeometry(0.050, 0.53, 0.012);
+    stile.translate(side * 0.22, 0.20, 0.013);
+    cageParts.push(stile);
+  }
+  for (const y of [-0.075, 0.47]) {
+    const crossRail = new THREE.BoxGeometry(0.49, 0.053, 0.012);
+    crossRail.translate(0, y, 0.013);
+    cageParts.push(crossRail);
+  }
+  const mullion = new THREE.BoxGeometry(0.035, 0.47, 0.012);
+  mullion.translate(0, 0.20, 0.013);
+  cageParts.push(mullion);
+  const midRail = new THREE.BoxGeometry(0.45, 0.033, 0.012);
+  midRail.translate(0, 0.19, 0.013);
+  cageParts.push(midRail);
+  const finial = new THREE.BoxGeometry(0.075, 0.075, 0.017);
+  finial.rotateZ(Math.PI / 4);
+  finial.translate(0, -0.18, 0);
+  cageParts.push(finial);
+  const cageGeometry = mergeGeometries(cageParts, false);
+  cageParts.forEach(part => part.dispose());
+  if (!cageGeometry) throw new Error('Swordhaven lantern cage geometry could not be merged');
+  const mounts = new THREE.InstancedMesh(cageGeometry, iron, valid.length);
+
+  // Old amber emission is unchanged: no new point light or shadow budget.
   const glass = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.38, 0.46, 0.035), amber, valid.length,
   );
-  const caps = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.54, 0.1, 0.035), iron, valid.length,
-  );
+  // The peaked, two-rafter oak/iron hood is a single silhouette drawn through
+  // the original cap InstancedMesh, not a separate object for each sconce.
+  const capParts = [new THREE.BoxGeometry(0.59, 0.10, 0.035)];
+  for (const side of [-1, 1]) {
+    const rafter = new THREE.BoxGeometry(0.37, 0.075, 0.034);
+    rafter.rotateZ(-side * 0.45);
+    rafter.translate(side * 0.155, 0.13, 0);
+    capParts.push(rafter);
+  }
+  const capGeometry = mergeGeometries(capParts, false);
+  capParts.forEach(part => part.dispose());
+  if (!capGeometry) throw new Error('Swordhaven lantern cap geometry could not be merged');
+  const caps = new THREE.InstancedMesh(capGeometry, iron, valid.length);
   const dummy = new THREE.Object3D();
   valid.forEach(({ x, y, dx, dy, yaw }, i) => {
     const [wx, wz] = gridToWorld(x, y, center);
@@ -526,6 +567,8 @@ function addSettlementWallLanterns(town, { grid, blocked, center, placements }) 
     mesh.name = name;
     mesh.castShadow = false;
     mesh.receiveShadow = false;
+    mesh.frustumCulled = false; // The three fixtures are distant instances.
+    mesh.userData.chroniclesDecorativeOnly = true;
     town.add(mesh);
   }
 }
