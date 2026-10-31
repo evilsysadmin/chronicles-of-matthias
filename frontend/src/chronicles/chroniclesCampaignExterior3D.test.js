@@ -531,7 +531,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(doors.count).toBeLessThan(frames.count / 2);
     expect(doorFrames.geometry.index.count).toBe(4 * 36);
     expect(doorFrames.material.color.getHex()).not.toBe(doors.material.color.getHex());
-    expect(1.988 + doorFrames.geometry.boundingBox?.max.z || 1.997).toBeLessThan(2);
+    const doorFrameBounds = new THREE.Box3()
+      .setFromBufferAttribute(doorFrames.geometry.getAttribute('position'));
+    expect(1.988 + doorFrameBounds.max.z).toBeLessThan(2);
     const doorMatrix = new THREE.Matrix4();
     const doorPosition = new THREE.Vector3();
     const orientation = new THREE.Quaternion();
