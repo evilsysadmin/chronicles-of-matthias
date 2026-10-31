@@ -2,6 +2,7 @@ import { APP_BUILD_ID } from '../release.js';
 import { normalizeBuildSha } from '../releaseManifest.js';
 
 export const CHRONICLES_ADMIN_CHANGELOG_LIMIT = 20;
+export const CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES = 5;
 const REPOSITORY = 'evilsysadmin/chronicles-of-matthias';
 const COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/i;
 
@@ -61,17 +62,37 @@ export function chroniclesVisibleAdminCommits(entries, showAll = false) {
   return showAll ? entries : entries.filter((entry) => chroniclesAdminCommitCategory(entry?.title).userFacing);
 }
 
+// Keep the visible order and don't render an entry twice if the remote
+// repository changes while an administrator browses older pages.
+export function chroniclesMergeAdminCommits(existing, older) {
+  const seen = new Set();
+  return [...(Array.isArray(existing) ? existing : []), ...(Array.isArray(older) ? older : [])]
+    .filter((item) => {
+      if (!item?.sha || seen.has(item.sha)) return false;
+      seen.add(item.sha);
+      return true;
+    });
+}
+
 export async function chroniclesFetchAdminChangelog({
-  buildId = APP_BUILD_ID, fetchImpl = globalThis.fetch, signal,
+  buildId = APP_BUILD_ID, fetchImpl = globalThis.fetch, signal, page = 1,
 } = {}) {
   const sha = chroniclesAdminChangelogBuildSha(buildId);
   if (!sha) throw new Error('Esta compilación no incluye un SHA verificable.');
-  const url = `https://api.github.com/repos/${REPOSITORY}/commits?sha=${sha}&per_page=${CHRONICLES_ADMIN_CHANGELOG_LIMIT}`;
+  if (!Number.isInteger(page) || page < 1 || page > CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES) {
+    throw new Error('Página de historial no válida.');
+  }
+  const url = `https://api.github.com/repos/${REPOSITORY}/commits?sha=${sha}&per_page=${CHRONICLES_ADMIN_CHANGELOG_LIMIT}&page=${page}`;
   const response = await fetchImpl(url, {
     method: 'GET',
     headers: { Accept: 'application/vnd.github+json' },
     signal,
   });
   if (!response?.ok) throw new Error('GitHub no ha permitido consultar el historial. Inténtalo más tarde.');
-  return chroniclesNormalizeAdminCommits(await response.json());
+  const payload = await response.json();
+  const entries = chroniclesNormalizeAdminCommits(payload);
+  return {
+    entries,
+    hasMore: payload.length === CHRONICLES_ADMIN_CHANGELOG_LIMIT && page < CHRONICLES_ADMIN_CHANGELOG_MAX_PAGES,
+  };
 }
