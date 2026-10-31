@@ -45,7 +45,7 @@
 .chronicles-quick-status__table { display: grid; padding: 8px; gap: 4px; }
 .chronicles-quick-status__table > [role="row"] {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1.6fr) 34px 70px 64px 38px minmax(0, 1.3fr) 66px;
+  grid-template-columns: 26px minmax(0, 1.6fr) 70px 64px 38px minmax(0, 1.3fr) 66px;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -92,7 +92,7 @@
   .chronicles-quick-status__close { width: 34px; height: 34px; }
   .chronicles-quick-status__table { padding: 4px 6px; gap: 2px; }
   .chronicles-quick-status footer { padding: 4px 10px 6px; }
-  .chronicles-quick-status__table > [role="row"] { grid-template-columns: 20px minmax(0, 1fr) 28px 58px 52px 30px 56px; gap: 6px; padding: 5px 6px; }
+  .chronicles-quick-status__table > [role="row"] { grid-template-columns: 20px minmax(0, 1fr) 58px 52px 30px 56px; gap: 6px; padding: 5px 6px; }
   .chronicles-quick-status__table .is-weapon { display: none; }
   .chronicles-quick-status__row { font-size: .9rem; }
 }
