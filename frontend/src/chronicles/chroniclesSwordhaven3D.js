@@ -1690,9 +1690,12 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // turret. All pieces sit above the authored solid building footprint.
     // Real glazing needs an open frame: the previous solid timber box
     // obscured the panes and read as an opaque green roof cube from the street.
-    const herbalGlass = material(0xa0cbb4, {
-      emissive: 0x12372a, emissiveIntensity: 0.12, metalness: 0.04,
-      roughness: 0.27, transparent: true, opacity: 0.58,
+    // Clearer, paler glazing lets the actual terracotta and foliage read
+    // through the roof instead of flattening the conservatory into a green box.
+    // Keep depth writes disabled so the interior remains visible on mobile.
+    const herbalGlass = material(0xc1e2d2, {
+      emissive: 0x0d2b24, emissiveIntensity: 0.06, metalness: 0.04,
+      roughness: 0.19, transparent: true, opacity: 0.42,
       depthWrite: false, side: THREE.DoubleSide,
     });
     const herbarium = new THREE.Group();
