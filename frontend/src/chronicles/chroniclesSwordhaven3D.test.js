@@ -498,7 +498,10 @@ describe('Swordhaven modular real-time 3D', () => {
       expect(returns.every(stone => stone.material === piers[0].material
         && stone.geometry.parameters.depth > piers[0].geometry.parameters.depth
         && stone.position.z > piers[0].position.z)).toBe(true);
-      expect(hearth.position.y).toBeLessThan(coals.position.y + 2.40);
+      const coalMatrix = new THREE.Matrix4();
+      coals.getMatrixAt(0, coalMatrix);
+      const firstCoalY = new THREE.Vector3().setFromMatrixPosition(coalMatrix).y;
+      expect(hearth.position.y + hearth.geometry.parameters.height / 2).toBeLessThan(firstCoalY);
       expect(hearth.position.z).toBeGreaterThan(recess.position.z);
       expect(lip.position.z).toBeGreaterThan(hearth.position.z);
       expect(bay.position.z + lip.position.z + lip.geometry.parameters.depth / 2)
