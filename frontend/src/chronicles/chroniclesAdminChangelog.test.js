@@ -6,6 +6,8 @@ import {
   chroniclesAdminCommitUrl,
   chroniclesFetchAdminChangelog,
   chroniclesNormalizeAdminCommits,
+  chroniclesAdminCommitCategory,
+  chroniclesVisibleAdminCommits,
 } from './chroniclesAdminChangelog.js';
 
 const deployed = 'b654709d068424a979ff73d0fd3b2b072b2609b3';
@@ -42,6 +44,35 @@ describe('admin changelog of the deployed bundle', () => {
     expect(entries[1].date).toBeNull();
     expect(entries[1].url).toBe(chroniclesAdminCommitUrl(newer));
     expect(() => chroniclesNormalizeAdminCommits({ message: 'Rate limited' })).toThrow('historial válido');
+  });
+
+  it.each([
+    ['feat(Swordhaven): nuevas murallas (#100)', 'Novedad', true],
+    ['fix(MM3): daño correcto (#101)', 'Corrección', true],
+    ['perf: movimientos fluidos', 'Rendimiento', true],
+    ['feat!: cambia el combate', 'Novedad', true],
+    ['fix(ci): ajustar pipeline', 'Técnico', false],
+    ['feat(deps): nueva dependencia', 'Técnico', false],
+    ['perf(infra): optimizar deploy', 'Técnico', false],
+    ['refactor(tactics): extraer helpers', 'Técnico', false],
+    ['ci: checks', 'Técnico', false],
+    ['cualquier otro mensaje', 'Técnico', false],
+    [null, 'Técnico', false],
+  ])('classifies "%s" without inventing player-facing changes', (title, label, userFacing) => {
+    expect(chroniclesAdminCommitCategory(title)).toEqual({ label, userFacing });
+  });
+
+  it('keeps all historical commits reachable in the complete view', () => {
+    const commits = [
+      { sha: deployed, title: 'feat(MM3): nuevo equipo' },
+      { sha: newer, title: 'ci: optimizar workflows' },
+      { sha: 'a'.repeat(40), title: 'fix(api): problemas de guardado' },
+      { sha: 'b'.repeat(40), title: 'build(deps): bump react' },
+    ];
+    expect(chroniclesVisibleAdminCommits(commits)).toEqual([commits[0], commits[2]]);
+    expect(chroniclesVisibleAdminCommits(commits, true)).toEqual(commits);
+    expect(chroniclesVisibleAdminCommits(null, true)).toEqual([]);
+    expect(chroniclesVisibleAdminCommits(commits.slice(1, 2))).toEqual([]);
   });
 
   it('queries only history reachable from this build, with no unauthenticated fallback to HEAD', async () => {
