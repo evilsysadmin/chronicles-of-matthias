@@ -5,6 +5,8 @@ import {
   chroniclesAdminChangelogBuildSha,
   chroniclesAdminChangelogUrl,
   chroniclesFetchAdminChangelog,
+  chroniclesAdminCommitCategory,
+  chroniclesVisibleAdminCommits,
 } from '../chronicles/chroniclesAdminChangelog.js';
 
 function commitDate(date) {
@@ -18,6 +20,7 @@ export default function ChroniclesAdminChangelog() {
   const [entries, setEntries] = useState(null);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!buildSha) return undefined;
@@ -42,6 +45,8 @@ export default function ChroniclesAdminChangelog() {
   }, [buildSha, retry]);
 
   const historyUrl = chroniclesAdminChangelogUrl(buildSha);
+  const news = chroniclesVisibleAdminCommits(entries);
+  const visible = chroniclesVisibleAdminCommits(entries, showAll);
 
   return (
     <section className="chronicles-admin-changelog" aria-label="Cambios de esta versión" data-chronicles-admin-changelog>
@@ -49,7 +54,7 @@ export default function ChroniclesAdminChangelog() {
         Versión cargada: <strong>{APP_RELEASE}</strong> · build <code>{buildSha?.slice(0, 12) || 'sin SHA'}</code>
       </p>
       <p className="chronicles-admin-changelog__intro">
-        Últimos {CHRONICLES_ADMIN_CHANGELOG_LIMIT} commits incluidos hasta el código que tienes abierto.
+        Resumen de los últimos {CHRONICLES_ADMIN_CHANGELOG_LIMIT} commits incluidos hasta el código que tienes abierto.
         Las fechas son las de los commits, no las del despliegue. No aparecen cambios pendientes en main.
       </p>
       {!buildSha ? (
@@ -67,14 +72,32 @@ export default function ChroniclesAdminChangelog() {
           {!error && entries === null && <p role="status">Consultando cambios de esta versión…</p>}
           {!error && entries?.length === 0 && <p>No hay commits disponibles para este build.</p>}
           {!error && entries?.length > 0 && (
-            <ol className="chronicles-admin-changelog__entries">
-              {entries.map((entry) => (
-                <li key={entry.sha}>
-                  <a href={entry.url} target="_blank" rel="noopener noreferrer">{entry.title}</a>
-                  <small>{commitDate(entry.date)} · <code>{entry.sha.slice(0, 9)}</code></small>
-                </li>
-              ))}
-            </ol>
+            <>
+              <div className="chronicles-admin-changelog__filters" role="group" aria-label="Filtrar cambios">
+                <button type="button" aria-pressed={!showAll} onClick={() => setShowAll(false)}>
+                  Novedades ({news.length})
+                </button>
+                <button type="button" aria-pressed={showAll} onClick={() => setShowAll(true)}>
+                  Todos los commits ({entries.length})
+                </button>
+              </div>
+              {!visible.length ? (
+                <p role="status">No hay novedades clasificables en estos {entries.length} commits.
+                  Consulta «Todos los commits» para ver los cambios técnicos.</p>
+              ) : (
+                <ol className="chronicles-admin-changelog__entries">
+                  {visible.map((entry) => (
+                    <li key={entry.sha}>
+                      <div className="chronicles-admin-changelog__entry-title">
+                        <span className="chronicles-admin-changelog__category">{chroniclesAdminCommitCategory(entry.title).label}</span>
+                        <a href={entry.url} target="_blank" rel="noopener noreferrer">{entry.title}</a>
+                      </div>
+                      <small>{commitDate(entry.date)} · <code>{entry.sha.slice(0, 9)}</code></small>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </>
           )}
         </>
       )}
