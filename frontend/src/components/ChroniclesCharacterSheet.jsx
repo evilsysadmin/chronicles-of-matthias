@@ -178,9 +178,6 @@ export default function ChroniclesCharacterSheet({
   const effectiveAgility = chroniclesPartyInitiativeAgility(state, member);
   const mm3 = !tacticsMode && member.mm3 ? member.mm3 : null;
   const className = mm3?.classLabel || profile.className;
-  const spellcastingCompanion = !tacticsMode && onSelectMember
-    ? state.party?.find((companion) => companion.id !== member.id && chroniclesMemberSchool(companion))
-    : null;
   const relic = relicDetails(state, member.id);
   const inventory = (tacticsMode
     ? chroniclesInventoryEntries(state)
@@ -682,7 +679,16 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__identity">
             {tacticsMode && <span>EXPEDIENTE DE CAMPAÑA</span>}
             <h3 id="chronicles-character-sheet-title">{member.name}</h3>
-            <p>{className} · Nivel {progress.level}{mm3 ? '' : ` · ${profile.weaponName}`}</p>
+            {tacticsMode
+              ? <p>{className} · Nivel {progress.level} · {profile.weaponName}</p>
+              : <p className="chronicles-character-sheet__identity-meta">
+                  <span className="chronicles-character-sheet__class-label">{className}</span>
+                  <span className="chronicles-character-sheet__level" data-chronicles-character-level
+                    aria-label={`Nivel ${progress.level}`}>
+                    Nivel <strong>{progress.level}</strong>
+                  </span>
+                </p>
+            }
             {!tacticsMode && (
               <div className="chronicles-character-sheet__quick" aria-label="Recursos actuales">
                 <span data-resource="health">PV <b>{member.hp}/{member.maxHp}</b></span>
@@ -807,13 +813,7 @@ export default function ChroniclesCharacterSheet({
         {!tacticsMode && !chroniclesMemberSchool(member) && activeFolio === 'spells' && (
           <div className="chronicles-character-sheet__section chronicles-character-sheet__no-spells">
             <span>✧</span>
-            <p>Este personaje no practica ninguna escuela de magia.</p>
-            {spellcastingCompanion && (
-              <button type="button" className="chronicles-character-sheet__spell-companion"
-                onClick={() => onSelectMember(spellcastingCompanion.id)}>
-                Ver hechizos de {spellcastingCompanion.name} <span aria-hidden="true">›</span>
-              </button>
-            )}
+            <p>Este personaje no practica magia.</p>
           </div>
         )}
 
