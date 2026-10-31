@@ -1004,6 +1004,30 @@
       },
       "visualType": "signpost",
       "visualFacing": 2
+    },
+    {
+      "id": "swordhaven-endurance-crystal",
+      "kind": "pickup",
+      "x": 9,
+      "y": 14,
+      "label": "Cristal de la fortaleza · +1 Resistencia",
+      "mm3WorldStat": "endurance",
+      "when": [
+        {
+          "key": "swordhavenEnduranceCrystalClaimed",
+          "falsy": true
+        }
+      ],
+      "action": {
+        "effects": [
+          {
+            "type": "set",
+            "key": "swordhavenEnduranceCrystalClaimed",
+            "value": true
+          }
+        ],
+        "message": "El cristal pierde su fulgor tras entregar su poder."
+      }
     }
   ],
   "treasures": [
