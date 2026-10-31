@@ -442,8 +442,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.98,
   }) : null;
+  // The armourer's blue-grey dressed stone should read as a fortified
+  // arsenal at street distance, rather than sharing the temple's neutral
+  // ashlar. Cached masonry albedo and relief add no textures or geometry.
+  const armorAshlar = isArmor ? material(0x8da5b5, {
+    map: swordhavenSurfaceTexture('masonry'),
+    normalMap: swordhavenSurfaceNormalTexture('masonry'),
+    normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.95,
+  }) : null;
   const wallMaterial = guildStone || tavernBrick || forgeMasonry || apothecaryStone || storeOchre
-    || watchAshlar || (isTemple || isArmor ? mats.stone : mats.plaster);
+    || watchAshlar || armorAshlar || (isTemple ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
@@ -480,7 +488,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const flatRoof = new THREE.Group();
     flatRoof.name = 'armor-flat-ashlar-roof';
     flatRoof.userData.chroniclesDecorativeOnly = true;
-    mesh(flatRoof, new THREE.BoxGeometry(width + 0.36, 0.24, depth + 0.82), mats.stone,
+    mesh(flatRoof, new THREE.BoxGeometry(width + 0.36, 0.24, depth + 0.82), armorAshlar,
       'armor-flat-roof-deck', [0, height + 0.08, 0], !coarse);
     mesh(flatRoof, new THREE.BoxGeometry(width + 0.55, 0.20, depth + 1.00), mats.stone,
       'armor-flat-roof-coping', [0, height + 0.22, 0], !coarse);
