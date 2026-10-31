@@ -33,6 +33,16 @@ describe('Swordhaven apothecary sage masonry', () => {
     expect(walls.material.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
     expect(botica.getObjectByName('roof-gable-1').material).toBe(walls.material);
     expect(botica.getObjectByName('roof-gable--1').material).toBe(walls.material);
+    // The herb house must not inherit the guild's violet roof or the
+    // provisions warehouse's cedar finish on desktop or touch.
+    for (const side of [-1, 1]) {
+      const roof = botica.getObjectByName('pitched-roof-' + side);
+      expect(roof.material.color.getHex()).toBe(0x5d8570);
+      expect(roof.material.map).toBe(swordhavenSurfaceTexture('roof'));
+      expect(roof.material.normalMap).toBe(swordhavenSurfaceNormalTexture('roof'));
+      expect(roof.material.color.getHex())
+        .not.toBe(store.getObjectByName('pitched-roof-' + side).material.color.getHex());
+    }
     expect(botica.getObjectByName('vertical-facade-post')).toBeFalsy();
     expect(botica.getObjectByName('diagonal-timber-brace')).toBeFalsy();
     expect(store.getObjectByName('vertical-facade-post')).toBeTruthy();
