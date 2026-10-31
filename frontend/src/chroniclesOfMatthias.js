@@ -1246,7 +1246,8 @@ export function chroniclesReduce(state, action) {
     if (!chroniclesUsesMM3Combat(state) || !state.initiative || !action?.memberId) return state;
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
     const member = state.party.find((hero) => hero.id === action.memberId && hero.hp > 0);
-    if (actor?.kind !== 'party' || actor.id !== action.memberId || !member) return state;
+    if (actor?.kind !== 'party' || actor.id !== action.memberId || !member
+      || state.combatBlock?.[member.id] === true) return state;
     return {
       ...state,
       turns: state.turns + 1,
