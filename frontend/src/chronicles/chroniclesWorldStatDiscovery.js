@@ -20,7 +20,7 @@ export function chroniclesMM3WorldStatOffer(state) {
   const stat = definition?.mm3WorldStat;
   const effect = definition?.action?.effects?.[0];
   if (definition?.kind !== 'pickup' || !CHRONICLES_MM3_STATS.includes(stat)
-    || definition.action.effects.length !== 1
+    || definition?.action?.effects?.length !== 1
     || effect?.type !== 'set' || effect.value !== true
     || !definition.when?.some((requirement) => requirement.key === effect.key && requirement.falsy === true)) return null;
   if (state.runProgression?.claimedWorldStatSources?.includes(definition.id)) return null;
