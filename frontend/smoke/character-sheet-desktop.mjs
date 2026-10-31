@@ -41,6 +41,41 @@ async function assertResourceContrast(sheet, resource) {
   }
 }
 
+async function assertReadableMM3Level(sheet, viewport) {
+  const painted = await sheet.evaluate((node) => {
+    const identity = node.querySelector('.chronicles-character-sheet__identity');
+    const level = node.querySelector('[data-chronicles-character-level]');
+    const header = node.querySelector('.chronicles-character-sheet__head');
+    const close = header?.querySelector('button[aria-label="Cerrar ficha"]');
+    if (!identity || !level || !close) return null;
+    const value = level.querySelector('strong');
+    const rect = level.getBoundingClientRect();
+    const identityRect = identity.getBoundingClientRect();
+    const closeRect = close.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    const css = getComputedStyle(level);
+    return {
+      label: level.getAttribute('aria-label'),
+      text: level.textContent.trim(),
+      number: value?.textContent.trim(),
+      fontSize: parseFloat(css.fontSize),
+      visible: css.visibility !== 'hidden' && css.display !== 'none' && rect.width > 0,
+      clipped: level.scrollWidth > level.clientWidth + 1,
+      insideIdentity: rect.left >= identityRect.left - 2 && rect.right <= identityRect.right + 2,
+      insideHeader: rect.top >= headerRect.top - 2 && rect.bottom <= headerRect.bottom + 2,
+      overlapsClose: rect.left < closeRect.right && rect.right > closeRect.left
+        && rect.top < closeRect.bottom && rect.bottom > closeRect.top,
+    };
+  });
+  assert.ok(painted && painted.visible && painted.fontSize >= 14
+    && painted.label === 'Nivel 1' && painted.number === '1'
+    && painted.text === 'Nivel 1'
+    && !painted.clipped && painted.insideIdentity && painted.insideHeader
+    && !painted.overlapsClose,
+  'The real MM3 level must be clearly visible, unclipped and never overlap close at '
+    + viewport + ': ' + JSON.stringify(painted));
+}
+
 async function assertNavigationHighlight(nav, expected) {
   const buttons = await nav.locator('button').evaluateAll((nodes) => nodes.map((node) => {
     const channels = (getComputedStyle(node).backgroundColor.match(/[0-9]+/g) || [])
@@ -119,6 +154,7 @@ try {
       await page.goto(url, { waitUntil: 'networkidle' });
       const sheet = page.locator('[data-chronicles-folio="v2"]');
       await sheet.waitFor({ state: 'visible' });
+      await assertReadableMM3Level(sheet, width + 'x' + height);
       const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
       const metrics = await sheet.evaluate((element) => {
         const menu = element.querySelector('.chronicles-character-sheet__tabs').getBoundingClientRect();
@@ -977,6 +1013,7 @@ try {
       await page.goto(url, { waitUntil: 'load' });
       const sheet = page.locator('[data-chronicles-folio="v2"]');
       await sheet.waitFor({ state: 'visible' });
+      await assertReadableMM3Level(sheet, width + 'x' + height);
       const geometry = await sheet.evaluate((node) => {
         const head = node.querySelector('.chronicles-character-sheet__head').getBoundingClientRect();
         const dock = node.querySelector('.chronicles-character-sheet__party-dock').getBoundingClientRect();

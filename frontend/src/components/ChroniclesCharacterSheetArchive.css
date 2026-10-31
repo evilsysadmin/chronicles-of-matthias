@@ -373,36 +373,6 @@
   }
 }
 
-/* Desktop-only shortcut from a noncaster's honest empty spellbook to a
-   genuine party caster. Do not change the separate mobile folio. */
-.chronicles-character-sheet__spell-companion { display: none; }
-
-@media (min-width: 851px) and (min-height: 581px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__spell-companion {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 44px;
-    margin: 4px auto 0;
-    padding: 9px 15px;
-    border: 1px solid #895d2c;
-    border-radius: 3px;
-    background: #e4c38e;
-    color: #3c2813;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__spell-companion:hover {
-    background: #f4dcaf;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__spell-companion:focus-visible {
-    outline: 3px solid #5b3818;
-    outline-offset: 2px;
-  }
-}
-
 /* At 1024-wide desktop, a single column hides most MM3 attributes below
    the fold. Keep two readable columns with restrained ink and balanced rows.
    Under 1000 px retain the previously validated one-column safe fallback. */
