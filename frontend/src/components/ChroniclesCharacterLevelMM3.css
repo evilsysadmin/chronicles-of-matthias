@@ -11,7 +11,7 @@
   line-height: 1.35;
 }
 .chronicles-character-sheet--mm3 .chronicles-character-sheet__identity-meta .chronicles-character-sheet__class-label {
-  color: #e0d7c3;
+  color: inherit;
   font-size: clamp(12px, 1.15vw, 14px);
   letter-spacing: .015em;
   text-transform: none;
@@ -21,8 +21,8 @@
   align-items: baseline;
   gap: 6px;
   padding-left: 10px;
-  border-left: 1px solid #bdab82;
-  color: #f4e6c9;
+  border-left: 1px solid currentColor;
+  color: inherit;
   font-size: clamp(14px, 1.3vw, 16px);
   font-weight: 600;
   letter-spacing: .01em;
@@ -31,7 +31,7 @@
   white-space: nowrap;
 }
 .chronicles-character-sheet--mm3 .chronicles-character-sheet__level strong {
-  color: #ffe3a3;
+  color: inherit;
   font-size: 1.22em;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
