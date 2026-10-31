@@ -807,6 +807,61 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   }
   mesh(root, new THREE.SphereGeometry(0.08, 8, 6), mats.gold,
     'door-handle', [0.58, 1.45, facadeZ + 0.29]);
+  // The provisions warehouse has two heavy cedar leaves instead of the
+  // generic merchant door. Batched iron braces and plank seams give it a
+  // loading-bay identity at street distance. All relief is presentation-only:
+  // the original shop door, map collision and interaction remain unchanged.
+  if (isStore) {
+    const entrance = new THREE.Group();
+    entrance.name = 'store-cedar-loading-doors';
+    entrance.userData.chroniclesDecorativeOnly = true;
+    const cedar = material(0x785537, { roughness: 0.98 });
+    const seamWood = material(0x493522, { roughness: 1 });
+    for (const side of [-1, 1]) {
+      mesh(entrance, new THREE.BoxGeometry(0.82, 2.98, 0.105), cedar,
+        'store-door-cedar-leaf', [side * 0.42, 1.56, facadeZ + 0.35], !coarse);
+    }
+    const seams = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.035, 2.77, 0.042), seamWood, 6);
+    seams.name = 'store-door-cedar-plank-seams';
+    seams.castShadow = !coarse;
+    const seam = new THREE.Object3D();
+    for (const [i, x] of [-0.69, -0.43, -0.17, 0.17, 0.43, 0.69].entries()) {
+      seam.position.set(x, 1.56, facadeZ + 0.426);
+      seam.updateMatrix();
+      seams.setMatrixAt(i, seam.matrix);
+    }
+    seams.instanceMatrix.needsUpdate = true;
+    entrance.add(seams);
+    const iron = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.105, 2.23, 0.065), mats.steel, 2);
+    iron.name = 'store-door-cross-braces';
+    iron.castShadow = !coarse;
+    const brace = new THREE.Object3D();
+    for (const [i, side] of [-1, 1].entries()) {
+      brace.position.set(side * 0.42, 1.56, facadeZ + 0.465);
+      brace.rotation.z = side * 0.33;
+      brace.updateMatrix();
+      iron.setMatrixAt(i, brace.matrix);
+    }
+    iron.instanceMatrix.needsUpdate = true;
+    entrance.add(iron);
+    const pulls = new THREE.InstancedMesh(
+      new THREE.TorusGeometry(0.10, 0.025, 6, 12), mats.steel, 2);
+    pulls.name = 'store-door-iron-ring-pulls';
+    const pull = new THREE.Object3D();
+    for (const [i, side] of [-1, 1].entries()) {
+      pull.position.set(side * 0.14, 1.40, facadeZ + 0.50);
+      pull.updateMatrix();
+      pulls.setMatrixAt(i, pull.matrix);
+    }
+    pulls.instanceMatrix.needsUpdate = true;
+    entrance.add(pulls);
+    mesh(entrance, new THREE.BoxGeometry(2.10, 0.27, 0.30), mats.timber,
+      'store-door-oak-loading-lintel', [0, 3.22, facadeZ + 0.31], !coarse);
+    entrance.traverse(part => { part.userData.chroniclesDecorativeOnly = true; });
+    root.add(entrance);
+  }
   // The temple is dressed stone, not another flower-box merchant frontage.
   // Two pointed blue-glass lancets replace the shared amber shop windows.
   // Their raised tracery is decorative only: doors, map cells and collision
