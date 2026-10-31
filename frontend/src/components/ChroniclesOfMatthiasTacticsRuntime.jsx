@@ -37,6 +37,7 @@ import {
   chroniclesTacticsResolvePlayerAction,
 } from '../chroniclesTacticsTurnMode.js';
 import { chroniclesPartyMemberPosition } from '../chroniclesPartyFootprint.js';
+import { tacticsExecuteMove, tacticsExecuteAttack } from '../tactics/tacticsActionDispatch.js';
 import { chroniclesAdvanceCombatInitiative } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
 import {
@@ -73,6 +74,19 @@ import { chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBin
 import './ChroniclesOfMatthiasTactics.css';
 import './ChroniclesOfMatthiasProgression.css';
 import './ChroniclesActionForecast.css';
+
+// Bind the portable action dispatch to the existing authoritative Chronicles rules.
+// Leave UI throttling and progression/checkpoint commit ownership in React.
+const tacticsActionPorts = Object.freeze({
+  partyCanAct: chroniclesTacticsPartyCanAct,
+  currentActor: chroniclesTacticsCurrentActor,
+  memberPosition: chroniclesPartyMemberPosition,
+  legalMoves: chroniclesTacticsLegalMoves,
+  move: chroniclesTacticsMove,
+  targets: chroniclesTacticsTargets,
+  attack: chroniclesTacticsAttack,
+  resolveAction: chroniclesTacticsResolvePlayerAction,
+});
 
 const MOVEMENT = Object.freeze({
   ArrowUp: Object.freeze({ dx: 0, dy: -1 }),
@@ -261,19 +275,12 @@ export default function ChroniclesOfMatthiasTactics({
     const freeExploration = current?.phase === 'explore' && !current?.initiative?.order?.length;
     const minimumGap = freeExploration ? 105 : 120;
     if (now - lastMoveAtRef.current < minimumGap) return undefined;
-    if (!chroniclesTacticsPartyCanAct(current)) return false;
-    const actor = chroniclesTacticsCurrentActor(current);
-    const memberId = actor?.kind === 'party' ? actor.id : null;
-    const origin = memberId
-      ? chroniclesPartyMemberPosition(current, memberId)
-      : { x: current.x, y: current.y };
-    const legal = chroniclesTacticsLegalMoves(current, memberId).find((move) => (
-      move.x === origin.x + dx && move.y === origin.y + dy
-    ));
-    if (!legal) return false;
-    const next = chroniclesTacticsMove(current, legal, memberId);
-    const resolved = chroniclesTacticsResolvePlayerAction(current, next);
-    const committed = commitState(resolved, { actorMemberId: memberId, actionKind: 'move' });
+    const result = tacticsExecuteMove(current, dx, dy, tacticsActionPorts);
+    if (!result) return false;
+    const committed = commitState(result.next, {
+      actorMemberId: result.actorMemberId,
+      actionKind: result.actionKind,
+    });
     if (committed) lastMoveAtRef.current = now;
     return committed;
   }, [commitState]);
@@ -315,21 +322,14 @@ export default function ChroniclesOfMatthiasTactics({
   const attackEnemy = useCallback((enemyId = null) => {
     const now = performance.now();
     if (now - lastAttackAtRef.current < 260) return;
-    const current = stateRef.current;
-    if (!chroniclesTacticsPartyCanAct(current)) return;
-    const actor = chroniclesTacticsCurrentActor(current);
-    const memberId = actor?.kind === 'party' ? actor.id : selectedMemberRef.current;
-    const targets = chroniclesTacticsTargets(current, memberId);
-    const target = enemyId
-      ? targets.find((candidate) => candidate.enemyId === enemyId)
-      : targets[0];
-    if (!target) return;
-    const next = chroniclesTacticsAttack(current, memberId, target.enemyId);
-    const resolved = chroniclesTacticsResolvePlayerAction(current, next, {
-      forceCombat: !current.initiative,
-      forceEnemyIds: [target.enemyId],
-    });
-    if (commitState(resolved, { actorMemberId: memberId, actionKind: 'attack' })) lastAttackAtRef.current = now;
+    const result = tacticsExecuteAttack(
+      stateRef.current, enemyId, selectedMemberRef.current, tacticsActionPorts,
+    );
+    if (!result) return;
+    if (commitState(result.next, {
+      actorMemberId: result.actorMemberId,
+      actionKind: result.actionKind,
+    })) lastAttackAtRef.current = now;
   }, [commitState]);
 
   const useClassAbility = useCallback(() => {
