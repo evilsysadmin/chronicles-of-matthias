@@ -2123,6 +2123,27 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     mesh(bay, new THREE.BoxGeometry(0.18, 0.30, 0.11), mats.steel,
       'forge-workshop-iron-keystone', [0, 3.60, 0.23]);
     root.add(bay);
+    // A projecting, soot-patinated iron hood makes the active smithing bay
+    // recognisable from street level, unlike the armorer's stone display bays.
+    // Its narrow span stays to the right of the engraved shop name; the high
+    // overhang and supports are decorative and inside existing blocked cells.
+    const hood = new THREE.Group();
+    hood.name = 'forge-workshop-iron-hood';
+    hood.userData.chroniclesDecorativeOnly = true;
+    hood.position.set(width * 0.33 + 0.13, 4.08, facadeZ + 0.90);
+    const hoodIron = material(0x514940, { roughness: 0.88, metalness: 0.24 });
+    const hoodRoof = mesh(hood, new THREE.BoxGeometry(2.10, 0.16, 1.55),
+      hoodIron, 'forge-workshop-hood-patinated-roof', [0, 0, 0], !coarse);
+    hoodRoof.rotation.x = 0.22;
+    mesh(hood, new THREE.BoxGeometry(2.12, 0.12, 0.13), mats.steel,
+      'forge-workshop-hood-iron-drip-edge', [0, -0.19, 0.76], !coarse);
+    for (const side of [-1, 1]) {
+      const bracket = mesh(hood, new THREE.BoxGeometry(0.13, 0.13, 1.08),
+        mats.steel, 'forge-workshop-hood-iron-bracket',
+        [side * 0.87, -0.39, -0.28], !coarse);
+      bracket.rotation.x = -0.50;
+    }
+    root.add(hood);
     // A tall, iron-capped masonry flue identifies the weaponsmith from the
     // street. Its base intersects the solid roof; no smoke particles/lights.
     const stack = new THREE.Group();
