@@ -7,6 +7,8 @@ import {
 } from '../chroniclesOfMatthias.js';
 import { CHRONICLES_DIRECTION_KEYS } from './chroniclesKeyboardBindings.js';
 import { chroniclesChooseEnemyStep, chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 const MOVES = ['forward', 'backward', 'strafe-left', 'strafe-right'];
 const ROTATIONS = ['turn-left', 'turn-right'];
@@ -103,6 +105,33 @@ describe('Chronicles MM3 stationary party during combat', () => {
       { type: 'move', enemyId: enemy.id },
     ]);
     expect([acted.x, acted.y]).toEqual([1, 5]);
+  });
+
+  it('keeps movement and rotation locked after restoring a real MM3 initiative checkpoint', () => {
+    const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const goblin = chroniclesActiveEnemies(base).find(({ id }) => id === 'sewers-goblin-west');
+    expect(goblin).toBeTruthy();
+    const prepared = {
+      ...base, x: 1, y: 1, direction: 2,
+      ...Object.fromEntries(chroniclesActiveEnemies(base)
+        .filter(({ id }) => id !== goblin.id).map(({ hpKey }) => [hpKey, 0])),
+      enemyPositions: { [goblin.id]: { x: 1, y: 2 } },
+    };
+    const fight = chroniclesStartInitiativeCombat(prepared, [goblin], {
+      forceEnemyIds: [goblin.id], random: () => 0,
+    });
+    expect(fight.phase).toBe('combat');
+    const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(fight, 1)));
+    const resumed = chroniclesApplyRunCheckpoint(
+      createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' }), payload,
+    );
+    expect(resumed.phase).toBe('combat');
+    expect(resumed.initiative).toEqual(fight.initiative);
+    expect([resumed.x, resumed.y, resumed.direction]).toEqual([1, 1, 2]);
+    for (const action of [...MOVES, ...ROTATIONS]) {
+      expect(chroniclesReduce(resumed, action)).toBe(resumed);
+      expect(chroniclesReduce(resumed, { type: action })).toBe(resumed);
+    }
   });
 
   it('does not lock out non-travel combat actions', () => {
