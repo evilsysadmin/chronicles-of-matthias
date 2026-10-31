@@ -67,6 +67,49 @@ async function assertNavigationHighlight(nav, expected) {
 }
 
 try {
+  // With browser zoom, a 1280px-wide desktop can have only 690 CSS pixels
+  // of height. Before the fix, the full-width V3 ledger fell back to the
+  // archive's half-empty two-column folio despite ample horizontal space.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 690 } });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(url, { waitUntil: 'networkidle' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      const metrics = await sheet.evaluate((node) => {
+        const content = node.querySelector('[data-chronicles-chapter="record"]');
+        const stats = content.querySelector('.chronicles-character-sheet__section--core-stats');
+        const battle = content.querySelector('.chronicles-character-sheet__vitals');
+        const ledger = content.querySelector('.chronicles-character-sheet__mm3-stats');
+        const frame = node.getBoundingClientRect();
+        return {
+          contentWidth: content.getBoundingClientRect().width,
+          statsWidth: stats.getBoundingClientRect().width,
+          battleWidth: battle.getBoundingClientRect().width,
+          columns: getComputedStyle(ledger).gridTemplateColumns.split(' ').filter(Boolean).length,
+          clippedLabels: [...ledger.querySelectorAll('[data-stat] span, [data-stat] small')]
+            .filter((text) => text.scrollWidth > text.clientWidth + 2)
+            .map((text) => text.textContent.trim()),
+          frameLeft: frame.left,
+          frameRight: frame.right,
+        };
+      });
+      assert.ok(metrics.contentWidth >= 850
+        && metrics.statsWidth >= metrics.contentWidth - 40
+        && metrics.battleWidth >= metrics.contentWidth - 40,
+      'Zoomed desktop Status must fill the available horizontal workspace: ' + JSON.stringify(metrics));
+      assert.equal(metrics.columns, 4,
+        'Zoomed desktop must keep the four readable MM3 attribute columns');
+      assert.deepEqual(metrics.clippedLabels, [],
+        'Zoomed desktop must not clip attribute names or descriptions');
+      assert.ok(metrics.frameLeft <= 12 && metrics.frameRight >= 1268,
+        'The decorated MM3 frame must reach the safe-area viewport edges: ' + JSON.stringify(metrics));
+      await page.screenshot({ path: 'smoke-character-sheet-status-zoomed-1280.png' });
+      console.log('CHRONICLES_CHARACTER_STATUS_ZOOMED_OK 1280x690');
+    } finally {
+      await ctx.close();
+    }
+  }
   for (const [width, height] of [[1024,768],[1280,800],[1440,900],[1760,870]]) {
     const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
