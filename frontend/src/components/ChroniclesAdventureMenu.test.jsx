@@ -39,6 +39,23 @@ describe('Chronicles adventure menu hotkey affordances', () => {
   });
 
 
+  it('shows admin tools only after server verification and permits an explicit retry after a timeout', () => {
+    const admin = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      isAdmin adminStatus="verified" />);
+    expect(admin).toContain('data-chronicles-menu-admin');
+    expect(admin).toContain('Modo admin');
+    expect(admin).not.toContain('data-chronicles-menu-admin-retry');
+    const unknown = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      adminStatus="unavailable" onRetryAdmin={() => {}} />);
+    expect(unknown).not.toContain('data-chronicles-menu-admin>');
+    expect(unknown).toContain('data-chronicles-menu-admin-retry');
+    expect(unknown).toContain('Reintentar verificación de permisos');
+    const denied = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} adminStatus="denied" />);
+    expect(denied).not.toContain('data-chronicles-menu-admin');
+    const checking = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} adminStatus="checking" />);
+    expect(checking).not.toContain('data-chronicles-menu-admin');
+  });
+
   it('explains combat restrictions and disables all save actions, not loading or exiting without saving', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} inCombat />);
     expect(html).toContain('data-chronicles-combat-save-notice');
