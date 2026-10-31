@@ -51,7 +51,7 @@ const TECHNICAL_CHANGE = Object.freeze({ label: 'Técnico', userFacing: false })
 
 export function chroniclesAdminCommitCategory(title) {
   if (typeof title !== 'string') return TECHNICAL_CHANGE;
-  const match = /^(feat|fix|perf)(?:\\(([^)]+)\\))?!?:\\s/i.exec(title.trim());
+  const match = /^(feat|fix|perf)(?:\(([^)]+)\))?!?:\s/i.exec(title.trim());
   if (!match || (match[2] && INTERNAL_SCOPES.test(match[2]))) return TECHNICAL_CHANGE;
   return CHANGE_TYPES[match[1].toLowerCase()] || TECHNICAL_CHANGE;
 }
