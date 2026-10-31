@@ -529,6 +529,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     expect(domesticPanels.count).toBeGreaterThan(4);
     expect(domesticPanels.count).toBeLessThan(frames.count / 2);
+    // Every domestic opening removes only its two formerly crossing braces.
+    expect(uprights.count + domesticPanels.count * 2).toBe(318);
     expect(doorFrames.geometry.index.count).toBe(4 * 36);
     expect(doorFrames.material.color.getHex()).not.toBe(domesticPanels.material.color.getHex());
     const doorFrameBounds = new THREE.Box3()
