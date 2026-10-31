@@ -66,6 +66,8 @@ try {
           'Seven Swordhaven terrace roofs must show coherent batched oak eaves, ridges and gable verges');
         assert.equal(result.premiumResidentialDormers, 'true',
           'Residential roof runs must have real raised dormers and roof windows without extra lighting or colliders');
+        assert.equal(result.readableDormerWindows, 'true',
+          'All residential dormers must have real oak casements and legible leaded glass from the streets');
         assert.equal(result.distinctGuildMasonry, 'true',
           'Guild must have its own slate masonry without merchant timberwork');
         assert.equal(result.distinctGuildButtresses, 'true',
