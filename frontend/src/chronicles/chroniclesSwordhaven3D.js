@@ -1003,6 +1003,57 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       diamondLead.instanceMatrix.needsUpdate = true;
       root.add(diamondLead);
 
+      if (isTavern) {
+        // Four substantial hinged oak shutters give the inn a recognisable
+        // street-level window silhouette instead of generic amber rectangles.
+        // They sit beside (never over) the existing panes, above the flower
+        // boxes and wholly on the solid facade. Three shared batches, no
+        // colliders, textures, lighting or interaction changes.
+        const shutters = new THREE.Group();
+        shutters.name = 'tavern-inn-oak-shutters';
+        shutters.userData.chroniclesDecorativeOnly = true;
+        const panels = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.43, 1.28, 0.10),
+          material(0x62432d, { roughness: 0.98 }), 4);
+        panels.name = 'tavern-oak-shutter-panel';
+        const hinges = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.36, 0.07, 0.05), mats.steel, 8);
+        hinges.name = 'tavern-shutter-iron-hinges';
+        const braces = new THREE.InstancedMesh(
+          new THREE.BoxGeometry(0.09, 1.12, 0.045), mats.timber, 4);
+        braces.name = 'tavern-shutter-oak-brace';
+        const shutter = new THREE.Object3D();
+        let panelIndex = 0;
+        for (const x of [-width * 0.33, width * 0.33]) {
+          for (const side of [-1, 1]) {
+            const sx = x + side * 0.99;
+            shutter.position.set(sx, 2.75, facadeZ + 0.40);
+            shutter.rotation.set(0, side * 0.22, 0);
+            shutter.updateMatrix();
+            panels.setMatrixAt(panelIndex, shutter.matrix);
+            shutter.position.z = facadeZ + 0.48;
+            shutter.rotation.z = side * 0.23;
+            shutter.updateMatrix();
+            braces.setMatrixAt(panelIndex, shutter.matrix);
+            shutter.rotation.z = 0;
+            for (const [strapIndex, dy] of [-0.43, 0.43].entries()) {
+              shutter.position.y = 2.75 + dy;
+              shutter.updateMatrix();
+              hinges.setMatrixAt(panelIndex * 2 + strapIndex, shutter.matrix);
+            }
+            panelIndex += 1;
+          }
+        }
+        for (const batch of [panels, hinges, braces]) {
+          batch.userData.chroniclesDecorativeOnly = true;
+          batch.castShadow = !coarse;
+          batch.receiveShadow = true;
+          batch.instanceMatrix.needsUpdate = true;
+          shutters.add(batch);
+        }
+        root.add(shutters);
+      }
+
       if (isStore) {
         // The warehouse displays braced oak supply crates rather than the
         // inn's flowers. Two instanced batches on the existing raised sills;
