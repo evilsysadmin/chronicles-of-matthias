@@ -403,6 +403,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const isArmor = spec.serviceStyle === 'armor' || spec.id === 'swordhaven-armor';
   const isStore = spec.serviceStyle === 'store';
   const isWatch = spec.serviceStyle === 'watch';
+  // Authored coordinates, not random/session state, determine the four
+  // residential finishes. Reuse one cached stucco texture and normal map.
+  const homeStyle = spec.emblem === 'home'
+    ? ((spec.x * 7 + spec.y * 11) % 4 + 4) % 4 : null;
   const width = isTemple ? 9.0 : 8.1;
   const depth = isTavern ? 8.2 : 7.1;
   const height = isTemple ? 6.3 : isTavern ? 5.7 : 5.25;
@@ -469,8 +473,15 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
     normalScale: new THREE.Vector2(0.48, 0.48), roughness: 0.95,
   }) : null;
+  const homeStucco = homeStyle !== null ? mats.plaster.clone() : null;
+  if (homeStucco) homeStucco.color.setHex([
+    0xe5cfb4, // warm limestone limewash
+    0xc4ccb7, // weathered pale sage
+    0xd4b9ae, // clay-warmed plaster
+    0xd3c2a2, // golden aged stucco
+  ][homeStyle]);
   const wallMaterial = guildStone || tavernBrick || forgeMasonry || apothecaryStone || storeOchre
-    || watchAshlar || armorAshlar || (isTemple ? mats.stone : mats.plaster);
+    || watchAshlar || armorAshlar || homeStucco || (isTemple ? mats.stone : mats.plaster);
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
@@ -2657,7 +2668,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   // Decorative children have no colliders and do not affect NPC interactions.
   if (isTownHall || spec.emblem === 'home') {
     dressSwordhavenPremiumHouse(root, {
-      civic: isTownHall, width, height, facadeZ, mats, coarse,
+      civic: isTownHall, width, height, facadeZ, mats, coarse, homeStyle,
     });
   }
   // Homes carry no shop sign.
