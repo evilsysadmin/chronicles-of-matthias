@@ -7,7 +7,7 @@ import {
 import swordhaven from './maps/swordhaven-first-book.json';
 
 describe('Swordhaven tavern brick frontage', () => {
-  it.each([true, false])('uses narrow fired brick, not the forge's ashlar, with coarsePointer=%s', (coarsePointer) => {
+  it.each([true, false])('uses narrow fired brick, unlike the forge ashlar, with coarsePointer=%s', (coarsePointer) => {
     const scene = new THREE.Scene();
     const content = [...swordhaven.interactables, ...swordhaven.exits]
       .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y }, visible: true }));
