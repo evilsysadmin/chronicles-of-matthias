@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/evilsysadmin/chess-studio/backend-go/internal/presence"
+	"github.com/evilsysadmin/chess-studio/backend-go/internal/identityauth"
 )
 
 const (
@@ -110,7 +111,15 @@ func NewSession(cfg SessionConfig) (*SessionHandler, error) {
 
 // isAdmin mirrors main.is_admin.
 func (h *SessionHandler) isAdmin(username string) bool {
-	return h.allAdmins || h.admins[strings.ToLower(username)]
+	key := strings.ToLower(username)
+	// Central Identity tokens authenticate an immutable product profile but
+	// carry no roles. A legacy wildcard must never grant cross-product admin.
+	// Only a deliberately reviewed, exact profile-key allowlist can do so.
+	if identityauth.IsReservedProfileKey(key) {
+		_, valid := identityauth.SubjectForProfileKey(key)
+		return valid && h.admins[key]
+	}
+	return h.allAdmins || h.admins[key]
 }
 
 // allowedActivities mirrors activity_heartbeat's coarse screen labels.

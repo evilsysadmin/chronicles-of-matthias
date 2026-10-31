@@ -48,12 +48,12 @@ type adminRosterHandler struct {
 	origins map[string]bool
 }
 
-func newAdminRoster(db *mongo.Database, jwtSecret string, sso *ssoauth.Verifier, timeout time.Duration, origins []string) http.Handler {
+func newAdminRoster(db *mongo.Database, jwtSecret string, sso *ssoauth.Verifier, identity *identityauth.Verifier, timeout time.Duration, origins []string) http.Handler {
 	accounts := accountstore.New(db, timeout)
 	h := &adminRosterHandler{
 		origins: make(map[string]bool),
 		authorize: func(r *http.Request) int {
-			return rosterAuthorization(r, []byte(jwtSecret), sso, accounts)
+			return rosterAuthorization(r, []byte(jwtSecret), sso, identity, accounts)
 		},
 		read: func(ctx context.Context, after string) (rosterPage, error) {
 			return readRoster(ctx, db, after, time.Now().UTC())
@@ -67,14 +67,22 @@ func newAdminRoster(db *mongo.Database, jwtSecret string, sso *ssoauth.Verifier,
 	return h
 }
 
-func rosterAuthorization(r *http.Request, secret []byte, sso *ssoauth.Verifier, accounts *accountstore.Store) int {
+func rosterAuthorization(r *http.Request, secret []byte, sso *ssoauth.Verifier, identity *identityauth.Verifier, accounts *accountstore.Store) int {
 	bearer := r.Header.Get("Authorization")
 	if !strings.HasPrefix(bearer, "Bearer ") {
 		return http.StatusUnauthorized
 	}
 	token := strings.TrimPrefix(bearer, "Bearer ")
 	var username string
-	if sso != nil && ssoauth.IsToken(token) {
+	if identityauth.Recognizes(token) {
+		// Central tokens contain no admin roles. Authentication is the pinned
+		// issuer/audience/signature + live freshness verifier, never a display name.
+		if identity == nil { return http.StatusUnauthorized }
+		claims, err := identity.Verify(r.Context(), token, time.Now())
+		if errors.Is(err, identityauth.ErrUnavailable) { return http.StatusServiceUnavailable }
+		if err != nil { return http.StatusUnauthorized }
+		username = claims.ProfileKey()
+	} else if sso != nil && ssoauth.IsToken(token) {
 		claims, err := sso.Verify(r.Context(), token, time.Now())
 		if err != nil || identityauth.IsReservedProfileKey(claims.Subject) {
 			return http.StatusUnauthorized
