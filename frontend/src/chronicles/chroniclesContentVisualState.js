@@ -2,6 +2,7 @@ import {
   chroniclesMapContentPosition,
   chroniclesMapForState,
 } from './chroniclesMapCatalog.js';
+import { chroniclesIsRestorativeFountain } from './chroniclesRestorativeFountain.js';
 import {
   chroniclesContentEntries,
   chroniclesContentVisible,
@@ -41,6 +42,7 @@ export function chroniclesContentVisualVisible(state, entry) {
   if (entry.mm3WorldStat && state?.combatRules !== 'mm3') return false;
   // Landmarks (an NPC, a great tree) stay in the world after their
   // interaction is spent; only their interaction availability changes.
+  if (chroniclesIsRestorativeFountain(entry)) return true;
   if (PERSISTENT_VISUAL_KINDS.has(entry.kind) || entry.persistentVisual === true) return true;
   return chroniclesContentVisible(state, entry);
 }
