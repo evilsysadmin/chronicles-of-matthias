@@ -648,8 +648,15 @@ function refreshMm3Member(member, progression) {
     ...member,
     // The base attack already contains the rolled Might modifier. Apply only
     // the *difference* from the previous effective modifier.
-    damage: Math.max(1, Number(member.damage || 1)
-      + sheet.derived.bonuses.might - Number(member.mm3.bonuses?.might || 0)),
+    // Reconstruct the clamped MM3 baseline before applying the new Might
+    // bonus. A delta added to already-clamped 1 damage would create phantom
+    // damage for weak heroes (e.g. Might 6 -> 7).
+    damage: (() => {
+      const templateDamage = Number(CHRONICLES_PARTY.find(({ id }) => id === member.id)?.damage || 1);
+      const oldBase = Math.max(1, templateDamage + Number(member.mm3.bonuses?.might || 0));
+      const nextBase = Math.max(1, templateDamage + sheet.derived.bonuses.might);
+      return Math.max(1, nextBase + Number(member.damage || 1) - oldBase);
+    })(),
     mm3: {
       ...member.mm3,
       stats: sheet.stats,
