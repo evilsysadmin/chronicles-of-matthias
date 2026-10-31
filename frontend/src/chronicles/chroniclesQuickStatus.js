@@ -9,7 +9,7 @@ import { chroniclesPartyHotkeySlots } from './chroniclesKeyboardBindings.js';
 const CONDITION_LABELS = Object.freeze({ fresh: 'Bien', worn: 'Tocado', critical: 'Grave', down: 'Caído' });
 
 // MM3's Quick Reference: one line per hero with what matters between fights.
-export function chroniclesQuickStatusRows(state, levelOf = () => 1) {
+export function chroniclesQuickStatusRows(state) {
   return chroniclesPartyHotkeySlots(state?.party).map(({ member, slot }) => {
     const maxSp = chroniclesMemberMaxSp(state, member);
     const condition = chroniclesPartyCondition(member);
@@ -18,7 +18,6 @@ export function chroniclesQuickStatusRows(state, levelOf = () => 1) {
       slot,
       name: member.name,
       classLabel: chroniclesMM3Class(member.mm3?.classId)?.label || '—',
-      level: levelOf(member.id),
       hp: Math.max(0, Number(member.hp || 0)),
       maxHp: Number(member.maxHp || 0),
       sp: maxSp > 0 ? chroniclesMemberSp(state, member) : null,
