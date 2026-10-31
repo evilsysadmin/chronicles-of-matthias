@@ -289,11 +289,20 @@ try {
     distinctTavernOriel: String(Boolean(
       tavern?.getObjectByName('tavern-east-guest-oriel')?.userData.chroniclesDecorativeOnly
       && tavern?.getObjectByName('tavern-oriel-timber-body')
-      && tavern?.getObjectByName('tavern-oriel-sloped-roof')?.rotation.z !== 0
+      && tavern?.getObjectByName('tavern-oriel-pitched-roof-slope')?.rotation.x !== 0
+      && tavern?.getObjectByName('tavern-oriel-east-brick-gable')
       && tavern?.getObjectByName('tavern-east-guest-oriel')?.children
         .filter(child => child.name === 'tavern-oriel-guest-window').length === 2
       && !forge?.getObjectByName('tavern-east-guest-oriel')
       && tavern?.getObjectByName('shop-door')
+    )),
+    distinctTavernGallery: String(Boolean(
+      tavern?.getObjectByName('tavern-east-guest-gallery')?.userData.chroniclesDecorativeOnly
+      && tavern?.getObjectByName('tavern-gallery-oak-deck')
+      && tavern?.getObjectByName('tavern-gallery-carved-balusters')?.count === 7
+      && tavern?.getObjectByName('tavern-gallery-knee-supports')?.count === 2
+      && tavern?.getObjectByName('tavern-oriel-brass-roof-finials')?.count === 2
+      && !forge?.getObjectByName('tavern-east-guest-gallery')
     )),
     distinctTavernRoof: String(Boolean(
       tavern?.getObjectByName('tavern-double-hearth')
