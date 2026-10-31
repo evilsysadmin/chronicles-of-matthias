@@ -95,7 +95,7 @@ export function planSwordhavenRoofChimneys(runs, center, wallHeight, eave = 0.22
       || (width === 4 && (x + 2 * y) % 3 !== 0)
       || (width === 2 && x % 2 === 0);
     if (!selected) continue;
-    const slot = width === 5 ? width - 0.45 : 0.5;
+    const slot = width === 5 ? width - 1.10 : 0.5;
     const side = (x + y) % 2 ? -1 : 1;
     const roofOffset = side * 0.72;
     const rise = swordhavenRoofRise({ x, y, width });
