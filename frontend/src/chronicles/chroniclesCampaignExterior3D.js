@@ -214,7 +214,9 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
 // recognizable house fronts. Continuous storey beams and upright timbers sit
 // on the solid side of every authored street-facing wall. Two shared batches,
 // never a mesh per facade, and no geometry touches the walkable floor.
-function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wallHeight, lanterns = [] }) {
+function addSettlementTimberFrontages(town, {
+  grid, blocked, center, zones, wallHeight, lanterns = [], upperTrusses = false,
+}) {
   if (wallHeight < 4) return;
   const faces = settlementStreetFacingFaces({ grid, blocked, zones });
   if (!faces.length) return;
@@ -257,7 +259,8 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
   );
   const posts = new THREE.InstancedMesh(
     new THREE.BoxGeometry(0.13, wallHeight - 0.48, 0.04), wood,
-    faces.length * 2 + cornerJoints.length + bracedFaces.length * 2,
+    faces.length * 2 + cornerJoints.length + bracedFaces.length * 2
+      + (upperTrusses ? blankFaces.length * 2 : 0),
   );
   const dummy = new THREE.Object3D();
   faces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
@@ -310,6 +313,33 @@ function addSettlementTimberFrontages(town, { grid, blocked, center, zones, wall
       posts.setMatrixAt(faces.length * 2 + cornerJoints.length + faceIndex * 2 + sideIndex, dummy.matrix);
     }
   });
+  // Swordhaven's blind upper storeys need actual timber structure, not
+  // another full-height slab of blank limewash. Each bay gets two diagonals
+  // running between the existing 3.25m storey beam and upper eave beam.
+  // Alternate A/V braces using authored coordinates, not session randomness.
+  // Domestic doors lie BELOW this storey, so their upper frontage participates
+  // without crossing the closed oak entrances. Reuse the SAME upright mesh.
+  if (upperTrusses) {
+    const firstUpper = faces.length * 2 + cornerJoints.length + bracedFaces.length * 2;
+    const upperY = (3.25 + wallHeight - 0.21) / 2;
+    blankFaces.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
+      const [wx, wz] = gridToWorld(x, y, center);
+      const pattern = (x * 3 + y) % 4 === 1 ? 1 : -1;
+      for (const [sideIndex, side] of [-1, 1].entries()) {
+        const sideways = side * 0.85;
+        dummy.rotation.set(0, yaw, 0);
+        dummy.rotateZ(pattern * side * 0.52);
+        dummy.scale.set(1, 0.55, 1);
+        dummy.position.set(
+          wx + dx * 1.973 + Math.cos(yaw) * sideways,
+          upperY,
+          wz + dy * 1.973 - Math.sin(yaw) * sideways,
+        );
+        dummy.updateMatrix();
+        posts.setMatrixAt(firstUpper + faceIndex * 2 + sideIndex, dummy.matrix);
+      }
+    });
+  }
   beams.instanceMatrix.needsUpdate = true;
   posts.instanceMatrix.needsUpdate = true;
   beams.name = 'chronicles-town-timber-storey-beams';
@@ -794,6 +824,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       grid, blocked, center: sceneCenter, wallHeight: streetWallHeight,
       zones: scenePlan.landscape?.facadeZones,
       lanterns: scenePlan.landscape?.wallLanterns,
+      upperTrusses: scenePlan.mapId === 'swordhaven-first-book',
     });
     addSettlementWallLanterns(town, {
       grid, blocked, center: sceneCenter,

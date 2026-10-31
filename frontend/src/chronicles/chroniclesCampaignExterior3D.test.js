@@ -529,8 +529,13 @@ describe('Chronicles file-authored exterior renderer', () => {
     }
     expect(domesticPanels.count).toBeGreaterThan(4);
     expect(domesticPanels.count).toBeLessThan(frames.count / 2);
-    // Every domestic opening removes only its two formerly crossing braces.
-    expect(uprights.count + domesticPanels.count * 2).toBe(318);
+    // Every domestic opening still replaces TWO lower braces. The upper
+    // storey gains two trusses per blind bay, all in the SAME upright batch.
+    const upperTrussCount = beams.count - frames.count;
+    expect(upperTrussCount).toBeGreaterThan(0);
+    expect(upperTrussCount % 2).toBe(0);
+    expect(uprights.count + domesticPanels.count * 2)
+      .toBe(318 + upperTrussCount);
     // Real raised oak planks and two forged straps share the original
     // THREE door batches. No per-door meshes, new material or draw calls.
     expect(domesticPanels.geometry.index.count).toBe(5 * 36); // Leaf + 4 boards.
@@ -564,6 +569,44 @@ describe('Chronicles file-authored exterior renderer', () => {
         Math.round(pos.z / 4 + center.y),
         Math.round(outward.x), Math.round(outward.z)].join(':'));
     }
+    // One pair per genuinely windowless upper facade. Both A and V patterns
+    // appear, follow the real street normal, and never float into a walkable
+    // tile or overlap the window-bearing facades.
+    const upperStart = uprights.count - upperTrussCount;
+    const patterns = new Set();
+    for (let index = upperStart; index < uprights.count; index += 2) {
+      const pair = [];
+      for (const offset of [0, 1]) {
+        uprights.getMatrixAt(index + offset, braceMatrix);
+        const at = new THREE.Vector3();
+        const rotate = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        braceMatrix.decompose(at, rotate, scale);
+        const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(rotate);
+        const gx = Math.round(at.x / 4 + center.x);
+        const gy = Math.round(at.z / 4 + center.y);
+        const dx = Math.round(normal.x);
+        const dy = Math.round(normal.z);
+        expect(grid[gy]?.[gx]).toBe('#');
+        expect(grid[gy + dy]?.[gx + dx]).toBe('.');
+        expect(windowCells.has([gx, gy, dx, dy].join(':'))).toBe(false);
+        expect(at.y).toBeCloseTo((3.25 + swordhavenFirstBook.landscape.streetWallHeight - 0.21) / 2);
+        expect(scale.y).toBeCloseTo(0.55);
+        expect(scale.z).toBeCloseTo(1);
+        const slope = Math.sign(new THREE.Vector3(1, 0, 0).applyQuaternion(rotate).y);
+        pair.push({ at, slope });
+        // First (left) truss reflects the author's deterministic A/V choice.
+        if (offset === 0) {
+          const pattern = (gx * 3 + gy) % 4 === 1 ? 1 : -1;
+          expect(slope).toBe(-pattern);
+          patterns.add(pattern);
+        }
+      }
+      expect(pair[0].slope).toBe(-pair[1].slope);
+      expect(pair[0].at.x === pair[1].at.x && pair[0].at.z === pair[1].at.z)
+        .toBe(false);
+    }
+    expect(patterns).toEqual(new Set([-1, 1]));
     const sconceCells = new Set(swordhavenFirstBook.landscape.wallLanterns
       .map(({ x, y }) => x + ':' + y));
     for (let i = 0; i < domesticPanels.count; i += 1) {
