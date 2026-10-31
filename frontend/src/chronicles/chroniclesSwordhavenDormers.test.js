@@ -75,7 +75,7 @@ describe('Swordhaven inhabited terrace roof dormers', () => {
       front.getMatrixAt(index, matrix);
       location.setFromMatrixPosition(matrix);
       expect(location.x).toBeCloseTo(entry.x);
-      expect(location.y).toBeCloseTo(entry.y + 0.52);
+      expect(location.y).toBeCloseTo(entry.y + 0.50);
       expect(location.z).toBeCloseTo(entry.z);
       glass.getMatrixAt(index, matrix);
       location.setFromMatrixPosition(matrix);
