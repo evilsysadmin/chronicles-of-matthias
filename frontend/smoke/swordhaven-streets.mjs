@@ -122,9 +122,11 @@ try {
           'Quartermaster store must have a unique overhead striped awning');
         assert.equal(result.roofRelief, 'true',
           'Real street roofs must use aligned, shared shingle relief');
-        // 188 facade posts + 38 reinforced corners + 92 diagonal braces
-        // on the 46 windowless faces, still in the same instanced batch.
-        assert.equal(Number(result.cornerUprights), 318);
+        // 188 facade posts + 38 reinforced corners + 92 historical braces.
+        // Each real domestic entry replaces exactly TWO braces, rather than
+        // hiding or truncating the existing solid-cell timber geometry.
+        assert.ok(Number(result.domesticDoorCount) >= 5);
+        assert.equal(Number(result.cornerUprights) + 2 * Number(result.domesticDoorCount), 318);
         // A close masonry facade at phone width may occupy almost the entire
         // frame with just a few colours. Only reject a truly flat framebuffer.
         assert.ok(Number(result.pixelVariants) >= 2,
