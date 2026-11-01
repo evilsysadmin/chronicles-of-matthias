@@ -38,6 +38,7 @@ type rosterUser struct {
 	ActiveQuests int        `json:"activeQuests,omitempty"`
 	CompletedQuests int     `json:"completedQuests,omitempty"`
 	MainObjective string    `json:"mainObjective,omitempty"`
+	SavedExpeditions int64  `json:"savedExpeditions,omitempty"`
 }
 
 type rosterPage struct {
@@ -272,6 +273,51 @@ func rosterQuestSummary(quests bson.M) (active, completed int, mainObjective str
 	return
 }
 
+// Aggregate once for the bounded page of owners rather than issuing one extra
+// count per player. The pipeline projects only owner and count; no run data
+// (quests, inventory or coordinates) leaves the database.
+func rosterRunCountPipeline(owners []string) mongo.Pipeline {
+	in := bson.A{}
+	for _, owner := range owners {
+		in = append(in, owner)
+	}
+	return mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "owner", Value: bson.D{{Key: "$in", Value: in}}}}}},
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$owner"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}}},
+	}
+}
+
+func rosterSavedExpeditionCounts(ctx context.Context, runs *mongo.Collection, owners []string) (map[string]int64, error) {
+	counts := make(map[string]int64, len(owners))
+	if len(owners) == 0 {
+		return counts, nil
+	}
+	cursor, err := runs.Aggregate(ctx, rosterRunCountPipeline(owners))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var item struct {
+			Owner string `bson:"_id"`
+			Count int64 `bson:"count"`
+		}
+		if err := cursor.Decode(&item); err != nil {
+			return nil, err
+		}
+		if item.Count > 0 {
+			counts[item.Owner] = item.Count
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return counts, nil
+}
+
 func readRoster(ctx context.Context, db *mongo.Database, after string, now time.Time) (rosterPage, error) {
 	page := rosterPage{Users: []rosterUser{}}
 	filter := bson.D{}
@@ -301,6 +347,14 @@ func readRoster(ctx context.Context, db *mongo.Database, after string, now time.
 		page.NextAfter = users[adminPageSize-1].Username
 		users = users[:adminPageSize]
 	}
+	owners := make([]string, 0, len(users))
+	for _, user := range users {
+		owners = append(owners, user.Username)
+	}
+	savedCounts, err := rosterSavedExpeditionCounts(ctx, db.Collection("chronicles_runs"), owners)
+	if err != nil {
+		return rosterPage{}, err
+	}
 	for _, user := range users {
 		last := user.LastActivity
 		if last == "" {
@@ -311,6 +365,7 @@ func readRoster(ctx context.Context, db *mongo.Database, after string, now time.
 			CreatedAt: user.CreatedAt,
 			LastActivity: last,
 			Online: rosterActive(user.LastActivity, user.PresenceOnline == nil || *user.PresenceOnline, now),
+			SavedExpeditions: savedCounts[user.Username],
 		}
 		var run struct {
 			MapID string `bson:"currentMapId"`
