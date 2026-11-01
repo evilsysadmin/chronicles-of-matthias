@@ -991,9 +991,12 @@
   .chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio {
     width: min(790px, calc(100vw - 16px));
   }
-  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row,
+  /* A 790px control board fits four utility actions, even in short landscape. */
+  .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row:has(.chronicles-game-menu__admin) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__utility-row > button.chronicles-game-menu__leave {
     grid-column: auto;
