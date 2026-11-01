@@ -1816,8 +1816,40 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const oak = material(0x79553c, { roughness: 0.96 });
     mesh(loft, new THREE.BoxGeometry(2.54, 1.45, 1.42), oak,
       'store-loft-oak-gable', [0, 0, 0], !coarse);
-    mesh(loft, new THREE.BoxGeometry(1.32, 0.83, 0.10), mats.window,
-      'store-loft-window', [0, 0.12, 0.77]);
+    // A working cargo hatch makes the hoist and attic read as one merchant
+    // warehouse, rather than a crane above a flat domestic amber window.
+    // Shutters fold out beside a warm, shadowed opening; all geometry remains
+    // decorative and high above the unchanged shop entrance and walk grid.
+    const cargoHatch = new THREE.Group();
+    cargoHatch.name = 'store-loft-loading-hatch';
+    cargoHatch.userData.chroniclesDecorativeOnly = true;
+    const hatchRecess = material(0x2c211a, { roughness: 0.98 });
+    const hatchInterior = material(0xa5733f, {
+      roughness: 0.91, emissive: 0x573015, emissiveIntensity: 0.18,
+    });
+    mesh(cargoHatch, new THREE.BoxGeometry(1.34, 0.96, 0.10), hatchRecess,
+      'store-loft-hatch-dark-recess', [0, 0.12, 0.78], !coarse);
+    mesh(cargoHatch, new THREE.BoxGeometry(1.14, 0.76, 0.08), hatchInterior,
+      'store-loft-hatch-warm-interior', [0, 0.12, 0.85], !coarse);
+    for (const side of [-1, 1]) {
+      const shutter = mesh(cargoHatch, new THREE.BoxGeometry(0.36, 0.88, 0.13),
+        mats.timber, 'store-loft-hatch-open-oak-shutter',
+        [side * 0.94, 0.12, 0.98], !coarse);
+      shutter.rotation.y = side * 0.40;
+      mesh(cargoHatch, new THREE.BoxGeometry(0.12, 0.94, 0.16), mats.timber,
+        'store-loft-hatch-oak-jamb', [side * 0.72, 0.12, 0.91], !coarse);
+    }
+    for (const [name, y] of [
+      ['store-loft-hatch-oak-lintel', 0.65],
+      ['store-loft-hatch-oak-sill', -0.41],
+    ]) {
+      mesh(cargoHatch, new THREE.BoxGeometry(1.58, 0.13, 0.17), mats.timber,
+        name, [0, y, 0.92], !coarse);
+    }
+    for (const part of cargoHatch.children) {
+      part.userData.chroniclesDecorativeOnly = true;
+    }
+    loft.add(cargoHatch);
     for (const side of [-1, 1]) {
       const slope = mesh(loft, new THREE.BoxGeometry(1.66, 0.15, 1.85), roof,
         'store-loft-roof-slope', [side * 0.53, 0.94, 0], !coarse);
