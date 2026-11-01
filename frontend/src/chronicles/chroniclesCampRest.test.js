@@ -66,7 +66,8 @@ describe('MM3 field rest · safe expedition resources', () => {
     expect(goblin).toBeTruthy();
     const position = chroniclesRuntimeEnemyPosition(base, goblin);
     const near = { ...base, x: position.x, y: position.y };
-    expect(chroniclesCampRestStatus(near, [goblin]).reason).toContain('enemigos');
+    expect(chroniclesCampRestStatus(near, [goblin]).reason)
+      .toBe('Hay enemigos demasiado cerca para descansar.');
     expect(chroniclesReduce(near, 'camp-rest')).toBe(near);
     const fight = chroniclesStartInitiativeCombat(base, [goblin], {
       forceEnemyIds: [goblin.id], random: () => 0,
@@ -86,7 +87,7 @@ describe('MM3 field rest · safe expedition resources', () => {
     const exposed = wounded(stocked({ ...spawned, ...othersDown, x: 13, y: 3 }));
     expect(chroniclesEnemyCanAttackParty(exposed, archer)).toBe(true);
     expect(chroniclesCampRestStatus(exposed, chroniclesActiveEnemies(exposed)).reason)
-      .toContain('enemigos');
+      .toBe('Hay enemigos que pueden atacar el campamento a distancia.');
     expect(chroniclesReduce(exposed, 'camp-rest')).toBe(exposed);
 
     // Same three-tile distance, but the authored road wall blocks the bolt.
