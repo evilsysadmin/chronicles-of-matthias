@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel, chroniclesRosterHasSave, chroniclesRosterFacetCounts, chroniclesRosterVisibleUsers } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel, chroniclesRosterHasSave, chroniclesRosterFacetCounts, chroniclesRosterVisibleUsers, chroniclesRosterSavedExpeditionsLabel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
@@ -123,6 +123,15 @@ describe('Chronicles player administration', () => {
       .toEqual(['charlie', 'eli']);
     expect(chroniclesRosterVisibleUsers(users, { filter: 'saved' })).toHaveLength(2);
     expect(users.map((u) => u.username)).toEqual(['alice', 'bob', 'charlie', 'dan']);
+  });
+
+  it('labels only genuine saved-run counts without inventing numbers', () => {
+    expect(chroniclesRosterSavedExpeditionsLabel({ savedExpeditions: 1 })).toBe('1 expedición guardada');
+    expect(chroniclesRosterSavedExpeditionsLabel({ savedExpeditions: 12 })).toBe('12 expediciones guardadas');
+    for (const count of [undefined, null, 0, -1, 1.5, '3', {}, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(chroniclesRosterSavedExpeditionsLabel({ savedExpeditions: count })).toBeNull();
+    }
+    expect(chroniclesRosterSavedExpeditionsLabel(null)).toBeNull();
   });
 
   it('reports only documented latest run status, not an imagined live position', () => {
