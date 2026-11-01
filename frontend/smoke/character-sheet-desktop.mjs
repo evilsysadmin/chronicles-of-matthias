@@ -1244,7 +1244,7 @@ try {
           for (const hero of mobileHeroes) {
             assert.ok(hero.numberHidden && hero.unitHidden
               && hero.width >= 60 && hero.height >= 44
-              && hero.healthFits && /^\\d+\\/\\d+$/.test(hero.health)
+              && hero.healthFits && /^\d+\/\d+$/.test(hero.health)
               && hero.accessible?.includes(hero.hero),
               'Mobile dock must show intact HP and legible hero selection without redundant labels: '
                 + JSON.stringify({ viewport: width, hero }));
