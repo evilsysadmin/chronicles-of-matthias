@@ -1,4 +1,6 @@
 import { chroniclesMapForState } from './chroniclesMapCatalog.js';
+import { chroniclesTempleServiceChoices, chroniclesTempleBlessingRemaining } from './chroniclesTempleServices.js';
+import { chroniclesGoldBalance } from './chroniclesContentRuntime.js';
 
 // An NPC audience is a presentation over authored campaign content. Dialogue
 // choices are data, never a second implementation of quest/reward effects.
@@ -85,9 +87,12 @@ export function chroniclesNpcDialogueForState(state, contextual = null) {
   if (!entry) return null;
   const scripted = NPC_SCRIPTS[npcScriptKey(state.mapId, entry)] || null;
   const name = scripted?.name || String(entry.label || 'Habitante').split(' · ')[0];
-  const choices = [...(scripted?.topics || [])].map((topic) => ({
-    id: topic.id, kind: 'say', label: topic.label, answer: topic.answer,
-  }));
+  const choices = [
+    ...(scripted?.room === 'temple' ? chroniclesTempleServiceChoices(state) : []),
+    ...(scripted?.topics || []).map((topic) => ({
+      id: topic.id, kind: 'say', label: topic.label, answer: topic.answer,
+    })),
+  ];
   if (active?.action && contextual?.id === active.id) {
     const firstMeeting = active.id === 'swordhaven-mayor' && state.swordhavenMayorMet !== true;
     const questChoice = {
@@ -108,6 +113,10 @@ export function chroniclesNpcDialogueForState(state, contextual = null) {
     place: scripted?.place || String(entry.label || 'Interior').split(' · ')[0],
     room: scripted?.room || 'generic',
     greeting: scripted?.greeting || 'El habitante te recibe. Puedes preguntar por su encargo o volver a la calle.',
+    ...(scripted?.room === 'temple' ? {
+      treasury: `Oro del grupo: ${chroniclesGoldBalance(state)}`,
+      blessingTurns: chroniclesTempleBlessingRemaining(state),
+    } : {}),
     choices,
   };
 }

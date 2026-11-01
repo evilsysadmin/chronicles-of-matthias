@@ -745,7 +745,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (chroniclesCampaignEpiloguePending(current)) return current;
     // A held touch control must not keep moving the expedition behind an NPC.
     // The deliberate dialogue quest option alone may invoke 'interact'.
-    if (audienceRef.current && actionType !== 'interact') return current;
+    if (audienceRef.current && actionType !== 'interact' && actionType !== 'temple-service') return current;
     // A door in an MM3 town opens an audience instead of silently awarding
     // a quest from a stone wall. One more step into the facade enters.
     if (actionType === 'forward' && !current.initiative && current.phase === 'explore') {
@@ -772,6 +772,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         setAudience(dialogue);
         return atDoor;
       }
+    }
+    if (actionType === 'temple-service') {
+      const updated = chroniclesReduce(current, action);
+      if (updated !== current) { stateRef.current = updated; setState(updated); }
+      return updated;
     }
     if (actionType === 'equip-item' || actionType === 'unequip-item'
       || actionType === 'shop-buy' || actionType === 'shop-sell' || actionType === 'shop-close'
@@ -2504,7 +2509,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       {audience && !sheetMember && (
         <ChroniclesAudience
           dialogue={audience}
-          onAction={(actionId) => {
+          onAction={(actionId, kind) => {
+            if (kind === 'temple-service') {
+              if (audienceRef.current?.room !== 'temple') return 'No estás ante el altar.';
+              const current = stateRef.current;
+              const next = dispatch({ type: 'temple-service', serviceId: actionId });
+              if (!next || next === current) return 'Ilse no puede prestar ese servicio ahora mismo.';
+              const updatedDialogue = chroniclesNpcDialogueForState(next, chroniclesContextualContentAction(next));
+              if (updatedDialogue?.room === 'temple') {
+                audienceRef.current = updatedDialogue;
+                setAudience(updatedDialogue);
+              }
+              return next.message;
+            }
             const context = chroniclesContextualContentAction(stateRef.current);
             if (context?.id !== actionId) return 'Ese asunto ya está resuelto.';
             const next = dispatch('interact');
