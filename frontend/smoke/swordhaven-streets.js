@@ -9,6 +9,10 @@ const VIEWS = Object.freeze({
   oldtown: { x: 3, y: 4, heading: 'north' },
   // Golden shot: the mayor's real door from a walkable plaza cell.
   'mayor-square': { x: 11, y: 8, heading: 'south', target: { x: 11, y: 10 }, cameraHeight: 1.85, lookUp: 1.8 },
+  // Genuine open street looking south at the plaza's occupied (9,9) tile.
+  // Eight metres gives the wide lower bowl room to fit in a 390px portrait.
+  fountain: { x: 9, y: 7, heading: 'south', target: { x: 9, y: 9 },
+    cameraHeight: 1.8, lookUp: 0.35 },
   // Walkable street looking at the only generic residential house's gable.
   'home-gable': { x: 3, y: 8, heading: 'south', target: { x: 3, y: 11.5 }, cameraHeight: 2.4, lookUp: 2.9 },
   // Both facades from matching walkable oblique positions, far enough away
@@ -180,6 +184,7 @@ try {
     child.name.startsWith('swordhaven-building-first-book-watch-'));
   const hall = town?.children.find(child =>
     child.name.startsWith('swordhaven-building-first-book-hall-'));
+  const fountain = town?.getObjectByName('swordhaven-fountain');
   const homes = town?.children.filter(child =>
     child.name.startsWith('swordhaven-building-first-book-home-')) || [];
   if (!wall || !perimeter || !battlements || !road || !plaster || !roofs || !posts || !windowFrames || !windowPanes) {
@@ -202,6 +207,45 @@ try {
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
     mapId: swordhaven.id,
+    tieredPlazaFountain: String(Boolean(
+      fountain?.userData != null
+      && swordhaven.grid[9]?.[9] === '#'
+      && Math.abs(fountain.position.x - (9 - center.x) * 4) < 0.001
+      && Math.abs(fountain.position.z - (9 - center.y) * 4) < 0.001
+      && fountain.getObjectByName('fountain-basin')
+      && fountain.getObjectByName('fountain-water')
+      && fountain.getObjectByName('fountain-upper-stone-bowl')?.userData.chroniclesDecorativeOnly
+      && fountain.getObjectByName('fountain-upper-water')
+      && fountain.getObjectByName('fountain-gilded-finial')
+      && fountain.getObjectByName('fountain-four-water-jets')?.count === 4
+      && fountain.getObjectByName('fountain-four-water-jets')?.isInstancedMesh
+      && fountain.getObjectByName('fountain-four-water-jets')?.material
+        === fountain.getObjectByName('fountain-water')?.material
+    )),
+    fountainPortraitFraming: String((() => {
+      if (name !== 'fountain') return true;
+      if (!fountain || chosen.x !== 9 || chosen.y !== 7
+        || swordhaven.grid[chosen.y]?.[chosen.x] !== '.') return false;
+      const upper = fountain.getObjectByName('swordhaven-fountain-upper-tier');
+      const jets = fountain.getObjectByName('fountain-four-water-jets');
+      if (!upper?.userData.chroniclesDecorativeOnly || jets?.count !== 4) return false;
+      // Project the REAL lower bowl edges and highest finial; checking just
+      // the fountain origin allows a useless cropped portrait screenshot.
+      const bounds = new THREE.Box3().setFromObject(fountain);
+      if (bounds.isEmpty() || bounds.max.y < 3 || bounds.min.y < -0.02) return false;
+      const targets = [
+        [bounds.min.x, 0.75, fountain.position.z],
+        [bounds.max.x, 0.75, fountain.position.z],
+        [fountain.position.x, bounds.max.y, fountain.position.z],
+        [fountain.position.x, 0.12, fountain.position.z],
+      ];
+      return targets.every(([x, y, z]) => {
+        const projected = new THREE.Vector3(x, y, z).project(camera);
+        return Math.abs(projected.x) < 0.94
+          && Math.abs(projected.y) < 0.90
+          && projected.z > -1 && projected.z < 1;
+      });
+    })()),
     premiumCivic: String(Boolean(
       hall?.getObjectByName('swordhaven-civic-premium-frontage')
       && hall.getObjectByName('civic-portal-carved-lintel')
