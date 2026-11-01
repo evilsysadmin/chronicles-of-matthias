@@ -1222,6 +1222,34 @@ try {
           assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
             .locator('button').count(), 5, 'Compact phones retain five commands; delivery uses party slots');
         }
+        if (width <= 620) {
+          const mobileHeroes = await sheet.getByRole('navigation', {
+            name: 'Seleccionar personaje de la compañía',
+          }).locator('button').evaluateAll((buttons) => buttons.map((button) => {
+            const ordinal = button.querySelector('.chronicles-character-sheet__party-number');
+            const hp = button.querySelector('.chronicles-character-sheet__party-hp');
+            const unit = button.querySelector('.chronicles-character-sheet__party-hp-unit');
+            const box = button.getBoundingClientRect();
+            return {
+              hero: button.querySelector('.chronicles-character-sheet__party-name')?.textContent.trim(),
+              width: box.width, height: box.height,
+              numberHidden: getComputedStyle(ordinal).display === 'none',
+              unitHidden: getComputedStyle(unit).display === 'none',
+              healthFits: hp.scrollWidth <= hp.clientWidth + 1,
+              health: hp.querySelector('.chronicles-character-sheet__party-hp-value')?.textContent.trim(),
+              accessible: button.getAttribute('aria-label'),
+            };
+          }));
+          assert.equal(mobileHeroes.length, 4, 'All four real heroes must remain selectable');
+          for (const hero of mobileHeroes) {
+            assert.ok(hero.numberHidden && hero.unitHidden
+              && hero.width >= 60 && hero.height >= 44
+              && hero.healthFits && /^\\d+\\/\\d+$/.test(hero.health)
+              && hero.accessible?.includes(hero.hero),
+              'Mobile dock must show intact HP and legible hero selection without redundant labels: '
+                + JSON.stringify({ viewport: width, hero }));
+          }
+        }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
