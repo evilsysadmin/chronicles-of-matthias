@@ -1934,6 +1934,20 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         'forge-lantern-iron-louver', [0, y, 0.48]);
       slat.rotation.x = -0.18;
     }
+    // Close the daylight slit below the lantern cap with a dark, pitched
+    // timber backboard. The louvers remain proud of it and visibly open;
+    // this is scenery only, with no collision or lighting changes.
+    const upperInfill = new THREE.Shape();
+    upperInfill.moveTo(-1.68, 0.38);
+    upperInfill.lineTo(1.68, 0.38);
+    upperInfill.lineTo(1.68, 0.76);
+    upperInfill.lineTo(0, 1.48);
+    upperInfill.lineTo(-1.68, 0.76);
+    upperInfill.closePath();
+    const backboard = mesh(vent, new THREE.ShapeGeometry(upperInfill),
+      material(0x30251e, { roughness: 0.98, side: THREE.DoubleSide }),
+      'forge-lantern-pitched-dark-infill', [0, 0, 0.39], !coarse);
+    backboard.userData.chroniclesDecorativeOnly = true;
     const lanternGable = new THREE.Shape();
     lanternGable.moveTo(-1.73, 0.76);
     lanternGable.lineTo(1.73, 0.76);
