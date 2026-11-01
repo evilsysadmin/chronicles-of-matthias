@@ -125,7 +125,7 @@ export function dressSwordhavenTieredFountain(fountain, mats, { coarsePointer = 
   const point = new THREE.Vector3();
   function updateChroniclesFountainWater(seconds) {
     if (!Number.isFinite(seconds)) return;
-    rippleMaterial.opacity = 0.49 + 0.10 * Math.sin(seconds * 2.1);
+    rippleMaterial.opacity = 0.62 + 0.08 * Math.sin(seconds * 2.1);
     waveMaterial.opacity = 0.17 + 0.04 * Math.sin(seconds * 1.3);
     for (let index = 0; index < 4; index += 1) {
       const phase = (seconds * 0.36 + index * 0.25) % 1;
