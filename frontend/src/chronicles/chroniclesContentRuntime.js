@@ -428,6 +428,10 @@ export function chroniclesApplyContentEffects(state, effects, adapters = {}) {
 export function chroniclesApplyContentAction(state, action, adapters = {}) {
   if (!action) return state;
   let next = chroniclesApplyContentEffects(state, action.effects, adapters);
+  // A rejected pure trade must not display its success message or consume a
+  // turn. The exchange is atomic: insufficient gold and a full pack are no-ops.
+  if (next === state && action.effects?.length === 1
+    && action.effects[0]?.type === 'exchange-item') return state;
   if (action.message) next = { ...next, message: action.message };
   if (action.journal && typeof adapters.appendJournal === 'function') {
     next = adapters.appendJournal(next, action.journal);
