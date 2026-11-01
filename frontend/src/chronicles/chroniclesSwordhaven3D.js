@@ -1714,6 +1714,53 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     shutters.instanceMatrix.needsUpdate = true;
     root.add(shutters);
   }
+  // A full upper cedar-clad warehouse storey replaces a bare ochre strip
+  // on both side elevations. Broad timber panels and their raised battens
+  // sit above the cargo hatches and below the eaves, giving Provisiones a
+  // distinct merchant-warehouse mass from the oblique street approach.
+  // All three instanced batches stay on the existing blocked building footprint.
+  if (isStore) {
+    const cladding = new THREE.Group();
+    cladding.name = 'store-upper-cedar-cladding';
+    cladding.userData.chroniclesDecorativeOnly = true;
+    const cedar = material(0x785a40, {
+      map: swordhavenSurfaceTexture('timber'), roughness: 0.98,
+    });
+    const panels = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.16, 1.06, depth - 1.15), cedar, 2);
+    panels.name = 'store-upper-cedar-wall-panels';
+    const battens = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.19, 1.11, 0.14), mats.timber, 14);
+    battens.name = 'store-upper-cedar-vertical-battens';
+    const rails = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.21, 0.15, depth - 0.88), mats.timber, 4);
+    rails.name = 'store-upper-cedar-cornice-rails';
+    const part = new THREE.Object3D();
+    for (const [sideIndex, side] of [-1, 1].entries()) {
+      part.position.set(side * (width / 2 + 0.11), 4.47, 0);
+      part.updateMatrix();
+      panels.setMatrixAt(sideIndex, part.matrix);
+      for (let index = 0; index < 7; index += 1) {
+        part.position.set(side * (width / 2 + 0.24), 4.47,
+          (index - 3) * 0.83);
+        part.updateMatrix();
+        battens.setMatrixAt(sideIndex * 7 + index, part.matrix);
+      }
+      for (const [index, y] of [3.90, 5.04].entries()) {
+        part.position.set(side * (width / 2 + 0.23), y, 0);
+        part.updateMatrix();
+        rails.setMatrixAt(sideIndex * 2 + index, part.matrix);
+      }
+    }
+    for (const batch of [panels, battens, rails]) {
+      batch.userData.chroniclesDecorativeOnly = true;
+      batch.castShadow = !coarse;
+      batch.receiveShadow = true;
+      batch.instanceMatrix.needsUpdate = true;
+      cladding.add(batch);
+    }
+    root.add(cladding);
+  }
   // Boarded cargo hatches give the provisions store a warehouse-like side
   // elevation instead of the same glowing domestic windows as other shops.
   // Three oak battens per hatch share one instanced draw call; the authored
