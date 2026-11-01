@@ -414,7 +414,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   // The provisions warehouse uses weathered cedar boards, not the red
   // ceramic tiles of its neighbours. Reuse the cached timber atlas for both
   // main slopes and the loading loft: no extra geometry, assets or colliders.
-  const roof = material(isStore ? 0x8c7357 : spec.roof, {
+  // Charcoal slate distinguishes the working forge from the inn's red clay
+  // and the warehouse's cedar, across the entire pitched roof and smoke lantern.
+  // The cached roof maps, geometry and collision footprint remain unchanged.
+  const roof = material(isStore ? 0x8c7357 : isForge ? 0x535b61 : spec.roof, {
     map: swordhavenSurfaceTexture(isStore ? 'timber' : 'roof'),
     normalMap: isStore ? null : swordhavenSurfaceNormalTexture('roof'),
     normalScale: new THREE.Vector2(0.35, 0.35),
