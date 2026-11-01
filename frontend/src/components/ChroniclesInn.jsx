@@ -95,7 +95,8 @@ export default function ChroniclesInn({ state, onAction, onClose }) {
               <span aria-hidden="true" className="chronicles-inn__icon">♨</span>
               <div><h4>Comprar provisiones</h4>
                 <p>{CHRONICLES_INN_FOOD.description} En la mochila: {rations}.</p>
-                <button type="button" data-inn-action="food" disabled={gold < CHRONICLES_INN_FOOD.price}
+                {rations >= 9999 && <p role="status">Mochila llena: no caben más raciones.</p>}
+                <button type="button" data-inn-action="food" disabled={gold < CHRONICLES_INN_FOOD.price || rations >= 9999}
                   onClick={() => onAction({ type: 'inn-buy-food' })}>
                   Comprar raciones · {CHRONICLES_INN_FOOD.price} oro
                 </button>
