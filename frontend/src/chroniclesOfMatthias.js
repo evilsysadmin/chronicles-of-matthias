@@ -22,7 +22,11 @@ import {
   chroniclesRequirementsMet,
   chroniclesToName,
 } from './chronicles/chroniclesContentRuntime.js';
-import { resolveChroniclesCharacterParty } from './chronicles/chroniclesCharacterBuilds.js';
+import {
+  CHRONICLES_MM3_BASE_DAMAGE,
+  CHRONICLES_MM3_DAMAGE_PROFILE_VERSION,
+  resolveChroniclesCharacterParty,
+} from './chronicles/chroniclesCharacterBuilds.js';
 import { chroniclesEquipItem, chroniclesUnequipItem, chroniclesEquipmentBonuses, chroniclesEquippedItem } from './chronicles/chroniclesEquipment.js';
 import {
   chroniclesCloseShop, chroniclesOpenShop, chroniclesShopBuy, chroniclesShopSell,
@@ -473,8 +477,18 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
   const weapon = chroniclesEquippedItem(state, memberId, shooting ? 'missile' : 'weapon');
   // Without a missile weapon there is nothing to shoot with.
   if (shooting && chroniclesUsesMM3Combat(state) && !weapon) return { damage: 0, reach: 0, toHit: 0 };
+  // Pre-v2 MM3 runtime snapshots inherited the chess-piece damage baseline.
+  // Normalize their effective attack without mutating a saved state; new MM3
+  // builds and reconciled checkpoints already use the common baseline.
+  const legacyMm3DamageBias = chroniclesUsesMM3Combat(state) && member.mm3
+    && member.mm3.damageProfileVersion !== CHRONICLES_MM3_DAMAGE_PROFILE_VERSION
+    ? Math.max(1, Number(CHRONICLES_PARTY.find(({ id }) => id === memberId)?.damage || 1)
+      + Number(member.mm3.bonuses?.might || 0))
+      - Math.max(1, CHRONICLES_MM3_BASE_DAMAGE + Number(member.mm3.bonuses?.might || 0))
+    : 0;
   return {
-    damage: Math.max(0, Number(member.damage || 0) + persistentDamageBonus + equipment.attackDamageBonus),
+    damage: Math.max(0, Number(member.damage || 0) - legacyMm3DamageBias
+      + persistentDamageBonus + equipment.attackDamageBonus),
     // MM3 has no weapon-range stat: melee requires adjacency, and
     // missiles use unobstructed sight. Preserve Tactics reach separately.
     reach: chroniclesUsesMM3Combat(state)
