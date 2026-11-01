@@ -776,7 +776,7 @@
   width: min(1140px, calc(100vw - 24px));
   max-width: calc(100vw - 12px);
   max-height: calc(100dvh - 16px - env(safe-area-inset-bottom));
-  position: relative;
+  /* Preserve the fixed, viewport-centered positioning from MM3Chrome. */
   border: 3px ridge #cf9b4e;
   border-radius: 8px;
   background: #241d1a;
