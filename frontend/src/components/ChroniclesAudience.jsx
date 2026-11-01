@@ -34,13 +34,18 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
   const room = ROOM_ART[dialogue?.room] || null;
 
   const choose = (choice) => {
-    if (!choice) return;
+    if (!choice || choice.disabled) return;
     if (choice.kind === 'leave') {
       onClose();
       return;
     }
     if (choice.kind === 'say') {
       setReply(choice.answer);
+      return;
+    }
+    if (choice.kind === 'temple-service') {
+      const message = onAction(choice.serviceId, 'temple-service');
+      setReply(message || 'Ilse no puede atender esta petición ahora mismo.');
       return;
     }
     if (choice.kind === 'action') {
@@ -114,13 +119,19 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
         <div className="chronicles-audience__dialogue">
           <small>{reply ? `${dialogue.name.toUpperCase()} RESPONDE` : 'AUDIENCIA'}</small>
           <p data-chronicles-dialogue-answer aria-live="polite">{reply || dialogue.greeting}</p>
+          {dialogue.treasury && <p className="chronicles-audience__wallet" data-chronicles-temple-gold>
+            {dialogue.treasury}
+            {dialogue.blessingTurns > 0 ? ` · Bendición: ${dialogue.blessingTurns} acciones restantes` : ''}
+          </p>}
           <div className="chronicles-audience__actions" aria-label="Respuestas disponibles">
             {choices.map((choice, index) => (
               <button ref={index === 0 ? firstChoiceRef : undefined} key={choice.id}
                 type="button" data-chronicles-dialogue-choice={choice.id}
+                disabled={choice.disabled === true} title={choice.reason || undefined}
                 onClick={() => choose(choice)}>
                 <b aria-hidden="true">{index + 1}.</b>
-                <span>{choice.label}</span>
+                <span>{choice.label}{choice.disabled && choice.reason
+                  ? <small className="chronicles-audience__choice-reason"> · {choice.reason}</small> : null}</span>
               </button>
             ))}
           </div>
