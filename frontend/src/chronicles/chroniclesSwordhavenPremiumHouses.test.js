@@ -98,6 +98,9 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(facade.getObjectByName('home-authored-attic-vent')).toBeFalsy();
     const bellcote = facade.getObjectByName('civic-roof-bellcote');
     expect(bellcote?.userData.chroniclesDecorativeOnly).toBe(true);
+    // The bell must clear the actual front gable, not disappear behind its ridge.
+    const gableTie = facade.getObjectByName('premium-oak-gable-tie');
+    expect(bellcote.position.y - gableTie.position.y).toBeGreaterThan(2.0);
     expect(bellcote.getObjectByName('civic-bellcote-open-posts')).toBeInstanceOf(THREE.InstancedMesh);
     expect(bellcote.getObjectByName('civic-bellcote-open-posts').count).toBe(4);
     expect(bellcote.getObjectByName('civic-bellcote-pitched-cap').rotation.y).toBeCloseTo(Math.PI / 4);
