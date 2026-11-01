@@ -6,6 +6,7 @@ import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import { CHRONICLES_SPELLS } from '../chronicles/chroniclesMagic.js';
 
 const workspace = readFileSync(new URL('./ChroniclesCharacterGrimoireWorkspace.css', import.meta.url), 'utf8');
+const sharedDesktopLayout = readFileSync(new URL('./ChroniclesCharacterSheetArchive.css', import.meta.url), 'utf8');
 const source = readFileSync(new URL('./ChroniclesCharacterGrimoire.jsx', import.meta.url), 'utf8');
 const spells = [CHRONICLES_SPELLS['first-aid'], CHRONICLES_SPELLS['flying-fist']];
 
@@ -32,7 +33,8 @@ describe('MM3 spell catalogue follows full-width Equipment workspace', () => {
   it('uses the entire desktop sheet without changing other folios or Tactics', () => {
     expect(workspace).toContain('@media (min-width: 851px) and (min-height: 581px)');
     expect(workspace).toContain('[data-chronicles-chapter="spells"]');
-    expect(workspace).toContain('grid-template-columns: minmax(0, 1fr) clamp(152px, 11vw, 188px)');
+    // The sidebar width is now owned by the shared layout, not spellbook-specific CSS.
+    expect(sharedDesktopLayout).toContain('grid-template-columns: minmax(0,1fr) clamp(152px, 11vw, 188px)');
     expect(workspace).toContain('grid-template-columns: repeat(2, minmax(0, 1fr))');
     expect(workspace).toContain('max-height: none;');
     expect(workspace).toContain('flex: 1 1 auto;');

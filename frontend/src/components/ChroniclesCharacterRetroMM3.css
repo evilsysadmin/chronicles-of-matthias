@@ -157,9 +157,6 @@
 /* Layout changes only where desktop has room. Phones retain their proven
    two-line name, 44px+ hero buttons and single-column safe fallbacks. */
 @media (min-width: 1200px) and (min-height: 650px) {
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__folio-layout {
-    grid-template-columns: minmax(0, 1fr) 146px;
-  }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__folio-content {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
