@@ -11,6 +11,7 @@ import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
 import { dressSwordhavenStreetWindows } from './chroniclesSwordhavenStreetDressing.js';
 import { dressSwordhavenAlleyLaundry } from './chroniclesSwordhavenAlleyLaundry.js';
+import { dressSwordhavenTieredFountain } from './chroniclesSwordhavenFountainArt.js';
 import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
@@ -876,6 +877,9 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const neighbours = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
       if (neighbours.length) return;
       const fountain = buildSwordhavenFountain(village);
+      if (scenePlan.mapId === 'swordhaven-first-book') {
+        dressSwordhavenTieredFountain(fountain, village, { coarsePointer });
+      }
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       fountain.position.set(wx, 0, wz);
       town.add(fountain);
