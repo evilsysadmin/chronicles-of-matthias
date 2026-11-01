@@ -49,7 +49,9 @@ export function chroniclesAdvanceOpeningVolley(previous, after) {
   if (!previous || !after || previous.combatRules !== 'mm3'
     || previous.phase !== 'explore' || previous.initiative
     || after.phase !== 'explore' || after.initiative
-    || previous.mapId !== after.mapId) return after;
+    || previous.mapId !== after.mapId
+    // A stale/no-op volley cannot provoke initiative without paying its turn.
+    || !(Number(after.turns) > Number(previous.turns))) return after;
 
   const { target, shooters, shots } = chroniclesOpeningVolleyShots(previous);
   if (!shooters.length) return after;
