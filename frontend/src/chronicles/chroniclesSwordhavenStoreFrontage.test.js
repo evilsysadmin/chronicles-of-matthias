@@ -117,10 +117,13 @@ describe('Swordhaven general store frontage', () => {
     const loft = store.getObjectByName('store-merchant-loft');
     expect(loft?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(loft.getObjectByName('store-loft-oak-gable')).toBeTruthy();
-    expect(loft.getObjectByName('store-loft-window')).toBeTruthy();
-    // The loft window must project in front of the main gable to be visible
-    // from the street-facing camera, not merely exist in the scene graph.
-    expect(loft.position.z + 0.77).toBeGreaterThan(store.getObjectByName('roof-gable-1').position.z);
+    const hatch = loft.getObjectByName('store-loft-loading-hatch');
+    expect(hatch?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(hatch.getObjectByName('store-loft-hatch-dark-recess')).toBeTruthy();
+    // The open cargo hatch must project in front of the main gable to be
+    // visible from the street-facing camera, not just in the scene graph.
+    expect(loft.position.z + hatch.getObjectByName('store-loft-hatch-warm-interior').position.z)
+      .toBeGreaterThan(store.getObjectByName('roof-gable-1').position.z);
     expect(loft.children.filter(child => child.name === 'store-loft-roof-slope')).toHaveLength(2);
     const balcony = loft.getObjectByName('store-loft-loading-balcony');
     expect(balcony?.userData.chroniclesDecorativeOnly).toBe(true);
@@ -132,10 +135,10 @@ describe('Swordhaven general store frontage', () => {
       .toHaveLength(2);
     expect(balcony.children.filter(child => child.name === 'store-balcony-diagonal-brace'))
       .toHaveLength(2);
-    // The cargo deck projects beyond the attic window and stays high above
-    // the street; it must never introduce a ground-level obstruction.
+    // The cargo deck projects beyond the warm hatch opening and stays high
+    // above the street; it must never introduce a ground-level obstruction.
     const deck = balcony.getObjectByName('store-balcony-loading-deck');
-    expect(deck.position.z).toBeGreaterThan(loft.getObjectByName('store-loft-window').position.z);
+    expect(deck.position.z).toBeGreaterThan(hatch.getObjectByName('store-loft-hatch-warm-interior').position.z);
     expect(loft.position.y + deck.position.y - 0.09).toBeGreaterThan(4.5);
     expect(forge.getObjectByName('store-loft-loading-balcony')).toBeFalsy();
     expect(store.getObjectByName('pitched-roof-dormer--1')).toBeFalsy();

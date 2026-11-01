@@ -34,6 +34,27 @@ describe('Swordhaven Provisiones cedar loading doors', () => {
     expect(braces.count).toBe(2);
     expect(pulls.count).toBe(2);
     expect(doors.getObjectByName('store-door-oak-loading-lintel')).toBeTruthy();
+    // The hoist must serve an open, framed warehouse hatch rather than a
+    // generic flat window, on both coarse/mobile and desktop render paths.
+    const hatch = store.getObjectByName('store-loft-loading-hatch');
+    expect(hatch?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-loft-loading-hatch')).toBeFalsy();
+    expect(hatch.getObjectByName('store-loft-hatch-dark-recess')).toBeTruthy();
+    expect(hatch.getObjectByName('store-loft-hatch-warm-interior')).toBeTruthy();
+    expect(hatch.getObjectByName('store-loft-hatch-oak-lintel')).toBeTruthy();
+    expect(hatch.getObjectByName('store-loft-hatch-oak-sill')).toBeTruthy();
+    const shutters = hatch.children.filter(part =>
+      part.name === 'store-loft-hatch-open-oak-shutter');
+    expect(shutters).toHaveLength(2);
+    expect(shutters.map(part => Math.sign(part.rotation.y))).toEqual([-1, 1]);
+    expect(shutters.every(part =>
+      part.getObjectByName('store-loft-hatch-iron-shutter-strap')?.userData.chroniclesDecorativeOnly === true)).toBe(true);
+    expect(hatch.children.every(part =>
+      part.userData.chroniclesDecorativeOnly === true)).toBe(true);
+    for (const shutter of shutters) {
+      expect(shutter.castShadow).toBe(!coarsePointer);
+      expect(shutter.position.y).toBeGreaterThan(-0.5);
+    }
     for (const part of doors.children) {
       expect(part.userData.chroniclesDecorativeOnly).toBe(true);
       expect(part.position.z).toBeLessThan(4.5);

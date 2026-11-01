@@ -1816,8 +1816,44 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const oak = material(0x79553c, { roughness: 0.96 });
     mesh(loft, new THREE.BoxGeometry(2.54, 1.45, 1.42), oak,
       'store-loft-oak-gable', [0, 0, 0], !coarse);
-    mesh(loft, new THREE.BoxGeometry(1.32, 0.83, 0.10), mats.window,
-      'store-loft-window', [0, 0.12, 0.77]);
+    // A working cargo hatch makes the hoist and attic read as one merchant
+    // warehouse, rather than a crane above a flat domestic amber window.
+    // Shutters fold out beside a warm, shadowed opening; all geometry remains
+    // decorative and high above the unchanged shop entrance and walk grid.
+    const cargoHatch = new THREE.Group();
+    cargoHatch.name = 'store-loft-loading-hatch';
+    cargoHatch.userData.chroniclesDecorativeOnly = true;
+    const hatchRecess = material(0x2c211a, { roughness: 0.98 });
+    const hatchInterior = material(0xc18a4f, {
+      roughness: 0.91, emissive: 0x98551f, emissiveIntensity: 0.62,
+    });
+    const shutterOak = material(0x9e744b, { roughness: 0.95 });
+    mesh(cargoHatch, new THREE.BoxGeometry(1.50, 1.04, 0.10), hatchRecess,
+      'store-loft-hatch-dark-recess', [0, 0.12, 0.78], !coarse);
+    mesh(cargoHatch, new THREE.BoxGeometry(1.28, 0.84, 0.08), hatchInterior,
+      'store-loft-hatch-warm-interior', [0, 0.12, 0.85], !coarse);
+    for (const side of [-1, 1]) {
+      const shutter = mesh(cargoHatch, new THREE.BoxGeometry(0.48, 1.00, 0.13),
+        shutterOak, 'store-loft-hatch-open-oak-shutter',
+        [side * 1.06, 0.12, 1.03], !coarse);
+      shutter.rotation.y = side * 0.62;
+      const strap = mesh(shutter, new THREE.BoxGeometry(0.43, 0.085, 0.14),
+        mats.steel, 'store-loft-hatch-iron-shutter-strap', [0, -0.22, 0.10], !coarse);
+      strap.userData.chroniclesDecorativeOnly = true;
+      mesh(cargoHatch, new THREE.BoxGeometry(0.12, 0.94, 0.16), mats.timber,
+        'store-loft-hatch-oak-jamb', [side * 0.72, 0.12, 0.91], !coarse);
+    }
+    for (const [name, y] of [
+      ['store-loft-hatch-oak-lintel', 0.65],
+      ['store-loft-hatch-oak-sill', -0.41],
+    ]) {
+      mesh(cargoHatch, new THREE.BoxGeometry(1.58, 0.13, 0.17), mats.timber,
+        name, [0, y, 0.92], !coarse);
+    }
+    for (const part of cargoHatch.children) {
+      part.userData.chroniclesDecorativeOnly = true;
+    }
+    loft.add(cargoHatch);
     for (const side of [-1, 1]) {
       const slope = mesh(loft, new THREE.BoxGeometry(1.66, 0.15, 1.85), roof,
         'store-loft-roof-slope', [side * 0.53, 0.94, 0], !coarse);
