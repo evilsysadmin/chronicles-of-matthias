@@ -1076,11 +1076,11 @@ try {
         const [current, maximum] = fraction.split('/');
         return /^\d+\/\d+$/.test(fraction) && accessibleLabel.includes(`${current} de ${maximum} PV`);
       }), 'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
-      assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 380)),
-        'Only the narrowest phone may omit the redundant visible PV suffix: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 620)),
+        'Phone-size dock uses heart + full numeric HP instead of a redundant PV suffix: ' + JSON.stringify(geometry.dockButtons));
       assert.ok(geometry.dockButtons.every(({ healthGlyph }) =>
-        (healthGlyph.includes('♥')) === (width <= 380)),
-      'Only narrow phones should show a health glyph when the PV suffix is hidden: ' + JSON.stringify(geometry.dockButtons));
+        (healthGlyph.includes('♥')) === (width <= 620)),
+      'Every phone dock without a visible PV suffix must show the health glyph: ' + JSON.stringify(geometry.dockButtons));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
