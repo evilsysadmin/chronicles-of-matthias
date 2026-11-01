@@ -52,6 +52,16 @@ describe('Swordhaven forge masonry', () => {
     }
     tavernCourses.getColorAt(0, tint);
     expect(tint.getHex()).toBe(0xb5ab9a);
+    const portal = forge.getObjectByName('forge-kiln-brick-entry-arch');
+    expect(portal?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(portal.children.filter(part => part.name === 'forge-portal-kiln-brick-pier'))
+      .toHaveLength(2);
+    const arch = portal.getObjectByName('forge-portal-kiln-brick-vault');
+    expect(arch.geometry.type).toBe('ShapeGeometry');
+    expect(arch.material.map).toBe(swordhavenSurfaceTexture('brick'));
+    expect(arch.position.z).toBeLessThan(4.5);
+    expect(portal.children.every(part => part.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(tavern.getObjectByName('forge-kiln-brick-entry-arch')).toBeFalsy();
     expect(forge.getObjectByName('shop-door')).toBeTruthy();
     expect(forge.getObjectByName('forge-roof-smokestack')).toBeTruthy();
     expect(swordhaven.grid[4][5]).toBe('.');
