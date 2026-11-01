@@ -31,7 +31,34 @@ describe('Swordhaven First Book plaza fountain', () => {
     expect(jets).toBeInstanceOf(THREE.InstancedMesh);
     expect(jets.count).toBe(4);
     expect(jets.geometry.type).toBe('TubeGeometry');
+    expect(jets.geometry.parameters.radius).toBeLessThan(0.030);
     expect(jets.material).toBe(lowerWater.material);
+
+    const ripples = tier.getObjectByName('fountain-water-impact-ripples');
+    expect(ripples).toBeInstanceOf(THREE.InstancedMesh);
+    expect(ripples.count).toBe(4);
+    expect(ripples.geometry.type).toBe('TorusGeometry');
+    expect(ripples.geometry.parameters.radius + ripples.geometry.parameters.tube)
+      .toBeLessThan(0.12);
+    expect(ripples.material.transparent).toBe(true);
+    expect(ripples.material.opacity).toBeGreaterThan(0.5);
+    expect(ripples.material.opacity).toBeLessThan(0.8);
+    expect(ripples.material.depthWrite).toBe(false);
+    expect(ripples.castShadow).toBe(false);
+    expect(ripples.receiveShadow).toBe(false);
+    expect(ripples.userData.chroniclesDecorativeOnly).toBe(true);
+    const rippleMatrix = new THREE.Matrix4();
+    for (let index = 0; index < ripples.count; index += 1) {
+      ripples.getMatrixAt(index, rippleMatrix);
+      const pos = new THREE.Vector3().setFromMatrixPosition(rippleMatrix);
+      const radius = Math.hypot(pos.x, pos.z);
+      // All rings are inside the unchanged basin, above the flat water disk.
+      expect(radius).toBeCloseTo(1.3, 5);
+      expect(radius + ripples.geometry.parameters.radius
+        + ripples.geometry.parameters.tube).toBeLessThan(1.47);
+      expect(pos.y).toBeGreaterThan(0.725);
+      expect(pos.y).toBeLessThan(0.79);
+    }
     expect(jets.castShadow).toBe(false);
     expect(tier.children.every(child => child.userData.chroniclesDecorativeOnly)).toBe(true);
     expect(tier.children.every(child => !child.isLight)).toBe(true);
@@ -73,6 +100,7 @@ describe('Swordhaven First Book plaza fountain', () => {
     expect(fountain.position.x).toBe(0);
     expect(fountain.position.z).toBe(-8);
     expect(fountain.getObjectByName('swordhaven-fountain-upper-tier')).toBeTruthy();
+    expect(fountain.getObjectByName('fountain-water-impact-ripples')?.count).toBe(4);
 
     const otherScene = new THREE.Scene();
     buildChroniclesCampaignExterior(otherScene, {
@@ -80,5 +108,6 @@ describe('Swordhaven First Book plaza fountain', () => {
     });
     expect(otherScene.getObjectByName('swordhaven-fountain')).toBeTruthy();
     expect(otherScene.getObjectByName('swordhaven-fountain-upper-tier')).toBeFalsy();
+    expect(otherScene.getObjectByName('fountain-water-impact-ripples')).toBeFalsy();
   });
 });
