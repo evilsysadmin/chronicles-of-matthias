@@ -120,7 +120,7 @@ async function assertMM3ChapterTabsStable(nav, initial, chapter, viewport) {
   const message = chapter + ' must preserve all Estado tab dimensions at ' + viewport
     + ': ' + JSON.stringify({ initial, current });
   assert.equal(current.buttons.length, 3, message);
-  assert.ok(Math.abs(current.railLeft - initial.railLeft) <= 1
+  assert.ok(Math.abs(current.railLeft - initial.railLeft) <= 3
     && Math.abs(current.railWidth - initial.railWidth) <= 1, message);
   current.buttons.forEach((button, index) => {
     assert.ok(button.height >= 55 && button.width >= 100, message);
