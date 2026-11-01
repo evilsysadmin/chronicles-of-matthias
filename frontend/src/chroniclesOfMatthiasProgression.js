@@ -7,6 +7,8 @@ import { setProfileStorageItem } from './profileKeys.js';
 import { CHRONICLES_PARTY } from './chroniclesOfMatthias.js';
 import {
   createCanonicalChroniclesCharacterBuild,
+  CHRONICLES_MM3_BASE_DAMAGE,
+  CHRONICLES_MM3_DAMAGE_PROFILE_VERSION,
   normalizeChroniclesCharacterBuild,
   validateChroniclesCharacterBuild,
 } from './chronicles/chroniclesCharacterBuilds.js';
@@ -697,13 +699,19 @@ function refreshMm3Member(member, progression, turns) {
     // bonus. A delta added to already-clamped 1 damage would create phantom
     // damage for weak heroes (e.g. Might 6 -> 7).
     damage: (() => {
-      const templateDamage = Number(CHRONICLES_PARTY.find(({ id }) => id === member.id)?.damage || 1);
-      const oldBase = Math.max(1, templateDamage + Number(member.mm3.bonuses?.might || 0));
-      const nextBase = Math.max(1, templateDamage + sheet.derived.bonuses.might);
+      // Old MM3 checkpoints may still carry the chess-rook's +1 template
+      // damage. Convert that legacy baseline once, retaining any independent
+      // damage delta and avoiding drift on repeated progression reconciliation.
+      const legacyTemplateDamage = Number(CHRONICLES_PARTY.find(({ id }) => id === member.id)?.damage || 1);
+      const previousBaseDamage = member.mm3.damageProfileVersion === CHRONICLES_MM3_DAMAGE_PROFILE_VERSION
+        ? CHRONICLES_MM3_BASE_DAMAGE : legacyTemplateDamage;
+      const oldBase = Math.max(1, previousBaseDamage + Number(member.mm3.bonuses?.might || 0));
+      const nextBase = Math.max(1, CHRONICLES_MM3_BASE_DAMAGE + sheet.derived.bonuses.might);
       return Math.max(1, nextBase + Number(member.damage || 1) - oldBase);
     })(),
     mm3: {
       ...member.mm3,
+      damageProfileVersion: CHRONICLES_MM3_DAMAGE_PROFILE_VERSION,
       stats: sheet.stats,
       bonuses: sheet.derived.bonuses,
       worldBonuses: sheet.worldBonuses,

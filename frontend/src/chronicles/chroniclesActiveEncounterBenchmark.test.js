@@ -83,25 +83,26 @@ function playSewerEncounter(rollOffset, {
         expect(chroniclesReduce(state, { type: move }), `${move} action must not change combat state`).toBe(state);
       }
       const inReach = chroniclesCombatMeleeTarget(state);
-      const rook = state.party.find(({ id }) => id === 'rook');
+      const wounded = state.party.filter(({ hp, maxHp }) => hp > 0 && hp < maxHp)
+        .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];
       const caster = state.party.find(({ id }) => id === 'bishop');
       // A carried-over party may take wounds in the SECOND encounter even
       // without the explicit first-encounter woundedStart fixture. If the
       // cleric still has PH, spending a genuine healing turn is part of the
       // playable resource budget, not a synthetic reset or lowered bar.
-      if ((woundedStart || previousState) && allowSpellHealing && actor.id === 'bishop' && rook?.hp > 0
-        && rook.hp < rook.maxHp && chroniclesMemberSp(state, caster) > 0) {
+      if ((woundedStart || previousState) && allowSpellHealing && actor.id === 'bishop' && wounded
+        && chroniclesMemberSp(state, caster) > 0) {
         const beforeSp = chroniclesMemberSp(state, caster);
-        const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: 'rook' });
+        const healed = chroniclesReduce(state, { type: 'cast', memberId: actor.id, spellId: 'first-aid', targetId: wounded.id });
         expect(healed.turns).toBe(state.turns + 1);
         const afterSp = chroniclesMemberSp(healed, healed.party.find(({ id }) => id === 'bishop'));
-        const afterRook = healed.party.find(({ id }) => id === 'rook');
+        const afterTarget = healed.party.find(({ id }) => id === wounded.id);
         expect(afterSp).toBe(beforeSp - 1);
-        expect(afterRook.hp).toBeGreaterThan(rook.hp);
+        expect(afterTarget.hp).toBeGreaterThan(wounded.hp);
         metrics.heroHeals += 1;
         metrics.healingPhSpent += beforeSp - afterSp;
-        metrics.healedHp += afterRook.hp - rook.hp;
-        healingByHero.rook += afterRook.hp - rook.hp;
+        metrics.healedHp += afterTarget.hp - wounded.hp;
+        healingByHero[wounded.id] += afterTarget.hp - wounded.hp;
         state = healed;
       } else if (inReach) {
         const attempted = chroniclesReduce(state, { type: 'attack', memberId: actor.id, mode: 'melee' });
