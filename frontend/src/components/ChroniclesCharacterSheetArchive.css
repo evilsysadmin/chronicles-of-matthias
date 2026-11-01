@@ -71,7 +71,7 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__xp-track { background: #faeccf; border-color: #986e3c; }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__folio-layout {
     display: grid;
-    grid-template-columns: minmax(0,1fr) clamp(148px, 15vw, 190px);
+    grid-template-columns: minmax(0,1fr) clamp(152px, 11vw, 188px);
     align-items: start;
     gap: 0;
     min-width: 0;
@@ -96,7 +96,9 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button,
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs button.is-active {
     justify-content: flex-start;
-    min-height: 55px;
+    min-height: 56px;
+    height: 56px;
+    box-sizing: border-box;
     padding: 10px;
     gap: 9px;
     border: 1px solid #b48d58;
