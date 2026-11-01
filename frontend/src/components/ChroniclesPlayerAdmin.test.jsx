@@ -66,6 +66,17 @@ describe('Chronicles player administration', () => {
       .toBe('Navegador · 75bb33628d');
     expect(chroniclesRosterPlayerLabel({ username: 'shadowops:staging:11111111-1111-4111-8111-111111111111' }))
       .toBe('ShadowOps ID · 11111111');
+    expect(chroniclesRosterPlayerLabel({
+      username: 'shadowops:staging:11111111-1111-4111-8111-111111111111',
+      accountAlias: 'alice',
+    })).toBe('alice');
+    expect(chroniclesRosterPlayerLabel({
+      username: 'shadowops:staging:11111111-1111-4111-8111-111111111111',
+      accountAlias: '<script>',
+    })).toBe('ShadowOps ID · 11111111');
+    expect(chroniclesRosterPlayerLabel({
+      username: 'legacy-player', accountAlias: 'alice',
+    })).toBe('legacy-player');
     expect(chroniclesRosterPlayerLabel({ username: '' })).toBe('Cuenta sin nombre');
   });
 
@@ -75,6 +86,15 @@ describe('Chronicles player administration', () => {
     expect(chroniclesRosterMatches(user, 'éOW')).toBe(true);
     expect(chroniclesRosterMatches(user, 'no-existe')).toBe(false);
     expect(chroniclesRosterMatches({ username: 'bob', heroNames: { rook: {} } }, 'bob')).toBe(true);
+  });
+
+  it('searches only a trusted central account alias without trusting a legacy display-name field', () => {
+    const player = {
+      username: 'shadowops:staging:11111111-1111-4111-8111-111111111111',
+      accountAlias: 'alice',
+    };
+    expect(chroniclesRosterMatches(player, 'ALI')).toBe(true);
+    expect(chroniclesRosterMatches({ username: 'bob', accountAlias: 'alice' }, 'ALI')).toBe(false);
   });
 
   it('can search real saved map labels and authored main objectives', () => {
