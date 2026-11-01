@@ -1,5 +1,6 @@
 import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
+import ChroniclesInventoryMiniature, { chroniclesInventoryMiniatureSpec } from './ChroniclesInventoryMiniature.jsx';
 
 // Original 16px pixel silhouettes, not external emoji/fonts or MM3 assets.
 // The real catalog identifies each family so a dagger is not a long sword.
@@ -41,6 +42,10 @@ export default function ChroniclesInventoryItemIcon({ item }) {
         loading="lazy" decoding="async" draggable="false" data-item-icon={kind} />
     );
   }
+  // The known catalog has material-aware miniatures for every armor and
+  // weapon family. Only genuinely unknown loot uses the old pixel fallback.
+  const miniature = chroniclesInventoryMiniatureSpec(item);
+  if (miniature) return <ChroniclesInventoryMiniature item={item} spec={miniature} kind={kind} />;
   return (
     <svg className="chronicles-character-sheet__pixel-item-icon" viewBox="0 0 16 16"
       width="27" height="27" shapeRendering="crispEdges" aria-hidden="true" focusable="false"
