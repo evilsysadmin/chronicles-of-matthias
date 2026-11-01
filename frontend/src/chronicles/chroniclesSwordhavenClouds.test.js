@@ -12,7 +12,7 @@ describe('Swordhaven daylight cloud banks', () => {
 
     expect(root.children).toHaveLength(count);
     const lobes = root.children.flatMap(bank => {
-      expect(bank.name).toMatch(/^swordhaven-cloud-\\d+$/);
+      expect(bank.name).toMatch(/^swordhaven-cloud-\d+$/);
       expect(bank.userData.chroniclesDecorativeOnly).toBe(true);
       expect(bank.position.y).toBeGreaterThan(15);
       expect(bank.children).toHaveLength(5);
