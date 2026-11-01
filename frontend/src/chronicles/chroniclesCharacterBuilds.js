@@ -20,6 +20,10 @@ import {
 } from './chroniclesMM3Rules.js';
 
 export const CHRONICLES_CHARACTER_BUILD_VERSION = 2;
+// MM3 physical damage starts from a common human baseline; the four chess
+// slots retain their individual authored damage only in Tactics.
+export const CHRONICLES_MM3_BASE_DAMAGE = 1;
+export const CHRONICLES_MM3_DAMAGE_PROFILE_VERSION = 2;
 export const CHRONICLES_CHARACTER_NAME_MAX = 24;
 
 export const CHRONICLES_CHARACTER_SLOTS = Object.freeze([
@@ -278,10 +282,12 @@ export function resolveChroniclesCharacterParty(partyTemplates, rawBuild, { rule
       name: character.name,
       portraitId: character.portraitId,
       maxHp: mm3 ? derived.maxHp : Math.max(1, Number(template.maxHp || 1)),
-      damage: Math.max(1, Number(template.damage || 1) + (mm3 ? derived.damageBonus : 0)),
+      damage: Math.max(1, (mm3 ? CHRONICLES_MM3_BASE_DAMAGE : Number(template.damage || 1))
+        + (mm3 ? derived.damageBonus : 0)),
       reach: Math.max(1, Number(template.reach || 1)),
       ...(mm3 ? {
         mm3: {
+          damageProfileVersion: CHRONICLES_MM3_DAMAGE_PROFILE_VERSION,
           classId: derived.classId,
           classLabel: derived.classLabel,
           raceId: character.raceId,
