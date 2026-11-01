@@ -104,6 +104,14 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(bellcote.getObjectByName('civic-bellcote-open-posts')).toBeInstanceOf(THREE.InstancedMesh);
     expect(bellcote.getObjectByName('civic-bellcote-open-posts').count).toBe(4);
     expect(bellcote.getObjectByName('civic-bellcote-pitched-cap').rotation.y).toBeCloseTo(Math.PI / 4);
+    const bronzeBell = bellcote.getObjectByName('civic-bellcote-bronze-bell');
+    expect(bronzeBell?.geometry).toBeInstanceOf(THREE.LatheGeometry);
+    // The lower mouth must flare beyond the narrow upper shoulder: a cone
+    // pointing up reads as a roof ornament, not as a hanging bronze bell.
+    const profile = bronzeBell.geometry.parameters.points;
+    expect(profile[0].x).toBeGreaterThan(profile[profile.length - 2].x);
+    expect(bronzeBell.position.y + profile[0].y).toBeGreaterThan(
+      bellcote.getObjectByName('civic-bellcote-clapper').position.y);
     expect(bellcote.getObjectByName('civic-bellcote-bronze-bell')).toBeTruthy();
     expect(bellcote.getObjectByName('civic-bellcote-roof-finial')).toBeTruthy();
     expect(bellcote.children.every(node => node.userData.chroniclesDecorativeOnly)).toBe(true);
