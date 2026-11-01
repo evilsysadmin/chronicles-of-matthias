@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesCampRestStatus } from './chroniclesCampRest.js';
+import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
@@ -74,6 +75,38 @@ describe('MM3 field rest · safe expedition resources', () => {
     expect(chroniclesReduce(fight, 'camp-rest')).toBe(fight);
     const stale = { ...base, phase: 'combat' };
     expect(chroniclesReduce(stale, 'camp-rest')).toBe(stale);
+  });
+
+  it('advances a real nearby goblin exactly once for a successful camp turn', () => {
+    const spawned = initial();
+    const goblin = chroniclesActiveEnemies(spawned).find((enemy) => enemy.id === 'sewers-goblin-west');
+    expect(goblin).toBeTruthy();
+    // The starting corridor has open cells (1, 1) through (1, 4).
+    // Three steps is safe to begin resting, but the goblin can approach.
+    const base = wounded(stocked(cleared(spawned)));
+    const before = {
+      ...base,
+      [goblin.hpKey]: goblin.maxHp,
+      enemyPositions: { ...base.enemyPositions, [goblin.id]: { x: 1, y: 4 } },
+    };
+    expect({ x: before.x, y: before.y }).toEqual({ x: 1, y: 1 });
+    expect(chroniclesCampRestStatus(before, chroniclesActiveEnemies(before)).canRest).toBe(true);
+    // This is the real first-person exploration path, not a reducer-only rest:
+    // creatures must receive the same single movement tick as a turn or spell.
+    const after = chroniclesGridExplorationStep(before, 'camp-rest');
+    expect(after.turns).toBe(before.turns + 1);
+    expect(after.explorationEnemySteps).toBe((before.explorationEnemySteps || 0) + 1);
+    expect(after.enemyPositions[goblin.id]).toEqual({ x: 1, y: 3 });
+    expect(after.inventory['road-rations'].quantity).toBe(1);
+    expect(after.party[0].hp).toBe(0);
+    // A refused rest, whether threatened or fully healed, must be a no-op:
+    // no extra food, no free enemy step and no additional exploration time.
+    const threatened = {
+      ...before,
+      enemyPositions: { ...before.enemyPositions, [goblin.id]: { x: 1, y: 3 } },
+    };
+    expect(chroniclesGridExplorationStep(threatened, 'camp-rest')).toBe(threatened);
+    expect(chroniclesGridExplorationStep(after, 'camp-rest')).toBe(after);
   });
 
   it('never changes the independent Tactics rules or lets a stale inn camp', () => {
