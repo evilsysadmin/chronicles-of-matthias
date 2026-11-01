@@ -3182,20 +3182,60 @@ export function createSwordhavenMaterials() {
 }
 
 export function addSwordhavenClouds(root, coarsePointer = false) {
-  // Cloud banks are genuine low-detail 3D volume silhouettes, not a flat sky texture.
-  // Basic materials keep the clouds bright without costly per-cloud lighting.
-  const cloudMaterial = new THREE.MeshBasicMaterial({
-    color: 0xf6f8f4, transparent: true, opacity: 0.87, depthWrite: false,
+  // The old unlit white spheres looked like overlapping discs; opaque shaded
+  // polyhedra looked like floating rocks. A single soft-edged procedural cloud
+  // bank per cluster reads as atmosphere, not foreground geometry. The same
+  // small RGBA atlas and SpriteMaterial serve every camera-facing bank.
+  const width = 128;
+  const height = 64;
+  const pixels = new Uint8Array(width * height * 4);
+  const lobes = [
+    [-0.72, -0.15, 0.35, 0.36],
+    [-0.39, 0.08, 0.40, 0.49],
+    [0.02, 0.20, 0.43, 0.54],
+    [0.43, 0.05, 0.40, 0.45],
+    [0.76, -0.14, 0.31, 0.33],
+  ];
+  for (let y = 0; y < height; y += 1) {
+    const ny = y / (height - 1) * 2 - 1;
+    for (let x = 0; x < width; x += 1) {
+      const nx = x / (width - 1) * 2 - 1;
+      let density = 0;
+      for (const [cx, cy, rx, ry] of lobes) {
+        const dx = (nx - cx) / rx;
+        const dy = (ny - cy) / ry;
+        density += Math.exp(-2.2 * (dx * dx + dy * dy));
+      }
+      const t = Math.max(0, Math.min(1, (density - 0.12) / 1.10));
+      const feather = t * t * (3 - 2 * t);
+      const offset = (y * width + x) * 4;
+      pixels[offset] = 240;
+      pixels[offset + 1] = 244;
+      pixels[offset + 2] = 242;
+      pixels[offset + 3] = Math.round(feather * 235);
+    }
+  }
+  const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  const cloudMaterial = new THREE.SpriteMaterial({
+    map: texture, transparent: true, opacity: 0.78, depthWrite: false,
+    color: 0xffffff, fog: true,
   });
   for (let cluster = 0; cluster < (coarsePointer ? 3 : 5); cluster += 1) {
     const cloud = new THREE.Group();
     cloud.name = 'swordhaven-cloud-' + cluster;
+    cloud.userData.chroniclesDecorativeOnly = true;
     const direction = cluster % 2 === 0 ? -1 : 1;
     cloud.position.set(direction * (16 + cluster * 2.7), 16 + (cluster % 3) * 2, -38 + cluster * 3);
-    for (let puff = 0; puff < 3; puff += 1) {
-      mesh(cloud, new THREE.SphereGeometry(2.35 - puff * 0.26, 9, 6),
-        cloudMaterial, 'cloud-puff', [(puff - 1) * 2.0, puff % 2 ? 0.65 : 0, 0]);
-    }
+    const bank = new THREE.Sprite(cloudMaterial);
+    bank.name = 'cloud-soft-bank';
+    bank.scale.set(11.8 + (cluster % 2) * 1.6, 4.2 + (cluster % 3) * 0.35, 1);
+    bank.userData.chroniclesDecorativeOnly = true;
+    cloud.add(bank);
     root.add(cloud);
   }
 }
