@@ -1103,23 +1103,34 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(battlements).toBeInstanceOf(THREE.InstancedMesh);
     expect(perimeter.frustumCulled).toBe(false);
     expect(battlements.frustumCulled).toBe(false);
-    expect(perimeter.count).toBe(wall); // Every solid border tile, including corners.
+    // Swordhaven has one real passage north at (9,0). The perimeter batch
+    // excludes precisely that solid tile; two jambs and a lintel replace it.
+    expect(perimeter.count).toBe(wall - 1);
+    const opening = scene.getObjectByName('chronicles-town-gate-passage-to-first-book-banner-road');
+    const gate = scene.getObjectByName('chronicles-campaign-content-to-first-book-banner-road');
+    expect(opening).toBeInstanceOf(THREE.Group);
+    expect(opening.children.filter(part => part.name === 'chronicles-town-gate-wall-jamb')).toHaveLength(2);
+    expect(opening.getObjectByName('chronicles-town-gate-wall-lintel')).toBeTruthy();
+    expect(gate.getObjectByName('chronicles-town-gate-threshold')).toBeTruthy();
+    expect(gate.getObjectByName('chronicles-town-gate-outbound-road')).toBeTruthy();
+    expect(gate.userData.chroniclesContentId).toBe('to-first-book-banner-road');
+    expect(gate.userData.chroniclesExitGatewayStyle).toBe('settlement');
     expect(battlements.count).toBeGreaterThan(0);
     expect(perimeter.geometry.parameters.height).toBe(6.4);
-    expect(urbanWalls.count + perimeter.count).toBe(126);
+    expect(urbanWalls.count + perimeter.count).toBe(125); // One gate tile is no longer a solid block.
     expect(urbanWalls.count).toBeLessThan(perimeter.count); // No doubled border masonry.
-    // Actual 1.62m first-person eye rays from the plaza must hit solid
-    // stone on all four sides, not empty sky; this tests live mesh placement
-    // rather than simply counting instances in the authored map.
+    // An eye-level north ray must now pass through the real carved opening.
+    // Every other compass direction must still encounter the city wall.
     scene.updateMatrixWorld(true);
-    for (const direction of [
-      [0, 0, -1], [0, 0, 1], [-1, 0, 0], [1, 0, 0],
-    ]) {
-      const ray = new THREE.Raycaster(
-        new THREE.Vector3(0, 1.62, 0),
-        new THREE.Vector3(...direction), 0.1, 90,
-      );
-      expect(ray.intersectObject(perimeter).length).toBeGreaterThan(0);
+    const rayTo = (direction) => new THREE.Raycaster(
+      new THREE.Vector3(0, 1.62, 0),
+      new THREE.Vector3(...direction), 0.1, 90,
+    );
+    const north = rayTo([0, 0, -1]);
+    expect(north.intersectObject(perimeter)).toHaveLength(0);
+    expect(north.intersectObject(opening, true)).toHaveLength(0);
+    for (const direction of [[0, 0, 1], [-1, 0, 0], [1, 0, 0]]) {
+      expect(rayTo(direction).intersectObject(perimeter).length).toBeGreaterThan(0);
     }
     // The matrix of every perimeter instance corresponds to a real blocked
     // edge tile. No extra obstacle may appear over a shop approach or street.
@@ -1135,7 +1146,9 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(x === 0 || x === width - 1 || y === 0 || y === height - 1).toBe(true);
       visitedPerimeter.add(x + ',' + y);
     }
-    expect(visitedPerimeter.size).toBe(wall);
+    expect(visitedPerimeter.size).toBe(wall - 1);
+    expect(visitedPerimeter.has('9,0')).toBe(false);
+    expect(grid[0][9]).toBe('#'); // Visual opening is NOT a collision change.
     expect(swordhavenFirstBook.landscape.streetWallHeight).toBe(6.4);
     expect(urbanWalls).toBeInstanceOf(THREE.InstancedMesh);
     expect(urbanWalls.geometry.parameters.height).toBe(6.4);
