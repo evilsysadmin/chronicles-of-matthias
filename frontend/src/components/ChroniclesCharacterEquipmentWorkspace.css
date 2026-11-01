@@ -119,7 +119,6 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="equipment"]) {
-    grid-template-columns: minmax(0, 1fr) clamp(152px, 11vw, 188px);
     align-items: stretch;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
