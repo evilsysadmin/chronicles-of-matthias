@@ -43,16 +43,16 @@ export function dressSwordhavenTieredFountain(fountain, mats, { coarsePointer = 
     new THREE.SphereGeometry(0.24, coarsePointer ? 8 : 12, 8),
     mats.gold, [0, 2.88, 0]);
 
-  // Four gently arched streams share one geometry/material and one draw call.
-  // Each falls into the existing lower water disk (radius 1.47m), not onto
-  // walkable streets. Neither the curves nor the upper bowl can be clicked.
+  // On actual 390px screenshots, the old 10cm-wide water tubes looked like
+  // rigid cyan pipes. Keep the same four arcs but make them fine water threads.
+  // All impacts stay inside the original 1.47m water disk, not on the road.
   const stream = new THREE.QuadraticBezierCurve3(
     new THREE.Vector3(0.69, 2.32, 0),
     new THREE.Vector3(1.12, 2.42, 0),
     new THREE.Vector3(1.30, 0.79, 0),
   );
   const jets = new THREE.InstancedMesh(
-    new THREE.TubeGeometry(stream, coarsePointer ? 12 : 20, 0.052, 6, false),
+    new THREE.TubeGeometry(stream, coarsePointer ? 12 : 20, 0.026, 6, false),
     water.material, 4);
   jets.name = 'fountain-four-water-jets';
   jets.userData.chroniclesDecorativeOnly = true;
@@ -66,6 +66,32 @@ export function dressSwordhavenTieredFountain(fountain, mats, { coarsePointer = 
   }
   jets.instanceMatrix.needsUpdate = true;
   tier.add(jets);
+
+  // Four quiet, low-profile ripple crowns give the otherwise perfectly flat
+  // lower water a visible point of impact. Batch all four into one draw call;
+  // the ring is fully contained within the same basin (1.30 + 0.112 < 1.47).
+  // This material is local to one decorative fountain, not the shared water
+  // surface, so the original basin tint and all other settlements are intact.
+  const rippleMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc0e7e5, metalness: 0.05, roughness: 0.38,
+    transparent: true, opacity: 0.70, depthWrite: false,
+  });
+  const ripples = new THREE.InstancedMesh(
+    new THREE.TorusGeometry(0.10, 0.012, 4, coarsePointer ? 12 : 16),
+    rippleMaterial, 4);
+  ripples.name = 'fountain-water-impact-ripples';
+  ripples.userData.chroniclesDecorativeOnly = true;
+  ripples.castShadow = false;
+  ripples.receiveShadow = false;
+  for (let index = 0; index < 4; index += 1) {
+    const angle = index * Math.PI / 2;
+    dummy.position.set(Math.cos(angle) * 1.30, 0.748, -Math.sin(angle) * 1.30);
+    dummy.rotation.set(-Math.PI / 2, 0, 0);
+    dummy.updateMatrix();
+    ripples.setMatrixAt(index, dummy.matrix);
+  }
+  ripples.instanceMatrix.needsUpdate = true;
+  tier.add(ripples);
   fountain.add(tier);
   return tier;
 }
