@@ -52,6 +52,53 @@ describe('MM3 field rest · safe expedition resources', () => {
     expect(chroniclesReduce(after, 'camp-rest')).toBe(after); // No wasted rations at full health.
   });
 
+  it('feeds and heals numeric-string HP survivors without reviving malformed or fallen heroes', () => {
+    const base = wounded(stocked(cleared(initial())));
+    const legacy = {
+      ...base,
+      party: base.party.map((member, index) => ({
+        ...member, hp: index === 0 ? '1' : 0,
+      })),
+    };
+    expect(chroniclesCampRestStatus(legacy, []).rationsNeeded).toBe(1);
+    const rested = chroniclesReduce(legacy, 'camp-rest');
+    expect(rested.turns).toBe(legacy.turns + 1);
+    expect(rested.inventory['road-rations'].quantity).toBe(3);
+    expect(rested.party[0].hp).toBe(rested.party[0].maxHp);
+    expect(rested.party.slice(1).every(({ hp }) => hp === 0)).toBe(true);
+
+    for (const malformed of [true, [3], { hp: 3 }, Infinity, 'Infinity', ' ']) {
+      const damaged = {
+        ...base,
+        party: base.party.map((member, index) => ({
+          ...member, hp: index === 0 ? malformed : index === 1 ? 1 : 0,
+        })),
+      };
+      expect(chroniclesCampRestStatus(damaged, []).rationsNeeded).toBe(1);
+      const after = chroniclesReduce(damaged, 'camp-rest');
+      expect(after.turns).toBe(damaged.turns + 1);
+      expect(after.inventory['road-rations'].quantity).toBe(3);
+      expect(after.party[0].hp).toEqual(malformed);
+      expect(after.party[1].hp).toBe(after.party[1].maxHp);
+    }
+  });
+
+  it('does not let malformed enemy HP block a camp when given a stale enemy roster', () => {
+    const spawned = initial();
+    const goblin = chroniclesActiveEnemies(spawned)
+      .find(({ id }) => id === 'sewers-goblin-west');
+    expect(goblin).toBeTruthy();
+    const position = chroniclesRuntimeEnemyPosition(spawned, goblin);
+    const base = wounded(stocked(cleared(spawned)));
+    for (const malformed of [true, [3], { hp: 3 }, Infinity, 'Infinity', ' ']) {
+      const near = { ...base, x: position.x, y: position.y, [goblin.hpKey]: malformed };
+      expect(chroniclesCampRestStatus(near, [goblin]).canRest).toBe(true);
+    }
+    const realThreat = { ...base, x: position.x, y: position.y, [goblin.hpKey]: '3' };
+    expect(chroniclesCampRestStatus(realThreat, [goblin]).reason)
+      .toBe('Hay enemigos demasiado cerca para descansar.');
+  });
+
   it('refuses insufficient, fractional or absent food atomically without spending time', () => {
     const base = wounded(cleared(initial()));
     for (const state of [base, stocked(base, 2), stocked(base, 2.5)]) {

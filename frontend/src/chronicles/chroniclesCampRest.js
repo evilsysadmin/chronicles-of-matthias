@@ -7,6 +7,15 @@ import { chroniclesEnemyCanAttackParty, chroniclesRuntimeEnemyPosition } from '.
 
 export const CHRONICLES_CAMP_RATION_ID = 'road-rations';
 
+// Match the initiative roster: old saves may contain numeric HP strings,
+// but booleans, arrays, objects and non-finite values are not living actors.
+function hasLivingHitPoints(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
+  const hp = Number(value);
+  return Number.isFinite(hp) && hp > 0;
+}
+
 function rationCount(state) {
   const value = state?.inventory?.[CHRONICLES_CAMP_RATION_ID]?.quantity;
   return Number.isSafeInteger(value) && value > 0 && value <= 9999 ? value : 0;
@@ -14,7 +23,7 @@ function rationCount(state) {
 
 export function chroniclesCampRestStatus(state, enemies = []) {
   const living = (Array.isArray(state?.party) ? state.party : [])
-    .filter((member) => Number.isFinite(member?.hp) && member.hp > 0);
+    .filter((member) => hasLivingHitPoints(member?.hp));
   const rationsNeeded = living.length;
   const rationsAvailable = rationCount(state);
   const blocked = (reason) => ({ canRest: false, rationsNeeded, rationsAvailable, reason });
@@ -30,7 +39,7 @@ export function chroniclesCampRestStatus(state, enemies = []) {
   let closeThreat = false;
   let rangedThreat = false;
   for (const enemy of (Array.isArray(enemies) ? enemies : [])) {
-    if (!(Number(state?.[enemy?.hpKey]) > 0)) continue;
+    if (!hasLivingHitPoints(state?.[enemy?.hpKey])) continue;
     const position = chroniclesRuntimeEnemyPosition(state, enemy);
     if (!position) continue;
     if (Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 2) {
@@ -64,7 +73,7 @@ export function chroniclesCampRest(state, enemies = []) {
   }
   const spellPoints = { ...(state.spellPoints || {}) };
   const party = state.party.map((member) => {
-    if (!(Number.isFinite(member.hp) && member.hp > 0)) return member;
+    if (!hasLivingHitPoints(member.hp)) return member;
     delete spellPoints[member.id]; // Missing means full PH; preserve fallen heroes' ledger.
     return { ...member, hp: member.maxHp };
   });
