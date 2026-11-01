@@ -1117,11 +1117,11 @@ try {
         const [current, maximum] = fraction.split('/');
         return /^\d+\/\d+$/.test(fraction) && accessibleLabel.includes(`${current} de ${maximum} PV`);
       }), 'Compact visual HP must retain the complete accessible fraction and unit: ' + JSON.stringify(geometry.dockButtons));
-      assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 380)),
-        'Only the narrowest phone may omit the redundant visible PV suffix: ' + JSON.stringify(geometry.dockButtons));
+      assert.ok(geometry.dockButtons.every(({ unitVisible }) => unitVisible === (width > 620)),
+        'Phone-size dock uses heart + full numeric HP instead of a redundant PV suffix: ' + JSON.stringify(geometry.dockButtons));
       assert.ok(geometry.dockButtons.every(({ healthGlyph }) =>
-        (healthGlyph.includes('♥')) === (width <= 380)),
-      'Only narrow phones should show a health glyph when the PV suffix is hidden: ' + JSON.stringify(geometry.dockButtons));
+        (healthGlyph.includes('♥')) === (width <= 620)),
+      'Every phone dock without a visible PV suffix must show the health glyph: ' + JSON.stringify(geometry.dockButtons));
       assert(geometry.docWidth <= width + 1, 'No horizontal document overflow: ' + JSON.stringify(geometry));
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
@@ -1262,6 +1262,34 @@ try {
             'A fully visible inventory must not advertise imaginary content below');
           assert.equal(await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
             .locator('button').count(), 5, 'Compact phones retain five commands; delivery uses party slots');
+        }
+        if (width <= 620) {
+          const mobileHeroes = await sheet.getByRole('navigation', {
+            name: 'Seleccionar personaje de la compañía',
+          }).locator('button').evaluateAll((buttons) => buttons.map((button) => {
+            const ordinal = button.querySelector('.chronicles-character-sheet__party-number');
+            const hp = button.querySelector('.chronicles-character-sheet__party-hp');
+            const unit = button.querySelector('.chronicles-character-sheet__party-hp-unit');
+            const box = button.getBoundingClientRect();
+            return {
+              hero: button.querySelector('.chronicles-character-sheet__party-name')?.textContent.trim(),
+              width: box.width, height: box.height,
+              numberHidden: getComputedStyle(ordinal).display === 'none',
+              unitHidden: getComputedStyle(unit).display === 'none',
+              healthFits: hp.scrollWidth <= hp.clientWidth + 1,
+              health: hp.querySelector('.chronicles-character-sheet__party-hp-value')?.textContent.trim(),
+              accessible: button.getAttribute('aria-label'),
+            };
+          }));
+          assert.equal(mobileHeroes.length, 4, 'All four real heroes must remain selectable');
+          for (const hero of mobileHeroes) {
+            assert.ok(hero.numberHidden && hero.unitHidden
+              && hero.width >= 60 && hero.height >= 44
+              && hero.healthFits && /^\d+\/\d+$/.test(hero.health)
+              && hero.accessible?.includes(hero.hero),
+              'Mobile dock must show intact HP and legible hero selection without redundant labels: '
+                + JSON.stringify({ viewport: width, hero }));
+          }
         }
         await page.screenshot({ path: 'smoke-character-sheet-backpack-' + width + '.png' });
       }
