@@ -83,8 +83,8 @@ export default function ChroniclesOfMatthiasTactics({ onExit }) {
   const activeRunIdRef = useRef(null);
 
   const exitChronicles = useCallback(() => {
-    // Leaving Tactics is a view change, not an expedition boundary. Preserve
-    // the canonical run so first-person Chronicles resumes the same world.
+    // Tactics owns a separate runId/checkpoint. Leaving this screen must not
+    // finish either game, and MM3 will recover its own existing position.
     activeRunIdRef.current = null;
     onExit?.();
   }, [onExit]);
