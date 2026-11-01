@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildSwordhavenFountain, createSwordhavenMaterials } from './chroniclesSwordhaven3D.js';
-import { dressSwordhavenTieredFountain } from './chroniclesSwordhavenFountainArt.js';
+import { dressSwordhavenTieredFountain, chroniclesFountainMotionEnabled } from './chroniclesSwordhavenFountainArt.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhaven from './maps/swordhaven-first-book.json';
 
@@ -81,6 +81,78 @@ describe('Swordhaven First Book plaza fountain', () => {
     expect(bounds.min.y).toBeGreaterThanOrEqual(-0.01);
     expect(bounds.max.y).toBeGreaterThan(3);
     expect(bounds.max.y).toBeLessThan(3.5);
+  });
+
+  it.each([true, false])('animates only decorative water without moving the physical fountain coarse=%s', (coarsePointer) => {
+    const mats = createSwordhavenMaterials();
+    const fountain = buildSwordhavenFountain(mats);
+    const water = fountain.getObjectByName('fountain-water');
+    const basinPosition = water.position.clone();
+    const baseColor = water.material.color.getHex();
+    const tier = dressSwordhavenTieredFountain(fountain, mats, { coarsePointer });
+    const update = tier.userData.updateChroniclesFountainWater;
+    const impact = tier.getObjectByName('fountain-water-impact-ripples');
+    const pool = tier.getObjectByName('fountain-pool-soft-waves');
+    const glints = tier.getObjectByName('fountain-jet-moving-glints');
+    expect(typeof update).toBe('function');
+    expect(pool).toBeInstanceOf(THREE.InstancedMesh);
+    expect(pool.count).toBe(2);
+    expect(glints).toBeInstanceOf(THREE.InstancedMesh);
+    expect(glints.count).toBe(12);
+    expect(pool.material).not.toBe(water.material);
+    expect(glints.material).not.toBe(water.material);
+    expect(pool.material.depthWrite).toBe(false);
+    expect(glints.material.depthWrite).toBe(false);
+
+    update(0.4);
+    const first = [...glints.instanceMatrix.array];
+    update(2.4);
+    const later = [...glints.instanceMatrix.array];
+    expect(later).not.toEqual(first);
+    update(2.4);
+    expect([...glints.instanceMatrix.array]).toEqual(later);
+    expect(impact.instanceMatrix.version).toBeGreaterThan(0);
+    expect(pool.instanceMatrix.version).toBeGreaterThan(0);
+    expect(glints.instanceMatrix.version).toBeGreaterThan(0);
+
+    const matrix = new THREE.Matrix4();
+    const pos = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    for (let index = 0; index < impact.count; index += 1) {
+      impact.getMatrixAt(index, matrix);
+      matrix.decompose(pos, quat, scale);
+      expect(Math.hypot(pos.x, pos.z) + 0.112 * scale.x).toBeLessThan(1.47);
+    }
+    for (let index = 0; index < glints.count; index += 1) {
+      glints.getMatrixAt(index, matrix);
+      matrix.decompose(pos, quat, scale);
+      expect(Math.hypot(pos.x, pos.z)).toBeLessThan(1.47);
+      expect(pos.y).toBeGreaterThan(0.75);
+      expect(pos.y).toBeLessThan(2.5);
+    }
+    expect(water.position).toEqual(basinPosition);
+    expect(water.material.color.getHex()).toBe(baseColor);
+    expect(tier.children.every(child => child.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(tier.children.every(child => !child.isLight)).toBe(true);
+  });
+
+  it('wakes the water only nearby and visible, never with reduced motion', () => {
+    const fountainPosition = new THREE.Vector3(0, 0, -8);
+    const near = new THREE.Vector3(0, 1.62, 12);
+    expect(chroniclesFountainMotionEnabled({
+      partyPosition: near, fountainPosition,
+    })).toBe(true);
+    expect(chroniclesFountainMotionEnabled({
+      partyPosition: new THREE.Vector3(0, 1.62, 30), fountainPosition,
+    })).toBe(false);
+    expect(chroniclesFountainMotionEnabled({
+      partyPosition: near, fountainPosition, visible: false,
+    })).toBe(false);
+    expect(chroniclesFountainMotionEnabled({
+      partyPosition: near, fountainPosition, reducedMotion: true,
+    })).toBe(false);
+    expect(chroniclesFountainMotionEnabled({ partyPosition: near })).toBe(false);
   });
 
   it('dresses only the actual First Book fountain at the authored blocked plaza cell', () => {
