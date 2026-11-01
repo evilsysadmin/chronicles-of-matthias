@@ -121,6 +121,7 @@ try {
               && Math.abs(bounds(a).right - bounds(b).right) <= 1;
             return {
               primaryActions: primary.children.length,
+              kickerHidden: getComputedStyle(node.querySelector('.chronicles-game-menu__section-kicker')).display === 'none',
               primaryHorizontal: Math.abs(bounds(primary.children[0]).top
                 - bounds(primary.children[1]).top) <= 1,
               rows: rows.length,
@@ -139,6 +140,7 @@ try {
             };
           });
           assert.equal(board.primaryActions, 2, 'Continue and rest share a semantic row');
+          assert.equal(board.kickerHidden, true, 'Default pause board should not waste a separate expedition heading');
           assert.equal(board.rows, 2, 'Journal/status and save/load/exit remain grouped');
           assert.equal(board.sameEdges, true, 'All control-board rows align horizontally');
           assert.equal(board.primaryHorizontal, width > 650,
