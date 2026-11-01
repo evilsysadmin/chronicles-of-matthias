@@ -557,11 +557,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const vault = new THREE.Group();
     vault.name = 'armor-lead-barrel-vault';
     vault.userData.chroniclesDecorativeOnly = true;
-    vault.position.y = height + 0.31;
+    vault.position.y = height + 0.51;
     vault.scale.y = 0.78;
     const vaultRadius = 3.06;
     const vaultLength = depth - 1.30;
-    const lead = material(0x687b82, {
+    const lead = material(0x83939a, {
       roughness: 0.82, metalness: 0.23, side: THREE.DoubleSide,
     });
     const iron = material(0x35464d, { roughness: 0.78, metalness: 0.27 });
