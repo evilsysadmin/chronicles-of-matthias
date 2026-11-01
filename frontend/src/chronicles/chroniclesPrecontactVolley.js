@@ -33,8 +33,17 @@ export function chroniclesTouchVolleyOpportunity(state) {
 // The party occupies the camera tile while exploring (as opposed to the
 // deployed four-cell formation during initiative). Only physical adjacency
 // ends pre-contact shooting; a ranged foe may shoot back without closing.
+function validPartyGridCoordinate(value) {
+  // Number(null), Number('') and Number(false) are zero: malformed saves must
+  // not invent a party position and trigger phantom pre-contact combat.
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
+  const coordinate = Number(value);
+  return Number.isSafeInteger(coordinate) && coordinate >= 0;
+}
+
 export function chroniclesPrecontactMeleeContact(state) {
-  if (!state || !Number.isInteger(Number(state.x)) || !Number.isInteger(Number(state.y))) return false;
+  if (!state || !validPartyGridCoordinate(state.x) || !validPartyGridCoordinate(state.y)) return false;
   return chroniclesActiveEnemies(state).some((enemy) => {
     const position = chroniclesRuntimeEnemyPosition(state, enemy);
     return Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 1;
