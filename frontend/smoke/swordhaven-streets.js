@@ -6,6 +6,9 @@ import swordhaven from '../src/chronicles/maps/swordhaven-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 
 const VIEWS = Object.freeze({
+  // The actual city exit from a walkable street, framed at human eye level.
+  // Its arch must sit IN the perimeter opening, not before a solid wall.
+  'gate-north': { x: 9, y: 2, heading: 'north', target: { x: 9, y: 0 }, cameraHeight: 1.62, lookUp: 1 },
   oldtown: { x: 3, y: 4, heading: 'north' },
   // Golden shot: the mayor's real door from a walkable plaza cell.
   'mayor-square': { x: 11, y: 8, heading: 'south', target: { x: 11, y: 10 }, cameraHeight: 1.85, lookUp: 1.8 },
@@ -111,6 +114,19 @@ try {
   const wall = scene.getObjectByName('chronicles-campaign-visible-blockers');
   const perimeter = scene.getObjectByName('chronicles-campaign-town-perimeter');
   const battlements = scene.getObjectByName('chronicles-campaign-town-battlements');
+  const northGate = scene.getObjectByName('chronicles-campaign-content-to-first-book-banner-road');
+  const opening = scene.getObjectByName('chronicles-town-gate-passage-to-first-book-banner-road');
+  const northEyeRay = new THREE.Raycaster(
+    new THREE.Vector3(0, 1.62, 0), new THREE.Vector3(0, 0, -1), 0.1, 90,
+  );
+  const gateOpening = Boolean(
+    opening?.children.filter(mesh => mesh.name === 'chronicles-town-gate-wall-jamb').length === 2
+    && opening.getObjectByName('chronicles-town-gate-wall-lintel')
+    && northGate?.getObjectByName('chronicles-town-gate-threshold')
+    && northGate?.getObjectByName('chronicles-town-gate-outbound-road')
+    && northEyeRay.intersectObject(perimeter).length === 0
+    && northEyeRay.intersectObject(opening, true).length === 0
+  );
   const road = scene.getObjectByName('chronicles-campaign-road');
   const town = scene.getObjectByName('chronicles-campaign-town');
   const plaster = town?.getObjectByName('chronicles-town-street-limewash-fronts');
@@ -414,10 +430,11 @@ try {
     streetView: name,
     cameraCell: chosen.x + ',' + chosen.y,
     wallHeight: String(wall.geometry.parameters.height),
-    // Original total still covers every authored solid non-house tile;
-    // the city enclosure now lives in its own reliably rendered batch.
+    // The walled city retains every authored collision tile; one perimeter
+    // tile is visually replaced with the actual gate opening.
     wallCount: String(wall.count + perimeter.count),
     perimeterCount: String(perimeter.count),
+    gateOpening: String(gateOpening),
     perimeterUnculled: String(!perimeter.frustumCulled && !battlements.frustumCulled),
     roadCount: String(road.count),
     plasterCount: String(plaster.count),

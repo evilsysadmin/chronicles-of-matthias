@@ -16,7 +16,7 @@ import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRis
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { buildChroniclesExteriorExit, chroniclesExteriorExitKind } from './chroniclesExteriorExitArt.js';
+import { buildChroniclesExteriorExit, buildChroniclesTownWallOpening, chroniclesExteriorExitKind, chroniclesTownWallPassage } from './chroniclesExteriorExitArt.js';
 
 // File-authored exterior topology: no independent collision map or invisible
 // decorative blockers. Impassable cells alone own boulders/low walls; every
@@ -687,6 +687,17 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const streetWallHeight = settlement && Number.isFinite(authoredWallHeight)
     && authoredWallHeight >= 3.2 && authoredWallHeight <= 9.6 ? authoredWallHeight : 1.6;
   const village = settlement ? createSwordhavenMaterials() : null;
+  // The walkable transition tile borders a solid perimeter cell. Carve its
+  // VISIBLE mesh only, otherwise the user walks into a decorative brick wall.
+  const townPassages = settlement && streetWallHeight >= 4.4
+    ? (scenePlan.content || [])
+      .filter((entry) => entry.kind === 'exit' && entry.visible !== false)
+      .map((entry) => ({ id: entry.id, passage: chroniclesTownWallPassage(entry, grid) }))
+      .filter((entry) => entry.passage)
+    : [];
+  const townPassagesById = new Map(townPassages.map(({ id, passage }) => [id, passage]));
+  const openedPerimeter = new Set(townPassages.map(({ passage }) =>
+    passage.wallX + ',' + passage.wallY));
   // The B2 heath uses its own peat/lichen surface; neighboring hills keep
   // their existing grass. One tiled texture and the same single terrain mesh.
   const heathB2 = scenePlan.mapId === 'terra-b2' && scenePlan.biome === 'hills' && !settlement;
@@ -812,9 +823,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     const perimeter = blocked.filter(({ x, y }) =>
       x === 0 || y === 0 || x === width - 1 || y === height - 1);
     if (perimeter.length) {
+      const solidPerimeter = perimeter.filter(({ x, y }) =>
+        !openedPerimeter.has(x + ',' + y));
       const wall = new THREE.InstancedMesh(
         new THREE.BoxGeometry(CELL * 0.99, streetWallHeight, CELL * 0.99),
-        stone, perimeter.length,
+        stone, solidPerimeter.length,
       );
       wall.name = 'chronicles-campaign-town-perimeter';
       wall.frustumCulled = false; // The enclosure must not vanish while turning.
@@ -830,7 +843,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       merlons.castShadow = !coarsePointer;
       merlons.receiveShadow = true;
       const dummy = new THREE.Object3D();
-      for (const [index, { x, y }] of perimeter.entries()) {
+      for (const [index, { x, y }] of solidPerimeter.entries()) {
         const [wx, wz] = gridToWorld(x, y, sceneCenter);
         dummy.position.set(wx, streetWallHeight / 2 - 0.04, wz);
         dummy.updateMatrix();
@@ -845,6 +858,17 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       wall.instanceMatrix.needsUpdate = true;
       merlons.instanceMatrix.needsUpdate = true;
       scene.add(wall, merlons);
+      townPassages.forEach(({ id, passage }) => {
+        const [wx, wz] = gridToWorld(passage.wallX, passage.wallY, sceneCenter);
+        const infill = new THREE.Group();
+        infill.name = 'chronicles-town-gate-passage-' + id;
+        infill.position.set(wx, 0, wz);
+        infill.rotation.y = passage.yaw;
+        buildChroniclesTownWallOpening(infill, {
+          wallHeight: streetWallHeight, stone, coarsePointer, depth: CELL * 0.99,
+        });
+        scene.add(infill);
+      });
       // Never draw the same masonry twice (depth flicker/z-fighting).
       const edge = new Set(perimeter.map(({ x, y }) => x + ',' + y));
       blocked = blocked.filter(({ x, y }) => !edge.has(x + ',' + y));
@@ -1160,12 +1184,37 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       water.position.y = 0.72;
       root.add(basin, water);
     } else if (entry.kind === 'exit') {
-      // Use the actual destination manifest, not the current area's biome.
-      // This remains cosmetic: entry IDs, transition actions and map collision
-      // are untouched. Rotate east/west boundaries across the approach.
-      if (entry.position.x <= 1 || entry.position.x >= width - 2) root.rotation.y = Math.PI / 2;
-      const style = chroniclesExteriorExitKind(exitDefinitions.get(entry.id), lookupDestinationMap);
-      buildChroniclesExteriorExit(root, { style, stone, timber, plaque, coarsePointer });
+      // Boundary architecture is governed by BOTH sides of the transition.
+      // An exit from Swordhaven must look like a wall gate, not a trail sign.
+      const passage = townPassagesById.get(entry.id);
+      if (passage) {
+        root.rotation.y = passage.yaw;
+        const gateway = new THREE.Group();
+        gateway.name = 'chronicles-town-gate-threshold';
+        gateway.position.z = -CELL / 2; // align with the city wall's inside face
+        buildChroniclesExteriorExit(gateway, {
+          style: 'settlement', stone, timber, plaque, coarsePointer,
+        });
+        root.add(gateway);
+        // A small visual-only causeway continues outside the wall. No collider,
+        // no additional walkable cell, and no change to the transition action.
+        const roadThroughGate = new THREE.Mesh(
+          new THREE.BoxGeometry(2.42, 0.04, CELL * 2.6), paver,
+        );
+        roadThroughGate.name = 'chronicles-town-gate-outbound-road';
+        roadThroughGate.position.set(0, 0.015, -CELL * 1.75);
+        roadThroughGate.receiveShadow = true;
+        root.add(roadThroughGate);
+        root.userData.chroniclesExitGatewayStyle = 'settlement';
+      } else {
+        if (entry.position.x <= 1 || entry.position.x >= width - 2) root.rotation.y = Math.PI / 2;
+        const style = chroniclesExteriorExitKind(
+          exitDefinitions.get(entry.id), lookupDestinationMap, {
+            regionKind: scenePlan.regionKind,
+          },
+        );
+        buildChroniclesExteriorExit(root, { style, stone, timber, plaque, coarsePointer });
+      }
     } else if ((!village || !String(entry.visualType || '').startsWith('building-'))
       && !(scenePlan.mapId === 'swordhaven-first-book' && entry.id === 'sealed-order')) {
       // Swordhaven's sealed order is a quest interaction anchor outside the
