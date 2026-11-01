@@ -35,6 +35,9 @@ type rosterUser struct {
 	MapID string            `json:"mapId,omitempty"`
 	SavedAt string          `json:"savedAt,omitempty"`
 	RunStatus string        `json:"runStatus,omitempty"`
+	ActiveQuests int        `json:"activeQuests,omitempty"`
+	CompletedQuests int     `json:"completedQuests,omitempty"`
+	MainObjective string    `json:"mainObjective,omitempty"`
 }
 
 type rosterPage struct {
@@ -230,6 +233,45 @@ func rosterHeroNames(raw string) map[string]string {
 	return names
 }
 
+// Only a bounded, authored objective and aggregate quest statuses leave the
+// saved-run document; never return the raw quest graph or world flags.
+func rosterQuestField(raw any, name string) string {
+	var value any
+	switch doc := raw.(type) {
+	case bson.D:
+		for _, item := range doc {
+			if item.Key == name { value = item.Value; break }
+		}
+	case bson.M:
+		value = doc[name]
+	default:
+		return ""
+	}
+	text, ok := value.(string)
+	if !ok { return "" }
+	return text
+}
+
+func rosterQuestSummary(quests bson.M) (active, completed int, mainObjective string) {
+	for id, quest := range quests {
+		status := rosterQuestField(quest, "status")
+		switch status {
+		case "active":
+			active++
+		case "completed":
+			completed++
+		}
+		if id == "lost-king" && status == "active" {
+			objective := strings.TrimSpace(rosterQuestField(quest, "objective"))
+			if objective != "" && utf8.RuneCountInString(objective) <= 180 &&
+				!strings.ContainsAny(objective, "\r\n\x00") {
+				mainObjective = objective
+			}
+		}
+	}
+	return
+}
+
 func readRoster(ctx context.Context, db *mongo.Database, after string, now time.Time) (rosterPage, error) {
 	page := rosterPage{Users: []rosterUser{}}
 	filter := bson.D{}
@@ -274,16 +316,18 @@ func readRoster(ctx context.Context, db *mongo.Database, after string, now time.
 			MapID string `bson:"currentMapId"`
 			Status string `bson:"status"`
 			UpdatedAt bson.DateTime `bson:"updatedAt"`
+			Quests bson.M `bson:"quests"`
 		}
 		err := db.Collection("chronicles_runs").FindOne(ctx, bson.D{{Key: "owner", Value: user.Username}},
 			options.FindOne().SetSort(bson.D{{Key: "updatedAt", Value: -1}}).
-				SetProjection(bson.D{{Key: "currentMapId", Value: 1}, {Key: "status", Value: 1}, {Key: "updatedAt", Value: 1}})).Decode(&run)
+				SetProjection(bson.D{{Key: "currentMapId", Value: 1}, {Key: "status", Value: 1}, {Key: "updatedAt", Value: 1}, {Key: "quests", Value: 1}})).Decode(&run)
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			return rosterPage{}, err
 		}
 		if err == nil {
 			entry.MapID = run.MapID
 			entry.RunStatus = run.Status
+			entry.ActiveQuests, entry.CompletedQuests, entry.MainObjective = rosterQuestSummary(run.Quests)
 			if run.UpdatedAt != 0 {
 				entry.SavedAt = run.UpdatedAt.Time().UTC().Format(time.RFC3339)
 			}

@@ -41,3 +41,17 @@
 .chronicles-admin-changelog__more { min-height:44px; width:100%; padding:9px 12px; border:1px solid #a5844d; border-radius:5px; background:rgba(224,182,115,.10); color:#f0d79e; cursor:pointer; }
 .chronicles-admin-changelog__more:disabled { opacity:.6; cursor:wait; }
 .chronicles-admin-changelog__more:focus-visible { outline:2px solid #e7c88b; outline-offset:2px; }
+
+
+/* The headline answers who / where / when. Extended read-only diagnostics
+   remain in an accessible per-player disclosure. */
+.chronicles-player-admin__search { display:grid; gap:6px; font-size:.79rem; color:#e7c88b; }
+.chronicles-player-admin__search input { width:100%; min-width:0; min-height:44px; padding:9px 12px; border:1px solid #655038; border-radius:6px; background:#16171c; color:#ead5b5; font:inherit; }
+.chronicles-player-admin__search input:focus-visible { outline:2px solid #e7c88b; outline-offset:2px; }
+.chronicles-player-admin__objective { margin:8px 0; line-height:1.45; font-size:.81rem; color:#e3c894; overflow-wrap:anywhere; }
+.chronicles-player-admin__objective strong { color:#f0d79e; }
+.chronicles-player-admin__details { border-top:1px solid rgba(224,182,115,.18); margin-top:10px; }
+.chronicles-player-admin__details summary { padding:12px 4px; cursor:pointer; min-height:44px; color:#e7c88b; font-size:.82rem; }
+.chronicles-player-admin__details summary:focus-visible { outline:2px solid #e7c88b; outline-offset:2px; }
+.chronicles-player-admin__detail-body { padding:0 2px 4px; }
+.chronicles-player-admin__detail-body code { font-size:.75rem; overflow-wrap:anywhere; white-space:normal; }
