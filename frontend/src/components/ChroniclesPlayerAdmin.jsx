@@ -248,6 +248,11 @@ export default function ChroniclesPlayerAdmin() {
                   Alta: {dateLabel(user.createdAt)}
                   {user.runStatus ? ` · Estado guardado: ${chroniclesRosterRunLabel(user)}` : ''}
                 </p>
+                {Number.isSafeInteger(user.savedExpeditions) && user.savedExpeditions > 0 && (
+                  <p className="chronicles-player-admin__metadata">
+                    Expediciones guardadas: <strong>{user.savedExpeditions}</strong>
+                  </p>
+                )}
                 {chroniclesRosterHasSave(user) && (
                   <p className="chronicles-player-admin__metadata">
                     Encargos del último guardado: {user.activeQuests || 0} activos · {user.completedQuests || 0} completados
