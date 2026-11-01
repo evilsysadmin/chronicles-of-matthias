@@ -18,7 +18,7 @@ export async function assertAdventureFolioInk(dialog, viewport) {
     .map((element) => {
       const style = getComputedStyle(element);
       const paint = style.getPropertyValue('-webkit-text-fill-color') || style.color;
-      const channels = (paint.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+      const channels = (paint.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
       const linear = channels.map((channel) => {
         const c = channel / 255;
         return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
