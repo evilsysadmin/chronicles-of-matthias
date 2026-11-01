@@ -7,7 +7,7 @@ import { CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolic
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
 export default function ChroniclesAdventureMenu({
-  onClose, onContinue, onJournal, onQuickStatus, onSave,
+  onClose, onContinue, onJournal, onQuickStatus, onCampRest, campRestStatus, onSave,
   onSaveExit, onRequestLoad, onSaveBeforeLoad, onLoadWithoutSave, onCancelLoad,
   onAdmin, onRetryAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, confirmLoadSelection = false,
@@ -88,6 +88,9 @@ export default function ChroniclesAdventureMenu({
               <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
               <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
             </div>
+            <button type="button" data-chronicles-menu-camp-rest
+              disabled={!campRestStatus?.canRest} title={campRestStatus?.reason || undefined}
+              onClick={onCampRest}>☾ Descansar en campo · {campRestStatus?.rationsNeeded ?? '—'} raciones</button>
             <div className="chronicles-game-menu__action-pair">
               <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave}
                 disabled={saveBusy || inCombat} title={inCombat ? CHRONICLES_COMBAT_SAVE_NOTICE : undefined}>

@@ -7,7 +7,7 @@ import { chroniclesTownCounterInReach } from './chroniclesTownCounterReach.js';
 export const CHRONICLES_INN_FOOD = Object.freeze({
   id: 'road-rations',
   name: 'Raciones de viaje',
-  description: 'Raciones guardadas en la mochila. El descanso de campo todavía no está disponible; no curan en combate.',
+  description: 'Una ración alimenta a un héroe en pie durante un descanso de campo seguro. Recupera PV y PH fuera del combate; no resucita.',
   price: 4,
 });
 
