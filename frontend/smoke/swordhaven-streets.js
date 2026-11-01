@@ -763,7 +763,9 @@ try {
     distinctStoreLoft: String(Boolean(
       store?.getObjectByName('store-merchant-loft')?.userData.chroniclesDecorativeOnly
       && store?.getObjectByName('store-loft-oak-gable')
-      && store?.getObjectByName('store-loft-window')
+      && store?.getObjectByName('store-loft-loading-hatch')?.userData.chroniclesDecorativeOnly
+      && store?.getObjectByName('store-loft-hatch-dark-recess')
+      && store?.getObjectByName('store-loft-hatch-open-oak-shutter')
       && !store?.getObjectByName('pitched-roof-dormer--1')
       && !forge?.getObjectByName('store-merchant-loft')
       && forge?.getObjectByName('forge-roof-smoke-lantern')
