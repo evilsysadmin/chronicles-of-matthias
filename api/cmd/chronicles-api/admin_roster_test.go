@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"reflect"
 	"testing"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 func TestRosterPolicyAndDataDisclosure(t *testing.T) {
@@ -33,7 +35,7 @@ func TestRosterPolicyAndDataDisclosure(t *testing.T) {
 			}
 			return rosterPage{Users: []rosterUser{
 				{Username: "alice", Online: true, MapID: "swordhaven-first-book",
-					Levels: map[string]int{"matthias": 3}},
+					Levels: map[string]int{"matthias": 3}, SavedExpeditions: 3},
 			}, NextAfter: ""}, nil
 		},
 	}
@@ -60,6 +62,7 @@ func TestRosterPolicyAndDataDisclosure(t *testing.T) {
 	var page rosterPage
 	if err := json.Unmarshal(w.Body.Bytes(), &page); err != nil { t.Fatal(err) }
 	if len(page.Users) != 1 || page.Users[0].Levels["matthias"] != 3 { t.Fatal("missing safe player summary") }
+	if page.Users[0].SavedExpeditions != 3 { t.Fatal("missing measured saved expeditions") }
 	for _, sensitive := range []string{"password", "clientIp", "email", "inventory", "worldFlags", "coordinate"} {
 		if strings.Contains(w.Body.String(), sensitive) { t.Fatalf("leaked %q", sensitive) }
 	}
@@ -173,5 +176,39 @@ func TestRosterQuestSummaryOnlyPublishesBoundedAuthoredProgress(t *testing.T) {
 		quests["lost-king"] = bson.M{"status": "active", "objective": invalid}
 		_, _, got := rosterQuestSummary(quests)
 		if got != "" { t.Fatalf("unsafe quest objective returned: %q", got) }
+	}
+}
+
+func TestRosterRunCountPipelineIsOwnerScopedAndReturnsOnlyCounts(t *testing.T) {
+	owners := []string{"alice", "bob"}
+	want := mongo.Pipeline{
+		bson.D{{Key: "$match", Value: bson.D{{Key: "owner", Value: bson.D{
+			{Key: "$in", Value: bson.A{"alice", "bob"}},
+		}}}}},
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$owner"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}}},
+	}
+	if got := rosterRunCountPipeline(owners); !reflect.DeepEqual(got, want) {
+		t.Fatalf("count pipeline should match only page owners and return counts; got %#v", got)
+	}
+	// An empty page should not hit Mongo at all.
+	counts, err := rosterSavedExpeditionCounts(context.Background(), nil, nil)
+	if err != nil || len(counts) != 0 {
+		t.Fatalf("empty page returned counts=%v err=%v", counts, err)
+	}
+}
+
+func TestRosterSavedExpeditionsAreOmittedWhenUnknownOrZero(t *testing.T) {
+	unknown, err := json.Marshal(rosterUser{Username: "legacy", Online: false})
+	if err != nil { t.Fatal(err) }
+	if strings.Contains(string(unknown), "savedExpeditions") {
+		t.Fatalf("missing run count must not appear as an asserted value: %s", unknown)
+	}
+	known, err := json.Marshal(rosterUser{Username: "alice", Online: true, SavedExpeditions: 4})
+	if err != nil { t.Fatal(err) }
+	if !strings.Contains(string(known), `"savedExpeditions":4`) {
+		t.Fatalf("known run count missing: %s", known)
 	}
 }
