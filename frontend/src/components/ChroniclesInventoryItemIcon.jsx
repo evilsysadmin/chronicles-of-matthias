@@ -1,4 +1,5 @@
 import { CHRONICLES_EQUIPMENT } from '../chronicles/chroniclesEquipment.js';
+import { chroniclesShopItemArt } from '../chronicles/chroniclesShopItemArt.js';
 
 // Original 16px pixel silhouettes, not external emoji/fonts or MM3 assets.
 // The real catalog identifies each family so a dagger is not a long sword.
@@ -30,6 +31,16 @@ export function chroniclesItemIconKind(item) {
 
 export default function ChroniclesInventoryItemIcon({ item }) {
   const kind = chroniclesItemIconKind(item);
+  // Small authored item portraits convey bronze, leather and distinct weapon types;
+  // unmapped loot keeps the original readable pixel silhouette.
+  const art = chroniclesShopItemArt(item);
+  if (art) {
+    return (
+      <img className="chronicles-character-sheet__illustrated-item-icon"
+        src={art} width="29" height="29" alt="" aria-hidden="true"
+        loading="lazy" decoding="async" draggable="false" data-item-icon={kind} />
+    );
+  }
   return (
     <svg className="chronicles-character-sheet__pixel-item-icon" viewBox="0 0 16 16"
       width="27" height="27" shapeRendering="crispEdges" aria-hidden="true" focusable="false"
