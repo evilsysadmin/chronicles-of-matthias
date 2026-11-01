@@ -36,6 +36,33 @@ describe('Swordhaven forge masonry', () => {
     expect(forge.getObjectByName('roof-gable--1').material).toBe(walls.material);
     expect(tavern.getObjectByName('timber-and-stone-walls').material.color.getHex())
       .not.toBe(walls.material.color.getHex());
+    // The entire smithy base and exposed corner courses are smoke-darkened,
+    // while neighbouring merchant buildings retain pale ashlar. Geometry,
+    // authored access and collision cells must remain unchanged.
+    expect(forge.getObjectByName('stone-foundations').material).toBe(walls.material);
+    expect(tavern.getObjectByName('stone-foundations').material).not.toBe(walls.material);
+    const forgeCourses = forge.getObjectByName('corner-dressed-stone-courses');
+    const tavernCourses = tavern.getObjectByName('corner-dressed-stone-courses');
+    expect(forgeCourses).toBeInstanceOf(THREE.InstancedMesh);
+    expect(forgeCourses.count).toBeGreaterThan(0);
+    const tint = new THREE.Color();
+    for (const [level, expected] of [0x776a60, 0x64584f, 0x8a7868].entries()) {
+      forgeCourses.getColorAt(level * 4, tint);
+      expect(tint.getHex()).toBe(expected);
+    }
+    tavernCourses.getColorAt(0, tint);
+    expect(tint.getHex()).toBe(0xb5ab9a);
+    const portal = forge.getObjectByName('forge-kiln-brick-entry-arch');
+    expect(portal?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(portal.children.filter(part => part.name === 'forge-portal-kiln-brick-pier'))
+      .toHaveLength(2);
+    const arch = portal.getObjectByName('forge-portal-kiln-brick-vault');
+    expect(arch.geometry.type).toBe('ShapeGeometry');
+    expect(arch.material.map).toBe(swordhavenSurfaceTexture('brick'));
+    expect(arch.material.color.getHex()).toBe(0xba8d70);
+    expect(arch.position.z).toBeLessThan(4.5);
+    expect(portal.children.every(part => part.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(tavern.getObjectByName('forge-kiln-brick-entry-arch')).toBeFalsy();
     expect(forge.getObjectByName('shop-door')).toBeTruthy();
     expect(forge.getObjectByName('forge-roof-smokestack')).toBeTruthy();
     expect(swordhaven.grid[4][5]).toBe('.');
