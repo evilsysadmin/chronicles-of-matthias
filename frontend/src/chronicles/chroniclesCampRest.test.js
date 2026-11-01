@@ -52,6 +52,40 @@ describe('MM3 field rest · safe expedition resources', () => {
     expect(chroniclesReduce(after, 'camp-rest')).toBe(after); // No wasted rations at full health.
   });
 
+  it('honors legacy numeric-string rations once, then saves normalized stock', () => {
+    const base = wounded(stocked(cleared(initial())));
+    const legacy = {
+      ...base,
+      inventory: {
+        ...base.inventory,
+        'road-rations': { ...base.inventory['road-rations'], quantity: '4' },
+      },
+    };
+    expect(chroniclesCampRestStatus(legacy, [])).toMatchObject({
+      canRest: true, rationsNeeded: 3, rationsAvailable: 4,
+    });
+    const rested = chroniclesReduce(legacy, 'camp-rest');
+    expect(rested.turns).toBe(legacy.turns + 1);
+    expect(rested.inventory['road-rations'].quantity).toBe(1);
+    const saved = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(rested, 1)));
+    const restored = chroniclesApplyRunCheckpoint(initial(), saved);
+    expect(restored.inventory['road-rations'].quantity).toBe(1);
+    expect(restored.turns).toBe(rested.turns);
+    expect(chroniclesReduce(restored, 'camp-rest')).toBe(restored);
+
+    for (const invalid of [true, [4], { quantity: 4 }, ' ', 'Infinity', 2.5, '2.5', '10000', -1]) {
+      const malformed = {
+        ...base,
+        inventory: {
+          ...base.inventory,
+          'road-rations': { ...base.inventory['road-rations'], quantity: invalid },
+        },
+      };
+      expect(chroniclesCampRestStatus(malformed, []).canRest).toBe(false);
+      expect(chroniclesReduce(malformed, 'camp-rest')).toBe(malformed);
+    }
+  });
+
   it('feeds and heals numeric-string HP survivors without reviving malformed or fallen heroes', () => {
     const base = wounded(stocked(cleared(initial())));
     const legacy = {
