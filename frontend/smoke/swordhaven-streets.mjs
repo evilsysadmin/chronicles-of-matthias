@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
+      for (const view of ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -66,10 +66,12 @@ try {
         assert.equal(result.streetView, view);
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
-        // The old combined 126 blockers are now split between interior
-        // street walls and the independent 80-cell fortified town perimeter.
-        assert.equal(Number(result.wallCount), 126);
-        assert.equal(Number(result.perimeterCount), 80);
+        // One of the 80 wall cells is now an actual arched gateway, not a
+        // solid instanced cube. The other 79 remain reliably rendered.
+        assert.equal(Number(result.wallCount), 125);
+        assert.equal(Number(result.perimeterCount), 79);
+        assert.equal(result.gateOpening, 'true',
+          'Swordhaven north gate must be an actual opening with visible arch and outgoing road');
         assert.equal(result.perimeterUnculled, 'true',
           'The town enclosure must not vanish under camera frustum culling');
         assert.ok(Number(result.roadCount) > 100);
