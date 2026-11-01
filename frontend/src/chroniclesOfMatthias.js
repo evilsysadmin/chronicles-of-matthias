@@ -424,6 +424,10 @@ function resolveContextualContentAction(state) {
   if (definition?.guild && Array.isArray(definition.guild.spells)) return chroniclesOpenGuild(state, definition);
   if (!definition?.action) return state;
   if (contextual.locked) {
+    // A shop exchange refused at the counter is not an exploration action.
+    // Do not spend a turn merely to repeat the authored insufficient-gold text.
+    if (definition.action.effects?.length === 1
+      && definition.action.effects[0]?.type === 'exchange-item') return state;
     const blocked = chroniclesRequirementFailure(state, definition.requirements);
     return withMessage(state, blocked?.message || 'El paso sigue cerrado.');
   }

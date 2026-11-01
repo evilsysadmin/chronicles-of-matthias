@@ -74,8 +74,19 @@ describe('Swordhaven premium provisions counter', () => {
     expect(chroniclesGoldBalance(next)).toBe(3);
     expect(next.inventory['road-rations']?.quantity || 0).toBe(
       state.inventory['road-rations']?.quantity || 0);
-    // The historic direct reducer can spend a refusal turn. The new counter
-    // blocks this path with a disabled button rather than changing rules here.
-    // Opening/closing the counter never invokes that reducer in the first place.
+    expect(next).toBe(state);
+    expect(next.turns).toBe(state.turns); // Rejected purchases are not actions.
+  });
+  it('does not charge or spend a turn when the ration pack is already full', () => {
+    const state = atCounter(28);
+    const packed = { ...state, inventory: {
+      ...state.inventory,
+      'road-rations': { id: 'road-rations', name: 'Raciones de viaje', quantity: 9999 },
+    } };
+    const next = chroniclesReduce(packed, { type: 'interact' });
+    expect(next).toBe(packed);
+    expect(chroniclesGoldBalance(next)).toBe(28);
+    expect(next.inventory['road-rations'].quantity).toBe(9999);
+    expect(next.turns).toBe(packed.turns);
   });
 });
