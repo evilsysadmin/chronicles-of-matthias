@@ -35,7 +35,10 @@ export function chroniclesRosterStatusLabel({ hasLoaded, loading, loadingMore = 
 export function chroniclesRosterPlayerLabel(user) {
   const username = typeof user?.username === 'string' ? user.username : '';
   if (username.startsWith('browser-journey-')) return `Navegador · ${username.slice(-10)}`;
-  if (/^shadowops:staging:[0-9a-f-]{36}$/.test(username)) {
+  if (/^shadowops:staging:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(username)) {
+    if (typeof user?.accountAlias === 'string' && /^[a-z][a-z0-9_]{2,31}$/.test(user.accountAlias)) {
+      return user.accountAlias;
+    }
     return `ShadowOps ID · ${username.slice(-8)}`;
   }
   return username || 'Cuenta sin nombre';
@@ -55,7 +58,7 @@ export function chroniclesRosterMatches(user, query) {
     && !Array.isArray(user.heroNames) ? user.heroNames : {});
   const area = typeof user?.mapId === 'string' && user.mapId.trim()
     ? chroniclesSavedExpeditionArea({ currentMapId: user.mapId }) : '';
-  return [user?.username, ...labels, area, user?.mainObjective].some((value) =>
+  return [user?.username, chroniclesRosterPlayerLabel(user), ...labels, area, user?.mainObjective].some((value) =>
     typeof value === 'string' && value.toLocaleLowerCase('es').includes(term));
 }
 
@@ -286,6 +289,8 @@ export default function ChroniclesPlayerAdmin() {
               <div className="chronicles-player-admin__detail-body">
                 <p className="chronicles-player-admin__metadata">
                   Cuenta: <code>{user.username}</code>
+                  {chroniclesRosterPlayerLabel(user) !== user.username && user.accountAlias
+                    ? ' · Alias de ShadowOps ID' : ''}
                 </p>
                 <p className="chronicles-player-admin__metadata">
                   Alta: {dateLabel(user.createdAt)}
