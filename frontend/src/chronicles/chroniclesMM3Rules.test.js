@@ -81,7 +81,8 @@ describe('Chronicles MM3 rules', () => {
     expect(chroniclesPartyAttackStats(state, 'knight').toHit).toBe(3);
     expect(chroniclesPartyArmorClass(state, 'knight')).toBe(1);
     const faust = state.party.find((member) => member.id === 'knight');
-    expect(chroniclesPartyInitiativeAgility(state, faust)).toBe(faust.agility + 1);
+    // Speed belongs to the MM3 sheet; the chess-knight slot's agility does not.
+    expect(chroniclesPartyInitiativeAgility(state, faust)).toBe(4 + faust.mm3.bonuses.speed);
 
     // Luck halves trap damage on a successful save; without MM3 rules it never does.
     const hits = (rules) => {
