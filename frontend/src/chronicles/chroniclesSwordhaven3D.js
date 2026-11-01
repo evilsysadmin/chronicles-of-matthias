@@ -2409,6 +2409,28 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     }
     mesh(porch, new THREE.BoxGeometry(0.16, 0.18, 2.22), mats.timber,
       'tavern-porch-ridge', [0, 3.41, 0], !coarse);
+    // Close the formerly hollow street-facing porch gable. The pale limewash
+    // and exposed oak rake/king post make the inn's entrance read as a
+    // half-timbered pitched roof, rather than two floating brown roof slabs.
+    // All pieces remain above the original door, entirely decorative.
+    const porchGable = new THREE.Shape();
+    porchGable.moveTo(-2.50, 3.00);
+    porchGable.lineTo(2.50, 3.00);
+    porchGable.lineTo(0, 3.37);
+    porchGable.closePath();
+    const infill = mesh(porch, new THREE.ShapeGeometry(porchGable), mats.plaster,
+      'tavern-porch-limewash-gable', [0, 0, 1.085], !coarse);
+    infill.userData.chroniclesDecorativeOnly = true;
+    for (const side of [-1, 1]) {
+      const rake = mesh(porch, new THREE.BoxGeometry(2.54, 0.15, 0.17),
+        mats.timber, 'tavern-porch-oak-gable-rake',
+        [side * 1.25, 3.185, 1.14], !coarse);
+      rake.rotation.z = -side * 0.147;
+      rake.userData.chroniclesDecorativeOnly = true;
+    }
+    const kingPost = mesh(porch, new THREE.BoxGeometry(0.16, 0.38, 0.17),
+      mats.timber, 'tavern-porch-oak-king-post', [0, 3.18, 1.15], !coarse);
+    kingPost.userData.chroniclesDecorativeOnly = true;
     root.add(porch);
     for (const x of [-2.35, 2.35]) mesh(root, new THREE.CylinderGeometry(0.11, 0.14, 3.15, 8),
       mats.timber, 'porch-timber-support', [x, 1.63, facadeZ + 1.60], !coarse);
