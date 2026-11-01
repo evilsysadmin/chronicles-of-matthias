@@ -53,8 +53,51 @@ export function chroniclesRosterMatches(user, query) {
   if (!term) return true;
   const labels = Object.values(user?.heroNames && typeof user.heroNames === 'object'
     && !Array.isArray(user.heroNames) ? user.heroNames : {});
-  return [user?.username, ...labels].some((value) =>
+  const area = typeof user?.mapId === 'string' && user.mapId.trim()
+    ? chroniclesSavedExpeditionArea({ currentMapId: user.mapId }) : '';
+  return [user?.username, ...labels, area, user?.mainObjective].some((value) =>
     typeof value === 'string' && value.toLocaleLowerCase('es').includes(term));
+}
+
+// These are client-side facets over the already loaded page(s). Never imply
+// that the totals cover the database while a nextAfter cursor still exists.
+export function chroniclesRosterHasSave(user) {
+  return typeof user?.mapId === 'string' && Boolean(user.mapId.trim());
+}
+
+export function chroniclesRosterFacetCounts(users, query = '') {
+  const matching = (Array.isArray(users) ? users : [])
+    .filter((user) => chroniclesRosterMatches(user, query));
+  return {
+    all: matching.length,
+    online: matching.filter((user) => user.online === true).length,
+    saved: matching.filter(chroniclesRosterHasSave).length,
+    unsaved: matching.filter((user) => !chroniclesRosterHasSave(user)).length,
+  };
+}
+
+export function chroniclesRosterVisibleUsers(users, { query = '', filter = 'all', order = 'recent' } = {}) {
+  const matching = (Array.isArray(users) ? users : [])
+    .filter((user) => chroniclesRosterMatches(user, query))
+    .filter((user) => {
+      if (filter === 'online') return user.online === true;
+      if (filter === 'saved') return chroniclesRosterHasSave(user);
+      if (filter === 'unsaved') return !chroniclesRosterHasSave(user);
+      return true;
+    });
+  const lastSeen = (user) => {
+    const timestamp = Date.parse(user?.lastActivity);
+    return Number.isFinite(timestamp) ? timestamp : -Infinity;
+  };
+  return matching.sort((left, right) => {
+    if (order === 'recent') {
+      const difference = lastSeen(right) - lastSeen(left);
+      // Subtracting two missing dates is NaN; use the stable name fallback.
+      if (Number.isFinite(difference) && difference !== 0) return difference;
+      if (lastSeen(right) !== lastSeen(left)) return lastSeen(right) > lastSeen(left) ? 1 : -1;
+    }
+    return String(left?.username || '').localeCompare(String(right?.username || ''), 'es');
+  });
 }
 
 function dateLabel(raw) {
@@ -67,6 +110,8 @@ function dateLabel(raw) {
 export default function ChroniclesPlayerAdmin() {
   const [section, setSection] = useState('players');
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [order, setOrder] = useState('recent');
   const [users, setUsers] = useState([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [nextAfter, setNextAfter] = useState('');
@@ -109,7 +154,8 @@ export default function ChroniclesPlayerAdmin() {
     }
   }
 
-  const visibleUsers = users.filter((user) => chroniclesRosterMatches(user, query));
+  const counts = chroniclesRosterFacetCounts(users, query);
+  const visibleUsers = chroniclesRosterVisibleUsers(users, { query, filter, order });
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const environment = hostname.startsWith('staging.') ? 'STAGING'
@@ -143,14 +189,33 @@ export default function ChroniclesPlayerAdmin() {
       {loading && <p role="status">{loadingMore ? 'Cargando más jugadores…' : 'Consultando jugadores…'}</p>}
       {!loading && !error && hasLoaded && users.length === 0 && <p>Aún no hay jugadores en esta instancia.</p>}
       <label className="chronicles-player-admin__search">
-        Buscar jugador o héroe
+        Buscar jugador, héroe, zona u objetivo
         <input type="search" value={query} onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nombre o identificador…" />
+          placeholder="Nombre, Swordhaven, misión…" />
       </label>
-      {hasLoaded && query.trim() && <p className="chronicles-player-admin__metadata" role="status">
-        {visibleUsers.length} coincidencias entre {users.length} usuarios cargados
-        {nextAfter ? ' · puede haber más usuarios sin cargar' : ''}
+      <div className="chronicles-player-admin__filters" role="group" aria-label="Filtrar jugadores">
+        {[
+          ['all', 'Todos'], ['online', 'En línea'],
+          ['saved', 'Con expedición'], ['unsaved', 'Sin expedición'],
+        ].map(([value, label]) => (
+          <button type="button" key={value} aria-pressed={filter === value}
+            onClick={() => setFilter(value)}>{label} · {counts[value]}</button>
+        ))}
+      </div>
+      <div className="chronicles-player-admin__sort">
+        <label htmlFor="chronicles-roster-order">Ordenar por</label>
+        <select id="chronicles-roster-order" value={order} onChange={(event) => setOrder(event.target.value)}>
+          <option value="recent">Actividad más reciente</option>
+          <option value="name">Nombre de cuenta</option>
+        </select>
+      </div>
+      {hasLoaded && <p className="chronicles-player-admin__metadata" role="status">
+        Mostrando {visibleUsers.length} de {users.length} usuarios cargados
+        {nextAfter ? ' · los filtros y recuentos solo incluyen los cargados' : ''}
       </p>}
+      {hasLoaded && !loading && visibleUsers.length === 0 && users.length > 0 && (
+        <p className="chronicles-player-admin__empty">No hay jugadores que coincidan con estos filtros.</p>
+      )}
       <ul className="chronicles-player-admin__users">
         {visibleUsers.map((user) => (
           <li key={user.username}>
@@ -183,7 +248,7 @@ export default function ChroniclesPlayerAdmin() {
                   Alta: {dateLabel(user.createdAt)}
                   {user.runStatus ? ` · Estado guardado: ${chroniclesRosterRunLabel(user)}` : ''}
                 </p>
-                {(Number.isInteger(user.activeQuests) || Number.isInteger(user.completedQuests)) && (
+                {chroniclesRosterHasSave(user) && (
                   <p className="chronicles-player-admin__metadata">
                     Encargos del último guardado: {user.activeQuests || 0} activos · {user.completedQuests || 0} completados
                   </p>
