@@ -61,6 +61,14 @@ export function chroniclesRosterMatches(user, query) {
 
 // These are client-side facets over the already loaded page(s). Never imply
 // that the totals cover the database while a nextAfter cursor still exists.
+// A missing count is unknown, not proof of zero. Never coerce malformed or
+// oversized numbers supplied by an older or broken API response.
+export function chroniclesRosterSavedExpeditionsLabel(user) {
+  const count = user?.savedExpeditions;
+  if (!Number.isSafeInteger(count) || count < 1) return null;
+  return count === 1 ? '1 expedición guardada' : `${count} expediciones guardadas`;
+}
+
 export function chroniclesRosterHasSave(user) {
   return typeof user?.mapId === 'string' && Boolean(user.mapId.trim());
 }
@@ -248,9 +256,9 @@ export default function ChroniclesPlayerAdmin() {
                   Alta: {dateLabel(user.createdAt)}
                   {user.runStatus ? ` · Estado guardado: ${chroniclesRosterRunLabel(user)}` : ''}
                 </p>
-                {Number.isSafeInteger(user.savedExpeditions) && user.savedExpeditions > 0 && (
+                {chroniclesRosterSavedExpeditionsLabel(user) && (
                   <p className="chronicles-player-admin__metadata">
-                    Expediciones guardadas: <strong>{user.savedExpeditions}</strong>
+                    {chroniclesRosterSavedExpeditionsLabel(user)}
                   </p>
                 )}
                 {chroniclesRosterHasSave(user) && (
