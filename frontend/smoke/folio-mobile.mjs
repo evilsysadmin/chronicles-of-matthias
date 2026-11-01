@@ -133,6 +133,8 @@ try {
               saveExitSameRow: Math.abs(bounds(rows[1].children[1]).top
                 - bounds(rows[1].children[2]).top) <= 1,
               utilityHasExit: !!utility.querySelector('.chronicles-game-menu__leave'),
+              utilitySingleRow: Math.abs(bounds(utility.firstElementChild).top
+                - bounds(utility.lastElementChild).top) <= 1,
               minTargetHeight: Math.min(...[...node.querySelectorAll(
                 '.chronicles-game-menu__primary-row button, .chronicles-game-menu__action-pair button, .chronicles-game-menu__utility-row button'
               )].map((button) => bounds(button).height)),
@@ -151,6 +153,8 @@ try {
           assert.equal(board.saveExitSameRow, width > 650,
             'Save and exit form three columns only where room allows');
           assert.equal(board.utilityHasExit, true, 'Unsafe exit remains in the last row');
+          assert.equal(board.utilitySingleRow, width > 650,
+            'Wider control boards must fit all utilities, including exit, on one row');
           assert.ok(board.minTargetHeight >= 44 && board.noHorizontalOverflow,
             'Tactile controls must fit without horizontal overflow: ' + JSON.stringify(board));
           // Expanded sound scrolls a short landscape folio. Reset before
