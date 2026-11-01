@@ -42,7 +42,8 @@ describe('Swordhaven First Book plaza fountain', () => {
     for (let index = 0; index < jets.count; index += 1) {
       jets.getMatrixAt(index, matrix);
       const direction = origin.clone().transformDirection(matrix);
-      directions.push([Math.round(direction.x), Math.round(direction.z)]);
+      // Quarter-turn matrices can produce -0 for a direction component.
+      directions.push([Math.round(direction.x) || 0, Math.round(direction.z) || 0]);
     }
     expect(directions).toEqual([[1, 0], [0, -1], [-1, 0], [0, 1]]);
     const bounds = new THREE.Box3().setFromObject(fountain);
