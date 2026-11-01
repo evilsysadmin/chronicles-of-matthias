@@ -23,7 +23,8 @@ describe('MM3 initiative rejects coerced legacy stats', () => {
   ])('ignores %s instead of converting it into agility or speed', (_label, invalid) => {
     const hero = { id: 'matthias', hp: 7, agility: invalid, mm3: { bonuses: { speed: invalid } } };
     const state = { party: [hero], rpgModifiers: { matthias: { initiativeBonus: invalid } } };
-    expect(chroniclesPartyInitiativeAgility(state, hero)).toBe(0);
+    // A corrupt slot agility never leaks into MM3: only the common base 4 remains.
+    expect(chroniclesPartyInitiativeAgility(state, hero)).toBe(4);
     // Missing or malformed enemy AGI falls back to its authored build.
     expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: invalid })).toBe(4);
   });
@@ -31,7 +32,7 @@ describe('MM3 initiative rejects coerced legacy stats', () => {
   it('retains legacy numeric strings and legitimate negative MM3 speed', () => {
     const hero = { id: 'matthias', hp: 7, agility: '6', mm3: { bonuses: { speed: '-2' } } };
     const state = { party: [hero], rpgModifiers: { matthias: { initiativeBonus: '3' } } };
-    expect(chroniclesPartyInitiativeAgility(state, hero)).toBe(7);
+    expect(chroniclesPartyInitiativeAgility(state, hero)).toBe(5);
     expect(chroniclesEnemyInitiativeAgility({ ...enemy, agility: '5' })).toBe(5);
   });
 
@@ -49,9 +50,9 @@ describe('MM3 initiative rejects coerced legacy stats', () => {
     };
     const rolled = chroniclesRollInitiative(state, [{ ...enemy, agility: [13] }], { random: () => 0 });
     expect(rolled.order.map(({ id, agility, roll, initiative }) => [id, agility, roll, initiative])).toEqual([
-      ['rook', 6, 1, 7],
+      ['rook', 5, 1, 6],
       ['horse-thing', 4, 1, 5],
-      ['matthias', 0, 1, 1],
+      ['matthias', 4, 1, 5],
     ]);
   });
 });
