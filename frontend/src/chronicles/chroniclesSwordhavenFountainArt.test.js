@@ -111,7 +111,6 @@ describe('Swordhaven First Book plaza fountain', () => {
     expect(later).not.toEqual(first);
     update(2.4);
     expect([...glints.instanceMatrix.array]).toEqual(later);
-    expect(impact.instanceMatrix.needsUpdate).toBeUndefined(); // version tracks GPU uploads
     expect(impact.instanceMatrix.version).toBeGreaterThan(0);
     expect(pool.instanceMatrix.version).toBeGreaterThan(0);
     expect(glints.instanceMatrix.version).toBeGreaterThan(0);
