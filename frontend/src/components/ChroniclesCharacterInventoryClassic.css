@@ -725,12 +725,25 @@
   color: #fff5dc;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
-[data-chronicles-equipment-folio] .chronicles-character-sheet__pixel-item-icon {
+[data-chronicles-equipment-folio] :is(.chronicles-character-sheet__pixel-item-icon, .chronicles-character-sheet__illustrated-item-icon) {
   display: block;
-  width: 25px;
-  height: 25px;
+  width: 28px;
+  height: 28px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__pixel-item-icon {
   color: #315849;
   image-rendering: pixelated;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__illustrated-item-icon {
+  object-fit: contain;
+  filter: drop-shadow(1px 1px 0 #36423966);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > .chronicles-character-sheet__inventory-glyph {
+  background: #ddd3bb;
+  border-color: #899083;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected .chronicles-character-sheet__pixel-item-icon {
