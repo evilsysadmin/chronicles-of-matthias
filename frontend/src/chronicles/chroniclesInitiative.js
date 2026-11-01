@@ -43,7 +43,12 @@ export function chroniclesRollD8(random = Math.random) {
 // already keep in the run state. Callers must not add it again.
 export function chroniclesPartyInitiativeAgility(state, member) {
   if (!member) return 0;
-  const base = nonNegativeInteger(member.agility);
+  // MM3 characters must not inherit the hidden 2/3/4/5 agility of their
+  // chess-piece slots. Keep the old shared Matthias baseline (4) so Speed
+  // and real progression, not slot identity, determine their initiative.
+  // This also normalizes legacy MM3 checkpoints without rewriting saves;
+  // Tactics continues to use each piece's authored agility.
+  const base = member.mm3 ? 4 : nonNegativeInteger(member.agility);
   const progressionBonus = nonNegativeInteger(state?.rpgModifiers?.[member.id]?.initiativeBonus);
   // MM Speed: its bonus (negative for slow heroes) moves the hero in the order.
   const rawSpeedBonus = member.mm3?.bonuses?.speed ?? 0;
