@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import ChroniclesQuickStatus from '../src/components/ChroniclesQuickStatus.jsx';
 import ChroniclesFirstSteps from '../src/components/ChroniclesFirstSteps.jsx';
-import { chroniclesAdventureMenuShortcut, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
+import { chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesPartyHotkeyMember } from '../src/chronicles/chroniclesKeyboardBindings.js';
 import { useEscapeToClose } from '../src/useEscapeToClose.js';
 import '../src/styles.css';
 import '../src/components/ChroniclesOfMatthias.css';
@@ -109,7 +109,7 @@ function MenuShortcutFixture() {
         return;
       }
       event.preventDefault();
-      if (action === 'save') setSaveRequests((n) => n + 1);
+      if (action === 'save' && !document.querySelector('[data-shortcut-capture-only]')) setSaveRequests((n) => n + 1);
       if (action === 'request-exit') {
         setExitRequests((n) => n + 1);
         setConfirmExitWithoutSaving(true);
@@ -167,6 +167,11 @@ function MenuShortcutFixture() {
         </div>
         <div style={{ position: 'absolute', top: 4, right: 8, zIndex: 50, height: 44 }}>
           <details className="chronicles-game-menu" open={open}
+            onKeyDownCapture={(event) => {
+              chroniclesHandleAdventureMenuSaveKey(event, event.currentTarget, {
+                saveBusy, confirmExitWithoutSaving, subpageOpen: feedbackOpen,
+              });
+            }}
             onKeyDown={(event) => { chroniclesContainAdventureMenuTab(event, event.currentTarget); }}
             onToggle={(event) => {
               setOpen(event.currentTarget.open);

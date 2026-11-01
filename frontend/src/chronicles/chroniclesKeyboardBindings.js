@@ -58,6 +58,24 @@ export function chroniclesAdventureMenuShortcut(event, {
   return null;
 }
 
+// Capture S on the *open native details* before other window-level game
+// handlers can consume it. This includes focus on the sapphire menu gem.
+// Delegate to the actual Save button to preserve its real handler and
+// disabled state; do not create a parallel checkpoint implementation.
+export function chroniclesHandleAdventureMenuSaveKey(event, menuDetails, options = {}) {
+  if (event?.key !== 's' && event?.key !== 'S') return false;
+  if (chroniclesAdventureMenuShortcut(event, {
+    ...options,
+    menuOpen: Boolean(menuDetails?.open),
+  }) !== 'save') return false;
+  const saveButton = menuDetails?.querySelector?.('[data-chronicles-menu-save]');
+  if (!saveButton || saveButton.disabled || !saveButton.getClientRects?.().length) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  saveButton.click();
+  return true;
+}
+
 // The global Back/Escape stack dispatches at document level BEFORE a
 // spell/objects folio's window handler. The most visible first-person layer
 // must be dismissed first; never open the adventure menu behind another

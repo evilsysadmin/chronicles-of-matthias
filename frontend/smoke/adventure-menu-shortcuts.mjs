@@ -275,6 +275,14 @@ try {
       await page.waitForFunction(() =>
         Number(document.querySelector('[data-shortcut-save-requests]')?.textContent) === 2);
       assert.equal(await count(page, 'save'), 2);
+      // The production capture path must save from the sapphire GEM even if
+      // the window-level shortcut listener does not handle this event.
+      await details.evaluate((node) => node.setAttribute('data-shortcut-capture-only', ''));
+      await opener.focus();
+      await page.keyboard.press('s');
+      await page.waitForFunction(() => Number(document.querySelector('[data-shortcut-save-requests]')?.textContent) === 3);
+      await details.evaluate((node) => node.removeAttribute('data-shortcut-capture-only'));
+      assert.equal(await count(page, 'save'), 3, 'S on the gem dispatches exactly one real Save click');
       assert.equal(await count(page, 'discard'), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false, 'Menu must not cause horizontal scrolling');
