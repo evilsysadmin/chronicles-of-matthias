@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel, chroniclesRosterHasSave, chroniclesRosterFacetCounts, chroniclesRosterVisibleUsers } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
@@ -77,6 +77,54 @@ describe('Chronicles player administration', () => {
     expect(chroniclesRosterMatches({ username: 'bob', heroNames: { rook: {} } }, 'bob')).toBe(true);
   });
 
+  it('can search real saved map labels and authored main objectives', () => {
+    const user = {
+      username: 'alice', mapId: 'swordhaven-first-book',
+      mainObjective: 'Habla con el alcalde Aldric',
+    };
+    expect(chroniclesRosterMatches(user, 'SWORDHAVEN')).toBe(true);
+    expect(chroniclesRosterMatches(user, 'ALCALDE')).toBe(true);
+    expect(chroniclesRosterMatches(user, 'inventada')).toBe(false);
+    expect(chroniclesRosterMatches({ username: 'bob' }, 'swordhaven')).toBe(false);
+  });
+
+  it('counts only loaded accounts and combines saved / online facets with text search', () => {
+    const users = [
+      { username: 'alice', online: true, mapId: 'swordhaven-first-book', lastActivity: '2026-10-31T12:00:00Z' },
+      { username: 'bob', online: false, mapId: '', lastActivity: '2026-10-29T12:00:00Z' },
+      { username: 'charlie', online: false, mapId: '  ', lastActivity: 'invalid' },
+      { username: 'dan', online: false, mapId: 'swordhaven-sewers', lastActivity: '2026-10-30T12:00:00Z' },
+    ];
+    expect(chroniclesRosterFacetCounts(users)).toEqual({
+      all: 4, online: 1, saved: 2, unsaved: 2,
+    });
+    expect(chroniclesRosterFacetCounts(users, 'alice')).toEqual({
+      all: 1, online: 1, saved: 1, unsaved: 0,
+    });
+    expect(chroniclesRosterFacetCounts([], '')).toEqual({
+      all: 0, online: 0, saved: 0, unsaved: 0,
+    });
+    expect(chroniclesRosterHasSave(users[0])).toBe(true);
+    expect(chroniclesRosterHasSave(users[2])).toBe(false);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'online' }).map((u) => u.username))
+      .toEqual(['alice']);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'saved' }).map((u) => u.username))
+      .toEqual(['alice', 'dan']);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'unsaved' }).map((u) => u.username))
+      .toEqual(['bob', 'charlie']);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'unsaved', query: 'charlie' }).map((u) => u.username))
+      .toEqual(['charlie']);
+    expect(chroniclesRosterVisibleUsers(users, { order: 'name' }).map((u) => u.username))
+      .toEqual(['alice', 'bob', 'charlie', 'dan']);
+    expect(chroniclesRosterVisibleUsers(users).map((u) => u.username))
+      .toEqual(['alice', 'dan', 'bob', 'charlie']);
+    // Invalid or absent lastActivity can never outrank a recorded timestamp.
+    expect(chroniclesRosterVisibleUsers([users[2], { username: 'eli' }]).map((u) => u.username))
+      .toEqual(['charlie', 'eli']);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'saved' })).toHaveLength(2);
+    expect(users.map((u) => u.username)).toEqual(['alice', 'bob', 'charlie', 'dan']);
+  });
+
   it('reports only documented latest run status, not an imagined live position', () => {
     expect(chroniclesRosterRunLabel({})).toBe('Sin expedición guardada');
     expect(chroniclesRosterRunLabel({ mapId: 'swordhaven', runStatus: 'active' }))
@@ -114,7 +162,11 @@ describe('Chronicles player administration', () => {
     expect(html).toContain('último guardado, no a una posición en vivo');
     expect(html).toContain('Consultando jugadores');
     expect(html).toContain('Cambios de versión');
-    expect(html).toContain('Buscar jugador o héroe');
+    expect(html).toContain('Buscar jugador, héroe, zona u objetivo');
+    expect(html).toContain('Filtrar jugadores');
+    expect(html).toContain('Actividad más reciente');
+    expect(html).toContain('Con expedición');
+    expect(html).toContain('Sin expedición');
     expect(html).not.toContain('Ver ficha del jugador');
 
     expect(html).not.toContain('data-chronicles-admin-changelog');

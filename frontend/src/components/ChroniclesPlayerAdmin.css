@@ -55,3 +55,17 @@
 .chronicles-player-admin__details summary:focus-visible { outline:2px solid #e7c88b; outline-offset:2px; }
 .chronicles-player-admin__detail-body { padding:0 2px 4px; }
 .chronicles-player-admin__detail-body code { font-size:.75rem; overflow-wrap:anywhere; white-space:normal; }
+
+
+/* Administrative facets act only on the rows already loaded from the API. */
+.chronicles-player-admin__filters { display:flex; flex-wrap:wrap; gap:6px; }
+.chronicles-player-admin__filters button { min-height:42px; padding:8px 10px; border:1px solid #655038; border-radius:6px; background:rgba(10,14,20,.65); color:#d7c8ae; font-size:.75rem; text-align:center; cursor:pointer; }
+.chronicles-player-admin__filters button[aria-pressed="true"] { border-color:#e7c88b; background:rgba(224,182,115,.15); color:#f0d79e; }
+.chronicles-player-admin__filters button:focus-visible, .chronicles-player-admin__sort select:focus-visible { outline:2px solid #e7c88b; outline-offset:2px; }
+.chronicles-player-admin__sort { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; font-size:.77rem; color:#cbbda6; }
+.chronicles-player-admin__sort select { min-height:42px; width:min(100%,230px); padding:8px; border:1px solid #655038; border-radius:6px; background:#16171c; color:#ead5b5; font:inherit; }
+.chronicles-player-admin__empty { font-size:.8rem; color:#c9baa5; line-height:1.5; }
+@media (max-width:390px) {
+  .chronicles-player-admin__filters button { flex:1 1 calc(50% - 6px); }
+  .chronicles-player-admin__sort select { width:100%; }
+}
