@@ -31,6 +31,7 @@ import {
   chroniclesCloseGuild, chroniclesGuildJoin, chroniclesGuildLearn, chroniclesOpenGuild,
 } from './chronicles/chroniclesGuild.js';
 import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
+import { chroniclesCampRest } from './chronicles/chroniclesCampRest.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
   CHRONICLES_SPELLS,
@@ -1226,6 +1227,7 @@ export function chroniclesReduce(state, action) {
   if (state.combatRules === 'mm3' && state.initiative
     && (actionType === 'interact' || actionType === 'cross-area-threshold')) return state;
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
+  if (actionType === 'camp-rest') return chroniclesCampRest(state, chroniclesActiveEnemies(state));
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
   if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
   if (actionType === 'inn-buy-food') return chroniclesInnBuyFood(state, chroniclesMapForState(state));

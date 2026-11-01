@@ -101,7 +101,7 @@ describe('Chronicles · tavern room instead of one-click rest', () => {
     expect(chroniclesGoldBalance(next)).toBe(chroniclesGoldBalance(packed));
     expect(next.inventory['road-rations'].quantity).toBe(9999);
     expect(next.turns).toBe(packed.turns);
-    expect(CHRONICLES_INN_FOOD.description).toContain('descanso de campo todavía no está disponible');
+    expect(CHRONICLES_INN_FOOD.description).toContain('descanso de campo seguro');
   });
 
   it('rumors are free, cycle through authored Swordhaven hints and do not invent quest progress', () => {

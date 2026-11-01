@@ -93,6 +93,7 @@ import {
   chroniclesShouldResumePlayingRun,
 } from '../chronicles/chroniclesRefreshResume.js';
 import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.js';
+import { chroniclesCampRestStatus } from '../chronicles/chroniclesCampRest.js';
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
@@ -2104,6 +2105,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}
                 onJournal={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
+                campRestStatus={chroniclesCampRestStatus(state, chroniclesActiveEnemies(state))}
+                onCampRest={() => {
+                  const before = stateRef.current;
+                  const after = dispatch({ type: 'camp-rest' });
+                  if (after && before && after.turns > before.turns) {
+                    chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+                    setMenuOpen(false);
+                  }
+                }}
                 inCombat={Boolean(state.initiative)}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
                 onSaveExit={() => void saveAndExit()}

@@ -9,7 +9,7 @@ import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 describe('Chronicles adventure menu hotkey affordances', () => {
   const handlers = {
     onClose: () => {}, onContinue: () => {}, onJournal: () => {},
-    onQuickStatus: () => {}, onSave: () => {}, onSaveExit: () => {},
+    onQuickStatus: () => {}, onCampRest: () => {}, onSave: () => {}, onSaveExit: () => {},
     onRequestLoad: () => {}, onSaveBeforeLoad: () => {}, onLoadWithoutSave: () => {}, onCancelLoad: () => {},
     onAdmin: () => {}, onRequestExit: () => {},
     onDiscardExit: () => {}, onCancelExit: () => {},
@@ -38,6 +38,17 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('aria-hidden="true"');
   });
 
+
+  it('shows the actual ration cost and disables unsafe field rest without hiding the reason', () => {
+    const ready = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      campRestStatus={{ canRest: true, rationsNeeded: 3, reason: '' }} />);
+    expect(ready).toMatch(/data-chronicles-menu-camp-rest[^>]*>☾ Descansar en campo · 3 raciones<\/button>/);
+    expect(ready).not.toMatch(/data-chronicles-menu-camp-rest[^>]*disabled/);
+    const unsafe = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
+      campRestStatus={{ canRest: false, rationsNeeded: 4, reason: 'Hay enemigos demasiado cerca.' }} />);
+    expect(unsafe).toMatch(/data-chronicles-menu-camp-rest[^>]*disabled=""/);
+    expect(unsafe).toContain('Hay enemigos demasiado cerca.');
+  });
 
   it('shows admin tools only after server verification and permits an explicit retry after a timeout', () => {
     const admin = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
