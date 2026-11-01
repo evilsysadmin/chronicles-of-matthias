@@ -19,6 +19,17 @@ describe('Swordhaven forge smoke lantern', () => {
     expect(cap).toBeTruthy();
     expect(lantern.children.filter(child => child.name === 'forge-lantern-pitched-cap')).toHaveLength(2);
     expect(lantern.getObjectByName('forge-lantern-timber-gable')).toBeTruthy();
+    // Close the daylight slit without covering the functional-looking louvers.
+    const infill = lantern.getObjectByName('forge-lantern-pitched-dark-infill');
+    expect(infill?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(infill.geometry.type).toBe('ShapeGeometry');
+    expect(infill.material.color.getHex()).toBe(0x30251e);
+    expect(infill.material.side).toBe(THREE.DoubleSide);
+    expect(infill.position.z).toBeLessThan(lantern.getObjectByName('forge-lantern-iron-louver').position.z);
+    const infillBounds = new THREE.Box3().setFromBufferAttribute(infill.geometry.getAttribute('position'));
+    expect(infillBounds.min.y).toBeLessThan(0.4);
+    expect(infillBounds.max.y).toBeGreaterThan(1.4);
+    expect(armor?.getObjectByName('forge-lantern-pitched-dark-infill')).toBeFalsy();
     expect(lantern.getObjectByName('forge-lantern-oak-post').position.y).toBeLessThan(0);
     // A roof feature hidden behind the main gable is not a visual improvement.
     expect(lantern.position.z).toBeGreaterThan(forge.getObjectByName('roof-gable-1').position.z);
