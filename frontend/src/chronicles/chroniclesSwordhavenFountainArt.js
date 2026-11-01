@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Only the First Book plaza gets this second, ceremonial fountain tier.
 // The original 4m-blocked tile remains the only collision source. This is
-// static visual art: no timers, lights, extra water simulation or raycasts.
+// decorative visual art: no lights, physics, raycasts or per-frame allocation.
 export function dressSwordhavenTieredFountain(fountain, mats, { coarsePointer = false } = {}) {
   if (!fountain?.isGroup) return null;
   const existing = fountain.getObjectByName('swordhaven-fountain-upper-tier');
@@ -92,6 +92,86 @@ export function dressSwordhavenTieredFountain(fountain, mats, { coarsePointer = 
   }
   ripples.instanceMatrix.needsUpdate = true;
   tier.add(ripples);
+
+  // Two soft wave crests on the lower pool. All pieces are instanced and
+  // use local materials: no moving water shader or shared palette mutation.
+  const waveMaterial = new THREE.MeshBasicMaterial({
+    color: 0xc1f0eb, transparent: true, opacity: 0.19,
+    depthWrite: false, toneMapped: false,
+  });
+  const poolWaves = new THREE.InstancedMesh(
+    new THREE.TorusGeometry(0.62, 0.009, 4, coarsePointer ? 12 : 20),
+    waveMaterial, 2);
+  poolWaves.name = 'fountain-pool-soft-waves';
+  poolWaves.userData.chroniclesDecorativeOnly = true;
+  poolWaves.castShadow = false;
+  poolWaves.receiveShadow = false;
+  tier.add(poolWaves);
+
+  // A few very small highlights travel down the existing curved jets.
+  // The original four tubes remain stationary, inside the blocked tile.
+  const glintMaterial = new THREE.MeshBasicMaterial({
+    color: 0xe0fbf6, transparent: true, opacity: 0.52,
+    depthWrite: false, toneMapped: false,
+  });
+  const glints = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.031, 6, 4), glintMaterial, 12);
+  glints.name = 'fountain-jet-moving-glints';
+  glints.userData.chroniclesDecorativeOnly = true;
+  glints.castShadow = false;
+  glints.receiveShadow = false;
+  tier.add(glints);
+
+  const point = new THREE.Vector3();
+  function updateChroniclesFountainWater(seconds) {
+    if (!Number.isFinite(seconds)) return;
+    rippleMaterial.opacity = 0.49 + 0.10 * Math.sin(seconds * 2.1);
+    waveMaterial.opacity = 0.17 + 0.04 * Math.sin(seconds * 1.3);
+    for (let index = 0; index < 4; index += 1) {
+      const phase = (seconds * 0.36 + index * 0.25) % 1;
+      const angle = index * Math.PI / 2;
+      dummy.position.set(Math.cos(angle) * 1.30, 0.748, -Math.sin(angle) * 1.30);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.setScalar(0.76 + phase * 0.43);
+      dummy.updateMatrix();
+      ripples.setMatrixAt(index, dummy.matrix);
+    }
+    ripples.instanceMatrix.needsUpdate = true;
+    for (let index = 0; index < 2; index += 1) {
+      const phase = (seconds * 0.19 + index * 0.5) % 1;
+      dummy.position.set(0, 0.748 + index * 0.001, 0);
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.setScalar(0.90 + phase * 0.40);
+      dummy.updateMatrix();
+      poolWaves.setMatrixAt(index, dummy.matrix);
+    }
+    poolWaves.instanceMatrix.needsUpdate = true;
+    for (let jet = 0; jet < 4; jet += 1) {
+      const angle = jet * Math.PI / 2;
+      for (let bead = 0; bead < 3; bead += 1) {
+        const phase = (seconds * 0.30 + bead / 3 + jet * 0.06) % 1;
+        stream.getPoint(phase, point);
+        dummy.position.set(point.x * Math.cos(angle), point.y, -point.x * Math.sin(angle));
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.setScalar(0.65 + 0.17 * Math.sin(phase * Math.PI));
+        dummy.updateMatrix();
+        glints.setMatrixAt(jet * 3 + bead, dummy.matrix);
+      }
+    }
+    glints.instanceMatrix.needsUpdate = true;
+  }
+  tier.userData.updateChroniclesFountainWater = updateChroniclesFountainWater;
+  updateChroniclesFountainWater(0);
   fountain.add(tier);
   return tier;
+}
+
+/** Only animate while the camera is near the First Book plaza; no idle GPU loop elsewhere. */
+export function chroniclesFountainMotionEnabled({
+  visible = true, reducedMotion = false, partyPosition, fountainPosition,
+} = {}) {
+  if (!visible || reducedMotion || !partyPosition || !fountainPosition) return false;
+  const dx = partyPosition.x - fountainPosition.x;
+  const dz = partyPosition.z - fountainPosition.z;
+  return Number.isFinite(dx) && Number.isFinite(dz) && dx * dx + dz * dz <= 26 * 26;
 }
