@@ -15,7 +15,6 @@
     flex: 1 1 auto;
     min-height: 0;
     align-items: stretch;
-    grid-template-columns: minmax(0, 1fr) clamp(152px, 11vw, 188px);
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-layout:has([data-chronicles-chapter="spells"])
