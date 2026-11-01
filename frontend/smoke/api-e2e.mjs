@@ -174,8 +174,15 @@ try {
   await adventure.getByRole('button', { name: 'Guardar partida · S' }).waitFor();
   expect(await adventure.isVisible(), 'returning from feedback should keep adventure menu open');
 
-  await page.getByRole('button', { name: 'Guardar partida' }).click();
+  // The real authenticated menu must route S through the same server save
+  // as its button, even after returning from the nested feedback page.
+  // The isolated menu fixture only counts callbacks; this proves Mongo writes.
+  const writesBeforeSave = calls.filter((call) => call.startsWith('PUT /api/chronicles/runs/')).length;
+  await adventure.getByRole('button', { name: 'Continuar' }).focus();
+  await page.keyboard.press('s');
   await page.getByText('Partida guardada correctamente.').waitFor({ timeout: 15000 });
+  expect(calls.filter((call) => call.startsWith('PUT /api/chronicles/runs/')).length === writesBeforeSave + 1,
+    'S inside the adventure menu must persist exactly one real API checkpoint');
   await page.screenshot({ path: 'api-e2e-saved.png' });
   await ctx.close();
 
