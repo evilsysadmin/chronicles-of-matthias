@@ -101,6 +101,36 @@ async function assertNavigationHighlight(nav, expected) {
   }
 }
 
+async function measureMM3ChapterTabGeometry(nav) {
+  return nav.evaluate((element) => {
+    const rail = element.getBoundingClientRect();
+    return {
+      railLeft: rail.left,
+      railWidth: rail.width,
+      buttons: [...element.querySelectorAll('button')].map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      }),
+    };
+  });
+}
+
+async function assertMM3ChapterTabsStable(nav, initial, chapter, viewport) {
+  const current = await measureMM3ChapterTabGeometry(nav);
+  const message = chapter + ' must preserve all Estado tab dimensions at ' + viewport
+    + ': ' + JSON.stringify({ initial, current });
+  assert.equal(current.buttons.length, 3, message);
+  assert.ok(Math.abs(current.railLeft - initial.railLeft) <= 1
+    && Math.abs(current.railWidth - initial.railWidth) <= 1, message);
+  current.buttons.forEach((button, index) => {
+    assert.ok(button.height >= 55 && button.width >= 100, message);
+    assert.ok(Math.abs(button.width - initial.buttons[index].width) <= 1
+      && Math.abs(button.height - initial.buttons[index].height) <= 1, message);
+    assert.ok(Math.abs(button.width - current.buttons[0].width) <= 1
+      && Math.abs(button.height - current.buttons[0].height) <= 1, message);
+  });
+}
+
 try {
   // With browser zoom, a 1280px-wide desktop can have only 690 CSS pixels
   // of height. Before the fix, the full-width V3 ledger fell back to the
@@ -304,12 +334,20 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Estado/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Estado');
+      const initialChapterTabs = width >= 1200
+        ? await measureMM3ChapterTabGeometry(nav) : null;
+      if (initialChapterTabs) {
+        await assertMM3ChapterTabsStable(nav, initialChapterTabs, 'Estado', width + 'x' + height);
+      }
       await assertResourceContrast(sheet, 'gold');
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
+      if (initialChapterTabs) {
+        await assertMM3ChapterTabsStable(nav, initialChapterTabs, 'Equipo', width + 'x' + height);
+      }
       // The classic equipment skin must not hide the only close button with
       // its large identity banner. Exercise painted and accessible geometry.
       const equipmentClose = sheet.getByRole('button', { name: 'Cerrar ficha' });
@@ -522,6 +560,9 @@ try {
       assert.equal(await nav.getByRole('button', { name: /Hechizos/ }).getAttribute('aria-pressed'), 'true');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Hechizos');
+      if (initialChapterTabs) {
+        await assertMM3ChapterTabsStable(nav, initialChapterTabs, 'Hechizos', width + 'x' + height);
+      }
       // Non-casters remain on their own sheet: no cross-hero magic CTA.
       const nonCaster = sheet.locator('.chronicles-character-sheet__no-spells');
       await nonCaster.waitFor({ state: 'visible' });
