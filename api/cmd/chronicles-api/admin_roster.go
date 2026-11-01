@@ -38,7 +38,7 @@ type rosterUser struct {
 	ActiveQuests int        `json:"activeQuests,omitempty"`
 	CompletedQuests int     `json:"completedQuests,omitempty"`
 	MainObjective string    `json:"mainObjective,omitempty"`
-	SavedExpeditions int    `json:"savedExpeditions,omitempty"`
+	SavedExpeditions int64  `json:"savedExpeditions,omitempty"`
 }
 
 type rosterPage struct {
@@ -290,8 +290,8 @@ func rosterRunCountPipeline(owners []string) mongo.Pipeline {
 	}
 }
 
-func rosterSavedExpeditionCounts(ctx context.Context, runs *mongo.Collection, owners []string) (map[string]int, error) {
-	counts := make(map[string]int, len(owners))
+func rosterSavedExpeditionCounts(ctx context.Context, runs *mongo.Collection, owners []string) (map[string]int64, error) {
+	counts := make(map[string]int64, len(owners))
 	if len(owners) == 0 {
 		return counts, nil
 	}
@@ -308,8 +308,8 @@ func rosterSavedExpeditionCounts(ctx context.Context, runs *mongo.Collection, ow
 		if err := cursor.Decode(&item); err != nil {
 			return nil, err
 		}
-		if item.Count > 0 && item.Count <= 1000000 {
-			counts[item.Owner] = int(item.Count)
+		if item.Count > 0 {
+			counts[item.Owner] = item.Count
 		}
 	}
 	if err := cursor.Err(); err != nil {
