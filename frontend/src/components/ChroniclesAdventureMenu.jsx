@@ -81,16 +81,18 @@ export default function ChroniclesAdventureMenu({
             : <div className="chronicles-game-menu__actions">
             {!confirmExitWithoutSaving && !confirmLoadSelection && !feedbackOpen && !helpOpen && (
               <>
+            <div className="chronicles-game-menu__primary-row" data-chronicles-menu-primary>
                 <button type="button" className="chronicles-game-menu__continue" onClick={onContinue}>
               <span aria-hidden="true">▶</span> Continuar
             </button>
+            <button type="button" data-chronicles-menu-camp-rest
+              disabled={!campRestStatus?.canRest} title={campRestStatus?.reason || undefined}
+              onClick={onCampRest}>☾ Descansar en campo · {campRestStatus?.rationsNeeded ?? '—'} raciones</button>
+            </div>
             <div className="chronicles-game-menu__action-pair">
               <button type="button" data-chronicles-menu-journal onClick={onJournal}>Crónica · J</button>
               <button type="button" data-chronicles-menu-quick-status onClick={onQuickStatus}>Estado del grupo · G</button>
             </div>
-            <button type="button" data-chronicles-menu-camp-rest
-              disabled={!campRestStatus?.canRest} title={campRestStatus?.reason || undefined}
-              onClick={onCampRest}>☾ Descansar en campo · {campRestStatus?.rationsNeeded ?? '—'} raciones</button>
             <div className="chronicles-game-menu__action-pair">
               <button type="button" className="chronicles-game-menu__save" data-chronicles-menu-save onClick={onSave}
                 disabled={saveBusy || inCombat} title={inCombat ? CHRONICLES_COMBAT_SAVE_NOTICE : undefined}>
@@ -121,8 +123,8 @@ export default function ChroniclesAdventureMenu({
                   Reintentar verificación de permisos
                 </button>
               )}
-            </div>
                 <button type="button" className="chronicles-game-menu__leave" ref={requestExitRef} onClick={onRequestExit}>Salir sin guardar · Q</button>
+            </div>
               </>
             )}
             {!confirmExitWithoutSaving && !confirmLoadSelection && feedbackOpen && !helpOpen && (
