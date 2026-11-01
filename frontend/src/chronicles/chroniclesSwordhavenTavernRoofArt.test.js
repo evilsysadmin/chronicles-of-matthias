@@ -11,7 +11,7 @@ describe('Swordhaven inn roof silhouette', () => {
     const tavern = buildSwordhavenHouse(
       SWORDHAVEN_BUILDINGS.find(building => building.id === 'swordhaven-tavern'),
       mats, coarse, new Set(), { x: 9, y: 9 },
-    );
+    ).root;
     const dormer = tavern.getObjectByName('tavern-front-roof-dormer');
     expect(dormer).toBeInstanceOf(THREE.Group);
     expect(dormer.userData.chroniclesDecorativeOnly).toBe(true);
@@ -37,8 +37,8 @@ describe('Swordhaven inn roof silhouette', () => {
   it('never adds the inn dormer to the forge, armory, guild or temple', () => {
     const mats = createSwordhavenMaterials();
     for (const spec of SWORDHAVEN_BUILDINGS.filter(item => item.id !== 'swordhaven-tavern')) {
-      const house = buildSwordhavenHouse(spec, mats, true, new Set(), { x: 9, y: 9 });
-      expect(house.getObjectByName('tavern-front-roof-dormer')).toBeNull();
+      const house = buildSwordhavenHouse(spec, mats, true, new Set(), { x: 9, y: 9 }).root;
+      expect(house.getObjectByName('tavern-front-roof-dormer')).toBeUndefined();
     }
   });
 
