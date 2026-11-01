@@ -1,31 +1,8 @@
 /* MM3 inventory: wide ledger, explicit command strip, old-school portraits.
    Pure presentation; no changes to equipability, saves, Tactics or combat. */
 @media (min-width: 851px) and (min-height: 581px) {
-  /* Equipment removes the large identity banner, but must not hide its
-     only close control. Keep a compact keyboard/touch-accessible close row. */
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
-  .chronicles-character-sheet__head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 40px;
-    min-height: 44px;
-    height: 44px;
-    padding: 2px 12px;
-    gap: 0;
-    border-bottom: 0;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
-  .chronicles-character-sheet__identity {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
-  .chronicles-character-sheet__head > button { grid-column: 2; }
-  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
-  .chronicles-character-sheet__progression { display: none; }
+  /* Keep the shared compact identity and XP header visible in Equipment.
+     Hiding it moved the navigation upwards on chapter changes. */
 
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="equipment"] { min-height: 430px; background: #bd7b48; }
@@ -300,6 +277,16 @@
 .chronicles-character-sheet__head {
   background: #465051;
   border-color: #797d71;
+}
+/* The same compact heading remains legible on Equipment's dark stone skin. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__identity h3 {
+  color: #fff0d8;
+  text-shadow: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
+.chronicles-character-sheet__identity p {
+  color: #e3d7c1;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
 .chronicles-character-sheet__head > button {
