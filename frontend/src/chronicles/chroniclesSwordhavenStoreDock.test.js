@@ -42,6 +42,31 @@ describe('Swordhaven provisions side loading dock', () => {
       expect(x - halfWidth).toBeGreaterThan(4);
       expect(Math.abs(part.position.z) + part.geometry.parameters.depth / 2).toBeLessThan(3.5);
     }
+    // Full-height cedar cladding is a store-only, decorative upper storey,
+    // not another ground-level blocker or a copy of the tavern facade.
+    const cladding = store.getObjectByName('store-upper-cedar-cladding');
+    expect(cladding?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(forge.getObjectByName('store-upper-cedar-cladding')).toBeFalsy();
+    const panels = cladding.getObjectByName('store-upper-cedar-wall-panels');
+    const battens = cladding.getObjectByName('store-upper-cedar-vertical-battens');
+    const rails = cladding.getObjectByName('store-upper-cedar-cornice-rails');
+    expect(panels.count).toBe(2);
+    expect(battens.count).toBe(14);
+    expect(rails.count).toBe(4);
+    expect(panels.material.color.getHex()).toBe(0x785a40);
+    expect(panels.material.map?.name).toBe('chronicles-town-timber');
+    for (const batch of [panels, battens, rails]) {
+      expect(batch.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(batch.count).toBeGreaterThan(0);
+      const transform = new THREE.Matrix4();
+      for (let index = 0; index < batch.count; index += 1) {
+        batch.getMatrixAt(index, transform);
+        const pos = new THREE.Vector3().setFromMatrixPosition(transform);
+        expect(pos.y).toBeGreaterThan(3.8);
+        expect(Math.abs(pos.x)).toBeLessThan(6);
+        expect(Math.abs(pos.z)).toBeLessThan(3.1);
+      }
+    }
     expect(store.getObjectByName('shop-door')).toBeTruthy();
     expect(store.getObjectByName('store-side-loading-hatch-battens')).toBeTruthy();
     expect(swordhaven.grid[4][5]).toBe('.');
