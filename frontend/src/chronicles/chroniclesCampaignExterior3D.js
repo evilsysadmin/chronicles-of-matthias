@@ -15,6 +15,8 @@ import { dressSwordhavenTieredFountain } from './chroniclesSwordhavenFountainArt
 import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { chroniclesMapById } from './chroniclesMapCatalog.js';
+import { buildChroniclesExteriorExit, chroniclesExteriorExitKind } from './chroniclesExteriorExitArt.js';
 
 // File-authored exterior topology: no independent collision map or invisible
 // decorative blockers. Impassable cells alone own boulders/low walls; every
@@ -706,7 +708,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     } : {}),
   });
   const timber = material(0x4d3424);
-  const linen = material(0x963f32, { side: THREE.DoubleSide });
+
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });
 
   const skyTint = biome?.sky ?? (forest ? 0x9fb8a4 : 0xb4d4df);
@@ -969,6 +971,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     }));
   }
 
+  const exitDefinitions = new Map((chroniclesMapById(scenePlan.mapId)?.exits || [])
+    .map((exit) => [exit.id, exit]));
+  const lookupDestinationMap = (id) => {
+    const map = chroniclesMapById(id);
+    return map?.id === id ? map : null;
+  };
   const contentProps = [];
   for (const entry of scenePlan.content || []) {
     if (!entry.position || !['exit', 'lore', 'pickup'].includes(entry.kind)) continue;
@@ -1152,18 +1160,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       water.position.y = 0.72;
       root.add(basin, water);
     } else if (entry.kind === 'exit') {
-      // Gate posts flank the road, so a gate on the west/east edge turns 90°
-      // instead of planting one post straight in front of the arriving camera.
+      // Use the actual destination manifest, not the current area's biome.
+      // This remains cosmetic: entry IDs, transition actions and map collision
+      // are untouched. Rotate east/west boundaries across the approach.
       if (entry.position.x <= 1 || entry.position.x >= width - 2) root.rotation.y = Math.PI / 2;
-      for (const side of [-1, 1]) {
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.15, 4.4, 8), timber);
-        pole.position.set(side * 1.25, 2.2, 0);
-        root.add(pole);
-        const banner = new THREE.Mesh(new THREE.BoxGeometry(0.67, 1.65, 0.06), linen);
-        banner.name = 'banner-road-heraldic-pennant';
-        banner.position.set(side * 1.25 + 0.34 * side, 3.18, 0);
-        root.add(banner);
-      }
+      const style = chroniclesExteriorExitKind(exitDefinitions.get(entry.id), lookupDestinationMap);
+      buildChroniclesExteriorExit(root, { style, stone, timber, plaque, coarsePointer });
     } else if ((!village || !String(entry.visualType || '').startsWith('building-'))
       && !(scenePlan.mapId === 'swordhaven-first-book' && entry.id === 'sealed-order')) {
       // Swordhaven's sealed order is a quest interaction anchor outside the
