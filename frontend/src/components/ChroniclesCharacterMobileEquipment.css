@@ -14,12 +14,12 @@
   .chronicles-character-sheet__progression {
     display: none;
   }
-  /* Compact four-way navigation; preserve at least 44px touch targets.
+  /* Compact three-way navigation; preserve at least 44px touch targets.
      Old mobile CSS stacked huge symbols over labels (two full text lines). */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__tabs {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 2px;
     padding: 2px;
     margin: 0;
