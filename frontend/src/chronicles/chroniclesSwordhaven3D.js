@@ -1502,6 +1502,20 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       new THREE.BoxGeometry(0.065, 1.45, 0.065), mats.gold, 4);
     lead.name = 'magic-side-lancet-brass-mullions';
     lead.userData.chroniclesDecorativeOnly = true;
+    // Deep limestone returns and projecting sills make the guild's four
+    // lancets read as real stone openings from an oblique street approach,
+    // not flat violet decals. Batched on the existing solid side walls.
+    const returns = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.16, 1.92, 0.46), mats.stone, 8);
+    returns.name = 'magic-side-lancet-deep-stone-returns';
+    const deepSills = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1.90, 0.20, 0.50), mats.stone, 4);
+    deepSills.name = 'magic-side-lancet-projecting-stone-sills';
+    for (const batch of [returns, deepSills]) {
+      batch.userData.chroniclesDecorativeOnly = true;
+      batch.castShadow = !coarse;
+      batch.receiveShadow = true;
+    }
     const dummy = new THREE.Object3D();
     let index = 0;
     for (const side of [-1, 1]) {
@@ -1516,10 +1530,19 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
         dummy.position.x = side * (width / 2 + 0.36);
         dummy.position.y = 2.62;
         dummy.updateMatrix();
-        lead.setMatrixAt(index++, dummy.matrix);
+        lead.setMatrixAt(index, dummy.matrix);
+        for (const [edgeIndex, edge] of [-1, 1].entries()) {
+          dummy.position.set(side * (width / 2 + 0.37), 2.82, z + edge * 0.77);
+          dummy.updateMatrix();
+          returns.setMatrixAt(index * 2 + edgeIndex, dummy.matrix);
+        }
+        dummy.position.set(side * (width / 2 + 0.39), 1.85, z);
+        dummy.updateMatrix();
+        deepSills.setMatrixAt(index, dummy.matrix);
+        index += 1;
       }
     }
-    for (const batch of [frames, panes, lead]) {
+    for (const batch of [frames, panes, lead, returns, deepSills]) {
       batch.instanceMatrix.needsUpdate = true;
       lancets.add(batch);
     }
