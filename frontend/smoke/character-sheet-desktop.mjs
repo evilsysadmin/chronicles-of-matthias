@@ -129,10 +129,11 @@ async function measureMM3ChapterTabGeometry(nav) {
     const rail = element.getBoundingClientRect();
     return {
       railLeft: rail.left,
+      railTop: rail.top,
       railWidth: rail.width,
       buttons: [...element.querySelectorAll('button')].map((button) => {
         const rect = button.getBoundingClientRect();
-        return { width: rect.width, height: rect.height };
+        return { top: rect.top, width: rect.width, height: rect.height };
       }),
     };
   });
@@ -144,11 +145,13 @@ async function assertMM3ChapterTabsStable(nav, initial, chapter, viewport) {
     + ': ' + JSON.stringify({ initial, current });
   assert.equal(current.buttons.length, 3, message);
   assert.ok(Math.abs(current.railLeft - initial.railLeft) <= 3
+    && Math.abs(current.railTop - initial.railTop) <= 3
     && Math.abs(current.railWidth - initial.railWidth) <= 1, message);
   current.buttons.forEach((button, index) => {
     assert.ok(button.height >= 55 && button.width >= 100, message);
     assert.ok(Math.abs(button.width - initial.buttons[index].width) <= 1
-      && Math.abs(button.height - initial.buttons[index].height) <= 1, message);
+      && Math.abs(button.height - initial.buttons[index].height) <= 1
+      && Math.abs(button.top - initial.buttons[index].top) <= 3, message);
     assert.ok(Math.abs(button.width - current.buttons[0].width) <= 1
       && Math.abs(button.height - current.buttons[0].height) <= 1, message);
   });
@@ -366,6 +369,10 @@ try {
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__identity h3').isVisible(), true,
+        'Equipment must keep the selected hero name visible');
+      assert.equal(await sheet.locator('.chronicles-character-sheet__progression').isVisible(), true,
+        'Equipment must keep the shared XP header and vertical tab position');
       await page.mouse.move(10, 10);
       await assertNavigationHighlight(nav, 'Equipo');
       if (initialChapterTabs) {
