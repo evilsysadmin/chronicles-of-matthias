@@ -4,7 +4,7 @@ import { chroniclesCampRestStatus } from './chroniclesCampRest.js';
 import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
-import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyCanAttackParty, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 const mapId = 'swordhaven-sewers';
@@ -75,6 +75,28 @@ describe('MM3 field rest · safe expedition resources', () => {
     expect(chroniclesReduce(fight, 'camp-rest')).toBe(fight);
     const stale = { ...base, phase: 'combat' };
     expect(chroniclesReduce(stale, 'camp-rest')).toBe(stale);
+  });
+
+  it('rejects a real archer at three tiles with line of sight but permits a wall-shielded camp', () => {
+    const spawned = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const archer = chroniclesActiveEnemies(spawned).find(({ id }) => id === 'banner-road-east-scout');
+    expect(archer?.ai?.attackReach).toBe(3);
+    const othersDown = Object.fromEntries(chroniclesActiveEnemies(spawned)
+      .filter(({ id }) => id !== archer.id).map(({ hpKey }) => [hpKey, 0]));
+    const exposed = wounded(stocked({ ...spawned, ...othersDown, x: 13, y: 3 }));
+    expect(chroniclesEnemyCanAttackParty(exposed, archer)).toBe(true);
+    expect(chroniclesCampRestStatus(exposed, chroniclesActiveEnemies(exposed)).reason)
+      .toContain('enemigos');
+    expect(chroniclesReduce(exposed, 'camp-rest')).toBe(exposed);
+
+    // Same three-tile distance, but the authored road wall blocks the bolt.
+    const sheltered = { ...exposed, x: 16, y: 6 };
+    expect(chroniclesEnemyCanAttackParty(sheltered, archer)).toBe(false);
+    expect(chroniclesCampRestStatus(sheltered, chroniclesActiveEnemies(sheltered)).canRest)
+      .toBe(true);
+    const rested = chroniclesReduce(sheltered, 'camp-rest');
+    expect(rested.turns).toBe(sheltered.turns + 1);
+    expect(rested.inventory['road-rations'].quantity).toBe(1);
   });
 
   it('advances a real nearby goblin exactly once for a successful camp turn', () => {

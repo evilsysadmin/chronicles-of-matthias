@@ -3,7 +3,7 @@
 // companions neither eat nor revive. No real-world hour/day conversion is
 // implied by the single exploration turn.
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
-import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesEnemyCanAttackParty, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
 export const CHRONICLES_CAMP_RATION_ID = 'road-rations';
 
@@ -25,12 +25,13 @@ export function chroniclesCampRestStatus(state, enemies = []) {
     return blocked('Sal del establecimiento antes de acampar.');
   }
   if (!rationsNeeded) return blocked('No queda nadie en pie para preparar el campamento.');
-  // Conservative safety radius: no resting while a living creature is within
-  // two cardinal steps, even if a wall currently blocks its attack.
+  // Two cardinal steps are always unsafe, even through a wall. Beyond that,
+  // an archer with a clear shot can still attack the camp from its real reach.
   const threatened = (Array.isArray(enemies) ? enemies : []).some((enemy) => {
     if (!(Number(state?.[enemy?.hpKey]) > 0)) return false;
     const position = chroniclesRuntimeEnemyPosition(state, enemy);
-    return position && Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 2;
+    return position && (Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 2
+      || chroniclesEnemyCanAttackParty(state, enemy, position));
   });
   if (threatened) return blocked('Hay enemigos demasiado cerca para descansar.');
   if (rationsAvailable < rationsNeeded) {
