@@ -28,6 +28,11 @@ describe('Swordhaven armorer lead barrel vault', () => {
     expect(ribs.castShadow).toBe(!coarsePointer);
     expect(vault.scale.y).toBeGreaterThan(0.70);
     expect(vault.scale.y).toBeLessThan(0.82);
+    // The roof must clear the parapet enough to read as a barrel vault
+    // from the market approach, while remaining below the shoulder caps.
+    const coping = armor.getObjectByName('armor-flat-roof-coping');
+    expect(vault.position.y).toBeGreaterThan(coping.position.y + 0.22);
+    expect(shell.material.color.getHex()).toBe(0x83939a);
 
     // The curved roof stays behind the front battlements and below the
     // existing paired tower caps, without altering entrances or walk cells.
