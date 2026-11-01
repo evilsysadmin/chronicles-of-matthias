@@ -4,6 +4,7 @@ import { clearStorageMemoryFallback } from '../safeStorage.js';
 import {
   CHRONICLES_FIRST_PERSON_RUN_STORAGE_KEY,
   CHRONICLES_RUN_STORAGE_KEY,
+  CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY,
   CHRONICLES_TACTICS_RUN_STORAGE_KEY,
   beginChroniclesRun,
   ensureChroniclesRun,
@@ -23,7 +24,7 @@ import {
   chroniclesNoteSavedRunCheckpoint,
 } from './chroniclesRunIdentity.js';
 
-describe('Chronicles shared run identity', () => {
+describe('Chronicles isolated run identity', () => {
   beforeEach(() => {
     clearStorageMemoryFallback();
     localStorage.clear();
@@ -31,40 +32,39 @@ describe('Chronicles shared run identity', () => {
   });
 
   it('uses one canonical active expedition across first person and Tactics', () => {
+    const first = ensureChroniclesRun('first-person');
+    const tactical = ensureChroniclesRun('tactics');
+    expect(tactical).not.toBe(first);
     expect(CHRONICLES_RUN_STORAGE_KEY).toBe('chess-study-chronicles-run-v1');
-
-    const firstPerson = ensureChroniclesRun('first-person');
-    const tactics = ensureChroniclesRun('tactics');
-
-    expect(tactics).toBe(firstPerson);
-    expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY))).toMatchObject({
-      id: firstPerson,
-      owner: 'alice',
-      ended: false,
-    });
+    expect(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY).toBe('chess-study-chronicles-tactics-run-v3');
+    expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)).id).toBe(first);
+    expect(JSON.parse(localStorage.getItem(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY)).id).toBe(tactical);
+    expect(ensureChroniclesRun('first-person')).toBe(first);
+    expect(ensureChroniclesRun('tactics')).toBe(tactical);
+    expect(chroniclesListSavedRuns('first-person').map(row => row.id)).toEqual([first]);
+    expect(chroniclesListSavedRuns('tactics').map(row => row.id)).toEqual([tactical]);
   });
 
   it('starts fresh first-person expeditions in Swordhaven and shares the map identity', () => {
-    const id = ensureChroniclesRun('first-person');
+    const first = ensureChroniclesRun('first-person');
     expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
-    expect(ensureChroniclesRun('tactics')).toBe(id);
-    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-first-book');
+    expect(ensureChroniclesRun('tactics')).not.toBe(first);
+    expect(chroniclesRunEntryMapId('tactics')).toBeNull();
     expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)))
-      .toMatchObject({ id, entryMapId: 'swordhaven-first-book' });
+      .toMatchObject({ id: first, entryMapId: 'swordhaven-first-book' });
   });
 
   it('uses the same Swordhaven for default and explicit fresh campaign starts', () => {
     const first = beginChroniclesRun('first-person');
     const second = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-first-book' });
     expect(second).not.toBe(first);
-    expect(ensureChroniclesRun('tactics')).toBe(second);
+    expect(ensureChroniclesRun('tactics')).not.toBe(second);
     expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
     expect(chroniclesListSavedRuns('first-person')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: first, entryMapId: 'swordhaven-first-book' }),
       expect.objectContaining({ id: second, entryMapId: 'swordhaven-first-book' }),
     ]));
     expect(chroniclesSelectSavedRun('first-person', first)).toBe(true);
-    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
   });
 
   it('rejects unsupported fresh-run map choices before changing the selected save', () => {
@@ -80,10 +80,11 @@ describe('Chronicles shared run identity', () => {
   });
 
   it('keeps fresh Tactics-first expeditions on the dungeon route for both adapters', () => {
-    const id = ensureChroniclesRun('tactics');
+    const tactical = ensureChroniclesRun('tactics');
     expect(chroniclesRunEntryMapId('tactics')).toBeNull();
-    expect(ensureChroniclesRun('first-person')).toBe(id);
-    expect(chroniclesRunEntryMapId('first-person')).toBeNull();
+    const first = ensureChroniclesRun('first-person');
+    expect(first).not.toBe(tactical);
+    expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
   });
 
   it('preserves legacy crypt run identity and server idempotency fingerprint', () => {
@@ -96,56 +97,52 @@ describe('Chronicles shared run identity', () => {
 
   it('migrates the active legacy identity from the adapter entered first', () => {
     localStorage.setItem(CHRONICLES_FIRST_PERSON_RUN_STORAGE_KEY, JSON.stringify({
-      id: 'legacy-first-person',
-      owner: 'alice',
-      ended: false,
+      id: 'legacy-first-person', owner: 'alice', ended: false,
     }));
     localStorage.setItem(CHRONICLES_TACTICS_RUN_STORAGE_KEY, JSON.stringify({
-      id: 'legacy-tactics',
-      owner: 'alice',
-      ended: false,
+      id: 'legacy-tactics', owner: 'alice', ended: false,
     }));
-
     expect(ensureChroniclesRun('first-person')).toBe('legacy-first-person');
-    expect(ensureChroniclesRun('tactics')).toBe('legacy-first-person');
-    expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)).id).toBe('legacy-first-person');
+    const tactics = ensureChroniclesRun('tactics');
+    expect(tactics).not.toBe('legacy-first-person');
+    expect(tactics).not.toBe('legacy-tactics');
   });
 
   it('can migrate a Tactics-only legacy expedition into the shared identity', () => {
     localStorage.setItem(CHRONICLES_TACTICS_RUN_STORAGE_KEY, JSON.stringify({
-      id: 'legacy-tactics',
-      owner: 'alice',
-      ended: false,
+      id: 'legacy-tactics', owner: 'alice', ended: false,
     }));
-
-    expect(ensureChroniclesRun('tactics')).toBe('legacy-tactics');
+    const tactics = ensureChroniclesRun('tactics');
+    expect(tactics).not.toBe('legacy-tactics');
     expect(ensureChroniclesRun('first-person')).toBe('legacy-tactics');
+    expect(ensureChroniclesRun('tactics')).toBe(tactics);
   });
 
   it('keeps one active expedition across remounts', () => {
     const first = beginChroniclesRun('first-person');
+    const tactical = beginChroniclesRun('tactics');
     expect(ensureChroniclesRun('first-person')).toBe(first);
-    expect(ensureChroniclesRun('tactics')).toBe(first);
+    expect(ensureChroniclesRun('tactics')).toBe(tactical);
   });
 
   it('finishes an expedition so the next entry gets a fresh shared identity', () => {
     const first = beginChroniclesRun('first-person');
-    expect(finishChroniclesRun('tactics', first)).toBe(true);
-
-    const second = ensureChroniclesRun('first-person');
-    expect(second).not.toBe(first);
-    expect(ensureChroniclesRun('tactics')).toBe(second);
+    const tactical = beginChroniclesRun('tactics');
+    expect(finishChroniclesRun('tactics', tactical)).toBe(true);
+    const next = ensureChroniclesRun('tactics');
+    expect(next).not.toBe(tactical);
+    expect(finishChroniclesRun('tactics', first)).toBe(false);
+    expect(ensureChroniclesRun('first-person')).toBe(first);
   });
 
   it('renews a stale identity once without clobbering a newer replacement', () => {
-    const stale = beginChroniclesRun('first-person');
+    const first = beginChroniclesRun('first-person');
+    const stale = beginChroniclesRun('tactics');
     const replacement = renewChroniclesRun('tactics', stale);
-
     expect(replacement).not.toBe(stale);
-    expect(ensureChroniclesRun('first-person')).toBe(replacement);
-    expect(renewChroniclesRun('first-person', stale)).toBe(replacement);
+    expect(ensureChroniclesRun('first-person')).toBe(first);
+    expect(renewChroniclesRun('tactics', stale)).toBe(replacement);
   });
-
 
   it('preserves the authored campaign route when renewing a stale first-person run', () => {
     const stale = beginChroniclesRun('first-person', { entryMapId: 'swordhaven-first-book' });
@@ -170,16 +167,15 @@ describe('Chronicles shared run identity', () => {
     chroniclesRenameSavedRun('first-person', first, 'Campaña de Hildegard');
     chroniclesNoteSavedRunCheckpoint('first-person', first, 'crypt-eight-squares');
     const second = beginChroniclesRun('first-person');
-    expect(second).not.toBe(first);
     const saves = chroniclesListSavedRuns('first-person');
-    expect(saves.map((save) => save.id)).toEqual(expect.arrayContaining([first, second]));
-    expect(saves.find((save) => save.id === first)).toMatchObject({
+    expect(saves.map(run => run.id)).toEqual(expect.arrayContaining([first, second]));
+    expect(saves.find(run => run.id === first)).toMatchObject({
       title: 'Campaña de Hildegard', currentMapId: 'crypt-eight-squares', active: false,
     });
     expect(chroniclesSelectSavedRun('first-person', first)).toBe(true);
-    expect(ensureChroniclesRun('tactics')).toBe(first);
+    expect(ensureChroniclesRun('tactics')).not.toBe(first);
     expect(chroniclesRunEntryMapId('first-person')).toBe('swordhaven-first-book');
-    expect(chroniclesListSavedRuns('first-person').find((save) => save.id === first).active).toBe(true);
+    expect(chroniclesListSavedRuns('first-person').find(run => run.id === first).active).toBe(true);
   });
 
   it('removes only the chosen local slot without touching another run', () => {
@@ -276,23 +272,18 @@ describe('Chronicles shared run identity', () => {
   });
 
   it('rekeys a new POST to the authoritative server UUID and preserves the local save name', () => {
-    const provisionalId = beginChroniclesRun('first-person');
-    expect(chroniclesRenameSavedRun('first-person', provisionalId, 'Swordhaven · día uno')).toBe(true);
-    const canonicalId = 'uuid5-owner-key-from-server';
-
-    expect(chroniclesMarkSavedRunRemote('first-person', provisionalId, canonicalId)).toBe(canonicalId);
-    expect(ensureChroniclesRun('tactics')).toBe(canonicalId);
-    expect(chroniclesRunEntryMapId('tactics')).toBe('swordhaven-first-book');
+    const provisional = beginChroniclesRun('first-person');
+    expect(chroniclesRenameSavedRun('first-person', provisional, 'Swordhaven · día uno')).toBe(true);
+    const id = 'uuid5-owner-key-from-server';
+    expect(chroniclesMarkSavedRunRemote('first-person', provisional, id)).toBe(id);
+    expect(ensureChroniclesRun('tactics')).not.toBe(id);
+    expect(chroniclesRunEntryMapId('tactics')).toBeNull();
     expect(chroniclesListSavedRuns('first-person')).toEqual([
-      expect.objectContaining({
-        id: canonicalId, title: 'Swordhaven · día uno',
-        remote: true, pending: false, active: true,
-      }),
+      expect.objectContaining({ id, title: 'Swordhaven · día uno', remote: true, pending: false, active: true }),
     ]);
-    expect(chroniclesSelectedRunIsRemote('first-person', canonicalId)).toBe(true);
-    expect(chroniclesMarkSavedRunRemote('tactics', canonicalId, canonicalId)).toBe(canonicalId);
-    // Refresh/mount must GET the canonical server ID, never POST the provisional UUID.
-    expect(ensureChroniclesRun('first-person')).toBe(canonicalId);
+    expect(chroniclesSelectedRunIsRemote('first-person', id)).toBe(true);
+    expect(chroniclesMarkSavedRunRemote('tactics', id, id)).toBeNull();
+    expect(ensureChroniclesRun('first-person')).toBe(id);
   });
 
   it('never changes a newer run or an established remote ID on a late POST response', () => {
@@ -393,13 +384,44 @@ describe('Chronicles shared run identity', () => {
     }
   });
 
-  it('never inherits an active expedition across authenticated users', () => {
-    const aliceRun = beginChroniclesRun('first-person');
-
-    localStorage.setItem('chess-study-auth-username', 'bob');
-    const bobRun = ensureChroniclesRun('tactics');
-
-    expect(bobRun).not.toBe(aliceRun);
-    expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)).owner).toBe('bob');
+  it('keeps remote checkpoints and save book entries scoped to their actual mode', () => {
+    const mm3 = beginChroniclesRun('first-person');
+    expect(chroniclesMarkSavedRunRemote('first-person', mm3, 'mm3-server')).toBe('mm3-server');
+    const tactics = beginChroniclesRun('tactics');
+    expect(chroniclesMarkSavedRunRemote('tactics', tactics, 'tactics-server')).toBe('tactics-server');
+    expect(ensureChroniclesRun('first-person')).toBe('mm3-server');
+    expect(ensureChroniclesRun('tactics')).toBe('tactics-server');
+    expect(chroniclesSelectSavedRun('first-person', 'tactics-server')).toBe(false);
+    expect(chroniclesSelectSavedRun('tactics', 'mm3-server')).toBe(false);
+    expect(chroniclesNoteSavedRunCheckpoint('tactics', 'mm3-server', 'rookwood-first-book')).toBe(false);
+    expect(chroniclesRenameSavedRun('tactics', 'mm3-server', 'overwrite')).toBe(false);
+    expect(chroniclesForgetSavedRun('tactics', 'mm3-server')).toBe(false);
+    expect(finishChroniclesRun('tactics', 'mm3-server')).toBe(false);
+    expect(chroniclesListSavedRuns('first-person').map(x => x.id)).toEqual(['mm3-server']);
+    expect(chroniclesListSavedRuns('tactics').map(x => x.id)).toEqual(['tactics-server']);
   });
+
+  it('does not adopt legacy shared MM3 checkpoints into the isolated tactical mode', () => {
+    localStorage.setItem(CHRONICLES_RUN_STORAGE_KEY, JSON.stringify({
+      id: 'shared-server', owner: 'alice', remote: true, ended: false, entryMapId: 'swordhaven-first-book',
+    }));
+    localStorage.setItem(CHRONICLES_TACTICS_RUN_STORAGE_KEY, JSON.stringify({
+      id: 'shared-server', owner: 'alice', remote: true, ended: false,
+    }));
+    const tactical = ensureChroniclesRun('tactics');
+    expect(tactical).not.toBe('shared-server');
+    expect(chroniclesSelectedRunIsRemote('tactics', tactical)).toBe(false);
+    expect(ensureChroniclesRun('first-person')).toBe('shared-server');
+    expect(chroniclesSelectedRunIsRemote('first-person', 'shared-server')).toBe(true);
+  });
+
+  it('never inherits an active expedition across authenticated users', () => {
+    const first = beginChroniclesRun('first-person');
+    localStorage.setItem('chess-study-auth-username', 'bob');
+    const tactical = ensureChroniclesRun('tactics');
+    expect(tactical).not.toBe(first);
+    expect(JSON.parse(localStorage.getItem(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY)).owner).toBe('bob');
+    expect(JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)).owner).toBe('alice');
+  });
+
 });

@@ -86,6 +86,13 @@
 - Inspiración Might & Magic III / Terra: primera persona, grupo con
   progresión real, salvas colectivas antes de contacto y combate por turnos
   al entrar en contacto. No romper el modo Tactics al mejorar MM3.
+- **Aislamiento de modos**: Tactics y la exploración MM3 usan expediciones
+  **independientes**, con runId y checkpoint propios. Tactics no debe
+  leer/escribir el puntero canónico de primera persona
+  (`CHRONICLES_RUN_STORAGE_KEY`) ni migrar automáticamente el antiguo
+  puntero Tactics v2, que puede referirse a una partida MM3 compartida.
+  Conservar el modo y las posiciones del jugador al alternar vistas;
+  ningún movimiento táctico puede modificar el estado guardado de MM3.
 - **Controles de teclado vigentes**: en exploración, flechas ↑/↓
   avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
   Durante iniciativa MM3, **no se puede trasladar ni girar el grupo**:

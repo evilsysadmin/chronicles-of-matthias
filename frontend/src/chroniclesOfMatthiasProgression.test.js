@@ -26,6 +26,7 @@ import {
   unlockChroniclesSkill,
 } from './chroniclesOfMatthiasProgression.js';
 import { clearStorageMemoryFallback } from './safeStorage.js';
+import { CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY } from './chronicles/chroniclesRunIdentity.js';
 import { chroniclesMemberMaxSp } from './chronicles/chroniclesMagic.js';
 import { chroniclesPartyAttackStats } from './chroniclesOfMatthias.js';
 
@@ -404,10 +405,11 @@ describe('Chronicles Tactics · progression', () => {
     const current = ensureChroniclesTacticsRun();
     expect(current).not.toBe('legacy-crypt-run');
 
-    const stored = JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY));
+    const stored = JSON.parse(localStorage.getItem(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY));
     expect(stored.id).toBe(current);
     expect(stored.owner).toBe('alice');
     expect(stored.ended).toBe(false);
+    expect(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY)).toBeNull();
   });
 
   it('creates a fresh run identity after the current expedition is finished', () => {
@@ -439,7 +441,7 @@ describe('Chronicles Tactics · progression', () => {
     const bobRun = ensureChroniclesTacticsRun();
     expect(bobRun).not.toBe(aliceRun);
 
-    const stored = JSON.parse(localStorage.getItem(CHRONICLES_RUN_STORAGE_KEY));
+    const stored = JSON.parse(localStorage.getItem(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY));
     expect(stored.owner).toBe('bob');
   });
 
