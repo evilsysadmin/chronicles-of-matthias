@@ -22,6 +22,9 @@ import {
 describe('Chronicles MM3 rules', () => {
   it('uses the MM3 stat-bonus bands', () => {
     expect([3, 5, 7, 9, 11, 13, 15, 17, 18].map(chroniclesMM3StatBonus)).toEqual([-4, -3, -2, -1, 0, 1, 2, 3, 3]);
+    // Boundaries from the original MM3 table, including values earned in play.
+    expect([23, 24, 25, 26, 27, 29, 30, 34, 35, 39, 40, 49, 50, 74, 75, 99, 100, 124, 125, 149, 150, 174, 175, 199, 200, 224, 225, 249, 250]
+      .map(chroniclesMM3StatBonus)).toEqual([5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 20]);
   });
 
   it('describes the robber using implemented abilities rather than promising locks or disarming', () => {
