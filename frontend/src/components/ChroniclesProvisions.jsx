@@ -31,7 +31,8 @@ export default function ChroniclesProvisions({ state, onBuy, onClose }) {
   const price = exchange?.costQuantity;
   const gold = chroniclesGoldBalance(state);
   const rations = Number(state.inventory?.['road-rations']?.quantity || 0);
-  const affordable = Number.isInteger(price) && price > 0 && gold >= price;
+  const packFull = rations >= 9999;
+  const affordable = Number.isInteger(price) && price > 0 && gold >= price && !packFull;
 
   useEffect(() => {
     const previousFocus = document.activeElement;
@@ -94,7 +95,7 @@ export default function ChroniclesProvisions({ state, onBuy, onClose }) {
           <div className="chronicles-provisions__offer">
             <span className="chronicles-provisions__eyebrow">ALMACÉN DE CAMPAÑA</span>
             <h3>Raciones de viaje</h3>
-            <p>Provisiones para futuras incursiones. No son un consumible de combate.</p>
+            <p>Se guardan en la mochila, pero el descanso de campo todavía no está disponible. No son un consumible de combate.</p>
             <div className="chronicles-provisions__balances">
               <span data-provisions-gold>◉ {gold} oro</span>
               <span data-provisions-rations>En mochila: {rations}</span>
@@ -108,7 +109,8 @@ export default function ChroniclesProvisions({ state, onBuy, onClose }) {
             ) : (
               <>
                 {!affordable && <p role="status" data-provisions-result="insufficient">
-                  {price == null ? 'El intendente no tiene existencias.' : 'No tienes suficiente oro.'}
+                  {packFull ? 'Mochila llena: no caben más raciones.'
+                    : price == null ? 'El intendente no tiene existencias.' : 'No tienes suficiente oro.'}
                 </p>}
                 <button type="button" data-provisions-buy disabled={!affordable}
                   onClick={purchase}>Comprar raciones · {price ?? '—'} oro</button>

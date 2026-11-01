@@ -90,6 +90,20 @@ describe('Chronicles · tavern room instead of one-click rest', () => {
     expect(next.turns).toBe(opened.turns);
   });
 
+  it('does not offer a false purchase when the ration pack has reached its save limit', () => {
+    const opened = act(atInn(), 'interact');
+    const packed = { ...opened, inventory: {
+      ...opened.inventory,
+      'road-rations': { id: 'road-rations', name: 'Raciones de viaje', quantity: 9999 },
+    } };
+    const next = act(packed, 'inn-buy-food');
+    expect(next).toBe(packed);
+    expect(chroniclesGoldBalance(next)).toBe(chroniclesGoldBalance(packed));
+    expect(next.inventory['road-rations'].quantity).toBe(9999);
+    expect(next.turns).toBe(packed.turns);
+    expect(CHRONICLES_INN_FOOD.description).toContain('descanso de campo todavía no está disponible');
+  });
+
   it('rumors are free, cycle through authored Swordhaven hints and do not invent quest progress', () => {
     const opened = act(atInn(), 'interact');
     const purse = chroniclesGoldBalance(opened);

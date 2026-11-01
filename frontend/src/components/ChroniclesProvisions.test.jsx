@@ -83,6 +83,12 @@ describe('Swordhaven premium provisions counter', () => {
       ...state.inventory,
       'road-rations': { id: 'road-rations', name: 'Raciones de viaje', quantity: 9999 },
     } };
+    const html = renderToStaticMarkup(createElement(ChroniclesProvisions, {
+      state: packed, onBuy: () => { throw Error('Full pack cannot purchase'); }, onClose: () => {},
+    }));
+    expect(html).toContain('Mochila llena: no caben más raciones.');
+    expect(html).toMatch(/data-provisions-buy[^>]*disabled=""/);
+    expect(html).not.toContain('No tienes suficiente oro.');
     const next = chroniclesReduce(packed, { type: 'interact' });
     expect(next).toBe(packed);
     expect(chroniclesGoldBalance(next)).toBe(28);
