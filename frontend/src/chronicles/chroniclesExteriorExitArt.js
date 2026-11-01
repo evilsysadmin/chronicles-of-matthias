@@ -2,7 +2,9 @@ import * as THREE from 'three';
 
 // An exit is a contextual interaction, not a physical obstruction. Keep the
 // opening legible and do not introduce colliders or change any map topology.
-export function chroniclesExteriorExitKind(exitDefinition, lookupMap) {
+export function chroniclesExteriorExitKind(exitDefinition, lookupMap, originMap = null) {
+  // Exiting a walled city is a city GATE even if the road outside is wild.
+  if (originMap?.regionKind === 'settlement') return 'settlement';
   const destinationId = exitDefinition?.action?.effects?.find(
     (effect) => effect?.type === 'transition-map',
   )?.mapId;
@@ -12,6 +14,47 @@ export function chroniclesExteriorExitKind(exitDefinition, lookupMap) {
   if (destination.regionKind === 'settlement') return 'settlement';
   if (destination.regionKind === 'dungeon') return 'dungeon';
   return destination.biome === 'forest' ? 'forest' : 'wilderness';
+}
+
+
+// Return the solid perimeter cell directly beyond an exit's walkable tile.
+// Purely visual: we never change the authored grid, saved positions or
+// transition contracts. Special exits (sewer grates, caves) keep their art.
+export function chroniclesTownWallPassage(entry, grid) {
+  if (entry?.kind !== 'exit' || (entry.visualType && entry.visualType !== 'exit')) return null;
+  const x = Number(entry?.position?.x);
+  const y = Number(entry?.position?.y);
+  const height = grid?.length || 0;
+  const width = grid?.[0]?.length || 0;
+  if (!Number.isInteger(x) || !Number.isInteger(y) || grid?.[y]?.[x] === '#') return null;
+  const candidates = [
+    { valid: y === 1, wallX: x, wallY: 0, yaw: 0 },
+    { valid: x === width - 2, wallX: width - 1, wallY: y, yaw: -Math.PI / 2 },
+    { valid: y === height - 2, wallX: x, wallY: height - 1, yaw: Math.PI },
+    { valid: x === 1, wallX: 0, wallY: y, yaw: Math.PI / 2 },
+  ];
+  return candidates.find((candidate) =>
+    candidate.valid && grid?.[candidate.wallY]?.[candidate.wallX] === '#') || null;
+}
+
+// Replaces only the visual wall tile with two massive masonry jambs and a
+// supported lintel: the opening stays transparent all the way to the horizon.
+export function buildChroniclesTownWallOpening(root, {
+  wallHeight, stone, coarsePointer = false, depth = 3.96,
+} = {}) {
+  const openingTop = Math.min(4.12, wallHeight - 0.25);
+  for (const side of [-1, 1]) {
+    box(root, 'chronicles-town-gate-wall-jamb',
+      [0.72, wallHeight, depth], [side * 1.64, wallHeight / 2 - 0.04, 0],
+      stone, !coarsePointer);
+  }
+  if (wallHeight > openingTop) {
+    box(root, 'chronicles-town-gate-wall-lintel',
+      [2.56, wallHeight - openingTop, depth],
+      [0, (wallHeight + openingTop) / 2 - 0.04, 0], stone, !coarsePointer);
+  }
+  root.userData.chroniclesTownGateOpeningWidth = 2.56;
+  return root;
 }
 
 function box(root, name, dimensions, position, surface, shadow = false) {
