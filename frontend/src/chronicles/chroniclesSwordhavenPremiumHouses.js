@@ -165,8 +165,15 @@ export function dressSwordhavenPremiumHouse(root, {
     const roof = bellcotePiece('civic-bellcote-pitched-cap',
       new THREE.ConeGeometry(1.24, 0.88, 4), mats.steel, 0, 1.64, 0);
     roof.rotation.y = Math.PI / 4;
+    // The previous upward-pointing cone read as a golden triangle from the
+    // square. A lathed flared lip and narrow shoulder give the bell its
+    // recognisable hanging silhouette at the normal gameplay camera.
+    const bellProfile = [
+      [0.00, 0.29], [0.10, 0.26], [0.19, 0.20], [0.24, 0.08],
+      [0.28, -0.12], [0.36, -0.23], [0.39, -0.28],
+    ].reverse().map(([radius, y]) => new THREE.Vector2(radius, y));
     bellcotePiece('civic-bellcote-bronze-bell',
-      new THREE.ConeGeometry(0.33, 0.52, coarse ? 8 : 12),
+      new THREE.LatheGeometry(bellProfile, coarse ? 10 : 16),
       mats.gold, 0, 0.90, 0);
     bellcotePiece('civic-bellcote-clapper',
       new THREE.SphereGeometry(0.10, 8, 6), mats.gold, 0, 0.56, 0);
