@@ -180,6 +180,18 @@ describe('Chronicles MM3 inventory chapter skin', () => {
     expect(classic).toContain('.chronicles-character-sheet__transfer-hint');
   });
 
+  it('centers item art directly on the parchment without inner icon tiles', () => {
+    const glyphRules = [...classic.matchAll(/\[data-chronicles-equipment-folio\]\s+\.chronicles-character-sheet__inventory button > \.chronicles-character-sheet__inventory-glyph\s*\{([^}]*)\}/g)];
+    const current = glyphRules.at(-1)?.[1] || '';
+    expect(current).toContain('place-items: center;');
+    expect(current).toContain('justify-self: center;');
+    expect(current).toContain('background: transparent;');
+    expect(current).toContain('border: 0;');
+    expect(current).toContain('box-shadow: none;');
+    expect(classic).toContain('width: min(28px, 100%);');
+    expect(classic).toContain('aspect-ratio: 1;');
+  });
+
   it('keeps the equipment chapter in a cool stone and parchment palette with compact desktop actions', () => {
     expect(classic).toContain(':has([data-chronicles-chapter="equipment"])');
     expect(classic).toContain('--mm3-equipment-stone: #303b3e;');

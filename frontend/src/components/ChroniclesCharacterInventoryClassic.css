@@ -740,10 +740,25 @@
   object-fit: contain;
   filter: drop-shadow(1px 1px 0 #36423966);
 }
-.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+/* Equipment and bag art should sit directly on parchment, centered within
+   the existing icon column; avoid a second framed tile around each object. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="equipment"])
 [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > .chronicles-character-sheet__inventory-glyph {
-  background: #ddd3bb;
-  border-color: #899083;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: min(34px, 100%);
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory-glyph > :is(.chronicles-character-sheet__illustrated-item-icon, .chronicles-character-sheet__pixel-item-icon) {
+  width: min(28px, 100%);
+  height: auto;
+  aspect-ratio: 1;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.is-selected .chronicles-character-sheet__pixel-item-icon {
