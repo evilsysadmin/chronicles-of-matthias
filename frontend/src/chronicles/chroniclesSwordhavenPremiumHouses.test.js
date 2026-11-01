@@ -30,6 +30,7 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(cages.count).toBe(8);
     expect(facade.children.filter(node => node.name === 'premium-oak-gable-rake')).toHaveLength(2);
     expect(facade.getObjectByName('home-carved-door-hood')).toBeTruthy();
+    expect(facade.getObjectByName('civic-roof-bellcote')).toBeFalsy();
     expect(facade.getObjectByName('civic-portal-carved-lintel')).toBeFalsy();
     expect(facade.children.every(node => node.userData.chroniclesDecorativeOnly)).toBe(true);
     expect(shutterPanels.castShadow).toBe(!coarse);
@@ -95,6 +96,30 @@ describe('Swordhaven approved town-square house treatment', () => {
     expect(facade.children.filter(node => node.name === 'civic-pennant-gold-tower')).toHaveLength(2);
     expect(facade.getObjectByName('home-carved-door-hood')).toBeFalsy();
     expect(facade.getObjectByName('home-authored-attic-vent')).toBeFalsy();
+    const bellcote = facade.getObjectByName('civic-roof-bellcote');
+    expect(bellcote?.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(bellcote.getObjectByName('civic-bellcote-open-posts')).toBeInstanceOf(THREE.InstancedMesh);
+    expect(bellcote.getObjectByName('civic-bellcote-open-posts').count).toBe(4);
+    expect(bellcote.getObjectByName('civic-bellcote-pitched-cap').rotation.y).toBeCloseTo(Math.PI / 4);
+    expect(bellcote.getObjectByName('civic-bellcote-bronze-bell')).toBeTruthy();
+    expect(bellcote.getObjectByName('civic-bellcote-roof-finial')).toBeTruthy();
+    expect(bellcote.children.every(node => node.userData.chroniclesDecorativeOnly)).toBe(true);
+    const postMatrix = new THREE.Matrix4();
+    const posts = bellcote.getObjectByName('civic-bellcote-open-posts');
+    for (let index = 0; index < posts.count; index += 1) {
+      posts.getMatrixAt(index, postMatrix);
+      const p = new THREE.Vector3().setFromMatrixPosition(postMatrix);
+      expect(Math.abs(p.x)).toBeCloseTo(0.62);
+      expect(Math.abs(p.z)).toBeCloseTo(0.51);
+    }
+    root.updateWorldMatrix(true, true);
+    const bounds = new THREE.Box3().setFromObject(bellcote);
+    // The new skyline is above the existing 7.05m ridge, yet wholly inside
+    // the solid building frontage and well above its real door and sign.
+    expect(bounds.min.y).toBeGreaterThan(6.8);
+    expect(bounds.max.y).toBeGreaterThan(9);
+    expect(bounds.min.z).toBeGreaterThan(0);
+    expect(bounds.max.z).toBeLessThan(4);
     expect(sign).toBeTruthy();
     expect(root.getObjectByName('swordhaven-shop-nameplate')?.userData.shopLabel).toBe('AYUNTAMIENTO');
     expect(root.getObjectByName('shop-door')).toBeTruthy();
@@ -119,8 +144,10 @@ describe('Swordhaven approved town-square house treatment', () => {
     const hall = town.children.find(child => child.name.startsWith('swordhaven-building-first-book-hall-'));
     const houses = town.children.filter(child => child.name.startsWith('swordhaven-building-first-book-home-'));
     expect(hall?.getObjectByName('swordhaven-civic-premium-frontage')).toBeTruthy();
+    expect(hall.getObjectByName('civic-roof-bellcote')).toBeTruthy();
     expect(houses.length).toBeGreaterThan(0);
     expect(houses.every(house => house.getObjectByName('swordhaven-home-premium-frontage'))).toBe(true);
+    expect(houses.every(house => !house.getObjectByName('civic-roof-bellcote'))).toBe(true);
     expect(houses.every(house => !house.getObjectByName('swordhaven-shop-nameplate'))).toBe(true);
     expect(scene.getObjectByName('chronicles-town-notice-board')).toBeTruthy();
     expect(hall.getObjectByName('swordhaven-civic-premium-frontage').userData.chroniclesDecorativeOnly).toBe(true);

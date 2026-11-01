@@ -125,6 +125,54 @@ export function dressSwordhavenPremiumHouse(root, {
   }
 
   if (civic) {
+    // A proper roof bellcote gives the town hall a recognisable silhouette
+    // above its neighbouring houses, rather than relying on a tiny sign.
+    // It stays fully inside the existing solid building footprint. No light,
+    // collision, navigation, audio or new material is introduced.
+    const bellcote = new THREE.Group();
+    bellcote.name = 'civic-roof-bellcote';
+    bellcote.position.set(0, height + 1.77, facadeZ - 1.50);
+    bellcote.userData.chroniclesDecorativeOnly = true;
+    const bellcotePiece = (name, geometry, mat, x, y, z) => {
+      const part = new THREE.Mesh(geometry, mat);
+      part.name = name;
+      part.position.set(x, y, z);
+      part.castShadow = !coarse;
+      part.receiveShadow = true;
+      part.userData.chroniclesDecorativeOnly = true;
+      bellcote.add(part);
+      return part;
+    };
+    bellcotePiece('civic-bellcote-stone-sill',
+      new THREE.BoxGeometry(1.90, 0.24, 1.58), mats.stone, 0, 0.12, 0);
+    const posts = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.18, 1.18, 0.18), mats.stone, 4);
+    posts.name = 'civic-bellcote-open-posts';
+    posts.userData.chroniclesDecorativeOnly = true;
+    posts.castShadow = !coarse;
+    posts.receiveShadow = true;
+    const post = new THREE.Object3D();
+    let postIndex = 0;
+    for (const x of [-0.62, 0.62]) {
+      for (const z of [-0.51, 0.51]) {
+        post.position.set(x, 0.80, z);
+        post.updateMatrix();
+        posts.setMatrixAt(postIndex++, post.matrix);
+      }
+    }
+    posts.instanceMatrix.needsUpdate = true;
+    bellcote.add(posts);
+    const roof = bellcotePiece('civic-bellcote-pitched-cap',
+      new THREE.ConeGeometry(1.24, 0.88, 4), mats.steel, 0, 1.64, 0);
+    roof.rotation.y = Math.PI / 4;
+    bellcotePiece('civic-bellcote-bronze-bell',
+      new THREE.ConeGeometry(0.33, 0.52, coarse ? 8 : 12),
+      mats.gold, 0, 0.90, 0);
+    bellcotePiece('civic-bellcote-clapper',
+      new THREE.SphereGeometry(0.10, 8, 6), mats.gold, 0, 0.56, 0);
+    bellcotePiece('civic-bellcote-roof-finial',
+      new THREE.SphereGeometry(0.12, 8, 6), mats.gold, 0, 2.10, 0);
+    dressing.add(bellcote);
     // Raised limestone doorway with a proper lintel, iron ring knocker and
     // gilded municipal coat of arms on the EXISTING pair of pennants.
     for (const side of [-1, 1]) {
