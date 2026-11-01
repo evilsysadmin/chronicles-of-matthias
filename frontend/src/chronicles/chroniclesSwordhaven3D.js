@@ -488,7 +488,10 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   const walls = mesh(root, new THREE.BoxGeometry(width, height, depth), wallMaterial,
     'timber-and-stone-walls', [0, height / 2, 0], !coarse);
   walls.userData.chroniclesArchitecture = true;
-  mesh(root, new THREE.BoxGeometry(width + 0.55, 0.7, depth + 0.6), mats.stone,
+  // The smithy's smoke-stained stone continues through its full foundation,
+  // unlike the pale merchant plinths. Reuse the existing forge masonry map.
+  mesh(root, new THREE.BoxGeometry(width + 0.55, 0.7, depth + 0.6),
+    isForge ? forgeMasonry : mats.stone,
     'stone-foundations', [0, 0.35, 0]);
   // One instanced corner-course mesh per house: masonry reads as dressed
   // stone instead of four perfectly smooth box corners.
@@ -505,7 +508,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       quoin.scale.set(0.92 + (level % 3) * 0.055, 1, 1);
       quoin.updateMatrix();
       quoins.setMatrixAt(courseIndex, quoin.matrix);
-      quoinColor.setHex([0xb5ab9a, 0xa59d8c, 0xc5bba9][level % 3]);
+      // Soot-darkened corner courses make the smithy read as a working forge
+      // at street distance; other trades retain their original pale ashlar.
+      quoinColor.setHex((isForge
+        ? [0x776a60, 0x64584f, 0x8a7868]
+        : [0xb5ab9a, 0xa59d8c, 0xc5bba9])[level % 3]);
       quoins.setColorAt(courseIndex, quoinColor);
       courseIndex += 1;
     }
