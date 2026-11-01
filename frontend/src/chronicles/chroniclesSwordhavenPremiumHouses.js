@@ -131,7 +131,7 @@ export function dressSwordhavenPremiumHouse(root, {
     // collision, navigation, audio or new material is introduced.
     const bellcote = new THREE.Group();
     bellcote.name = 'civic-roof-bellcote';
-    bellcote.position.set(0, height + 1.77, facadeZ - 1.50);
+    bellcote.position.set(0, height + 2.35, facadeZ - 1.50);
     bellcote.userData.chroniclesDecorativeOnly = true;
     const bellcotePiece = (name, geometry, mat, x, y, z) => {
       const part = new THREE.Mesh(geometry, mat);
