@@ -827,8 +827,8 @@
     linear-gradient(125deg, #a86a38, #8c502b 58%, #724023);
   border-inline: 1px solid #ad723f;
 }
-.chronicles .chronicles-game-menu__folio-columns[data-confirming-exit="false"][data-confirming-load="false"]
-[data-help-open="false"][data-feedback-open="false"] .chronicles-game-menu__section-kicker {
+.chronicles .chronicles-game-menu__folio-columns[data-confirming-exit="false"][data-confirming-load="false"][data-help-open="false"][data-feedback-open="false"]
+.chronicles-game-menu__section-kicker {
   display: none;
 }
 .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions {
@@ -1063,4 +1063,17 @@
   }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__folio-section { padding: 7px 9px; }
   .chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions { gap: 6px; }
+}
+
+
+/* Global MM3 stone hover used multiply blending and turned ivory tiles brown.
+   Keep the visual press feedback bright; preserve outline/focus and labels. */
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions
+:is(.chronicles-game-menu__primary-row, .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row)
+> button:hover:not(:disabled),
+.chronicles .chronicles-game-menu__panel--folio .chronicles-game-menu__actions
+:is(.chronicles-game-menu__primary-row, .chronicles-game-menu__action-pair, .chronicles-game-menu__utility-row)
+> button:focus-visible {
+  background-blend-mode: normal !important;
+  background-color: transparent !important;
 }
