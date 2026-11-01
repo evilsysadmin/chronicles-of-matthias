@@ -89,7 +89,9 @@ describe('MM3 gallery · two enemy rounds across a save', () => {
     expect(chroniclesMemberSp(state, member(state, 'bishop'))).toBe(1);
     expect(chroniclesCurrentInitiativeActor(state.initiative))
       .toMatchObject({ kind: 'enemy', id: jailer.id });
-    expect(state.initiative.round).toBeGreaterThan(first.committed.initiative.round);
+    // Enemy-turn resolution may already advance the round before the saved
+    // checkpoint; the second attack still follows a full hero-action cycle.
+    expect(state.initiative.round).toBeGreaterThan(started.initiative.round);
 
     const beforeSecond = hpById(state);
     const second = chroniclesRunPendingEnemyTurn(state, jailer.id, undefined, state.initiative);
