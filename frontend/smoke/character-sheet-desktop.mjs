@@ -76,6 +76,29 @@ async function assertReadableMM3Level(sheet, viewport) {
     + viewport + ': ' + JSON.stringify(painted));
 }
 
+async function assertMobileChapterTabGeometry(nav, label) {
+  const layout = await nav.evaluate((element) => {
+    const navBox = element.getBoundingClientRect();
+    const buttons = [...element.querySelectorAll('button')].map((button) => {
+      const rect = button.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+    });
+    return {
+      columns: getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length,
+      left: navBox.left, right: navBox.right, buttons,
+    };
+  });
+  const explanation = label + ' three chapter tabs must fill the mobile nav evenly: '
+    + JSON.stringify(layout);
+  assert.equal(layout.columns, 3, explanation);
+  assert.equal(layout.buttons.length, 3, explanation);
+  assert.ok(layout.buttons.every((button) => button.height >= 44), explanation);
+  assert.ok(layout.buttons.every((button) => Math.abs(button.width - layout.buttons[0].width) <= 1),
+    explanation);
+  assert.ok(layout.buttons[0].left <= layout.left + 6
+    && layout.buttons[2].right >= layout.right - 6, explanation);
+}
+
 async function assertNavigationHighlight(nav, expected) {
   const buttons = await nav.locator('button').evaluateAll((nodes) => nodes.map((node) => {
     const channels = (getComputedStyle(node).backgroundColor.match(/[0-9]+/g) || [])
@@ -1126,6 +1149,7 @@ try {
       assert(geometry.dockBottom <= geometry.dialogBottom + 2,
         'Party selector must stay inside the dialog: ' + JSON.stringify(geometry));
       const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
+      await assertMobileChapterTabGeometry(nav, 'Estado ' + width + 'x' + height);
       const equipmentTab = nav.getByRole('button', { name: /Equipo/ });
       // Reproduce the original bug: a long Estado scroll carried into the
       // Equipment tab. Use native click to avoid Playwright's auto-scroll
@@ -1135,6 +1159,7 @@ try {
       await equipmentTab.evaluate((button) => button.click());
       await sheet.locator('[data-chronicles-equipment-folio] [data-inventory-item]').first()
         .waitFor({ state: 'visible' });
+      await assertMobileChapterTabGeometry(nav, 'Equipo ' + width + 'x' + height);
       const fold = await sheet.evaluate((node) => {
         const scroll = node.querySelector('.chronicles-character-sheet__scroll');
         const dock = node.querySelector('.chronicles-character-sheet__party-dock');
@@ -1296,6 +1321,7 @@ try {
       assert(await equipmentTab.evaluate((node) => node.getBoundingClientRect().height)
         >= (height <= 480 ? 34 : 44), 'Touch equipment tab must remain usable');
       await nav.getByRole('button', { name: /Hechizos/ }).click();
+      await assertMobileChapterTabGeometry(nav, 'Hechizos ' + width + 'x' + height);
       if (width === 390) {
         // Capture the actual populated mobile spell catalogue and its floating
         // inspection, not an empty spellbook from a non-caster.
