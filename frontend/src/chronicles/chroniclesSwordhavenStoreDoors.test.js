@@ -47,6 +47,8 @@ describe('Swordhaven Provisiones cedar loading doors', () => {
       part.name === 'store-loft-hatch-open-oak-shutter');
     expect(shutters).toHaveLength(2);
     expect(shutters.map(part => Math.sign(part.rotation.y))).toEqual([-1, 1]);
+    expect(shutters.every(part =>
+      part.getObjectByName('store-loft-hatch-iron-shutter-strap')?.userData.chroniclesDecorativeOnly === true)).toBe(true);
     expect(hatch.children.every(part =>
       part.userData.chroniclesDecorativeOnly === true)).toBe(true);
     for (const shutter of shutters) {
