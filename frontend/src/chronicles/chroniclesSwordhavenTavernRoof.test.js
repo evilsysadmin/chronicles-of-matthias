@@ -53,4 +53,43 @@ describe('Swordhaven tavern architectural identity', () => {
     expect(swordhaven.grid[10][7]).toBe('.');
     expect(swordhaven.grid[12][7]).toBe('#');
   });
+
+  it.each([true, false])('closes the street-facing porch gable on coarsePointer=%s', (coarsePointer) => {
+    const scene = new THREE.Scene();
+    const content = [...swordhaven.interactables, ...swordhaven.exits]
+      .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y }, visible: true }));
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhaven.id, regionKind: swordhaven.regionKind,
+        width: swordhaven.grid[0].length, height: swordhaven.grid.length,
+        center: { x: 9, y: 11 }, grid: swordhaven.grid,
+        content, landscape: swordhaven.landscape,
+      },
+    });
+    const town = scene.getObjectByName('chronicles-campaign-town');
+    const tavern = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-tavern-'));
+    const forge = town.children.find(child =>
+      child.name.startsWith('swordhaven-building-first-book-forge-'));
+    const porch = tavern.getObjectByName('tavern-porch-awning');
+    const gable = porch.getObjectByName('tavern-porch-limewash-gable');
+    const rakes = porch.children.filter(child => child.name === 'tavern-porch-oak-gable-rake');
+    const kingPost = porch.getObjectByName('tavern-porch-oak-king-post');
+    expect(gable.geometry).toBeInstanceOf(THREE.ShapeGeometry);
+    expect(gable.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(gable.position.z).toBeGreaterThan(1.07); // In front of the existing roof slabs.
+    expect(rakes).toHaveLength(2);
+    expect(rakes[0].rotation.z).toBeCloseTo(-rakes[1].rotation.z);
+    expect(rakes.every(rake => rake.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(kingPost.userData.chroniclesDecorativeOnly).toBe(true);
+    const bounds = new THREE.Box3().setFromObject(gable);
+    expect(bounds.min.y).toBeGreaterThan(2.5); // Door remains fully open.
+    expect(bounds.max.y).toBeLessThan(3.6); // Below the inn's existing sign.
+    expect(tavern.getObjectByName('shop-door')).toBeTruthy();
+    expect(tavern.getObjectByName('shop-nameplate-lettering')).toBeTruthy();
+    expect(forge.getObjectByName('tavern-porch-limewash-gable')).toBeFalsy();
+    expect(swordhaven.grid[10][7]).toBe('.');
+    expect(swordhaven.grid[12][7]).toBe('#');
+  });
 });
