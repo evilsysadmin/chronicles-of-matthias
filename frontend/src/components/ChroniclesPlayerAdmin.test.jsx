@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel, chroniclesRosterHasSave, chroniclesRosterFacetCounts, chroniclesRosterVisibleUsers, chroniclesRosterSavedExpeditionsLabel } from './ChroniclesPlayerAdmin.jsx';
+import ChroniclesPlayerAdmin, { chroniclesRosterStatusLabel, chroniclesRosterHeroLabel, chroniclesRosterHeroLevel, chroniclesRosterPlayerLabel, chroniclesRosterMatches, chroniclesRosterRunLabel, chroniclesRosterHasSave, chroniclesRosterFacetCounts, chroniclesRosterVisibleUsers, chroniclesRosterSavedExpeditionsLabel, chroniclesRosterPresenceState, chroniclesRosterPresenceLabel } from './ChroniclesPlayerAdmin.jsx';
 import { chroniclesValidateAdminRosterPage } from '../chronicles/chroniclesAdminRosterClient.js';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesAdminChangelog from './ChroniclesAdminChangelog.jsx';
@@ -95,10 +95,11 @@ describe('Chronicles player administration', () => {
       { username: 'charlie', online: false, mapId: '  ', lastActivity: 'invalid' },
       { username: 'dan', online: false, mapId: 'swordhaven-sewers', lastActivity: '2026-10-30T12:00:00Z' },
     ];
-    expect(chroniclesRosterFacetCounts(users)).toEqual({
+    const nowMs = Date.parse('2026-10-31T12:01:00Z');
+    expect(chroniclesRosterFacetCounts(users, '', { nowMs })).toEqual({
       all: 4, online: 1, saved: 2, unsaved: 2,
     });
-    expect(chroniclesRosterFacetCounts(users, 'alice')).toEqual({
+    expect(chroniclesRosterFacetCounts(users, 'alice', { nowMs })).toEqual({
       all: 1, online: 1, saved: 1, unsaved: 0,
     });
     expect(chroniclesRosterFacetCounts([], '')).toEqual({
@@ -106,7 +107,7 @@ describe('Chronicles player administration', () => {
     });
     expect(chroniclesRosterHasSave(users[0])).toBe(true);
     expect(chroniclesRosterHasSave(users[2])).toBe(false);
-    expect(chroniclesRosterVisibleUsers(users, { filter: 'online' }).map((u) => u.username))
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'online', nowMs }).map((u) => u.username))
       .toEqual(['alice']);
     expect(chroniclesRosterVisibleUsers(users, { filter: 'saved' }).map((u) => u.username))
       .toEqual(['alice', 'dan']);
@@ -123,6 +124,43 @@ describe('Chronicles player administration', () => {
       .toEqual(['charlie', 'eli']);
     expect(chroniclesRosterVisibleUsers(users, { filter: 'saved' })).toHaveLength(2);
     expect(users.map((u) => u.username)).toEqual(['alice', 'bob', 'charlie', 'dan']);
+  });
+
+  it('expires displayed online status exactly at the existing 150-second API TTL', () => {
+    const nowMs = Date.parse('2026-11-01T12:00:00Z');
+    const player = { username: 'alice', online: true, lastActivity: new Date(nowMs - 60000).toISOString() };
+    expect(chroniclesRosterPresenceState(player, { nowMs })).toBe('online');
+    expect(chroniclesRosterPresenceLabel('online')).toBe('En línea');
+
+    const edge = { ...player, lastActivity: new Date(nowMs - 150000).toISOString() };
+    expect(chroniclesRosterPresenceState(edge, { nowMs })).toBe('online');
+    expect(chroniclesRosterPresenceState(edge, { nowMs: nowMs + 1 })).toBe('unconfirmed');
+    expect(chroniclesRosterPresenceLabel('unconfirmed')).toBe('Estado sin confirmar');
+    expect(chroniclesRosterPresenceState(player, { nowMs, unavailable: true })).toBe('unconfirmed');
+    expect(chroniclesRosterPresenceState({ ...player, lastActivity: 'invalid' }, { nowMs })).toBe('unconfirmed');
+    expect(chroniclesRosterPresenceState({ ...player, lastActivity: new Date(nowMs + 6000).toISOString() }, { nowMs }))
+      .toBe('unconfirmed');
+    expect(chroniclesRosterPresenceState({ ...player, lastActivity: new Date(nowMs + 5000).toISOString() }, { nowMs }))
+      .toBe('online');
+    expect(chroniclesRosterPresenceState({ username: 'bob', online: false }, { nowMs })).toBe('offline');
+    expect(chroniclesRosterPresenceLabel('offline')).toBe('Sin conexión al consultar');
+  });
+
+  it('keeps online filters and counts in sync when a roster snapshot expires or a refresh fails', () => {
+    const nowMs = Date.parse('2026-11-01T12:00:00Z');
+    const users = [
+      { username: 'alice', online: true, lastActivity: new Date(nowMs - 100000).toISOString() },
+      { username: 'bob', online: false, lastActivity: new Date(nowMs - 250000).toISOString() },
+    ];
+    expect(chroniclesRosterFacetCounts(users, '', { nowMs }).online).toBe(1);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'online', nowMs }).map((u) => u.username))
+      .toEqual(['alice']);
+    expect(chroniclesRosterFacetCounts(users, '', { nowMs: nowMs + 60000 }).online).toBe(0);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'online', nowMs: nowMs + 60000 })).toEqual([]);
+    expect(chroniclesRosterFacetCounts(users, '', { nowMs, unavailable: true }).online).toBe(0);
+    expect(chroniclesRosterVisibleUsers(users, { filter: 'online', nowMs, unavailable: true })).toEqual([]);
+    expect(chroniclesRosterFacetCounts(users, '', { nowMs: nowMs + 60000 }).all).toBe(2);
+    expect(chroniclesRosterVisibleUsers(users, { nowMs: nowMs + 60000 })).toHaveLength(2);
   });
 
   it('labels only genuine saved-run counts without inventing numbers', () => {
@@ -176,6 +214,7 @@ describe('Chronicles player administration', () => {
     expect(html).toContain('Actividad más reciente');
     expect(html).toContain('Con expedición');
     expect(html).toContain('Sin expedición');
+    expect(html).toContain('«En línea» caduca tras 150 s');
     expect(html).not.toContain('Ver ficha del jugador');
 
     expect(html).not.toContain('data-chronicles-admin-changelog');
