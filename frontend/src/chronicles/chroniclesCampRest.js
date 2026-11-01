@@ -27,13 +27,20 @@ export function chroniclesCampRestStatus(state, enemies = []) {
   if (!rationsNeeded) return blocked('No queda nadie en pie para preparar el campamento.');
   // Two cardinal steps are always unsafe, even through a wall. Beyond that,
   // an archer with a clear shot can still attack the camp from its real reach.
-  const threatened = (Array.isArray(enemies) ? enemies : []).some((enemy) => {
-    if (!(Number(state?.[enemy?.hpKey]) > 0)) return false;
+  let closeThreat = false;
+  let rangedThreat = false;
+  for (const enemy of (Array.isArray(enemies) ? enemies : [])) {
+    if (!(Number(state?.[enemy?.hpKey]) > 0)) continue;
     const position = chroniclesRuntimeEnemyPosition(state, enemy);
-    return position && (Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 2
-      || chroniclesEnemyCanAttackParty(state, enemy, position));
-  });
-  if (threatened) return blocked('Hay enemigos demasiado cerca para descansar.');
+    if (!position) continue;
+    if (Math.abs(position.x - state.x) + Math.abs(position.y - state.y) <= 2) {
+      closeThreat = true;
+      break;
+    }
+    if (chroniclesEnemyCanAttackParty(state, enemy, position)) rangedThreat = true;
+  }
+  if (closeThreat) return blocked('Hay enemigos demasiado cerca para descansar.');
+  if (rangedThreat) return blocked('Hay enemigos que pueden atacar el campamento a distancia.');
   if (rationsAvailable < rationsNeeded) {
     return blocked(`Necesitas ${rationsNeeded} raciones y llevas ${rationsAvailable}.`);
   }
