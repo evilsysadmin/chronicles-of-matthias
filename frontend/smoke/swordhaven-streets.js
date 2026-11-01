@@ -218,6 +218,10 @@ try {
       && fountain.getObjectByName('fountain-upper-water')
       && fountain.getObjectByName('fountain-gilded-finial')
       && fountain.getObjectByName('fountain-four-water-jets')?.count === 4
+      && fountain.getObjectByName('fountain-four-water-jets')?.geometry.parameters.radius < 0.030
+      && fountain.getObjectByName('fountain-water-impact-ripples')?.count === 4
+      && fountain.getObjectByName('fountain-water-impact-ripples')?.isInstancedMesh
+      && fountain.getObjectByName('fountain-water-impact-ripples')?.material.transparent
       && fountain.getObjectByName('fountain-four-water-jets')?.isInstancedMesh
       && fountain.getObjectByName('fountain-four-water-jets')?.material
         === fountain.getObjectByName('fountain-water')?.material
