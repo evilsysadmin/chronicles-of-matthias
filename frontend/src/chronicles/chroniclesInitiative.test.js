@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { CHRONICLES_PARTY } from '../chroniclesOfMatthias.js';
+import { createCanonicalChroniclesCharacterBuild, resolveChroniclesCharacterParty } from './chroniclesCharacterBuilds.js';
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesAdvanceInitiative,
@@ -73,15 +75,44 @@ describe('Chronicles initiative', () => {
     const state = { party, rpgModifiers: { matthias: { initiativeBonus: 3 } } };
 
     expect(chroniclesPartyInitiativeAgility(state, party[0])).toBe(7);
-    expect(chroniclesPartyInitiativeAgility(state, party[1])).toBe(5);
-    expect(chroniclesPartyInitiativeAgility(state, party[2])).toBe(2);
+    expect(chroniclesPartyInitiativeAgility(state, party[1])).toBe(4);
+    expect(chroniclesPartyInitiativeAgility(state, party[2])).toBe(0);
 
     const rolled = chroniclesRollInitiative(state, [], { random: () => 0 });
     expect(rolled.order.map(({ id, agility, initiative }) => [id, agility, initiative])).toEqual([
       ['matthias', 7, 8],
-      ['rook', 5, 6],
-      ['bishop', 2, 3],
+      ['rook', 4, 5],
+      ['bishop', 0, 1],
     ]);
+  });
+
+  it('gives four identical MM3 character sheets the same initiative regardless of chess slot', () => {
+    const canonical = createCanonicalChroniclesCharacterBuild(CHRONICLES_PARTY);
+    const stats = {
+      might: 15, intellect: 15, personality: 15, endurance: 15,
+      speed: 15, accuracy: 15, luck: 15,
+    };
+    const build = {
+      ...canonical,
+      mode: 'custom',
+      characters: canonical.characters.map((hero) => ({
+        ...hero, classId: 'knight', raceId: 'human', stats: { ...stats },
+      })),
+    };
+    const tactics = resolveChroniclesCharacterParty(CHRONICLES_PARTY, build);
+    const mm3 = resolveChroniclesCharacterParty(CHRONICLES_PARTY, build, { rules: 'mm3' });
+    // Tactics deliberately keeps the authored chess-piece agility profiles.
+    expect(tactics.map((hero) => hero.agility)).toEqual([4, 2, 3, 5]);
+    const state = {
+      party: mm3.map((hero) => ({ ...hero, hp: hero.maxHp })),
+      rpgModifiers: {},
+    };
+    expect(state.party.map((hero) => chroniclesPartyInitiativeAgility(state, hero)))
+      .toEqual([6, 6, 6, 6]); // common base 4 + MM3 Speed bonus 2
+    // Existing checkpoints can still contain old per-slot agility values.
+    const restored = JSON.parse(JSON.stringify(state));
+    expect(chroniclesRollInitiative(restored, [], { random: () => 0.5 })
+      .order.map((actor) => actor.initiative)).toEqual([11, 11, 11, 11]);
   });
 
   it('adds progression AGI exactly once to the resolved party stat and advances by rounds', () => {
