@@ -110,7 +110,7 @@
   background: linear-gradient(90deg, #996835, #e7ba70);
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__tabs {
-  grid-template-columns: repeat(4, minmax(0,1fr));
+  grid-template-columns: repeat(3, minmax(0,1fr));
   gap: 0;
   padding: 0 14px;
   border: 0;
