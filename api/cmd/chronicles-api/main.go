@@ -244,6 +244,14 @@ func buildRoutes(m *mongoruntime.Runtime, jwtSecret string, timeout time.Duratio
 	// The administrative census reads only this environment's MongoDB.
 	// It has independent server-side authorization; frontend visibility is cosmetic.
 	roster := newAdminRoster(db, jwtSecret, sso, central, timeout, origins)
+	aliasCredential := os.Getenv("SHADOWOPS_IDENTITY_ADMIN_ALIAS_CREDENTIAL")
+	if aliasCredential != "" && central == nil {
+		return nil, errors.New("admin aliases require staging central Identity")
+	}
+	roster.resolveAliases, err = newRosterAliasResolver(environment, aliasCredential, nil)
+	if err != nil {
+		return nil, errors.New("invalid admin alias service configuration")
+	}
 
 	// Reuse native authenticated feedback validation and rate limits. Both
 	// player and admin inboxes persist ONLY in Chronicles' own Mongo DB;
