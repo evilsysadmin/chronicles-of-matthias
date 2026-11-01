@@ -159,7 +159,14 @@ export function chroniclesEnemyIsActive(state, enemy) {
 }
 
 function enemyAlive(state, enemy) {
-  return chroniclesEnemyIsActive(state, enemy) && Number(state[enemy.hpKey] || 0) > 0;
+  // Match the initiative roster: malformed legacy HP must not create a
+  // phantom enemy that blocks exploration, combat or field rest. Numeric
+  // strings remain valid for old checkpoints; booleans/arrays/Infinity do not.
+  const value = state?.[enemy.hpKey];
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
+  const hp = Number(value);
+  return Number.isFinite(hp) && hp > 0 && chroniclesEnemyIsActive(state, enemy);
 }
 
 export function chroniclesEnemyAlive(state) {
