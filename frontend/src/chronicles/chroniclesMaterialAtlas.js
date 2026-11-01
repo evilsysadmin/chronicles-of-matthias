@@ -146,7 +146,10 @@ function cellSignature(entries = []) {
   // The same procedural layout must keep its palette regardless of the
   // traversal order used to enumerate wall and floor cells. Duplicate
   // coordinates from overlapping geometry passes are still one map cell.
-  return [...new Set((entries || [])
+  // Ignore malformed cells from incomplete procedural geometry rather than
+  // crashing or letting them change the stable material palette.
+  return [...new Set((Array.isArray(entries) ? entries : [])
+    .filter((entry) => Number.isSafeInteger(entry?.x) && Number.isSafeInteger(entry?.y))
     .map((entry) => String(entry.x) + ',' + String(entry.y)))]
     .sort()
     .join(';');
