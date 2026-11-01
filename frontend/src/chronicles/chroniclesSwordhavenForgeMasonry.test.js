@@ -59,6 +59,7 @@ describe('Swordhaven forge masonry', () => {
     const arch = portal.getObjectByName('forge-portal-kiln-brick-vault');
     expect(arch.geometry.type).toBe('ShapeGeometry');
     expect(arch.material.map).toBe(swordhavenSurfaceTexture('brick'));
+    expect(arch.material.color.getHex()).toBe(0xba8d70);
     expect(arch.position.z).toBeLessThan(4.5);
     expect(portal.children.every(part => part.userData.chroniclesDecorativeOnly)).toBe(true);
     expect(tavern.getObjectByName('forge-kiln-brick-entry-arch')).toBeFalsy();
