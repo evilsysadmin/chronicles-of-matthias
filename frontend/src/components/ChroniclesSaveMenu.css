@@ -476,3 +476,15 @@
 }
 .chronicles-save-menu__tactics-link .chronicles-save-menu__action-copy { flex: 1; }
 .chronicles-save-menu__tactics-link small { display: block; font-size: .7rem; opacity: .78; margin-top: 3px; }
+
+
+/* Privileged tools live on the Home itself, never buried in the expedition
+   overflow menu. Visual treatment is distinct but subordinate to Continue. */
+.chronicles-save-menu--expedition .chronicles-save-menu__actions button.chronicles-save-menu__admin-shortcut {
+  border-color: rgba(218, 168, 100, .58);
+  background: linear-gradient(90deg, rgba(102, 70, 41, .38), rgba(27, 26, 28, .88));
+}
+.chronicles-save-menu--expedition .chronicles-save-menu__admin-shortcut:focus-visible {
+  outline: 2px solid #e6bb78;
+  outline-offset: 2px;
+}
