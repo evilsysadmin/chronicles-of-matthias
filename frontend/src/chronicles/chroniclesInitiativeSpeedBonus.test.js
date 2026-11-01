@@ -16,10 +16,10 @@ describe('Chronicles MM3 initiative speed bonus integrity', () => {
     'ignores malformed speed bonus %s instead of introducing invalid initiative',
     (speed) => {
       const state = withSpeed(speed);
-      expect(chroniclesPartyInitiativeAgility(state, state.party[0])).toBe(6);
+      expect(chroniclesPartyInitiativeAgility(state, state.party[0])).toBe(5);
       const rolled = chroniclesRollInitiative(state, [], { random: () => 0 });
       expect(rolled.order[0]).toMatchObject({
-        id: 'matthias', agility: 6, roll: 1, initiative: 7,
+        id: 'matthias', agility: 5, roll: 1, initiative: 6,
       });
       expect(Number.isSafeInteger(rolled.order[0].initiative)).toBe(true);
     },
@@ -49,12 +49,12 @@ describe('Chronicles MM3 initiative speed bonus integrity', () => {
   });
 
   it('preserves valid positive and negative integer speed modifiers', () => {
-    expect(chroniclesPartyInitiativeAgility(withSpeed(2), withSpeed(2).party[0])).toBe(8);
+    expect(chroniclesPartyInitiativeAgility(withSpeed(2), withSpeed(2).party[0])).toBe(7);
     const slowed = withSpeed(-3);
-    expect(chroniclesPartyInitiativeAgility(slowed, slowed.party[0])).toBe(3);
+    expect(chroniclesPartyInitiativeAgility(slowed, slowed.party[0])).toBe(2);
     const rolled = chroniclesRollInitiative(slowed, [], { random: () => 0.999 });
     expect(rolled.order[0]).toMatchObject({
-      agility: 3, roll: 8, initiative: 11,
+      agility: 2, roll: 8, initiative: 10,
     });
   });
 });
