@@ -29,9 +29,10 @@ describe('Swordhaven inn roof silhouette', () => {
     expect(localBounds.min.y).toBeGreaterThan(5.7);
     expect(localBounds.max.y).toBeGreaterThan(8.5);
     expect(localBounds.max.y).toBeLessThan(9.5);
-    expect(localBounds.min.x).toBeGreaterThan(-4.05);
-    expect(localBounds.max.x).toBeLessThan(4.05);
-    expect(localBounds.max.z).toBeLessThan(6);
+    expect(localBounds.max.x - localBounds.min.x).toBeLessThan(3.5);
+    expect(localBounds.max.z - localBounds.min.z).toBeLessThan(3.5);
+    expect(dormer.position.x).toBe(0);
+    expect(dormer.position.z + 1.2).toBeLessThan(6);
   });
 
   it('never adds the inn dormer to the forge, armory, guild or temple', () => {
