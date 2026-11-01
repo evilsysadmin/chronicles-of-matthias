@@ -38,7 +38,7 @@ func rosterTestAliasResponse(status int, body string) *http.Response {
 
 func TestRosterAliasConfigurationRequiresExplicitStagingAndIndependentSecret(t *testing.T) {
 	valid := rosterTestAliasCredential()
-	for _, value := range []string{"", "soc1_" + strings.Repeat("A", 43), "Bearer " + valid, "soa1_" + strings.Repeat("A", 43), "user-password"} {
+	for _, value := range []string{"", "soc1_" + strings.Repeat("A", 43), "Bearer " + valid, "soa1_" + strings.Repeat("x", 43), "user-password"} {
 		if rosterAliasCredentialValid(value) {
 			t.Fatalf("accepted invalid alias service credential: %q", value)
 		}
