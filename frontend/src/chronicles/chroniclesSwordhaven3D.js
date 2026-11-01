@@ -3,6 +3,7 @@ import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import { dressSwordhavenWindowBoxes } from './chroniclesSwordhavenFoliage.js';
 import { dressSwordhavenPremiumHouse } from './chroniclesSwordhavenPremiumHouses.js';
+import { dressSwordhavenTavernRoofDormer } from './chroniclesSwordhavenTavernRoofArt.js';
 
 // Authored in grid coordinates: future map collision must reserve these footprints.
 export const SWORDHAVEN_BUILDINGS = Object.freeze([
@@ -666,6 +667,9 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       fascia.rotation.z = side * 0.16;
     }
   }
+  if (isTavern) dressSwordhavenTavernRoofDormer(root, {
+    width, depth, height, roof, wallMaterial, mats, coarse,
+  });
   // Stone-fronted armorer, guild and botica have no merchant timber lattice.
   // Doors, shop signs, windows and their collision cells remain untouched.
   if (!isArmor && !isMagic && !isApothecary && !isTemple && !isWatch) {
