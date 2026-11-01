@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import {
   buildChroniclesExteriorExit,
   chroniclesExteriorExitKind,
+  chroniclesTownWallPassage,
+  buildChroniclesTownWallOpening,
 } from './chroniclesExteriorExitArt.js';
 
 const destinations = {
@@ -25,6 +27,7 @@ describe('destination-aware exterior area thresholds', () => {
     expect(chroniclesExteriorExitKind(exitTo('missing'), lookup)).toBe('wilderness');
     expect(chroniclesExteriorExitKind({}, lookup)).toBe('wilderness');
     expect(chroniclesExteriorExitKind(exitTo('crypt'), () => destinations.swordhaven)).toBe('wilderness');
+    expect(chroniclesExteriorExitKind(exitTo('moor'), lookup, { regionKind: 'settlement' })).toBe('settlement');
   });
 
   it.each(['settlement', 'dungeon', 'forest', 'wilderness'])(
@@ -58,5 +61,47 @@ describe('destination-aware exterior area thresholds', () => {
     expect(hinges.every((hinge) => Math.abs(hinge.rotation.y) > 1)).toBe(true);
     const trail = buildChroniclesExteriorExit(new THREE.Group(), { ...palette, style: 'wilderness' });
     expect(trail.getObjectByName('chronicles-exit-gate-open-hinge')).toBeUndefined();
+  });
+});
+
+describe('walled city exits', () => {
+  const grid = [
+    '#########',
+    '#.......#',
+    '#.......#',
+    '#.......#',
+    '#.......#',
+    '#.......#',
+    '#########',
+  ];
+  const exit = (x, y, visualType = 'exit') => ({
+    kind: 'exit', visualType, position: { x, y },
+  });
+
+  it('identifies only valid border transitions and never a sewer grate', () => {
+    expect(chroniclesTownWallPassage(exit(4, 1), grid))
+      .toMatchObject({ wallX: 4, wallY: 0, yaw: 0 });
+    expect(chroniclesTownWallPassage(exit(7, 3), grid))
+      .toMatchObject({ wallX: 8, wallY: 3, yaw: -Math.PI / 2 });
+    expect(chroniclesTownWallPassage(exit(4, 5), grid))
+      .toMatchObject({ wallX: 4, wallY: 6, yaw: Math.PI });
+    expect(chroniclesTownWallPassage(exit(1, 3), grid))
+      .toMatchObject({ wallX: 0, wallY: 3, yaw: Math.PI / 2 });
+    expect(chroniclesTownWallPassage(exit(4, 3), grid)).toBeNull();
+    expect(chroniclesTownWallPassage(exit(4, 1, 'sewer-grate'), grid)).toBeNull();
+  });
+
+  it('leaves a physical gap in the rendered masonry mesh, with a high lintel', () => {
+    const root = buildChroniclesTownWallOpening(new THREE.Group(), {
+      wallHeight: 6.4, stone: new THREE.MeshStandardMaterial(),
+    });
+    const jambs = root.children.filter((item) => item.name === 'chronicles-town-gate-wall-jamb');
+    const lintels = root.children.filter((item) => item.name === 'chronicles-town-gate-wall-lintel');
+    expect(jambs).toHaveLength(2);
+    expect(lintels).toHaveLength(1);
+    expect(jambs[0].position.x).toBeLessThan(-1);
+    expect(jambs[1].position.x).toBeGreaterThan(1);
+    expect(lintels[0].position.y).toBeGreaterThan(4);
+    expect(root.userData.chroniclesTownGateOpeningWidth).toBe(2.56);
   });
 });
