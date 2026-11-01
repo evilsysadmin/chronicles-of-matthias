@@ -9,9 +9,10 @@ const AUTH_USERNAME_KEY = 'chess-study-auth-username';
 
 export const CHRONICLES_RUN_STORAGE_KEY = 'chess-study-chronicles-run-v1';
 
-// Legacy adapter-specific keys remain readable for one-way migration only.
-// Runtime ownership is now shared by first-person Chronicles and Tactics.
+// v2 may refer to the same server run as MM3 after the shared-run era.
+// Never adopt that pointer for independent tactical sessions.
 export const CHRONICLES_TACTICS_RUN_STORAGE_KEY = 'chess-study-chronicles-tactics-run-v2';
+export const CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY = 'chess-study-chronicles-tactics-run-v3';
 export const CHRONICLES_FIRST_PERSON_RUN_STORAGE_KEY = 'chess-study-chronicles-first-person-run-v1';
 
 const LEGACY_RUN_STORAGE_KEYS = Object.freeze({
@@ -82,6 +83,7 @@ function readSaveCatalog() {
     }).map((item) => ({
       id: item.id,
       title: item.title.slice(0, 56),
+      scope: item.scope === 'tactics' ? 'tactics' : 'first-person',
       entryMapId: typeof item.entryMapId === 'string' ? item.entryMapId : null,
       currentMapId: typeof item.currentMapId === 'string' ? item.currentMapId : null,
       createdAt: Number.isFinite(item.createdAt) ? item.createdAt : 0,
@@ -100,7 +102,7 @@ function writeSaveCatalog(runs) {
   }));
 }
 
-function indexActiveRun(run) {
+function indexActiveRun(run, scope) {
   if (!run || run.ended || !currentOwner()) return;
   const runs = readSaveCatalog();
   if (runs.some((item) => item.id === run.id)) return;
@@ -110,7 +112,8 @@ function indexActiveRun(run) {
     return Math.max(highest, match ? Number(match[1]) : 0);
   }, 0);
   runs.unshift({
-    id: run.id, title: 'Expedición ' + (numbered + 1),
+    id: run.id, title: scope === 'tactics' ? 'Tactics ' + (numbered + 1) : 'Expedición ' + (numbered + 1),
+    scope,
     entryMapId: run.entryMapId || null,
     currentMapId: run.entryMapId || null, createdAt: now, updatedAt: now, remote: false, pending: run.pending === true,
   });
@@ -127,6 +130,7 @@ export function chroniclesListSavedRuns(scope) {
   const current = readRunState(scope); // Migrate pre-catalog active sessions.
   if (current && !current.ended) indexActiveRun(current);
   return readSaveCatalog()
+    .filter((item) => item.scope === scope)
     .map((item) => ({ ...item, active: item.id === current?.id && !current.ended }))
     .sort((a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id));
 }
@@ -160,6 +164,7 @@ export function chroniclesMergeRemoteSavedRuns(scope, remoteRuns, { expectedOwne
     const updatedAt = remoteTimestamp(row.updatedAtMs ?? row.updatedAt);
     return [{
       id,
+      scope: local?.scope || 'first-person',
       title: local?.title || `Expedición ${id.slice(0, 8)}`,
       entryMapId: local?.entryMapId || null,
       currentMapId: typeof row.currentMapId === 'string' ? row.currentMapId : null,
@@ -175,9 +180,9 @@ export function chroniclesMergeRemoteSavedRuns(scope, remoteRuns, { expectedOwne
   const pendingLocal = previous.filter((row) => (!row.remote || !complete) && !seen.has(row.id));
   writeSaveCatalog([...incoming, ...pendingLocal]);
   if (active && !active.ended && active.remote && complete && !seen.has(active.id)) {
-    writeRunState({ ...active, ended: true });
+    writeRunState({ ...active, ended: true }, scope);
   } else if (active && !active.ended && seen.has(active.id) && !active.remote) {
-    writeRunState({ ...active, remote: true, pending: false });
+    writeRunState({ ...active, remote: true, pending: false }, scope);
   }
   return chroniclesListSavedRuns(scope);
 }
@@ -195,7 +200,8 @@ export async function chroniclesRecoverLegacySavedRunIds(scope, remoteRuns, {
   const serverIds = new Set(remoteRuns.filter((row) => !row.status || row.status === 'active')
     .map((row) => row.runId).filter((id) => typeof id === 'string'));
   let recovered = 0;
-  const candidates = readSaveCatalog().filter((row) => !row.pending && !serverIds.has(row.id));
+  const candidates = readSaveCatalog().filter((row) =>
+    row.scope === scope && !row.pending && !serverIds.has(row.id));
   for (const candidate of candidates) {
     if (signal?.aborted || expectedOwner !== currentOwner()) break;
     const canonicalId = await chroniclesCanonicalRunIdForKey(expectedOwner, candidate.id);
@@ -213,7 +219,7 @@ export async function chroniclesRecoverLegacySavedRunIds(scope, remoteRuns, {
     const active = readRunState(scope);
     writeSaveCatalog([repaired, ...latest.filter((row) => row.id !== candidate.id && row.id !== canonicalId)]);
     if (active?.id === candidate.id && !active.ended && !active.pending) {
-      writeRunState({ ...active, id: canonicalId, remote: true, pending: false });
+      writeRunState({ ...active, id: canonicalId, remote: true, pending: false }, scope);
     }
     recovered += 1;
   }
@@ -253,7 +259,7 @@ export function chroniclesMarkSavedRunRemote(scope, runId, authoritativeRunId = 
       pending: false,
     };
     writeSaveCatalog([confirmed, ...runs.filter((item) => item.id !== runId && item.id !== serverId)]);
-    writeRunState({ ...active, id: serverId, remote: true, pending: false });
+    writeRunState({ ...active, id: serverId, remote: true, pending: false }, scope);
     return serverId;
   }
 
@@ -263,7 +269,7 @@ export function chroniclesMarkSavedRunRemote(scope, runId, authoritativeRunId = 
     writeSaveCatalog(runs);
   }
   if (!active.remote || active.pending) {
-    writeRunState({ ...active, remote: true, pending: false });
+    writeRunState({ ...active, remote: true, pending: false }, scope);
   }
   return serverId;
 }
@@ -278,14 +284,14 @@ export function chroniclesSelectedRunIsRemote(scope, runId) {
 
 export function chroniclesSelectSavedRun(scope, runId) {
   legacyStorageKeyFor(scope);
-  const row = readSaveCatalog().find((item) => item.id === runId);
+  const row = readSaveCatalog().find((item) => item.id === runId && item.scope === scope);
   if (!row) return false;
   writeRunState({
     id: row.id, owner: currentOwner(), ended: false,
     entryMapId: row.entryMapId,
     remote: row.remote === true,
     pending: row.pending === true,
-  });
+  }, scope);
   return true;
 }
 
@@ -294,7 +300,7 @@ export function chroniclesRenameSavedRun(scope, runId, title) {
   const name = String(title || '').trim().slice(0, 56);
   if (!name) return false;
   const runs = readSaveCatalog();
-  const row = runs.find((item) => item.id === runId);
+  const row = runs.find((item) => item.id === runId && item.scope === scope);
   if (!row) return false;
   row.title = name;
   writeSaveCatalog(runs);
@@ -306,10 +312,11 @@ export function chroniclesRenameSavedRun(scope, runId, title) {
 export function chroniclesForgetSavedRun(scope, runId) {
   const current = readRunState(scope);
   const runs = readSaveCatalog();
-  if (!runs.some((item) => item.id === runId)) return false;
+  if (!runs.some((item) => item.id === runId && item.scope === scope)) return false;
   unindexRun(runId);
   if (current && current.id === runId) {
-    setStorageItem(STORAGE_LOCAL, CHRONICLES_RUN_STORAGE_KEY, JSON.stringify({
+    setStorageItem(STORAGE_LOCAL, scope === 'tactics'
+      ? CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY : CHRONICLES_RUN_STORAGE_KEY, JSON.stringify({
       ...current, ended: true,
     }));
   }
@@ -319,7 +326,7 @@ export function chroniclesForgetSavedRun(scope, runId) {
 export function chroniclesNoteSavedRunCheckpoint(scope, runId, currentMapId) {
   legacyStorageKeyFor(scope);
   const runs = readSaveCatalog();
-  const row = runs.find((item) => item.id === runId);
+  const row = runs.find((item) => item.id === runId && item.scope === scope);
   if (!row) return false;
   if (typeof currentMapId === 'string' && /^[a-z0-9-]{1,64}$/.test(currentMapId)) {
     row.currentMapId = currentMapId;
@@ -331,32 +338,36 @@ export function chroniclesNoteSavedRunCheckpoint(scope, runId, currentMapId) {
   return true;
 }
 
-function writeRunState(run) {
-  const saved = setStorageItem(STORAGE_LOCAL, CHRONICLES_RUN_STORAGE_KEY, JSON.stringify(run));
+function writeRunState(run, scope) {
+  legacyStorageKeyFor(scope);
+  const key = scope === 'tactics'
+    ? CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY : CHRONICLES_RUN_STORAGE_KEY;
+  const saved = setStorageItem(STORAGE_LOCAL, key, JSON.stringify(run));
   if (run.ended) unindexRun(run.id);
-  else indexActiveRun(run);
+  else indexActiveRun(run, scope);
   return saved;
 }
 
 function readRunState(scope) {
-  const preferredLegacyKey = legacyStorageKeyFor(scope);
+  legacyStorageKeyFor(scope);
+  if (scope === 'tactics') {
+    // Legacy v2 Tactics and the canonical key may point to an MM3 run already
+    // on the server. Never rebind them into a new tactical expedition.
+    const tactics = readStoredRun(CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY);
+    if (tactics && !tactics.ended) indexActiveRun(tactics, scope);
+    return tactics;
+  }
   const shared = readStoredRun(CHRONICLES_RUN_STORAGE_KEY);
   if (shared) {
-    if (!shared.ended) indexActiveRun(shared);
+    if (!shared.ended) indexActiveRun(shared, scope);
     return shared;
   }
-
-  // Migration is intentionally first-entry-wins. If old first-person and
-  // Tactics sessions disagree, whichever adapter the player opens first
-  // establishes the canonical run; the other adapter then follows it.
-  const migrationKeys = [
-    preferredLegacyKey,
-    ...Object.values(LEGACY_RUN_STORAGE_KEYS).filter((key) => key !== preferredLegacyKey),
-  ];
-  for (const storageKey of migrationKeys) {
-    const legacy = readStoredRun(storageKey);
+  // MM3 preserves all existing server-run identities. Legacy tactical-only
+  // data is still recoverable in the historic first-person save catalog.
+  for (const key of [CHRONICLES_FIRST_PERSON_RUN_STORAGE_KEY, CHRONICLES_TACTICS_RUN_STORAGE_KEY]) {
+    const legacy = readStoredRun(key);
     if (!legacy || legacy.ended) continue;
-    writeRunState(legacy);
+    writeRunState(legacy, scope);
     return legacy;
   }
   return null;
@@ -379,7 +390,7 @@ export function beginChroniclesRun(scope, { entryMapId = null } = {}) {
     entryMapId: scope === 'first-person' ? (entryMapId || 'swordhaven-first-book') : null,
     pending: true,
   };
-  writeRunState(run);
+  writeRunState(run, scope);
   return run.id;
 }
 
@@ -398,7 +409,7 @@ export function renewChroniclesRun(scope, runId) {
   const current = readRunState(scope);
   if (current && !current.ended && current.id !== runId) return current.id;
   if (current && current.id === runId && !current.ended) {
-    writeRunState({ ...current, ended: true });
+    writeRunState({ ...current, ended: true }, scope);
   }
   // Restart stale first-person slots in the only maintained Swordhaven.
   // Tactics keeps its independent dungeon entry semantics.
@@ -409,6 +420,6 @@ export function renewChroniclesRun(scope, runId) {
 export function finishChroniclesRun(scope, runId) {
   const current = readRunState(scope);
   if (!current || current.id !== runId) return false;
-  writeRunState({ ...current, ended: true });
+  writeRunState({ ...current, ended: true }, scope);
   return true;
 }
