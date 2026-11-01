@@ -27,6 +27,7 @@ const adminPageSize = 40
 
 type rosterUser struct {
 	Username string         `json:"username"`
+	AccountAlias string `json:"accountAlias,omitempty"`
 	CreatedAt string        `json:"createdAt,omitempty"`
 	LastActivity string     `json:"lastActivity,omitempty"`
 	Online bool             `json:"online"`
@@ -50,9 +51,10 @@ type adminRosterHandler struct {
 	authorize func(*http.Request) int
 	read func(context.Context, string) (rosterPage, error)
 	origins map[string]bool
+	resolveAliases func(context.Context, *rosterPage)
 }
 
-func newAdminRoster(db *mongo.Database, jwtSecret string, sso *ssoauth.Verifier, identity *identityauth.Verifier, timeout time.Duration, origins []string) http.Handler {
+func newAdminRoster(db *mongo.Database, jwtSecret string, sso *ssoauth.Verifier, identity *identityauth.Verifier, timeout time.Duration, origins []string) *adminRosterHandler {
 	accounts := accountstore.New(db, timeout)
 	h := &adminRosterHandler{
 		origins: make(map[string]bool),
@@ -166,6 +168,11 @@ func (h *adminRosterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "No se pudo consultar el servidor.", http.StatusServiceUnavailable)
 		return
+	}
+	// Only after verified admin authorization and a successful local read.
+	// A failing Identity call cannot turn a valid census into an error.
+	if h.resolveAliases != nil {
+		h.resolveAliases(ctx, &page)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(page)
