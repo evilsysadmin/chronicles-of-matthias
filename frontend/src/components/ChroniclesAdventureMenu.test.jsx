@@ -171,8 +171,8 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}
       isAdmin campRestStatus={{ canRest: false, rationsNeeded: 4, reason: 'Enemigos cerca' }} />);
     expect(html).toContain('data-chronicles-menu-primary');
-    expect(html).toMatch(/chronicles-game-menu__primary-row[^>]*>[\\s\\S]*?Continuar[\\s\\S]*?Descansar en campo · 4 raciones[\\s\\S]*?<\\/div>/);
-    expect(html).toMatch(/chronicles-game-menu__utility-row[^>]*>[\\s\\S]*?Sonido[\\s\\S]*?Ayuda[\\s\\S]*?Feedback[\\s\\S]*?Modo admin[\\s\\S]*?Salir sin guardar · Q[\\s\\S]*?<\\/div>/);
+    expect(html).toMatch(/chronicles-game-menu__primary-row[^>]*>[\s\S]*?Continuar[\s\S]*?Descansar en campo · 4 raciones[\s\S]*?<\/div>/);
+    expect(html).toMatch(/chronicles-game-menu__utility-row[^>]*>[\s\S]*?Sonido[\s\S]*?Ayuda[\s\S]*?Feedback[\s\S]*?Modo admin[\s\S]*?Salir sin guardar · Q[\s\S]*?<\/div>/);
     expect(html).toMatch(/data-chronicles-menu-camp-rest[^>]*disabled/);
     expect(html).toContain('data-chronicles-menu-save');
     expect(html).toContain('data-chronicles-menu-load');
