@@ -57,17 +57,19 @@ export function chroniclesMM3Race(raceId) {
 export const CHRONICLES_MM3_STAT_MIN = 3;
 export const CHRONICLES_MM3_STAT_MAX = 18;
 
-// MM3 series bonus table (the same bands MM4/5 keep).
+// MM3 stat thresholds recovered from the original executable (roadmap #1045).
 const BONUS_BANDS = Object.freeze([
   [2, -5], [4, -4], [6, -3], [8, -2], [10, -1], [12, 0],
-  [14, 1], [16, 2], [18, 3], [20, 4], [23, 5], [26, 6],
+  [14, 1], [16, 2], [18, 3], [20, 4], [24, 5], [29, 6],
+  [34, 7], [39, 8], [49, 9], [74, 10], [99, 11], [124, 12],
+  [149, 13], [174, 14], [199, 15], [224, 16], [249, 17],
 ]);
 
 export function chroniclesMM3StatBonus(value) {
   const numeric = Math.floor(Number(value));
   if (!Number.isFinite(numeric)) return 0;
   const band = BONUS_BANDS.find(([upper]) => numeric <= upper);
-  return band ? band[1] : 7;
+  return band ? band[1] : 20;
 }
 
 // Armor tiers: 0 none, 1 padded, 2 leather, 3 scale, 4 ring, 5 chain,
