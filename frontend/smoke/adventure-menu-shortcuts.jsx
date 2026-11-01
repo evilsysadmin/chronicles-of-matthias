@@ -109,7 +109,7 @@ function MenuShortcutFixture() {
         return;
       }
       event.preventDefault();
-      if (action === 'save') setSaveRequests((n) => n + 1);
+      if (action === 'save' && !document.querySelector('[data-shortcut-capture-only]')) setSaveRequests((n) => n + 1);
       if (action === 'request-exit') {
         setExitRequests((n) => n + 1);
         setConfirmExitWithoutSaving(true);
