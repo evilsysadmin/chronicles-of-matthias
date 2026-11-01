@@ -815,6 +815,34 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'forge-door-iron-ring', [0.42, 1.33, facadeZ + 0.54]);
     entrance.traverse(part => { part.userData.chroniclesDecorativeOnly = true; });
     root.add(entrance);
+    // A broad kiln-brick arch frames the working smith's door, rather than
+    // reusing the square limestone portal of the watchhouse. It projects only
+    // over the existing blocked facade and never intercepts the real doorway.
+    const portal = new THREE.Group();
+    portal.name = 'forge-kiln-brick-entry-arch';
+    portal.userData.chroniclesDecorativeOnly = true;
+    const kilnBrick = material(0x8b6650, {
+      map: swordhavenSurfaceTexture('brick'),
+      normalMap: swordhavenSurfaceNormalTexture('brick'),
+      normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.98,
+    });
+    for (const side of [-1, 1]) {
+      const pier = mesh(portal, new THREE.BoxGeometry(0.43, 2.93, 0.42), kilnBrick,
+        'forge-portal-kiln-brick-pier',
+        [side * 1.12, 1.53, facadeZ + 0.48], !coarse);
+      pier.userData.chroniclesDecorativeOnly = true;
+    }
+    const archOutline = new THREE.Shape();
+    archOutline.moveTo(-1.34, 2.94);
+    archOutline.quadraticCurveTo(0, 4.30, 1.34, 2.94);
+    archOutline.lineTo(0.92, 2.94);
+    archOutline.quadraticCurveTo(0, 3.68, -0.92, 2.94);
+    archOutline.closePath();
+    const arch = mesh(portal, new THREE.ShapeGeometry(archOutline, coarse ? 8 : 16),
+      kilnBrick, 'forge-portal-kiln-brick-vault',
+      [0, 0, facadeZ + 0.72], !coarse);
+    arch.userData.chroniclesDecorativeOnly = true;
+    root.add(portal);
   }
   // The watchhouse is dressed military ashlar, not a half-timbered
   // merchant shop. Its shallow stone portal frames the unchanged oak door;
