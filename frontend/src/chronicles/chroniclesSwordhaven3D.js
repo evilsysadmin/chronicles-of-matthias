@@ -3182,19 +3182,28 @@ export function createSwordhavenMaterials() {
 }
 
 export function addSwordhavenClouds(root, coarsePointer = false) {
-  // Cloud banks are genuine low-detail 3D volume silhouettes, not a flat sky texture.
-  // Basic materials keep the clouds bright without costly per-cloud lighting.
-  const cloudMaterial = new THREE.MeshBasicMaterial({
-    color: 0xf6f8f4, transparent: true, opacity: 0.87, depthWrite: false,
+  // The old bright, unlit spheres looked like overlapping white discs above
+  // the shops. Keep a low-poly 3D silhouette, but make each cloud a long,
+  // shallow cumulus bank with actual daylight shading and no alpha stacking.
+  // Share one geometry/material across all puffs, including touch rendering.
+  const cloudMaterial = new THREE.MeshLambertMaterial({
+    color: 0xe9eeeb, flatShading: true,
   });
+  const puffGeometry = new THREE.IcosahedronGeometry(1, 1);
+  const heights = [0.05, 0.38, 0.68, 0.30, 0.02];
   for (let cluster = 0; cluster < (coarsePointer ? 3 : 5); cluster += 1) {
     const cloud = new THREE.Group();
     cloud.name = 'swordhaven-cloud-' + cluster;
+    cloud.userData.chroniclesDecorativeOnly = true;
     const direction = cluster % 2 === 0 ? -1 : 1;
     cloud.position.set(direction * (16 + cluster * 2.7), 16 + (cluster % 3) * 2, -38 + cluster * 3);
-    for (let puff = 0; puff < 3; puff += 1) {
-      mesh(cloud, new THREE.SphereGeometry(2.35 - puff * 0.26, 9, 6),
-        cloudMaterial, 'cloud-puff', [(puff - 1) * 2.0, puff % 2 ? 0.65 : 0, 0]);
+    for (let puff = 0; puff < heights.length; puff += 1) {
+      const lobe = mesh(cloud, puffGeometry, cloudMaterial, 'cloud-puff',
+        [(puff - 2) * 1.62, heights[puff], puff % 2 ? 0.22 : -0.18]);
+      lobe.scale.set(2.20 - Math.abs(puff - 2) * 0.23,
+        0.72 + (puff === 2 ? 0.24 : 0), 1.18 + (puff % 2) * 0.14);
+      lobe.receiveShadow = false;
+      lobe.userData.chroniclesDecorativeOnly = true;
     }
     root.add(cloud);
   }
