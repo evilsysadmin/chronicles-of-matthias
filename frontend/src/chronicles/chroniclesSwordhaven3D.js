@@ -821,7 +821,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     const portal = new THREE.Group();
     portal.name = 'forge-kiln-brick-entry-arch';
     portal.userData.chroniclesDecorativeOnly = true;
-    const kilnBrick = material(0x8b6650, {
+    const kilnBrick = material(0xba8d70, {
       map: swordhavenSurfaceTexture('brick'),
       normalMap: swordhavenSurfaceNormalTexture('brick'),
       normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.98,
