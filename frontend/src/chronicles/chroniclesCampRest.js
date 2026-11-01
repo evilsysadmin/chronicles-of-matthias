@@ -18,7 +18,12 @@ function hasLivingHitPoints(value) {
 
 function rationCount(state) {
   const value = state?.inventory?.[CHRONICLES_CAMP_RATION_ID]?.quantity;
-  return Number.isSafeInteger(value) && value > 0 && value <= 9999 ? value : 0;
+  // Old checkpoints can contain numeric-string quantities, just like HP.
+  // Never coerce booleans, arrays, objects or whitespace into usable food.
+  if (typeof value !== 'number' && typeof value !== 'string') return 0;
+  if (typeof value === 'string' && !value.trim()) return 0;
+  const quantity = Number(value);
+  return Number.isSafeInteger(quantity) && quantity > 0 && quantity <= 9999 ? quantity : 0;
 }
 
 export function chroniclesCampRestStatus(state, enemies = []) {
