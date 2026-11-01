@@ -515,8 +515,10 @@ export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = 
   const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
   const block = state?.initiative && state.combatBlock?.[memberId] === true ? CHRONICLES_BLOCK_AC_BONUS : 0;
   const blessing = chroniclesTempleBlessingArmor(state);
+  // A divine +2 must remain +2 even for heroes whose base speed imposes
+  // a negative AC modifier. Clamp the ordinary defense first, then bless.
   return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
-    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block + blessing);
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block) + blessing;
 }
 
 export function chroniclesUsesMM3Combat(state) {
