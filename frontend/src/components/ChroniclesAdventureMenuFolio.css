@@ -823,7 +823,7 @@
   padding: 14px 20px 12px;
   gap: 8px;
   background:
-    repeating-linear-gradient(0deg, #2c170c15 0, #2c170c15 1px, transparent 1px, transparent 4px),
+    linear-gradient(0deg, #28180b1a, #dfaa6542 50%, #28180b1a),
     linear-gradient(125deg, #a86a38, #8c502b 58%, #724023);
   border-inline: 1px solid #ad723f;
 }
