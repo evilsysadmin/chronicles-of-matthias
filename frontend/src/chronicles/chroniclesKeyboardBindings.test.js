@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
@@ -208,6 +208,58 @@ describe('Chronicles adventure menu keyboard shortcuts', () => {
   });
 });
 
+
+describe('Chronicles adventure menu S capture reaches the real Save action', () => {
+  const makeEvent = (key, patch = {}) => {
+    const calls = { prevented: 0, stopped: 0 };
+    return { event: {
+      key, target: { closest: () => null },
+      preventDefault: () => { calls.prevented++; },
+      stopPropagation: () => { calls.stopped++; },
+      ...patch,
+    }, calls };
+  };
+  const makeDetails = (button, open = true) => ({
+    open, querySelector: (selector) => selector === '[data-chronicles-menu-save]' ? button : null,
+  });
+  it('routes lowercase and uppercase S from an open menu gem to exactly one real click', () => {
+    let clicks = 0;
+    const button = { disabled: false, getClientRects: () => [{}], click: () => { clicks++; } };
+    for (const key of ['s', 'S']) {
+      const { event, calls } = makeEvent(key);
+      expect(chroniclesHandleAdventureMenuSaveKey(event, makeDetails(button))).toBe(true);
+      expect(calls).toEqual({ prevented: 1, stopped: 1 });
+    }
+    expect(clicks).toBe(2);
+  });
+  it('never saves if menu is closed, hidden, disabled, in combat or confirming exit/load', () => {
+    let clicks = 0;
+    const button = { disabled: false, getClientRects: () => [{}], click: () => { clicks++; } };
+    const cases = [
+      [makeDetails(button, false), {}],
+      [makeDetails({ ...button, disabled: true }), {}],
+      [makeDetails({ ...button, getClientRects: () => [] }), {}],
+      [makeDetails(button), { saveBusy: true }],
+      [makeDetails(button), { inCombat: true }],
+      [makeDetails(button), { confirmExitWithoutSaving: true }],
+      [makeDetails(button), { confirmLoadSelection: true }],
+      [makeDetails(button), { subpageOpen: true }],
+    ];
+    for (const [details, state] of cases) {
+      const { event, calls } = makeEvent('s');
+      expect(chroniclesHandleAdventureMenuSaveKey(event, details, state)).toBe(false);
+      expect(calls).toEqual({ prevented: 0, stopped: 0 });
+    }
+    for (const patch of [
+      { repeat: true }, { defaultPrevented: true }, { metaKey: true },
+      { target: { closest: () => ({ tagName: 'INPUT' }) } },
+    ]) {
+      const { event } = makeEvent('S', patch);
+      expect(chroniclesHandleAdventureMenuSaveKey(event, makeDetails(button))).toBe(false);
+    }
+    expect(clicks).toBe(0);
+  });
+});
 
 describe('Chronicles pause menu · choose saved expedition', () => {
   const key = (keyName) => ({
