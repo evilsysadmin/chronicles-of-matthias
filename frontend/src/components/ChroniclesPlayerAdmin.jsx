@@ -73,22 +73,40 @@ export function chroniclesRosterHasSave(user) {
   return typeof user?.mapId === 'string' && Boolean(user.mapId.trim());
 }
 
-export function chroniclesRosterFacetCounts(users, query = '') {
+// Presence is a snapshot, not a live feed. The API expires activity after
+// 150 seconds (with a 5-second future clock tolerance). Never keep a green
+// status indefinitely when the admin tab remains open or a refresh fails.
+export function chroniclesRosterPresenceState(user, { nowMs = Date.now(), unavailable = false } = {}) {
+  if (unavailable) return 'unconfirmed';
+  if (user?.online !== true) return 'offline';
+  const stamp = Date.parse(user?.lastActivity);
+  if (!Number.isFinite(stamp) || !Number.isFinite(nowMs)) return 'unconfirmed';
+  const age = nowMs - stamp;
+  return age >= -5000 && age <= 150000 ? 'online' : 'unconfirmed';
+}
+
+export function chroniclesRosterPresenceLabel(state) {
+  if (state === 'online') return 'En línea';
+  if (state === 'offline') return 'Sin conexión al consultar';
+  return 'Estado sin confirmar';
+}
+
+export function chroniclesRosterFacetCounts(users, query = '', presence = {}) {
   const matching = (Array.isArray(users) ? users : [])
     .filter((user) => chroniclesRosterMatches(user, query));
   return {
     all: matching.length,
-    online: matching.filter((user) => user.online === true).length,
+    online: matching.filter((user) => chroniclesRosterPresenceState(user, presence) === 'online').length,
     saved: matching.filter(chroniclesRosterHasSave).length,
     unsaved: matching.filter((user) => !chroniclesRosterHasSave(user)).length,
   };
 }
 
-export function chroniclesRosterVisibleUsers(users, { query = '', filter = 'all', order = 'recent' } = {}) {
+export function chroniclesRosterVisibleUsers(users, { query = '', filter = 'all', order = 'recent', nowMs = Date.now(), unavailable = false } = {}) {
   const matching = (Array.isArray(users) ? users : [])
     .filter((user) => chroniclesRosterMatches(user, query))
     .filter((user) => {
-      if (filter === 'online') return user.online === true;
+      if (filter === 'online') return chroniclesRosterPresenceState(user, { nowMs, unavailable }) === 'online';
       if (filter === 'saved') return chroniclesRosterHasSave(user);
       if (filter === 'unsaved') return !chroniclesRosterHasSave(user);
       return true;
@@ -127,6 +145,7 @@ export default function ChroniclesPlayerAdmin() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
     const controller = new AbortController();
     setLoadingMore(false);
@@ -135,6 +154,7 @@ export default function ChroniclesPlayerAdmin() {
     chroniclesAdminRoster('', { signal: controller.signal }).then((page) => {
       if (controller.signal.aborted) return;
       setUsers(page.users);
+      setNowMs(Date.now());
       setNextAfter(page.nextAfter);
       setHasLoaded(true);
     }).catch((cause) => {
@@ -153,6 +173,7 @@ export default function ChroniclesPlayerAdmin() {
     try {
       const page = await chroniclesAdminRoster(nextAfter);
       setUsers((current) => [...current, ...page.users]);
+      setNowMs(Date.now());
       setNextAfter(page.nextAfter);
     } catch (cause) {
       setError(cause?.message || 'No se pudo continuar la consulta.');
@@ -162,8 +183,22 @@ export default function ChroniclesPlayerAdmin() {
     }
   }
 
-  const counts = chroniclesRosterFacetCounts(users, query);
-  const visibleUsers = chroniclesRosterVisibleUsers(users, { query, filter, order });
+  // Reassess the received timestamps locally; this never contacts the API.
+  // Also tick when the browser returns from a suspended/background tab.
+  useEffect(() => {
+    if (section !== 'players' || !hasLoaded) return undefined;
+    const tick = () => setNowMs(Date.now());
+    const timer = setInterval(tick, 15000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [section, hasLoaded]);
+
+  const presence = { nowMs, unavailable: Boolean(error) };
+  const counts = chroniclesRosterFacetCounts(users, query, presence);
+  const visibleUsers = chroniclesRosterVisibleUsers(users, { query, filter, order, ...presence });
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const environment = hostname.startsWith('staging.') ? 'STAGING'
@@ -229,8 +264,8 @@ export default function ChroniclesPlayerAdmin() {
           <li key={user.username}>
             <div className="chronicles-player-admin__identity">
               <strong>{chroniclesRosterPlayerLabel(user)}</strong>
-              <span className={user.online ? 'is-online' : ''}>
-                {user.online ? 'En línea' : 'Sin conexión'}
+              <span className={chroniclesRosterPresenceState(user, presence) === 'online' ? 'is-online' : ''}>
+                {chroniclesRosterPresenceLabel(chroniclesRosterPresenceState(user, presence))}
               </span>
             </div>
             <p className="chronicles-player-admin__metadata">
@@ -278,7 +313,7 @@ export default function ChroniclesPlayerAdmin() {
       </ul>
       {nextAfter && <button type="button" onClick={more} disabled={loading}>Cargar más jugadores</button>}
       <p className="chronicles-player-admin__note">
-        Zona y encargos: último guardado, no posición en vivo. Niveles: última progresión sincronizada; pueden existir cambios sin guardar.
+        Zona y encargos: último guardado, no posición en vivo. Niveles: última progresión sincronizada; pueden existir cambios sin guardar. Presencia: «En línea» caduca tras 150 s; «Estado sin confirmar» requiere pulsar Actualizar.
       </p>
         </>
       )}
