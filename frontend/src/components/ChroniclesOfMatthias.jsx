@@ -1426,7 +1426,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       // A pristine first-person run must still write its *first* checkpoint.
       // Equal fingerprints only permit skipping a write if a durable
       // authoritative world snapshot already exists.
-      if (!checkpointExistsRef.current || fingerprint !== checkpointFingerprintRef.current) {
+      const alreadyDurable = checkpointExistsRef.current
+        && fingerprint === checkpointFingerprintRef.current;
+      if (!alreadyDurable) {
         const updated = await chroniclesCheckpointState(
           requestedRunId, stagedSnapshot, currentRun.worldVersion,
           {
@@ -1448,7 +1450,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       checkpointExistsRef.current = true;
       saveChroniclesAutomapVisited(requestedRunId, visited);
       chroniclesNoteSavedRunCheckpoint(FIRST_PERSON_RUN_SCOPE, requestedRunId, snapshot.mapId);
-      if (reason === 'manual') setSaveNotice('Partida guardada correctamente.');
+      if (reason === 'manual') setSaveNotice(alreadyDurable
+        ? 'Sin cambios desde el último guardado.'
+        : 'Partida guardada correctamente.');
       return true;
     }).catch((error) => {
       console.error('Chronicles checkpoint failed', error);
