@@ -19,7 +19,7 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of ['oldtown', 'mayor-square', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
+      for (const view of ['oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -40,6 +40,11 @@ try {
         assert.equal(result.sceneError, undefined, JSON.stringify(result));
         assert.equal(result.sceneReady, 'true');
         assert.equal(result.mapId, 'swordhaven-first-book');
+        assert.equal(result.tieredPlazaFountain, 'true',
+          'The real (9,9) square must contain the two-tier bowl and four shared water jets');
+        assert.equal(result.fountainPortraitFraming, 'true',
+          'The dedicated fountain view must fit lower stone rim and upper finial at 390 and 1280px');
+        if (view === 'fountain') assert.equal(result.cameraCell, '9,7');
         assert.equal(result.premiumCivic, 'true', 'The real mayor hall needs its carved civic facade');
         assert.equal(result.premiumHomes, 'true', 'Residential houses need the premium shuttered facade');
         assert.equal(result.premiumHomeGables, 'true',
