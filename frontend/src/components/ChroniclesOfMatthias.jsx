@@ -186,7 +186,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
@@ -2073,6 +2073,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             <details
               className="chronicles-game-menu"
               open={menuOpen}
+              onKeyDownCapture={(event) => {
+                chroniclesHandleAdventureMenuSaveKey(event, event.currentTarget, {
+                  saveBusy, inCombat: Boolean(stateRef.current?.initiative),
+                  confirmExitWithoutSaving, confirmLoadSelection,
+                  subpageOpen: feedbackOpen,
+                });
+              }}
               onKeyDown={(event) => { chroniclesContainAdventureMenuTab(event, event.currentTarget); }}
               onToggle={(event) => {
                 setMenuOpen(event.currentTarget.open);
