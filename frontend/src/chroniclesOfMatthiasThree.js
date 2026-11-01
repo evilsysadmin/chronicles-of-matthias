@@ -21,6 +21,7 @@ import { createChroniclesRenderDiagnostics, chroniclesRenderDiagnosticsEnabled }
 import { chroniclesPerfIsolationFlags, chroniclesPerfTorchesVisible } from './chronicles/chroniclesPerfIsolation.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
+import { chroniclesFountainMotionEnabled } from './chronicles/chroniclesSwordhavenFountainArt.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import { buildChroniclesWitchCauldron3D } from './chronicles/chroniclesWitchCauldron3D.js';
 import { buildChroniclesRestorativeFountain3D } from './chronicles/chroniclesRestorativeFountain3D.js';
@@ -730,6 +731,9 @@ export function createChroniclesOfMatthiasGame(host, {
     : scenePlan?.regionKind === 'settlement'
       ? buildSwordhavenScene(scene, { coarsePointer: coarse, scenePlan })
       : createDungeonScene(scene, { coarsePointer: coarse, scenePlan });
+  const plazaFountainArt = scenePlan?.mapId === 'swordhaven-first-book'
+    ? scene.getObjectByName('swordhaven-fountain-upper-tier') : null;
+  const plazaFountainPosition = plazaFountainArt?.parent?.getWorldPosition(new THREE.Vector3());
   const contentRaycaster = new THREE.Raycaster();
   const contentPointer = new THREE.Vector2();
   const dressing = scenePlan?.useAuthoredCryptDressing
@@ -791,6 +795,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const enemyMoveFrom = new Map();
   const reducedHurtTimers = new Map();
   const clock = new THREE.Clock();
+  let fountainFrameTimer = null;
 
   camera.position.copy(desiredPosition);
   camera.rotation.set(0, desiredYaw, 0);
@@ -967,6 +972,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // A changed view paints once; movement and impacts get a short animation
     // window. The GPU stays idle while the player is waiting.
     scheduler.invalidate(animateState ? 1050 : 0);
+    refreshFountainFrameTimer();
   }
 
   function playAttack(memberId) {
@@ -1210,6 +1216,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // Party-carried light is gameplay visibility, not a decorative animation.
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
+    if (!reducedMotion) plazaFountainArt?.userData.updateChroniclesFountainWater?.(time);
     renderer.render(scene, camera);
     renderDiagnostics.recordFrame();
     ambientTorchGlows.update();
@@ -1223,6 +1230,22 @@ export function createChroniclesOfMatthiasGame(host, {
     draw: render,
   });
   scheduler.setVisible(visible);
+  // 8fps only while a player is near the visible fountain; no permanent RAF,
+  // particle physics or full-map GPU wakeups. Clears on hide, map swap, exit.
+  function refreshFountainFrameTimer() {
+    const shouldRun = chroniclesFountainMotionEnabled({
+      visible: visible && !destroyed, reducedMotion,
+      partyPosition: desiredPosition, fountainPosition: plazaFountainPosition,
+    });
+    if (!shouldRun && fountainFrameTimer !== null) {
+      window.clearInterval(fountainFrameTimer);
+      fountainFrameTimer = null;
+    } else if (shouldRun && fountainFrameTimer === null) {
+      fountainFrameTimer = window.setInterval(() => scheduler.invalidate(0), 125);
+      scheduler.invalidate(0);
+    }
+  }
+  refreshFountainFrameTimer();
   // R2 may decode after the GPU has parked on an idle frame. Reveal the new
   // spider painting in a single invalidated frame, not a perpetual render loop.
   dungeon.enemyDefinitions.forEach((definition) => {
@@ -1262,6 +1285,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const onVisibility = () => {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
+    refreshFountainFrameTimer();
     ambientTorchGlows.setVisible(chroniclesPerfTorchesVisible(visible, perfIsolation.disableTorchGlows));
     renderDiagnostics.setVisible(visible);
   };
@@ -1276,6 +1300,7 @@ export function createChroniclesOfMatthiasGame(host, {
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      refreshFountainFrameTimer();
       scheduler.dispose();
       reducedHurtTimers.forEach((timeout) => clearTimeout(timeout));
       reducedHurtTimers.clear();
