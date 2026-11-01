@@ -36,6 +36,7 @@ import {
 } from './chronicles/chroniclesGuild.js';
 import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
 import { chroniclesCampRest } from './chronicles/chroniclesCampRest.js';
+import { chroniclesApplyTempleService, chroniclesTempleBlessingArmor } from './chronicles/chroniclesTempleServices.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
   CHRONICLES_SPELLS,
@@ -513,8 +514,9 @@ export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = 
   // Escudo de fe holds only while the fight it was cast in lasts.
   const ward = state?.initiative ? Math.max(0, Number(state.combatWard?.armorClass || 0)) : 0;
   const block = state?.initiative && state.combatBlock?.[memberId] === true ? CHRONICLES_BLOCK_AC_BONUS : 0;
+  const blessing = chroniclesTempleBlessingArmor(state);
   return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
-    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block);
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block + blessing);
 }
 
 export function chroniclesUsesMM3Combat(state) {
@@ -1247,6 +1249,7 @@ export function chroniclesReduce(state, action) {
   // change floors during MM3 initiative. Travel resumes after combat ends.
   if (state.combatRules === 'mm3' && state.initiative
     && (actionType === 'interact' || actionType === 'cross-area-threshold')) return state;
+  if (actionType === 'temple-service') return chroniclesApplyTempleService(state, action?.serviceId);
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
   if (actionType === 'camp-rest') return chroniclesCampRest(state, chroniclesActiveEnemies(state));
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
