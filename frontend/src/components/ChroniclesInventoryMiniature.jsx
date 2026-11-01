@@ -32,7 +32,7 @@ export function chroniclesInventoryMiniatureSpec(item) {
 
 const outline = '#39342e';
 
-function Weapon({ family, metal, wood, light }) {
+function Weapon({ family, material, metal, wood, light }) {
   switch (family) {
     case 'dagger':
     case 'sword':
@@ -53,7 +53,7 @@ function Weapon({ family, metal, wood, light }) {
         <g stroke={outline} strokeLinejoin="round">
           <path d="m22 21 4 0 1 22-6 0z" fill={wood} strokeWidth="1.6" />
           <path d="M21 35h6v4h-6zM20 42h8l-2 4h-4z" fill={metal} strokeWidth="1.3" />
-          <path d="M17 9 22 5h6l4 4 3 5-3 9-8 4-8-4-3-9Z" fill={metal} strokeWidth="1.7" />
+          <path d="M17 9 22 5h6l4 4 3 5-3 9-8 4-8-4-3-9Z" fill={material === 'wooden' ? wood : metal} strokeWidth="1.7" />
           <path d="m24 5 3 8-3 14-4-14ZM14 14h20M18 22l12-1" fill="none"
             stroke={light} strokeWidth="2" opacity=".75" />
           <path d="m17 10-5 2v7l5 2m14-11 5 2v7l-5 2" fill="none" stroke={outline} strokeWidth="2" />
@@ -82,8 +82,8 @@ function Weapon({ family, metal, wood, light }) {
     case 'staff':
       return (
         <g transform="rotate(24 24 24)" stroke={outline} strokeLinejoin="round">
-          <path d="M21 8Q18 19 21 28L20 45h6l1-18q-4-12 0-19Z" fill={wood} strokeWidth="1.7" />
-          <path d="M18 11Q17 3 24 3q8 0 7 8l-5 5-6-2Z" fill={wood} strokeWidth="1.6" />
+          <path d="M21 8Q18 19 21 28L20 45h6l1-18q-4-12 0-19Z" fill={material === 'ivory' ? metal : wood} strokeWidth="1.7" />
+          <path d="M18 11Q17 3 24 3q8 0 7 8l-5 5-6-2Z" fill={material === 'ivory' ? metal : wood} strokeWidth="1.6" />
           <path d="M24 4q-5 7 2 10m-4 10 3 5-3 6" fill="none" stroke={light} strokeWidth="1.5" opacity=".8" />
           <path d="M21 17h6v3h-6zM20 39h7v3h-7z" fill={metal} strokeWidth="1.2" />
         </g>
@@ -142,8 +142,10 @@ function Weapon({ family, metal, wood, light }) {
   }
 }
 
-function Armor({ family, metal, wood, light }) {
-  const soft = family === 'leather' || family === 'padded';
+function Armor({ family, material, metal, wood, light }) {
+  // Bronze/iron/steel cuirasses use plated metal even in the leather-shaped cut.
+  // Only actual leather is dyed hide; do not paint steel equipment brown.
+  const soft = material === 'leather';
   return (
     <g stroke={outline} strokeLinejoin="round">
       <path d="M14 6 5 13 3 24 13 28 16 21v21q8 5 16 0V21l3 7 10-4-2-11-9-7-5 5H19Z"
@@ -201,8 +203,8 @@ export default function ChroniclesInventoryMiniature({ item, spec = chroniclesIn
         </linearGradient>
       </defs>
       {ARMOR_TYPES.has(spec.family)
-        ? <Armor family={spec.family} metal={metal} wood={wood} light={tones[0]} />
-        : <Weapon family={spec.family} metal={metal} wood={wood} light={tones[0]} />}
+        ? <Armor family={spec.family} material={spec.material} metal={metal} wood={wood} light={tones[0]} />
+        : <Weapon family={spec.family} material={spec.material} metal={metal} wood={wood} light={tones[0]} />}
     </svg>
   );
 }
