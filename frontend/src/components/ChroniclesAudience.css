@@ -182,3 +182,33 @@
   .chronicles-audience__actions { gap: 4px; }
   .chronicles-audience__actions button { min-height: 40px; padding: 5px 8px; }
 }
+
+
+/* Ilse's services share the existing audience and its focus/number navigation.
+   Disabled actions disclose why no coins are taken; no invented treatment. */
+.chronicles-audience__dialogue .chronicles-audience__wallet {
+  padding: 6px 9px;
+  border: 1px solid rgba(222, 173, 90, .45);
+  color: #f4d39b;
+  background: rgba(59, 42, 22, .82);
+  font: 600 .85rem/1.35 system-ui, sans-serif;
+}
+.chronicles-audience__actions button[data-chronicles-dialogue-choice^='temple-'] {
+  border-color: #d3ac62;
+  background: linear-gradient(180deg, rgba(111, 74, 34, .96), rgba(58, 39, 23, .97));
+}
+.chronicles-audience__actions button:disabled,
+.chronicles-audience__actions button[data-chronicles-dialogue-choice^='temple-']:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+  background: rgba(40, 39, 38, .96);
+  border-color: #736654;
+}
+.chronicles-audience__actions button:disabled:hover {
+  outline: none;
+}
+.chronicles-audience__choice-reason {
+  color: #f1cc99;
+  font-size: .83em;
+  font-weight: 400;
+}
