@@ -105,6 +105,32 @@ try {
             (nodes) => nodes.map((node) => node.getBoundingClientRect().height));
           assert(buttons.every((h) => h >= 44), 'Mobile dialogue buttons are too short: ' + buttons);
         }
+        if (npc === 'ilse') {
+          const services = modal.locator('[data-chronicles-dialogue-choice^="temple-"]');
+          assert.equal(await services.count(), 4, 'Ilse must expose four real temple services');
+          assert.equal((await modal.locator('[data-chronicles-temple-gold]').innerText()).includes('40'), true);
+          const purify = modal.locator('[data-chronicles-dialogue-choice="temple-purify"]');
+          assert.equal(await purify.isDisabled(), true, 'No fictional diseases or payable cures');
+          const originalArmor = Number(await page.locator('[data-audience-armor]').innerText());
+          const originalHp = (await page.locator('[data-audience-hp]').innerText()).split(',').map(Number);
+          await modal.locator('[data-chronicles-dialogue-choice="temple-heal"]').click();
+          await page.waitForFunction(() => document.querySelector('[data-audience-gold]')?.textContent === '35');
+          const healed = (await page.locator('[data-audience-hp]').innerText()).split(',').map(Number);
+          assert(healed[0] > originalHp[0] && healed[1] === 0,
+            'Healing must not revive a fallen hero or charge without applying HP');
+          await modal.locator('[data-chronicles-dialogue-choice="temple-revive"]').click();
+          await page.waitForFunction(() => document.querySelector('[data-audience-gold]')?.textContent === '25');
+          const revived = (await page.locator('[data-audience-hp]').innerText()).split(',').map(Number);
+          assert(revived[1] > 0, 'A real fallen member should be revived');
+          // Four numbered services: 4 is Donate, not movement or hero selection.
+          await page.keyboard.press('4');
+          await page.waitForFunction(() => document.querySelector('[data-audience-gold]')?.textContent === '17');
+          assert.equal(Number(await page.locator('[data-audience-armor]').innerText()), originalArmor + 2);
+          assert.equal(await modal.locator('[data-chronicles-dialogue-choice="temple-donate"]').isDisabled(), true,
+            'Repeated donations may not stack while the blessing is active');
+          assert.match(await modal.locator('[data-chronicles-temple-gold]').innerText(), /Bendición: 12/);
+          assert.equal(await page.locator('[data-audience-action]').innerText(), 'temple:donate');
+        }
         if ([390, 844, 1280].includes(width)) {
           await page.screenshot({ path: 'smoke-audience-' + npc + '-' + width + '.png' });
         }
@@ -113,7 +139,8 @@ try {
         const say = modal.locator('[data-chronicles-dialogue-choice="town"], [data-chronicles-dialogue-choice="road"], [data-chronicles-dialogue-choice="wounded"]');
         await say.click();
         assert((await modal.locator('[data-chronicles-dialogue-answer]').innerText()).length > 45);
-        assert.equal(await page.locator('[data-audience-action]').innerText(), '');
+        assert.equal(await page.locator('[data-audience-action]').innerText(),
+          npc === 'ilse' ? 'temple:donate' : '');
         const quest = modal.locator('[data-chronicles-dialogue-choice="quest"]');
         await quest.click();
         assert.equal(await page.locator('[data-audience-action]').innerText(),
