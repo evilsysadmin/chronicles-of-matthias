@@ -3410,9 +3410,12 @@ export function buildSwordhavenScene(scene, { scenePlan = {}, coarsePointer = fa
   scene.fog = new THREE.Fog(0xb8dce9, 48, Math.max(width, height) * CELL * 0.98);
   const sunDirection = new THREE.Vector3(-28, 26, -90).normalize();
   scene.add(createSwordhavenSkyDome(sunDirection));
-  const skylight = new THREE.HemisphereLight(0xd7ebff, 0x688258, 1.45);
+  // A gentler sky fill and a slightly stronger directional key reveal the
+  // depth of stone quoins, timber eaves and recessed shop windows. Keep the
+  // original light count, sun direction and mobile shadow budget unchanged.
+  const skylight = new THREE.HemisphereLight(0xd7ebff, 0x688258, 1.24);
   scene.add(skylight);
-  const sun = new THREE.DirectionalLight(0xffedd1, coarsePointer ? 1.2 : 1.65);
+  const sun = new THREE.DirectionalLight(0xffedd1, coarsePointer ? 1.38 : 1.72);
   sun.name = 'swordhaven-sun';
   sun.position.copy(sunDirection).multiplyScalar(98);
   sun.castShadow = !coarsePointer;
