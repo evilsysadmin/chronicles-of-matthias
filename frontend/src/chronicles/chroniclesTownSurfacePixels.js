@@ -117,9 +117,12 @@ export function chroniclesTownSurfacePixels(kind) {
       const index = y * size + x;
       const offset = index * 4;
       if (heights) heights[index] = detail.elevation;
+      // Swordhaven's paving needs quieter joints so the shopfronts remain
+      // the focal point; keep brick and masonry mortar unchanged.
       for (let channel = 0; channel < 3; channel += 1) {
         const pigment = detail.mortar
-          ? (moss ? [76, 98, 55] : kind === 'brick' ? [163, 150, 137] : [95, 89, 80])[channel]
+          ? (cobble ? (moss ? [112, 120, 91] : [132, 124, 112])
+            : kind === 'brick' ? [163, 150, 137] : [95, 89, 80])[channel]
           : lichen ? [130, 137, 100][channel]
           : base[channel] * detail.shade
             + (channel === 0 ? 1 : channel === 2 ? -1 : 0) * ((detail.stone ?? 0.5) - 0.5) * 13;
