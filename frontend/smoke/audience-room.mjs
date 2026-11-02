@@ -106,8 +106,49 @@ try {
           assert(buttons.every((h) => h >= 44), 'Mobile dialogue buttons are too short: ' + buttons);
         }
         if (npc === 'ilse') {
-          const services = modal.locator('[data-chronicles-dialogue-choice^="temple-"]');
-          assert.equal(await services.count(), 4, 'Ilse must expose four real temple services');
+          const services = modal.locator('[data-chronicles-temple-services]');
+          const serviceButtons = services.locator('[data-chronicles-dialogue-choice^="temple-"]');
+          const speech = modal.locator('.chronicles-audience__dialogue');
+          assert.equal(await serviceButtons.count(), 4, 'Ilse must expose four real temple services');
+          assert.equal(await speech.locator('[data-chronicles-dialogue-choice^="temple-"]').count(), 0,
+            'Purchases must not be mixed into Ilse dialogue');
+          assert.equal(await services.locator('[data-chronicles-dialogue-choice="town"], [data-chronicles-dialogue-choice="wounded"]').count(), 0,
+            'Narrative responses belong to the right panel');
+          assert.equal(await speech.locator('[data-chronicles-dialogue-choice]').count(), 4,
+            'All four conversation options remain on the right');
+          const split = await modal.evaluate((node) => {
+            const left = node.querySelector('[data-chronicles-temple-services]');
+            const right = node.querySelector('.chronicles-audience__dialogue');
+            const area = node.getBoundingClientRect();
+            const servicesRect = left.getBoundingClientRect();
+            const speechRect = right.getBoundingClientRect();
+            const heights = [...left.querySelectorAll('button')].map(el => el.getBoundingClientRect().height);
+            return {
+              services: { x: servicesRect.x, right: servicesRect.right,
+                y: servicesRect.y, bottom: servicesRect.bottom },
+              dialogue: { x: speechRect.x, right: speechRect.right,
+                y: speechRect.y, bottom: speechRect.bottom },
+              frame: { x: area.x, right: area.right, y: area.y, bottom: area.bottom },
+              heights,
+            };
+          });
+          const s = split.services, d = split.dialogue, frame = split.frame;
+          assert(s.x >= frame.x - 1 && s.right <= frame.right + 1
+            && d.x >= frame.x - 1 && d.right <= frame.right + 1
+            && s.y >= frame.y - 1 && s.bottom <= frame.bottom + 1
+            && d.y >= frame.y - 1 && d.bottom <= frame.bottom + 1,
+            'Both Ilse panels must stay within the viewport: ' + JSON.stringify(split));
+          assert(split.heights.every(h => h >= (height <= 560 ? 40 : 44)),
+            'All service controls must retain usable tap targets: ' + JSON.stringify(split));
+          if (width <= 430) {
+            assert(s.bottom <= d.y + 1,
+              'Portrait places services above, separate from narrative: ' + JSON.stringify(split));
+          } else {
+            assert(s.right + 40 < d.x,
+              'Desktop and landscape keep services to the left of conversation with art between: '
+              + JSON.stringify(split));
+          }
+          const originalGreeting = await speech.locator('[data-chronicles-dialogue-answer]').innerText();
           assert.equal((await modal.locator('[data-chronicles-temple-gold]').innerText()).includes('40'), true);
           const purify = modal.locator('[data-chronicles-dialogue-choice="temple-purify"]');
           assert.equal(await purify.isDisabled(), true, 'No fictional diseases or payable cures');
@@ -115,6 +156,9 @@ try {
           const originalHp = (await page.locator('[data-audience-hp]').innerText()).split(',').map(Number);
           await modal.locator('[data-chronicles-dialogue-choice="temple-heal"]').click();
           await page.waitForFunction(() => document.querySelector('[data-audience-gold]')?.textContent === '35');
+          assert.match(await services.locator('[data-chronicles-temple-result]').innerText(), /cura las heridas/i);
+          assert.equal(await speech.locator('[data-chronicles-dialogue-answer]').innerText(), originalGreeting,
+            'Treatment feedback must stay with services, never replace Ilse narrative');
           const healed = (await page.locator('[data-audience-hp]').innerText()).split(',').map(Number);
           assert(healed[0] > originalHp[0] && healed[1] === 0,
             'Healing must not revive a fallen hero or charge without applying HP');
