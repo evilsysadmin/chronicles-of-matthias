@@ -97,7 +97,32 @@ try {
   // Switch to the mobile controls and issue an actual touch attack as well.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-chronicles-touch-action="attack"]').click();
+  // Saving in MM3 initiative is deliberately forbidden. Verify the lock,
+  // then finish the real encounter with party melee actions before saving.
+  const combatRail = page.locator('[data-chronicles-initiative="visible"]');
+  assert.equal(await combatRail.count(), 1, 'The authored crypt must enter real initiative');
   await page.getByLabel('Abrir menú de Chronicles').click();
+  assert.equal(await page.locator('[data-chronicles-menu-save]').isDisabled(), true,
+    'Manual save must remain disabled during initiative');
+  await page.getByRole('button', { name: 'Cerrar menú' }).click();
+  for (let action = 0; action < 32 && await combatRail.count(); action++) {
+    await page.waitForFunction(() => {
+      const rail = document.querySelector('[data-chronicles-initiative="visible"]');
+      return !rail || !rail.classList.contains('is-enemy-turn');
+    }, null, { timeout: 12000 });
+    if (!await combatRail.count()) break;
+    const actor = await combatRail.getAttribute('aria-label');
+    await page.keyboard.press('a');
+    await page.waitForFunction(previous => {
+      const rail = document.querySelector('[data-chronicles-initiative="visible"]');
+      return !rail || rail.getAttribute('aria-label') !== previous;
+    }, actor, { timeout: 12000 });
+  }
+  assert.equal(await combatRail.count(), 0,
+    'The real crypt encounter must finish before the manual checkpoint');
+  await page.getByLabel('Abrir menú de Chronicles').click();
+  assert.equal(await page.locator('[data-chronicles-menu-save]').isEnabled(), true,
+    'Saving must become available after victory');
   // A manual save may legally reuse the durable area-change checkpoint
   // when no gameplay state changed. Wait for the visible result, then inspect
   // the authoritative world the REAL Chronicles backend will reload.
@@ -136,10 +161,8 @@ try {
   }));
   assert.equal(saveMessage?.trim(), 'Partida guardada correctamente.',
     'Manual combat save was not acknowledged by the real game UI');
-  // Genuine authored enemy damage OR initiative. Never substitute a fake hit.
-  assert.ok((typeof enemyHp === 'number' && enemyHp < 5)
-    || (typeof initiative === 'string' && initiative.length > 10),
-  'No real enemy damage or initiative persisted after the crypt attacks');
+  // Victory must be real, not inferred from a cosmetic attack animation.
+  assert.equal(enemyHp, 0, 'The authored pawn must be defeated before saving');
   assert.deepEqual(errors, [], 'Browser exceptions during live combat');
   // F5 must recover the SAME server checkpoint, not a local copy or a
   // newly created expedition. Capture bootstrap before the reload so an
