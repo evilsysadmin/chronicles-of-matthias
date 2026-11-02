@@ -120,14 +120,16 @@ export function chroniclesMaterialEnvironmentForMapId(mapId = '') {
   // A map named after a town can still be a crypt, mine or sewer floor.
   // Match specific biomes before broad settlement/wilderness place names.
   if (/(cistern|water|flood|canal)/.test(id)) return 'cave-water';
-  if (/(sewer)/.test(id)) return 'sewer-masonry';
-  if (/(cave|cavern|grotto|mine|mountain|tunnel|underground)/.test(id)) return 'cave';
+  // Procedural Spanish map ids must retain their biome on deeper floors,
+  // even when they are not in the authored MAP_ENVIRONMENT catalog.
+  if (/(sewer|(?:^|[-_])alcantarillas?(?:[-_]|$))/.test(id)) return 'sewer-masonry';
+  if (/(cave|cavern|grotto|mine|mountain|tunnel|underground|(?:^|[-_])(?:cuevas?|grutas?|minas?|tuneles?)(?:[-_]|$))/.test(id)) return 'cave';
   if (/(foundry|forge|iron|smelter)/.test(id)) return 'iron-foundry';
   if (/(glass|obsidian)/.test(id)) return 'black-glass';
   if (/(ash|ruin|burnt|charred)/.test(id)) return 'ash-ruin';
   if (/(tower|rampart|courtyard|exterior|wall|battlement)/.test(id)) return 'exterior';
   if (/(archive|basilica|gallery|castle|palace|chapel|keep|hall|library)/.test(id)) return 'castle-interior';
-  if (/(crypt|dungeon|vault|tomb|catacomb)/.test(id)) return 'dungeon';
+  if (/(crypt|dungeon|vault|tomb|catacomb|(?:^|[-_])criptas?(?:[-_]|$))/.test(id)) return 'dungeon';
   if (/(swordhaven|village|hamlet|town|settlement|outskirts|forest|road|woodland)/.test(id)) return 'exterior';
   return 'dungeon';
 }
