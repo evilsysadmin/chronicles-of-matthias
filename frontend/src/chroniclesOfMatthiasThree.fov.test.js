@@ -4,8 +4,26 @@ import { chroniclesFirstPersonFov } from './chroniclesOfMatthiasThree.js';
 const hfov = (vfov, aspect) => 2 * Math.atan(Math.tan((vfov * Math.PI) / 360) * aspect) * (180 / Math.PI);
 
 describe('Chronicles first-person field of view', () => {
-  it('keeps 67° vertical on 4:3, 16:9 and portrait phones', () => {
-    for (const aspect of [390 / 844, 1, 4 / 3, 1.6]) expect(chroniclesFirstPersonFov(aspect)).toBe(67);
+  it('keeps the original lens for dungeons, wide town views and desktop', () => {
+    for (const aspect of [390 / 844, 1, 4 / 3, 1.6]) {
+      expect(chroniclesFirstPersonFov(aspect)).toBe(67);
+    }
+    for (const aspect of [0.78, 1, 4 / 3, 1.6]) {
+      expect(chroniclesFirstPersonFov(aspect, { settlement: true })).toBe(67);
+    }
+  });
+
+  it('reveals more of shop facades only in portrait settlements, with a smooth lens transition', () => {
+    for (const aspect of [360 / 800, 390 / 844, 430 / 932]) {
+      const vfov = chroniclesFirstPersonFov(aspect, { settlement: true });
+      expect(vfov).toBe(79);
+      expect(hfov(vfov, aspect)).toBeGreaterThan(hfov(67, aspect) + 6);
+      expect(hfov(vfov, aspect)).toBeLessThan(45);
+      expect(chroniclesFirstPersonFov(aspect)).toBe(67);
+    }
+    const midway = chroniclesFirstPersonFov(0.64, { settlement: true });
+    expect(midway).toBeGreaterThan(67);
+    expect(midway).toBeLessThan(79);
   });
 
   it('caps the horizontal FOV on wide desktop canvases instead of a fisheye', () => {
