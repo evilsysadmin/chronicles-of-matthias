@@ -729,8 +729,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     : new THREE.Fog(skyTint, 55, Math.max(width, height) * CELL * 1.65);
   const sunDirection = new THREE.Vector3(-25, 30, -65).normalize();
   scene.add(createSwordhavenSkyDome(sunDirection));
-  scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, 1.4));
-  const sunlight = new THREE.DirectionalLight(0xffe6ba, coarsePointer ? 1.18 : 1.55);
+  // Book One shopfronts need a directional key to reveal dressed stone,
+  // projecting eaves and recessed windows. Leave wilderness lighting intact.
+  // Mobile keeps its existing no-shadow budget and the same light count.
+  const skyFill = settlement ? 1.12 : 1.4;
+  const sunKey = settlement ? (coarsePointer ? 1.56 : 1.88)
+    : (coarsePointer ? 1.18 : 1.55);
+  scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, skyFill));
+  const sunlight = new THREE.DirectionalLight(0xffe6ba, sunKey);
   sunlight.name = 'chronicles-campaign-sun';
   sunlight.position.copy(sunDirection).multiplyScalar(75);
   sunlight.castShadow = !coarsePointer;

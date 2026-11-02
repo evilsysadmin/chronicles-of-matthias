@@ -19,6 +19,30 @@ const demo = {
 
 describe('Chronicles file-authored exterior renderer', () => {
 
+  it.each([false, true])('gives Book One facades directional daylight at coarse=%s without changing wilderness', (coarsePointer) => {
+    const town = new THREE.Scene();
+    buildChroniclesCampaignExterior(town, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+        width: swordhavenFirstBook.grid[0].length, height: swordhavenFirstBook.grid.length,
+        center: { x: 9, y: 7 }, grid: swordhavenFirstBook.grid, content: [],
+        landscape: swordhavenFirstBook.landscape,
+      },
+    });
+    const wild = new THREE.Scene();
+    buildChroniclesCampaignExterior(wild, { coarsePointer, scenePlan: demo });
+    const fill = scene => scene.children.find(child => child.isHemisphereLight);
+    const sun = scene => scene.getObjectByName('chronicles-campaign-sun');
+    expect(fill(town).intensity).toBe(1.12);
+    expect(sun(town).intensity).toBe(coarsePointer ? 1.56 : 1.88);
+    expect(sun(town).intensity).toBeGreaterThan(fill(town).intensity);
+    expect(fill(wild).intensity).toBe(1.4);
+    expect(sun(wild).intensity).toBe(coarsePointer ? 1.18 : 1.55);
+    expect(sun(town).castShadow).toBe(!coarsePointer);
+    expect(sun(wild).castShadow).toBe(!coarsePointer);
+  });
+
   it.each([true, false])('gives the guardhouse its own cold ashlar walls and gable at coarse=%s', (coarsePointer) => {
     const grid = swordhavenFirstBook.grid;
     const content = [...swordhavenFirstBook.interactables, ...swordhavenFirstBook.exits]
