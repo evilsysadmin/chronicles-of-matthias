@@ -52,11 +52,13 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.waitForFunction(() => Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
-  // "Otra aventura" starts in legacy Swordhaven. Its south gate is
-  // immediately behind the spawn and transports to the authored crypt
-  // with a REAL corrupted pawn two tiles east (never stubbed).
-  await page.locator('.chronicles-save-menu__more > summary').click();
-  await page.getByRole('button', { name: /Otra aventura/ }).click();
+  // A new temporary account must use the real primary "Nueva expedición"
+  // action. The legacy "Otra aventura" menu item no longer exists.
+  // Swordhaven's south gate transports to the authored crypt with a REAL
+  // corrupted pawn two tiles east (never stubbed).
+  const start = page.locator('[data-chronicles-primary-action="new"] > button.is-primary');
+  await start.waitFor({ state: 'visible', timeout: 30_000 });
+  await start.click();
   await page.locator('[data-chronicles-character-setup="choice"]').waitFor();
   const newRun = page.waitForResponse(r => r.request().method() === 'POST'
     && new URL(r.url()).pathname === '/api/chronicles/runs' && r.status() === 201,
