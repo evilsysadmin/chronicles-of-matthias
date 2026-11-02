@@ -5,6 +5,7 @@ import {
   chroniclesExteriorExitKind,
   chroniclesTownWallPassage,
   buildChroniclesTownWallOpening,
+  buildChroniclesTownGateVista,
 } from './chroniclesExteriorExitArt.js';
 
 const destinations = {
@@ -89,6 +90,27 @@ describe('walled city exits', () => {
       .toMatchObject({ wallX: 0, wallY: 3, yaw: Math.PI / 2 });
     expect(chroniclesTownWallPassage(exit(4, 3), grid)).toBeNull();
     expect(chroniclesTownWallPassage(exit(4, 1, 'sewer-grate'), grid)).toBeNull();
+  });
+
+  it.each([true, false])('fills only the exterior vista at coarse=%s, without adding a collider', (coarsePointer) => {
+    const root = new THREE.Group();
+    const earth = new THREE.MeshStandardMaterial();
+    const vista = buildChroniclesTownGateVista(root, { earth, coarsePointer });
+    expect(vista.name).toBe('chronicles-town-gate-outside-vista');
+    expect(vista.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(vista.children).toHaveLength(3);
+    const meadow = vista.getObjectByName('chronicles-town-gate-outer-meadow');
+    expect(meadow.material).toBe(earth);
+    expect(meadow.position.z).toBeLessThan(-10);
+    expect(meadow.geometry.parameters.width).toBeGreaterThan(20);
+    const hills = vista.children.filter(child => child.name === 'chronicles-town-gate-distant-hill');
+    expect(hills).toHaveLength(2);
+    expect(hills[0].material).toBe(hills[1].material);
+    expect(hills[0].geometry).toBe(hills[1].geometry);
+    expect(hills[0].position.x).toBeLessThan(0);
+    expect(hills[1].position.x).toBeGreaterThan(0);
+    expect(vista.children.every(child => child.userData.chroniclesDecorativeOnly)).toBe(true);
+    expect(root.userData.chroniclesContentId).toBeUndefined();
   });
 
   it('leaves a physical gap in the rendered masonry mesh, with a high lintel', () => {

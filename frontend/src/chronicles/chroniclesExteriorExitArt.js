@@ -57,6 +57,47 @@ export function buildChroniclesTownWallOpening(root, {
   return root;
 }
 
+
+/**
+ * Decorative ground and low, distant hills behind a town gate. Without this
+ * small continuation the causeway appears to end in a flat blue void.
+ * Coordinates are local to the exit: -Z always points outside the wall,
+ * regardless of which perimeter edge owns the exit. The authored map remains
+ * the sole authority for movement and interaction.
+ */
+export function buildChroniclesTownGateVista(root, { earth, coarsePointer = false } = {}) {
+  if (!root?.isGroup || !earth?.isMaterial) return null;
+  const vista = new THREE.Group();
+  vista.name = 'chronicles-town-gate-outside-vista';
+  vista.userData.chroniclesDecorativeOnly = true;
+
+  // Extend the meadow below the existing stone causeway, not over its surface.
+  const meadow = new THREE.Mesh(new THREE.BoxGeometry(26, 0.10, 28), earth);
+  meadow.name = 'chronicles-town-gate-outer-meadow';
+  meadow.position.set(0, -0.105, -19);
+  meadow.receiveShadow = true;
+  meadow.userData.chroniclesDecorativeOnly = true;
+  vista.add(meadow);
+
+  // Two restrained silhouettes, low enough to keep the sky and open gateway.
+  // Shared geometry/material: three meshes total, including the meadow.
+  const hillGeometry = new THREE.SphereGeometry(1, coarsePointer ? 10 : 16, 8);
+  const hillMaterial = new THREE.MeshStandardMaterial({
+    color: 0x839779, roughness: 1, flatShading: true,
+  });
+  for (const side of [-1, 1]) {
+    const hill = new THREE.Mesh(hillGeometry, hillMaterial);
+    hill.name = 'chronicles-town-gate-distant-hill';
+    hill.position.set(side * 8.5, -0.35, -28);
+    hill.scale.set(9.2, 2.7, 5.4);
+    hill.receiveShadow = true;
+    hill.userData.chroniclesDecorativeOnly = true;
+    vista.add(hill);
+  }
+  root.add(vista);
+  return vista;
+}
+
 function box(root, name, dimensions, position, surface, shadow = false) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...dimensions), surface);
   mesh.name = name;
