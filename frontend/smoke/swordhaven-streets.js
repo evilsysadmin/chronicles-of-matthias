@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import swordhaven from '../src/chronicles/maps/swordhaven-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
+import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
 
 const VIEWS = Object.freeze({
   // The actual city exit from a walkable street, framed at human eye level.
@@ -91,7 +92,11 @@ try {
   });
   renderer.setPixelRatio(1); // Comparable output regardless of CI screen density.
   renderer.setSize(innerWidth, innerHeight, false);
-  const camera = new THREE.PerspectiveCamera(67, innerWidth / innerHeight, 0.1, 180);
+  // Use the production town lens: QA screenshots must reflect the actual mobile framing.
+  const camera = new THREE.PerspectiveCamera(
+    chroniclesFirstPersonFov(innerWidth / innerHeight, { settlement: true }),
+    innerWidth / innerHeight, 0.1, 180,
+  );
   const worldX = (chosen.x - center.x) * 4;
   const worldZ = (chosen.y - center.y) * 4;
   const [dx, dy] = direction[chosen.heading];
@@ -222,6 +227,7 @@ try {
   }
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
+    cameraFov: String(camera.fov),
     mapId: swordhaven.id,
     tieredPlazaFountain: String(Boolean(
       fountain?.userData != null
