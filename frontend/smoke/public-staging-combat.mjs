@@ -112,7 +112,17 @@ try {
     }, null, { timeout: 12000 });
     if (!await combatRail.count()) break;
     const actor = await combatRail.getAttribute('aria-label');
-    await page.keyboard.press('a');
+    // The opening volley may force initiative from two cells away. In MM3
+    // the party cannot move during combat and melee must not reach that far.
+    // Block until the real enemy spends its own turn closing the distance.
+    const attackButton = page.locator('[data-chronicles-touch-action="attack"]');
+    const canMelee = await attackButton.getAttribute('data-melee-ready') === 'true'
+      && await attackButton.isEnabled();
+    const actionKey = canMelee ? 'a' : 'b';
+    console.log('CHRONICLES_PUBLIC_COMBAT_ACTION ' + JSON.stringify({
+      actor, action: canMelee ? 'melee' : 'block',
+    }));
+    await page.keyboard.press(actionKey);
     await page.waitForFunction(previous => {
       const rail = document.querySelector('[data-chronicles-initiative="visible"]');
       return !rail || rail.getAttribute('aria-label') !== previous;
