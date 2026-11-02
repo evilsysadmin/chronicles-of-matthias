@@ -55,6 +55,28 @@ export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } =
     fascia.setMatrixAt(index, dummy.matrix);
   }
   fascia.instanceMatrix.needsUpdate = true;
-  dock.add(batten, fascia);
+
+  // Three exposed oak rafters support the cedar canopy from below. Their
+  // sloped undersides add a warehouse-like shadow line at street height
+  // without another material, light, collider or draw call per beam.
+  // They remain inside the original solid 3x3 building footprint.
+  const rafters = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(width - 0.18, 0.15, 0.17),
+    mats.timber, 3,
+  );
+  rafters.name = 'store-loading-dock-oak-underside-rafters';
+  rafters.position.copy(canopy.position);
+  rafters.castShadow = !coarse;
+  rafters.receiveShadow = true;
+  rafters.userData.chroniclesDecorativeOnly = true;
+  for (const [index, z] of [-depth * 0.32, 0, depth * 0.32].entries()) {
+    // Rotate the local roof normal, so each beam touches the pitched soffit.
+    dummy.position.set(0.16 * s, -0.16 * c, z);
+    dummy.rotation.set(0, 0, pitch);
+    dummy.updateMatrix();
+    rafters.setMatrixAt(index, dummy.matrix);
+  }
+  rafters.instanceMatrix.needsUpdate = true;
+  dock.add(batten, fascia, rafters);
   return batten;
 }
