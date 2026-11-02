@@ -1,2 +1,15 @@
 frontend/sim-report.md
 frontend/sim-debug.log
+
+# Local dependencies, credentials and generated verification output.
+node_modules/
+.env
+/.artifacts/
+/coverage/
+/frontend/coverage/
+/test-results/
+/playwright-report/
+/frontend/test-results/
+/frontend/playwright-report/
+__pycache__/
+*.py[cod]
