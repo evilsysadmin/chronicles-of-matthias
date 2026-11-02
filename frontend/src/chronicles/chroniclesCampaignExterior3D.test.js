@@ -34,8 +34,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     buildChroniclesCampaignExterior(wild, { coarsePointer, scenePlan: demo });
     const fill = scene => scene.children.find(child => child.isHemisphereLight);
     const sun = scene => scene.getObjectByName('chronicles-campaign-sun');
-    expect(fill(town).intensity).toBe(1.24);
-    expect(sun(town).intensity).toBe(coarsePointer ? 1.38 : 1.72);
+    expect(fill(town).intensity).toBe(1.12);
+    expect(sun(town).intensity).toBe(coarsePointer ? 1.56 : 1.88);
     expect(sun(town).intensity).toBeGreaterThan(fill(town).intensity);
     expect(fill(wild).intensity).toBe(1.4);
     expect(sun(wild).intensity).toBe(coarsePointer ? 1.18 : 1.55);
