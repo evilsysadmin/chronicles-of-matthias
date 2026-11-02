@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 const source = readFileSync('frontend/smoke/public-staging-combat.mjs', 'utf8');
 test('only shared SSO handshake is mocked; crypt enemy and damage stay real', () => {
-  for (const k of ["'swordhaven-square'", "'crypt-eight-squares'", "'ArrowDown'", "'ArrowUp'", "'s'", "'a'",
+  for (const k of ["'crypt-eight-squares'", "'ArrowUp'", "'s'", "'a'",
     '[data-chronicles-touch-action="attack"]', "flags.enemyHp", "__chrRuntime.initiative",
     "CHRONICLES_PUBLIC_COMBAT_OK", "CHRONICLES_SOURCE_SHA",
     "CHRONICLES_STAGING_INVITE_CODE", "'/auth/delete-account'"]) {
@@ -15,10 +15,13 @@ test('only shared SSO handshake is mocked; crypt enemy and damage stay real', ()
   assert.doesNotMatch(source, /route\.fulfill\([^)]*enemyHp/);
 });
 
-test('public combat entry tracks the canonical new-expedition UI and captures failures', () => {
+test('public combat creates an official crypt run and resumes it via Home', () => {
   const menu = readFileSync('frontend/src/components/ChroniclesSaveMenu.jsx', 'utf8');
   assert.ok(menu.includes('data-chronicles-primary-action={resume ? \'continue\' : \'new\'}'));
-  assert.ok(source.includes('[data-chronicles-primary-action="new"] button.is-primary'));
+  assert.ok(source.includes("body: JSON.stringify({ mapId: 'crypt-eight-squares' })"));
+  assert.ok(source.includes("Authorization: 'Bearer ' + token"));
+  assert.ok(source.includes('[data-chronicles-primary-action="continue"] button.is-primary'));
+  assert.doesNotMatch(source, /assert\.equal\(game\.currentMapId, 'swordhaven-square'/);
   assert.doesNotMatch(source, /getByRole\('button', \{ name: \/Otra aventura\//);
   assert.ok(source.includes("chronicles-combat-failure.png"));
   assert.ok(source.includes('if (!completed) await page?.screenshot'));
