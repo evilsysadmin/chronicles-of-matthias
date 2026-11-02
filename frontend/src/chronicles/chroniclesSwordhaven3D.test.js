@@ -245,6 +245,27 @@ describe('Swordhaven modular real-time 3D', () => {
     }
   });
 
+  it('gives each canonical shop distinct corner-stone tones without new geometry', () => {
+    for (const coarsePointer of [true, false]) {
+      const scene = new THREE.Scene();
+      buildSwordhavenScene(scene, { scenePlan: { content: [] }, coarsePointer });
+      const firstCourse = SWORDHAVEN_BUILDINGS.map(({ id }) => {
+        const house = scene.getObjectByName('swordhaven-building-' + id);
+        const stones = house.getObjectByName('corner-dressed-stone-courses');
+        expect(stones).toBeInstanceOf(THREE.InstancedMesh);
+        expect(stones.count).toBeGreaterThan(4);
+        expect(stones.instanceColor).toBeTruthy();
+        const first = new THREE.Color();
+        const second = new THREE.Color();
+        stones.getColorAt(0, first);
+        stones.getColorAt(4, second);
+        expect(first.equals(second)).toBe(false);
+        return first.getHex();
+      });
+      expect(new Set(firstCourse).size).toBe(SWORDHAVEN_BUILDINGS.length);
+    }
+  });
+
   it('keeps dressed stone, side windows and distinctive rooflines on the houses', () => {
     for (const coarsePointer of [true, false]) {
       const scene = new THREE.Scene();
