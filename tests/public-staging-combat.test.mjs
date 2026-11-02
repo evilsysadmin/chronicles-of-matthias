@@ -48,6 +48,17 @@ test('public B1 respects the combat save lock and defeats the real pawn before F
   assert.ok(source.includes('Saving must become available after victory'));
 });
 
+test('public B1 blocks out-of-range heroes instead of fabricating a melee hit', () => {
+  const ui = readFileSync('frontend/src/components/ChroniclesOfMatthias.jsx', 'utf8');
+  assert.ok(ui.includes('data-melee-ready={!touchWillShoot ? String(meleeReady) : undefined}'));
+  assert.ok(ui.includes('data-chronicles-touch-action="block"'));
+  assert.ok(source.includes("const actionKey = canMelee ? 'a' : 'b'"));
+  assert.ok(source.includes("await attackButton.getAttribute('data-melee-ready') === 'true'"));
+  assert.ok(source.includes('await attackButton.isEnabled()'));
+  assert.ok(source.includes('await page.keyboard.press(actionKey)'));
+  assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_ACTION'));
+});
+
 test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
   const guard = source.indexOf('try {');
   const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
