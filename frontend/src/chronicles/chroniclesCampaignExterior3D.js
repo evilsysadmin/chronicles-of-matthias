@@ -16,7 +16,7 @@ import { dressSwordhavenRoofRuns, dressSwordhavenRoofChimneys, swordhavenRoofRis
 import { dressSwordhavenDormers } from './chroniclesSwordhavenDormers.js';
 import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
-import { buildChroniclesExteriorExit, buildChroniclesTownWallOpening, chroniclesExteriorExitKind, chroniclesTownWallPassage } from './chroniclesExteriorExitArt.js';
+import { buildChroniclesExteriorExit, buildChroniclesTownGateVista, buildChroniclesTownWallOpening, chroniclesExteriorExitKind, chroniclesTownWallPassage } from './chroniclesExteriorExitArt.js';
 
 // File-authored exterior topology: no independent collision map or invisible
 // decorative blockers. Impassable cells alone own boulders/low walls; every
@@ -1205,6 +1205,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
         roadThroughGate.position.set(0, 0.015, -CELL * 1.75);
         roadThroughGate.receiveShadow = true;
         root.add(roadThroughGate);
+        // Pure scenery beyond the north/south/east/west wall: the road now
+        // leads into a meadow and distant relief instead of empty sky.
+        if (scenePlan.mapId === 'swordhaven-first-book') {
+          buildChroniclesTownGateVista(root, { earth, coarsePointer });
+        }
         root.userData.chroniclesExitGatewayStyle = 'settlement';
       } else {
         if (entry.position.x <= 1 || entry.position.x >= width - 2) root.rotation.y = Math.PI / 2;
