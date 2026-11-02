@@ -28,9 +28,11 @@ describe('Swordhaven forge masonry', () => {
     expect(forge).toBeTruthy();
     expect(tavern).toBeTruthy();
     const walls = forge.getObjectByName('timber-and-stone-walls');
-    expect(walls.material.color.getHex()).toBe(0x958171);
+    expect(walls.material.color.getHex()).toBe(0xb39b86);
     expect(walls.material.map).toBe(swordhavenSurfaceTexture('masonry'));
     expect(walls.material.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
+    expect(walls.material.normalScale.x).toBeCloseTo(0.53);
+    expect(walls.material.normalScale.y).toBeCloseTo(0.53);
     expect(walls.material.roughness).toBeCloseTo(0.98);
     expect(forge.getObjectByName('roof-gable-1').material).toBe(walls.material);
     expect(forge.getObjectByName('roof-gable--1').material).toBe(walls.material);
