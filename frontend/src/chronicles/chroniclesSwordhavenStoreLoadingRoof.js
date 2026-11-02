@@ -77,6 +77,26 @@ export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } =
     rafters.setMatrixAt(index, dummy.matrix);
   }
   rafters.instanceMatrix.needsUpdate = true;
-  dock.add(batten, fascia, rafters);
+
+  // The outer eave now has a continuous oak lip, visibly separating the
+  // pitched cedar roof from its shaded loading platform in oblique views.
+  // One short decorative mesh follows the existing roof pitch; its edge
+  // remains inside the same blocked building footprint.
+  const eave = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.24, depth - 0.10), mats.timber,
+  );
+  eave.name = 'store-loading-dock-oak-outer-eave';
+  const edgeX = width / 2 - 0.12;
+  const belowRoof = -0.14;
+  eave.position.set(
+    canopy.position.x + edgeX * c - belowRoof * s,
+    canopy.position.y + edgeX * s + belowRoof * c,
+    canopy.position.z,
+  );
+  eave.rotation.z = pitch;
+  eave.castShadow = !coarse;
+  eave.receiveShadow = true;
+  eave.userData.chroniclesDecorativeOnly = true;
+  dock.add(batten, fascia, rafters, eave);
   return batten;
 }

@@ -41,6 +41,14 @@ describe('Swordhaven provisions loading-dock roof', () => {
     expect(zPositions[0]).toBeLessThan(-1.7);
     expect(zPositions[1]).toBe(0);
     expect(zPositions[2]).toBeGreaterThan(1.7);
+    const eave = dock.getObjectByName('store-loading-dock-oak-outer-eave');
+    expect(eave).toBeInstanceOf(THREE.Mesh);
+    expect(eave.material).toBe(mats.timber);
+    expect(eave.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(eave.rotation.z).toBeCloseTo(canopy.rotation.z);
+    expect(eave.position.x).toBeGreaterThan(canopy.position.x + 0.5);
+    expect(eave.position.y).toBeLessThan(canopy.position.y - 0.2);
+    expect(new THREE.Box3().setFromObject(eave).max.x).toBeLessThan(6);
     const bounds = new THREE.Box3().setFromObject(rafters);
     expect(bounds.max.x).toBeLessThan(6);
     expect(bounds.min.y).toBeGreaterThan(3.1);
