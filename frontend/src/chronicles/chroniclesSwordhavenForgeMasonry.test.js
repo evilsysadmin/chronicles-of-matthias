@@ -66,6 +66,17 @@ describe('Swordhaven forge masonry', () => {
     expect(arch.position.z).toBeLessThan(4.5);
     expect(portal.children.every(part => part.userData.chroniclesDecorativeOnly)).toBe(true);
     expect(tavern.getObjectByName('forge-kiln-brick-entry-arch')).toBeFalsy();
+    // Forge panes have their own restrained ember warmth, not the generic
+    // merchant glazing. The original two window meshes remain in place.
+    const forgeWindows = forge.children.filter(part => part.name === 'warm-glass-window');
+    expect(forgeWindows).toHaveLength(2);
+    for (const pane of forgeWindows) {
+      expect(pane.material.color.getHex()).toBe(0x805737);
+      expect(pane.material.emissive.getHex()).toBe(0xe8832d);
+      expect(pane.material.emissiveIntensity).toBeCloseTo(0.52);
+    }
+    expect(tavern.children.find(part => part.name === 'warm-glass-window')?.material)
+      .not.toBe(forgeWindows[0].material);
     expect(forge.getObjectByName('shop-door')).toBeTruthy();
     expect(forge.getObjectByName('forge-roof-smokestack')).toBeTruthy();
     expect(swordhaven.grid[4][5]).toBe('.');
