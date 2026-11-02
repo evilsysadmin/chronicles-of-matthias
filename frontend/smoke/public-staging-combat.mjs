@@ -146,6 +146,35 @@ try {
     || (typeof initiative === 'string' && initiative.length > 10),
   'No real enemy damage or initiative persisted after the crypt attacks');
   assert.deepEqual(errors, [], 'Browser exceptions during live combat');
+  // F5 must recover the SAME server checkpoint, not a local copy or a
+  // newly created expedition. Capture bootstrap before the reload so an
+  // automatic resume and a Home -> Continuar flow are both supported.
+  const restoredBootstrap = page.waitForResponse(r =>
+    r.request().method() === 'GET'
+      && new URL(r.url()).pathname === '/api/chronicles/runs/' + game.runId + '/bootstrap'
+      && r.url().startsWith(api) && r.status() === 200,
+  { timeout: 30_000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() =>
+    Boolean(document.querySelector('[data-chronicles-save-menu="home"]')
+      || document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')),
+    null, { timeout: 30_000 });
+  if (await page.locator('[data-chronicles-save-menu="home"]').isVisible()) {
+    await page.getByRole('button', { name: /Continuar expedición/ }).click();
+  }
+  const resumed = await (await restoredBootstrap).json();
+  assert.equal(resumed.runId, game.runId, 'F5 resumed a different expedition');
+  assert.equal(resumed.currentMapId, saved.currentMapId, 'F5 lost the crypt');
+  for (const key of ['x', 'y', 'direction', 'turns', 'initiative']) {
+    assert.deepEqual(resumed.worldFlags?.['__chrRuntime.' + key], flags['__chrRuntime.' + key],
+      'F5 lost saved combat field: ' + key);
+  }
+  const restoredCrypt = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
+  await restoredCrypt.waitFor({ state: 'visible', timeout: 30_000 });
+  assert.equal(Number(await restoredCrypt.getAttribute('data-chronicles-turns')),
+    Number(flags['__chrRuntime.turns']), 'F5 added or lost a combat turn');
+  assert.deepEqual(errors, [], 'Browser exceptions during combat restore');
+  console.log('CHRONICLES_PUBLIC_COMBAT_RESTORE_OK crypt-eight-squares same-run');
   console.log('CHRONICLES_PUBLIC_COMBAT_OK crypt-eight-squares real-enemy');
   await context.close();
 } finally {

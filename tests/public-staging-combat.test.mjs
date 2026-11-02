@@ -44,4 +44,10 @@ test('combat actions wait for actual crypt render and a real turn', () => {
   assert.ok(source.indexOf("page.waitForFunction(previous") < source.indexOf("page.keyboard.press('ArrowUp')"));
   assert.ok(source.includes('assert.equal(afterVolleyTurns, cryptTurns + 1'),
     'The live browser smoke must reject a duplicated volley exploration tick');
+  assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_RESTORE_OK'),
+    'The public combat smoke must verify browser reload after the real save');
+  assert.ok(source.includes("await page.reload({ waitUntil: 'domcontentloaded' })"));
+  assert.ok(source.includes("assert.equal(resumed.runId, game.runId"));
+  assert.ok(source.includes("Number(flags['__chrRuntime.turns'])"));
+  assert.ok(source.includes("'/bootstrap'") || source.includes(" + '/bootstrap'"));
 });
