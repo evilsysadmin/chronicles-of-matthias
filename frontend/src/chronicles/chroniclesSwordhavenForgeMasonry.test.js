@@ -50,8 +50,11 @@ describe('Swordhaven forge masonry', () => {
       forgeCourses.getColorAt(level * 4, tint);
       expect(tint.getHex()).toBe(expected);
     }
+    // The inn now keeps its own warm brick-coloured corner stones rather
+    // than reverting to the generic pale merchant ashlar.
     tavernCourses.getColorAt(0, tint);
-    expect(tint.getHex()).toBe(0xb5ab9a);
+    expect(tint.getHex()).toBe(0xc1a28c);
+    expect(tint.getHex()).not.toBe(0x776a60);
     const portal = forge.getObjectByName('forge-kiln-brick-entry-arch');
     expect(portal?.userData.chroniclesDecorativeOnly).toBe(true);
     expect(portal.children.filter(part => part.name === 'forge-portal-kiln-brick-pier'))
