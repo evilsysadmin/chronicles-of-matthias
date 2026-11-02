@@ -27,6 +27,15 @@ test('public combat creates an official crypt run and resumes it via Home', () =
   assert.ok(source.includes('if (!completed) await page?.screenshot'));
 });
 
+test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
+  const guard = source.indexOf('\\ntry {\\n');
+  const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
+  const cleanup = source.lastIndexOf('\\n} finally {');
+  const deleteAccount = source.indexOf("await fetch(api + '/auth/delete-account'");
+  assert.ok(guard >= 0 && guard < create, 'Crypt creation must be inside the try block');
+  assert.ok(create < cleanup && cleanup < deleteAccount, 'Creation failures must reach account deletion');
+});
+
 test('public crypt browser smoke passes native Node parse check before release', () => {
   const checked = spawnSync(process.execPath, ['--check', 'frontend/smoke/public-staging-combat.mjs'],
     { encoding: 'utf8', timeout: 10000 });
