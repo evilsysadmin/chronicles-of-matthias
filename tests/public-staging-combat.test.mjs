@@ -65,7 +65,10 @@ test('initiative and save lock are verified before any potentially lethal attack
   const combatActions = source.indexOf("let usedTouch = false");
   assert.ok(initiative >= 0 && initiative < saveLock && saveLock < combatActions,
     'Combat must be observed before attacks can end it');
-  assert.doesNotMatch(source.slice(0, initiative), /page\\.keyboard\\.press\\('a'\\)|touch-action="attack"'\\]\\)\\.click/);
+  assert.ok(!source.slice(0, initiative).includes("await page.keyboard.press('a')"),
+    'Do not issue a melee attack before observing initiative');
+  assert.ok(!source.slice(0, initiative).includes("await page.locator('[data-chronicles-touch-action=\\\"attack\\\"]').click()"),
+    'Do not issue a touch attack before observing initiative');
   assert.ok(source.includes("assert.ok(usedTouch, 'The encounter must exercise a real mobile combat control')"));
   assert.ok(source.includes("await touchAction.click()"));
   assert.ok(source.includes("await page.keyboard.press(actionKey)"));
