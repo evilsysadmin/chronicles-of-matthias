@@ -1258,10 +1258,16 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // while retaining the original door, solid footprint and interactions.
     const watchRecess = isWatch
       ? material(0x293039, { roughness: 0.98, metalness: 0.06 }) : null;
+    // Low, steady furnace warmth behind the smithy's front panes. This is
+    // emissive glass, not a new light source: it leaves scene lighting,
+    // shadows, interaction targets and the authored walk grid untouched.
+    const forgeGlazing = isForge ? material(0x49362c, {
+      emissive: 0xa54c20, emissiveIntensity: 0.36, roughness: 0.88,
+    }) : null;
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;
       mesh(root, new THREE.BoxGeometry(1.37, 1.23, 0.11),
-        isWatch ? watchRecess : mats.window,
+        isWatch ? watchRecess : isForge ? forgeGlazing : mats.window,
         isWatch ? 'watchhouse-front-dark-recess' : 'warm-glass-window',
         [x, 2.75, front]);
       for (const dx of [-0.70, 0.70]) mesh(root, new THREE.BoxGeometry(0.10, 1.38, 0.18),
