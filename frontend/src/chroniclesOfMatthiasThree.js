@@ -81,16 +81,24 @@ function worldForCell(x, y, center = DEFAULT_SCENE_CENTER) {
 // while still legitimately blocking their runtime cell.
 const CHRONICLES_FIRST_PERSON_VFOV = 67;
 const CHRONICLES_FIRST_PERSON_MAX_HFOV = 96;
+const CHRONICLES_SETTLEMENT_PORTRAIT_MAX_VFOV = 79;
 
 // Vertical field of view for a viewport aspect. A fixed 67° vertical FOV on a
 // wide desktop canvas (≈2.5:1) opens ~117° horizontally: buildings at the
 // screen edges stretch and look taller and nearer than the ones ahead. Cap
 // the horizontal FOV so wide screens see more world, not a fisheye.
-export function chroniclesFirstPersonFov(aspect) {
+export function chroniclesFirstPersonFov(aspect, { settlement = false } = {}) {
   const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
+  // A portrait phone otherwise sees barely 34° horizontally: the distinctive
+  // shop roofs and flanking bays are cut off. Open the settlement lens gently,
+  // without changing dungeon targeting, landscape or desktop composition.
+  const portraitMix = settlement ? THREE.MathUtils.clamp((0.78 - safeAspect) / 0.28, 0, 1) : 0;
+  const preferredV = THREE.MathUtils.lerp(
+    CHRONICLES_FIRST_PERSON_VFOV, CHRONICLES_SETTLEMENT_PORTRAIT_MAX_VFOV, portraitMix,
+  );
   const maxHalfH = THREE.MathUtils.degToRad(CHRONICLES_FIRST_PERSON_MAX_HFOV / 2);
   const cappedV = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(maxHalfH) / safeAspect));
-  return Math.min(CHRONICLES_FIRST_PERSON_VFOV, cappedV);
+  return Math.min(preferredV, cappedV);
 }
 
 export function chroniclesEnemyFacingYaw(enemyCell, partyCell) {
@@ -815,7 +823,9 @@ export function createChroniclesOfMatthiasGame(host, {
     if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.fov = chroniclesFirstPersonFov(camera.aspect);
+    camera.fov = chroniclesFirstPersonFov(camera.aspect, {
+      settlement: scenePlan?.regionKind === 'settlement',
+    });
     camera.updateProjectionMatrix();
     scheduler.invalidate(0);
   }
