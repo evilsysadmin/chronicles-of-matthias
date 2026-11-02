@@ -24,10 +24,12 @@ assert.equal(created.status, 201);
 const token = (await created.json()).token;
 assert.ok(token);
 let browser;
+let page;
+let completed = false;
 try {
   browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page = await context.newPage();
+  page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route('https://api-staging.chess-studio.shadowops.dpdns.org/api/**', async route => {
@@ -52,11 +54,10 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.waitForFunction(() => Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
-  // "Otra aventura" starts in legacy Swordhaven. Its south gate is
-  // immediately behind the spawn and transports to the authored crypt
-  // with a REAL corrupted pawn two tiles east (never stubbed).
-  await page.locator('.chronicles-save-menu__more > summary').click();
-  await page.getByRole('button', { name: /Otra aventura/ }).click();
+  // Use the canonical new-expedition action instead of an obsolete
+  // "Otra aventura" copy label. Its Swordhaven south exit leads to the
+  // authored crypt with a real corrupted pawn (never stubbed).
+  await page.locator('[data-chronicles-primary-action="new"] button.is-primary').click();
   await page.locator('[data-chronicles-character-setup="choice"]').waitFor();
   const newRun = page.waitForResponse(r => r.request().method() === 'POST'
     && new URL(r.url()).pathname === '/api/chronicles/runs' && r.status() === 201,
@@ -176,8 +177,14 @@ try {
   assert.deepEqual(errors, [], 'Browser exceptions during combat restore');
   console.log('CHRONICLES_PUBLIC_COMBAT_RESTORE_OK crypt-eight-squares same-run');
   console.log('CHRONICLES_PUBLIC_COMBAT_OK crypt-eight-squares real-enemy');
+  completed = true;
   await context.close();
 } finally {
+  // Preserve a browser frame even if an earlier selector or checkpoint fails.
+  // Never let diagnostic capture prevent cleanup of the ephemeral account.
+  if (!completed) await page?.screenshot({
+    path: 'chronicles-combat-failure.png', fullPage: false, timeout: 5000,
+  }).catch(() => {});
   await browser?.close();
   const deleted = await fetch(api + '/auth/delete-account', {
     method: 'POST', headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' },
