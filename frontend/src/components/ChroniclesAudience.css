@@ -212,3 +212,123 @@
   font-size: .83em;
   font-weight: 400;
 }
+
+
+/* Ilse alone uses a dedicated left-side sanctuary counter. The central
+   artwork remains visible and narrative dialogue stays on the right;
+   Aldric/Brask keep their original cinematic single-column composition. */
+.chronicles-audience.chronicles-shop.chronicles-audience--temple {
+  width: min(1450px, calc(100vw - 24px));
+  grid-template-columns: minmax(270px, .72fr) minmax(0, 1fr) minmax(350px, .93fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'services . head' 'services . dialogue';
+  column-gap: clamp(8px, 1.3vw, 16px);
+}
+.chronicles-audience--temple .chronicles-audience__services {
+  position: relative;
+  z-index: 2;
+  grid-area: services;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(12px, 1.5vw, 20px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(216, 170, 97, .64);
+  background: rgba(22, 17, 14, .91);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .36);
+  color: #f2e2c8;
+}
+.chronicles-audience--temple .chronicles-audience__services > small {
+  display: block;
+  color: #e8c286;
+  font-family: var(--mm3-pixel-font), monospace;
+  font-size: 1rem;
+  letter-spacing: .07em;
+}
+.chronicles-audience--temple .chronicles-audience__services .chronicles-audience__wallet {
+  padding: 9px 10px;
+  border: 1px solid rgba(222, 173, 90, .45);
+  color: #f4d39b;
+  background: rgba(59, 42, 22, .82);
+  font: 600 .85rem/1.35 system-ui, sans-serif;
+}
+.chronicles-audience--temple .chronicles-audience__service-actions {
+  margin-top: 0;
+  gap: 9px;
+}
+.chronicles-audience--temple .chronicles-audience__service-actions > button {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: baseline;
+  min-height: 52px;
+}
+.chronicles-audience--temple .chronicles-audience__service-actions > button:last-child:not(:first-child) {
+  border-color: #d3ac62;
+  background: linear-gradient(180deg, rgba(111, 74, 34, .96), rgba(58, 39, 23, .97));
+}
+.chronicles-audience--temple .chronicles-audience__service-actions > button:disabled:last-child {
+  background: rgba(40, 39, 38, .96);
+  border-color: #736654;
+}
+.chronicles-audience--temple .chronicles-audience__service-result:not(:empty) {
+  padding: 9px;
+  margin-top: auto;
+  border: 1px solid rgba(161, 205, 148, .5);
+  background: rgba(22, 63, 43, .88);
+  color: #e8f7dc;
+  font: 500 .9rem/1.4 Georgia, serif;
+}
+.chronicles-audience--temple .chronicles-audience__service-result:empty { display: none; }
+.chronicles-audience--temple .chronicles-audience__dialogue {
+  background: rgba(16, 13, 13, .91);
+}
+@media (max-width: 680px) and (orientation: portrait) {
+  .chronicles-audience.chronicles-shop.chronicles-audience--temple {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(95px, 16dvh) auto minmax(0, 34dvh) minmax(0, 1fr);
+    grid-template-areas: 'scene' 'head' 'services' 'dialogue';
+    gap: 7px;
+  }
+  .chronicles-audience--temple .chronicles-audience__services {
+    padding: 10px 12px;
+    gap: 7px;
+  }
+  .chronicles-audience--temple .chronicles-audience__service-actions {
+    gap: 6px;
+  }
+  .chronicles-audience--temple .chronicles-audience__service-actions > button {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  .chronicles-audience--temple .chronicles-audience__services > small { font-size: .9rem; }
+  .chronicles-audience--temple .chronicles-audience__service-result:not(:empty) {
+    margin-top: 4px;
+    padding: 6px 9px;
+  }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  .chronicles-audience.chronicles-shop.chronicles-audience--temple {
+    width: 100%;
+    grid-template-columns: minmax(235px, .75fr) minmax(0, 1fr) minmax(280px, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'services . head' 'services . dialogue';
+    gap: 5px;
+  }
+  .chronicles-audience--temple .chronicles-audience__services {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .chronicles-audience--temple .chronicles-audience__service-actions {
+    gap: 5px;
+  }
+  .chronicles-audience--temple .chronicles-audience__service-actions > button {
+    min-height: 40px;
+    padding: 6px 8px;
+  }
+  .chronicles-audience--temple .chronicles-audience__services > small { font-size: .86rem; }
+}

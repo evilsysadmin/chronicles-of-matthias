@@ -29,9 +29,14 @@ const ROOM_ART = Object.freeze({
 export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
   const firstChoiceRef = useRef(null);
   const [reply, setReply] = useState('');
+  const [serviceReply, setServiceReply] = useState('');
   const [actionTaken, setActionTaken] = useState(false);
   const choices = dialogue?.choices?.filter((choice) => !actionTaken || choice.kind !== 'action') || [];
   const room = ROOM_ART[dialogue?.room] || null;
+  const isTemple = dialogue?.room === 'temple';
+  const services = isTemple ? choices.filter((choice) => choice.kind === 'temple-service') : [];
+  const conversation = choices.filter((choice) => choice.kind !== 'temple-service');
+  const firstAvailableChoice = choices.find((choice) => !choice.disabled)?.id;
 
   const choose = (choice) => {
     if (!choice || choice.disabled) return;
@@ -45,7 +50,7 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
     }
     if (choice.kind === 'temple-service') {
       const message = onAction(choice.serviceId, 'temple-service');
-      setReply(message || 'Ilse no puede atender esta petición ahora mismo.');
+      setServiceReply(message || 'Ilse no puede atender esta petición ahora mismo.');
       return;
     }
     if (choice.kind === 'action') {
@@ -89,9 +94,25 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
 
   if (!dialogue) return null;
 
+  // One contiguous number sequence for both visible areas. The existing 1–9
+  // keyboard contract still follows the same choices in the same order.
+  const renderChoice = (choice) => {
+    const index = choices.findIndex((entry) => entry.id === choice.id);
+    return (
+      <button ref={choice.id === firstAvailableChoice ? firstChoiceRef : undefined} key={choice.id}
+        type="button" data-chronicles-dialogue-choice={choice.id}
+        disabled={choice.disabled === true} title={choice.reason || undefined}
+        onClick={() => choose(choice)}>
+        <b aria-hidden="true">{index + 1}.</b>
+        <span>{choice.label}{choice.disabled && choice.reason
+          ? <small className="chronicles-audience__choice-reason"> · {choice.reason}</small> : null}</span>
+      </button>
+    );
+  };
+
   const modal = (
     <div className="chronicles-shop__backdrop" onClick={onClose}>
-      <section className="chronicles-shop chronicles-audience"
+      <section className={`chronicles-shop chronicles-audience${isTemple ? ' chronicles-audience--temple' : ''}`}
         role="dialog" aria-modal="true"
         aria-label={`Conversación con ${dialogue.name}`}
         data-chronicles-audience={dialogue.id}
@@ -116,24 +137,27 @@ export default function ChroniclesAudience({ dialogue, onAction, onClose }) {
           )}
         </figure>
 
+        {isTemple && (
+          <aside className="chronicles-audience__services" aria-label="Servicios del templo"
+            data-chronicles-temple-services>
+            <small>SERVICIOS DEL TEMPLO</small>
+            <p className="chronicles-audience__wallet" data-chronicles-temple-gold>
+              {dialogue.treasury}
+              {dialogue.blessingTurns > 0 ? ` · Bendición: ${dialogue.blessingTurns} acciones restantes` : ''}
+            </p>
+            <div className="chronicles-audience__actions chronicles-audience__service-actions"
+              aria-label="Tratamientos y donaciones">
+              {services.map(renderChoice)}
+            </div>
+            <p className="chronicles-audience__service-result" aria-live="polite"
+              data-chronicles-temple-result>{serviceReply}</p>
+          </aside>
+        )}
         <div className="chronicles-audience__dialogue">
           <small>{reply ? `${dialogue.name.toUpperCase()} RESPONDE` : 'AUDIENCIA'}</small>
           <p data-chronicles-dialogue-answer aria-live="polite">{reply || dialogue.greeting}</p>
-          {dialogue.treasury && <p className="chronicles-audience__wallet" data-chronicles-temple-gold>
-            {dialogue.treasury}
-            {dialogue.blessingTurns > 0 ? ` · Bendición: ${dialogue.blessingTurns} acciones restantes` : ''}
-          </p>}
           <div className="chronicles-audience__actions" aria-label="Respuestas disponibles">
-            {choices.map((choice, index) => (
-              <button ref={index === 0 ? firstChoiceRef : undefined} key={choice.id}
-                type="button" data-chronicles-dialogue-choice={choice.id}
-                disabled={choice.disabled === true} title={choice.reason || undefined}
-                onClick={() => choose(choice)}>
-                <b aria-hidden="true">{index + 1}.</b>
-                <span>{choice.label}{choice.disabled && choice.reason
-                  ? <small className="chronicles-audience__choice-reason"> · {choice.reason}</small> : null}</span>
-              </button>
-            ))}
+            {conversation.map(renderChoice)}
           </div>
         </div>
       </section>
