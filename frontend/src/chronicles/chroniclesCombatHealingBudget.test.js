@@ -5,6 +5,7 @@ import {
   chroniclesStartInitiativeCombat,
 } from './chroniclesInitiative.js';
 import { CHRONICLES_SPELLS, chroniclesMemberSp } from './chroniclesMagic.js';
+import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 // A deterministic real sewer encounter, not a free-form cast outside combat.
 // The bishop's initiative turn is selected without giving any actor a free action.
@@ -103,6 +104,33 @@ describe('MM3 sewer initiative · healing costs a real action and PH', () => {
     expect(guarded.initiative).toEqual(state.initiative);
     expect(chroniclesReduce(guarded, firstAid)).toBe(guarded);
     expect(chroniclesReduce(guarded, { type: 'block', memberId: 'bishop' })).toBe(guarded);
+  });
+
+
+  it('preserves the unspent BLOCK action across a checkpoint after a zero-PH cast is rejected', () => {
+    const state = bishopTurn({ spellPoints: 0 });
+    const rejected = chroniclesReduce(state, firstAid);
+    expect(rejected.turns).toBe(state.turns);
+    expect(rejected.combatActionSpent?.bishop).toBeUndefined();
+
+    // A reload between a rejected cast and the next valid action must not
+    // silently consume the hero's initiative slot or replenish PH.
+    const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(rejected, 1)));
+    const resumed = chroniclesApplyRunCheckpoint(
+      createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' }), payload,
+    );
+    expect(resumed.phase).toBe('combat');
+    expect(chroniclesCurrentInitiativeActor(resumed.initiative)?.id).toBe('bishop');
+    expect(resumed.turns).toBe(state.turns);
+    expect(chroniclesMemberSp(resumed, bishop(resumed))).toBe(0);
+    expect(resumed.combatActionSpent?.bishop).toBeUndefined();
+
+    const guarded = chroniclesReduce(resumed, { type: 'block', memberId: 'bishop' });
+    expect(guarded.turns).toBe(state.turns + 1);
+    expect(guarded.combatBlock?.bishop).toBe(true);
+    expect(guarded.combatActionSpent?.bishop).toBe(true);
+    expect(chroniclesReduce(guarded, { type: 'block', memberId: 'bishop' })).toBe(guarded);
+    expect(chroniclesReduce(guarded, firstAid)).toBe(guarded);
   });
 
 });
