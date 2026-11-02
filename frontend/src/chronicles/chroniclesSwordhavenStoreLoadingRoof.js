@@ -39,7 +39,7 @@ export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } =
   // Two visible cut ends complete the canopy's timber thickness in oblique
   // street views, without projecting beyond the existing blocked house cells.
   const fascia = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(width + 0.06, 0.15, 0.11),
+    new THREE.BoxGeometry(width + 0.02, 0.15, 0.11),
     mats.timber, 2,
   );
   fascia.name = 'store-loading-dock-cedar-fascia';
