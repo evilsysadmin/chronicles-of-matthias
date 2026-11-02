@@ -492,7 +492,6 @@ try {
         const location = parent.querySelector('[data-chronicles-location]');
         const locationBounds = location.getBoundingClientRect();
         const frame = parent.getBoundingClientRect();
-        const prefix = location.querySelector('.chronicles-minimap__location-prefix');
         const placeRange = document.createRange();
         placeRange.selectNodeContents(location.lastChild);
         const placeBounds = placeRange.getBoundingClientRect();
@@ -504,7 +503,6 @@ try {
             (frame.left + frame.right) / 2) <= 3,
           belowTiles: caption.top >= svg.getBoundingClientRect().bottom - 2,
           location: location.textContent.trim(),
-          prefixDisplay: getComputedStyle(prefix).display,
           placeFits: placeBounds.left >= locationBounds.left - 1
             && placeBounds.right <= locationBounds.right + 1,
           locationClipped: location.scrollWidth > location.clientWidth + 1,
@@ -521,10 +519,8 @@ try {
       if (sandstone) assert.equal(position.shadow, 'none', 'Dark coordinates must not have a light halo');
       assert.equal(position.locationColor, sandstone ? 'rgb(36, 22, 13)' : 'rgb(226, 197, 151)',
         'Location must contrast with the actual minimap backing: ' + JSON.stringify(position));
-      assert.equal(position.location, 'UBICACIÓN · SWORDHAVEN');
-      const compactMap = width <= 800 || (width <= 1024 && height <= 600);
-      assert.equal(position.prefixDisplay === 'none', compactMap,
-        'Only compact minimaps should omit the redundant visible prefix: ' + JSON.stringify(position));
+      assert.equal(position.location, 'SWORDHAVEN',
+        'The visible caption must contain only the place name: ' + JSON.stringify(position));
       assert(position.placeFits && !position.locationClipped,
         'SWORDHAVEN must fit in the minimap caption without ellipsis: ' + JSON.stringify(position));
       assert(position.locationCentered && position.locationBelowCoordinates && position.locationWithinFrame,
