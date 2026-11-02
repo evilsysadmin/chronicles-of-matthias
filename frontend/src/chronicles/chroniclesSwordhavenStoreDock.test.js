@@ -45,7 +45,7 @@ describe('Swordhaven provisions side loading dock', () => {
     expect(roofBattens.geometry.parameters.depth).toBeCloseTo(roof.geometry.parameters.depth - 0.12);
     expect(roofBattens.userData.chroniclesDecorativeOnly).toBe(true);
     expect(fascia.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(forge.getObjectByName('store-loading-dock-cedar-roofBattens')).toBeFalsy();
+    expect(forge.getObjectByName('store-loading-dock-cedar-battens')).toBeFalsy();
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     for (let index = 0; index < roofBattens.count; index += 1) {
