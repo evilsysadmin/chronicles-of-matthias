@@ -54,6 +54,20 @@ describe('Chronicles semantic material atlas', () => {
       expect(CHRONICLES_MATERIAL_ENVIRONMENTS['sewer-masonry'].floor).toContain(id));
   });
 
+  it.each([
+    ['cueva-del-viento-level-2', 'cave'],
+    ['minas-de-sal-floor-3', 'cave'],
+    ['swordhaven-cueva-oculta-level-2', 'cave'],
+    ['swordhaven-alcantarillas-level-2', 'sewer-masonry'],
+    ['cripta-de-la-luna-level-3', 'dungeon'],
+  ])('keeps Spanish procedural dungeon %s in the %s material biome', (mapId, expected) => {
+    expect(chroniclesMaterialEnvironmentForMapId(mapId)).toBe(expected);
+    const plan = chroniclesMaterialPlanForScene({ mapId, regionKind: 'dungeon', width: 8, height: 8 });
+    expect(plan.environmentId).toBe(expected);
+    plan.wallProfileIds.forEach((id) => expect(CHRONICLES_MATERIAL_ENVIRONMENTS[expected].wall).toContain(id));
+    plan.floorProfileIds.forEach((id) => expect(CHRONICLES_MATERIAL_ENVIRONMENTS[expected].floor).toContain(id));
+  });
+
   it('gives Swordhaven sewers damp masonry walls and worn stone floors without cave-rock walls', () => {
     const environment = CHRONICLES_MATERIAL_ENVIRONMENTS['sewer-masonry'];
     expect(environment.wall).toEqual(['D03', 'D04', 'V05']);
