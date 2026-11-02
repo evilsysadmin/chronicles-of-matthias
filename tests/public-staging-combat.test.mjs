@@ -101,6 +101,8 @@ test('combat actions wait for actual crypt render and a real turn', () => {
     'The public combat smoke must verify browser reload after the real save');
   assert.ok(source.includes("await page.reload({ waitUntil: 'domcontentloaded' })"));
   assert.ok(source.includes("assert.equal(resumed.runId, game.runId"));
+  assert.ok(source.includes("assert.equal(resumed.worldFlags?.enemyHp, 0"),
+    'The live F5 smoke must reject resurrection of the defeated enemy');
   assert.ok(source.includes("Number(flags['__chrRuntime.turns'])"));
   assert.ok(source.includes("'/bootstrap'") || source.includes(" + '/bootstrap'"));
 });
