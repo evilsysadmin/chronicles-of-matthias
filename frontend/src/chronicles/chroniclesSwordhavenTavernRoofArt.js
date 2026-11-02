@@ -38,6 +38,21 @@ export function dressSwordhavenTavernRoofDormer(root, {
     new THREE.ShapeGeometry(gable), wallMaterial,
     0, height + 2.38, 1.045);
 
+  // The street-facing attic gable needs a visible oak truss, not just a
+  // flat brick triangle. Rakes follow the existing clay roof pitch, with a
+  // short king post above the casement. No light, collider or extra texture.
+  add('tavern-dormer-oak-tie-beam',
+    new THREE.BoxGeometry(2.24, 0.12, 0.14), mats.timber,
+    0, height + 2.41, 1.16);
+  for (const side of [-1, 1]) {
+    add('tavern-dormer-oak-gable-rake',
+      new THREE.BoxGeometry(1.32, 0.13, 0.14), mats.timber,
+      side * 0.56, height + 2.76, 1.17).rotation.z = -side * 0.56;
+  }
+  add('tavern-dormer-oak-king-post',
+    new THREE.BoxGeometry(0.13, 0.58, 0.15), mats.timber,
+    0, height + 2.74, 1.20);
+
   // Two real sloping clay-tile planes, not a flat ornament on the facade.
   for (const side of [-1, 1]) {
     const slope = add('tavern-dormer-roof-slope',

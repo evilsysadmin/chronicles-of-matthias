@@ -18,6 +18,14 @@ describe('Swordhaven inn roof silhouette', () => {
     expect(dormer.getObjectByName('tavern-dormer-attic-body')).toBeTruthy();
     expect(dormer.getObjectByName('tavern-dormer-front-gable')).toBeTruthy();
     expect(dormer.getObjectByName('tavern-dormer-amber-window').material).toBe(mats.window);
+    // Oak rake/tie/king-post must read as a real inn gable on both viewports,
+    // without crossing the casement or changing the authored building bounds.
+    expect(dormer.children.filter(child => child.name === 'tavern-dormer-oak-gable-rake'))
+      .toHaveLength(2);
+    expect(dormer.getObjectByName('tavern-dormer-oak-tie-beam').material).toBe(mats.timber);
+    expect(dormer.getObjectByName('tavern-dormer-oak-king-post').material).toBe(mats.timber);
+    expect(dormer.children.filter(child => child.name === 'tavern-dormer-oak-gable-rake')
+      .map(child => Math.sign(child.rotation.z))).toEqual([1, -1]);
     expect(dormer.children.filter(child => child.name === 'tavern-dormer-roof-slope')).toHaveLength(2);
     expect(dormer.children.every(child => child.userData.chroniclesDecorativeOnly)).toBe(true);
     expect(dormer.children.every(child => !child.isLight)).toBe(true);
