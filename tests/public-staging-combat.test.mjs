@@ -28,9 +28,9 @@ test('public combat creates an official crypt run and resumes it via Home', () =
 });
 
 test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
-  const guard = source.indexOf('\\ntry {\\n');
+  const guard = source.indexOf('try {');
   const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
-  const cleanup = source.lastIndexOf('\\n} finally {');
+  const cleanup = source.lastIndexOf('} finally {');
   const deleteAccount = source.indexOf("await fetch(api + '/auth/delete-account'");
   assert.ok(guard >= 0 && guard < create, 'Crypt creation must be inside the try block');
   assert.ok(create < cleanup && cleanup < deleteAccount, 'Creation failures must reach account deletion');
