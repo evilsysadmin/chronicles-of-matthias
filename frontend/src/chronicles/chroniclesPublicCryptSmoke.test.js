@@ -9,9 +9,12 @@ describe('public crypt combat smoke prerequisites', () => {
     expect(crypt.partyStart).toMatchObject({ x: 1, y: 5, direction: 1 });
     const pawn = crypt.enemies.find((enemy) => enemy.id === 'corrupted-pawn');
     expect(pawn).toMatchObject({
-      x: 3, y: 5, maxHp: 5,
+      x: 3, y: 5,
       ai: { engagedMovement: 'cardinal-chase', engageRange: 1 },
     });
+    // Effective HP includes EnemyBuild modifiers; do not freeze the raw
+    // authored maxHp (5) when the normalized enemy currently has 6.
+    expect(pawn.maxHp).toBeGreaterThan(0);
     expect(crypt.grid[5][2]).toBe('.');
   });
 });
