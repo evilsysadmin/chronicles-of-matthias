@@ -34,22 +34,22 @@ describe('Swordhaven provisions side loading dock', () => {
     expect(roof.geometry.parameters.depth).toBeGreaterThan(5);
     // Cedar joinery follows the pitched side canopy, rather than floating
     // horizontally above it. Both batches are store-only and decorative.
-    const battens = dock.getObjectByName('store-loading-dock-cedar-battens');
+    const roofBattens = dock.getObjectByName('store-loading-dock-cedar-roofBattens');
     const fascia = dock.getObjectByName('store-loading-dock-cedar-fascia');
-    expect(battens).toBeInstanceOf(THREE.InstancedMesh);
+    expect(roofBattens).toBeInstanceOf(THREE.InstancedMesh);
     expect(fascia).toBeInstanceOf(THREE.InstancedMesh);
-    expect(battens.count).toBe(6);
+    expect(roofBattens.count).toBe(6);
     expect(fascia.count).toBe(2);
-    expect(battens.material).toBe(deck.material);
+    expect(roofBattens.material).toBe(deck.material);
     expect(fascia.material).toBe(deck.material);
-    expect(battens.geometry.parameters.depth).toBeCloseTo(roof.geometry.parameters.depth - 0.12);
-    expect(battens.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(roofBattens.geometry.parameters.depth).toBeCloseTo(roof.geometry.parameters.depth - 0.12);
+    expect(roofBattens.userData.chroniclesDecorativeOnly).toBe(true);
     expect(fascia.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(forge.getObjectByName('store-loading-dock-cedar-battens')).toBeFalsy();
+    expect(forge.getObjectByName('store-loading-dock-cedar-roofBattens')).toBeFalsy();
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
-    for (let index = 0; index < battens.count; index += 1) {
-      battens.getMatrixAt(index, matrix);
+    for (let index = 0; index < roofBattens.count; index += 1) {
+      roofBattens.getMatrixAt(index, matrix);
       position.setFromMatrixPosition(matrix);
       const x = (index - 2.5) * 0.30;
       expect(position.y).toBeCloseTo(
