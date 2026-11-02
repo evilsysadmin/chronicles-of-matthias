@@ -87,4 +87,22 @@ describe('MM3 sewer initiative · healing costs a real action and PH', () => {
     expect(rook(next).hp).toBe(rook(state).hp);
     expect(next.initiative).toEqual(state.initiative);
   });
+  it('keeps the initiative action available after an unaffordable spell, allowing BLOCK', () => {
+    const state = bishopTurn({ spellPoints: 0 });
+    const rejected = chroniclesReduce(state, firstAid);
+    expect(rejected.turns).toBe(state.turns);
+    expect(rejected.initiative).toEqual(state.initiative);
+    expect(rejected.combatActionSpent?.bishop).toBeUndefined();
+    expect(chroniclesMemberSp(rejected, bishop(rejected))).toBe(0);
+
+    // A rejected cast must not steal the hero's only valid action this round.
+    const guarded = chroniclesReduce(rejected, { type: 'block', memberId: 'bishop' });
+    expect(guarded.turns).toBe(state.turns + 1);
+    expect(guarded.combatBlock?.bishop).toBe(true);
+    expect(guarded.combatActionSpent?.bishop).toBe(true);
+    expect(guarded.initiative).toEqual(state.initiative);
+    expect(chroniclesReduce(guarded, firstAid)).toBe(guarded);
+    expect(chroniclesReduce(guarded, { type: 'block', memberId: 'bishop' })).toBe(guarded);
+  });
+
 });
