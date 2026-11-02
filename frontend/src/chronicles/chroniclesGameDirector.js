@@ -89,7 +89,10 @@ export async function chroniclesResolveAreaManifest(
 ) {
   const fail = (reason, error = null) => {
     // Cancellation belongs to the caller's navigation, never to a fallback scene.
-    if (allowBundledFallback && reason !== 'aborted') return localFallback(mapId, seed, reason);
+    // An unknown map has no bundled definition; falling back would return an unusable area.
+    if (allowBundledFallback && reason !== 'aborted' && reason !== 'unknown-map') {
+      return localFallback(mapId, seed, reason);
+    }
     const failure = error instanceof Error ? error : new Error(reason);
     failure.reason = reason;
     throw failure;
