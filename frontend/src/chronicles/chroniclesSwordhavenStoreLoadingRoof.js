@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // the town's oak material. No walk-grid, interaction or collision changes.
 export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } = {}) {
   if (!dock?.isGroup || !mats?.timber) return null;
-  const existing = dock.getObjectByName('store-loading-dock-cedar-battens');
+  const existing = dock.getObjectByName('store-loading-dock-cedar-planks');
   if (existing) return existing;
   const canopy = dock.getObjectByName('store-loading-dock-cedar-roof');
   if (!canopy?.isMesh || canopy.geometry?.type !== 'BoxGeometry') return null;
@@ -14,28 +14,29 @@ export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } =
   const c = Math.cos(pitch);
   const s = Math.sin(pitch);
   const batten = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.075, 0.055, depth - 0.12),
-    mats.timber, 6,
+    new THREE.BoxGeometry(0.43, 0.045, depth - 0.18),
+    canopy.material, 4,
   );
-  batten.name = 'store-loading-dock-cedar-battens';
+  batten.name = 'store-loading-dock-cedar-planks';
   batten.position.copy(canopy.position);
-  batten.castShadow = !coarse;
+  batten.castShadow = false;
   batten.receiveShadow = true;
   batten.userData.chroniclesDecorativeOnly = true;
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
-  for (let index = 0; index < 6; index += 1) {
-    const x = (index - 2.5) * 0.30;
+  for (let index = 0; index < 4; index += 1) {
+    const x = (index - 1.5) * 0.45;
     // Local normal of the sloped roof: raised just above its top face.
-    dummy.position.set(x * c - 0.12 * s, x * s + 0.12 * c, 0);
+    dummy.position.set(x * c - 0.115 * s, x * s + 0.115 * c, 0);
     dummy.rotation.set(0, 0, pitch);
     dummy.updateMatrix();
     batten.setMatrixAt(index, dummy.matrix);
-    batten.setColorAt(index, tint.setHex(index % 2 ? 0xd4b694 : 0xf0d4ac));
+    batten.setColorAt(index, tint.setHex(index % 2 ? 0xe4d9ca : 0xffffff));
   }
   batten.instanceMatrix.needsUpdate = true;
   if (batten.instanceColor) batten.instanceColor.needsUpdate = true;
 
+  // Four broad cedar boards create restrained seams rather than dark roof ribs.
   // Two visible cut ends complete the canopy's timber thickness in oblique
   // street views, without projecting beyond the existing blocked house cells.
   const fascia = new THREE.InstancedMesh(
