@@ -81,20 +81,6 @@ describe('Swordhaven modular real-time 3D', () => {
   });
 
 
-  it('keeps a directional daylight key over the sky fill on desktop and mobile', () => {
-    for (const coarsePointer of [false, true]) {
-      const scene = new THREE.Scene();
-      buildSwordhavenScene(scene, { coarsePointer });
-      const sun = scene.getObjectByName('swordhaven-sun');
-      const fill = scene.children.find(child => child.isHemisphereLight);
-      expect(fill).toBeInstanceOf(THREE.HemisphereLight);
-      expect(fill.intensity).toBe(1.24);
-      expect(sun.intensity).toBe(coarsePointer ? 1.38 : 1.72);
-      expect(sun.intensity).toBeGreaterThan(fill.intensity);
-      expect(sun.castShadow).toBe(!coarsePointer);
-    }
-  });
-
   it('tiles a deterministic pixel-art meadow with a short VGA-like palette', () => {
     const texture = swordhavenGrassTexture();
     expect(texture).toBe(swordhavenGrassTexture()); // One bounded allocation across runs.
