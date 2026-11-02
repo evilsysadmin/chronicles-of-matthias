@@ -191,7 +191,7 @@ export default function ChroniclesMinimap({
     >
       <span className="chronicles-minimap__title" aria-hidden="true" data-chronicles-coordinates>{coordinates}</span>
       <span className="chronicles-minimap__location" aria-hidden="true" data-chronicles-location>
-        <span className="chronicles-minimap__location-prefix">UBICACIÓN · </span>{locationText}
+        {locationText}
       </span>
       <svg
         ref={svgRef}
