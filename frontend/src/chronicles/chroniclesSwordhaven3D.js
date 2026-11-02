@@ -4,6 +4,7 @@ import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import { dressSwordhavenWindowBoxes } from './chroniclesSwordhavenFoliage.js';
 import { dressSwordhavenPremiumHouse } from './chroniclesSwordhavenPremiumHouses.js';
 import { dressSwordhavenTavernRoofDormer } from './chroniclesSwordhavenTavernRoofArt.js';
+import { dressSwordhavenStoreLoadingRoof } from './chroniclesSwordhavenStoreLoadingRoof.js';
 
 // Authored in grid coordinates: future map collision must reserve these footprints.
 export const SWORDHAVEN_BUILDINGS = Object.freeze([
@@ -1913,6 +1914,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       brace.rotation.z = -0.56;
       brace.userData.chroniclesDecorativeOnly = true;
     }
+    dressSwordhavenStoreLoadingRoof(dock, { mats, coarse });
     root.add(dock);
   }
   // A single broad merchant's attic loft replaces the ordinary domestic
