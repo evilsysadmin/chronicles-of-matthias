@@ -34,7 +34,7 @@ describe('Swordhaven provisions side loading dock', () => {
     expect(roof.geometry.parameters.depth).toBeGreaterThan(5);
     // Cedar joinery follows the pitched side canopy, rather than floating
     // horizontally above it. Both batches are store-only and decorative.
-    const roofBattens = dock.getObjectByName('store-loading-dock-cedar-roofBattens');
+    const roofBattens = dock.getObjectByName('store-loading-dock-cedar-battens');
     const fascia = dock.getObjectByName('store-loading-dock-cedar-fascia');
     expect(roofBattens).toBeInstanceOf(THREE.InstancedMesh);
     expect(fascia).toBeInstanceOf(THREE.InstancedMesh);
