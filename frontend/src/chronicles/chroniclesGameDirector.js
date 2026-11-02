@@ -95,6 +95,9 @@ export async function chroniclesResolveAreaManifest(
     throw failure;
   };
 
+  // A navigation may be cancelled before the resolver starts. Do not even
+  // issue its stale request (or show a bundled fallback) in that case.
+  if (signal?.aborted) return fail('aborted');
   if (!chroniclesMapIds().includes(mapId)) return fail('unknown-map');
   if (typeof fetchManifest !== 'function') return fail('transport-unavailable');
 
