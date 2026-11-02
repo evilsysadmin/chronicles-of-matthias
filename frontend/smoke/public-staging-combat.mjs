@@ -91,20 +91,31 @@ try {
   const afterVolleyTurns = Number(await crypt.getAttribute('data-chronicles-turns'));
   assert.equal(afterVolleyTurns, cryptTurns + 1,
     'Opening S volley must consume exactly one turn, never a duplicate tick');
-  await page.keyboard.press('ArrowUp');
-  await page.keyboard.press('a');
-
-  // Switch to the mobile controls and issue an actual touch attack as well.
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('[data-chronicles-touch-action="attack"]').click();
-  // Saving in MM3 initiative is deliberately forbidden. Verify the lock,
-  // then finish the real encounter with party melee actions before saving.
+  // Do not attack before proving initiative. The opening volley and two
+  // pre-assertion attacks could kill this 5-HP pawn, making a successful
+  // encounter look like a failure when the initiative rail had already gone.
   const combatRail = page.locator('[data-chronicles-initiative="visible"]');
+  for (let approach = 0; approach < 3 && !await combatRail.isVisible(); approach++) {
+    const before = Number(await crypt.getAttribute('data-chronicles-turns'));
+    await page.keyboard.press('ArrowUp');
+    await page.waitForFunction(previous => {
+      const root = document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]');
+      return Boolean(document.querySelector('[data-chronicles-initiative="visible"]'))
+        || Number(root?.getAttribute('data-chronicles-turns')) > previous;
+    }, before, { timeout: 12000 });
+    if (!await combatRail.isVisible()) {
+      await combatRail.waitFor({ state: 'visible', timeout: 750 }).catch(() => {});
+    }
+  }
   assert.equal(await combatRail.count(), 1, 'The authored crypt must enter real initiative');
+  // Saving in MM3 initiative is deliberately forbidden. Verify the lock
+  // before any potentially lethal melee/touch attack.
   await page.getByLabel('Abrir menú de Chronicles').click();
   assert.equal(await page.locator('[data-chronicles-menu-save]').isDisabled(), true,
     'Manual save must remain disabled during initiative');
   await page.getByRole('button', { name: 'Cerrar menú' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  let usedTouch = false;
   for (let action = 0; action < 32 && await combatRail.count(); action++) {
     await page.waitForFunction(() => {
       const rail = document.querySelector('[data-chronicles-initiative="visible"]');
@@ -122,12 +133,21 @@ try {
     console.log('CHRONICLES_PUBLIC_COMBAT_ACTION ' + JSON.stringify({
       actor, action: canMelee ? 'melee' : 'block',
     }));
-    await page.keyboard.press(actionKey);
+    if (!usedTouch) {
+      // Exercise real mobile controls once; BLOCK is legal when melee is not.
+      const touchAction = canMelee ? attackButton
+        : page.locator('[data-chronicles-touch-action="block"]');
+      await touchAction.click();
+      usedTouch = true;
+    } else {
+      await page.keyboard.press(actionKey);
+    }
     await page.waitForFunction(previous => {
       const rail = document.querySelector('[data-chronicles-initiative="visible"]');
       return !rail || rail.getAttribute('aria-label') !== previous;
     }, actor, { timeout: 12000 });
   }
+  assert.ok(usedTouch, 'The encounter must exercise a real mobile combat control');
   assert.equal(await combatRail.count(), 0,
     'The real crypt encounter must finish before the manual checkpoint');
   await page.getByLabel('Abrir menú de Chronicles').click();
