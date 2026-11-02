@@ -108,7 +108,8 @@ try {
         + new URL(response.url()).pathname.replace(game.runId, ':run'));
     }
   });
-  await page.getByRole('button', { name: 'Guardar partida', exact: true }).click();
+  // Use the stable menu action: its visible name includes the S shortcut.
+  await page.locator('[data-chronicles-menu-save]').click();
   // Capture diagnostics before making a timeout the only actionable error.
   await page.waitForFunction(() =>
     Boolean(document.querySelector('.chronicles-game-menu__notice')?.textContent?.trim()),
