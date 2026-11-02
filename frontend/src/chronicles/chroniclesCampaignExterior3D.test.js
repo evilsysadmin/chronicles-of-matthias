@@ -989,7 +989,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(botanicalBays.children.every(bay =>
       bay.getObjectByName('apothecary-window-rounded-stone-arch')
       && bay.getObjectByName('apothecary-window-oak-mullion')
-      && bay.getObjectByName('apothecary-window-sage-glass')?.material.color.getHex() === 0x79aa8e
+      && bay.getObjectByName('apothecary-window-sage-glass')?.material.color.getHex() === 0x93bfa1
+      && bay.getObjectByName('apothecary-window-dark-reveal')
+      && bay.getObjectByName('apothecary-window-glass-reflection')
     )).toBe(true);
     expect(apothecary.getObjectByName('warm-glass-window')).toBeFalsy();
     expect(apothecary.getObjectByName('apothecary-herb-window-box')).toBeTruthy();
