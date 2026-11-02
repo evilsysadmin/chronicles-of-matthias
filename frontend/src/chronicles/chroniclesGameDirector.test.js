@@ -124,6 +124,21 @@ describe('Chronicles Game Director frontend resolver', () => {
     })).rejects.toMatchObject({ reason: 'aborted' });
   });
 
+  it('never requests an area if navigation was cancelled before resolution', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetchManifest = vi.fn().mockResolvedValue(remoteEnvelope('crypt-eight-squares', 23));
+
+    await expect(chroniclesResolveAreaManifest('crypt-eight-squares', {
+      seed: 23,
+      signal: controller.signal,
+      fetchManifest,
+      allowBundledFallback: true,
+    })).rejects.toMatchObject({ reason: 'aborted' });
+
+    expect(fetchManifest).not.toHaveBeenCalled();
+  });
+
   it('discards a remote area that resolves after navigation cancellation', async () => {
     const controller = new AbortController();
     const fetchManifest = vi.fn().mockImplementation(async () => {
