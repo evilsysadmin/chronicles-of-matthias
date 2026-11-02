@@ -503,6 +503,18 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
   quoins.name = 'corner-dressed-stone-courses';
   const quoin = new THREE.Object3D();
   const quoinColor = new THREE.Color();
+  // Tie the masonry corner courses to each trade's wall finish instead of
+  // repeating the same pale merchant quoins across every storefront.
+  // Instanced colour only: unchanged geometry, draw calls and collision.
+  const quoinTones = isForge ? [0x776a60, 0x64584f, 0x8a7868]
+    : isArmor ? [0x9baab4, 0x7d919e, 0xb5c1c7]
+      : isMagic ? [0xb4a0c0, 0x9583aa, 0xc4b1ce]
+        : isApothecary ? [0xb4c3a8, 0x98ab8c, 0xc4d0b7]
+          : isStore ? [0xc5ab87, 0xa78a69, 0xd4bd9b]
+            : isTemple ? [0xc6c4b9, 0xa8b0b4, 0xd8d6cc]
+              : isTavern ? [0xc1a28c, 0xa78070, 0xd1b09d]
+                : isWatch ? [0xabb7b9, 0x8e9fa6, 0xc2cbca]
+                  : [0xb5ab9a, 0xa59d8c, 0xc5bba9];
   let courseIndex = 0;
   for (let level = 0; level < courses; level += 1) {
     for (const sideX of [-1, 1]) for (const sideZ of [-1, 1]) {
@@ -512,9 +524,7 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       quoins.setMatrixAt(courseIndex, quoin.matrix);
       // Soot-darkened corner courses make the smithy read as a working forge
       // at street distance; other trades retain their original pale ashlar.
-      quoinColor.setHex((isForge
-        ? [0x776a60, 0x64584f, 0x8a7868]
-        : [0xb5ab9a, 0xa59d8c, 0xc5bba9])[level % 3]);
+      quoinColor.setHex(quoinTones[level % quoinTones.length]);
       quoins.setColorAt(courseIndex, quoinColor);
       courseIndex += 1;
     }
