@@ -215,6 +215,18 @@ describe('Chronicles Game Director frontend resolver', () => {
     });
   });
 
+  it('fails closed on an unknown area even when preview fallback is enabled', async () => {
+    const fetchManifest = vi.fn();
+
+    await expect(chroniclesResolveAreaManifest('missing-room', {
+      seed: 17,
+      fetchManifest,
+      allowBundledFallback: true,
+    })).rejects.toMatchObject({ reason: 'unknown-map' });
+
+    expect(fetchManifest).not.toHaveBeenCalled();
+  });
+
   it('does not ask the backend for an unknown internal map id', async () => {
     const fetchManifest = vi.fn();
 
