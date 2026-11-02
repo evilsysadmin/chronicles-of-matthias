@@ -23,23 +23,23 @@ const created = await fetch(api + '/auth/register', {
 assert.equal(created.status, 201);
 const token = (await created.json()).token;
 assert.ok(token);
-// This smoke exercises a shipped authored crypt through the REAL public API.
-// The default new-game UI now starts Book One in swordhaven-first-book; the
-// retired swordhaven-square route must not be assumed or resurrected.
-// First-hour UI creation is covered separately by public-staging-journey.mjs.
-const expedition = await fetch(api + '/chronicles/runs', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
-  body: JSON.stringify({ mapId: 'crypt-eight-squares' }),
-});
-assert.equal(expedition.status, 201, 'Cannot create the shipped crypt expedition');
-const game = await expedition.json();
-assert.equal(game.currentMapId, 'crypt-eight-squares');
-assert.ok(game.runId, 'Real crypt expedition has no run ID');
 let browser;
 let page;
 let completed = false;
 try {
+  // This smoke exercises a shipped authored crypt through the REAL public API.
+  // The default new-game UI now starts Book One in swordhaven-first-book; the
+  // retired swordhaven-square route must not be assumed or resurrected.
+  // First-hour UI creation is covered separately by public-staging-journey.mjs.
+  const expedition = await fetch(api + '/chronicles/runs', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ mapId: 'crypt-eight-squares' }),
+  });
+  assert.equal(expedition.status, 201, 'Cannot create the shipped crypt expedition');
+  const game = await expedition.json();
+  assert.equal(game.currentMapId, 'crypt-eight-squares');
+  assert.ok(game.runId, 'Real crypt expedition has no run ID');
   browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   page = await context.newPage();
