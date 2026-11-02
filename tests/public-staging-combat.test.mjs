@@ -35,6 +35,19 @@ test('public combat saves through the real menu action, including its keyboard h
   assert.doesNotMatch(source, /getByRole\('button', \{ name: 'Guardar partida', exact: true \}\)/);
 });
 
+test('public B1 respects the combat save lock and defeats the real pawn before F5', () => {
+  const menu = readFileSync('frontend/src/components/ChroniclesAdventureMenu.jsx', 'utf8');
+  assert.ok(menu.includes('disabled={saveBusy || inCombat}'), 'Save must stay locked in initiative');
+  const combat = source.indexOf("const combatRail = page.locator('[data-chronicles-initiative=");
+  const victory = source.indexOf("assert.equal(await combatRail.count(), 0");
+  const save = source.indexOf("await page.locator('[data-chronicles-menu-save]').click()");
+  assert.ok(combat >= 0 && combat < victory && victory < save,
+    'Real initiative and victory must precede the manual checkpoint');
+  assert.ok(source.includes("await page.getByRole('button', { name: 'Cerrar menú' }).click()"));
+  assert.ok(source.includes("assert.equal(enemyHp, 0"));
+  assert.ok(source.includes('Saving must become available after victory'));
+});
+
 test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
   const guard = source.indexOf('try {');
   const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
