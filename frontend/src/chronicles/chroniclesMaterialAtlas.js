@@ -142,7 +142,7 @@ function hashText(text) {
   return hash >>> 0;
 }
 
-function cellSignature(entries = []) {
+function cellSignature(entries = [], width = null, height = null) {
   // The same procedural layout must keep its palette regardless of the
   // traversal order used to enumerate wall and floor cells. Duplicate
   // coordinates from overlapping geometry passes are still one map cell.
@@ -150,7 +150,11 @@ function cellSignature(entries = []) {
   // crashing or letting them change the stable material palette.
   return [...new Set((Array.isArray(entries) ? entries : [])
     .filter((entry) => Number.isSafeInteger(entry?.x) && entry.x >= 0
-      && Number.isSafeInteger(entry?.y) && entry.y >= 0)
+      && Number.isSafeInteger(entry?.y) && entry.y >= 0
+      // Geometry outside the declared scene is not rendered and must not
+      // change the palette of the visible dungeon.
+      && (!Number.isSafeInteger(width) || width <= 0 || entry.x < width)
+      && (!Number.isSafeInteger(height) || height <= 0 || entry.y < height))
     .map((entry) => String(entry.x) + ',' + String(entry.y)))]
     .sort()
     .join(';');
@@ -160,8 +164,8 @@ export function chroniclesMaterialSceneSeed(scenePlan = null) {
   const signature = [
     scenePlan?.mapId || 'unknown',
     String(scenePlan?.width || 0) + 'x' + String(scenePlan?.height || 0),
-    cellSignature(scenePlan?.walls),
-    cellSignature(scenePlan?.floors),
+    cellSignature(scenePlan?.walls, scenePlan?.width, scenePlan?.height),
+    cellSignature(scenePlan?.floors, scenePlan?.width, scenePlan?.height),
   ].join('|');
   return hashText(signature);
 }

@@ -48,6 +48,18 @@ describe('Chronicles procedural material seed · repeated geometry cells', () =>
     expect(chroniclesMaterialPlanForScene(damaged)).toEqual(chroniclesMaterialPlanForScene(scene));
     expect(chroniclesMaterialSceneSeed({ ...scene, walls: { corrupt: true }, floors: null }))
       .toBe(chroniclesMaterialSceneSeed({ ...scene, walls: [], floors: [] }));
+    // Cells beyond the declared width/height are invisible geometry, too.
+    const outOfBounds = {
+      ...scene,
+      walls: [...scene.walls, { x: 8, y: 0 }, { x: 999, y: 2 }],
+      floors: [...scene.floors, { x: 0, y: 8 }, { x: 3, y: 999 }],
+    };
+    expect(chroniclesMaterialSceneSeed(outOfBounds)).toBe(chroniclesMaterialSceneSeed(scene));
+    expect(chroniclesMaterialPlanForScene(outOfBounds)).toEqual(chroniclesMaterialPlanForScene(scene));
+    // The final in-bounds column/row must still contribute to the seed.
+    expect(chroniclesMaterialSceneSeed({
+      ...scene, walls: [...scene.walls, { x: 7, y: 7 }],
+    })).not.toBe(chroniclesMaterialSceneSeed(scene));
     // A new valid tile still changes the seed; corruption must not erase
     // legitimate variation between different dungeon layouts.
     expect(chroniclesMaterialSceneSeed({
