@@ -9,17 +9,21 @@ const browser = await chromium.launch({
 });
 const failures = [];
 try {
-  for (const width of [390, 1280]) {
-    // This fixture has no cookies or storage state. A fresh navigation recreates
-    // the real WebGL scene, while reusing the browser context avoids 19 GPU/
-    // renderer initializations per viewport. Keep all 38 visual assertions.
+  // Keep the full visual contract at 390 and desktop. Add compact 360/430
+  // storefront photography to catch narrow-phone crop regressions cheaply.
+  const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney'];
+  const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
+  for (const width of [360, 390, 430, 1280]) {
+    const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
+    // Fresh navigation recreates the real WebGL scene; one browser context per
+    // viewport keeps renderer initialization bounded.
     const context = await browser.newContext({
-      viewport: { width, height: width === 1280 ? 800 : 844 },
+      viewport: { width, height },
       deviceScaleFactor: 1,
     });
     const page = await context.newPage();
     try {
-      for (const view of ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney']) {
+      for (const view of width === 360 || width === 430 ? portraitShops : fullViews) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
@@ -176,7 +180,9 @@ try {
         assert.ok(Number(result.pixelVariants) >= 2,
           'Blank WebGL framebuffer: ' + JSON.stringify(result));
         assert.equal(result.canvasWidth, width);
-        assert.equal(result.canvasHeight, width === 1280 ? 800 : 844);
+        assert.equal(result.canvasHeight, height);
+        assert.equal(Number(result.cameraFov), width === 1280 ? 67 : 79,
+          'Swordhaven smoke must use the same portrait town lens as the game');
         assert.equal(result.overflowing, false);
         assert.deepEqual(pageErrors, []);
         console.log('OK real Swordhaven 3D ' + view + ' ' + width + 'px');
