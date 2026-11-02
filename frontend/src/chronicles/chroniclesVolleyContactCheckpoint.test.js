@@ -62,7 +62,7 @@ describe('MM3 B1 · checkpoint at melee contact', () => {
         turn, GOBLIN, undefined, turn.initiative,
       );
       expect(resolved?.error).toBeNull();
-      expect(resolved.acted.enemyTurnEvents.map(({ type }) => type).toEqual(['move']);
+      expect(resolved.acted.enemyTurnEvents.map(({ type }) => type)).toEqual(['move']);
       expect(chroniclesRuntimeEnemyPosition(resolved.committed, goblin)).toEqual({ x: 1, y });
       expect(resolved.committed.party.map(({ hp }) => hp)).toEqual(hpBefore);
       expect(resolved.committed.turns).toBe(fired.turns);
@@ -84,7 +84,7 @@ describe('MM3 B1 · checkpoint at melee contact', () => {
       turn, GOBLIN, undefined, turn.initiative,
     );
     expect(resolved?.error).toBeNull();
-    expect(resolved.acted.enemyTurnEvents.map(({ type }) => type).toEqual(['attack']);
+    expect(resolved.acted.enemyTurnEvents.map(({ type }) => type)).toEqual(['attack']);
     expect(chroniclesRuntimeEnemyPosition(resolved.committed, goblin)).toEqual({ x: 1, y: 2 });
     expect(resolved.committed.turns).toBe(fired.turns);
     expect(chroniclesCurrentInitiativeActor(resolved.committed.initiative)?.kind).toBe('party');
