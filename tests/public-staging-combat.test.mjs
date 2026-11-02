@@ -15,6 +15,18 @@ test('only shared SSO handshake is mocked; crypt enemy and damage stay real', ()
   assert.doesNotMatch(source, /route\.fulfill\([^)]*enemyHp/);
 });
 
+test('public combat onboarding follows the actual fresh-account primary action', () => {
+  const menu = readFileSync('frontend/src/components/ChroniclesSaveMenu.jsx', 'utf8');
+  assert.ok(menu.includes("data-chronicles-primary-action={resume ? 'continue' : 'new'}"));
+  assert.ok(menu.includes("onClick={() => onNew('swordhaven-first-book')}"));
+  assert.ok(menu.includes('Nueva expedición'));
+  assert.ok(source.includes('[data-chronicles-primary-action="new"] > button.is-primary'));
+  assert.ok(source.includes("start.waitFor({ state: 'visible', timeout: 30_000 })"));
+  assert.ok(source.includes('await start.click()'));
+  assert.doesNotMatch(source, /getByRole\('button', \{ name: \/Otra aventura\//);
+  assert.doesNotMatch(source, /\.chronicles-save-menu__more > summary/);
+});
+
 test('public crypt browser smoke passes native Node parse check before release', () => {
   const checked = spawnSync(process.execPath, ['--check', 'frontend/smoke/public-staging-combat.mjs'],
     { encoding: 'utf8', timeout: 10000 });
