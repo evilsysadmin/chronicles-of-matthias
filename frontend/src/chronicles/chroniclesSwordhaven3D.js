@@ -1170,9 +1170,21 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     bays.name = 'apothecary-botanical-window-bays';
     bays.userData.chroniclesDecorativeOnly = true;
     bays.position.z = facadeZ + 0.72;
-    const sageGlass = material(0x79aa8e, {
-      emissive: 0x183728, emissiveIntensity: 0.20,
-      roughness: 0.40, metalness: 0.02, side: THREE.DoubleSide,
+    // Layered glass reads as a real recessed shop window instead of a flat
+    // opaque green panel. The dark reveal sits behind translucent glazing;
+    // both remain within the existing decorative bay and solid house cells.
+    const sageGlass = material(0x93bfa1, {
+      emissive: 0x183728, emissiveIntensity: 0.12,
+      roughness: 0.24, metalness: 0.05, side: THREE.DoubleSide,
+      transparent: true, opacity: 0.72, depthWrite: false,
+    });
+    const bayShadow = material(0x243e32, {
+      emissive: 0x0b1c15, emissiveIntensity: 0.10,
+      roughness: 0.98, side: THREE.DoubleSide,
+    });
+    const glassReflection = material(0xd8eee0, {
+      roughness: 0.22, transparent: true, opacity: 0.20,
+      depthWrite: false, side: THREE.DoubleSide,
     });
     const arch = new THREE.Shape();
     arch.moveTo(-0.85, -0.77);
@@ -1219,8 +1231,13 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       }
       mesh(bay, new THREE.ShapeGeometry(arch), mats.stone,
         'apothecary-window-rounded-stone-arch', [0, 0, 0], !coarse);
+      mesh(bay, new THREE.ShapeGeometry(pane), bayShadow,
+        'apothecary-window-dark-reveal', [0, 0, 0.035]);
       mesh(bay, new THREE.ShapeGeometry(pane), sageGlass,
-        'apothecary-window-sage-glass', [0, 0, 0.07], !coarse);
+        'apothecary-window-sage-glass', [0, 0, 0.07]);
+      // A restrained vertical sky reflection stays inside the original pane.
+      mesh(bay, new THREE.PlaneGeometry(0.11, 0.94), glassReflection,
+        'apothecary-window-glass-reflection', [-0.43, -0.07, 0.115]);
       mesh(bay, new THREE.BoxGeometry(0.075, 1.33, 0.09), mats.timber,
         'apothecary-window-oak-mullion', [0, -0.08, 0.14]);
       mesh(bay, new THREE.BoxGeometry(1.36, 0.07, 0.09), mats.timber,
