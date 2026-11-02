@@ -441,12 +441,13 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     normalMap: swordhavenSurfaceNormalTexture('brick'),
     normalScale: new THREE.Vector2(0.42, 0.42), roughness: 0.97,
   }) : null;
-  // The smithy has smoke-darkened dressed stone instead of the guardhouse's
-  // pale limewash. Reuse cached town masonry maps; no extra textures or lights.
-  const forgeMasonry = isForge ? material(0x958171, {
+  // Lift the smithy's masonry midtones so its recessed ironwork and soot-dark
+  // corner courses read against the wall at street distance. Keep the same
+  // cached relief, footprint, geometry and lighting as the original facade.
+  const forgeMasonry = isForge ? material(0xb39b86, {
     map: swordhavenSurfaceTexture('masonry'),
     normalMap: swordhavenSurfaceNormalTexture('masonry'),
-    normalScale: new THREE.Vector2(0.45, 0.45), roughness: 0.98,
+    normalScale: new THREE.Vector2(0.53, 0.53), roughness: 0.98,
   }) : null;
   // The botica is a sage-coloured stone herb house, not another half-timbered
   // merchant frontage. Its roof herbarium, hanging herbs and doorway survive.
