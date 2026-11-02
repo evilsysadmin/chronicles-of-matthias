@@ -71,9 +71,9 @@ describe('Swordhaven forge masonry', () => {
     const forgeWindows = forge.children.filter(part => part.name === 'warm-glass-window');
     expect(forgeWindows).toHaveLength(2);
     for (const pane of forgeWindows) {
-      expect(pane.material.color.getHex()).toBe(0x49362c);
-      expect(pane.material.emissive.getHex()).toBe(0xa54c20);
-      expect(pane.material.emissiveIntensity).toBeCloseTo(0.36);
+      expect(pane.material.color.getHex()).toBe(0x8f6242);
+      expect(pane.material.emissive.getHex()).toBe(0xff8a2a);
+      expect(pane.material.emissiveIntensity).toBeCloseTo(0.72);
     }
     expect(tavern.children.find(part => part.name === 'warm-glass-window')?.material)
       .not.toBe(forgeWindows[0].material);
