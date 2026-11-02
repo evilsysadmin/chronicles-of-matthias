@@ -317,6 +317,33 @@ describe('Chronicles difficulty/progression policy', () => {
     expect(chroniclesRunDepth(run, 'entry')).toBe(0);
   });
 
+  it('increases dungeon threat only after unique deeper floors, including after route serialization', () => {
+    const progression = leveledParty(4);
+    const route = {
+      currentMapId: 'fifth',
+      areas: [
+        { mapId: 'swordhaven', regionKind: 'settlement' },
+        { mapId: 'entry', regionKind: 'dungeon' },
+        { mapId: 'road', regionKind: 'wilderness' },
+        { mapId: 'gallery', regionKind: 'dungeon' },
+        { mapId: 'gallery', regionKind: 'dungeon' },
+        { mapId: 'crypt', regionKind: 'dungeon' },
+        { mapId: 'vault', regionKind: 'dungeon' },
+        { mapId: 'fifth', regionKind: 'dungeon' },
+      ],
+    };
+    const bands = (run) => ['entry', 'gallery', 'crypt', 'vault', 'fifth'].map((mapId) =>
+      chroniclesDifficultyBand({ progression, depth: chroniclesRunDepth(run, mapId) }));
+    const expected = [[0, 2], [1, 2], [2, 3], [3, 3], [4, 4]];
+
+    expect(bands(route).map(({ depth, targetLevel }) => [depth, targetLevel]))
+      .toEqual(expected);
+    expect(bands(JSON.parse(JSON.stringify(route)))).toEqual(bands(route));
+    expect(bands(route).every(({ partyLevel, targetLevel, maxLevel }) =>
+      partyLevel === 4 && targetLevel <= partyLevel + 1 && maxLevel <= partyLevel + 1
+    )).toBe(true);
+  });
+
   it('derives run depth from the authoritative route order', () => {
     const run = {
       currentMapId: 'archive',
