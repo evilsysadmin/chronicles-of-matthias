@@ -27,6 +27,14 @@ test('public combat creates an official crypt run and resumes it via Home', () =
   assert.ok(source.includes('if (!completed) await page?.screenshot'));
 });
 
+test('public combat saves through the real menu action, including its keyboard hint', () => {
+  const menu = readFileSync('frontend/src/components/ChroniclesAdventureMenu.jsx', 'utf8');
+  assert.ok(menu.includes('data-chronicles-menu-save'));
+  assert.ok(menu.includes('Guardar partida · S'));
+  assert.ok(source.includes("page.locator('[data-chronicles-menu-save]').click()"));
+  assert.doesNotMatch(source, /getByRole\('button', \{ name: 'Guardar partida', exact: true \}\)/);
+});
+
 test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
   const guard = source.indexOf('try {');
   const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
