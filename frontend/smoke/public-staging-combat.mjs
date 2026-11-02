@@ -193,6 +193,8 @@ try {
   const resumed = await (await restoredBootstrap).json();
   assert.equal(resumed.runId, game.runId, 'F5 resumed a different expedition');
   assert.equal(resumed.currentMapId, saved.currentMapId, 'F5 lost the crypt');
+  // Reloading the same run must not silently resurrect a defeated enemy.
+  assert.equal(resumed.worldFlags?.enemyHp, 0, 'F5 resurrected the defeated pawn');
   for (const key of ['x', 'y', 'direction', 'turns', 'initiative']) {
     assert.deepEqual(resumed.worldFlags?.['__chrRuntime.' + key], flags['__chrRuntime.' + key],
       'F5 lost saved combat field: ' + key);
