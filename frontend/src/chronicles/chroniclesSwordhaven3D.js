@@ -1261,8 +1261,8 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // Low, steady furnace warmth behind the smithy's front panes. This is
     // emissive glass, not a new light source: it leaves scene lighting,
     // shadows, interaction targets and the authored walk grid untouched.
-    const forgeGlazing = isForge ? material(0x8f6242, {
-      emissive: 0xff8a2a, emissiveIntensity: 0.72, roughness: 0.88,
+    const forgeGlazing = isForge ? material(0x805737, {
+      emissive: 0xe8832d, emissiveIntensity: 0.52, roughness: 0.88,
     }) : null;
     for (const x of [-width * 0.33, width * 0.33]) {
       const front = facadeZ + 0.16;
