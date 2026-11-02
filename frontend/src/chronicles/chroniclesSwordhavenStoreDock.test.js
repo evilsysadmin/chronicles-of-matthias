@@ -32,28 +32,28 @@ describe('Swordhaven provisions side loading dock', () => {
     expect(roof.userData.chroniclesDecorativeOnly).toBe(true);
     expect(roof.rotation.z).toBeLessThan(-0.2);
     expect(roof.geometry.parameters.depth).toBeGreaterThan(5);
-    // Cedar joinery follows the pitched side canopy, rather than floating
+    // Four broad cedar planks follow the pitched side canopy, rather than floating
     // horizontally above it. Both batches are store-only and decorative.
-    const roofBattens = dock.getObjectByName('store-loading-dock-cedar-battens');
+    const roofBattens = dock.getObjectByName('store-loading-dock-cedar-planks');
     const fascia = dock.getObjectByName('store-loading-dock-cedar-fascia');
     expect(roofBattens).toBeInstanceOf(THREE.InstancedMesh);
     expect(fascia).toBeInstanceOf(THREE.InstancedMesh);
-    expect(roofBattens.count).toBe(6);
+    expect(roofBattens.count).toBe(4);
     expect(fascia.count).toBe(2);
-    expect(roofBattens.material).toBe(deck.material);
+    expect(roofBattens.material).toBe(roof.material);
     expect(fascia.material).toBe(deck.material);
-    expect(roofBattens.geometry.parameters.depth).toBeCloseTo(roof.geometry.parameters.depth - 0.12);
+    expect(roofBattens.geometry.parameters.depth).toBeCloseTo(roof.geometry.parameters.depth - 0.18);
     expect(roofBattens.userData.chroniclesDecorativeOnly).toBe(true);
     expect(fascia.userData.chroniclesDecorativeOnly).toBe(true);
-    expect(forge.getObjectByName('store-loading-dock-cedar-battens')).toBeFalsy();
+    expect(forge.getObjectByName('store-loading-dock-cedar-planks')).toBeFalsy();
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     for (let index = 0; index < roofBattens.count; index += 1) {
       roofBattens.getMatrixAt(index, matrix);
       position.setFromMatrixPosition(matrix);
-      const x = (index - 2.5) * 0.30;
+      const x = (index - 1.5) * 0.45;
       expect(position.y).toBeCloseTo(
-        x * Math.sin(roof.rotation.z) + 0.12 * Math.cos(roof.rotation.z), 4);
+        x * Math.sin(roof.rotation.z) + 0.115 * Math.cos(roof.rotation.z), 4);
     }
     expect(dock.children.filter(child => child.name === 'store-loading-dock-oak-post')).toHaveLength(2);
     expect(dock.children.filter(child => child.name === 'store-loading-dock-knee-brace')).toHaveLength(2);
