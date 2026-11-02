@@ -121,7 +121,7 @@ export function chroniclesTownSurfacePixels(kind) {
       // the focal point; keep brick and masonry mortar unchanged.
       for (let channel = 0; channel < 3; channel += 1) {
         const pigment = detail.mortar
-          ? (cobble ? (moss ? [112, 120, 91] : [132, 124, 112])
+          ? (kind === 'cobble' ? (moss ? [112, 120, 91] : [132, 124, 112])
             : kind === 'brick' ? [163, 150, 137] : [95, 89, 80])[channel]
           : lichen ? [130, 137, 100][channel]
           : base[channel] * detail.shade
