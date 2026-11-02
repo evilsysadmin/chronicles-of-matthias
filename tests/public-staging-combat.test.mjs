@@ -15,6 +15,15 @@ test('only shared SSO handshake is mocked; crypt enemy and damage stay real', ()
   assert.doesNotMatch(source, /route\.fulfill\([^)]*enemyHp/);
 });
 
+test('public combat entry tracks the canonical new-expedition UI and captures failures', () => {
+  const menu = readFileSync('frontend/src/components/ChroniclesSaveMenu.jsx', 'utf8');
+  assert.ok(menu.includes('data-chronicles-primary-action={resume ? \'continue\' : \'new\'}'));
+  assert.ok(source.includes('[data-chronicles-primary-action="new"] button.is-primary'));
+  assert.doesNotMatch(source, /getByRole\('button', \{ name: \/Otra aventura\//);
+  assert.ok(source.includes("chronicles-combat-failure.png"));
+  assert.ok(source.includes('if (!completed) await page?.screenshot'));
+});
+
 test('public crypt browser smoke passes native Node parse check before release', () => {
   const checked = spawnSync(process.execPath, ['--check', 'frontend/smoke/public-staging-combat.mjs'],
     { encoding: 'utf8', timeout: 10000 });
