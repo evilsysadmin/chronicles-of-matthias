@@ -41,8 +41,8 @@ describe('Chronicles procedural material seed · repeated geometry cells', () =>
     const damaged = {
       ...scene,
       walls: [null, {}, { x: NaN, y: 0 }, { x: Infinity, y: 0 },
-        { x: '1', y: 0 }, ...scene.walls],
-      floors: [undefined, { x: 1, y: 1.5 }, ...scene.floors],
+        { x: '1', y: 0 }, { x: -1, y: 0 }, { x: 0, y: -1 }, ...scene.walls],
+      floors: [undefined, { x: 1, y: 1.5 }, { x: -2, y: 1 }, ...scene.floors],
     };
     expect(chroniclesMaterialSceneSeed(damaged)).toBe(chroniclesMaterialSceneSeed(scene));
     expect(chroniclesMaterialPlanForScene(damaged)).toEqual(chroniclesMaterialPlanForScene(scene));
