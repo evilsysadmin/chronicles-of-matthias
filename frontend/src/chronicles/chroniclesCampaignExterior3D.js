@@ -732,8 +732,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // Book One shopfronts need a directional key to reveal dressed stone,
   // projecting eaves and recessed windows. Leave wilderness lighting intact.
   // Mobile keeps its existing no-shadow budget and the same light count.
-  const skyFill = settlement ? 1.24 : 1.4;
-  const sunKey = settlement ? (coarsePointer ? 1.38 : 1.72)
+  const skyFill = settlement ? 1.12 : 1.4;
+  const sunKey = settlement ? (coarsePointer ? 1.56 : 1.88)
     : (coarsePointer ? 1.18 : 1.55);
   scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, skyFill));
   const sunlight = new THREE.DirectionalLight(0xffe6ba, sunKey);
