@@ -42,4 +42,6 @@ test('combat actions wait for actual crypt render and a real turn', () => {
   assert.ok(source.includes('data-chronicles-turns'));
   assert.ok(source.indexOf("crypt.waitFor") < source.indexOf("page.keyboard.press('s')"));
   assert.ok(source.indexOf("page.waitForFunction(previous") < source.indexOf("page.keyboard.press('ArrowUp')"));
+  assert.ok(source.includes('assert.equal(afterVolleyTurns, cryptTurns + 1'),
+    'The live browser smoke must reject a duplicated volley exploration tick');
 });
