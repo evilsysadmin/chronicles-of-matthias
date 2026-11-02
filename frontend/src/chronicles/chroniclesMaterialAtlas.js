@@ -149,7 +149,8 @@ function cellSignature(entries = []) {
   // Ignore malformed cells from incomplete procedural geometry rather than
   // crashing or letting them change the stable material palette.
   return [...new Set((Array.isArray(entries) ? entries : [])
-    .filter((entry) => Number.isSafeInteger(entry?.x) && Number.isSafeInteger(entry?.y))
+    .filter((entry) => Number.isSafeInteger(entry?.x) && entry.x >= 0
+      && Number.isSafeInteger(entry?.y) && entry.y >= 0)
     .map((entry) => String(entry.x) + ',' + String(entry.y)))]
     .sort()
     .join(';');
