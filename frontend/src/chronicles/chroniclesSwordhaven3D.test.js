@@ -681,7 +681,7 @@ describe('Swordhaven modular real-time 3D', () => {
     const forgeWall = scene.getObjectByName('swordhaven-building-swordhaven-forge')
       .getObjectByName('timber-and-stone-walls').material;
     expect(forgeWall.normalMap).toBe(swordhavenSurfaceNormalTexture('masonry'));
-    expect(forgeWall.normalScale.toArray()).toEqual([0.45, 0.45]);
+    expect(forgeWall.normalScale.toArray()).toEqual([0.53, 0.53]);
     expect(forgeWall.map.repeat.toArray()).toEqual(forgeWall.normalMap.repeat.toArray());
     expect(scene.getObjectByName('swordhaven-street-cobblestones').material.normalMap)
       .toBe(swordhavenSurfaceNormalTexture('cobble'));
