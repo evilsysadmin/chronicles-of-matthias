@@ -790,7 +790,7 @@ try {
       && forge?.getObjectByName('timber-and-stone-walls')?.material?.map?.name === 'chronicles-town-masonry'
       && forge?.getObjectByName('timber-and-stone-walls')?.material?.map
         !== tavern?.getObjectByName('timber-and-stone-walls')?.material?.map
-      && forge?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0x958171
+      && forge?.getObjectByName('timber-and-stone-walls')?.material?.color?.getHex() === 0xb39b86
     )),
     distinctTavernPorch: String(Boolean(
       tavern?.getObjectByName('tavern-porch-awning')?.userData.chroniclesDecorativeOnly
