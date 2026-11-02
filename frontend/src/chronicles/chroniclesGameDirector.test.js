@@ -170,6 +170,24 @@ describe('Chronicles Game Director frontend resolver', () => {
     })).rejects.toMatchObject({ reason: 'seed-mismatch' });
   });
 
+  it.each([
+    ['unsupported schema', (payload) => { payload.schemaVersion = 99; }, 'unsupported-schema'],
+    ['wrong seed', (payload) => { payload.seed += 1; }, 'seed-mismatch'],
+    ['forged difficulty', (payload) => { payload.difficulty.targetLevel = 'hard'; }, 'invalid-difficulty'],
+  ])('never masks a remote %s with preview fallback', async (_case, mutate, reason) => {
+    const payload = remoteEnvelope('crypt-eight-squares', 71);
+    mutate(payload);
+    const fetchManifest = vi.fn().mockResolvedValue(payload);
+
+    await expect(chroniclesResolveAreaManifest('crypt-eight-squares', {
+      seed: 71,
+      fetchManifest,
+      allowBundledFallback: true,
+    })).rejects.toMatchObject({ reason });
+
+    expect(fetchManifest).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects malformed authoritative difficulty metadata', async () => {
     const payload = remoteEnvelope('crypt-eight-squares', 21);
     payload.difficulty.targetLevel = 'hard';
