@@ -92,6 +92,11 @@ try {
   await page.waitForFunction(previous =>
     Number(document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')?.getAttribute('data-chronicles-turns')) > previous,
     cryptTurns, { timeout: 12000 });
+  // A collective opening volley spends exactly one exploration action. A
+  // second tick here would let the enemy move/attack twice before contact.
+  const afterVolleyTurns = Number(await crypt.getAttribute('data-chronicles-turns'));
+  assert.equal(afterVolleyTurns, cryptTurns + 1,
+    'Opening S volley must consume exactly one turn, never a duplicate tick');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('a');
 
