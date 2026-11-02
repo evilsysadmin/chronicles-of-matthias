@@ -59,6 +59,18 @@ test('public B1 blocks out-of-range heroes instead of fabricating a melee hit', 
   assert.ok(source.includes('CHRONICLES_PUBLIC_COMBAT_ACTION'));
 });
 
+test('initiative and save lock are verified before any potentially lethal attack', () => {
+  const initiative = source.indexOf("assert.equal(await combatRail.count(), 1");
+  const saveLock = source.indexOf("assert.equal(await page.locator('[data-chronicles-menu-save]').isDisabled(), true");
+  const combatActions = source.indexOf("let usedTouch = false");
+  assert.ok(initiative >= 0 && initiative < saveLock && saveLock < combatActions,
+    'Combat must be observed before attacks can end it');
+  assert.doesNotMatch(source.slice(0, initiative), /page\\.keyboard\\.press\\('a'\\)|touch-action="attack"'\\]\\)\\.click/);
+  assert.ok(source.includes("assert.ok(usedTouch, 'The encounter must exercise a real mobile combat control')"));
+  assert.ok(source.includes("await touchAction.click()"));
+  assert.ok(source.includes("await page.keyboard.press(actionKey)"));
+});
+
 test('a failed crypt creation remains inside the temporary-account cleanup guard', () => {
   const guard = source.indexOf('try {');
   const create = source.indexOf("const expedition = await fetch(api + '/chronicles/runs'");
