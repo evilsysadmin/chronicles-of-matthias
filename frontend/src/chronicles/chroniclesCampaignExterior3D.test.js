@@ -32,6 +32,8 @@ describe('Chronicles file-authored exterior renderer', () => {
         grid, content, landscape: swordhavenFirstBook.landscape,
       },
     });
+    expect(scene.getObjectByName('chronicles-town-gate-outside-vista')).toBeTruthy();
+    expect(scene.getObjectByName('chronicles-town-gate-outer-meadow')).toBeTruthy();
     const buildings = scene.getObjectByName('chronicles-campaign-town').children;
     const watch = buildings.find(building => building.getObjectByName('watchhouse-front-iron-bars'));
     const forge = buildings.find(building => building.getObjectByName('forge-window-tool-displays'));
