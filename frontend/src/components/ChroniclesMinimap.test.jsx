@@ -19,12 +19,13 @@ describe('ChroniclesMinimap', () => {
     expect(html).toContain('data-chronicles-minimap-facing=');
   });
 
-  it('keeps the complete place name accessible while separating its optional visual prefix', () => {
+  it('shows just the place name visually while preserving the accessible location label', () => {
     const state = createChroniclesState('swordhaven-first-book');
     const html = renderToStaticMarkup(
       <ChroniclesMinimap state={state} visitedCells={[]} />,
     );
-    expect(html).toContain('class="chronicles-minimap__location-prefix">UBICACIÓN · </span>SWORDHAVEN');
+    expect(html).toMatch(/class="chronicles-minimap__location"[^>]*>SWORDHAVEN<\/span>/);
+    expect(html).not.toContain('UBICACIÓN ·');
     expect(html).toContain('Ubicación: SWORDHAVEN. Coordenadas:');
     expect(html).toContain('data-chronicles-location');
   });
