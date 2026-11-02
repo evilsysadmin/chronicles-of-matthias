@@ -23,6 +23,19 @@ const created = await fetch(api + '/auth/register', {
 assert.equal(created.status, 201);
 const token = (await created.json()).token;
 assert.ok(token);
+// This smoke exercises a shipped authored crypt through the REAL public API.
+// The default new-game UI now starts Book One in swordhaven-first-book; the
+// retired swordhaven-square route must not be assumed or resurrected.
+// First-hour UI creation is covered separately by public-staging-journey.mjs.
+const expedition = await fetch(api + '/chronicles/runs', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
+  body: JSON.stringify({ mapId: 'crypt-eight-squares' }),
+});
+assert.equal(expedition.status, 201, 'Cannot create the shipped crypt expedition');
+const game = await expedition.json();
+assert.equal(game.currentMapId, 'crypt-eight-squares');
+assert.ok(game.runId, 'Real crypt expedition has no run ID');
 let browser;
 let page;
 let completed = false;
@@ -54,32 +67,12 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.waitForFunction(() => Boolean(localStorage.getItem('chess-study-auth-token')), null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
-  // Use the canonical new-expedition action instead of an obsolete
-  // "Otra aventura" copy label. Its Swordhaven south exit leads to the
-  // authored crypt with a real corrupted pawn (never stubbed).
-  await page.locator('[data-chronicles-primary-action="new"] button.is-primary').click();
-  await page.locator('[data-chronicles-character-setup="choice"]').waitFor();
-  const newRun = page.waitForResponse(r => r.request().method() === 'POST'
-    && new URL(r.url()).pathname === '/api/chronicles/runs' && r.status() === 201,
-  { timeout: 30_000 });
-  await page.getByRole('button', { name: 'Empezar con este grupo' }).click();
-  const game = await (await newRun).json();
-  assert.equal(game.currentMapId, 'swordhaven-square', 'Legacy adventure must begin at Swordhaven');
-  await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
-  // At (9,16) facing north, one backward step enters the SOUTH exit at (9,17).
-  // Observe the real server-backed area transition; do not spawn an enemy by fiat.
-  const cryptCheckpoint = page.waitForResponse(r =>
-    r.request().method() === 'PUT'
-      && /\/api\/chronicles\/runs\/[^/]+\/checkpoint$/.test(new URL(r.url()).pathname)
-      && r.status() === 200
-      && r.request().postDataJSON()?.currentMapId === 'crypt-eight-squares',
-  { timeout: 30_000 });
-  await page.keyboard.press('ArrowDown');
-  const area = await cryptCheckpoint;
-  assert.equal(area.request().postDataJSON().currentMapId, 'crypt-eight-squares');
-  // A successful area-change checkpoint can arrive while the former map is
-  // still rendered. Wait for the ACTUAL new game state, not an old visible
-  // menu button. Otherwise S / A may hit the outgoing world or be dropped.
+  // Load the server-created crypt run through the real Home resume flow.
+  // Do not seed browser storage, inject a fake checkpoint or rely on the
+  // retired Swordhaven map. The game still owns every subsequent action.
+  await page.locator('[data-chronicles-primary-action="continue"] button.is-primary').click();
+  // Wait for the ACTUAL crypt state before firing S; an earlier Home or
+  // loading frame is not evidence that the expedition is playable.
   const crypt = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
   await crypt.waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
