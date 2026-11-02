@@ -55,6 +55,48 @@ export function dressSwordhavenStoreLoadingRoof(dock, { mats, coarse = false } =
     fascia.setMatrixAt(index, dummy.matrix);
   }
   fascia.instanceMatrix.needsUpdate = true;
-  dock.add(batten, fascia);
+
+  // Three exposed oak rafters support the cedar canopy from below. Their
+  // sloped undersides add a warehouse-like shadow line at street height
+  // without another material, light, collider or draw call per beam.
+  // They remain inside the original solid 3x3 building footprint.
+  const rafters = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(width - 0.18, 0.15, 0.17),
+    mats.timber, 3,
+  );
+  rafters.name = 'store-loading-dock-oak-underside-rafters';
+  rafters.position.copy(canopy.position);
+  rafters.castShadow = !coarse;
+  rafters.receiveShadow = true;
+  rafters.userData.chroniclesDecorativeOnly = true;
+  for (const [index, z] of [-depth * 0.32, 0, depth * 0.32].entries()) {
+    // Rotate the local roof normal, so each beam touches the pitched soffit.
+    dummy.position.set(0.16 * s, -0.16 * c, z);
+    dummy.rotation.set(0, 0, pitch);
+    dummy.updateMatrix();
+    rafters.setMatrixAt(index, dummy.matrix);
+  }
+  rafters.instanceMatrix.needsUpdate = true;
+
+  // The outer eave now has a continuous oak lip, visibly separating the
+  // pitched cedar roof from its shaded loading platform in oblique views.
+  // One short decorative mesh follows the existing roof pitch; its edge
+  // remains inside the same blocked building footprint.
+  const eave = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.24, depth - 0.10), mats.timber,
+  );
+  eave.name = 'store-loading-dock-oak-outer-eave';
+  const edgeX = width / 2 - 0.12;
+  const belowRoof = -0.14;
+  eave.position.set(
+    canopy.position.x + edgeX * c - belowRoof * s,
+    canopy.position.y + edgeX * s + belowRoof * c,
+    canopy.position.z,
+  );
+  eave.rotation.z = pitch;
+  eave.castShadow = !coarse;
+  eave.receiveShadow = true;
+  eave.userData.chroniclesDecorativeOnly = true;
+  dock.add(batten, fascia, rafters, eave);
   return batten;
 }
