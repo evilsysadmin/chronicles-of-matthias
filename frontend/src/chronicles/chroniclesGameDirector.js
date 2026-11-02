@@ -104,14 +104,26 @@ export async function chroniclesResolveAreaManifest(
   if (!chroniclesMapIds().includes(mapId)) return fail('unknown-map');
   if (typeof fetchManifest !== 'function') return fail('transport-unavailable');
 
+  let payload;
   try {
-    const payload = await fetchManifest(mapId, seed, { signal });
-    // Some transports resolve even after AbortSignal fires. Never reveal a
-    // stale area after the player has navigated elsewhere.
-    if (signal?.aborted) return fail('aborted');
-    return chroniclesValidateAreaEnvelope(payload, mapId, seed);
+    payload = await fetchManifest(mapId, seed, { signal });
   } catch (error) {
     if (signal?.aborted) return fail('aborted', error);
     return fail(error instanceof Error ? error.message : 'remote-unavailable', error);
+  }
+
+  // Some transports resolve even after AbortSignal fires. Never reveal a
+  // stale area after the player has navigated elsewhere.
+  if (signal?.aborted) return fail('aborted');
+
+  // A successful authoritative response must be valid, even in preview mode.
+  // Only transport failures may use bundled fallback; never hide corrupt
+  // manifests, mismatched seeds, or forged difficulty behind local content.
+  try {
+    return chroniclesValidateAreaEnvelope(payload, mapId, seed);
+  } catch (error) {
+    const failure = error instanceof Error ? error : new Error('invalid-envelope');
+    failure.reason = failure.message;
+    throw failure;
   }
 }
