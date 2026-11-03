@@ -96,8 +96,23 @@
   width: min(520px, calc(100vw - 24px));
   margin: 0;
   box-shadow: 0 5px 24px rgba(0, 0, 0, .6);
-  pointer-events: none;
+  pointer-events: auto;
 }
+.chronicles-progression-conflict p { margin: 0 0 8px; }
+.chronicles-progression-conflict button {
+  display: block;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid #dfb37b;
+  border-radius: 6px;
+  background: #422a18;
+  color: #fff0d5;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+.chronicles-progression-conflict button:focus-visible { outline: 2px solid #fff0d5; outline-offset: 2px; }
 .chronicles-save-menu__sync-recovery { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0; }
 .chronicles-save-menu__sync-error { margin: 0; flex: 1 1 200px; color: #e9b58a; font-size: .82rem; line-height: 1.4; }
 .chronicles-save-menu__sync-recovery button { min-height: 44px; }
