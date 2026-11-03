@@ -118,6 +118,34 @@ describe('Chronicles expedition entry', () => {
     expect(html).toContain('Descargar ambas versiones (.json)');
   });
 
+  it('does not expose a usable resolution choice until a backup is prepared and confirmed', () => {
+    const callback = vi.fn();
+    const initial = menu([], { progressionConflict: true, onDownloadProgressionBackup: vi.fn(),
+      onResolveProgressionConflict: callback });
+    expect(initial).toContain('Conservar este dispositivo');
+    expect(initial).toContain('Conservar el servidor');
+    expect(initial).toContain('He comprobado que guardé el JSON');
+    expect(initial).toMatch(/disabled=""[^>]*>Conservar este dispositivo<\/button>/);
+    expect(initial).toMatch(/disabled=""[^>]*>Conservar el servidor<\/button>/);
+    expect(initial).not.toContain('Confirmar elección');
+
+    const prepared = menu([], { progressionConflict: true, progressionBackupPrepared: true,
+      onDownloadProgressionBackup: vi.fn(), onResolveProgressionConflict: callback });
+    expect(prepared).toContain('He comprobado que guardé el JSON');
+    // Even after generating the download, the manual check must be explicit.
+    expect(prepared).toMatch(/disabled=""[^>]*>Conservar este dispositivo<\/button>/);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('does not show destructive choice actions without a real conflict or callback', () => {
+    const withCallback = menu([], { onResolveProgressionConflict: vi.fn(),
+      progressionBackupPrepared: true });
+    expect(withCallback).not.toContain('Conservar este dispositivo');
+    expect(withCallback).not.toContain('Conservar el servidor');
+    expect(menu([], { progressionConflict: true, progressionBackupPrepared: true }))
+      .not.toContain('Conservar este dispositivo');
+  });
+
   it('shows an explicit retry only for failed catalog sync, disabled while busy', () => {
     const error = 'No se pudo consultar el servidor.';
     const html = menu([], { error, onRetrySync: vi.fn() });
