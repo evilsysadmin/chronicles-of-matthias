@@ -1093,5 +1093,7 @@
    The existing coarse-pointer hide rule remains authoritative. */
 .chronicles .chronicles-game-menu__panel.chronicles-game-menu__panel--folio
 > small.chronicles-game-menu__hint {
-  font: 400 18px/1.3 var(--mm3-pixel-font);
+  /* The real game defines the MM3 font in Chrome.css. Isolated menu mounts
+     also need a valid shorthand so the declared 18px never falls back to 16. */
+  font: 400 18px/1.3 var(--mm3-pixel-font, Georgia, serif);
 }
