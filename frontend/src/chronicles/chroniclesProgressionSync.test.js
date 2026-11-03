@@ -49,18 +49,18 @@ describe('Chronicles progression across devices', () => {
     const skillB = unlockChroniclesSkill(base, 'knight', competingSkill);
     expect(skillA.unlocked).toBe(true);
     expect(skillB.unlocked).toBe(true);
-    expect(chroniclesPickProgression(skillA.progression, skillB.progression).from).toBe('remote');
+    expect(chroniclesPickProgression(skillA.progression, skillB.progression).from).toBe('conflict');
 
     const local = spendChroniclesAttributePoint(base, 'knight', 'vigor').progression;
     const remote = spendChroniclesAttributePoint(base, 'knight', 'agility').progression;
-    expect(chroniclesPickProgression(local, remote).from).toBe('remote');
+    expect(chroniclesPickProgression(local, remote).from).toBe('conflict');
   });
 
   it('does not confuse equal total XP with each character having equal XP', () => {
     const left = withXp(70);
     const right = withXp(40);
     right.heroes.rook.xp = 30;
-    expect(chroniclesPickProgression(left, right).from).toBe('remote');
+    expect(chroniclesPickProgression(left, right).from).toBe('conflict');
   });
 
   it('does not choose a local skill upgrade if it would lose server award receipts', () => {
@@ -89,7 +89,36 @@ describe('Chronicles progression across devices', () => {
         },
       },
     };
-    expect(chroniclesPickProgression(invalid, base).from).toBe('remote');
+    expect(chroniclesPickProgression(invalid, base).from).toBe('conflict');
+  });
+
+  it('does not claim a divergence when the server is demonstrably newer at the same XP', () => {
+    const local = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:newer-server').progression;
+    const remote = spendChroniclesAttributePoint(local, 'knight', 'vigor').progression;
+    const chosen = chroniclesPickProgression(local, remote);
+    expect(chosen.from).toBe('remote');
+    expect(chosen.progression.heroes.knight.attributes.vigor).toBe(1);
+  });
+
+  it('uses the remote save on a new device with no local copy even when builds could differ', () => {
+    const remote = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:fresh-device').progression;
+    const unsavedDefault = createChroniclesProgression();
+    expect(chroniclesPickProgression(unsavedDefault, remote, { hasLocalCopy: false }).from).toBe('remote');
+    // Never trust the unsaved default as a higher-XP record.
+    expect(chroniclesPickProgression(withXp(200), remote, { hasLocalCopy: false }).progression.heroes.knight.xp).toBe(50);
+  });
+
+  it('preserves unsynchronized local choices on a conflict rather than mutating either input', () => {
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:conflicting-choices').progression;
+    const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
+    const remote = unlockChroniclesSkill(base, 'knight', 'knight-heavy-bolts').progression;
+    const left = JSON.stringify(local);
+    const right = JSON.stringify(remote);
+    const picked = chroniclesPickProgression(local, remote);
+    expect(picked.from).toBe('conflict');
+    expect(picked.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(JSON.stringify(local)).toBe(left);
+    expect(JSON.stringify(remote)).toBe(right);
   });
 
   it('prefers the server on a tie and uses the local copy when the server has none', () => {
