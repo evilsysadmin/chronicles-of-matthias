@@ -88,6 +88,66 @@ async function assertActionCaptions(page, label, isTouch) {
   }
 }
 
+// Same temporary notice classes rendered by ChroniclesOfMatthias.jsx, measured
+// in Chromium against the actual stage and thumb controls at each viewport.
+async function assertNoticeReadability(page, viewport) {
+  const cases = [
+    { kind: 'refusal', classes: 'chronicles-quiet-action-notice',
+      text: 'No hay enemigos al alcance para disparar desde esta posición.' },
+    { kind: 'loot', classes: 'chronicles-quiet-action-notice chronicles-loot-notice',
+      text: 'Has encontrado 2 pociones curativas y una llave oxidada.' },
+    { kind: 'boon', classes: 'chronicles-quiet-action-notice chronicles-boon-expiry-notice',
+      text: 'La bendición temporal de la fuente se ha agotado.' },
+  ];
+  for (const sample of cases) {
+    const metrics = await page.locator('.chronicles-stage').evaluate((stage, notice) => {
+      const element = document.createElement('div');
+      element.className = notice.classes;
+      element.setAttribute('role', 'status');
+      element.setAttribute('aria-live', 'polite');
+      element.textContent = notice.text;
+      stage.appendChild(element);
+      try {
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        const controls = document.querySelector('.chronicles-touch').getBoundingClientRect();
+        const rect = el => ({
+          left: el.left, top: el.top, right: el.right, bottom: el.bottom,
+          width: el.width, height: el.height,
+        });
+        return {
+          notice: rect(box), controls: rect(controls),
+          font: parseFloat(style.fontSize), whiteSpace: style.whiteSpace,
+          pointerEvents: style.pointerEvents,
+          contentWidth: element.scrollWidth, innerWidth: element.clientWidth,
+          contentHeight: element.scrollHeight, innerHeight: element.clientHeight,
+          horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      } finally {
+        element.remove();
+      }
+    }, sample);
+    const label = sample.kind + ' ' + viewport.width + 'x' + viewport.height;
+    assert.ok(metrics.font >= 17,
+      label + ': temporary notice must be readable without browser zoom: ' + JSON.stringify(metrics));
+    assert.equal(metrics.whiteSpace, 'normal', label + ': long feedback must wrap');
+    assert.equal(metrics.pointerEvents, 'none', label + ': transient feedback must never block input');
+    assert.ok(metrics.notice.left >= -1 && metrics.notice.right <= viewport.width + 1
+      && metrics.notice.top >= -1 && metrics.notice.bottom <= viewport.height + 1,
+      label + ': notice escaped the screen: ' + JSON.stringify(metrics));
+    assert.ok(metrics.contentWidth <= metrics.innerWidth + 2
+      && metrics.contentHeight <= metrics.innerHeight + 2 && !metrics.horizontalOverflow,
+      label + ': notice text is clipped or scrolls sideways: ' + JSON.stringify(metrics));
+    const touchLayout = viewport.width <= 800
+      || (viewport.width <= 1024 && viewport.height <= 600);
+    if (sample.kind === 'refusal' && touchLayout) {
+      assert.ok(metrics.notice.bottom <= metrics.controls.top - 4,
+        label + ': rejected-action notice must clear touch controls: ' + JSON.stringify(metrics));
+    }
+  }
+  console.log('CHRONICLES_QUIET_NOTICE_READABLE_OK', viewport.width, viewport.height);
+}
+
 async function addCombatRoster(page) {
   await page.locator('.chronicles-stage-wrap').evaluate(main => {
     const section = document.createElement('section');
@@ -170,6 +230,7 @@ try {
       await page.goto(url, { waitUntil: 'load' });
       const baseline = await measure(page);
       verifyStable(baseline, baseline, 'baseline', viewport);
+      await assertNoticeReadability(page, viewport);
       // A non-caster renders no PH bar, but still reserves its second row:
       // the PV row must align with all three casters (the original regression).
       assert.equal(baseline.hpBars.length, 4, 'All four heroes need a PV bar');
@@ -287,6 +348,7 @@ try {
       });
       assert.equal(errors.length, 0, 'No mobile HUD script errors');
       assert.equal(m.overflow, false, 'Mobile HUD must not scroll horizontally: ' + JSON.stringify(m));
+      await assertNoticeReadability(page, viewport);
       assert.equal(m.heroes.length, 4, 'Four visible heroes stay in one row');
       assert.ok(m.party.right <= m.map.left - 2 || m.party.bottom <= m.map.top,
         'Readability must not move the party over the minimap: ' + JSON.stringify(m));
