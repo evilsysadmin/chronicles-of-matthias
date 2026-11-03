@@ -149,7 +149,7 @@ async function assertRealStatColorTones(sheet, viewport) {
       const row = grid.querySelector('[data-stat="condition"]');
       const value = row.querySelector(':scope > b');
       const note = row.querySelector(':scope > small').textContent.trim();
-      const hp = note.match(/^(\\d+)\\/(\\d+) PV/);
+      const hp = note.match(/^([0-9]+)[/]([0-9]+) PV/);
       const bonuses = [...grid.querySelectorAll('[data-stat]:not([data-stat="condition"])')].map((item) => {
         const em = item.querySelector('em[data-bonus-tone]');
         return {
