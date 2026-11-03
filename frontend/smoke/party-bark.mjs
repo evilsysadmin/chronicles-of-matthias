@@ -52,6 +52,11 @@ try {
 
       assert.equal(await tab.getAttribute('aria-expanded'), 'true');
       await detail.waitFor({ state: 'visible' });
+      // A visible panel may still be 1-5px into its 140ms translateY entrance.
+      // Measure settled geometry, not a transient animation frame.
+      await detail.evaluate(async (node) => {
+        await Promise.all(node.getAnimations().map((animation) => animation.finished.catch(() => {})));
+      });
       const metrics = await detail.evaluate((node) => {
         const rect = (element) => {
           const r = element.getBoundingClientRect();
