@@ -407,3 +407,100 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* MM3-inspired legibility pass: the item ledger and Examinar should read at
+   normal viewing distance. Restrict this to Equipo; no game rules, hit areas
+   or Tactics presentation are changed. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+  font-size: 1.02rem;
+  line-height: 1.25;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button > small {
+  font-size: .9rem;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] :is(.chronicles-character-sheet__shortcuts,
+  .chronicles-character-sheet__transfer-hint, .chronicles-character-sheet__worn-hint) {
+  font-size: .9rem;
+  line-height: 1.35;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-head small {
+  font-size: .9rem;
+  line-height: 1.25;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-head strong {
+  font-size: 1.38rem;
+  line-height: 1.22;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__item-essentials > span {
+  font-size: .9rem;
+  line-height: 1.25;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__swap-preview > summary {
+  font-size: .97rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__swap-preview > summary > strong {
+  font-size: 1.03rem;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__swap-preview > small {
+  font-size: .9rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__item-more > summary {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__item-more :is(dt, dd) {
+  font-size: .96rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+.chronicles-character-sheet__item-more :is(p, small) {
+  font-size: .9rem;
+  line-height: 1.35;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-equipment-folio] .chronicles-character-sheet__inspection-scrim
+> .chronicles-character-sheet__item-details > p {
+  font-size: .96rem;
+  line-height: 1.35;
+}
+@media (min-width: 851px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button {
+    font-size: 1.12rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+    font-size: .98rem;
+  }
+}
+@media (max-width: 850px), (max-height: 580px) {
+  /* The two visible touch commands must not fall back to 11px text.
+     Keep the existing two-column action bar and accessible full item names. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__classic-actions > button {
+    font-size: 1rem;
+    min-height: 48px;
+    height: auto;
+    line-height: 1.2;
+  }
+}
