@@ -1,6 +1,8 @@
 import { STORAGE_LOCAL, getStorageItem, setStorageItem } from './safeStorage.js';
 import { PROFILE_CHANGED_EVENT, setProfileStorageItem } from './profileKeys.js';
-import { TIME_CONTROLS } from './clock.js';
+// Keep the old chess setting readable without importing Chess Studio's clock engine.
+// The standalone Chronicles game does not expose chess time controls.
+const LEGACY_CHESS_TIME_CONTROL_IDS = new Set(['none', '1+0', '3+2', '5+0', '10+0', '15+10']);
 
 export const DEFAULT_TIME_CONTROL_KEY = 'chess-study-default-time-control';
 export const UI_LANGUAGE_KEY = 'chess-study-ui-language';
@@ -65,11 +67,11 @@ function installReducedMotionInvalidationListeners() {
 
 export function getDefaultTimeControlId() {
   const value = getStorageItem(STORAGE_LOCAL, DEFAULT_TIME_CONTROL_KEY) || 'none';
-  return TIME_CONTROLS.some((row) => row.id === value) ? value : 'none';
+  return LEGACY_CHESS_TIME_CONTROL_IDS.has(value) ? value : 'none';
 }
 
 export function setDefaultTimeControlId(value) {
-  const normalized = TIME_CONTROLS.some((row) => row.id === value) ? value : 'none';
+  const normalized = LEGACY_CHESS_TIME_CONTROL_IDS.has(value) ? value : 'none';
   setProfileStorageItem(DEFAULT_TIME_CONTROL_KEY, normalized);
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(USER_PREFERENCES_CHANGED_EVENT));
   return normalized;
