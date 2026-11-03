@@ -179,6 +179,8 @@ export default function ChroniclesCharacterSheet({
     : firstPersonStats.damage;
   const effectiveAgility = chroniclesPartyInitiativeAgility(state, member);
   const mm3 = !tacticsMode && member.mm3 ? member.mm3 : null;
+  // State-of-health is derived from real current/max PV, never persisted UI state.
+  const conditionTone = member.hp <= 0 ? 'fallen' : member.hp < member.maxHp ? 'wounded' : 'healthy';
   const className = mm3?.classLabel || profile.className;
   const relic = relicDetails(state, member.id);
   const inventory = (tacticsMode
@@ -788,7 +790,7 @@ export default function ChroniclesCharacterSheet({
                   title={`${CHRONICLES_MM3_STAT_EFFECTS[key]} · Base ${member.characterBuild?.stats?.[key] ?? mm3.stats[key]}`}>
                   <ChroniclesCharacterStatIcon stat={key} />
                   <span>{CHRONICLES_MM3_STAT_LABELS[key]}</span>
-                  <b>{mm3.stats[key]} <em>({signed(mm3.bonuses[key])})</em></b>
+                  <b>{mm3.stats[key]} <em data-bonus-tone={mm3.bonuses[key] > 0 ? 'benefit' : mm3.bonuses[key] < 0 ? 'penalty' : 'neutral'}>({signed(mm3.bonuses[key])})</em></b>
                   <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
                     ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}
                     {mm3.temporaryBoon?.stat === key
@@ -796,10 +798,11 @@ export default function ChroniclesCharacterSheet({
                       : ''}</small>
                 </div>
               ))}
-              <div data-stat="condition" title="Estado general según los puntos de vida actuales">
+              <div data-stat="condition" data-condition={conditionTone}
+                title="Estado general según los puntos de vida actuales">
                 <ChroniclesCharacterStatIcon stat="condition" />
                 <span>ESTADO</span>
-                <b>{member.hp <= 0 ? 'Caído' : member.hp < member.maxHp ? 'Herido' : 'Sano'}</b>
+                <b>{conditionTone === 'fallen' ? 'Caído' : conditionTone === 'wounded' ? 'Herido' : 'Sano'}</b>
                 <small>{member.hp}/{member.maxHp} PV · condición física</small>
               </div>
             </div>
