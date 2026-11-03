@@ -207,3 +207,88 @@
     flex: 1 1 100%;
   }
 }
+
+/* MM3 spellbook readability: the large catalogue must spend its space on
+   spell names, categories and PH costs, not tiny type. Long names may use a
+   second line; the existing scrolling catalogue absorbs the extra height.
+   Only the first-person spell folio is affected, never CAST or Tactics. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__toolbar b {
+  font-size: 1.18rem;
+  line-height: 1.2;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__toolbar small {
+  font-size: .95rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__filter button {
+  min-height: 44px;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list button {
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 60px;
+  height: auto;
+  gap: 8px;
+  padding: 7px 9px;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__entry b {
+  font-size: 1.12rem;
+  line-height: 1.2;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__entry small {
+  font-size: .94rem;
+  line-height: 1.25;
+  opacity: 1;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__cost {
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspect-trigger {
+  font-size: 1rem;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail-head small {
+  font-size: .94rem;
+  line-height: 1.3;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail h4 {
+  font-size: 1.38rem;
+  line-height: 1.22;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail p {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__detail dl div {
+  font-size: 1rem;
+  line-height: 1.3;
+  flex-wrap: wrap;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__inspection-scrim .chronicles-sheet-grimoire__availability {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__hint {
+  font-size: .94rem;
+  line-height: 1.35;
+}
