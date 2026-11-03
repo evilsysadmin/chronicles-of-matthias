@@ -49,6 +49,45 @@ async function addAction(page, id) {
   }, id);
 }
 
+// Read computed typography and painted bounds, not just CSS strings.
+async function assertActionCaptions(page, label, isTouch) {
+  const captions = await page.locator('.chronicles-touch button small').evaluateAll(nodes =>
+    nodes.map(node => {
+      const style = getComputedStyle(node);
+      const box = node.getBoundingClientRect();
+      const parent = node.closest('button').getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return {
+        text: node.textContent.trim(),
+        font: parseFloat(style.fontSize),
+        width: box.width,
+        textWidth: range.getBoundingClientRect().width,
+        left: box.left,
+        right: box.right,
+        parentLeft: parent.left,
+        parentRight: parent.right,
+        hidden: box.width <= 2 || box.height <= 2 || style.visibility === 'hidden',
+      };
+    }).filter(node => !node.hidden)
+  );
+  const expected = isTouch ? ['MATTHIAS', 'MAGIA', 'USAR', 'BLOCK']
+    : ['MATTHIAS', 'MAGIA', 'USAR'];
+  for (const word of expected) {
+    const item = captions.find(caption => caption.text === word);
+    assert.ok(item, label + ': missing caption ' + word + ' ' + JSON.stringify(captions));
+    assert.ok(item.font >= (word === 'MATTHIAS' ? 10 : isTouch ? 11 : 12),
+      label + ': action caption has microscopic type ' + JSON.stringify(item));
+    assert.ok(item.width > 10 && item.left >= item.parentLeft - 2
+      && item.right <= item.parentRight + 2,
+      label + ': action caption spills out of its button ' + JSON.stringify(item));
+    if (word !== 'MATTHIAS') {
+      assert.ok(item.textWidth <= item.width + 2,
+        label + ': short action label must not be ellipsized ' + JSON.stringify(item));
+    }
+  }
+}
+
 async function addCombatRoster(page) {
   await page.locator('.chronicles-stage-wrap').evaluate(main => {
     const section = document.createElement('section');
@@ -170,6 +209,7 @@ try {
       await page.locator('[data-chronicles-touch-action="block"]').click();
       assert.equal(await page.locator('[data-chronicles-touch-action="block"]')
         .getAttribute('data-pressed'), 'yes');
+      await assertActionCaptions(page, 'desktop ' + viewport.width, false);
 
       // Actual failure from the sewer screenshot: combat roster injects a
       // right-rail track, yet all six portraits must stay in the viewport.
@@ -218,6 +258,12 @@ try {
     page.on('pageerror', e => errors.push(e.message));
     try {
       await page.goto(url, { waitUntil: 'load' });
+      // Check the real MM3 movement and combat controls, including contextual
+      // actions that only appear during spells, combat or object interaction.
+      await addAction(page, 'cast');
+      await addAction(page, 'interact');
+      await addAction(page, 'block');
+      await assertActionCaptions(page, 'touch ' + viewport.width, true);
       const m = await page.evaluate(() => {
         const bounds = node => {
           const r = node.getBoundingClientRect();
