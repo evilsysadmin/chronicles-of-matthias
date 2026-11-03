@@ -53,8 +53,8 @@
     background: #b97b46;
     padding: 10px 13px 8px;
   }
-  /* The seven MM3 stats plus the actual HP-based condition form two clean
-     four-column rows; no half-empty second statistics card. */
+  /* The seven MM3 stats plus the HP-based condition share one ledger.
+     Three columns at laptop widths avoid cramped microtype. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats {
     /* Beat the old two-column desktop folio's grid-column:2. Otherwise
