@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
+import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
 
 const css = readFileSync(new URL('./ChroniclesCharacterRecordV3.css', import.meta.url), 'utf8');
 const render = (mode = 'chronicles') => {
@@ -58,6 +59,14 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('@media (min-width: 1550px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('font-size: .9rem;');
+  });
+  it('keeps company gold in the G group summary rather than individual character headers', () => {
+    const status = renderToStaticMarkup(createElement(ChroniclesQuickStatus, {
+      open: true, rows: [], gold: 40, onClose: () => {}, onOpenSheet: () => {},
+    }));
+    expect(status).toContain('ESTADO DEL GRUPO');
+    expect(status).toContain('ORO <b>40</b>');
+    expect(render()).not.toContain('data-resource="gold"');
   });
   it('keeps non-record chapters and Tactics outside the new layout', () => {
     expect(render('tactics')).not.toContain('data-chronicles-chapter="record"');
