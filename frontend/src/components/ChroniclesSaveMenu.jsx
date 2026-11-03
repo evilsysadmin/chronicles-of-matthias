@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useChroniclesAdminAccess } from '../chronicles/useChroniclesAdminAccess.js';
 import ChroniclesPlayerAdmin from './ChroniclesPlayerAdmin.jsx';
 import './ChroniclesSaveMenu.css';
@@ -56,6 +56,14 @@ export default function ChroniclesSaveMenu({
   const [confirmForget, setConfirmForget] = useState(null);
   const [resolutionChoice, setResolutionChoice] = useState(null);
   const [backupAcknowledged, setBackupAcknowledged] = useState(false);
+  // A failed/stale resolution invalidates the previous confirmation, even if
+  // the old choices are still in React state during the next backup download.
+  useEffect(() => {
+    if (!progressionBackupPrepared) {
+      setResolutionChoice(null);
+      setBackupAcknowledged(false);
+    }
+  }, [progressionBackupPrepared]);
   const resume = saves.find((save) => save.active) || saves[0] || null;
   // Cached metadata is safe to read during an outage, but unsafe to edit or
   // delete while the authoritative catalog is unresolved.
