@@ -26,7 +26,7 @@ export default function ChroniclesGameHelp({ onBack }) {
           muestra para cada héroe el valor actual → el nuevo y su variación
           en verde (mejora) o rojo (empeora).</p>
         <p>Un arma cuerpo a cuerpo a dos manos sustituye al escudo.
-          Los escudos no aportan protección mientras disparas con arco o ballesta.</p>
+          El escudo sigue aportando protección al disparar con arco, ballesta u honda.</p>
         <p>Los objetos equipados no se venden. Las pociones y pergaminos
           se usan desde OBJETOS, sin equiparlos.</p>
       </details>
