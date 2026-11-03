@@ -17,6 +17,7 @@ import './ChroniclesCharacterEquipmentWorkspace.css';
 import './ChroniclesCharacterLevelMM3.css';
 import ChroniclesCharacterGrimoire from './ChroniclesCharacterGrimoire.jsx';
 import ChroniclesInventoryItemIcon from './ChroniclesInventoryItemIcon.jsx';
+import ChroniclesCharacterStatIcon from './ChroniclesCharacterStatIcon.jsx';
 import {
   CHRONICLES_GOLD_ITEM_ID,
   chroniclesGoldBalance,
@@ -785,6 +786,7 @@ export default function ChroniclesCharacterSheet({
               {CHRONICLES_MM3_STATS.map((key) => (
                 <div key={key} data-stat={key}
                   title={`${CHRONICLES_MM3_STAT_EFFECTS[key]} · Base ${member.characterBuild?.stats?.[key] ?? mm3.stats[key]}`}>
+                  <ChroniclesCharacterStatIcon stat={key} />
                   <span>{CHRONICLES_MM3_STAT_LABELS[key]}</span>
                   <b>{mm3.stats[key]} <em>({signed(mm3.bonuses[key])})</em></b>
                   <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
@@ -795,6 +797,7 @@ export default function ChroniclesCharacterSheet({
                 </div>
               ))}
               <div data-stat="condition" title="Estado general según los puntos de vida actuales">
+                <ChroniclesCharacterStatIcon stat="condition" />
                 <span>ESTADO</span>
                 <b>{member.hp <= 0 ? 'Caído' : member.hp < member.maxHp ? 'Herido' : 'Sano'}</b>
                 <small>{member.hp}/{member.maxHp} PV · condición física</small>
