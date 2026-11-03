@@ -29,7 +29,6 @@ import {
   loadChroniclesCharacterDraft,
   saveChroniclesCharacterDraft,
 } from '../chronicles/chroniclesCharacterDraft.js';
-import { clearRememberedLabMode, rememberLabMode } from '../labLaunchIntent.js';
 import './ChroniclesCharacterSetup.css';
 
 function customFrom(build) {
@@ -70,7 +69,6 @@ export default function ChroniclesCharacterSetup({
   currentBuild,
   onConfirm,
   onExit,
-  recoveryLabMode = null,
 }) {
   const normalizedCurrent = useMemo(
     () => normalizeChroniclesCharacterBuild(currentBuild, CHRONICLES_PARTY),
@@ -92,20 +90,17 @@ export default function ChroniclesCharacterSetup({
 
   useEffect(() => {
     if (!editing) return;
-    const saved = saveChroniclesCharacterDraft({ activeSlot, editorStep, build: draft }, CHRONICLES_PARTY);
-    if (saved && recoveryLabMode) rememberLabMode(recoveryLabMode);
-  }, [activeSlot, editorStep, draft, editing, recoveryLabMode]);
+    saveChroniclesCharacterDraft({ activeSlot, editorStep, build: draft }, CHRONICLES_PARTY);
+  }, [activeSlot, editorStep, draft, editing]);
 
   const clearRecovery = () => {
     clearChroniclesCharacterDraft();
-    clearRememberedLabMode();
   };
 
   const confirmBuild = (build) => {
-    // The character draft is finished, but the player is still inside
-    // Chronicles. Keep the Lab mode across F5 so the active run can resume.
+    // The standalone MM3/Tactics route comes from the URL; the campaign
+    // checkpoint, not Chess Studio's Lab mode, restores a run across F5.
     clearChroniclesCharacterDraft();
-    if (recoveryLabMode) rememberLabMode(recoveryLabMode);
     onConfirm(build);
   };
 
