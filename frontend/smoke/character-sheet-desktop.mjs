@@ -876,6 +876,72 @@ try {
     } finally { await ctx.close(); }
   }
 
+  // Mobile Status must show every attribute at human scale and let the user
+  // scroll through the final row without burying it behind persistent portraits.
+  async function assertTouchStatusReadable(sheet, width) {
+    const ledger = sheet.locator('[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats');
+    const rows = await ledger.evaluate((grid) => ({
+      columns: getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length,
+      cells: [...grid.querySelectorAll('[data-stat]')].map((row) => {
+        const get = (selector) => row.querySelector(selector);
+        const size = (element) => element ? parseFloat(getComputedStyle(element).fontSize) : null;
+        const label = get('span');
+        const value = get('b');
+        const note = get('small');
+        const modifier = get('em');
+        const bounds = (element) => element.getBoundingClientRect();
+        return {
+          stat: row.dataset.stat,
+          label: size(label), value: size(value),
+          note: size(note), modifier: size(modifier),
+          clipped: row.scrollWidth > row.clientWidth + 2
+            || [label, value, note, modifier].filter(Boolean)
+              .some((node) => node.scrollWidth > node.clientWidth + 2),
+          overlap: bounds(label).right > bounds(value).left + 2
+            && bounds(label).top < bounds(value).bottom
+            && bounds(value).top < bounds(label).bottom,
+        };
+      }),
+      sidewaysOverflow: grid.scrollWidth > grid.clientWidth + 2,
+    }));
+    assert.equal(rows.cells.length, 8, 'Seven stats and current physical condition must remain visible');
+    if (width <= 520) assert.equal(rows.columns, 1,
+      'Narrow phones need one readable stat column, never two tiny ones');
+    assert.ok(rows.cells.every((row) => row.label >= 17 && row.value >= 25
+      && row.note >= 16 && (row.modifier == null || row.modifier >= 16)
+      && !row.clipped && !row.overlap) && !rows.sidewaysOverflow,
+      'Status labels, values and effects must remain readable without collisions at '
+        + width + ': ' + JSON.stringify(rows));
+
+    const last = ledger.locator('[data-stat="condition"]');
+    await last.evaluate((node) => node.scrollIntoView({ block: 'end', inline: 'nearest' }));
+    const reach = await sheet.evaluate((node) => {
+      const scroll = node.querySelector('.chronicles-character-sheet__scroll');
+      const target = node.querySelector('[data-chronicles-chapter="record"] [data-stat="condition"]');
+      const dock = node.querySelector('.chronicles-character-sheet__party-dock');
+      const sr = scroll.getBoundingClientRect();
+      const tr = target.getBoundingClientRect();
+      const dr = dock.getBoundingClientRect();
+      return {
+        top: tr.top, bottom: tr.bottom,
+        scrollTop: scroll.scrollTop, maxScroll: scroll.scrollHeight - scroll.clientHeight,
+        viewportTop: sr.top, viewportBottom: sr.bottom, dockTop: dr.top,
+        pageOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+      };
+    });
+    assert.ok(reach.top >= reach.viewportTop - 2
+      && reach.bottom <= reach.viewportBottom + 2
+      && reach.bottom <= reach.dockTop + 2
+      && !reach.pageOverflow,
+      'Last State attribute must be reachable above the fixed portrait dock: '
+        + JSON.stringify(reach));
+    if (width <= 520) assert.ok(reach.scrollTop > 0 && reach.maxScroll > 0,
+      'Narrow phones must really scroll to reach the final attribute: '
+        + JSON.stringify(reach));
+    await sheet.locator('.chronicles-character-sheet__scroll')
+      .evaluate((node) => { node.scrollTop = 0; });
+  }
+
   // Readability regression on actual touch widths, not merely a CSS source
   // check. Inspecting magic must preserve scrolling, focus and the PH column.
   for (const [width, height] of [[360,780],[390,844],[430,932]]) {
@@ -886,6 +952,7 @@ try {
       await page.goto(url, { waitUntil: 'networkidle' });
       const sheet = page.locator('[data-chronicles-folio="v2"]');
       await sheet.waitFor({ state: 'visible' });
+      await assertTouchStatusReadable(sheet, width);
       await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
       await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
         .getByRole('button', { name: /Hechizos/ }).click();
