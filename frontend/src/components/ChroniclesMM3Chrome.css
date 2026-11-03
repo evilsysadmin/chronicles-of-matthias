@@ -1808,6 +1808,11 @@
    The active fighter's name is deliberately narrower: it must fit even when
    Hildegard takes the turn in a 74px mobile attack control. */
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
+  /* At the 1025px breakpoint each action slab is only ~52px wide.
+     Reclaim inner padding instead of shrinking MAGIA back to microtype. */
+  .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) {
+    padding-inline: 1px;
+  }
   .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) > small {
     max-width: 100%;
     overflow: hidden;
