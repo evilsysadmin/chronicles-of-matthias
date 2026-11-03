@@ -1,6 +1,6 @@
 import { authHeader, getUsername } from '../auth.js';
 import { requestJson } from '../http.js';
-import { chroniclesSkillsForMember, normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
+import { chroniclesAllowedAttributes, chroniclesSkillsForMember, normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 
 // The heroes' progression (build, XP, attributes) lives on the server too,
 // so it follows the account between the phone and the desktop. Each save
@@ -66,7 +66,9 @@ function localAdvancesEqualXp(local, remote) {
     for (const id of next.skills) {
       if (previous.skills.includes(id)) continue;
       const definition = definitions.find((skill) => skill.id === id);
-      if (!definition) return false;
+      if (!definition || definition.requiredLevel > next.level
+        || next.skills.some((other) => other !== id
+          && definitions.some((skill) => skill.id === other && skill.group === definition.group))) return false;
       spentSkills += definition.cost;
     }
     if (next.skillPoints + spentSkills !== previous.skillPoints) return false;
@@ -75,7 +77,7 @@ function localAdvancesEqualXp(local, remote) {
     let spentAttributes = 0;
     for (const [key, value] of Object.entries(previous.attributes)) {
       const delta = next.attributes[key] - value;
-      if (delta < 0) return false;
+      if (delta < 0 || (delta > 0 && !chroniclesAllowedAttributes(memberId).includes(key))) return false;
       spentAttributes += delta;
     }
     if (next.attributePoints + spentAttributes !== previous.attributePoints) return false;
