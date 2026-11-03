@@ -99,6 +99,7 @@ import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
 import { CHRONICLES_TURN_ENGINE_VERSION } from '../chroniclesOfMatthiasTurns.js';
 import {
+  CHRONICLES_PROGRESSION_STORAGE_KEY,
   applyChroniclesProgressionToTacticsState,
   applyChroniclesTacticsProgression,
   chroniclesFreshExpeditionProgression,
@@ -134,6 +135,7 @@ import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
 import { chroniclesPullProgression, chroniclesPushProgression } from '../chronicles/chroniclesProgressionSync.js';
+import { getStorageItem, STORAGE_LOCAL } from '../safeStorage.js';
 import {
   chroniclesClearSessionResume,
   chroniclesLoadSessionResume,
@@ -252,18 +254,26 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // between devices). Runs bootstrap only once it has been pulled, or the
   // pull failed and the local copy stands.
   const [progressionSynced, setProgressionSynced] = useState(false);
+  const [progressionConflict, setProgressionConflict] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    chroniclesPullProgression(progressionRef.current, { signal: controller.signal })
+    const hasLocalCopy = getStorageItem(STORAGE_LOCAL, CHRONICLES_PROGRESSION_STORAGE_KEY) !== null;
+    chroniclesPullProgression(progressionRef.current, { signal: controller.signal, hasLocalCopy })
       .then((pulled) => {
         if (!active || runProgressionActiveRef.current) return;
+        if (pulled.from === 'conflict') {
+          setProgressionConflict(true);
+          return;
+        }
         if (pulled.from === 'remote') {
           const saved = saveChroniclesProgression(pulled.progression);
           progressionRef.current = saved;
           setProgression(saved);
         }
-        if (pulled.needsPush) void chroniclesPushProgression(pulled.progression).catch(() => {});
+        if (pulled.needsPush) void chroniclesPushProgression(pulled.progression)
+          .then((result) => { if (active && result.conflict) setProgressionConflict(true); })
+          .catch(() => {});
       })
       .catch(() => {})
       .finally(() => { if (active) setProgressionSynced(true); });
@@ -1831,6 +1841,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           saves={saveInventory ?? chroniclesListSavedRuns(FIRST_PERSON_RUN_SCOPE)}
           loading={saveMenuLoading}
           error={saveMenuError}
+          progressionConflict={progressionConflict}
           busyRunId={saveMenuBusy}
           onRetrySync={() => refreshSaves((value) => value + 1)}
           onNew={startFreshGame}
@@ -1964,6 +1975,12 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       onClickCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
       onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
     >
+      {progressionConflict && (
+        <p className="chronicles-progression-conflict chronicles-progression-conflict--play" role="alert">
+          La progresión local y la del servidor son distintas. Ninguna se ha sobrescrito.
+          Evita cerrar sesión: este dispositivo conserva cambios sin sincronizar.
+        </p>
+      )}
       <div className="chronicles-shell">
         <aside className="chronicles-party" aria-label="Grupo de Matthias">
           <span className="chronicles-panel-kicker">GRUPO · 1–4 SELECCIONAR · DOBLE FICHA</span>
