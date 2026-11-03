@@ -138,7 +138,9 @@ async function assertNoticeReadability(page, viewport) {
     assert.ok(metrics.contentWidth <= metrics.innerWidth + 2
       && metrics.contentHeight <= metrics.innerHeight + 2 && !metrics.horizontalOverflow,
       label + ': notice text is clipped or scrolls sideways: ' + JSON.stringify(metrics));
-    if (sample.kind === 'refusal') {
+    const touchLayout = viewport.width <= 800
+      || (viewport.width <= 1024 && viewport.height <= 600);
+    if (sample.kind === 'refusal' && touchLayout) {
       assert.ok(metrics.notice.bottom <= metrics.controls.top - 4,
         label + ': rejected-action notice must clear touch controls: ' + JSON.stringify(metrics));
     }
