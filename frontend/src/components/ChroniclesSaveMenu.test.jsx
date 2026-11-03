@@ -82,6 +82,18 @@ describe('Chronicles expedition entry', () => {
     }
   });
 
+  it('warns about incompatible progress without suggesting the save catalog failed', () => {
+    const html = menu([{ id: 'saved', active: true, title: 'Mi partida' }], {
+      progressionConflict: true,
+    });
+    expect(html).toContain('role="alert"');
+    expect(html).toContain('No se ha sobrescrito ninguna');
+    expect(html).toContain('cambios sin sincronizar');
+    expect(html).toContain('Mi partida');
+    expect(html).not.toContain('Reintentar sincronización');
+    expect(menu([])).not.toContain('cambios sin sincronizar');
+  });
+
   it('shows an explicit retry only for failed catalog sync, disabled while busy', () => {
     const error = 'No se pudo consultar el servidor.';
     const html = menu([], { error, onRetrySync: vi.fn() });

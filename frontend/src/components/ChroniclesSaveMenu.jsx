@@ -44,7 +44,7 @@ function saveWhen(value) {
 
 export default function ChroniclesSaveMenu({
   saves = [], onNew, onLoad, onRename, onForget, onDelete, onExit,
-  loading = false, error = '', busyRunId = null, onRetrySync, initialScreen = 'home',
+  loading = false, error = '', progressionConflict = false, busyRunId = null, onRetrySync, initialScreen = 'home',
 }) {
   const [screen, setScreen] = useState(initialScreen === 'load' ? 'load' : 'home');
   const { isAdmin: mayViewAdmin, status: adminStatus, retry: retryAdminAccess } = useChroniclesAdminAccess();
@@ -84,6 +84,12 @@ export default function ChroniclesSaveMenu({
             <strong>¿Tu primera expedición?</strong>
             <p>Elige un grupo preparado o crea cuatro aventureros. Después explorarás Swordhaven; podrás guardar desde el menú durante la aventura.</p>
           </div>
+        )}
+        {progressionConflict && (
+          <p className="chronicles-progression-conflict" role="alert">
+            La progresión local y la del servidor son distintas. No se ha sobrescrito ninguna.
+            Este dispositivo conserva cambios sin sincronizar: evita cerrar sesión hasta resolverlo.
+          </p>
         )}
         {loading && <p className="chronicles-save-menu__sync" role="status">Consultando expediciones del servidor…</p>}
         {error && (

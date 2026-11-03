@@ -91,22 +91,34 @@ function localAdvancesEqualXp(local, remote) {
   return advanced;
 }
 
-export function chroniclesPickProgression(local, remote) {
+export function chroniclesPickProgression(local, remote, { hasLocalCopy = true } = {}) {
   if (!remote) return { progression: normalizeChroniclesProgression(local), from: 'local' };
   const normalizedRemote = normalizeChroniclesProgression(remote);
+  // A fresh device has no local progression to lose. Do not mistake the
+  // default party for a conflicting user-created character build.
+  if (!hasLocalCopy) return { progression: normalizedRemote, from: 'remote' };
   const normalizedLocal = normalizeChroniclesProgression(local);
-  const localAhead = totalXp(normalizedLocal) > totalXp(normalizedRemote)
-    || (totalXp(normalizedLocal) === totalXp(normalizedRemote)
-      && localAdvancesEqualXp(normalizedLocal, normalizedRemote));
-  return localAhead ? { progression: normalizedLocal, from: 'local' } : { progression: normalizedRemote, from: 'remote' };
+  const localXp = totalXp(normalizedLocal);
+  const remoteXp = totalXp(normalizedRemote);
+  if (localXp > remoteXp) return { progression: normalizedLocal, from: 'local' };
+  if (localXp < remoteXp) return { progression: normalizedRemote, from: 'remote' };
+  if (sameProgression(normalizedLocal, normalizedRemote))
+    return { progression: normalizedRemote, from: 'remote' };
+  if (localAdvancesEqualXp(normalizedLocal, normalizedRemote))
+    return { progression: normalizedLocal, from: 'local' };
+  if (localAdvancesEqualXp(normalizedRemote, normalizedLocal))
+    return { progression: normalizedRemote, from: 'remote' };
+  // Equal XP but irreconcilable changes: keep both local and server copies
+  // untouched, and let the caller warn the player. Never auto-merge doctrines.
+  return { progression: normalizedLocal, from: 'conflict' };
 }
 
-export async function chroniclesPullProgression(local, { signal } = {}) {
+export async function chroniclesPullProgression(local, { signal, hasLocalCopy = true } = {}) {
   const { owner } = currentRevision();
   const payload = await requestJson(URL, { headers: authHeader(), signal });
   assertCurrentRevisionOwner(owner);
   knownRevision = Number.isInteger(payload?.revision) ? payload.revision : 0;
-  const picked = chroniclesPickProgression(local, payload?.progression || null);
+  const picked = chroniclesPickProgression(local, payload?.progression || null, { hasLocalCopy });
   const needsPush = !payload?.progression || (picked.from === 'local' && !sameProgression(picked.progression, payload.progression));
   return { ...picked, needsPush };
 }
@@ -129,6 +141,7 @@ export async function chroniclesPushProgression(progression, { retries = 1 } = {
     // Another device saved meanwhile: keep the more advanced progression.
     knownRevision = Number(error.body?.revision || 0);
     const picked = chroniclesPickProgression(progression, error.body?.progression || null);
+    if (picked.from === 'conflict') return { pushed: false, progression: picked.progression, conflict: true };
     if (picked.from === 'remote') return { pushed: false, progression: picked.progression };
     return chroniclesPushProgression(picked.progression, { retries: retries - 1 });
   }

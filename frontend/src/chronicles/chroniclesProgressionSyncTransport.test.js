@@ -126,6 +126,43 @@ describe('Chronicles progression revision ownership', () => {
     expect(pushedBaseRevision(1)).toBe(5);
   });
 
+  it('does not upload either incompatible doctrine after an equal-XP pull', async () => {
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:tie-pull').progression;
+    const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
+    const remote = unlockChroniclesSkill(base, 'knight', 'knight-heavy-bolts').progression;
+    requestJson.mockResolvedValueOnce({ revision: 5, progression: remote });
+
+    const result = await chroniclesPullProgression(local);
+    expect(result.from).toBe('conflict');
+    expect(result.needsPush).toBe(false);
+    expect(result.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry a 409 by overwriting incompatible remote progression', async () => {
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:tie-409').progression;
+    const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
+    const remote = unlockChroniclesSkill(base, 'knight', 'knight-heavy-bolts').progression;
+    requestJson.mockRejectedValueOnce(Object.assign(new Error('conflict'), {
+      status: 409, body: { revision: 9, progression: remote },
+    }));
+
+    const result = await chroniclesPushProgression(local);
+    expect(result).toMatchObject({ pushed: false, conflict: true });
+    expect(result.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('pulls the server record on a fresh device without risking an unnecessary push', async () => {
+    const server = withXp(15);
+    requestJson.mockResolvedValueOnce({ revision: 8, progression: server });
+    const result = await chroniclesPullProgression(withXp(50), { hasLocalCopy: false });
+    expect(result.from).toBe('remote');
+    expect(result.needsPush).toBe(false);
+    expect(result.progression.heroes.matthias.xp).toBe(15);
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps the existing same-user 409 conflict retry behavior', async () => {
     requestJson.mockRejectedValueOnce(Object.assign(new Error('conflict'), {
       status: 409,
