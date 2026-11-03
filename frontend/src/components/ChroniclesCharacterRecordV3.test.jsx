@@ -59,7 +59,11 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('font-size: clamp(28px, 2.1vw, 36px);');
     expect(css).toContain('@media (min-width: 1550px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
-    expect(css).toContain('font-size: .9rem;');
+    expect(css).toContain('@media (max-width: 520px)');
+    expect(css).toContain('font-size: 17px;');
+    expect(css).toContain('font-size: 25px;');
+    expect(css).toContain('font-size: 16px;');
+    expect(css).toContain('grid-template-columns: minmax(0, 1fr);');
   });
   it('keeps company gold in the G group summary rather than individual character headers', () => {
     const status = renderToStaticMarkup(createElement(ChroniclesQuickStatus, {
