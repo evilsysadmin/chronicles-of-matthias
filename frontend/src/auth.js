@@ -8,9 +8,8 @@ import { request, requestJson, setSessionRefresher } from './http.js';
 import { ssoEnabled, ssoForgotPassword, ssoLogin, ssoLogout, ssoRegister, ssoSilentToken } from './shadowopsIdentity.js';
 import { markAmbientThemeSessionFresh, clearAmbientThemeSessionStorage } from './audioSession.js';
 import { clearSessionView } from './viewState.js';
-import { clearAllClockSnapshots } from './clockPersistence.js';
 import { APP_RELEASE } from './release.js';
-import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, removeStorageItem, setStorageItem } from './safeStorage.js';
+import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, listStorageKeys, removeStorageItem, setStorageItem } from './safeStorage.js';
 import { setUiLanguage } from './userPreferences.js';
 import { clearMatthiasSessionSignals, queueMatthiasLoginGreeting } from './matthiasSession.js';
 
@@ -22,6 +21,9 @@ export const PRESENCE_DOCUMENT_OWNER_KEY = 'chess-study-presence-owner-v1';
 const AUTH_STORAGE_KEYS = Object.freeze([TOKEN_KEY, USERNAME_KEY]);
 // Historic Chess Studio session-only state; kept for account isolation when
 // upgrading an older standalone browser. Do not revive these subsystems.
+// Clock ids were dynamic (one per Chess Studio match), so a prefix sweep
+// must survive after retiring the unused chess-clock persistence engine.
+const LEGACY_CHESS_CLOCK_PREFIX = 'chess-study-clock:';
 const LEGACY_CHESS_SESSION_KEYS = Object.freeze([
   'chess-study-active-combat-session-v1',
   'chess-study-active-combat-markers-v1',
@@ -122,7 +124,9 @@ export function watchSessionIdentity(onChange) {
 // en un camino pero sobreviva accidentalmente en el otro.
 function clearSessionRuntimeState() {
   clearSessionView();
-  clearAllClockSnapshots();
+  for (const key of listStorageKeys(STORAGE_LOCAL, { prefix: LEGACY_CHESS_CLOCK_PREFIX })) {
+    removeStorageItem(STORAGE_LOCAL, key);
+  }
   // Chronicles never starts Chess Studio's Combat Chess or Home nudge. Clear
   // their historic session keys without importing their unused engines.
   for (const key of LEGACY_CHESS_SESSION_KEYS) removeStorageItem(STORAGE_SESSION, key);
