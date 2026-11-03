@@ -16,14 +16,14 @@
   align-items: center;
   gap: 7px;
   min-height: 40px;
-  max-width: min(220px, 100%);
+  max-width: min(240px, 100%);
   padding: 5px 10px 5px 5px;
   border: 1px solid rgba(202, 164, 104, .43);
   border-radius: 999px;
   background: rgba(19, 15, 12, .91);
   color: #e8c88f;
   box-shadow: 0 5px 16px #0006;
-  font: 700 .7rem/1.2 Georgia, 'Times New Roman', serif;
+  font: 700 14px/1.3 Georgia, 'Times New Roman', serif;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -58,7 +58,7 @@
   width: min(345px, calc(100vw - 28px));
   max-height: min(36vh, 180px);
   overflow: auto;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid rgba(202, 164, 104, .47);
   border-left: 3px solid rgba(230, 181, 100, .78);
   border-radius: 5px;
@@ -73,7 +73,7 @@
 .chronicles-party-bark__details p {
   margin: 0;
   overflow-wrap: anywhere;
-  font: .84rem/1.4 Georgia, 'Times New Roman', serif;
+  font: 16px/1.45 Georgia, 'Times New Roman', serif;
 }
 .chronicles-party-bark[data-expanded="true"] .chronicles-party-bark__details,
 .chronicles-party-bark:focus-within .chronicles-party-bark__details {
@@ -105,7 +105,7 @@
 }
 .chronicles-party-bark__action {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 44px;
   align-items: center;
   margin-top: 8px;
   padding: 6px 12px;
@@ -114,7 +114,7 @@
   background: rgba(65, 42, 21, .98);
   color: #f4dfb9;
   cursor: pointer;
-  font: 700 .73rem/1.2 Georgia, serif;
+  font: 700 15px/1.3 Georgia, serif;
 }
 .chronicles-party-bark__action:focus-visible {
   outline: 2px solid #f7d58d;
