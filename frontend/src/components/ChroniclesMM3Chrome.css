@@ -1802,3 +1802,42 @@
     -webkit-text-stroke: .15px #090909;
   }
 }
+
+/* Action captions belong to the play HUD, not to 8px footnotes. Preserve the
+   existing action grid, icon size, touch targets and full accessible labels.
+   The active fighter's name is deliberately narrower: it must fit even when
+   Hildegard takes the turn in a 74px mobile attack control. */
+@media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
+  /* At the 1025px breakpoint each action slab is only ~52px wide.
+     Reclaim inner padding instead of shrinking MAGIA back to microtype. */
+  .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) {
+    padding-inline: 1px;
+  }
+  .chronicles .chronicles-touch button:is(.is-attack, .is-magic, .is-contextual) > small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 700 13px/1.15 Arial, var(--mm3-hud-font);
+    letter-spacing: 0;
+  }
+  .chronicles .chronicles-touch button.is-attack > small,
+  .chronicles .chronicles-touch button.is-attack:disabled > small {
+    font-size: 11px;
+    letter-spacing: -.015em;
+  }
+}
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-touch button > small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 700 clamp(11px, 2.8vw, 12px)/1.15 Arial, var(--mm3-hud-font);
+    letter-spacing: 0;
+  }
+  .chronicles .chronicles-touch button.is-attack > small,
+  .chronicles .chronicles-touch button.is-attack:disabled > small {
+    font-size: 10.25px;
+    letter-spacing: -.015em;
+  }
+}
