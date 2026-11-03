@@ -129,6 +129,8 @@ jobs:
           node smoke/run-timed.mjs smoke/adventure-menu-shortcuts.mjs http://localhost:4174/smoke/adventure-menu-shortcuts.html
           # One click selects, double click/tap or Enter opens, spell targeting takes precedence.
           node smoke/run-timed.mjs smoke/party-avatar-interaction.mjs http://localhost:4174/smoke/party-avatar-interaction.html
+          # Live party bark: readable speech, hover/focus, mobile toggle and real equipment callback.
+          node smoke/run-timed.mjs smoke/party-bark.mjs http://localhost:4174/smoke/party-bark.html
           # No viewport jump at Swordhaven X13 Y16 when USAR appears; also covers CAST/BLOCK.
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.

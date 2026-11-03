@@ -9,16 +9,16 @@ import test from 'node:test';
 const runner = fileURLToPath(new URL('../frontend/smoke/run-timed.mjs', import.meta.url));
 const workflow = readFileSync(new URL('../.github/workflows/react-frontend.yml', import.meta.url), 'utf8');
 
-test('all 20 real Chromium fixtures stay sequential and measured', () => {
+test('all 21 real Chromium fixtures stay sequential and measured', () => {
   const scripts = [...workflow.matchAll(/^          node smoke\/run-timed\.mjs smoke\/([a-z0-9-]+\.mjs) http:\/\/localhost:\d+\//gm)]
     .map((x) => x[1]);
-  assert.equal(scripts.length, 20, 'a missing smoke fixture must not silently shorten CI');
-  assert.equal(new Set(scripts).size, 20);
+  assert.equal(scripts.length, 21, 'a missing smoke fixture must not silently shorten CI');
+  assert.equal(new Set(scripts).size, 21);
   for (const expected of [
     'mount.mjs', 'character-sheet-desktop.mjs', 'spell-target-banner.mjs', 'initiative-legibility.mjs',
     'folio-mobile.mjs', 'shop-room.mjs', 'audience-room.mjs', 'interior-art-gate.mjs', 'inn-room.mjs', 'provisions-room.mjs', 'journal-book.mjs',
     'loader.mjs', 'character-setup.mjs', 'save-menu.mjs', 'first-hour-contact.mjs',
-    'adventure-menu-shortcuts.mjs', 'party-avatar-interaction.mjs', 'party-hud-stability.mjs', 'area-transition-choice.mjs',
+    'adventure-menu-shortcuts.mjs', 'party-avatar-interaction.mjs', 'party-bark.mjs', 'party-hud-stability.mjs', 'area-transition-choice.mjs',
     'swordhaven-streets.mjs',
   ]) {
     assert.ok(scripts.includes(expected), expected);
