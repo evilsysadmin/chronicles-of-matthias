@@ -45,13 +45,17 @@ function saveWhen(value) {
 export default function ChroniclesSaveMenu({
   saves = [], onNew, onLoad, onRename, onForget, onDelete, onExit,
   loading = false, error = '', progressionConflict = false, progressionBackupError = '',
-  onDownloadProgressionBackup = null, busyRunId = null, onRetrySync, initialScreen = 'home',
+  onDownloadProgressionBackup = null, onResolveProgressionConflict = null,
+  progressionBackupPrepared = false, progressionResolutionBusy = false,
+  busyRunId = null, onRetrySync, initialScreen = 'home',
 }) {
   const [screen, setScreen] = useState(initialScreen === 'load' ? 'load' : 'home');
   const { isAdmin: mayViewAdmin, status: adminStatus, retry: retryAdminAccess } = useChroniclesAdminAccess();
   const [editing, setEditing] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [confirmForget, setConfirmForget] = useState(null);
+  const [resolutionChoice, setResolutionChoice] = useState(null);
+  const [backupAcknowledged, setBackupAcknowledged] = useState(false);
   const resume = saves.find((save) => save.active) || saves[0] || null;
   // Cached metadata is safe to read during an outage, but unsafe to edit or
   // delete while the authoritative catalog is unresolved.
@@ -96,6 +100,43 @@ export default function ChroniclesSaveMenu({
               </button>
             )}
             {progressionBackupError && <p>{progressionBackupError}</p>}
+            {onResolveProgressionConflict && (
+              <section className="chronicles-progression-resolution" aria-label="Resolver conflicto de progresión">
+                <p>Para elegir una versión, descarga primero el respaldo y comprueba que el fichero JSON está guardado.
+                  La elección descartará la otra versión activa; el respaldo será tu copia de recuperación.</p>
+                <label>
+                  <input type="checkbox" checked={backupAcknowledged}
+                    disabled={!progressionBackupPrepared || progressionResolutionBusy}
+                    onChange={(event) => setBackupAcknowledged(event.target.checked)} />
+                  He comprobado que guardé el JSON con ambas versiones.
+                </label>
+                <div className="chronicles-progression-resolution__actions">
+                  <button type="button"
+                    disabled={!progressionBackupPrepared || !backupAcknowledged || progressionResolutionBusy}
+                    onClick={() => setResolutionChoice('local')}>Conservar este dispositivo</button>
+                  <button type="button"
+                    disabled={!progressionBackupPrepared || !backupAcknowledged || progressionResolutionBusy}
+                    onClick={() => setResolutionChoice('remote')}>Conservar el servidor</button>
+                </div>
+                {resolutionChoice && progressionBackupPrepared && backupAcknowledged && (
+                  <div className="chronicles-progression-resolution__confirm" role="group"
+                    aria-label="Confirmación final de resolución">
+                    <p>
+                      {resolutionChoice === 'local'
+                        ? 'Se reemplazará la progresión del servidor con la de este dispositivo, solo si nadie la ha modificado mientras tanto.'
+                        : 'Se reemplazará la progresión de este dispositivo con la del servidor, solo si ninguna copia ha cambiado.'}
+                      {' '}Esta operación requiere tu confirmación.
+                    </p>
+                    <button type="button" disabled={progressionResolutionBusy}
+                      onClick={() => { void onResolveProgressionConflict(resolutionChoice); }}>
+                      {progressionResolutionBusy ? 'Comprobando…' : 'Confirmar elección'}
+                    </button>
+                    <button type="button" disabled={progressionResolutionBusy}
+                      onClick={() => setResolutionChoice(null)}>Cancelar</button>
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         )}
         {loading && <p className="chronicles-save-menu__sync" role="status">Consultando expediciones del servidor…</p>}
