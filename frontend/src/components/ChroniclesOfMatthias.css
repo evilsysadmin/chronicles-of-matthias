@@ -1474,9 +1474,10 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   min-height: 46px;
   padding: 5px 3px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 1px;
+  align-content: center;
   border: 1px solid rgba(197, 160, 105, .2);
   border-radius: 9px;
   background: rgba(10, 8, 6, .68);
