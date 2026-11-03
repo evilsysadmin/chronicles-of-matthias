@@ -113,6 +113,43 @@
   font-weight: 650;
 }
 .chronicles-progression-conflict button:focus-visible { outline: 2px solid #fff0d5; outline-offset: 2px; }
+
+.chronicles-progression-resolution {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(235, 173, 96, .35);
+}
+.chronicles-progression-resolution p { margin: 0 0 10px; line-height: 1.55; }
+.chronicles-progression-resolution label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .83rem;
+  line-height: 1.45;
+}
+.chronicles-progression-resolution input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: #dfb37b;
+}
+.chronicles-progression-resolution__actions,
+.chronicles-progression-resolution__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.chronicles-progression-resolution__actions button { flex: 1 1 185px; }
+.chronicles-progression-resolution button:disabled { cursor: not-allowed; opacity: .55; }
+.chronicles-progression-resolution__confirm {
+  display: block;
+  padding: 10px;
+  border: 1px solid rgba(235, 173, 96, .55);
+  border-radius: 6px;
+}
+.chronicles-progression-resolution__confirm button { display: inline-block; margin-right: 8px; }
+
 .chronicles-save-menu__sync-recovery { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0; }
 .chronicles-save-menu__sync-error { margin: 0; flex: 1 1 200px; color: #e9b58a; font-size: .82rem; line-height: 1.4; }
 .chronicles-save-menu__sync-recovery button { min-height: 44px; }
