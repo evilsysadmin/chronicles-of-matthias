@@ -156,6 +156,8 @@ export function markProfileDirtyForCurrentUser(key = null) {
 }
 
 export function profileDirtyStateForCurrentUser() {
+  // A stale tab must never inspect another account's dirty journal.
+  if (!profileStorageIdentityMatchesCurrentUser()) return { dirty: false, valid: true, keys: [] };
   const username = getStorageItem(STORAGE_LOCAL, AUTH_USERNAME_KEY);
   const owner = getStorageItem(STORAGE_LOCAL, PROFILE_DIRTY_USER_KEY);
   if (!username || owner !== username) {
@@ -185,13 +187,16 @@ export function dirtyProfileKeysForCurrentUser() {
 }
 
 export function hasDirtyProfileForCurrentUser() {
+  if (!profileStorageIdentityMatchesCurrentUser()) return false;
   const username = getStorageItem(STORAGE_LOCAL, AUTH_USERNAME_KEY);
   return !!username && getStorageItem(STORAGE_LOCAL, PROFILE_DIRTY_USER_KEY) === username;
 }
 
 export function clearProfileDirty() {
+  if (!profileStorageIdentityMatchesCurrentUser()) return false;
   removeStorageItem(STORAGE_LOCAL, PROFILE_DIRTY_USER_KEY);
   removeStorageItem(STORAGE_LOCAL, PROFILE_DIRTY_KEYS_KEY);
+  return true;
 }
 
 export function setProfileStorageItem(key, value) {
@@ -239,7 +244,10 @@ export function clearProfileCache({ notify = false } = {}) {
 }
 
 export function clearLocalUserState() {
+  // A late logout/cache reset from Alice must not clear Bob's session keys.
+  if (!profileStorageIdentityMatchesCurrentUser()) return false;
   clearProfileCache();
   for (const key of SESSION_STATE_KEYS) removeStorageItem(STORAGE_LOCAL, key);
   clearProfileDirty();
+  return true;
 }
