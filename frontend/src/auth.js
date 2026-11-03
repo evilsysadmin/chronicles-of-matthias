@@ -9,9 +9,6 @@ import { ssoEnabled, ssoForgotPassword, ssoLogin, ssoLogout, ssoRegister, ssoSil
 import { markAmbientThemeSessionFresh, clearAmbientThemeSessionStorage } from './audioSession.js';
 import { clearSessionView } from './viewState.js';
 import { clearAllClockSnapshots } from './clockPersistence.js';
-import { clearCombatSession } from './combatSession.js';
-import { clearCombatDebriefSession } from './combatDebriefSession.js';
-import { clearHomePlayNudgeSession } from './homePlayNudge.js';
 import { APP_RELEASE } from './release.js';
 import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, removeStorageItem, setStorageItem } from './safeStorage.js';
 import { setUiLanguage } from './userPreferences.js';
@@ -24,6 +21,14 @@ export const PRESENCE_SESSION_KEY = 'chess-study-presence-session-v1';
 export const PRESENCE_DOCUMENT_OWNER_KEY = 'chess-study-presence-owner-v1';
 
 const AUTH_STORAGE_KEYS = Object.freeze([TOKEN_KEY, USERNAME_KEY]);
+// Historic Chess Studio session-only state; kept for account isolation when
+// upgrading an older standalone browser. Do not revive these subsystems.
+const LEGACY_CHESS_SESSION_KEYS = Object.freeze([
+  'chess-study-active-combat-session-v1',
+  'chess-study-active-combat-markers-v1',
+  'chess-study-combat-post-battle-debrief-v1',
+  'chess-study-home-play-nudge-shown-v1',
+]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 const SSO_EXPIRY_KEY = 'chronicles-sso-expires-at';
@@ -118,9 +123,9 @@ export function watchSessionIdentity(onChange) {
 function clearSessionRuntimeState() {
   clearSessionView();
   clearAllClockSnapshots();
-  clearCombatSession();
-  clearCombatDebriefSession();
-  clearHomePlayNudgeSession();
+  // Chronicles never starts Chess Studio's Combat Chess or Home nudge. Clear
+  // their historic session keys without importing their unused engines.
+  for (const key of LEGACY_CHESS_SESSION_KEYS) removeStorageItem(STORAGE_SESSION, key);
   clearPvpEnrollment();
 }
 
