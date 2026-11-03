@@ -30,7 +30,7 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr))');
   });
-  it('fills the record workspace on zoomed desktops while keeping four legible columns', () => {
+  it('fills the record workspace on zoomed desktops and adapts columns for readable type', () => {
     // The legacy folio places statistics in grid column 2; at CSS heights
     // of 581-699px that left half was empty despite ample horizontal space.
     expect(css).toContain('.chronicles-character-sheet__backdrop:has(');
