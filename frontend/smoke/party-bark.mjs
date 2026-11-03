@@ -22,10 +22,11 @@ try {
     page.on('pageerror', (error) => errors.push(error.message));
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded' });
-      const tab = page.getByRole('button', { name: 'Comentario de Hildegard. Leer' });
+      const tab = page.locator('.chronicles-party-bark__trigger');
       const detail = page.locator('.chronicles-party-bark__details');
       const action = page.getByRole('button', { name: 'Revisar equipo' });
       await tab.waitFor({ state: 'visible' });
+      assert.equal(await tab.getAttribute('aria-label'), 'Comentario de Hildegard. Leer');
       assert.equal(await tab.getAttribute('aria-expanded'), 'false');
       assert.equal(await detail.isVisible(), false, 'Comment must not start expanded');
 
