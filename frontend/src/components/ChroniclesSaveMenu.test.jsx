@@ -94,6 +94,30 @@ describe('Chronicles expedition entry', () => {
     expect(menu([])).not.toContain('cambios sin sincronizar');
   });
 
+  it('offers an explicit backup of both progression branches only on a conflict', () => {
+    const onDownloadProgressionBackup = vi.fn();
+    const html = menu([], {
+      progressionConflict: true,
+      onDownloadProgressionBackup,
+    });
+    expect(html).toContain('Descargar ambas versiones (.json)');
+    expect(html).toContain('role="alert"');
+    expect(onDownloadProgressionBackup).not.toHaveBeenCalled();
+    expect(menu([], { progressionConflict: true })).not.toContain('Descargar ambas versiones (.json)');
+    expect(menu([], { onDownloadProgressionBackup })).not.toContain('Descargar ambas versiones (.json)');
+  });
+
+  it('shows backup export failures without losing the pending conflict notice', () => {
+    const html = menu([], {
+      progressionConflict: true,
+      onDownloadProgressionBackup: vi.fn(),
+      progressionBackupError: 'No se pudo generar la copia.',
+    });
+    expect(html).toContain('No se pudo generar la copia.');
+    expect(html).toContain('No se ha sobrescrito ninguna');
+    expect(html).toContain('Descargar ambas versiones (.json)');
+  });
+
   it('shows an explicit retry only for failed catalog sync, disabled while busy', () => {
     const error = 'No se pudo consultar el servidor.';
     const html = menu([], { error, onRetrySync: vi.fn() });

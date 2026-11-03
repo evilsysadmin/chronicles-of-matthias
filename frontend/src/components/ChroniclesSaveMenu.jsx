@@ -44,7 +44,8 @@ function saveWhen(value) {
 
 export default function ChroniclesSaveMenu({
   saves = [], onNew, onLoad, onRename, onForget, onDelete, onExit,
-  loading = false, error = '', progressionConflict = false, busyRunId = null, onRetrySync, initialScreen = 'home',
+  loading = false, error = '', progressionConflict = false, progressionBackupError = '',
+  onDownloadProgressionBackup = null, busyRunId = null, onRetrySync, initialScreen = 'home',
 }) {
   const [screen, setScreen] = useState(initialScreen === 'load' ? 'load' : 'home');
   const { isAdmin: mayViewAdmin, status: adminStatus, retry: retryAdminAccess } = useChroniclesAdminAccess();
@@ -86,10 +87,16 @@ export default function ChroniclesSaveMenu({
           </div>
         )}
         {progressionConflict && (
-          <p className="chronicles-progression-conflict" role="alert">
-            La progresión local y la del servidor son distintas. No se ha sobrescrito ninguna.
-            Este dispositivo conserva cambios sin sincronizar: evita cerrar sesión hasta resolverlo.
-          </p>
+          <div className="chronicles-progression-conflict" role="alert">
+            <p>La progresión local y la del servidor son distintas. No se ha sobrescrito ninguna.
+              Este dispositivo conserva cambios sin sincronizar: evita cerrar sesión hasta resolverlo.</p>
+            {onDownloadProgressionBackup && (
+              <button type="button" onClick={onDownloadProgressionBackup}>
+                Descargar ambas versiones (.json)
+              </button>
+            )}
+            {progressionBackupError && <p>{progressionBackupError}</p>}
+          </div>
         )}
         {loading && <p className="chronicles-save-menu__sync" role="status">Consultando expediciones del servidor…</p>}
         {error && (

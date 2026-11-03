@@ -135,6 +135,9 @@ import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
 import { chroniclesPullProgression, chroniclesPushProgression } from '../chronicles/chroniclesProgressionSync.js';
+import { downloadChroniclesProgressionConflictBundle } from '../chronicles/chroniclesProgressionConflictBackup.js';
+import { getUsername } from '../auth.js';
+import { profileStorageIdentityMatchesCurrentUser } from '../profileKeys.js';
 import { getStorageItem, STORAGE_LOCAL } from '../safeStorage.js';
 import {
   chroniclesClearSessionResume,
@@ -255,15 +258,43 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // pull failed and the local copy stands.
   const [progressionSynced, setProgressionSynced] = useState(false);
   const [progressionConflict, setProgressionConflict] = useState(false);
+  const [progressionConflictCopies, setProgressionConflictCopies] = useState(null);
+  const [progressionBackupError, setProgressionBackupError] = useState('');
+  const downloadProgressionBackup = useCallback(() => {
+    const owner = String(getUsername() || '').trim().toLowerCase();
+    if (!progressionConflictCopies || !profileStorageIdentityMatchesCurrentUser()
+      || owner !== progressionConflictCopies.owner) {
+      setProgressionBackupError('La sesión ha cambiado. No se exportarán datos de otra cuenta.');
+      return;
+    }
+    try {
+      downloadChroniclesProgressionConflictBundle(progressionConflictCopies);
+      setProgressionBackupError('');
+    } catch {
+      setProgressionBackupError('No se pudo generar la copia. Conserva la sesión y vuelve a intentarlo.');
+    }
+  }, [progressionConflictCopies]);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
+    const recordConflict = (result) => {
+      if (!active || !result.remoteProgression) return;
+      const owner = String(getUsername() || '').trim().toLowerCase();
+      setProgressionConflictCopies({
+        owner,
+        local: result.progression,
+        remote: result.remoteProgression,
+        revision: result.serverRevision,
+      });
+      setProgressionBackupError('');
+      setProgressionConflict(true);
+    };
     const hasLocalCopy = getStorageItem(STORAGE_LOCAL, CHRONICLES_PROGRESSION_STORAGE_KEY) !== null;
     chroniclesPullProgression(progressionRef.current, { signal: controller.signal, hasLocalCopy })
       .then((pulled) => {
         if (!active || runProgressionActiveRef.current) return;
         if (pulled.from === 'conflict') {
-          setProgressionConflict(true);
+          recordConflict(pulled);
           return;
         }
         if (pulled.from === 'remote') {
@@ -272,7 +303,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           setProgression(saved);
         }
         if (pulled.needsPush) void chroniclesPushProgression(pulled.progression)
-          .then((result) => { if (active && result.conflict) setProgressionConflict(true); })
+          .then((result) => { if (active && result.conflict) recordConflict(result); })
           .catch(() => {});
       })
       .catch(() => {})
@@ -1842,6 +1873,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           loading={saveMenuLoading}
           error={saveMenuError}
           progressionConflict={progressionConflict}
+          onDownloadProgressionBackup={progressionConflictCopies ? downloadProgressionBackup : null}
+          progressionBackupError={progressionBackupError}
           busyRunId={saveMenuBusy}
           onRetrySync={() => refreshSaves((value) => value + 1)}
           onNew={startFreshGame}
@@ -1976,10 +2009,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       onTouchStartCapture={(event) => { chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen); }}
     >
       {progressionConflict && (
-        <p className="chronicles-progression-conflict chronicles-progression-conflict--play" role="alert">
+        <div className="chronicles-progression-conflict chronicles-progression-conflict--play" role="alert">
           La progresión local y la del servidor son distintas. Ninguna se ha sobrescrito.
           Evita cerrar sesión: este dispositivo conserva cambios sin sincronizar.
-        </p>
+          {progressionConflictCopies && (
+            <button type="button" onClick={downloadProgressionBackup}>
+              Descargar ambas versiones (.json)
+            </button>
+          )}
+          {progressionBackupError && <span>{progressionBackupError}</span>}
+        </div>
       )}
       <div className="chronicles-shell">
         <aside className="chronicles-party" aria-label="Grupo de Matthias">

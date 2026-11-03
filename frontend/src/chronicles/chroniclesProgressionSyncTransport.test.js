@@ -136,6 +136,8 @@ describe('Chronicles progression revision ownership', () => {
     expect(result.from).toBe('conflict');
     expect(result.needsPush).toBe(false);
     expect(result.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(result.remoteProgression.heroes.knight.skills).toEqual(['knight-heavy-bolts']);
+    expect(result.serverRevision).toBe(5);
     expect(requestJson).toHaveBeenCalledTimes(1);
   });
 
@@ -148,8 +150,9 @@ describe('Chronicles progression revision ownership', () => {
     }));
 
     const result = await chroniclesPushProgression(local);
-    expect(result).toMatchObject({ pushed: false, conflict: true });
+    expect(result).toMatchObject({ pushed: false, conflict: true, serverRevision: 9 });
     expect(result.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(result.remoteProgression.heroes.knight.skills).toEqual(['knight-heavy-bolts']);
     expect(requestJson).toHaveBeenCalledTimes(1);
   });
 
