@@ -703,15 +703,29 @@ export default function ChroniclesCharacterSheet({
           <button type="button" autoFocus onClick={onClose} aria-label="Cerrar ficha">×</button>
         </header>
 
-        <div className="chronicles-character-sheet__progression">
+        <div className={`chronicles-character-sheet__progression${tacticsMode ? '' : ' chronicles-character-sheet__progression--readable-xp'}`}>
           <div className="chronicles-character-sheet__xp-copy">
-            {tacticsMode && <span>PROGRESIÓN</span>}
-            <b>{tacticsMode ? xp.label : `${progress.xp}/${xpWindow.maxLevel ? 'MAX' : xpWindow.next} XP`}</b>
+            {tacticsMode ? <>
+              <span>PROGRESIÓN</span>
+              <b>{xp.label}</b>
+            </> : <>
+              <span className="chronicles-character-sheet__xp-heading">PROGRESO DE NIVEL</span>
+              <b className="chronicles-character-sheet__xp-remaining" data-chronicles-xp-remaining>
+                {xpWindow.maxLevel ? 'Nivel máximo' : `${xpWindow.remaining} XP para subir`}
+              </b>
+            </>}
           </div>
-          <div className="chronicles-character-sheet__xp-track" aria-label={xp.label}>
+          <div className="chronicles-character-sheet__xp-track" role="progressbar"
+            aria-label={xp.label} aria-valuemin={0} aria-valuemax={100}
+            aria-valuenow={Math.round(xp.ratio * 100)}
+            aria-valuetext={xpWindow.maxLevel ? 'Nivel máximo' : `${xpWindow.remaining} XP para el siguiente nivel`}>
             <i style={{ width: `${xp.ratio * 100}%` }} />
           </div>
-          <small>{xpWindow.maxLevel ? 'Veterano al máximo' : `${xpWindow.remaining} XP para el siguiente nivel`}</small>
+          <small className={tacticsMode ? undefined : 'chronicles-character-sheet__xp-total'}>
+            {tacticsMode
+              ? (xpWindow.maxLevel ? 'Veterano al máximo' : `${xpWindow.remaining} XP para el siguiente nivel`)
+              : `${progress.xp} XP acumulados${xpWindow.maxLevel ? '' : ` / ${xpWindow.next}`}`}
+          </small>
         </div>
 
         <div className="chronicles-character-sheet__folio-layout">
