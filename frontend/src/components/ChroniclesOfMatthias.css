@@ -1541,7 +1541,13 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
     grid-template-columns: 72px minmax(0, 1fr);
   }
   .chronicles-initiative-rail__heading { min-width: 0; }
-  .chronicles-initiative-rail ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Stack two actual names: 230px is too narrow for two columns of
+     readable text, and widening the rail would overlap the minimap. */
+  .chronicles-initiative-rail ol {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+  .chronicles-initiative-rail li { min-height: 33px; padding: 4px 6px; }
   .chronicles-initiative-rail li:nth-child(n + 3) { display: none; }
 }
 
