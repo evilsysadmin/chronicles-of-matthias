@@ -120,6 +120,14 @@ export async function chroniclesPullProgression(local, { signal, hasLocalCopy = 
   knownRevision = Number.isInteger(payload?.revision) ? payload.revision : 0;
   const picked = chroniclesPickProgression(local, payload?.progression || null, { hasLocalCopy });
   const needsPush = !payload?.progression || (picked.from === 'local' && !sameProgression(picked.progression, payload.progression));
+  if (picked.from === 'conflict') {
+    return {
+      ...picked,
+      needsPush: false,
+      remoteProgression: normalizeChroniclesProgression(payload.progression),
+      serverRevision: knownRevision,
+    };
+  }
   return { ...picked, needsPush };
 }
 
@@ -141,7 +149,15 @@ export async function chroniclesPushProgression(progression, { retries = 1 } = {
     // Another device saved meanwhile: keep the more advanced progression.
     knownRevision = Number(error.body?.revision || 0);
     const picked = chroniclesPickProgression(progression, error.body?.progression || null);
-    if (picked.from === 'conflict') return { pushed: false, progression: picked.progression, conflict: true };
+    if (picked.from === 'conflict') {
+      return {
+        pushed: false,
+        progression: picked.progression,
+        conflict: true,
+        remoteProgression: normalizeChroniclesProgression(error.body.progression),
+        serverRevision: knownRevision,
+      };
+    }
     if (picked.from === 'remote') return { pushed: false, progression: picked.progression };
     return chroniclesPushProgression(picked.progression, { retries: retries - 1 });
   }
