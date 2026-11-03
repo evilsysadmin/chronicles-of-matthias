@@ -43,7 +43,7 @@ describe('Chronicles progression across devices', () => {
   it('does not merge conflicting skill doctrines or attribute choices', () => {
     const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:level-two').progression;
     const skillA = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver');
-    const competingSkill = Object.keys(base.heroes).length && 'knight-steady-shot';
+    const competingSkill = 'knight-heavy-bolts';
     // Both locally selected skills are separate possible choices, not a
     // descendant of one another. Never combine conflicting doctrine paths.
     const skillB = unlockChroniclesSkill(base, 'knight', competingSkill);
@@ -82,7 +82,7 @@ describe('Chronicles progression across devices', () => {
         ...legitimate.heroes,
         knight: {
           ...legitimate.heroes.knight,
-          skills: ['knight-double-quiver', 'knight-steady-shot'],
+          skills: ['knight-double-quiver', 'knight-heavy-bolts'],
           skillPoints: 0,
         },
       },
