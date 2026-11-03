@@ -143,6 +143,38 @@ describe('register/login', () => {
     expect(localStorage.getItem('chess-study-default-time-control')).toBe('5+0');
   });
 
+  it('conserva compatibilidad de perfil del tablero Chess pero no hereda preferencias ajenas', async () => {
+    const legacyBoardKeys = ['chess-study-board-coordinates', 'chess-study-board-renderer'];
+    for (const key of legacyBoardKeys) expect(PROFILE_PREFERENCE_KEYS).toContain(key);
+    localStorage.setItem('chess-study-auth-token', 'alice-token');
+    localStorage.setItem('chess-study-auth-username', 'alice');
+    localStorage.setItem(legacyBoardKeys[0], '1');
+    localStorage.setItem(legacyBoardKeys[1], '2d-explicit-v1');
+    // La calidad gráfica de Chronicles se configura por dispositivo y debe sobrevivir.
+    localStorage.setItem('chess-study-device-render-quality-v1', 'low');
+
+    mockFetchOnce(200, { token: 'bob-token', username: 'bob' });
+    await login('bob', 'clave123456');
+    expect(getUsername()).toBe('bob');
+    for (const key of legacyBoardKeys) expect(localStorage.getItem(key)).toBeNull();
+    expect(localStorage.getItem('chess-study-device-render-quality-v1')).toBe('low');
+
+    localStorage.setItem(legacyBoardKeys[0], '1');
+    localStorage.setItem(legacyBoardKeys[1], '3d');
+    logout();
+    for (const key of legacyBoardKeys) expect(localStorage.getItem(key)).toBeNull();
+    expect(localStorage.getItem('chess-study-device-render-quality-v1')).toBe('low');
+  });
+
+  it('no elimina las antiguas preferencias de tablero Chess si falla el login', async () => {
+    localStorage.setItem('chess-study-board-coordinates', '1');
+    localStorage.setItem('chess-study-board-renderer', '2d');
+    mockFetchOnce(401, { detail: 'Usuario o contraseña incorrectos.' });
+    await expect(login('bob', 'error')).rejects.toThrow('Usuario o contraseña incorrectos.');
+    expect(localStorage.getItem('chess-study-board-coordinates')).toBe('1');
+    expect(localStorage.getItem('chess-study-board-renderer')).toBe('2d');
+  });
+
   it('limpia la caché del usuario anterior solo después de un login correcto', async () => {
     localStorage.setItem('chess-study-tournament', '{"points":999}');
     localStorage.setItem('chess-study-active-game', 'alice-game');
