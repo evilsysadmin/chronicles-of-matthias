@@ -402,3 +402,48 @@
     grid-row: 3;
   }
 }
+
+/* The illustrated ledger already contains the real numbers. Distinguish the
+   *meaning* of a bonus and the current PV condition without a new widget.
+   Strong ink on parchment keeps this legible without relying on hue alone.
+   Add specificity over the later FolioStone.css ink skin; do not disable that
+   skin globally or change any other first-person chapter. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats > div em[data-bonus-tone="benefit"] {
+  color: #22663b;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats > div em[data-bonus-tone="penalty"] {
+  color: #922e2a;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats > div em[data-bonus-tone="neutral"] {
+  color: #62472f;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="healthy"] > b {
+  color: #21673b;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="wounded"] > b {
+  color: #8b4617;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="fallen"] > b {
+  color: #922e2a;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="healthy"] > .chronicles-character-sheet__stat-icon {
+  background: linear-gradient(145deg, #f2dfaa, #9eb77c);
+  border-color: #f1dfae #49683d #49683d #f1dfae;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="wounded"] > .chronicles-character-sheet__stat-icon {
+  background: linear-gradient(145deg, #f4d18b, #c88b49);
+  border-color: #f7d99d #875025 #875025 #f7d99d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats [data-stat="condition"][data-condition="fallen"] > .chronicles-character-sheet__stat-icon {
+  background: linear-gradient(145deg, #e6a083, #9e4f43);
+  border-color: #f6c3a6 #742d2b #742d2b #f6c3a6;
+}
