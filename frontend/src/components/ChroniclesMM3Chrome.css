@@ -1767,3 +1767,38 @@
     text-shadow: 0 1px 2px #000, 1px 0 1px #000;
   }
 }
+
+/* Mobile vital signs: do not ask players to read 7px text on 10px bars.
+   Slightly widen the existing four portraits without reaching the minimap
+   even at 360px. Preserve real current/max values and one bar per resource. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-party {
+    grid-template-columns: repeat(4, 52px);
+    gap: 6px;
+  }
+  .chronicles .chronicles-party .chronicles-party-member {
+    box-sizing: border-box;
+    width: 52px;
+    min-width: 52px;
+    height: 54px;
+    min-height: 54px;
+    padding: 4px;
+  }
+  .chronicles .chronicles-party .chronicles-party-glyph {
+    width: 40px;
+    height: 40px;
+  }
+  .chronicles .chronicles-party .chronicles-party-bars {
+    inset: auto 2px 2px;
+    gap: 1px;
+  }
+  .chronicles .chronicles-party .chronicles-party-bars i {
+    box-sizing: border-box;
+    height: 14px;
+    min-height: 14px;
+    font: 700 .75rem/1.1 var(--mm3-hud-font);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px #000, 1px 0 2px #000, -1px 0 2px #000;
+    -webkit-text-stroke: .15px #090909;
+  }
+}
