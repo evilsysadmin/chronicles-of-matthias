@@ -18,7 +18,7 @@ vi.mock('../http.js', async (importOriginal) => ({
 }));
 
 import { createChroniclesProgression, grantChroniclesXp, unlockChroniclesSkill } from '../chroniclesOfMatthiasProgression.js';
-import { chroniclesPullProgression, chroniclesPushProgression } from './chroniclesProgressionSync.js';
+import { chroniclesPullProgression, chroniclesPushProgression, chroniclesResolveProgressionConflict } from './chroniclesProgressionSync.js';
 
 let caseNumber = 0;
 
@@ -164,6 +164,92 @@ describe('Chronicles progression revision ownership', () => {
     expect(result.needsPush).toBe(false);
     expect(result.progression.heroes.matthias.xp).toBe(15);
     expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves in favor of local only with a fresh server match and exact CAS base revision', async () => {
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:manual-local').progression;
+    const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
+    const remote = unlockChroniclesSkill(base, 'knight', 'knight-heavy-bolts').progression;
+    requestJson.mockResolvedValueOnce({ revision: 9, progression: remote })
+      .mockResolvedValueOnce({ revision: 10 });
+    const result = await chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote, revision: 9, choice: 'local',
+    });
+    expect(result).toMatchObject({ choice: 'local', serverRevision: 10 });
+    expect(result.progression.heroes.knight.skills).toEqual(['knight-double-quiver']);
+    expect(requestJson).toHaveBeenCalledTimes(2);
+    expect(pushedBaseRevision(1)).toBe(9);
+    expect(JSON.parse(requestJson.mock.calls[1][1].body).progression.heroes.knight.skills)
+      .toEqual(['knight-double-quiver']);
+  });
+
+  it('resolves in favor of server without any write request', async () => {
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:manual-remote').progression;
+    const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
+    const remote = unlockChroniclesSkill(base, 'knight', 'knight-heavy-bolts').progression;
+    requestJson.mockResolvedValueOnce({ revision: 11, progression: remote });
+    const result = await chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote, revision: 11, choice: 'remote',
+    });
+    expect(result).toMatchObject({ choice: 'remote', serverRevision: 11 });
+    expect(result.progression.heroes.knight.skills).toEqual(['knight-heavy-bolts']);
+    expect(requestJson).toHaveBeenCalledTimes(1);
+    expect(requestJson.mock.calls[0][1].method).toBeUndefined();
+  });
+
+  it('aborts when server revision changed before explicit choice, with no PUT', async () => {
+    const local = withXp(25);
+    const remote = withXp(30);
+    requestJson.mockResolvedValueOnce({ revision: 15, progression: remote });
+    await expect(chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote, revision: 14, choice: 'local',
+    })).rejects.toMatchObject({ code: 'chronicles-progression-conflict-stale' });
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('aborts when the remote data changed even with the same declared revision', async () => {
+    const local = withXp(25);
+    requestJson.mockResolvedValueOnce({ revision: 6, progression: withXp(40) });
+    await expect(chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote: withXp(30), revision: 6, choice: 'remote',
+    })).rejects.toMatchObject({ code: 'chronicles-progression-conflict-stale' });
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('aborts a racing 409 without automatically retrying an explicit overwrite', async () => {
+    const local = withXp(25);
+    const remote = withXp(30);
+    requestJson.mockResolvedValueOnce({ revision: 2, progression: remote });
+    requestJson.mockRejectedValueOnce(Object.assign(new Error('conflict'), {
+      status: 409, body: { revision: 3, progression: withXp(35) },
+    }));
+    await expect(chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote, revision: 2, choice: 'local',
+    })).rejects.toMatchObject({ code: 'chronicles-progression-conflict-stale' });
+    expect(requestJson).toHaveBeenCalledTimes(2);
+    expect(pushedBaseRevision(1)).toBe(2);
+  });
+
+  it('rejects a late response after login changes without writing as the new user', async () => {
+    const local = withXp(25);
+    const remote = withXp(30);
+    let finishGet;
+    requestJson.mockImplementationOnce(() => new Promise(resolve => { finishGet = resolve; }));
+    const pending = chroniclesResolveProgressionConflict({
+      owner: identity.username, local, remote, revision: 3, choice: 'local',
+    });
+    identity.username = `bob-${caseNumber}`;
+    finishGet({ revision: 3, progression: remote });
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(requestJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects invalid choice and mismatched owner before any network request', async () => {
+    const data = { owner: identity.username, local: withXp(10), remote: withXp(10), revision: 0 };
+    await expect(chroniclesResolveProgressionConflict({ ...data, choice: 'merge' })).rejects.toThrow();
+    await expect(chroniclesResolveProgressionConflict({ ...data, owner: 'other', choice: 'local' }))
+      .rejects.toMatchObject({ name: 'AbortError' });
+    expect(requestJson).not.toHaveBeenCalled();
   });
 
   it('keeps the existing same-user 409 conflict retry behavior', async () => {
