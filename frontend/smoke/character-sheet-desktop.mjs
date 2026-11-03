@@ -649,6 +649,24 @@ try {
       const spellRows = grimoire.locator('[data-grimoire-spell]');
       const actualCount = await spellRows.count();
       assert.ok(actualCount >= 1, 'The real caster must have learned spells');
+      const spellType = await spellRows.first().evaluate((row) => {
+        const size = (selector) => parseFloat(getComputedStyle(row.querySelector(selector)).fontSize);
+        const label = row.querySelector('.chronicles-sheet-grimoire__entry b');
+        const cost = row.querySelector('.chronicles-sheet-grimoire__cost');
+        return {
+          name: size('.chronicles-sheet-grimoire__entry b'),
+          category: size('.chronicles-sheet-grimoire__entry small'),
+          ph: size('.chronicles-sheet-grimoire__cost'),
+          rowHeight: row.getBoundingClientRect().height,
+          nameClipped: label.scrollWidth > label.clientWidth + 1
+            || label.scrollHeight > label.clientHeight + 1,
+          costClipped: cost.scrollWidth > cost.clientWidth + 1,
+        };
+      });
+      assert.ok(spellType.name >= 17.5 && spellType.category >= 14.5
+        && spellType.ph >= 16 && spellType.rowHeight >= 60
+        && !spellType.nameClipped && !spellType.costClipped,
+      'MM3 spell names, category and PH must remain legible without cropping: ' + JSON.stringify(spellType));
       assert.equal(await spellRows.first().getAttribute('aria-pressed'), 'true');
       assert.deepEqual(await spellRows.evaluateAll((nodes) =>
         nodes.map((node) => node.tabIndex)),
@@ -677,6 +695,20 @@ try {
       assert.equal(await spellInspector.getAttribute('role'), 'dialog');
       assert.equal(await spellInspector.getAttribute('aria-modal'), 'true');
       assert.match(await spellInspector.innerText(), /PH/);
+      const spellInspectType = await spellInspector.evaluate((modal) => {
+        const size = (selector) => {
+          const item = modal.querySelector(selector);
+          return item ? parseFloat(getComputedStyle(item).fontSize) : null;
+        };
+        return { title: size('h4'), school: size('.chronicles-sheet-grimoire__detail-head small'),
+          description: size('p'), attributes: size('dl div'), availability: size('.chronicles-sheet-grimoire__availability'),
+          overflowX: modal.scrollWidth > modal.clientWidth + 2 };
+      });
+      assert.ok(spellInspectType.title >= 22 && spellInspectType.school >= 15
+        && spellInspectType.description >= 16 && spellInspectType.attributes >= 16
+        && spellInspectType.availability >= 16 && !spellInspectType.overflowX,
+        'Spell inspector must show readable real costs and effects without sideways overflow: '
+          + JSON.stringify(spellInspectType));
       assert.equal(await spellInspector.getByRole('button', { name: 'Cerrar inspección de hechizo' })
         .evaluate((node) => document.activeElement === node), true,
         'Inspect must focus its close button');
