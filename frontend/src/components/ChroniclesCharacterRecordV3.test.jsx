@@ -24,6 +24,11 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(html).toContain('Sano');
     expect(html).toContain('Estado general según los puntos de vida actuales');
     expect(html).not.toContain('data-chronicles-worn-gear="matthias"');
+    // The top PV and gold badges repeated the real HP strip and Group (G).
+    expect(html).not.toContain('data-resource="health"');
+    expect(html).not.toContain('data-resource="gold"');
+    expect(html).toContain('chronicles-character-sheet__vitals');
+    expect(html).toContain('chronicles-character-sheet__party-hp');
     expect(css).toContain('grid-template-areas: "battle" "attributes" "footer"');
     expect(css).toContain('.chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats');
     expect(css).toContain('grid-column: 1 / -1');
@@ -42,12 +47,14 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('overflow-wrap: break-word;');
   });
   it('reserves full-sized type for attributes, modifiers and explanations', () => {
-    // Regression for the old 11-12px labels inside giant 117px desktop cells.
-    expect(css).toContain('font-size: clamp(1.08rem, 1.12vw, 1.22rem);');
-    expect(css).toContain('font-size: clamp(1.48rem, 1.65vw, 1.82rem);');
-    expect(css).toContain('font-size: .94rem;');
-    expect(css).toContain('font-size: .95rem;');
-    expect(css).toContain('font-size: 1.52rem;');
+    // The 1909px screenshot showed tiny glyphs in very large desktop cells.
+    // Keep large type for the primary attribute/value and readable context.
+    expect(css).toContain('font-size: clamp(1.38rem, 1.42vw, 1.65rem);');
+    expect(css).toContain('font-size: clamp(1.875rem, 2vw, 2.25rem);');
+    expect(css).toContain('font-size: 1.05rem;');
+    expect(css).toContain('font-size: 1.125rem;');
+    expect(css).toContain('font-size: 1.65rem;');
+    expect(css).toContain('min-height: clamp(120px, 15dvh, 155px);');
     expect(css).toContain('@media (min-width: 1550px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('font-size: .9rem;');
