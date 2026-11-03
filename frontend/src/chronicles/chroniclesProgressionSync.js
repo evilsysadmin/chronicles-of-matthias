@@ -1,6 +1,6 @@
 import { authHeader, getUsername } from '../auth.js';
 import { requestJson } from '../http.js';
-import { normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
+import { chroniclesSkillsForMember, normalizeChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 
 // The heroes' progression (build, XP, attributes) lives on the server too,
 // so it follows the account between the phone and the desktop. Each save
@@ -40,11 +40,62 @@ function sameProgression(left, right) {
   return JSON.stringify(normalizeChroniclesProgression(left)) === JSON.stringify(normalizeChroniclesProgression(right));
 }
 
+// Spending earned attribute/skill points does not add XP. On an XP tie,
+// preserve a local upgrade only when it is demonstrably descended from the
+// remote state. Never merge competing skill choices, different character
+// builds, or incomparable receipts: server remains authoritative for those.
+function localAdvancesEqualXp(local, remote) {
+  if (JSON.stringify(local.characterBuild) !== JSON.stringify(remote.characterBuild)
+    || JSON.stringify(local.mm3TemporaryBoon) !== JSON.stringify(remote.mm3TemporaryBoon)) return false;
+
+  let advanced = false;
+  for (const field of ['claimedAwards', 'claimedWorldStatSources', 'claimedTemporaryWorldSources']) {
+    if (!remote[field].every((id) => local[field].includes(id))) return false;
+    if (local[field].length > remote[field].length) advanced = true;
+  }
+
+  for (const [memberId, previous] of Object.entries(remote.heroes)) {
+    const next = local.heroes[memberId];
+    // Equal total XP can conceal one hero gaining XP while another falls
+    // behind. That is a divergent progression, not a safe local upgrade.
+    if (next.xp !== previous.xp) return false;
+    if (!previous.skills.every((id) => next.skills.includes(id))) return false;
+
+    let spentSkills = 0;
+    const definitions = chroniclesSkillsForMember(memberId);
+    for (const id of next.skills) {
+      if (previous.skills.includes(id)) continue;
+      const definition = definitions.find((skill) => skill.id === id);
+      if (!definition) return false;
+      spentSkills += definition.cost;
+    }
+    if (next.skillPoints + spentSkills !== previous.skillPoints) return false;
+    if (spentSkills > 0) advanced = true;
+
+    let spentAttributes = 0;
+    for (const [key, value] of Object.entries(previous.attributes)) {
+      const delta = next.attributes[key] - value;
+      if (delta < 0) return false;
+      spentAttributes += delta;
+    }
+    if (next.attributePoints + spentAttributes !== previous.attributePoints) return false;
+    if (spentAttributes > 0) advanced = true;
+
+    for (const [key, value] of Object.entries(previous.mm3WorldBonuses)) {
+      if (next.mm3WorldBonuses[key] < value) return false;
+      if (next.mm3WorldBonuses[key] > value) advanced = true;
+    }
+  }
+  return advanced;
+}
+
 export function chroniclesPickProgression(local, remote) {
   if (!remote) return { progression: normalizeChroniclesProgression(local), from: 'local' };
   const normalizedRemote = normalizeChroniclesProgression(remote);
   const normalizedLocal = normalizeChroniclesProgression(local);
-  const localAhead = totalXp(normalizedLocal) > totalXp(normalizedRemote);
+  const localAhead = totalXp(normalizedLocal) > totalXp(normalizedRemote)
+    || (totalXp(normalizedLocal) === totalXp(normalizedRemote)
+      && localAdvancesEqualXp(normalizedLocal, normalizedRemote));
   return localAhead ? { progression: normalizedLocal, from: 'local' } : { progression: normalizedRemote, from: 'remote' };
 }
 
