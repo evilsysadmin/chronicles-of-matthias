@@ -35,6 +35,8 @@ try {
               text: name.textContent,
               fontSize: textSize(name),
               clipped: name.scrollWidth > name.clientWidth + 1,
+              availableWidth: name.clientWidth,
+              requiredWidth: name.scrollWidth,
               visible: style.display !== 'none' && name.getBoundingClientRect().width > 0,
               spoken: actor.getAttribute('aria-label'),
             };
@@ -48,8 +50,9 @@ try {
         `Turn and round labels must be readable at ${width}px: ${JSON.stringify(m)}`);
       assert.ok(m.names[0]?.fontSize >= 13.5 && m.names[1]?.fontSize >= 13.5,
         `Active and next actor must use readable type: ${JSON.stringify(m)}`);
-      assert.ok(m.names[0].visible && !m.names[0].clipped && !m.names[1].clipped,
-        `Do not truncate primary actor names at ${width}px: ${JSON.stringify(m)}`);
+      assert.ok(m.names[0].visible && m.names[1].visible
+        && m.names.filter(actor => actor.visible).every(actor => !actor.clipped),
+        `Visible actor names must fit at ${width}px: ${JSON.stringify(m)}`);
       assert.match(m.names[0].spoken || '', /Ahora: Espectro · iniciativa 12/);
       assert.match(m.names[1].spoken || '', /Matthias · iniciativa 11/);
       if (width === 390 || width === 1280) {
