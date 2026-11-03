@@ -649,6 +649,24 @@ try {
       const spellRows = grimoire.locator('[data-grimoire-spell]');
       const actualCount = await spellRows.count();
       assert.ok(actualCount >= 1, 'The real caster must have learned spells');
+      const spellType = await spellRows.first().evaluate((row) => {
+        const size = (selector) => parseFloat(getComputedStyle(row.querySelector(selector)).fontSize);
+        const label = row.querySelector('.chronicles-sheet-grimoire__entry b');
+        const cost = row.querySelector('.chronicles-sheet-grimoire__cost');
+        return {
+          name: size('.chronicles-sheet-grimoire__entry b'),
+          category: size('.chronicles-sheet-grimoire__entry small'),
+          ph: size('.chronicles-sheet-grimoire__cost'),
+          rowHeight: row.getBoundingClientRect().height,
+          nameClipped: label.scrollWidth > label.clientWidth + 1
+            || label.scrollHeight > label.clientHeight + 1,
+          costClipped: cost.scrollWidth > cost.clientWidth + 1,
+        };
+      });
+      assert.ok(spellType.name >= 17.5 && spellType.category >= 14.5
+        && spellType.ph >= 16 && spellType.rowHeight >= 60
+        && !spellType.nameClipped && !spellType.costClipped,
+      'MM3 spell names, category and PH must remain legible without cropping: ' + JSON.stringify(spellType));
       assert.equal(await spellRows.first().getAttribute('aria-pressed'), 'true');
       assert.deepEqual(await spellRows.evaluateAll((nodes) =>
         nodes.map((node) => node.tabIndex)),
@@ -677,6 +695,20 @@ try {
       assert.equal(await spellInspector.getAttribute('role'), 'dialog');
       assert.equal(await spellInspector.getAttribute('aria-modal'), 'true');
       assert.match(await spellInspector.innerText(), /PH/);
+      const spellInspectType = await spellInspector.evaluate((modal) => {
+        const size = (selector) => {
+          const item = modal.querySelector(selector);
+          return item ? parseFloat(getComputedStyle(item).fontSize) : null;
+        };
+        return { title: size('h4'), school: size('.chronicles-sheet-grimoire__detail-head small'),
+          description: size('p'), attributes: size('dl div'), availability: size('.chronicles-sheet-grimoire__availability'),
+          overflowX: modal.scrollWidth > modal.clientWidth + 2 };
+      });
+      assert.ok(spellInspectType.title >= 22 && spellInspectType.school >= 15
+        && spellInspectType.description >= 16 && spellInspectType.attributes >= 16
+        && spellInspectType.availability >= 16 && !spellInspectType.overflowX,
+        'Spell inspector must show readable real costs and effects without sideways overflow: '
+          + JSON.stringify(spellInspectType));
       assert.equal(await spellInspector.getByRole('button', { name: 'Cerrar inspección de hechizo' })
         .evaluate((node) => document.activeElement === node), true,
         'Inspect must focus its close button');
@@ -806,6 +838,72 @@ try {
       console.error('CHRONICLES_CHARACTER_DESKTOP_FAIL', width, error);
     } finally { await ctx.close(); }
   }
+
+  // Readability regression on actual touch widths, not merely a CSS source
+  // check. Inspecting magic must preserve scrolling, focus and the PH column.
+  for (const [width, height] of [[360,780],[390,844],[430,932]]) {
+    const ctx = await browser.newContext({ viewport: { width, height },
+      isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(url, { waitUntil: 'networkidle' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      await sheet.waitFor({ state: 'visible' });
+      await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
+      await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
+        .getByRole('button', { name: /Hechizos/ }).click();
+      const grimoire = sheet.locator('.chronicles-sheet-grimoire');
+      const entry = grimoire.locator('[data-grimoire-spell]').first();
+      await entry.waitFor({ state: 'visible' });
+      const visible = await grimoire.evaluate((node) => {
+        const row = node.querySelector('[data-grimoire-spell]');
+        const name = row.querySelector('.chronicles-sheet-grimoire__entry b');
+        const category = row.querySelector('.chronicles-sheet-grimoire__entry small');
+        const cost = row.querySelector('.chronicles-sheet-grimoire__cost');
+        const clipped = (el) => el.scrollWidth > el.clientWidth + 2
+          || el.scrollHeight > el.clientHeight + 2;
+        return {
+          name: parseFloat(getComputedStyle(name).fontSize),
+          category: parseFloat(getComputedStyle(category).fontSize),
+          ph: parseFloat(getComputedStyle(cost).fontSize),
+          rowHeight: row.getBoundingClientRect().height,
+          nameClipped: clipped(name),
+          costClipped: clipped(cost),
+          horizontalOverflow: node.scrollWidth > node.clientWidth + 2,
+        };
+      });
+      assert.ok(visible.name >= 17.5 && visible.category >= 14.5 && visible.ph >= 16
+        && visible.rowHeight >= 60 && !visible.nameClipped && !visible.costClipped
+        && !visible.horizontalOverflow,
+        'Touch spellbook text and PH must be readable without sideways clipping at '
+          + width + ': ' + JSON.stringify(visible));
+      const trigger = grimoire.getByRole('button', { name: /Examinar/ });
+      await trigger.click();
+      const detail = grimoire.getByRole('dialog', { name: /Examinar/ });
+      assert.equal(await detail.isVisible(), true);
+      const inspected = await detail.evaluate((node) => ({
+        title: parseFloat(getComputedStyle(node.querySelector('h4')).fontSize),
+        description: parseFloat(getComputedStyle(node.querySelector('p')).fontSize),
+        overflowX: node.scrollWidth > node.clientWidth + 2,
+        inViewport: node.getBoundingClientRect().left >= -1
+          && node.getBoundingClientRect().right <= innerWidth + 1,
+      }));
+      assert.ok(inspected.title >= 22 && inspected.description >= 16
+        && !inspected.overflowX && inspected.inViewport,
+        'Touch spell inspection must remain legible and scrollable: ' + JSON.stringify(inspected));
+      await page.keyboard.press('Escape');
+      assert.equal(await detail.isVisible(), false);
+      assert.equal(await trigger.evaluate((el) => document.activeElement === el), true);
+      await page.screenshot({ path: 'smoke-character-spellbook-readable-' + width + '.png' });
+      console.log('CHRONICLES_SPELLBOOK_READABLE_OK ' + width + 'x' + height);
+    } catch (error) {
+      failures.push('spellbook ' + width + ': ' + error.message);
+      console.error('CHRONICLES_SPELLBOOK_READABLE_FAIL', width, error);
+    } finally {
+      await ctx.close();
+    }
+  }
+
   // MM3's explicit handoff on a real mounted React sheet + actual campaign
   // reducer: preview != selection, 1–4 always navigates, and contextual
   // controls transfer exactly one item without inventory multiplication.
