@@ -75,6 +75,29 @@ describe('register/login', () => {
     expect(localStorage.getItem('chess-study-ui-language')).toBe('en');
   });
 
+  it('limpia todas las claves de reloj heredadas sin borrar datos ajenos en login y logout', async () => {
+    const clocks = ['chess-study-clock:alice-1', 'chess-study-clock:alice-2'];
+    for (const key of clocks) localStorage.setItem(key, '{"version":1}');
+    localStorage.setItem('chronicles-storage-unrelated', 'conservar');
+
+    mockFetchOnce(200, { token: 'nuevo-token', username: 'bob' });
+    await login('bob', 'clave123456');
+    for (const key of clocks) expect(localStorage.getItem(key)).toBeNull();
+    expect(localStorage.getItem('chronicles-storage-unrelated')).toBe('conservar');
+
+    for (const key of clocks) localStorage.setItem(key, '{"version":1}');
+    logout();
+    for (const key of clocks) expect(localStorage.getItem(key)).toBeNull();
+    expect(localStorage.getItem('chronicles-storage-unrelated')).toBe('conservar');
+  });
+
+  it('no limpia relojes heredados si la autenticación falla', async () => {
+    localStorage.setItem('chess-study-clock:alice-1', '{"version":1}');
+    mockFetchOnce(401, { detail: 'Usuario o contraseña incorrectos.' });
+    await expect(login('bob', 'error')).rejects.toThrow('Usuario o contraseña incorrectos.');
+    expect(localStorage.getItem('chess-study-clock:alice-1')).toBe('{"version":1}');
+  });
+
   it('crear Bob en el mismo navegador no hereda la caché de Alice', async () => {
     localStorage.setItem('chess-study-auth-token', 'alice-token');
     localStorage.setItem('chess-study-auth-username', 'alice');
