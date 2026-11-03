@@ -16,6 +16,19 @@ const render = (mode = 'chronicles') => {
     mode, initialFolio: 'record', onClose: () => {},
   }));
 };
+// Test true UI rendering with health and modifiers deliberately varied.
+// All tones must derive from current hero data, never hardcoded by identity.
+const renderHero = (update) => {
+  const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+  const member = update(base.party[0]);
+  const state = { ...base, party: base.party.map((hero) =>
+    hero.id === member.id ? member : hero) };
+  return renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
+    state, member, progression: createChroniclesProgression(),
+    mode: 'chronicles', initialFolio: 'record', onClose: () => {},
+  }));
+};
+
 describe('MM3 character Status layout is a real structural redesign', () => {
   it('presents real attributes and battle strip without duplicating equipment', () => {
     const html = render();
@@ -58,6 +71,47 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('.chronicles-character-sheet__stat-icon svg');
     expect(css).toContain('grid-column: 1;');
     expect(css).toContain('grid-row: 1 / 3;');
+  });
+  it('colors Sano, Herido and Caído using real PV without adding fake conditions', () => {
+    for (const [hp, maxHp, expectedTone, expectedLabel] of [
+      [11, 11, 'healthy', 'Sano'],
+      [7, 11, 'wounded', 'Herido'],
+      [0, 11, 'fallen', 'Caído'],
+    ]) {
+      const html = renderHero((hero) => ({ ...hero, hp, maxHp }));
+      const row = html.split('data-stat="condition"')[1]?.split('</div>')[0];
+      expect(row).toBeTruthy();
+      expect(row).toContain(`data-condition="${expectedTone}"`);
+      expect(row).toContain(`>${expectedLabel}</b>`);
+      expect(row).toContain(`${hp}/${maxHp} PV`);
+      expect(row).toContain('data-stat-icon="condition"');
+    }
+    expect(render('tactics')).not.toContain('data-condition=');
+    for (const tone of ['healthy', 'wounded', 'fallen']) {
+      expect(css).toContain(`[data-condition="${tone}"] > b`);
+      expect(css).toContain(`[data-condition="${tone}"] > .chronicles-character-sheet__stat-icon`);
+    }
+  });
+  it('uses the real signed modifier to distinguish benefits, penalties and neutral values', () => {
+    const html = renderHero((hero) => ({
+      ...hero,
+      mm3: {
+        ...hero.mm3,
+        bonuses: { ...hero.mm3.bonuses, might: 2, intellect: -1, luck: 0 },
+      },
+    }));
+    const findRow = (id, nextId) =>
+      html.split(`data-stat="${id}"`)[1]?.split(`data-stat="${nextId}"`)[0];
+    expect(findRow('might', 'intellect')).toContain('data-bonus-tone="benefit"');
+    expect(findRow('might', 'intellect')).toContain('(+2)');
+    expect(findRow('intellect', 'personality')).toContain('data-bonus-tone="penalty"');
+    expect(findRow('intellect', 'personality')).toContain('(-1)');
+    expect(findRow('luck', 'condition')).toContain('data-bonus-tone="neutral"');
+    expect(findRow('luck', 'condition')).toContain('(0)');
+    for (const tone of ['benefit', 'penalty', 'neutral']) {
+      expect(css).toContain(`em[data-bonus-tone="${tone}"]`);
+    }
+    expect(render('tactics')).not.toContain('data-bonus-tone=');
   });
   it('fills the record workspace on zoomed desktops and adapts columns for readable type', () => {
     // The legacy folio places statistics in grid column 2; at CSS heights
