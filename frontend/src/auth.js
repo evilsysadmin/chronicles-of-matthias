@@ -31,6 +31,8 @@ const LEGACY_CHESS_SESSION_KEYS = Object.freeze([
   'chess-study-pvp-enrollment-v1',
   'chess-study-current-view',
   'chess-study-view-history',
+  'chess-study-lab-mode-v1',
+  'chess-study-lab-launch-v1',
 ]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -128,8 +130,8 @@ function clearSessionRuntimeState() {
     removeStorageItem(STORAGE_LOCAL, key);
   }
   // Standalone Chronicles uses its own MM3/Tactics routing. Clear historical
-  // Chess Studio session keys without importing its retired navigation,
-  // Combat Chess, PvP enrollment, or Home nudge engines.
+  // Chess Studio session keys without importing retired navigation, Lab
+  // launch intents, Combat Chess, PvP enrollment, or Home nudge engines.
   for (const key of LEGACY_CHESS_SESSION_KEYS) removeStorageItem(STORAGE_SESSION, key);
 }
 
