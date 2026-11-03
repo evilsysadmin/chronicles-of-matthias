@@ -6,6 +6,7 @@ import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
+import ChroniclesCharacterStatIcon, { CHRONICLES_CHARACTER_STAT_ICON_IDS } from './ChroniclesCharacterStatIcon.jsx';
 
 const css = readFileSync(new URL('./ChroniclesCharacterRecordV3.css', import.meta.url), 'utf8');
 const render = (mode = 'chronicles') => {
@@ -35,6 +36,28 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('grid-column: 1 / -1');
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(3, minmax(0,1fr));');
+  });
+  it('draws eight unique original copper-framed emblems on the real MM3 stat rows only', () => {
+    const ids = ['might', 'intellect', 'personality', 'endurance', 'speed',
+      'accuracy', 'luck', 'condition'];
+    expect(CHRONICLES_CHARACTER_STAT_ICON_IDS).toEqual(ids);
+    const sheet = render();
+    for (const id of ids) {
+      expect(sheet).toContain(`data-stat-icon="${id}"`);
+      const markup = renderToStaticMarkup(createElement(ChroniclesCharacterStatIcon, { stat: id }));
+      expect(markup).toContain('aria-hidden="true"');
+      expect(markup).toContain('<svg');
+      expect(markup).toContain('viewBox="0 0 32 32"');
+      expect(markup).toContain(`data-stat-icon="${id}"`);
+    }
+    const drawings = ids.map((id) =>
+      renderToStaticMarkup(createElement(ChroniclesCharacterStatIcon, { stat: id })));
+    expect(new Set(drawings).size).toBe(8);
+    expect((sheet.match(/data-stat-icon="/g) || []).length).toBe(8);
+    expect(render('tactics')).not.toContain('data-stat-icon=');
+    expect(css).toContain('.chronicles-character-sheet__stat-icon svg');
+    expect(css).toContain('grid-column: 1;');
+    expect(css).toContain('grid-row: 1 / 3;');
   });
   it('fills the record workspace on zoomed desktops and adapts columns for readable type', () => {
     // The legacy folio places statistics in grid column 2; at CSS heights
