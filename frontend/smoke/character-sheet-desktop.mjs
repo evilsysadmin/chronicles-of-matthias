@@ -143,6 +143,63 @@ async function assertOriginalStatArtwork(sheet, viewport) {
     + viewport + ': ' + JSON.stringify(artwork));
 }
 
+async function assertRealStatColorTones(sheet, viewport) {
+  const info = await sheet.locator('[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats')
+    .evaluate((grid) => {
+      const row = grid.querySelector('[data-stat="condition"]');
+      const value = row.querySelector(':scope > b');
+      const note = row.querySelector(':scope > small').textContent.trim();
+      const hp = note.match(/^(\\d+)\\/(\\d+) PV/);
+      const bonuses = [...grid.querySelectorAll('[data-stat]:not([data-stat="condition"])')].map((item) => {
+        const em = item.querySelector('em[data-bonus-tone]');
+        return {
+          stat: item.dataset.stat,
+          value: em?.textContent.trim(),
+          tone: em?.dataset.bonusTone,
+          color: em ? getComputedStyle(em).color : null,
+        };
+      });
+      return {
+        current: row.dataset.condition,
+        label: value.textContent.trim(),
+        labelColor: getComputedStyle(value).color,
+        iconBackground: getComputedStyle(row.querySelector('.chronicles-character-sheet__stat-icon')).backgroundImage,
+        health: hp ? [+hp[1], +hp[2]] : null,
+        bonuses,
+      };
+    });
+  assert.ok(info.health, 'Condition must still show real current/max HP at ' + viewport);
+  const [hp, maxHp] = info.health;
+  const state = hp <= 0 ? 'fallen' : hp < maxHp ? 'wounded' : 'healthy';
+  const labels = { healthy: 'Sano', wounded: 'Herido', fallen: 'Caído' };
+  const colors = {
+    healthy: 'rgb(33, 103, 59)',
+    wounded: 'rgb(139, 70, 23)',
+    fallen: 'rgb(146, 46, 42)',
+  };
+  assert.equal(info.current, state, 'No fabricated condition: ' + JSON.stringify(info));
+  assert.equal(info.label, labels[state]);
+  assert.equal(info.labelColor, colors[state],
+    'The legible condition value must reflect live HP at ' + viewport);
+  assert.match(info.iconBackground, /linear-gradient/,
+    'The condition tile must visibly respond to real current health');
+  assert.equal(info.bonuses.length, 7);
+  const bonusColors = {
+    benefit: 'rgb(34, 102, 59)',
+    penalty: 'rgb(146, 46, 42)',
+    neutral: 'rgb(98, 71, 47)',
+  };
+  for (const modifier of info.bonuses) {
+    const n = Number(modifier.value?.replace(/[()]/g, ''));
+    const tone = n > 0 ? 'benefit' : n < 0 ? 'penalty' : 'neutral';
+    assert.ok(Number.isFinite(n), 'Stat bonus must remain numeric: ' + JSON.stringify(modifier));
+    assert.equal(modifier.tone, tone,
+      'Bonus ink is derived from the actual signed modifier, never the icon');
+    assert.equal(modifier.color, bonusColors[tone],
+      'Bonus ink must remain readable on the original parchment at ' + viewport);
+  }
+}
+
 async function assertMobileChapterTabGeometry(nav, label) {
   const layout = await nav.evaluate((element) => {
     const navBox = element.getBoundingClientRect();
@@ -454,6 +511,7 @@ try {
       }
       await assertNoDuplicateMM3HeaderResources(sheet);
       await assertOriginalStatArtwork(sheet, width + 'x' + height);
+      await assertRealStatColorTones(sheet, width + 'x' + height);
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
@@ -994,6 +1052,7 @@ try {
       await sheet.waitFor({ state: 'visible' });
       await assertTouchStatusReadable(sheet, width);
       await assertOriginalStatArtwork(sheet, width + 'x' + height);
+      await assertRealStatColorTones(sheet, width + 'x' + height);
       await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
       await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
         .getByRole('button', { name: /Hechizos/ }).click();
