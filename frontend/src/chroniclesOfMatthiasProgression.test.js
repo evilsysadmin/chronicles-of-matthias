@@ -26,6 +26,7 @@ import {
   unlockChroniclesSkill,
 } from './chroniclesOfMatthiasProgression.js';
 import { clearStorageMemoryFallback } from './safeStorage.js';
+import { bindProfileStorageIdentity } from './profileKeys.js';
 import { CHRONICLES_ISOLATED_TACTICS_RUN_STORAGE_KEY } from './chronicles/chroniclesRunIdentity.js';
 import { chroniclesMemberMaxSp } from './chronicles/chroniclesMagic.js';
 import { chroniclesPartyAttackStats } from './chroniclesOfMatthias.js';
@@ -94,6 +95,8 @@ describe('Chronicles Tactics · progression', () => {
     clearStorageMemoryFallback();
     localStorage.clear();
     localStorage.setItem('chess-study-auth-username', 'alice');
+    // The app binds a document to its authenticated user in auth.saveSession.
+    bindProfileStorageIdentity('alice');
   });
 
   it('applies spent progression to the live tactical state without healing existing damage', () => {

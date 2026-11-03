@@ -22,7 +22,10 @@ export function bindProfileStorageIdentity(username) {
 
 export function profileStorageIdentityMatchesCurrentUser() {
   const current = String(getStorageItem(STORAGE_LOCAL, AUTH_USERNAME_KEY) || '').trim().toLowerCase() || null;
-  return !boundProfileUsername || !current || boundProfileUsername === current;
+  // A tab that started anonymous must not write into a user who signed in
+  // elsewhere; likewise, a tab bound to Alice must not write after logout.
+  // Anonymous-on-anonymous writes remain valid for local preferences.
+  return boundProfileUsername === current;
 }
 
 export const PROFILE_PROGRESS_KEYS = Object.freeze([
