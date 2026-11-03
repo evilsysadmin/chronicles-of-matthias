@@ -475,6 +475,10 @@ try {
       assert.ok(density.firstRowHeight >= 44 && density.firstRowHeight <= 50,
         'Items must remain compact with minimum 44px targets: ' + JSON.stringify(density));
       assert.equal(density.horizontalOverflow, false, 'Inventory must not overflow sideways');
+      const rowType = await rows.first().evaluate((node) =>
+        parseFloat(getComputedStyle(node).fontSize));
+      assert.ok(rowType >= 17,
+        'Desktop inventory item names must be readable, not miniature: ' + rowType);
       if (width >= 1200) {
         assert.ok(density.visible >= Math.min(5, density.count),
           'Five objects should be visible without scrolling whenever five exist: '
@@ -533,6 +537,25 @@ try {
           + JSON.stringify(modalGeometry));
       assert.equal(modalGeometry.headerColor, 'rgb(57, 75, 76)',
         'The object dossier must use the same slate/sage visual language as the character sheet');
+      const inspectorType = await detail.evaluate((node) => {
+        const size = (selector) => {
+          const element = node.querySelector(selector);
+          return element ? parseFloat(getComputedStyle(element).fontSize) : null;
+        };
+        return {
+          name: size('.chronicles-character-sheet__inspection-head strong'),
+          status: size('.chronicles-character-sheet__inspection-head small'),
+          fact: size('.chronicles-character-sheet__item-essentials > span'),
+          attribute: size('.chronicles-character-sheet__item-more dt'),
+          value: size('.chronicles-character-sheet__item-more dd'),
+          description: size('.chronicles-character-sheet__item-more p'),
+        };
+      });
+      assert.ok(inspectorType.name >= 21 && inspectorType.status >= 14
+        && inspectorType.fact >= 14 && inspectorType.attribute >= 15
+        && inspectorType.value >= 15 && inspectorType.description >= 14,
+        'Examinar must display item identity and real attributes in readable type: '
+          + JSON.stringify(inspectorType));
       assert.equal(await detail.getByRole('button', { name: 'Cerrar inspección' }).evaluate((node) => document.activeElement === node), true,
         'Modal entry must focus its own close button');
       const more = detail.locator('.chronicles-character-sheet__item-more');
@@ -816,6 +839,26 @@ try {
       const itemRows = bag.locator('[data-inventory-item]');
       assert.ok(await itemRows.count() > 1, 'Exercise wraparound with actual different items');
       const itemCommands = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
+      if (width < 500) {
+        const readable = await sheet.locator('[data-chronicles-equipment-folio]')
+          .evaluate((panel) => {
+            const font = (node) => parseFloat(getComputedStyle(node).fontSize);
+            const rows = [...panel.querySelectorAll('.chronicles-character-sheet__inventory button')];
+            const commands = [...panel.querySelectorAll('.chronicles-character-sheet__classic-actions > button')]
+              .filter((node) => getComputedStyle(node).display !== 'none');
+            return {
+              item: font(rows[0]),
+              actions: commands.map((node) => ({ text: node.innerText,
+                font: font(node), height: node.getBoundingClientRect().height })),
+              sidewaysOverflow: panel.scrollWidth > panel.clientWidth + 2,
+            };
+          });
+        assert.ok(readable.item >= 16 && readable.actions.length === 2
+          && readable.actions.every((action) => action.font >= 16 && action.height >= 48)
+          && !readable.sidewaysOverflow,
+          'Touch inventory needs readable item names and commands without horizontal overflow: '
+            + JSON.stringify(readable));
+      }
       // Real reducer integration: first equip a loose sword, then select its
       // visible row in the SAME list and remove it. Stock returns exactly once.
       await sword.click();
