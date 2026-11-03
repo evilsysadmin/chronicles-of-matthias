@@ -50,12 +50,13 @@ describe('MM3 character Status layout is a real structural redesign', () => {
   it('reserves full-sized type for attributes, modifiers and explanations', () => {
     // The 1909px screenshot showed tiny glyphs in very large desktop cells.
     // Keep large type for the primary attribute/value and readable context.
-    expect(css).toContain('font-size: clamp(1.38rem, 1.42vw, 1.65rem);');
-    expect(css).toContain('font-size: clamp(1.875rem, 2vw, 2.25rem);');
-    expect(css).toContain('font-size: 1.05rem;');
-    expect(css).toContain('font-size: 1.125rem;');
-    expect(css).toContain('font-size: 1.65rem;');
+    expect(css).toContain('font-size: clamp(22px, 1.42vw, 27px);');
+    expect(css).toContain('font-size: clamp(30px, 2vw, 38px);');
+    expect(css).toContain('font-size: 17px;');
+    expect(css).toContain('font-size: 18px;');
+    expect(css).toContain('font-size: 27px;');
     expect(css).toContain('min-height: clamp(120px, 15dvh, 155px);');
+    expect(css).toContain('font-size: clamp(28px, 2.1vw, 36px);');
     expect(css).toContain('@media (min-width: 1550px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('font-size: .9rem;');
