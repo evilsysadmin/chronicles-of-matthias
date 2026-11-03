@@ -104,6 +104,45 @@ async function assertReadableMM3Level(sheet, viewport) {
     + viewport + ': ' + JSON.stringify(painted));
 }
 
+async function assertOriginalStatArtwork(sheet, viewport) {
+  const artwork = await sheet.locator('[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats')
+    .evaluate((grid) => [...grid.querySelectorAll('[data-stat]')].map((row) => {
+      const icon = row.querySelector(':scope > .chronicles-character-sheet__stat-icon');
+      const svg = icon?.querySelector('svg');
+      const label = row.querySelector(':scope > span');
+      const value = row.querySelector(':scope > b');
+      const note = row.querySelector(':scope > small');
+      const r = (node) => node?.getBoundingClientRect();
+      const ir = r(icon);
+      const rr = r(row);
+      const lr = r(label);
+      const vr = r(value);
+      const nr = r(note);
+      return {
+        stat: row.dataset.stat, icon: icon?.dataset.statIcon,
+        hidden: icon?.getAttribute('aria-hidden'),
+        shapes: svg?.querySelectorAll('path, rect, circle').length ?? 0,
+        viewBox: svg?.getAttribute('viewBox'), paintedWidth: ir?.width ?? 0,
+        paintedHeight: ir?.height ?? 0,
+        withinRow: !!ir && ir.left >= rr.left - 1 && ir.right <= rr.right + 1
+          && ir.top >= rr.top - 1 && ir.bottom <= rr.bottom + 1,
+        nextToText: !!ir && ir.right <= lr.left + 2 && ir.right <= nr.left + 2
+          && ir.right <= vr.left + 2,
+        textClipped: [label, value, note].some((node) => node.scrollWidth > node.clientWidth + 2),
+      };
+    }));
+  const keys = ['might', 'intellect', 'personality', 'endurance', 'speed',
+    'accuracy', 'luck', 'condition'];
+  assert.deepEqual(artwork.map((item) => item.stat), keys,
+    'Status must keep all real attributes and condition in order');
+  assert.ok(artwork.every((item) => item.icon === item.stat
+    && item.hidden === 'true' && item.shapes >= 2 && item.viewBox === '0 0 32 32'
+    && item.paintedWidth >= 40 && item.paintedHeight >= 40
+    && item.withinRow && item.nextToText && !item.textClipped),
+  'Every original retro stat emblem must fit beside readable data, never cover it at '
+    + viewport + ': ' + JSON.stringify(artwork));
+}
+
 async function assertMobileChapterTabGeometry(nav, label) {
   const layout = await nav.evaluate((element) => {
     const navBox = element.getBoundingClientRect();
@@ -414,6 +453,7 @@ try {
         await assertMM3ChapterTabsStable(nav, initialChapterTabs, 'Estado', width + 'x' + height);
       }
       await assertNoDuplicateMM3HeaderResources(sheet);
+      await assertOriginalStatArtwork(sheet, width + 'x' + height);
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
@@ -953,6 +993,7 @@ try {
       const sheet = page.locator('[data-chronicles-folio="v2"]');
       await sheet.waitFor({ state: 'visible' });
       await assertTouchStatusReadable(sheet, width);
+      await assertOriginalStatArtwork(sheet, width + 'x' + height);
       await sheet.getByRole('button', { name: 'Ver ficha de Hildegard' }).click();
       await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
         .getByRole('button', { name: /Hechizos/ }).click();
