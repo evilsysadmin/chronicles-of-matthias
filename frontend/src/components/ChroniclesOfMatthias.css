@@ -1472,10 +1472,10 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 .chronicles-initiative-rail li {
   min-width: 0;
   min-height: 46px;
-  padding: 5px 7px;
+  padding: 5px 3px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px;
+  gap: 2px;
   align-items: center;
   border: 1px solid rgba(197, 160, 105, .2);
   border-radius: 9px;
@@ -1509,7 +1509,7 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 }
 .chronicles-initiative-rail li small {
   color: #dfc6a2;
-  font: 650 .75rem/1.2 system-ui, sans-serif;
+  font: 650 .7rem/1.2 system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 @media (max-width: 520px) {
