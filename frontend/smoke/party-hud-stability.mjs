@@ -203,6 +203,78 @@ try {
       await context.close();
     }
   }
+
+  // A second, mobile-specific pass keeps the actual HP/SP fractions legible
+  // rather than merely asserting that tiny bars exist. No new CI fixture.
+  for (const viewport of [
+    { width: 360, height: 780 },
+    { width: 390, height: 844 },
+    { width: 430, height: 932 },
+    { width: 844, height: 390 },
+  ]) {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    try {
+      await page.goto(url, { waitUntil: 'load' });
+      const m = await page.evaluate(() => {
+        const bounds = node => {
+          const r = node.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const party = document.querySelector('.chronicles-party');
+        const map = document.querySelector('.chronicles-minimap');
+        const heroes = [...party.querySelectorAll('.chronicles-party-member')];
+        return {
+          party: bounds(party), map: bounds(map),
+          overflow: document.documentElement.scrollWidth > innerWidth + 1,
+          heroes: heroes.map(hero => ({
+            box: bounds(hero),
+            bars: [...hero.querySelectorAll('.chronicles-party-bars i')].map(bar => {
+              const value = bar.querySelector('span');
+              const range = document.createRange();
+              range.selectNodeContents(value);
+              const text = range.getBoundingClientRect();
+              return {
+                value: value.textContent.trim(), box: bounds(bar),
+                fontSize: parseFloat(getComputedStyle(bar).fontSize),
+                textWidth: text.width,
+              };
+            }),
+          })),
+        };
+      });
+      assert.equal(errors.length, 0, 'No mobile HUD script errors');
+      assert.equal(m.overflow, false, 'Mobile HUD must not scroll horizontally: ' + JSON.stringify(m));
+      assert.equal(m.heroes.length, 4, 'Four visible heroes stay in one row');
+      assert.ok(m.party.right <= m.map.left - 2 || m.party.bottom <= m.map.top,
+        'Readability must not move the party over the minimap: ' + JSON.stringify(m));
+      const values = m.heroes.flatMap(hero => hero.bars);
+      assert.equal(values.length, 7, 'Four HP bars and three caster SP bars');
+      assert.deepEqual(m.heroes.map(hero => hero.bars.length), [1, 2, 2, 2],
+        'No invented PH bar on the non-caster');
+      for (const hero of m.heroes) {
+        assert.ok(hero.box.width >= 48 && hero.box.height >= 48,
+          'Portrait target must stay comfortably usable: ' + JSON.stringify(hero));
+        for (const bar of hero.bars) {
+          assert.ok(bar.fontSize >= 12 && bar.box.height >= 14,
+            'PV/PH must not revert to the 7px microtype: ' + JSON.stringify({viewport, bar}));
+          assert.ok(bar.textWidth <= bar.box.width - 2,
+            'Full current/max fraction must fit its bar: ' + JSON.stringify({viewport, bar}));
+          assert.ok(bar.box.left >= hero.box.left - 1 && bar.box.right <= hero.box.right + 1
+            && bar.box.top >= hero.box.top - 1 && bar.box.bottom <= hero.box.bottom + 1,
+          'PV/PH cannot escape the corresponding portrait: ' + JSON.stringify({viewport, hero, bar}));
+        }
+      }
+      if (viewport.width === 360 || viewport.width === 390 || viewport.width === 430) {
+        await page.screenshot({path: 'smoke-mobile-vitals-' + viewport.width + '.png'});
+      }
+      console.log('CHRONICLES_MOBILE_VITALS_READABLE_OK', viewport.width, viewport.height);
+    } finally {
+      await context.close();
+    }
+  }
 } finally {
   await browser.close();
 }
