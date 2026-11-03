@@ -162,3 +162,56 @@ export async function chroniclesPushProgression(progression, { retries = 1 } = {
     return chroniclesPushProgression(picked.progression, { retries: retries - 1 });
   }
 }
+
+function staleConflict(message = 'La progresión del servidor ha cambiado. Revisa y descarga un nuevo respaldo antes de decidir.') {
+  const error = new Error(message);
+  error.code = 'chronicles-progression-conflict-stale';
+  return error;
+}
+
+// Deliberately separate from the automatic sync path. A player must have
+// downloaded both branches and explicitly chosen one before this is called.
+// CAS is mandatory for the destructive local->server choice; no 409 retry.
+export async function chroniclesResolveProgressionConflict({ owner, local, remote, revision, choice }) {
+  const { owner: activeOwner } = currentRevision();
+  if (!owner || String(owner).trim().toLowerCase() !== String(activeOwner || '').trim().toLowerCase()) {
+    const error = new Error('La sesión ha cambiado. No se puede resolver el conflicto.');
+    error.name = 'AbortError';
+    throw error;
+  }
+  if (!Number.isSafeInteger(revision) || revision < 0 || !local || !remote
+    || (choice !== 'local' && choice !== 'remote')) {
+    throw new Error('No se puede resolver el conflicto sin dos copias y una elección válida.');
+  }
+
+  const latest = await requestJson(URL, { headers: authHeader() });
+  assertCurrentRevisionOwner(activeOwner);
+  if (latest?.revision !== revision || !latest?.progression
+    || !sameProgression(latest.progression, remote)) {
+    throw staleConflict();
+  }
+
+  const selected = normalizeChroniclesProgression(choice === 'local' ? local : remote);
+  if (choice === 'remote') {
+    knownRevision = revision;
+    return { choice, progression: selected, serverRevision: revision };
+  }
+
+  try {
+    const saved = await requestJson(URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify({ progression: selected, baseRevision: revision }),
+    });
+    assertCurrentRevisionOwner(activeOwner);
+    if (!Number.isSafeInteger(saved?.revision) || saved.revision <= revision) {
+      throw new Error('El servidor no confirmó la revisión nueva.');
+    }
+    knownRevision = saved.revision;
+    return { choice, progression: selected, serverRevision: saved.revision };
+  } catch (error) {
+    assertCurrentRevisionOwner(activeOwner);
+    if (error?.status === 409) throw staleConflict();
+    throw error;
+  }
+}

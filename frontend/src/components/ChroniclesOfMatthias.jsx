@@ -134,11 +134,11 @@ import ChroniclesAccountMenu from './ChroniclesAccountMenu.jsx';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { createPortal } from 'react-dom';
 import ChroniclesHitSplat from './ChroniclesHitSplat.jsx';
-import { chroniclesPullProgression, chroniclesPushProgression } from '../chronicles/chroniclesProgressionSync.js';
+import { chroniclesPullProgression, chroniclesPushProgression, chroniclesResolveProgressionConflict } from '../chronicles/chroniclesProgressionSync.js';
 import { downloadChroniclesProgressionConflictBundle } from '../chronicles/chroniclesProgressionConflictBackup.js';
 import { getUsername } from '../auth.js';
 import { profileStorageIdentityMatchesCurrentUser } from '../profileKeys.js';
-import { getStorageItem, STORAGE_LOCAL } from '../safeStorage.js';
+import { getStorageItem, STORAGE_LOCAL, storageHealthSnapshot } from '../safeStorage.js';
 import {
   chroniclesClearSessionResume,
   chroniclesLoadSessionResume,
@@ -260,6 +260,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [progressionConflict, setProgressionConflict] = useState(false);
   const [progressionConflictCopies, setProgressionConflictCopies] = useState(null);
   const [progressionBackupError, setProgressionBackupError] = useState('');
+  const [entryView, setEntryView] = useState(() => {
+    if (loadChroniclesCharacterDraft(CHRONICLES_PARTY)) return 'setup';
+    return chroniclesShouldResumePlayingRun(FIRST_PERSON_RUN_SCOPE) ? 'playing' : 'menu';
+  });
+  const [progressionBackupPrepared, setProgressionBackupPrepared] = useState(false);
+  const [progressionResolutionBusy, setProgressionResolutionBusy] = useState(false);
+  const progressionResolutionInFlightRef = useRef(false);
   const downloadProgressionBackup = useCallback(() => {
     const owner = String(getUsername() || '').trim().toLowerCase();
     if (!progressionConflictCopies || !profileStorageIdentityMatchesCurrentUser()
@@ -269,11 +276,71 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     }
     try {
       downloadChroniclesProgressionConflictBundle(progressionConflictCopies);
+      setProgressionBackupPrepared(true);
       setProgressionBackupError('');
     } catch {
+      setProgressionBackupPrepared(false);
       setProgressionBackupError('No se pudo generar la copia. Conserva la sesión y vuelve a intentarlo.');
     }
   }, [progressionConflictCopies]);
+
+  const resolveProgressionConflict = useCallback(async (choice) => {
+    const copies = progressionConflictCopies;
+    const owner = String(getUsername() || '').trim().toLowerCase();
+    if (entryView !== 'menu' || runProgressionActiveRef.current || progressionResolutionInFlightRef.current || !copies
+      || !progressionBackupPrepared || !profileStorageIdentityMatchesCurrentUser()
+      || owner !== copies.owner || (choice !== 'local' && choice !== 'remote')) {
+      setProgressionBackupError('No es seguro resolver el conflicto ahora. Vuelve al menú con la cuenta correcta.');
+      return false;
+    }
+    // A pending game action, a second tab or a profile refresh can change
+    // the local copy after the conflict was first detected.
+    const original = JSON.stringify(copies.local);
+    if (JSON.stringify(loadChroniclesProgression()) !== original) {
+      setProgressionBackupPrepared(false);
+      setProgressionBackupError('El progreso local ha cambiado. Vuelve a entrar para obtener y guardar un respaldo actualizado.');
+      return false;
+    }
+    progressionResolutionInFlightRef.current = true;
+    setProgressionResolutionBusy(true);
+    try {
+      const resolved = await chroniclesResolveProgressionConflict({ ...copies, choice });
+      if (!profileStorageIdentityMatchesCurrentUser()
+        || String(getUsername() || '').trim().toLowerCase() !== copies.owner
+        || JSON.stringify(loadChroniclesProgression()) !== original) {
+        throw new Error('El progreso local o la sesión ha cambiado durante la resolución.');
+      }
+      if (choice === 'remote') {
+        // A memory-only safeStorage override is not a durable resolution.
+        const before = storageHealthSnapshot().local;
+        if (!before.readable || before.memoryFallbackActive) {
+          throw new Error('El almacenamiento local no es persistente.');
+        }
+        const updated = saveChroniclesProgression(resolved.progression);
+        if (JSON.stringify(loadChroniclesProgression()) !== JSON.stringify(updated)
+          || storageHealthSnapshot().local.memoryFallbackActive) {
+          throw new Error('No se ha podido conservar la versión elegida de forma persistente.');
+        }
+      }
+      progressionRef.current = resolved.progression;
+      setProgression(resolved.progression);
+      setProgressionConflict(false);
+      setProgressionConflictCopies(null);
+      setProgressionBackupPrepared(false);
+      setProgressionBackupError('');
+      return true;
+    } catch (error) {
+      setProgressionBackupPrepared(false);
+      setProgressionBackupError(error?.code === 'chronicles-progression-conflict-stale'
+        ? 'El servidor cambió. Vuelve a entrar para comparar y descargar un nuevo respaldo; no se ha sobrescrito nada.'
+        : 'No se ha podido resolver de forma segura. Conserva el respaldo y vuelve a entrar para revisar el conflicto.');
+      return false;
+    } finally {
+      progressionResolutionInFlightRef.current = false;
+      setProgressionResolutionBusy(false);
+    }
+  }, [entryView, progressionConflictCopies, progressionBackupPrepared]);
+
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -286,6 +353,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         remote: result.remoteProgression,
         revision: result.serverRevision,
       });
+      setProgressionBackupPrepared(false);
       setProgressionBackupError('');
       setProgressionConflict(true);
     };
@@ -316,10 +384,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // A reload of a playing expedition must return straight to the server
   // checkpoint. An intentional visit to the expedition book stays in 'menu'.
   // Never create a new run as part of the initial render.
-  const [entryView, setEntryView] = useState(() => {
-    if (loadChroniclesCharacterDraft(CHRONICLES_PARTY)) return 'setup';
-    return chroniclesShouldResumePlayingRun(FIRST_PERSON_RUN_SCOPE) ? 'playing' : 'menu';
-  });
+
   const [characterSetupDone, setCharacterSetupDone] = useState(entryView === 'playing');
   useChroniclesSoundtrack(entryView);
   const [savesRefreshKey, refreshSaves] = useState(0);
@@ -1875,6 +1940,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           progressionConflict={progressionConflict}
           onDownloadProgressionBackup={progressionConflictCopies ? downloadProgressionBackup : null}
           progressionBackupError={progressionBackupError}
+          progressionBackupPrepared={progressionBackupPrepared}
+          progressionResolutionBusy={progressionResolutionBusy}
+          onResolveProgressionConflict={progressionConflictCopies ? resolveProgressionConflict : null}
           busyRunId={saveMenuBusy}
           onRetrySync={() => refreshSaves((value) => value + 1)}
           onNew={startFreshGame}
