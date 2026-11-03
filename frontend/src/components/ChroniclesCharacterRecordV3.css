@@ -53,6 +53,23 @@
     background: #b97b46;
     padding: 10px 13px 8px;
   }
+  /* The name/class row is the character identity, not a row of 12px metadata.
+     The stripped PV/Oro badges leave actual room to use MM3-sized lettering. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity h3 {
+    font-size: clamp(28px, 2.1vw, 36px);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity-meta .chronicles-character-sheet__class-label {
+    font-size: 18px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity-meta .chronicles-character-sheet__level {
+    font-size: 18px;
+  }
   /* The seven MM3 stats plus the HP-based condition share one ledger.
      Three columns at laptop widths avoid cramped microtype. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -79,6 +96,12 @@
     border-bottom: 2px solid #995b2e;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__section--core-stats
+  .chronicles-character-sheet__section-head small {
+    font-size: 17px;
+    line-height: 1.3;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0,1fr));
@@ -88,13 +111,13 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats > div {
     display: grid;
-    grid-template-columns: 42px minmax(0,1fr) auto;
-    grid-template-rows: minmax(26px,auto) minmax(20px,auto);
+    grid-template-columns: 48px minmax(0,1fr) auto;
+    grid-template-rows: minmax(34px,auto) minmax(24px,auto);
     min-width: 0;
-    min-height: clamp(108px, 14dvh, 140px);
-    gap: 5px 7px;
+    min-height: clamp(120px, 15dvh, 155px);
+    gap: 6px 7px;
     align-content: center;
-    padding: 10px 8px;
+    padding: 12px 8px;
     border: 0;
     border-bottom: 1px solid #a26635;
     background: none;
@@ -104,9 +127,9 @@
     grid-column: 1;
     grid-row: 1 / 3;
     align-self: center;
-    width: 36px;
-    height: 36px;
-    font-size: 1.3rem;
+    width: 42px;
+    height: 42px;
+    font-size: 25px;
     border: 3px solid;
     border-color: #f5c88f #74421e #74421e #f5c88f;
     background: #dc9657;
@@ -116,7 +139,7 @@
     grid-column: 2;
     grid-row: 1;
     align-self: end;
-    font-size: clamp(1.08rem, 1.12vw, 1.22rem);
+    font-size: clamp(22px, 1.42vw, 27px);
     line-height: 1.2;
     color: #3b200c;
     min-width: 0;
@@ -126,7 +149,7 @@
     grid-column: 3;
     grid-row: 1;
     align-self: end;
-    font-size: clamp(1.48rem, 1.65vw, 1.82rem);
+    font-size: clamp(30px, 2vw, 38px);
     line-height: 1.15;
     font-variant-numeric: tabular-nums;
     color: #1d6a26;
@@ -135,14 +158,14 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats em {
-    font-size: .94rem;
+    font-size: 17px;
     color: #553519;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats small {
     grid-column: 2 / 4;
     grid-row: 2;
-    font-size: .95rem;
+    font-size: 18px;
     line-height: 1.3;
     color: #594025;
   }
@@ -168,13 +191,13 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals span {
-    font-size: .93rem;
+    font-size: 1rem;
     color: #f9dfb6;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals b {
     margin: 0;
-    font-size: 1.52rem;
+    font-size: 27px;
     color: #fff1cf;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -232,7 +255,7 @@
     grid-column: 1 / -1;
     margin: 4px 0 0;
     padding: 5px 7px;
-    font-size: .74rem;
+    font-size: 16px;
   }
 }
 

@@ -690,13 +690,12 @@ export default function ChroniclesCharacterSheet({
                   </span>
                 </p>
             }
-            {!tacticsMode && (
-              <div className="chronicles-character-sheet__quick" aria-label="Recursos actuales">
-                <span data-resource="health">PV <b>{member.hp}/{member.maxHp}</b></span>
-                {chroniclesMemberSchool(member) && (
-                  <span data-resource="magic">PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
-                )}
-                <span data-resource="gold">ORO <b>{gold}</b></span>
+            {/* First-person: PV already lives in the battle strip and hero dock,
+                while company gold belongs in G · Estado del grupo. Only a
+                caster's PH stays in the header for immediate spell context. */}
+            {!tacticsMode && chroniclesMemberSchool(member) && (
+              <div className="chronicles-character-sheet__quick" aria-label="Puntos de hechizo actuales">
+                <span data-resource="magic">PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
               </div>
             )}
           </div>

@@ -41,6 +41,34 @@ async function assertResourceContrast(sheet, resource) {
   }
 }
 
+async function assertNoDuplicateMM3HeaderResources(sheet) {
+  const summary = await sheet.evaluate((node) => {
+    const header = node.querySelector('.chronicles-character-sheet__head');
+    const battle = node.querySelector('.chronicles-character-sheet__vitals');
+    const dock = node.querySelector('.chronicles-character-sheet__party-dock');
+    return {
+      repeatedHealth: header.querySelectorAll('[data-resource="health"]').length,
+      repeatedGold: header.querySelectorAll('[data-resource="gold"]').length,
+      healthInCombat: battle?.querySelector(':scope > div:first-child b')?.textContent.trim(),
+      healthInDock: [...(dock?.querySelectorAll('.chronicles-character-sheet__party-hp') || [])]
+        .map((item) => item.textContent.trim()),
+      headerChips: [...header.querySelectorAll('[data-resource]')].map((item) => item.dataset.resource),
+    };
+  });
+  assert.equal(summary.repeatedHealth, 0,
+    'PV already exists in the battle strip and portrait dock: ' + JSON.stringify(summary));
+  assert.equal(summary.repeatedGold, 0,
+    'Gold belongs in Group (G), not in every hero header: ' + JSON.stringify(summary));
+  assert.match(summary.healthInCombat || '', /^\d+\/\d+$/,
+    'The battle strip retains the actual character HP');
+  assert.equal(summary.healthInDock.length, 4,
+    'All party portraits continue showing their live health');
+  assert.ok(summary.healthInDock.every((value) => /^\d+\/\d+ PV$/.test(value)),
+    'The HP readout stays visible on portraits: ' + JSON.stringify(summary));
+  assert.ok(summary.headerChips.every((kind) => kind === 'magic'),
+    'PH is the only optional header resource for a spellcaster');
+}
+
 async function assertReadableMM3Level(sheet, viewport) {
   const painted = await sheet.evaluate((node) => {
     const identity = node.querySelector('.chronicles-character-sheet__identity');
@@ -306,6 +334,11 @@ try {
             }));
             return { left: box.left, right: box.right, text };
           });
+          const headerType = {
+            name: parseFloat(getComputedStyle(node.querySelector('.chronicles-character-sheet__identity h3')).fontSize),
+            heroClass: parseFloat(getComputedStyle(node.querySelector('.chronicles-character-sheet__class-label')).fontSize),
+            level: parseFloat(getComputedStyle(node.querySelector('[data-chronicles-character-level]')).fontSize),
+          };
           const type = [...statGrid.querySelectorAll('[data-stat]')].map((row) => {
             const font = (selector) => {
               const element = row.querySelector(selector);
@@ -315,13 +348,17 @@ try {
               modifier: font('em'), explanation: font('small') };
           });
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            statColumns: columns, battleColumns, battleCells, labels, type,
+            statColumns: columns, battleColumns, battleCells, labels, type, headerType,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
         assert.equal(ledger.statColumns, width >= 1550 ? 4 : 3,
           'MM3 must use 3 readable columns on laptops and 4 on wide desktops: ' + JSON.stringify(ledger));
-        assert.ok(ledger.type.every((row) => row.label >= 17 && row.value >= 23
-          && row.explanation >= 15 && (row.modifier == null || row.modifier >= 15)),
+        assert.ok(ledger.headerType.name >= 28 && ledger.headerType.heroClass >= 18
+          && ledger.headerType.level >= 18,
+          'The hero name, class and level must be readable as the MM3 record title: '
+            + JSON.stringify(ledger.headerType));
+        assert.ok(ledger.type.every((row) => row.label >= 22 && row.value >= 30
+          && row.explanation >= 17 && (row.modifier == null || row.modifier >= 16)),
         'MM3 attribute type must be readable without browser zoom: ' + JSON.stringify(ledger.type));
         assert.equal(ledger.duplicatedEquipment, 0,
           'Estado must not duplicate equipped gear; all equipment controls live in Equipo');
@@ -376,7 +413,7 @@ try {
       if (initialChapterTabs) {
         await assertMM3ChapterTabsStable(nav, initialChapterTabs, 'Estado', width + 'x' + height);
       }
-      await assertResourceContrast(sheet, 'gold');
+      await assertNoDuplicateMM3HeaderResources(sheet);
       await page.screenshot({ path: 'smoke-character-sheet-desktop-' + width + '.png' });
       await nav.getByRole('button', { name: /Equipo/ }).click();
       assert.equal(await nav.getByRole('button', { name: /Equipo/ }).getAttribute('aria-pressed'), 'true');
@@ -645,7 +682,7 @@ try {
       const grimoire = spellbook.locator('[data-chronicles-grimoire]');
       await grimoire.waitFor({ state: 'visible' });
       await assertResourceContrast(sheet, 'magic');
-      await assertResourceContrast(sheet, 'gold');
+      await assertNoDuplicateMM3HeaderResources(sheet);
       const spellRows = grimoire.locator('[data-grimoire-spell]');
       const actualCount = await spellRows.count();
       assert.ok(actualCount >= 1, 'The real caster must have learned spells');
@@ -1515,10 +1552,10 @@ try {
       const repeatedEquipmentGold = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
       );
-      assert.equal(await companyGoldChip.isVisible(), true,
-        'The primary company gold balance must remain visible in the identity strip');
+      assert.equal(await companyGoldChip.count(), 0,
+        'The company gold is in the G group summary: no repeated header chip in Equipo');
       assert.equal(await repeatedEquipmentGold.count(), 0,
-        'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
+        'Equipment must not duplicate the gold balance already available from Grupo (G)');
       if (width <= 520) {
         const controls = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
         assert.equal(await controls.getByRole('button', { name: 'Detalles', exact: true }).count(), 0);
@@ -1549,11 +1586,9 @@ try {
           columns: getComputedStyle(wrapper).gridTemplateColumns,
         };
       });
-      // Computed ink contrast, not a CSS-string assertion: the 390px
-      // screenshot exposed pale PV/PH/ORO labels and values on beige chips.
-      for (const resource of ['health', 'magic', 'gold']) {
-        await assertResourceContrast(sheet, resource);
-      }
+      // Gold and HP no longer repeat in the header; keep caster PH contrast.
+      await assertNoDuplicateMM3HeaderResources(sheet);
+      await assertResourceContrast(sheet, 'magic');
       assert.equal(identity.titleText, 'Hildegard', 'Fixture must check the longer hero name');
       assert.match(identity.classText, /Nivel/, 'Class and level must remain readable');
       assert.ok(identity.overflow <= 1,

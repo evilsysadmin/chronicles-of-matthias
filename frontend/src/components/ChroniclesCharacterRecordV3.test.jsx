@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createChroniclesState } from '../chroniclesOfMatthias.js';
 import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
+import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
 
 const css = readFileSync(new URL('./ChroniclesCharacterRecordV3.css', import.meta.url), 'utf8');
 const render = (mode = 'chronicles') => {
@@ -24,6 +25,11 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(html).toContain('Sano');
     expect(html).toContain('Estado general según los puntos de vida actuales');
     expect(html).not.toContain('data-chronicles-worn-gear="matthias"');
+    // The top PV and gold badges repeated the real HP strip and Group (G).
+    expect(html).not.toContain('data-resource="health"');
+    expect(html).not.toContain('data-resource="gold"');
+    expect(html).toContain('chronicles-character-sheet__vitals');
+    expect(html).toContain('chronicles-character-sheet__party-hp');
     expect(css).toContain('grid-template-areas: "battle" "attributes" "footer"');
     expect(css).toContain('.chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats');
     expect(css).toContain('grid-column: 1 / -1');
@@ -42,15 +48,26 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('overflow-wrap: break-word;');
   });
   it('reserves full-sized type for attributes, modifiers and explanations', () => {
-    // Regression for the old 11-12px labels inside giant 117px desktop cells.
-    expect(css).toContain('font-size: clamp(1.08rem, 1.12vw, 1.22rem);');
-    expect(css).toContain('font-size: clamp(1.48rem, 1.65vw, 1.82rem);');
-    expect(css).toContain('font-size: .94rem;');
-    expect(css).toContain('font-size: .95rem;');
-    expect(css).toContain('font-size: 1.52rem;');
+    // The 1909px screenshot showed tiny glyphs in very large desktop cells.
+    // Keep large type for the primary attribute/value and readable context.
+    expect(css).toContain('font-size: clamp(22px, 1.42vw, 27px);');
+    expect(css).toContain('font-size: clamp(30px, 2vw, 38px);');
+    expect(css).toContain('font-size: 17px;');
+    expect(css).toContain('font-size: 18px;');
+    expect(css).toContain('font-size: 27px;');
+    expect(css).toContain('min-height: clamp(120px, 15dvh, 155px);');
+    expect(css).toContain('font-size: clamp(28px, 2.1vw, 36px);');
     expect(css).toContain('@media (min-width: 1550px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('font-size: .9rem;');
+  });
+  it('keeps company gold in the G group summary rather than individual character headers', () => {
+    const status = renderToStaticMarkup(createElement(ChroniclesQuickStatus, {
+      open: true, rows: [], gold: 40, onClose: () => {}, onOpenSheet: () => {},
+    }));
+    expect(status).toContain('ESTADO DEL GRUPO');
+    expect(status).toContain('ORO <b>40</b>');
+    expect(render()).not.toContain('data-resource="gold"');
   });
   it('keeps non-record chapters and Tactics outside the new layout', () => {
     expect(render('tactics')).not.toContain('data-chronicles-chapter="record"');
