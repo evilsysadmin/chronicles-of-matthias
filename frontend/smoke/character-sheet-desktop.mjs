@@ -1552,10 +1552,10 @@ try {
       const repeatedEquipmentGold = sheet.locator(
         '[data-chronicles-equipment-folio] > .chronicles-character-sheet__section-head > b'
       );
-      assert.equal(await companyGoldChip.isVisible(), true,
-        'The primary company gold balance must remain visible in the identity strip');
+      assert.equal(await companyGoldChip.count(), 0,
+        'The company gold is in the G group summary: no repeated header chip in Equipo');
       assert.equal(await repeatedEquipmentGold.count(), 0,
-        'MM3 already shows company gold in the identity strip; do not repeat it in Equipment');
+        'Equipment must not duplicate the gold balance already available from Grupo (G)');
       if (width <= 520) {
         const controls = sheet.getByRole('navigation', { name: 'Acciones de inventario' });
         assert.equal(await controls.getByRole('button', { name: 'Detalles', exact: true }).count(), 0);
