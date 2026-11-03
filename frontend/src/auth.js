@@ -7,7 +7,6 @@ import { bindProfileStorageIdentity, clearLocalUserState } from './profileKeys.j
 import { request, requestJson, setSessionRefresher } from './http.js';
 import { ssoEnabled, ssoForgotPassword, ssoLogin, ssoLogout, ssoRegister, ssoSilentToken } from './shadowopsIdentity.js';
 import { markAmbientThemeSessionFresh, clearAmbientThemeSessionStorage } from './audioSession.js';
-import { clearSessionView } from './viewState.js';
 import { APP_RELEASE } from './release.js';
 import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, listStorageKeys, removeStorageItem, setStorageItem } from './safeStorage.js';
 import { setUiLanguage } from './userPreferences.js';
@@ -30,6 +29,8 @@ const LEGACY_CHESS_SESSION_KEYS = Object.freeze([
   'chess-study-combat-post-battle-debrief-v1',
   'chess-study-home-play-nudge-shown-v1',
   'chess-study-pvp-enrollment-v1',
+  'chess-study-current-view',
+  'chess-study-view-history',
 ]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -123,12 +124,12 @@ export function watchSessionIdentity(onChange) {
 // este contrato en un único sitio evita que una nueva cache/session se limpie
 // en un camino pero sobreviva accidentalmente en el otro.
 function clearSessionRuntimeState() {
-  clearSessionView();
   for (const key of listStorageKeys(STORAGE_LOCAL, { prefix: LEGACY_CHESS_CLOCK_PREFIX })) {
     removeStorageItem(STORAGE_LOCAL, key);
   }
-  // Chronicles never starts Chess Studio's Combat Chess or Home nudge. Clear
-  // their historic session keys without importing their unused engines.
+  // Standalone Chronicles uses its own MM3/Tactics routing. Clear historical
+  // Chess Studio session keys without importing its retired navigation,
+  // Combat Chess, PvP enrollment, or Home nudge engines.
   for (const key of LEGACY_CHESS_SESSION_KEYS) removeStorageItem(STORAGE_SESSION, key);
 }
 

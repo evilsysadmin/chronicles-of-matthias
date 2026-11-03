@@ -226,22 +226,36 @@ describe('logout presence', () => {
 });
 
 describe('logout', () => {
-  it('descarta claves temporales heredadas de Chess (incluido PvP) al iniciar o cerrar sesión', async () => {
+  it('descarta claves temporales heredadas de Chess (incluida navegación) al iniciar o cerrar sesión', async () => {
     const oldKeys = [
       'chess-study-active-combat-session-v1',
       'chess-study-active-combat-markers-v1',
       'chess-study-combat-post-battle-debrief-v1',
       'chess-study-home-play-nudge-shown-v1',
       'chess-study-pvp-enrollment-v1',
+      'chess-study-current-view',
+      'chess-study-view-history',
     ];
     oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
+    sessionStorage.setItem('chronicles-unrelated-session', 'se conserva');
     mockFetchOnce(200, { token: 'current-token', username: 'nuevo' });
     await login('nuevo', 'clave123456');
     oldKeys.forEach((key) => expect(sessionStorage.getItem(key)).toBeNull());
+    expect(sessionStorage.getItem('chronicles-unrelated-session')).toBe('se conserva');
 
     oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
     logout();
     oldKeys.forEach((key) => expect(sessionStorage.getItem(key)).toBeNull());
+    expect(sessionStorage.getItem('chronicles-unrelated-session')).toBe('se conserva');
+  });
+
+  it('no borra navegación antigua de Chess si el login falla', async () => {
+    sessionStorage.setItem('chess-study-current-view', 'combat');
+    sessionStorage.setItem('chess-study-view-history', '["menu","combat"]');
+    mockFetchOnce(401, { detail: 'Usuario o contraseña incorrectos.' });
+    await expect(login('bob', 'error')).rejects.toThrow('Usuario o contraseña incorrectos.');
+    expect(sessionStorage.getItem('chess-study-current-view')).toBe('combat');
+    expect(sessionStorage.getItem('chess-study-view-history')).toBe('["menu","combat"]');
   });
 
   it('borra sesión, progreso y partida activa para que otra cuenta no herede nada', async () => {
