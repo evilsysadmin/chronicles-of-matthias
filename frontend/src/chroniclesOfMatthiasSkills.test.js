@@ -20,6 +20,7 @@ import {
   chroniclesTacticsEffectiveProfile,
 } from './chroniclesOfMatthiasTactics.js';
 import { clearStorageMemoryFallback } from './safeStorage.js';
+import { bindProfileStorageIdentity } from './profileKeys.js';
 
 function leveled(memberId, level = 2) {
   return grantChroniclesXp(
@@ -52,6 +53,8 @@ describe('Chronicles Tactics · class doctrine skills', () => {
     clearStorageMemoryFallback();
     localStorage.clear();
     localStorage.setItem('chess-study-auth-username', 'alice');
+    // The app binds a document to its authenticated user in auth.saveSession.
+    bindProfileStorageIdentity('alice');
   });
 
   it('offers two real doctrine choices per class at level 2', () => {
