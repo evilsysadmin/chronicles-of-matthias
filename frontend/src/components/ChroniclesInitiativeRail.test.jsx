@@ -25,5 +25,12 @@ describe('ChroniclesInitiativeRail', () => {
     expect(html.indexOf('Espectro')).toBeLessThan(html.indexOf('Hildegard'));
     expect(html.indexOf('Hildegard')).toBeLessThan(html.lastIndexOf('Matthias'));
     expect(html).toContain('TURNO ENEMIGO');
+    // The visual micro-labels may be hidden, but turn order and initiative
+    // remain fully accessible to keyboard/screen-reader players.
+    expect(html).toContain('aria-label="Ahora: Espectro · iniciativa 8"');
+    expect(html).toContain('aria-label="Después, posición 2: Hildegard · iniciativa 6"');
+    expect(html).toContain('aria-label="Después, posición 3: Matthias · iniciativa 9"');
+    expect(html).toContain('title="Espectro"');
+    expect(html).toContain('<span aria-hidden="true">AHORA</span>');
   });
 });

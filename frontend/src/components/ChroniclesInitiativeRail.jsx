@@ -34,8 +34,10 @@ export default function ChroniclesInitiativeRail({ initiative }) {
             key={actor.id}
             className={`${index === 0 ? 'is-active' : ''} ${actor.kind === 'enemy' ? 'is-enemy' : 'is-party'}`}
             aria-current={index === 0 ? 'step' : undefined}
+            aria-label={`${index === 0 ? 'Ahora' : `Después, posición ${index + 1}`}: ${actorLabel(actor)} · iniciativa ${actor.initiative}`}
+            title={actorLabel(actor)}
           >
-            <span>{index === 0 ? 'AHORA' : `+${index}`}</span>
+            <span aria-hidden="true">{index === 0 ? 'AHORA' : `+${index}`}</span>
             <b>{actorLabel(actor)}</b>
             <small>{actor.initiative}</small>
           </li>

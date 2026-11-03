@@ -1442,16 +1442,16 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 }
 
 .chronicles-initiative-rail__heading span {
-  color: #9e8057;
-  font-size: .52rem;
-  letter-spacing: .16em;
+  color: #e0bf93;
+  font: 600 .78rem/1.2 system-ui, sans-serif;
+  letter-spacing: .04em;
 }
 
 .chronicles-initiative-rail__heading strong {
   margin-top: 2px;
-  color: #f0d7ab;
-  font-size: .68rem;
-  letter-spacing: .09em;
+  color: #fff0ca;
+  font: 750 .88rem/1.2 system-ui, sans-serif;
+  letter-spacing: .01em;
 }
 
 .chronicles-initiative-rail.is-enemy-turn .chronicles-initiative-rail__heading {
@@ -1472,11 +1472,12 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 .chronicles-initiative-rail li {
   min-width: 0;
   min-height: 46px;
-  padding: 5px 7px;
+  padding: 5px 3px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 5px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 1px;
+  align-content: center;
   border: 1px solid rgba(197, 160, 105, .2);
   border-radius: 9px;
   background: rgba(10, 8, 6, .68);
@@ -1496,15 +1497,29 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   color: #f0c1ad;
 }
 
-.chronicles-initiative-rail li span { font-size: .46rem; color: #8f795d; }
+/* The active border already marks "ahora"; hide redundant micro-labels
+   instead of shrinking the actor names to fit five entries. */
+.chronicles-initiative-rail li > span { display: none; }
 .chronicles-initiative-rail li b {
   min-width: 0;
   overflow: hidden;
-  font-size: .62rem;
+  color: #f7dfb7;
+  font: 700 .88rem/1.2 system-ui, sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.chronicles-initiative-rail li small { font-size: .58rem; color: #b99a6b; }
+.chronicles-initiative-rail li small {
+  color: #dfc6a2;
+  font: 650 .7rem/1.2 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 520px) {
+  /* Two readable names beat four illegible micro-columns on phone. */
+  .chronicles-initiative-rail__heading { padding: 5px 4px; }
+  .chronicles-initiative-rail__heading span { font-size: .7rem; }
+  .chronicles-initiative-rail__heading strong { font-size: .78rem; }
+  .chronicles-initiative-rail li small { display: none; }
+}
 
 @media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
   .chronicles-initiative-rail {
@@ -1527,7 +1542,13 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
     grid-template-columns: 72px minmax(0, 1fr);
   }
   .chronicles-initiative-rail__heading { min-width: 0; }
-  .chronicles-initiative-rail ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Stack two actual names: 230px is too narrow for two columns of
+     readable text, and widening the rail would overlap the minimap. */
+  .chronicles-initiative-rail ol {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+  .chronicles-initiative-rail li { min-height: 33px; padding: 4px 6px; }
   .chronicles-initiative-rail li:nth-child(n + 3) { display: none; }
 }
 
