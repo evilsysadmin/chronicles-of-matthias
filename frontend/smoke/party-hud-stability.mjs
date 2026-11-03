@@ -258,12 +258,6 @@ try {
     page.on('pageerror', e => errors.push(e.message));
     try {
       await page.goto(url, { waitUntil: 'load' });
-      // Check the real MM3 movement and combat controls, including contextual
-      // actions that only appear during spells, combat or object interaction.
-      await addAction(page, 'cast');
-      await addAction(page, 'interact');
-      await addAction(page, 'block');
-      await assertActionCaptions(page, 'touch ' + viewport.width, true);
       const m = await page.evaluate(() => {
         const bounds = node => {
           const r = node.getBoundingClientRect();
@@ -316,6 +310,12 @@ try {
       if (viewport.width === 360 || viewport.width === 390 || viewport.width === 430) {
         await page.screenshot({path: 'smoke-mobile-vitals-' + viewport.width + '.png'});
       }
+      // Add optional commands only AFTER measuring the original mobile HUD:
+      // these simulated buttons must not alter the baseline geometry contract.
+      await addAction(page, 'cast');
+      await addAction(page, 'interact');
+      await addAction(page, 'block');
+      await assertActionCaptions(page, 'touch ' + viewport.width, true);
       console.log('CHRONICLES_MOBILE_VITALS_READABLE_OK', viewport.width, viewport.height);
     } finally {
       await context.close();
