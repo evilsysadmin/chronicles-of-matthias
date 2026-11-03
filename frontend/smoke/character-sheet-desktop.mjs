@@ -390,8 +390,8 @@ try {
             statColumns: columns, battleColumns, battleCells, labels, type, headerType,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
-        assert.equal(ledger.statColumns, width >= 1550 ? 4 : 3,
-          'MM3 must use 3 readable columns on laptops and 4 on wide desktops: ' + JSON.stringify(ledger));
+        assert.equal(ledger.statColumns, width >= 2100 ? 4 : 3,
+          'MM3 artwork needs 3 readable columns until ultrawide screens: ' + JSON.stringify(ledger));
         assert.ok(ledger.headerType.name >= 28 && ledger.headerType.heroClass >= 18
           && ledger.headerType.level >= 18,
           'The hero name, class and level must be readable as the MM3 record title: '
