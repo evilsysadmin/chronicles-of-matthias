@@ -266,6 +266,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   });
   const [progressionBackupPrepared, setProgressionBackupPrepared] = useState(false);
   const [progressionResolutionBusy, setProgressionResolutionBusy] = useState(false);
+  const progressionResolutionInFlightRef = useRef(false);
   const downloadProgressionBackup = useCallback(() => {
     const owner = String(getUsername() || '').trim().toLowerCase();
     if (!progressionConflictCopies || !profileStorageIdentityMatchesCurrentUser()
@@ -286,7 +287,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const resolveProgressionConflict = useCallback(async (choice) => {
     const copies = progressionConflictCopies;
     const owner = String(getUsername() || '').trim().toLowerCase();
-    if (entryView !== 'menu' || runProgressionActiveRef.current || !copies
+    if (entryView !== 'menu' || runProgressionActiveRef.current || progressionResolutionInFlightRef.current || !copies
       || !progressionBackupPrepared || !profileStorageIdentityMatchesCurrentUser()
       || owner !== copies.owner || (choice !== 'local' && choice !== 'remote')) {
       setProgressionBackupError('No es seguro resolver el conflicto ahora. Vuelve al menú con la cuenta correcta.');
@@ -300,6 +301,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       setProgressionBackupError('El progreso local ha cambiado. Vuelve a entrar para obtener y guardar un respaldo actualizado.');
       return false;
     }
+    progressionResolutionInFlightRef.current = true;
     setProgressionResolutionBusy(true);
     try {
       const resolved = await chroniclesResolveProgressionConflict({ ...copies, choice });
@@ -334,6 +336,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         : 'No se ha podido resolver de forma segura. Conserva el respaldo y vuelve a entrar para revisar el conflicto.');
       return false;
     } finally {
+      progressionResolutionInFlightRef.current = false;
       setProgressionResolutionBusy(false);
     }
   }, [entryView, progressionConflictCopies, progressionBackupPrepared]);
