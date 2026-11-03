@@ -334,6 +334,11 @@ try {
             }));
             return { left: box.left, right: box.right, text };
           });
+          const headerType = {
+            name: parseFloat(getComputedStyle(node.querySelector('.chronicles-character-sheet__identity h3')).fontSize),
+            heroClass: parseFloat(getComputedStyle(node.querySelector('.chronicles-character-sheet__class-label')).fontSize),
+            level: parseFloat(getComputedStyle(node.querySelector('[data-chronicles-character-level]')).fontSize),
+          };
           const type = [...statGrid.querySelectorAll('[data-stat]')].map((row) => {
             const font = (selector) => {
               const element = row.querySelector(selector);
@@ -343,11 +348,15 @@ try {
               modifier: font('em'), explanation: font('small') };
           });
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            statColumns: columns, battleColumns, battleCells, labels, type,
+            statColumns: columns, battleColumns, battleCells, labels, type, headerType,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
         assert.equal(ledger.statColumns, width >= 1550 ? 4 : 3,
           'MM3 must use 3 readable columns on laptops and 4 on wide desktops: ' + JSON.stringify(ledger));
+        assert.ok(ledger.headerType.name >= 28 && ledger.headerType.heroClass >= 18
+          && ledger.headerType.level >= 18,
+          'The hero name, class and level must be readable as the MM3 record title: '
+            + JSON.stringify(ledger.headerType));
         assert.ok(ledger.type.every((row) => row.label >= 22 && row.value >= 30
           && row.explanation >= 17 && (row.modifier == null || row.modifier >= 16)),
         'MM3 attribute type must be readable without browser zoom: ' + JSON.stringify(ledger.type));
