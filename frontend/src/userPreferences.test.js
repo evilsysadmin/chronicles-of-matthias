@@ -41,6 +41,8 @@ describe('user preferences', () => {
     expect(getDefaultTimeControlId()).toBe('none');
     expect(setDefaultTimeControlId('5+0')).toBe('5+0');
     expect(getDefaultTimeControlId()).toBe('5+0');
+    expect(setDefaultTimeControlId('15+10')).toBe('15+10');
+    expect(getDefaultTimeControlId()).toBe('15+10');
     expect(setDefaultTimeControlId('42+69')).toBe('none');
   });
 
