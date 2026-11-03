@@ -138,7 +138,7 @@ import { chroniclesPullProgression, chroniclesPushProgression, chroniclesResolve
 import { downloadChroniclesProgressionConflictBundle } from '../chronicles/chroniclesProgressionConflictBackup.js';
 import { getUsername } from '../auth.js';
 import { profileStorageIdentityMatchesCurrentUser } from '../profileKeys.js';
-import { getStorageItem, STORAGE_LOCAL } from '../safeStorage.js';
+import { getStorageItem, STORAGE_LOCAL, storageHealthSnapshot } from '../safeStorage.js';
 import {
   chroniclesClearSessionResume,
   chroniclesLoadSessionResume,
@@ -309,9 +309,15 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         throw new Error('El progreso local o la sesión ha cambiado durante la resolución.');
       }
       if (choice === 'remote') {
+        // A memory-only safeStorage override is not a durable resolution.
+        const before = storageHealthSnapshot().local;
+        if (!before.readable || before.memoryFallbackActive) {
+          throw new Error('El almacenamiento local no es persistente.');
+        }
         const updated = saveChroniclesProgression(resolved.progression);
-        if (JSON.stringify(loadChroniclesProgression()) !== JSON.stringify(updated)) {
-          throw new Error('No se ha podido conservar la versión elegida en este dispositivo.');
+        if (JSON.stringify(loadChroniclesProgression()) !== JSON.stringify(updated)
+          || storageHealthSnapshot().local.memoryFallbackActive) {
+          throw new Error('No se ha podido conservar la versión elegida de forma persistente.');
         }
       }
       progressionRef.current = resolved.progression;
