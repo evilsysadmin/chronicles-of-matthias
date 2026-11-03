@@ -17,7 +17,7 @@ vi.mock('../http.js', async (importOriginal) => ({
   requestJson,
 }));
 
-import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.js';
+import { createChroniclesProgression, grantChroniclesXp, unlockChroniclesSkill } from '../chroniclesOfMatthiasProgression.js';
 import { chroniclesPullProgression, chroniclesPushProgression } from './chroniclesProgressionSync.js';
 
 let caseNumber = 0;
@@ -92,6 +92,38 @@ describe('Chronicles progression revision ownership', () => {
     requestJson.mockResolvedValueOnce({ revision: 8 });
     await chroniclesPushProgression(withXp(20));
     expect(pushedBaseRevision(3)).toBe(7);
+  });
+
+  it('pushes a valid local skill spent at equal XP when the server pull is behind', async () => {
+    const remote = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:skill-tie').progression;
+    const local = unlockChroniclesSkill(remote, 'knight', 'knight-double-quiver').progression;
+
+    requestJson.mockResolvedValueOnce({ revision: 11, progression: remote });
+    const pulled = await chroniclesPullProgression(local);
+    expect(pulled.from).toBe('local');
+    expect(pulled.needsPush).toBe(true);
+
+    requestJson.mockResolvedValueOnce({ revision: 12 });
+    await chroniclesPushProgression(pulled.progression);
+    expect(pushedBaseRevision(1)).toBe(11);
+    expect(JSON.parse(requestJson.mock.calls[1][1].body).progression.heroes.knight.skills)
+      .toContain('knight-double-quiver');
+  });
+
+  it('retries a same-XP skill upgrade after a concurrent 409 without losing the unlock', async () => {
+    const remote = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:skill-409').progression;
+    const local = unlockChroniclesSkill(remote, 'knight', 'knight-double-quiver').progression;
+    requestJson.mockRejectedValueOnce(Object.assign(new Error('conflict'), {
+      status: 409,
+      body: { revision: 5, progression: remote },
+    }));
+    requestJson.mockResolvedValueOnce({ revision: 6 });
+
+    const result = await chroniclesPushProgression(local);
+    expect(result.pushed).toBe(true);
+    expect(result.progression.heroes.knight.skills).toContain('knight-double-quiver');
+    expect(pushedBaseRevision(0)).toBe(0);
+    expect(pushedBaseRevision(1)).toBe(5);
   });
 
   it('keeps the existing same-user 409 conflict retry behavior', async () => {
