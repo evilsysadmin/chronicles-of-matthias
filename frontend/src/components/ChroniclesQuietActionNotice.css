@@ -5,15 +5,19 @@
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  max-width: min(80%, 240px);
-  padding: 3px 10px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(86%, 420px);
+  padding: 6px 12px;
   border: 1px solid rgba(218, 174, 110, .48);
   border-radius: 4px;
-  background: rgba(19, 17, 17, .83);
+  background: rgba(19, 17, 17, .93);
   color: #e5c9a0;
-  font: 13px var(--mm3-pixel-font);
+  font: 18px/1.25 var(--mm3-pixel-font);
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   pointer-events: none;
   animation: chronicles-quiet-notice-in 120ms ease-out both;
 }
@@ -34,7 +38,7 @@
   max-width: min(90%, 560px);
   width: max-content;
   padding: 10px 16px;
-  font-size: clamp(14px, 1.35vw, 18px);
+  font-size: clamp(18px, 1.5vw, 21px);
   font-weight: 700;
   white-space: normal;
   line-height: 1.45;
@@ -52,8 +56,18 @@
   max-width: min(86%, 440px);
   width: max-content;
   padding: 7px 12px;
-  font-size: clamp(12px, 1.2vw, 14px);
+  font-size: clamp(17px, 1.4vw, 19px);
   white-space: normal;
   line-height: 1.4;
   text-wrap: balance;
+}
+
+/* Touch controls occupy the bottom of the viewport. A rejected command must
+   remain readable ABOVE them, not hidden behind the thumb controls. Loot and
+   blessing receipts keep their existing centred placement at top: 38%. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-quiet-action-notice:not(.chronicles-loot-notice):not(.chronicles-boon-expiry-notice) {
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 122px);
+    max-width: min(90%, 360px);
+  }
 }
