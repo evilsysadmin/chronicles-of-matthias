@@ -235,6 +235,8 @@ describe('logout', () => {
       'chess-study-pvp-enrollment-v1',
       'chess-study-current-view',
       'chess-study-view-history',
+      'chess-study-lab-mode-v1',
+      'chess-study-lab-launch-v1',
     ];
     oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
     sessionStorage.setItem('chronicles-unrelated-session', 'se conserva');
@@ -247,6 +249,15 @@ describe('logout', () => {
     logout();
     oldKeys.forEach((key) => expect(sessionStorage.getItem(key)).toBeNull());
     expect(sessionStorage.getItem('chronicles-unrelated-session')).toBe('se conserva');
+  });
+
+  it('no borra lanzamientos heredados de Chess Lab si el login falla', async () => {
+    sessionStorage.setItem('chess-study-lab-mode-v1', 'chronicles-tactics');
+    sessionStorage.setItem('chess-study-lab-launch-v1', 'pawnslug-godot');
+    mockFetchOnce(401, { detail: 'Usuario o contraseña incorrectos.' });
+    await expect(login('bob', 'error')).rejects.toThrow('Usuario o contraseña incorrectos.');
+    expect(sessionStorage.getItem('chess-study-lab-mode-v1')).toBe('chronicles-tactics');
+    expect(sessionStorage.getItem('chess-study-lab-launch-v1')).toBe('pawnslug-godot');
   });
 
   it('no borra navegación antigua de Chess si el login falla', async () => {

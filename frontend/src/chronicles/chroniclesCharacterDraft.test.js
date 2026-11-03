@@ -36,6 +36,9 @@ describe('Chronicles character draft', () => {
       build,
     }, PARTY)).toBe(true);
 
+    // F5 recovery belongs to the per-user Chronicles draft, never the removed
+    // Chess Studio Lab route/session key.
+    expect(sessionStorage.getItem('chess-study-lab-mode-v1')).toBeNull();
     expect(loadChroniclesCharacterDraft(PARTY)?.build.characters[2].portraitId).toBe('male-07');
     expect(loadChroniclesCharacterDraft(PARTY)).toEqual(expect.objectContaining({
       seed: 'vault-7',

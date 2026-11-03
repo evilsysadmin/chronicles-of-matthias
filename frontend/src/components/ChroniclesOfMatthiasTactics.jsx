@@ -181,7 +181,6 @@ export default function ChroniclesOfMatthiasTactics({ onExit }) {
     return (
       <ChroniclesCharacterSetup
         currentBuild={progression.characterBuild}
-        recoveryLabMode="chronicles-tactics"
         onConfirm={confirmCharacterBuild}
         onExit={exitChronicles}
       />

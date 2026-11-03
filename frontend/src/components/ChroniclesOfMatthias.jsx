@@ -1869,7 +1869,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return (
       <ChroniclesCharacterSetup
         currentBuild={progression.characterBuild}
-        recoveryLabMode="chronicles"
         onConfirm={confirmCharacterBuild}
         onExit={exitChronicles}
       />
