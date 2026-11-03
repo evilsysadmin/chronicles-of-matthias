@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PRESENCE_DOCUMENT_OWNER_KEY, PRESENCE_SESSION_KEY, getPresenceSessionId, getToken, getUsername, isLoggedIn, logout, reportLogoutPresence, reportPageLeavePresence, register, login, authHeader, wakeBackend, fetchMe, fetchMeStatus, touchActivity, watchSessionIdentity, forgotPassword, resetPassword, updateRecoveryEmail, fetchLiveStatus } from './auth.js';
 import { APP_RELEASE } from './release.js';
-import { setProfileStorageItem } from './profileKeys.js';
+import { PROFILE_PREFERENCE_KEYS, setProfileStorageItem } from './profileKeys.js';
 import { matthiasLoginGreetingPending } from './matthiasSession.js';
 
 function mockFetchOnce(status, body) {
@@ -115,6 +115,32 @@ describe('register/login', () => {
     expect(localStorage.getItem('chess-study-combat-roster')).toBeNull();
     expect(localStorage.getItem('chess-study-active-game')).toBeNull();
     expect(localStorage.getItem('chess-study-clock:alice-game')).toBeNull();
+  });
+
+  it('conserva la clave histórica del reloj para perfiles antiguos pero no la hereda otra cuenta', async () => {
+    // Mongo puede seguir enviando preferencias antiguas. No eliminamos su
+    // registro de perfil: solo retiramos la API de reloj inexistente en MM3.
+    const legacyTimeControl = 'chess-study-default-time-control';
+    expect(PROFILE_PREFERENCE_KEYS).toContain(legacyTimeControl);
+    localStorage.setItem('chess-study-auth-token', 'alice-token');
+    localStorage.setItem('chess-study-auth-username', 'alice');
+    localStorage.setItem(legacyTimeControl, '15+10');
+
+    mockFetchOnce(200, { token: 'bob-token', username: 'bob' });
+    await login('bob', 'clave123456');
+    expect(getUsername()).toBe('bob');
+    expect(localStorage.getItem(legacyTimeControl)).toBeNull();
+
+    localStorage.setItem(legacyTimeControl, '3+2');
+    logout();
+    expect(localStorage.getItem(legacyTimeControl)).toBeNull();
+  });
+
+  it('no borra la preferencia histórica de reloj cuando falla el login', async () => {
+    localStorage.setItem('chess-study-default-time-control', '5+0');
+    mockFetchOnce(401, { detail: 'Usuario o contraseña incorrectos.' });
+    await expect(login('bob', 'error')).rejects.toThrow('Usuario o contraseña incorrectos.');
+    expect(localStorage.getItem('chess-study-default-time-control')).toBe('5+0');
   });
 
   it('limpia la caché del usuario anterior solo después de un login correcto', async () => {
