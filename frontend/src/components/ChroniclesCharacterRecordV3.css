@@ -53,6 +53,23 @@
     background: #b97b46;
     padding: 10px 13px 8px;
   }
+  /* The name/class row is the character identity, not a row of 12px metadata.
+     The stripped PV/Oro badges leave actual room to use MM3-sized lettering. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity h3 {
+    font-size: clamp(1.75rem, 2.1vw, 2.25rem);
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity-meta .chronicles-character-sheet__class-label {
+    font-size: 1.125rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has(
+    [data-chronicles-chapter="record"]
+  ) .chronicles-character-sheet__identity-meta .chronicles-character-sheet__level {
+    font-size: 1.125rem;
+  }
   /* The seven MM3 stats plus the HP-based condition share one ledger.
      Three columns at laptop widths avoid cramped microtype. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
