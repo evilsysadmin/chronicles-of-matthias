@@ -203,12 +203,13 @@ describe('logout presence', () => {
 });
 
 describe('logout', () => {
-  it('descarta claves temporales heredadas de Chess al iniciar o cerrar sesión', async () => {
+  it('descarta claves temporales heredadas de Chess (incluido PvP) al iniciar o cerrar sesión', async () => {
     const oldKeys = [
       'chess-study-active-combat-session-v1',
       'chess-study-active-combat-markers-v1',
       'chess-study-combat-post-battle-debrief-v1',
       'chess-study-home-play-nudge-shown-v1',
+      'chess-study-pvp-enrollment-v1',
     ];
     oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
     mockFetchOnce(200, { token: 'current-token', username: 'nuevo' });
