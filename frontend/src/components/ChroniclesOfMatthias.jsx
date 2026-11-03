@@ -260,6 +260,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [progressionConflict, setProgressionConflict] = useState(false);
   const [progressionConflictCopies, setProgressionConflictCopies] = useState(null);
   const [progressionBackupError, setProgressionBackupError] = useState('');
+  const [entryView, setEntryView] = useState(() => {
+    if (loadChroniclesCharacterDraft(CHRONICLES_PARTY)) return 'setup';
+    return chroniclesShouldResumePlayingRun(FIRST_PERSON_RUN_SCOPE) ? 'playing' : 'menu';
+  });
   const [progressionBackupPrepared, setProgressionBackupPrepared] = useState(false);
   const [progressionResolutionBusy, setProgressionResolutionBusy] = useState(false);
   const downloadProgressionBackup = useCallback(() => {
@@ -371,10 +375,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   // A reload of a playing expedition must return straight to the server
   // checkpoint. An intentional visit to the expedition book stays in 'menu'.
   // Never create a new run as part of the initial render.
-  const [entryView, setEntryView] = useState(() => {
-    if (loadChroniclesCharacterDraft(CHRONICLES_PARTY)) return 'setup';
-    return chroniclesShouldResumePlayingRun(FIRST_PERSON_RUN_SCOPE) ? 'playing' : 'menu';
-  });
+
   const [characterSetupDone, setCharacterSetupDone] = useState(entryView === 'playing');
   useChroniclesSoundtrack(entryView);
   const [savesRefreshKey, refreshSaves] = useState(0);
