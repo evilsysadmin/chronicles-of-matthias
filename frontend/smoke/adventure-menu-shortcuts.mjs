@@ -58,6 +58,55 @@ try {
         'Menu must fit viewport: ' + JSON.stringify(bounds));
       assert.match(await menu.innerText(), /Guardar partida · S/);
       assert.match(await menu.innerText(), /Salir sin guardar · Q/);
+      // Open the actual Help subpage, not a stylesheet-only mock. The guide
+      // must be readable, truthful, scroll inside its bounded folio, and
+      // return keyboard focus to the menu without affecting Save/Exit.
+      const guideButton = menu.getByRole('button', { name: '? Ayuda' });
+      await guideButton.click();
+      const guide = menu.locator('[data-chronicles-game-help]');
+      await guide.waitFor({ state: 'visible' });
+      const equipment = guide.getByText('Equipo, compras y comparaciones');
+      await equipment.click();
+      assert.match(await guide.innerText(), /El escudo sigue aportando protección al disparar/);
+      const guideMetrics = await guide.evaluate((node) => {
+        const size = (selector) => {
+          const el = node.querySelector(selector);
+          return el ? parseFloat(getComputedStyle(el).fontSize) : 0;
+        };
+        const bounds = node.getBoundingClientRect();
+        return {
+          heading: size('.chronicles-game-help__head strong'),
+          intro: size(':scope > p'),
+          summary: size('summary'),
+          facts: size('dl dt'),
+          explanation: size('details[open] p'),
+          back: size('.chronicles-game-help__head button'),
+          left: bounds.left, right: bounds.right,
+          top: bounds.top, bottom: bounds.bottom,
+          clippedX: node.scrollWidth > node.clientWidth + 2,
+          pageOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      assert.ok(guideMetrics.heading >= 20 && guideMetrics.intro >= 16
+        && guideMetrics.summary >= 17 && guideMetrics.facts >= 16
+        && guideMetrics.explanation >= 16 && guideMetrics.back >= 16,
+        'MM3 guide must use readable typography, not 13px notes: ' + JSON.stringify(guideMetrics));
+      assert.ok(!guideMetrics.clippedX && !guideMetrics.pageOverflow
+        && guideMetrics.left >= -1 && guideMetrics.right <= width + 1
+        && guideMetrics.top >= -1 && guideMetrics.bottom <= (width === 1280 ? 800 : 844) + 1,
+        'MM3 guide must remain within the modal viewport: ' + JSON.stringify(guideMetrics));
+      const shortcutHint = menu.locator('.chronicles-game-menu__hint');
+      if (await shortcutHint.isVisible()) {
+        const hintFont = await shortcutHint.evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+        assert.ok(hintFont >= 18, 'Visible keyboard hint must be legible: ' + hintFont);
+      }
+      await page.screenshot({ path: 'smoke-menu-guide-readable-' + width + '.png' });
+      await guide.getByRole('button', { name: '← Volver al menú' }).click();
+      await guide.waitFor({ state: 'detached' });
+      await page.waitForFunction(() => document.activeElement?.hasAttribute('data-chronicles-menu-help'));
+      assert.equal(await menu.isVisible(), true);
+      assert.equal(await count(page, 'save'), 0);
+      assert.equal(await count(page, 'exit'), 0);
       // The feedback folio must remain keyboard/touch usable at 360/390/430px,
       // without spilling outside the viewport or triggering Save/Exit.
       await menu.getByRole('button', { name: /Buzón de feedback/ }).click();
