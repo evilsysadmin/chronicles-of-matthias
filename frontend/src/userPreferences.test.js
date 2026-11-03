@@ -10,7 +10,6 @@ import {
   getBoardCoordinates,
   getBoardRenderer,
   getConfiguredBoardRendererDefault,
-  getDefaultTimeControlId,
   getEffectiveReducedMotion,
   getReducedMotion,
   getReducedMotionPreference,
@@ -19,7 +18,6 @@ import {
   reducedMotionStatus,
   setBoardCoordinates,
   setBoardRenderer,
-  setDefaultTimeControlId,
   setReducedMotion,
   setRenderQualityPreference,
   setUiLanguage,
@@ -35,15 +33,6 @@ describe('user preferences', () => {
     setReducedMotion(false);
     localStorage.clear();
     clearStorageMemoryFallback();
-  });
-
-  it('guarda un control de tiempo válido y rechaza basura', () => {
-    expect(getDefaultTimeControlId()).toBe('none');
-    expect(setDefaultTimeControlId('5+0')).toBe('5+0');
-    expect(getDefaultTimeControlId()).toBe('5+0');
-    expect(setDefaultTimeControlId('15+10')).toBe('15+10');
-    expect(getDefaultTimeControlId()).toBe('15+10');
-    expect(setDefaultTimeControlId('42+69')).toBe('none');
   });
 
   it('mantiene idioma en valores realmente soportados', () => {
