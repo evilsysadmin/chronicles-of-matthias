@@ -94,6 +94,9 @@ jobs:
           node smoke/run-timed.mjs smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
           # Targeted healing lives in a dedicated party row, never over the sapphire.
           node smoke/run-timed.mjs smoke/spell-target-banner.mjs http://localhost:4174/smoke/spell-target-banner.html
+          # Combat is a reading task: actor names and turn labels need real
+          # font-size and clipping gates, not merely a successful React mount.
+          node smoke/run-timed.mjs smoke/initiative-legibility.mjs http://localhost:4174/smoke/initiative-legibility.html
           node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
