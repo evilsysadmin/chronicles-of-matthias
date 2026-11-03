@@ -203,6 +203,23 @@ describe('logout presence', () => {
 });
 
 describe('logout', () => {
+  it('descarta claves temporales heredadas de Chess al iniciar o cerrar sesión', async () => {
+    const oldKeys = [
+      'chess-study-active-combat-session-v1',
+      'chess-study-active-combat-markers-v1',
+      'chess-study-combat-post-battle-debrief-v1',
+      'chess-study-home-play-nudge-shown-v1',
+    ];
+    oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
+    mockFetchOnce(200, { token: 'current-token', username: 'nuevo' });
+    await login('nuevo', 'clave123456');
+    oldKeys.forEach((key) => expect(sessionStorage.getItem(key)).toBeNull());
+
+    oldKeys.forEach((key) => sessionStorage.setItem(key, 'sesion-anterior'));
+    logout();
+    oldKeys.forEach((key) => expect(sessionStorage.getItem(key)).toBeNull());
+  });
+
   it('borra sesión, progreso y partida activa para que otra cuenta no herede nada', async () => {
     mockFetchOnce(200, { token: 'x', username: 'juan' });
     await login('juan', 'clave123456');
