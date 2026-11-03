@@ -53,8 +53,8 @@
     background: #b97b46;
     padding: 10px 13px 8px;
   }
-  /* The seven MM3 stats plus the actual HP-based condition form two clean
-     four-column rows; no half-empty second statistics card. */
+  /* The seven MM3 stats plus the HP-based condition share one ledger.
+     Three columns at laptop widths avoid cramped microtype. */
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats {
     /* Beat the old two-column desktop folio's grid-column:2. Otherwise
@@ -81,8 +81,8 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0,1fr));
-    gap: 0 8px;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 0 12px;
     padding: 6px 2px 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -91,10 +91,10 @@
     grid-template-columns: 42px minmax(0,1fr) auto;
     grid-template-rows: minmax(26px,auto) minmax(20px,auto);
     min-width: 0;
-    min-height: clamp(91px, 12dvh, 117px);
-    gap: 2px 5px;
+    min-height: clamp(108px, 14dvh, 140px);
+    gap: 5px 7px;
     align-content: center;
-    padding: 9px 5px;
+    padding: 10px 8px;
     border: 0;
     border-bottom: 1px solid #a26635;
     background: none;
@@ -116,8 +116,8 @@
     grid-column: 2;
     grid-row: 1;
     align-self: end;
-    font-size: .99rem;
-    line-height: 1.1;
+    font-size: clamp(1.08rem, 1.12vw, 1.22rem);
+    line-height: 1.2;
     color: #3b200c;
     min-width: 0;
   }
@@ -126,7 +126,7 @@
     grid-column: 3;
     grid-row: 1;
     align-self: end;
-    font-size: clamp(1.10rem,1.3vw,1.38rem);
+    font-size: clamp(1.48rem, 1.65vw, 1.82rem);
     line-height: 1.15;
     font-variant-numeric: tabular-nums;
     color: #1d6a26;
@@ -135,15 +135,15 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats em {
-    font-size: .68rem;
+    font-size: .94rem;
     color: #553519;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats small {
     grid-column: 2 / 4;
     grid-row: 2;
-    font-size: .77rem;
-    line-height: 1.16;
+    font-size: .95rem;
+    line-height: 1.3;
     color: #594025;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -168,13 +168,13 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals span {
-    font-size: .75rem;
+    font-size: .93rem;
     color: #f9dfb6;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals b {
     margin: 0;
-    font-size: 1.13rem;
+    font-size: 1.52rem;
     color: #fff1cf;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -236,3 +236,46 @@
   }
 }
 
+
+/* A four-column MM3 ledger is useful only when each cell has room for
+   full-sized type, its modifier and the explanation below. At laptop widths
+   keep three columns rather than shrinking the text to make four fit. */
+@media (min-width: 1550px) and (min-height: 581px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Phones use the existing scrollable sheet and two-column layout, but the
+   content remains legible without pinch-zoom. Do not affect Tactics/Equipo. */
+@media (max-width: 850px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats span {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats b {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats em {
+    font-size: .88rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats small {
+    font-size: .9rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals span {
+    font-size: .91rem;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-chapter="record"] .chronicles-character-sheet__vitals b {
+    font-size: 1.4rem;
+  }
+}

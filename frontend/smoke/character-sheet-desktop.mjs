@@ -189,8 +189,8 @@ try {
         && metrics.statsWidth >= metrics.contentWidth - 40
         && metrics.battleWidth >= metrics.contentWidth - 40,
       'Zoomed desktop Status must fill the available horizontal workspace: ' + JSON.stringify(metrics));
-      assert.equal(metrics.columns, 4,
-        'Zoomed desktop must keep the four readable MM3 attribute columns');
+      assert.equal(metrics.columns, 3,
+        '1280px zoomed desktop must use three readable columns instead of shrinking text');
       assert.deepEqual(metrics.clippedLabels, [],
         'Zoomed desktop must not clip attribute names or descriptions');
       assert.ok(metrics.frameLeft <= 12 && metrics.frameRight >= 1268,
@@ -306,12 +306,23 @@ try {
             }));
             return { left: box.left, right: box.right, text };
           });
+          const type = [...statGrid.querySelectorAll('[data-stat]')].map((row) => {
+            const font = (selector) => {
+              const element = row.querySelector(selector);
+              return element ? parseFloat(getComputedStyle(element).fontSize) : null;
+            };
+            return { name: row.dataset.stat, label: font('span'), value: font('b'),
+              modifier: font('em'), explanation: font('small') };
+          });
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
-            statColumns: columns, battleColumns, battleCells, labels,
+            statColumns: columns, battleColumns, battleCells, labels, type,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
-        assert.equal(ledger.statColumns, 4,
-          'Classic MM3 status must be a full-width four-column ledger: ' + JSON.stringify(ledger));
+        assert.equal(ledger.statColumns, width >= 1550 ? 4 : 3,
+          'MM3 must use 3 readable columns on laptops and 4 on wide desktops: ' + JSON.stringify(ledger));
+        assert.ok(ledger.type.every((row) => row.label >= 17 && row.value >= 23
+          && row.explanation >= 15 && (row.modifier == null || row.modifier >= 15)),
+        'MM3 attribute type must be readable without browser zoom: ' + JSON.stringify(ledger.type));
         assert.equal(ledger.duplicatedEquipment, 0,
           'Estado must not duplicate equipped gear; all equipment controls live in Equipo');
         assert.equal(ledger.labels.length, 8,
