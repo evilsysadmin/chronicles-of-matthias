@@ -13,7 +13,6 @@ import { APP_RELEASE } from './release.js';
 import { STORAGE_LOCAL, STORAGE_SESSION, getStorageItem, removeStorageItem, setStorageItem } from './safeStorage.js';
 import { setUiLanguage } from './userPreferences.js';
 import { clearMatthiasSessionSignals, queueMatthiasLoginGreeting } from './matthiasSession.js';
-import { clearPvpEnrollment } from './pvpEnrollment.js';
 
 export const TOKEN_KEY = 'chess-study-auth-token';
 const USERNAME_KEY = 'chess-study-auth-username';
@@ -28,6 +27,7 @@ const LEGACY_CHESS_SESSION_KEYS = Object.freeze([
   'chess-study-active-combat-markers-v1',
   'chess-study-combat-post-battle-debrief-v1',
   'chess-study-home-play-nudge-shown-v1',
+  'chess-study-pvp-enrollment-v1',
 ]);
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -126,7 +126,6 @@ function clearSessionRuntimeState() {
   // Chronicles never starts Chess Studio's Combat Chess or Home nudge. Clear
   // their historic session keys without importing their unused engines.
   for (const key of LEGACY_CHESS_SESSION_KEYS) removeStorageItem(STORAGE_SESSION, key);
-  clearPvpEnrollment();
 }
 
 function saveSession(token, username) {
