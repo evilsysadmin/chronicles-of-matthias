@@ -63,14 +63,18 @@ describe('Chronicles progression across devices', () => {
     expect(chroniclesPickProgression(left, right).from).toBe('conflict');
   });
 
-  it('does not choose a local skill upgrade if it would lose server award receipts', () => {
+  it('flags a local skill and a remote receipt as divergent without dropping either', () => {
     const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:level-two').progression;
     const local = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
     const remote = {
       ...base,
       claimedAwards: [...base.claimedAwards, 'fixture:remote-receipt'],
     };
-    expect(chroniclesPickProgression(local, remote).from).toBe('remote');
+    const picked = chroniclesPickProgression(local, remote);
+    expect(picked.from).toBe('conflict');
+    expect(picked.progression.heroes.knight.skills).toContain('knight-double-quiver');
+    expect(remote.claimedAwards).toContain('fixture:remote-receipt');
+    expect(local.claimedAwards).not.toContain('fixture:remote-receipt');
   });
 
   it('does not choose an impossible local unlock from a competing doctrine', () => {
