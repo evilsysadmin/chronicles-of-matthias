@@ -28,7 +28,7 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('.chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats');
     expect(css).toContain('grid-column: 1 / -1');
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
-    expect(css).toContain('grid-template-columns: repeat(4, minmax(0,1fr))');
+    expect(css).toContain('grid-template-columns: repeat(3, minmax(0,1fr));');
   });
   it('fills the record workspace on zoomed desktops and adapts columns for readable type', () => {
     // The legacy folio places statistics in grid column 2; at CSS heights
