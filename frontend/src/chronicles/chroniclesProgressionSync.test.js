@@ -74,7 +74,9 @@ describe('Chronicles progression across devices', () => {
   });
 
   it('does not choose an impossible local unlock from a competing doctrine', () => {
-    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 50, 'fixture:level-two').progression;
+    // Level 4 legitimately has two skill points, but two skills in the
+    // same doctrine group still cannot be learned together.
+    const base = grantChroniclesXp(createChroniclesProgression(), 'knight', 250, 'fixture:level-four').progression;
     const legitimate = unlockChroniclesSkill(base, 'knight', 'knight-double-quiver').progression;
     const invalid = {
       ...legitimate,
