@@ -180,6 +180,7 @@ async function assertRealStatColorTones(sheet, viewport) {
         label: value.textContent.trim(),
         labelColor: getComputedStyle(value).color,
         iconBackground: getComputedStyle(row.querySelector('.chronicles-character-sheet__stat-icon')).backgroundImage,
+        iconFilter: getComputedStyle(row.querySelector('.chronicles-character-sheet__stat-icon')).filter,
         health: hp ? [+hp[1], +hp[2]] : null,
         bonuses,
       };
@@ -197,8 +198,9 @@ async function assertRealStatColorTones(sheet, viewport) {
   assert.equal(info.label, labels[state]);
   assert.equal(info.labelColor, colors[state],
     'The legible condition value must reflect live HP at ' + viewport);
-  assert.match(info.iconBackground, /linear-gradient/,
-    'The condition tile must visibly respond to real current health');
+  assert.ok(info.iconBackground.includes('chronicles-mm3-attribute-atlas.webp')
+    && info.iconFilter !== 'none',
+    'The approved heart artwork must remain visible and change tone with real current health');
   assert.equal(info.bonuses.length, 7);
   const bonusColors = {
     benefit: 'rgb(34, 102, 59)',
