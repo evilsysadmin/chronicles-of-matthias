@@ -110,6 +110,10 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
             <div className="chronicles-sheet-grimoire__list" ref={listRef}>
               {shown.map((spell) => (
                 <button type="button" key={spell.id} data-grimoire-spell={spell.id}
+                  data-can-afford={availableSp >= spell.cost}
+                  aria-label={`${spell.name}, ${spell.cost} PH, ${availableSp >= spell.cost
+                    ? 'PH suficientes para el coste'
+                    : `faltan ${spell.cost - availableSp} PH`}`}
                   tabIndex={spell.id === selected?.id ? 0 : -1}
                   aria-pressed={spell.id === selected?.id}
                   className={spell.id === selected?.id ? 'is-selected' : ''}
@@ -120,7 +124,14 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
                     <b>{spell.name}</b>
                     <small>{typeLabel(spell)}</small>
                   </span>
-                  <span className="chronicles-sheet-grimoire__cost">{spell.cost} PH</span>
+                  <span className="chronicles-sheet-grimoire__cost">
+                    <span>{spell.cost} PH</span>
+                    {availableSp < spell.cost && (
+                      <small className="chronicles-sheet-grimoire__ph-shortage">
+                        Faltan {spell.cost - availableSp} PH
+                      </small>
+                    )}
+                  </span>
                 </button>
               ))}
             </div>
