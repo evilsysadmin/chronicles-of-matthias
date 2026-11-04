@@ -47,3 +47,21 @@
 [data-stat="condition"][data-condition] > .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] {
   background: url('/images/chronicles-mm3-attribute-atlas.webp') 100% 100% / 400% 200% no-repeat;
 }
+
+/* Preserve the single approved heart picture, but let real PV drive a subtle
+   condition treatment; no fictional health status or duplicate illustration. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats
+[data-stat="condition"][data-condition="healthy"] > .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] {
+  filter: drop-shadow(0 0 2px #75ac68) saturate(1.06);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats
+[data-stat="condition"][data-condition="wounded"] > .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] {
+  filter: sepia(.16) drop-shadow(0 0 2px #c17d45);
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats
+[data-stat="condition"][data-condition="fallen"] > .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] {
+  filter: grayscale(.75) brightness(.78) drop-shadow(0 0 2px #962e2a);
+}
