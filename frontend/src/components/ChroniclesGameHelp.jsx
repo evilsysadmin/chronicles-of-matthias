@@ -1,3 +1,10 @@
+import { Fragment } from 'react';
+import {
+  CHRONICLES_MM3_STATS,
+  CHRONICLES_MM3_STAT_LABELS,
+  CHRONICLES_MM3_STAT_EFFECTS,
+} from '../chronicles/chroniclesMM3Rules.js';
+
 // Plain-language field guide. Keep mechanics described here aligned with
 // AGENTS.md, the active MM3 combat rules and the shop's real comparison data.
 export default function ChroniclesGameHelp({ onBack }) {
@@ -10,12 +17,23 @@ export default function ChroniclesGameHelp({ onBack }) {
       <p>Consulta las reglas cuando las necesites, sin tapar la aventura con explicaciones.</p>
       <details open>
         <summary>Personajes y estadísticas</summary>
-        <dl>
+        <p>El valor entre paréntesis de cada atributo es su bonificador: positivo,
+          negativo o neutro. PV y PH máximos crecen con el nivel según la clase
+          y, cuando corresponde, la raza y los atributos del personaje.</p>
+        <dl data-chronicles-mm3-attribute-guide>
+          {CHRONICLES_MM3_STATS.map((stat) => (
+            <Fragment key={stat}>
+              <dt data-mm3-stat-help={stat}>{CHRONICLES_MM3_STAT_LABELS[stat]}</dt>
+              <dd>{CHRONICLES_MM3_STAT_EFFECTS[stat]}</dd>
+            </Fragment>
+          ))}
+          <dt>Estado</dt><dd>Sano, herido o caído según los PV actuales.</dd>
           <dt>PV · Vida</dt><dd>La salud del héroe. Con 0 PV queda fuera de combate.</dd>
           <dt>PH · Magia</dt><dd>Puntos utilizados para lanzar hechizos.</dd>
           <dt>CA · Armadura</dt><dd>Cuanto mayor es, más difícil resulta que te alcancen. No resta daño a los golpes acertados.</dd>
           <dt>Acierto</dt><dd>Facilidad para impactar al atacar.</dd>
-          <dt>Daño y alcance</dt><dd>El efecto y la distancia del ataque correspondiente.</dd>
+          <dt>Daño</dt><dd>Cuánto daño causa un ataque que acierta; la Fuerza
+            modifica el daño cuerpo a cuerpo.</dd>
         </dl>
       </details>
       <details>
