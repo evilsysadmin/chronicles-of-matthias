@@ -1,9 +1,19 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
 
+const gaugeCSS = readFileSync(new URL('./ChroniclesPartyVitals.css', import.meta.url), 'utf8');
+
 describe('ChroniclesPartyVitals', () => {
+  it('keeps the recessed PV/PH gauges but omits white diamond ornaments', () => {
+    expect(gaugeCSS).toContain('.chronicles-vital-fill');
+    expect(gaugeCSS).toContain('grid-template-rows: repeat(2, 22px)');
+    expect(gaugeCSS).toContain('linear-gradient(180deg, var(--vital-shine)');
+    expect(gaugeCSS).not.toContain('.chronicles-party-bars i::before');
+    expect(gaugeCSS).not.toContain('.chronicles-party-bars i::after');
+  });
   it('renders gemstone fills with exact PV/PH available through accessible labels and hover', () => {
     const html = renderToStaticMarkup(<ChroniclesPartyVitals
       hp={8} maxHp={11} sp={3} maxSp={4} band="hurt"
