@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import ChroniclesSpellIcon from './ChroniclesSpellIcon.jsx';
 import './ChroniclesCharacterGrimoire.css';
 import './ChroniclesCharacterGrimoireRetro.css';
 import './ChroniclesCharacterGrimoireWorkspace.css';
@@ -21,11 +22,6 @@ const typeLabel = (spell) => ({
   attack: 'Ataque',
   heal: 'Curación',
   other: 'Utilidad',
-})[spellType(spell)];
-const typeMark = (spell) => ({
-  attack: '✦',
-  heal: '✚',
-  other: '◇',
 })[spellType(spell)];
 
 // Arrow/Home/End operate on the currently visible spells only; no casts or
@@ -112,16 +108,16 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
         <section className="chronicles-sheet-grimoire__catalog" aria-label="Lista de hechizos conocidos">
           {shown.length ? (
             <div className="chronicles-sheet-grimoire__list" ref={listRef}>
-              {shown.map((spell, index) => (
+              {shown.map((spell) => (
                 <button type="button" key={spell.id} data-grimoire-spell={spell.id}
                   tabIndex={spell.id === selected?.id ? 0 : -1}
                   aria-pressed={spell.id === selected?.id}
                   className={spell.id === selected?.id ? 'is-selected' : ''}
                   onClick={() => setSelectedId(spell.id)}
                   onKeyDown={(event) => chooseByKeyboard(event, spell.id)}>
-                  <span className="chronicles-sheet-grimoire__glyph" aria-hidden="true">{typeMark(spell)}</span>
+                  <span className="chronicles-sheet-grimoire__glyph" aria-hidden="true"><ChroniclesSpellIcon spell={spell} /></span>
                   <span className="chronicles-sheet-grimoire__entry">
-                    <b>{index + 1}. {spell.name}</b>
+                    <b>{spell.name}</b>
                     <small>{typeLabel(spell)}</small>
                   </span>
                   <span className="chronicles-sheet-grimoire__cost">{spell.cost} PH</span>
@@ -143,7 +139,7 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
           {selected ? (
             <>
               <div className="chronicles-sheet-grimoire__detail-head">
-                <span aria-hidden="true">{typeMark(selected)}</span>
+                <span className="chronicles-sheet-grimoire__detail-icon" aria-hidden="true"><ChroniclesSpellIcon spell={selected} /></span>
                 <div>
                   <small>{typeLabel(selected)} · {schoolLabel}</small>
                   <h4>{selected.name}</h4>
