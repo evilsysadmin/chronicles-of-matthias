@@ -94,6 +94,7 @@ import {
 } from '../chronicles/chroniclesRefreshResume.js';
 import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.js';
 import { chroniclesCampRestStatus } from '../chronicles/chroniclesCampRest.js';
+import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
@@ -195,6 +196,7 @@ import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesC
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
+import './ChroniclesWorldClock.css';
 // The first-person folio must override both base and old MM3 chrome styles.
 import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
@@ -2006,6 +2008,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     );
   }
 
+  const worldCalendar = state.combatRules === 'mm3' ? chroniclesWorldCalendar(state.worldMinutes) : null;
   const objective = chroniclesObjective(state);
   // The authored quest's region takes precedence when the objective text
   // does not name its destination (e.g. the missing banner in Swordhaven).
@@ -2283,6 +2286,14 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             </details>
 
           <div className="chronicles-stage">
+            {worldCalendar && (
+              <div className="chronicles-world-clock" data-chronicles-world-clock
+                aria-label={worldCalendar.weekday + ', día ' + worldCalendar.dayOfYear + ', año ' + worldCalendar.year + ', ' + worldCalendar.time + ', ' + worldCalendar.season}
+                title={worldCalendar.weekday + ' · ' + worldCalendar.season}>
+                <strong>{worldCalendar.time}</strong>
+                <span>DÍA {worldCalendar.dayOfYear} · AÑO {worldCalendar.year}</span>
+              </div>
+            )}
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
             {relockPrompt && typeof document !== 'undefined' && createPortal(
