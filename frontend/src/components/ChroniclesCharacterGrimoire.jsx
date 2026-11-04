@@ -43,6 +43,7 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
   const listRef = useRef(null);
   const inspectTriggerRef = useRef(null);
   const closeRef = useRef(null);
+  const inspectionReturnFocusRef = useRef(null);
   const shown = spells.filter((spell) => filter === 'all' || spellType(spell) === filter);
   const selected = shown.find((spell) => spell.id === selectedId) || shown[0] || null;
   useEffect(() => {
@@ -50,7 +51,9 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
   }, [inspecting]);
   const closeInspection = () => {
     setInspecting(false);
-    inspectTriggerRef.current?.focus();
+    const previous = inspectionReturnFocusRef.current;
+    inspectionReturnFocusRef.current = null;
+    (previous?.isConnected ? previous : inspectTriggerRef.current)?.focus({ preventScroll: true });
   };
   const handleInspectionKeys = (event) => {
     // Never leak modal keyboard actions to the parent character sheet or game.
@@ -100,7 +103,10 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
         <button ref={inspectTriggerRef} type="button"
           className="chronicles-sheet-grimoire__inspect-trigger"
           aria-haspopup="dialog" aria-expanded={inspecting}
-          disabled={!selected} onClick={() => setInspecting(true)}>
+          disabled={!selected} onClick={(event) => {
+            inspectionReturnFocusRef.current = event.currentTarget;
+            setInspecting(true);
+          }}>
           ⌕ Examinar
         </button>
       </div>
@@ -117,7 +123,18 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
                   tabIndex={spell.id === selected?.id ? 0 : -1}
                   aria-pressed={spell.id === selected?.id}
                   className={spell.id === selected?.id ? 'is-selected' : ''}
-                  onClick={() => setSelectedId(spell.id)}
+                  onClick={(event) => {
+                    setSelectedId(spell.id);
+                    // A genuine touch/pen tap goes straight to the inspector;
+                    // keyboard and desktop mouse still only select a spell.
+                    const native = event.nativeEvent;
+                    const touch = native?.pointerType === 'touch' || native?.pointerType === 'pen'
+                      || native?.sourceCapabilities?.firesTouchEvents === true;
+                    if (touch) {
+                      inspectionReturnFocusRef.current = event.currentTarget;
+                      setInspecting(true);
+                    }
+                  }}
                   onKeyDown={(event) => chooseByKeyboard(event, spell.id)}>
                   <span className="chronicles-sheet-grimoire__glyph" aria-hidden="true"><ChroniclesSpellIcon spell={spell} /></span>
                   <span className="chronicles-sheet-grimoire__entry">
@@ -177,7 +194,10 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
         </section>
         </div>
       </div>
-      <p className="chronicles-sheet-grimoire__hint">Tab · entrar/salir de la lista · ↑ ↓ / Inicio / Fin · seleccionar · Examinar abre la ficha · Para lanzar, vuelve a la aventura y abre Magia (C).</p>
+      <p className="chronicles-sheet-grimoire__hint">
+        <span className="chronicles-sheet-grimoire__hint-keyboard">Tab · entrar/salir de la lista · ↑ ↓ / Inicio / Fin · seleccionar · Examinar abre la ficha · Para lanzar, vuelve a la aventura y abre Magia (C).</span>
+        <span className="chronicles-sheet-grimoire__hint-touch">Toca un hechizo para examinarlo. Para lanzar, vuelve a la aventura y abre Magia (C).</span>
+      </p>
     </div>
   );
 }
