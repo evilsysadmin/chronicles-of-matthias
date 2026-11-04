@@ -29,3 +29,11 @@
 .chronicles-character-sheet__stat-icon[data-stat-icon="luck"] { background-position: 66.666667% 100%; }
 .chronicles-character-sheet--mm3 [data-chronicles-chapter="record"]
 .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] { background-position: 100% 100%; }
+
+/* Condition tones keep controlling the *text*. They must not replace the
+   approved heart illustration with the former gradient-only background. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats
+[data-stat="condition"][data-condition] > .chronicles-character-sheet__stat-icon[data-stat-icon="condition"] {
+  background: url('/images/chronicles-mm3-attribute-atlas.webp') 100% 100% / 400% 200% no-repeat;
+}
