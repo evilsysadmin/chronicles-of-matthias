@@ -12,23 +12,35 @@ const extraOverworldPatrolLimit = 2
 func addOverworldDensityPatrols(m *O, areaCode string) {
 	areaID := mapID(areaCode)
 	current := m.Arr("enemies")
-	ordinary := 0
-	for ordinary < len(current) &&
-		current[ordinary].(*O).Str("id") == fmt.Sprintf("%s-foe-%d", areaID, ordinary) {
-		ordinary++
+	// Infer the original ordinary count from the stable *trailing* first
+	// wave, not from a contiguous prefix. In maps without quest enemies,
+	// ordinary foes and their reinforcements have consecutive foe-N IDs.
+	ordinary, firstWaveCount := 0, 0
+	for _, candidate := range []int{2, 3, 4} {
+		wave := 3
+		if candidate >= 4 {
+			wave = 4
+		}
+		start := len(current) - wave
+		if start < 0 {
+			continue
+		}
+		match := true
+		for i := 0; i < wave; i++ {
+			if current[start+i].(*O).Str("id") != fmt.Sprintf("%s-foe-%d", areaID, candidate+i) {
+				match = false
+				break
+			}
+		}
+		if match {
+			ordinary, firstWaveCount = candidate, wave
+			break
+		}
 	}
-	if ordinary < 2 || ordinary > 4 {
-		panic(areaID + ": expected ordinary foes before extra overworld patrols")
+	if ordinary == 0 {
+		panic(areaID + ": missing stable first-wave patrol IDs")
 	}
-	firstWaveCount := 3
-	if ordinary >= 4 {
-		firstWaveCount = 4
-	}
-	// The existing wave is appended to the end, after any story/camp enemies.
 	firstWaveStart := len(current) - firstWaveCount
-	if firstWaveStart < ordinary {
-		panic(areaID + ": missing stable first-wave patrols")
-	}
 	rows := m.Arr("grid")
 	grid := make([][]byte, len(rows))
 	for y, raw := range rows {
