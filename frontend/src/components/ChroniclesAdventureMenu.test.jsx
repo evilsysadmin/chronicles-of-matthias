@@ -43,7 +43,7 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
     expect(html).toContain('data-chronicles-menu-world-info');
     expect(html).toContain('Información del juego: fecha y hora (I)');
-    const utility = html.match(/class="chronicles-game-menu__utility-row"[\\s\\S]*?<\\/div>/)?.[0];
+    const utility = html.split('class="chronicles-game-menu__utility-row"')[1]?.split('</div>')[0];
     expect(utility).toBeTruthy();
     expect((utility.match(/<button/g) || [])).toHaveLength(4); // Sonido, Ayuda, Feedback, Salir
     const confirming = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} confirmExitWithoutSaving />);
