@@ -1025,10 +1025,14 @@
     padding: 0 6px;
   }
   .chronicles .chronicles-party-member > .chronicles-party-glyph {
-    width: 100%;
+    /* The card's stretched grid row is the containing box, not the
+       portrait's intrinsic dimensions. Keep this desktop-only. */
+    grid-area: auto;
+    position: absolute;
+    inset: 2px auto 2px 8px;
+    width: var(--face-w);
     height: auto;
     min-height: var(--face);
-    align-self: stretch;
     box-sizing: border-box;
   }
   /* The portrait follows the full card height even when the shell stretches
