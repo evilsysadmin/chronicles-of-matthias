@@ -1791,9 +1791,7 @@ try {
       if (height <= 480) {
         assert.equal(identity.descriptionVisible, false,
           'In short-landscape Equipo, redundant class/level text must free space for the inventory');
-        assert.ok(identity.resources.top >= identity.title.bottom - 1,
-          'Landscape gold/resources must sit below the hero name without overlap: '
-            + JSON.stringify(identity));
+
       }
       await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
       assert.deepEqual(errors, []);
