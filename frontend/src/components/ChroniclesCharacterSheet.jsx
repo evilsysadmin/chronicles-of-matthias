@@ -782,28 +782,29 @@ export default function ChroniclesCharacterSheet({
           <div className="chronicles-character-sheet__section chronicles-character-sheet__section--core-stats"
             hidden={activeFolio !== 'record'}>
             <div className="chronicles-character-sheet__section-head">
-              <div><span>ESTADÍSTICAS</span><small>Bonificador entre paréntesis · PV/PH crecen con el nivel</small></div>
+              <div><span>ESTADÍSTICAS</span></div>
             </div>
             <div className="chronicles-character-sheet__mm3-stats">
               {CHRONICLES_MM3_STATS.map((key) => (
                 <div key={key} data-stat={key}
-                  title={`${CHRONICLES_MM3_STAT_EFFECTS[key]} · Base ${member.characterBuild?.stats?.[key] ?? mm3.stats[key]}`}>
+                  title={[
+                    CHRONICLES_MM3_STAT_EFFECTS[key],
+                    `Base ${member.characterBuild?.stats?.[key] ?? mm3.stats[key]}`,
+                    Number(mm3.worldBonuses?.[key] || 0) > 0 ? `Hallazgos +${mm3.worldBonuses[key]}` : null,
+                    mm3.temporaryBoon?.stat === key
+                      ? `${chroniclesTemporaryFountainName(mm3.temporaryBoon.sourceId) || 'Bendición'} +${mm3.temporaryBoon.amount} (${Math.max(0, mm3.temporaryBoon.expiresAtTurn - (state?.turns || 0))} acciones)`
+                      : null,
+                  ].filter(Boolean).join(' · ')}>
                   <ChroniclesCharacterStatIcon stat={key} />
                   <span>{CHRONICLES_MM3_STAT_LABELS[key]}</span>
                   <b>{mm3.stats[key]} <em data-bonus-tone={mm3.bonuses[key] > 0 ? 'benefit' : mm3.bonuses[key] < 0 ? 'penalty' : 'neutral'}>({signed(mm3.bonuses[key])})</em></b>
-                  <small>{CHRONICLES_MM3_STAT_EFFECTS[key]}{Number(mm3.worldBonuses?.[key] || 0) > 0
-                    ? ` · Hallazgos +${mm3.worldBonuses[key]}` : ''}
-                    {mm3.temporaryBoon?.stat === key
-                      ? ` · ${chroniclesTemporaryFountainName(mm3.temporaryBoon.sourceId) || 'Bendición'} +${mm3.temporaryBoon.amount} (${Math.max(0, mm3.temporaryBoon.expiresAtTurn - (state?.turns || 0))} acciones)`
-                      : ''}</small>
                 </div>
               ))}
               <div data-stat="condition" data-condition={conditionTone}
-                title="Estado general según los puntos de vida actuales">
+                title={`Estado general según los puntos de vida actuales · ${member.hp}/${member.maxHp} PV`}>
                 <ChroniclesCharacterStatIcon stat="condition" />
                 <span>ESTADO</span>
                 <b>{conditionTone === 'fallen' ? 'Caído' : conditionTone === 'wounded' ? 'Herido' : 'Sano'}</b>
-                <small>{member.hp}/{member.maxHp} PV · condición física</small>
               </div>
             </div>
           </div>
