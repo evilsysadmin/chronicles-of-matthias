@@ -50,6 +50,10 @@ export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   const spentTurns = Number(after.turns) - Number(before.turns);
   if (!Number.isSafeInteger(spentTurns) || spentTurns <= 0) return after;
   const actionType = typeof action === 'string' ? action : action?.type;
+  // The legacy reducer sometimes increments turns for a wall bump. It may
+  // still advance enemy awareness, but no journey time passes without a step.
+  if (['forward', 'backward', 'strafe-left', 'strafe-right'].includes(actionType)
+    && before.mapId === after.mapId && before.x === after.x && before.y === after.y) return after;
   const spentMinutes = actionType === 'camp-rest' || actionType === 'inn-rest'
     ? CHRONICLES_WORLD_REST_MINUTES
     : CHRONICLES_WORLD_ACTION_MINUTES * spentTurns;

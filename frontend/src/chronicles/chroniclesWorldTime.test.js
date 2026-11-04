@@ -61,6 +61,9 @@ describe('MM3 world clock', () => {
     expect(chroniclesAdvanceWorldTimeOnTurn(safe, { ...safe, turns: safe.turns + 1 }, 'inn-rest').worldMinutes)
       .toBe(safe.worldMinutes + 480);
     expect(chroniclesAdvanceWorldTimeOnTurn(safe, safe, 'inn-rest')).toBe(safe);
+    // A blocked step is a legacy turn for pursuit, but not a clock advance.
+    const wallBump = { ...safe, turns: safe.turns + 1 };
+    expect(chroniclesAdvanceWorldTimeOnTurn(safe, wallBump, 'forward')).toBe(wallBump);
   });
 
   it('persists elapsed minutes in real run flags and restores legacy and corrupt saves safely', () => {
