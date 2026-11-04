@@ -85,4 +85,46 @@ describe('MM3 area travel confirmations', () => {
     expect(chroniclesAreaTransitionIntent({ ...state, shop: { id: 'vendor' } }, 'backward')).toBeNull();
     expect(chroniclesAreaTransitionIntent({ ...state, phase: 'defeated' }, 'backward')).toBeNull();
   });
+
+  it('invites the unlocked sewer crossing only at the actual grate, not three steps early', () => {
+    const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const briefed = chroniclesReduce({ ...base, x: 10, y: 10, direction: 1 }, 'interact');
+    expect(briefed.swordhavenMayorMet).toBe(true);
+    expect(briefed.inventory['sewer-key'].quantity).toBe(1);
+
+    const inSight = { ...briefed, x: 13, y: 10, direction: 2 };
+    expect(chroniclesAreaTransitionIntent(inSight, 'forward')).toBeNull();
+
+    const approach = { ...briefed, x: 13, y: 12, direction: 2 };
+    const intent = chroniclesAreaTransitionIntent(approach, 'forward');
+    expect(intent).toMatchObject({
+      sourceId: 'swordhaven-first-book',
+      destinationId: 'swordhaven-sewers',
+      exitId: 'swordhaven-to-sewers',
+    });
+    expect(intent.question).toMatch(/entrar en .*alcantarillas/i);
+
+    const onGrate = chroniclesReduce(approach, { type: 'forward', deferAreaTransition: true });
+    expect(onGrate).toMatchObject({ x: 13, y: 13, mapId: 'swordhaven-first-book' });
+    expect(onGrate.turns).toBe(approach.turns + 1);
+    expect(chroniclesAreaTransitionIntent(onGrate, 'interact'))
+      .toMatchObject({ exitId: intent.exitId, atThreshold: true });
+
+    const entered = chroniclesReduce(onGrate, { type: 'cross-area-threshold', exitId: intent.exitId });
+    expect(entered.mapId).toBe('swordhaven-sewers');
+    expect(entered.turns).toBe(onGrate.turns);
+  });
+
+  it('refuses a locked sewer grate and explains the candado without entering', () => {
+    const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const approach = { ...base, x: 13, y: 12, direction: 2 };
+    expect(chroniclesAreaTransitionIntent(approach, 'forward')).toBeNull();
+
+    const onGrate = chroniclesReduce(approach, 'forward');
+    expect(onGrate).toMatchObject({ x: 13, y: 12, mapId: 'swordhaven-first-book' });
+    expect(onGrate.message).toMatch(/candado.*alcalde/i);
+    expect(onGrate.turns).toBe(approach.turns + 1);
+    expect(chroniclesAreaTransitionIntent(onGrate, 'interact')).toBeNull();
+  });
+
 });
