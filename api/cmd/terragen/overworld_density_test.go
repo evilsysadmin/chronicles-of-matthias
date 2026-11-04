@@ -29,7 +29,7 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 		if len(added) < 1 || len(added) > extraOverworldPatrolLimit {
 			t.Fatalf("%s: expected 1–%d additional safe patrols; got %d", code, extraOverworldPatrolLimit, len(added))
 		}
-		rows := m.Arr("grid")
+		rows := parse(dump(m)).(*O).Arr("grid")
 		grid := make([][]byte, len(rows))
 		for y, raw := range rows {
 			grid[y] = []byte(raw.(string))
