@@ -142,7 +142,7 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('font-size: 27px;');
     expect(css).toContain('min-height: 68px;');
     expect(css).toContain('font-size: clamp(28px, 2.1vw, 36px);');
-    expect(css).toContain('@media (min-width: 1650px) and (min-height: 581px)');
+    expect(css).toContain('@media (min-width: 1900px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('@media (max-width: 520px)');
     expect(css).toContain('font-size: 17px;');
