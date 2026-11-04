@@ -240,6 +240,186 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-b3-foe-7",
+      "visualType": "skeleton",
+      "name": "ahorcado del camino",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_b3Foe7Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahorcado del camino usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b3-foe-8",
+      "visualType": "ash-goblin",
+      "name": "goblin",
+      "x": 15,
+      "y": 9,
+      "hpKey": "terra_b3Foe8Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b3-foe-9",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
+      "x": 16,
+      "y": 11,
+      "hpKey": "terra_b3Foe9Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b3-foe-10",
+      "visualType": "skeleton",
+      "name": "ahorcado del camino",
+      "x": 4,
+      "y": 11,
+      "hpKey": "terra_b3Foe10Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ahorcado del camino usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b3-foe-11",
+      "visualType": "ash-goblin",
+      "name": "goblin",
+      "x": 4,
+      "y": 3,
+      "hpKey": "terra_b3Foe11Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b3-foe-12",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
+      "x": 15,
+      "y": 12,
+      "hpKey": "terra_b3Foe12Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
