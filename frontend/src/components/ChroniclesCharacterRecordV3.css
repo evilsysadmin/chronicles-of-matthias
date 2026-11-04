@@ -249,7 +249,7 @@
 /* Illustrated MM3 attributes need space for an actual icon AND the full
    label/value. Three readable columns are preferable even at 1760px.
    Reserve four for genuinely ultrawide workspaces. */
-@media (min-width: 1650px) and (min-height: 581px) {
+@media (min-width: 1900px) and (min-height: 581px) {
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
