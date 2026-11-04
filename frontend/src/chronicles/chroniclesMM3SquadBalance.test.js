@@ -106,7 +106,19 @@ function fightSquad(count, sample, geared) {
     return Number(state[enemy.hpKey]) === 0;
   }) && state.phase !== 'defeated';
   const defeat = state.phase === 'defeated';
-  if (!victory && !defeat) throw new Error(`Stalled cistern fight count=${count} seed=${sample}`);
+  if (!victory && !defeat) {
+    const remaining = enemies.map((enemy) => ({
+      id: enemy.id,
+      hp: state[enemy.hpKey],
+      position: state.enemyPositions?.[enemy.id] || { x: enemy.x, y: enemy.y },
+    }));
+    const party = state.party.map((hero) => ({ id: hero.id, hp: hero.hp }));
+    throw new Error(`Stalled cistern fight ${JSON.stringify({
+      count, sample, geared, phase: state.phase, round: state.initiative?.round,
+      cursor: state.initiative?.cursor, partyActions, blocks, enemyActions,
+      party, remaining, lastEnemyEvents: state.enemyTurnEvents,
+    })}`);
+  }
   return {
     victory, defeat, rounds, partyActions, blocks, enemyActions, enemyStrikes, enemyHits,
     hpLost: startingHp - state.party.reduce((total, hero) => total + Math.max(0, hero.hp), 0),
