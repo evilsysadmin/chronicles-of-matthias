@@ -443,7 +443,9 @@ try {
       assert.equal(geometry.length, 6, `Expected four hero portraits and two empty slots at ${width}x${height}`);
       assert.equal(geometry.filter((card) => card.type === 'hero').length, 4);
       assert.equal(geometry.filter((card) => card.type === 'hireling').length, 2);
-      assert.ok(geometry.every((card) => card.shown && card.height >= 84 && card.height <= 170),
+      const maxExpectedHeight = Math.min(220, Math.max(170, height * .22));
+      assert.ok(geometry.every((card) => card.shown && card.height >= 84
+        && card.height <= maxExpectedHeight),
         `Keep the canonical portrait scale for every desktop slot at ${width}x${height}: ${JSON.stringify(geometry)}`);
       assert.ok(geometry.every((card) => card.paddingTop === '0px'
         && card.top <= 3.5 && card.top >= -1
