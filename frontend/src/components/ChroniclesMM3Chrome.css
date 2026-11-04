@@ -1026,8 +1026,9 @@
   }
   .chronicles .chronicles-party-member > .chronicles-party-glyph {
     width: 100%;
-    height: 100%;
+    height: auto;
     min-height: var(--face);
+    align-self: stretch;
     box-sizing: border-box;
   }
   /* The portrait follows the full card height even when the shell stretches
