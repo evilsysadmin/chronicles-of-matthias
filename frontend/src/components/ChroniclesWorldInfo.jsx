@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { chroniclesWorldInfoShortcut } from '../chronicles/chroniclesKeyboardBindings.js';
 
 // A read-only MM3-style Game Information parchment. No timers, world
 // mutations or save writes: the calendar comes from the run's saved minutes.
@@ -26,7 +27,7 @@ export default function ChroniclesWorldInfo({ calendar, onClose }) {
         onKeyDown={(event) => {
           // Keep the sole close button in focus and never send modal shortcuts
           // into the game, especially movement/combat and the Equip I key.
-          if (event.key === 'Escape' || event.key.toLowerCase() === 'i') {
+          if (chroniclesWorldInfoShortcut(event, { open: true }) === 'close') {
             event.preventDefault();
             event.stopPropagation();
             onClose();
