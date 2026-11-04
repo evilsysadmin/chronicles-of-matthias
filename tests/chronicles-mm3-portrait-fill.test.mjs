@@ -9,7 +9,7 @@ test('MM3 portraits and hireling niches keep their scale with minimal vertical i
   // intrinsic-image growth. Keep the MM3 floor and the outer bevel while
   // matching stretched card heights at regular and tall desktop viewports.
   assert.match(css, /\.chronicles \.chronicles-party-member,\s*\.chronicles \.chronicles-party-hireling\s*\{[^}]*padding:\s*0 6px\s*;/);
-  assert.match(css, /\.chronicles \.chronicles-party-member > \.chronicles-party-glyph\s*\{[^}]*position:\s*absolute\s*;[^}]*inset:\s*2px auto 2px 8px\s*;[^}]*min-height:\s*var\(--face\)\s*;/);
+  assert.match(css, /\.chronicles \.chronicles-party-member > \.chronicles-party-glyph\s*\{[^}]*position:\s*absolute\s*;[^}]*inset:\s*0 auto 4px 8px\s*;[^}]*min-height:\s*var\(--face\)\s*;/);
   assert.match(css, /\.chronicles \.chronicles-party-hireling__face\s*\{[^}]*height:\s*100%\s*;[^}]*min-height:\s*var\(--face\)\s*;/);
   assert.match(css, /\.chronicles \.chronicles-party \.chronicles-party-member > \.chronicles-party-glyph\.has-authored-portrait\s*\{[^}]*border-width:\s*0\s*;/);
   assert.match(css, /\.chronicles \.chronicles-party-hireling__face\s*\{[^}]*border:\s*0 solid\s*;/);
