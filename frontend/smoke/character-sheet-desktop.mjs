@@ -111,13 +111,11 @@ async function assertOriginalStatArtwork(sheet, viewport) {
       const svg = icon?.querySelector('svg');
       const label = row.querySelector(':scope > span');
       const value = row.querySelector(':scope > b');
-      const note = row.querySelector(':scope > small');
       const r = (node) => node?.getBoundingClientRect();
       const ir = r(icon);
       const rr = r(row);
       const lr = r(label);
       const vr = r(value);
-      const nr = r(note);
       return {
         stat: row.dataset.stat, icon: icon?.dataset.statIcon,
         hidden: icon?.getAttribute('aria-hidden'),
@@ -126,9 +124,9 @@ async function assertOriginalStatArtwork(sheet, viewport) {
         paintedHeight: ir?.height ?? 0,
         withinRow: !!ir && ir.left >= rr.left - 1 && ir.right <= rr.right + 1
           && ir.top >= rr.top - 1 && ir.bottom <= rr.bottom + 1,
-        nextToText: !!ir && ir.right <= lr.left + 2 && ir.right <= nr.left + 2
+        nextToText: !!ir && ir.right <= lr.left + 2
           && ir.right <= vr.left + 2,
-        textClipped: [label, value, note].some((node) => node.scrollWidth > node.clientWidth + 2),
+        textClipped: [label, value].some((node) => node.scrollWidth > node.clientWidth + 2),
       };
     }));
   const keys = ['might', 'intellect', 'personality', 'endurance', 'speed',
@@ -148,8 +146,8 @@ async function assertRealStatColorTones(sheet, viewport) {
     .evaluate((grid) => {
       const row = grid.querySelector('[data-stat="condition"]');
       const value = row.querySelector(':scope > b');
-      const note = row.querySelector(':scope > small').textContent.trim();
-      const hp = note.match(/^([0-9]+)[/]([0-9]+) PV/);
+      const note = row.getAttribute('title') || '';
+      const hp = note.match(/([0-9]+)[/]([0-9]+) PV/);
       const bonuses = [...grid.querySelectorAll('[data-stat]:not([data-stat="condition"])')].map((item) => {
         const em = item.querySelector('em[data-bonus-tone]');
         return {
@@ -441,20 +439,20 @@ try {
               return element ? parseFloat(getComputedStyle(element).fontSize) : null;
             };
             return { name: row.dataset.stat, label: font('span'), value: font('b'),
-              modifier: font('em'), explanation: font('small') };
+              modifier: font('em'), hasExplanation: !!row.querySelector(':scope > small') };
           });
           return { content: rect(content), stats: rect(stats), battle: rect(battle),
             statColumns: columns, battleColumns, battleCells, labels, type, headerType,
             duplicatedEquipment: content.querySelectorAll('[data-chronicles-worn-gear]').length };
         });
-        assert.equal(ledger.statColumns, width >= 2100 ? 4 : 3,
-          'MM3 artwork needs 3 readable columns until ultrawide screens: ' + JSON.stringify(ledger));
+        assert.equal(ledger.statColumns, width >= 1900 ? 4 : 3,
+          'MM3 artwork needs 3 readable columns until 1900px: ' + JSON.stringify(ledger));
         assert.ok(ledger.headerType.name >= 28 && ledger.headerType.heroClass >= 18
           && ledger.headerType.level >= 18,
           'The hero name, class and level must be readable as the MM3 record title: '
             + JSON.stringify(ledger.headerType));
         assert.ok(ledger.type.every((row) => row.label >= 22 && row.value >= 30
-          && row.explanation >= 17 && (row.modifier == null || row.modifier >= 16)),
+          && !row.hasExplanation && (row.modifier == null || row.modifier >= 16)),
         'MM3 attribute type must be readable without browser zoom: ' + JSON.stringify(ledger.type));
         assert.equal(ledger.duplicatedEquipment, 0,
           'Estado must not duplicate equipped gear; all equipment controls live in Equipo');
@@ -991,7 +989,7 @@ try {
         return {
           stat: row.dataset.stat,
           label: size(label), value: size(value),
-          note: size(note), modifier: size(modifier),
+          hasExplanation: !!note, modifier: size(modifier),
           clipped: row.scrollWidth > row.clientWidth + 2
             || [label, value, note, modifier].filter(Boolean)
               .some((node) => node.scrollWidth > node.clientWidth + 2),
@@ -1006,9 +1004,9 @@ try {
     if (width <= 520) assert.equal(rows.columns, 1,
       'Narrow phones need one readable stat column, never two tiny ones');
     assert.ok(rows.cells.every((row) => row.label >= 17 && row.value >= 25
-      && row.note >= 16 && (row.modifier == null || row.modifier >= 16)
+      && !row.hasExplanation && (row.modifier == null || row.modifier >= 16)
       && !row.clipped && !row.overlap) && !rows.sidewaysOverflow,
-      'Status labels, values and effects must remain readable without collisions at '
+      'Status labels, values and modifiers must remain readable without collisions at '
         + width + ': ' + JSON.stringify(rows));
 
     const last = ledger.locator('[data-stat="condition"]');
