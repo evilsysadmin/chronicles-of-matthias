@@ -163,7 +163,7 @@ jobs:
           [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Restore pinned Playwright Chromium browser
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
