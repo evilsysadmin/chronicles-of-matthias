@@ -329,6 +329,13 @@ function enterTile(state, x, y, { deferAreaTransition = false } = {}) {
   }
 
   const exit = contentEntryAt(state, 'exits', x, y);
+  // A locked floor threshold may still be walked over. Explain why it will
+  // not open instead of silently swallowing the attempted crossing.
+  // The step already cost one turn, so do not call withMessage() here.
+  if (exit && next.phase === 'explore' && !chroniclesRequirementsMet(state, exit.requirements)) {
+    const failure = chroniclesRequirementFailure(state, exit.requirements);
+    next = { ...next, message: failure?.message || exit.lockedLabel || 'El paso sigue cerrado.' };
+  }
   // A lethal trap cannot be bypassed by a gate on the same cell.
   if (exit && next.phase !== 'defeated'
       && chroniclesRequirementsMet(state, exit.requirements) && !deferAreaTransition) {
