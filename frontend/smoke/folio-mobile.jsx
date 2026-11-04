@@ -64,6 +64,16 @@ function Fixture() {
                 <b>{member.hp}/{member.maxHp}</b>
               </button>
             ))}
+            {/* Match the two vacant hireling places from the real MM3 strip. */}
+            {[1, 2].map((slot) => (
+              <div key={`hireling-${slot}`} className="chronicles-party-hireling"
+                data-chronicles-hireling-slot={slot} aria-label={`Hueco ${slot} para contratado, libre`}>
+                <span className="chronicles-party-hireling__face" aria-hidden="true" />
+                <span className="chronicles-party-hireling__label">
+                  <strong>Plaza libre</strong><small>Sin contratar</small>
+                </span>
+              </div>
+            ))}
           </aside>
           <main className="chronicles-stage-wrap">
             <div className="chronicles-statusbar">
