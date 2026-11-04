@@ -270,6 +270,186 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-c6-foe-8",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
+      "x": 6,
+      "y": 10,
+      "hpKey": "terra_c6Foe8Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-9",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 16,
+      "y": 11,
+      "hpKey": "terra_c6Foe9Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-10",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
+      "x": 17,
+      "y": 3,
+      "hpKey": "terra_c6Foe10Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de marisma usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-11",
+      "visualType": "bog-toad",
+      "name": "sapo de la ciénaga",
+      "x": 6,
+      "y": 12,
+      "hpKey": "terra_c6Foe11Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con sapo de la ciénaga usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-12",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 14,
+      "y": 12,
+      "hpKey": "terra_c6Foe12Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-13",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
+      "x": 15,
+      "y": 2,
+      "hpKey": "terra_c6Foe13Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de marisma usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

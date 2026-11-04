@@ -358,6 +358,185 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-f5-foe-10",
+      "visualType": "stone-golem",
+      "name": "gólem de escoria",
+      "x": 16,
+      "y": 11,
+      "hpKey": "terra_f5Foe10Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con gólem de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-11",
+      "visualType": "ash-goblin",
+      "name": "goblin de ceniza",
+      "x": 18,
+      "y": 7,
+      "hpKey": "terra_f5Foe11Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-12",
+      "visualType": "ember-wisp",
+      "name": "lumbre de ceniza",
+      "x": 2,
+      "y": 12,
+      "hpKey": "terra_f5Foe12Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 2,
+        "requiresLineOfSight": true
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con lumbre de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-13",
+      "visualType": "gate-jailer",
+      "name": "guardián de escoria",
+      "x": 18,
+      "y": 2,
+      "hpKey": "terra_f5Foe13Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con guardián de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-14",
+      "visualType": "stone-golem",
+      "name": "gólem de escoria",
+      "x": 17,
+      "y": 8,
+      "hpKey": "terra_f5Foe14Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con gólem de escoria usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f5-foe-15",
+      "visualType": "ash-goblin",
+      "name": "goblin de ceniza",
+      "x": 14,
+      "y": 10,
+      "hpKey": "terra_f5Foe15Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de ceniza usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
