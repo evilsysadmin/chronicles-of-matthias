@@ -25,6 +25,11 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 		if ordinary >= 4 {
 			firstWave = 4
 		}
+		// Even narrow/quest-heavy regions must feel inhabited, without
+		// compromising the arrival and quest safety perimeters.
+		if len(all) < 11 {
+			t.Fatalf("%s: wilderness has only %d foes; expected at least 11", code, len(all))
+		}
 		added := all[len(original)+firstWave:]
 		if len(added) < 1 || len(added) > extraOverworldPatrolLimit {
 			t.Fatalf("%s: expected 1–%d additional safe patrols; got %d", code, extraOverworldPatrolLimit, len(added))
@@ -95,7 +100,7 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 	}
 	// Some densely authored forests deliberately admit only one extra.
 	// Still cover the *whole* generated overworld, not just Swordhaven.
-	if addedTotal < 200 {
+	if addedTotal < 250 {
 		t.Fatalf("Terra-wide population did not increase enough: %d patrols", addedTotal)
 	}
 }
