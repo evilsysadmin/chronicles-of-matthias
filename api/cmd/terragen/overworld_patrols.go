@@ -182,4 +182,5 @@ func reinforceOverworld(m *O, areaCode string) {
 		occupied[best] = true
 	}
 	m.Set("enemies", current)
+	addOverworldDensityPatrols(m, areaCode)
 }

@@ -212,6 +212,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-c2-foe-5",
+      "visualType": "ash-goblin",
+      "name": "goblin de las colinas",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_c2Foe5Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de las colinas usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-6",
+      "visualType": "road-bandit",
+      "name": "bandolero",
+      "x": 16,
+      "y": 10,
+      "hpKey": "terra_c2Foe6Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con bandolero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

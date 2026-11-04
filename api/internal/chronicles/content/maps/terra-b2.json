@@ -229,6 +229,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-b2-foe-5",
+      "visualType": "orc-raider",
+      "name": "orco saqueador del brezal",
+      "x": 15,
+      "y": 9,
+      "hpKey": "terra_b2Foe5Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 2,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con orco saqueador del brezal usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b2-foe-6",
+      "visualType": "gnoll",
+      "name": "gnoll merodeador del brezal",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_b2Foe6Hp",
+      "maxHp": 17,
+      "retaliation": 3,
+      "toHit": 5,
+      "armorClass": 2,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con gnoll merodeador del brezal usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

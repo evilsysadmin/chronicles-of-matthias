@@ -210,6 +210,36 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-e1-foe-6",
+      "visualType": "weaver-spider",
+      "name": "araña tejedora",
+      "x": 5,
+      "y": 12,
+      "hpKey": "terra_e1Foe6Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con araña tejedora usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
