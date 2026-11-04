@@ -53,7 +53,8 @@ export default function ChroniclesCharacterGrimoire({ spells = [], availableSp =
     setInspecting(false);
     const previous = inspectionReturnFocusRef.current;
     inspectionReturnFocusRef.current = null;
-    (previous?.isConnected ? previous : inspectTriggerRef.current)?.focus({ preventScroll: true });
+    if (previous?.isConnected) previous.focus({ preventScroll: true });
+    else inspectTriggerRef.current?.focus();
   };
   const handleInspectionKeys = (event) => {
     // Never leak modal keyboard actions to the parent character sheet or game.
