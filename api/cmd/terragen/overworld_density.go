@@ -41,7 +41,7 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 		panic(areaID + ": missing stable first-wave patrol IDs")
 	}
 	firstWaveStart := len(current) - firstWaveCount
-	rows := m.Arr("grid")
+	rows := parse(dump(m)).(*O).Arr("grid")
 	grid := make([][]byte, len(rows))
 	for y, raw := range rows {
 		grid[y] = []byte(raw.(string))
