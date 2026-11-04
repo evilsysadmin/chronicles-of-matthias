@@ -35,7 +35,7 @@ async function assertMagicCombatResource(sheet) {
     };
   });
   assert.equal(status.label, 'MP');
-  assert.match(status.value || '', /^\\d+\\/\\d+$/);
+  assert.match(status.value || '', /^\d+\/\d+$/);
   assert.equal(status.index, 1, 'MP follows HP, before initiative');
   if (status.visible) {
     assert.ok(Math.abs(status.mp.top - status.hp.top) <= 2
