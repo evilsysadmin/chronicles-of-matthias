@@ -1029,7 +1029,7 @@
        portrait's intrinsic dimensions. Keep this desktop-only. */
     grid-area: auto;
     position: absolute;
-    inset: 2px auto 2px 8px;
+    inset: 0 auto 4px 8px;
     width: var(--face-w);
     height: auto;
     min-height: var(--face);
