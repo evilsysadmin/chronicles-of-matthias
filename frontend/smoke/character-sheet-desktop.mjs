@@ -108,7 +108,7 @@ async function assertOriginalStatArtwork(sheet, viewport) {
   const artwork = await sheet.locator('[data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats')
     .evaluate((grid) => [...grid.querySelectorAll('[data-stat]')].map((row) => {
       const icon = row.querySelector(':scope > .chronicles-character-sheet__stat-icon');
-      const svg = icon?.querySelector('svg');
+      const style = icon ? getComputedStyle(icon) : null;
       const label = row.querySelector(':scope > span');
       const value = row.querySelector(':scope > b');
       const r = (node) => node?.getBoundingClientRect();
@@ -119,8 +119,11 @@ async function assertOriginalStatArtwork(sheet, viewport) {
       return {
         stat: row.dataset.stat, icon: icon?.dataset.statIcon,
         hidden: icon?.getAttribute('aria-hidden'),
-        shapes: svg?.querySelectorAll('path, rect, circle').length ?? 0,
-        viewBox: svg?.getAttribute('viewBox'), paintedWidth: ir?.width ?? 0,
+        atlas: style?.backgroundImage ?? '',
+        atlasSize: style?.backgroundSize ?? '',
+        atlasPosition: style?.backgroundPosition ?? '',
+        hasOldSvg: !!icon?.querySelector('svg'),
+        paintedWidth: ir?.width ?? 0,
         paintedHeight: ir?.height ?? 0,
         withinRow: !!ir && ir.left >= rr.left - 1 && ir.right <= rr.right + 1
           && ir.top >= rr.top - 1 && ir.bottom <= rr.bottom + 1,
@@ -133,12 +136,27 @@ async function assertOriginalStatArtwork(sheet, viewport) {
     'accuracy', 'luck', 'condition'];
   assert.deepEqual(artwork.map((item) => item.stat), keys,
     'Status must keep all real attributes and condition in order');
-  assert.ok(artwork.every((item) => item.icon === item.stat
-    && item.hidden === 'true' && item.shapes >= 2 && item.viewBox === '0 0 32 32'
+  const positions = [
+    '0% 0%', '33.3333% 0%', '66.6667% 0%', '100% 0%',
+    '0% 100%', '33.3333% 100%', '66.6667% 100%', '100% 100%',
+  ];
+  assert.ok(artwork.every((item, index) => item.icon === item.stat
+    && item.hidden === 'true' && item.atlas.includes('chronicles-mm3-attribute-atlas.webp')
+    && item.atlasSize === '400% 200%' && !item.hasOldSvg
+    && Math.abs(parseFloat(item.atlasPosition) - parseFloat(positions[index])) < .01
+    && item.atlasPosition.endsWith(positions[index].endsWith('100%') ? '100%' : '0%')
     && item.paintedWidth >= 40 && item.paintedHeight >= 40
     && item.withinRow && item.nextToText && !item.textClipped),
-  'Every original retro stat emblem must fit beside readable data, never cover it at '
+  'Every approved atlas icon must paint the correct cell and fit beside readable data at '
     + viewport + ': ' + JSON.stringify(artwork));
+  const loaded = await sheet.evaluate(async () => {
+    const image = new Image();
+    image.src = '/images/chronicles-mm3-attribute-atlas.webp';
+    await image.decode();
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  });
+  assert.deepEqual(loaded, { width: 256, height: 128 },
+    'The exact local 4x2 WebP atlas must decode in the real browser');
 }
 
 async function assertRealStatColorTones(sheet, viewport) {
