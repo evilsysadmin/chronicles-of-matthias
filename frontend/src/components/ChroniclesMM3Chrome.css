@@ -1022,9 +1022,15 @@
     gap: 3px 8px;
     padding: 6px;
   }
-  .chronicles .chronicles-party-member > .chronicles-party-glyph {
+  /* Keep the original minimum strip height, but fill any extra card space.
+     The face and an empty hireling niche must reach the same inset edges. */
+  .chronicles .chronicles-party-member > .chronicles-party-glyph,
+  .chronicles .chronicles-party-hireling__face {
+    box-sizing: border-box;
     width: 100%;
-    height: var(--face);
+    height: 100%;
+    min-height: var(--face);
+    align-self: stretch;
   }
   .chronicles .chronicles-party-member .chronicles-party-thumbnail { object-position: 50% 18%; }
   .chronicles .chronicles-party-member > span:nth-child(2) {
@@ -1127,8 +1133,6 @@
   }
   .chronicles .chronicles-party-hireling__face {
     grid-area: portrait;
-    width: 100%;
-    height: var(--face);
     border: 2px solid;
     border-color: var(--mm3-lo) var(--mm3-hi) var(--mm3-hi) var(--mm3-lo);
     background: radial-gradient(ellipse at 50% 38%, #2a2a30 0 40%, #121215 75%);
