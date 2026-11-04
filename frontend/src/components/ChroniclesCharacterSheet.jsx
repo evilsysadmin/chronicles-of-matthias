@@ -694,14 +694,6 @@ export default function ChroniclesCharacterSheet({
                   </span>
                 </p>
             }
-            {/* First-person: PV already lives in the battle strip and hero dock,
-                while company gold belongs in G · Estado del grupo. Only a
-                caster's PH stays in the header for immediate spell context. */}
-            {!tacticsMode && chroniclesMemberSchool(member) && (
-              <div className="chronicles-character-sheet__quick" aria-label="Puntos de hechizo actuales">
-                <span data-resource="magic">PH <b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></span>
-              </div>
-            )}
           </div>
           <button type="button" autoFocus onClick={onClose} aria-label="Cerrar ficha">×</button>
         </header>
@@ -753,6 +745,9 @@ export default function ChroniclesCharacterSheet({
         <div className="chronicles-character-sheet__vitals"
           hidden={!tacticsMode && activeFolio !== 'record'}>
           <div><span>HP</span><b>{member.hp}/{member.maxHp}</b></div>
+          {!tacticsMode && (
+            <div data-resource="magic"><span>MP</span><b>{chroniclesMemberSp(state, member)}/{chroniclesMemberMaxSp(state, member)}</b></div>
+          )}
           {tacticsMode
             ? <div><span>RECURSO</span><b>{ability.charges}/{ability.max}</b></div>
             : <div><span>INICIATIVA</span><b>{effectiveAgility}</b></div>}

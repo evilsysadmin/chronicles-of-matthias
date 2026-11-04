@@ -7,6 +7,7 @@ import { createChroniclesProgression } from '../chroniclesOfMatthiasProgression.
 import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
 import ChroniclesCharacterStatIcon, { CHRONICLES_CHARACTER_STAT_ICON_IDS } from './ChroniclesCharacterStatIcon.jsx';
+import { chroniclesMemberMaxSp } from '../chronicles/chroniclesMagic.js';
 
 const css = readFileSync(new URL('./ChroniclesCharacterRecordV3.css', import.meta.url), 'utf8');
 const artworkCss = readFileSync(new URL('./ChroniclesCharacterStatArtwork.css', import.meta.url), 'utf8');
@@ -55,8 +56,36 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('grid-template-areas: "battle" "attributes" "footer"');
     expect(css).toContain('.chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__section--core-stats');
     expect(css).toContain('grid-column: 1 / -1');
-    expect(css).toContain('grid-template-columns: repeat(5, minmax(0,1fr))');
+    expect(css).toContain('grid-template-columns: repeat(6, minmax(0,1fr))');
     expect(css).toContain('grid-template-columns: repeat(3, minmax(0,1fr));');
+  });
+  it('shows current MP beside HP even for a non-caster, never in the header', () => {
+    const state = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
+    const caster = state.party.find((hero) => chroniclesMemberMaxSp(state, hero) > 0);
+    const nonCaster = state.party.find((hero) => chroniclesMemberMaxSp(state, hero) === 0);
+    expect(caster).toBeTruthy();
+    expect(nonCaster).toBeTruthy();
+    const maxMp = chroniclesMemberMaxSp(state, caster);
+    const spent = { ...state, spellPoints: { ...state.spellPoints, [caster.id]: maxMp - 1 } };
+    for (const [hero, currentState, mpLabel] of [
+      [caster, spent, `${maxMp - 1}/${maxMp}`],
+      [nonCaster, state, '0/0'],
+    ]) {
+      const html = renderToStaticMarkup(createElement(ChroniclesCharacterSheet, {
+        state: currentState, member: hero, progression: createChroniclesProgression(),
+        mode: 'chronicles', initialFolio: 'record', onClose: () => {},
+      }));
+      const battle = html.split('class="chronicles-character-sheet__vitals"')[1]?.split('</div></div>')[0];
+      expect(battle).toBeTruthy();
+      expect(battle).toContain(`<span>HP</span><b>${hero.hp}/${hero.maxHp}</b>`);
+      expect(battle).toContain(`data-resource="magic"><span>MP</span><b>${mpLabel}</b>`);
+      expect(battle.indexOf('<span>HP</span>')).toBeLessThan(battle.indexOf('<span>MP</span>'));
+      expect(battle.indexOf('<span>MP</span>')).toBeLessThan(battle.indexOf('<span>INICIATIVA</span>'));
+      expect(html).not.toContain('chronicles-character-sheet__quick');
+    }
+    expect(render('tactics')).not.toContain('<span>MP</span>');
+    expect(css).toContain('grid-template-columns: repeat(6, minmax(0,1fr));');
+    expect(css).toContain('grid-template-columns: repeat(3, minmax(0, 1fr));');
   });
   it('renders eight approved atlas illustrations on real MM3 stat rows only', () => {
     const ids = ['might', 'intellect', 'personality', 'endurance', 'speed',
@@ -136,7 +165,7 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('.chronicles-character-sheet__backdrop:has(');
     expect(css).toContain('padding: 6px;');
     expect(css).toContain('grid-template-columns: minmax(0, 1fr);');
-    expect(css).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
+    expect(css).toContain('grid-template-columns: repeat(6, minmax(0, 1fr));');
     expect(css).toContain('grid-template-columns: repeat(3, minmax(0,1fr));');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0, 1fr));');
     expect(css).toContain('grid-template-rows: auto;');

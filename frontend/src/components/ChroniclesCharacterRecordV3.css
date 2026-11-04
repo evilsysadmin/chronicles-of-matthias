@@ -26,7 +26,7 @@
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__vitals {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     min-width: 0;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
@@ -161,7 +161,7 @@
   .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__vitals {
     grid-area: battle;
     grid-column: 1 / -1;
-    grid-template-columns: repeat(5, minmax(0,1fr));
+    grid-template-columns: repeat(6, minmax(0,1fr));
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
@@ -469,5 +469,14 @@
   [data-chronicles-chapter="record"] .chronicles-character-sheet__mm3-stats > div {
     min-height: 64px;
     padding: 6px;
+  }
+}
+ 
+/* Six MM3 combat facts stay together; compact/short displays use two rows
+   of three rather than an uneven final row. Tactics stays unchanged. */
+@media (max-width: 850px), (max-height: 580px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  .chronicles-character-sheet__folio-content[data-chronicles-chapter="record"] > .chronicles-character-sheet__vitals {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

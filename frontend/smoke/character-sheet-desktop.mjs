@@ -15,29 +15,32 @@ async function assertParchmentSurface(locator, label) {
   assert.ok(r >= 170 && g >= 150 && b >= 105,
     label + ' must remain a light reading surface rather than legacy dark chrome: ' + bg);
 }
-async function assertResourceContrast(sheet, resource) {
-  const chip = sheet.locator(`.chronicles-character-sheet__quick [data-resource="${resource}"]`);
-  assert.equal(await chip.count(), 1, 'Expected a real ' + resource + ' resource badge');
-  const ratios = await chip.evaluate((node) => {
-    const rgb = (value) => (value.match(/[0-9.]+/g) || []).slice(0, 3).map(Number);
-    const linear = (channel) => {
-      const c = channel / 255;
-      return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+async function assertMagicCombatResource(sheet) {
+  // The real current/max MP belongs beside HP in the combat strip, never in
+  // the identity header. Check source order even when another chapter hides it.
+  const cell = sheet.locator('.chronicles-character-sheet__vitals [data-resource="magic"]');
+  assert.equal(await cell.count(), 1, 'The record must have one real MP field');
+  const status = await cell.evaluate((node) => {
+    const grid = node.parentElement;
+    const health = grid.querySelector(':scope > div:first-child');
+    const hp = health.getBoundingClientRect();
+    const mp = node.getBoundingClientRect();
+    return {
+      label: node.querySelector('span')?.textContent.trim(),
+      value: node.querySelector('b')?.textContent.trim(),
+      index: [...grid.children].indexOf(node),
+      visible: mp.width > 0 && mp.height > 0,
+      hp: { top: hp.top, right: hp.right },
+      mp: { top: mp.top, left: mp.left },
     };
-    const luminance = (value) => {
-      const [r, g, b] = rgb(value).map(linear);
-      return r * .2126 + g * .7152 + b * .0722;
-    };
-    const paper = luminance(getComputedStyle(node).backgroundColor);
-    const contrast = (element) => {
-      const ink = luminance(getComputedStyle(element).color);
-      return (Math.max(ink, paper) + .05) / (Math.min(ink, paper) + .05);
-    };
-    return { label: contrast(node), value: contrast(node.querySelector('b')) };
   });
-  for (const [part, ratio] of Object.entries(ratios)) {
-    assert.ok(ratio >= 4.5,
-      resource + ' ' + part + ' must have readable contrast on parchment; measured=' + ratio.toFixed(2));
+  assert.equal(status.label, 'MP');
+  assert.match(status.value || '', /^\d+\/\d+$/);
+  assert.equal(status.index, 1, 'MP follows HP, before initiative');
+  if (status.visible) {
+    assert.ok(Math.abs(status.mp.top - status.hp.top) <= 2
+      && status.mp.left >= status.hp.right - 2,
+    'MP must render beside HP without overlap: ' + JSON.stringify(status));
   }
 }
 
@@ -65,8 +68,8 @@ async function assertNoDuplicateMM3HeaderResources(sheet) {
     'All party portraits continue showing their live health');
   assert.ok(summary.healthInDock.every((value) => /^\d+\/\d+ PV$/.test(value)),
     'The HP readout stays visible on portraits: ' + JSON.stringify(summary));
-  assert.ok(summary.headerChips.every((kind) => kind === 'magic'),
-    'PH is the only optional header resource for a spellcaster');
+  assert.deepEqual(summary.headerChips, [],
+    'MP belongs beside HP in Estado, not in the character header');
 }
 
 async function assertReadableMM3Level(sheet, viewport) {
@@ -486,14 +489,16 @@ try {
             + JSON.stringify(ledger));
         assert.ok(ledger.battle.bottom <= ledger.stats.top + 2,
           'Combat strip comes first, then full-width attribute ledger: ' + JSON.stringify(ledger));
-        assert.equal(ledger.battleColumns, 5,
-          'The five visible combat metrics must occupy five equal columns, not leave a phantom sixth');
-        assert.equal(ledger.battleCells.length, 5);
+        assert.equal(ledger.battleColumns, 6,
+          'HP, MP, initiative, damage, hit and armor must occupy six equal columns');
+        assert.equal(ledger.battleCells.length, 6);
+        assert.deepEqual(ledger.battleCells.map((item) => item.text[0]?.value),
+          ['HP', 'MP', 'INICIATIVA', 'DAÑO', 'ACIERTO', 'ARMADURA']);
         assert.ok(ledger.battleCells.every((item) => item.left >= ledger.content.left - 2
           && item.right <= ledger.content.right + 2
           && item.text.every((label) => !label.clipped && label.left >= ledger.content.left - 2
             && label.right <= ledger.content.right + 2)),
-          'HP, initiative, damage, hit and armor must be fully legible within the left and right edges: '
+          'HP, MP, initiative, damage, hit and armor must fit the available width: '
             + JSON.stringify(ledger));
       }
       if (width === 1024) {
@@ -797,7 +802,7 @@ try {
       await spellbook.waitFor({ state: 'visible' });
       const grimoire = spellbook.locator('[data-chronicles-grimoire]');
       await grimoire.waitFor({ state: 'visible' });
-      await assertResourceContrast(sheet, 'magic');
+      await assertMagicCombatResource(sheet);
       await assertNoDuplicateMM3HeaderResources(sheet);
       const spellRows = grimoire.locator('[data-grimoire-spell]');
       const actualCount = await spellRows.count();
@@ -1759,10 +1764,9 @@ try {
         };
         const title = wrapper.querySelector('h3');
         const description = wrapper.querySelector('p');
-        const resources = wrapper.querySelector('.chronicles-character-sheet__quick');
         return {
           head: rect(head), wrapper: rect(wrapper), title: rect(title),
-          description: rect(description), resources: rect(resources),
+          description: rect(description),
           close: rect(head.querySelector('button')),
           overflow: wrapper.scrollWidth - wrapper.clientWidth,
           titleText: title.textContent.trim(),
@@ -1771,14 +1775,14 @@ try {
           columns: getComputedStyle(wrapper).gridTemplateColumns,
         };
       });
-      // Gold and HP no longer repeat in the header; keep caster PH contrast.
+      // No duplicated HP, gold or MP in the header; MP lives beside HP in Estado.
       await assertNoDuplicateMM3HeaderResources(sheet);
-      await assertResourceContrast(sheet, 'magic');
+      await assertMagicCombatResource(sheet);
       assert.equal(identity.titleText, 'Hildegard', 'Fixture must check the longer hero name');
       assert.match(identity.classText, /Nivel/, 'Class and level must remain readable');
       assert.ok(identity.overflow <= 1,
         'Identity must not overflow its reserved column: ' + JSON.stringify(identity));
-      for (const key of ['title', 'description', 'resources']) {
+      for (const key of ['title', 'description']) {
         assert.ok(identity[key].right <= identity.close.left - 3,
           key + ' must not collide with close button: ' + JSON.stringify(identity));
         assert.ok(identity[key].bottom <= identity.head.bottom + 1,
@@ -1787,9 +1791,7 @@ try {
       if (height <= 480) {
         assert.equal(identity.descriptionVisible, false,
           'In short-landscape Equipo, redundant class/level text must free space for the inventory');
-        assert.ok(identity.resources.top >= identity.title.bottom - 1,
-          'Landscape gold/resources must sit below the hero name without overlap: '
-            + JSON.stringify(identity));
+
       }
       await page.screenshot({ path: 'smoke-character-sheet-compact-' + width + '.png' });
       assert.deepEqual(errors, []);
