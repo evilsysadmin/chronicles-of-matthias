@@ -270,6 +270,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-a6-foe-8",
+      "visualType": "salt-crab",
+      "name": "cangrejo de roca",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_a6Foe8Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de roca usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-a6-foe-9",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 6,
+      "y": 11,
+      "hpKey": "terra_a6Foe9Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con náufrago ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

@@ -210,6 +210,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-c6-foe-6",
+      "visualType": "salt-crab",
+      "name": "cangrejo de salitre",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_c6Foe6Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con cangrejo de salitre usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c6-foe-7",
+      "visualType": "sewer-rat",
+      "name": "rata de marisma",
+      "x": 15,
+      "y": 9,
+      "hpKey": "terra_c6Foe7Hp",
+      "maxHp": 21,
+      "retaliation": 4,
+      "toHit": 6,
+      "armorClass": 3,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con rata de marisma usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

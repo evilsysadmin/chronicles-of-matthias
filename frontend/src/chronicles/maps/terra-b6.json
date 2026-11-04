@@ -314,6 +314,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-b6-foe-6",
+      "visualType": "harpy",
+      "name": "arpía del acantilado",
+      "x": 5,
+      "y": 9,
+      "hpKey": "terra_b6Foe6Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 6,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-b6-foe-7",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 15,
+      "y": 9,
+      "hpKey": "terra_b6Foe7Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con náufrago ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

@@ -210,6 +210,66 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-d6-foe-6",
+      "visualType": "bandit-archer",
+      "name": "ballestero",
+      "x": 14,
+      "y": 3,
+      "hpKey": "terra_d6Foe6Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 3,
+        "requiresLineOfSight": true,
+        "disengageRange": 1
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con ballestero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-d6-foe-7",
+      "visualType": "ash-goblin",
+      "name": "goblin",
+      "x": 15,
+      "y": 9,
+      "hpKey": "terra_d6Foe7Hp",
+      "maxHp": 25,
+      "retaliation": 4,
+      "toHit": 7,
+      "armorClass": 4,
+      "agility": 4,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
