@@ -416,6 +416,18 @@ try {
         .evaluate((node) => node.getBoundingClientRect().height);
       assert.ok(portraitHeight >= 84 && portraitHeight <= 170,
         `Exploration hero portraits must keep original scale: ${portraitHeight}`);
+      const inset = await page.locator('.chronicles-party-member').first().evaluate((card) => {
+        const cardRect = card.getBoundingClientRect();
+        const imageRect = card.querySelector('.chronicles-party-thumbnail').getBoundingClientRect();
+        return {
+          top: imageRect.top - cardRect.top,
+          bottom: cardRect.bottom - imageRect.bottom,
+          paddingTop: getComputedStyle(card).paddingTop,
+        };
+      });
+      assert.equal(inset.paddingTop, '0px', 'MM3 desktop portraits must have no extra top padding');
+      assert.ok(inset.top <= 3.5 && inset.bottom <= 3.5,
+        'Portrait must reach the card bevel without unnecessary vertical gaps: ' + JSON.stringify(inset));
       await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
       console.log('EXPLORATION_PARTY_PORTRAITS_OK');
     } catch (error) {

@@ -1020,13 +1020,18 @@
       'portrait bars';
     align-items: start;
     gap: 3px 8px;
-    /* Make the faces nearly flush with their stone card rather than
-       leaving 6px of unused space above and below each portrait. */
-    padding: 1px 6px;
+    /* Desktop faces fill the inset vertically; only the card's beveled
+       outer frame remains. Horizontal padding preserves room for bars. */
+    padding: 0 6px;
   }
   .chronicles .chronicles-party-member > .chronicles-party-glyph {
     width: 100%;
     height: var(--face);
+  }
+  /* The one-pixel portrait rim plus the card padding caused the final gap.
+     The inset shadow still provides definition without shrinking the photo. */
+  .chronicles .chronicles-party .chronicles-party-member > .chronicles-party-glyph.has-authored-portrait {
+    border-width: 0;
   }
   .chronicles .chronicles-party-member .chronicles-party-thumbnail { object-position: 50% 18%; }
   .chronicles .chronicles-party-member > span:nth-child(2) {
@@ -1131,7 +1136,7 @@
     grid-area: portrait;
     width: 100%;
     height: var(--face);
-    border: 2px solid;
+    border: 0 solid;
     border-color: var(--mm3-lo) var(--mm3-hi) var(--mm3-hi) var(--mm3-lo);
     background: radial-gradient(ellipse at 50% 38%, #2a2a30 0 40%, #121215 75%);
     box-shadow: 0 0 0 1px #141416, inset 0 0 18px rgba(0, 0, 0, .8);
