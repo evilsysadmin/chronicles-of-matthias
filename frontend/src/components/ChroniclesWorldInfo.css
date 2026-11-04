@@ -1,0 +1,99 @@
+/* Information lives behind I, never as a permanent overlay on the 3D scene. */
+.chronicles .chronicles-world-info__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(5, 8, 16, .68);
+  color-scheme: only light;
+}
+.chronicles .chronicles-world-info {
+  width: min(460px, 100%);
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  border: 5px ridge #b2b2b9;
+  background: #9699a4 var(--mm3-stone) center / 128px 128px;
+  box-shadow: 0 12px 44px #000b;
+  font-family: var(--mm3-pixel-font), monospace;
+  color: #241b16;
+  text-shadow: none;
+}
+.chronicles .chronicles-world-info header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 13px;
+  border-bottom: 2px solid #514c50;
+}
+.chronicles .chronicles-world-info header small {
+  font-size: 13px;
+  letter-spacing: .07em;
+}
+.chronicles .chronicles-world-info h2 {
+  margin: 3px 0 0;
+  font: normal clamp(23px, 4vw, 32px)/1 var(--mm3-pixel-font), monospace;
+}
+.chronicles .chronicles-world-info header button {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 2px outset #eee;
+  background: #c2c2c6;
+  color: #1c181b;
+  font: 30px/1 var(--mm3-pixel-font), monospace;
+  cursor: pointer;
+}
+.chronicles .chronicles-world-info header button:focus-visible {
+  outline: 3px solid #3256b8;
+  outline-offset: 2px;
+}
+.chronicles .chronicles-world-info__paper {
+  margin: 12px;
+  padding: 12px clamp(12px, 5vw, 24px);
+  border: 2px solid #70442b;
+  background: repeating-linear-gradient(0deg, #b87f52, #b87f52 3px, #bc865b 4px);
+  box-shadow: inset 0 0 0 2px #d7a477;
+}
+.chronicles .chronicles-world-info__date {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 7px 0 12px;
+  text-align: center;
+}
+.chronicles .chronicles-world-info__date span,
+.chronicles .chronicles-world-info__date small { font-size: clamp(19px, 3vw, 24px); }
+.chronicles .chronicles-world-info__date strong {
+  font: normal clamp(40px, 9vw, 62px)/1 var(--mm3-pixel-font), monospace;
+  color: #d8ffff;
+  text-shadow: 2px 2px 0 #6b493c, 0 0 5px #38343a;
+  font-variant-numeric: tabular-nums;
+}
+.chronicles .chronicles-world-info dl { display: grid; gap: 4px; margin: 0; }
+.chronicles .chronicles-world-info dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 2px 12px;
+  border-bottom: 1px solid #855a40;
+  font-size: 27px;
+}
+.chronicles .chronicles-world-info dd { margin: 0; color: #d8ffff; text-shadow: 1px 1px 0 #694b42; }
+.chronicles .chronicles-world-info__paper p {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 18px;
+}
+.chronicles .chronicles-world-info footer {
+  padding: 0 12px 12px;
+  text-align: center;
+  font-size: 18px;
+}
+@media (max-width: 430px) {
+  .chronicles .chronicles-world-info__backdrop { padding: 8px; }
+  .chronicles .chronicles-world-info__paper { margin: 7px; }
+  .chronicles .chronicles-world-info header { padding: 6px 8px; }
+}

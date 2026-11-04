@@ -185,7 +185,7 @@ try {
             assert(tabLines.every((tab) => Math.abs(tab.labelTop - tab.shortcutTop) <= 8
               && tab.shortcutRight <= tab.buttonRight - 2
               && tab.scrollWidth <= tab.clientWidth + 1),
-            `CAST page labels and C/I shortcuts must stay on one line at ${width}px: ${JSON.stringify(tabLines)}`);
+            `CAST page labels and C/O shortcuts must stay on one line at ${width}px: ${JSON.stringify(tabLines)}`);
           }
           if (width <= 430) {
             const description = await dialog.locator('.chronicles-spell-menu__entry small')

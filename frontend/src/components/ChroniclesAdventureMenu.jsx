@@ -7,7 +7,7 @@ import { CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolic
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
 export default function ChroniclesAdventureMenu({
-  onClose, onContinue, onJournal, onQuickStatus, onCampRest, campRestStatus, onSave,
+  onClose, onContinue, onJournal, onQuickStatus, onWorldInfo, onCampRest, campRestStatus, onSave,
   onSaveExit, onRequestLoad, onSaveBeforeLoad, onLoadWithoutSave, onCancelLoad,
   onAdmin, onRetryAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, confirmLoadSelection = false,
@@ -55,7 +55,10 @@ export default function ChroniclesAdventureMenu({
       data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
       data-confirming-load={confirmLoadSelection ? 'true' : 'false'}>
       <div className="chronicles-game-menu__heading">
-        <div className="chronicles-game-menu__crest" aria-hidden="true">♜</div>
+        <button type="button" className="chronicles-game-menu__crest"
+          data-chronicles-menu-world-info aria-label="Información del juego: fecha y hora (I)"
+          title="Información del juego (I)" onClick={onWorldInfo}
+          hidden={confirmExitWithoutSaving || confirmLoadSelection || feedbackOpen || helpOpen}>ⓘ</button>
         <div className="chronicles-game-menu__heading-copy">
           <small>CHRONICLES OF MATTHIAS · FOLIO DE PAUSA</small>
           <strong>MENÚ DE AVENTURA</strong>

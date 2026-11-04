@@ -9,7 +9,7 @@ import ChroniclesAdventureMenu from './ChroniclesAdventureMenu.jsx';
 describe('Chronicles adventure menu hotkey affordances', () => {
   const handlers = {
     onClose: () => {}, onContinue: () => {}, onJournal: () => {},
-    onQuickStatus: () => {}, onCampRest: () => {}, onSave: () => {}, onSaveExit: () => {},
+    onQuickStatus: () => {}, onWorldInfo: () => {}, onCampRest: () => {}, onSave: () => {}, onSaveExit: () => {},
     onRequestLoad: () => {}, onSaveBeforeLoad: () => {}, onLoadWithoutSave: () => {}, onCancelLoad: () => {},
     onAdmin: () => {}, onRequestExit: () => {},
     onDiscardExit: () => {}, onCancelExit: () => {},
@@ -38,6 +38,17 @@ describe('Chronicles adventure menu hotkey affordances', () => {
     expect(html).toContain('aria-hidden="true"');
   });
 
+
+  it('puts I information on the existing crest, keeping four regular utilities in one row', () => {
+    const html = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} />);
+    expect(html).toContain('data-chronicles-menu-world-info');
+    expect(html).toContain('Información del juego: fecha y hora (I)');
+    const utility = html.split('class="chronicles-game-menu__utility-row"')[1]?.split('</div>')[0];
+    expect(utility).toBeTruthy();
+    expect((utility.match(/<button/g) || [])).toHaveLength(4); // Sonido, Ayuda, Feedback, Salir
+    const confirming = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers} confirmExitWithoutSaving />);
+    expect(confirming).toMatch(/data-chronicles-menu-world-info[^>]*hidden=""/);
+  });
 
   it('shows the actual ration cost and disables unsafe field rest without hiding the reason', () => {
     const ready = renderToStaticMarkup(<ChroniclesAdventureMenu {...handlers}

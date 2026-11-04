@@ -55,7 +55,8 @@ export default function ChroniclesGameHelp({ onBack }) {
         <p>En contacto con enemigos, el combate pasa a turnos. La iniciativa
           determina quién actúa antes. A ataca cuerpo a cuerpo durante tu turno;
           S dispara con un personaje que lleve un arma a distancia válida.
-          C abre la magia.</p>
+          C abre la magia; O abre los objetos y I consulta la hora, el día,
+          el año y la estación sin consumir un turno.</p>
       </details>
       <details>
         <summary>Crónica, progreso y guardado</summary>

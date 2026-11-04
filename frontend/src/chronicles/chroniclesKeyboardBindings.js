@@ -95,12 +95,14 @@ export function chroniclesFirstPersonEscapeAction({
   automapOpen = false,
   journalOpen = false,
   quickStatusOpen = false,
+  worldInfoOpen = false,
 } = {}) {
   if (menuOpen && confirmExitWithoutSaving) return 'cancel-exit';
   if (menuOpen && confirmLoadSelection) return 'cancel-load';
   // Escape and browser Back must first leave the nested feedback page, even
   // when the outer summary (rather than the textarea) owns keyboard focus.
   if (menuOpen && feedbackOpen) return 'back-feedback';
+  if (worldInfoOpen) return 'close-world-info';
   // The character dossier can sit on top of a merchant/guild. Dismiss its
   // own topmost layer first, rather than closing the shop behind it.
   if (sheetOpen) return 'close-sheet';
@@ -201,6 +203,18 @@ export function chroniclesBlockAdventureMenuBackgroundEvent(event, menuOpen = fa
   event.preventDefault();
   event.stopPropagation();
   return true;
+}
+
+// The I key opens MM3 Game Information in the world. Inside the equipment
+// chapter, its own scoped I still inspects an item; O opens consumables.
+export function chroniclesWorldInfoShortcut(event, { open = false } = {}) {
+  if (!event || event.defaultPrevented || event.repeat || event.isComposing
+    || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return null;
+  if (event.target?.isContentEditable
+    || event.target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
+  const key = String(event.key || '').toLowerCase();
+  if (open && key === 'escape') return 'close';
+  return key === 'i' ? (open ? 'close' : 'open') : null;
 }
 
 // Keyboard letters act only within the MM3 equipment chapter.

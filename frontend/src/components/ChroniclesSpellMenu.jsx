@@ -26,7 +26,7 @@ export function chroniclesSpellMenuKind(kind) {
   return SPELL_KINDS[kind] || { label: 'Objeto', glyph: '◇' };
 }
 
-// The page keys behave like the closed-world C/I controls: switch to the
+// The page keys behave like the closed-world C/O controls: switch to the
 // requested folio, or close when pressing the already-open page's key.
 // Disabled for modifiers, autorepeat and editable descendants.
 export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) {
@@ -35,7 +35,7 @@ export function chroniclesSpellMenuPageShortcut(event, { tab, hasSpells } = {}) 
   if (event.target?.isContentEditable
     || event.target?.closest?.('input, textarea, select, [contenteditable], [role="textbox"]')) return null;
   const key = String(event.key || '').toLowerCase();
-  const next = key === 'i' ? 'items' : key === 'c' && hasSpells ? 'spells' : null;
+  const next = key === 'o' ? 'items' : key === 'c' && hasSpells ? 'spells' : null;
   return next ? next === tab ? 'close' : next : null;
 }
 
@@ -282,9 +282,9 @@ export default function ChroniclesSpellMenu({
             </button>
             <button id={itemsTabId} type="button" role="tab" aria-selected={tab === 'items'}
               aria-controls={pageId} tabIndex={tab === 'items' ? 0 : -1}
-              data-chronicles-menu-tab-button="items" aria-keyshortcuts="I"
-              title="Objetos (I)" onClick={() => { setHealSpellId(null); setReviveItemId(null); setHealNotice(''); setTab('items'); }}>
-              ◈ Objetos <small>{stock} · I</small>
+              data-chronicles-menu-tab-button="items" aria-keyshortcuts="O"
+              title="Objetos (O)" onClick={() => { setHealSpellId(null); setReviveItemId(null); setHealNotice(''); setTab('items'); }}>
+              ◈ Objetos <small>{stock} · O</small>
             </button>
           </div>
         )}

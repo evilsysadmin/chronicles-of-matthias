@@ -146,6 +146,7 @@ import {
   chroniclesSaveSessionResume,
 } from '../chronicles/chroniclesSessionResume.js';
 import ChroniclesQuickStatus from './ChroniclesQuickStatus.jsx';
+import ChroniclesWorldInfo from './ChroniclesWorldInfo.jsx';
 import { chroniclesQuickStatusRows } from '../chronicles/chroniclesQuickStatus.js';
 import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js';
 import { CHRONICLES_SPLAT_MS, chroniclesHitImpacts } from '../chronicles/chroniclesHitSplats.js';
@@ -192,11 +193,11 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
-import './ChroniclesWorldClock.css';
+import './ChroniclesWorldInfo.css';
 // The first-person folio must override both base and old MM3 chrome styles.
 import './ChroniclesCharacterSheetMM3.css';
 import './ChroniclesSpellMenuFolio.css';
@@ -540,6 +541,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const [narrationLog, setNarrationLog] = useState([]);
   const narrationRunRef = useRef(null);
   const [quickStatusOpen, setQuickStatusOpen] = useState(false);
+  const [worldInfoOpen, setWorldInfoOpen] = useState(false);
   const [chronicleModalOpen, setChronicleModalOpen] = useState(false);
   const [automapOpen, setAutomapOpen] = useState(false);
   // false, 'spells' or 'items': the MAGIA/OBJETOS panel and its open tab.
@@ -734,7 +736,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       sheetOpen: Boolean(sheetMemberId),
       shopOpen: Boolean(stateRef.current?.shop),
       guildOpen: Boolean(stateRef.current?.guild), innOpen: Boolean(stateRef.current?.inn),
-      audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen,
+      audienceOpen: Boolean(audienceRef.current), automapOpen, journalOpen, quickStatusOpen, worldInfoOpen,
     });
     if (action === 'cancel-exit') setConfirmExitWithoutSaving(false);
     else if (action === 'cancel-load') { if (!saveBusy) setConfirmLoadSelection(false); }
@@ -749,6 +751,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     else if (action === 'close-automap') setAutomapOpen(false);
     else if (action === 'close-journal') setJournalOpen(false);
     else if (action === 'close-quick-status') setQuickStatusOpen(false);
+    else if (action === 'close-world-info') setWorldInfoOpen(false);
     else {
       // Focus the gem only when opening. Blurring when closing prevents a
       // stale keyboard outline around an inactive menu (Tab -> Esc).
@@ -1666,6 +1669,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
+      // The information folio owns input until closed. Do not move, fight
+      // or select party members through its translucent backdrop.
+      if (worldInfoOpen) {
+        const shortcut = chroniclesWorldInfoShortcut(event, { open: true });
+        if (shortcut === 'close') {
+          event.preventDefault();
+          setWorldInfoOpen(false);
+        } else if (event.key !== 'Tab') event.preventDefault();
+        return;
+      }
       if (provisionsOpenRef.current) {
         if (event.key === 'Escape') {
           event.preventDefault();
@@ -1780,9 +1793,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         menuSummaryRef.current?.focus();
         return;
       }
-      // The mailbox is a page of the modal, not a game context. J/G/M (and
-      // every other world shortcut) must not switch views under its draft.
+      // The mailbox is a page of the modal, not a game context. J/G/M/I
+      // must not switch views under its draft or a dangerous confirmation.
       if (menuOpen && (feedbackOpen || confirmExitWithoutSaving || confirmLoadSelection)) return;
+      if (chroniclesWorldInfoShortcut(event) === 'open') {
+        event.preventDefault();
+        clearTouchHold();
+        setMenuOpen(false);
+        setAutomapOpen(false);
+        setJournalOpen(false);
+        setQuickStatusOpen(false);
+        setWorldInfoOpen(true);
+        return;
+      }
       if (event.key === 'j' || event.key === 'J') {
         event.preventDefault();
         if (event.repeat) return;
@@ -1839,8 +1862,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         setSpellMenuOpen((open) => (open ? false : 'spells'));
         return;
       }
-      if (event.key === 'i' || event.key === 'I') {
+      if (event.key === 'o' || event.key === 'O') {
         event.preventDefault();
+        if (event.repeat) return;
         setSpellMenuOpen((open) => (open ? false : 'items'));
         return;
       }
@@ -1855,7 +1879,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
     confirmExitWithoutSaving, confirmLoadSelection, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
-    pendingSpellTarget, chooseSpellTarget, noticeBoardOpen]);
+    pendingSpellTarget, chooseSpellTarget, noticeBoardOpen, worldInfoOpen]);
 
   const startFreshGame = (entryMapId = null) => {
     setSaveBookInitialScreen('home');
@@ -2247,6 +2271,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}
                 onJournal={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setJournalOpen(true); }}
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
+                onWorldInfo={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setWorldInfoOpen(true); }}
                 campRestStatus={chroniclesCampRestStatus(state, chroniclesActiveEnemies(state))}
                 onCampRest={() => {
                   const before = stateRef.current;
@@ -2286,14 +2311,6 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             </details>
 
           <div className="chronicles-stage">
-            {worldCalendar && (
-              <div className="chronicles-world-clock" data-chronicles-world-clock
-                aria-label={worldCalendar.weekday + ', día ' + worldCalendar.dayOfYear + ', año ' + worldCalendar.year + ', ' + worldCalendar.time + ', ' + worldCalendar.season}
-                title={worldCalendar.weekday + ' · ' + worldCalendar.season}>
-                <strong>{worldCalendar.time}</strong>
-                <span>DÍA {worldCalendar.dayOfYear} · AÑO {worldCalendar.year}</span>
-              </div>
-            )}
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
             {relockPrompt && typeof document !== 'undefined' && createPortal(
@@ -2347,7 +2364,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
               contextualAction={contextualAction}
               npc={npcAtPosition}
               suspended={Boolean(audience || chronicleModalOpen || menuOpen || journalOpen
-                || quickStatusOpen || automapOpen || sheetMemberId || spellMenuOpen
+                || quickStatusOpen || worldInfoOpen || automapOpen || sheetMemberId || spellMenuOpen
                 || state.shop || state.guild || state.inn || expeditionOver)}
               onTalk={interactWithContext}
             />
@@ -2544,7 +2561,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <span><kbd>1</kbd>–<kbd>4</kbd> pieza</span>
                 <span><kbd>F</kbd> usar/recoger</span>
                 <span><kbd>C</kbd> hechizos</span>
-                <span><kbd>I</kbd> objetos</span>
+                <span><kbd>O</kbd> objetos</span>
+                <span><kbd>I</kbd> información</span>
                 <span><kbd>M</kbd> mapa</span>
               </div>
             </>
@@ -2716,6 +2734,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       )}
 
       {!scenePainted && <LoadingScreen />}
+      <ChroniclesWorldInfo calendar={worldInfoOpen ? worldCalendar : null}
+        onClose={() => setWorldInfoOpen(false)} />
       <ChroniclesAutomap
         open={automapOpen}
         state={state}

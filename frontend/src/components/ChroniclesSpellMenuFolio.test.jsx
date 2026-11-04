@@ -16,21 +16,22 @@ function render(state, member, props = {}) {
 }
 
 describe('Chronicles · CAST diegetic grimoire', () => {
-  it('switches C/I folio keys, and closes on the same page key', () => {
+  it('switches C/O folio keys, and closes on the same page key', () => {
     const pageKey = (key, tab, hasSpells = true, extra = {}) =>
       chroniclesSpellMenuPageShortcut({ key, ...extra }, { tab, hasSpells });
-    expect(pageKey('i', 'spells')).toBe('items');
-    expect(pageKey('I', 'items')).toBe('close');
+    expect(pageKey('o', 'spells')).toBe('items');
+    expect(pageKey('O', 'items')).toBe('close');
     expect(pageKey('c', 'items')).toBe('spells');
     expect(pageKey('C', 'spells')).toBe('close');
     expect(pageKey('c', 'items', false)).toBe(null);
-    expect(pageKey('i', 'spells', true, { ctrlKey: true })).toBe(null);
-    expect(pageKey('i', 'spells', true, { shiftKey: true })).toBe(null);
-    expect(pageKey('i', 'spells', true, { repeat: true })).toBe(null);
+    expect(pageKey('o', 'spells', true, { ctrlKey: true })).toBe(null);
+    expect(pageKey('o', 'spells', true, { shiftKey: true })).toBe(null);
+    expect(pageKey('o', 'spells', true, { repeat: true })).toBe(null);
     expect(pageKey('c', 'items', true, { isComposing: true })).toBe(null);
-    expect(pageKey('i', 'spells', true, {
+    expect(pageKey('o', 'spells', true, {
       target: { closest: () => ({ tagName: 'INPUT' }) },
     })).toBe(null);
+    expect(pageKey('i', 'spells')).toBe(null); // I belongs to Game Information.
   });
 
   it('preserves real spell IDs, costs, tab semantics and dialog focus affordances', () => {
@@ -46,7 +47,7 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('data-chronicles-menu-tab-button="spells"');
     expect(html).toContain('data-chronicles-menu-tab-button="items"');
     expect(html).toContain('aria-keyshortcuts="C"');
-    expect(html).toContain('aria-keyshortcuts="I"');
+    expect(html).toContain('aria-keyshortcuts="O"');
     expect(html).toContain('data-chronicles-cast="' + first.id + '"');
     expect(html).toContain(first.name);
     expect(html).toContain(first.cost + ' PH');
@@ -170,7 +171,7 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     }))).toContain('Nadie está caído');
   });
 
-  it('keeps inventory IDs and quantities for the I/Objetos tab', () => {
+  it('keeps inventory IDs and quantities for the O/Objetos tab', () => {
     const state = makeState();
     const stocked = { ...state, inventory: {
       ...state.inventory,
