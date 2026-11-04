@@ -47,11 +47,17 @@ describe('MM3 spell miniatures match the Equipment item-illustration approach', 
     expect(html).not.toContain('Lanzar hechizo');
   });
 
-  it('scopes illustrated 42px icon tiles and keeps spell names and PH space', () => {
+  it('uses Equipment-scale illustrated tiles without shrinking names, PH or touch rows', () => {
     expect(style).toContain('[data-chronicles-chapter="spells"]');
-    expect(style).toContain('grid-template-columns: 44px minmax(0, 1fr) auto');
-    expect(style).toContain('width: 42px');
-    expect(style).toContain('height: 42px');
+    expect(style).toContain('grid-template-columns: 38px minmax(0, 1fr) auto');
+    expect(style).toContain('min-height: 60px');
+    expect(style).toContain('width: 36px');
+    expect(style).toContain('height: 36px');
+    expect(style).toContain('width: 48px');
+    expect(style).toContain('height: 48px');
+    expect(style).toContain('background: linear-gradient(145deg, #efc69a, #c48d5e)');
+    expect(style).toContain('minmax(0, 1fr) auto');
+    expect(style).not.toContain('min-height: 64px');
     expect(style).toContain('image-rendering: pixelated');
     expect(style).not.toContain('chronicles-cast-backdrop');
     expect(style).not.toContain('[data-chronicles-chapter="equipment"]');

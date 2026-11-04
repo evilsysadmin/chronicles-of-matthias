@@ -1,10 +1,11 @@
-/* Diegetic miniatures for the MM3 spellbook, matching the Equipment folio.
-   Keep CAST, other folios and Tactics visually and functionally untouched. */
+/* Compact MM3 spell miniatures, close to Equipment's 30px item portraits.
+   Keep a 60px readable row, cost column and tap target without spending the
+   extra 12px on an oversized icon frame. No CAST or Tactics style changes. */
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__catalog .chronicles-sheet-grimoire__list button {
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  min-height: 64px;
-  gap: 9px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  min-height: 60px;
+  gap: 8px;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__glyph,
@@ -14,20 +15,20 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   min-width: 0;
   padding: 3px;
   border: 2px solid;
-  border-color: #eee2bb #526858 #526858 #eee2bb;
+  border-color: #ffe2b7 #82502b #82502b #ffe2b7;
   border-radius: 1px;
-  background: linear-gradient(145deg, #d7dbc0, #8ca79b);
-  box-shadow: inset 0 0 0 1px #678274;
+  background: linear-gradient(145deg, #efc69a, #c48d5e);
+  box-shadow: inset 0 0 0 1px #ab7345;
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list button.is-selected .chronicles-sheet-grimoire__glyph {
-  border-color: #e3c987 #324a42 #324a42 #e3c987;
-  background: linear-gradient(145deg, #ead5a6, #a6b89d);
+  border-color: #fff0c1 #86532e #86532e #fff0c1;
+  background: linear-gradient(145deg, #ffe5ba, #e1aa75);
 }
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
 [data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__spell-icon {
