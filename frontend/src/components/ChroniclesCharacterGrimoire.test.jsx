@@ -69,17 +69,18 @@ describe('Character folio MM3 grimoire', () => {
       <ChroniclesCharacterGrimoire spells={spells}
         availableSp={2} maxSp={6} schoolLabel="Esoterica" />,
     );
-    const rows = [...html.matchAll(/<button[^>]*data-grimoire-spell="[^"]+"[^>]*>[\\s\\S]*?<\\/button>/g)];
+    const rows = html.split('data-grimoire-spell="').slice(1)
+      .map((part) => part.split('</button>')[0]);
     expect(rows).toHaveLength(3);
-    expect(rows[0][0]).toContain('data-can-afford="true"'); // first aid: 1 PH
-    expect(rows[1][0]).toContain('data-can-afford="true"'); // flying fist: 2 PH
-    expect(rows[2][0]).toContain('data-can-afford="false"'); // faith ward: 4 PH
-    expect(rows[2][0]).toContain('Faltan 2 PH');
-    expect(rows[2][0]).toContain('aria-label="Escudo de fe, 4 PH, faltan 2 PH"');
-    expect(rows[2][0]).not.toContain('disabled');
-    expect(rows[2][0]).toContain('tabindex="-1"');
-    expect(rows[0][0]).not.toContain('Faltan');
-    expect(rows[1][0]).not.toContain('Faltan');
+    expect(rows[0]).toContain('data-can-afford="true"'); // first aid: 1 PH
+    expect(rows[1]).toContain('data-can-afford="true"'); // flying fist: 2 PH
+    expect(rows[2]).toContain('data-can-afford="false"'); // faith ward: 4 PH
+    expect(rows[2]).toContain('Faltan 2 PH');
+    expect(rows[2]).toContain('aria-label="Escudo de fe, 4 PH, faltan 2 PH"');
+    expect(rows[2]).not.toContain('disabled');
+    expect(rows[2]).toContain('tabindex="-1"');
+    expect(rows[0]).not.toContain('Faltan');
+    expect(rows[1]).not.toContain('Faltan');
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('PH disponibles para el coste');
     expect(JSON.stringify(spells)).toBe(original);
