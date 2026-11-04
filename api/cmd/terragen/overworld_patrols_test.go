@@ -27,8 +27,9 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 		if ordinary >= 4 {
 			extra = 4
 		}
-		if len(after) != len(previous)+extra {
-			t.Fatalf("%s: expected %d+%d, got %d", code, len(previous), extra, len(after))
+		if len(after) < len(previous)+extra+1 || len(after) > len(previous)+extra+extraOverworldPatrolLimit {
+			t.Fatalf("%s: expected %d original, %d first-wave and 1–%d safe second-wave patrols, got %d",
+				code, len(previous), extra, extraOverworldPatrolLimit, len(after))
 		}
 		// Existing enemy order matters: saves remember kills by array index.
 		for i := range previous {
@@ -59,7 +60,7 @@ func TestTerraOverworldPatrolsPreserveExistingWorld(t *testing.T) {
 			used[point{e.Int("x"), e.Int("y")}] = true
 		}
 		manhattan := func(a, b point) int { return abs(a.x-b.x) + abs(a.y-b.y) }
-		for i, raw := range after[len(previous):] {
+		for i, raw := range after[len(previous):len(previous)+extra] {
 			e := raw.(*O)
 			p := point{e.Int("x"), e.Int("y")}
 			if !accessible[p] || used[p] || manhattan(p, spawn) < patrolStartClearance {
@@ -158,7 +159,7 @@ func TestB2PremiumOrcPatrolPreservesExistingEnemyIdentities(t *testing.T) {
 	baseline := buildArea("B2", story().areas)
 	actual := generated.Arr("enemies")
 	original := baseline.Arr("enemies")
-	if len(actual) != len(original)+3 {
+	if len(actual) != len(original)+3+extraOverworldPatrolLimit {
 		t.Fatalf("B2 ordinary encounter count changed: %d", len(actual))
 	}
 	for i, before := range original {
