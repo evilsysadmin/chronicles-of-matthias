@@ -107,7 +107,11 @@
   con el héroe activo en iniciativa. **Espacio NO ataca**
   ni tiene alias de ataque automático en primera persona; no recuperarlo.
   El botón táctil de ataque automático permanece disponible por separado.
-  `C` abre magia. Mantener código, ayuda, botones y pruebas sincronizados.
+  `C` abre magia. `I` abre información del calendario sin gasto de turno,
+  `O` abre consumibles; en la ficha Equipo, `I` conserva Inspeccionar.
+  Hora y calendario no se muestran permanentemente sobre la escena: se
+  consultan desde el folio Información o el menú táctil.
+  Mantener código, ayuda, botones y pruebas sincronizados.
 - En MM3 **no existe el atributo «Alcance»** de equipo. Melee, incluidas lanza y bastón, ataca adyacente; **durante iniciativa con cámara fija**, cada héroe puede alcanzar a un enemigo vivo y comprometido en cualquiera de las cuatro casillas cardinales adyacentes (no a través de paredes). Fuera del combate se conserva el ataque frontal. Arco, ballesta, honda y conjuros ofensivos/paralizantes actúan sobre enemigos visibles en línea recta sin atravesar paredes. El recorrido está limitado por el propio mapa. El HUD y las tiendas no deben anunciar diferencias de casillas ficticias. Mantener intacta la geometría de combate del modo Tactics y los identificadores/metadatos históricos de los objetos para guardados existentes.
 - Recogidas y botín MM3: dar un aviso breve no modal tras ganar realmente objetos, mostrando el nombre/cantidad del inventario tras la acción, tanto de objetos del suelo como de enemigos derrotados. Nunca anunciar recompensas por intentos fallidos, compras o restauración de saves.
 - Tiempo de exploración MM3: toda acción que **consume turno** (caminar, girar, disparar, conjurar) avanza detección y persecución una sola vez, incluso si el grupo no cambia de casilla. Las acciones rechazadas y transiciones de mapa no hacen avanzar criaturas. El contacto abre iniciativa; no introducir ataques gratis ni atravesar muros. Las criaturas orgánicas como arañas persiguen a razón de **una casilla cardinal caminable por acción**, sin saltos de caballo de ajedrez aunque algún dato antiguo indique `knight-chase`; los enemigos especiales explícitamente ajedrecísticos mantienen sus propias reglas.

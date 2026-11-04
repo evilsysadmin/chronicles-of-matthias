@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
@@ -486,6 +486,25 @@ describe('Chronicles adventure-menu modal pointer guard', () => {
   });
 });
 
+
+describe('Chronicles I = world info, O = consumables, equipment I remains scoped', () => {
+  const key = (value, patch = {}) => ({ key: value, target: { isContentEditable: false, closest: () => null }, ...patch });
+  it('toggles game information without spending a turn or stealing browser shortcuts', () => {
+    expect(chroniclesWorldInfoShortcut(key('i'))).toBe('open');
+    expect(chroniclesWorldInfoShortcut(key('I'))).toBe('open');
+    expect(chroniclesWorldInfoShortcut(key('i'), { open: true })).toBe('close');
+    expect(chroniclesWorldInfoShortcut(key('Escape'), { open: true })).toBe('close');
+    expect(chroniclesWorldInfoShortcut(key('o'))).toBeNull();
+    expect(chroniclesWorldInfoShortcut(key('i', { ctrlKey: true }))).toBeNull();
+    expect(chroniclesWorldInfoShortcut(key('i', { metaKey: true }))).toBeNull();
+    expect(chroniclesWorldInfoShortcut(key('i', { repeat: true }))).toBeNull();
+    expect(chroniclesWorldInfoShortcut(key('i', { target: { closest: () => true } }))).toBeNull();
+  });
+  it('keeps the world info folio above menu/back and leaves equipment inspect untouched', () => {
+    expect(chroniclesFirstPersonEscapeAction({ worldInfoOpen: true })).toBe('close-world-info');
+    expect(chroniclesFirstPersonEscapeAction({ worldInfoOpen: false })).toBe('toggle-menu');
+  });
+});
 
 describe('Chronicles global Escape / browser Back overlay priority', () => {
   it('dismisses Magia/Objetos first and never toggles the adventure menu behind the folio', () => {

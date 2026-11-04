@@ -7,7 +7,7 @@ import { CHRONICLES_COMBAT_SAVE_NOTICE } from '../chronicles/chroniclesSavePolic
 // This is the same pause/menu surface shared with the real expedition.
 // Handlers deliberately stay in ChroniclesOfMatthias: no save logic lives here.
 export default function ChroniclesAdventureMenu({
-  onClose, onContinue, onJournal, onQuickStatus, onCampRest, campRestStatus, onSave,
+  onClose, onContinue, onJournal, onQuickStatus, onWorldInfo, onCampRest, campRestStatus, onSave,
   onSaveExit, onRequestLoad, onSaveBeforeLoad, onLoadWithoutSave, onCancelLoad,
   onAdmin, onRetryAdmin, onRequestExit, onDiscardExit, onCancelExit,
   confirmExitWithoutSaving = false, confirmLoadSelection = false,
@@ -110,6 +110,8 @@ export default function ChroniclesAdventureMenu({
               <button type="button" ref={helpButtonRef} data-chronicles-menu-help
                 aria-expanded={helpOpen} aria-controls="chronicles-game-help"
                 onClick={() => { setSoundOpen(false); setHelpOpen(true); }}>? Ayuda</button>
+              <button type="button" data-chronicles-menu-world-info
+                title="Hora y calendario de Terra (I)" onClick={onWorldInfo}>◷ Información · I</button>
               <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
                 aria-label="Buzón de feedback"
                 onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
