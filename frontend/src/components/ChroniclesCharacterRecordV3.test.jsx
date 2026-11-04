@@ -83,6 +83,9 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(artworkAtlas.toString('ascii', 0, 4)).toBe('RIFF');
     expect(artworkAtlas.toString('ascii', 8, 12)).toBe('WEBP');
     expect(artworkAtlas.length).toBeLessThan(32_000);
+    for (const tone of ['healthy', 'wounded', 'fallen']) {
+      expect(artworkCss).toContain(`[data-condition="${tone}"] > .chronicles-character-sheet__stat-icon`);
+    }
     expect(css).toContain('grid-column: 1;');
     expect(css).toContain('grid-row: 1;');
   });
