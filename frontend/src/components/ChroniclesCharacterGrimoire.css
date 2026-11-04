@@ -117,3 +117,17 @@
 @media (prefers-reduced-motion: reduce) {
   .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire button { scroll-behavior: auto; transition: none; }
 }
+
+/* Direct touch inspection leaves the desktop / keyboard selection workflow
+   untouched and makes the concise guide reflect the actual gesture. */
+.chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__hint-touch {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__hint-keyboard {
+    display: none;
+  }
+  .chronicles-character-sheet--folio-v2 .chronicles-sheet-grimoire__hint-touch {
+    display: inline;
+  }
+}

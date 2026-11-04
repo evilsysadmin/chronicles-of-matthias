@@ -37,6 +37,7 @@ describe('Character folio MM3 grimoire', () => {
     expect(rows[0]).toContain('aria-pressed="true"');
     expect(rows.slice(1).every((row) => row.includes('aria-pressed="false"'))).toBe(true);
     expect(html).toContain('Tab · entrar/salir de la lista');
+    expect(html).toContain('Toca un hechizo para examinarlo');
   });
 
   it('moves inside only the visible spell list, wraps, and never mutates spells', () => {

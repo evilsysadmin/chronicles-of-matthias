@@ -92,6 +92,8 @@ jobs:
           wait_for_http http://localhost:4174/smoke/folio-mobile.html "$dev_pid" "$RUNNER_TEMP/chronicles-dev.log" "Vite smoke fixtures"
           # Fail fast on the actual MM3 desktop dossier before the full fixture battery.
           node smoke/run-timed.mjs smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
+          # A touch on a spell should inspect it immediately, restoring focus to its row.
+          node smoke/run-timed.mjs smoke/grimoire-touch.mjs http://localhost:4174/smoke/character-sheet-desktop.html
           # Targeted healing lives in a dedicated party row, never over the sapphire.
           node smoke/run-timed.mjs smoke/spell-target-banner.mjs http://localhost:4174/smoke/spell-target-banner.html
           # Combat is a reading task: actor names and turn labels need real
