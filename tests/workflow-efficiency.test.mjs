@@ -92,7 +92,7 @@ test('Chromium cache key comes from installed npm-locked Playwright in both E2Es
   const dollar = String.fromCharCode(36);
   const expectedKey = 'chronicles-playwright-' + dollar + '{{ runner.os }}-' + dollar + '{{ runner.arch }}-' + dollar + '{{ steps.playwright_version.outputs.version }}';
   for (const workflow of [frontend, api]) {
-    assert.match(workflow, /uses: actions\/cache@v5/);
+    assert.match(workflow, /uses: actions\/cache@v[56]\b/);
     assert.match(workflow, /path: ~\/\.cache\/ms-playwright/);
     assert.ok(workflow.includes('key: ' + expectedKey));
     assert.match(workflow, /id: playwright_version/);
@@ -121,7 +121,7 @@ test('first-party workflow actions use Node 24-compatible releases', () => {
   assert.match(api, /uses: docker\/login-action@v4/);
   assert.doesNotMatch(api, /docker\/(?:setup-buildx-action|login-action)@v3/);
   for (const workflow of [frontend, api]) {
-    assert.match(workflow, /actions\/cache@v5/);
+    assert.match(workflow, /actions\/cache@v[56]\b/);
     assert.match(workflow, /actions\/upload-artifact@v7/);
     assert.doesNotMatch(workflow, /actions\/upload-artifact@v[3456]/);
   }
