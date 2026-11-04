@@ -1097,3 +1097,19 @@
      also need a valid shorthand so the declared 18px never falls back to 16. */
   font: 400 18px/1.3 var(--mm3-pixel-font, Georgia, serif);
 }
+
+/* The existing 54px crest now opens I/Information on touch, without adding
+   a fifth utility control that wraps the wide MM3 action board. */
+.chronicles .chronicles-game-menu__panel--folio button.chronicles-game-menu__crest {
+  padding: 0;
+  cursor: pointer;
+  color: #f8e3b4;
+  -webkit-text-fill-color: #f8e3b4;
+}
+.chronicles .chronicles-game-menu__panel--folio button.chronicles-game-menu__crest[hidden] {
+  display: none;
+}
+.chronicles .chronicles-game-menu__panel--folio button.chronicles-game-menu__crest:focus-visible {
+  outline: 3px solid #ffec9b;
+  outline-offset: 2px;
+}

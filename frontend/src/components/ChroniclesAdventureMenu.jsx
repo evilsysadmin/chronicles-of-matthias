@@ -55,7 +55,10 @@ export default function ChroniclesAdventureMenu({
       data-confirming-exit={confirmExitWithoutSaving ? 'true' : 'false'}
       data-confirming-load={confirmLoadSelection ? 'true' : 'false'}>
       <div className="chronicles-game-menu__heading">
-        <div className="chronicles-game-menu__crest" aria-hidden="true">♜</div>
+        <button type="button" className="chronicles-game-menu__crest"
+          data-chronicles-menu-world-info aria-label="Información del juego: fecha y hora (I)"
+          title="Información del juego (I)" onClick={onWorldInfo}
+          hidden={confirmExitWithoutSaving || confirmLoadSelection || feedbackOpen || helpOpen}>ⓘ</button>
         <div className="chronicles-game-menu__heading-copy">
           <small>CHRONICLES OF MATTHIAS · FOLIO DE PAUSA</small>
           <strong>MENÚ DE AVENTURA</strong>
@@ -110,8 +113,6 @@ export default function ChroniclesAdventureMenu({
               <button type="button" ref={helpButtonRef} data-chronicles-menu-help
                 aria-expanded={helpOpen} aria-controls="chronicles-game-help"
                 onClick={() => { setSoundOpen(false); setHelpOpen(true); }}>? Ayuda</button>
-              <button type="button" data-chronicles-menu-world-info
-                title="Hora y calendario de Terra (I)" onClick={onWorldInfo}>◷ Información · I</button>
               <button type="button" data-chronicles-menu-feedback ref={feedbackButtonRef}
                 aria-label="Buzón de feedback"
                 onClick={() => onFeedbackOpenChange?.(true)}>✉ Feedback</button>
