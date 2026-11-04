@@ -25,6 +25,11 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 		if ordinary >= 4 {
 			firstWave = 4
 		}
+		// Even narrow/quest-heavy regions must feel inhabited, without
+		// compromising the arrival and quest safety perimeters.
+		if len(all) < 11 {
+			t.Fatalf("%s: wilderness has only %d foes; expected at least 11", code, len(all))
+		}
 		added := all[len(original)+firstWave:]
 		if len(added) < 1 || len(added) > extraOverworldPatrolLimit {
 			t.Fatalf("%s: expected 1–%d additional safe patrols; got %d", code, extraOverworldPatrolLimit, len(added))
@@ -55,7 +60,7 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 				t.Fatalf("%s: new patrol %s overlaps, is unreachable or starts too near player at %v", code, expectedID, p)
 			}
 			for other := range used {
-				if distance(p, other) < 3 {
+				if distance(p, other) < 2 {
 					t.Fatalf("%s: patrol %s crowds another foe at %v", code, expectedID, p)
 				}
 			}
@@ -79,7 +84,7 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 			}
 			// The new wave clones the AI/species of the existing generic
 			// patrols, preserving regional strength without invented scaling.
-			first := all[len(original)+i].(*O)
+			first := all[len(original)+(i%firstWave)].(*O)
 			if e.Str("visualType") != first.Str("visualType") || dump(e.Obj("ai")) != dump(first.Obj("ai")) ||
 				e.Int("maxHp") != first.Int("maxHp") || e.Int("retaliation") != first.Int("retaliation") {
 				t.Fatalf("%s: extra patrol stats/behavior diverged from the area baseline", code)
@@ -95,7 +100,7 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 	}
 	// Some densely authored forests deliberately admit only one extra.
 	// Still cover the *whole* generated overworld, not just Swordhaven.
-	if addedTotal < 60 {
+	if addedTotal < 250 {
 		t.Fatalf("Terra-wide population did not increase enough: %d patrols", addedTotal)
 	}
 }

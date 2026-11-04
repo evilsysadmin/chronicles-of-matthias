@@ -272,6 +272,186 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-c2-foe-7",
+      "visualType": "harpy",
+      "name": "arpía del brezal",
+      "x": 5,
+      "y": 9,
+      "hpKey": "terra_c2Foe7Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del brezal usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-8",
+      "visualType": "ash-goblin",
+      "name": "goblin de las colinas",
+      "x": 4,
+      "y": 3,
+      "hpKey": "terra_c2Foe8Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de las colinas usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-9",
+      "visualType": "road-bandit",
+      "name": "bandolero",
+      "x": 15,
+      "y": 12,
+      "hpKey": "terra_c2Foe9Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con bandolero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-10",
+      "visualType": "harpy",
+      "name": "arpía del brezal",
+      "x": 6,
+      "y": 11,
+      "hpKey": "terra_c2Foe10Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 3,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del brezal usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-11",
+      "visualType": "ash-goblin",
+      "name": "goblin de las colinas",
+      "x": 15,
+      "y": 2,
+      "hpKey": "terra_c2Foe11Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con goblin de las colinas usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-c2-foe-12",
+      "visualType": "road-bandit",
+      "name": "bandolero",
+      "x": 16,
+      "y": 3,
+      "hpKey": "terra_c2Foe12Hp",
+      "maxHp": 13,
+      "retaliation": 2,
+      "toHit": 4,
+      "armorClass": 1,
+      "agility": 1,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con bandolero usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],

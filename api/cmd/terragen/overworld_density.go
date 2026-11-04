@@ -6,8 +6,10 @@ import "fmt"
 // Apply AFTER the original reinforcement: already-persisted enemy IDs,
 // indices, HP keys, positions, quest outcomes and treasure remain untouched.
 // Do not bypass the start/arrival safety perimeter or fill narrow corridors
-// just to hit an arbitrary creature quota.
-const extraOverworldPatrolLimit = 2
+// just to hit an arbitrary creature quota. Two existing saved patrol slots
+// retain their legacy 3-cell clearance; only the additional population
+// uses a 2-cell spacing (never adjacent to or overlapping another foe).
+const extraOverworldPatrolLimit = 8
 
 func addOverworldDensityPatrols(m *O, areaCode string) {
 	areaID := mapID(areaCode)
@@ -61,7 +63,12 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 	dist := func(a, b point) int { return abs(a.x-b.x) + abs(a.y-b.y) }
 	salt := saltOf(areaCode)
 
+	added := 0
 	for n := 0; n < extraOverworldPatrolLimit; n++ {
+		minSpacing := 3
+		if n >= 2 {
+			minSpacing = 2
+		}
 		best, bestScore := point{}, -1
 		for y := 2; y < len(grid)-2; y++ {
 			for x := 2; x < len(grid[y])-2; x++ {
@@ -99,7 +106,7 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 						nearest = d
 					}
 				}
-				if nearest < 3 {
+				if nearest < minSpacing {
 					continue
 				}
 				score := nearest*10 + (x*17+y*31+salt+n*7)%11
@@ -108,14 +115,18 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 				}
 			}
 		}
-		// Forests with many authored foes, exits and interactions can have
-		// room for just one. Keep the safe spawn budget, never force a second.
+		// Do not shift the legacy first one/two patrol slots in saved games.
+		// If the second 3-cell slot was impossible, retry at 2-cell spacing
+		// only for NEW identities, preserving the original first slot.
 		if bestScore < 0 {
+			if n < 2 {
+				continue
+			}
 			break
 		}
-		source := current[firstWaveStart+n%firstWaveCount].(*O)
+		source := current[firstWaveStart+added%firstWaveCount].(*O)
 		foe := parse(dump(source)).(*O)
-		index := ordinary + firstWaveCount + n
+		index := ordinary + firstWaveCount + added
 		foe.Set("id", fmt.Sprintf("%s-foe-%d", areaID, index))
 		foe.Set("hpKey", fmt.Sprintf("%sFoe%dHp", camelFlag(areaID), index))
 		foe.Set("x", best.x)
@@ -131,6 +142,7 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 		current = append(current, foe)
 		positions = append(positions, best)
 		occupied[best] = true
+		added++
 	}
 	m.Set("enemies", current)
 }
