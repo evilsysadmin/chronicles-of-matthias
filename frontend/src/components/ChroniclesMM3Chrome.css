@@ -1020,7 +1020,9 @@
       'portrait bars';
     align-items: start;
     gap: 3px 8px;
-    padding: 6px;
+    /* Make the faces nearly flush with their stone card rather than
+       leaving 6px of unused space above and below each portrait. */
+    padding: 1px 6px;
   }
   .chronicles .chronicles-party-member > .chronicles-party-glyph {
     width: 100%;
