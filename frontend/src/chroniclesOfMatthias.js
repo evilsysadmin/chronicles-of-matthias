@@ -36,6 +36,7 @@ import {
 } from './chronicles/chroniclesGuild.js';
 import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
 import { chroniclesCampRest } from './chronicles/chroniclesCampRest.js';
+import { CHRONICLES_WORLD_START_MINUTES, chroniclesAdvanceWorldTimeOnTurn } from './chronicles/chroniclesWorldTime.js';
 import { chroniclesApplyTempleService, chroniclesTempleBlessingArmor } from './chronicles/chroniclesTempleServices.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
@@ -142,7 +143,7 @@ export function createChroniclesState(mapId = null, characterBuild = null, { rul
     ...map.initialFlags,
     phase: 'explore',
     party: partyState(requestedBuild, rules),
-    ...(rules === 'mm3' ? { combatRules: 'mm3' } : {}),
+    ...(rules === 'mm3' ? { combatRules: 'mm3', worldMinutes: CHRONICLES_WORLD_START_MINUTES } : {}),
     turns: 0,
     journal: [map.initialJournal],
     message: map.introMessage,
@@ -1234,7 +1235,7 @@ function chroniclesRecordMM3TurnAction(previous, next) {
   };
 }
 
-export function chroniclesReduce(state, action) {
+function chroniclesReduceAction(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
   // Enforce in the reducer: neither direct actions nor held keyboard/touch
@@ -1288,7 +1289,7 @@ export function chroniclesReduce(state, action) {
   if (actionType === 'share-party-loot') return chroniclesSharePartyLoot(state);
   // Any other action (moving, turning, fighting) walks away from the counter.
   if ((state.shop || state.guild || state.inn) && actionType !== 'equip-item' && actionType !== 'unequip-item') {
-    return chroniclesReduce(chroniclesCloseInn(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
+    return chroniclesReduceAction(chroniclesCloseInn(chroniclesCloseGuild(chroniclesCloseShop(state))), action);
   }
   if (actionType === 'equip-item') return chroniclesEquipItem(state, action.memberId, action.itemId);
   if (actionType === 'unequip-item') return chroniclesUnequipItem(state, action.memberId, action.slot);
@@ -1348,6 +1349,12 @@ export function chroniclesReduce(state, action) {
     return chroniclesDeployPartyForCombat({ ...moved, partyPositions: {} });
   }
   return moved;
+}
+
+// Apply the adventure clock at the reducer boundary, once per accepted
+// turn-consuming action. Tactics retains its independent timing contract.
+export function chroniclesReduce(state, action) {
+  return chroniclesAdvanceWorldTimeOnTurn(state, chroniclesReduceAction(state, action), action);
 }
 
 export function chroniclesObjective(state) {

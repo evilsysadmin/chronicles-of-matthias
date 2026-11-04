@@ -301,6 +301,10 @@ function runtimeCheckpointFlags(state) {
   if (y !== null) flags[runtimeKey('y')] = y;
   if (direction !== null) flags[runtimeKey('direction')] = direction;
   if (turns !== null) flags[runtimeKey('turns')] = turns;
+  // Game time is not derivable from turns: inn/camp rests consume hours.
+  if (source.combatRules === 'mm3' && Number.isSafeInteger(source.worldMinutes) && source.worldMinutes >= 0) {
+    flags[runtimeKey('worldMinutes')] = source.worldMinutes;
+  }
   if (round !== null) flags[runtimeKey('round')] = round;
   if (explorationEnemySteps !== null) flags[runtimeKey('explorationEnemySteps')] = explorationEnemySteps;
   if (phase !== null) flags[runtimeKey('phase')] = phase;
@@ -502,6 +506,11 @@ function applyRuntimeCheckpoint(state, flags) {
   }
   if (direction !== null) next.direction = direction;
   if (turns !== null) next.turns = turns;
+  const savedWorldMinutes = flags[runtimeKey('worldMinutes')];
+  // Missing or corrupted flags retain the 08:00 baseline of a legacy save.
+  if (next.combatRules === 'mm3' && Number.isSafeInteger(savedWorldMinutes) && savedWorldMinutes >= 0) {
+    next.worldMinutes = savedWorldMinutes;
+  }
   if (round !== null) next.round = round;
   if (explorationEnemySteps !== null) next.explorationEnemySteps = explorationEnemySteps;
   if (phase !== null) next.phase = phase;
