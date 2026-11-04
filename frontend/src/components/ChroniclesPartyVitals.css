@@ -1,0 +1,92 @@
+/* Recessed stone-and-metal gauges inspired by MM3. No external artwork,
+   fixed animation or extra HUD height on compact portrait tiles. */
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  box-sizing: border-box;
+  min-width: 0;
+  border: 2px solid #7c808a;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #27282d 0%, #08090d 28%, #050608 73%, #35343b 100%);
+  box-shadow: 0 0 0 1px #0b0c10, 0 2px 2px rgba(0, 0, 0, .62),
+    inset 0 2px 3px rgba(0, 0, 0, .9),
+    inset 0 -1px 1px rgba(234, 232, 230, .28);
+}
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars .is-hp {
+  --vital-shine: #e1ffb0;
+  --vital-light: #86f653;
+  --vital-main: #37c922;
+  --vital-dark: #0e6618;
+}
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars[data-band='hurt'] .is-hp {
+  --vital-shine: #fff4b5;
+  --vital-light: #ffe66c;
+  --vital-main: #d9b52f;
+  --vital-dark: #755315;
+}
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars[data-band='critical'] .is-hp {
+  --vital-shine: #ffd6ae;
+  --vital-light: #ff8362;
+  --vital-main: #dd3a2c;
+  --vital-dark: #701b1c;
+}
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars .is-sp {
+  --vital-shine: #e1faff;
+  --vital-light: #8bdcff;
+  --vital-main: #258df0;
+  --vital-dark: #103b99;
+}
+.chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars .chronicles-vital-fill {
+  position: absolute;
+  z-index: 1;
+  inset: 2px auto 2px 2px;
+  width: calc((100% - 4px) * var(--fill));
+  max-width: calc(100% - 4px);
+  box-sizing: border-box;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--vital-shine) 0%, var(--vital-light) 21%,
+    var(--vital-main) 56%, var(--vital-dark) 100%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .84),
+    inset 0 -1px 2px rgba(0, 0, 0, .46), 0 0 5px var(--vital-main);
+  pointer-events: none;
+}
+/* Tiny metallic diamonds on the large portrait strip. */
+@media (min-width: 801px) and (min-height: 601px), (min-width: 1025px) {
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars {
+    grid-template-rows: repeat(2, 22px);
+    gap: 6px;
+    padding-inline: 4px;
+  }
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i {
+    height: 22px;
+  }
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i::before,
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border: 1px solid #393943;
+    transform: translateX(-50%) rotate(45deg);
+    background: radial-gradient(circle at 30% 30%, #fff9c9, #a9abb0 43%, #565762 73%, #26242b);
+    box-shadow: 0 0 0 1px rgba(226, 212, 160, .65);
+    pointer-events: none;
+  }
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i::before { top: -6px; }
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i::after { bottom: -6px; }
+}
+/* Narrow/mobile: keep the existing 10/14px status rows without overflow. */
+@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars i {
+    border-width: 1px;
+    border-radius: 5px;
+  }
+  .chronicles .chronicles-party .chronicles-party-member .chronicles-party-bars .chronicles-vital-fill {
+    inset: 1px auto 1px 1px;
+    width: calc((100% - 2px) * var(--fill));
+    max-width: calc(100% - 2px);
+  }
+}
