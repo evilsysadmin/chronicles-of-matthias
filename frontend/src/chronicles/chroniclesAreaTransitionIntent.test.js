@@ -115,13 +115,13 @@ describe('MM3 area travel confirmations', () => {
     expect(entered.turns).toBe(onGrate.turns);
   });
 
-  it('explains the locked sewer grate without crossing or charging an extra turn', () => {
+  it('refuses a locked sewer grate and explains the candado without entering', () => {
     const base = createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' });
     const approach = { ...base, x: 13, y: 12, direction: 2 };
     expect(chroniclesAreaTransitionIntent(approach, 'forward')).toBeNull();
 
     const onGrate = chroniclesReduce(approach, 'forward');
-    expect(onGrate).toMatchObject({ x: 13, y: 13, mapId: 'swordhaven-first-book' });
+    expect(onGrate).toMatchObject({ x: 13, y: 12, mapId: 'swordhaven-first-book' });
     expect(onGrate.message).toMatch(/candado.*alcalde/i);
     expect(onGrate.turns).toBe(approach.turns + 1);
     expect(chroniclesAreaTransitionIntent(onGrate, 'interact')).toBeNull();
