@@ -8,6 +8,7 @@ import { chroniclesPartyPortraitUrl } from '../src/chronicles/chroniclesPartyPor
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
+import '../src/components/ChroniclesPartyThumbnails.css';
 import '../src/components/ChroniclesMM3Chrome.css';
 import '../src/components/ChroniclesSpellMenuFolio.css';
 import '../src/components/ChroniclesAdventureMenuFolio.css';
@@ -63,6 +64,16 @@ function Fixture() {
                 <span><strong>{member.name}</strong></span>
                 <b>{member.hp}/{member.maxHp}</b>
               </button>
+            ))}
+            {/* Match the two vacant hireling places from the real MM3 strip. */}
+            {[1, 2].map((slot) => (
+              <div key={`hireling-${slot}`} className="chronicles-party-hireling"
+                data-chronicles-hireling-slot={slot} aria-label={`Hueco ${slot} para contratado, libre`}>
+                <span className="chronicles-party-hireling__face" aria-hidden="true" />
+                <span className="chronicles-party-hireling__label">
+                  <strong>Plaza libre</strong><small>Sin contratar</small>
+                </span>
+              </div>
             ))}
           </aside>
           <main className="chronicles-stage-wrap">
