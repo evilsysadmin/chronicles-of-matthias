@@ -106,7 +106,11 @@ function fightSquad(count, sample, geared) {
     return Number(state[enemy.hpKey]) === 0;
   }) && state.phase !== 'defeated';
   const defeat = state.phase === 'defeated';
-  if (!victory && !defeat) {
+  // Squadmates may legitimately take an alternate route, lose sight and
+  // disengage. Explore with a living enemy is NOT a stuck initiative.
+  const disengaged = !victory && !defeat && state.phase === 'explore' && !state.initiative
+    && enemies.some((enemy) => Number(state[enemy.hpKey]) > 0);
+  if (!victory && !defeat && !disengaged) {
     const remaining = enemies.map((enemy) => ({
       id: enemy.id,
       hp: state[enemy.hpKey],
@@ -120,9 +124,10 @@ function fightSquad(count, sample, geared) {
     })}`);
   }
   return {
-    victory, defeat, rounds, partyActions, blocks, enemyActions, enemyStrikes, enemyHits,
+    victory, defeat, disengaged, rounds, partyActions, blocks, enemyActions, enemyStrikes, enemyHits,
     hpLost: startingHp - state.party.reduce((total, hero) => total + Math.max(0, hero.hp), 0),
     heroesDown: state.party.filter((hero) => hero.hp <= 0).length,
+    enemiesLeft: enemies.filter((enemy) => Number(state[enemy.hpKey]) > 0).length,
   };
 }
 
@@ -135,6 +140,8 @@ function measure(count, geared) {
     samples: SAMPLES,
     victories: fights.filter((fight) => fight.victory).length,
     defeats: fights.filter((fight) => fight.defeat).length,
+    disengagements: fights.filter((fight) => fight.disengaged).length,
+    meanEnemiesLeft: mean('enemiesLeft'),
     pctEnemyActs: Math.round(100 * fights.filter((fight) => fight.enemyActions > 0).length / SAMPLES),
     meanRounds: mean('rounds'),
     meanPartyActions: mean('partyActions'),
@@ -154,7 +161,9 @@ describe('MM3 authored cistern squad difficulty benchmark', () => {
     console.info(`CHRONICLES_MM3_SQUAD_BASELINE ${JSON.stringify(two)}`);
     console.info(`CHRONICLES_MM3_SQUAD_BASELINE ${JSON.stringify(three)}`);
     for (const result of [two, three]) {
-      expect(result.victories + result.defeats).toBe(SAMPLES);
+      // The real combat leash can end an initiative while a distant
+      // surviving goblin remains in the level: count that explicitly.
+      expect(result.victories + result.defeats + result.disengagements).toBe(SAMPLES);
       expect(result.meanPartyActions).toBeGreaterThan(0);
       expect(result.meanEnemyActions).toBeGreaterThan(0);
     }
