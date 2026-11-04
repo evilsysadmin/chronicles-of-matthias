@@ -394,6 +394,9 @@ try {
         `Leave room for the top-right menu gem at ${width}x${height}: ${JSON.stringify(geometry)}`);
       assert.ok(geometry.partyLeft >= -1 && geometry.partyRight <= width + 1, 'Heroes fit screen');
       assert.ok(geometry.noHorizontalOverflow, 'HUD must not scroll sideways');
+      const hirelingsHidden = await page.locator('.chronicles-party-hireling')
+        .evaluateAll((slots) => slots.length === 2 && slots.every((slot) => getComputedStyle(slot).display === 'none'));
+      assert.ok(hirelingsHidden, 'Compact touch HUD keeps both vacant places out of the four-hero row');
       await page.screenshot({ path: `smoke-compact-hud-${width}.png` });
       console.log(`COMPACT_PARTY_HUD_OK ${width}x${height}`);
     } catch (error) {
@@ -404,35 +407,57 @@ try {
     }
   }
 
-  // Desktop MM3: exploration retains its large original hero portraits.
-  // Only the character-sheet/equipment dock is allowed to compact them.
-  {
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  // Desktop MM3: test all six actual slots (4 heroes + 2 empty hireling
+  // places), not just one hero in the old synthetic fixture. Check that
+  // neither the narrower laptop nor the tall desktop enlarges/crops faces.
+  for (const [width, height] of [[1280, 720], [1366, 768], [1920, 1080]]) {
+    const ctx = await browser.newContext({
+      viewport: { width, height }, deviceScaleFactor: 1,
+    });
     const page = await ctx.newPage();
     try {
       await page.goto(base + '?view=compact-hud', { waitUntil: 'load' });
-      await page.locator('.chronicles-party-member').first().waitFor({ state: 'visible', timeout: 20_000 });
-      const portraitHeight = await page.locator('.chronicles-party-member .chronicles-party-glyph').first()
-        .evaluate((node) => node.getBoundingClientRect().height);
-      assert.ok(portraitHeight >= 84 && portraitHeight <= 170,
-        `Exploration hero portraits must keep original scale: ${portraitHeight}`);
-      const inset = await page.locator('.chronicles-party-member').first().evaluate((card) => {
-        const cardRect = card.getBoundingClientRect();
-        const imageRect = card.querySelector('.chronicles-party-thumbnail').getBoundingClientRect();
-        return {
-          top: imageRect.top - cardRect.top,
-          bottom: cardRect.bottom - imageRect.bottom,
-          paddingTop: getComputedStyle(card).paddingTop,
-        };
+      await page.locator('.chronicles-party-member').first()
+        .waitFor({ state: 'visible', timeout: 20_000 });
+      await page.waitForFunction(() => document.fonts.status === 'loaded');
+      const geometry = await page.locator('.chronicles-party').evaluate((strip) => {
+        const cards = [...strip.querySelectorAll('.chronicles-party-member, .chronicles-party-hireling')];
+        const rect = (node) => node.getBoundingClientRect();
+        return cards.map((card) => {
+          const face = card.querySelector('.chronicles-party-thumbnail, .chronicles-party-hireling__face');
+          const outer = rect(card);
+          const portrait = rect(face);
+          return {
+            type: card.classList.contains('chronicles-party-hireling') ? 'hireling' : 'hero',
+            height: portrait.height,
+            top: portrait.top - outer.top,
+            bottom: outer.bottom - portrait.bottom,
+            cardTop: outer.top,
+            cardBottom: outer.bottom,
+            paddingTop: getComputedStyle(card).paddingTop,
+            shown: getComputedStyle(card).display !== 'none',
+            noOverflow: portrait.left >= outer.left - 1 && portrait.right <= outer.right + 1,
+          };
+        });
       });
-      assert.equal(inset.paddingTop, '0px', 'MM3 desktop portraits must have no extra top padding');
-      assert.ok(inset.top <= 3.5 && inset.bottom <= 3.5,
-        'Portrait must reach the card bevel without unnecessary vertical gaps: ' + JSON.stringify(inset));
-      await page.screenshot({ path: 'smoke-compact-hud-desktop.png' });
-      console.log('EXPLORATION_PARTY_PORTRAITS_OK');
+      assert.equal(geometry.length, 6, `Expected four hero portraits and two empty slots at ${width}x${height}`);
+      assert.equal(geometry.filter((card) => card.type === 'hero').length, 4);
+      assert.equal(geometry.filter((card) => card.type === 'hireling').length, 2);
+      assert.ok(geometry.every((card) => card.shown && card.height >= 84 && card.height <= 170),
+        `Keep the canonical portrait scale for every desktop slot at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(geometry.every((card) => card.paddingTop === '0px'
+        && card.top <= 3.5 && card.top >= -1
+        && card.bottom <= 3.5 && card.bottom >= -1
+        && card.noOverflow),
+      `Every hero/hireling face must meet its card bevel at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      assert.ok(Math.max(...geometry.map((card) => card.cardTop))
+        - Math.min(...geometry.map((card) => card.cardTop)) <= 2,
+      `The six party cards must line up at ${width}x${height}: ${JSON.stringify(geometry)}`);
+      await page.screenshot({ path: `smoke-compact-hud-desktop-${width}.png` });
+      console.log(`EXPLORATION_PARTY_PORTRAITS_OK ${width}x${height}`);
     } catch (error) {
       failures++;
-      console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL: ${error.message}`);
+      console.error(`COMPACT_PARTY_HUD_DESKTOP_FAIL ${width}x${height}: ${error.message}`);
     } finally {
       await ctx.close();
     }
