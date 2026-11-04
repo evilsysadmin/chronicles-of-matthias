@@ -8,8 +8,8 @@ import { chroniclesPartyPortraitUrl } from '../src/chronicles/chroniclesPartyPor
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
 import ChroniclesAdventureMenu from '../src/components/ChroniclesAdventureMenu.jsx';
 import '../src/components/ChroniclesOfMatthias.css';
-import '../src/components/ChroniclesMM3Chrome.css';
 import '../src/components/ChroniclesPartyThumbnails.css';
+import '../src/components/ChroniclesMM3Chrome.css';
 import '../src/components/ChroniclesSpellMenuFolio.css';
 import '../src/components/ChroniclesAdventureMenuFolio.css';
 
