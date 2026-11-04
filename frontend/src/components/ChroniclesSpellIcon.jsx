@@ -1,3 +1,5 @@
+import './ChroniclesSpellIcon.css';
+
 // Original tiny pixel portraits for each currently implemented MM3 spell.
 // Pure presentation: do not infer spells, effects, costs or availability here.
 // Colours are authored locally, without Unicode emoji, external images or CDNs.
