@@ -43,3 +43,30 @@
   height: 48px;
   margin-right: 3px;
 }
+
+/* Cost-only PH affordance. Keep every row selectable for inspection: available
+   points do not prove that CAST has a legal target or valid combat context. */
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list .chronicles-sheet-grimoire__cost {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.15;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list button[data-can-afford="false"] .chronicles-sheet-grimoire__cost {
+  color: #78351d;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__list button[data-can-afford="false"].is-selected .chronicles-sheet-grimoire__cost {
+  color: #ffe0c4;
+}
+.chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+[data-chronicles-chapter="spells"] .chronicles-sheet-grimoire__ph-shortage {
+  color: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: nowrap;
+}
