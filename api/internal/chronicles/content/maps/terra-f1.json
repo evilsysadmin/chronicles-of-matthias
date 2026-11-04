@@ -330,6 +330,186 @@
           }
         ]
       }
+    },
+    {
+      "id": "terra-f1-foe-10",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 18,
+      "y": 6,
+      "hpKey": "terra_f1Foe10Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f1-foe-11",
+      "visualType": "harpy",
+      "name": "arpía del acantilado",
+      "x": 16,
+      "y": 5,
+      "hpKey": "terra_f1Foe11Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 7,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f1-foe-12",
+      "visualType": "drowned",
+      "name": "náufrago ahogado",
+      "x": 18,
+      "y": 2,
+      "hpKey": "terra_f1Foe12Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-chase",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 3
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con náufrago ahogado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f1-foe-13",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 17,
+      "y": 8,
+      "hpKey": "terra_f1Foe13Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f1-foe-14",
+      "visualType": "road-bandit",
+      "name": "pirata",
+      "x": 3,
+      "y": 3,
+      "hpKey": "terra_f1Foe14Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 5,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "hold",
+        "attackReach": 1,
+        "engagedMovement": "cardinal-chase",
+        "engageRange": 2
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con pirata usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "terra-f1-foe-15",
+      "visualType": "harpy",
+      "name": "arpía del acantilado",
+      "x": 13,
+      "y": 3,
+      "hpKey": "terra_f1Foe15Hp",
+      "maxHp": 29,
+      "retaliation": 5,
+      "toHit": 8,
+      "armorClass": 5,
+      "agility": 7,
+      "optional": true,
+      "activation": "always",
+      "ai": {
+        "movement": "cardinal-roam",
+        "attackReach": 1,
+        "engagedMovement": "knight-chase",
+        "engageRange": 4
+      },
+      "onDefeat": {
+        "message": "{attacker} acaba con arpía del acantilado usando {attack}.",
+        "effects": [
+          {
+            "type": "grant-gold",
+            "amount": 1
+          }
+        ]
+      }
     }
   ],
   "triggers": [],
