@@ -38,6 +38,12 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     }
     expect(html).toContain('Sano');
     expect(html).toContain('Estado general según los puntos de vida actuales');
+    expect(html).not.toContain('Bonificador entre paréntesis');
+    const ledger = html.split('class="chronicles-character-sheet__mm3-stats"')[1]?.split('data-stat="condition"')[0];
+    const condition = html.split('data-stat="condition"')[1]?.split('</div>')[0];
+    expect(ledger).toBeTruthy();
+    expect(ledger).not.toContain('<small');
+    expect(condition).not.toContain('<small');
     expect(html).not.toContain('data-chronicles-worn-gear="matthias"');
     // The top PV and gold badges repeated the real HP strip and Group (G).
     expect(html).not.toContain('data-resource="health"');
@@ -70,7 +76,7 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(render('tactics')).not.toContain('data-stat-icon=');
     expect(css).toContain('.chronicles-character-sheet__stat-icon svg');
     expect(css).toContain('grid-column: 1;');
-    expect(css).toContain('grid-row: 1 / 3;');
+    expect(css).toContain('grid-row: 1;');
   });
   it('colors Sano, Herido and Caído using real PV without adding fake conditions', () => {
     for (const [hp, maxHp, expectedTone, expectedLabel] of [
@@ -122,9 +128,11 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
     expect(css).toContain('grid-template-columns: repeat(3, minmax(0,1fr));');
     expect(css).toContain('grid-template-columns: repeat(4, minmax(0, 1fr));');
+    expect(css).toContain('grid-template-rows: auto;');
+    expect(css).toContain('min-height: 60px;');
     expect(css).toContain('overflow-wrap: break-word;');
   });
-  it('reserves full-sized type for attributes, modifiers and explanations', () => {
+  it('reserves readable type for attributes and modifiers in compact rows', () => {
     // The 1909px screenshot showed tiny glyphs in very large desktop cells.
     // Keep large type for the primary attribute/value and readable context.
     expect(css).toContain('font-size: clamp(22px, 1.42vw, 27px);');
@@ -132,9 +140,9 @@ describe('MM3 character Status layout is a real structural redesign', () => {
     expect(css).toContain('font-size: 17px;');
     expect(css).toContain('font-size: 18px;');
     expect(css).toContain('font-size: 27px;');
-    expect(css).toContain('min-height: clamp(120px, 15dvh, 155px);');
+    expect(css).toContain('min-height: 68px;');
     expect(css).toContain('font-size: clamp(28px, 2.1vw, 36px);');
-    expect(css).toContain('@media (min-width: 2100px) and (min-height: 581px)');
+    expect(css).toContain('@media (min-width: 1900px) and (min-height: 581px)');
     expect(css).toContain('@media (max-width: 850px)');
     expect(css).toContain('@media (max-width: 520px)');
     expect(css).toContain('font-size: 17px;');
