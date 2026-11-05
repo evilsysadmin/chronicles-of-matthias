@@ -14,8 +14,9 @@ function QuestCard({ offer, onAccept = null, posted = false }) {
     <li className="chronicles-notice-board__card"
       data-chronicles-board-quest={offer.questId || offer.id}
       data-chronicles-board-status={offer.status}>
+      <span className="chronicles-notice-board__pin" aria-hidden="true" />
       <div className="chronicles-notice-board__card-meta">
-        <span>{posted ? 'Edicto de Swordhaven' : 'Registro de la compañía'}</span>
+        <span className="chronicles-notice-board__kind">{posted ? 'Edicto de Swordhaven' : 'Registro de la compañía'}</span>
         <span className={'chronicles-notice-board__status is-' + offer.status}>
           {STATUS[offer.status] || offer.status}
         </span>
@@ -95,6 +96,7 @@ export default function ChroniclesNoticeBoard({ state, onAccept, onClose }) {
             <h2>Tablón de encargos</h2>
             <p>Noticias, trabajos y asuntos pendientes de la compañía.</p>
           </div>
+          <span className="chronicles-notice-board__crest" aria-hidden="true">⚜</span>
           <button type="button" ref={closeRef} className="chronicles-notice-board__close"
             onClick={onClose} aria-label="Cerrar tablón">✕</button>
         </header>
