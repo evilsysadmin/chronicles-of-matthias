@@ -106,6 +106,8 @@ jobs:
           node smoke/run-timed.mjs smoke/notice-board.mjs http://localhost:4174/smoke/notice-board.html
           # Rain/snow compositor: actual viewport overlay at 360/390/430/landscape/desktop.
           node smoke/run-timed.mjs smoke/precipitation.mjs http://localhost:4174/smoke/precipitation.html
+          # Windborne leaves/ash: composited, zero UI capture, mobile and landscape.
+          node smoke/run-timed.mjs smoke/wind-debris.mjs http://localhost:4174/smoke/wind-debris.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
