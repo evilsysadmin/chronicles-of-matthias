@@ -65,7 +65,7 @@ describe('Terra decorative wind-borne leaves and ash', () => {
       ...clear, precipitation: 'rain', precipitationStrength: 0.3,
     })).toBeNull();
     expect(chroniclesWindDebrisKind('forest', 'wilderness', null)).toBeNull();
-    // A new dry six-hour cell may retain dense fog for 40 Terra minutes.
+    // A new dry 90-minute cell may retain dense fog for 40 Terra minutes.
     expect(chroniclesWindDebrisKind('forest', 'wilderness', { ...clear, fog: 0.87 })).toBeNull();
     expect(chroniclesWindDebrisKind('ash', 'wilderness', { ...clear, fog: 0.35 })).toBeNull();
     expect(chroniclesWindDebrisKind('forest', 'wilderness', { ...clear, fog: 0.34 })).toBe('leaf');
