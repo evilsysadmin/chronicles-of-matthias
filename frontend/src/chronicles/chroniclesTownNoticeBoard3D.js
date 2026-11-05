@@ -99,7 +99,18 @@ function tornWritGeometry(width, height, offset = 0) {
     else shape.lineTo(px, y);
   });
   shape.closePath();
-  return new THREE.ShapeGeometry(shape);
+  const geometry = new THREE.ShapeGeometry(shape);
+  // ShapeGeometry defaults to world-space UVs. Normalize to the whole writ
+  // so paper grain is actually sampled across its surface, not at the edge.
+  const coords = geometry.getAttribute('position');
+  const uvs = geometry.getAttribute('uv');
+  for (let i = 0; i < uvs.count; i += 1) {
+    uvs.setXY(i,
+      THREE.MathUtils.clamp(coords.getX(i) / width + 0.5, 0, 1),
+      THREE.MathUtils.clamp(coords.getY(i) / height + 0.5, 0, 1));
+  }
+  uvs.needsUpdate = true;
+  return geometry;
 }
 
 // Built entirely from lightweight, authored geometry. The interaction stays
