@@ -127,7 +127,12 @@
   ocultar el efecto en pestañas invisibles y liberarlo al salir del mapa.
   Los cambios de nubosidad/niebla, lluvia y nieve se suavizan los primeros
   40 minutos de cada bloque meteorológico (sin modificar el estado oficial
-  de seis horas mostrado en I). Al entrar, salir o restaurar una partida,
+  de seis horas mostrado en I). El viento regional deriva del mismo
+  mapId/bioma/estación/período y sus componentes este/sur se mezclan
+  gradualmente. La lluvia y nieve se desvían en pantalla según ese vector
+  y el rumbo real de cámara: girar 180° invierte la deriva sin recrear
+  partículas, sumar tiempo ni despertar WebGL.
+  Al entrar, salir o restaurar una partida,
   todos los efectos deben derivarse del worldMinutes persistido, sin timers
   propios de precipitación, sin duplicar partículas ni aumentar el presupuesto móvil.
   Además, en **exploración MM3 exterior visible y sin overlays**, Terra

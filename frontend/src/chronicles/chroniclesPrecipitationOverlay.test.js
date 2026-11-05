@@ -4,7 +4,7 @@ import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '
 import {
   chroniclesPrecipitationBudget,
   chroniclesPrecipitationKind,
-  chroniclesPrecipitationParticle,
+  chroniclesPrecipitationParticle, chroniclesPrecipitationWindDrift,
   createChroniclesPrecipitationOverlay,
 } from './chroniclesPrecipitationOverlay.js';
 
@@ -69,6 +69,38 @@ describe('Terra cheap CSS precipitation', () => {
       expect(snow.duration).toBeGreaterThan(5);
       expect(snow.size).toBeGreaterThan(rain.size);
     } finally { random.mockRestore(); }
+  });
+
+  it('turning the camera reverses wind without recreating rain or exceeding budgets', () => {
+    const wind = { east: 0.6, south: -0.4 };
+    expect(chroniclesPrecipitationWindDrift(wind, 0, 'rain')).toBe(56);
+    expect(chroniclesPrecipitationWindDrift(wind, 2, 'rain')).toBe(-56);
+    expect(chroniclesPrecipitationWindDrift(wind, 1, 'snow')).toBe(-56);
+    expect(chroniclesPrecipitationWindDrift(wind, 3, 'snow')).toBe(56);
+    expect(chroniclesPrecipitationWindDrift(wind, 0, 'clear')).toBe(0);
+    expect(chroniclesPrecipitationWindDrift(null, 0, 'rain')).toBe(0);
+    const fake = fakeDocument();
+    vi.stubGlobal('document', fake);
+    const host = fake.element('host');
+    host.clientHeight = 400;
+    const fx = createChroniclesPrecipitationOverlay(host, region, { coarse: true });
+    const minute = findTime(region, 'rain');
+    const regionalWind = chroniclesRegionalWeatherTransition({
+      ...region, worldMinutes: minute,
+    }).wind;
+    const facing = Math.abs(regionalWind.east) > Math.abs(regionalWind.south) ? 0 : 1;
+    expect(fx.sync(minute, facing)).toBe(true);
+    const layer = host.children[0];
+    const firstDrift = Number.parseInt(layer.style.values['--wind-drift'], 10);
+    const originalDroplets = [...layer.children];
+    expect(firstDrift).not.toBe(0);
+    expect(fx.sync(minute, (facing + 2) % 4)).toBe(true);
+    const reversed = Number.parseInt(layer.style.values['--wind-drift'], 10);
+    expect(reversed).toBe(-firstDrift);
+    expect(layer.children).toEqual(originalDroplets);
+    expect(layer.children).toHaveLength(16);
+    expect(fx.sync(minute, (facing + 2) % 4)).toBe(false);
+    fx.dispose();
   });
 
   it('creates particles only for precipitation, restores clear, suspends and disposes', () => {
