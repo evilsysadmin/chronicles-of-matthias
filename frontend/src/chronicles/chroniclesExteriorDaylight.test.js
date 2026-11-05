@@ -251,7 +251,12 @@ describe('Terra solar cycle', () => {
     const end = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: boundary + 40 });
     expect(start.fog).not.toBe(end.fog);
     expect(states[2].fog).toBeCloseTo((states[0].fog + states[4].fog) / 2);
-    expect(states[2].sun).toBeCloseTo((states[0].sun + states[4].sun) / 2);
+    // At dawn the sun itself climbs non-linearly: compare the exact saved
+    // solar time + blended cloudiness, not an invalid linear sun midpoint.
+    const middayWeather = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: boundary + 20 });
+    const solar = chroniclesExteriorDaylightProfile(boundary + 20);
+    const expectedSun = 1.88 * (0.20 + 0.80 * solar.daylight) * (1 - middayWeather.clouds * 0.48);
+    expect(states[2].sun).toBeCloseTo(expectedSun);
     expect(states[1].fog).not.toBe(states[0].fog);
     expect(states[3].fog).not.toBe(states[4].fog);
     expect(scene.children.length).toBe(count);
