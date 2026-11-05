@@ -51,8 +51,8 @@ try {
         }
         return readings;
       });
-      assert.equal(windViews[0].drift, -windViews[1].drift);
-      assert.equal(windViews[2].drift, -windViews[3].drift);
+      assert.equal(windViews[0].drift + windViews[1].drift, 0);
+      assert.equal(windViews[2].drift + windViews[3].drift, 0);
       assert(windViews.some(x => x.drift !== 0), 'Wind must reach at least one camera axis');
       assert(windViews.every(x => x.count === result.count), 'Turning must keep the same particles');
       assert(Math.abs(result.width - width) < 2 && Math.abs(result.height - height) < 2,

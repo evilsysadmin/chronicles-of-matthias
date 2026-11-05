@@ -26,7 +26,9 @@ export function chroniclesPrecipitationParticle(index, kind) {
   const x = 2 + fraction(index, 171) * 96;
   const size = snow ? 3 + fraction(index, 423) * 3.4 : 0.8 + fraction(index, 37) * 0.9;
   const duration = snow ? 5.5 + fraction(index, 173) * 4.8 : 0.75 + fraction(index, 91) * 0.65;
-  const drift = snow ? -36 + fraction(index, 43) * 72 : -44 - fraction(index, 79) * 54;
+  // A nearly vertical default fall: the regional wind, not an old
+  // always-left particle bias, determines the dominant rain slant.
+  const drift = snow ? -36 + fraction(index, 43) * 72 : -11 + fraction(index, 79) * 22;
   const opacity = snow ? 0.42 + fraction(index, 317) * 0.38 : 0.28 + fraction(index, 317) * 0.4;
   return Object.freeze({
     x, size, duration, drift, opacity,
