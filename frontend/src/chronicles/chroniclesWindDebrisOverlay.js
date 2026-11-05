@@ -63,8 +63,10 @@ export function createChroniclesWindDebrisOverlay(host, region, {
   let disposed = false;
 
   const resize = () => {
-    if (!disposed) layer.style.setProperty('--debris-travel',
-      `${Math.max(120, host.clientWidth + 150)}px`);
+    if (disposed) return;
+    const travel = Math.max(120, host.clientWidth + 150);
+    layer.style.setProperty('--debris-travel', travel + 'px');
+    layer.style.setProperty('--debris-travel-half', (travel / 2) + 'px');
   };
 
   const sync = (worldMinutes, facing = 0) => {
@@ -91,7 +93,8 @@ export function createChroniclesWindDebrisOverlay(host, region, {
           fleck.style.setProperty('--debris-y', p.y.toFixed(2) + '%');
           fleck.style.setProperty('--debris-width', p.width.toFixed(2) + 'px');
           fleck.style.setProperty('--debris-height', p.height.toFixed(2) + 'px');
-          fleck.style.setProperty('--debris-float', p.float.toFixed(2) + 'px');
+          fleck.style.setProperty('--debris-float-up', (-p.float).toFixed(2) + 'px');
+          fleck.style.setProperty('--debris-float-down', (p.float * 0.4).toFixed(2) + 'px');
           fleck.style.setProperty('--debris-duration', p.duration.toFixed(2) + 's');
           fleck.style.setProperty('--debris-delay', p.delay.toFixed(2) + 's');
           fleck.style.setProperty('--debris-alpha', p.alpha.toFixed(2));

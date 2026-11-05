@@ -43,11 +43,11 @@
 @keyframes chronicles-wind-drift {
   0% { transform: translate3d(0, 0, 0) rotate(-12deg); opacity: 0; }
   18% { opacity: var(--debris-alpha); }
-  50% { transform: translate3d(calc(var(--debris-travel) * .5),
-    calc(var(--debris-float) * -1), 0) rotate(110deg); }
+  50% { transform: translate3d(var(--debris-travel-half),
+    var(--debris-float-up), 0) rotate(110deg); }
   80% { opacity: var(--debris-alpha); }
   100% { transform: translate3d(var(--debris-travel),
-    calc(var(--debris-float) * .4), 0) rotate(240deg); opacity: 0; }
+    var(--debris-float-down), 0) rotate(240deg); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .chronicles-wind-debris-fleck { animation: none !important; opacity: 0; }

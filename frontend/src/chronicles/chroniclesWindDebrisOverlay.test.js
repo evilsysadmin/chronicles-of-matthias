@@ -98,6 +98,7 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     const layer = host.children[0];
     expect(layer.hidden).toBe(true);
     expect(layer.style.values['--debris-travel']).toBe('540px');
+    expect(layer.style.values['--debris-travel-half']).toBe('270px');
     const minute = sample(forest, 'dry');
     const weather = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: minute });
     const facing = facingCrosswind(weather.wind);
