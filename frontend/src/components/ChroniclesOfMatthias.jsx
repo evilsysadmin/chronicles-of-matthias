@@ -97,7 +97,7 @@ import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.
 import { chroniclesCampRestStatus } from '../chronicles/chroniclesCampRest.js';
 import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
 import {
-  chroniclesAdvanceAmbientWorldTime,
+  chroniclesAdvanceAmbientWorldTime, createChroniclesAmbientTimeCounter,
   attachChroniclesAmbientWorldClock,
 } from '../chronicles/chroniclesAmbientWorldClock.js';
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
@@ -415,6 +415,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const checkpointExistsRef = useRef(false);
   const automapVisitedRef = useRef({});
   const stateRef = useRef(null);
+  // Session-local progress toward the next 5 REAL minutes; renders/moves
+  // must not discard it, nor opening/closing a help/menu overlay.
+  const ambientTimeCounterRef = useRef(null);
+  if (!ambientTimeCounterRef.current) ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
   const [state, setState] = useState(null);
   // Opening the quartermaster counter is a free presentation transition.
   const [provisionsOpen, setProvisionsOpen] = useState(false);
@@ -1960,9 +1964,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     });
   };
 
-  // The outdoors remains alive while the player is stationary: Terra minutes
-  // pass in sparse visible-tab batches, but do NOT increment turns, move foes,
-  // or continue behind menus, dialogues, combat, map transitions or saves.
+  // A real five-minute block gives +10 Terra minutes independent from
+  // movement. Never discard the partial block when the party moves.
+  const ambientClockMap = state ? chroniclesMapForState(state) : null;
   const ambientClockPaused = !ready || entryView !== 'playing'
     || state?.phase !== 'explore' || Boolean(state?.initiative)
     || menuOpen || feedbackOpen || firstStepsOpen || adminOpen || journalOpen
@@ -1972,17 +1976,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     || Boolean(worldStatOffer) || provisionsOpen || saveBusy
     || confirmExitWithoutSaving || confirmLoadSelection
     || Boolean(state?.shop || state?.guild || state?.inn)
-    || Boolean(chroniclesCampaignEpiloguePending(state));
+    || Boolean(chroniclesCampaignEpiloguePending(state))
+    || !['settlement', 'wilderness', 'outdoor'].includes(ambientClockMap?.regionKind);
   useEffect(() => {
     if (ambientClockPaused) return undefined;
-    return attachChroniclesAmbientWorldClock(() => {
+    return attachChroniclesAmbientWorldClock((minutes) => {
       const before = stateRef.current;
-      if (!before) return;
-      const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before));
-      if (after === before) return;
+      if (!before) return false;
+      const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before), minutes);
+      if (after === before) return false;
       stateRef.current = after;
       setState(after);
-    });
+      return true;
+    }, { counter: ambientTimeCounterRef.current });
   }, [ambientClockPaused, state?.mapId]);
 
   if (entryView === 'menu') {
