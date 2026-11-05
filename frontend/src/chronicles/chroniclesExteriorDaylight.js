@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 
 // A deterministic 24-hour outdoor light profile. The 05–07 and 18–20
@@ -89,7 +89,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       if (elapsed === lastElapsedMinute) return false;
       lastElapsedMinute = elapsed;
       const profile = chroniclesExteriorDaylightProfile(elapsed);
-      const weather = chroniclesRegionalWeather({ ...region, worldMinutes: elapsed });
+      const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: elapsed });
       const cloudiness = weather?.clouds ?? 0;
       const fogStrength = weather?.fog ?? 0;
       const { daylight, twilight, sunVisible } = profile;

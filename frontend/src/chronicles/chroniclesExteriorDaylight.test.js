@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
@@ -227,6 +227,36 @@ describe('Terra solar cycle', () => {
     apply.sync(noonWet);
     expect(puddles.visible).toBe(true);
     expect(puddles.material.opacity).toBeCloseTo(.76);
+  });
+
+  it('fades the real 3D fog and sunlight across a weather boundary with no new lights', () => {
+    const { scene, sun, renderer } = outdoors();
+    const place = { mapId: 'terra-marsh', biome: 'marsh', regionKind: 'wilderness' };
+    const boundary = Array.from({ length: 90 }, (_, i) => (i + 1) * 360)
+      .find(t => {
+        const previous = chroniclesRegionalWeather({ ...place, worldMinutes: t - 1 });
+        const current = chroniclesRegionalWeather({ ...place, worldMinutes: t });
+        return previous.kind !== current.kind
+          && previous.fog !== current.fog;
+      });
+    expect(boundary).toBeDefined();
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, place);
+    const count = scene.children.length;
+    const states = [boundary, boundary + 10, boundary + 20, boundary + 30, boundary + 40]
+      .map(minute => {
+        cycle.sync(minute);
+        return { minute, sun: sun.intensity, fog: scene.fog.far };
+      });
+    const start = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: boundary });
+    const end = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: boundary + 40 });
+    expect(start.fog).not.toBe(end.fog);
+    expect(states[2].fog).toBeCloseTo((states[0].fog + states[4].fog) / 2);
+    expect(states[2].sun).toBeCloseTo((states[0].sun + states[4].sun) / 2);
+    expect(states[1].fog).not.toBe(states[0].fog);
+    expect(states[3].fog).not.toBe(states[4].fog);
+    expect(scene.children.length).toBe(count);
+    cycle.sync(boundary);
+    expect(scene.fog.far).toBe(states[0].fog);
   });
 
   it('does not change the dungeon renderer when no exterior sun is present', () => {

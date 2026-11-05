@@ -1,4 +1,4 @@
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import './chroniclesPrecipitationOverlay.css';
 
 // Screen-space rainfall/snowfall is a tiny compositor layer above the idle
@@ -46,6 +46,7 @@ export function createChroniclesPrecipitationOverlay(host, region, {
   layer.hidden = true;
   host.appendChild(layer);
   let kind = null;
+  let strength = 0;
   let visible = true;
   let disposed = false;
 
@@ -56,13 +57,18 @@ export function createChroniclesPrecipitationOverlay(host, region, {
 
   function sync(worldMinutes) {
     if (disposed) return false;
-    const nextKind = chroniclesPrecipitationKind(
-      chroniclesRegionalWeather({ ...region, worldMinutes }),
-    );
-    if (nextKind === kind) return false;
+    const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes });
+    const nextKind = chroniclesPrecipitationKind({ kind: weather?.precipitation });
+    const nextStrength = nextKind ? weather.precipitationStrength : 0;
+    if (nextKind === kind && Math.abs(nextStrength - strength) < 0.00001) return false;
+    const changedKind = nextKind !== kind;
     kind = nextKind;
-    layer.replaceChildren();
-    if (kind) {
+    strength = nextStrength;
+    layer.style.setProperty('--precipitation-strength', strength.toFixed(3));
+    // Rebuild only when swapping precipitation type; changing its strength
+    // merely updates the opacity of the existing CSS compositor layer.
+    if (changedKind) layer.replaceChildren();
+    if (changedKind && kind) {
       layer.dataset.kind = kind;
       const budget = chroniclesPrecipitationBudget(kind, coarse, reducedMotion);
       const fragment = document.createDocumentFragment();
@@ -80,7 +86,7 @@ export function createChroniclesPrecipitationOverlay(host, region, {
         fragment.appendChild(drop);
       }
       layer.appendChild(fragment);
-    } else {
+    } else if (changedKind) {
       delete layer.dataset.kind;
     }
     layer.hidden = !visible || !kind;

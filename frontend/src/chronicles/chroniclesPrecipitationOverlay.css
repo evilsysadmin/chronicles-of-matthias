@@ -7,6 +7,8 @@
   z-index: 2;
   overflow: hidden;
   pointer-events: none;
+  opacity: var(--precipitation-strength, 1);
+  transition: opacity 160ms linear;
   contain: layout paint style;
 }
 .chronicles-precipitation-layer[hidden] { display: none; }
@@ -46,6 +48,7 @@
   to { transform: translate3d(var(--p-drift), var(--precipitation-travel), 0); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .chronicles-precipitation-layer { transition: none; }
   .chronicles-precipitation-particle {
     animation: none !important;
     transform: none;

@@ -125,6 +125,11 @@
   capa CSS dentro del viewport 3D, presupuestos menores en móvil y reducción
   de movimiento. No despertar el renderizador WebGL para hacer caer partículas;
   ocultar el efecto en pestañas invisibles y liberarlo al salir del mapa.
+  Los cambios de nubosidad/niebla, lluvia y nieve se suavizan los primeros
+  40 minutos de cada bloque meteorológico (sin modificar el estado oficial
+  de seis horas mostrado en I). Al entrar, salir o restaurar una partida,
+  todos los efectos deben derivarse del worldMinutes persistido, sin timers,
+  sin duplicar partículas ni aumentar el presupuesto móvil.
   Los adoquines de Swordhaven responden a la lluvia sin afectar al grid:
   humedecen durante 30 min, se secan durante las tres horas siguientes al
   último bloque lluvioso; material original/restauración reversible y una

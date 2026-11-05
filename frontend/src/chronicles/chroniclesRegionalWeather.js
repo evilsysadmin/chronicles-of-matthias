@@ -62,3 +62,52 @@ export function chroniclesRegionalWeather({
     period, season, untilWorldMinutes: (period + 1) * CHRONICLES_WEATHER_PERIOD_MINUTES,
   });
 }
+
+// Visual atmosphere only: the six-hour *reported* weather kind remains fixed.
+// During the first 40 in-world minutes after a boundary, blend from the
+// preceding cell. This is pure and works when a saved game is reloaded or
+// its clock moves backwards; no ticks or additional persisted fields.
+export const CHRONICLES_WEATHER_BLEND_MINUTES = 40;
+
+function precipitationKind(weather) {
+  return weather?.kind === 'rain' || weather?.kind === 'snow' ? weather.kind : null;
+}
+
+export function chroniclesRegionalWeatherTransition({ worldMinutes, ...region } = {}) {
+  const elapsed = chroniclesWorldMinutes(worldMinutes);
+  const current = chroniclesRegionalWeather({ ...region, worldMinutes: elapsed });
+  if (!current) return null;
+  const offset = elapsed % CHRONICLES_WEATHER_PERIOD_MINUTES;
+  const previous = elapsed >= CHRONICLES_WEATHER_PERIOD_MINUTES
+    ? chroniclesRegionalWeather({ ...region, worldMinutes: elapsed - offset - 1 })
+    : current;
+  const from = previous || current;
+  const x = Math.min(1, offset / CHRONICLES_WEATHER_BLEND_MINUTES);
+  const progress = from.kind === current.kind ? 1 : x * x * (3 - 2 * x);
+  const oldPrecip = precipitationKind(from);
+  const newPrecip = precipitationKind(current);
+  let precipitation = newPrecip;
+  let strength = newPrecip ? 1 : 0;
+  if (oldPrecip !== newPrecip && progress < 1) {
+    if (oldPrecip && newPrecip) {
+      // Swap rain for snow via a brief lull; never double particle budgets.
+      precipitation = progress < 0.5 ? oldPrecip : newPrecip;
+      strength = progress < 0.5 ? 1 - 2 * progress : 2 * progress - 1;
+    } else if (oldPrecip) {
+      precipitation = oldPrecip;
+      strength = 1 - progress;
+    } else {
+      strength = progress;
+    }
+  }
+  // Zero intensity means no DOM particles at all, including a clean onset.
+  if (strength <= 0) precipitation = null;
+  return Object.freeze({
+    kind: current.kind,
+    clouds: from.clouds + (current.clouds - from.clouds) * progress,
+    fog: from.fog + (current.fog - from.fog) * progress,
+    precipitation,
+    precipitationStrength: strength,
+    progress,
+  });
+}

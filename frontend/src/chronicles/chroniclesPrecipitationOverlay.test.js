@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import {
   chroniclesPrecipitationBudget,
   chroniclesPrecipitationKind,
@@ -103,6 +103,47 @@ describe('Terra cheap CSS precipitation', () => {
     expect(host.children).toHaveLength(0);
     expect(effect.sync(rain)).toBe(false);
     expect(frozen.children).toHaveLength(0);
+  });
+
+  it('fades a weather start/end on the same compositor node without recreating droplets', () => {
+    const fake = fakeDocument();
+    vi.stubGlobal('document', fake);
+    const host = fake.element('host');
+    host.clientHeight = 400;
+    const fx = createChroniclesPrecipitationOverlay(host, region, { coarse: true });
+    let enters = null;
+    let ends = null;
+    for (let i = 1; i < 130; i += 1) {
+      const minute = i * 360;
+      const before = chroniclesRegionalWeather({ ...region, worldMinutes: minute - 1 }).kind;
+      const after = chroniclesRegionalWeather({ ...region, worldMinutes: minute }).kind;
+      if (before !== 'rain' && after === 'rain' && enters === null) enters = minute;
+      if (before === 'rain' && after !== 'rain' && ends === null) ends = minute;
+    }
+    expect(enters).not.toBeNull();
+    expect(ends).not.toBeNull();
+    const layer = host.children[0];
+    expect(fx.sync(enters)).toBe(false); // zero opacity: no DOM particles
+    expect(layer.hidden).toBe(true);
+    expect(fx.sync(enters + 10)).toBe(true);
+    expect(layer.children).toHaveLength(16);
+    const originalDroplets = [...layer.children];
+    expect(Number(layer.style.values['--precipitation-strength'])).toBeGreaterThan(0);
+    const mid = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: enters + 20 });
+    expect(fx.sync(enters + 20)).toBe(true);
+    expect(layer.children[0]).toBe(originalDroplets[0]);
+    expect(Number(layer.style.values['--precipitation-strength'])).toBeCloseTo(mid.precipitationStrength, 3);
+    expect(fx.sync(enters + 40)).toBe(true);
+    expect(layer.style.values['--precipitation-strength']).toBe('1.000');
+    expect(fx.sync(enters + 50)).toBe(false);
+    expect(fx.sync(ends)).toBe(false); // rain remains fully active
+    expect(fx.sync(ends + 20)).toBe(true);
+    expect(layer.children[0]).toBe(originalDroplets[0]);
+    expect(fx.sync(ends + 40)).toBe(true);
+    expect(layer.hidden).toBe(true);
+    expect(layer.children).toHaveLength(0);
+    fx.dispose();
+    expect(host.children).toHaveLength(0);
   });
 
   it('keeps caves and Tactics without precipitation, and snow respects lower budgets', () => {

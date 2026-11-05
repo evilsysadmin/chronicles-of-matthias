@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { chroniclesRegionalWeather, CHRONICLES_WEATHER_PERIOD_MINUTES } from './chroniclesRegionalWeather.js';
+import {
+  chroniclesRegionalWeather, chroniclesRegionalWeatherTransition,
+  CHRONICLES_WEATHER_PERIOD_MINUTES, CHRONICLES_WEATHER_BLEND_MINUTES,
+} from './chroniclesRegionalWeather.js';
 
 describe('Terra weather by region and stored world time', () => {
   const region = { mapId: 'terra-b2', regionKind: 'wilderness', biome: 'hills' };
@@ -41,6 +44,72 @@ describe('Terra weather by region and stored world time', () => {
     expect(winter).toContain('snow');
     expect(winter).not.toContain('rain');
     expect(run('hills', 480)).not.toContain('snow');
+  });
+
+  it('smoothly blends clouds and fog while keeping the reported six-hour state stable', () => {
+    const wet = { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'marsh' };
+    const boundary = Array.from({ length: 100 }, (_, i) => (i + 1) * 360)
+      .find(t => chroniclesRegionalWeather({ ...wet, worldMinutes: t - 1 }).kind
+        !== chroniclesRegionalWeather({ ...wet, worldMinutes: t }).kind);
+    expect(boundary).toBeDefined();
+    const before = chroniclesRegionalWeather({ ...wet, worldMinutes: boundary - 1 });
+    const after = chroniclesRegionalWeather({ ...wet, worldMinutes: boundary });
+    const start = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary });
+    const middle = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 20 });
+    const finish = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 40 });
+    expect(CHRONICLES_WEATHER_BLEND_MINUTES).toBe(40);
+    expect(start.kind).toBe(after.kind);
+    expect(start.clouds).toBe(before.clouds);
+    expect(start.fog).toBe(before.fog);
+    expect(start.progress).toBe(0);
+    expect(middle.progress).toBeCloseTo(0.5);
+    expect(middle.clouds).toBeCloseTo((before.clouds + after.clouds) / 2);
+    expect(middle.fog).toBeCloseTo((before.fog + after.fog) / 2);
+    expect(finish.progress).toBe(1);
+    expect(finish.clouds).toBe(after.clouds);
+    expect(finish.fog).toBe(after.fog);
+    expect(chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 40 }))
+      .toEqual(finish);
+    expect(chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary - 1 }).kind)
+      .toBe(before.kind);
+  });
+
+  it('ramps precipitation at its start and end, and switches rain/snow without doubling budgets', () => {
+    const regions = [
+      { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'marsh' },
+      { mapId: 'terra-demo-snow', regionKind: 'wilderness', biome: 'snow' },
+    ];
+    for (const place of regions) {
+      let entering = null;
+      let leaving = null;
+      for (let slot = 1; slot < 180; slot += 1) {
+        const minute = slot * 360;
+        const before = chroniclesRegionalWeather({ ...place, worldMinutes: minute - 1 }).kind;
+        const after = chroniclesRegionalWeather({ ...place, worldMinutes: minute }).kind;
+        const precip = k => k === 'rain' || k === 'snow';
+        if (!precip(before) && precip(after) && entering === null) entering = minute;
+        if (precip(before) && !precip(after) && leaving === null) leaving = minute;
+      }
+      expect(entering).not.toBeNull();
+      expect(leaving).not.toBeNull();
+      const start = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: entering });
+      const halfway = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: entering + 20 });
+      const ready = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: entering + 40 });
+      expect(start.precipitation).toBeNull();
+      expect(start.precipitationStrength).toBe(0);
+      expect(halfway.precipitationStrength).toBeCloseTo(0.5);
+      expect(ready.precipitationStrength).toBe(1);
+      const endStart = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: leaving });
+      const endMiddle = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: leaving + 20 });
+      const end = chroniclesRegionalWeatherTransition({ ...place, worldMinutes: leaving + 40 });
+      expect(endStart.precipitationStrength).toBe(1);
+      expect(endMiddle.precipitationStrength).toBeCloseTo(0.5);
+      expect(end.precipitation).toBeNull();
+      expect(end.precipitationStrength).toBe(0);
+    }
+    expect(chroniclesRegionalWeatherTransition({
+      mapId: 'swordhaven-sewers', regionKind: 'dungeon', worldMinutes: 360,
+    })).toBeNull();
   });
 
   it('does not depend on global random or the real date and is bounded', () => {
