@@ -24,6 +24,11 @@ const start = sample(w => ['clear', 'cloudy'].includes(w.kind)
   && Math.max(Math.abs(w.wind.east), Math.abs(w.wind.south)) >= 0.08);
 const wind = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: start }).wind;
 const facing = Math.abs(wind.east) >= Math.abs(wind.south) ? 0 : 1;
+const initialCrosswind = Math.abs(chroniclesWindDebrisCrosswind(wind, facing));
+const alternate = sample(w => ['clear', 'cloudy'].includes(w.kind)
+  && !w.precipitation && w.fog < 0.35
+  && Math.abs(chroniclesWindDebrisCrosswind(w.wind, facing)) >= 8
+  && Math.abs(Math.abs(chroniclesWindDebrisCrosswind(w.wind, facing)) - initialCrosswind) >= 12);
 const disabled = sample(w => biome === 'ash' ? w.kind === 'fog' : w.kind === 'rain');
 const host = document.getElementById('wind-preview');
 if (biome === 'ash') {
@@ -32,7 +37,7 @@ if (biome === 'ash') {
 const effect = createChroniclesWindDebrisOverlay(host, region, { coarse, reducedMotion });
 effect.sync(start, facing);
 window.__terraWindDebris = {
-  biome, start, disabled, facing, wind,
+  biome, start, alternate, disabled, facing, wind,
   budget: chroniclesWindDebrisBudget(biome === 'forest' ? 'leaf' : 'ash', coarse, reducedMotion),
   cross: chroniclesWindDebrisCrosswind(wind, facing),
   setTime: effect.sync, resize: effect.resize, setVisible: effect.setVisible,
