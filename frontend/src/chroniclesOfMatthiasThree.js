@@ -21,6 +21,7 @@ import { createChroniclesRenderDiagnostics, chroniclesRenderDiagnosticsEnabled }
 import { chroniclesPerfIsolationFlags, chroniclesPerfTorchesVisible } from './chronicles/chroniclesPerfIsolation.js';
 import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
+import { createChroniclesExteriorDaylight } from './chronicles/chroniclesExteriorDaylight.js';
 import { chroniclesFountainMotionEnabled } from './chronicles/chroniclesSwordhavenFountainArt.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import { buildChroniclesWitchCauldron3D } from './chronicles/chroniclesWitchCauldron3D.js';
@@ -739,6 +740,9 @@ export function createChroniclesOfMatthiasGame(host, {
     : scenePlan?.regionKind === 'settlement'
       ? buildSwordhavenScene(scene, { coarsePointer: coarse, scenePlan })
       : createDungeonScene(scene, { coarsePointer: coarse, scenePlan });
+  // Exterior daylight is driven by persisted Terra minutes, never Date.now.
+  // No extra light/mesh is allocated and subterranean scenes are untouched.
+  const exteriorDaylight = outdoors ? createChroniclesExteriorDaylight(scene, renderer) : null;
   const plazaFountainArt = scenePlan?.mapId === 'swordhaven-first-book'
     ? scene.getObjectByName('swordhaven-fountain-upper-tier') : null;
   const plazaFountainPosition = plazaFountainArt?.parent?.getWorldPosition(new THREE.Vector3());
@@ -831,6 +835,9 @@ export function createChroniclesOfMatthiasGame(host, {
   }
 
   function syncState(state) {
+    // One sky/light update per change of in-game minute; in-place rotations
+    // and menu interactions leave both lighting and world time unchanged.
+    exteriorDaylight?.sync(state?.worldMinutes);
     const now = clock.getElapsedTime();
     const previousState = latestState;
     const viewDirection = chroniclesCombatCameraFacing(state);
