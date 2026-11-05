@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
-import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
@@ -30,8 +30,13 @@ describe('Terra solar cycle', () => {
     expect(chroniclesExteriorDaylightProfile(720).sun.y).toBeGreaterThan(0.8);
     expect(chroniclesExteriorDaylightProfile(1320).sunVisible).toBe(false);
     expect(chroniclesExteriorDaylightProfile(1080).daylight).toBeGreaterThan(0);
-    expect(chroniclesExteriorDaylightProfile(1140).daylight).toBeGreaterThan(0);
-    expect(chroniclesExteriorDaylightProfile(1160).daylight).toBeLessThan(0.5);
+    const summer = 84 * 1440, winter = 252 * 1440;
+    expect(chroniclesExteriorDaylightProfile(summer + 19 * 60).daylight).toBeGreaterThan(0);
+    expect(chroniclesExteriorDaylightProfile(winter + 19 * 60).daylight).toBe(0);
+    expect(chroniclesExteriorDaylightProfile(summer + 19 * 60).sunVisible).toBe(true);
+    expect(chroniclesExteriorDaylightProfile(winter + 19 * 60).sunVisible).toBe(false);
+    expect(chroniclesExteriorDaylightProfile(winter + 17 * 60).daylight)
+      .toBeLessThan(chroniclesExteriorDaylightProfile(summer + 17 * 60).daylight);
     expect(chroniclesExteriorDaylightProfile(480 + 1440).minute).toBe(480);
     expect(chroniclesExteriorDaylightProfile(NaN).minute).toBe(480);
   });
@@ -96,7 +101,7 @@ describe('Terra solar cycle', () => {
     expect(glows.visible).toBe(false);
     expect(glows.material.opacity).toBe(0);
     expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
-    expect(cycle.sync(19 * 60)).toBe(true);
+    expect(cycle.sync(18 * 60)).toBe(true);
     expect(glows.visible).toBe(true);
     expect(glows.material.opacity).toBeGreaterThan(0);
     expect(glows.material.opacity).toBeLessThan(0.82);
@@ -143,7 +148,7 @@ describe('Terra solar cycle', () => {
     const children = scene.children.length;
     // Compare fog versus clear at identical 08:00 solar altitude, avoiding
     // false failures caused by different hours rather than cloud cover.
-    const samples = Array.from({ length: 90 }, (_, i) => 480 + i * 1440);
+    const samples = Array.from({ length: 90 }, (_, i) => 590 + i * 1440);
     const fogMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'fog');
     const clearMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'clear');
     expect(fogMinute).toBeDefined();
@@ -189,7 +194,7 @@ describe('Terra solar cycle', () => {
     const baseMetalness = roads.material.metalness;
     let start = null;
     for (let n = 0; n < 100; n++) {
-      const t = n * 360;
+      const t = n * CHRONICLES_WEATHER_PERIOD_MINUTES;
       const w = chroniclesRegionalWeather({ mapId: swordhavenFirstBook.id, regionKind: 'settlement', worldMinutes: t });
       const prev = t > 0 ? chroniclesRegionalWeather({ mapId: swordhavenFirstBook.id, regionKind: 'settlement', worldMinutes: t - 1 }) : null;
       if (w.kind === 'rain' && prev?.kind !== 'rain') { start = t; break; }
@@ -212,7 +217,9 @@ describe('Terra solar cycle', () => {
     expect(scene.children.length).toBe(initialCount);
     // Deterministic rewind: the same geometry and original dry material come back.
     let clear = null;
-    for (let t = start + 360; t < start + 360 * 20; t += 360) {
+    for (let t = start + CHRONICLES_WEATHER_PERIOD_MINUTES;
+      t < start + CHRONICLES_WEATHER_PERIOD_MINUTES * 80;
+      t += CHRONICLES_WEATHER_PERIOD_MINUTES) {
       if (chroniclesTownRainWetness({ mapId: swordhavenFirstBook.id,
         regionKind: 'settlement', worldMinutes: t + 180 }) === 0) { clear = t + 180; break; }
     }
@@ -232,7 +239,8 @@ describe('Terra solar cycle', () => {
   it('fades the real 3D fog and sunlight across a weather boundary with no new lights', () => {
     const { scene, sun, renderer } = outdoors();
     const place = { mapId: 'terra-marsh', biome: 'marsh', regionKind: 'wilderness' };
-    const boundary = Array.from({ length: 90 }, (_, i) => (i + 1) * 360)
+    const boundary = Array.from({ length: 90 }, (_, i) =>
+      (i + 1) * CHRONICLES_WEATHER_PERIOD_MINUTES)
       .find(t => {
         const previous = chroniclesRegionalWeather({ ...place, worldMinutes: t - 1 });
         const current = chroniclesRegionalWeather({ ...place, worldMinutes: t });
