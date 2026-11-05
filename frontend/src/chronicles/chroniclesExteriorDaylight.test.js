@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
+import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
@@ -130,6 +131,40 @@ describe('Terra solar cycle', () => {
     expect(scene.getObjectByName('chronicles-town-street-window-night-glow')).toBeUndefined();
     expect(scene.getObjectByName('chronicles-town-wall-lantern-glass')).toBeUndefined();
     expect(createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1 })?.sync(1320)).toBe(true);
+  });
+
+  it('attenuates daylight and shortens existing fog without adding objects, reversible on save restore', () => {
+    const { scene, sun, hemi, renderer } = outdoors();
+    const baselineFogNear = scene.fog.near;
+    const baselineFogFar = scene.fog.far;
+    const region = { mapId: 'terra-marsh', biome: 'marsh', regionKind: 'wilderness' };
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    const children = scene.children.length;
+    // Compare fog versus clear at identical 08:00 solar altitude, avoiding
+    // false failures caused by different hours rather than cloud cover.
+    const samples = Array.from({ length: 90 }, (_, i) => 480 + i * 1440);
+    const fogMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'fog');
+    const clearMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'clear');
+    expect(fogMinute).toBeDefined();
+    expect(clearMinute).toBeDefined();
+    cycle.sync(clearMinute);
+    const clearSun = sun.intensity;
+    const clearFill = hemi.intensity;
+    expect(scene.fog.near).toBe(baselineFogNear);
+    expect(scene.fog.far).toBe(baselineFogFar);
+    cycle.sync(fogMinute);
+    expect(scene.fog.near).toBeLessThan(baselineFogNear);
+    expect(scene.fog.far).toBeLessThan(baselineFogFar);
+    expect(scene.fog.far).toBeGreaterThanOrEqual(45);
+    expect(sun.intensity).toBeLessThan(clearSun);
+    expect(hemi.intensity).toBeLessThan(clearFill);
+    expect(scene.children.length).toBe(children);
+    cycle.sync(clearMinute);
+    expect(scene.fog.near).toBe(baselineFogNear);
+    expect(scene.fog.far).toBe(baselineFogFar);
+    expect(scene.children.length).toBe(children);
+    // The same time in a later day must be reevaluated, not cached by hh:mm.
+    expect(cycle.sync(clearMinute + 1440)).toBe(true);
   });
 
   it('does not change the dungeon renderer when no exterior sun is present', () => {

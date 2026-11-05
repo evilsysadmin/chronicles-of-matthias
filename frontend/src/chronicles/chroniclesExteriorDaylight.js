@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
+import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
 
 // A deterministic 24-hour outdoor light profile. The 05–07 and 18–20
 // transitions are gradual, and use the exact same minutes as I/Information.
@@ -36,7 +37,7 @@ export function chroniclesExteriorDaylightProfile(worldMinutes) {
 // Updates existing lights and sky vertices only when the game-world minute
 // changes. No timers, new light sources, new shadow maps or runtime assets.
 // A dungeon lacks the outdoor dome+sun pair and is intentionally ignored.
-export function createChroniclesExteriorDaylight(scene, renderer) {
+export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const dome = scene?.getObjectByName?.('swordhaven-sky-dome');
   const sun = scene?.getObjectByName?.('chronicles-campaign-sun');
   const skyColors = dome?.geometry?.getAttribute?.('color');
@@ -44,6 +45,8 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
   const hemi = scene.children.find((node) => node.isHemisphereLight) || null;
   const backgroundDay = scene.background?.isColor ? scene.background.clone() : null;
   const fogDay = scene.fog?.color?.clone?.() || null;
+  const fogNear = scene.fog?.isFog ? scene.fog.near : null;
+  const fogFar = scene.fog?.isFog ? scene.fog.far : null;
   const hemiBase = hemi?.intensity ?? 0;
   const sunBase = sun.intensity;
   const exposureDay = Number.isFinite(renderer?.toneMappingExposure)
@@ -62,6 +65,8 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
   const sunColorDay = new THREE.Color(0xffe6ba);
   const moonColor = new THREE.Color(0x92b3d8);
   const nightFog = new THREE.Color(0x1d2b43);
+  const weatherSky = new THREE.Color(0x74838e);
+  const weatherFog = new THREE.Color(0x75858a);
   const face = new THREE.Quaternion();
   const forward = new THREE.Vector3(0, 0, 1);
   const halo = dome.getObjectByName('swordhaven-sun-halo');
@@ -69,23 +74,27 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
   const townWindowGlows = scene.getObjectByName('chronicles-town-street-window-night-glow');
   const townLanternGlass = scene.getObjectByName('chronicles-town-wall-lantern-glass');
   const lanternDayIntensity = townLanternGlass?.material?.emissiveIntensity ?? null;
-  let lastMinute = null;
+  let lastElapsedMinute = null;
 
   return {
     sync(worldMinutes) {
-      const profile = chroniclesExteriorDaylightProfile(worldMinutes);
-      if (profile.minute === lastMinute) return false;
-      lastMinute = profile.minute;
+      const elapsed = chroniclesWorldMinutes(worldMinutes);
+      if (elapsed === lastElapsedMinute) return false;
+      lastElapsedMinute = elapsed;
+      const profile = chroniclesExteriorDaylightProfile(elapsed);
+      const weather = chroniclesRegionalWeather({ ...region, worldMinutes: elapsed });
+      const cloudiness = weather?.clouds ?? 0;
+      const fogStrength = weather?.fog ?? 0;
       const { daylight, twilight, sunVisible } = profile;
       sunVector.set(profile.sun.x, profile.sun.y, profile.sun.z);
       // Never light walls from below. At night, the same shadowless-looking
       // key is a faint, cool lunar fill from above the horizon.
       if (sunVisible) sun.position.copy(sunVector).multiplyScalar(75);
       else sun.position.set(33, 48, 22);
-      sun.intensity = sunBase * (0.20 + 0.80 * daylight);
+      sun.intensity = sunBase * (0.20 + 0.80 * daylight) * (1 - cloudiness * 0.48);
       sun.color.copy(moonColor).lerp(sunColorDay, daylight);
       if (hemi) {
-        hemi.intensity = hemiBase * (0.46 + 0.54 * daylight);
+        hemi.intensity = hemiBase * (0.46 + 0.54 * daylight) * (1 - cloudiness * 0.15);
       }
       // Only the authored urban fixtures participate. Dungeons and wild
       // biomes have no such batches, so remain exactly as before.
@@ -103,9 +112,17 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
         renderer.toneMappingExposure = exposureDay * (0.92 + 0.08 * daylight);
       }
       if (backgroundDay) scene.background.copy(backgroundDay).lerp(nightFog, 1 - daylight);
-      if (fogDay) scene.fog.color.copy(fogDay).lerp(nightFog, 1 - daylight);
-      blendedHorizon.copy(horizonNight).lerp(horizonDay, daylight);
-      blendedZenith.copy(zenithNight).lerp(zenithDay, daylight);
+      if (fogDay) scene.fog.color.copy(fogDay).lerp(nightFog, 1 - daylight)
+        .lerp(weatherFog, fogStrength * (0.32 + 0.68 * daylight));
+      if (fogNear !== null && fogFar !== null) {
+        // At most halve draw distance; never hide the next few playable cells.
+        scene.fog.near = Math.max(8, fogNear * (1 - fogStrength * 0.55));
+        scene.fog.far = Math.max(45, fogFar * (1 - fogStrength * 0.55));
+      }
+      blendedHorizon.copy(horizonNight).lerp(horizonDay, daylight)
+        .lerp(weatherSky, cloudiness * 0.55);
+      blendedZenith.copy(zenithNight).lerp(zenithDay, daylight)
+        .lerp(weatherSky, cloudiness * 0.72);
       for (let i = 0; i < pos.count; i += 1) {
         direction.fromBufferAttribute(pos, i).normalize();
         const altitude = THREE.MathUtils.smoothstep(direction.y, -0.08, 0.75);
@@ -120,7 +137,7 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
       face.setFromUnitVectors(forward, sunVector);
       for (const ornament of [disc, halo]) {
         if (!ornament) continue;
-        ornament.visible = sunVisible;
+        ornament.visible = sunVisible && cloudiness < 0.8;
         ornament.quaternion.copy(face);
         ornament.position.copy(sunVector).multiplyScalar(
           ornament === disc ? 57.5 : 59,

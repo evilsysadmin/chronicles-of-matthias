@@ -742,7 +742,9 @@ export function createChroniclesOfMatthiasGame(host, {
       : createDungeonScene(scene, { coarsePointer: coarse, scenePlan });
   // Exterior daylight is driven by persisted Terra minutes, never Date.now.
   // No extra light/mesh is allocated and subterranean scenes are untouched.
-  const exteriorDaylight = outdoors ? createChroniclesExteriorDaylight(scene, renderer) : null;
+  const exteriorDaylight = outdoors ? createChroniclesExteriorDaylight(scene, renderer, {
+    mapId: scenePlan?.mapId, regionKind: scenePlan?.regionKind, biome: scenePlan?.biome,
+  }) : null;
   const plazaFountainArt = scenePlan?.mapId === 'swordhaven-first-book'
     ? scene.getObjectByName('swordhaven-fountain-upper-tier') : null;
   const plazaFountainPosition = plazaFountainArt?.parent?.getWorldPosition(new THREE.Vector3());

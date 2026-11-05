@@ -35,7 +35,7 @@
 }
 .chronicles .chronicles-world-info__head {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 44px;
+  grid-template-columns: 36px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 10px;
   min-height: 76px;
@@ -70,8 +70,13 @@
   font: 400 clamp(20px, 4vw, 27px)/1.05 var(--mm3-pixel-font), monospace;
 }
 .chronicles .chronicles-world-info__head button.chronicles-world-info__close {
-  min-width: 44px;
-  min-height: 44px;
+  /* Explicit 48px target, with extra headroom against fractional desktop
+     scaling: the browser smoke requires an actual >=44px hit rectangle. */
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  box-sizing: border-box;
   padding: 0;
   border: 3px ridge #c6a571;
   border-radius: 2px;
@@ -191,7 +196,7 @@
 @media (max-width: 430px) {
   .chronicles .chronicles-world-info__backdrop { padding: 7px; }
   .chronicles .chronicles-world-info__head {
-    grid-template-columns: 29px minmax(0, 1fr) 44px;
+    grid-template-columns: 29px minmax(0, 1fr) 48px;
     gap: 6px;
     padding: 8px 8px;
     min-height: 67px;
@@ -222,4 +227,26 @@
 @keyframes chronicles-world-info-appear {
   from { transform: translateY(5px); opacity: .7; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* The currently observed climate is part of I/Information, not a permanent
+   HUD badge. The parchment remains compact on phones and short landscapes. */
+.chronicles .chronicles-world-info__weather {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  padding: 9px 5px 2px;
+  border-bottom: 1px solid #8f603f;
+  font: 16px/1.2 var(--mm3-pixel-font), monospace;
+}
+.chronicles .chronicles-world-info__weather span { color: #64412b; }
+.chronicles .chronicles-world-info__weather strong {
+  color: #46301e;
+  font-weight: 400;
+  font-size: 21px;
+}
+@media (max-height: 460px) and (orientation: landscape) {
+  .chronicles .chronicles-world-info__weather { padding-block: 3px 1px; }
 }

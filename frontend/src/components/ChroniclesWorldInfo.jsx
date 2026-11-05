@@ -3,7 +3,7 @@ import { chroniclesWorldInfoShortcut } from '../chronicles/chroniclesKeyboardBin
 
 // The real saved Terra calendar is read-only here. Opening the folio never
 // changes world time, spends a turn or triggers a synthetic weather forecast.
-export default function ChroniclesWorldInfo({ calendar, onClose }) {
+export default function ChroniclesWorldInfo({ calendar, weather = null, onClose }) {
   const closeRef = useRef(null);
   useEffect(() => {
     if (!calendar) return undefined;
@@ -59,6 +59,11 @@ export default function ChroniclesWorldInfo({ calendar, onClose }) {
             <span className="chronicles-world-info__clock-kicker">HORA DE TERRA</span>
             <strong data-chronicles-world-info-time>{calendar.time}</strong>
           </div>
+          {weather && <div className="chronicles-world-info__weather"
+            data-chronicles-world-weather={weather.kind}>
+            <span>CLIMA REGIONAL</span>
+            <strong>{weather.label}</strong>
+          </div>}
           <dl className="chronicles-world-info__calendar" aria-label="Calendario de Terra">
             <div><dt>Día</dt><dd>{calendar.dayOfYear}</dd></div>
             <div><dt>Mes</dt><dd>{calendar.month}</dd></div>
