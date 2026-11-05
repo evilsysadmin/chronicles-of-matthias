@@ -37,6 +37,12 @@ describe('Swordhaven notice board — lasting offers', () => {
     expect(chroniclesNoticeBoardEntries(completed).posted[0]).toMatchObject({
       status: 'completed', canAccept: false,
     });
+    const completedMarkup = renderToStaticMarkup(createElement(ChroniclesNoticeBoard, {
+      state: completed, onAccept: () => {}, onClose: () => {},
+    }));
+    expect(completedMarkup).toContain('data-chronicles-board-status="completed"');
+    expect(completedMarkup).toContain('Completado');
+    expect(completedMarkup).not.toContain('data-chronicles-board-accept');
     const restored = chroniclesApplyRunCheckpoint(
       createChroniclesState('swordhaven-first-book', null, { rules: 'mm3' }),
       chroniclesRunCheckpointPayload(accepted, 6),
@@ -71,6 +77,7 @@ describe('Swordhaven notice board — lasting offers', () => {
       state: initial, onAccept: () => {}, onClose: () => {},
     }));
     expect(available).toContain('data-chronicles-board-section="posted"');
+    expect(available).toContain('data-chronicles-board-layout="single"');
     expect(available).toContain('1 aviso');
     expect(available).not.toContain('data-chronicles-board-section="other"');
     expect(available).toContain('data-chronicles-board-status="available"');

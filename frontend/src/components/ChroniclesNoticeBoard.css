@@ -87,6 +87,39 @@
   gap: 24px;
 }
 .chronicles-notice-board__section { min-width: 0; }
+/* An isolated edict must not stretch across an entire desktop notice board. */
+.chronicles-notice-board__sections[data-chronicles-board-layout="single"] > .chronicles-notice-board__section {
+  max-width: 540px;
+}
+@media (min-width: 800px) {
+  .chronicles-notice-board__sections[data-chronicles-board-layout="single"] {
+    grid-template-columns: minmax(0, 540px) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 52px);
+  }
+  /* Embossed, non-interactive town crest on the unused wooden plank. */
+  .chronicles-notice-board__sections[data-chronicles-board-layout="single"]::after {
+    content: '⚜';
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    justify-self: center;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: min(100%, 178px);
+    aspect-ratio: 1;
+    border: 5px double #c49b6159;
+    border-radius: 50%;
+    background: radial-gradient(circle, #bd955027, #291c1300 73%);
+    box-shadow: inset 0 0 0 8px #21140e21, 0 1px 1px #e1b68024;
+    color: #d6a86573;
+    text-shadow: 0 2px 1px #24170e, 0 -1px #f1d1a039;
+    font-size: clamp(3.5rem, 6vw, 6rem);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+}
 .chronicles-notice-board__section-head {
   display: flex;
   align-items: center;
@@ -142,6 +175,18 @@
   box-shadow: 1px 2px 3px #2f1c13a6;
   transform: translateX(-50%);
 }
+.chronicles-notice-board__card::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  background: linear-gradient(135deg, #e4ca9a, #997043);
+  filter: drop-shadow(-2px -2px 1px #4a2c1544);
+  pointer-events: none;
+}
 .chronicles-notice-board__card-meta {
   display: flex;
   align-items: center;
@@ -159,25 +204,38 @@
 .chronicles-notice-board__status {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 31px;
-  padding: 3px 10px;
-  border: 2px double #935d3d;
-  border-radius: 2px 10px 3px 8px;
-  background: #b8785736;
+  gap: 7px;
+  min-height: 32px;
   color: #653720;
   font: .9rem/1 'Chronicles Pixel', Georgia, serif;
   transform: rotate(-3deg);
 }
-.chronicles-notice-board__status.is-active {
-  border-color: #86612b;
-  background: #b78c3f30;
-  color: #6f4819;
+.chronicles-notice-board__status::before {
+  content: '✦';
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 2px ridge #753522;
+  border-radius: 50%;
+  background: radial-gradient(circle at 33% 26%, #c47855, #933e28 63%, #5d261d);
+  box-shadow: inset 0 0 0 2px #efb48555, 1px 2px 2px #6b3e275c;
+  color: #f5c799;
+  font: bold 1rem Georgia, serif;
 }
-.chronicles-notice-board__status.is-completed {
-  border-color: #3d7150;
-  background: #68946f24;
-  color: #285637;
+.chronicles-notice-board__status.is-active { color: #6f4819; }
+.chronicles-notice-board__status.is-active::before {
+  border-color: #80591f;
+  background: radial-gradient(circle at 33% 26%, #e6b86b, #ad7a2f 64%, #704a19);
+  color: #fff0c5;
+}
+.chronicles-notice-board__status.is-completed { color: #285637; }
+.chronicles-notice-board__status.is-completed::before {
+  border-color: #31513a;
+  background: radial-gradient(circle at 33% 26%, #a5bd92, #557f60 64%, #2b523b);
+  color: #e8f0cc;
 }
 .chronicles-notice-board__card-title {
   display: block;
@@ -223,6 +281,17 @@
   color: #fff0cd;
   box-shadow: inset 0 1px #c49c60, 0 3px 0 #25170e;
   font: bold 1rem Georgia, serif;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .chronicles-notice-board__card {
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .chronicles-notice-board__card:hover,
+  .chronicles-notice-board__card:focus-within {
+    transform: translateY(-3px);
+    box-shadow: inset 0 0 0 3px #fff1cc77, inset 0 0 30px #84582722,
+      3px 9px 1px #21130977, 7px 17px 23px #160c08b3;
+  }
 }
 .chronicles-notice-board__card button:hover {
   background: linear-gradient(#77502b, #483020);
