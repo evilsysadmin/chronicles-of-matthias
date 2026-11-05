@@ -15,8 +15,8 @@ export function chroniclesExteriorDaylightProfile(worldMinutes) {
   const hour = minute / 60;
   const daylight = smooth((hour - 5) / 2) * (1 - smooth((hour - 18) / 2));
   const twilight = clamp01(
-    Math.exp(-((hour - 6.2) / 1.1) ** 2)
-    + Math.exp(-((hour - 18.9) / 1.1) ** 2),
+    Math.exp(-(((hour - 6.2) / 1.1) ** 2))
+    + Math.exp(-(((hour - 18.9) / 1.1) ** 2)),
   );
   // Rise in the east at 06:00, peak at midday and set in the west at 18:00.
   // Keep the disc below the horizon when it should be invisible.
@@ -57,6 +57,8 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
   const zenithNight = new THREE.Color(0x09152b);
   const horizonNight = new THREE.Color(0x263b56);
   const warm = new THREE.Color(0xffcb97);
+  const blendedHorizon = new THREE.Color();
+  const blendedZenith = new THREE.Color();
   const sunColorDay = new THREE.Color(0xffe6ba);
   const moonColor = new THREE.Color(0x92b3d8);
   const nightFog = new THREE.Color(0x1d2b43);
@@ -88,14 +90,15 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
       }
       if (backgroundDay) scene.background.copy(backgroundDay).lerp(nightFog, 1 - daylight);
       if (fogDay) scene.fog.color.copy(fogDay).lerp(nightFog, 1 - daylight);
+      blendedHorizon.copy(horizonNight).lerp(horizonDay, daylight);
+      blendedZenith.copy(zenithNight).lerp(zenithDay, daylight);
       for (let i = 0; i < pos.count; i += 1) {
         direction.fromBufferAttribute(pos, i).normalize();
         const altitude = THREE.MathUtils.smoothstep(direction.y, -0.08, 0.75);
         // The horizon warms briefly at sunset/sunrise rather than turning
         // the entire sky orange. Midday retains the original blue gradient.
         const glow = Math.pow(Math.max(0, direction.dot(sunVector)), 30) * 0.54;
-        color.copy(horizonNight).lerp(horizonDay, daylight)
-          .lerp(zenithNight.clone().lerp(zenithDay, daylight), altitude);
+        color.copy(blendedHorizon).lerp(blendedZenith, altitude);
         color.lerp(warm, clamp01(glow * daylight + twilight * (1 - altitude) * 0.32));
         skyColors.setXYZ(i, color.r, color.g, color.b);
       }
