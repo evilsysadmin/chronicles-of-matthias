@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
+import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
+import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
 
 function outdoors() {
@@ -56,6 +58,78 @@ describe('Terra solar cycle', () => {
     expect(dome.getObjectByName('swordhaven-sun-disc').visible).toBe(true);
     expect(sun.intensity).toBeCloseTo(lit);
     expect(hemi.intensity).toBeCloseTo(ambient);
+  });
+
+  it.each([true, false])('reveals sparse warm town windows and brighter existing wall lanterns at night (coarse=%s)', (coarsePointer) => {
+    const scene = new THREE.Scene();
+    const grid = swordhavenFirstBook.grid;
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+        width: grid[0].length, height: grid.length, center: { x: 9, y: 7 },
+        grid, content: [], landscape: swordhavenFirstBook.landscape,
+      },
+    });
+    const panes = scene.getObjectByName('chronicles-town-street-window-panes');
+    const glows = scene.getObjectByName('chronicles-town-street-window-night-glow');
+    const lanterns = scene.getObjectByName('chronicles-town-wall-lantern-glass');
+    expect(glows).toBeInstanceOf(THREE.InstancedMesh);
+    expect(glows.count).toBeGreaterThan(0);
+    expect(glows.count).toBeLessThan(panes.count / 3);
+    expect(glows.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+    expect(glows.userData.chroniclesDecorativeOnly).toBe(true);
+    expect(glows.visible).toBe(false);
+    expect(lanterns).toBeInstanceOf(THREE.InstancedMesh);
+    const countLights = () => {
+      let count = 0;
+      scene.traverse((object) => { if (object.isLight) count += 1; });
+      return count;
+    };
+    const lightsBefore = countLights();
+    const lampDayIntensity = lanterns.material.emissiveIntensity;
+    const renderer = { toneMappingExposure: 1.08 };
+    const cycle = createChroniclesExteriorDaylight(scene, renderer);
+    expect(cycle.sync(8 * 60)).toBe(true);
+    expect(glows.visible).toBe(false);
+    expect(glows.material.opacity).toBe(0);
+    expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
+    expect(cycle.sync(19 * 60)).toBe(true);
+    expect(glows.visible).toBe(true);
+    expect(glows.material.opacity).toBeGreaterThan(0);
+    expect(glows.material.opacity).toBeLessThan(0.82);
+    expect(cycle.sync(22 * 60)).toBe(true);
+    expect(glows.material.opacity).toBeCloseTo(0.82);
+    expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity + 1.7);
+    expect(countLights()).toBe(lightsBefore);
+    // No extra landscape colliders, and the new glow is in the same wall
+    // cell as the existing pane, not out in a walkable street.
+    const matrix = new THREE.Matrix4();
+    glows.getMatrixAt(0, matrix);
+    const p = new THREE.Vector3().setFromMatrixPosition(matrix);
+    expect(Number.isFinite(p.x) && Number.isFinite(p.z)).toBe(true);
+    expect(cycle.sync(22 * 60)).toBe(false);
+    expect(cycle.sync(8 * 60)).toBe(true);
+    expect(glows.visible).toBe(false);
+    expect(glows.material.opacity).toBe(0);
+    expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
+    expect(countLights()).toBe(lightsBefore);
+  });
+
+  it('does not add any inhabited windows or lanterns to wild exteriors', () => {
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer: true,
+      scenePlan: {
+        mapId: 'banner-road', regionKind: 'wilderness',
+        width: 5, height: 5, center: { x: 2, y: 2 },
+        grid: ['#####', '#...#', '#.#.#', '#...#', '#####'],
+        content: [],
+      },
+    });
+    expect(scene.getObjectByName('chronicles-town-street-window-night-glow')).toBeUndefined();
+    expect(scene.getObjectByName('chronicles-town-wall-lantern-glass')).toBeUndefined();
+    expect(createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1 })?.sync(1320)).toBe(true);
   });
 
   it('does not change the dungeon renderer when no exterior sun is present', () => {

@@ -144,6 +144,10 @@ function addSettlementStreetFacades(town, {
   const oak = new THREE.Color();
   const glass = new THREE.Color();
   const dummy = new THREE.Object3D();
+  // A few deterministic, occupied windows get a warm inner glow at night.
+  // One batched pane layer keeps the original blue-grey glass and leadwork,
+  // adds no point lights and needs no individual window updates.
+  const litWindowMatrices = [];
   facades.forEach(({ x, y, dx, dy, yaw }, faceIndex) => {
     const [wx, wz] = gridToWorld(x, y, center);
     dummy.rotation.y = yaw;
@@ -161,6 +165,13 @@ function addSettlementStreetFacades(town, {
       if (swordhavenWindows) {
         const tone = (x * 3 + y * 5 + storeyIndex * 2) % 7;
         panes.setColorAt(index, glass.setHex(glassTints[tone === 0 ? 3 : tone % 3]));
+        if ((x * 17 + y * 11 + storeyIndex * 3) % 7 === 0) {
+          // Only 0.003 m proud of the existing leaded pane, still inside
+          // its authored solid wall tile (outward depth < 2.0 m).
+          dummy.position.set(wx + dx * 1.997, windowY + 0.02, wz + dy * 1.997);
+          dummy.updateMatrix();
+          litWindowMatrices.push(dummy.matrix.clone());
+        }
       }
     });
   });
@@ -173,6 +184,27 @@ function addSettlementStreetFacades(town, {
   frames.castShadow = false;
   panes.castShadow = false;
   town.add(frames, panes);
+  if (litWindowMatrices.length) {
+    // A single transparent BasicMaterial batch: visible warm interiors at
+    // dusk/night without globally changing all glass or creating GPU lights.
+    const glow = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.62, 0.40, 0.003),
+      new THREE.MeshBasicMaterial({
+        color: 0xffcd7d, transparent: true, opacity: 0,
+        toneMapped: false, depthWrite: false,
+      }),
+      litWindowMatrices.length,
+    );
+    litWindowMatrices.forEach((matrix, index) => glow.setMatrixAt(index, matrix));
+    glow.instanceMatrix.needsUpdate = true;
+    glow.name = 'chronicles-town-street-window-night-glow';
+    glow.visible = false;
+    glow.castShadow = false;
+    glow.receiveShadow = false;
+    glow.frustumCulled = false; // Instanced windows span distant alleys.
+    glow.userData.chroniclesDecorativeOnly = true;
+    town.add(glow);
+  }
 }
 
 // Make long medieval facades read as TWO inhabited storeys instead of a
