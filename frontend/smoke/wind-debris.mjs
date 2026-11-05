@@ -55,6 +55,20 @@ try {
       assert.notEqual(facing.initialFlow, facing.reversed);
       assert.equal(facing.reused, true);
       assert.equal(facing.count, reading.count);
+      const gust = await page.evaluate(() => {
+        const fx = window.__terraWindDebris;
+        const layer = document.querySelector('.chronicles-wind-debris-layer');
+        const first = layer.firstElementChild;
+        const before = Number.parseFloat(getComputedStyle(first).animationDuration);
+        fx.setTime(fx.alternate, fx.facing);
+        const after = Number.parseFloat(getComputedStyle(first).animationDuration);
+        const reused = first === layer.firstElementChild;
+        fx.setTime(fx.start, fx.facing);
+        return { before, after, reused, count: layer.childElementCount };
+      });
+      assert.notEqual(gust.before, gust.after, 'Different wind strengths must alter CSS pace');
+      assert.equal(gust.reused, true, 'Wind gusts must not recreate flecks');
+      assert.equal(gust.count, reading.count);
       assert.deepEqual(errors, []);
       await page.screenshot({ path: 'smoke-wind-debris-' + biome + '-' + width + '.png' });
       await page.emulateMedia({ reducedMotion: 'reduce' });
