@@ -94,8 +94,8 @@ function regionalWeatherKind(mapId, biome, period) {
   // candidate becomes cloudy; this needs only two fixed lookbacks, never
   // previous mutable state, extra save data or an unbounded history scan.
   if ((kind === 'rain' || kind === 'snow') && period >= 2
-    && sampledWeatherKind(mapId, biome, period - 1) === kind
-    && sampledWeatherKind(mapId, biome, period - 2) === kind) return 'cloudy';
+    && ['rain', 'snow'].includes(sampledWeatherKind(mapId, biome, period - 1))
+    && ['rain', 'snow'].includes(sampledWeatherKind(mapId, biome, period - 2))) return 'cloudy';
   return kind;
 }
 
