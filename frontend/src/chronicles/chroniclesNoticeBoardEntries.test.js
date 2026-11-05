@@ -64,4 +64,23 @@ describe('Swordhaven notice board — lasting offers', () => {
     expect(after).toContain('data-chronicles-board-status="active"');
     expect(after).not.toContain('data-chronicles-board-accept');
   });
+
+  it('groups genuine notices and company work without altering quest status or actions', () => {
+    const initial = atBoard(createChroniclesState('swordhaven-first-book'));
+    const available = renderToStaticMarkup(createElement(ChroniclesNoticeBoard, {
+      state: initial, onAccept: () => {}, onClose: () => {},
+    }));
+    expect(available).toContain('data-chronicles-board-section="posted"');
+    expect(available).toContain('1 aviso');
+    expect(available).not.toContain('data-chronicles-board-section="other"');
+    expect(available).toContain('data-chronicles-board-status="available"');
+
+    const active = chroniclesReduce(initial, 'interact');
+    const markup = renderToStaticMarkup(createElement(ChroniclesNoticeBoard, {
+      state: active, onAccept: () => {}, onClose: () => {},
+    }));
+    expect(markup).toContain('data-chronicles-board-status="active"');
+    expect(markup).toContain('Objetivo actual');
+    expect(markup).not.toContain('data-chronicles-board-accept');
+  });
 });
