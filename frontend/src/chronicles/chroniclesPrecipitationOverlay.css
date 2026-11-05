@@ -41,11 +41,11 @@
 }
 @keyframes chronicles-rainfall {
   from { transform: translate3d(0, -24px, 0); }
-  to { transform: translate3d(var(--p-drift), var(--precipitation-travel), 0); }
+  to { transform: translate3d(calc(var(--p-drift) + var(--wind-drift, 0px)), var(--precipitation-travel), 0); }
 }
 @keyframes chronicles-snowfall {
   from { transform: translate3d(0, -24px, 0); }
-  to { transform: translate3d(var(--p-drift), var(--precipitation-travel), 0); }
+  to { transform: translate3d(calc(var(--p-drift) + var(--wind-drift, 0px)), var(--precipitation-travel), 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .chronicles-precipitation-layer { transition: none; }
