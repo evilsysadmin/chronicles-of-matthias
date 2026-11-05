@@ -56,7 +56,8 @@ export default function ChroniclesGameHelp({ onBack }) {
           determina quién actúa antes. A ataca cuerpo a cuerpo durante tu turno;
           S dispara con un personaje que lleve un arma a distancia válida.
           C abre la magia; O abre los objetos y I consulta la hora, el día,
-          el año y la estación sin consumir un turno.</p>
+          el año y la estación sin consumir un turno. Girar en el sitio
+          no adelanta el reloj del mundo.</p>
       </details>
       <details>
         <summary>Crónica, progreso y guardado</summary>

@@ -26,11 +26,41 @@ describe('MM3 world clock', () => {
     expect(chroniclesReduce(start, 'not-an-action')).toBe(start);
     const turned = chroniclesReduce(start, 'turn-left');
     expect(turned.turns).toBe(start.turns + 1);
-    expect(turned.worldMinutes).toBe(490);
+    expect(turned.worldMinutes).toBe(CHRONICLES_WORLD_START_MINUTES);
+    expect(turned.direction).toBe((start.direction + 3) % 4);
+    const turnedBack = chroniclesReduce(turned, 'turn-right');
+    expect(turnedBack.turns).toBe(start.turns + 2);
+    expect(turnedBack.direction).toBe(start.direction);
+    expect(turnedBack.worldMinutes).toBe(CHRONICLES_WORLD_START_MINUTES);
     const blocked = { ...turned, phase: 'combat', initiative: { order: [], cursor: 0 } };
     expect(chroniclesReduce(blocked, 'turn-right')).toBe(blocked);
     const tactics = createChroniclesState('swordhaven-sewers');
     expect(chroniclesReduce(tactics, 'turn-right').worldMinutes).toBeUndefined();
+  });
+
+  it('a full rotation does not advance time or cross midnight; a real step does', () => {
+    const start = { ...initial(), worldMinutes: 23 * 60 + 50 };
+    let turning = start;
+    for (const action of ['turn-right', 'turn-right', 'turn-right', 'turn-right', 'turn-left']) {
+      const next = chroniclesReduce(turning, action);
+      expect(next.turns).toBe(turning.turns + 1); // keep the existing pursuit contract
+      expect(next.x).toBe(start.x);
+      expect(next.y).toBe(start.y);
+      expect(next.worldMinutes).toBe(start.worldMinutes);
+      turning = next;
+    }
+    expect(chroniclesWorldCalendar(turning.worldMinutes).time).toBe('23:50');
+    const stepped = chroniclesAdvanceWorldTimeOnTurn(turning, {
+      ...turning, x: turning.x + 1, turns: turning.turns + 1,
+    }, 'forward');
+    expect(chroniclesWorldCalendar(stepped.worldMinutes)).toMatchObject({
+      time: '00:00', dayOfYear: 2,
+    });
+    // Object-shaped dispatches and Tactics retain the same distinction.
+    const objectTurn = chroniclesAdvanceWorldTimeOnTurn(turning,
+      { ...turning, direction: (turning.direction + 1) % 4, turns: turning.turns + 1 },
+      { type: 'turn-right' });
+    expect(objectTurn.worldMinutes).toBe(turning.worldMinutes);
   });
 
   it('supports rolling past midnight, seasons and years', () => {
@@ -69,9 +99,10 @@ describe('MM3 world clock', () => {
   it('persists elapsed minutes in real run flags and restores legacy and corrupt saves safely', () => {
     const after = chroniclesReduce(initial(), 'turn-right');
     const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(after, 1)));
-    expect(payload.worldFlags['__chrRuntime.worldMinutes']).toBe(490);
+    expect(payload.worldFlags['__chrRuntime.worldMinutes']).toBe(480);
     const recovered = chroniclesApplyRunCheckpoint(initial(), payload);
-    expect(recovered.worldMinutes).toBe(490);
+    expect(recovered.worldMinutes).toBe(480);
+    expect(recovered.direction).toBe(after.direction);
     const legacy = structuredClone(payload);
     delete legacy.worldFlags['__chrRuntime.worldMinutes'];
     expect(chroniclesApplyRunCheckpoint(initial(), legacy).worldMinutes).toBe(480);

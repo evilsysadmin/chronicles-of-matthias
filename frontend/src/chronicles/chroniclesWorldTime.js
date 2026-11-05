@@ -43,13 +43,18 @@ export function chroniclesWorldCalendar(value) {
 }
 
 // Uses the actual accepted turn budget, not button presses or animation frames.
-// No time is spent for blocked moves, refused actions or menu interactions.
-// Resting consumes one tactical turn but eight hours on the world clock.
+// No time is spent for blocked steps, in-place facing changes, refused actions
+// or menu interactions. Resting consumes one tactical turn but eight hours.
+// Exploratory turns/pursuit remain separate from the calendar's elapsed minutes.
 export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   if (!before || !after || before.combatRules !== 'mm3') return after;
   const spentTurns = Number(after.turns) - Number(before.turns);
   if (!Number.isSafeInteger(spentTurns) || spentTurns <= 0) return after;
   const actionType = typeof action === 'string' ? action : action?.type;
+  // Looking around without leaving the same tile never advances Terra's sun
+  // or calendar. Preserve the preexisting exploration-turn budget/pursuit:
+  // turning may still alert enemies, but not move the in-world clock.
+  if (actionType === 'turn-left' || actionType === 'turn-right') return after;
   // The legacy reducer sometimes increments turns for a wall bump. It may
   // still advance enemy awareness, but no journey time passes without a step.
   if (['forward', 'backward', 'strafe-left', 'strafe-right'].includes(actionType)
