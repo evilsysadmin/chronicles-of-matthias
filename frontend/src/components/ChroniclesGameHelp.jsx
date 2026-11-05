@@ -57,7 +57,10 @@ export default function ChroniclesGameHelp({ onBack }) {
           S dispara con un personaje que lleve un arma a distancia válida.
           C abre la magia; O abre los objetos y I consulta la hora, el día,
           el año y la estación sin consumir un turno. Girar en el sitio
-          no adelanta el reloj del mundo.</p>
+          no gasta minutos por el giro. Cinco minutos reales de
+          exploración exterior visible suman diez minutos de Terra adicionales.
+          El contador conserva lo acumulado aunque camines, y se pausa
+          en combate, menús y con la pestaña oculta.</p>
       </details>
       <details>
         <summary>Crónica, progreso y guardado</summary>

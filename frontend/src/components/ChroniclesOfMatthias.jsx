@@ -96,6 +96,10 @@ import {
 import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.js';
 import { chroniclesCampRestStatus } from '../chronicles/chroniclesCampRest.js';
 import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
+import {
+  chroniclesAdvanceAmbientWorldTime, createChroniclesAmbientTimeCounter,
+  attachChroniclesAmbientWorldClock,
+} from '../chronicles/chroniclesAmbientWorldClock.js';
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
@@ -411,6 +415,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const checkpointExistsRef = useRef(false);
   const automapVisitedRef = useRef({});
   const stateRef = useRef(null);
+  // Session-local progress toward the next 5 REAL minutes; renders/moves
+  // must not discard it, nor opening/closing a help/menu overlay.
+  const ambientTimeCounterRef = useRef(null);
+  if (!ambientTimeCounterRef.current) ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
   const [state, setState] = useState(null);
   // Opening the quartermaster counter is a free presentation transition.
   const [provisionsOpen, setProvisionsOpen] = useState(false);
@@ -772,6 +780,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     runProgressionActiveRef.current = true;
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, ensureChroniclesRun(FIRST_PERSON_RUN_SCOPE));
     progressionRef.current = saved;
+    // Replace the counter, not just reset it: a retiring effect cleanup
+    // must never accrue old-session time into the next expedition.
+    ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
     stateRef.current = null;
     staleRunRecoveryAttemptedRef.current = false;
     setProgression(saved);
@@ -1315,6 +1326,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       finishChroniclesRun(FIRST_PERSON_RUN_SCOPE, activeRunIdRef.current);
       activeRunIdRef.current = null;
     }
+    ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
     stateRef.current = null;
     setState(null);
     setSelectedMemberId('matthias');
@@ -1914,6 +1926,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     activeRunIdRef.current = null;
     authoritativeRunRef.current = null;
     checkpointFingerprintRef.current = '';
+    // Switching save slots isolates the new run even if old timer cleanup
+    // executes after this callback.
+    ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
     stateRef.current = null;
     setState(null);
     setReady(false);
@@ -1955,6 +1970,37 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       refreshSaves((value) => value + 1);
     });
   };
+
+  // A real five-minute block gives +10 Terra minutes independent from
+  // movement. Never discard the partial block when the party moves.
+  const ambientClockMap = state ? chroniclesMapForState(state) : null;
+  const ambientClockPaused = !ready || entryView !== 'playing'
+    || state?.phase !== 'explore' || Boolean(state?.initiative)
+    || menuOpen || feedbackOpen || firstStepsOpen || adminOpen || journalOpen
+    || quickStatusOpen || worldInfoOpen || chronicleModalOpen || automapOpen
+    || Boolean(spellMenuOpen) || Boolean(sheetMemberId) || Boolean(pendingSpellTarget)
+    || Boolean(areaTransition) || Boolean(audience) || noticeBoardOpen
+    || Boolean(worldStatOffer) || provisionsOpen || saveBusy
+    || confirmExitWithoutSaving || confirmLoadSelection
+    || Boolean(state?.shop || state?.guild || state?.inn)
+    || Boolean(chroniclesCampaignEpiloguePending(state))
+    || !['settlement', 'wilderness', 'outdoor'].includes(ambientClockMap?.regionKind);
+  useEffect(() => {
+    if (ambientClockPaused) return undefined;
+    const counter = ambientTimeCounterRef.current;
+    return attachChroniclesAmbientWorldClock((minutes) => {
+      // Ignore stale callbacks from a retired run when a new game or save
+      // replaces the ref before React has cleaned up the previous timer.
+      if (ambientTimeCounterRef.current !== counter) return false;
+      const before = stateRef.current;
+      if (!before) return false;
+      const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before), minutes);
+      if (after === before) return false;
+      stateRef.current = after;
+      setState(after);
+      return true;
+    }, { counter });
+  }, [ambientClockPaused, state?.mapId]);
 
   if (entryView === 'menu') {
     return (

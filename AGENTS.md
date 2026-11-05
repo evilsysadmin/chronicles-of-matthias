@@ -125,6 +125,21 @@
   capa CSS dentro del viewport 3D, presupuestos menores en móvil y reducción
   de movimiento. No despertar el renderizador WebGL para hacer caer partículas;
   ocultar el efecto en pestañas invisibles y liberarlo al salir del mapa.
+  Los cambios de nubosidad/niebla, lluvia y nieve se suavizan los primeros
+  40 minutos de cada bloque meteorológico (sin modificar el estado oficial
+  de seis horas mostrado en I). Al entrar, salir o restaurar una partida,
+  todos los efectos deben derivarse del worldMinutes persistido, sin timers
+  propios de precipitación, sin duplicar partículas ni aumentar el presupuesto móvil.
+  Además, en **exploración MM3 exterior visible y sin overlays**, Terra
+  avanza **10 minutos por cada 5 minutos reales** de tiempo activo, aunque
+  el grupo esté quieto. Un contador de tiempo real persiste entre movimientos:
+  3 min quieto + un paso (+10 min Terra) + 3 min quieto = otros +10 min Terra,
+  quedando **1 minuto real acumulado** para el siguiente umbral. El contador
+  no se reinicia por movimiento, menús ni cambios de mapa; se pausa en
+  interiores, combates, diálogos y pestañas ocultas, sin recuperar tiempo
+  en segundo plano. No genera turnos ni persecuciones, y no renderiza/tiquea
+  cada segundo: una alarma por umbral de 5 minutos. Solo los bloques
+  completos actualizan worldMinutes para guardados y clima.
   Los adoquines de Swordhaven responden a la lluvia sin afectar al grid:
   humedecen durante 30 min, se secan durante las tres horas siguientes al
   último bloque lluvioso; material original/restauración reversible y una
