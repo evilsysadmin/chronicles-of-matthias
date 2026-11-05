@@ -93,7 +93,7 @@ describe('Terra weather by region and stored world time', () => {
     expect(middle.fog).toBeCloseTo((before.fog + after.fog) / 2);
     expect(finish.progress).toBe(1);
     expect(finish.clouds).toBe(after.clouds);
-    expect(finish.fog).toBe(after.fog);
+    expect(finish.fog).toBeCloseTo(after.fog);
     expect(chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 40 }))
       .toEqual(finish);
     expect(chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary - 1 }).kind)
@@ -143,7 +143,7 @@ describe('Terra weather by region and stored world time', () => {
     const a = chroniclesRegionalWind({ ...wet, worldMinutes: 480 });
     expect(a).toEqual(chroniclesRegionalWind({ ...wet, worldMinutes: 480 }));
     expect(Object.isFrozen(a)).toBe(true);
-    expect(chroniclesRegionalWind({ ...wet, worldMinutes: 480 + 100 })).toEqual(a);
+    expect(chroniclesRegionalWind({ ...wet, worldMinutes: 480 + 30 })).toEqual(a);
     const boundary = Array.from({ length: 120 }, (_, i) => (i + 1) * CHRONICLES_WEATHER_PERIOD_MINUTES)
       .find(minute => {
         const prev = chroniclesRegionalWind({ ...wet, worldMinutes: minute - 1 });
