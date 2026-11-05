@@ -114,11 +114,17 @@
   El sol y cielo de los exteriores deben derivarse del mismo worldMinutes
   persistido (sin Date.now, sin refresco continuo ni clima ficticio), con
   iluminación nocturna jugable; mazmorras y Tactics no cambian su luz.
+  Amanecer, atardecer y la fase del folio I comparten el mismo fotoperíodo
+  estacional suave: 12 horas de luz en equinoccios de primavera/otoño,
+  14,5 en pleno verano y 9,5 en pleno invierno, sin modificar la hora del reloj.
   El alumbrado urbano del exterior canónico reutiliza vidrio/linternas
   instanciados y reacciona solo al minuto del reloj, sin nuevas luces
   puntuales por casa, colisionadores ni cambios en la cuadrícula.
   La meteorología regional se deriva de mapId, bioma, estación y minuto
-  persistido en tramos de seis horas: sin Date.now, timers ni RNG en runtime.
+  persistido en tramos de 90 minutos de Terra (45 reales estando quieto):
+  cada tramo permite un cambio, pero no lo fuerza. Tablas por bioma y estación,
+  sin nieve estival, con precipitación continua acotada a dos tramos y sin
+  Date.now, timers ni RNG en runtime.
   Informar del clima actual solo en I; mazmorras no tienen clima exterior.
   La primera pasada atmosférica modifica cielo, luz y alcance de niebla
   existente. Lluvia y nieve se animan exclusivamente en exteriores con una
@@ -127,7 +133,7 @@
   ocultar el efecto en pestañas invisibles y liberarlo al salir del mapa.
   Los cambios de nubosidad/niebla, lluvia y nieve se suavizan los primeros
   40 minutos de cada bloque meteorológico (sin modificar el estado oficial
-  de seis horas mostrado en I). El viento regional deriva del mismo
+  de 90 minutos mostrado en I). El viento regional deriva del mismo
   mapId/bioma/estación/período y sus componentes este/sur se mezclan
   gradualmente. La lluvia y nieve se desvían en pantalla según ese vector
   y el rumbo real de cámara: girar 180° invierte la deriva sin recrear
@@ -152,7 +158,8 @@
   completos actualizan worldMinutes para guardados y clima.
   Los adoquines de Swordhaven responden a la lluvia sin afectar al grid:
   humedecen durante 30 min, se secan durante las tres horas siguientes al
-  último bloque lluvioso; material original/restauración reversible y una
+  último bloque lluvioso aunque eso abarque varias celdas meteorológicas;
+  material original/restauración reversible y una
   única malla instanciada de charcos puramente decorativos (12 móvil / 22 PC).
   Mantener código, ayuda, botones y pruebas sincronizados.
 - En MM3 **no existe el atributo «Alcance»** de equipo. Melee, incluidas lanza y bastón, ataca adyacente; **durante iniciativa con cámara fija**, cada héroe puede alcanzar a un enemigo vivo y comprometido en cualquiera de las cuatro casillas cardinales adyacentes (no a través de paredes). Fuera del combate se conserva el ataque frontal. Arco, ballesta, honda y conjuros ofensivos/paralizantes actúan sobre enemigos visibles en línea recta sin atravesar paredes. El recorrido está limitado por el propio mapa. El HUD y las tiendas no deben anunciar diferencias de casillas ficticias. Mantener intacta la geometría de combate del modo Tactics y los identificadores/metadatos históricos de los objetos para guardados existentes.
