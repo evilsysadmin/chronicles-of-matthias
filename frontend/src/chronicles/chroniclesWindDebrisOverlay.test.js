@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import {
   chroniclesWindDebrisKind, chroniclesWindDebrisBudget,
   chroniclesWindDebrisParticle, chroniclesWindDebrisCrosswind,
@@ -12,7 +12,7 @@ const ash = { mapId: 'terra-test-ash', regionKind: 'wilderness', biome: 'ash' };
 
 function sample(region, target) {
   for (let slot = 0; slot < 160; slot += 1) {
-    const minute = 480 + slot * 360 + 60;
+    const minute = CHRONICLES_WEATHER_PERIOD_MINUTES * (6 + slot) + 50;
     const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
     if (target === 'dry' && ['clear', 'cloudy'].includes(weather.kind)) return minute;
     if (weather.kind === target) return minute;
@@ -134,7 +134,7 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     let alternate = null;
     const initialStrength = Math.abs(chroniclesWindDebrisCrosswind(weather.wind, facing));
     for (let slot = 0; slot < 160; slot += 1) {
-      const candidate = 480 + slot * 360 + 60;
+      const candidate = CHRONICLES_WEATHER_PERIOD_MINUTES * (6 + slot) + 50;
       const other = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: candidate });
       const strength = Math.abs(chroniclesWindDebrisCrosswind(other.wind, facing));
       if (['clear', 'cloudy'].includes(other.kind) && !other.precipitation
@@ -161,7 +161,7 @@ describe('Terra decorative wind-borne leaves and ash', () => {
   it('waits for previous fog to dissipate before showing leaves in a dry cell', () => {
     let minute = null;
     for (let cell = 2; cell < 240; cell += 1) {
-      const candidate = cell * 360 + 5;
+      const candidate = cell * CHRONICLES_WEATHER_PERIOD_MINUTES + 5;
       const weather = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: candidate });
       if (['clear', 'cloudy'].includes(weather.kind)
         && weather.fog >= 0.35 && !weather.precipitation) {
