@@ -23,6 +23,7 @@ import { buildSwordhavenScene } from './chronicles/chroniclesSwordhaven3D.js';
 import { buildChroniclesCampaignExterior } from './chronicles/chroniclesCampaignExterior3D.js';
 import { createChroniclesExteriorDaylight } from './chronicles/chroniclesExteriorDaylight.js';
 import { createChroniclesPrecipitationOverlay } from './chronicles/chroniclesPrecipitationOverlay.js';
+import { createChroniclesWindDebrisOverlay } from './chronicles/chroniclesWindDebrisOverlay.js';
 import { chroniclesFountainMotionEnabled } from './chronicles/chroniclesSwordhavenFountainArt.js';
 import { buildChroniclesDungeonClutter } from './chronicles/chroniclesDungeonClutter.js';
 import { buildChroniclesWitchCauldron3D } from './chronicles/chroniclesWitchCauldron3D.js';
@@ -751,6 +752,13 @@ export function createChroniclesOfMatthiasGame(host, {
   const precipitation = outdoors ? createChroniclesPrecipitationOverlay(host, {
     mapId: scenePlan?.mapId, regionKind: scenePlan?.regionKind, biome: scenePlan?.biome,
   }, { coarse, reducedMotion }) : null;
+  // Only authored forests/ash wilderness get airborne debris; the 3D world
+  // keeps sleeping while these tiny CSS composited details drift.
+  const windDebris = scenePlan?.regionKind === 'wilderness'
+    && ['forest', 'ash'].includes(scenePlan?.biome)
+    ? createChroniclesWindDebrisOverlay(host, {
+      mapId: scenePlan.mapId, regionKind: scenePlan.regionKind, biome: scenePlan.biome,
+    }, { coarse, reducedMotion }) : null;
   const plazaFountainArt = scenePlan?.mapId === 'swordhaven-first-book'
     ? scene.getObjectByName('swordhaven-fountain-upper-tier') : null;
   const plazaFountainPosition = plazaFountainArt?.parent?.getWorldPosition(new THREE.Vector3());
@@ -831,6 +839,7 @@ export function createChroniclesOfMatthiasGame(host, {
     if (!chroniclesThreeViewportChanged(lastViewport, nextViewport)) return;
     lastViewport = nextViewport;
     precipitation?.resize();
+    windDebris?.resize();
     const { width, height, pixelRatio } = nextViewport;
     // Browser zoom/display changes can change DPR without a CSS size change.
     if (renderer.getPixelRatio() !== pixelRatio) renderer.setPixelRatio(pixelRatio);
@@ -853,6 +862,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // World wind projected to camera-right: an in-place turn changes its
     // apparent direction without changing world time or particle geometry.
     precipitation?.sync(state?.worldMinutes, viewDirection);
+    windDebris?.sync(state?.worldMinutes, viewDirection);
     // A stationary MM3 group can be ambushed at its side while looking at
     // a solid wall. Follow a REAL adjacent target with the camera only;
     // keep state.direction (and every turn/aiming rule) untouched.
@@ -1317,6 +1327,7 @@ export function createChroniclesOfMatthiasGame(host, {
     refreshFountainFrameTimer();
     ambientTorchGlows.setVisible(chroniclesPerfTorchesVisible(visible, perfIsolation.disableTorchGlows));
     precipitation?.setVisible(visible);
+    windDebris?.setVisible(visible);
     renderDiagnostics.setVisible(visible);
   };
   document.addEventListener('visibilitychange', onVisibility);
@@ -1336,6 +1347,7 @@ export function createChroniclesOfMatthiasGame(host, {
       reducedHurtTimers.clear();
       ambientTorchGlows.dispose();
       precipitation?.dispose();
+      windDebris?.dispose();
       renderDiagnostics.dispose();
       observer?.disconnect();
       window.removeEventListener('resize', onWindowResize);

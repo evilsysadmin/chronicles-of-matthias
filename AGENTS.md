@@ -131,7 +131,12 @@
   mapId/bioma/estación/período y sus componentes este/sur se mezclan
   gradualmente. La lluvia y nieve se desvían en pantalla según ese vector
   y el rumbo real de cámara: girar 180° invierte la deriva sin recrear
-  partículas, sumar tiempo ni despertar WebGL.
+  partículas, sumar tiempo ni despertar WebGL. En bosques y tierras de
+  ceniza salvajes se pueden componer pocas hojas/motas secas desplazadas
+  por ese viento (4–5 móvil / 8–10 escritorio), solo con despejado/nublado,
+  sin lluvia, nieve ni niebla. No usar ese efecto en ciudades/mazmorras;
+  suspender al ocultar la pestaña, respetar movimiento reducido y no añadir
+  timers, luces, colisiones ni nuevos campos al guardado.
   Al entrar, salir o restaurar una partida,
   todos los efectos deben derivarse del worldMinutes persistido, sin timers
   propios de precipitación, sin duplicar partículas ni aumentar el presupuesto móvil.
