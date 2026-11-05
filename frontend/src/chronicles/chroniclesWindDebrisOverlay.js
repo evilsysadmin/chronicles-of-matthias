@@ -52,6 +52,13 @@ export function chroniclesWindDebrisCrosswind(wind, facing = 0) {
   return chroniclesPrecipitationWindDrift(wind, facing, 'rain');
 }
 
+// Faster lateral wind means shorter travel times. Pure and symmetric for
+// left/right camera-relative wind; no wall-clock gusts or extra timers.
+export function chroniclesWindDebrisPace(crosswind) {
+  const strength = Number.isFinite(crosswind) ? Math.abs(crosswind) : 0;
+  return Math.max(0.70, Math.min(1.12, 1.18 - 0.0065 * strength));
+}
+
 export function createChroniclesWindDebrisOverlay(host, region, {
   coarse = false, reducedMotion = false,
 } = {}) {
@@ -70,6 +77,8 @@ export function createChroniclesWindDebrisOverlay(host, region, {
     const travel = Math.max(120, host.clientWidth + 150);
     layer.style.setProperty('--debris-travel', travel + 'px');
     layer.style.setProperty('--debris-travel-half', (travel / 2) + 'px');
+    layer.style.setProperty('--debris-travel-quarter', (travel * 0.16) + 'px');
+    layer.style.setProperty('--debris-travel-three-quarter', (travel * 0.76) + 'px');
   };
 
   const sync = (worldMinutes, facing = 0) => {
@@ -80,8 +89,10 @@ export function createChroniclesWindDebrisOverlay(host, region, {
     const nextKind = Math.abs(nextDrift) >= 8 && !reducedMotion ? potential : null;
     if (kind === nextKind && drift === nextDrift) return false;
     const changedKind = kind !== nextKind;
+    const changedSpeed = Math.abs(drift) !== Math.abs(nextDrift);
     kind = nextKind;
     drift = nextDrift;
+    const pace = chroniclesWindDebrisPace(drift);
     layer.dataset.flow = drift < 0 ? 'left' : 'right';
     if (changedKind) {
       layer.replaceChildren();
@@ -97,14 +108,25 @@ export function createChroniclesWindDebrisOverlay(host, region, {
           fleck.style.setProperty('--debris-width', p.width.toFixed(2) + 'px');
           fleck.style.setProperty('--debris-height', p.height.toFixed(2) + 'px');
           fleck.style.setProperty('--debris-float-up', (-p.float).toFixed(2) + 'px');
+          fleck.style.setProperty('--debris-float-quarter', (-p.float * 0.3).toFixed(2) + 'px');
+          fleck.style.setProperty('--debris-float-three-quarter', (p.float * 0.12).toFixed(2) + 'px');
           fleck.style.setProperty('--debris-float-down', (p.float * 0.4).toFixed(2) + 'px');
-          fleck.style.setProperty('--debris-duration', p.duration.toFixed(2) + 's');
-          fleck.style.setProperty('--debris-delay', p.delay.toFixed(2) + 's');
+          fleck.style.setProperty('--debris-duration', (p.duration * pace).toFixed(2) + 's');
+          fleck.style.setProperty('--debris-delay', (p.delay * pace).toFixed(2) + 's');
           fleck.style.setProperty('--debris-alpha', p.alpha.toFixed(2));
           fragment.appendChild(fleck);
         }
         layer.appendChild(fragment);
       } else delete layer.dataset.kind;
+    } else if (kind && changedSpeed) {
+      // Retain the same nodes and their stagger; only update compositor CSS
+      // timing when a new Terra cell changes camera-relative wind intensity.
+      for (let index = 0; index < layer.children.length; index += 1) {
+        const p = chroniclesWindDebrisParticle(index, kind);
+        layer.children[index].style.setProperty(
+          '--debris-duration', (p.duration * pace).toFixed(2) + 's',
+        );
+      }
     }
     layer.hidden = !visible || !kind;
     return true;
