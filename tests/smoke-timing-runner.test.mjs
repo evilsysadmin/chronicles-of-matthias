@@ -9,14 +9,14 @@ import test from 'node:test';
 const runner = fileURLToPath(new URL('../frontend/smoke/run-timed.mjs', import.meta.url));
 const workflow = readFileSync(new URL('../.github/workflows/react-frontend.yml', import.meta.url), 'utf8');
 
-test('all 22 real Chromium fixtures stay sequential and measured', () => {
+test('all 23 real Chromium fixtures stay sequential and measured', () => {
   const scripts = [...workflow.matchAll(/^          node smoke\/run-timed\.mjs smoke\/([a-z0-9-]+\.mjs) http:\/\/localhost:\d+\//gm)]
     .map((x) => x[1]);
-  assert.equal(scripts.length, 22, 'a missing smoke fixture must not silently shorten CI');
-  assert.equal(new Set(scripts).size, 22);
+  assert.equal(scripts.length, 23, 'a missing smoke fixture must not silently shorten CI');
+  assert.equal(new Set(scripts).size, 23);
   for (const expected of [
     'mount.mjs', 'character-sheet-desktop.mjs', 'grimoire-touch.mjs', 'spell-target-banner.mjs', 'initiative-legibility.mjs',
-    'folio-mobile.mjs', 'shop-room.mjs', 'audience-room.mjs', 'interior-art-gate.mjs', 'inn-room.mjs', 'provisions-room.mjs', 'journal-book.mjs',
+    'folio-mobile.mjs', 'world-info.mjs', 'shop-room.mjs', 'audience-room.mjs', 'interior-art-gate.mjs', 'inn-room.mjs', 'provisions-room.mjs', 'journal-book.mjs',
     'loader.mjs', 'character-setup.mjs', 'save-menu.mjs', 'first-hour-contact.mjs',
     'adventure-menu-shortcuts.mjs', 'party-avatar-interaction.mjs', 'party-bark.mjs', 'party-hud-stability.mjs', 'area-transition-choice.mjs',
     'swordhaven-streets.mjs',

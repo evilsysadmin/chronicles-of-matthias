@@ -4,23 +4,38 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import ChroniclesWorldInfo from './ChroniclesWorldInfo.jsx';
 import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
 
-describe('MM3 world information parchment', () => {
-  it('renders saved Terra time and day without changing the clock', () => {
+const render = (minutes) => renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+  calendar: chroniclesWorldCalendar(minutes), onClose: () => {},
+}));
+
+describe('MM3 information folio', () => {
+  it('presents the saved calendar once, with a clear clock and compact date cells', () => {
     const calendar = chroniclesWorldCalendar(8 * 60);
     const before = JSON.stringify(calendar);
-    const html = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
-      calendar, onClose: () => {},
-    }));
+    const html = render(8 * 60);
     expect(html).toContain('INFORMACIÓN DEL JUEGO');
+    expect(html).toContain('TERRA · CRÓNICA DEL VIAJE');
+    expect(html).toContain('data-chronicles-world-info-time');
     expect(html).toContain('08:00');
     expect(html).toContain('500');
     expect(html).toContain('Lunes');
     expect(html).toContain('Primavera');
     expect(html).toContain('role="dialog"');
-    expect(html).toContain('data-chronicles-world-info');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain('data-daylight-phase="day"');
+    expect(html).toContain('chronicles-world-info__calendar');
+    expect(html).toContain('Consultar no consume turno');
+    expect(html).not.toContain('Día 1 del mes');
     expect(JSON.stringify(calendar)).toBe(before);
   });
-  it('does not render the popup when closed', () => {
+  it('uses the actual saved day/night phase, not made-up weather', () => {
+    const night = render(22 * 60);
+    expect(night).toContain('data-daylight-phase="night"');
+    expect(night).toContain('Noche');
+    expect(night).toContain('22:00');
+    expect(night).not.toMatch(/Lluvia|Nieve|Despejado/);
+  });
+  it('renders nothing while closed', () => {
     expect(renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
       calendar: null, onClose: () => {},
     }))).toBe('');

@@ -100,6 +100,8 @@ jobs:
           # font-size and clipping gates, not merely a successful React mount.
           node smoke/run-timed.mjs smoke/initiative-legibility.mjs http://localhost:4174/smoke/initiative-legibility.html
           node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
+          # MM3's I folio: real component, legible calendar and 360/390/430/landscape/desktop fit.
+          node smoke/run-timed.mjs smoke/world-info.mjs http://localhost:4174/smoke/world-info.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
