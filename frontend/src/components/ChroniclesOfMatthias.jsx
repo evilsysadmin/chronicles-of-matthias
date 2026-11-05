@@ -1987,7 +1987,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     || !['settlement', 'wilderness', 'outdoor'].includes(ambientClockMap?.regionKind);
   useEffect(() => {
     if (ambientClockPaused) return undefined;
+    const counter = ambientTimeCounterRef.current;
     return attachChroniclesAmbientWorldClock((minutes) => {
+      // Ignore stale callbacks from a retired run when a new game or save
+      // replaces the ref before React has cleaned up the previous timer.
+      if (ambientTimeCounterRef.current !== counter) return false;
       const before = stateRef.current;
       if (!before) return false;
       const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before), minutes);
@@ -1995,7 +1999,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       stateRef.current = after;
       setState(after);
       return true;
-    }, { counter: ambientTimeCounterRef.current });
+    }, { counter });
   }, [ambientClockPaused, state?.mapId]);
 
   if (entryView === 'menu') {
