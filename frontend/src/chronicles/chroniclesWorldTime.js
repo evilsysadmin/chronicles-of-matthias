@@ -19,6 +19,19 @@ export function chroniclesWorldMinutes(value) {
     ? value : CHRONICLES_WORLD_START_MINUTES;
 }
 
+// Terra's northern-hemisphere-like year has a smoothly changing photoperiod:
+// 12 hours at spring/autumn equinox, 14.5 in midsummer and 9.5 in midwinter.
+// Both the sky and the Information folio use this one persisted-time function.
+export function chroniclesSeasonalSunTimes(worldMinutes) {
+  const day = Math.floor(chroniclesWorldMinutes(worldMinutes) / MINUTES_PER_DAY) % DAYS_PER_YEAR;
+  const hours = 12 + 2.5 * Math.sin(day * 2 * Math.PI / DAYS_PER_YEAR);
+  return Object.freeze({
+    daylightHours: hours,
+    sunrise: 12 - hours / 2,
+    sunset: 12 + hours / 2,
+  });
+}
+
 export function chroniclesWorldCalendar(value) {
   const elapsed = chroniclesWorldMinutes(value);
   const daysElapsed = Math.floor(elapsed / MINUTES_PER_DAY);
@@ -27,6 +40,11 @@ export function chroniclesWorldCalendar(value) {
   const monthIndex = Math.floor(dayIndex / DAYS_PER_MONTH);
   const hour = Math.floor(minutesToday / 60);
   const minute = minutesToday % 60;
+  const solar = chroniclesSeasonalSunTimes(elapsed);
+  const timeOfDay = minutesToday / 60;
+  const daylightPhase = timeOfDay < solar.sunrise - 1 || timeOfDay >= solar.sunset + 1
+    ? 'night' : timeOfDay < solar.sunrise + 1 ? 'dawn'
+      : timeOfDay < solar.sunset - 1 ? 'day' : 'dusk';
   return {
     year: CHRONICLES_WORLD_START_YEAR + Math.floor(daysElapsed / DAYS_PER_YEAR),
     dayOfYear: dayIndex + 1,
@@ -37,8 +55,7 @@ export function chroniclesWorldCalendar(value) {
     hour,
     minute,
     time: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
-    daylightPhase: hour < 5 || hour >= 20 ? 'night'
-      : hour < 7 ? 'dawn' : hour < 18 ? 'day' : 'dusk',
+    daylightPhase,
   };
 }
 

@@ -1,7 +1,7 @@
 import {
   createChroniclesPrecipitationOverlay, chroniclesPrecipitationBudget,
 } from '../src/chronicles/chroniclesPrecipitationOverlay.js';
-import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('kind') === 'snow' ? 'snow' : 'rain';
@@ -10,7 +10,7 @@ const region = mode === 'rain'
   : { mapId: 'terra-preview-snow', regionKind: 'wilderness', biome: 'snow' };
 function findTime(kind) {
   for (let i = 0; i < 150; i += 1) {
-    const minute = 480 + 360 * i;
+    const minute = CHRONICLES_WEATHER_PERIOD_MINUTES * (6 + i) + 50;
     if (chroniclesRegionalWeather({ ...region, worldMinutes: minute })?.kind === kind) return minute;
   }
   throw Error('No ' + kind + ' weather sample');

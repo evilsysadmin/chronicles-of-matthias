@@ -2,7 +2,7 @@ import {
   chroniclesWindDebrisCrosswind, createChroniclesWindDebrisOverlay,
   chroniclesWindDebrisBudget,
 } from '../src/chronicles/chroniclesWindDebrisOverlay.js';
-import { chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
 const biome = params.get('biome') === 'ash' ? 'ash' : 'forest';
@@ -14,7 +14,7 @@ const coarse = params.get('coarse') === 'true';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function sample(predicate) {
   for (let i = 0; i < 160; i += 1) {
-    const minute = 480 + i * 360 + 60;
+    const minute = CHRONICLES_WEATHER_PERIOD_MINUTES * (6 + i) + 50;
     const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
     if (predicate(weather)) return minute;
   }

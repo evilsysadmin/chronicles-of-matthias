@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
 import {
   chroniclesTownRainWetness, chroniclesTownRainPuddleCells, createChroniclesTownRainPuddles,
 } from './chroniclesTownRainPavement.js';
@@ -10,16 +10,18 @@ function weatherAt(minute) {
   return chroniclesRegionalWeather({ ...town, worldMinutes: minute })?.kind;
 }
 function findFirstRain() {
-  for (let n = 0; n < 100; n++) {
-    const minute = n * 360;
-    if (weatherAt(minute) === 'rain' && (minute === 0 || weatherAt(minute - 1) !== 'rain')) return minute;
+  for (let n = 3; n < 400; n++) {
+    const minute = n * CHRONICLES_WEATHER_PERIOD_MINUTES;
+    if (weatherAt(minute) === 'rain' && weatherAt(minute - 1) !== 'rain'
+      && weatherAt(minute - CHRONICLES_WEATHER_PERIOD_MINUTES - 1) !== 'rain') return minute;
   }
   throw Error('No rain cell in first hundred weather blocks');
 }
 function findRainEnd() {
-  for (let n = 1; n < 100; n++) {
-    const minute = n * 360;
-    if (weatherAt(minute - 1) === 'rain' && weatherAt(minute) !== 'rain') return minute;
+  for (let n = 1; n < 400; n++) {
+    const minute = n * CHRONICLES_WEATHER_PERIOD_MINUTES;
+    if (weatherAt(minute - 1) === 'rain' && weatherAt(minute) !== 'rain'
+      && weatherAt(minute + CHRONICLES_WEATHER_PERIOD_MINUTES) !== 'rain') return minute;
   }
   throw Error('No rain to dry after');
 }
@@ -32,6 +34,7 @@ describe('Swordhaven wet cobblestones', () => {
     const stop = findRainEnd();
     expect(chroniclesTownRainWetness({ ...town, worldMinutes: stop })).toBe(1);
     expect(chroniclesTownRainWetness({ ...town, worldMinutes: stop + 90 })).toBeCloseTo(.5);
+    expect(chroniclesTownRainWetness({ ...town, worldMinutes: stop + 135 })).toBeCloseTo(.25);
     expect(chroniclesTownRainWetness({ ...town, worldMinutes: stop + 180 })).toBe(0);
   });
   it('restores precisely from time, never creating rain slicks in wilderness or dungeons', () => {

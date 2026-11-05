@@ -10,14 +10,23 @@ export function chroniclesTownRainWetness({ worldMinutes, ...region } = {}) {
   if (region.mapId !== 'swordhaven-first-book' || region.regionKind !== 'settlement') return 0;
   const elapsed = chroniclesWorldMinutes(worldMinutes);
   const offset = elapsed % CHRONICLES_WEATHER_PERIOD_MINUTES;
+  const start = elapsed - offset;
   const current = chroniclesRegionalWeather({ ...region, worldMinutes: elapsed });
-  const previous = elapsed - offset > 0
-    ? chroniclesRegionalWeather({ ...region, worldMinutes: elapsed - offset - 1 })
-    : null;
-  const raining = current?.kind === 'rain';
-  const wasRaining = previous?.kind === 'rain';
-  if (raining) return wasRaining ? 1 : Math.min(1, offset / 30);
-  return wasRaining ? Math.max(0, 1 - offset / 180) : 0;
+  // Shorter 90-minute climate cells must not shorten the existing 3-hour
+  // drying time. Inspect at most the last two 90-minute boundaries and
+  // remember when the most recent rain finished, without new save fields.
+  let residual = 0;
+  for (let boundary = start; boundary > 0 && elapsed - boundary < 180;
+    boundary -= CHRONICLES_WEATHER_PERIOD_MINUTES) {
+    const before = chroniclesRegionalWeather({ ...region, worldMinutes: boundary - 1 });
+    if (before?.kind === 'rain') {
+      residual = Math.max(0, 1 - (elapsed - boundary) / 180);
+      break;
+    }
+  }
+  // An intermittent shower re-wets still-damp cobbles instead of resetting
+  // them to dry at a new weather boundary.
+  return current?.kind === 'rain' ? Math.max(residual, Math.min(1, offset / 30)) : residual;
 }
 
 // Puddles belong entirely to existing walkable, authored road tiles. Sparse,
