@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createChroniclesTownRainPuddles } from './chroniclesTownRainPavement.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { settlementHouseBlocks, settlementHouseFacing } from './chroniclesSettlementLayout.js';
 import {
@@ -844,6 +845,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     roads.name = 'chronicles-campaign-road';
     roads.receiveShadow = true;
     scene.add(roads);
+    if (scenePlan.mapId === 'swordhaven-first-book' && settlement) {
+      // A single, sparse batch floats just above authored road surfaces.
+      // Purely decorative: no blocked tile, collision mask or puddle state.
+      const puddles = createChroniclesTownRainPuddles({
+        roadCells, sceneCenter, coarsePointer, gridToWorld,
+      });
+      if (puddles) scene.add(puddles);
+    }
   }
 
   // Existing '#'-cell collision is visualized as stone embankment (one draw

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
 import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 
 // A deterministic 24-hour outdoor light profile. The 05–07 and 18–20
 // transitions are gradual, and use the exact same minutes as I/Information.
@@ -74,6 +75,12 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const townWindowGlows = scene.getObjectByName('chronicles-town-street-window-night-glow');
   const townLanternGlass = scene.getObjectByName('chronicles-town-wall-lantern-glass');
   const lanternDayIntensity = townLanternGlass?.material?.emissiveIntensity ?? null;
+  const rainPuddles = scene.getObjectByName('chronicles-town-rain-puddles');
+  const pavedRoad = rainPuddles ? scene.getObjectByName('chronicles-campaign-road') : null;
+  const dryRoadColor = pavedRoad?.material?.color?.clone() || null;
+  const dryRoadRoughness = pavedRoad?.material?.roughness ?? 1;
+  const dryRoadMetalness = pavedRoad?.material?.metalness ?? 0;
+  const dampStone = new THREE.Color(0x88979d);
   let lastElapsedMinute = null;
 
   return {
@@ -106,6 +113,16 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       if (lanternDayIntensity !== null) {
         townLanternGlass.material.emissiveIntensity =
           lanternDayIntensity + (1 - daylight) * 1.7;
+      }
+      if (rainPuddles && pavedRoad && dryRoadColor) {
+        // Wet paving remembers recent rain through the canonical six-hour
+        // weather blocks. No timers, new lights or persistence migration.
+        const wet = chroniclesTownRainWetness({ ...region, worldMinutes: elapsed });
+        pavedRoad.material.color.copy(dryRoadColor).lerp(dampStone, wet * 0.58);
+        pavedRoad.material.roughness = THREE.MathUtils.lerp(dryRoadRoughness, 0.43, wet);
+        pavedRoad.material.metalness = THREE.MathUtils.lerp(dryRoadMetalness, 0.14, wet);
+        rainPuddles.material.opacity = wet * 0.76;
+        rainPuddles.visible = wet > 0.025;
       }
       if (exposureDay !== null) {
         // Gentle, visible night; never an opaque black viewport.
