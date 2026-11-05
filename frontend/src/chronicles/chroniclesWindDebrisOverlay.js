@@ -78,8 +78,6 @@ export function createChroniclesWindDebrisOverlay(host, region, {
     kind = nextKind;
     drift = nextDrift;
     layer.dataset.flow = drift < 0 ? 'left' : 'right';
-    layer.style.setProperty('--debris-pace',
-      Math.max(0.65, 1.35 - Math.abs(drift) / 100).toFixed(2));
     if (changedKind) {
       layer.replaceChildren();
       if (kind) {

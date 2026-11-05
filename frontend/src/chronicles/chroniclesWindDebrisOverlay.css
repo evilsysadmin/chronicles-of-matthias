@@ -19,7 +19,7 @@
   border-radius: 65% 0 65% 0;
   background: #aeb66b;
   opacity: 0;
-  animation: chronicles-wind-drift calc(var(--debris-duration) * var(--debris-pace, 1))
+  animation: chronicles-wind-drift var(--debris-duration)
     linear var(--debris-delay) infinite;
   will-change: transform;
 }
