@@ -60,7 +60,10 @@ export default function ChroniclesGameHelp({ onBack }) {
           no gasta minutos por el giro. Cinco minutos reales de
           exploración exterior visible suman diez minutos de Terra adicionales.
           El contador conserva lo acumulado aunque camines, y se pausa
-          en combate, menús y con la pestaña oculta.</p>
+          en combate, menús y con la pestaña oculta. En exteriores el clima
+          puede cambiar cada 90 minutos de Terra (sin garantizar un cambio);
+          las cuatro estaciones y cada bioma determinan lluvia, nieve y niebla.
+          En verano los días son más largos y en invierno anochece antes.</p>
       </details>
       <details>
         <summary>Crónica, progreso y guardado</summary>
