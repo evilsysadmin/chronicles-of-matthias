@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import {
   chroniclesPrecipitationBudget,
   chroniclesPrecipitationKind,
@@ -12,7 +12,7 @@ const region = { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'mars
 const snowy = { mapId: 'terra-demo-snow', regionKind: 'wilderness', biome: 'snow' };
 function findTime(place, kind) {
   for (let i = 0; i < 120; i += 1) {
-    const minute = 480 + i * 360;
+    const minute = CHRONICLES_WEATHER_PERIOD_MINUTES * (6 + i) + 50;
     if (chroniclesRegionalWeather({ ...place, worldMinutes: minute })?.kind === kind) return minute;
   }
   throw Error('Weather sample not found: ' + kind);
@@ -146,7 +146,7 @@ describe('Terra cheap CSS precipitation', () => {
     let enters = null;
     let ends = null;
     for (let i = 1; i < 130; i += 1) {
-      const minute = i * 360;
+      const minute = i * CHRONICLES_WEATHER_PERIOD_MINUTES;
       const before = chroniclesRegionalWeather({ ...region, worldMinutes: minute - 1 }).kind;
       const after = chroniclesRegionalWeather({ ...region, worldMinutes: minute }).kind;
       if (before !== 'rain' && after === 'rain' && enters === null) enters = minute;
