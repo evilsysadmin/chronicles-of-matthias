@@ -37,6 +37,24 @@ try {
       assert.equal(result.count, kind === 'rain' ? (coarse ? 16 : 36) : (coarse ? 12 : 24));
       assert.equal(result.pointerEvents, 'none');
       assert(result.animation.includes(kind === 'rain' ? 'rainfall' : 'snowfall'));
+      // A 180-degree turn reverses the wind without remounting any particle.
+      const windViews = await page.evaluate(() => {
+        const layer = document.querySelector('.chronicles-precipitation-layer');
+        const overlay = window.__terraPrecipitation;
+        const readings = [];
+        for (const facing of [0, 2, 1, 3]) {
+          overlay.setTime(overlay.start, facing);
+          readings.push({
+            drift: Number.parseInt(layer.style.getPropertyValue('--wind-drift'), 10),
+            count: layer.childElementCount,
+          });
+        }
+        return readings;
+      });
+      assert.equal(windViews[0].drift, -windViews[1].drift);
+      assert.equal(windViews[2].drift, -windViews[3].drift);
+      assert(windViews.some(x => x.drift !== 0), 'Wind must reach at least one camera axis');
+      assert(windViews.every(x => x.count === result.count), 'Turning must keep the same particles');
       assert(Math.abs(result.width - width) < 2 && Math.abs(result.height - height) < 2,
         'Viewport overlay clips incorrectly: ' + JSON.stringify(result));
       assert.deepEqual(errors, []);

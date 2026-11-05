@@ -1,7 +1,7 @@
 import {
   createChroniclesPrecipitationOverlay, chroniclesPrecipitationBudget,
 } from '../src/chronicles/chroniclesPrecipitationOverlay.js';
-import { chroniclesRegionalWeather } from '../src/chronicles/chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('kind') === 'snow' ? 'snow' : 'rain';
@@ -24,5 +24,6 @@ effect.sync(start);
 window.__terraPrecipitation = {
   mode, coarse, budget: chroniclesPrecipitationBudget(mode, coarse, reducedMotion),
   start, clear: findTime('clear'),
+  wind: chroniclesRegionalWeatherTransition({ ...region, worldMinutes: start }).wind,
   setTime: effect.sync, resize: effect.resize, setVisible: effect.setVisible, dispose: effect.dispose,
 };

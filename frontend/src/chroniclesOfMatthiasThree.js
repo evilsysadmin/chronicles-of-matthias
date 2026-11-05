@@ -847,10 +847,12 @@ export function createChroniclesOfMatthiasGame(host, {
     // One sky/light update per change of in-game minute; in-place rotations
     // and menu interactions leave both lighting and world time unchanged.
     exteriorDaylight?.sync(state?.worldMinutes);
-    precipitation?.sync(state?.worldMinutes);
     const now = clock.getElapsedTime();
     const previousState = latestState;
     const viewDirection = chroniclesCombatCameraFacing(state);
+    // World wind projected to camera-right: an in-place turn changes its
+    // apparent direction without changing world time or particle geometry.
+    precipitation?.sync(state?.worldMinutes, viewDirection);
     // A stationary MM3 group can be ambushed at its side while looking at
     // a solid wall. Follow a REAL adjacent target with the camera only;
     // keep state.direction (and every turn/aiming rule) untouched.
