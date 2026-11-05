@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
+import { chroniclesWorldMinutes, chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 
-// A deterministic 24-hour outdoor light profile. The 05–07 and 18–20
-// transitions are gradual, and use the exact same minutes as I/Information.
+// A deterministic 24-hour profile with season-dependent sunrise and sunset.
+// The 2-hour twilight transitions follow the real Terra calendar in I.
 const DAY = 1440;
 const smooth = (t) => {
   const x = Math.min(1, Math.max(0, t));
@@ -15,14 +15,16 @@ const clamp01 = (value) => Math.min(1, Math.max(0, value));
 export function chroniclesExteriorDaylightProfile(worldMinutes) {
   const minute = chroniclesWorldMinutes(worldMinutes) % DAY;
   const hour = minute / 60;
-  const daylight = smooth((hour - 5) / 2) * (1 - smooth((hour - 18) / 2));
+  const solar = chroniclesSeasonalSunTimes(worldMinutes);
+  const daylight = smooth((hour - (solar.sunrise - 1)) / 2)
+    * (1 - smooth((hour - (solar.sunset - 1)) / 2));
   const twilight = clamp01(
-    Math.exp(-(((hour - 6.2) / 1.1) ** 2))
-    + Math.exp(-(((hour - 18.9) / 1.1) ** 2)),
+    Math.exp(-(((hour - solar.sunrise) / 1.1) ** 2))
+    + Math.exp(-(((hour - solar.sunset) / 1.1) ** 2)),
   );
-  // Rise in the east at 06:00, peak at midday and set in the west at 18:00.
-  // Keep the disc below the horizon when it should be invisible.
-  const angle = (hour - 6) * Math.PI / 12;
+  // Solar disc crosses the horizon at the actual seasonal sunrise/sunset;
+  // noon stays overhead, and nights remain softly lit and playable.
+  const angle = (hour - solar.sunrise) * Math.PI / solar.daylightHours;
   const altitude = Math.sin(angle);
   const azimuth = -Math.cos(angle);
   const sun = new THREE.Vector3(azimuth * 0.88, altitude * 0.93, -0.27).normalize();
@@ -115,8 +117,8 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
           lanternDayIntensity + (1 - daylight) * 1.7;
       }
       if (rainPuddles && pavedRoad && dryRoadColor) {
-        // Wet paving remembers recent rain through the canonical six-hour
-        // weather blocks. No timers, new lights or persistence migration.
+        // Wet paving remembers recent rain across the shorter weather
+        // blocks. No timers, new lights or persistence migration.
         const wet = chroniclesTownRainWetness({ ...region, worldMinutes: elapsed });
         pavedRoad.material.color.copy(dryRoadColor).lerp(dampStone, wet * 0.58);
         pavedRoad.material.roughness = THREE.MathUtils.lerp(dryRoadRoughness, 0.43, wet);
