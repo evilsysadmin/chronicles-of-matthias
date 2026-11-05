@@ -5,6 +5,7 @@ import {
   CHRONICLES_WORLD_START_MINUTES,
   chroniclesWorldCalendar,
   chroniclesWorldMinutes,
+  chroniclesSeasonalSunTimes,
   chroniclesAdvanceWorldTimeOnTurn,
 } from './chroniclesWorldTime.js';
 
@@ -72,6 +73,31 @@ describe('MM3 world clock', () => {
     });
     expect(chroniclesWorldMinutes('480')).toBe(CHRONICLES_WORLD_START_MINUTES);
     expect(chroniclesWorldCalendar(NaN).time).toBe('08:00');
+  });
+
+  it('lengthens summer days and shortens winter ones, with calendar and sky sharing sunrise/sunset', () => {
+    const spring = chroniclesSeasonalSunTimes(0);
+    const summerMinute = 84 * 1440;
+    const autumnMinute = 168 * 1440;
+    const winterMinute = 252 * 1440;
+    const summer = chroniclesSeasonalSunTimes(summerMinute);
+    const autumn = chroniclesSeasonalSunTimes(autumnMinute);
+    const winter = chroniclesSeasonalSunTimes(winterMinute);
+    expect(spring.daylightHours).toBeCloseTo(12);
+    expect(summer.daylightHours).toBeCloseTo(14.5);
+    expect(autumn.daylightHours).toBeCloseTo(12);
+    expect(winter.daylightHours).toBeCloseTo(9.5);
+    expect(summer.sunrise).toBeLessThan(spring.sunrise);
+    expect(summer.sunset).toBeGreaterThan(spring.sunset);
+    expect(winter.sunrise).toBeGreaterThan(spring.sunrise);
+    expect(winter.sunset).toBeLessThan(spring.sunset);
+    // Seasonal day/night phases in I match the actual outdoor sun, including
+    // the same evening hour being light in summer but dark in winter.
+    expect(chroniclesWorldCalendar(summerMinute + 18 * 60).daylightPhase).toBe('day');
+    expect(chroniclesWorldCalendar(winterMinute + 18 * 60).daylightPhase).toBe('night');
+    expect(chroniclesWorldCalendar(summerMinute + 5 * 60).daylightPhase).toBe('dawn');
+    expect(chroniclesWorldCalendar(winterMinute + 5 * 60).daylightPhase).toBe('night');
+    expect(chroniclesSeasonalSunTimes(summerMinute + 1440 * 336)).toEqual(summer);
   });
 
   it('spends eight hours for a safe camp rest, and for accepted inn rests', () => {
