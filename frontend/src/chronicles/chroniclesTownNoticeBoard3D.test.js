@@ -21,6 +21,11 @@ describe('Swordhaven estandarte notice board', () => {
     expect(board.getObjectByName('notice-board-heraldic-crest')).toBeTruthy();
     const writ = board.getObjectByName('notice-board-parchment');
     expect(writ.geometry.type).toBe('ShapeGeometry');
+    const uvs = writ.geometry.getAttribute('uv');
+    const uvValues = Array.from({ length: uvs.count }, (_, i) => [uvs.getX(i), uvs.getY(i)]);
+    expect(Math.min(...uvValues.map(([u]) => u))).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...uvValues.map(([u]) => u))).toBeLessThanOrEqual(1);
+    expect(Math.max(...uvValues.map(([u]) => u))).toBeGreaterThan(0.9);
     expect(writ.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(writ.material.map.image.data.some((value) => value < 210)).toBe(true);
     const lettering = board.getObjectByName('notice-board-lettering');
