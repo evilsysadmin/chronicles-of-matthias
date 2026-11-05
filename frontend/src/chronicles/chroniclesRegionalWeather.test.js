@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chroniclesRegionalWeather, chroniclesRegionalWeatherTransition,
+  chroniclesRegionalWeather, chroniclesRegionalWeatherTransition, chroniclesRegionalWind,
   CHRONICLES_WEATHER_PERIOD_MINUTES, CHRONICLES_WEATHER_BLEND_MINUTES,
 } from './chroniclesRegionalWeather.js';
 
@@ -110,6 +110,47 @@ describe('Terra weather by region and stored world time', () => {
     expect(chroniclesRegionalWeatherTransition({
       mapId: 'swordhaven-sewers', regionKind: 'dungeon', worldMinutes: 360,
     })).toBeNull();
+  });
+
+  it('reproduces map-world wind and blends it over weather cell boundaries', () => {
+    const wet = { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'marsh' };
+    const a = chroniclesRegionalWind({ ...wet, worldMinutes: 480 });
+    expect(a).toEqual(chroniclesRegionalWind({ ...wet, worldMinutes: 480 }));
+    expect(Object.isFrozen(a)).toBe(true);
+    expect(chroniclesRegionalWind({ ...wet, worldMinutes: 480 + 100 })).toEqual(a);
+    const boundary = Array.from({ length: 120 }, (_, i) => (i + 1) * 360)
+      .find(minute => {
+        const prev = chroniclesRegionalWind({ ...wet, worldMinutes: minute - 1 });
+        const current = chroniclesRegionalWind({ ...wet, worldMinutes: minute });
+        return prev.east !== current.east || prev.south !== current.south;
+      });
+    expect(boundary).toBeDefined();
+    const before = chroniclesRegionalWind({ ...wet, worldMinutes: boundary - 1 });
+    const after = chroniclesRegionalWind({ ...wet, worldMinutes: boundary });
+    const start = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary });
+    const halfway = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 20 });
+    const finish = chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary + 40 });
+    expect(start.wind).toEqual(before);
+    expect(halfway.wind.east).toBeCloseTo((before.east + after.east) / 2);
+    expect(halfway.wind.south).toBeCloseTo((before.south + after.south) / 2);
+    expect(finish.wind).toEqual(after);
+    expect(Object.isFrozen(halfway.wind)).toBe(true);
+    expect(chroniclesRegionalWeatherTransition({ ...wet, worldMinutes: boundary }))
+      .toEqual(start);
+    expect(chroniclesRegionalWind({ mapId: 'crypt', regionKind: 'dungeon', worldMinutes: boundary }))
+      .toBeNull();
+  });
+
+  it('sheltered forest has weaker wind than open coast at equal map/time', () => {
+    for (const minute of [480, 720, 1440, 2160]) {
+      const forest = chroniclesRegionalWind({
+        mapId: 'terra-sample', regionKind: 'wilderness', biome: 'forest', worldMinutes: minute,
+      });
+      const coast = chroniclesRegionalWind({
+        mapId: 'terra-sample', regionKind: 'wilderness', biome: 'coast', worldMinutes: minute,
+      });
+      expect(Math.hypot(forest.east, forest.south)).toBeLessThan(Math.hypot(coast.east, coast.south));
+    }
   });
 
   it('does not depend on global random or the real date and is bounded', () => {

@@ -26,6 +26,15 @@ const WEATHER_TABLES = Object.freeze({
   dry: ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'fog'],
 });
 
+// Wind is a two-dimensional map-world vector: positive east/south means
+// positive X/Z in Three.js. The camera projects it into the viewport later.
+const WIND_DIRECTIONS = Object.freeze([
+  Object.freeze([1, 0]), Object.freeze([0.7071, 0.7071]),
+  Object.freeze([0, 1]), Object.freeze([-0.7071, 0.7071]),
+  Object.freeze([-1, 0]), Object.freeze([-0.7071, -0.7071]),
+  Object.freeze([0, -1]), Object.freeze([0.7071, -0.7071]),
+]);
+
 function hashWeather(value) {
   let h = 2166136261;
   for (let i = 0; i < value.length; i += 1) {
@@ -63,6 +72,26 @@ export function chroniclesRegionalWeather({
   });
 }
 
+// Deterministic regional wind, derived from the same six-hour Terra cell.
+// Hills, coast and snowfields are more exposed than sheltered forests.
+// No mutable RNG, clock, persistence schema or frame updates.
+export function chroniclesRegionalWind({ mapId, biome = null, regionKind = null, worldMinutes } = {}) {
+  if (typeof mapId !== 'string' || !mapId.trim()
+    || !['settlement', 'wilderness', 'outdoor'].includes(regionKind)) return null;
+  const elapsed = chroniclesWorldMinutes(worldMinutes);
+  const period = Math.floor(elapsed / CHRONICLES_WEATHER_PERIOD_MINUTES);
+  const season = chroniclesWorldCalendar(elapsed).season;
+  const h = hashWeather('wind:' + mapId + ':' + period + ':' + season);
+  const direction = WIND_DIRECTIONS[h % WIND_DIRECTIONS.length];
+  const exposure = biome === 'forest' ? 0.65
+    : biome === 'coast' || biome === 'snow' || biome === 'hills' ? 1 : 0.8;
+  const magnitude = (0.18 + ((h >>> 8) % 4) * 0.19) * exposure;
+  return Object.freeze({
+    east: direction[0] * magnitude,
+    south: direction[1] * magnitude,
+  });
+}
+
 // Visual atmosphere only: the six-hour *reported* weather kind remains fixed.
 // During the first 40 in-world minutes after a boundary, blend from the
 // preceding cell. This is pure and works when a saved game is reloaded or
@@ -83,7 +112,18 @@ export function chroniclesRegionalWeatherTransition({ worldMinutes, ...region } 
     : current;
   const from = previous || current;
   const x = Math.min(1, offset / CHRONICLES_WEATHER_BLEND_MINUTES);
-  const progress = from.kind === current.kind ? 1 : x * x * (3 - 2 * x);
+  const windProgress = x * x * (3 - 2 * x);
+  const progress = from.kind === current.kind ? 1 : windProgress;
+  const currentWind = chroniclesRegionalWind({ ...region, worldMinutes: elapsed });
+  const previousWind = elapsed >= CHRONICLES_WEATHER_PERIOD_MINUTES
+    ? chroniclesRegionalWind({ ...region, worldMinutes: elapsed - offset - 1 })
+    : currentWind;
+  // Wind can shift even between equally cloudy blocks: interpolate its two
+  // map-world components regardless of changes to the official condition.
+  const wind = Object.freeze({
+    east: previousWind.east + (currentWind.east - previousWind.east) * windProgress,
+    south: previousWind.south + (currentWind.south - previousWind.south) * windProgress,
+  });
   const oldPrecip = precipitationKind(from);
   const newPrecip = precipitationKind(current);
   let precipitation = newPrecip;
@@ -108,6 +148,7 @@ export function chroniclesRegionalWeatherTransition({ worldMinutes, ...region } 
     fog: from.fog + (current.fog - from.fog) * progress,
     precipitation,
     precipitationStrength: strength,
+    wind,
     progress,
   });
 }
