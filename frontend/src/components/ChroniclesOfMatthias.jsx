@@ -43,6 +43,7 @@ import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.j
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
 import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
+import { chroniclesRegionalWeather } from '../chronicles/chroniclesRegionalWeather.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
@@ -2033,6 +2034,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }
 
   const worldCalendar = state.combatRules === 'mm3' ? chroniclesWorldCalendar(state.worldMinutes) : null;
+  const weatherMap = worldCalendar ? chroniclesMapForState(state) : null;
+  const worldWeather = weatherMap && worldCalendar ? chroniclesRegionalWeather({
+    mapId: weatherMap.id, biome: weatherMap.biome,
+    regionKind: weatherMap.regionKind, worldMinutes: state.worldMinutes,
+  }) : null;
   const objective = chroniclesObjective(state);
   // The authored quest's region takes precedence when the objective text
   // does not name its destination (e.g. the missing banner in Swordhaven).
@@ -2735,6 +2741,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
       {!scenePainted && <LoadingScreen />}
       <ChroniclesWorldInfo calendar={worldInfoOpen ? worldCalendar : null}
+        weather={worldInfoOpen ? worldWeather : null}
         onClose={() => setWorldInfoOpen(false)} />
       <ChroniclesAutomap
         open={automapOpen}

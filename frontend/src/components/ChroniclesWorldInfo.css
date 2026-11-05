@@ -223,3 +223,25 @@
   from { transform: translateY(5px); opacity: .7; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* The currently observed climate is part of I/Information, not a permanent
+   HUD badge. The parchment remains compact on phones and short landscapes. */
+.chronicles .chronicles-world-info__weather {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  padding: 9px 5px 2px;
+  border-bottom: 1px solid #8f603f;
+  font: 16px/1.2 var(--mm3-pixel-font), monospace;
+}
+.chronicles .chronicles-world-info__weather span { color: #64412b; }
+.chronicles .chronicles-world-info__weather strong {
+  color: #46301e;
+  font-weight: 400;
+  font-size: 21px;
+}
+@media (max-height: 460px) and (orientation: landscape) {
+  .chronicles .chronicles-world-info__weather { padding-block: 3px 1px; }
+}

@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ChroniclesWorldInfo from './ChroniclesWorldInfo.jsx';
 import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
+import { chroniclesRegionalWeather } from '../chronicles/chroniclesRegionalWeather.js';
 
 const render = (minutes) => renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
   calendar: chroniclesWorldCalendar(minutes), onClose: () => {},
@@ -34,6 +35,18 @@ describe('MM3 information folio', () => {
     expect(night).toContain('Noche');
     expect(night).toContain('22:00');
     expect(night).not.toMatch(/Lluvia|Nieve|Despejado/);
+  });
+  it('displays only observed regional weather without inventing dungeon conditions', () => {
+    const weather = chroniclesRegionalWeather({
+      mapId: 'swordhaven-first-book', regionKind: 'settlement', worldMinutes: 480,
+    });
+    const html = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+      calendar: chroniclesWorldCalendar(480), weather, onClose: () => {},
+    }));
+    expect(html).toContain('CLIMA REGIONAL');
+    expect(html).toContain(weather.label);
+    expect(html).toContain('data-chronicles-world-weather="' + weather.kind + '"');
+    expect(render(480)).not.toContain('CLIMA REGIONAL');
   });
   it('renders nothing while closed', () => {
     expect(renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
