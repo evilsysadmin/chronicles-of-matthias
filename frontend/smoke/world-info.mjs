@@ -35,7 +35,8 @@ try {
         'World info must fit viewport ' + width + ': ' + JSON.stringify(bounds));
       assert(bounds.paperWidth <= bounds.paperClientWidth + 1 &&
         bounds.scrollWidth <= width + 1, 'No horizontal overflow at ' + width + ': ' + JSON.stringify(bounds));
-      assert(bounds.closeHeight >= 44, 'Close touch target too small at ' + width);
+      assert(bounds.closeHeight >= 44, 'Close touch target too small at ' + width
+        + ': ' + JSON.stringify(bounds));
       assert.equal(await modal.locator('[data-chronicles-world-info-time]').innerText(),
         width === 430 ? '22:00' : '08:00');
       const clock = await page.locator('[data-world-time-minutes]').getAttribute('data-world-time-minutes');
