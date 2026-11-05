@@ -6,18 +6,18 @@ import {
 
 describe('Terra weather by region and stored world time', () => {
   const region = { mapId: 'terra-b2', regionKind: 'wilderness', biome: 'hills' };
-  it('is reproducible, persists across day/clock reentry and changes only on six-hour boundaries', () => {
+  it('is reproducible, persists across reentry and changes only at 90-minute boundaries', () => {
     const a = chroniclesRegionalWeather({ ...region, worldMinutes: 480 });
     const b = chroniclesRegionalWeather({ ...region, worldMinutes: 480 });
     expect(a).toEqual(b);
     expect(Object.isFrozen(a)).toBe(true);
-    expect(chroniclesRegionalWeather({ ...region, worldMinutes: 719 })).toMatchObject({
+    expect(chroniclesRegionalWeather({ ...region, worldMinutes: 539 })).toMatchObject({
       kind: a.kind, period: a.period,
     });
-    const next = chroniclesRegionalWeather({ ...region, worldMinutes: 720 });
+    const next = chroniclesRegionalWeather({ ...region, worldMinutes: 540 });
     expect(next.period).toBe(a.period + 1);
-    expect(CHRONICLES_WEATHER_PERIOD_MINUTES).toBe(360);
-    expect(a.untilWorldMinutes).toBe(720);
+    expect(CHRONICLES_WEATHER_PERIOD_MINUTES).toBe(90);
+    expect(a.untilWorldMinutes).toBe(540);
   });
 
   it('never renders outdoor weather in a dungeon or an unknown map', () => {
@@ -44,11 +44,37 @@ describe('Terra weather by region and stored world time', () => {
     expect(winter).toContain('snow');
     expect(winter).not.toContain('rain');
     expect(run('hills', 480)).not.toContain('snow');
+    const summer = 84 * 1440 + 480;
+    const winter = 252 * 1440 + 480;
+    for (const biome of ['snow', 'hills', 'plains', 'forest', 'marsh', 'coast', 'ash']) {
+      expect(run(biome, summer)).not.toContain('snow');
+    }
+    expect(run('snow', winter)).toContain('snow');
+    expect(run('forest', winter)).toContain('snow');
+    expect(run('coast', winter)).not.toContain('snow');
+    expect(run('ash', winter)).not.toContain('rain');
   });
 
-  it('smoothly blends clouds and fog while keeping the reported six-hour state stable', () => {
+  it('prevents three consecutive rain or snow cells while allowing spells and clearing weather', () => {
+    for (const biome of ['snow', 'marsh', 'forest', 'hills']) {
+      for (const origin of [480, 252 * 1440 + 480]) {
+        let streak = 0;
+        for (let slot = 0; slot < 300; slot += 1) {
+          const at = Math.floor(origin / CHRONICLES_WEATHER_PERIOD_MINUTES + slot)
+            * CHRONICLES_WEATHER_PERIOD_MINUTES;
+          const kind = chroniclesRegionalWeather({
+            mapId: 'terra-seasonal-run', regionKind: 'wilderness', biome, worldMinutes: at,
+          }).kind;
+          streak = kind === 'rain' || kind === 'snow' ? streak + 1 : 0;
+          expect(streak).toBeLessThanOrEqual(2);
+        }
+      }
+    }
+  });
+
+  it('smoothly blends clouds and fog while keeping the reported 90-minute state stable', () => {
     const wet = { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'marsh' };
-    const boundary = Array.from({ length: 100 }, (_, i) => (i + 1) * 360)
+    const boundary = Array.from({ length: 100 }, (_, i) => (i + 1) * CHRONICLES_WEATHER_PERIOD_MINUTES)
       .find(t => chroniclesRegionalWeather({ ...wet, worldMinutes: t - 1 }).kind
         !== chroniclesRegionalWeather({ ...wet, worldMinutes: t }).kind);
     expect(boundary).toBeDefined();
@@ -83,7 +109,7 @@ describe('Terra weather by region and stored world time', () => {
       let entering = null;
       let leaving = null;
       for (let slot = 1; slot < 180; slot += 1) {
-        const minute = slot * 360;
+        const minute = slot * CHRONICLES_WEATHER_PERIOD_MINUTES;
         const before = chroniclesRegionalWeather({ ...place, worldMinutes: minute - 1 }).kind;
         const after = chroniclesRegionalWeather({ ...place, worldMinutes: minute }).kind;
         const precip = k => k === 'rain' || k === 'snow';
@@ -118,7 +144,7 @@ describe('Terra weather by region and stored world time', () => {
     expect(a).toEqual(chroniclesRegionalWind({ ...wet, worldMinutes: 480 }));
     expect(Object.isFrozen(a)).toBe(true);
     expect(chroniclesRegionalWind({ ...wet, worldMinutes: 480 + 100 })).toEqual(a);
-    const boundary = Array.from({ length: 120 }, (_, i) => (i + 1) * 360)
+    const boundary = Array.from({ length: 120 }, (_, i) => (i + 1) * CHRONICLES_WEATHER_PERIOD_MINUTES)
       .find(minute => {
         const prev = chroniclesRegionalWind({ ...wet, worldMinutes: minute - 1 });
         const current = chroniclesRegionalWind({ ...wet, worldMinutes: minute });
