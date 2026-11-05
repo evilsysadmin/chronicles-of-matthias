@@ -140,7 +140,9 @@ describe('Terra solar cycle', () => {
     const region = { mapId: 'terra-marsh', biome: 'marsh', regionKind: 'wilderness' };
     const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
     const children = scene.children.length;
-    const samples = Array.from({ length: 90 }, (_, i) => 480 + i * 360);
+    // Compare fog versus clear at identical 08:00 solar altitude, avoiding
+    // false failures caused by different hours rather than cloud cover.
+    const samples = Array.from({ length: 90 }, (_, i) => 480 + i * 1440);
     const fogMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'fog');
     const clearMinute = samples.find(t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind === 'clear');
     expect(fogMinute).toBeDefined();
