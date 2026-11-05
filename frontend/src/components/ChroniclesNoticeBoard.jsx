@@ -99,7 +99,8 @@ export default function ChroniclesNoticeBoard({ state, onAccept, onClose }) {
             onClick={onClose} aria-label="Cerrar tablón">✕</button>
         </header>
         <div className="chronicles-notice-board__body">
-          <div className="chronicles-notice-board__sections">
+          <div className="chronicles-notice-board__sections"
+            data-chronicles-board-layout={other.length ? 'split' : 'single'}>
             <section className="chronicles-notice-board__section" data-chronicles-board-section="posted">
               <div className="chronicles-notice-board__section-head">
                 <h3>Ofertas del tablón</h3>
