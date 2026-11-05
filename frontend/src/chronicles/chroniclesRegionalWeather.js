@@ -2,8 +2,9 @@ import { chroniclesWorldCalendar, chroniclesWorldMinutes } from './chroniclesWor
 
 // Regional weather is derived entirely from the saved Terra clock and authored
 // map identity. No Date.now(), storage migration, per-turn RNG or frame timer.
-// A weather cell lasts six hours and is stable across save/load and re-entry.
-export const CHRONICLES_WEATHER_PERIOD_MINUTES = 6 * 60;
+// A weather cell lasts 90 Terra minutes (45 real minutes standing still).
+// This is a chance to change, not a forced weather flip at every boundary.
+export const CHRONICLES_WEATHER_PERIOD_MINUTES = 90;
 const LABELS = Object.freeze({
   clear: 'Despejado',
   cloudy: 'Nublado',
@@ -18,12 +19,40 @@ const METRICS = Object.freeze({
   fog: Object.freeze({ clouds: 0.63, fog: 0.87 }),
   snow: Object.freeze({ clouds: 0.82, fog: 0.55 }),
 });
+// Weather frequency depends on both biome and season. Ordinary Terra
+// summers never generate snow; alpine winters can. Consecutive precipitation
+// events are capped separately below so short cells don't become a monsoon.
 const WEATHER_TABLES = Object.freeze({
-  mild: ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain', 'fog'],
-  cold: ['clear', 'cloudy', 'cloudy', 'fog', 'snow', 'snow', 'snow', 'snow'],
-  wet: ['clear', 'cloudy', 'rain', 'rain', 'rain', 'fog', 'fog'],
-  coastal: ['clear', 'clear', 'cloudy', 'cloudy', 'rain', 'fog'],
-  dry: ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'fog'],
+  mild: {
+    Primavera: ['clear', 'clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+    Verano: ['clear', 'clear', 'clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain'],
+    Otoño: ['clear', 'clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+    Invierno: ['clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog', 'fog'],
+  },
+  cold: {
+    Primavera: ['clear', 'clear', 'cloudy', 'cloudy', 'rain', 'fog', 'snow'],
+    Verano: ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain', 'fog'],
+    Otoño: ['clear', 'cloudy', 'cloudy', 'cloudy', 'fog', 'fog', 'snow'],
+    Invierno: ['clear', 'cloudy', 'cloudy', 'fog', 'snow', 'snow', 'snow', 'snow'],
+  },
+  wet: {
+    Primavera: ['clear', 'cloudy', 'cloudy', 'rain', 'rain', 'rain', 'fog', 'fog'],
+    Verano: ['clear', 'clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+    Otoño: ['clear', 'cloudy', 'cloudy', 'rain', 'rain', 'rain', 'fog', 'fog'],
+    Invierno: ['clear', 'cloudy', 'cloudy', 'rain', 'rain', 'fog', 'fog', 'snow'],
+  },
+  coastal: {
+    Primavera: ['clear', 'clear', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+    Verano: ['clear', 'clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain'],
+    Otoño: ['clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+    Invierno: ['clear', 'cloudy', 'cloudy', 'cloudy', 'rain', 'rain', 'fog'],
+  },
+  dry: {
+    Primavera: ['clear', 'clear', 'clear', 'clear', 'cloudy', 'cloudy', 'fog'],
+    Verano: ['clear', 'clear', 'clear', 'clear', 'clear', 'cloudy'],
+    Otoño: ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'fog'],
+    Invierno: ['clear', 'clear', 'cloudy', 'cloudy', 'fog'],
+  },
 });
 
 // Wind is a two-dimensional map-world vector: positive east/south means
@@ -44,13 +73,30 @@ function hashWeather(value) {
 }
 
 function weatherTable(biome, season) {
+  let zone = 'mild';
   if (biome === 'snow' || ((biome === 'hills' || biome === 'plains') && season === 'Invierno')) {
-    return WEATHER_TABLES.cold;
-  }
-  if (biome === 'marsh' || biome === 'forest') return WEATHER_TABLES.wet;
-  if (biome === 'coast') return WEATHER_TABLES.coastal;
-  if (biome === 'ash') return WEATHER_TABLES.dry;
-  return WEATHER_TABLES.mild;
+    zone = 'cold';
+  } else if (biome === 'marsh' || biome === 'forest') zone = 'wet';
+  else if (biome === 'coast') zone = 'coastal';
+  else if (biome === 'ash') zone = 'dry';
+  return WEATHER_TABLES[zone][season];
+}
+
+function sampledWeatherKind(mapId, biome, period) {
+  const season = chroniclesWorldCalendar(period * CHRONICLES_WEATHER_PERIOD_MINUTES).season;
+  const table = weatherTable(biome, season);
+  return table[hashWeather(mapId + ':' + period + ':' + season) % table.length];
+}
+
+function regionalWeatherKind(mapId, biome, period) {
+  const kind = sampledWeatherKind(mapId, biome, period);
+  // Cap uninterrupted rain/snow at two 90-minute cells. The third wet
+  // candidate becomes cloudy; this needs only two fixed lookbacks, never
+  // previous mutable state, extra save data or an unbounded history scan.
+  if ((kind === 'rain' || kind === 'snow') && period >= 2
+    && sampledWeatherKind(mapId, biome, period - 1) === kind
+    && sampledWeatherKind(mapId, biome, period - 2) === kind) return 'cloudy';
+  return kind;
 }
 
 // Return null for dungeons and unknown content rather than claiming outdoor
@@ -63,8 +109,7 @@ export function chroniclesRegionalWeather({
   const elapsed = chroniclesWorldMinutes(worldMinutes);
   const period = Math.floor(elapsed / CHRONICLES_WEATHER_PERIOD_MINUTES);
   const season = chroniclesWorldCalendar(elapsed).season;
-  const table = weatherTable(biome, season);
-  const kind = table[hashWeather(mapId + ':' + period + ':' + season) % table.length];
+  const kind = regionalWeatherKind(mapId, biome, period);
   const metrics = METRICS[kind];
   return Object.freeze({
     kind, label: LABELS[kind], clouds: metrics.clouds, fog: metrics.fog,
@@ -72,7 +117,7 @@ export function chroniclesRegionalWeather({
   });
 }
 
-// Deterministic regional wind, derived from the same six-hour Terra cell.
+// Deterministic regional wind, derived from the same 90-minute Terra cell.
 // Hills, coast and snowfields are more exposed than sheltered forests.
 // No mutable RNG, clock, persistence schema or frame updates.
 export function chroniclesRegionalWind({ mapId, biome = null, regionKind = null, worldMinutes } = {}) {
@@ -92,7 +137,7 @@ export function chroniclesRegionalWind({ mapId, biome = null, regionKind = null,
   });
 }
 
-// Visual atmosphere only: the six-hour *reported* weather kind remains fixed.
+// Visual atmosphere only: the 90-minute *reported* weather kind remains fixed.
 // During the first 40 in-world minutes after a boundary, blend from the
 // preceding cell. This is pure and works when a saved game is reloaded or
 // its clock moves backwards; no ticks or additional persisted fields.
