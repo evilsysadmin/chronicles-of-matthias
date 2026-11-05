@@ -65,6 +65,10 @@ describe('Terra decorative wind-borne leaves and ash', () => {
       ...clear, precipitation: 'rain', precipitationStrength: 0.3,
     })).toBeNull();
     expect(chroniclesWindDebrisKind('forest', 'wilderness', null)).toBeNull();
+    // A new dry six-hour cell may retain dense fog for 40 Terra minutes.
+    expect(chroniclesWindDebrisKind('forest', 'wilderness', { ...clear, fog: 0.87 })).toBeNull();
+    expect(chroniclesWindDebrisKind('ash', 'wilderness', { ...clear, fog: 0.35 })).toBeNull();
+    expect(chroniclesWindDebrisKind('forest', 'wilderness', { ...clear, fog: 0.34 })).toBe('leaf');
     expect(chroniclesWindDebrisBudget('leaf', true)).toBe(4);
     expect(chroniclesWindDebrisBudget('ash', true)).toBe(5);
     expect(chroniclesWindDebrisBudget('leaf')).toBe(8);
@@ -125,6 +129,38 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     effect.dispose();
     expect(host.children).toHaveLength(0);
     expect(effect.sync(minute, facing)).toBe(false);
+  });
+
+  it('waits for previous fog to dissipate before showing leaves in a dry cell', () => {
+    let minute = null;
+    for (let cell = 2; cell < 240; cell += 1) {
+      const candidate = cell * 360 + 5;
+      const weather = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: candidate });
+      if (['clear', 'cloudy'].includes(weather.kind)
+        && weather.fog >= 0.35 && !weather.precipitation) {
+        minute = candidate;
+        break;
+      }
+    }
+    expect(minute).not.toBeNull();
+    const document = fakeDocument();
+    vi.stubGlobal('document', document);
+    const host = document.element('host');
+    host.clientWidth = 390;
+    const effect = createChroniclesWindDebrisOverlay(host, forest, { coarse: true });
+    const layer = host.children[0];
+    const settled = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: minute + 40 });
+    const facing = facingCrosswind(settled.wind);
+
+    // Suppression may leave the overlay completely unchanged when crosswind is zero.
+    effect.sync(minute, facing);
+    expect(layer.hidden).toBe(true);
+    expect(layer.children).toHaveLength(0);
+    expect(effect.sync(minute + 40, facing)).toBe(true);
+    expect(layer.hidden).toBe(false);
+    expect(layer.children).toHaveLength(4);
+    effect.dispose();
+    expect(host.children).toHaveLength(0);
   });
 
   it('shows sparse ash in dry weather, with zero reduced-motion or dungeon particles', () => {

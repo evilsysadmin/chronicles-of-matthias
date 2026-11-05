@@ -4,10 +4,13 @@ import './chroniclesWindDebrisOverlay.css';
 
 // Airborne details are decorative. Only explicitly authored outdoor biomes
 // get them, and only during dry, visible conditions. No invented climate.
+// The official six-hour condition can already be clear while the previous
+// fog cell is still fading: wait for actual visual visibility to recover.
 export function chroniclesWindDebrisKind(biome, regionKind, weather) {
   if (regionKind !== 'wilderness' || !weather
     || !['clear', 'cloudy'].includes(weather.kind)
-    || weather.precipitation || weather.precipitationStrength > 0) return null;
+    || weather.precipitation || weather.precipitationStrength > 0
+    || (Number.isFinite(weather.fog) && weather.fog >= 0.35)) return null;
   if (biome === 'forest') return 'leaf';
   if (biome === 'ash') return 'ash';
   return null;
