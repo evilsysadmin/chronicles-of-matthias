@@ -40,9 +40,9 @@ describe('Terra weather by region and stored world time', () => {
     expect(run('snow', 480)).toContain('snow');
     expect(run('marsh', 480)).toContain('rain');
     expect(run('marsh', 480)).toContain('fog');
-    const winter = run('hills', 252 * 1440 + 480);
-    expect(winter).toContain('snow');
-    expect(winter).not.toContain('rain');
+    const winterHills = run('hills', 252 * 1440 + 480);
+    expect(winterHills).toContain('snow');
+    expect(winterHills).not.toContain('rain');
     expect(run('hills', 480)).not.toContain('snow');
     const summer = 84 * 1440 + 480;
     const winter = 252 * 1440 + 480;
