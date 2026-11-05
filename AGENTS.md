@@ -128,8 +128,15 @@
   Los cambios de nubosidad/niebla, lluvia y nieve se suavizan los primeros
   40 minutos de cada bloque meteorológico (sin modificar el estado oficial
   de seis horas mostrado en I). Al entrar, salir o restaurar una partida,
-  todos los efectos deben derivarse del worldMinutes persistido, sin timers,
-  sin duplicar partículas ni aumentar el presupuesto móvil.
+  todos los efectos deben derivarse del worldMinutes persistido, sin timers
+  propios de precipitación, sin duplicar partículas ni aumentar el presupuesto móvil.
+  Además, en **exploración MM3 exterior visible y sin overlays**, Terra avanza
+  cinco minutos cada cinco segundos reales aunque el grupo esté quieto.
+  Este reloj ambiental NO consume turnos ni mueve enemigos; se suspende con
+  menús, diálogos, combate y pestañas ocultas, sin recuperar el tiempo en
+  segundo plano. Girar no tiene coste temporal por acción: solo pasan los
+  minutos ambientales realmente transcurridos. El reloj se guarda únicamente
+  cuando la expedición se guarda o cambia de región, como el resto del estado.
   Los adoquines de Swordhaven responden a la lluvia sin afectar al grid:
   humedecen durante 30 min, se secan durante las tres horas siguientes al
   último bloque lluvioso; material original/restauración reversible y una

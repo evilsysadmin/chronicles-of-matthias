@@ -96,6 +96,10 @@ import {
 import { chroniclesPartyCondition } from '../chroniclesOfMatthiasPartyCondition.js';
 import { chroniclesCampRestStatus } from '../chronicles/chroniclesCampRest.js';
 import { chroniclesWorldCalendar } from '../chronicles/chroniclesWorldTime.js';
+import {
+  chroniclesAdvanceAmbientWorldTime,
+  attachChroniclesAmbientWorldClock,
+} from '../chronicles/chroniclesAmbientWorldClock.js';
 import { chroniclesEquippedItem } from '../chronicles/chroniclesEquipment.js';
 import { chroniclesPartyRelic } from '../chroniclesOfMatthiasRelics.js';
 import { chroniclesRetaliationCue } from '../chroniclesOfMatthiasRetaliation.js';
@@ -1955,6 +1959,31 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       refreshSaves((value) => value + 1);
     });
   };
+
+  // The outdoors remains alive while the player is stationary: Terra minutes
+  // pass in sparse visible-tab batches, but do NOT increment turns, move foes,
+  // or continue behind menus, dialogues, combat, map transitions or saves.
+  const ambientClockPaused = !ready || entryView !== 'playing'
+    || state?.phase !== 'explore' || Boolean(state?.initiative)
+    || menuOpen || feedbackOpen || firstStepsOpen || adminOpen || journalOpen
+    || quickStatusOpen || worldInfoOpen || chronicleModalOpen || automapOpen
+    || Boolean(spellMenuOpen) || Boolean(sheetMemberId) || Boolean(pendingSpellTarget)
+    || Boolean(areaTransition) || Boolean(audience) || noticeBoardOpen
+    || Boolean(worldStatOffer) || provisionsOpen || saveBusy
+    || confirmExitWithoutSaving || confirmLoadSelection
+    || Boolean(state?.shop || state?.guild || state?.inn)
+    || Boolean(chroniclesCampaignEpiloguePending(state));
+  useEffect(() => {
+    if (ambientClockPaused) return undefined;
+    return attachChroniclesAmbientWorldClock(() => {
+      const before = stateRef.current;
+      if (!before) return;
+      const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before));
+      if (after === before) return;
+      stateRef.current = after;
+      setState(after);
+    });
+  }, [ambientClockPaused, state?.mapId]);
 
   if (entryView === 'menu') {
     return (
