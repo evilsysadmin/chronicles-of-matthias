@@ -47,7 +47,7 @@ try {
         assert(geometry.closeWidth >= 44 && geometry.closeHeight >= 44
           && geometry.closeTop >= 0 && geometry.closeBottom <= height + 1,
           'Close button must remain reachable: ' + JSON.stringify(geometry));
-        assert.equal(await dialog.locator('[data-chronicles-board-viewport]').getAttribute('data-chronicles-board-viewport'), 'fullscreen');
+        assert.equal(await dialog.getAttribute('data-chronicles-board-viewport'), 'fullscreen');
         assert.equal(await dialog.locator('[data-chronicles-board-layout]').getAttribute('data-chronicles-board-layout'), layout);
         assert.equal(await dialog.locator('[data-chronicles-board-section="other"]').count(), layout === 'split' ? 1 : 0);
         const acceptance = dialog.getByRole('button', { name: 'Aceptar encargo' });
