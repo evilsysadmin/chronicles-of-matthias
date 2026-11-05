@@ -1,0 +1,54 @@
+/* Sparse composited precipitation, never a new WebGL frame loop. The
+   host is a positioned Three.js viewport; UI, click targets and dialogs
+   remain in front of the effect and fully interactive. */
+.chronicles-precipitation-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint style;
+}
+.chronicles-precipitation-layer[hidden] { display: none; }
+.chronicles-precipitation-particle {
+  position: absolute;
+  top: -30px;
+  left: var(--p-x);
+  width: var(--p-size);
+  height: 21px;
+  pointer-events: none;
+  opacity: var(--p-alpha);
+  background: linear-gradient(180deg,
+    rgba(226, 244, 255, 0),
+    rgba(229, 246, 255, .92) 52%,
+    rgba(183, 213, 243, .15));
+  transform: translate3d(0, -24px, 0);
+  animation: chronicles-rainfall var(--p-duration) linear var(--p-delay) infinite;
+}
+.chronicles-precipitation-layer[data-kind="snow"] .chronicles-precipitation-particle {
+  width: var(--p-size);
+  height: var(--p-size);
+  border-radius: 50%;
+  background: #f5faff;
+  box-shadow: 0 0 4px rgba(244, 250, 255, .36);
+  animation-name: chronicles-snowfall;
+  animation-timing-function: ease-in-out;
+}
+.chronicles-precipitation-particle[data-depth="far"] {
+  opacity: calc(var(--p-alpha) * .6);
+}
+@keyframes chronicles-rainfall {
+  from { transform: translate3d(0, -24px, 0); }
+  to { transform: translate3d(var(--p-drift), var(--precipitation-travel), 0); }
+}
+@keyframes chronicles-snowfall {
+  from { transform: translate3d(0, -24px, 0); }
+  to { transform: translate3d(var(--p-drift), var(--precipitation-travel), 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-precipitation-particle {
+    animation: none !important;
+    transform: none;
+    opacity: .22;
+  }
+}

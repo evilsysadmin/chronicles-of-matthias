@@ -1,0 +1,135 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import {
+  chroniclesPrecipitationBudget,
+  chroniclesPrecipitationKind,
+  chroniclesPrecipitationParticle,
+  createChroniclesPrecipitationOverlay,
+} from './chroniclesPrecipitationOverlay.js';
+
+const region = { mapId: 'terra-demo-wet', regionKind: 'wilderness', biome: 'marsh' };
+const snowy = { mapId: 'terra-demo-snow', regionKind: 'wilderness', biome: 'snow' };
+function findTime(place, kind) {
+  for (let i = 0; i < 120; i += 1) {
+    const minute = 480 + i * 360;
+    if (chroniclesRegionalWeather({ ...place, worldMinutes: minute })?.kind === kind) return minute;
+  }
+  throw Error('Weather sample not found: ' + kind);
+}
+
+function fakeDocument() {
+  function element(name) {
+    const node = {
+      name, children: [], dataset: {}, hidden: false, parent: null,
+      style: { values: {}, setProperty(key, value) { this.values[key] = value; } },
+      setAttribute() {},
+      appendChild(child) {
+        if (child.name === '#fragment') {
+          for (const nested of child.children) this.appendChild(nested);
+        } else {
+          child.parent = this;
+          this.children.push(child);
+        }
+        return child;
+      },
+      replaceChildren(...nodes) { this.children = []; nodes.forEach((n) => this.appendChild(n)); },
+      remove() { if (this.parent) this.parent.children = this.parent.children.filter((n) => n !== this); },
+    };
+    return node;
+  }
+  return { createElement: element, createDocumentFragment: () => element('#fragment'), element };
+}
+afterEach(() => vi.unstubAllGlobals());
+
+describe('Terra cheap CSS precipitation', () => {
+  it('only animates real rain and snow, with separate mobile budgets', () => {
+    for (const kind of ['clear', 'cloudy', 'fog', null]) {
+      expect(chroniclesPrecipitationKind({ kind })).toBeNull();
+      expect(chroniclesPrecipitationBudget(kind)).toBe(0);
+    }
+    expect(chroniclesPrecipitationKind({ kind: 'rain' })).toBe('rain');
+    expect(chroniclesPrecipitationBudget('rain')).toBe(36);
+    expect(chroniclesPrecipitationBudget('rain', true)).toBe(16);
+    expect(chroniclesPrecipitationBudget('snow')).toBe(24);
+    expect(chroniclesPrecipitationBudget('snow', true)).toBe(12);
+    expect(chroniclesPrecipitationBudget('rain', true, true)).toBe(4);
+  });
+
+  it('uses reproducible positions and different rain/snow speeds without RNG', () => {
+    const random = vi.spyOn(Math, 'random').mockImplementation(() => { throw Error('No RNG'); });
+    try {
+      const rain = chroniclesPrecipitationParticle(11, 'rain');
+      const snow = chroniclesPrecipitationParticle(11, 'snow');
+      expect(rain).toEqual(chroniclesPrecipitationParticle(11, 'rain'));
+      expect(Object.isFrozen(rain)).toBe(true);
+      expect(rain.x).toBeGreaterThan(0);
+      expect(rain.x).toBeLessThan(100);
+      expect(rain.duration).toBeLessThan(1.5);
+      expect(snow.duration).toBeGreaterThan(5);
+      expect(snow.size).toBeGreaterThan(rain.size);
+    } finally { random.mockRestore(); }
+  });
+
+  it('creates particles only for precipitation, restores clear, suspends and disposes', () => {
+    const fake = fakeDocument();
+    vi.stubGlobal('document', fake);
+    const host = fake.element('host');
+    host.clientHeight = 390;
+    const effect = createChroniclesPrecipitationOverlay(host, region, { coarse: true });
+    const layer = host.children[0];
+    expect(layer.hidden).toBe(true);
+    expect(layer.style.values['--precipitation-travel']).toBe('445px');
+    const rain = findTime(region, 'rain');
+    const clear = findTime(region, 'clear');
+    expect(effect.sync(rain)).toBe(true);
+    expect(layer.hidden).toBe(false);
+    expect(layer.children).toHaveLength(16);
+    expect(layer.dataset.kind).toBe('rain');
+    expect(effect.sync(rain + 10)).toBe(false);
+    expect(layer.children).toHaveLength(16);
+    effect.setVisible(false);
+    expect(layer.hidden).toBe(true);
+    effect.setVisible(true);
+    expect(layer.hidden).toBe(false);
+    host.clientHeight = 600;
+    effect.resize();
+    expect(layer.style.values['--precipitation-travel']).toBe('655px');
+    expect(effect.sync(clear)).toBe(true);
+    expect(layer.hidden).toBe(true);
+    expect(layer.children).toHaveLength(0);
+    const frozen = layer;
+    effect.dispose();
+    expect(host.children).toHaveLength(0);
+    expect(effect.sync(rain)).toBe(false);
+    expect(frozen.children).toHaveLength(0);
+  });
+
+  it('keeps caves and Tactics without precipitation, and snow respects lower budgets', () => {
+    const fake = fakeDocument();
+    vi.stubGlobal('document', fake);
+    const dungeon = fake.element('host');
+    dungeon.clientHeight = 360;
+    const fx = createChroniclesPrecipitationOverlay(dungeon, {
+      mapId: 'swordhaven-sewers', regionKind: 'dungeon',
+    }, { coarse: true });
+    expect(fx.sync(findTime(region, 'rain'))).toBe(false);
+    expect(dungeon.children[0].hidden).toBe(true);
+    fx.dispose();
+    const host = fake.element('host');
+    host.clientHeight = 400;
+    const snowFx = createChroniclesPrecipitationOverlay(host, snowy, { coarse: false });
+    expect(snowFx.sync(findTime(snowy, 'snow'))).toBe(true);
+    expect(host.children[0].children).toHaveLength(24);
+    snowFx.dispose();
+  });
+
+  it('disables animation for reduced motion; no timers or WebGL loop', () => {
+    const css = readFileSync(new URL('./chroniclesPrecipitationOverlay.css', import.meta.url), 'utf8');
+    const js = readFileSync(new URL('./chroniclesPrecipitationOverlay.js', import.meta.url), 'utf8');
+    expect(css).toContain('prefers-reduced-motion: reduce');
+    expect(css).toMatch(/animation:\s*none\s*!important/);
+    expect(css).toMatch(/pointer-events:\s*none/);
+    expect(js).not.toMatch(/requestAnimationFrame|setInterval|setTimeout|new THREE/);
+  });
+});

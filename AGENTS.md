@@ -121,7 +121,10 @@
   persistido en tramos de seis horas: sin Date.now, timers ni RNG en runtime.
   Informar del clima actual solo en I; mazmorras no tienen clima exterior.
   La primera pasada atmosférica modifica cielo, luz y alcance de niebla
-  existente, sin partículas/precipitación visual ficticia.
+  existente. Lluvia y nieve se animan exclusivamente en exteriores con una
+  capa CSS dentro del viewport 3D, presupuestos menores en móvil y reducción
+  de movimiento. No despertar el renderizador WebGL para hacer caer partículas;
+  ocultar el efecto en pestañas invisibles y liberarlo al salir del mapa.
   Mantener código, ayuda, botones y pruebas sincronizados.
 - En MM3 **no existe el atributo «Alcance»** de equipo. Melee, incluidas lanza y bastón, ataca adyacente; **durante iniciativa con cámara fija**, cada héroe puede alcanzar a un enemigo vivo y comprometido en cualquiera de las cuatro casillas cardinales adyacentes (no a través de paredes). Fuera del combate se conserva el ataque frontal. Arco, ballesta, honda y conjuros ofensivos/paralizantes actúan sobre enemigos visibles en línea recta sin atravesar paredes. El recorrido está limitado por el propio mapa. El HUD y las tiendas no deben anunciar diferencias de casillas ficticias. Mantener intacta la geometría de combate del modo Tactics y los identificadores/metadatos históricos de los objetos para guardados existentes.
 - Recogidas y botín MM3: dar un aviso breve no modal tras ganar realmente objetos, mostrando el nombre/cantidad del inventario tras la acción, tanto de objetos del suelo como de enemigos derrotados. Nunca anunciar recompensas por intentos fallidos, compras o restauración de saves.
