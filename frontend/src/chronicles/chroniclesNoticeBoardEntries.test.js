@@ -59,6 +59,7 @@ describe('Swordhaven notice board — lasting offers', () => {
       state: initial, onAccept: () => {}, onClose: () => {},
     }));
     expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('data-chronicles-board-viewport="fullscreen"');
     expect(markup).toContain('El estandarte perdido');
     expect(markup).toContain('18 monedas de oro');
     expect(markup).toContain('data-chronicles-board-accept="first-book-missing-board"');

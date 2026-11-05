@@ -89,7 +89,8 @@ export default function ChroniclesNoticeBoard({ state, onAccept, onClose }) {
       if (event.target === event.currentTarget) onClose();
     }}>
       <section className="chronicles-notice-board" ref={panelRef} role="dialog" aria-modal="true"
-        aria-label="Tablón de encargos de Swordhaven" data-chronicles-notice-board>
+        aria-label="Tablón de encargos de Swordhaven" data-chronicles-notice-board
+        data-chronicles-board-viewport="fullscreen">
         <header className="chronicles-notice-board__header">
           <div className="chronicles-notice-board__heading">
             <small>SWORDHAVEN · EDICTOS Y CONTRATOS</small>
