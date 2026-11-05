@@ -9,19 +9,25 @@ const STATUS = Object.freeze({
   completed: 'Completado',
 });
 
-function QuestCard({ offer, onAccept = null }) {
+function QuestCard({ offer, onAccept = null, posted = false }) {
   return (
     <li className="chronicles-notice-board__card"
       data-chronicles-board-quest={offer.questId || offer.id}
       data-chronicles-board-status={offer.status}>
-      <div className="chronicles-notice-board__card-head">
-        <strong>{offer.title}</strong>
-        <span className={'is-' + offer.status}>{STATUS[offer.status] || offer.status}</span>
+      <div className="chronicles-notice-board__card-meta">
+        <span>{posted ? 'Edicto de Swordhaven' : 'Registro de la compañía'}</span>
+        <span className={'chronicles-notice-board__status is-' + offer.status}>
+          {STATUS[offer.status] || offer.status}
+        </span>
       </div>
+      <strong className="chronicles-notice-board__card-title">{offer.title}</strong>
       {offer.description && <p>{offer.description}</p>}
       {offer.detail && <p className="chronicles-notice-board__detail">{offer.detail}</p>}
       {offer.status !== 'available' && offer.objective && (
-        <p className="chronicles-notice-board__objective">{offer.objective}</p>
+        <div className="chronicles-notice-board__objective">
+          <span>Objetivo actual</span>
+          <p>{offer.objective}</p>
+        </div>
       )}
       {offer.canAccept && onAccept && (
         <button type="button" data-chronicles-board-accept={offer.id}
@@ -83,28 +89,38 @@ export default function ChroniclesNoticeBoard({ state, onAccept, onClose }) {
     }}>
       <section className="chronicles-notice-board" ref={panelRef} role="dialog" aria-modal="true"
         aria-label="Tablón de encargos de Swordhaven" data-chronicles-notice-board>
-        <header>
-          <div>
+        <header className="chronicles-notice-board__header">
+          <div className="chronicles-notice-board__heading">
             <small>SWORDHAVEN · EDICTOS Y CONTRATOS</small>
             <h2>Tablón de encargos</h2>
-            <p>Consulta los avisos y decide cuáles acepta la compañía.</p>
+            <p>Noticias, trabajos y asuntos pendientes de la compañía.</p>
           </div>
           <button type="button" ref={closeRef} className="chronicles-notice-board__close"
             onClick={onClose} aria-label="Cerrar tablón">✕</button>
         </header>
         <div className="chronicles-notice-board__body">
-          <h3>Ofertas del tablón</h3>
-          {posted.length
-            ? <ul>{posted.map((offer) => <QuestCard key={offer.id} offer={offer} onAccept={onAccept} />)}</ul>
-            : <p className="chronicles-notice-board__empty">No hay avisos publicados en este tablón.</p>}
-          {other.length > 0 && (
-            <>
-              <h3>Otros encargos de la compañía</h3>
-              <ul>{other.map((quest) => <QuestCard key={quest.id} offer={quest} />)}</ul>
-            </>
-          )}
+          <div className="chronicles-notice-board__sections">
+            <section className="chronicles-notice-board__section" data-chronicles-board-section="posted">
+              <div className="chronicles-notice-board__section-head">
+                <h3>Ofertas del tablón</h3>
+                <span>{posted.length} {posted.length === 1 ? 'aviso' : 'avisos'}</span>
+              </div>
+              {posted.length
+                ? <ul>{posted.map((offer) => <QuestCard key={offer.id} offer={offer} posted onAccept={onAccept} />)}</ul>
+                : <p className="chronicles-notice-board__empty">No hay avisos publicados en este tablón.</p>}
+            </section>
+            {other.length > 0 && (
+              <section className="chronicles-notice-board__section" data-chronicles-board-section="other">
+                <div className="chronicles-notice-board__section-head">
+                  <h3>Otros encargos de la compañía</h3>
+                  <span>{other.length} {other.length === 1 ? 'encargo' : 'encargos'}</span>
+                </div>
+                <ul>{other.map((quest) => <QuestCard key={quest.id} offer={quest} />)}</ul>
+              </section>
+            )}
+          </div>
         </div>
-        <footer>Los contratos aceptados y completados permanecen consultables. La Crónica conserva su historia.</footer>
+        <footer>La Crónica conserva la historia de cada encargo aceptado o completado.</footer>
       </section>
     </div>
   );
