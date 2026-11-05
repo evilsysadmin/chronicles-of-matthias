@@ -10,7 +10,7 @@ const region = mode === 'rain'
   : { mapId: 'terra-preview-snow', regionKind: 'wilderness', biome: 'snow' };
 function findTime(kind) {
   for (let i = 0; i < 150; i += 1) {
-    const minute = 480 + 360 * i;
+    const minute = 90 * (6 + i) + 50;
     if (chroniclesRegionalWeather({ ...region, worldMinutes: minute })?.kind === kind) return minute;
   }
   throw Error('No ' + kind + ' weather sample');
