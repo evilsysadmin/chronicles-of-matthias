@@ -1,0 +1,54 @@
+/* A few wind-driven flecks are composited ABOVE the sleeping 3D scene.
+   No pointer capture, billboards, shadow maps, asset requests or frame loops. */
+.chronicles-wind-debris-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout paint style;
+}
+.chronicles-wind-debris-layer[hidden] { display: none; }
+.chronicles-wind-debris-fleck {
+  position: absolute;
+  left: -12%;
+  top: var(--debris-y);
+  width: var(--debris-width);
+  height: var(--debris-height);
+  pointer-events: none;
+  border-radius: 65% 0 65% 0;
+  background: #aeb66b;
+  opacity: 0;
+  animation: chronicles-wind-drift calc(var(--debris-duration) * var(--debris-pace, 1))
+    linear var(--debris-delay) infinite;
+  will-change: transform;
+}
+.chronicles-wind-debris-layer[data-kind="leaf"] .chronicles-wind-debris-fleck[data-variant="1"] {
+  background: #b88b4b;
+}
+.chronicles-wind-debris-layer[data-kind="leaf"] .chronicles-wind-debris-fleck[data-variant="2"] {
+  background: #7c9258;
+}
+.chronicles-wind-debris-layer[data-kind="ash"] .chronicles-wind-debris-fleck {
+  border-radius: 50%;
+  background: #a69a8f;
+  box-shadow: 0 0 3px #b8aa9b66;
+}
+.chronicles-wind-debris-layer[data-kind="ash"] .chronicles-wind-debris-fleck[data-variant="2"] {
+  background: #cec4b6;
+}
+.chronicles-wind-debris-layer[data-flow="left"] .chronicles-wind-debris-fleck {
+  animation-direction: reverse;
+}
+@keyframes chronicles-wind-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(-12deg); opacity: 0; }
+  18% { opacity: var(--debris-alpha); }
+  50% { transform: translate3d(calc(var(--debris-travel) * .5),
+    calc(var(--debris-float) * -1), 0) rotate(110deg); }
+  80% { opacity: var(--debris-alpha); }
+  100% { transform: translate3d(var(--debris-travel),
+    calc(var(--debris-float) * .4), 0) rotate(240deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-wind-debris-fleck { animation: none !important; opacity: 0; }
+}
