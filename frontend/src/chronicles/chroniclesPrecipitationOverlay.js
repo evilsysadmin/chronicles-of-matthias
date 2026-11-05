@@ -36,7 +36,7 @@ export function chroniclesPrecipitationParticle(index, kind) {
 }
 
 // Outdoor-only. Invoked on game-state/time changes and visibility/viewport
-// changes, NEVER in requestAnimationFrame or from a setInterval.
+// changes only; no autonomous frame loop or timer is allocated.
 export function createChroniclesPrecipitationOverlay(host, region, {
   coarse = false, reducedMotion = false,
 } = {}) {
