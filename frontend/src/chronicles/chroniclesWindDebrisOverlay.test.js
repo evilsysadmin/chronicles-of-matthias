@@ -4,7 +4,7 @@ import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather
 import {
   chroniclesWindDebrisKind, chroniclesWindDebrisBudget,
   chroniclesWindDebrisParticle, chroniclesWindDebrisCrosswind,
-  createChroniclesWindDebrisOverlay,
+  chroniclesWindDebrisPace, createChroniclesWindDebrisOverlay,
 } from './chroniclesWindDebrisOverlay.js';
 
 const forest = { mapId: 'terra-test-forest', regionKind: 'wilderness', biome: 'forest' };
@@ -90,6 +90,10 @@ describe('Terra decorative wind-borne leaves and ash', () => {
       const wind = { east: 0.6, south: -0.4 };
       expect(chroniclesWindDebrisCrosswind(wind, 0)).toBe(56);
       expect(chroniclesWindDebrisCrosswind(wind, 2)).toBe(-56);
+      expect(chroniclesWindDebrisPace(15)).toBeGreaterThan(chroniclesWindDebrisPace(55));
+      expect(chroniclesWindDebrisPace(-55)).toBe(chroniclesWindDebrisPace(55));
+      expect(chroniclesWindDebrisPace(1000)).toBe(0.70);
+      expect(chroniclesWindDebrisPace(NaN)).toBe(1.12);
     } finally { random.mockRestore(); }
   });
 
@@ -103,6 +107,8 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     expect(layer.hidden).toBe(true);
     expect(layer.style.values['--debris-travel']).toBe('540px');
     expect(layer.style.values['--debris-travel-half']).toBe('270px');
+    expect(Number.parseFloat(layer.style.values['--debris-travel-quarter'])).toBeCloseTo(86.4);
+    expect(Number.parseFloat(layer.style.values['--debris-travel-three-quarter'])).toBeCloseTo(410.4);
     const minute = sample(forest, 'dry');
     const weather = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: minute });
     const facing = facingCrosswind(weather.wind);
@@ -111,10 +117,12 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     expect(layer.dataset.kind).toBe('leaf');
     expect(layer.children).toHaveLength(4);
     const children = [...layer.children];
+    const duration = layer.children[0].style.values['--debris-duration'];
     const flow = layer.dataset.flow;
     expect(effect.sync(minute, (facing + 2) % 4)).toBe(true);
     expect(layer.children).toEqual(children);
     expect(layer.dataset.flow).not.toBe(flow);
+    expect(layer.children[0].style.values['--debris-duration']).toBe(duration);
     expect(effect.sync(minute, (facing + 2) % 4)).toBe(false);
     effect.setVisible(false);
     expect(layer.hidden).toBe(true);
@@ -123,6 +131,25 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     host.clientWidth = 800;
     effect.resize();
     expect(layer.style.values['--debris-travel']).toBe('950px');
+    let alternate = null;
+    const initialStrength = Math.abs(chroniclesWindDebrisCrosswind(weather.wind, facing));
+    for (let slot = 0; slot < 160; slot += 1) {
+      const candidate = 480 + slot * 360 + 60;
+      const other = chroniclesRegionalWeatherTransition({ ...forest, worldMinutes: candidate });
+      const strength = Math.abs(chroniclesWindDebrisCrosswind(other.wind, facing));
+      if (['clear', 'cloudy'].includes(other.kind) && !other.precipitation
+        && other.fog < 0.35 && strength >= 8 && Math.abs(strength - initialStrength) >= 12) {
+        alternate = { minute: candidate, strength };
+        break;
+      }
+    }
+    expect(alternate).not.toBeNull();
+    expect(effect.sync(alternate.minute, facing)).toBe(true);
+    expect(layer.children).toEqual(children);
+    const nextDuration = layer.children[0].style.values['--debris-duration'];
+    expect(nextDuration).not.toBe(duration);
+    expect(Number.parseFloat(nextDuration) > Number.parseFloat(duration))
+      .toBe(alternate.strength < initialStrength);
     expect(effect.sync(sample(forest, 'rain'), facing)).toBe(true);
     expect(layer.hidden).toBe(true);
     expect(layer.children).toHaveLength(0);
@@ -200,6 +227,8 @@ describe('Terra decorative wind-borne leaves and ash', () => {
     expect(css).toContain('prefers-reduced-motion: reduce');
     expect(css).toMatch(/animation:\s*none\s*!important/);
     expect(css).toMatch(/pointer-events:\s*none/);
+    expect(css).toContain('--debris-travel-quarter');
+    expect(css).toContain('--debris-float-three-quarter');
     expect(js).not.toMatch(/requestAnimationFrame|setInterval|setTimeout|new THREE/);
   });
 });
