@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
 import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
@@ -165,6 +166,67 @@ describe('Terra solar cycle', () => {
     expect(scene.children.length).toBe(children);
     // The same time in a later day must be reevaluated, not cached by hh:mm.
     expect(cycle.sync(clearMinute + 1440)).toBe(true);
+  });
+
+  it.each([true, false])('makes only Swordhaven paving wet after rain, then restores dry cobble (coarse=%s)', (coarsePointer) => {
+    const grid = swordhavenFirstBook.grid;
+    const scene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, {
+      coarsePointer,
+      scenePlan: {
+        mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+        width: grid[0].length, height: grid.length,
+        center: { x: 9, y: 7 }, grid, content: [],
+        landscape: swordhavenFirstBook.landscape,
+      },
+    });
+    const roads = scene.getObjectByName('chronicles-campaign-road');
+    const puddles = scene.getObjectByName('chronicles-town-rain-puddles');
+    expect(puddles).toBeInstanceOf(THREE.InstancedMesh);
+    expect(roads).toBeInstanceOf(THREE.InstancedMesh);
+    const baseColor = roads.material.color.clone();
+    const baseRoughness = roads.material.roughness;
+    const baseMetalness = roads.material.metalness;
+    let start = null;
+    for (let n = 0; n < 100; n++) {
+      const t = n * 360;
+      const w = chroniclesRegionalWeather({ mapId: swordhavenFirstBook.id, regionKind: 'settlement', worldMinutes: t });
+      const prev = t > 0 ? chroniclesRegionalWeather({ mapId: swordhavenFirstBook.id, regionKind: 'settlement', worldMinutes: t - 1 }) : null;
+      if (w.kind === 'rain' && prev?.kind !== 'rain') { start = t; break; }
+    }
+    expect(start).not.toBeNull();
+    const noonWet = start + 40;
+    expect(chroniclesTownRainWetness({
+      mapId: swordhavenFirstBook.id, regionKind: 'settlement', worldMinutes: noonWet,
+    })).toBe(1);
+    const apply = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 }, {
+      mapId: swordhavenFirstBook.id, regionKind: 'settlement',
+    });
+    const initialCount = scene.children.length;
+    apply.sync(noonWet);
+    expect(puddles.visible).toBe(true);
+    expect(puddles.material.opacity).toBeCloseTo(.76);
+    expect(roads.material.color.getHex()).not.toBe(baseColor.getHex());
+    expect(roads.material.roughness).toBeCloseTo(.43);
+    expect(roads.material.metalness).toBeCloseTo(.14);
+    expect(scene.children.length).toBe(initialCount);
+    // Deterministic rewind: the same geometry and original dry material come back.
+    let clear = null;
+    for (let t = start + 360; t < start + 360 * 20; t += 360) {
+      if (chroniclesTownRainWetness({ mapId: swordhavenFirstBook.id,
+        regionKind: 'settlement', worldMinutes: t + 180 }) === 0) { clear = t + 180; break; }
+    }
+    expect(clear).not.toBeNull();
+    apply.sync(clear);
+    expect(puddles.visible).toBe(false);
+    expect(puddles.material.opacity).toBe(0);
+    expect(roads.material.color.getHex()).toBe(baseColor.getHex());
+    expect(roads.material.roughness).toBe(baseRoughness);
+    expect(roads.material.metalness).toBe(baseMetalness);
+    expect(scene.children.length).toBe(initialCount);
+    apply.sync(noonWet);
+    expect(puddles.visible).toBe(true);
+    expect(puddles.material.opacity).toBeCloseTo(.76);
   });
 
   it('does not change the dungeon renderer when no exterior sun is present', () => {
