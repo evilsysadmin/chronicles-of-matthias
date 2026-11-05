@@ -66,6 +66,9 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
   const forward = new THREE.Vector3(0, 0, 1);
   const halo = dome.getObjectByName('swordhaven-sun-halo');
   const disc = dome.getObjectByName('swordhaven-sun-disc');
+  const townWindowGlows = scene.getObjectByName('chronicles-town-street-window-night-glow');
+  const townLanternGlass = scene.getObjectByName('chronicles-town-wall-lantern-glass');
+  const lanternDayIntensity = townLanternGlass?.material?.emissiveIntensity ?? null;
   let lastMinute = null;
 
   return {
@@ -83,6 +86,17 @@ export function createChroniclesExteriorDaylight(scene, renderer) {
       sun.color.copy(moonColor).lerp(sunColorDay, daylight);
       if (hemi) {
         hemi.intensity = hemiBase * (0.46 + 0.54 * daylight);
+      }
+      // Only the authored urban fixtures participate. Dungeons and wild
+      // biomes have no such batches, so remain exactly as before.
+      if (townWindowGlows) {
+        const opacity = (1 - daylight) * 0.82;
+        townWindowGlows.material.opacity = opacity;
+        townWindowGlows.visible = opacity > 0.01;
+      }
+      if (lanternDayIntensity !== null) {
+        townLanternGlass.material.emissiveIntensity =
+          lanternDayIntensity + (1 - daylight) * 1.7;
       }
       if (exposureDay !== null) {
         // Gentle, visible night; never an opaque black viewport.
