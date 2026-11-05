@@ -1,7 +1,7 @@
 import {
   createChroniclesPrecipitationOverlay, chroniclesPrecipitationBudget,
 } from '../src/chronicles/chroniclesPrecipitationOverlay.js';
-import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
+import { CHRONICLES_WEATHER_PERIOD_MINUTES, chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('kind') === 'snow' ? 'snow' : 'rain';
