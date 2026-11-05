@@ -62,6 +62,9 @@ describe('Swordhaven notice board — lasting offers', () => {
     expect(markup).toContain('El estandarte perdido');
     expect(markup).toContain('18 monedas de oro');
     expect(markup).toContain('data-chronicles-board-accept="first-book-missing-board"');
+    expect(markup).toContain('chronicles-notice-board__crest');
+    expect(markup).toContain('chronicles-notice-board__pin');
+    expect(markup).toContain('aria-label="Cerrar tablón"');
 
     const accepted = chroniclesReduce(initial, 'interact');
     const after = renderToStaticMarkup(createElement(ChroniclesNoticeBoard, {
