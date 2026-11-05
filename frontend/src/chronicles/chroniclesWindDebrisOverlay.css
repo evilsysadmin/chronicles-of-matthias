@@ -40,11 +40,17 @@
 .chronicles-wind-debris-layer[data-flow="left"] .chronicles-wind-debris-fleck {
   animation-direction: reverse;
 }
+/* Uneven lateral spacing and small vertical lifts suggest a soft gust
+   followed by a lull. Only the existing transform/opacity are animated. */
 @keyframes chronicles-wind-drift {
   0% { transform: translate3d(0, 0, 0) rotate(-12deg); opacity: 0; }
   18% { opacity: var(--debris-alpha); }
+  22% { transform: translate3d(var(--debris-travel-quarter),
+    var(--debris-float-quarter), 0) rotate(55deg); }
   50% { transform: translate3d(var(--debris-travel-half),
     var(--debris-float-up), 0) rotate(110deg); }
+  76% { transform: translate3d(var(--debris-travel-three-quarter),
+    var(--debris-float-three-quarter), 0) rotate(185deg); }
   80% { opacity: var(--debris-alpha); }
   100% { transform: translate3d(var(--debris-travel),
     var(--debris-float-down), 0) rotate(240deg); opacity: 0; }
