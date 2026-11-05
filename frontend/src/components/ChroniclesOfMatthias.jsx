@@ -780,6 +780,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     runProgressionActiveRef.current = true;
     chroniclesRememberPlayingRun(FIRST_PERSON_RUN_SCOPE, ensureChroniclesRun(FIRST_PERSON_RUN_SCOPE));
     progressionRef.current = saved;
+    // A completely new expedition never inherits the last run's fraction.
+    ambientTimeCounterRef.current?.reset();
     stateRef.current = null;
     staleRunRecoveryAttemptedRef.current = false;
     setProgression(saved);
@@ -1323,6 +1325,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       finishChroniclesRun(FIRST_PERSON_RUN_SCOPE, activeRunIdRef.current);
       activeRunIdRef.current = null;
     }
+    ambientTimeCounterRef.current?.reset();
     stateRef.current = null;
     setState(null);
     setSelectedMemberId('matthias');
@@ -1922,6 +1925,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     activeRunIdRef.current = null;
     authoritativeRunRef.current = null;
     checkpointFingerprintRef.current = '';
+    // Switching save slots starts a distinct real-time counter.
+    ambientTimeCounterRef.current?.reset();
     stateRef.current = null;
     setState(null);
     setReady(false);
