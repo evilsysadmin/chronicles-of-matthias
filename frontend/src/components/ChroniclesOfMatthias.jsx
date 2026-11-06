@@ -2271,6 +2271,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
+                data-chronicles-asleep={member.hp > 0 && (campPhase === 'sleeping'
+                  || state.initiative?.order?.some((actor) => actor.kind === 'party' && actor.id === member.id && actor.asleep === true))
+                  ? 'true' : undefined}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
               >
                 <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
@@ -2396,14 +2399,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
                 onWorldInfo={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setWorldInfoOpen(true); }}
                 campRestStatus={chroniclesCampRestStatus(state, chroniclesActiveEnemies(state))}
-                onCampRest={() => {
-                  const before = stateRef.current;
-                  const after = dispatch({ type: 'camp-rest' });
-                  if (after && before && after.turns > before.turns) {
-                    chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
-                    setMenuOpen(false);
-                  }
-                }}
+                onCampRest={beginCampRest}
                 inCombat={Boolean(state.initiative)}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
                 onSaveExit={() => void saveAndExit()}
@@ -2436,6 +2432,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <div className="chronicles-stage">
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
+            <div className={`chronicles-camp-curtain ${campPhase === 'sleeping' ? 'is-sleeping' : ''}`}
+              data-chronicles-camp-phase={campPhase || 'idle'} aria-hidden="true" />
             {relockPrompt && typeof document !== 'undefined' && createPortal(
               <div className="chronicles-relock" role="dialog" aria-modal="true" aria-labelledby="chronicles-relock-title" data-chronicles-relock>
                 <button type="button" className="chronicles-relock__go" onClick={() => { void activateLandscape(); }}>
