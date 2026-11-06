@@ -13,3 +13,6 @@ node_modules/
 /frontend/playwright-report/
 __pycache__/
 *.py[cod]
+
+# Content-hashed WebP export; binary assets belong in Chronicles R2, not Git.
+/frontend/.portrait-r2-stage/
