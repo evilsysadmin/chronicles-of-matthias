@@ -257,7 +257,12 @@ function normalizedInitiative(value) {
       const roll = integerOrNull(Number(actor?.roll), 1, 8);
       const initiative = integerOrNull(Number(actor?.initiative), 1, 1007);
       if (!id || !kind || agility === null || roll === null || initiative === null) return null;
-      return { index, actor: { id, kind, name, agility, roll, initiative } };
+      // Only MM3 party actors may carry the one-turn sleeping condition.
+      // Preserve it through Go/Mongo checkpoints so F5 cannot cure an ambush.
+      return { index, actor: {
+        id, kind, name, agility, roll, initiative,
+        ...(kind === 'party' && actor.asleep === true ? { asleep: true } : {}),
+      } };
     })
     .filter(Boolean);
   if (!validEntries.length) return null;
