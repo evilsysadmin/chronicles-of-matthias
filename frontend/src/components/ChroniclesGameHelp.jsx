@@ -51,7 +51,11 @@ export default function ChroniclesGameHelp({ onBack }) {
       <details>
         <summary>Exploración y combate</summary>
         <p>Usa las flechas para avanzar, retroceder y girar; Q y E desplazan
-          lateralmente durante la exploración. El minimapa muestra tu posición.</p>
+          lateralmente durante la exploración. El minimapa muestra tu posición.
+          Pulsa R para dormir ocho horas en el campo: necesitas una ración por
+          compañero en pie. El descanso puede interrumpirse por enemigos vivos
+          cercanos; algunos héroes comenzarán la emboscada dormidos y perderán
+          su primera acción. En una noche tranquila recuperas PV y PH.</p>
         <p>En contacto con enemigos, el combate pasa a turnos. La iniciativa
           determina quién actúa antes. A ataca cuerpo a cuerpo durante tu turno;
           S dispara con un personaje que lleve un arma a distancia válida.

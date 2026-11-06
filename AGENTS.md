@@ -104,7 +104,16 @@
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
-  con el héroe activo en iniciativa. **Espacio NO ataca**
+  con el héroe activo en iniciativa. **R** inicia el descanso de campo
+  directamente en exploración: consume una ración por héroe vivo, permite
+  descansar con PV/PH completos, cierra visualmente los ojos de los retratos
+  y funde a negro el viewport. Sin encuentro avanza 480 minutos y muestra
+  «8 hours passed - the party rested». Una patrulla real, viva y próxima
+  puede iniciar una emboscada reproducible por runSeed/estado; solo avanza
+  entre 1 y 7 horas, nunca cura gratis y algunos héroes dormidos pierden
+  su primera acción. El marcador de sueño de iniciativa persiste en saves;
+  el botón de descanso en el menú se conserva para tacto. No respawn de
+  enemigos durante descansos. **Espacio NO ataca**
   ni tiene alias de ataque automático en primera persona; no recuperarlo.
   El botón táctil de ataque automático permanece disponible por separado.
   `C` abre magia. `I` abre información del calendario sin gasto de turno,

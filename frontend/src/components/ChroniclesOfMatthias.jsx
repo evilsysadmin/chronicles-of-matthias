@@ -200,6 +200,7 @@ import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
 import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
+import './ChroniclesCampSleep.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
 import './ChroniclesWorldInfo.css';
@@ -420,6 +421,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const ambientTimeCounterRef = useRef(null);
   if (!ambientTimeCounterRef.current) ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
   const [state, setState] = useState(null);
+  // Ephemeral presentation, never additional gameplay or time commits.
+  const [campPhase, setCampPhase] = useState(null);
+  const campPhaseRef = useRef(null);
+  const campTimerRef = useRef(null);
+  useEffect(() => () => {
+    if (campTimerRef.current !== null) window.clearTimeout(campTimerRef.current);
+  }, []);
   // Opening the quartermaster counter is a free presentation transition.
   const [provisionsOpen, setProvisionsOpen] = useState(false);
   const provisionsOpenRef = useRef(false);
@@ -816,6 +824,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // cannot advance behind it, and simply opening the modal awards nothing.
     if (worldStatOfferRef.current) return current;
     const requestedAction = typeof action === 'string' ? action : action?.type;
+    if (campPhaseRef.current && requestedAction !== 'camp-rest') return current;
     if (requestedAction === 'interact') {
       const offer = chroniclesMM3WorldStatOffer(current);
       if (offer) {
@@ -914,7 +923,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       return updated; // Synchronous result lets shop feedback verify completed trades.
     }
     const activeActor = chroniclesCurrentInitiativeActor(current.initiative);
-    if (current.initiative && activeActor?.kind === 'enemy') return;
+    if (current.initiative && (activeActor?.kind === 'enemy' || activeActor?.asleep === true)) return current;
     if (
       current.initiative
       && (actionType === 'attack' || actionType === 'cast' || actionType === 'use-item')
@@ -1104,6 +1113,38 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     touchHoldRef.current = { delayId: null, repeatId: null };
   }, []);
 
+  const beginCampRest = useCallback(() => {
+    if (campPhaseRef.current) return;
+    const current = stateRef.current;
+    if (!current) return;
+    const status = chroniclesCampRestStatus(current, chroniclesActiveEnemies(current));
+    if (!status.canRest) {
+      showMissileNotice(status.reason);
+      return;
+    }
+    clearTouchHold();
+    chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+    setMenuOpen(false);
+    campPhaseRef.current = 'sleeping';
+    setCampPhase('sleeping');
+    campTimerRef.current = window.setTimeout(() => {
+      // A stale timer cannot rest another expedition after load or exit.
+      if (stateRef.current !== current || campPhaseRef.current !== 'sleeping') {
+        campPhaseRef.current = null;
+        setCampPhase(null);
+        return;
+      }
+      dispatch({ type: 'camp-rest' });
+      campPhaseRef.current = 'waking';
+      setCampPhase('waking');
+      campTimerRef.current = window.setTimeout(() => {
+        campTimerRef.current = null;
+        campPhaseRef.current = null;
+        setCampPhase(null);
+      }, 430);
+    }, 480);
+  }, [clearTouchHold, dispatch, showMissileNotice]);
+
   const startTouchHold = useCallback((action, event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     event.preventDefault();
@@ -1133,7 +1174,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   useEffect(() => {
     const current = stateRef.current;
     const actor = chroniclesCurrentInitiativeActor(current?.initiative);
-    if (sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase !== 'combat') return undefined;
+    if (campPhase || sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase !== 'combat') return undefined;
 
     const timer = window.setTimeout(() => {
       const latest = stateRef.current;
@@ -1183,7 +1224,28 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [sheetMemberId, state?.initiative, state?.phase, showHitSplats, showLootNotice]);
+  }, [campPhase, sheetMemberId, state?.initiative, state?.phase, showHitSplats, showLootNotice]);
+
+  // Sleeping heroes in a night ambush automatically lose one initiative slot.
+  // The asleep bit is checkpointed; the wake-up action is never a free attack.
+  useEffect(() => {
+    const actor = chroniclesCurrentInitiativeActor(state?.initiative);
+    if (campPhase || sheetMemberId || state?.phase !== 'combat'
+      || actor?.kind !== 'party' || actor.asleep !== true) return undefined;
+    const expected = state.initiative;
+    const timer = window.setTimeout(() => {
+      const latest = stateRef.current;
+      if (latest?.initiative !== expected || latest.phase !== 'combat') return;
+      const advanced = chroniclesAdvanceCombatInitiative(latest, chroniclesActiveEnemies(latest));
+      const committed = {
+        ...advanced,
+        message: `${actor.name} se despierta sobresaltado y pierde su primer turno.`,
+      };
+      stateRef.current = committed;
+      setState(committed);
+    }, 380);
+    return () => window.clearTimeout(timer);
+  }, [campPhase, sheetMemberId, state?.initiative, state?.phase]);
 
   useEffect(() => {
     const actor = chroniclesCurrentInitiativeActor(state?.initiative);
@@ -1682,6 +1744,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (campPhaseRef.current) {
+        if (event.key !== 'Tab') event.preventDefault();
+        return;
+      }
       // The information folio owns input until closed. Do not move, fight
       // or select party members through its translucent backdrop.
       if (worldInfoOpen) {
@@ -1848,6 +1914,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         return;
       }
       if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
+      if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault();
+        if (!event.repeat) beginCampRest();
+        return;
+      }
       if (event.key === 'f' || event.key === 'F') {
         const rawContextual = chroniclesContextualContentAction(current);
         const rawDialogue = chroniclesNpcDialogueForState(current, rawContextual);
@@ -1889,7 +1960,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
+  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, beginCampRest, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
     confirmExitWithoutSaving, confirmLoadSelection, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget, noticeBoardOpen, worldInfoOpen]);
@@ -1980,7 +2051,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     || quickStatusOpen || worldInfoOpen || chronicleModalOpen || automapOpen
     || Boolean(spellMenuOpen) || Boolean(sheetMemberId) || Boolean(pendingSpellTarget)
     || Boolean(areaTransition) || Boolean(audience) || noticeBoardOpen
-    || Boolean(worldStatOffer) || provisionsOpen || saveBusy
+    || Boolean(worldStatOffer) || provisionsOpen || Boolean(campPhase) || saveBusy
     || confirmExitWithoutSaving || confirmLoadSelection
     || Boolean(state?.shop || state?.guild || state?.inn)
     || Boolean(chroniclesCampaignEpiloguePending(state))
@@ -1991,7 +2062,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return attachChroniclesAmbientWorldClock((minutes) => {
       // Ignore stale callbacks from a retired run when a new game or save
       // replaces the ref before React has cleaned up the previous timer.
-      if (ambientTimeCounterRef.current !== counter) return false;
+      if (ambientTimeCounterRef.current !== counter || campPhaseRef.current) return false;
       const before = stateRef.current;
       if (!before) return false;
       const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before), minutes);
@@ -2200,6 +2271,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
+                data-chronicles-asleep={member.hp > 0 && (campPhase === 'sleeping'
+                  || state.initiative?.order?.some((actor) => actor.kind === 'party' && actor.id === member.id && actor.asleep === true))
+                  ? 'true' : undefined}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
               >
                 <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
@@ -2325,14 +2399,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 onQuickStatus={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setQuickStatusOpen(true); }}
                 onWorldInfo={() => { setMenuOpen(false); setConfirmExitWithoutSaving(false); setWorldInfoOpen(true); }}
                 campRestStatus={chroniclesCampRestStatus(state, chroniclesActiveEnemies(state))}
-                onCampRest={() => {
-                  const before = stateRef.current;
-                  const after = dispatch({ type: 'camp-rest' });
-                  if (after && before && after.turns > before.turns) {
-                    chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
-                    setMenuOpen(false);
-                  }
-                }}
+                onCampRest={beginCampRest}
                 inCombat={Boolean(state.initiative)}
                 onSave={() => void persistCheckpoint(stateRef.current, 'manual')}
                 onSaveExit={() => void saveAndExit()}
@@ -2365,6 +2432,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <div className="chronicles-stage">
             <div ref={hostRef} className="chronicles-three" data-chronicles-renderer="three" aria-label="Mazmorra 3D en primera persona de Chronicles of Matthias" />
             <div className="chronicles-vignette" aria-hidden="true" />
+            <div className={`chronicles-camp-curtain ${campPhase === 'sleeping' ? 'is-sleeping' : ''}`}
+              data-chronicles-camp-phase={campPhase || 'idle'} aria-hidden="true" />
             {relockPrompt && typeof document !== 'undefined' && createPortal(
               <div className="chronicles-relock" role="dialog" aria-modal="true" aria-labelledby="chronicles-relock-title" data-chronicles-relock>
                 <button type="button" className="chronicles-relock__go" onClick={() => { void activateLandscape(); }}>

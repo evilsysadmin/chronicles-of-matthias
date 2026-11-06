@@ -1254,7 +1254,7 @@ function chroniclesReduceAction(state, action) {
     && (actionType === 'interact' || actionType === 'cross-area-threshold')) return state;
   if (actionType === 'temple-service') return chroniclesApplyTempleService(state, action?.serviceId);
   if (actionType === 'admin') return chroniclesAdminReduce(state, action);
-  if (actionType === 'camp-rest') return chroniclesCampRest(state, chroniclesActiveEnemies(state));
+  if (actionType === 'camp-rest') return chroniclesCampRest(state, chroniclesActiveEnemies(state), chroniclesMapForState(state));
   if (actionType === 'inn-close') return chroniclesCloseInn(state);
   if (actionType === 'inn-rest') return chroniclesInnRest(state, chroniclesMapForState(state));
   if (actionType === 'inn-buy-food') return chroniclesInnBuyFood(state, chroniclesMapForState(state));

@@ -1,0 +1,62 @@
+/* Diegetic MM3 field rest: an unobtrusive eyelid gesture and a true
+   blackout of the 3D viewport. No WebGL animation, portrait re-download or
+   new full-screen modal. Existing portraits remain the source of truth. */
+.chronicles-stage .chronicles-camp-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: #030304;
+  opacity: 0;
+  transition: opacity 440ms ease-in-out;
+}
+
+.chronicles-stage .chronicles-camp-curtain.is-sleeping {
+  opacity: 1;
+}
+
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph {
+  position: relative;
+}
+
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-thumbnail {
+  filter: saturate(.72) contrast(1.04) brightness(.74);
+  transition: filter 260ms ease;
+}
+
+/* Two soft eyelid strokes appear over the approximate eye-line of the face.
+   Rendered inside the portrait itself so mobile and custom faces still sleep.
+   The character art is never modified or replaced. */
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::before,
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 38%;
+  width: 20%;
+  height: 4px;
+  border-radius: 70% 70% 45% 45%;
+  background: rgba(22, 12, 10, .92);
+  box-shadow: 0 1px 1px rgba(245, 181, 126, .25);
+  pointer-events: none;
+  animation: chronicles-eye-close 260ms ease-out both;
+}
+
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::before { left: 25%; }
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::after { right: 25%; }
+
+@keyframes chronicles-eye-close {
+  from { transform: scaleY(.1); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chronicles-stage .chronicles-camp-curtain,
+  .chronicles-party [data-chronicles-asleep="true"] .chronicles-party-thumbnail {
+    transition: none;
+  }
+  .chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::before,
+  .chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph::after {
+    animation: none;
+  }
+}

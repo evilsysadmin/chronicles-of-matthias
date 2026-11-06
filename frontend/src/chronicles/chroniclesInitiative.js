@@ -301,6 +301,20 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
 
 export function chroniclesAdvanceCombatInitiative(state, enemies) {
   if (!state?.initiative) return state;
+  // When a surprised sleeper loses their first action, wake that actor before
+  // advancing. Future rounds must never charge a second sleeping turn.
+  const active = chroniclesCurrentInitiativeActor(state.initiative);
+  if (active?.kind === 'party' && active.asleep === true) {
+    state = {
+      ...state,
+      initiative: {
+        ...state.initiative,
+        order: state.initiative.order.map((actor) => (
+          actor === active ? { ...actor, asleep: false } : actor
+        )),
+      },
+    };
+  }
   // A party wiped during an active round must end in defeat, even if
   // enemies survive or the final enemy fell at the same time.
   if (!Array.isArray(state.party) || !state.party.some((member) => (
