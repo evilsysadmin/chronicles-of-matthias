@@ -51,8 +51,8 @@ describe('MM3 mobile portrait clearance', () => {
     expect(mobile).toContain('@media (max-width: 800px), (max-width: 1024px) and (max-height: 600px)');
     expect(mobile).toContain('grid-template-columns: repeat(4, 52px)');
     const tile = mobile.match(/\.chronicles \.chronicles-party \.chronicles-party-member\s*\{([^}]+)\}/)?.[1] || '';
-    expect(tile).toContain('height: 76px');
-    expect(tile).toContain('grid-template-rows: 40px 22px');
+    expect(tile).toContain('height: 84px');
+    expect(tile).toContain('grid-template-rows: 40px 30px');
     expect(tile).toContain('row-gap: 2px');
 
     const portrait = mobile.match(/\.chronicles \.chronicles-party \.chronicles-party-member > \.chronicles-party-glyph\s*\{([^}]+)\}/)?.[1] || '';
@@ -62,7 +62,9 @@ describe('MM3 mobile portrait clearance', () => {
     const gauges = mobile.match(/\.chronicles \.chronicles-party \.chronicles-party-member > \.chronicles-party-bars\s*\{([^}]+)\}/)?.[1] || '';
     expect(gauges).toContain('grid-area: 2 / 1');
     expect(gauges).toContain('position: static');
-    expect(gauges).toContain('grid-template-rows: repeat(2, 10px)');
+    expect(gauges).toContain('grid-template-rows: repeat(2, 14px)');
     expect(gauges).toContain('pointer-events: none');
+    expect(mobile).toContain('min-height: 14px');
+    expect(css).toContain('font: 700 12px/1 var(--mm3-hud-font)');
   });
 });
