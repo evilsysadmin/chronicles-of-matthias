@@ -1174,7 +1174,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   useEffect(() => {
     const current = stateRef.current;
     const actor = chroniclesCurrentInitiativeActor(current?.initiative);
-    if (sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase !== 'combat') return undefined;
+    if (campPhase || sheetMemberId || !current?.initiative || actor?.kind !== 'enemy' || current.phase !== 'combat') return undefined;
 
     const timer = window.setTimeout(() => {
       const latest = stateRef.current;
@@ -1224,7 +1224,28 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       }
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [sheetMemberId, state?.initiative, state?.phase, showHitSplats, showLootNotice]);
+  }, [campPhase, sheetMemberId, state?.initiative, state?.phase, showHitSplats, showLootNotice]);
+
+  // Sleeping heroes in a night ambush automatically lose one initiative slot.
+  // The asleep bit is checkpointed; the wake-up action is never a free attack.
+  useEffect(() => {
+    const actor = chroniclesCurrentInitiativeActor(state?.initiative);
+    if (campPhase || sheetMemberId || state?.phase !== 'combat'
+      || actor?.kind !== 'party' || actor.asleep !== true) return undefined;
+    const expected = state.initiative;
+    const timer = window.setTimeout(() => {
+      const latest = stateRef.current;
+      if (latest?.initiative !== expected || latest.phase !== 'combat') return;
+      const advanced = chroniclesAdvanceCombatInitiative(latest, chroniclesActiveEnemies(latest));
+      const committed = {
+        ...advanced,
+        message: `${actor.name} se despierta sobresaltado y pierde su primer turno.`,
+      };
+      stateRef.current = committed;
+      setState(committed);
+    }, 380);
+    return () => window.clearTimeout(timer);
+  }, [campPhase, sheetMemberId, state?.initiative, state?.phase]);
 
   useEffect(() => {
     const actor = chroniclesCurrentInitiativeActor(state?.initiative);
@@ -1723,6 +1744,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       const current = stateRef.current;
       if (!current || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (campPhaseRef.current) {
+        if (event.key !== 'Tab') event.preventDefault();
+        return;
+      }
       // The information folio owns input until closed. Do not move, fight
       // or select party members through its translucent backdrop.
       if (worldInfoOpen) {
@@ -1889,6 +1914,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
         return;
       }
       if (automapOpen || menuOpen || journalOpen || quickStatusOpen) return;
+      if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault();
+        if (!event.repeat) beginCampRest();
+        return;
+      }
       if (event.key === 'f' || event.key === 'F') {
         const rawContextual = chroniclesContextualContentAction(current);
         const rawDialogue = chroniclesNpcDialogueForState(current, rawContextual);
@@ -1930,7 +1960,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     };
     window.addEventListener('keydown', onKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
+  }, [acceptAreaTravel, cancelAreaTravel, attackWithSelected, beginCampRest, blockWithActive, shootWithParty, automapOpen, chronicleModalOpen, clearTouchHold, closeProvisions,
     confirmExitWithoutSaving, confirmLoadSelection, dispatch, feedbackOpen, interactWithContext, journalOpen, menuOpen, openMemberSheet,
     persistCheckpoint, quickStatusOpen, ready, saveBusy, sheetMemberId, spellMenuOpen,
     pendingSpellTarget, chooseSpellTarget, noticeBoardOpen, worldInfoOpen]);
