@@ -60,3 +60,14 @@
     animation: none;
   }
 }
+
+/* An actually decoded sleeping WebP replaces the provisional CSS eyelids.
+   If the R2 request fails, the bundled portrait + eyelids stay visible. */
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph:has(
+  .chronicles-party-thumbnail[data-chronicles-sleep-ready="true"]
+)::before,
+.chronicles-party [data-chronicles-asleep="true"] .chronicles-party-glyph:has(
+  .chronicles-party-thumbnail[data-chronicles-sleep-ready="true"]
+)::after {
+  display: none;
+}
