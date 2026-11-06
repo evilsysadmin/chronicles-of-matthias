@@ -76,6 +76,10 @@ export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   // still advance enemy awareness, but no journey time passes without a step.
   if (['forward', 'backward', 'strafe-left', 'strafe-right'].includes(actionType)
     && before.mapId === after.mapId && before.x === after.x && before.y === after.y) return after;
+  // Camp ambushes commit the exact interrupted hours inside the camp reducer.
+  // Do not overwrite those partial hours with an artificial full night.
+  if (actionType === 'camp-rest' && after.initiative
+    && chroniclesWorldMinutes(after.worldMinutes) > chroniclesWorldMinutes(before.worldMinutes)) return after;
   const spentMinutes = actionType === 'camp-rest' || actionType === 'inn-rest'
     ? CHRONICLES_WORLD_REST_MINUTES
     : CHRONICLES_WORLD_ACTION_MINUTES * spentTurns;
