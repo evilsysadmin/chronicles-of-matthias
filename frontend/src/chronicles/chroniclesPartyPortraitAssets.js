@@ -84,7 +84,10 @@ export function chroniclesPartyPortraitUrl(memberOrId, variant = 'awake') {
 
 export function chroniclesPortraitImageFallback(image, memberOrId) {
   const bundled = chroniclesPartyPortraitLocalUrl(memberOrId);
-  if (!image || image.src === bundled) return false;
+  // HTMLImageElement.src is absolute even when Vite's bundled URL is a
+  // relative /assets/... string. Compare the raw attribute too to prevent
+  // a broken local asset from recursively retrying onError.
+  if (!image || image.src === bundled || image.getAttribute?.('src') === bundled) return false;
   image.removeAttribute?.('data-chronicles-sleep-ready');
   image.src = bundled;
   return true;
