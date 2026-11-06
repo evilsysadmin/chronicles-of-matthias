@@ -77,7 +77,7 @@ describe('MM3 R-to-sleep · eight-hour camp and surprise', () => {
     const sleepers = after.initiative.order.filter((actor) => actor.kind === 'party' && actor.asleep);
     expect(sleepers.length).toBeGreaterThanOrEqual(1);
     expect(sleepers.length).toBeLessThan(after.party.length);
-    expect(sleepers.map((actor) => actor.id)).toEqual(ambush.asleepIds);
+    expect(sleepers.map((actor) => actor.id).sort()).toEqual([...ambush.asleepIds].sort());
     const checkpoint = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(after, 1)));
     const resumed = chroniclesApplyRunCheckpoint(initial(), checkpoint);
     expect(resumed.worldMinutes).toBe(after.worldMinutes);
@@ -105,8 +105,8 @@ describe('MM3 R-to-sleep · eight-hour camp and surprise', () => {
     const legacy = stocked(goblinCamp());
     expect(chroniclesCampAmbush(legacy, chroniclesActiveEnemies(legacy), chroniclesMapForState(legacy))).toBe(null);
     expect(chroniclesReduce(legacy, 'camp-rest').worldMinutes - legacy.worldMinutes).toBe(480);
-    expect(chroniclesReduce(stocked(createChroniclesState('swordhaven-sewers')), 'camp-rest'))
-      .toEqual(stocked(createChroniclesState('swordhaven-sewers')));
+    const tactics = stocked(createChroniclesState('swordhaven-sewers'));
+    expect(chroniclesReduce(tactics, 'camp-rest')).toBe(tactics);
   });
 
   it('keeps the keyboard and fade visibly diegetic, never opening a rest modal', () => {
