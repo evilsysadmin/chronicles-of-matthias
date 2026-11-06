@@ -81,3 +81,11 @@ export function chroniclesPartyPortraitUrl(memberOrId, variant = 'awake') {
     || (variant === 'sleep' && chroniclesPartyPortraitRemoteUrl(memberOrId, 'awake'))
     || chroniclesPartyPortraitLocalUrl(memberOrId);
 }
+
+export function chroniclesPortraitImageFallback(image, memberOrId) {
+  const bundled = chroniclesPartyPortraitLocalUrl(memberOrId);
+  if (!image || image.src === bundled) return false;
+  image.removeAttribute?.('data-chronicles-sleep-ready');
+  image.src = bundled;
+  return true;
+}
