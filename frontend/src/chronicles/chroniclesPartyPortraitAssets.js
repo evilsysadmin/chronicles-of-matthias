@@ -1,3 +1,4 @@
+import { chroniclesPortraitR2Url } from './chroniclesPortraitR2.js';
 import matthiasPortrait from '../assets/chronicles/matthias-chronicles-canonical-v3.webp';
 import hildegardPortrait from '../assets/chronicles/hildegard-canonical-v2.webp';
 import azizPortrait from '../assets/chronicles/aziz-canonical-v2.webp';
@@ -52,12 +53,31 @@ export const CHRONICLES_GALLERY_PORTRAITS = Object.freeze({
   'female-10': portrait_female_10,
 });
 
-// Existing slot-ID callers remain valid; resolved heroes carry portraitId.
-export function chroniclesPartyPortraitUrl(memberOrId) {
+// Stable portrait IDs in saves do not change when storage changes.
+export function chroniclesPartyPortraitId(memberOrId) {
   const member = memberOrId && typeof memberOrId === 'object' ? memberOrId : null;
-  const id = member?.portraitId || member?.characterBuild?.portraitId ||
-    (typeof memberOrId === 'string' ? memberOrId : member?.slotId || member?.id);
+  const id = member?.portraitId || member?.characterBuild?.portraitId
+    || (typeof memberOrId === 'string' ? memberOrId : member?.slotId || member?.id);
   const slot = member?.slotId || member?.id;
-  return CHRONICLES_GALLERY_PORTRAITS[id] || CHRONICLES_PARTY_PORTRAITS[id] ||
-    CHRONICLES_PARTY_PORTRAITS[slot] || matthiasPortrait;
+  if (Object.hasOwn(CHRONICLES_GALLERY_PORTRAITS, id)
+    || Object.hasOwn(CHRONICLES_PARTY_PORTRAITS, id)) return id;
+  return Object.hasOwn(CHRONICLES_PARTY_PORTRAITS, slot) ? slot : 'matthias';
+}
+
+export function chroniclesPartyPortraitLocalUrl(memberOrId) {
+  const id = chroniclesPartyPortraitId(memberOrId);
+  return CHRONICLES_GALLERY_PORTRAITS[id] || CHRONICLES_PARTY_PORTRAITS[id];
+}
+
+export function chroniclesPartyPortraitRemoteUrl(memberOrId, variant = 'awake') {
+  return chroniclesPortraitR2Url(chroniclesPartyPortraitId(memberOrId), variant);
+}
+
+// The sleep portrait is opt-in per character. Until a faithful closed-eye
+// WebP is approved on R2, the existing local/CSS eyelid effect stays active.
+// Remote awake may be reused during sleep while the CSS fallback is in use.
+export function chroniclesPartyPortraitUrl(memberOrId, variant = 'awake') {
+  return chroniclesPartyPortraitRemoteUrl(memberOrId, variant)
+    || (variant === 'sleep' && chroniclesPartyPortraitRemoteUrl(memberOrId, 'awake'))
+    || chroniclesPartyPortraitLocalUrl(memberOrId);
 }
