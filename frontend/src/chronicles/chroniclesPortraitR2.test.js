@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { CHRONICLES_PORTRAIT_R2_HOST, chroniclesPortraitR2Url } from './chroniclesPortraitR2.js';
 import {
   CHRONICLES_PARTY_PORTRAITS, CHRONICLES_GALLERY_PORTRAITS,
@@ -69,9 +70,9 @@ describe('MM3 immutable R2 portrait manifest', () => {
 
 describe('R2 operator pack', () => {
   it('produces exactly 24 immutable WebPs with genuine bytes and SHA-256 keys', () => {
-    const frontend = resolve('frontend');
+    const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
     execFileSync(process.execPath, [join(frontend, 'scripts', 'prepare-portrait-r2.mjs')], {
-      cwd: resolve('..'), stdio: 'pipe',
+      cwd: frontend, stdio: 'pipe',
     });
     const stage = join(frontend, '.portrait-r2-stage');
     const manifest = JSON.parse(readFileSync(join(stage, 'manifest.candidate.json'), 'utf8'));
