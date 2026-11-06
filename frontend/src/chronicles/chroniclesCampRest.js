@@ -1,9 +1,12 @@
-// A field rest is one explicit expedition action, not an autosave or a free
-// healing item. One road ration feeds each living hero for this rest; fallen
-// companions neither eat nor revive. No real-world hour/day conversion is
-// implied by the single exploration turn.
+// One press of R is one atomic eight-hour camp attempt. Rations are paid once;
+// a nearby living patrol can interrupt the night without healing the party.
+// No new monsters, real-world timers or free revivals are generated here.
 import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
-import { chroniclesEnemyCanAttackParty, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import {
+  chroniclesEnemyCanAttackParty, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition,
+} from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
 
 export const CHRONICLES_CAMP_RATION_ID = 'road-rations';
 
@@ -58,13 +61,52 @@ export function chroniclesCampRestStatus(state, enemies = []) {
   if (rationsAvailable < rationsNeeded) {
     return blocked(`Necesitas ${rationsNeeded} raciones y llevas ${rationsAvailable}.`);
   }
-  const needsRest = living.some((member) => member.hp < member.maxHp
-    || chroniclesMemberSp(state, member) < chroniclesMemberMaxSp(state, member));
-  if (!needsRest) return blocked('La compañía ya tiene todos sus PV y PH.');
+  // Sleeping is also how the party passes the night, not just a heal button.
   return { canRest: true, rationsNeeded, rationsAvailable, reason: '' };
 }
 
-export function chroniclesCampRest(state, enemies = []) {
+// The seed is the persisted expedition identity, not Math.random() or the wall
+// clock. Identical checkpoint + action yields the same interruption, even on F5.
+function campRoll(state, salt) {
+  const key = `${state.runSeed}:${state.mapId}:${state.x}:${state.y}:${state.turns}:${chroniclesWorldMinutes(state.worldMinutes)}:${salt}`;
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = Math.imul(hash ^ key.charCodeAt(i), 16777619);
+  }
+  return (hash >>> 0) / 4294967296;
+}
+
+// Only monsters still alive on this very map may raid a camp. They must be
+// close enough to have wandered over during the night and have an unobstructed
+// route of sight. Cleared areas never respawn enemies through the rest action.
+export function chroniclesCampAmbush(state, enemies = [], map = null) {
+  if (!state?.runSeed || typeof state.runSeed !== 'string') return null;
+  const nearby = (Array.isArray(enemies) ? enemies : []).filter((enemy) => {
+    if (!hasLivingHitPoints(state[enemy?.hpKey])) return false;
+    const position = chroniclesRuntimeEnemyPosition(state, enemy);
+    if (!position) return false;
+    const distance = Math.abs(position.x - state.x) + Math.abs(position.y - state.y);
+    return distance > 2 && distance <= 6
+      && chroniclesEnemyHasSightline(state, position, { x: state.x, y: state.y });
+  });
+  if (!nearby.length) return null;
+  const chance = map?.regionKind === 'settlement' ? 0.08
+    : map?.regionKind === 'wilderness' || map?.regionKind === 'outdoor' ? 0.32 : 0.24;
+  if (campRoll(state, 'ambush') >= chance) return null;
+  const enemy = nearby[Math.floor(campRoll(state, 'enemy') * nearby.length)];
+  const elapsedHours = 1 + Math.floor(campRoll(state, 'hour') * 7);
+  const living = state.party.filter((member) => hasLivingHitPoints(member.hp));
+  // At least one sleeper, but leave an awake companion when possible. An
+  // ambushed sleeper misses precisely their first initiative action.
+  const asleepCount = living.length === 1 ? 1
+    : 1 + Math.floor(campRoll(state, 'count') * Math.min(2, living.length - 1));
+  const asleepIds = living.slice().sort((a, b) => (
+    campRoll(state, `sleeper:${a.id}`) - campRoll(state, `sleeper:${b.id}`)
+  )).slice(0, asleepCount).map((member) => member.id);
+  return { enemyId: enemy.id, elapsedHours, asleepIds };
+}
+
+export function chroniclesCampRest(state, enemies = [], map = null) {
   const status = chroniclesCampRestStatus(state, enemies);
   if (!status.canRest) return state;
   const inventory = { ...state.inventory };
@@ -76,6 +118,35 @@ export function chroniclesCampRest(state, enemies = []) {
   } else {
     delete inventory[CHRONICLES_CAMP_RATION_ID];
   }
+  const spent = { ...state, inventory, turns: state.turns + 1 };
+  const ambush = chroniclesCampAmbush(state, enemies, map);
+  if (ambush) {
+    // The world clock receives only the hours actually slept. The ordinary
+    // successful rest still gets its full eight hours in the world-time layer.
+    const interrupted = {
+      ...spent,
+      worldMinutes: Math.min(Number.MAX_SAFE_INTEGER,
+        chroniclesWorldMinutes(state.worldMinutes) + ambush.elapsedHours * 60),
+    };
+    let rollIndex = 0;
+    const started = chroniclesStartInitiativeCombat(interrupted, enemies, {
+      forceEnemyIds: [ambush.enemyId],
+      random: () => campRoll(state, `initiative:${rollIndex++}`),
+    });
+    if (started !== interrupted && started.initiative) {
+      const sleepers = new Set(ambush.asleepIds);
+      return {
+        ...started,
+        initiative: {
+          ...started.initiative,
+          order: started.initiative.order.map((actor) => (
+            actor.kind === 'party' && sleepers.has(actor.id) ? { ...actor, asleep: true } : actor
+          )),
+        },
+        message: `¡Emboscada! Tras ${ambush.elapsedHours} horas de sueño, los enemigos atacan. Algunos héroes siguen dormidos.`,
+      };
+    }
+  }
   const spellPoints = { ...(state.spellPoints || {}) };
   const party = state.party.map((member) => {
     if (!hasLivingHitPoints(member.hp)) return member;
@@ -83,8 +154,7 @@ export function chroniclesCampRest(state, enemies = []) {
     return { ...member, hp: member.maxHp };
   });
   return {
-    ...state, inventory, party, spellPoints,
-    turns: state.turns + 1,
-    message: `La compañía descansa a salvo. Consume ${status.rationsNeeded} raciones; los héroes en pie recuperan PV y PH.`,
+    ...spent, party, spellPoints,
+    message: '8 hours passed - the party rested',
   };
 }
