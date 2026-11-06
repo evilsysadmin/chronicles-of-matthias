@@ -1,7 +1,6 @@
 // One press of R is one atomic eight-hour camp attempt. Rations are paid once;
 // a nearby living patrol can interrupt the night without healing the party.
 // No new monsters, real-world timers or free revivals are generated here.
-import { chroniclesMemberMaxSp, chroniclesMemberSp } from './chroniclesMagic.js';
 import {
   chroniclesEnemyCanAttackParty, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition,
 } from '../chroniclesOfMatthiasTurns.js';
