@@ -41,7 +41,10 @@ import './ChroniclesPortraitLevelUp.css';
 import { chroniclesResolveTemporaryFountainBoon } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
-import { chroniclesPartyPortraitUrl } from '../chronicles/chroniclesPartyPortraitAssets.js';
+import {
+  chroniclesPartyPortraitUrl, chroniclesPartyPortraitRemoteUrl,
+  chroniclesPortraitImageFallback,
+} from '../chronicles/chroniclesPartyPortraitAssets.js';
 import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chroniclesReconcileCurrentMapEnemyHp } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesRegionalWeather } from '../chronicles/chroniclesRegionalWeather.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
@@ -2252,6 +2255,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             const maxSp = chroniclesMemberMaxSp(state, member);
             const sp = maxSp > 0 ? chroniclesMemberSp(state, member) : 0;
             const vitals = `${member.hp}/${member.maxHp} PV${maxSp > 0 ? ` · ${sp}/${maxSp} PH` : ''}`;
+            const sleeping = member.hp > 0 && (campPhase === 'sleeping'
+              || state.initiative?.order?.some((actor) => actor.kind === 'party'
+                && actor.id === member.id && actor.asleep === true));
+            const sleepUrl = sleeping ? chroniclesPartyPortraitRemoteUrl(member, 'sleep') : null;
             return (
               <ChroniclesPartyAvatarButton
                 key={member.id}
@@ -2271,18 +2278,26 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
-                data-chronicles-asleep={member.hp > 0 && (campPhase === 'sleeping'
-                  || state.initiative?.order?.some((actor) => actor.kind === 'party' && actor.id === member.id && actor.asleep === true))
-                  ? 'true' : undefined}
+                data-chronicles-asleep={sleeping ? 'true' : undefined}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
               >
                 <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
                   <img
+                    key={`${member.id}:${sleeping ? 'sleep' : 'awake'}`}
                     className="chronicles-party-thumbnail"
-                    src={chroniclesPartyPortraitUrl(member)}
+                    src={chroniclesPartyPortraitUrl(member, sleeping ? 'sleep' : 'awake')}
                     alt=""
                     draggable="false"
                     data-chronicles-party-thumbnail={member.id}
+                    onError={(event) => chroniclesPortraitImageFallback(event.currentTarget, member)}
+                    onLoad={(event) => {
+                      const image = event.currentTarget;
+                      if (sleepUrl && image.currentSrc === sleepUrl) {
+                        image.setAttribute('data-chronicles-sleep-ready', 'true');
+                      } else {
+                        image.removeAttribute('data-chronicles-sleep-ready');
+                      }
+                    }}
                   />
                   {hitSplats.filter((splat) => splat.kind === 'party' && splat.id === member.id).map((splat) => (
                     <ChroniclesHitSplat key={splat.token} impact={splat} className="is-party" />
@@ -2695,6 +2710,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           <img
             className="chronicles-party-preview-image"
             src={chroniclesPartyPortraitUrl(selectedMember)}
+            onError={(event) => chroniclesPortraitImageFallback(event.currentTarget, selectedMember)}
             alt={`Retrato de ${selectedMember.name}`}
             data-chronicles-party-renderer="authored"
             data-member-id={selectedMember.id}
