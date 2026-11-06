@@ -200,6 +200,7 @@ import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
 import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
+import './ChroniclesCampSleep.css';
 import './ChroniclesRecoveredRelic.css';
 import './ChroniclesMM3Chrome.css';
 import './ChroniclesWorldInfo.css';
@@ -420,6 +421,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const ambientTimeCounterRef = useRef(null);
   if (!ambientTimeCounterRef.current) ambientTimeCounterRef.current = createChroniclesAmbientTimeCounter();
   const [state, setState] = useState(null);
+  // Ephemeral presentation, never additional gameplay or time commits.
+  const [campPhase, setCampPhase] = useState(null);
+  const campPhaseRef = useRef(null);
+  const campTimerRef = useRef(null);
+  useEffect(() => () => {
+    if (campTimerRef.current !== null) window.clearTimeout(campTimerRef.current);
+  }, []);
   // Opening the quartermaster counter is a free presentation transition.
   const [provisionsOpen, setProvisionsOpen] = useState(false);
   const provisionsOpenRef = useRef(false);
@@ -816,6 +824,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     // cannot advance behind it, and simply opening the modal awards nothing.
     if (worldStatOfferRef.current) return current;
     const requestedAction = typeof action === 'string' ? action : action?.type;
+    if (campPhaseRef.current && requestedAction !== 'camp-rest') return current;
     if (requestedAction === 'interact') {
       const offer = chroniclesMM3WorldStatOffer(current);
       if (offer) {
@@ -914,7 +923,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       return updated; // Synchronous result lets shop feedback verify completed trades.
     }
     const activeActor = chroniclesCurrentInitiativeActor(current.initiative);
-    if (current.initiative && activeActor?.kind === 'enemy') return;
+    if (current.initiative && (activeActor?.kind === 'enemy' || activeActor?.asleep === true)) return current;
     if (
       current.initiative
       && (actionType === 'attack' || actionType === 'cast' || actionType === 'use-item')
@@ -1103,6 +1112,38 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     if (active.repeatId !== null) window.clearInterval(active.repeatId);
     touchHoldRef.current = { delayId: null, repeatId: null };
   }, []);
+
+  const beginCampRest = useCallback(() => {
+    if (campPhaseRef.current) return;
+    const current = stateRef.current;
+    if (!current) return;
+    const status = chroniclesCampRestStatus(current, chroniclesActiveEnemies(current));
+    if (!status.canRest) {
+      showMissileNotice(status.reason);
+      return;
+    }
+    clearTouchHold();
+    chroniclesReleaseAdventureMenuFocus(menuSummaryRef.current?.parentElement);
+    setMenuOpen(false);
+    campPhaseRef.current = 'sleeping';
+    setCampPhase('sleeping');
+    campTimerRef.current = window.setTimeout(() => {
+      // A stale timer cannot rest another expedition after load or exit.
+      if (stateRef.current !== current || campPhaseRef.current !== 'sleeping') {
+        campPhaseRef.current = null;
+        setCampPhase(null);
+        return;
+      }
+      dispatch({ type: 'camp-rest' });
+      campPhaseRef.current = 'waking';
+      setCampPhase('waking');
+      campTimerRef.current = window.setTimeout(() => {
+        campTimerRef.current = null;
+        campPhaseRef.current = null;
+        setCampPhase(null);
+      }, 430);
+    }, 480);
+  }, [clearTouchHold, dispatch, showMissileNotice]);
 
   const startTouchHold = useCallback((action, event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
