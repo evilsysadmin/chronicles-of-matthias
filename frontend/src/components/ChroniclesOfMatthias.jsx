@@ -2051,7 +2051,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     || quickStatusOpen || worldInfoOpen || chronicleModalOpen || automapOpen
     || Boolean(spellMenuOpen) || Boolean(sheetMemberId) || Boolean(pendingSpellTarget)
     || Boolean(areaTransition) || Boolean(audience) || noticeBoardOpen
-    || Boolean(worldStatOffer) || provisionsOpen || saveBusy
+    || Boolean(worldStatOffer) || provisionsOpen || Boolean(campPhase) || saveBusy
     || confirmExitWithoutSaving || confirmLoadSelection
     || Boolean(state?.shop || state?.guild || state?.inn)
     || Boolean(chroniclesCampaignEpiloguePending(state))
@@ -2062,7 +2062,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     return attachChroniclesAmbientWorldClock((minutes) => {
       // Ignore stale callbacks from a retired run when a new game or save
       // replaces the ref before React has cleaned up the previous timer.
-      if (ambientTimeCounterRef.current !== counter) return false;
+      if (ambientTimeCounterRef.current !== counter || campPhaseRef.current) return false;
       const before = stateRef.current;
       if (!before) return false;
       const after = chroniclesAdvanceAmbientWorldTime(before, chroniclesMapForState(before), minutes);
