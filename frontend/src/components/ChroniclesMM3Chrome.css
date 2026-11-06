@@ -1776,7 +1776,7 @@
     height: 10px;
     min-width: 0;
     color: #fff;
-    font: 700 .44rem/1 var(--mm3-hud-font);
+    font: 700 9px/1 var(--mm3-hud-font);
     font-style: normal;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
