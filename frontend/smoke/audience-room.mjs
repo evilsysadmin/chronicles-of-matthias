@@ -84,6 +84,36 @@ try {
           && geometry.dialog.y >= -1 && geometry.dialog.bottom <= height + 1,
           'Audience must stay inside viewport: ' + JSON.stringify(geometry));
         assert(geometry.overflow <= width + 1, 'Audience adds horizontal scroll');
+        // Dialogue is actionable reading. Check actual computed typography
+        // and native wrapping, not a CSS-string contract or resized screenshot.
+        const reading = await modal.evaluate((root) => {
+          const dialogue = root.querySelector('.chronicles-audience__dialogue');
+          const answer = dialogue.querySelector('[data-chronicles-dialogue-answer]');
+          const choices = [...dialogue.querySelectorAll('[data-chronicles-dialogue-choice]')];
+          const serviceButtons = [...root.querySelectorAll('[data-chronicles-dialogue-choice^="temple-"]')];
+          const font = node => Number.parseFloat(getComputedStyle(node).fontSize);
+          return {
+            storyPx: font(answer),
+            choicePx: choices.map(font),
+            servicePx: serviceButtons.map(font),
+            choiceHeights: choices.map(node => node.getBoundingClientRect().height),
+            dialogueOverflowX: dialogue.scrollWidth > dialogue.clientWidth + 2,
+            buttonOverflowX: [...choices, ...serviceButtons].some(node =>
+              node.scrollWidth > node.clientWidth + 2),
+            screenOverflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+          };
+        });
+        assert.ok(reading.storyPx >= 16,
+          'NPC story must be readable at ' + width + 'px: ' + JSON.stringify(reading));
+        assert(reading.choicePx.length >= 4 && reading.choicePx.every(n => n >= 16),
+          'Every narrative choice must be readable at ' + width + 'px: ' + JSON.stringify(reading));
+        assert(reading.servicePx.every(n => n >= 16),
+          'Ilse services must be readable at ' + width + 'px: ' + JSON.stringify(reading));
+        assert(reading.choiceHeights.every(h => h >= (height <= 560 ? 40 : 44)),
+          'Larger NPC text must retain touch targets: ' + JSON.stringify(reading));
+        assert(!reading.dialogueOverflowX && !reading.buttonOverflowX && !reading.screenOverflowX,
+          'Long NPC text must wrap inside the dialogue instead of scrolling sideways: '
+          + JSON.stringify(reading));
         assert.equal(geometry.scenePointer, 'none');
         assert.notEqual(geometry.artworkRendering, 'pixelated');
         if (width <= 430) {
@@ -175,7 +205,8 @@ try {
           assert.match(await modal.locator('[data-chronicles-temple-gold]').innerText(), /Bendición: 12/);
           assert.equal(await page.locator('[data-audience-action]').innerText(), 'temple:donate');
         }
-        if ([390, 844, 1280].includes(width)) {
+        // All phone widths are golden-reading snapshots, not just one sample.
+        if ([360, 390, 430, 844, 1280].includes(width)) {
           await page.screenshot({ path: 'smoke-audience-' + npc + '-' + width + '.png' });
         }
         // Real lore answer stays in the room; story effects never happen merely

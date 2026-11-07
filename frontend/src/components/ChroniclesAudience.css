@@ -97,7 +97,7 @@
 .chronicles-audience__dialogue p {
   margin: 0;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(.93rem, 1.4vw, 1.12rem);
+  font-size: clamp(1rem, 1.4vw, 1.12rem);
   line-height: 1.52;
   white-space: pre-wrap;
 }
@@ -113,7 +113,7 @@
   background: linear-gradient(180deg, rgba(92, 68, 43, .95), rgba(47, 34, 27, .97));
   color: #fff0d1;
   text-align: left;
-  font: 600 .9rem/1.3 system-ui, sans-serif;
+  font: 600 1rem/1.35 system-ui, sans-serif;
   cursor: pointer;
 }
 .chronicles-audience__actions button:last-child:not(:first-child) {
@@ -159,7 +159,7 @@
   .chronicles-audience__head > div { grid-column: 1 / -1; }
   .chronicles-audience__head h2 { margin-bottom: 1px; }
   .chronicles-audience__dialogue { padding: 10px 12px; gap: 8px; }
-  .chronicles-audience__dialogue p { font-size: .94rem; line-height: 1.38; }
+  .chronicles-audience__dialogue p { font-size: 1rem; line-height: 1.45; }
   .chronicles-audience__actions { gap: 6px; }
   .chronicles-audience__actions button { min-height: 44px; padding: 8px 10px; }
 }
@@ -178,7 +178,7 @@
   }
   .chronicles-audience__head { min-height: 0; padding: 6px 11px; }
   .chronicles-audience__dialogue { gap: 5px; padding: 8px 10px; }
-  .chronicles-audience__dialogue p { font-size: .88rem; line-height: 1.3; }
+  .chronicles-audience__dialogue p { font-size: 1rem; line-height: 1.4; }
   .chronicles-audience__actions { gap: 4px; }
   .chronicles-audience__actions button { min-height: 40px; padding: 5px 8px; }
 }
@@ -191,7 +191,7 @@
   border: 1px solid rgba(222, 173, 90, .45);
   color: #f4d39b;
   background: rgba(59, 42, 22, .82);
-  font: 600 .85rem/1.35 system-ui, sans-serif;
+  font: 600 .875rem/1.4 system-ui, sans-serif;
 }
 .chronicles-audience__actions button[data-chronicles-dialogue-choice^='temple-'] {
   border-color: #d3ac62;
@@ -209,7 +209,7 @@
 }
 .chronicles-audience__choice-reason {
   color: #f1cc99;
-  font-size: .83em;
+  font-size: .875rem;
   font-weight: 400;
 }
 
@@ -253,7 +253,7 @@
   border: 1px solid rgba(222, 173, 90, .45);
   color: #f4d39b;
   background: rgba(59, 42, 22, .82);
-  font: 600 .85rem/1.35 system-ui, sans-serif;
+  font: 600 .875rem/1.4 system-ui, sans-serif;
 }
 .chronicles-audience--temple .chronicles-audience__service-actions {
   margin-top: 0;
