@@ -38,8 +38,10 @@
     min-height: 44px;
     height: 44px;
     padding: 3px 2px;
-    font-size: clamp(.72rem, 2.2vw, .94rem);
-    line-height: 1.05;
+    /* Three navigation labels are actionable: 11.5px on 360px phones was
+       not readable. Keep all chapters in one row without shrinking text. */
+    font-size: clamp(.875rem, 2.2vw, 1rem);
+    line-height: 1.15;
     white-space: nowrap;
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
