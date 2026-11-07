@@ -69,7 +69,7 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     });
   });
 
-  it('keeps the visible final opponent direction if a restored fight ends during an enemy turn', () => {
+  it('keeps canonical facing if a restored fight ends during an enemy turn, without auto-rotating', () => {
     const initial = enemyFirstEncounter();
     const enemy = chroniclesActiveEnemies(initial).find(({ id }) => id === WEST);
     const fight = {
@@ -81,7 +81,7 @@ describe('MM3 automatic enemy turn cannot deadlock the controls', () => {
     }));
     expect(resolved.error).toBeNull();
     expect(resolved.committed).toMatchObject({
-      phase: 'explore', initiative: null, direction: 2,
+      phase: 'explore', initiative: null, direction: 0,
     });
     expect(resolved.committed.turns).toBe(fight.turns + 1);
   });

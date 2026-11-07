@@ -14,9 +14,9 @@ import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.j
 
 // Unlike the passive pressure benchmark, every living hero spends a real
 // initiative action. Attack a physically adjacent enemy (even off camera),
-// or BLOCK while stragglers close. Moving or turning is also a legal MM3
-// action, but this pressure baseline deliberately uses attacks/defense.
-// No swings at empty air, free turns or free camera rotations.
+// or BLOCK while stragglers close. Translation costs a hero action;
+// rotating is forbidden during initiative. This baseline uses attack/defense.
+// No swings at empty air or off-axis camera rotation.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewers-goblin-east-culvert'];
@@ -76,16 +76,10 @@ function playSewerEncounter(rollOffset, {
     expect(actor).toBeTruthy();
     metrics.rounds = Math.max(metrics.rounds, state.initiative.round);
     if (actor.kind === 'party') {
-      // A legal MM3 rotation now spends the hero's complete initiative
-      // action. Probe the budget without changing this reproducible
-      // attack/defense scenario or awarding an extra action.
-      const facing = state.direction;
-      const probe = chroniclesReduce(state, 'turn-right');
-      expect(probe.direction).toBe((facing + 1) % 4);
-      expect(probe.turns).toBe(state.turns + 1);
-      expect(probe.combatActionSpent?.[actor.id]).toBe(true);
-      expect(chroniclesReduce(probe, 'turn-right')).toBe(probe);
-      expect(state.direction).toBe(facing);
+      // Even an unspent hero cannot turn: no turn, initiative action,
+      // extra enemy pressure or camera heading is granted.
+      expect(chroniclesReduce(state, 'turn-left')).toBe(state);
+      expect(chroniclesReduce(state, 'turn-right')).toBe(state);
       const inReach = chroniclesCombatMeleeTarget(state);
       const wounded = state.party.filter(({ hp, maxHp }) => hp > 0 && hp < maxHp)
         .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];

@@ -33,6 +33,9 @@ describe('MM3 help after compacting the character Status ledger', () => {
     expect(html).toContain('<details open="">');
     expect(html).toContain('Equipo, compras y comparaciones');
     expect(html).toContain('Exploración y combate');
+    expect(html).toContain('Durante la iniciativa no se puede girar ni reorientar la cámara');
+    expect(html).toContain('retrocede sin girarte');
+    expect(html).toContain('consume su acción completa');
     expect(html).toContain('<dt>Daño</dt>');
     expect(html).not.toContain('Daño y alcance');
     expect(html).not.toContain('Atributo Alcance');

@@ -81,8 +81,11 @@ describe('MM3 P0 rear ranged enemy no longer traps an unarmed party', () => {
       expect(chroniclesCombatPartyStepBlocked(enemyTurn, action)).toBe(true);
       expect(chroniclesReduce(enemyTurn, action)).toBe(enemyTurn);
     }
-    const moved = chroniclesReduce(fight, 'turn-right');
-    expect(moved.direction).toBe(1);
+    expect(chroniclesCombatPartyStepBlocked(fight, 'turn-right')).toBe(true);
+    expect(chroniclesReduce(fight, 'turn-right')).toBe(fight);
+    // Backstep remains useful and costs one action; no spin is allowed.
+    const moved = chroniclesReduce(fight, 'backward');
+    expect([moved.x, moved.y, moved.direction]).toEqual([10, 4, 0]);
     expect(moved.combatActionSpent?.[fight.initiative.order[fight.initiative.cursor].id]).toBe(true);
     expect(chroniclesReduce(moved, 'turn-right')).toBe(moved);
   });

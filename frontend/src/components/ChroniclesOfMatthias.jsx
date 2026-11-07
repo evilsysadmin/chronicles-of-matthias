@@ -2590,7 +2590,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   data-chronicles-touch-action="turn-left"
                   disabled={chroniclesCombatPartyStepBlocked(state, 'turn-left')}
-                  title={chroniclesCombatPartyStepBlocked(state, 'turn-left') ? 'Combate: girar consume una acción' : 'Girar a la izquierda'}
+                  title={state.initiative && state.combatRules === 'mm3' ? 'En combate no se puede girar' : 'Girar a la izquierda'}
                   onPointerDown={(event) => startTouchHold('turn-left', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2622,7 +2622,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
                   title={touchAttackDisabled ? touchAttackReason
                     : state.initiative && state.combatRules === 'mm3'
-                      ? 'Combate · flechas/Q/E: 1 acción · A atacar · S disparar · B bloquear'
+                      ? 'Combate · sin giros · ↑/↓/Q/E: 1 acción · A atacar · S disparar · B bloquear'
                       : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchAttackDisabled
                     ? activeInitiativeActor?.kind === 'enemy' ? 'ESPERA' : 'SIN ALCANCE'
@@ -2672,7 +2672,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   data-chronicles-touch-action="turn-right"
                   disabled={chroniclesCombatPartyStepBlocked(state, 'turn-right')}
-                  title={chroniclesCombatPartyStepBlocked(state, 'turn-right') ? 'Combate: girar consume una acción' : 'Girar a la derecha'}
+                  title={state.initiative && state.combatRules === 'mm3' ? 'En combate no se puede girar' : 'Girar a la derecha'}
                   onPointerDown={(event) => startTouchHold('turn-right', event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
@@ -2684,7 +2684,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
               <div className="chronicles-keyboard-help">
                 {state.initiative && state.combatRules === 'mm3'
-                  ? <span data-chronicles-combat-movement-hint>COMBATE · mover o girar consume una acción</span>
+                  ? <span data-chronicles-combat-movement-hint>COMBATE · sin giros · ↑/↓/Q/E mover: 1 acción</span>
                   : <>
                     <span><kbd>↑</kbd> avanzar</span>
                     <span><kbd>↓</kbd> retroceder</span>

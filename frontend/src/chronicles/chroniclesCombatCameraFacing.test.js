@@ -25,24 +25,23 @@ function realFlankFight({ x = 1, y = 2, direction = 0, distance = 1 } = {}) {
   };
 }
 
-describe('MM3 encounter camera focuses real melee threats, not masonry', () => {
-  it('looks at an adjacent goblin behind the camera without rotating the party or consuming turns', () => {
+describe('MM3 initiative camera remains fixed, even against offscreen melee threats', () => {
+  it('keeps the view north while a real adjacent goblin behind stays melee-targetable', () => {
     const fight = realFlankFight(); // group faces north; goblin attacks from south
     expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(ID);
     expect(chroniclesMM3MeleeAvailable(fight, 'matthias')).toBe(true);
-    expect(chroniclesCombatCameraFacing(fight)).toBe(2);
+    expect(chroniclesCombatCameraFacing(fight)).toBe(0);
     expect(fight.direction).toBe(0);
-    const turned = chroniclesReduce(fight, 'turn-left');
-    expect(turned.direction).toBe(3);
-    expect(turned.turns).toBe(fight.turns + 1);
-    expect(turned.combatActionSpent?.matthias).toBe(true);
-    expect(chroniclesReduce(turned, 'turn-right')).toBe(turned);
+    for (const type of ['turn-left', 'turn-right']) {
+      expect(chroniclesReduce(fight, type)).toBe(fight);
+      expect(chroniclesReduce(fight, { type })).toBe(fight);
+    }
     const swung = chroniclesReduce(fight, { type: 'attack', memberId: 'matthias', mode: 'melee' });
     expect(swung.turns).toBe(fight.turns + 1);
     expect(swung.direction).toBe(0);
   });
 
-  it('honours the original forward-facing shot and never invents a target', () => {
+  it('keeps facing fixed for forward, rear, distant and defeated threats', () => {
     const facing = realFlankFight({ direction: 2 });
     expect(chroniclesCombatCameraFacing(facing)).toBe(2);
     const distant = realFlankFight({ distance: 2 });
@@ -53,23 +52,24 @@ describe('MM3 encounter camera focuses real melee threats, not masonry', () => {
     expect(chroniclesCombatCameraFacing(dead)).toBe(2);
   });
 
-  it('keeps the combat-facing view after victory, including the saved exploration direction', () => {
+  it('keeps the canonical facing at victory and after restore without any spin', () => {
     const fight = realFlankFight(); // north-facing party, adjacent goblin to south
     const goblin = chroniclesActiveEnemies(fight).find(({ id }) => id === ID);
-    expect(chroniclesCombatCameraFacing(fight)).toBe(2);
+    expect(chroniclesCombatCameraFacing(fight)).toBe(0);
     const defeated = { ...fight, [goblin.hpKey]: 0, turns: fight.turns + 1 };
     const closed = chroniclesAdvanceCombatInitiative(defeated, chroniclesActiveEnemies(defeated));
     expect(closed).toMatchObject({ phase: 'explore', initiative: null, direction: 0 });
 
     const kept = chroniclesKeepVictoryFacing(fight, closed);
-    expect(kept).toMatchObject({ phase: 'explore', initiative: null, direction: 2 });
+    expect(kept).toBe(closed);
+    expect(kept).toMatchObject({ phase: 'explore', initiative: null, direction: 0 });
     expect(kept.turns).toBe(closed.turns);
     expect([kept.x, kept.y]).toEqual([fight.x, fight.y]);
-    // The actual renderer reads direction after combat; no return-to-north.
-    expect(chroniclesCombatCameraFacing(kept)).toBe(2);
+    // The camera and party never stopped facing north; F5 must preserve it.
+    expect(chroniclesCombatCameraFacing(kept)).toBe(0);
     const recovered = JSON.parse(JSON.stringify(kept));
-    expect(chroniclesCombatCameraFacing(recovered)).toBe(2);
-    const stepped = chroniclesReduce(recovered, 'forward');
+    expect(chroniclesCombatCameraFacing(recovered)).toBe(0);
+    const stepped = chroniclesReduce(recovered, 'backward');
     expect([stepped.x, stepped.y]).toEqual([1, 2]);
   });
 

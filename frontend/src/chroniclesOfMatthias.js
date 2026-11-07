@@ -1206,9 +1206,9 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
-// In MM3 combat one legal reposition or rotation consumes the active hero's
-// initiative action. Stale input, enemy turns and already-spent heroes remain
-// blocked. Tactics retains its independent movement rules.
+// During MM3 initiative, facing is fixed. Only a legal translation can
+// consume the active hero's action; reject all manual rotations at source.
+// Tactics retains its independent controls.
 const CHRONICLES_PARTY_STEPS = new Set([
   'forward', 'backward', 'strafe-left', 'strafe-right',
   'turn-left', 'turn-right',
@@ -1217,6 +1217,8 @@ const CHRONICLES_PARTY_STEPS = new Set([
 export function chroniclesCombatPartyStepBlocked(state, action) {
   const type = typeof action === 'string' ? action : action?.type;
   if (!state?.initiative || state.combatRules !== 'mm3' || !CHRONICLES_PARTY_STEPS.has(type)) return false;
+  // Even an unspent hero action must not rotate the party or camera.
+  if (type === 'turn-left' || type === 'turn-right') return true;
   const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
   return actor?.kind !== 'party' || actor.asleep === true
     || !state.party?.some((member) => member.id === actor.id && Number(member.hp) > 0)
@@ -1241,8 +1243,8 @@ function chroniclesRecordMM3TurnAction(previous, next) {
 function chroniclesReduceAction(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
-  // Enforce in the reducer: enemy turns and spent heroes cannot move or
-  // rotate, even via direct calls or held keyboard/touch input.
+  // Enforce in the reducer: no rotation during initiative, and no
+  // translation during enemy turns or after an action was spent.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (state.combatRules === 'mm3' && state.initiative && MM3_TURN_ACTIONS.has(actionType)) {
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
