@@ -1516,8 +1516,10 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 @media (max-width: 520px) {
   /* Two readable names beat four illegible micro-columns on phone. */
   .chronicles-initiative-rail__heading { padding: 5px 4px; }
-  .chronicles-initiative-rail__heading span { font-size: .7rem; }
-  .chronicles-initiative-rail__heading strong { font-size: .78rem; }
+  /* Round and whose-turn are decisions, not decorative microcopy.
+     Permit a clean two-line enemy turn instead of 11–12px labels. */
+  .chronicles-initiative-rail__heading span { font-size: .8rem; }
+  .chronicles-initiative-rail__heading strong { font-size: .9rem; overflow-wrap: break-word; }
   .chronicles-initiative-rail li small { display: none; }
 }
 
@@ -1539,7 +1541,9 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
 @media (max-width: 520px) {
   .chronicles-initiative-rail {
     width: min(260px, calc(100% - 130px));
-    grid-template-columns: 72px minmax(0, 1fr);
+    /* Give the larger 'TURNO ENEMIGO' text room without growing the
+       full rail into the floating minimap. Actor names stay in a 1fr slot. */
+    grid-template-columns: 82px minmax(0, 1fr);
   }
   .chronicles-initiative-rail__heading { min-width: 0; }
   /* Stack two actual names: 230px is too narrow for two columns of
