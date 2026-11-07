@@ -1851,9 +1851,11 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   border-radius: 0;
   background: transparent;
   color: #e2c597;
-  font-size: .59rem;
-  line-height: 1.25;
-  letter-spacing: .07em;
+  /* Coordinates are navigation data: 9px lettering is unreadable in
+     the 104px touch minimap. The 16px caption track fits this 12px line. */
+  font-size: .75rem;
+  line-height: 1.1;
+  letter-spacing: .025em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1872,8 +1874,10 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   border: 0;
   background: transparent;
   color: #e2c597;
-  font: 600 .62rem/1.25 Georgia, serif;
-  letter-spacing: .045em;
+  /* Place names are useful while exploring, not decorative microtype.
+     Longer names can ellipsize; the complete name stays in aria-label. */
+  font: 600 .75rem/1.15 Georgia, serif;
+  letter-spacing: .01em;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-shadow: none;
