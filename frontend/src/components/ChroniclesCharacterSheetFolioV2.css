@@ -582,6 +582,57 @@
 }
 
 
+/* The 480px-height compact layout used to hide XP across every chapter.
+   At 200% browser zoom, 1280x800 reflows into roughly 640x400 CSS pixels:
+   Estado then lost the only "XP para subir" figure. Preserve the usable
+   compact frame, but give Estado its own one-line XP readout and progress.
+   Equipo / Hechizos keep the original height-saving behavior. */
+@media (max-height: 480px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__progression--readable-xp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(52px, .42fr) auto;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 5px 10px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__progression--readable-xp .chronicles-character-sheet__xp-remaining {
+    font-size: clamp(1.1rem, 2vw, 1.3rem);
+    line-height: 1.2;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__progression--readable-xp .chronicles-character-sheet__xp-total {
+    /* The older DeskCompact mobile rule hides > small outright.
+       In Estado this number is essential; restore it as a grid item. */
+    display: block;
+    min-width: 0;
+    font-size: .9rem;
+    white-space: normal;
+  }
+}
+@media (max-width: 520px) and (max-height: 480px) {
+  /* A narrow, short viewport needs the numbers and progress in two rows.
+     Keeping both values beats clipping the XP or restoring a tall cover. */
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__progression--readable-xp {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 9px;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__xp-copy {
+    grid-column: 1 / -1;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__xp-track {
+    grid-column: 1;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
+  .chronicles-character-sheet__xp-total {
+    grid-column: 2;
+  }
+}
+
 /* Equipment tab: separate actual A/S stats and a read-only swap preview.
    Dense enough for the full-width folio without making phones scroll sideways. */
 .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2 .chronicles-character-sheet__dual-weapons {
