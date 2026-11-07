@@ -62,6 +62,68 @@ try {
       }
       await page.screenshot({ path: 'smoke-first-threat-' + width + '.png' });
 
+      // The same real Banner Road crossbowman can shoot the company while
+      // standing two cells behind it. Unlike a floating alert, the warning
+      // must remain visible in the CLOSED mobile enemy roster.
+      await gotoFixture(page, url + '?view=combat-rear');
+      const combatRoster = page.locator('.chronicles-combat-roster');
+      await combatRoster.waitFor({ state: 'visible' });
+      assert.equal(await page.locator('body').getAttribute('data-combat-scout-id'),
+        'banner-road-east-scout', 'Must use the authored ranged enemy');
+      const wideRoster = width === 1280;
+      const warning = combatRoster.locator(wideRoster
+        ? '.chronicles-combat-roster__desktop-header [data-threat-cue="rear"]'
+        : '.chronicles-combat-roster__compact summary [data-threat-cue="rear"]');
+      await warning.waitFor({ state: 'visible' });
+      assert.match(await warning.innerText(), /ESPALDA/);
+      assert.match(await warning.getAttribute('aria-label'), /atacar desde atrás/);
+      const threatBounds = await warning.evaluate(node => {
+        const rect = node.getBoundingClientRect();
+        const parent = node.closest('header, summary').getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const ink = range.getBoundingClientRect();
+        return {
+          font: parseFloat(getComputedStyle(node).fontSize),
+          fits: ink.left >= rect.left - 1 && ink.right <= rect.right + 1
+            && ink.top >= rect.top - 1 && ink.bottom <= rect.bottom + 1
+            && rect.left >= parent.left - 1 && rect.right <= parent.right + 1
+            && rect.bottom <= parent.bottom + 1
+            && rect.left >= -1 && rect.right <= innerWidth + 1
+            && rect.top >= -1 && rect.bottom <= innerHeight + 1,
+          clipped: node.scrollWidth > node.clientWidth + 1
+            || node.scrollHeight > node.clientHeight + 1,
+          overflow: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      assert(threatBounds.font >= 13 && threatBounds.fits
+        && !threatBounds.clipped && !threatBounds.overflow,
+      'Rear threat cue must be legible and inside existing combat roster: '
+        + width + ' ' + JSON.stringify(threatBounds));
+      if (!wideRoster) {
+        const details = combatRoster.locator('.chronicles-combat-roster__compact');
+        assert.equal(await details.getAttribute('open'), null,
+          'Mobile combat roster stays collapsed by default');
+        await details.locator('summary').click();
+        const actualThreat = details.locator('li[data-threat-bearing="rear"]');
+        await actualThreat.waitFor({ state: 'visible' });
+        assert.match(await actualThreat.getAttribute('title'), /atacar desde atrás/);
+      } else {
+        assert.equal(await combatRoster.locator(
+          '.chronicles-combat-roster__desktop li[data-threat-bearing="rear"]',
+        ).isVisible(), true);
+      }
+      if (width === 390 || width === 1280) {
+        await page.screenshot({ path: 'smoke-combat-rear-threat-' + width + '.png' });
+      }
+      await gotoFixture(page, url + '?view=combat-front');
+      await page.locator('.chronicles-combat-roster').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('.chronicles-combat-roster [data-threat-cue]').count(), 0,
+        'The same forward-facing crossbowman must not report an offscreen threat');
+      assert.equal(await page.locator('.chronicles-combat-roster [data-threat-bearing]').count(), 0,
+        'Frontline enemies must not gain false rear or flank labels');
+
+
       await page.goto(url + '?view=guides', { waitUntil: 'domcontentloaded' });
       const steps = page.locator('[data-chronicles-first-steps]');
       await steps.waitFor({ state: 'visible', timeout: 20000 });
