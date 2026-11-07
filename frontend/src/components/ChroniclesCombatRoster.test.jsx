@@ -38,7 +38,7 @@ describe('ChroniclesCombatRoster', () => {
     expect(html).toContain('data-threat-bearing="rear"');
     expect(html).toContain('data-threat-cue="rear"');
     // The warning is visible even BEFORE expanding the mobile details.
-    expect(html).toMatch(/<summary>[\\s\\S]*data-threat-cue="rear"/);
+    expect(html.split('<summary>')[1]?.split('</summary>')[0]).toContain('data-threat-cue="rear"');
     expect(html).toContain('Amenaza capaz de atacar desde atrás');
     expect(html).toContain('ESPALDA');
 
