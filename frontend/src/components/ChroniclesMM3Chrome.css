@@ -1743,7 +1743,10 @@
     border-bottom-color: #34343b;
     background: #a3a3a8 var(--mm3-stone) 0 0 / 128px 128px;
     color: #101014;
-    font: 700 .88rem/1 var(--mm3-pixel-font);
+    /* These two primary navigation actions were 14px pixel text in
+       touch layouts. Keep the existing 44px targets and single HUD row,
+       but make their actual command labels legible without zoom. */
+    font: 700 1.125rem/1.1 var(--mm3-pixel-font);
     white-space: nowrap;
     pointer-events: auto;
     cursor: pointer;
