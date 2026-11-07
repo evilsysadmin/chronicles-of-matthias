@@ -226,7 +226,25 @@ async function assertMobileChapterTabGeometry(nav, label) {
     const navBox = element.getBoundingClientRect();
     const buttons = [...element.querySelectorAll('button')].map((button) => {
       const rect = button.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, width: rect.width, height: rect.height };
+      const symbol = button.querySelector('span');
+      const textNode = [...button.childNodes].find((node) =>
+        node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+      const labelRange = document.createRange();
+      if (textNode) labelRange.selectNodeContents(textNode);
+      const labelBox = textNode ? labelRange.getBoundingClientRect() : null;
+      const iconBox = symbol?.getBoundingClientRect();
+      return {
+        label: button.textContent.trim(),
+        fontSize: Number.parseFloat(getComputedStyle(button).fontSize),
+        left: rect.left, right: rect.right, width: rect.width, height: rect.height,
+        clipped: button.scrollWidth > button.clientWidth + 2
+          || button.scrollHeight > button.clientHeight + 2,
+        labelInside: Boolean(labelBox)
+          && labelBox.left >= rect.left - 1 && labelBox.right <= rect.right + 1
+          && labelBox.top >= rect.top - 1 && labelBox.bottom <= rect.bottom + 1,
+        symbolInside: Boolean(iconBox)
+          && iconBox.left >= rect.left - 1 && iconBox.right <= rect.right + 1,
+      };
     });
     return {
       columns: getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length,
@@ -238,6 +256,11 @@ async function assertMobileChapterTabGeometry(nav, label) {
   assert.equal(layout.columns, 3, explanation);
   assert.equal(layout.buttons.length, 3, explanation);
   assert.ok(layout.buttons.every((button) => button.height >= 44), explanation);
+  assert.deepEqual(layout.buttons.map((button) => button.label.replace(/[◆⚔✧]/g, '')),
+    ['Estado', 'Equipo', 'Hechizos'], explanation);
+  assert.ok(layout.buttons.every((button) =>
+    button.fontSize >= 14 && !button.clipped && button.labelInside && button.symbolInside),
+  'Every actionable chapter label must render at 14px+ without clipping: ' + explanation);
   assert.ok(layout.buttons.every((button) => Math.abs(button.width - layout.buttons[0].width) <= 1),
     explanation);
   assert.ok(layout.buttons[0].left <= layout.left + 6
@@ -318,6 +341,7 @@ try {
       const sheet = page.locator('[data-chronicles-folio="v2"]');
       await sheet.waitFor({ state: 'visible' });
       const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
+      await assertMobileChapterTabGeometry(nav, 'Estado short reflow ' + width + 'x' + height);
       const xp = sheet.locator('.chronicles-character-sheet__progression--readable-xp');
       const measure = () => xp.evaluate((node) => {
         const remaining = node.querySelector('[data-chronicles-xp-remaining]');
@@ -356,6 +380,7 @@ try {
       await page.screenshot({path: 'smoke-character-status-xp-reflow-' + width + '.png'});
       for (const tab of ['Equipo', 'Hechizos']) {
         await nav.getByRole('button', { name: tab }).evaluate((button) => button.click());
+        await assertMobileChapterTabGeometry(nav, tab + ' short reflow ' + width + 'x' + height);
         assert.equal(await xp.isVisible(), false,
           tab + ' must still save short-viewport height by hiding unrelated XP');
       }
