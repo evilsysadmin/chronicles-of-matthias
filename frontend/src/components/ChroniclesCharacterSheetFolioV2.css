@@ -603,6 +603,10 @@
   }
   .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2:has([data-chronicles-chapter="record"])
   .chronicles-character-sheet__progression--readable-xp .chronicles-character-sheet__xp-total {
+    /* The older DeskCompact mobile rule hides > small outright.
+       In Estado this number is essential; restore it as a grid item. */
+    display: block;
+    min-width: 0;
     font-size: .9rem;
     white-space: normal;
   }
