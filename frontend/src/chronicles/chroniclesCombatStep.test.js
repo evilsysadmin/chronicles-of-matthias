@@ -26,29 +26,28 @@ describe('Chronicles combat step', () => {
   });
 });
 
-describe('MM3 initiative movement lock on an authored combat map', () => {
-  it('freezes the company on its encounter cells and keeps its facing fixed', () => {
+describe('MM3 initiative repositioning on an authored combat map', () => {
+  it('moves only during a living hero turn, without free repeat actions', () => {
     const initial = createChroniclesState(null, null, { rules: 'mm3' });
     const arrived = chroniclesApplyContentEffects(initial, [{ type: 'transition-map', mapId: 'terra-a3' }]);
     const placed = { ...arrived, x: 10, y: 8, direction: 0, enemyPositions: { 'terra-a3-foe-0': { x: 10, y: 4 } } };
-    const combat = chroniclesStartInitiativeCombat(placed, chroniclesActiveEnemies(placed), { forceEnemyIds: ['terra-a3-foe-0'] });
-    expect(combat.initiative?.order.length).toBeGreaterThan(0);
+    const fight = chroniclesStartInitiativeCombat(placed, chroniclesActiveEnemies(placed), { forceEnemyIds: ['terra-a3-foe-0'] });
+    const index = fight.initiative.order.findIndex((actor) => actor.kind === 'party');
+    expect(index).toBeGreaterThanOrEqual(0);
+    const combat = { ...fight, initiative: { ...fight.initiative, cursor: index } };
+    const actor = combat.initiative.order[index];
     const before = chroniclesLivingPartyPositions(combat);
+    const stepped = chroniclesReduce(combat, 'forward');
+    expect([stepped.x, stepped.y]).toEqual([10, 7]);
+    expect(stepped.turns).toBe(combat.turns + 1);
+    expect(stepped.combatActionSpent?.[actor.id]).toBe(true);
+    expect(chroniclesLivingPartyPositions(stepped)).not.toEqual(before);
+    expect(chroniclesReduce(stepped, 'forward')).toBe(stepped);
 
-    for (const action of ['forward', 'backward', 'strafe-left', 'strafe-right']) {
-      const rejected = chroniclesReduce(combat, action);
-      expect(rejected).toBe(combat);
-      expect([rejected.x, rejected.y, rejected.turns, rejected.direction])
-        .toEqual([combat.x, combat.y, combat.turns, combat.direction]);
-      expect(chroniclesLivingPartyPositions(rejected)).toEqual(before);
-    }
-    for (const action of ['turn-left', 'turn-right']) {
-      const rotated = chroniclesReduce(combat, action);
-      expect(rotated).toBe(combat);
-      expect(rotated.direction).toBe(combat.direction);
-      expect(rotated.turns).toBe(combat.turns);
-      expect(chroniclesLivingPartyPositions(rotated)).toEqual(before);
-    }
+    const turned = chroniclesReduce(combat, 'turn-left');
+    expect(turned.direction).toBe(3);
+    expect(turned.turns).toBe(combat.turns + 1);
+    expect(chroniclesReduce(turned, 'forward')).toBe(turned);
   });
 });
 
