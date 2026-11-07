@@ -26,7 +26,7 @@ const encounter = (actor = 'party') => ({
   },
 });
 
-describe('Chronicles MM3 movement consumes initiative', () => {
+describe('Chronicles MM3 translation consumes initiative without rotation', () => {
   it.each(MOVES)('rejects %s on an enemy turn without moving or spending a turn', (action) => {
     const state = encounter('enemy');
     expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(true);
@@ -44,26 +44,25 @@ describe('Chronicles MM3 movement consumes initiative', () => {
     }
   });
 
-  it.each(ROTATIONS)('charges %s one hero action, never free rotation', (action) => {
-    const state = encounter();
-    expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(false);
-    const turned = chroniclesReduce(state, action);
-    expect(turned.direction).toBe((state.direction + (action === 'turn-left' ? 3 : 1)) % 4);
-    expect(turned.turns).toBe(state.turns + 1);
-    expect(turned.combatActionSpent?.matthias).toBe(true);
-    expect(chroniclesCombatPartyStepBlocked(turned, action)).toBe(true);
-    expect(chroniclesReduce(turned, action)).toBe(turned);
-    const enemyTurn = encounter('enemy');
-    expect(chroniclesCombatPartyStepBlocked(enemyTurn, action)).toBe(true);
-    expect(chroniclesReduce(enemyTurn, action)).toBe(enemyTurn);
+  it.each(ROTATIONS)('forbids %s during hero and enemy turns, without cost or facing changes', (action) => {
+    for (const actor of ['party', 'enemy']) {
+      const state = encounter(actor);
+      expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(true);
+      expect(chroniclesCombatPartyStepBlocked(state, { type: action })).toBe(true);
+      expect(chroniclesReduce(state, action)).toBe(state);
+      expect(chroniclesReduce(state, { type: action })).toBe(state);
+      expect(state.initiative.round).toBe(2);
+    }
+    const spent = { ...encounter(), combatActionSpent: { matthias: true } };
+    expect(chroniclesReduce(spent, action)).toBe(spent);
   });
 
-  it('routes the keyboard left/right turns through the same initiative budget', () => {
+  it('blocks keyboard left/right during initiative without spending an action', () => {
     const state = encounter();
     for (const key of FACING_KEYS) {
       const turn = CHRONICLES_DIRECTION_KEYS[key];
       expect(ROTATIONS).toContain(turn);
-      expect(chroniclesReduce(state, turn).turns).toBe(state.turns + 1);
+      expect(chroniclesReduce(state, turn)).toBe(state);
     }
   });
 
@@ -133,14 +132,11 @@ describe('Chronicles MM3 movement consumes initiative', () => {
     expect([resumed.x, resumed.y, resumed.direction]).toEqual([1, 1, 2]);
     const actor = resumed.initiative.order[resumed.initiative.cursor];
     const permitted = actor.kind === 'party' && actor.asleep !== true;
-    expect(chroniclesCombatPartyStepBlocked(resumed, 'turn-left')).toBe(!permitted);
-    const rotated = chroniclesReduce(resumed, 'turn-left');
-    if (permitted) {
-      expect(rotated.turns).toBe(resumed.turns + 1);
-      expect(rotated.combatActionSpent?.[actor.id]).toBe(true);
-    } else {
-      expect(rotated).toBe(resumed);
-    }
+    expect(chroniclesCombatPartyStepBlocked(resumed, 'turn-left')).toBe(true);
+    expect(chroniclesCombatPartyStepBlocked(resumed, 'turn-right')).toBe(true);
+    expect(chroniclesReduce(resumed, 'turn-left')).toBe(resumed);
+    expect(chroniclesReduce(resumed, { type: 'turn-right' })).toBe(resumed);
+    expect(chroniclesCombatPartyStepBlocked(resumed, 'backward')).toBe(!permitted);
   });
 
   it('does not lock out non-travel combat actions', () => {
