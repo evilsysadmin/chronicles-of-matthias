@@ -1801,6 +1801,92 @@ try {
       console.error('CHRONICLES_CHARACTER_COMPACT_MOBILE_FAIL', width, error);
     } finally { await ctx.close(); }
   }
+
+  // Equipped items are real selectable inventory rows, not separate tiny
+  // status chips. Verify their full labels at phone sizes and at the 640px
+  // CSS viewport reached by a 1280px desktop reflowed at 200% zoom.
+  for (const [width, height] of [[360,780],[390,844],[430,932],[640,800]]) {
+    const context = await browser.newContext({ viewport: { width, height },
+      isMobile: width <= 430, hasTouch: width <= 430, deviceScaleFactor: 1 });
+    const page = await context.newPage();
+    try {
+      await page.goto(url + '?interactive=1', { waitUntil: 'domcontentloaded' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      await sheet.waitFor({ state: 'visible' });
+      await sheet.getByRole('navigation', { name: 'Apartados de la ficha' })
+        .getByRole('button', { name: /Equipo/ }).click();
+      const bag = sheet.locator('.chronicles-character-sheet__inventory');
+      await bag.locator('[data-inventory-item="bronze-sword"]').click();
+      await sheet.getByRole('navigation', { name: 'Acciones de inventario' })
+        .getByRole('button', { name: /Equipar/ }).click();
+      const worn = bag.locator('[data-worn-slot="weapon"]');
+      await worn.waitFor({ state: 'visible' });
+      assert.match(await worn.innerText(), /Puesto/);
+      // Stress the real equipped row's CSS with a long readable item/slot
+      // label; DOM-only fixture mutation does not touch inventory or saves.
+      await worn.evaluate((row) => {
+        row.querySelector(':scope > span').textContent =
+          'Espada de bronce de los guardianes de Swordhaven';
+        row.querySelector(':scope > small').textContent =
+          'Puesto · arma principal de la compañía';
+      });
+      const reading = await worn.evaluate((row) => {
+        const name = row.querySelector(':scope > span');
+        const marker = row.querySelector(':scope > small');
+        const glyph = row.querySelector(':scope > .chronicles-character-sheet__inventory-glyph');
+        const outer = row.getBoundingClientRect();
+        const measure = (node) => {
+          const box = node.getBoundingClientRect();
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          return {
+            text: node.textContent.trim(),
+            font: parseFloat(getComputedStyle(node).fontSize),
+            whiteSpace: getComputedStyle(node).whiteSpace,
+            clipped: node.scrollWidth > node.clientWidth + 1
+              || node.scrollHeight > node.clientHeight + 1,
+            fragments: [...range.getClientRects()].map(r => ({
+              left: r.left, right: r.right, top: r.top, bottom: r.bottom,
+            })),
+            top: box.top, bottom: box.bottom,
+          };
+        };
+        return {
+          rowWidth: outer.width, rowHeight: outer.height,
+          overflow: row.scrollWidth > row.clientWidth + 2,
+          pageOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+          name: measure(name), marker: measure(marker),
+          icon: {left: glyph.getBoundingClientRect().left, right: glyph.getBoundingClientRect().right},
+          outer: {left: outer.left, right: outer.right, top: outer.top, bottom: outer.bottom},
+          markerInSecondLine: marker.getBoundingClientRect().top >= name.getBoundingClientRect().bottom - 1,
+        };
+      });
+      assert.ok(reading.name.font >= 16 && reading.marker.font >= 14,
+        'MM3 equipped name/slot must be readable: ' + JSON.stringify({width, reading}));
+      assert.ok(reading.name.whiteSpace === 'normal' && reading.marker.whiteSpace === 'normal'
+        && !reading.name.clipped && !reading.marker.clipped
+        && reading.markerInSecondLine && !reading.overflow && !reading.pageOverflow,
+        'Long equipped gear must wrap in two rows without clipping or horizontal scroll: '
+          + JSON.stringify({width, reading}));
+      assert.ok([...reading.name.fragments, ...reading.marker.fragments].every(rect =>
+        rect.left >= reading.outer.left - 1 && rect.right <= reading.outer.right + 1
+        && rect.top >= reading.outer.top - 1 && rect.bottom <= reading.outer.bottom + 1),
+      'Every painted text fragment must remain inside the equipped row: '
+        + JSON.stringify({width, reading}));
+      assert.ok(reading.rowHeight >= 52,
+        'Equipped row must grow vertically, not shrink text: ' + JSON.stringify({width, reading}));
+      if (width === 390 || width === 640) {
+        await page.screenshot({path: 'smoke-equipment-readable-equipped-' + width + '.png'});
+      }
+      console.log('CHRONICLES_EQUIPPED_LEDGER_READABLE_OK ' + width + 'x' + height);
+    } catch (error) {
+      failures.push('equipped readability ' + width + ': ' + error.message);
+      console.error('CHRONICLES_EQUIPPED_LEDGER_READABLE_FAIL ' + width, error);
+    } finally {
+      await context.close();
+    }
+  }
+
 } finally { await browser.close(); }
 if (failures.length) throw new Error(failures.join('\n'));
 assert.ok(exercisedScrollableDossier, 'At least one desktop fixture must exercise long-page scroll restoration');
