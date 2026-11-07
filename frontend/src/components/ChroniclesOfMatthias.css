@@ -1888,4 +1888,15 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
    Keep the full region name in the button's accessible description. */
 @media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
   .chronicles-minimap__location-prefix { display: none; }
+  /* The actual uppercase SWORDHAVEN label needs more than the inner grid
+     track after increasing type to 12px. Reclaim unused inner bezel space
+     (the overall 104px map stays fixed), rather than shrinking the font.
+     Long region names can still elide, with their full aria-label intact. */
+  .chronicles-minimap__location {
+    box-sizing: border-box;
+    width: calc(100% + 16px);
+    max-width: calc(100% + 16px);
+    padding-inline: 0;
+    letter-spacing: -.035em;
+  }
 }
