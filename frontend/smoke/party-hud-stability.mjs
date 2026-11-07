@@ -68,9 +68,9 @@ async function assertMinimapCaptionReadability(page, viewport) {
     };
   });
   const label = viewport.width + 'x' + viewport.height;
-  assert.match(result.accessible, /Ubicación: Swordhaven\. Coordenadas: X13 Y17/);
+  assert.match(result.accessible, /Ubicación: SWORDHAVEN\. Coordenadas: X13 Y17/);
   assert.equal(result.coordinates.label, 'X13 Y17');
-  assert.equal(result.location.label, 'Swordhaven');
+  assert.equal(result.location.label, 'SWORDHAVEN');
   assert.ok(result.coordinates.visible && result.location.visible
     && result.coordinates.font >= 12 && result.location.font >= 12
     && !result.coordinates.clipped && !result.location.clipped
