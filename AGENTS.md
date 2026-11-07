@@ -95,12 +95,13 @@
   ningún movimiento táctico puede modificar el estado guardado de MM3.
 - **Controles de teclado vigentes**: en exploración, flechas ↑/↓
   avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
-  Durante iniciativa MM3, **no se puede trasladar ni girar el grupo**:
-  las cuatro flechas y Q/E quedan sin acción ni coste de turno.
-  La cámara puede enfocar automáticamente a un enemigo adyacente durante
-  combate, pero al vencer debe **conservar ese último rumbo** como orientación
-  del grupo para exploración y guardados (sin gastar un turno ni volver a
-  mirar hacia la dirección anterior al encuentro).
+  Durante iniciativa MM3, **mover una casilla o girar 90° consume
+  la acción completa del héroe activo**: flechas y Q/E funcionan solo en su
+  turno, nunca durante el turno enemigo ni tras gastar la acción.
+  Un choque contra pared/enemigo se rechaza sin coste; no se activan
+  interacciones ni transiciones de mapa en combate. La cámara puede
+  enfocar automáticamente a un enemigo adyacente; tras vencer se conserva
+  su último rumbo para exploración y guardados sin una acción adicional.
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
@@ -207,7 +208,7 @@
   Objetivo visual: **retro-premium**, lectura clara y elegante para arco,
   virote y piedra; estela discreta, vuelo natural y gasto GPU moderado.
   Preferir una mejora visual pequeña y validable a efectos exagerados.
-- **Combate MM3 estacionario:** mientras exista iniciativa, el grupo **no puede avanzar, retroceder, desplazarse lateralmente ni girar** con teclado, táctil ni llamada directa al reductor. Rechazar sin gastar turnos ni cambiar posición u orientación. La cámara puede enfocar una amenaza adyacente sin consumir acción ni girar al grupo; tras vencer se conserva el último rumbo de cámara como orientación de exploración. Solo al concluir la iniciativa vuelven a permitirse desplazamientos y giros. No modificar el movimiento táctico de enemigos ni el modo Tactics.
+- **Movimiento MM3 durante iniciativa:** el héroe activo puede gastar **una acción** en girar 90° o desplazar al grupo **una casilla** con flechas/Q/E. No hay desplazamientos gratuitos ni repetidos dentro del mismo turno; rechazar enemigo/asleep/acción ya gastada sin gasto adicional. Respetar paredes, enemigos, mapa y formación sin disparar interacciones, botín o transiciones de área. Un choque rechazado no consume la acción. La cámara puede enfocar automáticamente una amenaza cuerpo a cuerpo adyacente; al vencer conserva ese rumbo para exploración. No alterar el movimiento de enemigos ni Tactics.
 - Defensa MM3: durante iniciativa **B** es BLOCK del héroe activo (+4 CA, consume una acción completa y expira cuando el héroe vuelve a tener turno). No se acumula; sin combate o durante turno enemigo es inerte. El HUD debe ofrecerlo también en táctil.
 - Inventario MM3, solo en Equipo: **E** equipa la pieza seleccionada, **U** desequipa la pieza puesta, **T** inicia entrega con destinatario 1–4/retrato, **I** inspecciona atributos, **D** pide confirmación explícita para desechar una unidad suelta. Nunca borrar oro ni objetos marcados de misión, ni consumir letras desde formularios, otras pestañas o durante la confirmación.
 - Equipo MM3: arma de mano **A**, proyectiles **S**, armadura y escudo;

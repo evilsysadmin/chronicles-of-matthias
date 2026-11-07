@@ -14,8 +14,9 @@ import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.j
 
 // Unlike the passive pressure benchmark, every living hero spends a real
 // initiative action. Attack a physically adjacent enemy (even off camera),
-// or BLOCK while stragglers close: MM3 combat locks both tile and facing.
-// No swings at empty air, free turns or impossible camera rotations.
+// or BLOCK while stragglers close. Moving or turning is also a legal MM3
+// action, but this pressure baseline deliberately uses attacks/defense.
+// No swings at empty air, free turns or free camera rotations.
 // This is a reproducible *baseline*, not an optimal player or a win-rate claim.
 const PACK = ['sewers-goblin-west', 'sewers-goblin-overflow', 'sewers-goblin-bottom-shaft'];
 const CENTRAL_PACK = ['sewers-goblin-mid', 'sewers-goblin-upper-gallery', 'sewers-goblin-east-culvert'];
@@ -75,13 +76,16 @@ function playSewerEncounter(rollOffset, {
     expect(actor).toBeTruthy();
     metrics.rounds = Math.max(metrics.rounds, state.initiative.round);
     if (actor.kind === 'party') {
-      // Every translation is forbidden throughout MM3 initiative, whether
-      // dispatched by keyboard/touch as a string or directly as an action.
-      // Identity also guards against hidden turn, resource or state changes.
-      for (const move of ['forward', 'backward', 'strafe-left', 'strafe-right', 'turn-left', 'turn-right']) {
-        expect(chroniclesReduce(state, move), `${move} must not change combat state`).toBe(state);
-        expect(chroniclesReduce(state, { type: move }), `${move} action must not change combat state`).toBe(state);
-      }
+      // A legal MM3 rotation now spends the hero's complete initiative
+      // action. Probe the budget without changing this reproducible
+      // attack/defense scenario or awarding an extra action.
+      const facing = state.direction;
+      const probe = chroniclesReduce(state, 'turn-right');
+      expect(probe.direction).toBe((facing + 1) % 4);
+      expect(probe.turns).toBe(state.turns + 1);
+      expect(probe.combatActionSpent?.[actor.id]).toBe(true);
+      expect(chroniclesReduce(probe, 'turn-right')).toBe(probe);
+      expect(state.direction).toBe(facing);
       const inReach = chroniclesCombatMeleeTarget(state);
       const wounded = state.party.filter(({ hp, maxHp }) => hp > 0 && hp < maxHp)
         .sort((left, right) => left.hp / left.maxHp - right.hp / right.maxHp)[0];

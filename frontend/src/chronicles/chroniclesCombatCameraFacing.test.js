@@ -32,8 +32,11 @@ describe('MM3 encounter camera focuses real melee threats, not masonry', () => {
     expect(chroniclesMM3MeleeAvailable(fight, 'matthias')).toBe(true);
     expect(chroniclesCombatCameraFacing(fight)).toBe(2);
     expect(fight.direction).toBe(0);
-    expect(chroniclesReduce(fight, 'turn-left')).toBe(fight);
-    expect(chroniclesReduce(fight, 'turn-right')).toBe(fight);
+    const turned = chroniclesReduce(fight, 'turn-left');
+    expect(turned.direction).toBe(3);
+    expect(turned.turns).toBe(fight.turns + 1);
+    expect(turned.combatActionSpent?.matthias).toBe(true);
+    expect(chroniclesReduce(turned, 'turn-right')).toBe(turned);
     const swung = chroniclesReduce(fight, { type: 'attack', memberId: 'matthias', mode: 'melee' });
     expect(swung.turns).toBe(fight.turns + 1);
     expect(swung.direction).toBe(0);

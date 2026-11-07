@@ -1206,9 +1206,9 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
-// First-person MM3 combat fixes both the company's tile and its facing
-// for the entire initiative exchange. No free rotating to retarget a distant
-// foe; exploration and the separate Tactics mode retain normal controls.
+// In MM3 combat one legal reposition or rotation consumes the active hero's
+// initiative action. Stale input, enemy turns and already-spent heroes remain
+// blocked. Tactics retains its independent movement rules.
 const CHRONICLES_PARTY_STEPS = new Set([
   'forward', 'backward', 'strafe-left', 'strafe-right',
   'turn-left', 'turn-right',
@@ -1216,8 +1216,11 @@ const CHRONICLES_PARTY_STEPS = new Set([
 
 export function chroniclesCombatPartyStepBlocked(state, action) {
   const type = typeof action === 'string' ? action : action?.type;
-  return Boolean(state?.initiative && state.combatRules === 'mm3'
-    && CHRONICLES_PARTY_STEPS.has(type));
+  if (!state?.initiative || state.combatRules !== 'mm3' || !CHRONICLES_PARTY_STEPS.has(type)) return false;
+  const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+  return actor?.kind !== 'party' || actor.asleep === true
+    || !state.party?.some((member) => member.id === actor.id && Number(member.hp) > 0)
+    || state.combatActionSpent?.[actor.id] === true || state.combatBlock?.[actor.id] === true;
 }
 
 // One successful attack, spell, item or BLOCK consumes the hero's entire
@@ -1238,9 +1241,8 @@ function chroniclesRecordMM3TurnAction(previous, next) {
 function chroniclesReduceAction(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
-  // Enforce in the reducer: neither direct actions nor held keyboard/touch
-  // input can translate OR rotate the party, spend initiative or trigger a
-  // map transition during first-person combat.
+  // Enforce in the reducer: enemy turns and spent heroes cannot move or
+  // rotate, even via direct calls or held keyboard/touch input.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (state.combatRules === 'mm3' && state.initiative && MM3_TURN_ACTIONS.has(actionType)) {
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
@@ -1309,8 +1311,12 @@ function chroniclesReduceAction(state, action) {
       message: `${member.name} se cubre: +${CHRONICLES_BLOCK_AC_BONUS} CA hasta su próximo turno.`,
     });
   }
-  if (actionType === 'turn-left') return { ...state, direction: (state.direction + 3) % 4, turns: state.turns + 1 };
-  if (actionType === 'turn-right') return { ...state, direction: (state.direction + 1) % 4, turns: state.turns + 1 };
+  if (actionType === 'turn-left' || actionType === 'turn-right') {
+    const delta = actionType === 'turn-left' ? 3 : 1;
+    return chroniclesRecordMM3TurnAction(state, {
+      ...state, direction: (state.direction + delta) % 4, turns: state.turns + 1,
+    });
+  }
   if (actionType === 'attack') {
     const mode = typeof action === 'object' && ['melee', 'missile'].includes(action.mode) ? action.mode : 'auto';
     return chroniclesRecordMM3TurnAction(state,
@@ -1335,6 +1341,17 @@ function chroniclesReduceAction(state, action) {
   if (!displacement) return state;
   const x = state.x + displacement[0];
   const y = state.y + displacement[1];
+  // Combat repositioning is exactly one grid cell, at the cost of a whole
+  // hero action. Never fire exploration triggers, cross regions or enter NPC
+  // buildings in an initiative round. A failed collision costs no action.
+  if (state.combatRules === 'mm3' && state.initiative) {
+    if (!chroniclesTileAt(x, y, state) || explorationCellBlocker(state, x, y)) return state;
+    const repositioned = chroniclesDeployPartyForCombat({
+      ...state, x, y, partyPositions: {}, turns: state.turns + 1,
+      message: 'La compañía cambia de posición.',
+    });
+    return chroniclesRecordMM3TurnAction(state, repositioned);
+  }
   const blocker = explorationCellBlocker(state, x, y);
   if (blocker && actionType === 'forward') {
     const entered = bumpIntoBuilding(state, { x, y });
@@ -1343,8 +1360,8 @@ function chroniclesReduceAction(state, action) {
   if (blocker) return withMessage(state, blocker.message);
   const moved = chroniclesArriveOnTransition(state,
     enterTile(state, x, y, { deferAreaTransition: action?.deferAreaTransition === true }));
-  // Preserve legacy/Tactics tactical formation redeployment. MM3 cannot
-  // reach this path during initiative because party translation is blocked.
+  // Preserve legacy/Tactics tactical formation redeployment. MM3 initiative
+  // uses the guarded one-cell repositioning path above.
   if (state.initiative && moved.mapId === state.mapId && moved.partyPositions && Object.keys(moved.partyPositions).length) {
     return chroniclesDeployPartyForCombat({ ...moved, partyPositions: {} });
   }
