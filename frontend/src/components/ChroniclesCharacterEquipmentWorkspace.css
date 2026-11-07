@@ -504,3 +504,43 @@
     line-height: 1.2;
   }
 }
+
+/* At phone width (or a desktop reflowed to the same CSS viewport), a
+   three-column equipped row squeezed "Puesto · arma" into 11px and clipped
+   the actual item name. Let only equipped rows take a second reading line;
+   bag entries remain compact and the equipment reducer is untouched. */
+@media (max-width: 700px) {
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.chronicles-character-sheet__worn-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 9px;
+    row-gap: 2px;
+    min-height: 52px;
+    height: auto;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.chronicles-character-sheet__worn-item > .chronicles-character-sheet__inventory-glyph {
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.chronicles-character-sheet__worn-item > span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-character-sheet--mm3.chronicles-character-sheet--folio-v2
+  [data-chronicles-equipment-folio] .chronicles-character-sheet__inventory button.chronicles-character-sheet__worn-item > .chronicles-character-sheet__equipped-marker {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: none;
+    font-size: .875rem;
+    line-height: 1.3;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
