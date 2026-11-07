@@ -1851,9 +1851,11 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   border-radius: 0;
   background: transparent;
   color: #e2c597;
-  font-size: .59rem;
-  line-height: 1.25;
-  letter-spacing: .07em;
+  /* Coordinates are navigation data: 9px lettering is unreadable in
+     the 104px touch minimap. The 16px caption track fits this 12px line. */
+  font-size: .75rem;
+  line-height: 1.1;
+  letter-spacing: .025em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1872,8 +1874,10 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
   border: 0;
   background: transparent;
   color: #e2c597;
-  font: 600 .62rem/1.25 Georgia, serif;
-  letter-spacing: .045em;
+  /* Place names are useful while exploring, not decorative microtype.
+     Longer names can ellipsize; the complete name stays in aria-label. */
+  font: 600 .75rem/1.15 Georgia, serif;
+  letter-spacing: .01em;
   white-space: nowrap;
   text-overflow: ellipsis;
   text-shadow: none;
@@ -1884,4 +1888,15 @@ body:has([data-chronicles="true"]) .navigation-back-hint {
    Keep the full region name in the button's accessible description. */
 @media (max-width: 800px), (max-width: 1024px) and (max-height: 600px) {
   .chronicles-minimap__location-prefix { display: none; }
+  /* The actual uppercase SWORDHAVEN label needs more than the inner grid
+     track after increasing type to 12px. Reclaim unused inner bezel space
+     (the overall 104px map stays fixed), rather than shrinking the font.
+     Long region names can still elide, with their full aria-label intact. */
+  .chronicles-minimap__location {
+    box-sizing: border-box;
+    width: calc(100% + 16px);
+    max-width: calc(100% + 16px);
+    padding-inline: 0;
+    letter-spacing: -.035em;
+  }
 }

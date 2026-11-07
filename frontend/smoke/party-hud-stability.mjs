@@ -36,6 +36,54 @@ async function measure(page) {
   });
 }
 
+// Coordinates and place names were ~9-10px despite being navigation data.
+// Check painted text and the accessible full name with production MM3 styles.
+async function assertMinimapCaptionReadability(page, viewport) {
+  const result = await page.locator('.chronicles-minimap').evaluate(button => {
+    const frame = button.getBoundingClientRect();
+    const inspect = selector => {
+      const item = button.querySelector(selector);
+      const style = getComputedStyle(item);
+      const rect = item.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(item);
+      const painted = [...range.getClientRects()];
+      return {
+        label: item.textContent.trim(),
+        visible: style.display !== 'none' && rect.height > 0,
+        font: parseFloat(style.fontSize),
+        clipped: item.scrollWidth > item.clientWidth + 1
+          || item.scrollHeight > item.clientHeight + 1,
+        paintedWithinMap: painted.length > 0 && painted.every(box =>
+          box.left >= frame.left - 1 && box.right <= frame.right + 1
+          && box.top >= frame.top - 1 && box.bottom <= frame.bottom + 1),
+      };
+    };
+    return {
+      coordinates: inspect('[data-chronicles-coordinates]'),
+      location: inspect('[data-chronicles-location]'),
+      mapHeight: frame.height, mapWidth: frame.width,
+      accessible: button.getAttribute('aria-label'),
+      pageOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+    };
+  });
+  const label = viewport.width + 'x' + viewport.height;
+  assert.match(result.accessible, /Ubicación: SWORDHAVEN\. Coordenadas: X13 Y17/);
+  assert.equal(result.coordinates.label, 'X13 Y17');
+  assert.equal(result.location.label, 'SWORDHAVEN');
+  assert.ok(result.coordinates.visible && result.location.visible
+    && result.coordinates.font >= 12 && result.location.font >= 12
+    && !result.coordinates.clipped && !result.location.clipped
+    && result.coordinates.paintedWithinMap && result.location.paintedWithinMap
+    && !result.pageOverflow,
+  'Minimap navigation captions must fit and remain legible: ' + label + ' '
+    + JSON.stringify(result));
+  if ([390, 1280].includes(viewport.width)) {
+    await page.screenshot({path: 'smoke-minimap-captions-readable-' + viewport.width + '.png'});
+  }
+  console.log('CHRONICLES_MINIMAP_CAPTIONS_READABLE_OK', label);
+}
+
 async function addAction(page, id) {
   await page.locator('.chronicles-touch').evaluate((controls, action) => {
     const button = document.createElement('button');
@@ -229,6 +277,7 @@ try {
       const baseline = await measure(page);
       verifyStable(baseline, baseline, 'baseline', viewport);
       await assertNoticeReadability(page, viewport);
+      await assertMinimapCaptionReadability(page, viewport);
       // A non-caster renders no PH bar, but still reserves its second row:
       // the PV row must align with all three casters (the original regression).
       assert.equal(baseline.hpBars.length, 4, 'All four heroes need a PV bar');
@@ -347,6 +396,7 @@ try {
       assert.equal(errors.length, 0, 'No mobile HUD script errors');
       assert.equal(m.overflow, false, 'Mobile HUD must not scroll horizontally: ' + JSON.stringify(m));
       await assertNoticeReadability(page, viewport);
+      await assertMinimapCaptionReadability(page, viewport);
       assert.equal(m.heroes.length, 4, 'Four visible heroes stay in one row');
       assert.ok(m.party.right <= m.map.left - 2 || m.party.bottom <= m.map.top,
         'Readability must not move the party over the minimap: ' + JSON.stringify(m));
