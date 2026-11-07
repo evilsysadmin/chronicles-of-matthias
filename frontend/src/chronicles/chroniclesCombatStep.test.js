@@ -44,10 +44,9 @@ describe('MM3 initiative repositioning on an authored combat map', () => {
     expect(chroniclesLivingPartyPositions(stepped)).not.toEqual(before);
     expect(chroniclesReduce(stepped, 'forward')).toBe(stepped);
 
-    const turned = chroniclesReduce(combat, 'turn-left');
-    expect(turned.direction).toBe(3);
-    expect(turned.turns).toBe(combat.turns + 1);
-    expect(chroniclesReduce(turned, 'forward')).toBe(turned);
+    expect(chroniclesReduce(combat, 'turn-left')).toBe(combat);
+    expect(chroniclesReduce(combat, 'turn-right')).toBe(combat);
+    expect(stepped.direction).toBe(combat.direction);
   });
 });
 
