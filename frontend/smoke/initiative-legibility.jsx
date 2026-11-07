@@ -9,7 +9,7 @@ import '../src/components/ChroniclesMM3Chrome.css';
 
 const initiative = {
   round: 3,
-  cursor: 0,
+  cursor: new URLSearchParams(window.location.search).get('turn') === 'party' ? 1 : 0,
   order: [
     { id: 'wraith', kind: 'enemy', name: 'Espectro', initiative: 12 },
     { id: 'matthias', kind: 'party', name: 'Matthias', initiative: 11 },
