@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   CHRONICLES_DIRECTIONS,
+  chroniclesActiveEnemies,
   chroniclesEnemyTargetAhead,
   chroniclesOpeningVolleyShooters,
   chroniclesTileAt,
@@ -28,7 +29,8 @@ import ChroniclesJournalModal from '../src/components/ChroniclesJournalModal.jsx
 import ChroniclesAutomap from '../src/components/ChroniclesAutomap.jsx';
 import ChroniclesMinimap from '../src/components/ChroniclesMinimap.jsx';
 import ChroniclesSpellMenu from '../src/components/ChroniclesSpellMenu.jsx';
-import { chroniclesCurrentInitiativeActor } from '../src/chronicles/chroniclesInitiative.js';
+import { chroniclesCurrentInitiativeActor, chroniclesStartInitiativeCombat } from '../src/chronicles/chroniclesInitiative.js';
+import ChroniclesCombatRoster from '../src/components/ChroniclesCombatRoster.jsx';
 import { chroniclesQuickStatusRows } from '../src/chronicles/chroniclesQuickStatus.js';
 import '../src/styles.css';
 // Match the actual first-person game CSS imports. The isolated fixture used
@@ -291,6 +293,24 @@ function actualMayorInvitation() {
   return { state, contextualAction, npc };
 }
 
+
+// Real authored backline shooter with a legal, unobstructed ranged attack.
+// The fixture differs only by canonical facing; no invented threat metadata.
+function actualRearThreatCombat(direction) {
+  const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+  const archer = chroniclesActiveEnemies(base)
+    .find(enemy => enemy.id === 'banner-road-east-scout');
+  if (archer?.ai?.attackReach !== 3) throw new Error('Authored scout reach has changed');
+  const fight = chroniclesStartInitiativeCombat({
+    ...base, x: 10, y: 3, direction,
+    enemyPositions: { [archer.id]: { x: 10, y: 5 } },
+  }, [archer], { forceEnemyIds: [archer.id], random: () => 0 });
+  if (!fight.initiative?.order.some(actor => actor.kind === 'enemy' && actor.id === archer.id)) {
+    throw new Error('Authored rear scout is not part of the combat order');
+  }
+  return { fight, archer };
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -324,6 +344,16 @@ if (view === 'threat') {
   content = <div className="chronicles" style={{ width: 'min(370px, 90vw)', padding: 8 }}>
     <ChroniclesMinimap state={{ ...state, x: 9, y: 4 }}
       visitedCells={['7:4', '11:4']} onExpand={() => {}} />
+  </div>;
+} else if (view === 'combat-rear' || view === 'combat-front') {
+  const { fight, archer } = actualRearThreatCombat(view === 'combat-rear' ? 0 : 2);
+  document.body.dataset.combatScoutId = archer.id;
+  content = <div className="chronicles" style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div className="chronicles-shell" style={{
+      position: 'relative', width: 'min(300px, 90vw)', height: '100%', marginLeft: 'auto',
+    }}>
+      <ChroniclesCombatRoster state={fight} />
+    </div>
   </div>;
 } else if (view === 'minimap-ink') {
   // Actual MM3 minimap, actual authored location and production CSS; this

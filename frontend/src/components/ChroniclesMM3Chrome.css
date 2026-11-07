@@ -289,6 +289,24 @@
   background: rgba(29, 12, 2, .45);
 }
 
+/* The threat cue lives in the EXISTING enemy roster, including its closed
+   mobile summary. No floating HUD, animation or extra overlay over the view.
+   Show only an enemy with an actual legal attack from outside our facing. */
+.chronicles .chronicles-combat-roster__bearing {
+  display: block;
+  margin-block-start: 3px;
+  color: #ffe5a1;
+  font: 700 .9rem/1.2 Georgia, serif;
+  letter-spacing: .035em;
+  text-shadow: 1px 1px 0 #351603;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.chronicles .chronicles-combat-roster li .chronicles-combat-roster__bearing {
+  margin-block-start: 2px;
+  font-size: .83rem;
+}
+
 /* The narrator speaks from a sandstone tablet under a stone tab. */
 .chronicles .chronicles-dm-trigger {
   border: 2px solid;
