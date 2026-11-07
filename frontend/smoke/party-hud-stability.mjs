@@ -84,6 +84,72 @@ async function assertMinimapCaptionReadability(page, viewport) {
   console.log('CHRONICLES_MINIMAP_CAPTIONS_READABLE_OK', label);
 }
 
+// CRÓNICA and GRUPO are always-on exploration actions, not decorative
+// bitmap text. Their 14px captions used to be hard to read on phones.
+// Measure the production selector, icon and actual painted text inside each
+// 44px touch button; neither button may displace the portrait row or map.
+async function assertChronicleNavigationReadability(page, viewport) {
+  const result = await page.locator('.chronicles-chronicle-slot').evaluate(slot => {
+    const frame = el => {
+      const r = el.getBoundingClientRect();
+      return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+    };
+    const bounds = frame(slot);
+    const buttons = [...slot.querySelectorAll('button')].map(button => {
+      const rect = frame(button);
+      const label = [...button.childNodes].find(node =>
+        node.nodeType === Node.TEXT_NODE && /CRÓNICA|GRUPO/.test(node.textContent));
+      const range = document.createRange();
+      if (label) range.selectNodeContents(label);
+      const fragments = label ? [...range.getClientRects()].map(el => ({
+        left:el.left,right:el.right,top:el.top,bottom:el.bottom,
+      })) : [];
+      const icon = button.querySelector('i');
+      const iconBounds = icon ? frame(icon) : null;
+      return {
+        text: label?.textContent.trim(),
+        font: parseFloat(getComputedStyle(button).fontSize),
+        rect,
+        clipped: button.scrollWidth > button.clientWidth + 1
+          || button.scrollHeight > button.clientHeight + 1,
+        paintedInside: fragments.length > 0 && fragments.every(box =>
+          box.left >= rect.left - 1 && box.right <= rect.right + 1
+          && box.top >= rect.top - 1 && box.bottom <= rect.bottom + 1),
+        iconInside: Boolean(iconBounds)
+          && iconBounds.left >= rect.left - 1 && iconBounds.right <= rect.right + 1,
+        shortcutHidden: getComputedStyle(button.querySelector('kbd')).display === 'none',
+        popup: button.getAttribute('aria-haspopup'),
+      };
+    });
+    return {
+      bounds, buttons,
+      party: frame(document.querySelector('.chronicles-party')),
+      map: frame(document.querySelector('.chronicles-minimap')),
+      overflow: document.documentElement.scrollWidth > innerWidth + 1,
+    };
+  });
+  const context = viewport.width + 'x' + viewport.height + ': ' + JSON.stringify(result);
+  assert.deepEqual(result.buttons.map(button => button.text), ['CRÓNICA', 'GRUPO'], context);
+  assert.equal(result.buttons.length, 2, context);
+  assert.ok(result.buttons.every(button =>
+    button.font >= 18 && button.rect.height >= 44 && button.rect.width >= 44
+    && !button.clipped && button.paintedInside && button.iconInside
+    && button.shortcutHidden && button.popup === 'dialog'),
+  'Touch journal/group commands must be readable and entirely visible: ' + context);
+  assert.ok(result.buttons[0].rect.right + 1 <= result.buttons[1].rect.left
+    && result.buttons.every(button =>
+      button.rect.top >= result.bounds.top - 1
+      && button.rect.bottom <= result.bounds.bottom + 1)
+    && result.bounds.right < result.map.left
+    && result.bounds.bottom <= result.party.top - 2
+    && !result.overflow,
+  'Persistent top HUD buttons must not overlap each other, map or portraits: ' + context);
+  if (viewport.width === 390 || viewport.width === 844) {
+    await page.screenshot({path:'smoke-chronicle-group-readable-' + viewport.width + '.png'});
+  }
+  console.log('CHRONICLES_CHRONICLE_GROUP_READABLE_OK', viewport.width, viewport.height);
+}
+
 async function addAction(page, id) {
   await page.locator('.chronicles-touch').evaluate((controls, action) => {
     const button = document.createElement('button');
@@ -397,6 +463,7 @@ try {
       assert.equal(m.overflow, false, 'Mobile HUD must not scroll horizontally: ' + JSON.stringify(m));
       await assertNoticeReadability(page, viewport);
       await assertMinimapCaptionReadability(page, viewport);
+      await assertChronicleNavigationReadability(page, viewport);
       assert.equal(m.heroes.length, 4, 'Four visible heroes stay in one row');
       assert.ok(m.party.right <= m.map.left - 2 || m.party.bottom <= m.map.top,
         'Readability must not move the party over the minimap: ' + JSON.stringify(m));
