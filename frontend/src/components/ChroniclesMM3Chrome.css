@@ -87,8 +87,8 @@
   transform: translateY(1px);
   box-shadow: 0 0 0 1px #141416;
 }
-/* Turning and travelling are genuinely unavailable during initiative.
-   The carved controls stay legible but cannot look hoverable or press down. */
+/* Unavailable direction controls (enemy turn, already-spent initiative)
+   stay visibly inactive rather than looking hoverable or pressed. */
 .chronicles .chronicles-touch button:disabled:not(.is-attack) {
   opacity: .56;
   filter: grayscale(.7);
@@ -1832,10 +1832,10 @@
   }
 }
 
-/* Action captions belong to the play HUD, not to 8px footnotes. Preserve the
-   existing action grid, icon size, touch targets and full accessible labels.
-   The active fighter's name is deliberately narrower: it must fit even when
-   Hildegard takes the turn in a 74px mobile attack control. */
+/* Action captions belong to the play HUD, not to 8px footnotes. Preserve
+   action grid, icon size, touch targets and accessible labels. The fighter's
+   identity belongs in portraits/initiative; the 74px attack button states
+   the action instead of shrinking arbitrary character names. */
 @media (min-width: 1025px), (min-width: 801px) and (min-height: 601px) {
   /* At the 1025px breakpoint each action slab is only ~52px wide.
      Reclaim inner padding instead of shrinking MAGIA back to microtype. */
@@ -1861,12 +1861,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 700 clamp(11px, 2.8vw, 12px)/1.15 Arial, var(--mm3-hud-font);
+    font: 700 12px/1.15 Arial, var(--mm3-hud-font);
     letter-spacing: 0;
   }
-  .chronicles .chronicles-touch button.is-attack > small,
+  /* ATACAR/SALVA are actions, not a microscopic fighter-name badge. */
+  .chronicles .chronicles-touch button.is-attack > small {
+    font-size: 12px;
+  }
+  /* SIN ALCANCE has two words: give it two readable lines instead of
+     squeezing the complete refusal into the 74px attack stone. */
   .chronicles .chronicles-touch button.is-attack:disabled > small {
-    font-size: 10.25px;
-    letter-spacing: -.015em;
+    font-size: 12px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.1;
   }
 }

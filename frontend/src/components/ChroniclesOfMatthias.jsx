@@ -2626,7 +2626,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                       : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchAttackDisabled
                     ? activeInitiativeActor?.kind === 'enemy' ? 'ESPERA' : 'SIN ALCANCE'
-                    : touchVolley.available ? `SALVA · ${touchVolley.shooters}` : selectedMember?.name?.toUpperCase() || 'ATACAR'}</small></button>
+                    : touchVolley.available ? `SALVA · ${touchVolley.shooters}` : 'ATACAR'}</small></button>
                 {state.combatRules === 'mm3' && activeInitiativeActor?.kind === 'party' && (
                   <button type="button" className="is-block"
                     data-chronicles-touch-action="block"

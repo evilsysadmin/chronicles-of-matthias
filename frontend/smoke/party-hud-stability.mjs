@@ -71,20 +71,18 @@ async function assertActionCaptions(page, label, isTouch) {
       };
     }).filter(node => !node.hidden)
   );
-  const expected = isTouch ? ['MATTHIAS', 'MAGIA', 'USAR', 'BLOCK']
-    : ['MATTHIAS', 'MAGIA', 'USAR'];
+  const expected = isTouch ? ['ATACAR', 'MAGIA', 'USAR', 'BLOCK']
+    : ['ATACAR', 'MAGIA', 'USAR'];
   for (const word of expected) {
     const item = captions.find(caption => caption.text === word);
     assert.ok(item, label + ': missing caption ' + word + ' ' + JSON.stringify(captions));
-    assert.ok(item.font >= (word === 'MATTHIAS' ? 10 : isTouch ? 11 : 12),
+    assert.ok(item.font >= (word === 'ATACAR' ? (isTouch ? 12 : 11) : isTouch ? 12 : 12),
       label + ': action caption has microscopic type ' + JSON.stringify(item));
     assert.ok(item.width > 10 && item.left >= item.parentLeft - 2
       && item.right <= item.parentRight + 2,
       label + ': action caption spills out of its button ' + JSON.stringify(item));
-    if (word !== 'MATTHIAS') {
-      assert.ok(item.textWidth <= item.width + 2,
-        label + ': short action label must not be ellipsized ' + JSON.stringify(item));
-    }
+    assert.ok(item.textWidth <= item.width + 2,
+      label + ': short action label must not be ellipsized ' + JSON.stringify(item));
   }
 }
 
@@ -378,6 +376,37 @@ try {
       await addAction(page, 'interact');
       await addAction(page, 'block');
       await assertActionCaptions(page, 'touch ' + viewport.width, true);
+      const attack = page.locator('[data-chronicles-touch-action="attack"]');
+      await attack.evaluate(button => {
+        button.disabled = true;
+        button.querySelector('small').textContent = 'SIN ALCANCE';
+      });
+      const refusal = await attack.evaluate(button => {
+        const label = button.querySelector('small');
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        const frame = button.getBoundingClientRect();
+        const fragments = [...range.getClientRects()].map(rect => ({
+          left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
+        }));
+        return {
+          font: parseFloat(getComputedStyle(label).fontSize),
+          lineCount: fragments.length,
+          label: label.textContent.trim(),
+          fragments, frame: {left: frame.left, right: frame.right, top: frame.top, bottom: frame.bottom},
+        };
+      });
+      assert.equal(refusal.label, 'SIN ALCANCE');
+      assert.ok(refusal.font >= 12 && refusal.lineCount === 2,
+        'Mobile disabled attack must wrap the full reason at a legible size: '
+        + JSON.stringify({viewport, refusal}));
+      assert.ok(refusal.fragments.every(rect =>
+        rect.left >= refusal.frame.left - 1 && rect.right <= refusal.frame.right + 1
+        && rect.top >= refusal.frame.top - 1 && rect.bottom <= refusal.frame.bottom + 1),
+      'Refusal must remain inside the attack control: ' + JSON.stringify({viewport, refusal}));
+      if ([360, 390, 430].includes(viewport.width)) {
+        await page.screenshot({path: 'smoke-mobile-attack-readable-' + viewport.width + '.png'});
+      }
       console.log('CHRONICLES_MOBILE_VITALS_READABLE_OK', viewport.width, viewport.height);
     } finally {
       await context.close();
