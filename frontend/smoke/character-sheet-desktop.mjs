@@ -303,6 +303,75 @@ async function assertMM3ChapterTabsStable(nav, initial, chapter, viewport) {
 }
 
 try {
+  // A 1280x800 desktop at 200% browser zoom has approximately 640x400
+  // CSS-pixel layout room. Playwright cannot set Chromium's native browser
+  // zoom, so exercise that exact *reflow* geometry rather than pretending
+  // deviceScaleFactor or pinch zoom triggers the same media queries.
+  // The 480px compact rule formerly hid the only XP figure even in Estado.
+  for (const [width, height] of [[640, 400], [844, 390], [390, 350]]) {
+    const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const sheet = page.locator('[data-chronicles-folio="v2"]');
+      await sheet.waitFor({ state: 'visible' });
+      const nav = sheet.getByRole('navigation', { name: 'Apartados de la ficha' });
+      const xp = sheet.locator('.chronicles-character-sheet__progression--readable-xp');
+      const measure = () => xp.evaluate((node) => {
+        const remaining = node.querySelector('[data-chronicles-xp-remaining]');
+        const total = node.querySelector('.chronicles-character-sheet__xp-total');
+        const track = node.querySelector('[role="progressbar"]');
+        const frame = node.getBoundingClientRect();
+        const metrics = (element) => {
+          const rect = element.getBoundingClientRect();
+          return { font: Number.parseFloat(getComputedStyle(element).fontSize),
+            text: element.textContent.trim(),
+            clipped: element.scrollWidth > element.clientWidth + 2
+              || element.scrollHeight > element.clientHeight + 2,
+            inside: rect.left >= frame.left - 1 && rect.right <= frame.right + 1
+              && rect.top >= frame.top - 1 && rect.bottom <= frame.bottom + 1 };
+        };
+        const scroll = node.parentElement;
+        return { display: getComputedStyle(node).display, width: frame.width,
+          height: frame.height, remaining: metrics(remaining), total: metrics(total),
+          track: { width: track.getBoundingClientRect().width,
+            value: track.getAttribute('aria-valuetext') },
+          scrollOverflowX: scroll.scrollWidth > scroll.clientWidth + 2,
+          documentOverflowX: document.documentElement.scrollWidth > innerWidth + 1 };
+      });
+      const visible = await measure();
+      assert.equal(visible.display, 'grid',
+        'Estado must not hide XP in short landscape/200% reflow: ' + JSON.stringify({width, visible}));
+      assert.match(visible.remaining.text, /XP para subir|Nivel máximo/);
+      assert.match(visible.total.text, /XP acumulados/);
+      assert.ok(visible.remaining.font >= 17 && visible.total.font >= 14
+        && !visible.remaining.clipped && !visible.total.clipped
+        && visible.remaining.inside && visible.total.inside && visible.track.width >= 35
+        && !visible.scrollOverflowX && !visible.documentOverflowX,
+        'XP and progress must fit a readable compact Estado strip: '
+          + JSON.stringify({width, visible}));
+      assert.equal(await xp.getByRole('progressbar').isVisible(), true);
+      await page.screenshot({path: 'smoke-character-status-xp-reflow-' + width + '.png'});
+      for (const tab of ['Equipo', 'Hechizos']) {
+        await nav.getByRole('button', { name: tab }).evaluate((button) => button.click());
+        assert.equal(await xp.isVisible(), false,
+          tab + ' must still save short-viewport height by hiding unrelated XP');
+      }
+      await nav.getByRole('button', { name: 'Estado' }).evaluate((button) => button.click());
+      assert.equal(await xp.isVisible(), true,
+        'Returning to Estado must restore XP without a reload');
+      assert.deepEqual(errors, [], 'No browser errors at ' + width + 'x' + height);
+      console.log('CHRONICLES_XP_SHORT_REFLOW_OK ' + width + 'x' + height);
+    } catch (error) {
+      failures.push('XP short reflow ' + width + ': ' + error.message);
+      console.error('CHRONICLES_XP_SHORT_REFLOW_FAIL', width, error);
+    } finally {
+      await ctx.close();
+    }
+  }
+
   // With browser zoom, a 1280px-wide desktop can have only 690 CSS pixels
   // of height. Before the fix, the full-width V3 ledger fell back to the
   // archive's half-empty two-column folio despite ample horizontal space.
