@@ -895,7 +895,7 @@
   .chronicles .chronicles-minimap__location {
     grid-row: 3;
     align-self: center;
-    font-size: clamp(.72rem, .85vw, .87rem);
+    font-size: clamp(.8125rem, .85vw, 1rem);
   }
   .chronicles .chronicles-minimap__title { display: none; }
   /* Consistent walkability semantics across desktop MM3 and mobile. */
