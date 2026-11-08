@@ -3,6 +3,8 @@ on:
   # Every protected-main SHA must have a verifiable frontend CI result.
   # Infra admits an exact SHA only after frontend + API + repository CI pass.
   pull_request:
+  # Manual visual audit of an exact branch SHA without requiring a throwaway PR.
+  workflow_dispatch:
   push:
     branches: [main]
 permissions:
@@ -148,7 +150,7 @@ jobs:
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v7
-        if: ${{ always() && (github.event_name == 'pull_request' || failure()) }}
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}
         with:
           name: chronicles-mount-smoke
           path: |
