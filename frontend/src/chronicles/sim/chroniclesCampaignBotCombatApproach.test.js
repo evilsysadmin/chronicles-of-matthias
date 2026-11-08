@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   chroniclesActiveEnemies, chroniclesCombatMeleeTarget,
   chroniclesEnemyTargetAhead, chroniclesReduce,
 } from '../../chroniclesOfMatthias.js';
 import { chroniclesStartInitiativeCombat } from '../chroniclesInitiative.js';
-import { ChroniclesCampaignBot } from './chroniclesCampaignBot.js';
+import { ChroniclesCampaignBot, seededRandom } from './chroniclesCampaignBot.js';
 
 function scenario({ flank = false } = {}) {
   const bot = new ChroniclesCampaignBot({
@@ -72,4 +72,37 @@ describe('MM3 campaign bot respects fixed-facing multi-enemy initiative', () => 
     expect(struck.direction).toBe(0);
     expect(struck[bystander.hpKey]).toBe(fight[bystander.hpKey]);
   });
+  it('completes the full rear-scout encounter without turning or attacking a bystander', () => {
+    const { bot, fight, archer, bystander } = scenario();
+    const outsiderHp = fight[bystander.hpKey];
+    const actions = [];
+    const act = bot.act.bind(bot);
+    bot.act = (action) => {
+      actions.push(typeof action === 'string' ? action : action.type);
+      const next = act(action);
+      // No action, including an enemy response, can rotate the MM3 camera.
+      expect(next.direction).toBe(fight.direction);
+      return next;
+    };
+
+    // Exercise actual initiative advancement, ranged enemy AI and damage
+    // against the authored archer, not only one permitted backstep.
+    const random = vi.spyOn(Math, 'random').mockImplementation(seededRandom(1173));
+    try {
+      bot.fight();
+    } finally {
+      random.mockRestore();
+    }
+
+    expect(actions).toContain('backward');
+    expect(actions).toContain('attack');
+    expect(actions).not.toContain('turn-left');
+    expect(actions).not.toContain('turn-right');
+    expect(bot.state.phase).not.toBe('defeated');
+    expect(bot.state.initiative).toBeNull();
+    expect(Number(bot.state[archer.hpKey])).toBeLessThanOrEqual(0);
+    expect(bot.state[bystander.hpKey]).toBe(outsiderHp);
+    expect(bot.fights.at(-1).partyTurns).toBeLessThan(50);
+  });
+
 });
