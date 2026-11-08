@@ -104,6 +104,10 @@
   interacciones ni transiciones de mapa en combate. Un enemigo comprometido
   adyacente detrás sigue siendo atacable con A. Al vencer y guardar se
   conserva la dirección original, sin giro manual ni automático.
+  **Disparos a distancia MM3 durante exploración:** enemigos con tiro legal
+  responden por acción exploratoria consumida, usando el motor real. Los
+  arqueros no abren por sí solos la iniciativa automática ni bloquean caminar
+  o contraatacar con S. El contacto cuerpo a cuerpo sí puede abrir iniciativa.
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
