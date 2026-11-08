@@ -198,11 +198,11 @@ export function chroniclesEngagedEnemies(state, enemies) {
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
       && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition)
-      // In first-person MM3, detection starts pursuit in exploration, not
-      // initiative. Only a legal attack from the enemy's CURRENT cell starts
-      // automatic combat; otherwise stationary melee would lock the party
-      // before either side can strike. Player-forced attacks are handled below.
-      && (state.combatRules !== 'mm3' || chroniclesEnemyCanAttackParty(state, enemy, enemyPosition));
+      // MM3 starts initiative only at melee contact, never at ranged reach.
+      // Detection, forced volleys and archers remain exploration events.
+      && (state.combatRules !== 'mm3'
+        || (chroniclesEnemyAttackReach(enemy) === 1
+          && chroniclesEnemyCanAttackParty(state, enemy, enemyPosition)));
   });
 }
 
@@ -249,45 +249,44 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   if (!Array.isArray(state.party) || !state.party.some((member) => (
     validActorId(member?.id) && hasLivingHitPoints(member?.hp)
   ))) return state;
+  // MM3 is stationary once initiative begins. Only a living melee foe
+  // standing next to the company can begin it. Shooters exchange fire during
+  // exploration instead, even after a forced opening volley or squad alert.
+  const meleeThreat = (enemy, partyState = state) => enemy
+    && chroniclesEnemyAttackReach(enemy) === 1
+    && chroniclesEnemyCanAttackParty(
+      partyState, enemy, chroniclesRuntimeEnemyPosition(partyState, enemy),
+    );
   const forceEnemyIds = new Set(Array.isArray(options.forceEnemyIds) ? options.forceEnemyIds : []);
   const candidates = Array.isArray(enemies) ? enemies : [];
   const engagedById = new Map(
     chroniclesEngagedEnemies(state, candidates).map((enemy) => [enemy.id, enemy]),
   );
   candidates.forEach((enemy) => {
-    // A malformed legacy roster may contain null slots; never crash combat startup.
-    if (!enemy) return;
-    if (forceEnemyIds.has(enemy.id) && hasLivingHitPoints(state?.[enemy.hpKey])) {
-      engagedById.set(enemy.id, enemy);
-    }
+    if (!enemy || !forceEnemyIds.has(enemy.id) || !hasLivingHitPoints(state?.[enemy.hpKey])) return;
+    if (state.combatRules === 'mm3' && !meleeThreat(enemy)) return;
+    engagedById.set(enemy.id, enemy);
   });
-  // MM3 sewer ambushes are authored as small squads. Once one goblin sees
-  // the party (or is hit by a forced volley), nearby squadmates enter the same
-  // initiative. Do not summon members across walls, across the map, or from
-  // the dead; their actual movement still consumes ordinary enemy turns.
-  // Tactics keeps its original independent-engagement semantics.
-  if (state.combatRules === 'mm3') {
-    const alerted = [...engagedById.values()].filter((enemy) => (
-      typeof enemy.squadId === 'string' && enemy.squadId.length > 0
-    ));
-    candidates.forEach((enemy) => {
-      if (!enemy) return;
-      if (!enemy.squadId || engagedById.has(enemy.id) || !hasLivingHitPoints(state?.[enemy.hpKey])) return;
-      const position = chroniclesRuntimeEnemyPosition(state, enemy);
-      if (alerted.some((mate) => {
-        if (mate.squadId !== enemy.squadId) return false;
-        const matePosition = chroniclesRuntimeEnemyPosition(state, mate);
-        return manhattanDistance(position, matePosition) <= 4
-          && chroniclesEnemyHasSightline(state, position, matePosition);
-      })) engagedById.set(enemy.id, enemy);
-    });
-  }
   // Reject malformed roster IDs before rolling: otherwise a forced encounter
   // can start party-only combat after the initiative roller drops its enemy.
-  const engaged = [...engagedById.values()].filter((enemy) => validActorId(enemy?.id));
+  const engaged = [...engagedById.values()].filter((enemy) => validActorId(enemy?.id)
+    && (state.combatRules !== 'mm3' || meleeThreat(enemy)));
   if (!engaged.length) return state;
-  const deployedState = chroniclesDeployPartyForCombat(state);
-  const initiative = chroniclesRollInitiative(deployedState, engaged, options);
+  // Face the first actual melee attacker exactly once at contact, before
+  // deploying the formation. Direction then stays fixed for the whole fight.
+  const attacker = state.combatRules === 'mm3'
+    ? chroniclesRuntimeEnemyPosition(state, engaged[0]) : null;
+  const dx = attacker ? attacker.x - state.x : 0;
+  const dy = attacker ? attacker.y - state.y : 0;
+  const facing = !attacker ? state.direction
+    : dx > 0 ? 1 : dx < 0 ? 3 : dy > 0 ? 2 : 0;
+  const deployedState = chroniclesDeployPartyForCombat(
+    state.combatRules === 'mm3' ? { ...state, direction: facing } : state,
+  );
+  const combatants = state.combatRules === 'mm3'
+    ? engaged.filter((enemy) => meleeThreat(enemy, deployedState)) : engaged;
+  if (!combatants.length) return state;
+  const initiative = chroniclesRollInitiative(deployedState, combatants, options);
   if (!initiative.order.length) return state;
   const { combatWard: _staleWard, combatBlock: _staleBlock,
     combatActionSpent: _staleAction, ...fresh } = deployedState;
@@ -369,6 +368,19 @@ export function chroniclesAdvanceCombatInitiative(state, enemies) {
   // rather than letting a later dead duplicate erase an actionable actor.
   const enemyById = new Map(uniqueLivingCombatants(enemies, (enemy) => state?.[enemy.hpKey])
     .map((enemy) => [enemy.id, enemy]));
+  // Restored encounters can contain distant enemies from older builds.
+  // Do not strand a stationary party with nobody in melee reach.
+  if (state.combatRules === 'mm3' && !state.initiative.order.some((actor) => {
+    if (actor?.kind !== 'enemy' || !actorIsAlive(state, enemyById, actor)) return false;
+    const enemy = enemyById.get(actor.id);
+    return chroniclesEnemyAttackReach(enemy) === 1
+      && chroniclesEnemyCanAttackParty(state, enemy, chroniclesRuntimeEnemyPosition(state, enemy));
+  })) {
+    const { combatWard: _ward, combatBlock: _block, combatActionSpent: _spent,
+      enemyStatus: _status, ...collapsed } = chroniclesCollapsePartyAfterCombat(state);
+    return { ...collapsed, phase: 'explore', turnPhase: 'party', initiative: null };
+  }
+
   // Legacy JSON may contain null initiative slots. Skip them without
   // shifting the turn boundary or granting another actor an extra action.
   const lost = state.initiative.order.filter((actor) => (
