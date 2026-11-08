@@ -1,108 +1,83 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  chroniclesActiveEnemies, chroniclesCombatMeleeTarget,
-  chroniclesEnemyTargetAhead, chroniclesReduce,
+  chroniclesActiveEnemies, chroniclesCombatMeleeTarget, chroniclesReduce,
 } from '../../chroniclesOfMatthias.js';
 import { chroniclesStartInitiativeCombat } from '../chroniclesInitiative.js';
 import { ChroniclesCampaignBot, seededRandom } from './chroniclesCampaignBot.js';
 
-function scenario({ flank = false } = {}) {
+function scenario({ melee = true } = {}) {
   const bot = new ChroniclesCampaignBot({
-    runId: 'initiative-multi-enemy-bot', startMap: 'banner-road-first-book',
+    runId: 'stationary-mm3-bot', startMap: 'banner-road-first-book',
   });
   const base = bot.state;
   const all = chroniclesActiveEnemies(base);
-  const byId = id => {
-    const enemy = all.find(candidate => candidate.id === id);
-    expect(enemy, id).toBeTruthy();
-    return enemy;
-  };
-  const archer = byId('banner-road-east-scout');
-  const captain = byId('banner-road-bandit-captain');
-  const bystander = byId('banner-road-deserter');
-  const kept = new Set([archer.id, captain.id, bystander.id]);
-  const state = {
+  const archer = all.find(({ id }) => id === 'banner-road-east-scout');
+  const meleeFoe = all.find(({ id }) => id === 'banner-road-deserter');
+  expect(archer && meleeFoe).toBeTruthy();
+  const activeIds = new Set([archer.id, meleeFoe.id]);
+  const placed = {
     ...base,
-    ...Object.fromEntries(all.filter(enemy => !kept.has(enemy.id))
-      .map(enemy => [enemy.hpKey, 0])),
-    x: 10, y: 3, direction: 0,
+    ...Object.fromEntries(all.filter((enemy) => !activeIds.has(enemy.id))
+      .map((enemy) => [enemy.hpKey, 0])),
+    ...(melee ? {} : { [meleeFoe.hpKey]: 0 }),
+    x: 10, y: 3, direction: 2,
     enemyPositions: {
       [archer.id]: { x: 10, y: 5 },
-      [captain.id]: { x: 11, y: 3 },
-      [bystander.id]: { x: 10, y: 2 },
+      [meleeFoe.id]: { x: 10, y: 2 },
     },
   };
-  const enrolled = flank ? [archer, captain] : [archer];
-  const started = chroniclesStartInitiativeCombat(state, enrolled, {
-    forceEnemyIds: enrolled.map(enemy => enemy.id), random: () => 0,
-  });
-  expect(started.phase).toBe('combat');
-  const heroIndex = started.initiative.order.findIndex(actor => actor.kind === 'party');
-  expect(heroIndex).toBeGreaterThanOrEqual(0);
-  const fight = {
-    ...started, initiative: { ...started.initiative, cursor: heroIndex },
-  };
-  bot.state = fight;
-  return { bot, fight, archer, captain, bystander,
-    heroId: fight.initiative.order[heroIndex].id };
+  return { bot, placed, archer, meleeFoe };
 }
 
-describe('MM3 campaign bot respects fixed-facing multi-enemy initiative', () => {
-  it('backs toward a real engaged rear shooter instead of attacking a forward bystander', () => {
-    const { bot, fight, archer, bystander, heroId } = scenario();
-    expect(chroniclesEnemyTargetAhead(fight, 3)?.enemy.id).toBe(bystander.id);
-    const action = bot.chooseCombatAction(heroId);
-    expect(action).toBe('backward');
-    const moved = chroniclesReduce(fight, action);
-    expect([moved.x, moved.y, moved.direction]).toEqual([10, 4, 0]);
-    expect(moved.turns).toBe(fight.turns + 1);
-    expect(moved.combatActionSpent?.[heroId]).toBe(true);
-    expect(chroniclesCombatMeleeTarget(moved)?.enemy.id).toBe(archer.id);
-    expect(moved[bystander.hpKey]).toBe(fight[bystander.hpKey]);
+describe('MM3 campaign bot: melee initiative is stationary', () => {
+  it('does not launch combat or take a frozen-initiative approach step toward a ranged shooter', () => {
+    const { bot, placed, archer } = scenario({ melee: false });
+    const attempted = chroniclesStartInitiativeCombat(placed, [archer], {
+      forceEnemyIds: [archer.id], random: () => 0,
+    });
+    expect(attempted).toBe(placed);
+    expect(attempted.phase).toBe('explore');
+    bot.state = attempted;
+    expect(bot.combatApproachAction()).toBeNull();
   });
 
-  it('uses melee against the engaged flank without turning or harming an outsider', () => {
-    const { bot, fight, captain, bystander, heroId } = scenario({ flank: true });
-    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(bystander.id);
-    expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(captain.id);
-    const action = bot.chooseCombatAction(heroId);
-    expect(action).toEqual({ type: 'attack', memberId: heroId, mode: 'melee' });
+  it('attacks an adjacent melee enemy without moving the group or rotating after contact', () => {
+    const { bot, placed, meleeFoe } = scenario();
+    const started = chroniclesStartInitiativeCombat(placed, [meleeFoe], { random: () => 0 });
+    expect(started.phase).toBe('combat');
+    expect(started.direction).toBe(0);
+    const index = started.initiative.order.findIndex((actor) => actor.kind === 'party');
+    const fight = { ...started, initiative: { ...started.initiative, cursor: index } };
+    bot.state = fight;
+    expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(meleeFoe.id);
+    const action = bot.chooseCombatAction(fight.initiative.order[index].id);
+    expect(action).toMatchObject({ type: 'attack', mode: 'melee' });
     const struck = chroniclesReduce(fight, action);
-    expect(struck.turns).toBe(fight.turns + 1);
-    expect(struck.direction).toBe(0);
-    expect(struck[bystander.hpKey]).toBe(fight[bystander.hpKey]);
+    expect([struck.x, struck.y, struck.direction]).toEqual([10, 3, 0]);
   });
-  it('completes the full rear-scout encounter without turning or attacking a bystander', () => {
-    const { bot, fight, archer, bystander } = scenario();
-    const outsiderHp = fight[bystander.hpKey];
+
+  it('finishes the real melee encounter without a single translation or turn', () => {
+    const { bot, placed, archer, meleeFoe } = scenario();
+    const outsiderHp = placed[archer.hpKey];
+    const started = chroniclesStartInitiativeCombat(placed, [meleeFoe], { random: () => 0 });
+    bot.state = started;
     const actions = [];
     const act = bot.act.bind(bot);
     bot.act = (action) => {
-      actions.push(typeof action === 'string' ? action : action.type);
+      const type = typeof action === 'string' ? action : action?.type;
+      actions.push(type);
       const next = act(action);
-      // No action, including an enemy response, can rotate the MM3 camera.
-      expect(next.direction).toBe(fight.direction);
+      expect([next.x, next.y, next.direction]).toEqual([10, 3, 0]);
       return next;
     };
-
-    // Exercise actual initiative advancement, ranged enemy AI and damage
-    // against the authored archer, not only one permitted backstep.
     const random = vi.spyOn(Math, 'random').mockImplementation(seededRandom(1173));
-    try {
-      bot.fight();
-    } finally {
-      random.mockRestore();
-    }
-
-    expect(actions).toContain('backward');
-    expect(actions).toContain('attack');
-    expect(actions).not.toContain('turn-left');
-    expect(actions).not.toContain('turn-right');
+    try { bot.fight(); } finally { random.mockRestore(); }
     expect(bot.state.phase).not.toBe('defeated');
     expect(bot.state.initiative).toBeNull();
-    expect(Number(bot.state[archer.hpKey])).toBeLessThanOrEqual(0);
-    expect(bot.state[bystander.hpKey]).toBe(outsiderHp);
-    expect(bot.fights.at(-1).partyTurns).toBeLessThan(50);
+    expect(actions).toContain('attack');
+    expect(actions).not.toContain('backward');
+    expect(actions).not.toContain('forward');
+    expect(actions).not.toContain('turn-right');
+    expect(bot.state[archer.hpKey]).toBe(outsiderHp);
   });
-
 });
