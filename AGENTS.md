@@ -95,15 +95,17 @@
   ningún movimiento táctico puede modificar el estado guardado de MM3.
 - **Controles de teclado vigentes**: en exploración, flechas ↑/↓
   avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
-  Durante iniciativa MM3, **no se puede girar ni reorientar la cámara**:
-  ←/→ están bloqueadas sin coste incluso en el turno propio. El héroe activo
-  puede avanzar, retroceder o desplazarse lateralmente (Q/E) una casilla
-  gastando su acción completa, acercándose también a tiradores traseros
-  sin girarse. Nunca moverse durante turno enemigo ni tras gastar la acción.
-  Un choque contra pared/enemigo se rechaza sin coste; no se activan
-  interacciones ni transiciones de mapa en combate. Un enemigo comprometido
-  adyacente detrás sigue siendo atacable con A. Al vencer y guardar se
-  conserva la dirección original, sin giro manual ni automático.
+  Durante iniciativa MM3 el grupo y la cámara **no pueden moverse ni
+  girar**, tampoco en el turno propio: ↑/↓/←/→/Q/E están bloqueados
+  sin coste. Los enemigos persiguen durante exploración, pero la
+  iniciativa solo empieza y sigue activa si al menos un enemigo vivo
+  puede atacar directamente a la compañía desde su posición actual
+  (cuerpo a cuerpo o a distancia, con alcance y línea de visión reales).
+  Ni la detección, ni las alertas de escuadra, ni atacar desde fuera del
+  alcance enemigo pueden iniciar una iniciativa inmóvil.
+  Un enemigo comprometido adyacente detrás sigue siendo atacable con A.
+  Al vencer, salir de iniciativa o guardar se conserva la dirección
+  original. Tactics conserva sus reglas independientes.
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
