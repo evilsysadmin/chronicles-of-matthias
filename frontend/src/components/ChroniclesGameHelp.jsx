@@ -56,6 +56,10 @@ export default function ChroniclesGameHelp({ onBack }) {
           compañero en pie. El descanso puede interrumpirse por enemigos vivos
           cercanos; algunos héroes comenzarán la emboscada dormidos y perderán
           su primera acción. En una noche tranquila recuperas PV y PH.</p>
+        <p>Fuera del contacto cuerpo a cuerpo, los arqueros enemigos
+          pueden disparar durante la exploración. Puedes moverte, girar
+          y responder con S: disparar desde lejos no inicia automáticamente
+          un combate por turnos.</p>
         <p>Durante la iniciativa no se puede girar ni reorientar la cámara.
           El héroe activo puede avanzar, retroceder o moverse lateralmente
           una casilla con ↑/↓/Q/E: consume su acción completa. Para acercarte
