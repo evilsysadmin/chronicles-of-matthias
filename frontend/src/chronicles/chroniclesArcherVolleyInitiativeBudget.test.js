@@ -7,7 +7,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
-import { chroniclesRunPendingEnemyTurn } from './chroniclesEnemyInitiativeTurn.js';
+import { chroniclesAdvanceExplorationEnemies } from './chroniclesGridExplorationStep.js';
 import { chroniclesPrecontactMeleeContact, chroniclesAdvanceOpeningVolley } from './chroniclesPrecontactVolley.js';
 
 const ARCHER = 'banner-road-east-scout';
@@ -36,9 +36,8 @@ function armedLane(x) {
 }
 
 describe('MM3 B1 · opening volley against a real ranged enemy', () => {
-  it('charges one volley, starts initiative, then allows exactly one crossbow response', () => {
+  it('charges one volley, stays mobile and gives the crossbowman exactly one exploration response', () => {
     const { state, archer } = armedLane(10);
-    expect(chroniclesTileAt(10, 4, state)).toBe('.');
     expect(chroniclesPrecontactMeleeContact(state)).toBe(false);
     const opening = chroniclesOpeningVolleyShots(state);
     expect(opening.target?.id).toBe(ARCHER);
@@ -47,32 +46,21 @@ describe('MM3 B1 · opening volley against a real ranged enemy', () => {
     const fired = chroniclesReduce(state, 'volley');
     expect(fired.turns).toBe(state.turns + 1);
     expect(fired[archer.hpKey]).toBeGreaterThan(0);
-    const engaged = chroniclesAdvanceOpeningVolley(state, fired);
-    expect(engaged.phase).toBe('combat');
-    expect(engaged.turns).toBe(fired.turns);
-    expect(engaged.party.map(({ hp }) => hp)).toEqual(state.party.map(({ hp }) => hp));
-    expect(engaged.enemyTurnEvents || []).toEqual([]);
-    expect(chroniclesRuntimeEnemyPosition(engaged, archer)).toEqual({ x: 10, y: 5 });
+    const afterVolley = chroniclesAdvanceOpeningVolley(state, fired);
+    expect(afterVolley.phase).toBe('explore');
+    expect(afterVolley.initiative).toBeFalsy();
+    expect(afterVolley.enemyTurnEvents || []).toEqual([]);
 
-    const enemyCursor = engaged.initiative.order.findIndex(
-      ({ kind, id }) => kind === 'enemy' && id === ARCHER,
-    );
-    expect(enemyCursor).toBeGreaterThanOrEqual(0);
-    const enemyTurn = {
-      ...engaged,
-      initiative: { ...engaged.initiative, cursor: enemyCursor },
-    };
-    expect(chroniclesEnemyAttackTarget(enemyTurn, archer)).toBeTruthy();
-    const resolved = chroniclesRunPendingEnemyTurn(enemyTurn, ARCHER);
-    expect(resolved?.error).toBeNull();
-    expect(resolved.acted.enemyTurnEvents.map(({ type }) => type)).toEqual(['attack']);
-    expect(resolved.committed.turns).toBe(fired.turns);
-    expect(chroniclesRuntimeEnemyPosition(resolved.committed, archer)).toEqual({ x: 10, y: 5 });
-
-    // A delayed browser callback for the spent slot cannot fire a second bolt.
-    expect(chroniclesRunPendingEnemyTurn(
-      resolved.committed, ARCHER, undefined, enemyTurn.initiative,
-    )).toBeNull();
+    const reply = chroniclesAdvanceExplorationEnemies(state, afterVolley);
+    expect(reply.phase).toBe('explore');
+    expect(reply.initiative).toBeFalsy();
+    expect(reply.turns).toBe(fired.turns);
+    expect(reply.enemyTurnEvents.map(({ type }) => type)).toEqual(['attack']);
+    expect(chroniclesEnemyAttackTarget(reply, archer)).toBeTruthy();
+    expect(chroniclesRuntimeEnemyPosition(reply, archer)).toEqual({ x: 10, y: 5 });
+    expect(chroniclesAdvanceExplorationEnemies(reply, reply)).toBe(reply);
+    // The party can still turn or move despite the incoming ranged attack.
+    expect(chroniclesReduce(reply, 'turn-right').direction).not.toBe(reply.direction);
   });
 
   it('does not provoke phantom initiative or retaliation through authored masonry', () => {
