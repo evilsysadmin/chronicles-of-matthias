@@ -276,45 +276,6 @@ export class ChroniclesCampaignBot {
     if (this.hurt(0.35)) this.needsRest = true;
   }
 
-  // The balance player must obey the same fixed-facing MM3 movement contract
-  // as a human: approach an ENGAGED foe using one legal forward/back/strafe
-  // action per hero turn. Search neighboring attack squares rather than the
-  // occupied enemy tile, and reject actual collisions via the real reducer.
-  combatApproachAction() {
-    if (this.state.combatRules !== 'mm3' || !this.state.initiative) return null;
-    const engagedIds = new Set(this.state.initiative.order
-      .filter(actor => actor?.kind === 'enemy').map(actor => actor.id));
-    const exits = this.exitCells(chroniclesMapById(this.state.mapId));
-    const plans = [];
-    for (const enemy of this.aliveEnemies()) {
-      if (!engagedIds.has(enemy.id)) continue;
-      const position = chroniclesRuntimeEnemyPosition(this.state, enemy);
-      for (const [dx, dy] of STEP) {
-        const x = position.x + dx;
-        const y = position.y + dy;
-        if (exits.has(`${x},${y}`) || !this.walkable(x, y, this.state.mapId)) continue;
-        const path = this.path({ x, y });
-        if (path?.length) plans.push({ enemyId: enemy.id, path });
-      }
-    }
-    plans.sort((a, b) => a.path.length - b.path.length
-      || a.enemyId.localeCompare(b.enemyId));
-    const relative = ['forward', 'strafe-right', 'backward', 'strafe-left'];
-    for (const { path } of plans) {
-      const [x, y] = path[0];
-      const absolute = STEP.findIndex(([dx, dy]) =>
-        this.state.x + dx === x && this.state.y + dy === y);
-      if (absolute < 0) continue;
-      const action = relative[(absolute - this.state.direction + 4) % 4];
-      const checked = chroniclesReduce(this.state, action);
-      if (checked !== this.state
-        && checked.x === x && checked.y === y
-        && checked.direction === this.state.direction
-        && checked.turns === this.state.turns + 1) return action;
-    }
-    return null;
-  }
-
   chooseCombatAction(memberId) {
     const member = this.state.party.find((candidate) => candidate.id === memberId);
     const sp = chroniclesMemberSp(this.state, member);
@@ -387,12 +348,10 @@ export class ChroniclesCampaignBot {
     if (attackSpell && !validAttack) return cast(attackSpell);
     if (validAttack) return { type: 'attack', memberId };
     if (attackSpell) return cast(attackSpell);
-    // When a shooter stands behind the party or another foe obstructs the
-    // forward ray, blocking forever is NOT a combat strategy. A legal
-    // single-square step toward an engaged opponent costs the full action.
-    // Use BLOCK only if no accessible adjacent attack square can be reached.
+    // MM3 initiative only exists at melee contact, and the company must
+    // stay immobile. Never pathfind or spend a turn on a translation here.
     if (this.state.initiative && this.state.combatRules === 'mm3') {
-      return this.combatApproachAction() || { type: 'block', memberId };
+      return { type: 'block', memberId };
     }
     // Outside combat the bot may still navigate and turn toward foes.
     const target = this.nearestEnemy({ reachable: true });
