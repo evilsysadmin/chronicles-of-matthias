@@ -2622,7 +2622,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                     : touchWillShoot ? 'Disparar con el personaje activo (S)' : 'Atacar cuerpo a cuerpo (A)'}
                   title={touchAttackDisabled ? touchAttackReason
                     : state.initiative && state.combatRules === 'mm3'
-                      ? 'Combate · sin giros · ↑/↓/Q/E: 1 acción · A atacar · S disparar · B bloquear'
+                      ? 'Combate cuerpo a cuerpo · inmóvil · A atacar · S disparar · B bloquear'
                       : 'Flechas · mover/girar · Q/E · desplazarse lateralmente · A · atacar en combate · S · disparar'}
                 >{touchWillShoot ? '➶' : '⚔'}<small>{touchAttackDisabled
                     ? activeInitiativeActor?.kind === 'enemy' ? 'ESPERA' : 'SIN ALCANCE'
@@ -2684,7 +2684,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
               <div className="chronicles-keyboard-help">
                 {state.initiative && state.combatRules === 'mm3'
-                  ? <span data-chronicles-combat-movement-hint>COMBATE · sin giros · ↑/↓/Q/E mover: 1 acción</span>
+                  ? <span data-chronicles-combat-movement-hint>COMBATE · sin desplazamientos ni giros</span>
                   : <>
                     <span><kbd>↑</kbd> avanzar</span>
                     <span><kbd>↓</kbd> retroceder</span>
