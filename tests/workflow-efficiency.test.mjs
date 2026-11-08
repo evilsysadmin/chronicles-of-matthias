@@ -52,8 +52,11 @@ test('protected checks and exact-SHA admission prerequisites are intact', () => 
 
 test('green main does not upload screenshots while PRs and failed main retain evidence', () => {
   const keepEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && (github.event_name == 'pull_request' || failure()) }}";
+  const manualEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}";
+  assert.match(frontend, /  workflow_dispatch:/);
+  assert.ok(frontend.includes(manualEvidence), 'Manual visual audits must retain PNGs');
+  assert.ok(api.includes(keepEvidence), 'API evidence retention must stay unchanged');
   for (const workflow of [frontend, api]) {
-    assert.ok(workflow.includes(keepEvidence));
     assert.match(workflow, /compression-level: 0/);
     assert.match(workflow, /retention-days: 7/);
   }
