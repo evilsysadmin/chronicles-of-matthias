@@ -8,6 +8,7 @@ import {
   chroniclesActiveEnemies,
   chroniclesEnemyPosition,
   chroniclesEnemyTargetAhead, chroniclesCombatMeleeTarget,
+  chroniclesCombatMissileTarget,
   chroniclesPartyArmorClass,
   chroniclesPartyAttackStats,
   chroniclesReduce,
@@ -275,6 +276,45 @@ export class ChroniclesCampaignBot {
     if (this.hurt(0.35)) this.needsRest = true;
   }
 
+  // The balance player must obey the same fixed-facing MM3 movement contract
+  // as a human: approach an ENGAGED foe using one legal forward/back/strafe
+  // action per hero turn. Search neighboring attack squares rather than the
+  // occupied enemy tile, and reject actual collisions via the real reducer.
+  combatApproachAction() {
+    if (this.state.combatRules !== 'mm3' || !this.state.initiative) return null;
+    const engagedIds = new Set(this.state.initiative.order
+      .filter(actor => actor?.kind === 'enemy').map(actor => actor.id));
+    const exits = this.exitCells(chroniclesMapById(this.state.mapId));
+    const plans = [];
+    for (const enemy of this.aliveEnemies()) {
+      if (!engagedIds.has(enemy.id)) continue;
+      const position = chroniclesRuntimeEnemyPosition(this.state, enemy);
+      for (const [dx, dy] of STEP) {
+        const x = position.x + dx;
+        const y = position.y + dy;
+        if (exits.has(`${x},${y}`) || !this.walkable(x, y, this.state.mapId)) continue;
+        const path = this.path({ x, y });
+        if (path?.length) plans.push({ enemyId: enemy.id, path });
+      }
+    }
+    plans.sort((a, b) => a.path.length - b.path.length
+      || a.enemyId.localeCompare(b.enemyId));
+    const relative = ['forward', 'strafe-right', 'backward', 'strafe-left'];
+    for (const { path } of plans) {
+      const [x, y] = path[0];
+      const absolute = STEP.findIndex(([dx, dy]) =>
+        this.state.x + dx === x && this.state.y + dy === y);
+      if (absolute < 0) continue;
+      const action = relative[(absolute - this.state.direction + 4) % 4];
+      const checked = chroniclesReduce(this.state, action);
+      if (checked !== this.state
+        && checked.x === x && checked.y === y
+        && checked.direction === this.state.direction
+        && checked.turns === this.state.turns + 1) return action;
+    }
+    return null;
+  }
+
   chooseCombatAction(memberId) {
     const member = this.state.party.find((candidate) => candidate.id === memberId);
     const sp = chroniclesMemberSp(this.state, member);
@@ -296,11 +336,21 @@ export class ChroniclesCampaignBot {
       .filter((id) => chroniclesMemberKnowsSpell(this.state, member, id))
       .map((id) => CHRONICLES_SPELLS[id].cost)[0] || 0;
     const affordable = (id) => knows(id) && sp - CHRONICLES_SPELLS[id].cost >= healReserve;
-    const foes = chroniclesActiveEnemies(this.state);
+    const engagedIds = new Set((this.state.initiative?.order || [])
+      .filter(actor => actor?.kind === 'enemy').map(actor => actor.id));
+    const foes = chroniclesActiveEnemies(this.state).filter(enemy =>
+      !this.state.initiative || engagedIds.has(enemy.id));
+    // Spells use the real FRONT ray, so only count a target which is actually
+    // in this encounter. A bystander ahead cannot steal a combat action.
+    const forwardTarget = reach => {
+      const target = chroniclesEnemyTargetAhead(this.state, reach);
+      return !this.state.initiative || (target && engagedIds.has(target.enemy.id))
+        ? target : null;
+    };
     // Open a hard fight with the ward: several foes, or a boss-grade one.
     if (this.state.initiative && !this.state.combatWard && affordable('faith-ward')
       && (foes.length >= 3 || foes.some((enemy) => enemy.maxHp >= 30))) return cast('faith-ward');
-    const ahead = chroniclesEnemyTargetAhead(this.state, 3);
+    const ahead = forwardTarget(3);
     // Hold the toughest thing in front of us still while the rest hit it.
     if (ahead && ahead.enemy.maxHp >= 30 && !this.state.enemyStatus?.[ahead.enemy.id]?.paralyzed
       && affordable('paralyze')) return cast('paralyze');
@@ -330,19 +380,23 @@ export class ChroniclesCampaignBot {
     }
     const reach = chroniclesPartyAttackStats(this.state, memberId).reach;
     const attackSpell = ATTACK_SPELLS
-      .find((id) => affordable(id) && chroniclesEnemyTargetAhead(this.state, CHRONICLES_SPELLS[id].reach));
-    if (attackSpell && !chroniclesEnemyTargetAhead(this.state, reach)) return cast(attackSpell);
-    if (chroniclesEnemyTargetAhead(this.state, reach)) return { type: 'attack', memberId };
+      .find((id) => affordable(id) && forwardTarget(CHRONICLES_SPELLS[id].reach));
+    const validAttack = this.state.initiative && this.state.combatRules === 'mm3'
+      ? chroniclesCombatMissileTarget(this.state, reach)
+      : chroniclesEnemyTargetAhead(this.state, reach);
+    if (attackSpell && !validAttack) return cast(attackSpell);
+    if (validAttack) return { type: 'attack', memberId };
     if (attackSpell) return cast(attackSpell);
-    // MM3 initiative owns the camera orientation. Waiting via a real BLOCK
-    // allows enemies to close without illegal free rotation or phantom turns.
+    // When a shooter stands behind the party or another foe obstructs the
+    // forward ray, blocking forever is NOT a combat strategy. A legal
+    // single-square step toward an engaged opponent costs the full action.
+    // Use BLOCK only if no accessible adjacent attack square can be reached.
     if (this.state.initiative && this.state.combatRules === 'mm3') {
-      return { type: 'block', memberId };
+      return this.combatApproachAction() || { type: 'block', memberId };
     }
     // Outside combat the bot may still navigate and turn toward foes.
     const target = this.nearestEnemy({ reachable: true });
-    // In MM3 initiative the group cannot move. A legal BLOCK passes the
-    // active hero's turn so engaged enemies can approach through real paths.
+    // Outside MM3 initiative, old navigation rules remain unchanged.
     // Never spin on a rejected forward step or a retreat in the simulator.
     const holdPosition = () => ({ type: 'block', memberId });
     if (!target) return this.state.initiative && this.state.combatRules === 'mm3'
