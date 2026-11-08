@@ -6,8 +6,7 @@ import {
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
 import { CHRONICLES_DIRECTION_KEYS } from './chroniclesKeyboardBindings.js';
-import { chroniclesChooseEnemyStep, chroniclesResolveEnemyActor } from '../chroniclesOfMatthiasTurns.js';
-import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
+import { chroniclesStartInitiativeCombat, chroniclesAdvanceCombatInitiative } from './chroniclesInitiative.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 const MOVES = ['forward', 'backward', 'strafe-left', 'strafe-right'];
@@ -26,7 +25,14 @@ const encounter = (actor = 'party') => ({
   },
 });
 
-describe('Chronicles MM3 translation consumes initiative without rotation', () => {
+describe('Chronicles MM3 forbids all movement after melee contact', () => {
+  it.each([...MOVES, ...ROTATIONS])('rejects %s on an UNSPENT hero turn without cost', (action) => {
+    const state = encounter();
+    expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(true);
+    expect(chroniclesReduce(state, action)).toBe(state);
+    expect(chroniclesReduce(state, { type: action })).toBe(state);
+    expect(chroniclesReduce(state, { type: action, deferAreaTransition: true })).toBe(state);
+  });
   it.each(MOVES)('rejects %s on an enemy turn without moving or spending a turn', (action) => {
     const state = encounter('enemy');
     expect(chroniclesCombatPartyStepBlocked(state, action)).toBe(true);
@@ -82,7 +88,7 @@ describe('Chronicles MM3 translation consumes initiative without rotation', () =
     }
   });
 
-  it('keeps an alerted sewer goblin chasing beyond detection range, so stationary combat can finish', () => {
+  it('restores exploration if an old checkpoint retained only a distant melee creature', () => {
     const base = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
     const enemy = chroniclesActiveEnemies(base).find((entry) => entry.id === 'sewers-goblin-bottom-shaft');
     expect(enemy).toBeTruthy();
@@ -97,16 +103,11 @@ describe('Chronicles MM3 translation consumes initiative without rotation', () =
         order: [{ id: 'matthias', kind: 'party' }, { id: enemy.id, kind: 'enemy' }],
       },
     };
-    // This goblin only detects within three cells. It was recruited to its
-    // squad's existing fight, so moving one legal cardinal square toward the
-    // party is required even when it currently stands four tiles away.
-    expect(chroniclesChooseEnemyStep(combat, enemy)).toEqual({ x: 4, y: 5 });
-    const acted = chroniclesResolveEnemyActor(combat, enemy.id);
-    expect(acted.enemyPositions[enemy.id]).toEqual({ x: 4, y: 5 });
-    expect(acted.enemyTurnEvents).toMatchObject([
-      { type: 'move', enemyId: enemy.id },
-    ]);
-    expect([acted.x, acted.y]).toEqual([1, 5]);
+    const ended = chroniclesAdvanceCombatInitiative(combat, chroniclesActiveEnemies(combat));
+    expect(ended.initiative).toBeNull();
+    expect(ended.phase).toBe('explore');
+    expect([ended.x, ended.y, ended.direction]).toEqual([1, 5, 1]);
+    expect(chroniclesReduce(ended, 'turn-left').direction).not.toBe(ended.direction);
   });
 
   it('preserves initiative action permissions after restoring a real MM3 checkpoint', () => {
@@ -130,13 +131,12 @@ describe('Chronicles MM3 translation consumes initiative without rotation', () =
     expect(resumed.phase).toBe('combat');
     expect(resumed.initiative).toEqual(fight.initiative);
     expect([resumed.x, resumed.y, resumed.direction]).toEqual([1, 1, 2]);
-    const actor = resumed.initiative.order[resumed.initiative.cursor];
-    const permitted = actor.kind === 'party' && actor.asleep !== true;
     expect(chroniclesCombatPartyStepBlocked(resumed, 'turn-left')).toBe(true);
     expect(chroniclesCombatPartyStepBlocked(resumed, 'turn-right')).toBe(true);
     expect(chroniclesReduce(resumed, 'turn-left')).toBe(resumed);
     expect(chroniclesReduce(resumed, { type: 'turn-right' })).toBe(resumed);
-    expect(chroniclesCombatPartyStepBlocked(resumed, 'backward')).toBe(!permitted);
+    expect(chroniclesCombatPartyStepBlocked(resumed, 'backward')).toBe(true);
+    expect(chroniclesReduce(resumed, 'backward')).toBe(resumed);
   });
 
   it('does not lock out non-travel combat actions', () => {
