@@ -95,17 +95,19 @@
   ningún movimiento táctico puede modificar el estado guardado de MM3.
 - **Controles de teclado vigentes**: en exploración, flechas ↑/↓
   avanzan/retroceden, ←/→ giran y **Q/E** hacen strafe lateral sin girar.
-  Durante iniciativa MM3 el grupo y la cámara **no pueden moverse ni
-  girar**, tampoco en el turno propio: ↑/↓/←/→/Q/E están bloqueados
-  sin coste. Los enemigos persiguen durante exploración, pero la
-  iniciativa solo empieza y sigue activa si al menos un enemigo vivo
-  puede atacar directamente a la compañía desde su posición actual
-  (cuerpo a cuerpo o a distancia, con alcance y línea de visión reales).
-  Ni la detección, ni las alertas de escuadra, ni atacar desde fuera del
-  alcance enemigo pueden iniciar una iniciativa inmóvil.
-  Un enemigo comprometido adyacente detrás sigue siendo atacable con A.
-  Al vencer, salir de iniciativa o guardar se conserva la dirección
-  original. Tactics conserva sus reglas independientes.
+  La iniciativa MM3 **solo empieza por contacto cuerpo a cuerpo** con
+  un atacante real (alcance adyacente); no por detectar o disparar a un
+  enemigo a distancia, ni por grupos o un ataque forzado fuera de CC.
+  En exploración, arqueros y ballesteros pueden disparar usando sus
+  tiradas reales sin bloquear el movimiento ni los disparos de respuesta.
+  Cuando un enemigo entra en CC la cámara **encara automáticamente al
+  atacante una sola vez**. Desde entonces grupo y cámara permanecen
+  inmóviles: ↑/↓/←/→/Q/E bloqueados sin coste. Si deja de haber amenaza
+  cuerpo a cuerpo la iniciativa termina y vuelve la exploración.
+  Los enemigos comprometidos adyacentes siguen siendo atacables con A;
+  fuera de iniciativa, S permite el intercambio de proyectiles.
+  Victoria, F5 y guardado conservan el rumbo canónico, sin giros
+  automáticos durante iniciativa. Tactics sigue independiente.
   en el menú de aventura **Q** abre la confirmación de salida sin guardar;
   **A** ataca cuerpo a cuerpo **solo durante iniciativa de combate** (en
   exploración es inerte); **S** dispara con el grupo fuera del combate y
@@ -212,7 +214,7 @@
   Objetivo visual: **retro-premium**, lectura clara y elegante para arco,
   virote y piedra; estela discreta, vuelo natural y gasto GPU moderado.
   Preferir una mejora visual pequeña y validable a efectos exagerados.
-- **Movimiento MM3 durante iniciativa:** **prohibidos todos los giros manuales y rotaciones automáticas de cámara**. Bloquear `turn-left`/`turn-right` sin coste en teclado, táctil y reductor, incluso con acción disponible. El héroe activo solo puede desplazar al grupo **una casilla** mediante ↑/↓/Q/E gastando su acción, manteniendo la orientación; retroceder permite aproximarse a un tirador trasero y atacarlo con A cuando quede adyacente. Los disparos y conjuros exigen línea frontal y paredes reales. Rechazar movimiento en turno enemigo, sueño o acción gastada; respetar paredes, enemigos y mapa sin interacciones, botín ni transiciones. Un choque no consume acción. Victoria, F5 y save conservan el rumbo canónico. No alterar Tactics.
+- **Movimiento MM3 durante iniciativa:** al **entrar por CC**, autoencarar al enemigo atacante UNA sola vez; después no se desplaza ni gira el grupo hasta terminar iniciativa. Flechas/Q/E bloqueadas sin coste en UI y reducer, sin excepciones para el turno propio. Arqueros fuera de CC atacan durante exploración; se puede mover, girar y contraatacar con S. La detección o una salva lejana no inician combate por turnos. Sin amenaza CC restante, salir de iniciativa y permitir movimiento. No alterar Tactics.
 - Defensa MM3: durante iniciativa **B** es BLOCK del héroe activo (+4 CA, consume una acción completa y expira cuando el héroe vuelve a tener turno). No se acumula; sin combate o durante turno enemigo es inerte. El HUD debe ofrecerlo también en táctil.
 - Inventario MM3, solo en Equipo: **E** equipa la pieza seleccionada, **U** desequipa la pieza puesta, **T** inicia entrega con destinatario 1–4/retrato, **I** inspecciona atributos, **D** pide confirmación explícita para desechar una unidad suelta. Nunca borrar oro ni objetos marcados de misión, ni consumir letras desde formularios, otras pestañas o durante la confirmación.
 - Equipo MM3: arma de mano **A**, proyectiles **S**, armadura y escudo;
