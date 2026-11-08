@@ -27,7 +27,7 @@ function rangedCompany() {
 }
 
 describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
-  it('starts initiative immediately after attacking a visible foe, even on a miss', () => {
+  it('keeps exploration active after a legal long-range salvo, hit or miss', () => {
     const base = rangedCompany();
     const target = chroniclesEnemyTargetAhead(base, 3);
     expect(target).toBeTruthy();
@@ -38,22 +38,21 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
     expect(after.turns).toBe(base.turns + 1);
     expect(after.round).toBe(Number(base.round || 0) + 1);
     expect(after.message).toMatch(/Salva de/);
-    const alive = Number(result[target.enemy.hpKey] || 0) > 0;
-    expect(Boolean(after.initiative), 'surviving targets must enter combat').toBe(alive);
-    if (alive) expect(after.initiative.order.some((actor) => actor.id === target.enemy.id)).toBe(true);
+    expect(after.initiative).toBeFalsy();
+    expect(after.phase).toBe('explore');
+    expect(after.direction).toBe(base.direction);
     expect(after.party.some((hero) => hero.hp < 0)).toBe(false);
   });
 
-  it('rolls initiative only once for a whole volley, with no extra enemy reply before combat', () => {
+  it('does not grant an unscheduled free enemy reply inside the volley helper', () => {
     const base = rangedCompany();
     const target = chroniclesEnemyTargetAhead(base, 3);
     expect(target).toBeTruthy();
     const fired = chroniclesReduce(base, 'volley');
     const next = chroniclesAdvanceOpeningVolley(base, fired);
-    const alive = Number(fired[target.enemy.hpKey] || 0) > 0;
-    expect(Boolean(next.initiative)).toBe(alive);
+    expect(next.initiative).toBeFalsy();
+    expect(next.phase).toBe('explore');
     expect((next.enemyTurnEvents || []).filter((event) => event.type === 'attack')).toHaveLength(0);
-    if (alive) expect(next.initiative.order.filter((actor) => actor.id === target.enemy.id)).toHaveLength(1);
   });
 
   it('shoots beyond the former range-three bow limit wherever the corridor is visible', () => {
@@ -73,16 +72,13 @@ describe('Chronicles · pre-contact MM3 ranged exchanges (#134)', () => {
     const fired = chroniclesReduce(far, { type: 'volley' });
     expect(fired[target.enemy.hpKey]).toBe(shot.remainingHp);
     const engaged = chroniclesAdvanceOpeningVolley(far, fired);
-    expect(engaged.initiative?.order.some((actor) => actor.id === target.enemy.id)).toBe(true);
-    expect(engaged.message).toMatch(/comienza el combate/i);
+    expect(engaged.initiative).toBeFalsy();
+    expect(engaged.phase).toBe('explore');
     expect(engaged.message).not.toMatch(/fuera de alcance/i);
     expect(engaged.turns).toBe(far.turns + 1);
-    const act = { ...engaged, initiative: { order: [
-      { kind: 'party', id: 'matthias' }, { kind: 'enemy', id: target.enemy.id },
-    ], cursor: 0, round: 1 } };
-    const singleShot = chroniclesReduce(act, { type: 'attack', memberId: 'matthias', mode: 'missile' });
-    expect(singleShot.turns).toBe(act.turns + 1);
-    expect(singleShot.message).not.toMatch(/no hay enemigo en su línea/i);
+    const secondShot = chroniclesReduce(engaged, { type: 'volley' });
+    expect(secondShot.turns).toBe(engaged.turns + 1);
+    expect(secondShot.initiative).toBeFalsy();
   });
 
   it('does not shoot through dungeon walls despite unrestricted missile range', () => {

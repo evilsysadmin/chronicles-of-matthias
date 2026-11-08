@@ -970,7 +970,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
           exploratoryNext,
           chroniclesActiveEnemies(exploratoryNext),
           {
-            forceEnemyIds: forcedTarget && Number(exploratoryNext[forcedTarget.enemy.hpKey] || 0) > 0 ? [forcedTarget.enemy.id] : [],
+            forceEnemyIds: exploratoryNext.combatRules !== 'mm3'
+              && forcedTarget && Number(exploratoryNext[forcedTarget.enemy.hpKey] || 0) > 0
+              ? [forcedTarget.enemy.id] : [],
           },
         );
       next = started !== exploratoryNext

@@ -1,21 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  chroniclesActiveEnemies,
-  chroniclesOpeningVolleyShots,
-  chroniclesReduce,
-  createChroniclesState,
-} from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesOpeningVolleyShots, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesRunPendingEnemyTurn } from './chroniclesEnemyInitiativeTurn.js';
 import {
-  chroniclesAdvanceCombatInitiative,
-  chroniclesCurrentInitiativeActor,
+  chroniclesAdvanceCombatInitiative, chroniclesCurrentInitiativeActor, chroniclesStartInitiativeCombat,
 } from './chroniclesInitiative.js';
+import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 import { chroniclesAdvanceOpeningVolley } from './chroniclesPrecontactVolley.js';
-import {
-  chroniclesApplyRunCheckpoint,
-  chroniclesRunCheckpointPayload,
-} from './chroniclesRunCheckpoint.js';
+import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
 const GOBLIN = 'sewers-goblin-west';
 const MAP = 'swordhaven-sewers';
@@ -30,64 +22,44 @@ function nextGoblinSlot(state) {
   throw new Error('Goblin never received its next initiative slot');
 }
 
-describe('MM3 B1 · checkpoint at melee contact', () => {
-  it('resumes pursuit at contact, attacks once and returns control to a hero', () => {
+describe('MM3 · first melee contact after a ranged volley survives F5', () => {
+  it('moves in exploration, checkpoints contact, then attacks once in initiative', () => {
     const base = createChroniclesState(MAP, null, { rules: 'mm3' });
     const enemies = chroniclesActiveEnemies(base);
     const goblin = enemies.find(({ id }) => id === GOBLIN);
-    expect(goblin).toBeTruthy();
-
     const prepared = {
       ...base,
-      ...Object.fromEntries(enemies.filter(({ id }) => id !== GOBLIN)
-        .map(({ hpKey }) => [hpKey, 0])),
+      ...Object.fromEntries(enemies.filter(({ id }) => id !== GOBLIN).map(({ hpKey }) => [hpKey, 0])),
       [goblin.hpKey]: 100,
       x: 1, y: 1, direction: 2,
       enemyPositions: { [GOBLIN]: { x: 1, y: 4 } },
-      equipment: {
-        matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' },
-      },
+      equipment: { matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' } },
     };
     expect(chroniclesOpeningVolleyShots(prepared).target?.id).toBe(GOBLIN);
-
-    const fired = chroniclesReduce(prepared, 'volley');
-    let combat = chroniclesAdvanceOpeningVolley(prepared, fired);
+    const fired = chroniclesAdvanceOpeningVolley(prepared, chroniclesReduce(prepared, 'volley'));
+    expect(fired.phase).toBe('explore');
+    const pursued = chroniclesAdvanceExplorationEnemies(prepared, fired);
+    expect(chroniclesRuntimeEnemyPosition(pursued, goblin)).toEqual({ x: 1, y: 3 });
+    const contactState = chroniclesGridExplorationStep(pursued, 'turn-right');
+    expect(chroniclesRuntimeEnemyPosition(contactState, goblin)).toEqual({ x: 1, y: 2 });
+    const combat = chroniclesStartInitiativeCombat(contactState, [goblin], { random: () => 0 });
     expect(combat.phase).toBe('combat');
-    expect(fired.turns).toBe(prepared.turns + 1);
+    expect(combat.turns).toBe(contactState.turns);
 
-    for (const y of [3, 2]) {
-      const turn = nextGoblinSlot(combat);
-      const hpBefore = turn.party.map(({ hp }) => hp);
-      const resolved = chroniclesRunPendingEnemyTurn(
-        turn, GOBLIN, undefined, turn.initiative,
-      );
-      expect(resolved?.error).toBeNull();
-      expect(resolved.acted.enemyTurnEvents.map(({ type }) => type)).toEqual(['move']);
-      expect(chroniclesRuntimeEnemyPosition(resolved.committed, goblin)).toEqual({ x: 1, y });
-      expect(resolved.committed.party.map(({ hp }) => hp)).toEqual(hpBefore);
-      expect(resolved.committed.turns).toBe(fired.turns);
-      combat = resolved.committed;
-    }
-
-    // Save at contact, not before the first pursuit step. The next enemy
-    // action must be a single attack, never another move or a double attack.
-    const checkpoint = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(combat, 1)));
+    const payload = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(combat, 1)));
     const restored = chroniclesApplyRunCheckpoint(
-      createChroniclesState(MAP, null, { rules: 'mm3' }), checkpoint,
+      createChroniclesState(MAP, null, { rules: 'mm3' }), payload,
     );
     expect(restored.phase).toBe('combat');
-    expect(restored.turns).toBe(fired.turns);
+    expect(restored.initiative).toBeTruthy();
     expect(chroniclesRuntimeEnemyPosition(restored, goblin)).toEqual({ x: 1, y: 2 });
 
     const turn = nextGoblinSlot(restored);
-    const resolved = chroniclesRunPendingEnemyTurn(
-      turn, GOBLIN, undefined, turn.initiative,
-    );
+    const resolved = chroniclesRunPendingEnemyTurn(turn, GOBLIN, undefined, turn.initiative);
     expect(resolved?.error).toBeNull();
     expect(resolved.acted.enemyTurnEvents.map(({ type }) => type)).toEqual(['attack']);
     expect(chroniclesRuntimeEnemyPosition(resolved.committed, goblin)).toEqual({ x: 1, y: 2 });
-    expect(resolved.committed.turns).toBe(fired.turns);
-    expect(chroniclesCurrentInitiativeActor(resolved.committed.initiative)?.kind).toBe('party');
+    expect(resolved.committed.turns).toBe(combat.turns);
     expect(chroniclesRunPendingEnemyTurn(
       resolved.committed, GOBLIN, undefined, turn.initiative,
     )).toBeNull();

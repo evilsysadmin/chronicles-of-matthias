@@ -198,11 +198,12 @@ export function chroniclesEngagedEnemies(state, enemies) {
     const enemyPosition = chroniclesRuntimeEnemyPosition(state, enemy);
     return manhattanDistance(partyPosition, enemyPosition) <= enemyEngagementRange(enemy)
       && chroniclesEnemyHasSightline(state, enemyPosition, partyPosition)
-      // In first-person MM3, detection starts pursuit in exploration, not
-      // initiative. Only a legal attack from the enemy's CURRENT cell starts
-      // automatic combat; otherwise stationary melee would lock the party
-      // before either side can strike. Player-forced attacks are handled below.
-      && (state.combatRules !== 'mm3' || chroniclesEnemyCanAttackParty(state, enemy, enemyPosition));
+      // MM3 ranged attacks occur during exploration; proximity only starts
+      // normal initiative for an adjacent attacker with melee reach.
+      // Explicit/scripted forced encounters remain a separate contract.
+      && (state.combatRules !== 'mm3'
+        || (chroniclesEnemyAttackReach(enemy) === 1
+          && chroniclesEnemyCanAttackParty(state, enemy, enemyPosition)));
   });
 }
 

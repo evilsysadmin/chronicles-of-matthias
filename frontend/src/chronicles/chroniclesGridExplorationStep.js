@@ -2,6 +2,8 @@ import { chroniclesReduce, chroniclesActiveEnemies } from '../chroniclesOfMatthi
 import {
   chroniclesChooseEnemyStep,
   chroniclesEnemyCanAttackParty,
+  chroniclesEnemyAttackReach,
+  chroniclesResolveEnemyActor,
   chroniclesRememberEnemySight,
   chroniclesRuntimeEnemyPosition,
 } from '../chroniclesOfMatthiasTurns.js';
@@ -19,12 +21,34 @@ export function chroniclesAdvanceExplorationEnemies(before, after) {
     explorationEnemySteps: Math.max(0, Math.floor(Number(after.explorationEnemySteps) || 0)) + 1,
   };
   const enemies = chroniclesActiveEnemies(progressed);
-  // No free exploration attack or movement when combat initiative should
-  // take over; keep the enemy in the cell where the player saw it.
-  if (enemies.some((enemy) => chroniclesEnemyCanAttackParty(progressed, enemy))) return progressed;
+  // MM3 melee contact belongs to initiative: no free swing or retreat.
+  // Other modes retain the previous pre-engagement behavior.
+  if (enemies.some((enemy) => chroniclesEnemyCanAttackParty(progressed, enemy)
+    && (progressed.combatRules !== 'mm3' || chroniclesEnemyAttackReach(enemy) === 1))) return progressed;
 
-  let current = progressed;
+  let current = { ...progressed, enemyTurnEvents: [] };
+  const shots = [];
   for (const enemy of enemies) {
+    if (current.phase !== 'explore') break;
+    // Use the real enemy actor's to-hit, armor and damage mechanics once per
+    // spent exploration turn, without opening initiative or granting a free
+    // move after a shot. Blocked rays never produce shots.
+    if (current.combatRules === 'mm3' && chroniclesEnemyAttackReach(enemy) > 1
+      && chroniclesEnemyCanAttackParty(current, enemy)) {
+      const acted = chroniclesResolveEnemyActor(current, enemy.id);
+      const events = acted.enemyTurnEvents || [];
+      if (events.some((event) => event.type === 'attack')) {
+        shots.push(...events);
+        current = { ...acted, turnPhase: 'party', enemyTurnEvents: [...shots] };
+        continue;
+      }
+      // Paralysis or a legitimate retreat still costs that enemy its turn.
+      if (events.length) {
+        current = { ...acted, turnPhase: 'party', enemyTurnEvents: [...shots, ...events] };
+        shots.push(...events);
+        continue;
+      }
+    }
     current = chroniclesRememberEnemySight(current, enemy);
     const from = chroniclesRuntimeEnemyPosition(current, enemy);
     const to = chroniclesChooseEnemyStep(current, enemy);

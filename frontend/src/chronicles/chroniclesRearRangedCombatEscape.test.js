@@ -23,7 +23,11 @@ function rearArcherFight() {
     enemyPositions: { [ARCHER_ID]: { x: 10, y: 5 } },
   };
   expect(chroniclesTileAt(10, 4, placed)).toBe('.');
-  const fight = chroniclesStartInitiativeCombat(placed, enemies, { random: () => 0 });
+  // Legacy explicitly forced initiative fixture: target/movement guards are
+  // tested independently of the normal MM3 rule (ranged shots stay in explore).
+  const fight = chroniclesStartInitiativeCombat(placed, enemies, {
+    forceEnemyIds: [ARCHER_ID], random: () => 0,
+  });
   expect(fight.phase).toBe('combat');
   const index = fight.initiative.order.findIndex((actor) => actor.kind === 'party');
   expect(index).toBeGreaterThanOrEqual(0);
@@ -77,6 +81,26 @@ function contestedTargetFight({ engageFlank = true } = {}) {
   expect(engagedIds).toEqual(engaged.map(enemy => enemy.id).sort());
   return { fight, archer, flank, bystander };
 }
+
+describe('MM3 ranged exploration does not begin initiative automatically', () => {
+  it('keeps a legal two-tile rear shooter in exploration, so the party can move', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const enemies = chroniclesActiveEnemies(base);
+    const archer = enemies.find((enemy) => enemy.id === ARCHER_ID);
+    const placed = {
+      ...base,
+      ...Object.fromEntries(enemies.filter((enemy) => enemy.id !== ARCHER_ID)
+        .map((enemy) => [enemy.hpKey, 0])),
+      x: 10, y: 3, direction: 2,
+      enemyPositions: { [ARCHER_ID]: { x: 10, y: 5 } },
+    };
+    expect(chroniclesEnemyAttackTarget(placed, archer)).toBeTruthy();
+    expect(chroniclesStartInitiativeCombat(placed, enemies, { random: () => 0 })).toBe(placed);
+    const moved = chroniclesReduce(placed, 'forward');
+    expect([moved.x, moved.y, moved.direction]).toEqual([10, 4, 2]);
+    expect(moved.initiative).toBeFalsy();
+  });
+});
 
 describe('MM3 P0 rear ranged enemy no longer traps an unarmed party', () => {
 

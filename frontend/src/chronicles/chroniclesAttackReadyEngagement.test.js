@@ -53,7 +53,9 @@ describe('MM3 automatic combat needs a legal enemy attack', () => {
 
     const firingLane = { ...state, enemyPositions: { [GOBLIN_ID]: { x: 3, y: 1 } } };
     expect(chroniclesEnemyCanAttackParty(firingLane, shooter)).toBe(true);
-    expect(chroniclesEngagedEnemies(firingLane, [shooter])).toEqual([shooter]);
+    // The archer can fire here, but cannot freeze MM3 exploration.
+    expect(chroniclesEngagedEnemies(firingLane, [shooter])).toEqual([]);
+    expect(chroniclesStartInitiativeCombat(firingLane, [shooter], { random: () => 0 })).toBe(firingLane);
   });
 
   it('preserves a combat explicitly provoked by the party before the foe reaches melee', () => {
