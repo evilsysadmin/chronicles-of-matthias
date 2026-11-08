@@ -959,7 +959,10 @@ export function applyChroniclesTacticsProgression(progression, previous, next, {
   const namespace = `${safeRunId}:${progressionNamespace(previous)}`;
 
   if (actorMemberId && HERO_IDS.includes(actorMemberId)) {
-    map.enemies.forEach((enemy) => {
+    // A region transition clears the former map's runtime enemy HP to zero.
+    // That is cleanup, not combat damage or a mass kill worth experience.
+    // Genuine quest awards, healing and objectives keep their own rules below.
+    if (previous.mapId === next.mapId) map.enemies.forEach((enemy) => {
       const before = enemyHp(previous, enemy);
       const after = enemyHp(next, enemy);
       if (after >= before) return;
