@@ -260,9 +260,15 @@ export function chroniclesCombatMeleeTarget(state) {
 // or outside the ongoing fight.
 export function chroniclesCombatMissileTarget(state, reach) {
   const straight = chroniclesEnemyTargetAhead(state, reach);
-  if (straight || !chroniclesUsesMM3Combat(state) || !state?.initiative || reach < 1) return straight;
-  const engagedIds = new Set(state.initiative.order
-    .filter((actor) => actor.kind === 'enemy').map((actor) => actor.id));
+  if (!chroniclesUsesMM3Combat(state) || !state?.initiative || reach < 1) return straight;
+  const engagedIds = new Set((state.initiative.order || [])
+    .filter((actor) => actor?.kind === 'enemy').map((actor) => actor.id));
+  // A living foe in the forward ray can be OUTSIDE this encounter (for
+  // example after loading an older multi-enemy checkpoint). Do not spend a
+  // hero's action on an unrelated enemy or let it hide a legal adjacent
+  // engaged opponent behind/to the side. It still physically blocks the ray:
+  // never shoot through it to reach a more distant enemy.
+  if (straight && engagedIds.has(straight.enemy.id)) return straight;
   return chroniclesActiveEnemies(state)
     .filter((enemy) => engagedIds.has(enemy.id))
     .map((enemy) => {
@@ -699,7 +705,7 @@ export function chroniclesAttackMode(state, memberId) {
   const melee = chroniclesPartyAttackStats(state, memberId, 'melee');
   if (chroniclesCombatMeleeTarget(state)) return 'melee';
   const missile = chroniclesPartyAttackStats(state, memberId, 'missile');
-  return chroniclesEquippedItem(state, memberId, 'missile') && chroniclesEnemyTargetAhead(state, missile.reach) ? 'missile' : 'melee';
+  return chroniclesEquippedItem(state, memberId, 'missile') && chroniclesCombatMissileTarget(state, missile.reach) ? 'missile' : 'melee';
 }
 
 function resolveAttack(state, memberId, spell = null, requestedMode = 'auto') {
