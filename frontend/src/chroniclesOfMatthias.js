@@ -1212,9 +1212,9 @@ export function chroniclesTrackQuest(state, questId) {
   return { ...state, trackedQuestId: questId, message: `Sigues: ${quest.title}.` };
 }
 
-// During MM3 initiative, facing is fixed. Only a legal translation can
-// consume the active hero's action; reject all manual rotations at source.
-// Tactics retains its independent controls.
+// During MM3 initiative the entire company and camera are immobile:
+// no rotation or translation, even during an unspent hero turn.
+// Enemy pursuit is exploration-only; Tactics retains its own rules.
 const CHRONICLES_PARTY_STEPS = new Set([
   'forward', 'backward', 'strafe-left', 'strafe-right',
   'turn-left', 'turn-right',
@@ -1223,12 +1223,7 @@ const CHRONICLES_PARTY_STEPS = new Set([
 export function chroniclesCombatPartyStepBlocked(state, action) {
   const type = typeof action === 'string' ? action : action?.type;
   if (!state?.initiative || state.combatRules !== 'mm3' || !CHRONICLES_PARTY_STEPS.has(type)) return false;
-  // Even an unspent hero action must not rotate the party or camera.
-  if (type === 'turn-left' || type === 'turn-right') return true;
-  const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
-  return actor?.kind !== 'party' || actor.asleep === true
-    || !state.party?.some((member) => member.id === actor.id && Number(member.hp) > 0)
-    || state.combatActionSpent?.[actor.id] === true || state.combatBlock?.[actor.id] === true;
+  return true;
 }
 
 // One successful attack, spell, item or BLOCK consumes the hero's entire
@@ -1249,8 +1244,7 @@ function chroniclesRecordMM3TurnAction(previous, next) {
 function chroniclesReduceAction(state, action) {
   if (!state || state.phase === 'escaped' || state.phase === 'defeated') return state;
   const actionType = typeof action === 'string' ? action : action?.type;
-  // Enforce in the reducer: no rotation during initiative, and no
-  // translation during enemy turns or after an action was spent.
+  // Enforce stationary MM3 initiative before any movement or turn handling.
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (state.combatRules === 'mm3' && state.initiative && MM3_TURN_ACTIONS.has(actionType)) {
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
@@ -1349,17 +1343,6 @@ function chroniclesReduceAction(state, action) {
   if (!displacement) return state;
   const x = state.x + displacement[0];
   const y = state.y + displacement[1];
-  // Combat repositioning is exactly one grid cell, at the cost of a whole
-  // hero action. Never fire exploration triggers, cross regions or enter NPC
-  // buildings in an initiative round. A failed collision costs no action.
-  if (state.combatRules === 'mm3' && state.initiative) {
-    if (!chroniclesTileAt(x, y, state) || explorationCellBlocker(state, x, y)) return state;
-    const repositioned = chroniclesDeployPartyForCombat({
-      ...state, x, y, partyPositions: {}, turns: state.turns + 1,
-      message: 'La compañía cambia de posición.',
-    });
-    return chroniclesRecordMM3TurnAction(state, repositioned);
-  }
   const blocker = explorationCellBlocker(state, x, y);
   if (blocker && actionType === 'forward') {
     const entered = bumpIntoBuilding(state, { x, y });
