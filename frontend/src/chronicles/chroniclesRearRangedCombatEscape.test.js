@@ -51,8 +51,8 @@ describe('MM3: stationary melee and mobile ranged exploration', () => {
 
   it('lets players move under ranged fire; adjacent archers alone do not force initiative', () => {
     const { state, enemy } = encounter(ARCHER_ID);
-    const moved = chroniclesReduce(state, 'backward');
-    expect([moved.x, moved.y, moved.direction]).toEqual([10, 2, 2]);
+    const moved = chroniclesReduce(state, 'forward');
+    expect([moved.x, moved.y, moved.direction]).toEqual([10, 4, 2]);
     expect(chroniclesStartInitiativeCombat(moved, [enemy], {
       forceEnemyIds: [enemy.id],
     })).toBe(moved);
