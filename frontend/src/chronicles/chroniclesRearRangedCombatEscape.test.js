@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chroniclesActiveEnemies, chroniclesCombatMeleeTarget,
-  chroniclesCombatPartyStepBlocked, chroniclesMM3MeleeAvailable,
+  chroniclesActiveEnemies, chroniclesAttackMode, chroniclesCombatMeleeTarget,
+  chroniclesCombatMissileTarget, chroniclesCombatPartyStepBlocked,
+  chroniclesEnemyTargetAhead, chroniclesMM3MeleeAvailable,
   chroniclesReduce, createChroniclesState, chroniclesTileAt,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEnemyAttackTarget } from '../chroniclesOfMatthiasTurns.js';
@@ -31,7 +32,110 @@ function rearArcherFight() {
   } };
 }
 
+
+
+// Three real, authored enemies: the scout fires from behind, the captain
+// attacks from the flank and a different living deserter stands directly
+// ahead but is NOT in this initiative (e.g. a resumed/forced encounter).
+// The latter must not steal A/S from either member of the current fight.
+function contestedTargetFight({ engageFlank = true } = {}) {
+  const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+  const all = chroniclesActiveEnemies(base);
+  const find = id => {
+    const enemy = all.find(candidate => candidate.id === id);
+    expect(enemy, id).toBeTruthy();
+    return enemy;
+  };
+  const archer = find(ARCHER_ID);
+  const flank = find('banner-road-bandit-captain');
+  const bystander = find('banner-road-deserter');
+  const positions = {
+    [archer.id]: { x: 10, y: 5 },
+    [flank.id]: { x: 11, y: 3 },
+    [bystander.id]: { x: 10, y: 2 },
+  };
+  const activeIds = new Set([archer.id, flank.id, bystander.id]);
+  const placed = {
+    ...base,
+    ...Object.fromEntries(all.filter(enemy => !activeIds.has(enemy.id))
+      .map(enemy => [enemy.hpKey, 0])),
+    x: 10, y: 3, direction: 0, enemyPositions: positions,
+  };
+  for (const position of Object.values(positions)) {
+    expect(chroniclesTileAt(position.x, position.y, placed)).toBe('.');
+  }
+  const engaged = engageFlank ? [archer, flank] : [archer];
+  const launched = chroniclesStartInitiativeCombat(placed, engaged, {
+    forceEnemyIds: engaged.map(enemy => enemy.id), random: () => 0,
+  });
+  expect(launched.phase).toBe('combat');
+  const cursor = launched.initiative.order.findIndex(actor => actor.kind === 'party');
+  expect(cursor).toBeGreaterThanOrEqual(0);
+  const fight = { ...launched, initiative: { ...launched.initiative, cursor } };
+  const engagedIds = fight.initiative.order.filter(actor => actor.kind === 'enemy')
+    .map(actor => actor.id).sort();
+  expect(engagedIds).toEqual(engaged.map(enemy => enemy.id).sort());
+  return { fight, archer, flank, bystander };
+}
+
 describe('MM3 P0 rear ranged enemy no longer traps an unarmed party', () => {
+
+  it('in a multi-enemy fight attacks the adjacent engaged flank, not a visible bystander', () => {
+    const { fight, archer, flank, bystander } = contestedTargetFight();
+    const hero = fight.initiative.order[fight.initiative.cursor];
+    expect(chroniclesEnemyAttackTarget(fight, archer)).toBeTruthy();
+    expect(chroniclesEnemyAttackTarget(fight, flank)).toBeTruthy();
+    // The ordinary world ray sees the bystander, but the combat ray must
+    // never use a target not present in the current initiative order.
+    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(bystander.id);
+    expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(flank.id);
+    expect(chroniclesCombatMissileTarget(fight, 3)?.enemy.id).toBe(flank.id);
+    expect(chroniclesMM3MeleeAvailable(fight, hero.id)).toBe(true);
+    expect(chroniclesAttackMode(fight, hero.id)).toBe('melee');
+    const attacked = chroniclesReduce(fight, {
+      type: 'attack', memberId: hero.id, mode: 'melee',
+    });
+    expect(attacked.turns).toBe(fight.turns + 1);
+    expect(attacked.direction).toBe(fight.direction);
+    expect(attacked[bystander.hpKey]).toBe(fight[bystander.hpKey]);
+    expect(attacked.combatActionSpent?.[hero.id]).toBe(true);
+    expect(chroniclesReduce(attacked, 'turn-right')).toBe(attacked);
+    expect(chroniclesReduce(attacked, { type: 'attack', memberId: hero.id, mode: 'melee' }))
+      .toBe(attacked);
+  });
+
+  it('does not swing or fire at a non-engaged enemy in front, yet can approach the rear scout', () => {
+    const { fight, archer, bystander } = contestedTargetFight({ engageFlank: false });
+    const actor = fight.initiative.order[fight.initiative.cursor];
+    expect(chroniclesEnemyTargetAhead(fight, 3)?.enemy.id).toBe(bystander.id);
+    expect(chroniclesCombatMeleeTarget(fight)).toBeNull();
+    expect(chroniclesCombatMissileTarget(fight, 3)).toBeNull();
+    expect(chroniclesMM3MeleeAvailable(fight, actor.id)).toBe(false);
+    expect(chroniclesAttackMode(fight, actor.id)).toBe('melee');
+    expect(chroniclesReduce(fight, { type: 'attack', memberId: actor.id, mode: 'melee' }))
+      .toBe(fight);
+    // This restriction applies only while initiative owns target selection;
+    // normal exploration and Tactics keep the pre-existing forward ray.
+    expect(chroniclesCombatMissileTarget({
+      ...fight, phase: 'explore', initiative: null,
+    }, 3)?.enemy.id).toBe(bystander.id);
+    expect(chroniclesCombatMissileTarget({
+      ...fight, combatRules: null,
+    }, 3)?.enemy.id).toBe(bystander.id);
+    const approached = chroniclesReduce(fight, 'backward');
+    expect([approached.x, approached.y, approached.direction]).toEqual([10, 4, 0]);
+    expect(approached.turns).toBe(fight.turns + 1);
+    expect(approached.combatActionSpent?.[actor.id]).toBe(true);
+    const nextActor = approached.initiative.order.findIndex(entry =>
+      entry.kind === 'party' && entry.id !== actor.id);
+    expect(nextActor).toBeGreaterThanOrEqual(0);
+    const next = { ...approached, initiative: { ...approached.initiative, cursor: nextActor } };
+    expect(chroniclesCombatMeleeTarget(next)?.enemy.id).toBe(archer.id);
+    expect(chroniclesMM3MeleeAvailable(next, next.initiative.order[nextActor].id)).toBe(true);
+    expect(next[bystander.hpKey]).toBe(fight[bystander.hpKey]);
+  });
+
+
   it('lets a hero close real distance at the cost of an action, then reach melee', () => {
     const { archer, fight } = rearArcherFight();
     const currentHero = fight.initiative.order[fight.initiative.cursor].id;
