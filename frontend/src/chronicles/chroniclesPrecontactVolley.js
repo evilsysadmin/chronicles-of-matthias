@@ -4,7 +4,6 @@ import {
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
-import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 
 // S launches an expedition-wide volley outside combat, or the active
 // hero's missile while initiative is running. No weapon means no action.
@@ -50,10 +49,9 @@ export function chroniclesPrecontactMeleeContact(state) {
   });
 }
 
-// Once an armed company shoots at a visible enemy, combat starts on that
-// single volley action, whether its d20 shots hit or miss.
-// The reducer alone decides damage. Never reward phantom hits or roll a
-// separate pre-contact enemy turn before initiative.
+// A collective volley remains an exploration action: ranged enemies may
+// shoot back on their regular exploration tick, but distant fire never
+// forces a stationary melee initiative. The reducer owns actual damage.
 export function chroniclesAdvanceOpeningVolley(previous, after) {
   if (!previous || !after || previous.combatRules !== 'mm3'
     || previous.phase !== 'explore' || previous.initiative
@@ -65,19 +63,9 @@ export function chroniclesAdvanceOpeningVolley(previous, after) {
   const { target, shooters, shots } = chroniclesOpeningVolleyShots(previous);
   if (!shooters.length) return after;
   if (!target || !shots.length) return after; // Empty air or solid wall: no engagement.
-  const alive = chroniclesActiveEnemies(after).some((enemy) => enemy.id === target.id);
-  const report = after.message;
-  const next = {
+  return {
     ...after,
     round: Math.max(0, Number(previous.round || 0)) + 1,
     turnPhase: 'party',
-    message: report,
   };
-  if (!alive) return next; // Defeated enemy cannot join an initiative order.
-  const engaged = chroniclesStartInitiativeCombat(
-    next, chroniclesActiveEnemies(next), { forceEnemyIds: [target.id] },
-  );
-  return engaged.initiative
-    ? { ...engaged, message: `${report} ¡Comienza el combate!` }
-    : next;
 }
