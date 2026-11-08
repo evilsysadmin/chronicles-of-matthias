@@ -21,10 +21,10 @@ export function chroniclesAdvanceExplorationEnemies(before, after) {
     explorationEnemySteps: Math.max(0, Math.floor(Number(after.explorationEnemySteps) || 0)) + 1,
   };
   const enemies = chroniclesActiveEnemies(progressed);
-  // Melee contact belongs to initiative: no free swing or retreat before
-  // combat begins. Ranged attackers NEVER freeze exploration.
-  if (enemies.some((enemy) => chroniclesEnemyAttackReach(enemy) === 1
-    && chroniclesEnemyCanAttackParty(progressed, enemy))) return progressed;
+  // MM3 melee contact belongs to initiative: no free swing or retreat.
+  // Other modes retain the previous pre-engagement behavior.
+  if (enemies.some((enemy) => chroniclesEnemyCanAttackParty(progressed, enemy)
+    && (progressed.combatRules !== 'mm3' || chroniclesEnemyAttackReach(enemy) === 1))) return progressed;
 
   let current = { ...progressed, enemyTurnEvents: [] };
   const shots = [];
@@ -33,7 +33,7 @@ export function chroniclesAdvanceExplorationEnemies(before, after) {
     // Use the real enemy actor's to-hit, armor and damage mechanics once per
     // spent exploration turn, without opening initiative or granting a free
     // move after a shot. Blocked rays never produce shots.
-    if (chroniclesEnemyAttackReach(enemy) > 1
+    if (current.combatRules === 'mm3' && chroniclesEnemyAttackReach(enemy) > 1
       && chroniclesEnemyCanAttackParty(current, enemy)) {
       const acted = chroniclesResolveEnemyActor(current, enemy.id);
       const events = acted.enemyTurnEvents || [];
