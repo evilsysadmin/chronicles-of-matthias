@@ -131,7 +131,10 @@ function enemyCanAttackCell(state, enemy, position, partyPosition) {
   if (separation < 1 || separation > reach) return false;
   if (reach === 1) return separation === 1;
   if (!(position.x === partyPosition.x || position.y === partyPosition.y)) return false;
-  return enemy.ai?.requiresLineOfSight === false ? true : lineIsClear(state, position, partyPosition);
+  // A MM3 projectile cannot travel through stone, even if a legacy enemy
+  // has an opt-out sightline hint. Preserve the Tactics compatibility rule.
+  return !chroniclesUsesMM3Combat(state) && enemy.ai?.requiresLineOfSight === false
+    ? true : lineIsClear(state, position, partyPosition);
 }
 
 export function chroniclesEnemyAttackTarget(state, enemy, position = chroniclesRuntimeEnemyPosition(state, enemy)) {
