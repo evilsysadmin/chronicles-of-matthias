@@ -31,14 +31,14 @@ function scenario({ melee = true } = {}) {
 
 describe('MM3 campaign bot: melee initiative is stationary', () => {
   it('does not launch combat or take a frozen-initiative approach step toward a ranged shooter', () => {
-    const { bot, placed, archer } = scenario({ melee: false });
+    const { placed, archer } = scenario({ melee: false });
     const attempted = chroniclesStartInitiativeCombat(placed, [archer], {
       forceEnemyIds: [archer.id], random: () => 0,
     });
     expect(attempted).toBe(placed);
     expect(attempted.phase).toBe('explore');
-    bot.state = attempted;
-    expect(bot.combatApproachAction()).toBeNull();
+    const moved = chroniclesReduce(attempted, 'forward');
+    expect([moved.x, moved.y]).toEqual([10, 4]);
   });
 
   it('attacks an adjacent melee enemy without moving the group or rotating after contact', () => {
