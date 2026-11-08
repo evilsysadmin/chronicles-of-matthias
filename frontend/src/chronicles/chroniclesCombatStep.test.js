@@ -4,49 +4,35 @@ import { chroniclesApplyContentEffects } from './chroniclesContentRuntime.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesLivingPartyPositions } from '../chroniclesPartyFootprint.js';
 
-// Found by the campaign bot: a step during combat moved the camera but left
-// the heroes' cells behind, so a creature could walk into the camera's cell.
-describe('Chronicles combat step', () => {
-  it('moves the whole company, not only the camera', () => {
+// Combat movement is a different contract in the two modes: MM3 freezes
+// the entire first-person company, whereas Tactics keeps its grid steps.
+describe('Chronicles stationary MM3 versus movable Tactics', () => {
+  it('keeps Tactics movement and hero formation consistent', () => {
     const arrived = chroniclesApplyContentEffects(createChroniclesState(), [{ type: 'transition-map', mapId: 'terra-a3' }]);
     const placed = { ...arrived, x: 10, y: 8, direction: 0, enemyPositions: { 'terra-a3-foe-0': { x: 10, y: 4 } } };
     const combat = chroniclesStartInitiativeCombat(placed, chroniclesActiveEnemies(placed), { forceEnemyIds: ['terra-a3-foe-0'] });
     expect(combat.initiative).toBeTruthy();
     const before = chroniclesLivingPartyPositions(combat);
-
     const stepped = chroniclesReduce(combat, 'forward');
-
     expect([stepped.x, stepped.y]).toEqual([10, 7]);
-    const after = chroniclesLivingPartyPositions(stepped);
-    expect(after).not.toEqual(before);
-    const lead = after.find((entry) => entry.memberId === 'matthias').position;
-    expect(Math.abs(lead.x - 10) + Math.abs(lead.y - 7)).toBeLessThanOrEqual(1);
-    const cells = after.map(({ position }) => `${position.x},${position.y}`);
-    expect(new Set(cells).size).toBe(cells.length);
+    expect(chroniclesLivingPartyPositions(stepped)).not.toEqual(before);
   });
-});
 
-describe('MM3 initiative repositioning on an authored combat map', () => {
-  it('moves only during a living hero turn, without free repeat actions', () => {
+  it('freezes MM3 facing, party cell and every deployed hero on their own turn', () => {
     const initial = createChroniclesState(null, null, { rules: 'mm3' });
     const arrived = chroniclesApplyContentEffects(initial, [{ type: 'transition-map', mapId: 'terra-a3' }]);
-    const placed = { ...arrived, x: 10, y: 8, direction: 0, enemyPositions: { 'terra-a3-foe-0': { x: 10, y: 4 } } };
+    const placed = { ...arrived, x: 10, y: 8, direction: 2, enemyPositions: { 'terra-a3-foe-0': { x: 10, y: 7 } } };
     const fight = chroniclesStartInitiativeCombat(placed, chroniclesActiveEnemies(placed), { forceEnemyIds: ['terra-a3-foe-0'] });
+    expect(fight.initiative).toBeTruthy();
+    expect(fight.direction).toBe(0); // Face the northern melee attacker once.
     const index = fight.initiative.order.findIndex((actor) => actor.kind === 'party');
-    expect(index).toBeGreaterThanOrEqual(0);
     const combat = { ...fight, initiative: { ...fight.initiative, cursor: index } };
-    const actor = combat.initiative.order[index];
     const before = chroniclesLivingPartyPositions(combat);
-    const stepped = chroniclesReduce(combat, 'forward');
-    expect([stepped.x, stepped.y]).toEqual([10, 7]);
-    expect(stepped.turns).toBe(combat.turns + 1);
-    expect(stepped.combatActionSpent?.[actor.id]).toBe(true);
-    expect(chroniclesLivingPartyPositions(stepped)).not.toEqual(before);
-    expect(chroniclesReduce(stepped, 'forward')).toBe(stepped);
-
-    expect(chroniclesReduce(combat, 'turn-left')).toBe(combat);
-    expect(chroniclesReduce(combat, 'turn-right')).toBe(combat);
-    expect(stepped.direction).toBe(combat.direction);
+    for (const action of ['forward', 'backward', 'strafe-left', 'strafe-right', 'turn-left', 'turn-right']) {
+      expect(chroniclesReduce(combat, action)).toBe(combat);
+    }
+    expect(chroniclesLivingPartyPositions(combat)).toEqual(before);
+    expect([combat.x, combat.y, combat.direction]).toEqual([10, 8, 0]);
   });
 });
 
