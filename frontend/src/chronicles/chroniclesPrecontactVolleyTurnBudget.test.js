@@ -5,7 +5,9 @@ import {
   chroniclesReduce,
   createChroniclesState,
 } from '../chroniclesOfMatthias.js';
-import { chroniclesResolveEnemyActor, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
+import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesAdvanceOpeningVolley } from './chroniclesPrecontactVolley.js';
 
 const GOBLIN_ID = 'sewers-goblin-west';
@@ -40,7 +42,7 @@ describe('MM3 opening volley spends exactly one exploration action before combat
     expect(refused[goblin.hpKey]).toBe(100);
   });
 
-  it('connects a real salvo to distant pursuit, melee contact and the first enemy attack without free actions', () => {
+  it('spends one volley and lets melee approach during exploration without free attacks', () => {
     const { goblin, state } = armedCorridor();
     const opening = chroniclesOpeningVolleyShots(state);
     expect(opening.target?.id).toBe(goblin.id);
@@ -49,24 +51,21 @@ describe('MM3 opening volley spends exactly one exploration action before combat
     const fired = chroniclesReduce(state, 'volley');
     expect(fired.turns).toBe(state.turns + 1);
     expect(fired[goblin.hpKey]).toBe(opening.remainingHp);
-    const engaged = chroniclesAdvanceOpeningVolley(state, fired);
-    expect(engaged.initiative?.order.filter((actor) => actor.id === goblin.id)).toHaveLength(1);
-    expect(engaged.turns).toBe(fired.turns);
-    expect(engaged.enemyTurnEvents || []).toEqual([]);
-    expect(engaged.party.map((hero) => hero.hp)).toEqual(state.party.map((hero) => hero.hp));
-    expect(chroniclesRuntimeEnemyPosition(engaged, goblin)).toEqual({ x: 1, y: 4 });
+    const volley = chroniclesAdvanceOpeningVolley(state, fired);
+    expect(volley.initiative).toBeFalsy();
+    expect(volley.turns).toBe(fired.turns);
+    expect(volley.party.map((hero) => hero.hp)).toEqual(state.party.map((hero) => hero.hp));
+    expect(chroniclesRuntimeEnemyPosition(volley, goblin)).toEqual({ x: 1, y: 4 });
 
-    let current = engaged;
-    for (const y of [3, 2]) {
-      const beforeHp = current.party.map((hero) => hero.hp);
-      const next = chroniclesResolveEnemyActor(current, goblin.id);
-      expect(next.enemyTurnEvents.map((event) => event.type)).toEqual(['move']);
-      expect(chroniclesRuntimeEnemyPosition(next, goblin)).toEqual({ x: 1, y });
-      expect(next.party.map((hero) => hero.hp)).toEqual(beforeHp);
-      current = next;
-    }
-    const contact = chroniclesResolveEnemyActor(current, goblin.id);
-    expect(contact.enemyTurnEvents.map((event) => event.type)).toEqual(['attack']);
-    expect(chroniclesRuntimeEnemyPosition(contact, goblin)).toEqual({ x: 1, y: 2 });
+    const first = chroniclesAdvanceExplorationEnemies(state, volley);
+    expect(chroniclesRuntimeEnemyPosition(first, goblin)).toEqual({ x: 1, y: 3 });
+    expect(first.enemyTurnEvents).toEqual([]);
+    expect(chroniclesStartInitiativeCombat(first, [goblin], { random: () => 0 })).toBe(first);
+    const second = chroniclesGridExplorationStep(first, 'turn-right');
+    expect(chroniclesRuntimeEnemyPosition(second, goblin)).toEqual({ x: 1, y: 2 });
+    expect(second.party.map((hero) => hero.hp)).toEqual(state.party.map((hero) => hero.hp));
+    const contact = chroniclesStartInitiativeCombat(second, [goblin], { random: () => 0 });
+    expect(contact.phase).toBe('combat');
+    expect(contact.initiative?.order.some(({ id }) => id === goblin.id)).toBe(true);
   });
 });
