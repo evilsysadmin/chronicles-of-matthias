@@ -56,12 +56,12 @@ export default function ChroniclesGameHelp({ onBack }) {
           compañero en pie. El descanso puede interrumpirse por enemigos vivos
           cercanos; algunos héroes comenzarán la emboscada dormidos y perderán
           su primera acción. En una noche tranquila recuperas PV y PH.</p>
-        <p>Durante la iniciativa no se puede girar ni reorientar la cámara.
-          El héroe activo puede avanzar, retroceder o moverse lateralmente
-          una casilla con ↑/↓/Q/E: consume su acción completa. Para acercarte
-          a un arquero situado detrás, retrocede sin girarte; cuando esté
-          adyacente podrás atacarlo cuerpo a cuerpo aunque quede a tu espalda.
-          Los disparos y hechizos ofensivos exigen línea frontal real.</p>
+        <p>Las flechas y Q/E sirven para explorar; puedes disparar con S
+          mientras te desplazas y los arqueros enemigos también pueden responder.
+          Solo el contacto cuerpo a cuerpo inicia el combate por turnos.
+          Al entrar en él, la cámara se orienta hacia el atacante y el grupo
+          queda inmóvil: no se puede avanzar, retroceder ni girar hasta acabar.
+          A ataca a enemigos adyacentes; disparos y magia exigen línea de tiro libre.</p>
         <p>En contacto con enemigos, el combate pasa a turnos. La iniciativa
           determina quién actúa antes. A ataca cuerpo a cuerpo durante tu turno;
           S dispara con un personaje que lleve un arma a distancia válida.
