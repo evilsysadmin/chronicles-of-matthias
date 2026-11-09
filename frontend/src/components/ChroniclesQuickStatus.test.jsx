@@ -18,6 +18,10 @@ describe('MM3 quick party status keeps level inside the character dossier', () =
     }));
     expect(html).toContain('Matthias');
     expect(html).toContain('11/11');
+    expect(html).toContain('class="is-hp">11/11');
+    expect(html).toContain('class="is-sp">—');
+    expect(html).toContain('class="is-ac">3');
+    expect(html).toContain('11 de 11 PV, sin PH, CA 3, estado Bien. Abrir ficha');
     expect(html).toContain('Arma');
     expect(html).toContain('Estado');
     expect(html).not.toContain('columnheader">Nv</span>');
