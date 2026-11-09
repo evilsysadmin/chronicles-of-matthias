@@ -66,8 +66,8 @@ test('green main does not upload screenshots while PRs and failed main retain ev
 test('API and frontend E2E use npm-ci locked exact Playwright with tested Chromium host readiness', () => {
   const pkg = JSON.parse(readFileSync(new URL('../frontend/package.json', import.meta.url), 'utf8'));
   const lock = JSON.parse(readFileSync(new URL('../frontend/package-lock.json', import.meta.url), 'utf8'));
-  const version = '1.64.1';
-  assert.equal(pkg.devDependencies.playwright, version);
+  const version = pkg.devDependencies.playwright;
+  assert.match(version, /^\d+\.\d+\.\d+$/, 'Playwright must be pinned to an exact release');
   assert.equal(lock.lockfileVersion, 3);
   assert.equal(lock.packages[''].devDependencies.playwright, version);
   for (const name of ['playwright', 'playwright-core']) {
