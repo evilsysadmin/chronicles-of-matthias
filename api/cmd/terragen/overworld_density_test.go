@@ -85,7 +85,16 @@ func TestTerraWidePatrolDensityRespectsSafetyAndPersistence(t *testing.T) {
 			// The new wave clones the AI/species of the existing generic
 			// patrols, preserving regional strength without invented scaling.
 			first := all[len(original)+(i%firstWave)].(*O)
-			if e.Str("visualType") != first.Str("visualType") || dump(e.Obj("ai")) != dump(first.Obj("ai")) ||
+			wantAI := first.Obj("ai").Clone()
+			// One authored late-wave B3 patrol follows a cardinal loop when
+			// unalerted, but retains the same goblin chase, stats and reward.
+			if code == "B3" && e.Str("id") == "terra-b3-foe-8" {
+				wantAI.Set("movement", "patrol-route").Set("patrolRoute", A{
+					obj("x", 15, "y", 9), obj("x", 15, "y", 10),
+					obj("x", 14, "y", 10), obj("x", 14, "y", 9),
+				})
+			}
+			if e.Str("visualType") != first.Str("visualType") || dump(e.Obj("ai")) != dump(wantAI) ||
 				e.Int("maxHp") != first.Int("maxHp") || e.Int("retaliation") != first.Int("retaliation") {
 				t.Fatalf("%s: extra patrol stats/behavior diverged from the area baseline", code)
 			}

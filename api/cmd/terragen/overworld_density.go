@@ -144,5 +144,43 @@ func addOverworldDensityPatrols(m *O, areaCode string) {
 		occupied[best] = true
 		added++
 	}
+	// The West Road is already populated, but almost all of its extra
+	// encounters are stationary sentries or free-roaming mobs. Give ONE
+	// existing, low-reward goblin a visible four-cell patrol. This is a
+	// behaviour change only: keep its saved ID, HP key, array index, start
+	// cell, stats, coin reward and all quest foes untouched.
+	if areaCode == "B3" {
+		var patrol *O
+		for _, raw := range current {
+			if e := raw.(*O); e.Str("id") == "terra-b3-foe-8" {
+				patrol = e
+				break
+			}
+		}
+		if patrol == nil || patrol.Str("visualType") != "ash-goblin" ||
+			patrol.Int("x") != 15 || patrol.Int("y") != 9 {
+			panic("B3: expected saved goblin patrol slot changed; re-audit before updating route")
+		}
+		route := A{
+			obj("x", 15, "y", 9),
+			obj("x", 15, "y", 10),
+			obj("x", 14, "y", 10),
+			obj("x", 14, "y", 9),
+		}
+		for _, raw := range route {
+			p := raw.(*O)
+			if grid[p.Int("y")][p.Int("x")] != '.' {
+				panic("B3: patrol route no longer traversable")
+			}
+			for _, other := range current {
+				e := other.(*O)
+				if e.Str("id") != patrol.Str("id") &&
+					e.Int("x") == p.Int("x") && e.Int("y") == p.Int("y") {
+					panic("B3: patrol route overlaps another enemy's spawn")
+				}
+			}
+		}
+		patrol.Obj("ai").Set("movement", "patrol-route").Set("patrolRoute", route)
+	}
 	m.Set("enemies", current)
 }

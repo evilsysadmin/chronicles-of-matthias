@@ -286,10 +286,28 @@
       "optional": true,
       "activation": "always",
       "ai": {
-        "movement": "cardinal-roam",
+        "movement": "patrol-route",
         "attackReach": 1,
         "engagedMovement": "cardinal-chase",
-        "engageRange": 2
+        "engageRange": 2,
+        "patrolRoute": [
+          {
+            "x": 15,
+            "y": 9
+          },
+          {
+            "x": 15,
+            "y": 10
+          },
+          {
+            "x": 14,
+            "y": 10
+          },
+          {
+            "x": 14,
+            "y": 9
+          }
+        ]
       },
       "onDefeat": {
         "message": "{attacker} acaba con goblin usando {attack}.",
