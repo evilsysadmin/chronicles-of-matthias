@@ -77,6 +77,17 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const townWindowGlows = scene.getObjectByName('chronicles-town-street-window-night-glow');
   const townLanternGlass = scene.getObjectByName('chronicles-town-wall-lantern-glass');
   const lanternDayIntensity = townLanternGlass?.material?.emissiveIntensity ?? null;
+  // Scan once on scene creation, not once per tick. Only authored merchant
+  // plaques have torch flames; wild exteriors and dungeons stay untouched.
+  const firelitShopSigns = [];
+  scene.traverse((object) => {
+    if (object.name !== 'swordhaven-shop-nameplate') return;
+    const lettering = object.getObjectByName('shop-nameplate-lettering');
+    const flames = object.getObjectByName('shop-sign-torch-flames');
+    if (lettering?.material?.isMeshStandardMaterial && flames) {
+      firelitShopSigns.push({ lettering, flames });
+    }
+  });
   const rainPuddles = scene.getObjectByName('chronicles-town-rain-puddles');
   const pavedRoad = rainPuddles ? scene.getObjectByName('chronicles-campaign-road') : null;
   const dryRoadColor = pavedRoad?.material?.color?.clone() || null;
@@ -115,6 +126,15 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       if (lanternDayIntensity !== null) {
         townLanternGlass.material.emissiveIntensity =
           lanternDayIntensity + (1 - daylight) * 1.7;
+      }
+      const torchlight = 1 - daylight;
+      for (const { lettering, flames } of firelitShopSigns) {
+        // The inscription is painted, not self-lit: a restrained warm bounce
+        // accompanies two visible oil flames as dusk settles over Terra.
+        lettering.material.emissiveIntensity = torchlight * 0.28;
+        flames.visible = torchlight > 0.02;
+        flames.userData.outerFire.opacity = torchlight * 0.94;
+        flames.userData.innerFire.opacity = torchlight * 0.80;
       }
       if (rainPuddles && pavedRoad && dryRoadColor) {
         // Wet paving remembers recent rain across the shorter weather
