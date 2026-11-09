@@ -8,7 +8,7 @@ const VALID_ID = /^(?:matthias|rook|bishop|knight|(?:male|female)-(?:0[1-9]|10))
 const VERSION = /^[a-f0-9]{16}$/;
 
 export function chroniclesPortraitR2Url(id, variant = 'awake', entries = manifest.portraits) {
-  if (!VALID_ID.test(String(id || '')) || !['awake', 'sleep'].includes(variant)
+  if (!VALID_ID.test(String(id || '')) || !['awake', 'sleep', 'tired'].includes(variant)
     || !entries || typeof entries !== 'object' || Array.isArray(entries)) return null;
   const value = entries[id]?.[variant];
   if (typeof value !== 'string') return null;
