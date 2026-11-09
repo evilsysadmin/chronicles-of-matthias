@@ -1,4 +1,5 @@
 import { resolveChroniclesEnemyBuildDefinition } from './chroniclesEnemyBuilds.js';
+import { chroniclesFatigueStatus } from './chroniclesFatigue.js';
 import { chroniclesEnemyAttackReach, chroniclesEnemyCanAttackParty, chroniclesEnemyHasSightline, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 import {
   chroniclesCollapsePartyAfterCombat,
@@ -59,7 +60,8 @@ export function chroniclesPartyInitiativeAgility(state, member) {
     ? Number(rawSpeedBonus)
     : NaN;
   const speedBonus = Number.isSafeInteger(numericSpeedBonus) ? numericSpeedBonus : 0;
-  return Math.min(MAX_SAFE_INITIATIVE_AGILITY, Math.max(0, base + progressionBonus + speedBonus));
+  return Math.min(MAX_SAFE_INITIATIVE_AGILITY, Math.max(0,
+    base + progressionBonus + speedBonus - chroniclesFatigueStatus(state).initiativePenalty));
 }
 
 export function chroniclesEnemyInitiativeAgility(enemy) {
