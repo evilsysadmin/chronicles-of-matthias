@@ -117,6 +117,8 @@ try {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMappingExposure = coarsePointer ? 1.14 : 1.08;
+  renderer.shadowMap.enabled = !coarsePointer;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setSize(innerWidth, innerHeight, false);
   // Use the production town lens: QA screenshots must reflect the actual mobile framing.
   const camera = new THREE.PerspectiveCamera(
