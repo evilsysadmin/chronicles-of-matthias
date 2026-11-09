@@ -85,14 +85,107 @@
 }
 .chronicles-quick-status footer b { color: #f0d27a; font-size: 1.1rem; }
 .chronicles-quick-status footer small { color: #8f8f98; }
-/* Phones: drop the weapon column and tighten everything to fit the height. */
+/* Group (G) is the legible, exact-numbers companion to the tiny
+   exploration portrait gauges. On touch/short landscape, seven squeezed
+   columns made names and values unreadable. Each hero becomes a two-line
+   card; the same whole row still opens the character sheet. */
 @media (max-width: 640px), (max-height: 480px) {
-  .chronicles-quick-status header { padding: 6px 10px; }
-  .chronicles-quick-status h2 { font-size: 1.05rem; }
-  .chronicles-quick-status__close { width: 34px; height: 34px; }
-  .chronicles-quick-status__table { padding: 4px 6px; gap: 2px; }
-  .chronicles-quick-status footer { padding: 4px 10px 6px; }
-  .chronicles-quick-status__table > [role="row"] { grid-template-columns: 20px minmax(0, 1fr) 58px 52px 30px 56px; gap: 6px; padding: 5px 6px; }
+  .chronicles-quick-status__backdrop {
+    padding: max(6px, env(safe-area-inset-top))
+      max(6px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(6px, env(safe-area-inset-left));
+  }
+  .chronicles-quick-status {
+    width: min(540px, 100%);
+    max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  .chronicles-quick-status header { padding: 9px 11px; }
+  .chronicles-quick-status header small {
+    font: 500 13px/1.15 system-ui, sans-serif;
+    letter-spacing: .03em;
+  }
+  .chronicles-quick-status h2 { font-size: 1.2rem; }
+  .chronicles-quick-status__close {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+  }
+  .chronicles-quick-status__table {
+    padding: 7px;
+    gap: 6px;
+  }
+  /* Every stat gets its own textual label, so hiding the table header
+     loses neither meaning nor accessibility on small displays. */
+  .chronicles-quick-status__table > .is-head { display: none; }
+  .chronicles-quick-status__table > .chronicles-quick-status__row {
+    box-sizing: border-box;
+    grid-template-columns: 24px repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(25px, auto) auto;
+    column-gap: 7px;
+    row-gap: 6px;
+    min-width: 0;
+    min-height: 86px;
+    padding: 7px 9px;
+    font: 600 16px/1.2 system-ui, sans-serif;
+  }
+  .chronicles-quick-status__row > [role='cell']:first-child {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+    color: #ded3ba;
+    text-align: center;
+  }
+  .chronicles-quick-status__row .is-name {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    align-self: center;
+    gap: 2px;
+  }
+  .chronicles-quick-status__row .is-name b {
+    font-size: 16px;
+    line-height: 1.2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-quick-status__row .is-name small {
+    font: 500 13px/1.15 system-ui, sans-serif;
+    color: #c3bcc0;
+  }
+  .chronicles-quick-status__row .is-condition {
+    grid-column: 4;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    min-width: 0;
+    font-size: 14px;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .chronicles-quick-status__row :is(.is-hp, .is-sp, .is-ac) {
+    min-width: 0;
+    display: grid;
+    align-content: end;
+    gap: 1px;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .chronicles-quick-status__row :is(.is-hp, .is-sp, .is-ac)::before {
+    font: 700 12px/1 system-ui, sans-serif;
+    color: #c2bac7;
+    letter-spacing: .04em;
+  }
+  .chronicles-quick-status__row .is-hp { grid-column: 2; grid-row: 2; }
+  .chronicles-quick-status__row .is-sp { grid-column: 3; grid-row: 2; }
+  .chronicles-quick-status__row .is-ac { grid-column: 4; grid-row: 2; }
+  .chronicles-quick-status__row .is-hp::before { content: 'PV'; }
+  .chronicles-quick-status__row .is-sp::before { content: 'PH'; }
+  .chronicles-quick-status__row .is-ac::before { content: 'CA'; }
   .chronicles-quick-status__table .is-weapon { display: none; }
-  .chronicles-quick-status__row { font-size: .9rem; }
+  .chronicles-quick-status footer {
+    padding: 7px 11px 10px;
+    font: 500 14px/1.3 system-ui, sans-serif;
+  }
+  .chronicles-quick-status footer small { font-size: 13px; }
 }

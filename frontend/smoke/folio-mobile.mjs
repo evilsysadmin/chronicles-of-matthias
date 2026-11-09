@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { assertAdventureFolioInk } from './adventure-contrast.mjs';
+import { runQuickStatusMobileSmoke } from './quick-status-mobile.mjs';
 
 const base = process.argv[2] || 'http://localhost:4174/smoke/folio-mobile.html';
 const browser = await chromium.launch({
@@ -482,3 +483,7 @@ try {
   await browser.close();
 }
 if (failures) process.exitCode = 1;
+
+// This is part of the already required folio Chromium gate, with no CI
+// workflow edits. Exact PV/PH/CA and touch accessibility cannot regress.
+await runQuickStatusMobileSmoke(new URL('quick-status-mobile.html', base).href);

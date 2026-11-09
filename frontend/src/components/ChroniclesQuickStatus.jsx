@@ -55,12 +55,12 @@ export default function ChroniclesQuickStatus({ open, rows, gold, onClose, onOpe
           </div>
           {rows.map((row) => (
             <button key={row.id} type="button" role="row" className="chronicles-quick-status__row" data-condition={row.condition}
-              aria-label={`Tecla ${row.slot}: ${row.name}: ${row.hp} de ${row.maxHp} PV. Abrir ficha`} onClick={() => onOpenSheet(row.id)}>
+              aria-label={`Tecla ${row.slot}: ${row.name}: ${row.hp} de ${row.maxHp} PV, ${row.maxSp === null ? 'sin PH' : `${row.sp} de ${row.maxSp} PH`}, CA ${row.armorClass}, estado ${row.conditionLabel}. Abrir ficha`} onClick={() => onOpenSheet(row.id)}>
               <span role="cell">{row.slot}</span>
               <span role="cell" className="is-name"><b>{row.name}</b><small>{row.classLabel}</small></span>
               <span role="cell" className="is-hp">{row.hp}/{row.maxHp}</span>
               <span role="cell" className="is-sp">{row.maxSp === null ? '—' : `${row.sp}/${row.maxSp}`}</span>
-              <span role="cell">{row.armorClass}</span>
+              <span role="cell" className="is-ac">{row.armorClass}</span>
               <span role="cell" className="is-weapon">{row.weapon}</span>
               <span role="cell" className="is-condition">{row.conditionLabel}</span>
             </button>
