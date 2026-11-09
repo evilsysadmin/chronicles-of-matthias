@@ -167,6 +167,8 @@ async function runEpisode(profile, seed, viewport) {
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
       const after = await observe(page);
+      assert.equal(after.mapId, 'crypt-eight-squares', 'Playtester lost the real game view');
+      assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
       if (after.turns > before.turns) blocked = 0;
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
@@ -182,6 +184,8 @@ async function runEpisode(profile, seed, viewport) {
       const before = await observe(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
+      assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
+        'Live initiative lost its actor or map');
       const action = playtestAction({ profile, observed: before, combatActions, seed });
       assert.ok(action === 'a' || action === 'b',
         'Bot must not rotate, teleport or use illegal moves in initiative');
