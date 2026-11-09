@@ -107,7 +107,7 @@ describe('Terra solar cycle', () => {
       expect(flames?.visible).toBe(false);
       expect(plaque.getObjectByName('shop-sign-torch-sconces')).toBeTruthy();
       expect(plaque.getObjectByName('shop-sign-torch-hoods')).toBeTruthy();
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash')?.visible).toBe(false);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash')?.visible).toBe(false);
     }
     const countLights = () => {
       let count = 0;
@@ -125,8 +125,8 @@ describe('Terra solar cycle', () => {
     for (const plaque of shopPlaques) {
       expect(plaque.getObjectByName('shop-nameplate-lettering').material.emissiveIntensity).toBe(0);
       expect(plaque.getObjectByName('shop-sign-torch-flames').visible).toBe(false);
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash').visible).toBe(false);
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash').material.opacity).toBe(0);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash').visible).toBe(false);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash').material.opacity).toBe(0);
     }
     expect(cycle.sync(18 * 60)).toBe(true);
     expect(glows.visible).toBe(true);
@@ -142,7 +142,7 @@ describe('Terra solar cycle', () => {
       expect(flames.userData.outerFire.opacity).toBeCloseTo(0.94);
       expect(flames.userData.innerFire.opacity).toBeCloseTo(0.80);
       expect(paint.emissiveIntensity).toBeCloseTo(0.28);
-      const wash = plaque.getObjectByName('shop-sign-torch-wallwash');
+      const wash = plaque.parent.getObjectByName('shop-sign-torch-wallwash');
       expect(wash.visible).toBe(true);
       expect(wash.material.opacity).toBeCloseTo(0.56);
     }
@@ -160,8 +160,8 @@ describe('Terra solar cycle', () => {
     expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
     for (const plaque of shopPlaques) {
       expect(plaque.getObjectByName('shop-sign-torch-flames').visible).toBe(false);
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash').visible).toBe(false);
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash').material.opacity).toBe(0);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash').visible).toBe(false);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash').material.opacity).toBe(0);
       expect(plaque.getObjectByName('shop-nameplate-lettering').material.emissiveIntensity).toBe(0);
     }
     // A covered brazier continues burning through genuine saved-world rain.
@@ -175,7 +175,7 @@ describe('Terra solar cycle', () => {
     for (const plaque of shopPlaques) {
       expect(plaque.getObjectByName('shop-sign-torch-flames').visible).toBe(true);
       expect(plaque.getObjectByName('shop-sign-torch-hoods')).toBeTruthy();
-      expect(plaque.getObjectByName('shop-sign-torch-wallwash').visible).toBe(true);
+      expect(plaque.parent.getObjectByName('shop-sign-torch-wallwash').visible).toBe(true);
     }
     expect(countLights()).toBe(lightsBefore);
     cycle.sync(8 * 60);
