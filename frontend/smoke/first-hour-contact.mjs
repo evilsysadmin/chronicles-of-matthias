@@ -224,12 +224,15 @@ try {
         document.querySelector('[data-qa-mayor-sewers]')?.getAttribute('data-qa-trips') === '1');
       assert.equal(await journey.getAttribute('data-qa-map'), 'swordhaven-first-book');
       assert.equal(await journey.getAttribute('data-qa-key'), '1');
+      const activeObjective = await journey.getAttribute('data-qa-quest');
+      assert.ok(activeObjective, 'The main quest must survive the sewer trip');
       await checkNoPhantomXp('sewer-exit');
       // Recovery is a real JSON/Go/Mongo-shaped snapshot, not a copied state.
       await page.locator('[data-qa-checkpoint]').click();
       assert.equal(await journey.getAttribute('data-qa-reloads'), '1');
       assert.equal(await journey.getAttribute('data-qa-key'), '1');
-      assert.match(await journey.getAttribute('data-qa-quest'), /alcantarillas/i);
+      assert.equal(await journey.getAttribute('data-qa-quest'), activeObjective,
+        'Checkpoint restoration must preserve the genuine current objective');
       await checkNoPhantomXp('checkpoint-restore');
       // A second identical trip cannot farm XP, duplicate the mayor key or
       // reset the story. The first departure was not an enemy victory.
