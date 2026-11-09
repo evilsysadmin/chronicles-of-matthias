@@ -6,6 +6,7 @@ import {
   attachChroniclesAmbientWorldClock,
 } from './chroniclesAmbientWorldClock.js';
 import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesFatigueStatus } from './chroniclesFatigue.js';
 
 const town = { id: 'swordhaven-first-book', regionKind: 'settlement' };
 const wild = { id: 'terra-b2', regionKind: 'wilderness' };
@@ -46,8 +47,8 @@ function fakeTime() {
     show() { doc.visibilityState = 'visible'; listeners.get('visibilitychange')(); },
   };
 }
-describe('Terra ambient clock: five real minutes earn ten Terra minutes', () => {
-  it('keeps a real-time remainder across steps: 3m + move + 3m = 10m and 1m banked', () => {
+describe('Terra ambient clock: one active real minute earns two Terra minutes', () => {
+  it('counts stationary minutes across movement and preserves partial progress across overlays', () => {
     const clock = fakeTime(), counter = createChroniclesAmbientTimeCounter();
     let state = start();
     const tick = vi.fn(minutes => {
@@ -57,53 +58,56 @@ describe('Terra ambient clock: five real minutes earn ten Terra minutes', () => 
       return true;
     });
     let detach = attachChroniclesAmbientWorldClock(tick, { ...clock, counter });
-    expect(CHRONICLES_AMBIENT_REAL_BLOCK_MS).toBe(300000);
-    expect(CHRONICLES_AMBIENT_WORLD_MINUTES).toBe(10);
-    clock.step(180000); // stationary for 3 minutes
+    expect(CHRONICLES_AMBIENT_REAL_BLOCK_MS).toBe(60000);
+    expect(CHRONICLES_AMBIENT_WORLD_MINUTES).toBe(2);
+    clock.step(30000); // still standing, under the first minute
     expect(tick).not.toHaveBeenCalled();
     const moved = { ...state, x: state.x + 1, turns: state.turns + 1, worldMinutes: state.worldMinutes + 10 };
     state = moved;
-    clock.step(180000); // 6 minutes of real exploration in total
-    expect(tick).toHaveBeenCalledOnce();
-    expect(tick).toHaveBeenCalledWith(10);
-    expect(state.worldMinutes).toBe(moved.worldMinutes + 10);
+    clock.step(90000); // now 2 active minutes, including the time before moving
+    expect(tick).toHaveBeenCalledTimes(2);
+    expect(tick).toHaveBeenNthCalledWith(1, 2);
+    expect(state.worldMinutes).toBe(moved.worldMinutes + 4);
     expect(state.turns).toBe(moved.turns);
     expect(state.x).toBe(moved.x);
-    detach();
-    expect(counter.getRemainderMs()).toBe(60000);
-    expect(counter.msUntilNextBlock()).toBe(240000);
+    clock.step(30000);
+    detach(); // open a menu; keep the elapsed half-minute
+    expect(counter.getRemainderMs()).toBe(30000);
+    expect(counter.msUntilNextBlock()).toBe(30000);
+    clock.step(600000); // paused: no new fatigue
     detach = attachChroniclesAmbientWorldClock(tick, { ...clock, counter });
-    clock.step(240000);
-    expect(tick).toHaveBeenCalledTimes(2);
-    expect(state.worldMinutes).toBe(moved.worldMinutes + 20);
+    clock.step(30000);
+    expect(tick).toHaveBeenCalledTimes(3);
+    expect(state.worldMinutes).toBe(moved.worldMinutes + 6);
     detach();
   });
 
   it('banks multiple delayed threshold credits while retaining excess minutes', () => {
     const counter = createChroniclesAmbientTimeCounter();
-    expect(counter.accrue(6*60000)).toBe(10);
-    expect(counter.getRemainderMs()).toBe(60000);
-    expect(counter.claimWorldMinutes()).toBe(10);
-    expect(counter.accrue(11*60000)).toBe(20);
-    expect(counter.getRemainderMs()).toBe(120000);
-    expect(counter.claimWorldMinutes()).toBe(20);
+    expect(counter.accrue(90000)).toBe(2);
+    expect(counter.getRemainderMs()).toBe(30000);
+    expect(counter.claimWorldMinutes()).toBe(2);
+    expect(counter.accrue(150000)).toBe(6);
+    expect(counter.getRemainderMs()).toBe(0);
+    expect(counter.claimWorldMinutes()).toBe(6);
     expect(counter.claimWorldMinutes()).toBe(0);
     expect(counter.accrue(NaN)).toBe(0);
     counter.reset();
-    expect(counter.msUntilNextBlock()).toBe(300000);
+    expect(counter.msUntilNextBlock()).toBe(60000);
   });
 
-  it('does not move enemies, consume turns, advance in caves, combat or Tactics', () => {
+  it('does not move enemies or spend turns, but counts exploration in caves, never combat or Tactics', () => {
     const before = start();
     const after = chroniclesAdvanceAmbientWorldTime(before, town);
-    expect(after.worldMinutes).toBe(before.worldMinutes + 10);
+    expect(after.worldMinutes).toBe(before.worldMinutes + 2);
     expect(after.turns).toBe(before.turns);
     expect(after.x).toBe(before.x);
     expect(after.direction).toBe(before.direction);
     expect(after.party).toBe(before.party);
     expect(chroniclesReduce(after, 'turn-left').worldMinutes).toBe(after.worldMinutes);
-    expect(chroniclesAdvanceAmbientWorldTime(before, sewer)).toBe(before);
-    expect(chroniclesAdvanceAmbientWorldTime(before, wild).worldMinutes).toBe(before.worldMinutes + 10);
+    expect(chroniclesAdvanceAmbientWorldTime(before, sewer).worldMinutes).toBe(before.worldMinutes + 2);
+    expect(chroniclesAdvanceAmbientWorldTime(before, null)).toBe(before);
+    expect(chroniclesAdvanceAmbientWorldTime(before, wild).worldMinutes).toBe(before.worldMinutes + 2);
     expect(chroniclesAdvanceAmbientWorldTime({ ...before, initiative: {} }, town).worldMinutes).toBe(before.worldMinutes);
     expect(chroniclesAdvanceAmbientWorldTime({ ...before, phase: 'defeated' }, town).worldMinutes).toBe(before.worldMinutes);
     expect(chroniclesAdvanceAmbientWorldTime(createChroniclesState('swordhaven-sewers'), town).combatRules).not.toBe('mm3');
@@ -116,18 +120,18 @@ describe('Terra ambient clock: five real minutes earn ten Terra minutes', () => 
   it('suspends in hidden tabs and overlays, without catch-up or losing the fraction', () => {
     const clock = fakeTime(), counter = createChroniclesAmbientTimeCounter(), onTick = vi.fn(() => true);
     let close = attachChroniclesAmbientWorldClock(onTick, { ...clock, counter });
-    clock.step(180000);
+    clock.step(30000);
     clock.hide();
     expect(clock.tasks.size).toBe(0);
-    expect(counter.getRemainderMs()).toBe(180000);
+    expect(counter.getRemainderMs()).toBe(30000);
     clock.step(3600000); // one hour hidden: zero elapsed credit
     clock.show();
-    clock.step(60000);
-    close(); // menu pauses but preserves previous 4 minutes
-    expect(counter.getRemainderMs()).toBe(240000);
+    clock.step(15000);
+    close(); // menu pauses but preserves previous 45 seconds
+    expect(counter.getRemainderMs()).toBe(45000);
     clock.step(900000);
     close = attachChroniclesAmbientWorldClock(onTick, { ...clock, counter });
-    clock.step(60000);
+    clock.step(15000);
     expect(onTick).toHaveBeenCalledOnce();
     expect(counter.getRemainderMs()).toBe(0);
     close();
@@ -136,12 +140,53 @@ describe('Terra ambient clock: five real minutes earn ten Terra minutes', () => 
     expect(clock.tasks.size).toBe(0);
   });
 
+  it('makes a completely stationary party tired after exactly 16 Terra hours', () => {
+    const clock = fakeTime();
+    let state = start();
+    const before = state;
+    const close = attachChroniclesAmbientWorldClock((minutes) => {
+      state = chroniclesAdvanceAmbientWorldTime(state, town, minutes);
+      return true;
+    }, clock);
+    clock.step(479 * 60000); // 15 h 58 min Terra, no movements or turns
+    expect(chroniclesFatigueStatus(state)).toMatchObject({
+      tired: false, awakeMinutes: 958, initiativePenalty: 0,
+    });
+    clock.step(60000);
+    expect(chroniclesFatigueStatus(state)).toMatchObject({
+      tired: true, awakeMinutes: 960, attackPenalty: 1,
+      armorClassPenalty: 1, initiativePenalty: 2,
+    });
+    expect(state.x).toBe(before.x);
+    expect(state.y).toBe(before.y);
+    expect(state.turns).toBe(before.turns);
+    expect(state.lastRestWorldMinutes).toBe(before.lastRestWorldMinutes);
+    close();
+  });
+
+  it('also accrues time when standing still in a dungeon, without triggering a turn', () => {
+    const clock = fakeTime();
+    let state = createChroniclesState('swordhaven-sewers', null, { rules: 'mm3' });
+    const first = state;
+    const close = attachChroniclesAmbientWorldClock((minutes) => {
+      const next = chroniclesAdvanceAmbientWorldTime(state, sewer, minutes);
+      if (next === state) return false;
+      state = next;
+      return true;
+    }, clock);
+    clock.step(60000);
+    expect(state.worldMinutes).toBe(first.worldMinutes + 2);
+    expect(chroniclesFatigueStatus(state).awakeMinutes).toBe(2);
+    expect(state.turns).toBe(first.turns);
+    close();
+  });
+
   it('keeps unpaid credit for the next eligible outdoor session', () => {
     const clock = fakeTime(), counter = createChroniclesAmbientTimeCounter();
     const onTick = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
     let close = attachChroniclesAmbientWorldClock(onTick, { ...clock, counter });
-    clock.step(300000);
-    expect(counter.getPendingWorldMinutes()).toBe(10);
+    clock.step(60000);
+    expect(counter.getPendingWorldMinutes()).toBe(2);
     close();
     close = attachChroniclesAmbientWorldClock(onTick, { ...clock, counter });
     expect(onTick).toHaveBeenCalledTimes(2);
