@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { addSwordhavenClouds, createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
+import { addSwordhavenClouds, buildSwordhavenScene, createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
+import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
+import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import { createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
 import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
 
@@ -49,6 +51,63 @@ describe('Swordhaven storm-cloud banks', () => {
       expect(bank.receiveShadow).toBe(false);
       expect(bank.userData.chroniclesDecorativeOnly).toBe(true);
     }
+  });
+
+  it.each(['legacy', 'campaign'])('keeps the %s town clouds fixed relative to the camera at every heading', (kind) => {
+    const scene = new THREE.Scene();
+    if (kind === 'legacy') {
+      buildSwordhavenScene(scene, { coarsePointer: true });
+    } else {
+      const grid = swordhavenFirstBook.grid;
+      buildChroniclesCampaignExterior(scene, {
+        coarsePointer: true,
+        scenePlan: {
+          mapId: swordhavenFirstBook.id,
+          regionKind: 'settlement',
+          width: grid[0].length,
+          height: grid.length,
+          center: { x: 9, y: 7 },
+          grid,
+          content: [],
+          landscape: swordhavenFirstBook.landscape,
+        },
+      });
+    }
+    const sky = scene.getObjectByName('swordhaven-sky-dome');
+    const cloud = scene.getObjectByName('swordhaven-cloud-0');
+    const panorama = sky?.getObjectByName('chronicles-sky-cloud-panorama');
+    expect(sky).toBeTruthy();
+    expect(panorama).toBeTruthy();
+    expect(cloud.parent).toBe(sky);
+    expect(cloud.position.length()).toBeLessThan(panorama.geometry.parameters.radius);
+    const town = scene.getObjectByName(kind === 'legacy' ? 'chronicles-swordhaven-town' : 'chronicles-campaign-town');
+    expect(town?.getObjectByName('swordhaven-cloud-0')).toBeUndefined();
+
+    const camera = new THREE.PerspectiveCamera();
+    const localOffset = cloud.position.clone();
+    for (const [x, z, yaw] of [
+      [0, 0, 0], [18, -22, Math.PI / 2],
+      [-27, 15, Math.PI], [7, 30, Math.PI * 1.5],
+    ]) {
+      camera.position.set(x, 1.62, z);
+      camera.rotation.y = yaw;
+      sky.onBeforeRender(null, scene, camera);
+      const actual = cloud.getWorldPosition(new THREE.Vector3());
+      expect(actual.distanceTo(camera.position.clone().add(localOffset))).toBeLessThan(1e-5);
+      expect(cloud.getWorldQuaternion(new THREE.Quaternion())
+        .angleTo(new THREE.Quaternion())).toBeLessThan(1e-5);
+    }
+  });
+
+  it('releases its shared procedural atlas exactly once on scene disposal', () => {
+    const root = new THREE.Group();
+    addSwordhavenClouds(root, true);
+    const material = root.children[0].children[0].material;
+    const atlas = material.map;
+    let disposed = 0;
+    atlas.addEventListener('dispose', () => { disposed += 1; });
+    root.children.forEach(group => group.children[0].material.dispose());
+    expect(disposed).toBe(1);
   });
 
   it('uses persisted weather and daylight to tint clouds without creating more sprites', () => {
