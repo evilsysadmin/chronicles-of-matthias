@@ -74,6 +74,9 @@ export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
     opacity: 0.11, depthWrite: false, depthTest: true, fog: false,
     toneMapped: false, side: THREE.BackSide,
   });
+  // The scene disposer releases materials; release this generated GPU
+  // texture with its owning material rather than retaining it across maps.
+  material.addEventListener('dispose', () => texture.dispose());
   const layer = new THREE.Mesh(
     new THREE.SphereGeometry(60.5, coarsePointer ? 48 : 64, coarsePointer ? 16 : 24),
     material,
