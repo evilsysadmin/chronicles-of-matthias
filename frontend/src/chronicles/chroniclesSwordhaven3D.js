@@ -3428,8 +3428,18 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
     map: texture, transparent: true, opacity: 0.40, depthWrite: false,
     color: 0xb1bfcb, fog: true, toneMapped: false,
   });
-  // Sparse wide banks around the compass: the sky remains cloudy on turns
-  // without adding geometry in the walkable town or blocking interactions.
+  // Several sprites share this material; release the procedural GPU atlas
+  // exactly once when the scene disposer tears down the sky dome.
+  let atlasDisposed = false;
+  cloudMaterial.addEventListener('dispose', () => {
+    if (!atlasDisposed) {
+      atlasDisposed = true;
+      texture.dispose();
+    }
+  });
+  // Sparse wide banks around the compass. They are children of the camera-
+  // centred sky dome, not the town: walking cannot make clouds fly over roofs.
+  // Their centres and billboard extents stay inside the 60.5m panorama.
   const banks = [
     [0, 26, -53, 47, 12],
     [-42, 24, -36, 40, 11],
@@ -3445,12 +3455,15 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
     const cloud = new THREE.Group();
     cloud.name = 'swordhaven-cloud-' + cluster;
     cloud.userData.chroniclesDecorativeOnly = true;
-    cloud.position.set(x, y, z);
+    cloud.position.set(x * 0.85, y * 0.85, z * 0.85);
     const bank = new THREE.Sprite(cloudMaterial);
     bank.name = 'cloud-soft-bank';
     bank.scale.set(wide, tall, 1);
     bank.castShadow = false;
     bank.receiveShadow = false;
+    // The dome follows the camera onBeforeRender, after the scene's frustum
+    // pass. Avoid culling against last frame's camera-relative position.
+    bank.frustumCulled = false;
     bank.userData.chroniclesDecorativeOnly = true;
     cloud.add(bank);
     root.add(cloud);
@@ -3464,7 +3477,8 @@ export function buildSwordhavenScene(scene, { scenePlan = {}, coarsePointer = fa
   scene.background = new THREE.Color(0xb8dce9); // Fallback if WebGL cannot render the dome.
   scene.fog = new THREE.Fog(0xb8dce9, 48, Math.max(width, height) * CELL * 0.98);
   const sunDirection = new THREE.Vector3(-28, 26, -90).normalize();
-  scene.add(createSwordhavenSkyDome(sunDirection, coarsePointer));
+  const skyDome = createSwordhavenSkyDome(sunDirection, coarsePointer);
+  scene.add(skyDome);
   const skylight = new THREE.HemisphereLight(0xd7ebff, 0x688258, 1.45);
   scene.add(skylight);
   const sun = new THREE.DirectionalLight(0xffedd1, coarsePointer ? 1.2 : 1.65);
@@ -3495,7 +3509,7 @@ export function buildSwordhavenScene(scene, { scenePlan = {}, coarsePointer = fa
   dressSwordhavenRoadsides(root, mats, coarsePointer, width, height, center);
   root.add(buildSwordhavenFountain(mats));
 
-  addSwordhavenClouds(root, coarsePointer);
+  addSwordhavenClouds(skyDome, coarsePointer);
 
   // Low walls define the silhouette but never replace grid-authoritative collision.
   for (const sign of [-1, 1]) {

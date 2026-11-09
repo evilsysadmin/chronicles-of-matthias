@@ -761,7 +761,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     ? new THREE.Fog(skyTint, 14, Math.max(width, height) * CELL * 0.95)
     : new THREE.Fog(skyTint, 55, Math.max(width, height) * CELL * 1.65);
   const sunDirection = new THREE.Vector3(-25, 30, -65).normalize();
-  scene.add(createSwordhavenSkyDome(sunDirection, coarsePointer));
+  const skyDome = createSwordhavenSkyDome(sunDirection, coarsePointer);
+  scene.add(skyDome);
   // Book One shopfronts need a directional key to reveal dressed stone,
   // projecting eaves and recessed windows. Leave wilderness lighting intact.
   // Mobile keeps its existing no-shadow budget and the same light count.
@@ -1004,7 +1005,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       buildSwordhavenTree(town, wx, wz, village, coarsePointer, index);
     });
-    addSwordhavenClouds(town, coarsePointer);
+    // Clouds belong to the camera-following sky, never the town geometry.
+    addSwordhavenClouds(skyDome, coarsePointer);
     scene.add(town);
   }
   if (blocked.length && forest) {
