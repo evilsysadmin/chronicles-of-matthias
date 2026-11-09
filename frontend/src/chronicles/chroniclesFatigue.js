@@ -1,7 +1,8 @@
 import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
 
-// A day in Terra is the only fatigue clock. Browser tab time, turns, and
-// checkpoint age never affect this rule.
+// Terra's persisted world minutes are the only fatigue authority. Active,
+// visible exploration advances Terra even when standing still; hidden tabs,
+// paused screens and elapsed offline time never accrue fatigue directly.
 export const CHRONICLES_FATIGUE_THRESHOLD_MINUTES = 16 * 60;
 
 // Older runs have no sleep receipt. Treat their currently restored Terra time

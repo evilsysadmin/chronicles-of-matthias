@@ -2048,9 +2048,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     });
   };
 
-  // A real five-minute block gives +10 Terra minutes independent from
-  // movement. Never discard the partial block when the party moves.
-  const ambientClockMap = state ? chroniclesMapForState(state) : null;
+  // Each real minute of visible, unpaused exploration adds two Terra minutes
+  // even when standing still, in town or in the dungeon. Preserve fractions
+  // through movement/overlays and suspend in combat, background or menus.
   const ambientClockPaused = !ready || entryView !== 'playing'
     || state?.phase !== 'explore' || Boolean(state?.initiative)
     || menuOpen || feedbackOpen || firstStepsOpen || adminOpen || journalOpen
@@ -2060,8 +2060,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     || Boolean(worldStatOffer) || provisionsOpen || Boolean(campPhase) || saveBusy
     || confirmExitWithoutSaving || confirmLoadSelection
     || Boolean(state?.shop || state?.guild || state?.inn)
-    || Boolean(chroniclesCampaignEpiloguePending(state))
-    || !['settlement', 'wilderness', 'outdoor'].includes(ambientClockMap?.regionKind);
+    || Boolean(chroniclesCampaignEpiloguePending(state));
   useEffect(() => {
     if (ambientClockPaused) return undefined;
     const counter = ambientTimeCounterRef.current;

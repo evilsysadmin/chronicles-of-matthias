@@ -1,13 +1,15 @@
 import { chroniclesWorldMinutes } from './chroniclesWorldTime.js';
 
-// Real visible exploration: five minutes earn ten additional Terra minutes.
-// Movement still costs its own ten minutes and NEVER resets the real counter.
-export const CHRONICLES_AMBIENT_REAL_BLOCK_MS = 5 * 60 * 1000;
-export const CHRONICLES_AMBIENT_WORLD_MINUTES = 10;
+// Every real minute of active exploration advances Terra by two minutes,
+// including when the party stands still. This preserves the previous 2:1
+// pacing while making rest/fatigue progress observable in smaller steps.
+// Movement still costs its own ten minutes and NEVER resets this counter.
+export const CHRONICLES_AMBIENT_REAL_BLOCK_MS = 60 * 1000;
+export const CHRONICLES_AMBIENT_WORLD_MINUTES = 2;
 
 export function chroniclesAdvanceAmbientWorldTime(state, map, minutes = CHRONICLES_AMBIENT_WORLD_MINUTES) {
   if (!state || state.combatRules !== 'mm3' || state.phase !== 'explore'
-      || state.initiative || !map || !['settlement', 'wilderness', 'outdoor'].includes(map.regionKind)
+      || state.initiative || !map
       || !Number.isSafeInteger(minutes) || minutes <= 0) return state;
   const elapsed = chroniclesWorldMinutes(state.worldMinutes);
   const next = Math.min(Number.MAX_SAFE_INTEGER, elapsed + minutes);
@@ -40,9 +42,9 @@ export function createChroniclesAmbientTimeCounter() {
   };
 }
 
-// One timer at the NEXT real five-minute threshold, rather than a React
-// interval or WebGL animation loop. A monotonic clock preserves the extra
-// minute if the browser wakes six minutes after the previous boundary.
+// One timer at the NEXT real one-minute threshold, rather than a React
+// interval or WebGL animation loop. A monotonic clock preserves remaining
+// fractions if the browser wakes late. Active dungeon exploration counts too.
 // Hidden tabs and modals do not accrue; a resumed session keeps fractions.
 export function attachChroniclesAmbientWorldClock(onTick, {
   doc = document, timer = window, now = () => performance.now(),
