@@ -150,6 +150,23 @@
   letter-spacing: .07em;
   text-shadow: 2px 3px 0 #5d432e, 0 0 9px #23455466;
 }
+.chronicles .chronicles-world-info__fatigue {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid #99704b;
+  background: #e2bd8966;
+  color: #3c291b;
+  font: 16px/1.25 var(--mm3-pixel-font), monospace;
+}
+.chronicles .chronicles-world-info__fatigue[data-chronicles-fatigue='tired'] {
+  border-color: #8c4633;
+  background: #c88b7057;
+}
+.chronicles .chronicles-world-info__fatigue span { color: #684528; }
+.chronicles .chronicles-world-info__fatigue strong { font-weight: 400; font-size: 19px; }
+.chronicles .chronicles-world-info__fatigue small { font-size: 15px; line-height: 1.32; }
 .chronicles .chronicles-world-info__calendar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
