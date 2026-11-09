@@ -84,7 +84,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     if (object.name !== 'swordhaven-shop-nameplate') return;
     const lettering = object.getObjectByName('shop-nameplate-lettering');
     const flames = object.getObjectByName('shop-sign-torch-flames');
-    const wash = object.getObjectByName('shop-sign-torch-wallwash');
+    const wash = object.parent?.getObjectByName('shop-sign-torch-wallwash');
     if (lettering?.material?.isMeshStandardMaterial && flames) {
       firelitShopSigns.push({ lettering, flames, wash });
     }
