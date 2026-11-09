@@ -823,7 +823,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const enemyMoveFrom = new Map();
   const reducedHurtTimers = new Map();
   const clock = new THREE.Clock();
-  let fountainFrameTimer = null;
+  let ambientFrameTimer = null;
 
   camera.position.copy(desiredPosition);
   camera.rotation.set(0, desiredYaw, 0);
@@ -1011,7 +1011,7 @@ export function createChroniclesOfMatthiasGame(host, {
     // A changed view paints once; movement and impacts get a short animation
     // window. The GPU stays idle while the player is waiting.
     scheduler.invalidate(animateState ? 1050 : 0);
-    refreshFountainFrameTimer();
+    refreshAmbientFrameTimer();
   }
 
   function playAttack(memberId) {
@@ -1255,7 +1255,10 @@ export function createChroniclesOfMatthiasGame(host, {
     // Party-carried light is gameplay visibility, not a decorative animation.
     // Keep it synced on every frame, including prefers-reduced-motion.
     atmosphere.userData.updateChroniclesAtmosphere?.(time);
-    if (!reducedMotion) plazaFountainArt?.userData.updateChroniclesFountainWater?.(time);
+    if (!reducedMotion) {
+      plazaFountainArt?.userData.updateChroniclesFountainWater?.(time);
+      exteriorDaylight?.animateShopTorches(time);
+    }
     renderer.render(scene, camera);
     renderDiagnostics.recordFrame();
     ambientTorchGlows.update();
@@ -1269,22 +1272,28 @@ export function createChroniclesOfMatthiasGame(host, {
     draw: render,
   });
   scheduler.setVisible(visible);
-  // 8fps only while a player is near the visible fountain; no permanent RAF,
-  // particle physics or full-map GPU wakeups. Clears on hide, map swap, exit.
-  function refreshFountainFrameTimer() {
-    const shouldRun = chroniclesFountainMotionEnabled({
-      visible: visible && !destroyed, reducedMotion,
-      partyPosition: desiredPosition, fountainPosition: plazaFountainPosition,
-    });
-    if (!shouldRun && fountainFrameTimer !== null) {
-      window.clearInterval(fountainFrameTimer);
-      fountainFrameTimer = null;
-    } else if (shouldRun && fountainFrameTimer === null) {
-      fountainFrameTimer = window.setInterval(() => scheduler.invalidate(0), 125);
+  // One shared 8fps ambient tick: the fountain OR a nearby lit shopfront.
+  // Swordhaven fire keeps moving while the camera is stationary; wilderness,
+  // broad daylight, reduced-motion and background tabs leave the GPU asleep.
+  // The existing fountain timer is reused, not duplicated per brazier.
+  function refreshAmbientFrameTimer() {
+    const canAnimate = visible && !destroyed && !reducedMotion;
+    const shouldRun = canAnimate && (
+      chroniclesFountainMotionEnabled({
+        visible: true, reducedMotion: false,
+        partyPosition: desiredPosition, fountainPosition: plazaFountainPosition,
+      })
+      || exteriorDaylight?.hasNearbyLitShopTorches(desiredPosition)
+    );
+    if (!shouldRun && ambientFrameTimer !== null) {
+      window.clearInterval(ambientFrameTimer);
+      ambientFrameTimer = null;
+    } else if (shouldRun && ambientFrameTimer === null) {
+      ambientFrameTimer = window.setInterval(() => scheduler.invalidate(0), 125);
       scheduler.invalidate(0);
     }
   }
-  refreshFountainFrameTimer();
+  refreshAmbientFrameTimer();
   // R2 may decode after the GPU has parked on an idle frame. Reveal the new
   // spider painting in a single invalidated frame, not a perpetual render loop.
   dungeon.enemyDefinitions.forEach((definition) => {
@@ -1324,7 +1333,7 @@ export function createChroniclesOfMatthiasGame(host, {
   const onVisibility = () => {
     visible = document.visibilityState !== 'hidden';
     scheduler.setVisible(visible);
-    refreshFountainFrameTimer();
+    refreshAmbientFrameTimer();
     ambientTorchGlows.setVisible(chroniclesPerfTorchesVisible(visible, perfIsolation.disableTorchGlows));
     precipitation?.setVisible(visible);
     windDebris?.setVisible(visible);
@@ -1341,7 +1350,7 @@ export function createChroniclesOfMatthiasGame(host, {
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      refreshFountainFrameTimer();
+      refreshAmbientFrameTimer();
       scheduler.dispose();
       reducedHurtTimers.forEach((timeout) => clearTimeout(timeout));
       reducedHurtTimers.clear();
