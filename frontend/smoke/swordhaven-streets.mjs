@@ -19,6 +19,7 @@ try {
   ];
   const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney', ...skyViews];
   const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
+  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'night'];
   for (const width of [360, 390, 430, 1280]) {
     const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
     // Fresh navigation recreates the real WebGL scene; one browser context per
@@ -29,12 +30,25 @@ try {
     });
     const page = await context.newPage();
     try {
-      for (const view of width === 360 || width === 430 ? portraitShops : fullViews) {
+      const shots = (width === 360 || width === 430 ? portraitShops : fullViews)
+        .map(view => ({ view, weather: null }));
+      // Only two representative viewport sizes get the extra four climate
+      // frames; the existing 360/430 shop budget remains unchanged.
+      if (width === 390 || width === 1280) {
+        shots.push(...skyWeatherScenarios.map(weather => ({
+          view: 'sky-plaza-south', weather,
+        })));
+      }
+      for (const { view, weather } of shots) {
         const pageErrors = [];
         const onPageError = error => pageErrors.push(error.message);
         page.on('pageerror', onPageError);
         try {
-        await page.goto(url + '?view=' + view, { waitUntil: 'domcontentloaded' });
+        await page.goto(
+          url + '?view=' + view + '&coarse=' + (width === 1280 ? '0' : '1')
+            + (weather ? '&weather=' + weather : ''),
+          { waitUntil: 'domcontentloaded' },
+        );
         await page.waitForFunction(() =>
           document.body.dataset.sceneReady === 'true'
           || Boolean(document.body.dataset.sceneError),
@@ -46,7 +60,9 @@ try {
           overflowing: document.documentElement.scrollWidth > innerWidth + 1,
         }));
         // Save evidence even when the contract fails, so review has a frame.
-        await page.screenshot({ path: 'smoke-swordhaven-' + view + '-' + width + '.png' });
+        await page.screenshot({
+          path: 'smoke-swordhaven-' + view + (weather ? '-' + weather : '') + '-' + width + '.png',
+        });
         assert.equal(result.sceneError, undefined, JSON.stringify(result));
         assert.equal(result.sceneReady, 'true');
         assert.equal(result.mapId, 'swordhaven-first-book');
@@ -74,14 +90,47 @@ try {
         assert.equal(result.julietMobileFraming, 'true',
           'The dedicated Juliet shot must visibly frame the actual wrought-iron upper guard in portrait');
         assert.equal(result.streetView, view);
+        assert.equal(result.skyCoarsePointer, String(width !== 1280),
+          'Desktop must use desktop Three.js budget; portrait must use touch budget');
         if (skyViews.includes(view)) {
           assert.equal(result.skyCapture, 'true');
           assert.equal(result.skyAnchored, 'true',
             'Sky dome, panorama and all cloud banks must remain camera-relative on every heading');
           assert.equal(result.skySeamless, 'true',
             'The procedural panoramic atlas must have identical pixels across its 360-degree seam');
-          assert.equal(Number(result.skyCloudCount), 4,
-            'The mobile-cost cloud fixture must show all four cloud banks without frustum popping');
+          assert.equal(Number(result.skyCloudCount), width === 1280 ? 8 : 4,
+            'Cloud bank count must match the actual desktop/touch budget');
+          assert.equal(Number(result.skyAtlasWidth), width === 1280 ? 512 : 256,
+            'Panoramic atlas resolution must match the actual desktop/touch budget');
+        }
+        if (weather) {
+          assert.equal(result.skyScenario, weather);
+          assert.ok(Number(result.skyWorldMinutes) >= 0,
+            'Sky photos must use reproducible persisted Terra minutes');
+          assert.ok(Number(result.skyCloudiness) >= 0);
+          if (weather === 'clear' || weather === 'rain') {
+            assert.equal(result.skyWeatherKind, weather,
+              'Weather scenario must be sampled from actual regional weather');
+            assert.ok(Number(result.skyDaylight) > 0.9,
+              'Weather comparison must have comparable midday sunlight');
+            assert.equal(result.skySunVisible, 'true');
+            assert.equal(result.skyPrecipitation, weather === 'rain' ? 'rain' : 'none');
+            if (weather === 'rain') {
+              assert.ok(Number(result.skyPanoramaOpacity) > 0.6,
+                'Rain must darken the existing real panorama');
+            } else {
+              assert.ok(Number(result.skyPanoramaOpacity) < 0.3,
+                'Clear weather must restore the lighter panorama');
+            }
+          } else if (weather === 'dawn') {
+            assert.ok(Number(result.skyTwilight) > 0.9,
+              'Dawn must track the seasonal sunrise, not a fixed wall-clock hour');
+            assert.ok(Number(result.skyDaylight) > 0.1
+              && Number(result.skyDaylight) < 0.9);
+          } else if (weather === 'night') {
+            assert.ok(Number(result.skyDaylight) < 0.01);
+            assert.equal(result.skySunVisible, 'false');
+          }
         }
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
@@ -200,10 +249,10 @@ try {
           'Swordhaven smoke must use the same portrait town lens as the game');
         assert.equal(result.overflowing, false);
         assert.deepEqual(pageErrors, []);
-        console.log('OK real Swordhaven 3D ' + view + ' ' + width + 'px');
+        console.log('OK real Swordhaven 3D ' + view + (weather ? '/' + weather : '') + ' ' + width + 'px');
         } catch (error) {
-          failures.push(view + '/' + width + ': ' + error.message);
-          console.error('FAIL Swordhaven 3D smoke', view, width, error);
+          failures.push(view + (weather ? '/' + weather : '') + '/' + width + ': ' + error.message);
+          console.error('FAIL Swordhaven 3D smoke', view, weather, width, error);
         } finally {
           page.off('pageerror', onPageError);
         }
