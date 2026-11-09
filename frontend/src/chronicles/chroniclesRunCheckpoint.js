@@ -309,6 +309,10 @@ function runtimeCheckpointFlags(state) {
   // Game time is not derivable from turns: inn/camp rests consume hours.
   if (source.combatRules === 'mm3' && Number.isSafeInteger(source.worldMinutes) && source.worldMinutes >= 0) {
     flags[runtimeKey('worldMinutes')] = source.worldMinutes;
+    if (Number.isSafeInteger(source.lastRestWorldMinutes) && source.lastRestWorldMinutes >= 0
+      && source.lastRestWorldMinutes <= source.worldMinutes) {
+      flags[runtimeKey('lastRestWorldMinutes')] = source.lastRestWorldMinutes;
+    }
   }
   if (round !== null) flags[runtimeKey('round')] = round;
   if (explorationEnemySteps !== null) flags[runtimeKey('explorationEnemySteps')] = explorationEnemySteps;
@@ -513,8 +517,15 @@ function applyRuntimeCheckpoint(state, flags) {
   if (turns !== null) next.turns = turns;
   const savedWorldMinutes = flags[runtimeKey('worldMinutes')];
   // Missing or corrupted flags retain the 08:00 baseline of a legacy save.
-  if (next.combatRules === 'mm3' && Number.isSafeInteger(savedWorldMinutes) && savedWorldMinutes >= 0) {
-    next.worldMinutes = savedWorldMinutes;
+  if (next.combatRules === 'mm3') {
+    if (Number.isSafeInteger(savedWorldMinutes) && savedWorldMinutes >= 0) {
+      next.worldMinutes = savedWorldMinutes;
+    }
+    const savedRest = flags[runtimeKey('lastRestWorldMinutes')];
+    // Old saves predate fatigue: don't pretend they have been awake since
+    // the first morning of Terra or inherit the newly-created party baseline.
+    next.lastRestWorldMinutes = Number.isSafeInteger(savedRest) && savedRest >= 0
+      && savedRest <= next.worldMinutes ? savedRest : next.worldMinutes;
   }
   if (round !== null) next.round = round;
   if (explorationEnemySteps !== null) next.explorationEnemySteps = explorationEnemySteps;
