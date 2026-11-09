@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import ChroniclesSpellIcon from './ChroniclesSpellIcon.jsx';
 import {
   CHRONICLES_SPELL_SCHOOLS,
   chroniclesMemberMaxSp,
@@ -322,7 +323,7 @@ export default function ChroniclesSpellMenu({
                         }
                       }}
                       title={!canAct ? 'No es el turno de este personaje' : down ? 'El personaje está fuera de combate' : sp < spell.cost ? 'No tienes suficientes PH' : `Lanzar ${spell.name}`}>
-                      <span className="chronicles-spell-menu__rune" aria-hidden="true">{kind.glyph}</span>
+                      <span className="chronicles-spell-menu__rune" aria-hidden="true"><ChroniclesSpellIcon spell={spell} /></span>
                       <span className="chronicles-spell-menu__entry">
                         <strong>{spell.name}</strong>
                         <small>{spell.description}</small>
