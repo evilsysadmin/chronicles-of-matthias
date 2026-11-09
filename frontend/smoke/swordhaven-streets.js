@@ -526,7 +526,8 @@ try {
       && streetHoods.count === windowFrames.count
       && streetBraces?.count === streetHoods.count * 2
       && streetBoxes?.count > 0 && streetBoxes.count < streetHoods.count / 2
-      && streetFoliage?.count === streetBoxes.count * 3
+      // Production uses 3 leaves per planter on touch and 5 on desktop.
+      && streetFoliage?.count === streetBoxes.count * (coarsePointer ? 3 : 5)
       && [streetHoods, streetBraces, streetBoxes, streetFoliage]
         .every(part => part.userData.chroniclesDecorativeOnly && !part.castShadow))),
     streetView: name,
