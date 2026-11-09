@@ -39,6 +39,36 @@
   filter: saturate(1) contrast(1.05) brightness(1.06);
 }
 
+/* Fatigue is a portrait *expression*, separate from sleep and low HP.
+   Keep the hero's canonical face; a lightly lowered upper eyelid and subtle
+   under-eye shade communicate 16h of wakefulness on custom portraits too.
+   Once a faithful tired WebP is approved on R2 these layers stand down. */
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-glyph {
+  position: relative;
+}
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-thumbnail:not([data-chronicles-tired-ready]) {
+  filter: saturate(.7) brightness(.88) contrast(1.04);
+}
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-glyph:not(:has(
+  .chronicles-party-thumbnail[data-chronicles-tired-ready]
+))::before,
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-glyph:not(:has(
+  .chronicles-party-thumbnail[data-chronicles-tired-ready]
+))::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 37%;
+  width: 20%;
+  height: 3px;
+  border-radius: 80% 80% 50% 50%;
+  background: rgba(36, 22, 23, .72);
+  box-shadow: 0 3px 3px rgba(39, 17, 22, .4);
+  pointer-events: none;
+}
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-glyph::before { left: 25%; }
+.chronicles-party [data-chronicles-fatigued='true'] .chronicles-party-glyph::after { right: 25%; }
+
 @media (max-width: 800px) {
   .chronicles-party-glyph {
     width: 28px;

@@ -12,7 +12,7 @@ try {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
-      const phase = width === 430 ? '?phase=night' : '';
+      const phase = width === 430 ? '?phase=night' : width === 390 ? '?fatigue=true' : '';
       await page.goto(base + phase, { waitUntil: 'domcontentloaded' });
       const modal = page.getByRole('dialog', { name: 'INFORMACIÓN DEL JUEGO' });
       await modal.waitFor({ state: 'visible', timeout: 15000 });
@@ -38,9 +38,13 @@ try {
       assert(bounds.closeHeight >= 44, 'Close touch target too small at ' + width
         + ': ' + JSON.stringify(bounds));
       assert.equal(await modal.locator('[data-chronicles-world-info-time]').innerText(),
-        width === 430 ? '22:00' : '08:00');
+        width === 430 ? '22:00' : width === 390 ? '00:00' : '08:00');
+      const fatigue = modal.locator('[data-chronicles-fatigue]');
+      assert.equal(await fatigue.getAttribute('data-chronicles-fatigue'),
+        width === 390 ? 'tired' : 'rested');
+      if (width === 390) assert.match(await fatigue.innerText(), /16 h sin dormir.*−2 iniciativa/s);
       const clock = await page.locator('[data-world-time-minutes]').getAttribute('data-world-time-minutes');
-      assert.equal(clock, width === 430 ? '1320' : '480');
+      assert.equal(clock, width === 430 ? '1320' : width === 390 ? '1440' : '480');
       assert.deepEqual(errors, [], 'No browser errors at ' + width);
       await page.screenshot({ path: 'smoke-world-info-' + width + '.png' });
       await page.keyboard.press('i');

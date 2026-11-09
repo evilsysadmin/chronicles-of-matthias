@@ -41,6 +41,7 @@ import './ChroniclesPortraitLevelUp.css';
 import { chroniclesResolveTemporaryFountainBoon } from '../chronicles/chroniclesTemporaryFountainBoon.js';
 import { useChroniclesSoundtrack } from '../chronicles/useChroniclesSoundtrack.js';
 import { attachChroniclesVisualViewport } from '../chronicles/chroniclesVisualViewport.js';
+import { chroniclesFatigueStatus } from '../chronicles/chroniclesFatigue.js';
 import {
   chroniclesPartyPortraitUrl, chroniclesPartyPortraitRemoteUrl,
   chroniclesPortraitImageFallback,
@@ -2156,6 +2157,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   }
 
   const worldCalendar = state.combatRules === 'mm3' ? chroniclesWorldCalendar(state.worldMinutes) : null;
+  const fatigue = chroniclesFatigueStatus(state);
   const weatherMap = worldCalendar ? chroniclesMapForState(state) : null;
   const worldWeather = weatherMap && worldCalendar ? chroniclesRegionalWeather({
     mapId: weatherMap.id, biome: weatherMap.biome,
@@ -2260,7 +2262,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
             const sleeping = member.hp > 0 && (campPhase === 'sleeping'
               || state.initiative?.order?.some((actor) => actor.kind === 'party'
                 && actor.id === member.id && actor.asleep === true));
+            const fatigued = fatigue.tired && member.hp > 0 && !sleeping;
+            const portraitVariant = sleeping ? 'sleep' : fatigued ? 'tired' : 'awake';
             const sleepUrl = sleeping ? chroniclesPartyPortraitRemoteUrl(member, 'sleep') : null;
+            const tiredUrl = fatigued ? chroniclesPartyPortraitRemoteUrl(member, 'tired') : null;
             return (
               <ChroniclesPartyAvatarButton
                 key={member.id}
@@ -2276,18 +2281,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 }}
                 onOpen={() => openMemberSheet(member.id)}
                 disabled={expeditionOver}
-                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}, ${vitals}`}
-                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals} · clic: seleccionar · doble clic / Enter: ficha`}
+                aria-label={pendingSpellTarget ? `Lanzar ${CHRONICLES_SPELLS[pendingSpellTarget.spellId]?.name} a ${member.name}, ${index + 1}` : `Seleccionar ${member.name}, ${vitals}${fatigued ? ' · Cansado: −1 acierto y CA, −2 iniciativa' : ''}`}
+                title={pendingSpellTarget ? `${index + 1} · ${member.name} · ${chroniclesHealTargetStatus(member) === 'wounded' ? 'Recibir curación' : 'No puede recibir curación'}` : `${member.name} · ${vitals}${fatigued ? ' · CANSADO: −1 acierto/CA y −2 iniciativa' : ''} · clic: seleccionar · doble clic / Enter: ficha`}
                 aria-pressed={member.id === selectedMemberId}
                 data-member-hp={member.hp}
                 data-chronicles-asleep={sleeping ? 'true' : undefined}
+                data-chronicles-fatigued={fatigued ? 'true' : undefined}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
               >
-                <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
+                <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true"
+                  data-chronicles-portrait-fatigued={fatigued ? "true" : undefined}>
                   <img
-                    key={`${member.id}:${sleeping ? 'sleep' : 'awake'}`}
+                    key={`${member.id}:${portraitVariant}`}
                     className="chronicles-party-thumbnail"
-                    src={chroniclesPartyPortraitUrl(member, sleeping ? 'sleep' : 'awake')}
+                    src={chroniclesPartyPortraitUrl(member, portraitVariant)}
                     alt=""
                     draggable="false"
                     data-chronicles-party-thumbnail={member.id}
@@ -2298,6 +2305,11 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                         image.setAttribute('data-chronicles-sleep-ready', 'true');
                       } else {
                         image.removeAttribute('data-chronicles-sleep-ready');
+                      }
+                      if (tiredUrl && image.currentSrc === tiredUrl) {
+                        image.setAttribute('data-chronicles-tired-ready', 'true');
+                      } else {
+                        image.removeAttribute('data-chronicles-tired-ready');
                       }
                     }}
                   />
@@ -2875,6 +2887,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       {!scenePainted && <LoadingScreen />}
       <ChroniclesWorldInfo calendar={worldInfoOpen ? worldCalendar : null}
         weather={worldInfoOpen ? worldWeather : null}
+        fatigue={worldInfoOpen ? fatigue : null}
         onClose={() => setWorldInfoOpen(false)} />
       <ChroniclesAutomap
         open={automapOpen}

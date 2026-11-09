@@ -37,6 +37,7 @@ import {
 import { chroniclesCloseInn, chroniclesOpenInn, chroniclesInnRest, chroniclesInnBuyFood, chroniclesInnHearRumor, chroniclesIsInn, chroniclesInnName } from './chronicles/chroniclesInns.js';
 import { chroniclesCampRest } from './chronicles/chroniclesCampRest.js';
 import { CHRONICLES_WORLD_START_MINUTES, chroniclesAdvanceWorldTimeOnTurn } from './chronicles/chroniclesWorldTime.js';
+import { chroniclesFatigueStatus } from './chronicles/chroniclesFatigue.js';
 import { chroniclesApplyTempleService, chroniclesTempleBlessingArmor } from './chronicles/chroniclesTempleServices.js';
 import {
   CHRONICLES_ELEMENT_LABELS,
@@ -143,7 +144,8 @@ export function createChroniclesState(mapId = null, characterBuild = null, { rul
     ...map.initialFlags,
     phase: 'explore',
     party: partyState(requestedBuild, rules),
-    ...(rules === 'mm3' ? { combatRules: 'mm3', worldMinutes: CHRONICLES_WORLD_START_MINUTES } : {}),
+    ...(rules === 'mm3' ? { combatRules: 'mm3', worldMinutes: CHRONICLES_WORLD_START_MINUTES,
+      lastRestWorldMinutes: CHRONICLES_WORLD_START_MINUTES } : {}),
     turns: 0,
     journal: [map.initialJournal],
     message: map.introMessage,
@@ -505,7 +507,7 @@ export function chroniclesPartyAttackStats(state, memberId, mode = 'auto') {
     // MM to-hit: level + Accuracy bonus + weapon (material) to-hit.
     toHit: Math.max(1, Number(modifiers.level || 1))
       + Number(member.mm3?.bonuses?.accuracy || 0)
-      + equipment.toHitBonus,
+      + equipment.toHitBonus - chroniclesFatigueStatus(state).attackPenalty,
   };
 }
 
@@ -525,7 +527,8 @@ export function chroniclesPartyArmorClass(state, memberId, { mode = 'melee' } = 
   // A divine +2 must remain +2 even for heroes whose base speed imposes
   // a negative AC modifier. Clamp the ordinary defense first, then bless.
   return Math.max(0, Number(member.mm3?.bonuses?.speed || 0)
-    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block) + blessing;
+    + chroniclesEquipmentBonuses(state, memberId, { mode }).armorClassBonus + ward + block
+    - chroniclesFatigueStatus(state).armorClassPenalty) + blessing;
 }
 
 export function chroniclesUsesMM3Combat(state) {

@@ -15,12 +15,14 @@ import {
 const base = `https://${CHRONICLES_PORTRAIT_R2_HOST}`;
 const valid = `${base}/portraits/matthias/awake-0123456789abcdef.webp`;
 const manifest = { matthias: { awake: valid,
-  sleep: `${base}/portraits/matthias/sleep-fedcba9876543210.webp` } };
+  sleep: `${base}/portraits/matthias/sleep-fedcba9876543210.webp`,
+  tired: `${base}/portraits/matthias/tired-0123456789abcdef.webp` } };
 
 describe('MM3 immutable R2 portrait manifest', () => {
   it('rejects all unverified objects, origins, query strings and malformed identities', () => {
     expect(chroniclesPortraitR2Url('matthias', 'awake', manifest)).toBe(valid);
     expect(chroniclesPortraitR2Url('matthias', 'sleep', manifest)).toBe(manifest.matthias.sleep);
+    expect(chroniclesPortraitR2Url('matthias', 'tired', manifest)).toBe(manifest.matthias.tired);
     const bad = [
       valid.replace('https:', 'http:'),
       valid.replace(CHRONICLES_PORTRAIT_R2_HOST, 'evil.example'),
@@ -48,6 +50,7 @@ describe('MM3 immutable R2 portrait manifest', () => {
       expect(chroniclesPartyPortraitId(id)).toBe(id);
       expect(chroniclesPartyPortraitUrl(id)).toBe(chroniclesPartyPortraitLocalUrl(id));
       expect(chroniclesPartyPortraitUrl(id, 'sleep')).toBe(chroniclesPartyPortraitLocalUrl(id));
+      expect(chroniclesPartyPortraitUrl(id, 'tired')).toBe(chroniclesPartyPortraitLocalUrl(id));
       expect(chroniclesPartyPortraitRemoteUrl(id)).toBeNull();
     }
     expect(chroniclesPartyPortraitId({ slotId: 'rook', portraitId: 'female-04' })).toBe('female-04');
@@ -63,7 +66,7 @@ describe('MM3 immutable R2 portrait manifest', () => {
     };
     expect(chroniclesPortraitImageFallback(node, 'matthias')).toBe(true);
     expect(node.src).toBe(CHRONICLES_PARTY_PORTRAITS.matthias);
-    expect(node.removed).toEqual(['data-chronicles-sleep-ready']);
+    expect(node.removed).toEqual(['data-chronicles-sleep-ready', 'data-chronicles-tired-ready']);
     expect(chroniclesPortraitImageFallback(node, 'matthias')).toBe(false);
   });
 });

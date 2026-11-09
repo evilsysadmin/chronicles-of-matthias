@@ -73,12 +73,12 @@ export function chroniclesPartyPortraitRemoteUrl(memberOrId, variant = 'awake') 
   return chroniclesPortraitR2Url(chroniclesPartyPortraitId(memberOrId), variant);
 }
 
-// The sleep portrait is opt-in per character. Until a faithful closed-eye
-// WebP is approved on R2, the existing local/CSS eyelid effect stays active.
-// Remote awake may be reused during sleep while the CSS fallback is in use.
+// Sleep and fatigue portraits are opt-in per character. Until a faithful
+// alternate WebP is approved on R2, the existing awake portrait plus
+// reversible CSS expression treatment remains authoritative.
 export function chroniclesPartyPortraitUrl(memberOrId, variant = 'awake') {
   return chroniclesPartyPortraitRemoteUrl(memberOrId, variant)
-    || (variant === 'sleep' && chroniclesPartyPortraitRemoteUrl(memberOrId, 'awake'))
+    || ((variant === 'sleep' || variant === 'tired') && chroniclesPartyPortraitRemoteUrl(memberOrId, 'awake'))
     || chroniclesPartyPortraitLocalUrl(memberOrId);
 }
 
@@ -89,6 +89,7 @@ export function chroniclesPortraitImageFallback(image, memberOrId) {
   // a broken local asset from recursively retrying onError.
   if (!image || image.src === bundled || image.getAttribute?.('src') === bundled) return false;
   image.removeAttribute?.('data-chronicles-sleep-ready');
+  image.removeAttribute?.('data-chronicles-tired-ready');
   image.src = bundled;
   return true;
 }

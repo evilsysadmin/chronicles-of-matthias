@@ -67,6 +67,10 @@ export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   if (!before || !after || before.combatRules !== 'mm3') return after;
   const spentTurns = Number(after.turns) - Number(before.turns);
   if (!Number.isSafeInteger(spentTurns) || spentTurns <= 0) return after;
+  const beforeMinutes = chroniclesWorldMinutes(before.worldMinutes);
+  const lastRest = Number.isSafeInteger(before.lastRestWorldMinutes)
+    && before.lastRestWorldMinutes >= 0 && before.lastRestWorldMinutes <= beforeMinutes
+    ? before.lastRestWorldMinutes : beforeMinutes;
   const actionType = typeof action === 'string' ? action : action?.type;
   // Looking around without leaving the same tile never advances Terra's sun
   // or calendar. Preserve the preexisting exploration-turn budget/pursuit:
@@ -79,12 +83,20 @@ export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   // Camp ambushes commit the exact interrupted hours inside the camp reducer.
   // Do not overwrite those partial hours with an artificial full night.
   if (actionType === 'camp-rest' && after.initiative
-    && chroniclesWorldMinutes(after.worldMinutes) > chroniclesWorldMinutes(before.worldMinutes)) return after;
+    && chroniclesWorldMinutes(after.worldMinutes) > beforeMinutes) {
+    // An ambush interrupts sleep: retain elapsed waking fatigue even after
+    // the partial world-clock advance, including when loading an old save.
+    return { ...after, lastRestWorldMinutes: lastRest };
+  }
   const spentMinutes = actionType === 'camp-rest' || actionType === 'inn-rest'
     ? CHRONICLES_WORLD_REST_MINUTES
     : CHRONICLES_WORLD_ACTION_MINUTES * spentTurns;
+  const worldMinutes = Math.min(Number.MAX_SAFE_INTEGER, beforeMinutes + spentMinutes);
   return {
     ...after,
-    worldMinutes: Math.min(Number.MAX_SAFE_INTEGER, chroniclesWorldMinutes(before.worldMinutes) + spentMinutes),
+    worldMinutes,
+    // Only a completed eight-hour camp/inn rest counts as recovery.
+    lastRestWorldMinutes: ['camp-rest', 'inn-rest'].includes(actionType) && !after.initiative
+      ? worldMinutes : lastRest,
   };
 }
