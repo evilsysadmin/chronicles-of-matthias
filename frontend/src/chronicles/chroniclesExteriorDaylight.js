@@ -84,8 +84,9 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     if (object.name !== 'swordhaven-shop-nameplate') return;
     const lettering = object.getObjectByName('shop-nameplate-lettering');
     const flames = object.getObjectByName('shop-sign-torch-flames');
+    const wash = object.getObjectByName('shop-sign-torch-wallwash');
     if (lettering?.material?.isMeshStandardMaterial && flames) {
-      firelitShopSigns.push({ lettering, flames });
+      firelitShopSigns.push({ lettering, flames, wash });
     }
   });
   const rainPuddles = scene.getObjectByName('chronicles-town-rain-puddles');
@@ -128,13 +129,18 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
           lanternDayIntensity + (1 - daylight) * 1.7;
       }
       const torchlight = 1 - daylight;
-      for (const { lettering, flames } of firelitShopSigns) {
-        // The inscription is painted, not self-lit: a restrained warm bounce
-        // accompanies two visible oil flames as dusk settles over Terra.
+      for (const { lettering, flames, wash } of firelitShopSigns) {
+        // Painted lettering and a soft, radial masonry wash pick up the
+        // sheltered braziers at night. Rain cannot extinguish an awning-
+        // protected flame. No timers or additional lights are introduced.
         lettering.material.emissiveIntensity = torchlight * 0.28;
         flames.visible = torchlight > 0.02;
         flames.userData.outerFire.opacity = torchlight * 0.94;
         flames.userData.innerFire.opacity = torchlight * 0.80;
+        if (wash) {
+          wash.visible = torchlight > 0.02;
+          wash.material.opacity = torchlight * 0.56;
+        }
       }
       if (rainPuddles && pavedRoad && dryRoadColor) {
         // Wet paving remembers recent rain across the shorter weather
