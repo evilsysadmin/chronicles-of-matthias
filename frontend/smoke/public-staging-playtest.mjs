@@ -180,7 +180,7 @@ async function runEpisode(profile, seed, viewport) {
           || root?.getAttribute('data-turn-phase') === 'enemy');
       }, null, { timeout: 15_000 });
       const before = await observe(page);
-      if (!before.initiative || before.phase !== 'explore') break;
+      if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
       const action = playtestAction({ profile, observed: before, combatActions, seed });
       assert.ok(action === 'a' || action === 'b',
@@ -196,7 +196,7 @@ async function runEpisode(profile, seed, viewport) {
       await page.waitForFunction(previous => {
         const rail = document.querySelector('[data-chronicles-initiative="visible"]');
         const root = document.querySelector('[data-chronicles="true"]');
-        return !rail || root?.getAttribute('data-chronicles-phase') !== 'explore'
+        return !rail || ['defeated', 'escaped'].includes(root?.getAttribute('data-chronicles-phase'))
           || rail.getAttribute('aria-label') !== previous;
       }, before.actor, { timeout: 12_000 });
       record(action, await observe(page));
