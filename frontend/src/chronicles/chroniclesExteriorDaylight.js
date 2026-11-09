@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { chroniclesWorldMinutes, chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 import { chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
+import { animateSwordhavenShopTorches } from './chroniclesSwordhavenShopTorches.js';
 
 // A deterministic 24-hour profile with season-dependent sunrise and sunset.
 // The 2-hour twilight transitions follow the real Terra calendar in I.
@@ -86,7 +87,11 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     const flames = object.getObjectByName('shop-sign-torch-flames');
     const wash = object.parent?.getObjectByName('shop-sign-torch-wallwash');
     if (lettering?.material?.isMeshStandardMaterial && flames) {
-      firelitShopSigns.push({ lettering, flames, wash });
+      firelitShopSigns.push({
+        lettering, flames, wash,
+        // Shopfronts never move: capture their position once, not per frame.
+        position: object.getWorldPosition(new THREE.Vector3()),
+      });
     }
   });
   const rainPuddles = scene.getObjectByName('chronicles-town-rain-puddles');
@@ -98,6 +103,18 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   let lastElapsedMinute = null;
 
   return {
+    hasNearbyLitShopTorches(partyPosition, radius = 26) {
+      if (!Number.isFinite(partyPosition?.x) || !Number.isFinite(partyPosition?.z)) return false;
+      const rangeSq = radius * radius;
+      return firelitShopSigns.some(({ flames, position }) =>
+        flames.visible
+        && (position.x - partyPosition.x) ** 2 + (position.z - partyPosition.z) ** 2 <= rangeSq);
+    },
+    animateShopTorches(seconds) {
+      for (const { flames, wash } of firelitShopSigns) {
+        animateSwordhavenShopTorches(flames, wash, seconds);
+      }
+    },
     sync(worldMinutes) {
       const elapsed = chroniclesWorldMinutes(worldMinutes);
       if (elapsed === lastElapsedMinute) return false;
@@ -134,6 +151,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         // sheltered braziers at night. Rain cannot extinguish an awning-
         // protected flame. No timers or additional lights are introduced.
         lettering.material.emissiveIntensity = torchlight * 0.28;
+        flames.userData.chroniclesFireStrength = torchlight;
         flames.visible = torchlight > 0.02;
         flames.userData.outerFire.opacity = torchlight * 0.94;
         flames.userData.innerFire.opacity = torchlight * 0.80;
