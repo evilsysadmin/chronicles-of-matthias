@@ -64,7 +64,19 @@ describe('MM3 information folio', () => {
       onClose: () => {},
     }));
     expect(fresh).toContain('data-chronicles-fatigue="rested"');
+    expect(fresh).toContain('0 h sin dormir');
+    expect(fresh).toContain('También cuenta esperar quietos explorando.');
     expect(fresh).not.toContain('Fatiga:');
+    const shortWait = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+      calendar: chroniclesWorldCalendar(482),
+      fatigue: { tired: false, awakeMinutes: 2 }, onClose: () => {},
+    }));
+    expect(shortWait).toContain('0 h 2 min sin dormir');
+    const longerWait = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+      calendar: chroniclesWorldCalendar(480 + 131),
+      fatigue: { tired: false, awakeMinutes: 131 }, onClose: () => {},
+    }));
+    expect(longerWait).toContain('2 h 11 min sin dormir');
   });
 
   it('renders nothing while closed', () => {
