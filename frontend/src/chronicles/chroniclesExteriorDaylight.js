@@ -104,6 +104,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   // never add a cloud animation loop or alter gameplay visibility.
   const cloudMaterial = scene.getObjectByName('swordhaven-cloud-0')
     ?.getObjectByName('cloud-soft-bank')?.material;
+  const panoramaMaterial = dome.getObjectByName('chronicles-sky-cloud-panorama')?.material;
   const cloudDay = new THREE.Color(0xc4cdd4);
   const cloudNight = new THREE.Color(0x3b4a5e);
   const cloudStorm = new THREE.Color(0x7d8993);
@@ -132,8 +133,15 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       const fogStrength = weather?.fog ?? 0;
       const { daylight, twilight, sunVisible } = profile;
       if (cloudMaterial) {
-        cloudMaterial.opacity = 0.24 + cloudiness * 0.71;
+        // Foreground shelves contribute parallax but no longer dominate
+        // the view over the uninterrupted distant cloud panorama.
+        cloudMaterial.opacity = 0.19 + cloudiness * 0.50;
         cloudMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
+          .lerp(cloudStorm, cloudiness * 0.62);
+      }
+      if (panoramaMaterial) {
+        panoramaMaterial.opacity = 0.11 + cloudiness * 0.79;
+        panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
           .lerp(cloudStorm, cloudiness * 0.62);
       }
       sunVector.set(profile.sun.x, profile.sun.y, profile.sun.z);
