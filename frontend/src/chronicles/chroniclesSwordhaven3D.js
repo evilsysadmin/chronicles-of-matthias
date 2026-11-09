@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createChroniclesSkyCloudPanorama } from './chroniclesSkyCloudPanorama.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { chroniclesTownSurfacePixels } from './chroniclesTownSurfacePixels.js';
 import { dressSwordhavenWindowBoxes } from './chroniclesSwordhavenFoliage.js';
@@ -112,7 +113,7 @@ export function swordhavenSurfaceTexture(kind) {
 
 // The dome moves with the camera but never rotates with it: the sun stays in
 // the same compass direction and the horizon remains stable while walking.
-export function createSwordhavenSkyDome(sunDirection) {
+export function createSwordhavenSkyDome(sunDirection, coarsePointer = false) {
   const geometry = new THREE.SphereGeometry(62, 64, 32);
   const coords = geometry.getAttribute('position');
   const colors = [];
@@ -136,6 +137,9 @@ export function createSwordhavenSkyDome(sunDirection) {
   sky.name = 'swordhaven-sky-dome';
   sky.renderOrder = -100;
   sky.frustumCulled = false;
+  // Camera-relative cloud shelves provide 360° coverage without parallax
+  // artifacts; existing near sprite banks remain a separate depth cue.
+  sky.add(createChroniclesSkyCloudPanorama(coarsePointer));
   const solarFacing = new THREE.Quaternion().setFromUnitVectors(
     new THREE.Vector3(0, 0, 1), sunDirection,
   );
@@ -3460,7 +3464,7 @@ export function buildSwordhavenScene(scene, { scenePlan = {}, coarsePointer = fa
   scene.background = new THREE.Color(0xb8dce9); // Fallback if WebGL cannot render the dome.
   scene.fog = new THREE.Fog(0xb8dce9, 48, Math.max(width, height) * CELL * 0.98);
   const sunDirection = new THREE.Vector3(-28, 26, -90).normalize();
-  scene.add(createSwordhavenSkyDome(sunDirection));
+  scene.add(createSwordhavenSkyDome(sunDirection, coarsePointer));
   const skylight = new THREE.HemisphereLight(0xd7ebff, 0x688258, 1.45);
   scene.add(skylight);
   const sun = new THREE.DirectionalLight(0xffedd1, coarsePointer ? 1.2 : 1.65);
