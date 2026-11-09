@@ -11,6 +11,17 @@ const VIEWS = Object.freeze({
   // Its arch must sit IN the perimeter opening, not before a solid wall.
   'gate-north': { x: 9, y: 2, heading: 'north', target: { x: 9, y: 0 }, cameraHeight: 1.62, lookUp: 1 },
   oldtown: { x: 3, y: 4, heading: 'north' },
+  // Cloud panorama regression: the same walkable eye positions looking in
+  // every cardinal direction, above the actual Swordhaven roof silhouettes.
+  // Two separated cells catch banks which incorrectly follow town geometry.
+  'sky-plaza-north': { x: 9, y: 7, heading: 'north', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-plaza-east': { x: 9, y: 7, heading: 'east', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-plaza-south': { x: 9, y: 7, heading: 'south', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-plaza-west': { x: 9, y: 7, heading: 'west', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-ward-north': { x: 9, y: 14, heading: 'north', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-ward-east': { x: 9, y: 14, heading: 'east', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-ward-south': { x: 9, y: 14, heading: 'south', cameraHeight: 1.8, lookUp: 2.7 },
+  'sky-ward-west': { x: 9, y: 14, heading: 'west', cameraHeight: 1.8, lookUp: 2.7 },
   // Golden shot: the mayor's real door from a walkable plaza cell.
   'mayor-square': { x: 11, y: 8, heading: 'south', target: { x: 11, y: 10 }, cameraHeight: 1.85, lookUp: 1.8 },
   // Genuine open street looking south at the plaza's occupied (9,9) tile.
@@ -225,8 +236,33 @@ try {
       distinct.add(Array.from(sample.slice(0, 3)).join(','));
     }
   }
+  const skyDome = scene.getObjectByName('swordhaven-sky-dome');
+  const skyPanorama = skyDome?.getObjectByName('chronicles-sky-cloud-panorama');
+  const skyClouds = Array.from({ length: 4 },
+    (_, index) => skyDome?.getObjectByName('swordhaven-cloud-' + index));
+  const skyTexture = skyPanorama?.material?.map;
+  const skyPixels = skyTexture?.image?.data;
+  const skyWidth = skyTexture?.image?.width;
+  const skyHeight = skyTexture?.image?.height;
+  const seamRow = Math.floor((skyHeight || 0) * 0.65);
+  const seamA = (seamRow * skyWidth) * 4;
+  const seamB = (seamRow * skyWidth + skyWidth - 1) * 4;
+  const skySeamless = Boolean(skyPixels && skyWidth > 0 && skyHeight > 0
+    && [0, 1, 2, 3].every(channel => skyPixels[seamA + channel] === skyPixels[seamB + channel]));
+  const skyAnchored = Boolean(skyDome && skyPanorama?.parent === skyDome
+    && skyDome.position.distanceTo(camera.position) < 0.001
+    && skyPanorama.material.transparent
+    && skyTexture.wrapS === THREE.RepeatWrapping
+    && skyClouds.every(cloud => cloud?.parent === skyDome
+      && cloud.children.length === 1
+      && cloud.children[0].frustumCulled === false
+      && cloud.position.length() < skyPanorama.geometry.parameters.radius));
   Object.assign(document.body.dataset, {
     sceneReady: 'true',
+    skyCapture: String(name.startsWith('sky-')),
+    skyAnchored: String(skyAnchored),
+    skySeamless: String(skySeamless),
+    skyCloudCount: String(skyClouds.filter(Boolean).length),
     cameraFov: String(camera.fov),
     mapId: swordhaven.id,
     tieredPlazaFountain: String(Boolean(
