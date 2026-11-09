@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
-import { chroniclesChooseEnemyStep } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesChooseEnemyStep, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesGridExplorationStep } from './chroniclesGridExplorationStep.js';
 import {
   chroniclesApplyRunCheckpoint,
   chroniclesRunCheckpointPayload,
@@ -16,7 +17,90 @@ const ROUTE = [
   { x: 14, y: 9 },
 ];
 
+
+// Unlike a pure AI direction test, this scenario calls the same exploration
+// entry point used for spent player actions. The enemy's position is NEVER
+// advanced by hand. Other mobs are defeated only to isolate this patrol's
+// response from 12 unrelated combat/archer events.
+function loneRoadGoblin() {
+  const initial = createChroniclesState(MAP_ID, null, { rules: 'mm3' });
+  const map = chroniclesMapById(MAP_ID);
+  const others = Object.fromEntries(map.enemies.filter((enemy) => enemy.id !== PATROL_ID)
+    .map((enemy) => [enemy.hpKey, 0]));
+  return { ...initial, ...others };
+}
+
 describe('MM3 · West Road real goblin circuit', () => {
+  it('actually circles during four spent exploration actions, survives a checkpoint mid-route and never farms rewards', () => {
+    const goblin = chroniclesMapById(MAP_ID).enemies.find((enemy) => enemy.id === PATROL_ID);
+    let state = loneRoadGoblin();
+    expect(chroniclesActiveEnemies(state).map((enemy) => enemy.id)).toEqual([PATROL_ID]);
+
+    const party = state.party;
+    const coins = state.gold;
+    const journal = state.journal;
+    const startTurns = state.turns;
+    // Turning in place spends exploration time, but never changes the
+    // camera cell; it must still animate an unalerted real patrol.
+    for (let index = 0; index < ROUTE.length; index += 1) {
+      const before = state;
+      state = chroniclesGridExplorationStep(before, 'turn-right');
+      expect(state.turns, `action ${index + 1} spent`).toBe(before.turns + 1);
+      expect(chroniclesRuntimeEnemyPosition(state, goblin))
+        .toEqual(ROUTE[(index + 1) % ROUTE.length]);
+      expect({ x: state.x, y: state.y }).toEqual({ x: 10, y: 7 });
+      expect(state.party).toEqual(party);
+      expect(state.gold).toBe(coins);
+      expect(state.journal).toEqual(journal);
+      expect(state.phase).toBe('explore');
+      expect(state.initiative).toBeFalsy();
+      if (index === 1) {
+        const checkpoint = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(state, 9)));
+        const restored = chroniclesApplyRunCheckpoint(
+          createChroniclesState(MAP_ID, null, { rules: 'mm3' }), checkpoint,
+        );
+        expect(chroniclesRuntimeEnemyPosition(restored, goblin)).toEqual(ROUTE[2]);
+        state = restored;
+      }
+    }
+    expect(state.turns).toBe(startTurns + 4);
+    expect(chroniclesRuntimeEnemyPosition(state, goblin)).toEqual(ROUTE[0]);
+    expect(chroniclesActiveEnemies(state).map((enemy) => enemy.id)).toEqual([PATROL_ID]);
+  });
+
+  it('breaks the circuit for real sighting/chase, then rejoins after the party leaves perception', () => {
+    const goblin = chroniclesMapById(MAP_ID).enemies.find((enemy) => enemy.id === PATROL_ID);
+    // Place the party in a real, unobstructed tile three cells north.
+    // The alert and every goblin step are handled by the production game loop.
+    const initial = { ...loneRoadGoblin(), x: 15, y: 6 };
+    const alerted = chroniclesGridExplorationStep(initial, 'turn-right');
+    expect(alerted.phase).toBe('explore');
+    expect(chroniclesRuntimeEnemyPosition(alerted, goblin)).toEqual({ x: 15, y: 8 });
+    expect(alerted.enemyAwareness?.[PATROL_ID]).toMatchObject({
+      x: 15, y: 6, mapId: MAP_ID, phase: 'explore',
+    });
+    // The party escapes outside line of sight; enemy memory expires and the
+    // actual pathfinder must find a traversable route back without teleporting.
+    let fleeing = { ...alerted, x: 1, y: 1 };
+    let rejoined = false;
+    for (let step = 0; step < 18; step += 1) {
+      const before = chroniclesRuntimeEnemyPosition(fleeing, goblin);
+      const after = chroniclesGridExplorationStep(fleeing, 'turn-right');
+      const position = chroniclesRuntimeEnemyPosition(after, goblin);
+      expect(Math.abs(position.x - before.x) + Math.abs(position.y - before.y))
+        .toBeLessThanOrEqual(1);
+      if (ROUTE.some((point) => point.x === position.x && point.y === position.y)) {
+        rejoined = true;
+      }
+      fleeing = after;
+    }
+    expect(rejoined).toBe(true);
+    expect(fleeing.phase).toBe('explore');
+    expect(fleeing.initiative).toBeFalsy();
+    expect(chroniclesActiveEnemies(fleeing).map((enemy) => enemy.id)).toEqual([PATROL_ID]);
+  });
+
+
   it('walks a predictable safe loop using the existing AI, without creating an enemy or a reward', () => {
     const map = chroniclesMapById(MAP_ID);
     const goblin = map.enemies.find((enemy) => enemy.id === PATROL_ID);
