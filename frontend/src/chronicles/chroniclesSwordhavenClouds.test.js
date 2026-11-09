@@ -49,6 +49,7 @@ describe('Swordhaven storm-cloud banks', () => {
       expect(bank.scale.x / bank.scale.y).toBeGreaterThan(2);
       expect(bank.castShadow).toBe(false);
       expect(bank.receiveShadow).toBe(false);
+      expect(bank.frustumCulled).toBe(false);
       expect(bank.userData.chroniclesDecorativeOnly).toBe(true);
     }
   });
