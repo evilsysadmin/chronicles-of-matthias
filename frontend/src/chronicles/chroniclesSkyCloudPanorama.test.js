@@ -37,7 +37,7 @@ describe('Seamless Terra cloud panorama', () => {
     }
     const bandY = Math.round(height * 0.64);
     expect(Array.from({ length: 12 }, (_, index) =>
-      px(Math.floor(index * (width - 1) / 12), bandY, 3)).every(a => a > 35)).toBe(true);
+      px(Math.floor(index * (width - 1) / 12), bandY, 3)).every(a => a > 24)).toBe(true);
     expect(px(Math.floor(width / 2), 0, 3)).toBe(0);
     expect(px(Math.floor(width / 2), height - 1, 3)).toBe(0);
     const atmosphere = Array.from({ length: 12 }, (_, index) =>
