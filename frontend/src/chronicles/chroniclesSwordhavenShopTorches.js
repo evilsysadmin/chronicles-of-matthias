@@ -165,6 +165,9 @@ export function dressSwordhavenShopTorches(nameplate) {
     depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
   }), 'shop-sign-torch-wallwash');
   wash.visible = false;
-  nameplate.add(wash, hoods, sconces, flames);
+  // The light pool belongs to the masonry, not to the wooden plaque.
+  // Its broad transparent quad must not expand the sign's geometric
+  // clearance envelope (notably the apothecary stone arch beneath it).
+  nameplate.add(hoods, sconces, flames);
   return { hoods, sconces, flames, wash };
 }
