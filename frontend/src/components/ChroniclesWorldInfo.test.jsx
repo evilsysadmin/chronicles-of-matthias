@@ -48,6 +48,25 @@ describe('MM3 information folio', () => {
     expect(html).toContain('data-chronicles-world-weather="' + weather.kind + '"');
     expect(render(480)).not.toContain('CLIMA REGIONAL');
   });
+  it('shows actual fatigue threshold and reversible penalties without inventing progress', () => {
+    const state = { combatRules: 'mm3', worldMinutes: 480 + 960, lastRestWorldMinutes: 480 };
+    const tired = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+      calendar: chroniclesWorldCalendar(state.worldMinutes),
+      fatigue: { tired: true, awakeMinutes: 960 },
+      onClose: () => {},
+    }));
+    expect(tired).toContain('data-chronicles-fatigue="tired"');
+    expect(tired).toContain('16 h sin dormir');
+    expect(tired).toContain('−1 acierto y CA · −2 iniciativa');
+    const fresh = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
+      calendar: chroniclesWorldCalendar(480),
+      fatigue: { tired: false, awakeMinutes: 0 },
+      onClose: () => {},
+    }));
+    expect(fresh).toContain('data-chronicles-fatigue="rested"');
+    expect(fresh).not.toContain('Fatiga:');
+  });
+
   it('renders nothing while closed', () => {
     expect(renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
       calendar: null, onClose: () => {},
