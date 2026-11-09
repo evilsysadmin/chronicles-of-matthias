@@ -102,6 +102,8 @@ jobs:
           # font-size and clipping gates, not merely a successful React mount.
           node smoke/run-timed.mjs smoke/initiative-legibility.mjs http://localhost:4174/smoke/initiative-legibility.html
           node smoke/run-timed.mjs smoke/folio-mobile.mjs http://localhost:4174/smoke/folio-mobile.html
+          # Real G/Grupo status: names and precise PV/PH/CA must be readable on touch.
+          node smoke/run-timed.mjs smoke/quick-status-mobile.mjs http://localhost:4174/smoke/quick-status-mobile.html
           # MM3's I folio: real component, legible calendar and 360/390/430/landscape/desktop fit.
           node smoke/run-timed.mjs smoke/world-info.mjs http://localhost:4174/smoke/world-info.html
           # Guild notices take the entire viewport without losing close, actions or paper scrolling.
