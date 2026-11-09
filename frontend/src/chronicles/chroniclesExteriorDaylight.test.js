@@ -75,7 +75,13 @@ describe('Terra solar cycle', () => {
       scenePlan: {
         mapId: swordhavenFirstBook.id, regionKind: 'settlement',
         width: grid[0].length, height: grid.length, center: { x: 9, y: 7 },
-        grid, content: [], landscape: swordhavenFirstBook.landscape,
+        grid,
+        // Build the real merchant fronts, not only anonymous houses:
+        // an empty content list has no shop plaques to illuminate.
+        content: swordhavenFirstBook.interactables
+          .filter(entry => String(entry.visualType || '').startsWith('building-'))
+          .map(entry => ({ ...entry, position: { x: entry.x, y: entry.y } })),
+        landscape: swordhavenFirstBook.landscape,
       },
     });
     const panes = scene.getObjectByName('chronicles-town-street-window-panes');
