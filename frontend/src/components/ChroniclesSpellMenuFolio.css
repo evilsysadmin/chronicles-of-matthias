@@ -235,6 +235,12 @@
   font: 400 1.6rem var(--mm3-pixel-font);
   box-shadow: inset 0 0 9px #9fbbd533;
 }
+.chronicles .chronicles-spell-menu__rune .chronicles-sheet-grimoire__spell-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
 .chronicles .chronicles-spell-menu__entry {
   display: grid;
   gap: 3px;

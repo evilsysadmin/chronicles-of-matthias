@@ -51,6 +51,9 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     expect(html).toContain('data-chronicles-cast="' + first.id + '"');
     expect(html).toContain(first.name);
     expect(html).toContain(first.cost + ' PH');
+    // CAST reuses the exact pixel portrait from the read-only character grimoire.
+    expect(html).toContain('data-spell-icon="' + first.id + '"');
+    expect((html.match(/data-spell-icon=/g) || []).length).toBe(chroniclesMemberSpells(state, member).length);
     expect(html).toContain('aria-label="Cerrar grimorio"');
   });
   it('locks unaffordable spells rather than silently permitting casts', () => {

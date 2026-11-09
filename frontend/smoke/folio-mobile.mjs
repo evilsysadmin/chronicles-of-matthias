@@ -67,6 +67,20 @@ try {
         assert.deepEqual(undersized, [], `${view} ${width} touch target too small`);
         assert.deepEqual(errors, [], `${view} ${width} browser exceptions`);
         if (view === 'cast' || view === 'items') {
+          if (view === 'cast') {
+            const portraits = await dialog.locator('[data-chronicles-cast] [data-spell-icon]').evaluateAll(
+              (icons) => icons.map((icon) => {
+                const tile = icon.closest('.chronicles-spell-menu__rune');
+                const ir = icon.getBoundingClientRect();
+                const tr = tile.getBoundingClientRect();
+                return { id: icon.getAttribute('data-spell-icon'),
+                  fits: ir.width > 0 && ir.height > 0 && ir.left >= tr.left - 1
+                    && ir.right <= tr.right + 1 && ir.top >= tr.top - 1 && ir.bottom <= tr.bottom + 1 };
+              }),
+            );
+            assert(portraits.length > 0 && portraits.every((icon) => icon.id !== 'fallback' && icon.fits),
+              `CAST authored portraits must fit their rune frames at ${width}px: ${JSON.stringify(portraits)}`);
+          }
           const footer = await dialog.locator('.chronicles-spell-menu__folio-footer').evaluate((node) => ({
             shortcutDisplay: getComputedStyle(node.querySelector('kbd')).display,
             coarse: matchMedia('(pointer: coarse)').matches,
