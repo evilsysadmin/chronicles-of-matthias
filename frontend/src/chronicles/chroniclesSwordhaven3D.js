@@ -3119,9 +3119,49 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'shop-nameplate-wood', [0, 0, 0]);
     mesh(nameplate, new THREE.BoxGeometry(3.14, 0.47, 0.08), mats.gold,
       'shop-nameplate-brass', [0, 0, 0.085]);
+    // Painted wood reacts to real daylight instead of glowing like a modern
+    // backlit sign. At night only a faint amber bounce from the side torches
+    // restores legibility; the letters themselves are never an LED panel.
     mesh(nameplate, new THREE.PlaneGeometry(3.02, 0.40),
-      new THREE.MeshBasicMaterial({ map: swordhavenShopLabelTexture(name, signTheme), toneMapped: false }),
+      material(0xffffff, {
+        map: swordhavenShopLabelTexture(name, signTheme), roughness: 0.93,
+        emissive: 0x74380e, emissiveIntensity: 0,
+      }),
       'shop-nameplate-lettering', [0, 0, 0.132]);
+
+    // Two small iron oil torches frame the inscription without obscuring it.
+    // Fire is decorative emissive geometry, NOT a PointLight or a collider.
+    // Its visibility is driven by Terra's existing exterior daylight sync.
+    const sconces = new THREE.Group();
+    sconces.name = 'shop-sign-torch-sconces';
+    sconces.userData.chroniclesDecorativeOnly = true;
+    const flames = new THREE.Group();
+    flames.name = 'shop-sign-torch-flames';
+    flames.userData.chroniclesDecorativeOnly = true;
+    flames.visible = false;
+    const iron = material(0x453426, { roughness: 0.80, metalness: 0.36 });
+    const torchWood = material(0x60442c, { roughness: 0.96 });
+    const outerFire = new THREE.MeshBasicMaterial({
+      color: 0xff9d45, transparent: true, opacity: 0, depthWrite: false,
+    });
+    const innerFire = new THREE.MeshBasicMaterial({
+      color: 0xffe3a1, transparent: true, opacity: 0, depthWrite: false,
+    });
+    for (const x of [-1.92, 1.92]) {
+      mesh(sconces, new THREE.BoxGeometry(0.10, 0.12, 0.42), iron,
+        'shop-sign-torch-bracket', [x, -0.10, 0.21], false);
+      mesh(sconces, new THREE.CylinderGeometry(0.06, 0.09, 0.30, 6), torchWood,
+        'shop-sign-torch-shaft', [x, 0.00, 0.38], false);
+      mesh(sconces, new THREE.CylinderGeometry(0.15, 0.10, 0.08, 8), iron,
+        'shop-sign-torch-cup', [x, 0.16, 0.38], false);
+      mesh(flames, new THREE.ConeGeometry(0.12, 0.31, 6), outerFire,
+        'shop-sign-torch-outer-flame', [x, 0.34, 0.38], false);
+      mesh(flames, new THREE.ConeGeometry(0.06, 0.19, 6), innerFire,
+        'shop-sign-torch-inner-flame', [x, 0.32, 0.46], false);
+    }
+    flames.userData.outerFire = outerFire;
+    flames.userData.innerFire = innerFire;
+    nameplate.add(sconces, flames);
     root.add(nameplate);
   }
   return { root, sign, interactive: contentIds.has(spec.id) };
