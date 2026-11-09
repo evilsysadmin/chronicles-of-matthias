@@ -3133,7 +3133,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
     // Rainproof mini-roofs and sculpted fire replace the old cone markers.
     // The translucent masonry glow is a sibling of the physical plaque,
     // preserving the existing arch-to-plaque clearance contract.
-    const { wash } = dressSwordhavenShopTorches(nameplate);
+    const { wash } = dressSwordhavenShopTorches(nameplate, {
+      // Authored position offsets keep neighbouring businesses from pulsing
+      // in perfect synchrony, even after reloading a saved expedition.
+      phase: spec.x * 0.71 + spec.y * 1.37,
+    });
     wash.position.copy(nameplate.position);
     root.add(nameplate, wash);
   }

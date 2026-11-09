@@ -93,7 +93,51 @@ function makeWarmWashTexture() {
   return texture;
 }
 
-export function dressSwordhavenShopTorches(nameplate) {
+// Animate the already-authored low-poly flames in place. Moving the upper
+// vertices rather than rotating the whole merged mesh lets the two wall
+// braziers sway independently while their bases remain inside their cups.
+// No geometry/material allocations, shaders or new lights per frame.
+export function animateSwordhavenShopTorches(flames, wash, seconds) {
+  if (!flames?.visible || !Number.isFinite(seconds)) return false;
+  const phase = flames.userData.chroniclesFirePhase ?? 0;
+  for (const [name, height] of [
+    ['shop-sign-torch-outer-flame', 0.47],
+    ['shop-sign-torch-inner-flame', 0.30],
+  ]) {
+    const mesh = flames.getObjectByName(name);
+    const position = mesh?.geometry?.getAttribute('position');
+    const rest = mesh?.userData?.chroniclesFireRestPositions;
+    if (!position || !rest) continue;
+    for (let i = 0; i < rest.length; i += 3) {
+      const x = rest[i];
+      const y = rest[i + 1];
+      const extent = Math.max(0, Math.min(1, (y - 0.205) / height));
+      const side = x < 0 ? -1 : 1;
+      const beat = seconds * 6.7 + phase + side * 1.9;
+      const sway = Math.sin(beat + extent * 2.4) * 0.048
+        + Math.sin(seconds * 11.3 + phase * 0.63 + side * 2.8) * 0.018;
+      // An anchored ember base with gently wandering tips. No sideways
+      // displacement of the physical hood, iron mount or painted plaque.
+      position.array[i] = x + sway * extent * extent;
+      position.array[i + 1] = y + extent * (
+        Math.sin(seconds * 8.3 + phase + side * 1.4) * 0.031
+        + Math.sin(beat * 1.7 + extent * 2.8) * 0.018
+      );
+    }
+    position.needsUpdate = true;
+  }
+  const strength = flames.userData.chroniclesFireStrength ?? 0;
+  const pulse = 0.92 + 0.06 * Math.sin(seconds * 8.1 + phase)
+    + 0.025 * Math.sin(seconds * 14.3 + phase * 1.3);
+  flames.userData.outerFire.opacity = strength * 0.94 * pulse;
+  flames.userData.innerFire.opacity = strength * 0.80
+    * (0.96 + 0.04 * Math.sin(seconds * 9.5 + phase + 1.3));
+  if (wash) wash.material.opacity = strength * 0.56
+    * (0.95 + 0.05 * Math.sin(seconds * 7.2 + phase));
+  return true;
+}
+
+export function dressSwordhavenShopTorches(nameplate, { phase = 0 } = {}) {
   const hoods = new THREE.Group();
   hoods.name = 'shop-sign-torch-hoods';
   hoods.userData.chroniclesDecorativeOnly = true;
@@ -104,6 +148,8 @@ export function dressSwordhavenShopTorches(nameplate) {
   flames.name = 'shop-sign-torch-flames';
   flames.userData.chroniclesDecorativeOnly = true;
   flames.visible = false;
+  flames.userData.chroniclesFirePhase = phase;
+  flames.userData.chroniclesFireStrength = 0;
 
   const roofParts = [];
   const ironParts = [];
@@ -148,8 +194,16 @@ export function dressSwordhavenShopTorches(nameplate) {
     color: 0xffe4a1, side: THREE.DoubleSide,
     transparent: true, opacity: 0, depthWrite: false,
   });
-  flames.add(decorativeMesh(fireGeometry(false), outerFire, 'shop-sign-torch-outer-flame'));
-  flames.add(decorativeMesh(fireGeometry(true), innerFire, 'shop-sign-torch-inner-flame'));
+  for (const [inner, fireMaterial, name] of [
+    [false, outerFire, 'shop-sign-torch-outer-flame'],
+    [true, innerFire, 'shop-sign-torch-inner-flame'],
+  ]) {
+    const mesh = decorativeMesh(fireGeometry(inner), fireMaterial, name);
+    // Original positions are immutable, including across F5/repeated frames.
+    mesh.userData.chroniclesFireRestPositions =
+      mesh.geometry.getAttribute('position').array.slice();
+    flames.add(mesh);
+  }
   flames.userData.outerFire = outerFire;
   flames.userData.innerFire = innerFire;
 
