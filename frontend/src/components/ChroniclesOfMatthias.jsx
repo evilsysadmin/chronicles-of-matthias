@@ -2289,7 +2289,8 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 data-chronicles-fatigued={fatigued ? 'true' : undefined}
                 data-damage-hit={retaliationCue?.targetId === member.id ? 'true' : undefined}
               >
-                <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true">
+                <span className="chronicles-party-glyph has-authored-portrait" aria-hidden="true"
+                  data-chronicles-portrait-fatigued={fatigued ? "true" : undefined}>
                   <img
                     key={`${member.id}:${portraitVariant}`}
                     className="chronicles-party-thumbnail"
