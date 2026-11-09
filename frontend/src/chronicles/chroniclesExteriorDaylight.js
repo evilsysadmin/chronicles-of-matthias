@@ -100,6 +100,13 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const dryRoadRoughness = pavedRoad?.material?.roughness ?? 1;
   const dryRoadMetalness = pavedRoad?.material?.metalness ?? 0;
   const dampStone = new THREE.Color(0x88979d);
+  // The sprites share one material. React only to saved-world weather changes;
+  // never add a cloud animation loop or alter gameplay visibility.
+  const cloudMaterial = scene.getObjectByName('swordhaven-cloud-0')
+    ?.getObjectByName('cloud-soft-bank')?.material;
+  const cloudDay = new THREE.Color(0xc4cdd4);
+  const cloudNight = new THREE.Color(0x3b4a5e);
+  const cloudStorm = new THREE.Color(0x7d8993);
   let lastElapsedMinute = null;
 
   return {
@@ -124,6 +131,11 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       const cloudiness = weather?.clouds ?? 0;
       const fogStrength = weather?.fog ?? 0;
       const { daylight, twilight, sunVisible } = profile;
+      if (cloudMaterial) {
+        cloudMaterial.opacity = 0.24 + cloudiness * 0.71;
+        cloudMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
+          .lerp(cloudStorm, cloudiness * 0.62);
+      }
       sunVector.set(profile.sun.x, profile.sun.y, profile.sun.z);
       // Never light walls from below. At night, the same shadowless-looking
       // key is a faint, cool lunar fill from above the horizon.
