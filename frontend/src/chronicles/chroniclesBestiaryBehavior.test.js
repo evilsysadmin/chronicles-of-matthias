@@ -34,6 +34,18 @@ describe('Chronicles Tactics bestiary behavior', () => {
           engagedMovement: 'cardinal-chase',
           engageRange: 3,
         });
+      } else if (mapId === 'terra-b3' && enemy.id === 'terra-b3-foe-8') {
+        // A single authored West Road goblin follows a real patrol circuit
+        // when unalerted, but retains every normal goblin combat behavior.
+        expect(enemy.ai).toMatchObject({
+          movement: 'patrol-route',
+          engagedMovement: 'cardinal-chase',
+          engageRange: 2,
+          patrolRoute: [
+            { x: 15, y: 9 }, { x: 15, y: 10 },
+            { x: 14, y: 10 }, { x: 14, y: 9 },
+          ],
+        });
       } else {
         expect(enemy.ai, `${mapId}/${enemy.id}`).toMatchObject({
           movement: 'cardinal-roam',
