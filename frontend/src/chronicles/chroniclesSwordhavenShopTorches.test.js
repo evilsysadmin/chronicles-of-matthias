@@ -14,7 +14,8 @@ describe('Swordhaven sheltered medieval shop braziers', () => {
       const hoods = plaque.getObjectByName('shop-sign-torch-hoods');
       const sconces = plaque.getObjectByName('shop-sign-torch-sconces');
       const flames = plaque.getObjectByName('shop-sign-torch-flames');
-      const wash = plaque.getObjectByName('shop-sign-torch-wallwash');
+      const wash = house.getObjectByName('shop-sign-torch-wallwash');
+      expect(plaque.getObjectByName('shop-sign-torch-wallwash')).toBeUndefined();
       const outer = flames.getObjectByName('shop-sign-torch-outer-flame');
       const inner = flames.getObjectByName('shop-sign-torch-inner-flame');
       const awning = hoods.getObjectByName('shop-sign-torch-shelter-wood');
