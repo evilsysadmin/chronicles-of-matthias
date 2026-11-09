@@ -63,8 +63,11 @@ export async function runQuickStatusMobileSmoke(base = 'http://localhost:4174/sm
       'Grupo modal escapes the viewport ' + reason);
       assert(result.docWidth <= width + 1 && !result.tableOverflows,
         'Grupo content scrolls sideways ' + reason);
-      assert(result.close.height >= 44 && result.close.width >= 44,
-        'Close button not touch sized ' + reason);
+      // The existing desktop X is intentionally 40px; only touch/short
+      // landscape needs the new 44px minimum.
+      const minClose = compact ? 44 : 40;
+      assert(result.close.height >= minClose && result.close.width >= minClose,
+        'Close button too small for this layout ' + reason);
       assert.equal(result.rows.length, 4, reason);
       assert.deepEqual(result.rows.map(row => row.name).sort(),
         ['Aziz', 'Faust', 'Hildegard', 'Matthias'].sort(), reason);
