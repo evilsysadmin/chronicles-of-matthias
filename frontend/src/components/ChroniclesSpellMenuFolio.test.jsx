@@ -64,7 +64,13 @@ describe('Chronicles · CAST diegetic grimoire', () => {
     const down = { ...state, party: state.party.map((hero) => (
       hero.id === member.id ? { ...hero, hp: 0 } : hero
     )) };
-    expect(render(down, down.party.find((hero) => hero.id === member.id))).toContain('disabled=""');
+    const fallenHtml = render(down, down.party.find((hero) => hero.id === member.id));
+    const firstSpellRow = fallenHtml.match(new RegExp(
+      `data-chronicles-cast="${chroniclesMemberSpells(state, member)[0].id}"[\\s\\S]*?</button>`,
+    ))?.[0];
+    expect(firstSpellRow).toContain('disabled=""');
+    expect(firstSpellRow).toContain('CAÍDO');
+    expect(firstSpellRow).not.toContain('SIN PH');
   });
   it('shows an MM3 ¿A quién? question with 1–4 and Escape before any cast', () => {
     const html = renderToStaticMarkup(createElement(ChroniclesSpellTargetQuestion, {

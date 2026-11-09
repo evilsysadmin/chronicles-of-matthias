@@ -328,7 +328,7 @@ export default function ChroniclesSpellMenu({
                         <small>{spell.description}</small>
                         <span className="chronicles-spell-menu__kind">{kind.label}</span>
                       </span>
-                      <span className="chronicles-spell-menu__cost"><b>{spell.cost} PH</b><small>{affordable ? 'LANZAR' : !canAct ? 'ESPERA' : 'SIN PH'}</small></span>
+                      <span className="chronicles-spell-menu__cost"><b>{spell.cost} PH</b><small>{!canAct ? 'ESPERA' : down ? 'CAÍDO' : sp < spell.cost ? 'SIN PH' : 'LANZAR'}</small></span>
                     </button>
                   </li>
                 );

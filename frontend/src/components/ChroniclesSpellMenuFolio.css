@@ -205,10 +205,23 @@
   outline: 2px solid #f3cf8b;
   outline-offset: 2px;
 }
+/* Unavailable spells must still be readable on touch: mute the surface, not
+   the entire row, so a player can distinguish CAÍDO / SIN PH / ESPERA. */
 .chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:disabled {
   cursor: not-allowed;
-  opacity: .54;
-  filter: saturate(.5);
+  opacity: 1;
+  filter: none;
+  background: linear-gradient(130deg, #292e36, #20252d);
+  /* Retain the left color stripe for attack, healing and other kinds. */
+  border-top-color: #797260;
+  border-right-color: #797260;
+  border-bottom-color: #797260;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:disabled .chronicles-spell-menu__entry strong {
+  color: #ded6c6;
+}
+.chronicles .chronicles-spell-menu--folio .chronicles-spell-menu__entries li button:disabled .chronicles-spell-menu__cost small {
+  color: #f3cba7;
 }
 .chronicles .chronicles-spell-menu__rune {
   display: grid;
