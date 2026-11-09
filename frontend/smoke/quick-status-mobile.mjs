@@ -3,9 +3,9 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
-const base = process.argv[2] || 'http://localhost:4174/smoke/quick-status-mobile.html';
-const browser = await chromium.launch();
-try {
+export async function runQuickStatusMobileSmoke(base = 'http://localhost:4174/smoke/quick-status-mobile.html') {
+  const browser = await chromium.launch();
+  try {
   for (const [width, height] of [[360, 780], [390, 844], [430, 932], [844, 390], [1280, 800]]) {
     const touch = width <= 430;
     const context = await browser.newContext({
@@ -95,4 +95,5 @@ try {
       console.log('CHRONICLES_QUICK_STATUS_READABLE_OK', width + 'x' + height);
     } finally { await context.close(); }
   }
-} finally { await browser.close(); }
+  } finally { await browser.close(); }
+}
