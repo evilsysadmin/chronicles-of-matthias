@@ -5,6 +5,9 @@ import * as THREE from 'three';
 import swordhaven from '../src/chronicles/maps/swordhaven-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
+import { createChroniclesExteriorDaylight, chroniclesExteriorDaylightProfile } from '../src/chronicles/chroniclesExteriorDaylight.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
+import { chroniclesSeasonalSunTimes } from '../src/chronicles/chroniclesWorldTime.js';
 
 const VIEWS = Object.freeze({
   // The actual city exit from a walkable street, framed at human eye level.
@@ -74,7 +77,16 @@ const VIEWS = Object.freeze({
 const direction = {
   north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0],
 };
-const name = new URLSearchParams(location.search).get('view') || 'ward';
+const parameters = new URLSearchParams(location.search);
+const name = parameters.get('view') || 'ward';
+// The QA runner supplies the production coarse-pointer choice explicitly:
+// 360/390/430px emulate touch; 1280px renders the real desktop budget.
+const coarsePointer = parameters.get('coarse') !== '0';
+const skyScenario = parameters.get('weather');
+const skyScenarios = ['clear', 'rain', 'dawn', 'night'];
+if (skyScenario && !skyScenarios.includes(skyScenario)) {
+  throw new Error('Unsupported Sky scenario: ' + skyScenario);
+}
 const chosen = VIEWS[name];
 const canvas = document.getElementById('stage');
 try {
@@ -91,7 +103,7 @@ try {
   ].map(entry => ({ ...entry, position: { x: entry.x, y: entry.y }, visible: true }));
   const scene = new THREE.Scene();
   buildChroniclesCampaignExterior(scene, {
-    coarsePointer: true,
+    coarsePointer,
     scenePlan: {
       mapId: swordhaven.id, regionKind: swordhaven.regionKind,
       width, height, center, grid: swordhaven.grid,
@@ -102,6 +114,9 @@ try {
     canvas, antialias: false, preserveDrawingBuffer: true,
   });
   renderer.setPixelRatio(1); // Comparable output regardless of CI screen density.
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMappingExposure = coarsePointer ? 1.14 : 1.08;
   renderer.setSize(innerWidth, innerHeight, false);
   // Use the production town lens: QA screenshots must reflect the actual mobile framing.
   const camera = new THREE.PerspectiveCamera(
@@ -124,6 +139,38 @@ try {
     eye + (chosen.lookUp || 0),
     chosen.target ? (chosen.target.y - center.y) * 4 : worldZ + dy * 4,
   );
+  // Weather evidence uses the actual persisted Terra clock and regional
+  // sampler. Never fake rain/clear or patch cloud materials for screenshots.
+  const skyRegion = { mapId: swordhaven.id, regionKind: swordhaven.regionKind };
+  const matchingWeatherMinute = (kind) => {
+    for (let day = 0; day < 160; day += 1) {
+      // 12:45 is daylight and 45 minutes into a 90-minute weather cell,
+      // after the deterministic 40-minute atmosphere blend has finished.
+      const minute = day * 1440 + 12 * 60 + 45;
+      if (chroniclesRegionalWeather({ ...skyRegion, worldMinutes: minute })?.kind === kind) {
+        return minute;
+      }
+    }
+    throw new Error('No authentic Swordhaven weather interval found: ' + kind);
+  };
+  const referenceDay = 84 * 1440;
+  const skyWorldMinutes = skyScenario === 'clear' || skyScenario === 'rain'
+    ? matchingWeatherMinute(skyScenario)
+    : skyScenario === 'dawn'
+      ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunrise * 60)
+      : skyScenario === 'night' ? referenceDay + 23 * 60 + 45 : null;
+  const skyWeather = skyWorldMinutes === null ? null
+    : chroniclesRegionalWeather({ ...skyRegion, worldMinutes: skyWorldMinutes });
+  const skyTransition = skyWorldMinutes === null ? null
+    : chroniclesRegionalWeatherTransition({ ...skyRegion, worldMinutes: skyWorldMinutes });
+  const skyDaylight = skyWorldMinutes === null ? null
+    : chroniclesExteriorDaylightProfile(skyWorldMinutes);
+  if (skyWorldMinutes !== null) {
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, skyRegion);
+    if (!cycle || !cycle.sync(skyWorldMinutes)) {
+      throw new Error('Sky weather fixture must use the active exterior daylight controller');
+    }
+  }
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
@@ -238,7 +285,7 @@ try {
   }
   const skyDome = scene.getObjectByName('swordhaven-sky-dome');
   const skyPanorama = skyDome?.getObjectByName('chronicles-sky-cloud-panorama');
-  const skyClouds = Array.from({ length: 4 },
+  const skyClouds = Array.from({ length: coarsePointer ? 4 : 8 },
     (_, index) => skyDome?.getObjectByName('swordhaven-cloud-' + index));
   const skyTexture = skyPanorama?.material?.map;
   const skyPixels = skyTexture?.image?.data;
@@ -263,6 +310,17 @@ try {
     skyAnchored: String(skyAnchored),
     skySeamless: String(skySeamless),
     skyCloudCount: String(skyClouds.filter(Boolean).length),
+    skyCoarsePointer: String(coarsePointer),
+    skyAtlasWidth: String(skyWidth),
+    skyScenario: skyScenario || 'default',
+    skyWeatherKind: skyWeather?.kind || 'none',
+    skyPrecipitation: skyTransition?.precipitation || 'none',
+    skyCloudiness: String(skyTransition?.clouds ?? -1),
+    skyDaylight: String(skyDaylight?.daylight ?? -1),
+    skyTwilight: String(skyDaylight?.twilight ?? -1),
+    skySunVisible: String(skyDaylight?.sunVisible ?? false),
+    skyPanoramaOpacity: String(skyPanorama?.material?.opacity ?? -1),
+    skyWorldMinutes: String(skyWorldMinutes ?? -1),
     cameraFov: String(camera.fov),
     mapId: swordhaven.id,
     tieredPlazaFountain: String(Boolean(
