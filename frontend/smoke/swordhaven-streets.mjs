@@ -11,7 +11,13 @@ const failures = [];
 try {
   // Keep the full visual contract at 390 and desktop. Add compact 360/430
   // storefront photography to catch narrow-phone crop regressions cheaply.
-  const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney'];
+  // Two locations × four compass headings, rendered at portrait and desktop
+  // widths. The existing smoke artifact upload retains each real WebGL frame.
+  const skyViews = [
+    'sky-plaza-north', 'sky-plaza-east', 'sky-plaza-south', 'sky-plaza-west',
+    'sky-ward-north', 'sky-ward-east', 'sky-ward-south', 'sky-ward-west',
+  ];
+  const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney', ...skyViews];
   const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
   for (const width of [360, 390, 430, 1280]) {
     const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
@@ -68,6 +74,15 @@ try {
         assert.equal(result.julietMobileFraming, 'true',
           'The dedicated Juliet shot must visibly frame the actual wrought-iron upper guard in portrait');
         assert.equal(result.streetView, view);
+        if (skyViews.includes(view)) {
+          assert.equal(result.skyCapture, 'true');
+          assert.equal(result.skyAnchored, 'true',
+            'Sky dome, panorama and all cloud banks must remain camera-relative on every heading');
+          assert.equal(result.skySeamless, 'true',
+            'The procedural panoramic atlas must have identical pixels across its 360-degree seam');
+          assert.equal(Number(result.skyCloudCount), 4,
+            'The mobile-cost cloud fixture must show all four cloud banks without frustum popping');
+        }
         assert.equal(Number(result.wallHeight), 6.4,
           'Street view must not regress to 1.6m parapet');
         // One of the 80 wall cells is now an actual arched gateway, not a
