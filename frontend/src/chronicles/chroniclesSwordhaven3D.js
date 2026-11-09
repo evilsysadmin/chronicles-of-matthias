@@ -3461,6 +3461,9 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
     bank.scale.set(wide, tall, 1);
     bank.castShadow = false;
     bank.receiveShadow = false;
+    // The dome follows the camera onBeforeRender, after the scene's frustum
+    // pass. Avoid culling against last frame's camera-relative position.
+    bank.frustumCulled = false;
     bank.userData.chroniclesDecorativeOnly = true;
     cloud.add(bank);
     root.add(cloud);
