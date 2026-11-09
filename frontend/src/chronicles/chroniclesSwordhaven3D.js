@@ -3131,9 +3131,11 @@ export function buildSwordhavenHouse(spec, mats, coarse, contentIds, center) {
       'shop-nameplate-lettering', [0, 0, 0.132]);
 
     // Rainproof mini-roofs and sculpted fire replace the old cone markers.
-    // The authored plaque, shop target and collision grid remain unchanged.
-    dressSwordhavenShopTorches(nameplate);
-    root.add(nameplate);
+    // The translucent masonry glow is a sibling of the physical plaque,
+    // preserving the existing arch-to-plaque clearance contract.
+    const { wash } = dressSwordhavenShopTorches(nameplate);
+    wash.position.copy(nameplate.position);
+    root.add(nameplate, wash);
   }
   return { root, sign, interactive: contentIds.has(spec.id) };
 }
