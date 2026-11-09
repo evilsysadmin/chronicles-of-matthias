@@ -3401,7 +3401,7 @@ export function addSwordhavenClouds(root, coarsePointer = false) {
         * (1 - smooth(0.67, 1, Math.abs(nx)));
       const breaks = smooth(0.10, 0.70,
         0.43 + (folds - 0.5) * 0.80 + (wisps - 0.5) * 0.28);
-      const alpha = Math.round(234 * envelope * (0.56 + 0.44 * breaks));
+      const alpha = Math.round(234 * envelope * (0.70 + 0.30 * breaks));
       // A blue-grey underbelly and brighter, irregular streaks, never
       // solid white. Solar/weather lighting tints the shared material.
       const illumination = THREE.MathUtils.clamp(
