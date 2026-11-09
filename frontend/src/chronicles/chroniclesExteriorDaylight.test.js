@@ -88,6 +88,19 @@ describe('Terra solar cycle', () => {
     expect(glows.userData.chroniclesDecorativeOnly).toBe(true);
     expect(glows.visible).toBe(false);
     expect(lanterns).toBeInstanceOf(THREE.InstancedMesh);
+    const shopPlaques = [];
+    scene.traverse((object) => {
+      if (object.name === 'swordhaven-shop-nameplate') shopPlaques.push(object);
+    });
+    expect(shopPlaques.length).toBeGreaterThan(0);
+    for (const plaque of shopPlaques) {
+      expect(plaque.getObjectByName('shop-nameplate-lettering').material)
+        .toBeInstanceOf(THREE.MeshStandardMaterial);
+      const flames = plaque.getObjectByName('shop-sign-torch-flames');
+      expect(flames?.userData.chroniclesDecorativeOnly).toBe(true);
+      expect(flames?.visible).toBe(false);
+      expect(plaque.getObjectByName('shop-sign-torch-sconces')).toBeTruthy();
+    }
     const countLights = () => {
       let count = 0;
       scene.traverse((object) => { if (object.isLight) count += 1; });
@@ -101,6 +114,10 @@ describe('Terra solar cycle', () => {
     expect(glows.visible).toBe(false);
     expect(glows.material.opacity).toBe(0);
     expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
+    for (const plaque of shopPlaques) {
+      expect(plaque.getObjectByName('shop-nameplate-lettering').material.emissiveIntensity).toBe(0);
+      expect(plaque.getObjectByName('shop-sign-torch-flames').visible).toBe(false);
+    }
     expect(cycle.sync(18 * 60)).toBe(true);
     expect(glows.visible).toBe(true);
     expect(glows.material.opacity).toBeGreaterThan(0);
@@ -108,6 +125,14 @@ describe('Terra solar cycle', () => {
     expect(cycle.sync(22 * 60)).toBe(true);
     expect(glows.material.opacity).toBeCloseTo(0.82);
     expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity + 1.7);
+    for (const plaque of shopPlaques) {
+      const flames = plaque.getObjectByName('shop-sign-torch-flames');
+      const paint = plaque.getObjectByName('shop-nameplate-lettering').material;
+      expect(flames.visible).toBe(true);
+      expect(flames.userData.outerFire.opacity).toBeCloseTo(0.94);
+      expect(flames.userData.innerFire.opacity).toBeCloseTo(0.80);
+      expect(paint.emissiveIntensity).toBeCloseTo(0.28);
+    }
     expect(countLights()).toBe(lightsBefore);
     // No extra landscape colliders, and the new glow is in the same wall
     // cell as the existing pane, not out in a walkable street.
@@ -120,6 +145,10 @@ describe('Terra solar cycle', () => {
     expect(glows.visible).toBe(false);
     expect(glows.material.opacity).toBe(0);
     expect(lanterns.material.emissiveIntensity).toBeCloseTo(lampDayIntensity);
+    for (const plaque of shopPlaques) {
+      expect(plaque.getObjectByName('shop-sign-torch-flames').visible).toBe(false);
+      expect(plaque.getObjectByName('shop-nameplate-lettering').material.emissiveIntensity).toBe(0);
+    }
     expect(countLights()).toBe(lightsBefore);
   });
 
