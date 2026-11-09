@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chronicles · Terra B3 · patrulla en WebGL real</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090e12}
+  #scene{width:100vw;height:100dvh;overflow:hidden}
+  #scene canvas{display:block}
+  #qa{position:fixed;left:12px;top:12px;z-index:2;display:flex;gap:8px;
+    align-items:center;padding:8px 10px;color:#f5ebdc;background:#101822e8;
+    font:600 13px/1.3 system-ui;border:1px solid #7778;border-radius:8px}
+  #qa button{min-height:44px;padding:7px 11px;border-radius:5px;
+    color:#f9eee0;background:#3c492e;border:1px solid #8d996c;font:inherit}
+  #qa output{max-width:42vw}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div id="qa"><button id="next" type="button">Avanzar patrulla</button><output id="status" role="status">Cargando mundo…</output></div>
+<script type="module" src="/smoke/terra-b3-patrol.js"></script>
+</body>
+</html>
