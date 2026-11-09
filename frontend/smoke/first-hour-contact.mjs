@@ -151,6 +151,102 @@ try {
       await mayor.getByRole('button', { name: 'Entrar y hablar con el alcalde Aldric' }).click();
       assert.equal(await page.locator('body').getAttribute('data-mayor-action-requested'), 'true',
         'Click must reach the existing mayor interaction callback');
+
+      // H7: genuine MM3 story/UI join, not five disconnected reducer tests.
+      // The fixture visibly relocates the heroes between two authored points;
+      // dialogue, quest effects, threshold consent, XP and save projection
+      // are all the real production implementations.
+      await gotoFixture(page, url + '?view=mayor-sewers-journey');
+      const journey = page.locator('[data-qa-mayor-sewers]');
+      await journey.waitFor({ state: 'visible' });
+      const checkNoPhantomXp = async (stage) => {
+        assert.equal(await journey.getAttribute('data-qa-xp'), '0,0,0,0',
+          'No invented combat XP at ' + stage + ' / ' + width);
+        assert.equal(await journey.getAttribute('data-qa-levels'), '1,1,1,1',
+          'No free level-ups at ' + stage + ' / ' + width);
+        assert.equal(await journey.getAttribute('data-qa-awards'), '0',
+          'No invented XP awards at ' + stage + ' / ' + width);
+      };
+      assert.equal(await journey.getAttribute('data-qa-map'), 'swordhaven-first-book');
+      assert.equal(await journey.getAttribute('data-qa-key'), '0');
+      await checkNoPhantomXp('start');
+      await page.locator('[data-qa-at-grate]').click();
+      assert.equal(await page.locator('[data-qa-travel]').count(), 0,
+        'Grate must not offer travel without the mayor key');
+      await page.locator('[data-qa-at-mayor]').click();
+      await page.locator('[data-chronicles-first-audience]').getByRole('button', {
+        name: 'Entrar y hablar con el alcalde Aldric',
+      }).click();
+      const audience = page.getByRole('dialog', { name: 'Conversación con Alcalde Aldric' });
+      await audience.waitFor({ state: 'visible' });
+      assert.equal(await journey.getAttribute('data-qa-key'), '0',
+        'Opening Aldric audience must not grant a quest key');
+      const questChoice = audience.locator('[data-chronicles-dialogue-choice="quest"]');
+      await questChoice.waitFor({ state: 'visible' });
+      assert.match(await questChoice.innerText(), /Presentar la carta de la Dama/);
+      if (width === 390 || width === 1280) {
+        await page.screenshot({ path: 'smoke-first-hour-aldric-dialogue-' + width + '.png' });
+      }
+      await questChoice.click();
+      await page.waitForFunction(() =>
+        document.querySelector('[data-qa-mayor-sewers]')?.getAttribute('data-qa-key') === '1');
+      assert.match(await journey.getAttribute('data-qa-quest'), /alcantarillas/i,
+        'The authored quest must guide the party to the sewer');
+      await checkNoPhantomXp('mayor-key');
+      await audience.getByRole('button', { name: 'Salir de la conversación' }).click();
+      assert.equal(await page.locator('[data-chronicles-first-audience]').count(), 0,
+        'One-time mayor invitation must not reappear after meeting him');
+
+      await page.locator('[data-qa-at-grate]').click();
+      const askForTravel = async (destination) => {
+        await page.locator('[data-qa-travel]').click();
+        const dialog = page.locator('[data-chronicles-area-transition] [role="dialog"]');
+        await dialog.waitFor({ state: 'visible' });
+        assert.match(await dialog.locator('h2').innerText(), destination);
+        return dialog;
+      };
+      let gate = await askForTravel(/alcantarillas/i);
+      await gate.locator('[data-area-transition-cancel]').click();
+      assert.equal(await journey.getAttribute('data-qa-map'), 'swordhaven-first-book',
+        'Saying No must not mutate the region');
+      await checkNoPhantomXp('rejected-entry');
+      gate = await askForTravel(/alcantarillas/i);
+      await gate.locator('[data-area-transition-accept]').click();
+      await page.waitForFunction(() =>
+        document.querySelector('[data-qa-mayor-sewers]')?.getAttribute('data-qa-map') === 'swordhaven-sewers');
+      await checkNoPhantomXp('sewer-entry');
+      if (width === 390 || width === 1280) {
+        await page.screenshot({ path: 'smoke-first-hour-sewer-join-' + width + '.png' });
+      }
+      gate = await askForTravel(/swordhaven/i);
+      await gate.locator('[data-area-transition-accept]').click();
+      await page.waitForFunction(() =>
+        document.querySelector('[data-qa-mayor-sewers]')?.getAttribute('data-qa-trips') === '1');
+      assert.equal(await journey.getAttribute('data-qa-map'), 'swordhaven-first-book');
+      assert.equal(await journey.getAttribute('data-qa-key'), '1');
+      const activeObjective = await journey.getAttribute('data-qa-quest');
+      assert.ok(activeObjective, 'The main quest must survive the sewer trip');
+      await checkNoPhantomXp('sewer-exit');
+      // Recovery is a real JSON/Go/Mongo-shaped snapshot, not a copied state.
+      await page.locator('[data-qa-checkpoint]').click();
+      assert.equal(await journey.getAttribute('data-qa-reloads'), '1');
+      assert.equal(await journey.getAttribute('data-qa-key'), '1');
+      assert.equal(await journey.getAttribute('data-qa-quest'), activeObjective,
+        'Checkpoint restoration must preserve the genuine current objective');
+      await checkNoPhantomXp('checkpoint-restore');
+      // A second identical trip cannot farm XP, duplicate the mayor key or
+      // reset the story. The first departure was not an enemy victory.
+      gate = await askForTravel(/alcantarillas/i);
+      await gate.locator('[data-area-transition-accept]').click();
+      gate = await askForTravel(/swordhaven/i);
+      await gate.locator('[data-area-transition-accept]').click();
+      await page.waitForFunction(() =>
+        document.querySelector('[data-qa-mayor-sewers]')?.getAttribute('data-qa-trips') === '2');
+      await checkNoPhantomXp('repeat-trip');
+      assert.equal(await journey.getAttribute('data-qa-key'), '1');
+      assert.deepEqual(errors, [], 'No browser errors during real mayor/sewer join');
+      console.log('CHRONICLES_FIRST_HOUR_MAYOR_SEWER_ROUNDTRIP_OK ' + width);
+
       await page.goto(url + '?view=threat', { waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: 'Entendido' }).click();
       assert.equal(await cue.count(), 0);

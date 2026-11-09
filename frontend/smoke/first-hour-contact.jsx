@@ -14,13 +14,17 @@ import {
 } from '../src/chroniclesOfMatthias.js';
 import { chroniclesMapById } from '../src/chronicles/chroniclesMapCatalog.js';
 import { chroniclesTacticsUse } from '../src/chroniclesOfMatthiasTactics.js';
-import { chroniclesApplyArrival } from '../src/chronicles/chroniclesArrival.js';
+import { chroniclesApplyArrival, chroniclesArriveOnTransition } from '../src/chronicles/chroniclesArrival.js';
+import { chroniclesAreaTransitionIntent } from '../src/chronicles/chroniclesAreaTransitionIntent.js';
+import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from '../src/chronicles/chroniclesRunCheckpoint.js';
 import { chroniclesNpcDialogueForState } from '../src/chronicles/chroniclesNpcDialogue.js';
 import { chroniclesPartyBark } from '../src/chroniclesOfMatthiasBarks.js';
 import { chroniclesApplyContentEffects, chroniclesGoldBalance } from '../src/chronicles/chroniclesContentRuntime.js';
-import { createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
+import { applyChroniclesTacticsProgression, chroniclesHeroProgress, createChroniclesProgression } from '../src/chroniclesOfMatthiasProgression.js';
 import ChroniclesFirstSteps from '../src/components/ChroniclesFirstSteps.jsx';
 import ChroniclesFirstAudienceCue from '../src/components/ChroniclesFirstAudienceCue.jsx';
+import ChroniclesAudience from '../src/components/ChroniclesAudience.jsx';
+import ChroniclesAreaTransitionDialog from '../src/components/ChroniclesAreaTransitionDialog.jsx';
 import ChroniclesFirstThreatCue from '../src/components/ChroniclesFirstThreatCue.jsx';
 import ChroniclesPartyBark from '../src/components/ChroniclesPartyBark.jsx';
 import ChroniclesCharacterSheet from '../src/components/ChroniclesCharacterSheet.jsx';
@@ -311,6 +315,101 @@ function actualRearThreatCombat(direction) {
   return { fight, archer };
 }
 
+
+// The missing first-hour JOIN: use the real Aldric audience, actual content
+// reducer, Go/Mongo-shaped checkpoint and the *same* Yes/No area dialog as
+// the game. Only spatial travel from the mayor's door to the sewer grate is
+// short-circuited by visible QA controls; no inventory, XP or quest flags are
+// fabricated. This catches softlocks and phantom level-ups across the join.
+function RealMayorSewerJourney() {
+  const [state, setState] = useState(() => actualMayorInvitation().state);
+  const [progression, setProgression] = useState(createChroniclesProgression);
+  const [talking, setTalking] = useState(false);
+  const [travelOpen, setTravelOpen] = useState(false);
+  const [trips, setTrips] = useState(0);
+  const [reloads, setReloads] = useState(0);
+  const [lastAwards, setLastAwards] = useState(0);
+  const contextAction = chroniclesContextualContentAction(state);
+  const npc = chroniclesNpcDialogueForState(state, contextAction);
+  const travel = chroniclesAreaTransitionIntent(state, 'interact');
+  const xp = state.party.map(hero => chroniclesHeroProgress(progression, hero.id).xp);
+  const levels = state.party.map(hero => chroniclesHeroProgress(progression, hero.id).level);
+  const applyAction = (previous, next, kind) => {
+    const result = applyChroniclesTacticsProgression(progression, previous, next, {
+      runId: 'qa-first-book-mayor-to-sewers',
+      actorMemberId: 'matthias',
+      actionKind: kind,
+    });
+    setProgression(result.progression);
+    setLastAwards(result.awards.length);
+    setState(next);
+  };
+  const acceptTravel = () => {
+    const before = state;
+    const after = chroniclesArriveOnTransition(before, chroniclesReduce(before, {
+      type: 'cross-area-threshold', exitId: travel.exitId,
+    }));
+    applyAction(before, after, 'cross-area-threshold');
+    if (after.mapId === 'swordhaven-first-book') setTrips(count => count + 1);
+    setTravelOpen(false);
+  };
+  const restoreCheckpoint = () => {
+    const snapshot = JSON.parse(JSON.stringify(chroniclesRunCheckpointPayload(state, 17)));
+    const restored = chroniclesApplyRunCheckpoint(
+      createChroniclesState(state.mapId, null, { rules: 'mm3' }), snapshot,
+    );
+    setState(restored);
+    setReloads(count => count + 1);
+  };
+  return (
+    <div className="chronicles" data-qa-mayor-sewers data-qa-map={state.mapId}
+      data-qa-key={state.inventory?.['sewer-key']?.quantity || 0}
+      data-qa-xp={xp.join(',')} data-qa-levels={levels.join(',')}
+      data-qa-quest={state.quests?.['lost-king']?.objective || ''}
+      data-qa-awards={lastAwards} data-qa-trips={trips} data-qa-reloads={reloads}
+      style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div style={{
+        position: 'absolute', left: 8, top: 8, zIndex: 20,
+        display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: 'min(480px, 96vw)',
+      }}>
+        {state.mapId === 'swordhaven-first-book' && (
+          <>
+            <button type="button" data-qa-at-grate
+              onClick={() => setState(previous => ({ ...previous, x: 13, y: 13 }))}>
+              QA · situar en reja
+            </button>
+            <button type="button" data-qa-at-mayor
+              onClick={() => setState(previous => ({ ...previous, x: 11, y: 10 }))}>
+              QA · situar en Ayuntamiento
+            </button>
+          </>
+        )}
+        {travel && <button type="button" data-qa-travel onClick={() => setTravelOpen(true)}>
+          Cruce · {travel.title}
+        </button>}
+        {trips > 0 && <button type="button" data-qa-checkpoint onClick={restoreCheckpoint}>
+          QA · restaurar guardado
+        </button>}
+      </div>
+      <ChroniclesFirstAudienceCue state={state} contextualAction={contextAction}
+        npc={npc} onTalk={() => setTalking(true)} suspended={talking || travelOpen} />
+      {talking && npc && (
+        <ChroniclesAudience dialogue={npc}
+          onAction={(actionId) => {
+            if (actionId !== 'swordhaven-mayor') return 'El alcalde no tiene otro encargo disponible.';
+            const after = chroniclesReduce(state, 'interact');
+            applyAction(state, after, 'interact');
+            return after.message;
+          }}
+          onClose={() => setTalking(false)} />
+      )}
+      {travelOpen && travel && <ChroniclesAreaTransitionDialog
+        question={travel.question} onAccept={acceptTravel}
+        onCancel={() => setTravelOpen(false)} />}
+    </div>
+  );
+}
+
 const view = new URLSearchParams(location.search).get('view') || 'threat';
 const stage = {
   position: 'relative', overflow: 'hidden', width: '100vw', height: '100dvh',
@@ -323,6 +422,8 @@ if (view === 'threat') {
     runId="qa-first-hour-threat" />;
   document.body.dataset.enemyId = target.enemy.id;
   document.body.dataset.realShooters = String(shooters);
+} else if (view === 'mayor-sewers-journey') {
+  content = <RealMayorSewerJourney />;
 } else if (view === 'mayor') {
   const { state, contextualAction, npc } = actualMayorInvitation();
   content = <ChroniclesFirstAudienceCue state={state} contextualAction={contextualAction}
