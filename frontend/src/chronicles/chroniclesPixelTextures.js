@@ -40,6 +40,9 @@ const hex = value => [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 // so roofs/plaster keep their per-building hue; grass carries its own greens.
 const RAMPS = Object.freeze({
   grass: [0x24461a, 0x335f22, 0x45782a, 0x5a8f33, 0x76a840, 0x93bd52].map(hex),
+  // Banner Road meadow: less black/green pixel contrast than town grass,
+  // with midtone olive/sage patches and subtle dry summer grass.
+  meadow: [0x35552b, 0x48683a, 0x5a7946, 0x6b8851, 0x7d965d, 0x92a66e].map(hex),
   masonry: [0x4a4440, 0x8a8178, 0xb3aa9c, 0xd4cbbb, 0xeee6d6, 0xfff9ec].map(hex),
   stucco: [0xa99c88, 0xd9cfbf, 0xeae2d4, 0xf6efe3, 0xfffaf0].map(hex),
   timber: [0x5a4a3a, 0x8f7a63, 0xb59f86, 0xd2bea4, 0xeadbc4].map(hex),
@@ -62,7 +65,7 @@ const RAMPS = Object.freeze({
 });
 
 const SIZES = Object.freeze({
-  grass: 64, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
+  grass: 64, meadow: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
   snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32,
 });
 
@@ -82,6 +85,18 @@ function sample(kind, x, y, size) {
     const flower = hash(x, y, 17);
     if (flower > 0.9965) return { color: flower > 0.9985 ? 0xf2ead2 : 0xe6c84a };
     return 0.52 + meadow * 0.55 + clover * 0.25 + grain * 0.18;
+  }
+  if (kind === 'meadow') {
+    // Tileable broad mottled grass, not 4-pixel squares or a checkerboard
+    // of repeated neon/dark blades. Fine grain adds life without a shader,
+    // geometry, animation or new light source. Sparse seedheads remain small.
+    const sward = valueNoise(x, y, size, 4, 91) - 0.5;
+    const clover = valueNoise(x, y, size, 13, 92) - 0.5;
+    const glint = hash(x, y, 93);
+    if (sward > 0.16 && clover > -0.02) return { color: 0x86955b };
+    if (sward < -0.18 && clover < 0.05) return 0.22;
+    if (glint > 0.9982) return { color: 0xc5b46b };
+    return 0.53 + sward * 0.48 + clover * 0.19 + grain * 0.09;
   }
   if (kind === 'heath') {
     // Four-octave-style deterministic ground breakup: dark peat patches,
@@ -224,8 +239,10 @@ export function chroniclesPixelTexture(kind) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestMipmapLinearFilter;
+  texture.magFilter = kind === 'meadow' ? THREE.LinearFilter : THREE.NearestFilter;
+  texture.minFilter = kind === 'meadow'
+    ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
+  if (kind === 'meadow') texture.anisotropy = 4; // Calm grazing-angle meadow on desktop.
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   texture.userData.chroniclesPixelArt = { kind, size, palette: ramp.length };
