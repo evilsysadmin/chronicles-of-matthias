@@ -55,9 +55,16 @@ export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
       const wisp = smooth(0.24, 0.71, middle * 0.72 + fine * 0.28);
       const highPatches = smooth(0.42, 0.72,
         broad * 0.56 + middle * 0.33 + fine * 0.11);
+      // Break the formerly continuous latitude shelf into distinct cloud
+      // islands. The shared periodic broad/mid noise leaves honest blue-sky
+      // gaps, while dense billows keep their existing sculpted highlights.
+      // Horizon mist stays faint and continuous for atmospheric depth.
+      const islands = smooth(0.40, 0.65, broad * 0.62 + middle * 0.38);
       const coverage = Math.min(0.83,
         silhouette * (0.18 + 0.64 * density) * (0.62 + 0.38 * wisp)
+          * Math.min(1.25, islands * 1.35)
         + highEnvelope * (0.035 + 0.43 * highPatches) * (0.55 + 0.45 * wisp)
+          * Math.min(1.20, islands * 1.28)
         + horizonMist * (0.07 + 0.13 * broad));
       // Sculpt lighting INSIDE the existing RGBA atlas rather than adding
       // geometry or a shader: the same periodic billows get darker bases and

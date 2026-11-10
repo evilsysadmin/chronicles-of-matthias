@@ -36,8 +36,17 @@ describe('Seamless Terra cloud panorama', () => {
       }
     }
     const bandY = Math.round(height * 0.64);
-    expect(Array.from({ length: 12 }, (_, index) =>
-      px(Math.floor(index * (width - 1) / 12), bandY, 3)).every(a => a > 24)).toBe(true);
+    // The old panorama had a continuous grey shelf. Each quarter-turn must
+    // now contain transparent sky AND at least one recognisable cloud body.
+    // These thresholds protect both the 256px touch and 512px desktop atlas.
+    for (let quarter = 0; quarter < 4; quarter += 1) {
+      const from = Math.floor(quarter * width / 4);
+      const to = Math.floor((quarter + 1) * width / 4);
+      const alphas = Array.from({ length: to - from }, (_, x) =>
+        px(from + x, bandY, 3));
+      expect(alphas.filter(alpha => alpha < 16).length).toBeGreaterThan(6);
+      expect(alphas.filter(alpha => alpha > 65).length).toBeGreaterThan(10);
+    }
     expect(px(Math.floor(width / 2), 0, 3)).toBe(0);
     expect(px(Math.floor(width / 2), height - 1, 3)).toBe(0);
     const atmosphere = Array.from({ length: 12 }, (_, index) =>
