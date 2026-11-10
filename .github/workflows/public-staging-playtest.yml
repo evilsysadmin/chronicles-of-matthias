@@ -1,0 +1,89 @@
+name: Chronicles staging autonomous playtest
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: chronicles-public-staging-playtest
+  cancel-in-progress: false
+jobs:
+  playtest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: staging
+    steps:
+      - name: Resolve the exact public staging release
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --location --max-time 20 \
+            --retry 2 'https://staging.chronicles.shadowops.dpdns.org/release.json' > "$RUNNER_TEMP/release.json"
+          sha="$(node -e "const r=require(process.argv[1]);if(!/^[a-f0-9]{40}$/.test(r.build||''))process.exit(1);process.stdout.write(r.build)" "$RUNNER_TEMP/release.json")"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Staging release SHA: $sha" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Reject unpublished or foreign source commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ steps.release.outputs.sha }}"
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked browser tooling
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run deterministic playtest policy tests
+        working-directory: frontend
+        run: npm test
+      - name: Install Chromium
+        working-directory: frontend
+        run: bash smoke/ensure-chromium.sh
+      - name: Run real staging playtest (two profiles, bounded actions)
+        working-directory: frontend
+        timeout-minutes: 20
+        env:
+          CHRONICLES_SOURCE_SHA: ${{ steps.release.outputs.sha }}
+          CHRONICLES_STAGING_INVITE_CODE: ${{ secrets.CHRONICLES_STAGING_INVITE_CODE }}
+        run: |
+          set -euo pipefail
+          test -n "$CHRONICLES_STAGING_INVITE_CODE" || { echo "::error::Missing staging invite secret"; exit 1; }
+          node smoke/public-staging-playtest.mjs
+      - name: Publish diagnostic artifacts even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicles-staging-playtest-${{ github.run_id }}
+          path: |
+            frontend/chronicles-playtest-report.json
+            frontend/chronicles-playtest-*.png
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Summarize hard and soft outcomes
+        if: always()
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync, appendFileSync } from 'node:fs';
+          const path = 'frontend/chronicles-playtest-report.json';
+          if (!existsSync(path)) {
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\nPlaytest report missing (setup or execution failed).\n');
+          } else {
+            const report = JSON.parse(readFileSync(path, 'utf8'));
+            const lines = ['','### Staging autonomous playtest', '', 'Source: `' + report.sourceSha + '`', '', '| Profile | Outcome | Warnings |', '| --- | --- | --- |'];
+            for (const episode of report.episodes ?? []) {
+              lines.push('| ' + episode.profile + ' | ' + episode.outcome + ' | ' + (episode.warnings ?? []).join(', ') + ' |');
+            }
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          }
+          NODE
