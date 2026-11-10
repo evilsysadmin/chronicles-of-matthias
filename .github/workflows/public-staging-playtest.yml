@@ -77,13 +77,13 @@ jobs:
           import { existsSync, readFileSync, appendFileSync } from 'node:fs';
           const path = 'frontend/chronicles-playtest-report.json';
           if (!existsSync(path)) {
-            appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\\nPlaytest report missing (setup or execution failed).\\n');
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\nPlaytest report missing (setup or execution failed).\n');
           } else {
             const report = JSON.parse(readFileSync(path, 'utf8'));
-            const lines = ['','### Staging autonomous playtest', '', 'Source: \`' + report.sourceSha + '\`', '', '| Profile | Outcome | Warnings |', '| --- | --- | --- |'];
+            const lines = ['','### Staging autonomous playtest', '', 'Source: `' + report.sourceSha + '`', '', '| Profile | Outcome | Warnings |', '| --- | --- | --- |'];
             for (const episode of report.episodes ?? []) {
               lines.push('| ' + episode.profile + ' | ' + episode.outcome + ' | ' + (episode.warnings ?? []).join(', ') + ' |');
             }
-            appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\\n') + '\\n');
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           }
           NODE
