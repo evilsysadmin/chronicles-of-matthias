@@ -19,7 +19,7 @@ try {
   ];
   const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney', ...skyViews];
   const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
-  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'night'];
+  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'dusk', 'night'];
   for (const width of [360, 390, 430, 1280]) {
     const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
     // Fresh navigation recreates the real WebGL scene; one browser context per
@@ -32,11 +32,14 @@ try {
     try {
       const shots = (width === 360 || width === 430 ? portraitShops : fullViews)
         .map(view => ({ view, weather: null }));
-      // Only two representative viewport sizes get the extra four climate
-      // frames; the existing 360/430 shop budget remains unchanged.
+      // Only two representative viewport sizes get five climate frames:
+      // sunrise points toward Terra's westward solar azimuth, sunset eastward.
+      // The existing 360/430 shop budget remains unchanged.
       if (width === 390 || width === 1280) {
         shots.push(...skyWeatherScenarios.map(weather => ({
-          view: 'sky-plaza-south', weather,
+          view: weather === 'dawn' ? 'sky-plaza-west'
+            : weather === 'dusk' ? 'sky-plaza-east' : 'sky-plaza-south',
+          weather,
         })));
       }
       for (const { view, weather } of shots) {
@@ -122,11 +125,13 @@ try {
               assert.ok(Number(result.skyPanoramaOpacity) < 0.3,
                 'Clear weather must restore the lighter panorama');
             }
-          } else if (weather === 'dawn') {
+          } else if (weather === 'dawn' || weather === 'dusk') {
             assert.ok(Number(result.skyTwilight) > 0.9,
-              'Dawn must track the seasonal sunrise, not a fixed wall-clock hour');
+              'Twilight must track seasonal sunrise/sunset, not a fixed wall-clock hour');
             assert.ok(Number(result.skyDaylight) > 0.1
               && Number(result.skyDaylight) < 0.9);
+            assert.ok(Number(result.skySunFacing) > 0.9,
+              'Twilight captures must look toward the genuine seasonal solar azimuth');
           } else if (weather === 'night') {
             assert.ok(Number(result.skyDaylight) < 0.01);
             assert.equal(result.skySunVisible, 'false');

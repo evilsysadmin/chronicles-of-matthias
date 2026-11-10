@@ -83,7 +83,7 @@ const name = parameters.get('view') || 'ward';
 // 360/390/430px emulate touch; 1280px renders the real desktop budget.
 const coarsePointer = parameters.get('coarse') !== '0';
 const skyScenario = parameters.get('weather');
-const skyScenarios = ['clear', 'rain', 'dawn', 'night'];
+const skyScenarios = ['clear', 'rain', 'dawn', 'dusk', 'night'];
 if (skyScenario && !skyScenarios.includes(skyScenario)) {
   throw new Error('Unsupported Sky scenario: ' + skyScenario);
 }
@@ -160,7 +160,9 @@ try {
     ? matchingWeatherMinute(skyScenario)
     : skyScenario === 'dawn'
       ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunrise * 60)
-      : skyScenario === 'night' ? referenceDay + 23 * 60 + 45 : null;
+      : skyScenario === 'dusk'
+        ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunset * 60)
+        : skyScenario === 'night' ? referenceDay + 23 * 60 + 45 : null;
   const skyWeather = skyWorldMinutes === null ? null
     : chroniclesRegionalWeather({ ...skyRegion, worldMinutes: skyWorldMinutes });
   const skyTransition = skyWorldMinutes === null ? null
@@ -321,6 +323,12 @@ try {
     skyDaylight: String(skyDaylight?.daylight ?? -1),
     skyTwilight: String(skyDaylight?.twilight ?? -1),
     skySunVisible: String(skyDaylight?.sunVisible ?? false),
+    // Sunward screenshots look along the seasonally derived sunrise/sunset
+    // bearing, not at a fixed opposite horizon.
+    skySunFacing: String(skyDaylight
+      ? (dx * skyDaylight.sun.x + dy * skyDaylight.sun.z)
+        / Math.hypot(skyDaylight.sun.x, skyDaylight.sun.z)
+      : -1),
     skyPanoramaOpacity: String(skyPanorama?.material?.opacity ?? -1),
     skyWorldMinutes: String(skyWorldMinutes ?? -1),
     cameraFov: String(camera.fov),
