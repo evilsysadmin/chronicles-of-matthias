@@ -108,6 +108,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
     ?.getObjectByName('cloud-soft-bank')?.material;
   const panoramaMaterial = dome.getObjectByName('chronicles-sky-cloud-panorama')?.material;
   const cloudDay = new THREE.Color(0xc4cdd4);
+  const clearCloudLight = new THREE.Color(0xf0f5f6);
   const cloudNight = new THREE.Color(0x3b4a5e);
   const cloudStorm = new THREE.Color(0x7d8993);
   let lastElapsedMinute = null;
@@ -148,9 +149,13 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         // coverage or amplify rain, fog, twilight darkness or night skies.
         const clearDaylight = 1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48);
         panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
-          + 0.10 * clearDaylight * daylight;
+          + 0.24 * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
-          .lerp(cloudStorm, cloudiness * 0.62);
+          .lerp(cloudStorm, cloudiness * 0.62)
+          // The procedural atlas already has broken bright crowns and darker
+          // bases. Let sunlight reveal that contrast in sparse clear clouds,
+          // instead of washing everything into the sky-blue background.
+          .lerp(clearCloudLight, 0.72 * clearDaylight * daylight);
       }
       sunVector.set(profile.sun.x, profile.sun.y, profile.sun.z);
       // Never light walls from below. At night, the same shadowless-looking

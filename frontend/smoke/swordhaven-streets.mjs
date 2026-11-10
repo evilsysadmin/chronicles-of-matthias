@@ -130,9 +130,9 @@ try {
               assert.ok(Number(result.skyPanoramaOpacity) > 0.6,
                 'Rain must darken the existing real panorama');
             } else {
-              assert.ok(Number(result.skyPanoramaOpacity) > 0.22
-                && Number(result.skyPanoramaOpacity) < 0.27,
-              'Clear daylight must reveal sparse cloud outlines without becoming overcast');
+              assert.ok(Number(result.skyPanoramaOpacity) > 0.36
+                && Number(result.skyPanoramaOpacity) < 0.41,
+              'Clear daylight must show bright, sparse cloud outlines without becoming overcast');
             }
           } else if (weather === 'dawn' || weather.startsWith('dusk')) {
             if (weather === 'dusk-clear' || weather === 'dusk-cloudy') {
@@ -145,7 +145,7 @@ try {
               'Sunset weather must have completed its 40-minute transition');
               assert.equal(result.skyPrecipitation, 'none');
               assert.ok(kind === 'clear'
-                ? Number(result.skyPanoramaOpacity) < 0.20
+                ? Number(result.skyPanoramaOpacity) < 0.32
                 : Number(result.skyPanoramaOpacity) > 0.50,
               'Actual sunset cloud cover must change panorama opacity');
             }
