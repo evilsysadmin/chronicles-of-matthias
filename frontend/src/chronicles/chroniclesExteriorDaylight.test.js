@@ -6,6 +6,7 @@ import { chroniclesTownRainWetness } from './chroniclesTownRainPavement.js';
 import { buildChroniclesCampaignExterior } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import { chroniclesExteriorDaylightProfile, createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
+import { chroniclesSeasonalSunTimes } from './chroniclesWorldTime.js';
 
 function outdoors() {
   const scene = new THREE.Scene();
@@ -39,6 +40,49 @@ describe('Terra solar cycle', () => {
       .toBeLessThan(chroniclesExteriorDaylightProfile(summer + 17 * 60).daylight);
     expect(chroniclesExteriorDaylightProfile(480 + 1440).minute).toBe(480);
     expect(chroniclesExteriorDaylightProfile(NaN).minute).toBe(480);
+  });
+
+  it.each([84, 252])('keeps summer/winter sunrise and sunset color on the sun-facing horizon (day %s)', (day) => {
+    const { scene, dome, renderer } = outdoors();
+    const cycle = createChroniclesExteriorDaylight(scene, renderer);
+    const positions = dome.geometry.getAttribute('position');
+    const colors = dome.geometry.getAttribute('color');
+    const atHorizon = (sun, opposite = false) => {
+      const solar = new THREE.Vector3(sun.x, 0, sun.z).normalize()
+        .multiplyScalar(opposite ? -1 : 1);
+      let chosen = -1;
+      let best = -Infinity;
+      for (let i = 0; i < positions.count; i += 1) {
+        const vector = new THREE.Vector3(
+          positions.getX(i), positions.getY(i), positions.getZ(i),
+        ).normalize();
+        const alignment = vector.x * solar.x + vector.z * solar.z;
+        const score = alignment - 4 * Math.abs(vector.y);
+        if (score > best) { chosen = i; best = score; }
+      }
+      return new THREE.Color(colors.getX(chosen), colors.getY(chosen), colors.getZ(chosen));
+    };
+    const date = day * 1440;
+    const solar = chroniclesSeasonalSunTimes(date);
+    for (const minutes of [Math.round(solar.sunrise * 60), Math.round(solar.sunset * 60)]) {
+      const worldMinutes = date + minutes;
+      const profile = chroniclesExteriorDaylightProfile(worldMinutes);
+      expect(profile.twilight).toBeGreaterThan(0.99);
+      expect(cycle.sync(worldMinutes)).toBe(true);
+      const front = atHorizon(profile.sun);
+      const back = atHorizon(profile.sun, true);
+      expect(front.r).toBeGreaterThan(back.r + 0.13);
+      expect(front.r - front.b).toBeGreaterThan(back.r - back.b + 0.18);
+      // A repeated render or camera yaw must not animate the sun or redraw it.
+      expect(cycle.sync(worldMinutes)).toBe(false);
+    }
+    const night = date + 23 * 60;
+    expect(cycle.sync(night)).toBe(true);
+    const profile = chroniclesExteriorDaylightProfile(night);
+    expect(atHorizon(profile.sun).r).toBeCloseTo(atHorizon(profile.sun, true).r, 5);
+    const count = scene.children.length;
+    expect(cycle.sync(date + 12 * 60)).toBe(true);
+    expect(scene.children.length).toBe(count);
   });
 
   it('uses existing lights and sky vertices, hides sun at night and restores sunrise', () => {
