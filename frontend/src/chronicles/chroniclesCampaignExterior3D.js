@@ -830,7 +830,7 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     // reading as one flat tan surface. An authored district tint is retained
     // as the base pigment rather than replaced by the procedural variation.
     const townStreetTints = settlement && scenePlan.mapId === 'swordhaven-first-book' ? {
-      nearWalls: ['#f0ede4', '#dfe4d8', '#eae3d9', '#ece8df'].map(hex => new THREE.Color(hex)),
+      nearWalls: ['#f0ede4', '#e3e7de', '#eae3df', '#ece8df'].map(hex => new THREE.Color(hex)),
       open: ['#ffffff', '#f4f0e8', '#e7e4dc', '#f6f2e9'].map(hex => new THREE.Color(hex)),
     } : null;
     const layeredTint = new THREE.Color();
