@@ -738,21 +738,23 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // The B2 heath uses its own peat/lichen surface; neighboring hills keep
   // their existing grass. One tiled texture and the same single terrain mesh.
   const heathB2 = scenePlan.mapId === 'terra-b2' && scenePlan.biome === 'hills' && !settlement;
+  const bannerTrail = scenePlan.mapId === 'banner-road-first-book'
+    && scenePlan.biome === 'plains' && !settlement;
   const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
     map: heathB2 ? terraGroundTexture('heath')
       : biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture(),
   });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
-  // The shared town-only relief adds directional light to weathered paving.
-  // Wild roads retain their cheaper albedo-only rendering.
-  const paver = material(heathB2 ? 0xffffff : (roadMap ? 0xcabfa6 : 0xddd3bf), {
-    // B2 still uses the exact same authored road cells and one InstancedMesh.
-    // Replacing only its albedo visually joins the peat terrain and stones.
+  // The central Banner Road had perfectly uniform flat-looking pavers.
+  // Reuse the existing shared cobble normal atlas only on desktop; mobile
+  // retains the original albedo-only cost, and other wild roads stay put.
+  const paver = material(heathB2 ? 0xffffff
+    : bannerTrail ? 0xd9cfbd : (roadMap ? 0xcabfa6 : 0xddd3bf), {
     map: heathB2 ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
-    ...(settlement ? {
+    ...((settlement || (bannerTrail && !coarsePointer)) ? {
       normalMap: swordhavenSurfaceNormalTexture('cobble'),
-      normalScale: new THREE.Vector2(0.72, 0.72),
+      normalScale: new THREE.Vector2(settlement ? 0.72 : 0.54, settlement ? 0.72 : 0.54),
     } : {}),
   });
   const timber = material(0x4d3424);
@@ -833,28 +835,44 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       nearWalls: ['#f0ede4', '#e3e7de', '#eae3df', '#ece8df'].map(hex => new THREE.Color(hex)),
       open: ['#ffffff', '#f4f0e8', '#e7e4dc', '#f6f2e9'].map(hex => new THREE.Color(hex)),
     } : null;
+    // Original Banner Road stays perfectly walkable, but its centuries-old
+    // stones no longer repeat the exact same tint for every four-metre slab.
+    // Grass-edge patina and central wear share the original one draw call.
+    const bannerTrackTints = bannerTrail ? {
+      edge: ['#e5e9df', '#e9e5d9', '#e3dfd5', '#f1eee5'].map(hex => new THREE.Color(hex)),
+      center: ['#ffffff', '#f2ede4', '#ebe5dc', '#f7f2e8'].map(hex => new THREE.Color(hex)),
+    } : null;
+    const roadKeySet = bannerTrackTints
+      ? new Set(roadCells.map(({ x, y }) => x + ',' + y)) : null;
     const layeredTint = new THREE.Color();
     roadCells.forEach(({ x, y }, index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
-      if (roadTintZones.length || heathTrackTints || townStreetTints) {
+      if (roadTintZones.length || heathTrackTints || townStreetTints || bannerTrackTints) {
         const district = roadTintZones.find(zone =>
           x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY);
         const nearStone = (heathTrackTints || townStreetTints) && (
           grid[y - 1]?.[x] === '#' || grid[y + 1]?.[x] === '#'
           || grid[y]?.[x - 1] === '#' || grid[y]?.[x + 1] === '#'
         );
+        const besideGrass = roadKeySet && (
+          !roadKeySet.has((x - 1) + ',' + y) || !roadKeySet.has((x + 1) + ',' + y)
+          || !roadKeySet.has(x + ',' + (y - 1)) || !roadKeySet.has(x + ',' + (y + 1))
+        );
         const shades = heathTrackTints
           ? (nearStone ? heathTrackTints.edge : heathTrackTints.open)
           : townStreetTints
             ? (nearStone ? townStreetTints.nearWalls : townStreetTints.open)
-            : null;
+            : bannerTrackTints
+              ? (besideGrass ? bannerTrackTints.edge : bannerTrackTints.center)
+              : null;
         // Larger correlated patches keep cobbles varied without turning
         // each four-metre road cell into a random checkerboard.
-        const tx = townStreetTints ? Math.floor(x / 2) : x;
-        const ty = townStreetTints ? Math.floor(y / 2) : y;
+        const correlatedPatches = townStreetTints || bannerTrackTints;
+        const tx = correlatedPatches ? Math.floor(x / 2) : x;
+        const ty = correlatedPatches ? Math.floor(y / 2) : y;
         const mix = (Math.imul(tx + 29, 73856093) ^ Math.imul(ty + 17, 19349663)) >>> 0;
         const naturalTint = shades?.[mix % shades.length];
         // Preserve authored south-ward pigments and all existing B2 paths.
