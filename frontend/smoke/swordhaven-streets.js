@@ -83,7 +83,7 @@ const name = parameters.get('view') || 'ward';
 // 360/390/430px emulate touch; 1280px renders the real desktop budget.
 const coarsePointer = parameters.get('coarse') !== '0';
 const skyScenario = parameters.get('weather');
-const skyScenarios = ['clear', 'rain', 'dawn', 'dusk', 'night'];
+const skyScenarios = ['clear', 'rain', 'dawn', 'dusk', 'dusk-clear', 'dusk-cloudy', 'night'];
 if (skyScenario && !skyScenarios.includes(skyScenario)) {
   throw new Error('Unsupported Sky scenario: ' + skyScenario);
 }
@@ -155,6 +155,22 @@ try {
     }
     throw new Error('No authentic Swordhaven weather interval found: ' + kind);
   };
+  // Sample true sunset weather rather than forcing the cloud material into
+  // an artificial test state. Complete atmospheric blending first so that
+  // both screenshots compare steady clear/overcast weather.
+  const matchingSunsetMinute = (kind) => {
+    for (let day = 0; day < 160; day += 1) {
+      const start = day * 1440;
+      const minute = start + Math.round(chroniclesSeasonalSunTimes(start).sunset * 60);
+      const actual = chroniclesRegionalWeather({ ...skyRegion, worldMinutes: minute });
+      const transition = chroniclesRegionalWeatherTransition({ ...skyRegion, worldMinutes: minute });
+      if (actual?.kind === kind && transition?.progress > 0.99
+        && (kind === 'clear' ? transition.clouds <= 0.08 : transition.clouds >= 0.54)) {
+        return minute;
+      }
+    }
+    throw new Error('No settled authentic Swordhaven sunset found: ' + kind);
+  };
   const referenceDay = 84 * 1440;
   const skyWorldMinutes = skyScenario === 'clear' || skyScenario === 'rain'
     ? matchingWeatherMinute(skyScenario)
@@ -162,7 +178,9 @@ try {
       ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunrise * 60)
       : skyScenario === 'dusk'
         ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunset * 60)
-        : skyScenario === 'night' ? referenceDay + 23 * 60 + 45 : null;
+        : skyScenario === 'dusk-clear' ? matchingSunsetMinute('clear')
+          : skyScenario === 'dusk-cloudy' ? matchingSunsetMinute('cloudy')
+            : skyScenario === 'night' ? referenceDay + 23 * 60 + 45 : null;
   const skyWeather = skyWorldMinutes === null ? null
     : chroniclesRegionalWeather({ ...skyRegion, worldMinutes: skyWorldMinutes });
   const skyTransition = skyWorldMinutes === null ? null
