@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createChroniclesSkyCloudPanorama } from './chroniclesSkyCloudPanorama.js';
-import { createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
+import { addSwordhavenClouds, createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
 import { createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
-import { chroniclesRegionalWeather } from './chroniclesRegionalWeather.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 
 describe('Seamless Terra cloud panorama', () => {
   it.each([
@@ -77,6 +77,74 @@ describe('Seamless Terra cloud panorama', () => {
     expect(cloud.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position)).toBeLessThan(1e-5);
     expect(cloud.getWorldQuaternion(new THREE.Quaternion()).angleTo(new THREE.Quaternion()))
       .toBeLessThan(1e-5);
+  });
+
+  it('fades the low skyline into actual regional fog, preserving higher clouds and rewind', () => {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xb4d4df);
+    scene.fog = new THREE.Fog(0xb4d4df, 55, 140);
+    const dome = createSwordhavenSkyDome(new THREE.Vector3(-25, 30, -65).normalize(), true);
+    scene.add(dome);
+    addSwordhavenClouds(dome, true);
+    const sun = new THREE.DirectionalLight(0xffe6ba, 1.88);
+    sun.name = 'chronicles-campaign-sun';
+    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, 1.12));
+    const panorama = dome.getObjectByName('chronicles-sky-cloud-panorama').material;
+    const foreground = dome.getObjectByName('swordhaven-cloud-0')
+      .getObjectByName('cloud-soft-bank').material;
+    const colors = dome.geometry.getAttribute('color');
+    const positions = dome.geometry.getAttribute('position');
+    const horizonIndex = Array.from({ length: positions.count }, (_, i) => i)
+      .find(i => Math.abs(positions.getY(i)) < 0.001);
+    const topIndex = Array.from({ length: positions.count }, (_, i) => i)
+      .find(i => positions.getY(i) > 61.9);
+    const sample = (index) => new THREE.Color(
+      colors.getX(index), colors.getY(index), colors.getZ(index));
+    const region = { mapId: 'swordhaven-first-book', regionKind: 'settlement' };
+    const samples = Array.from({ length: 160 }, (_, day) => day * 1440 + 12 * 60 + 45);
+    const weatherKind = (minute) => chroniclesRegionalWeather({
+      ...region, worldMinutes: minute,
+    })?.kind;
+    const clear = samples.find(minute => weatherKind(minute) === 'clear');
+    const fog = samples.find(minute => weatherKind(minute) === 'fog');
+    expect(clear).toBeDefined();
+    expect(fog).toBeDefined();
+    expect(chroniclesRegionalWeatherTransition({
+      ...region, worldMinutes: fog,
+    }).fog).toBeGreaterThan(0.8);
+    const cycle = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 }, region);
+    const initialCount = scene.children.length;
+    cycle.sync(clear);
+    const clearSkyline = sample(horizonIndex);
+    const clearPanorama = panorama.color.clone();
+    const clearForeground = foreground.color.clone();
+    const clearOpacity = panorama.opacity;
+    const baselineFogFar = scene.fog.far;
+    cycle.sync(fog);
+    const fogColor = scene.fog.color;
+    expect(scene.fog.far).toBeLessThan(baselineFogFar);
+    expect(sample(horizonIndex).distanceTo(fogColor))
+      .toBeLessThan(sample(topIndex).distanceTo(fogColor));
+    const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: fog });
+    const unattenuated = new THREE.Color(0x3b4a5e)
+      .lerp(new THREE.Color(0xc4cdd4), 1)
+      .lerp(new THREE.Color(0x7d8993), weather.clouds * 0.62);
+    const farVeil = panorama.color.distanceTo(unattenuated);
+    const nearVeil = foreground.color.distanceTo(unattenuated);
+    expect(farVeil).toBeGreaterThan(0.015);
+    expect(nearVeil).toBeGreaterThan(0);
+    expect(farVeil).toBeGreaterThan(nearVeil * 2);
+    expect(panorama.opacity).toBeLessThan(0.11 + weather.clouds * 0.79);
+    expect(panorama.material?.fog ?? panorama.fog).toBe(false);
+    expect(scene.children.length).toBe(initialCount);
+    cycle.sync(clear);
+    expect(sample(horizonIndex).distanceTo(clearSkyline)).toBeLessThan(1e-6);
+    expect(panorama.color.distanceTo(clearPanorama)).toBeLessThan(1e-6);
+    expect(foreground.color.distanceTo(clearForeground)).toBeLessThan(1e-6);
+    expect(panorama.opacity).toBeCloseTo(clearOpacity);
+    expect(scene.fog.far).toBeCloseTo(baselineFogFar);
+    expect(scene.children.length).toBe(initialCount);
   });
 
   it('matches persisted clear/rain transitions and reverses on restoring a save', () => {
