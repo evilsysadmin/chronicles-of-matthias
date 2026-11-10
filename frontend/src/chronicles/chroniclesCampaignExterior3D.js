@@ -229,7 +229,7 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
     material(0xffffff, {
       map: swordhavenSurfaceTexture('stucco'),
       normalMap: swordhavenSurfaceNormalTexture('stucco'),
-      normalScale: new THREE.Vector2(0.50, 0.50), roughness: 0.97,
+      normalScale: new THREE.Vector2(0.64, 0.64), roughness: 0.97,
     }),
     faces.length * layers.length,
   );
@@ -238,11 +238,15 @@ function addSettlementPlasterFrontages(town, { grid, blocked, center, zones, wal
     new THREE.Color('#c6b398'),
     new THREE.Color('#b9a68e'),
     new THREE.Color('#d1bda4'),
+    new THREE.Color('#b5b9ac'), // weathered cool limestone house
+    new THREE.Color('#c9aa91'), // warm ochre limewash
   ];
   const upperLime = [
     new THREE.Color('#e5d4b9'),
     new THREE.Color('#d8c6af'),
     new THREE.Color('#ecdbc3'),
+    new THREE.Color('#dce1d2'),
+    new THREE.Color('#e4c5ae'),
   ];
   faces.forEach(({ x, y, dx, dy, yaw }, i) => {
     const [wx, wz] = gridToWorld(x, y, center);
@@ -821,24 +825,44 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       edge: ['#e5ebdf', '#e2e9dc', '#edf0e4'].map(hex => new THREE.Color(hex)),
       open: ['#ffffff', '#faf5e9', '#f3ede2', '#f7f1e7'].map(hex => new THREE.Color(hex)),
     } : null;
+    // Reuse the existing single road InstancedMesh: broad 2x2-cell patches
+    // of worn paving and faint moss near house walls stop the long streets
+    // reading as one flat tan surface. An authored district tint is retained
+    // as the base pigment rather than replaced by the procedural variation.
+    const townStreetTints = settlement && scenePlan.mapId === 'swordhaven-first-book' ? {
+      nearWalls: ['#f0ede4', '#e3e7de', '#eae3df', '#ece8df'].map(hex => new THREE.Color(hex)),
+      open: ['#ffffff', '#f4f0e8', '#e7e4dc', '#f6f2e9'].map(hex => new THREE.Color(hex)),
+    } : null;
+    const layeredTint = new THREE.Color();
     roadCells.forEach(({ x, y }, index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
-      if (roadTintZones.length || heathTrackTints) {
+      if (roadTintZones.length || heathTrackTints || townStreetTints) {
         const district = roadTintZones.find(zone =>
           x >= zone.minX && x <= zone.maxX && y >= zone.minY && y <= zone.maxY);
-        const nearStone = heathTrackTints && (
+        const nearStone = (heathTrackTints || townStreetTints) && (
           grid[y - 1]?.[x] === '#' || grid[y + 1]?.[x] === '#'
           || grid[y]?.[x - 1] === '#' || grid[y]?.[x + 1] === '#'
         );
-        const shades = heathTrackTints && (nearStone ? heathTrackTints.edge : heathTrackTints.open);
-        const mix = (Math.imul(x + 29, 73856093) ^ Math.imul(y + 17, 19349663)) >>> 0;
+        const shades = heathTrackTints
+          ? (nearStone ? heathTrackTints.edge : heathTrackTints.open)
+          : townStreetTints
+            ? (nearStone ? townStreetTints.nearWalls : townStreetTints.open)
+            : null;
+        // Larger correlated patches keep cobbles varied without turning
+        // each four-metre road cell into a random checkerboard.
+        const tx = townStreetTints ? Math.floor(x / 2) : x;
+        const ty = townStreetTints ? Math.floor(y / 2) : y;
+        const mix = (Math.imul(tx + 29, 73856093) ^ Math.imul(ty + 17, 19349663)) >>> 0;
         const naturalTint = shades?.[mix % shades.length];
-        // Initialise every slot once instance colours are enabled, including
-        // those without district zones. Never leave uncoloured black roads.
-        roads.setColorAt(index, district?.tint || naturalTint || neutralTint);
+        // Preserve authored south-ward pigments and all existing B2 paths.
+        // Initialise every instance, including those without district zones.
+        const tint = district && townStreetTints && naturalTint
+          ? layeredTint.copy(district.tint).multiply(naturalTint)
+          : district?.tint || naturalTint || neutralTint;
+        roads.setColorAt(index, tint);
       }
     });
     roads.instanceMatrix.needsUpdate = true;

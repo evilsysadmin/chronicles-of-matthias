@@ -461,12 +461,22 @@ describe('Chronicles file-authored exterior renderer', () => {
       + [...grid[square.y].slice(0, square.x)].filter(tile => tile === '.').length;
     paved.getColorAt(squareIndex, squareTint);
     const expectedDistrictTint = new THREE.Color('#c7b19c');
-    expect(alleyTint.r).toBeCloseTo(expectedDistrictTint.r);
-    expect(alleyTint.g).toBeCloseTo(expectedDistrictTint.g);
-    expect(alleyTint.b).toBeCloseTo(expectedDistrictTint.b);
-    expect(squareTint.r).toBeCloseTo(1);
-    expect(squareTint.g).toBeCloseTo(1);
-    expect(squareTint.b).toBeCloseTo(1);
+    // The authored south-ward palette remains the base pigment even when
+    // the paving acquires narrow weathering patches; it must never be
+    // overwritten by the neutral plaza colour or black instance slots.
+    for (const channel of ['r', 'g', 'b']) {
+      expect(alleyTint[channel]).toBeLessThanOrEqual(expectedDistrictTint[channel] + 0.001);
+      expect(alleyTint[channel]).toBeGreaterThan(expectedDistrictTint[channel] * 0.70);
+      expect(squareTint[channel]).toBeGreaterThan(0.70);
+      expect(squareTint[channel]).toBeLessThanOrEqual(1);
+    }
+    const wornPavingColours = new Set();
+    const pavingColour = new THREE.Color();
+    for (let i = 0; i < paved.count; i += 1) {
+      paved.getColorAt(i, pavingColour);
+      wornPavingColours.add(pavingColour.getHexString());
+    }
+    expect(wornPavingColours.size).toBeGreaterThan(5);
     expect(paved.instanceColor).toBeTruthy();
     // The south-ward walls now have visible window fronts rather than bare
     // embankments. Both faces are batched: two instanced meshes total.
@@ -702,7 +712,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(plaster.instanceColor).toBeTruthy();
     expect(plaster.material.map).toBe(swordhavenSurfaceTexture('stucco'));
     expect(plaster.material.normalMap).toBe(swordhavenSurfaceNormalTexture('stucco'));
-    expect(plaster.material.normalScale.toArray()).toEqual([0.50, 0.50]);
+    expect(plaster.material.normalScale.toArray()).toEqual([0.64, 0.64]);
     expect(plaster.material.map.repeat.toArray()).toEqual(plaster.material.normalMap.repeat.toArray());
     expect(plaster.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(plaster.material.map.wrapS).toBe(THREE.RepeatWrapping);
@@ -740,9 +750,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(windowSurface).toBeGreaterThan(plasterSurface);
     expect(timberSurface).toBeGreaterThan(plasterSurface);
     expect(plasterSurface).toBeLessThan(2);
-    // Three deterministic house palettes × two consistent floor treatments.
-    // A darker ground floor and lighter upper floor give depth without a
-    // patchwork of materials, new meshes or random values on reload.
+    // Five deterministic limewash palettes × two consistent floor treatments
+    // distinguish adjacent homes. Existing stucco batching, textures and
+    // collision geometry remain unchanged.
     const groundShades = new Set();
     const upperShades = new Set();
     for (let i = 0; i < plaster.count; i += 1) {
@@ -761,8 +771,8 @@ describe('Chronicles file-authored exterior renderer', () => {
           .toBeGreaterThan(lowerTint.getHSL({ h: 0, s: 0, l: 0 }).l);
       }
     }
-    expect(groundShades.size).toBe(3);
-    expect(upperShades.size).toBe(3);
+    expect(groundShades.size).toBe(5);
+    expect(upperShades.size).toBe(5);
     expect([...groundShades].some(color => upperShades.has(color))).toBe(false);
     expect(beams.castShadow).toBe(false);
     expect(uprights.castShadow).toBe(false);
