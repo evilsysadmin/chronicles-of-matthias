@@ -19,7 +19,8 @@ try {
   ];
   const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney', ...skyViews];
   const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
-  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'dusk', 'night'];
+  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'dusk',
+    'dusk-clear', 'dusk-cloudy', 'night'];
   for (const width of [360, 390, 430, 1280]) {
     const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
     // Fresh navigation recreates the real WebGL scene; one browser context per
@@ -32,13 +33,12 @@ try {
     try {
       const shots = (width === 360 || width === 430 ? portraitShops : fullViews)
         .map(view => ({ view, weather: null }));
-      // Only two representative viewport sizes get five climate frames:
-      // sunrise points toward Terra's westward solar azimuth, sunset eastward.
-      // The existing 360/430 shop budget remains unchanged.
+      // Two reference widths photograph authentic sunny/overcast sunsets
+      // toward Terra's actual solar azimuth. 360/430 shops stay unchanged.
       if (width === 390 || width === 1280) {
         shots.push(...skyWeatherScenarios.map(weather => ({
           view: weather === 'dawn' ? 'sky-plaza-west'
-            : weather === 'dusk' ? 'sky-plaza-east' : 'sky-plaza-south',
+            : weather.startsWith('dusk') ? 'sky-plaza-east' : 'sky-plaza-south',
           weather,
         })));
       }
@@ -125,7 +125,21 @@ try {
               assert.ok(Number(result.skyPanoramaOpacity) < 0.3,
                 'Clear weather must restore the lighter panorama');
             }
-          } else if (weather === 'dawn' || weather === 'dusk') {
+          } else if (weather === 'dawn' || weather.startsWith('dusk')) {
+            if (weather === 'dusk-clear' || weather === 'dusk-cloudy') {
+              const kind = weather === 'dusk-clear' ? 'clear' : 'cloudy';
+              assert.equal(result.skyWeatherKind, kind,
+                'Sunset must use authentic regional weather, not a mocked tint');
+              assert.ok(kind === 'clear'
+                ? Number(result.skyCloudiness) <= 0.08
+                : Number(result.skyCloudiness) >= 0.54,
+              'Sunset weather must have completed its 40-minute transition');
+              assert.equal(result.skyPrecipitation, 'none');
+              assert.ok(kind === 'clear'
+                ? Number(result.skyPanoramaOpacity) < 0.20
+                : Number(result.skyPanoramaOpacity) > 0.50,
+              'Actual sunset cloud cover must change panorama opacity');
+            }
             assert.ok(Number(result.skyTwilight) > 0.9,
               'Twilight must track seasonal sunrise/sunset, not a fixed wall-clock hour');
             assert.ok(Number(result.skyDaylight) > 0.1
