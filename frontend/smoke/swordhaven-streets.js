@@ -83,7 +83,7 @@ const name = parameters.get('view') || 'ward';
 // 360/390/430px emulate touch; 1280px renders the real desktop budget.
 const coarsePointer = parameters.get('coarse') !== '0';
 const skyScenario = parameters.get('weather');
-const skyScenarios = ['clear', 'rain', 'dawn', 'dusk', 'dusk-clear', 'dusk-cloudy', 'night'];
+const skyScenarios = ['clear', 'rain', 'fog', 'dawn', 'dusk', 'dusk-clear', 'dusk-cloudy', 'night'];
 if (skyScenario && !skyScenarios.includes(skyScenario)) {
   throw new Error('Unsupported Sky scenario: ' + skyScenario);
 }
@@ -172,7 +172,7 @@ try {
     throw new Error('No settled authentic Swordhaven sunset found: ' + kind);
   };
   const referenceDay = 84 * 1440;
-  const skyWorldMinutes = skyScenario === 'clear' || skyScenario === 'rain'
+  const skyWorldMinutes = ['clear', 'rain', 'fog'].includes(skyScenario)
     ? matchingWeatherMinute(skyScenario)
     : skyScenario === 'dawn'
       ? referenceDay + Math.round(chroniclesSeasonalSunTimes(referenceDay).sunrise * 60)
@@ -338,6 +338,8 @@ try {
     skyWeatherKind: skyWeather?.kind || 'none',
     skyPrecipitation: skyTransition?.precipitation || 'none',
     skyCloudiness: String(skyTransition?.clouds ?? -1),
+    skyFogStrength: String(skyTransition?.fog ?? -1),
+    skyFogFar: String(scene.fog?.far ?? -1),
     skyDaylight: String(skyDaylight?.daylight ?? -1),
     skyTwilight: String(skyDaylight?.twilight ?? -1),
     skySunVisible: String(skyDaylight?.sunVisible ?? false),
