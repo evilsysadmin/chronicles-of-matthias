@@ -35,22 +35,32 @@ export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
   const rgba = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y += 1) {
     const v = y / (height - 1);
-    // The lower horizon is translucent mist; over it sit uneven, higher
-    // storm shelves, leaving room for blue sky on genuinely clear days.
-    const silhouette = smooth(0.50, 0.62, v) * (1 - smooth(0.79, 0.91, v));
-    const horizonMist = smooth(0.465, 0.515, v) * (1 - smooth(0.565, 0.64, v));
+    // Low horizon mist, broken mid-altitude shelves, and sparse high wisps
+    // are painted into the SAME 360° atlas. Latitude alone must never create
+    // a single flat grey stripe across every compass heading.
+    const horizonMist = smooth(0.465, 0.52, v) * (1 - smooth(0.585, 0.65, v));
+    const highEnvelope = smooth(0.635, 0.73, v) * (1 - smooth(0.89, 0.975, v));
     for (let x = 0; x < width; x += 1) {
       const u = x / (width - 1);
       const broad = longitudeNoise(u, v, 7, 4);
       const middle = longitudeNoise(u, v, 19, 10);
       const fine = longitudeNoise(u, v, 43, 19);
+      // Longitude-dependent height makes cloud silhouettes rise and break
+      // instead of painting a uniform shelf above the Swordhaven rooftops.
+      const lift = (broad - 0.5) * 0.14 + (middle - 0.5) * 0.055;
+      const silhouette = smooth(0.48 + lift * 0.45, 0.61 + lift, v)
+        * (1 - smooth(0.765 + lift * 0.65, 0.92 + lift * 0.8, v));
       const density = smooth(0.31, 0.79,
         0.18 + broad * 0.52 + middle * 0.29 + fine * 0.15);
       const wisp = smooth(0.24, 0.71, middle * 0.72 + fine * 0.28);
-      const coverage = Math.min(0.79,
-        silhouette * (0.18 + 0.59 * density) * (0.69 + 0.31 * wisp)
-        + horizonMist * (0.10 + 0.12 * broad));
-      const shade = Math.round(145 + broad * 38 + middle * 27 + fine * 9);
+      const highPatches = smooth(0.42, 0.72,
+        broad * 0.56 + middle * 0.33 + fine * 0.11);
+      const coverage = Math.min(0.83,
+        silhouette * (0.18 + 0.64 * density) * (0.62 + 0.38 * wisp)
+        + highEnvelope * (0.035 + 0.43 * highPatches) * (0.55 + 0.45 * wisp)
+        + horizonMist * (0.07 + 0.13 * broad));
+      const shade = Math.round(141 + broad * 38 + middle * 29 + fine * 11
+        + Math.max(0, v - 0.7) * 34);
       const index = (y * width + x) * 4;
       rgba[index] = shade - 11;
       rgba[index + 1] = shade;

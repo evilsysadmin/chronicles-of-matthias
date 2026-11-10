@@ -45,6 +45,14 @@ describe('Seamless Terra cloud panorama', () => {
     expect(atmosphere.some(a => a > 0)).toBe(true);
     expect(new Set(Array.from({ length: 12 }, (_, index) =>
       px(Math.floor(index * (width - 1) / 12), bandY, 0))).size).toBeGreaterThan(5);
+    // High-altitude clouds must have separated wisps instead of stopping at
+    // one ruler-straight horizon stripe. Both GPU budgets use the same shape.
+    const elevatedY = Math.round(height * 0.88);
+    const elevated = Array.from({ length: 12 }, (_, index) =>
+      px(Math.floor(index * (width - 1) / 12), elevatedY, 3));
+    expect(elevated.some(alpha => alpha >= 55)).toBe(true);
+    expect(elevated.some(alpha => alpha <= 20)).toBe(true);
+    expect(new Set(elevated).size).toBeGreaterThan(6);
     cloud.geometry.dispose();
     texture.dispose();
     cloud.material.dispose();
