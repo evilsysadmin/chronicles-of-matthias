@@ -130,8 +130,9 @@ try {
               assert.ok(Number(result.skyPanoramaOpacity) > 0.6,
                 'Rain must darken the existing real panorama');
             } else {
-              assert.ok(Number(result.skyPanoramaOpacity) < 0.3,
-                'Clear weather must restore the lighter panorama');
+              assert.ok(Number(result.skyPanoramaOpacity) > 0.22
+                && Number(result.skyPanoramaOpacity) < 0.27,
+              'Clear daylight must reveal sparse cloud outlines without becoming overcast');
             }
           } else if (weather === 'dawn' || weather.startsWith('dusk')) {
             if (weather === 'dusk-clear' || weather === 'dusk-cloudy') {
