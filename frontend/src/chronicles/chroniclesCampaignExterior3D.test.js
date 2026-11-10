@@ -6,6 +6,7 @@ import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
 import terraB2 from './maps/terra-b2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
+import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
 
 const demo = {
@@ -334,6 +335,33 @@ describe('Chronicles file-authored exterior renderer', () => {
     const road = full.getObjectByName('chronicles-campaign-road');
     const cheaper = mobile.getObjectByName('chronicles-campaign-road');
     const again = repeat.getObjectByName('chronicles-campaign-road');
+    const meadow = full.getObjectByName('chronicles-campaign-terrain');
+    const touchMeadow = mobile.getObjectByName('chronicles-campaign-terrain');
+    const restoredMeadow = repeat.getObjectByName('chronicles-campaign-terrain');
+    const meadowAtlas = chroniclesPixelTexture('meadow');
+    expect(meadow).toBeInstanceOf(THREE.Mesh);
+    expect(meadow.material.map).toBe(meadowAtlas);
+    expect(touchMeadow.material.map).toBe(meadowAtlas);
+    expect(restoredMeadow.material.map).toBe(meadowAtlas);
+    expect(meadow.geometry.parameters).toEqual(touchMeadow.geometry.parameters);
+    expect(meadowAtlas.image.width).toBe(128);
+    expect(meadowAtlas.image.height).toBe(128);
+    expect(meadowAtlas.repeat.toArray()).toEqual([7, 7]);
+    expect(meadowAtlas.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+    expect(meadowAtlas.anisotropy).toBe(4);
+    expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-terrain')).toHaveLength(1);
+    // All pixels stay opaque. Muted broad vegetation and sparse dry flecks
+    // replace the small aggressively repeated high-contrast town grass.
+    const image = meadowAtlas.image.data;
+    const colours = new Set();
+    let greenDominance = 0;
+    for (let i = 0; i < image.length; i += 4) {
+      expect(image[i + 3]).toBe(255);
+      if (image[i + 1] > image[i]) greenDominance++;
+      colours.add([image[i], image[i + 1], image[i + 2]].join(','));
+    }
+    expect(greenDominance).toBeGreaterThan((image.length / 4) * 0.99);
+    expect(colours.size).toBeGreaterThan(5);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
     expect(road.count).toBeGreaterThan(20);
