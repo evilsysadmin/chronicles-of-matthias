@@ -53,6 +53,33 @@ describe('Seamless Terra cloud panorama', () => {
     expect(elevated.some(alpha => alpha >= 55)).toBe(true);
     expect(elevated.some(alpha => alpha <= 20)).toBe(true);
     expect(new Set(elevated).size).toBeGreaterThan(6);
+    // Dense portions of the SAME procedural cloud need a readable shaded
+    // underside and an irregular brighter crown, not a uniformly grey slab.
+    // Both texture budgets must retain the contrast without more draw calls.
+    const cloudTones = (minV, maxV) => {
+      let total = 0;
+      let count = 0;
+      let darkest = 255;
+      let lightest = 0;
+      for (let y = Math.ceil(height * minV); y < Math.floor(height * maxV); y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          if (px(x, y, 3) < 48) continue;
+          const tone = px(x, y, 0);
+          total += tone;
+          count += 1;
+          darkest = Math.min(darkest, tone);
+          lightest = Math.max(lightest, tone);
+        }
+      }
+      return { mean: total / count, range: lightest - darkest, count };
+    };
+    const underside = cloudTones(0.53, 0.66);
+    const crowns = cloudTones(0.69, 0.84);
+    expect(underside.count).toBeGreaterThan(width * 5);
+    expect(crowns.count).toBeGreaterThan(width * 5);
+    expect(crowns.mean).toBeGreaterThan(underside.mean + 24);
+    expect(underside.range).toBeGreaterThan(35);
+    expect(crowns.range).toBeGreaterThan(55);
     cloud.geometry.dispose();
     texture.dispose();
     cloud.material.dispose();

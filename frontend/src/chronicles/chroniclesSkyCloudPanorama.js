@@ -59,10 +59,20 @@ export function createChroniclesSkyCloudPanorama(coarsePointer = false) {
         silhouette * (0.18 + 0.64 * density) * (0.62 + 0.38 * wisp)
         + highEnvelope * (0.035 + 0.43 * highPatches) * (0.55 + 0.45 * wisp)
         + horizonMist * (0.07 + 0.13 * broad));
-      const shade = Math.round(141 + broad * 38 + middle * 29 + fine * 11
-        + Math.max(0, v - 0.7) * 34);
+      // Sculpt lighting INSIDE the existing RGBA atlas rather than adding
+      // geometry or a shader: the same periodic billows get darker bases and
+      // lifted, broken crowns. No extra noise samples or runtime updates.
+      const underside = 1 - smooth(0.55 + lift * 0.45, 0.78 + lift * 0.55, v);
+      const crown = smooth(0.62 + lift * 0.65, 0.78 + lift * 0.75, v)
+        * (1 - smooth(0.85 + lift * 0.55, 0.96 + lift * 0.65, v));
+      const billow = smooth(0.35, 0.76,
+        broad * 0.36 + middle * 0.49 + fine * 0.15);
+      const shadow = (1 - billow) * 22 + underside * (11 + 12 * middle);
+      const ridgeLight = crown * (14 + 23 * billow);
+      const shade = Math.round(151 + broad * 24 + middle * 29 + fine * 8
+        - shadow + ridgeLight + Math.max(0, v - 0.7) * 8);
       const index = (y * width + x) * 4;
-      rgba[index] = shade - 11;
+      rgba[index] = Math.max(105, Math.min(220, shade - 11));
       rgba[index + 1] = shade;
       rgba[index + 2] = Math.min(255, shade + 13);
       rgba[index + 3] = Math.round(coverage * 255);
