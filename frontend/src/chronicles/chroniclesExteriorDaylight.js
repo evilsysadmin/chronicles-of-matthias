@@ -64,6 +64,8 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const zenithNight = new THREE.Color(0x09152b);
   const horizonNight = new THREE.Color(0x263b56);
   const warm = new THREE.Color(0xffcb97);
+  const twilightRose = new THREE.Color(0xf7a39d);
+  const twilightAmber = new THREE.Color(0xffbd78);
   const blendedHorizon = new THREE.Color();
   const blendedZenith = new THREE.Color();
   const sunColorDay = new THREE.Color(0xffe6ba);
@@ -206,14 +208,25 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         .lerp(weatherSky, cloudiness * 0.55);
       blendedZenith.copy(zenithNight).lerp(zenithDay, daylight)
         .lerp(weatherSky, cloudiness * 0.72);
+      // Anchor dusk/dawn color to the actual seasonal sun azimuth, not
+      // the camera heading. Cloud cover softens the amber/rose twilight.
+      const sunHorizontal = Math.hypot(sunVector.x, sunVector.z) || 1;
+      const twilightStrength = twilight * (1 - cloudiness * 0.48);
       for (let i = 0; i < pos.count; i += 1) {
         direction.fromBufferAttribute(pos, i).normalize();
         const altitude = THREE.MathUtils.smoothstep(direction.y, -0.08, 0.75);
-        // The horizon warms briefly at sunset/sunrise rather than turning
-        // the entire sky orange. Midday retains the original blue gradient.
+        const facingSun = Math.max(0,
+          (direction.x * sunVector.x + direction.z * sunVector.z) / sunHorizontal);
+        const roseBand = 1 - THREE.MathUtils.smoothstep(direction.y, 0.02, 0.56);
+        const amberBand = 1 - THREE.MathUtils.smoothstep(direction.y, -0.04, 0.30);
         const glow = Math.pow(Math.max(0, direction.dot(sunVector)), 30) * 0.54;
         color.copy(blendedHorizon).lerp(blendedZenith, altitude);
-        color.lerp(warm, clamp01(glow * daylight + twilight * (1 - altitude) * 0.32));
+        color.lerp(twilightRose,
+          clamp01(twilightStrength * Math.pow(facingSun, 3) * roseBand * 0.42));
+        color.lerp(twilightAmber,
+          clamp01(twilightStrength * Math.pow(facingSun, 7) * amberBand * 0.72));
+        // Midday retains the original blue gradient and localized solar glow.
+        color.lerp(warm, clamp01(glow * daylight));
         skyColors.setXYZ(i, color.r, color.g, color.b);
       }
       skyColors.needsUpdate = true;
