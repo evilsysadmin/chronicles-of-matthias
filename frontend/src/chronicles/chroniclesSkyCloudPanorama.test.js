@@ -101,6 +101,7 @@ describe('Seamless Terra cloud panorama', () => {
       .find(i => positions.getY(i) > 61.9);
     const sample = (index) => new THREE.Color(
       colors.getX(index), colors.getY(index), colors.getZ(index));
+    const colorDistance = (a, b) => Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
     const region = { mapId: 'swordhaven-first-book', regionKind: 'settlement' };
     const samples = Array.from({ length: 160 }, (_, day) => day * 1440 + 12 * 60 + 45);
     const weatherKind = (minute) => chroniclesRegionalWeather({
@@ -124,24 +125,24 @@ describe('Seamless Terra cloud panorama', () => {
     cycle.sync(fog);
     const fogColor = scene.fog.color;
     expect(scene.fog.far).toBeLessThan(baselineFogFar);
-    expect(sample(horizonIndex).distanceTo(fogColor))
-      .toBeLessThan(sample(topIndex).distanceTo(fogColor));
+    expect(colorDistance(sample(horizonIndex), fogColor))
+      .toBeLessThan(colorDistance(sample(topIndex), fogColor));
     const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: fog });
     const unattenuated = new THREE.Color(0x3b4a5e)
       .lerp(new THREE.Color(0xc4cdd4), 1)
       .lerp(new THREE.Color(0x7d8993), weather.clouds * 0.62);
-    const farVeil = panorama.color.distanceTo(unattenuated);
-    const nearVeil = foreground.color.distanceTo(unattenuated);
+    const farVeil = colorDistance(panorama.color, unattenuated);
+    const nearVeil = colorDistance(foreground.color, unattenuated);
     expect(farVeil).toBeGreaterThan(0.015);
     expect(nearVeil).toBeGreaterThan(0);
     expect(farVeil).toBeGreaterThan(nearVeil * 2);
     expect(panorama.opacity).toBeLessThan(0.11 + weather.clouds * 0.79);
-    expect(panorama.material?.fog ?? panorama.fog).toBe(false);
+    expect(panorama.fog).toBe(false);
     expect(scene.children.length).toBe(initialCount);
     cycle.sync(clear);
-    expect(sample(horizonIndex).distanceTo(clearSkyline)).toBeLessThan(1e-6);
-    expect(panorama.color.distanceTo(clearPanorama)).toBeLessThan(1e-6);
-    expect(foreground.color.distanceTo(clearForeground)).toBeLessThan(1e-6);
+    expect(colorDistance(sample(horizonIndex), clearSkyline)).toBeLessThan(1e-6);
+    expect(colorDistance(panorama.color, clearPanorama)).toBeLessThan(1e-6);
+    expect(colorDistance(foreground.color, clearForeground)).toBeLessThan(1e-6);
     expect(panorama.opacity).toBeCloseTo(clearOpacity);
     expect(scene.fog.far).toBeCloseTo(baselineFogFar);
     expect(scene.children.length).toBe(initialCount);
