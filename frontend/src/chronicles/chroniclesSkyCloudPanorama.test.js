@@ -125,9 +125,15 @@ describe('Seamless Terra cloud panorama', () => {
     cycle.sync(fog);
     const fogColor = scene.fog.color;
     expect(scene.fog.far).toBeLessThan(baselineFogFar);
-    expect(colorDistance(sample(horizonIndex), fogColor))
-      .toBeLessThan(colorDistance(sample(topIndex), fogColor));
     const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: fog });
+    // Compare the SAME horizon before/after fogging. The natural zenith
+    // happens to be close to fog grey on some days, so comparing altitude
+    // colours directly is not a valid measure of atmospheric integration.
+    const bareHorizon = new THREE.Color(0xb8dce9)
+      .lerp(new THREE.Color(0x74838e), weather.clouds * 0.55);
+    expect(colorDistance(sample(horizonIndex), fogColor))
+      .toBeLessThan(colorDistance(bareHorizon, fogColor) * 0.55);
+    expect(colorDistance(sample(topIndex), fogColor)).toBeGreaterThan(0.1);
     const unattenuated = new THREE.Color(0x3b4a5e)
       .lerp(new THREE.Color(0xc4cdd4), 1)
       .lerp(new THREE.Color(0x7d8993), weather.clouds * 0.62);
