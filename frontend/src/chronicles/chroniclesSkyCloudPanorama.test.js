@@ -196,15 +196,34 @@ describe('Seamless Terra cloud panorama', () => {
     const times = Array.from({ length: 160 }, (_, day) => day * 1440 + 12 * 60 + 45);
     const weatherAt = (t) => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind;
     const clear = times.find(t => weatherAt(t) === 'clear');
+    const cloudy = times.find(t => weatherAt(t) === 'cloudy');
     const rain = times.find(t => weatherAt(t) === 'rain');
+    const clearNight = Array.from({ length: 160 }, (_, day) =>
+      day * 1440 + 23 * 60 + 45).find(t => weatherAt(t) === 'clear');
     expect(clear).toBeDefined();
+    expect(cloudy).toBeDefined();
     expect(rain).toBeDefined();
+    expect(clearNight).toBeDefined();
     const cycle = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 }, region);
     const objectCount = scene.children.length;
     cycle.sync(clear);
     const clearOpacity = material.opacity;
     const clearColor = material.color.clone();
+    // Daylight reveals existing sparse cloud silhouettes without changing
+    // actual regional coverage, the atlas or the 360-degree seam.
+    expect(clearOpacity).toBeGreaterThan(0.22);
+    expect(clearOpacity).toBeLessThan(0.27);
     expect(cycle.sync(clear)).toBe(false);
+    cycle.sync(cloudy);
+    const clouds = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: cloudy });
+    // Cloudy weather must keep the previous opacity envelope; the new
+    // visibility boost belongs only to low-cloud daytime.
+    expect(material.opacity).toBeCloseTo((0.11 + clouds.clouds * 0.79)
+      * (1 - clouds.fog * 0.74 * 0.18), 5);
+    cycle.sync(clearNight);
+    const night = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: clearNight });
+    expect(night.clouds).toBeCloseTo(0.04);
+    expect(material.opacity).toBeCloseTo(0.11 + night.clouds * 0.79, 5);
     cycle.sync(rain);
     expect(material.opacity).toBeGreaterThan(clearOpacity);
     expect(material.color.equals(clearColor)).toBe(false);
