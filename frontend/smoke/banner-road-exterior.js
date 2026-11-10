@@ -57,6 +57,7 @@ try {
   const crowns = foliage?.getObjectByName('chronicles-terra-crown');
   const bushes = foliage?.getObjectByName('chronicles-terra-bush');
   const road = scene.getObjectByName('chronicles-campaign-road');
+  const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const triangles = geometry => geometry.index
     ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
   const shade = new THREE.Color();
@@ -87,6 +88,11 @@ try {
     canopyTints: String(crownTints.size),
     roadCount: String(road?.count || 0),
     roadRelief: String(Boolean(road?.material?.normalMap)),
+    groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
+    groundAtlasSize: String(terrain?.material?.map?.image?.width || 0),
+    groundRepeat: String(terrain?.material?.map?.repeat?.x ?? -1),
+    groundCount: String(scene.children.filter(child =>
+      child.name === 'chronicles-campaign-terrain').length),
     pixelVariants: String(variants.size),
   });
 } catch (error) {

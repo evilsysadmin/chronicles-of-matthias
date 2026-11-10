@@ -326,6 +326,13 @@ try {
       assert.ok(Number(result.roadCount) > 20);
       assert.equal(result.roadRelief, String(width === 1280),
         'Road normal detail belongs to desktop, preserving touch budget');
+      assert.equal(result.groundKind, 'meadow',
+        'Banner Road must use its own muted meadow, not city grass');
+      assert.equal(Number(result.groundAtlasSize), 128);
+      assert.equal(Number(result.groundRepeat), 7,
+        'Large meadow patches must not repeat twenty times like city grass');
+      assert.equal(Number(result.groundCount), 1,
+        'Terrain remains the existing single mesh on desktop and touch');
       assert.ok(Number(result.pixelVariants) >= 6,
         'Real forest road framebuffer cannot be a flat-color placeholder');
       assert.equal(result.overflowing, false);
