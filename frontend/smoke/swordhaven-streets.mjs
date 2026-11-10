@@ -19,7 +19,7 @@ try {
   ];
   const fullViews = ['gate-north', 'oldtown', 'mayor-square', 'fountain', 'home-gable', 'apothecary', 'guild', 'guild-oblique', 'forge', 'forge-oblique', 'armor', 'armor-oblique', 'temple', 'store', 'store-oblique', 'store-side', 'tavern', 'tavern-oblique', 'watch', 'alley', 'ward', 'lantern', 'juliet', 'laundry', 'roofline', 'chimney', ...skyViews];
   const portraitShops = ['apothecary', 'guild', 'forge', 'armor', 'temple', 'store', 'tavern'];
-  const skyWeatherScenarios = ['clear', 'rain', 'dawn', 'dusk',
+  const skyWeatherScenarios = ['clear', 'rain', 'fog', 'dawn', 'dusk',
     'dusk-clear', 'dusk-cloudy', 'night'];
   for (const width of [360, 390, 430, 1280]) {
     const height = width === 1280 ? 800 : width === 360 ? 800 : width === 430 ? 932 : 844;
@@ -33,8 +33,8 @@ try {
     try {
       const shots = (width === 360 || width === 430 ? portraitShops : fullViews)
         .map(view => ({ view, weather: null }));
-      // Two reference widths photograph authentic sunny/overcast sunsets
-      // toward Terra's actual solar azimuth. 360/430 shops stay unchanged.
+      // Two reference widths photograph genuine fog and sunny/overcast
+      // sunsets toward Terra's solar azimuth. 360/430 shops stay unchanged.
       if (width === 390 || width === 1280) {
         shots.push(...skyWeatherScenarios.map(weather => ({
           view: weather === 'dawn' ? 'sky-plaza-west'
@@ -111,14 +111,22 @@ try {
           assert.ok(Number(result.skyWorldMinutes) >= 0,
             'Sky photos must use reproducible persisted Terra minutes');
           assert.ok(Number(result.skyCloudiness) >= 0);
-          if (weather === 'clear' || weather === 'rain') {
+          if (weather === 'clear' || weather === 'rain' || weather === 'fog') {
             assert.equal(result.skyWeatherKind, weather,
               'Weather scenario must be sampled from actual regional weather');
             assert.ok(Number(result.skyDaylight) > 0.9,
               'Weather comparison must have comparable midday sunlight');
             assert.equal(result.skySunVisible, 'true');
             assert.equal(result.skyPrecipitation, weather === 'rain' ? 'rain' : 'none');
-            if (weather === 'rain') {
+            if (weather === 'fog') {
+              assert.ok(Number(result.skyFogStrength) >= 0.8,
+                'A real fog block must be fully blended at the sampled minute');
+              assert.ok(Number(result.skyFogFar) < 90,
+                'Ground-fog draw distance must contract while the sky remains visible');
+              assert.ok(Number(result.skyPanoramaOpacity) > 0.35
+                && Number(result.skyPanoramaOpacity) < 0.62,
+              'Distant cloud silhouettes must soften without disappearing');
+            } else if (weather === 'rain') {
               assert.ok(Number(result.skyPanoramaOpacity) > 0.6,
                 'Rain must darken the existing real panorama');
             } else {
