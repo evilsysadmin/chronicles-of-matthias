@@ -211,8 +211,13 @@ describe('Seamless Terra cloud panorama', () => {
     const clearColor = material.color.clone();
     // Daylight reveals existing sparse cloud silhouettes without changing
     // actual regional coverage, the atlas or the 360-degree seam.
-    expect(clearOpacity).toBeGreaterThan(0.22);
-    expect(clearOpacity).toBeLessThan(0.27);
+    expect(clearOpacity).toBeGreaterThan(0.36);
+    expect(clearOpacity).toBeLessThan(0.41);
+    // A numeric alpha change alone was nearly invisible. Clear daylight
+    // must also uncover pale cloud crowns without tinting cloudy weather.
+    expect(clearColor.r).toBeGreaterThan(0.75);
+    expect(clearColor.g).toBeGreaterThan(0.78);
+    expect(clearColor.b).toBeGreaterThan(0.80);
     expect(cycle.sync(clear)).toBe(false);
     cycle.sync(cloudy);
     const clouds = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: cloudy });
@@ -220,6 +225,12 @@ describe('Seamless Terra cloud panorama', () => {
     // visibility boost belongs only to low-cloud daytime.
     expect(material.opacity).toBeCloseTo((0.11 + clouds.clouds * 0.79)
       * (1 - clouds.fog * 0.74 * 0.18), 5);
+    const cloudyBase = new THREE.Color(0xc4cdd4)
+      .lerp(new THREE.Color(0x7d8993), clouds.clouds * 0.62)
+      .lerp(scene.fog.color, clouds.fog * 0.74 * 0.50);
+    expect(material.color.r).toBeCloseTo(cloudyBase.r, 5);
+    expect(material.color.g).toBeCloseTo(cloudyBase.g, 5);
+    expect(material.color.b).toBeCloseTo(cloudyBase.b, 5);
     cycle.sync(clearNight);
     const night = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: clearNight });
     expect(night.clouds).toBeCloseTo(0.04);
