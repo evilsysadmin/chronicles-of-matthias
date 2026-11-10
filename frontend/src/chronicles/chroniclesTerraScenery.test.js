@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -112,6 +112,84 @@ describe('Terra scenery', () => {
     const clutter = instanceCells(group, center).filter(({ part }) => CLUTTER.has(part));
     // Clutter is jittered inside its own cell, never onto the road cells.
     expect(clutter.filter(({ x, y }) => onRoad.has(`${x},${y}`)).length).toBeLessThan(clutter.length * 0.2);
+  });
+
+  it('sculpts irregular broadleaf and shrub silhouettes within the existing 20/80 triangle budget', () => {
+    const full = chroniclesOrganicCanopyGeometry();
+    const coarse = chroniclesOrganicCanopyGeometry({ coarsePointer: true });
+    const shrub = chroniclesOrganicCanopyGeometry({ shrub: true });
+    const original = new THREE.IcosahedronGeometry(1, 1);
+    const triangles = geo => geo.index
+      ? geo.index.count / 3 : geo.getAttribute('position').count / 3;
+    expect(triangles(full)).toBe(80);
+    expect(triangles(coarse)).toBe(20);
+    expect(triangles(shrub)).toBe(80);
+    const positions = full.getAttribute('position');
+    const baseline = original.getAttribute('position');
+    expect(positions.count).toBe(baseline.count);
+    expect([...positions.array]).not.toEqual([...baseline.array]);
+    const radii = new Set();
+    for (let i = 0; i < positions.count; i += 1) {
+      const x = positions.getX(i);
+      const y = positions.getY(i);
+      const z = positions.getZ(i);
+      expect([x, y, z].every(Number.isFinite)).toBe(true);
+      radii.add(Math.hypot(x, y, z).toFixed(3));
+    }
+    expect(radii.size).toBeGreaterThan(9);
+    expect(shrub.boundingSphere.radius).toBeLessThan(full.boundingSphere.radius * 1.1);
+    expect([...chroniclesOrganicCanopyGeometry().getAttribute('position').array])
+      .toEqual([...positions.array]); // No RNG across visits
+    full.dispose();
+    coarse.dispose();
+    shrub.dispose();
+    original.dispose();
+  });
+
+  it('gives Banner Road trees and bushes varied deterministic foliage while leaving roads clear', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: 'plains', mapId: map.id };
+    const detailed = buildTerraScenery(args);
+    const touch = buildTerraScenery({ ...args, coarsePointer: true });
+    const restored = buildTerraScenery(args);
+    const colours = new THREE.Color();
+    const twin = new THREE.Color();
+    const matrix = new THREE.Matrix4();
+    const twinMatrix = new THREE.Matrix4();
+    for (const part of ['crown', 'bush']) {
+      const batch = detailed.getObjectByName('chronicles-terra-' + part);
+      const reduced = touch.getObjectByName('chronicles-terra-' + part);
+      const again = restored.getObjectByName('chronicles-terra-' + part);
+      expect(batch).toBeInstanceOf(THREE.InstancedMesh);
+      expect(batch.count).toBeGreaterThan(10);
+      expect(reduced.count).toBeGreaterThan(0);
+      expect(batch.count).toBeGreaterThanOrEqual(reduced.count);
+      expect(batch.instanceColor.count).toBe(batch.count);
+      expect(reduced.instanceColor.count).toBe(reduced.count);
+      const shades = new Set();
+      for (let i = 0; i < batch.count; i += 1) {
+        batch.getMatrixAt(i, matrix);
+        again.getMatrixAt(i, twinMatrix);
+        expect(matrix.elements).toEqual(twinMatrix.elements);
+        batch.getColorAt(i, colours);
+        again.getColorAt(i, twin);
+        expect(colours.getHex()).toBe(twin.getHex());
+        shades.add(colours.getHex());
+        const x = Math.round(matrix.elements[12] / 4) + center.x;
+        const y = Math.round(matrix.elements[14] / 4) + center.y;
+        if (map.grid[y]?.[x] !== undefined) {
+          expect(map.grid[y][x]).toBe('#'); // Only visual dressing of blocked cells
+        }
+      }
+      expect(shades.size).toBeGreaterThan(2);
+    }
+    expect(detailed.children.every(child => child.isInstancedMesh)).toBe(true);
+    expect(detailed.children.length).toBe(restored.children.length);
+    // The existing coarse budget deliberately omits some outer-ring scenery,
+    // so optional small batches can disappear on touch. The crown and bush
+    // batches themselves are already asserted above on BOTH device budgets.
+    expect(touch.children.every(mesh => detailed.getObjectByName(mesh.name))).toBe(true);
   });
 
   it('smooths jagged boulders at full quality while keeping an inexpensive mobile mesh', () => {

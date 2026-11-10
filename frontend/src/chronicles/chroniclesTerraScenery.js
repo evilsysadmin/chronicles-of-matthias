@@ -98,6 +98,31 @@ export function chroniclesBrezalHeatherGeometry() {
   return geometry;
 }
 
+// Uneven clustered silhouettes replace the old perfect green spheres on
+// broadleaf trees and bushes. Reuse the same 20/80 triangle budget and one
+// shared geometry per part; displacement is deterministic and baked once.
+// Identical source positions move identically, including UV seam duplicates.
+export function chroniclesOrganicCanopyGeometry({ coarsePointer = false, shrub = false } = {}) {
+  const geometry = new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1);
+  const positions = geometry.getAttribute('position');
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    const angle = Math.atan2(z, x);
+    const radial = 1 + 0.15 * Math.sin(3 * angle + 0.45)
+      + 0.075 * Math.cos(5 * angle - 0.35)
+      + 0.045 * Math.sin(y * 4.8 + angle * 2);
+    const vertical = (shrub ? 0.76 : 0.93)
+      * (1 + 0.09 * Math.cos(2 * angle + 0.25));
+    positions.setXYZ(i, x * radial, y * vertical,
+      z * radial * (1 + 0.05 * Math.sin(angle * 2 - 0.5)));
+  }
+  positions.needsUpdate = true;
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -112,8 +137,8 @@ function partCatalog(coarsePointer) {
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    crown: () => [new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1), lit(0xd8e6c8, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
-    bush: () => [new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1), lit(0xb8cca8, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
+    crown: () => [chroniclesOrganicCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
+    bush: () => [chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }), lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
@@ -174,7 +199,14 @@ function broadleaf(p, wx, wz, x, y, k, scale = 1) {
   const ox = (noise(x, y, k + 23) - 0.5) * 2;
   const oz = (noise(y, x, k + 25) - 0.5) * 2;
   p.add('trunk', [wx + ox, 1.5 * s, wz + oz], { scale: [s, 3 * s, s] });
-  p.add('crown', [wx + ox, 3.9 * s, wz + oz], { yaw: noise(x, y, k) * 6.28, scale: [1.9 * s, 1.6 * s, 1.9 * s] });
+  const spreadX = 0.88 + noise(x, y, k + 27) * 0.25;
+  const spreadZ = 0.86 + noise(x, y, k + 29) * 0.29;
+  const crownHeight = 0.88 + noise(x, y, k + 33) * 0.25;
+  p.add('crown', [wx + ox, 3.9 * s, wz + oz], {
+    yaw: noise(x, y, k) * 6.28,
+    roll: (noise(x, y, k + 35) - 0.5) * 0.09,
+    scale: [1.9 * s * spreadX, 1.6 * s * crownHeight, 1.9 * s * spreadZ],
+  });
 }
 
 function pine(p, wx, wz, x, y, k, { snowy = false, scale = 1 } = {}) {
@@ -224,7 +256,10 @@ const DRESS = {
     if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, big ? 1.15 : 1);
     if (roll >= 0.35) {
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
-        { yaw: noise(x, y, 3) * 6.28, scale: [1.3, 0.8, 1.1] });
+        { yaw: noise(x, y, 3) * 6.28,
+          scale: [1.14 + noise(x, y, 5) * 0.34,
+            0.65 + noise(x, y, 6) * 0.28,
+            0.94 + noise(x, y, 7) * 0.36] });
     }
     if (roll >= 0.7 || big) boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
     if (roll < 0.2) broadleaf(p, wx, wz, x, y, 9, big ? 1.1 : 0.9);
@@ -382,6 +417,22 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
     matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
     mesh.instanceMatrix.needsUpdate = true;
+    // Plains foliage no longer repeats a single near-black green ball: subtle
+    // sunlit/sage/olive tints vary per persistent cell, using the same batch.
+    if (biome === 'plains' && (part === 'crown' || part === 'bush')) {
+      const shades = (part === 'crown'
+        ? ['#f3f4e8', '#e4eddc', '#ffffff', '#e8e9d2', '#dce9d9']
+        : ['#f1f0df', '#dce8d4', '#ffffff', '#e8e9d9'])
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 8), Math.round(e[14] * 8),
+          part === 'crown' ? 193 : 197);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
     // Weathered grey/olive stone variation, using instance colours instead
     // of new geometries, materials or draw calls. Other biomes stay identical.
     if (mapId === 'terra-b2' && biome === 'hills' && part === 'boulder') {
