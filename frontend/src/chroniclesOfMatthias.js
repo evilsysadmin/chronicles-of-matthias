@@ -1382,7 +1382,14 @@ function chroniclesReduceAction(state, action) {
 // Apply the adventure clock at the reducer boundary, once per accepted
 // turn-consuming action. Tactics retains its independent timing contract.
 export function chroniclesReduce(state, action) {
-  return chroniclesAdvanceWorldTimeOnTurn(state, chroniclesReduceAction(state, action), action);
+  const actionType = typeof action === 'string' ? action : action?.type;
+  // The touch "auto" attack chooses melee or bow at runtime. Preserve that
+  // actual choice for the world clock without altering the original action.
+  const autoMissile = actionType === 'attack' && state?.combatRules === 'mm3'
+    && !(typeof action === 'object' && ['melee', 'missile'].includes(action.mode))
+    && chroniclesAttackMode(state, typeof action === 'object' ? action.memberId : 'matthias') === 'missile';
+  const clockAction = autoMissile ? { type: 'attack', mode: 'missile' } : action;
+  return chroniclesAdvanceWorldTimeOnTurn(state, chroniclesReduceAction(state, action), clockAction);
 }
 
 export function chroniclesObjective(state) {

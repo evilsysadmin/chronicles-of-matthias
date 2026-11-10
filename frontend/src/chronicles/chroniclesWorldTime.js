@@ -76,6 +76,9 @@ export function chroniclesAdvanceWorldTimeOnTurn(before, after, action) {
   // or calendar. Preserve the preexisting exploration-turn budget/pursuit:
   // turning may still alert enemies, but not move the in-world clock.
   if (actionType === 'turn-left' || actionType === 'turn-right') return after;
+  // A bow shot takes an accepted tactical action (and can provoke enemies),
+  // but an arrow does not take ten minutes of Terra's calendar.
+  if (actionType === 'volley' || (actionType === 'attack' && action?.mode === 'missile')) return after;
   // The legacy reducer sometimes increments turns for a wall bump. It may
   // still advance enemy awareness, but no journey time passes without a step.
   if (['forward', 'backward', 'strafe-left', 'strafe-right'].includes(actionType)

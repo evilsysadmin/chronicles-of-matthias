@@ -64,6 +64,49 @@ describe('MM3 world clock', () => {
     expect(objectTurn.worldMinutes).toBe(turning.worldMinutes);
   });
 
+  it('shoots bows without ten calendar minutes, but still spends tactical actions', () => {
+    const base = initial();
+    const goblin = chroniclesActiveEnemies(base).find((enemy) => enemy.id === 'sewers-goblin-west');
+    expect(goblin).toBeTruthy();
+    const armed = {
+      ...base,
+      ...Object.fromEntries(chroniclesActiveEnemies(base)
+        .filter((enemy) => enemy.id !== goblin.id).map((enemy) => [enemy.hpKey, 0])),
+      [goblin.hpKey]: 100,
+      x: 1, y: 1, direction: 2,
+      enemyPositions: { [goblin.id]: { x: 1, y: 3 } },
+      equipment: { matthias: { weapon: 'bronze-sword', missile: 'wooden-bow' } },
+    };
+    const volley = chroniclesReduce(armed, 'volley');
+    expect(volley.turns).toBe(armed.turns + 1);
+    expect(volley.worldMinutes).toBe(armed.worldMinutes);
+    expect(volley[goblin.hpKey]).toBeLessThanOrEqual(armed[goblin.hpKey]);
+
+    const combat = {
+      ...armed, phase: 'combat',
+      initiative: { round: 1, cursor: 0, order: [
+        { kind: 'party', id: 'matthias' },
+        { kind: 'enemy', id: goblin.id },
+      ] },
+    };
+    const bow = chroniclesReduce(combat, { type: 'attack', memberId: 'matthias', mode: 'missile' });
+    expect(bow.turns).toBe(combat.turns + 1);
+    expect(bow.worldMinutes).toBe(combat.worldMinutes);
+
+    // The automatic touch attack also resolves to the bow at this distance.
+    const autoBow = chroniclesReduce(combat, { type: 'attack', memberId: 'matthias' });
+    expect(autoBow.turns).toBe(combat.turns + 1);
+    expect(autoBow.worldMinutes).toBe(combat.worldMinutes);
+
+    // Only bow shots are exempt; a genuine melee turn keeps its clock cost.
+    const adjacent = {
+      ...combat, enemyPositions: { [goblin.id]: { x: 1, y: 2 } },
+    };
+    const melee = chroniclesReduce(adjacent, { type: 'attack', memberId: 'matthias', mode: 'melee' });
+    expect(melee.turns).toBe(adjacent.turns + 1);
+    expect(melee.worldMinutes).toBe(adjacent.worldMinutes + 10);
+  });
+
   it('supports rolling past midnight, seasons and years', () => {
     const midnight = chroniclesWorldCalendar(23 * 60 + 50 + 20);
     expect(midnight).toMatchObject({ time: '00:10', dayOfYear: 2, weekday: 'Martes', daylightPhase: 'night' });
