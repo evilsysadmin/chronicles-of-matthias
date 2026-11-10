@@ -142,7 +142,13 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
           .lerp(cloudStorm, cloudiness * 0.62);
       }
       if (panoramaMaterial) {
-        panoramaMaterial.opacity = 0.11 + cloudiness * 0.79;
+        // A bright, genuinely clear sky still needs a few readable cloud
+        // shapes. Reveal the existing broken silhouettes by daylight only,
+        // tapering the boost smoothly before overcast. Never add cloud
+        // coverage or amplify rain, fog, twilight darkness or night skies.
+        const clearDaylight = 1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48);
+        panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
+          + 0.10 * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
           .lerp(cloudStorm, cloudiness * 0.62);
       }
