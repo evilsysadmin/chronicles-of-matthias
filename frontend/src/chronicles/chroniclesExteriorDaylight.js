@@ -204,6 +204,19 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         scene.fog.near = Math.max(8, fogNear * (1 - fogStrength * 0.55));
         scene.fog.far = Math.max(45, fogFar * (1 - fogStrength * 0.55));
       }
+      // The camera-relative sky must NOT enable Three.js distance fog: that
+      // would erase every cloud at the same spherical radius. Instead share
+      // the actual ground-fog colour, fading distant panorama more than the
+      // nearer sprite banks. One material update per Terra minute, no meshes.
+      const fogTint = scene.fog?.color?.isColor ? scene.fog.color : null;
+      const horizonFog = fogTint ? clamp01(fogStrength * 0.74) : 0;
+      if (horizonFog > 0) {
+        if (panoramaMaterial) {
+          panoramaMaterial.color.lerp(fogTint, horizonFog * 0.50);
+          panoramaMaterial.opacity *= 1 - horizonFog * 0.18;
+        }
+        if (cloudMaterial) cloudMaterial.color.lerp(fogTint, horizonFog * 0.16);
+      }
       blendedHorizon.copy(horizonNight).lerp(horizonDay, daylight)
         .lerp(weatherSky, cloudiness * 0.55);
       blendedZenith.copy(zenithNight).lerp(zenithDay, daylight)
@@ -229,6 +242,12 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
           clamp01(twilightStrength * Math.pow(facingSun, 7) * amberBand * 0.81));
         // Midday retains the original blue gradient and localized solar glow.
         color.lerp(warm, clamp01(glow * daylight));
+        // A shallow atmospheric veil connects roof-level distance fog to
+        // the cloud mist. Zenith and high cloud silhouettes stay legible.
+        if (horizonFog > 0) {
+          const lowAltitude = 1 - THREE.MathUtils.smoothstep(direction.y, 0, 0.42);
+          color.lerp(fogTint, horizonFog * lowAltitude);
+        }
         skyColors.setXYZ(i, color.r, color.g, color.b);
       }
       skyColors.needsUpdate = true;
