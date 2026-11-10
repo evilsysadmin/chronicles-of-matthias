@@ -66,11 +66,12 @@ export default function ChroniclesWorldInfo({ calendar, weather = null, fatigue 
           </div>}
           {fatigue && <div className="chronicles-world-info__fatigue"
             data-chronicles-fatigue={fatigue.tired ? 'tired' : 'rested'}>
-            <span>DESCANSO DEL GRUPO</span>
-            <strong>{fatigue.tired ? 'CANSADOS' : 'DESCANSADOS'} · {Math.floor(fatigue.awakeMinutes / 60)} h{fatigue.awakeMinutes % 60 ? ` ${fatigue.awakeMinutes % 60} min` : ''} sin dormir</strong>
-            <small>{fatigue.tired
-              ? 'Fatiga: −1 acierto y CA · −2 iniciativa. Descansa ocho horas.'
-              : 'Tras 16 horas sin dormir habrá penalizaciones. También cuenta esperar quietos explorando.'}</small>
+            <div className="chronicles-world-info__fatigue-summary">
+              <span>DESCANSO DEL GRUPO</span>
+              <strong>{fatigue.tired ? 'CANSADOS' : 'DESCANSADOS'}</strong>
+            </div>
+            <span className="chronicles-world-info__fatigue-duration">{Math.floor(fatigue.awakeMinutes / 60)} h{fatigue.awakeMinutes % 60 ? ` ${fatigue.awakeMinutes % 60} min` : ''} sin dormir</span>
+            {fatigue.tired && <small>Fatiga activa: −1 acierto y CA · −2 iniciativa. Descansa ocho horas.</small>}
           </div>}
           <dl className="chronicles-world-info__calendar" aria-label="Calendario de Terra">
             <div><dt>Día</dt><dd>{calendar.dayOfYear}</dd></div>

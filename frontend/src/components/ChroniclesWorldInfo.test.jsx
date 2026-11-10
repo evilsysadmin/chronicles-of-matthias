@@ -58,6 +58,8 @@ describe('MM3 information folio', () => {
     expect(tired).toContain('data-chronicles-fatigue="tired"');
     expect(tired).toContain('16 h sin dormir');
     expect(tired).toContain('−1 acierto y CA · −2 iniciativa');
+    expect(tired).toContain('Fatiga activa');
+    expect(tired).toContain('CANSADOS');
     const fresh = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
       calendar: chroniclesWorldCalendar(480),
       fatigue: { tired: false, awakeMinutes: 0 },
@@ -65,7 +67,9 @@ describe('MM3 information folio', () => {
     }));
     expect(fresh).toContain('data-chronicles-fatigue="rested"');
     expect(fresh).toContain('0 h sin dormir');
-    expect(fresh).toContain('También cuenta esperar quietos explorando.');
+    expect(fresh).toContain('DESCANSADOS');
+    expect(fresh).not.toContain('Tras 16 horas');
+    expect(fresh).not.toContain('También cuenta esperar quietos explorando.');
     expect(fresh).not.toContain('Fatiga:');
     const shortWait = renderToStaticMarkup(createElement(ChroniclesWorldInfo, {
       calendar: chroniclesWorldCalendar(482),
