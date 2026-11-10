@@ -16,6 +16,7 @@ import {
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction,
   playtestOutcome, playtestSummary,
 } from './playtest-policy.mjs';
+import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
 const origin = 'https://staging.chronicles.shadowops.dpdns.org';
 const api = 'https://chronicles-api-staging.shadowops.dpdns.org/api';
@@ -285,6 +286,7 @@ async function runEpisode(profile, seed, viewport) {
         body: JSON.stringify({ password }),
       });
       assert.ok(deleted.ok, 'BOT_ACCOUNT_CLEANUP_FAILED HTTP ' + deleted.status);
+      await assertPlaytestAccountRevoked(fetch, api, username, password);
     }
   }
 }
