@@ -741,7 +741,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const bannerTrail = scenePlan.mapId === 'banner-road-first-book'
     && scenePlan.biome === 'plains' && !settlement;
   const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
-    map: heathB2 ? terraGroundTexture('heath')
+    // Banner Road's old 64px grass repeated twenty times produced harsh
+    // square patches along the user's forest-path POV. A calmer 128px
+    // meadow with seven broad repeats reuses the SAME terrain mesh.
+    map: bannerTrail ? terraGroundTexture('meadow', 7)
+      : heathB2 ? terraGroundTexture('heath')
       : biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture(),
   });
   const stone = village ? village.stone
@@ -1371,9 +1375,9 @@ const TERRA_BIOMES = Object.freeze({
   ash: Object.freeze({ ground: 0xffffff, rock: 0x3e3634, sky: 0xc0a894, texture: 'ashland' }),
 });
 
-function terraGroundTexture(kind) {
+function terraGroundTexture(kind, repeat = 20) {
   const texture = chroniclesPixelTexture(kind);
-  texture.repeat.set(20, 20);
+  texture.repeat.set(repeat, repeat);
   return texture;
 }
 
