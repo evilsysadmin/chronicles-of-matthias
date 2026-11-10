@@ -211,20 +211,22 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       // Anchor dusk/dawn color to the actual seasonal sun azimuth, not
       // the camera heading. Cloud cover softens the amber/rose twilight.
       const sunHorizontal = Math.hypot(sunVector.x, sunVector.z) || 1;
-      const twilightStrength = twilight * (1 - cloudiness * 0.48);
+      // Clear sunsets keep a legible warm horizon; overcast sunsets remain
+      // subdued, without changing weather or adding any draw calls.
+      const twilightStrength = twilight * (1 - cloudiness * 0.62);
       for (let i = 0; i < pos.count; i += 1) {
         direction.fromBufferAttribute(pos, i).normalize();
         const altitude = THREE.MathUtils.smoothstep(direction.y, -0.08, 0.75);
         const facingSun = Math.max(0,
           (direction.x * sunVector.x + direction.z * sunVector.z) / sunHorizontal);
-        const roseBand = 1 - THREE.MathUtils.smoothstep(direction.y, 0.02, 0.56);
-        const amberBand = 1 - THREE.MathUtils.smoothstep(direction.y, -0.04, 0.30);
+        const roseBand = 1 - THREE.MathUtils.smoothstep(direction.y, 0.02, 0.64);
+        const amberBand = 1 - THREE.MathUtils.smoothstep(direction.y, -0.04, 0.35);
         const glow = Math.pow(Math.max(0, direction.dot(sunVector)), 30) * 0.54;
         color.copy(blendedHorizon).lerp(blendedZenith, altitude);
         color.lerp(twilightRose,
-          clamp01(twilightStrength * Math.pow(facingSun, 3) * roseBand * 0.42));
+          clamp01(twilightStrength * Math.pow(facingSun, 3) * roseBand * 0.50));
         color.lerp(twilightAmber,
-          clamp01(twilightStrength * Math.pow(facingSun, 7) * amberBand * 0.72));
+          clamp01(twilightStrength * Math.pow(facingSun, 7) * amberBand * 0.81));
         // Midday retains the original blue gradient and localized solar glow.
         color.lerp(warm, clamp01(glow * daylight));
         skyColors.setXYZ(i, color.r, color.g, color.b);
