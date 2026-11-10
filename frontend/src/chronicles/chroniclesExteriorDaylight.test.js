@@ -88,6 +88,56 @@ describe('Terra solar cycle', () => {
     expect(scene.children.length).toBe(count);
   });
 
+  it('keeps genuine clear sunsets warmer than overcast sunsets and restores them on reload', () => {
+    const region = { mapId: 'swordhaven-first-book', regionKind: 'settlement' };
+    const sunset = (kind) => {
+      for (let day = 0; day < 160; day += 1) {
+        const date = day * 1440;
+        const time = date + Math.round(chroniclesSeasonalSunTimes(date).sunset * 60);
+        const reported = chroniclesRegionalWeather({ ...region, worldMinutes: time });
+        const actual = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: time });
+        if (reported.kind === kind && actual.progress > 0.99
+          && (kind === 'clear' ? actual.clouds < 0.08 : actual.clouds > 0.54)) {
+          return time;
+        }
+      }
+      return null;
+    };
+    const clearTime = sunset('clear');
+    const overcastTime = sunset('cloudy');
+    expect(clearTime).not.toBeNull();
+    expect(overcastTime).not.toBeNull();
+    const { scene, dome, renderer } = outdoors();
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    const positions = dome.geometry.getAttribute('position');
+    const colors = dome.geometry.getAttribute('color');
+    const initialObjects = scene.children.length;
+    const snapshot = (minute) => {
+      expect(cycle.sync(minute)).toBe(true);
+      const { sun } = chroniclesExteriorDaylightProfile(minute);
+      const horizontal = new THREE.Vector3(sun.x, 0, sun.z).normalize();
+      let best = -Infinity;
+      let index = 0;
+      for (let i = 0; i < positions.count; i += 1) {
+        const direction = new THREE.Vector3(
+          positions.getX(i), positions.getY(i), positions.getZ(i),
+        ).normalize();
+        const score = direction.dot(horizontal) - 4 * Math.abs(direction.y);
+        if (score > best) { best = score; index = i; }
+      }
+      return new THREE.Color(colors.getX(index), colors.getY(index), colors.getZ(index));
+    };
+    const clear = snapshot(clearTime);
+    const cloudy = snapshot(overcastTime);
+    expect(clear.r - clear.b).toBeGreaterThan(cloudy.r - cloudy.b + 0.08);
+    expect(clear.r).toBeGreaterThan(cloudy.r);
+    const restored = snapshot(clearTime);
+    expect(restored.r).toBeCloseTo(clear.r, 6);
+    expect(restored.g).toBeCloseTo(clear.g, 6);
+    expect(restored.b).toBeCloseTo(clear.b, 6);
+    expect(scene.children.length).toBe(initialObjects);
+  });
+
   it('uses existing lights and sky vertices, hides sun at night and restores sunrise', () => {
     const { scene, dome, sun, hemi, renderer } = outdoors();
     const apply = createChroniclesExteriorDaylight(scene, renderer);
