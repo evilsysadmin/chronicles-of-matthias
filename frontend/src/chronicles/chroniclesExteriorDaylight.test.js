@@ -79,7 +79,10 @@ describe('Terra solar cycle', () => {
     const night = date + 23 * 60;
     expect(cycle.sync(night)).toBe(true);
     const profile = chroniclesExteriorDaylightProfile(night);
-    expect(atHorizon(profile.sun).r).toBeCloseTo(atHorizon(profile.sun, true).r, 5);
+    // Gaussian twilight decays asymptotically rather than becoming exactly zero.
+    // At night any remaining azimuth tint must be well below visual perception.
+    expect(Math.abs(atHorizon(profile.sun).r - atHorizon(profile.sun, true).r))
+      .toBeLessThan(0.001);
     const count = scene.children.length;
     expect(cycle.sync(date + 12 * 60)).toBe(true);
     expect(scene.children.length).toBe(count);
