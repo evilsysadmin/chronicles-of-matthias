@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { buildChroniclesCampaignExterior, settlementHouseBlocks, settlementHouseFacing } from './chroniclesCampaignExterior3D.js';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
+import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
 import terraB2 from './maps/terra-b2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
@@ -312,6 +313,57 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(openTints.size).toBeGreaterThan(1);
     expect([...edgeTints].every(hex => !openTints.has(hex))).toBe(true);
     expect(heath.instanceColor.count).toBe(heath.count);
+  });
+
+  it('weathers Banner Road stone slabs without changing the authored path or mobile GPU budget', () => {
+    const map = bannerRoadFirstBook;
+    const center = { x: 10, y: 7 };
+    const plan = {
+      mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: map.grid[0].length, height: map.grid.length,
+      grid: map.grid, center, content: [], scenery: [],
+    };
+    const make = coarsePointer => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { scenePlan: plan, coarsePointer });
+      return scene;
+    };
+    const full = make(false);
+    const mobile = make(true);
+    const repeat = make(false);
+    const road = full.getObjectByName('chronicles-campaign-road');
+    const cheaper = mobile.getObjectByName('chronicles-campaign-road');
+    const again = repeat.getObjectByName('chronicles-campaign-road');
+    expect(road).toBeInstanceOf(THREE.InstancedMesh);
+    expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
+    expect(road.count).toBeGreaterThan(20);
+    expect(road.count).toBe(cheaper.count);
+    expect(road.material.map).toBe(swordhavenSurfaceTexture('cobble'));
+    expect(road.material.normalMap).toBe(swordhavenSurfaceNormalTexture('cobble'));
+    expect(road.material.normalScale.toArray()).toEqual([0.54, 0.54]);
+    expect(cheaper.material.normalMap).toBeNull();
+    expect(cheaper.material.map).toBe(road.material.map);
+    expect(road.geometry.parameters).toEqual(cheaper.geometry.parameters);
+    expect(road.instanceColor.count).toBe(road.count);
+    const matrix = new THREE.Matrix4();
+    const twin = new THREE.Matrix4();
+    const shade = new THREE.Color();
+    const twinShade = new THREE.Color();
+    const shades = new Set();
+    for (let i = 0; i < road.count; i += 1) {
+      road.getMatrixAt(i, matrix);
+      again.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      road.getColorAt(i, shade);
+      again.getColorAt(i, twinShade);
+      expect(shade.getHex()).toBe(twinShade.getHex());
+      shades.add(shade.getHex());
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      expect(map.grid[y][x]).toBe('.');
+      expect(x === center.x || y === center.y).toBe(true);
+    }
+    expect(shades.size).toBeGreaterThan(2);
   });
 
   it('builds the road without a dungeon ceiling, maps visible blockers only to wall cells', () => {

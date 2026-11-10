@@ -289,6 +289,55 @@ try {
       await context.close();
     }
   }
+
+  // Keep visual evidence for the user's exact (10,13) Banner Road approach.
+  // This invokes the production exterior builder, not a screenshot mock.
+  // Two frames add only a small bounded workload to the existing smoke.
+  for (const width of [390, 1280]) {
+    const height = width === 1280 ? 800 : 844;
+    const context = await browser.newContext({
+      viewport: { width, height }, deviceScaleFactor: 1,
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    try {
+      const target = new URL('banner-road-exterior.html', url);
+      target.searchParams.set('coarse', width === 1280 ? '0' : '1');
+      await page.goto(target.toString(), { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() =>
+        document.body.dataset.sceneReady === 'true'
+        || Boolean(document.body.dataset.sceneError),
+      null, { timeout: 30_000 });
+      const result = await page.evaluate(() => ({
+        ...document.body.dataset,
+        overflowing: document.documentElement.scrollWidth > innerWidth + 1,
+      }));
+      await page.screenshot({ path: 'smoke-banner-road-approach-' + width + '.png' });
+      assert.equal(result.sceneError, undefined, JSON.stringify(result));
+      assert.equal(result.sceneReady, 'true');
+      assert.equal(result.mapId, 'banner-road-first-book');
+      assert.equal(result.cameraCell, '10,13');
+      assert.ok(Number(result.crownCount) > 10);
+      assert.ok(Number(result.bushCount) > 10);
+      assert.equal(Number(result.canopyTriangles), width === 1280 ? 80 : 20);
+      assert.ok(Number(result.canopyTints) > 2,
+        'Banner Road needs visibly varied broadleaf foliage');
+      assert.ok(Number(result.roadCount) > 20);
+      assert.equal(result.roadRelief, String(width === 1280),
+        'Road normal detail belongs to desktop, preserving touch budget');
+      assert.ok(Number(result.pixelVariants) >= 6,
+        'Real forest road framebuffer cannot be a flat-color placeholder');
+      assert.equal(result.overflowing, false);
+      assert.deepEqual(errors, []);
+      console.log('OK real Banner Road exterior ' + width + 'px');
+    } catch (error) {
+      failures.push('banner-road/' + width + ': ' + error.message);
+      console.error('FAIL Banner Road exterior', width, error);
+    } finally {
+      await context.close();
+    }
+  }
 } finally {
   await browser.close();
 }
