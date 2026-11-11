@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.27.3'
+          go-version: '1.27.4'
           cache-dependency-path: api/go.sum
       # Canonical module graph/checksums must match all source and test imports.
       # -diff checks without editing the checkout and fails on go.mod/go.sum drift.
@@ -54,11 +54,11 @@ jobs:
           # Terra's maps are generated: the committed ones (game + API copy)
           # must be exactly what the table produces.
           go run ./cmd/terragen -check
-          # Standard-library fixes (including GO-2026-6809) are baked into
+          # Standard-library fixes (including GO-2026-6809 and GO-2026-6859) are baked into
           # binaries. Check the real toolchain and both compiled architectures.
           export GOTOOLCHAIN=local
           build_go="$(go env GOVERSION)"
-          # Reject prereleases and anything older than the patched Go 1.27.3.
+          # Reject prereleases and anything older than the patched Go 1.27.4.
           # CI and Docker must still pin the same exact patch version.
           [[ "$build_go" =~ ^go([1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || {
             echo "::error::Malformed or prerelease Go compiler: $build_go"
@@ -67,7 +67,7 @@ jobs:
           major="${BASH_REMATCH[1]}"
           minor="${BASH_REMATCH[2]}"
           patch="${BASH_REMATCH[3]}"
-          (( major > 1 || (major == 1 && (minor > 27 || (minor == 27 && patch >= 3))) )) || {
+          (( major > 1 || (major == 1 && (minor > 27 || (minor == 27 && patch >= 4))) )) || {
             echo "::error::Go compiler below patched security floor: $build_go"
             exit 1
           }
