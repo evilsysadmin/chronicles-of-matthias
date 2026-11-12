@@ -33,7 +33,8 @@ export function playtestAction({ profile, observed, explorationActions = 0,
 }
 
 export function playtestOutcome({ observed, enemyHp, combatEntered,
-  explorationActions, combatActions, startHp, endHp }) {
+  explorationActions, combatActions, startHp, endHp,
+  meleeOpportunities = null, rejectedCombatMoves = 0 }) {
   const actions = explorationActions + combatActions;
   const hpLost = Math.max(0, startHp - endHp);
   const outcome = observed.phase === 'defeated' || endHp <= 0 ? 'defeat'
@@ -45,6 +46,12 @@ export function playtestOutcome({ observed, enemyHp, combatEntered,
   if (outcome === 'unfinished') warnings.push('encounter-not-resolved');
   if (startHp > 0 && hpLost >= startHp * 0.7) warnings.push('party-lost-70pct-hp');
   if (combatActions > 20) warnings.push('long-combat');
+  // Only report this if the bot measured legal melee opportunities in the
+  // real DOM. Twelve committed actions without one is suspicious, but not
+  // proof of a softlock: map geometry and ranged threats require review.
+  if (combatEntered && outcome !== 'victory' && combatActions >= 12
+    && meleeOpportunities === 0) warnings.push('no-melee-access-after-12-actions');
+  if (rejectedCombatMoves >= 8) warnings.push('repeated-rejected-combat-moves');
   return { outcome, warnings, hpLost, actions };
 }
 
