@@ -140,6 +140,9 @@ async function runEpisode(profile, seed, viewport) {
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
+    let combatBlocked = 0;
+    let repositionSteps = 0;
+    let rejectedCombatMoves = 0;
     const record = (action, state) => trace.push({
       action, turns: state.turns, partyHp: state.partyHp,
       initiative: state.initiative, phase: state.phase,
@@ -187,23 +190,42 @@ async function runEpisode(profile, seed, viewport) {
       combatEntered = true;
       assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
         'Live initiative lost its actor or map');
-      const action = playtestAction({ profile, observed: before, combatActions, seed });
-      assert.ok(action === 'a' || action === 'b',
+      const action = playtestAction({ profile, observed: before, combatActions,
+        repositionSteps, blocked: combatBlocked, seed });
+      const isMove = ['ArrowUp', 'ArrowDown', 'q', 'e'].includes(action);
+      assert.ok(isMove || action === 'a' || action === 'b',
         'Bot must not rotate, teleport or use illegal moves in initiative');
-      // Once per profile, use the real mobile button instead of keyboard.
-      if (viewport.width <= 430 && combatActions === 0) {
+      // Once per profile, use the real mobile attack/block button when selected.
+      if (viewport.width <= 430 && combatActions === 0 && !isMove) {
         const button = page.locator('[data-chronicles-touch-action="' +
           (action === 'a' ? 'attack' : 'block') + '"]');
         await button.click();
       } else {
         await page.keyboard.press(action);
       }
-      await page.waitForFunction(previous => {
-        const rail = document.querySelector('[data-chronicles-initiative="visible"]');
-        const root = document.querySelector('[data-chronicles="true"]');
-        return !rail || ['defeated', 'escaped'].includes(root?.getAttribute('data-chronicles-phase'))
-          || rail.getAttribute('aria-label') !== previous;
-      }, before.actor, { timeout: 12_000 });
+      try {
+        await page.waitForFunction(previous => {
+          const rail = document.querySelector('[data-chronicles-initiative="visible"]');
+          const root = document.querySelector('[data-chronicles="true"]');
+          return !rail || ['defeated', 'escaped'].includes(root?.getAttribute('data-chronicles-phase'))
+            || rail.getAttribute('aria-label') !== previous;
+        }, before.actor, { timeout: isMove ? 2_000 : 12_000 });
+      } catch (error) {
+        if (!isMove) throw error;
+        const unchanged = await observe(page);
+        // Only classify an input as rejected if the real turn and actor did
+        // not advance. A slow/ambiguous transition is an actual bot error.
+        if (!unchanged.initiative || unchanged.actor !== before.actor
+          || unchanged.turns !== before.turns) throw error;
+        combatBlocked += 1;
+        rejectedCombatMoves += 1;
+        record(action + '-rejected', unchanged);
+        continue;
+      }
+      if (isMove || action === 'b') {
+        combatBlocked = 0;
+        repositionSteps += 1;
+      }
       record(action, await observe(page));
     }
 
@@ -257,11 +279,13 @@ async function runEpisode(profile, seed, viewport) {
     const result = playtestOutcome({ observed: after, enemyHp, combatEntered,
       explorationActions, combatActions, startHp: initial.partyHp, endHp: after.partyHp });
     outcome = result.outcome;
+    if (rejectedCombatMoves >= 8) result.warnings.push('repeated-rejected-combat-moves');
     const metrics = {
       profile, seed, viewport: viewport.width, mapId: initial.mapId,
       ...result, explorationActions, combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
-      lastTurn: after.turns, blocked, saved, restored, trace,
+      lastTurn: after.turns, blocked, rejectedCombatMoves, repositionSteps,
+      saved, restored, trace,
     };
     await page.screenshot({
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
