@@ -142,6 +142,12 @@ async function saveReloadProbe(page, runId, token, expected) {
   });
   await page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
+  // Some first-run overlays are session-scoped and may reappear after F5.
+  // Resume the same public tutorial dismissal before attempting more moves.
+  const firstSteps = page.locator('[data-chronicles-first-steps]');
+  if (await firstSteps.isVisible().catch(() => false)) {
+    await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+  }
   const displayed = await observe(page);
   assert.equal(displayed.mapId, expected.mapId, 'F5 changed the visible map');
   assert.equal(displayed.turns, expected.turns, 'F5 changed the visible turn count');
