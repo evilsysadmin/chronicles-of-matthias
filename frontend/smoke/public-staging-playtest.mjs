@@ -354,13 +354,13 @@ async function runEpisode(profile, seed, viewport) {
     }
     await session?.context?.close().catch(() => {});
     if (token) {
-      const deleted = await fetch(api + '/auth/delete-account', {
-        method: 'POST', headers: {
-          'content-type': 'application/json', Authorization: 'Bearer ' + token,
-        },
-        body: JSON.stringify({ password }),
-      });
       try {
+        const deleted = await fetch(api + '/auth/delete-account', {
+          method: 'POST', headers: {
+            'content-type': 'application/json', Authorization: 'Bearer ' + token,
+          },
+          body: JSON.stringify({ password }),
+        });
         assert.ok(deleted.ok, 'BOT_ACCOUNT_CLEANUP_FAILED HTTP ' + deleted.status);
         await assertPlaytestAccountRevoked(fetch, api, username, password);
       } catch (error) {
