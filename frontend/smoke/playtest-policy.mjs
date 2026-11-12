@@ -66,3 +66,26 @@ export function playtestSummary(episodes) {
     averageActions: Number((episodes.reduce((sum, episode) => sum + episode.actions, 0) / episodes.length).toFixed(2)),
   };
 }
+
+/**
+ * Verify both server snapshots after a real UI save + F5.
+ * A loss in combat must not allow the bot to skip this persistence gate.
+ * The authoritative server, not a mock or client-only state, supplies both.
+ */
+export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored }) {
+  for (const [stage, payload] of [['saved', saved], ['restored', restored]]) {
+    if (payload?.runId !== runId) throw new Error('BOT_CHECKPOINT_' + stage + '_RUN_MISMATCH');
+    if (payload?.currentMapId !== mapId) throw new Error('BOT_CHECKPOINT_' + stage + '_MAP_MISMATCH');
+    if (payload?.worldFlags?.['__chrRuntime.turns'] !== turns) {
+      throw new Error('BOT_CHECKPOINT_' + stage + '_TURNS_MISMATCH');
+    }
+  }
+  const enemyHp = Number(saved.worldFlags?.enemyHp);
+  if (!Number.isInteger(enemyHp) || enemyHp < 0) {
+    throw new Error('BOT_CHECKPOINT_INVALID_ENEMY_HP');
+  }
+  if (Number(restored.worldFlags?.enemyHp) !== enemyHp) {
+    throw new Error('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+  }
+  return { enemyHp };
+}
