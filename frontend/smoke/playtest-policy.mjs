@@ -55,15 +55,55 @@ export function playtestOutcome({ observed, enemyHp, combatEntered,
   return { outcome, warnings, hpLost, actions };
 }
 
+// Keep runtime failures separate from observed gameplay outcomes. Otherwise a
+// failed browser/login test becomes an artificial zero-action, zero-damage run
+// and silently improves the average combat metrics.
 export function playtestSummary(episodes) {
   if (!Array.isArray(episodes) || !episodes.length) throw new Error('No playtest episodes');
+  const measured = episodes.filter(episode => episode.outcome !== 'error');
+  const mean = (field) => measured.length
+    ? Number((measured.reduce((sum, episode) => sum + episode[field], 0)
+      / measured.length).toFixed(2))
+    : null;
   return {
     episodes: episodes.length,
-    wins: episodes.filter(episode => episode.outcome === 'victory').length,
-    defeats: episodes.filter(episode => episode.outcome === 'defeat').length,
-    unresolved: episodes.filter(episode => !['victory', 'defeat'].includes(episode.outcome)).length,
-    averageHpLost: Number((episodes.reduce((sum, episode) => sum + episode.hpLost, 0) / episodes.length).toFixed(2)),
-    averageActions: Number((episodes.reduce((sum, episode) => sum + episode.actions, 0) / episodes.length).toFixed(2)),
+    measuredEpisodes: measured.length,
+    errors: episodes.length - measured.length,
+    wins: measured.filter(episode => episode.outcome === 'victory').length,
+    defeats: measured.filter(episode => episode.outcome === 'defeat').length,
+    unresolved: measured.filter(episode => !['victory', 'defeat'].includes(episode.outcome)).length,
+    averageHpLost: mean('hpLost'),
+    averageActions: mean('actions'),
+  };
+}
+
+// A bounded, credential-free trace for failed staging runs. It records only
+// observable gameplay state, never credentials, fetch bodies, or token values.
+export function playtestFailureEpisode({ profile, seed, viewport, lastObserved = null,
+  trace = [], error = '' }) {
+  const attempts = Array.isArray(trace) ? trace : [];
+  const recent = attempts.slice(-24).map(entry => ({
+    action: String(entry.action ?? '').slice(0, 40),
+    turns: Number.isFinite(entry.turns) ? entry.turns : null,
+    partyHp: Number.isFinite(entry.partyHp) ? entry.partyHp : null,
+    initiative: entry.initiative === true,
+    phase: entry.phase ?? null,
+    elapsedMs: Number.isFinite(entry.elapsedMs) ? entry.elapsedMs : null,
+  }));
+  return {
+    profile, seed, viewport,
+    mapId: lastObserved?.mapId ?? null,
+    outcome: 'error',
+    warnings: ['bot-execution-failed'],
+    // Null denotes unmeasured, not a pristine 0-damage encounter.
+    hpLost: null, actions: null,
+    attemptedInputs: attempts.length,
+    retainedTraceLength: recent.length,
+    lastTurn: lastObserved?.turns ?? null,
+    lastPhase: lastObserved?.phase ?? null,
+    lastPartyHp: lastObserved?.partyHp ?? null,
+    trace: recent,
+    error: String(error).slice(0, 480),
   };
 }
 

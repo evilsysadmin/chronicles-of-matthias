@@ -90,9 +90,18 @@ jobs:
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, '\nPlaytest report missing (setup or execution failed).\n');
           } else {
             const report = JSON.parse(readFileSync(path, 'utf8'));
-            const lines = ['','### Staging autonomous playtest', '', 'Source: `' + report.sourceSha + '`', '', '| Profile | Outcome | Warnings |', '| --- | --- | --- |'];
+            const lines = ['','### Staging autonomous playtest', '',
+              'Source: `' + report.sourceSha + '`', '',
+              'Measured episodes: ' + (report.summary?.measuredEpisodes ?? 'unknown')
+                + ' · Bot errors: ' + (report.summary?.errors ?? 'unknown'), '',
+              '| Profile | Outcome | Last turn | Inputs observed | Warnings |',
+              '| --- | --- | ---: | ---: | --- |'];
             for (const episode of report.episodes ?? []) {
-              lines.push('| ' + episode.profile + ' | ' + episode.outcome + ' | ' + (episode.warnings ?? []).join(', ') + ' |');
+              const lastTurn = episode.lastTurn ?? '—';
+              const inputs = episode.attemptedInputs ?? episode.actions ?? '—';
+              lines.push('| ' + episode.profile + ' | ' + episode.outcome + ' | '
+                + lastTurn + ' | ' + inputs + ' | '
+                + (episode.warnings ?? []).join(', ') + ' |');
             }
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           }
