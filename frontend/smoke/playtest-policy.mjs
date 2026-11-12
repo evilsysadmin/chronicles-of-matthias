@@ -5,12 +5,23 @@ export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
 export function playtestAction({ profile, observed, explorationActions = 0,
-  combatActions = 0, blocked = 0, seed = 0 }) {
+  combatActions = 0, blocked = 0, repositionSteps = 0, seed = 0 }) {
   if (!PLAYTEST_PROFILES.includes(profile)) throw new Error('Unknown playtest profile');
   if (!observed || ['defeated', 'escaped'].includes(observed.phase)) return null;
   if (observed.initiative) {
     if (observed.enemyTurn) return null; // no turn-stealing or repeated input
-    if (!observed.meleeReady) return 'b';
+    if (!observed.meleeReady) {
+      // In MM3 initiative the party cannot rotate, but may spend an action
+      // moving one square. Probe cardinal movement from the live UI rather
+      // than blocking forever when the enemy is behind or not yet adjacent.
+      const steps = profile === 'aggressive'
+        ? ['ArrowUp', 'ArrowDown', 'q', 'e']
+        : ['ArrowDown', 'ArrowUp', 'e', 'q'];
+      if (blocked >= steps.length) return 'b'; // all probes rejected; defend
+      // Continue the chosen heading across several successful actions;
+      // otherwise forward/backward oscillation never reaches a ranged foe.
+      return steps[(Math.floor(repositionSteps / 3) + blocked) % steps.length];
+    }
     // A conservative player occasionally blocks a legal adjacent attack.
     // Stable seed changes the cadence; no LLM or uncontrolled random calls.
     if (profile === 'cautious' && (combatActions + seed) % 3 === 0) return 'b';
