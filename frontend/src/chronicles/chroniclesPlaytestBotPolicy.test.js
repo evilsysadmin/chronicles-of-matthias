@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, playtestAction, playtestOutcome, playtestSummary,
-  verifyPlaytestCheckpoint,
+  verifyPlaytestCheckpoint, playtestFailureEpisode,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -85,7 +85,8 @@ describe('public staging Playwright bot policy', () => {
     expect(victory).toMatchObject({ outcome: 'victory', hpLost: 14, actions: 9, warnings: [] });
     expect(defeat.warnings).toContain('party-defeated');
     expect(playtestSummary([victory, defeat])).toEqual({
-      episodes: 2, wins: 1, defeats: 1, unresolved: 0, averageHpLost: 22, averageActions: 12,
+      episodes: 2, measuredEpisodes: 2, errors: 0,
+      wins: 1, defeats: 1, unresolved: 0, averageHpLost: 22, averageActions: 12,
     });
   });
 
@@ -109,6 +110,37 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestOutcome({
       ...distant, combatActions: 3, rejectedCombatMoves: 9,
     }).warnings).toEqual(['encounter-not-resolved', 'repeated-rejected-combat-moves']);
+  });
+
+  it('preserves bounded failure evidence without distorting balance statistics', () => {
+    const trace = Array.from({ length: 30 }, (_, i) => ({
+      action: i % 2 ? 'ArrowDown' : 'q', turns: i,
+      partyHp: 32 - i, phase: 'explore', initiative: false, elapsedMs: i * 50,
+      actor: 'should-not-be-copied', token: 'must-not-appear',
+    }));
+    const failure = playtestFailureEpisode({
+      profile: 'aggressive', seed: 11, viewport: 390,
+      lastObserved: { mapId: 'crypt-eight-squares', turns: 29, partyHp: 3, phase: 'explore' },
+      trace, error: 'BOT_SOFTLOCK_EXPLORE',
+    });
+    expect(failure).toMatchObject({
+      outcome: 'error', hpLost: null, actions: null,
+      attemptedInputs: 24, lastTurn: 29, lastPartyHp: 3,
+      mapId: 'crypt-eight-squares',
+    });
+    expect(failure.trace[0].turns).toBe(6);
+    expect(JSON.stringify(failure)).not.toContain('must-not-appear');
+    expect(JSON.stringify(failure)).not.toContain('should-not-be-copied');
+    expect(playtestSummary([failure])).toEqual({
+      episodes: 1, measuredEpisodes: 0, errors: 1,
+      wins: 0, defeats: 0, unresolved: 0,
+      averageHpLost: null, averageActions: null,
+    });
+    const legitimate = { outcome: 'victory', hpLost: 12, actions: 7 };
+    expect(playtestSummary([legitimate, failure])).toMatchObject({
+      episodes: 2, measuredEpisodes: 1, errors: 1,
+      wins: 1, unresolved: 0, averageHpLost: 12, averageActions: 7,
+    });
   });
 
   it('checks both authoritative checkpoint snapshots, including after a defeat', () => {
