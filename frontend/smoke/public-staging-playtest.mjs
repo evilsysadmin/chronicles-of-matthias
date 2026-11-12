@@ -208,8 +208,9 @@ async function runEpisode(profile, seed, viewport) {
           const rail = document.querySelector('[data-chronicles-initiative="visible"]');
           const root = document.querySelector('[data-chronicles="true"]');
           return !rail || ['defeated', 'escaped'].includes(root?.getAttribute('data-chronicles-phase'))
-            || rail.getAttribute('aria-label') !== previous;
-        }, before.actor, { timeout: isMove ? 2_000 : 12_000 });
+            || rail.getAttribute('aria-label') !== previous.actor
+            || Number(root?.getAttribute('data-chronicles-turns')) > previous.turns;
+        }, { actor: before.actor, turns: before.turns }, { timeout: isMove ? 2_000 : 12_000 });
       } catch (error) {
         if (!isMove) throw error;
         const unchanged = await observe(page);
