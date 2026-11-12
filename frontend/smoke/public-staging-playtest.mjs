@@ -190,7 +190,8 @@ async function runEpisode(profile, seed, viewport) {
       combatEntered = true;
       assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
         'Live initiative lost its actor or map');
-      const action = playtestAction({ profile, observed: before, combatActions,
+      const action = playtestAction({ profile, observed: before,
+        combatActions: combatActions - rejectedCombatMoves,
         repositionSteps, blocked: combatBlocked, seed });
       const isMove = ['ArrowUp', 'ArrowDown', 'q', 'e'].includes(action);
       assert.ok(isMove || action === 'a' || action === 'b',
@@ -277,13 +278,18 @@ async function runEpisode(profile, seed, viewport) {
         'F5 resurrected or invented an enemy');
       restored = true;
     }
+    // Rejected collision probes cost no initiative action and must not skew
+    // battle length or comparative balance metrics.
+    const committedCombatActions = combatActions - rejectedCombatMoves;
     const result = playtestOutcome({ observed: after, enemyHp, combatEntered,
-      explorationActions, combatActions, startHp: initial.partyHp, endHp: after.partyHp });
+      explorationActions, combatActions: committedCombatActions,
+      startHp: initial.partyHp, endHp: after.partyHp });
     outcome = result.outcome;
     if (rejectedCombatMoves >= 8) result.warnings.push('repeated-rejected-combat-moves');
     const metrics = {
       profile, seed, viewport: viewport.width, mapId: initial.mapId,
-      ...result, explorationActions, combatActions, combatEntered,
+      ...result, explorationActions, combatActions: committedCombatActions,
+      attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
       lastTurn: after.turns, blocked, rejectedCombatMoves, repositionSteps,
       saved, restored, trace,
@@ -292,7 +298,8 @@ async function runEpisode(profile, seed, viewport) {
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
     }).catch(() => {});
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
-      profile, outcome, explorationActions, combatActions, hpLost: result.hpLost,
+      profile, outcome, explorationActions, combatActions: committedCombatActions,
+      attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored,
     }));
     return metrics;
