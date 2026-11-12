@@ -45,6 +45,12 @@ describe('public staging Playwright bot policy', () => {
     }))).toEqual(['ArrowDown', 'ArrowUp', 'e', 'q']);
     expect(playtestAction({
       profile: 'aggressive', observed: distant, repositionSteps: 1,
+    })).toBe('ArrowUp');
+    expect(playtestAction({
+      profile: 'aggressive', observed: distant, repositionSteps: 3,
+    })).toBe('ArrowDown');
+    expect(playtestAction({
+      profile: 'cautious', observed: distant, repositionSteps: 2,
     })).toBe('ArrowDown');
     expect(playtestAction({
       profile: 'aggressive', observed: distant, blocked: 4,
