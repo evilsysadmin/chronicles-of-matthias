@@ -14,7 +14,7 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction,
-  playtestOutcome, playtestSummary,
+  playtestOutcome, playtestSummary, verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -102,6 +102,59 @@ async function browserSession(browser, username, password, token, viewport) {
   return { context, page, world, errors };
 }
 
+/**
+ * Use the public menu and real API for a checkpoint followed by a browser F5.
+ * This runs before the first risky move, guaranteeing both profiles exercise
+ * persistence even if combat later ends in a legitimate defeat.
+ */
+async function saveReloadProbe(page, runId, token, expected) {
+  assert.equal(expected.phase, 'explore', 'Save probe must start outside combat');
+  assert.equal(expected.initiative, false, 'Cannot save while initiative is active');
+  await page.getByLabel('Abrir menú de Chronicles').click();
+  const save = page.locator('[data-chronicles-menu-save]');
+  await save.waitFor({ state: 'visible', timeout: 10_000 });
+  assert.equal(await save.isEnabled(), true, 'Out-of-combat checkpoint must be enabled');
+  const saving = page.waitForResponse(r => r.url().startsWith(api)
+    && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
+    && r.request().method() === 'PUT', { timeout: 25_000 });
+  await save.click();
+  assert.equal((await saving).status(), 200, 'Bot could not save real staging run');
+  const check = await fetch(api + '/chronicles/runs/' + encodeURIComponent(runId) + '/bootstrap', {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  assert.equal(check.status, 200, 'Saved checkpoint cannot be read from server');
+  const saved = await check.json();
+  // F5 tests the public resume flow, not merely two backend GET requests.
+  const resumed = page.waitForResponse(r => r.url().startsWith(api)
+    && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/bootstrap'
+    && r.request().method() === 'GET' && r.status() === 200, { timeout: 30_000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => Boolean(
+    document.querySelector('[data-chronicles-save-menu="home"]')
+    || document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')),
+  null, { timeout: 30_000 });
+  if (await page.locator('[data-chronicles-save-menu="home"]').isVisible()) {
+    await page.getByRole('button', { name: /Continuar expedición/ }).click();
+  }
+  const restored = await (await resumed).json();
+  const verified = verifyPlaytestCheckpoint({
+    runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
+  });
+  await page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]')
+    .waitFor({ state: 'visible', timeout: 30_000 });
+  // Some first-run overlays are session-scoped and may reappear after F5.
+  // Resume the same public tutorial dismissal before attempting more moves.
+  const firstSteps = page.locator('[data-chronicles-first-steps]');
+  if (await firstSteps.isVisible().catch(() => false)) {
+    await firstSteps.getByRole('button', { name: 'Entendido' }).click();
+  }
+  const displayed = await observe(page);
+  assert.equal(displayed.mapId, expected.mapId, 'F5 changed the visible map');
+  assert.equal(displayed.turns, expected.turns, 'F5 changed the visible turn count');
+  assert.equal(displayed.partyHp, expected.partyHp, 'F5 changed visible party health');
+  return verified;
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
@@ -135,6 +188,8 @@ async function runEpisode(profile, seed, viewport) {
     assert.equal(initial.mapId, 'crypt-eight-squares');
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
+    // A defeat is a valid gameplay outcome; it must not skip save/F5 coverage.
+    const preCombatCheckpoint = await saveReloadProbe(page, runId, token, initial);
 
     let explorationActions = 0;
     let combatActions = 0;
@@ -238,49 +293,15 @@ async function runEpisode(profile, seed, viewport) {
     const after = await observe(page);
     assert.deepEqual(errors, [], 'Real browser exceptions during playtest');
     let enemyHp = null;
-    let saved = false;
-    let restored = false;
+    const saved = true; // pre-combat checkpoint passed, even if the party fell
+    const restored = true;
+    let postCombatSaved = false;
+    let postCombatRestored = false;
     if (after.phase === 'explore' && !after.initiative) {
-      await page.getByLabel('Abrir menú de Chronicles').click();
-      const save = page.locator('[data-chronicles-menu-save]');
-      await save.waitFor({ state: 'visible', timeout: 10_000 });
-      assert.equal(await save.isEnabled(), true, 'Out-of-combat checkpoint must be enabled');
-      const saving = page.waitForResponse(r => r.url().startsWith(api)
-        && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
-        && r.request().method() === 'PUT', { timeout: 25_000 });
-      await save.click();
-      assert.equal((await saving).status(), 200, 'Bot could not save real staging run');
-      saved = true;
-      const check = await fetch(api + '/chronicles/runs/' + encodeURIComponent(runId) + '/bootstrap', {
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      assert.equal(check.status, 200);
-      const payload = await check.json();
-      assert.equal(payload.runId, runId);
-      assert.equal(payload.currentMapId, 'crypt-eight-squares');
-      assert.equal(payload.worldFlags?.['__chrRuntime.turns'], after.turns,
-        'Saved run lost the real number of actions');
-      enemyHp = Number(payload.worldFlags?.enemyHp);
-      assert.ok(Number.isInteger(enemyHp) && enemyHp >= 0);
-      // F5 probes the public recovery flow, not merely the backend response.
-      const resumed = page.waitForResponse(r => r.url().startsWith(api)
-        && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/bootstrap'
-        && r.request().method() === 'GET' && r.status() === 200, { timeout: 30_000 });
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => Boolean(
-        document.querySelector('[data-chronicles-save-menu="home"]')
-        || document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')),
-      null, { timeout: 30_000 });
-      if (await page.locator('[data-chronicles-save-menu="home"]').isVisible()) {
-        await page.getByRole('button', { name: /Continuar expedición/ }).click();
-      }
-      const restoredRun = await (await resumed).json();
-      assert.equal(restoredRun.runId, runId, 'F5 switched expeditions');
-      assert.equal(restoredRun.worldFlags?.['__chrRuntime.turns'], after.turns,
-        'F5 lost playtest actions');
-      assert.equal(restoredRun.worldFlags?.enemyHp, enemyHp,
-        'F5 resurrected or invented an enemy');
-      restored = true;
+      const postCombatCheckpoint = await saveReloadProbe(page, runId, token, after);
+      enemyHp = postCombatCheckpoint.enemyHp;
+      postCombatSaved = true;
+      postCombatRestored = true;
     }
     // Rejected collision probes cost no initiative action and must not skew
     // battle length or comparative balance metrics.
@@ -297,7 +318,9 @@ async function runEpisode(profile, seed, viewport) {
       initialHp: initial.partyHp, finalHp: after.partyHp,
       lastTurn: after.turns, blocked, rejectedCombatMoves,
       meleeOpportunities, repositionSteps,
-      saved, restored, trace,
+      saved, restored, preCombatSaved: saved, preCombatRestored: restored,
+      preCombatEnemyHp: preCombatCheckpoint.enemyHp,
+      postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
@@ -305,7 +328,7 @@ async function runEpisode(profile, seed, viewport) {
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
       profile, outcome, explorationActions, combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
-      warnings: result.warnings, saved, restored,
+      warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } finally {

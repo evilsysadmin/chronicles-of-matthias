@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, playtestAction, playtestOutcome, playtestSummary,
+  verifyPlaytestCheckpoint,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -108,6 +109,34 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestOutcome({
       ...distant, combatActions: 3, rejectedCombatMoves: 9,
     }).warnings).toEqual(['encounter-not-resolved', 'repeated-rejected-combat-moves']);
+  });
+
+  it('checks both authoritative checkpoint snapshots, including after a defeat', () => {
+    const checkpoint = (overrides = {}) => ({
+      runId: 'run-test', currentMapId: 'crypt-eight-squares',
+      worldFlags: { '__chrRuntime.turns': 2, enemyHp: 8 },
+      ...overrides,
+    });
+    const input = {
+      runId: 'run-test', mapId: 'crypt-eight-squares', turns: 2,
+      saved: checkpoint(), restored: checkpoint(),
+    };
+    expect(verifyPlaytestCheckpoint(input)).toEqual({ enemyHp: 8 });
+    expect(() => verifyPlaytestCheckpoint({
+      ...input, restored: checkpoint({ runId: 'another-run' }),
+    })).toThrow('BOT_CHECKPOINT_restored_RUN_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...input, saved: checkpoint({ currentMapId: 'wrong-map' }),
+    })).toThrow('BOT_CHECKPOINT_saved_MAP_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...input, restored: checkpoint({ worldFlags: { '__chrRuntime.turns': 1, enemyHp: 8 } }),
+    })).toThrow('BOT_CHECKPOINT_restored_TURNS_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...input, restored: checkpoint({ worldFlags: { '__chrRuntime.turns': 2, enemyHp: 9 } }),
+    })).toThrow('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...input, saved: checkpoint({ worldFlags: { '__chrRuntime.turns': 2 } }),
+    })).toThrow('BOT_CHECKPOINT_INVALID_ENEMY_HP');
   });
 
   it('flags inaccessible enemies, protracted fights and expensive victories', () => {
