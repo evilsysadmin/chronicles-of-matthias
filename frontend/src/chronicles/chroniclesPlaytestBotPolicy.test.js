@@ -53,8 +53,8 @@ describe('public staging Playwright bot policy', () => {
       profile: 'aggressive', observed: distant, blocked: 4, combatActions: 10,
     })).toBe('b');
     expect(playtestAction({
-      profile: 'aggressive', observed: distant, meleeReady: true,
-    })).toBe('ArrowUp');
+      profile: 'aggressive', observed: seen({ initiative: true, meleeReady: true }),
+    })).toBe('a');
   });
 
   it('uses measured, deterministic defensive cadence without inventing resources', () => {
