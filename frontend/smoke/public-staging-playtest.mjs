@@ -143,6 +143,7 @@ async function runEpisode(profile, seed, viewport) {
     let combatBlocked = 0;
     let repositionSteps = 0;
     let rejectedCombatMoves = 0;
+    let meleeOpportunities = 0;
     const record = (action, state) => trace.push({
       action, turns: state.turns, partyHp: state.partyHp,
       initiative: state.initiative, phase: state.phase,
@@ -228,6 +229,9 @@ async function runEpisode(profile, seed, viewport) {
         combatBlocked = 0;
         repositionSteps += 1;
       }
+      // Count only accepted initiative actions; a collision rejected without
+      // cost must not look like a genuine opportunity to fight.
+      if (before.meleeReady) meleeOpportunities += 1;
       record(action, await observe(page));
     }
 
@@ -283,15 +287,16 @@ async function runEpisode(profile, seed, viewport) {
     const committedCombatActions = combatActions - rejectedCombatMoves;
     const result = playtestOutcome({ observed: after, enemyHp, combatEntered,
       explorationActions, combatActions: committedCombatActions,
-      startHp: initial.partyHp, endHp: after.partyHp });
+      startHp: initial.partyHp, endHp: after.partyHp,
+      meleeOpportunities, rejectedCombatMoves });
     outcome = result.outcome;
-    if (rejectedCombatMoves >= 8) result.warnings.push('repeated-rejected-combat-moves');
     const metrics = {
       profile, seed, viewport: viewport.width, mapId: initial.mapId,
       ...result, explorationActions, combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
-      lastTurn: after.turns, blocked, rejectedCombatMoves, repositionSteps,
+      lastTurn: after.turns, blocked, rejectedCombatMoves,
+      meleeOpportunities, repositionSteps,
       saved, restored, trace,
     };
     await page.screenshot({

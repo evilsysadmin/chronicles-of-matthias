@@ -88,6 +88,28 @@ describe('public staging Playwright bot policy', () => {
     });
   });
 
+  it('flags sustained lack of legal melee from accepted combat actions only', () => {
+    const distant = {
+      observed: seen({ initiative: true, meleeReady: false }),
+      enemyHp: 6, combatEntered: true,
+      explorationActions: 2, startHp: 30, endHp: 20,
+      meleeOpportunities: 0,
+    };
+    expect(playtestOutcome({ ...distant, combatActions: 11 }).warnings)
+      .not.toContain('no-melee-access-after-12-actions');
+    expect(playtestOutcome({ ...distant, combatActions: 12 }).warnings)
+      .toContain('no-melee-access-after-12-actions');
+    expect(playtestOutcome({ ...distant, combatActions: 12, meleeOpportunities: 1 }).warnings)
+      .not.toContain('no-melee-access-after-12-actions');
+    expect(playtestOutcome({ ...distant, combatActions: 12, enemyHp: 0 }).warnings)
+      .not.toContain('no-melee-access-after-12-actions');
+    expect(playtestOutcome({ ...distant, combatActions: 12, meleeOpportunities: null }).warnings)
+      .not.toContain('no-melee-access-after-12-actions');
+    expect(playtestOutcome({
+      ...distant, combatActions: 3, rejectedCombatMoves: 9,
+    }).warnings).toEqual(['encounter-not-resolved', 'repeated-rejected-combat-moves']);
+  });
+
   it('flags inaccessible enemies, protracted fights and expensive victories', () => {
     const unreachable = playtestOutcome({
       observed: seen(), enemyHp: 5, combatEntered: false,
