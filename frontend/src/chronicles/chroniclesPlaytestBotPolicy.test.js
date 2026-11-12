@@ -27,10 +27,34 @@ describe('public staging Playwright bot policy', () => {
       expect(playtestAction({ profile, observed: seen({ initiative: true, enemyTurn: true }) })).toBeNull();
       expect(playtestAction({ profile, observed: seen({ phase: 'defeated' }) })).toBeNull();
       expect(playtestAction({ profile, observed: seen({ phase: 'escaped' }) })).toBeNull();
-      // No turning while initiative is active; a ranged enemy can only be blocked
-      // until a legal adjacent melee appears, not attacked through a wall.
-      expect(playtestAction({ profile, observed: seen({ initiative: true, meleeReady: false }) })).toBe('b');
+      // Never turn during initiative. A distant or rear enemy requires
+      // deliberate repositioning; blocked moves can fall back to defense.
+      const step = profile === 'aggressive' ? 'ArrowUp' : 'ArrowDown';
+      expect(playtestAction({ profile, observed: seen({ initiative: true, meleeReady: false }) })).toBe(step);
+      expect(playtestAction({ profile, observed: seen({ initiative: true, meleeReady: false }), blocked: 4 })).toBe('b');
     }
+  });
+
+  it('tries every direction without rotating and can recover from rejected combat steps', () => {
+    const distant = seen({ initiative: true, meleeReady: false });
+    expect([0, 1, 2, 3].map(blocked => playtestAction({
+      profile: 'aggressive', observed: distant, blocked,
+    }))).toEqual(['ArrowUp', 'ArrowDown', 'q', 'e']);
+    expect([0, 1, 2, 3].map(blocked => playtestAction({
+      profile: 'cautious', observed: distant, blocked,
+    }))).toEqual(['ArrowDown', 'ArrowUp', 'e', 'q']);
+    expect(playtestAction({
+      profile: 'aggressive', observed: distant, repositionSteps: 1,
+    })).toBe('ArrowDown');
+    expect(playtestAction({
+      profile: 'aggressive', observed: distant, blocked: 4,
+    })).toBe('b');
+    expect(playtestAction({
+      profile: 'aggressive', observed: distant, blocked: 4, combatActions: 10,
+    })).toBe('b');
+    expect(playtestAction({
+      profile: 'aggressive', observed: distant, meleeReady: true,
+    })).toBe('ArrowUp');
   });
 
   it('uses measured, deterministic defensive cadence without inventing resources', () => {
