@@ -81,7 +81,8 @@ export function playtestSummary(episodes) {
 // observable gameplay state, never credentials, fetch bodies, or token values.
 export function playtestFailureEpisode({ profile, seed, viewport, lastObserved = null,
   trace = [], error = '' }) {
-  const recent = (Array.isArray(trace) ? trace : []).slice(-24).map(entry => ({
+  const attempts = Array.isArray(trace) ? trace : [];
+  const recent = attempts.slice(-24).map(entry => ({
     action: String(entry.action ?? '').slice(0, 40),
     turns: Number.isFinite(entry.turns) ? entry.turns : null,
     partyHp: Number.isFinite(entry.partyHp) ? entry.partyHp : null,
@@ -96,7 +97,8 @@ export function playtestFailureEpisode({ profile, seed, viewport, lastObserved =
     warnings: ['bot-execution-failed'],
     // Null denotes unmeasured, not a pristine 0-damage encounter.
     hpLost: null, actions: null,
-    attemptedInputs: recent.length,
+    attemptedInputs: attempts.length,
+    retainedTraceLength: recent.length,
     lastTurn: lastObserved?.turns ?? null,
     lastPhase: lastObserved?.phase ?? null,
     lastPartyHp: lastObserved?.partyHp ?? null,
