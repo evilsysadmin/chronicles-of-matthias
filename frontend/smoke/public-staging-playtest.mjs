@@ -14,7 +14,7 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction,
-  playtestOutcome, playtestSummary, verifyPlaytestCheckpoint,
+  playtestOutcome, playtestSummary, playtestFailureEpisode, verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -163,6 +163,16 @@ async function runEpisode(profile, seed, viewport) {
   let runId = null;
   const trace = [];
   let outcome = 'error';
+  let lastObserved = null;
+  const readObservation = async (page) => {
+    const state = await observe(page);
+    lastObserved = state;
+    return state;
+  };
+  const diagnostic = () => ({
+    lastObserved,
+    trace: trace.slice(-24),
+  });
   try {
     const registration = await fetch(api + '/auth/register', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -184,7 +194,7 @@ async function runEpisode(profile, seed, viewport) {
     assert.ok(runId && run.currentMapId === 'crypt-eight-squares');
     session = await browserSession(browser, username, password, token, viewport);
     const { page, world, errors } = session;
-    const initial = await observe(page);
+    const initial = await readObservation(page);
     assert.equal(initial.mapId, 'crypt-eight-squares');
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
@@ -206,7 +216,7 @@ async function runEpisode(profile, seed, viewport) {
     });
 
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
-      const before = await observe(page);
+      const before = await readObservation(page);
       if (before.initiative || before.phase !== 'explore') break;
       const action = playtestAction({ profile, observed: before,
         explorationActions, blocked, seed });
@@ -226,7 +236,7 @@ async function runEpisode(profile, seed, viewport) {
         // repeated attempts is one; the report records the blocked inputs.
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
-      const after = await observe(page);
+      const after = await readObservation(page);
       assert.equal(after.mapId, 'crypt-eight-squares', 'Playtester lost the real game view');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
       if (after.turns > before.turns) blocked = 0;
@@ -241,7 +251,7 @@ async function runEpisode(profile, seed, viewport) {
         return !rail || !(rail.classList.contains('is-enemy-turn')
           || root?.getAttribute('data-turn-phase') === 'enemy');
       }, null, { timeout: 15_000 });
-      const before = await observe(page);
+      const before = await readObservation(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
       assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
@@ -270,7 +280,7 @@ async function runEpisode(profile, seed, viewport) {
         }, { actor: before.actor, turns: before.turns }, { timeout: isMove ? 2_000 : 12_000 });
       } catch (error) {
         if (!isMove) throw error;
-        const unchanged = await observe(page);
+        const unchanged = await readObservation(page);
         // Only classify an input as rejected if the real turn and actor did
         // not advance. A slow/ambiguous transition is an actual bot error.
         if (!unchanged.initiative || unchanged.actor !== before.actor
@@ -287,10 +297,10 @@ async function runEpisode(profile, seed, viewport) {
       // Count only accepted initiative actions; a collision rejected without
       // cost must not look like a genuine opportunity to fight.
       if (before.meleeReady) meleeOpportunities += 1;
-      record(action, await observe(page));
+      record(action, await readObservation(page));
     }
 
-    const after = await observe(page);
+    const after = await readObservation(page);
     assert.deepEqual(errors, [], 'Real browser exceptions during playtest');
     let enemyHp = null;
     const saved = true; // pre-combat checkpoint passed, even if the party fell
@@ -331,6 +341,11 @@ async function runEpisode(profile, seed, viewport) {
       warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
     }));
     return metrics;
+  } catch (error) {
+    // Preserve actionable evidence when an assertion, browser operation or
+    // save check fails after several real actions. No auth details attached.
+    error.playtestDiagnostic = diagnostic();
+    throw error;
   } finally {
     if (outcome === 'error') {
       await session?.page?.screenshot({
@@ -345,8 +360,13 @@ async function runEpisode(profile, seed, viewport) {
         },
         body: JSON.stringify({ password }),
       });
-      assert.ok(deleted.ok, 'BOT_ACCOUNT_CLEANUP_FAILED HTTP ' + deleted.status);
-      await assertPlaytestAccountRevoked(fetch, api, username, password);
+      try {
+        assert.ok(deleted.ok, 'BOT_ACCOUNT_CLEANUP_FAILED HTTP ' + deleted.status);
+        await assertPlaytestAccountRevoked(fetch, api, username, password);
+      } catch (error) {
+        error.playtestDiagnostic = diagnostic();
+        throw error;
+      }
     }
   }
 }
@@ -357,8 +377,11 @@ try {
       observations.push(await runEpisode(profile, index + 1, index
         ? { width: 390, height: 844 } : { width: 1280, height: 800 }));
     } catch (error) {
-      observations.push({ profile, outcome: 'error', hpLost: 0, actions: 0,
-        warnings: ['bot-execution-failed'], error: String(error.message).slice(0, 480) });
+      observations.push(playtestFailureEpisode({
+        profile, seed: index + 1, viewport: index ? 390 : 1280,
+        ...(error.playtestDiagnostic ?? {}),
+        error: error.message,
+      }));
     }
   }
 } finally {
