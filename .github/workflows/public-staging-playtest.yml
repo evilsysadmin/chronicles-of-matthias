@@ -40,6 +40,16 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Validate staging invitation configuration early
+        shell: bash
+        env:
+          CHRONICLES_STAGING_INVITE_CODE: ${{ secrets.CHRONICLES_STAGING_INVITE_CODE }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CHRONICLES_STAGING_INVITE_CODE}" ]]; then
+            echo "::error::Missing staging invite secret (CHRONICLES_STAGING_INVITE_CODE)"
+            exit 1
+          fi
       - name: Install locked browser tooling
         working-directory: frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
