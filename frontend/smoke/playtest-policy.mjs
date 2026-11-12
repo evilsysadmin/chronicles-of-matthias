@@ -18,7 +18,9 @@ export function playtestAction({ profile, observed, explorationActions = 0,
         ? ['ArrowUp', 'ArrowDown', 'q', 'e']
         : ['ArrowDown', 'ArrowUp', 'e', 'q'];
       if (blocked >= steps.length) return 'b'; // all probes rejected; defend
-      return steps[(repositionSteps + blocked) % steps.length];
+      // Continue the chosen heading across several successful actions;
+      // otherwise forward/backward oscillation never reaches a ranged foe.
+      return steps[(Math.floor(repositionSteps / 3) + blocked) % steps.length];
     }
     // A conservative player occasionally blocks a legal adjacent attack.
     // Stable seed changes the cadence; no LLM or uncontrolled random calls.
