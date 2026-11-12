@@ -125,7 +125,8 @@ describe('public staging Playwright bot policy', () => {
     });
     expect(failure).toMatchObject({
       outcome: 'error', hpLost: null, actions: null,
-      attemptedInputs: 24, lastTurn: 29, lastPartyHp: 3,
+      attemptedInputs: 30, retainedTraceLength: 24,
+      lastTurn: 29, lastPartyHp: 3,
       mapId: 'crypt-eight-squares',
     });
     expect(failure.trace[0].turns).toBe(6);
