@@ -202,7 +202,7 @@ import './ChroniclesCharacterSheet.css';
 import './ChroniclesOfMatthiasArt.css';
 import './ChroniclesOfMatthiasJournal.css';
 import './ChroniclesPartyCondition.css';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember } from '../chronicles/chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesAdventureMenuShortcut, chroniclesCombatKeyMode, chroniclesContainAdventureMenuTab, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember, chroniclesTouchSideAction } from '../chronicles/chroniclesKeyboardBindings.js';
 import './ChroniclesPartyThumbnails.css';
 import './ChroniclesCampSleep.css';
 import './ChroniclesRecoveredRelic.css';
@@ -2199,6 +2199,9 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const itemUser = caster?.hp > 0 ? caster : activeInitiativeActor ? null : state.party.find((member) => member.hp > 0) || null;
   const meleeReady = chroniclesMM3MeleeAvailable(state, activeInitiativeActor?.kind === 'party'
     ? activeInitiativeActor.id : selectedMember?.id);
+  const leftTouchAction = chroniclesTouchSideAction(state, 'left');
+  const rightTouchAction = chroniclesTouchSideAction(state, 'right');
+  const touchSidestep = leftTouchAction === 'strafe-left';
   const touchAttackDisabled = state.combatRules === 'mm3' && (
     activeInitiativeActor?.kind === 'enemy' || (!touchWillShoot && !meleeReady)
   );
@@ -2602,18 +2605,20 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="turn-left"
-                  disabled={chroniclesCombatPartyStepBlocked(state, 'turn-left')}
-                  title={state.initiative && state.combatRules === 'mm3' ? 'En combate no se puede girar' : 'Girar a la izquierda'}
-                  onPointerDown={(event) => startTouchHold('turn-left', event)}
+                  data-chronicles-effective-action={leftTouchAction}
+                  disabled={chroniclesCombatPartyStepBlocked(state, leftTouchAction)}
+                  title={touchSidestep ? 'Desplazarse a la izquierda: consume una acción, sin girar' : 'Girar a la izquierda'}
+                  onPointerDown={(event) => startTouchHold(leftTouchAction, event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
                   onLostPointerCapture={clearTouchHold}
-                  onClick={(event) => activateTouchAction('turn-left', event)}
-                  aria-label="Girar a la izquierda"
-                >↶<small>GIRAR</small></button>
+                  onClick={(event) => activateTouchAction(leftTouchAction, event)}
+                  aria-label={touchSidestep ? 'Desplazarse lateralmente a la izquierda' : 'Girar a la izquierda'}
+                >{touchSidestep ? '⇦' : '↶'}<small>{touchSidestep ? 'LADO' : 'GIRAR'}</small></button>
                 <button
                   type="button"
                   data-chronicles-touch-action="forward"
+                  data-chronicles-effective-action="forward"
                   disabled={chroniclesCombatPartyStepBlocked(state, 'forward')}
                   title={state.initiative ? 'Combate: desplazarse consume una acción' : 'Avanzar'}
                   onPointerDown={(event) => startTouchHold('forward', event)}
@@ -2627,6 +2632,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                   type="button"
                   className="is-attack"
                   data-chronicles-touch-action="attack"
+                  data-chronicles-touch-attack-mode={touchWillShoot ? 'missile' : 'melee'}
                   data-melee-ready={!touchWillShoot ? String(meleeReady) : undefined}
                   disabled={touchAttackDisabled}
                   onClick={() => touchWillShoot ? shootWithParty() : attackWithSelected()}
@@ -2672,6 +2678,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="backward"
+                  data-chronicles-effective-action="backward"
                   disabled={chroniclesCombatPartyStepBlocked(state, 'backward')}
                   title={state.initiative ? 'Combate: desplazarse consume una acción' : 'Retroceder'}
                   onPointerDown={(event) => startTouchHold('backward', event)}
@@ -2684,15 +2691,16 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
                 <button
                   type="button"
                   data-chronicles-touch-action="turn-right"
-                  disabled={chroniclesCombatPartyStepBlocked(state, 'turn-right')}
-                  title={state.initiative && state.combatRules === 'mm3' ? 'En combate no se puede girar' : 'Girar a la derecha'}
-                  onPointerDown={(event) => startTouchHold('turn-right', event)}
+                  data-chronicles-effective-action={rightTouchAction}
+                  disabled={chroniclesCombatPartyStepBlocked(state, rightTouchAction)}
+                  title={touchSidestep ? 'Desplazarse a la derecha: consume una acción, sin girar' : 'Girar a la derecha'}
+                  onPointerDown={(event) => startTouchHold(rightTouchAction, event)}
                   onPointerUp={clearTouchHold}
                   onPointerCancel={clearTouchHold}
                   onLostPointerCapture={clearTouchHold}
-                  onClick={(event) => activateTouchAction('turn-right', event)}
-                  aria-label="Girar a la derecha"
-                >↷<small>GIRAR</small></button>
+                  onClick={(event) => activateTouchAction(rightTouchAction, event)}
+                  aria-label={touchSidestep ? 'Desplazarse lateralmente a la derecha' : 'Girar a la derecha'}
+                >{touchSidestep ? '⇨' : '↷'}<small>{touchSidestep ? 'LADO' : 'GIRAR'}</small></button>
               </div>
 
               <div className="chronicles-keyboard-help">
