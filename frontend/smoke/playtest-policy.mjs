@@ -9,14 +9,20 @@ export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 export const PLAYTEST_MOBILE_TOUCH_ACTIONS = Object.freeze({
   ArrowUp: 'forward',
   ArrowDown: 'backward',
+  ArrowLeft: 'turn-left',
+  ArrowRight: 'turn-right',
   q: 'strafe-left',
   e: 'strafe-right',
   a: 'attack',
   b: 'block',
   s: 'attack',
 });
-export function playtestMobileTouchAction(action) {
-  return PLAYTEST_MOBILE_TOUCH_ACTIONS[action] ?? null;
+export function playtestMobileTouchAction(action, { initiative = false } = {}) {
+  const control = PLAYTEST_MOBILE_TOUCH_ACTIONS[action] ?? null;
+  // Reorientation is valid while exploring but categorically forbidden
+  // during MM3 initiative; sidesteps are separate Q/E actions.
+  if (initiative && (control === 'turn-left' || control === 'turn-right')) return null;
+  return control;
 }
 
 export function playtestAction({ profile, observed, explorationActions = 0,
