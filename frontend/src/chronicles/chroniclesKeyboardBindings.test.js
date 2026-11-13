@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut } from './chroniclesKeyboardBindings.js';
+import { CHRONICLES_DIRECTION_KEYS, chroniclesCombatKeyMode, chroniclesAdventureMenuShortcut, chroniclesHandleAdventureMenuSaveKey, chroniclesAdventureTabClosesMenu, chroniclesContainAdventureMenuTab, chroniclesRestoreAdventureMenuFocus, chroniclesReleaseAdventureMenuFocus, chroniclesBlockAdventureMenuBackgroundEvent, chroniclesFirstPersonEscapeAction, chroniclesWorldInfoShortcut, chroniclesPartyHotkeyMember, chroniclesPartyHotkeySlots, CHRONICLES_PARTY_SLOT_IDS, chroniclesInventoryShortcut, chroniclesTouchSideAction } from './chroniclesKeyboardBindings.js';
 
 describe('Chronicles MM3 · keyboard movement and attack contract', () => {
   it('arrow keys move/turn and Q/E strafe without stealing attack keys', () => {
@@ -18,6 +18,22 @@ describe('Chronicles MM3 · keyboard movement and attack contract', () => {
     expect(CHRONICLES_DIRECTION_KEYS.s).toBeUndefined();
     expect(CHRONICLES_DIRECTION_KEYS[' ']).toBeUndefined();
   });
+  it('turn controls become legal lateral steps only during first-person MM3 initiative', () => {
+    const explore = { combatRules: 'mm3', initiative: null };
+    const combat = { combatRules: 'mm3', initiative: { cursor: 0 } };
+    const tactics = { combatRules: 'tactics', initiative: { cursor: 0 } };
+    for (const [side, turn, strafe] of [
+      ['left', 'turn-left', 'strafe-left'],
+      ['right', 'turn-right', 'strafe-right'],
+    ]) {
+      expect(chroniclesTouchSideAction(explore, side)).toBe(turn);
+      expect(chroniclesTouchSideAction(tactics, side)).toBe(turn);
+      expect(chroniclesTouchSideAction(combat, side)).toBe(strafe);
+      expect(CHRONICLES_DIRECTION_KEYS[side === 'left' ? 'q' : 'e']).toBe(strafe);
+    }
+    expect(() => chroniclesTouchSideAction(combat, 'backward')).toThrow('Unknown');
+  });
+
   it('A only attacks in combat; S shoots in exploration and combat; Space remains unbound', () => {
     for (const key of ['a', 'A']) {
       expect(chroniclesCombatKeyMode(key), key).toBeNull();
