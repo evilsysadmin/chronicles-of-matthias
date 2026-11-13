@@ -403,7 +403,8 @@ async function runEpisode(profile, seed, viewport) {
     const metrics = {
       profile, seed, viewport: viewport.width, viewportHeight: viewport.height,
       mapId: initial.mapId, inputMode: viewport.touch === true ? 'touch' : 'keyboard',
-      ...result, explorationActions, explorationCommitted,
+      ...result, explorationActions, explorationCommitted, explorationMoves,
+      distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
@@ -417,7 +418,8 @@ async function runEpisode(profile, seed, viewport) {
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
     }).catch(() => {});
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
-      profile, outcome, explorationActions, explorationCommitted,
+      profile, outcome, explorationActions, explorationCommitted, explorationMoves,
+      distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
