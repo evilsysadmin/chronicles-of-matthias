@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, playtestTileKey,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
+  PLAYTEST_OPENING_FLAG, playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
