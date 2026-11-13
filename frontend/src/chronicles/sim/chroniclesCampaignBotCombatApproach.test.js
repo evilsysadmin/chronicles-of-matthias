@@ -63,13 +63,15 @@ describe('MM3 campaign bot respects fixed-facing multi-enemy initiative', () => 
 
   it('uses melee against the engaged flank without turning or harming an outsider', () => {
     const { bot, fight, captain, bystander, heroId } = scenario({ flank: true });
-    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(bystander.id);
+    expect(fight.direction).toBe(1); // auto-face the adjacent captain at entry
+    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(captain.id);
+    expect(chroniclesEnemyTargetAhead({ ...fight, direction: 0 }, 1)?.enemy.id).toBe(bystander.id);
     expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(captain.id);
     const action = bot.chooseCombatAction(heroId);
     expect(action).toEqual({ type: 'attack', memberId: heroId, mode: 'melee' });
     const struck = chroniclesReduce(fight, action);
     expect(struck.turns).toBe(fight.turns + 1);
-    expect(struck.direction).toBe(0);
+    expect(struck.direction).toBe(fight.direction);
     expect(struck[bystander.hpKey]).toBe(fight[bystander.hpKey]);
   });
   it('completes the full rear-scout encounter without turning or attacking a bystander', () => {
