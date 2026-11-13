@@ -276,15 +276,30 @@ try {
       const fourthHeroName = (await partyPortraits.nth(3).locator('strong').innerText()).trim();
       assert.ok(firstHeroName && fourthHeroName, 'Missing hero names on actual party portraits');
       // Portraits select on one click/tap; the dossier opens on a desktop
-      // double-click or a second quick touch tap (PR #867).
+      // double-click or a second tap on the same selected hero. Slow real
+      // devices must not need to hit a 600 ms double-tap timing window.
       if (viewport.width === 390) {
         await partyPortraits.first().tap();
+        assert.equal(await partyPortraits.first().getAttribute('aria-pressed'), 'true',
+          'First touch must select its portrait before trying to open a folio');
+        await page.waitForTimeout(800); // Deliberately exceeds the former 600 ms cutoff.
         await partyPortraits.first().tap();
       } else {
         await partyPortraits.first().dblclick();
       }
       const heroFolio = page.locator('[role="dialog"][data-chronicles-folio="v2"]');
-      await heroFolio.waitFor({ state: 'visible', timeout: 12_000 });
+      try {
+        await heroFolio.waitFor({ state: 'visible', timeout: 12_000 });
+      } catch (error) {
+        console.error('CHRONICLES_PUBLIC_HERO_OPEN_PROBE', JSON.stringify({
+          viewport: viewport.width,
+          selected: await partyPortraits.first().getAttribute('aria-pressed').catch(() => null),
+          folios: await heroFolio.count(),
+          relock: await page.locator('[data-chronicles-relock]:visible').count(),
+        }));
+        await page.screenshot({ path: `chronicles-public-hero-open-failed-${viewport.width}.png` }).catch(() => {});
+        throw error;
+      }
       // The state folio also has a "Cambiar equipo ›" action. Scope this
       // click to the actual tab and use an exact accessible name; a broad
       // substring match throws Playwright strict-mode on live staging.
