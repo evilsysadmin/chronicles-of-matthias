@@ -148,6 +148,9 @@ export function playtestAcceptance(episodes) {
     if (episode.mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID) {
       reasons.push('wrong-campaign-entry:' + profile);
     }
+    if (episode.openingNarrativeVerified !== true) {
+      reasons.push('opening-letter-not-verified:' + profile);
+    }
     if (episode.saved !== true || episode.restored !== true
       || episode.preCombatSaved !== true || episode.preCombatRestored !== true) {
       reasons.push('checkpoint-not-verified:' + profile);
