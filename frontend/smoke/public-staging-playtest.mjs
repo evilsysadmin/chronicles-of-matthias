@@ -14,7 +14,7 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
-  playtestOutcome, playtestSummary, playtestFailureEpisode,
+  playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
@@ -35,6 +35,7 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 const observations = [];
+let acceptance = { passed: false, reasons: ['not-finished'] };
 const started = Date.now();
 
 function observe(page) {
@@ -446,15 +447,19 @@ try {
   }
 } finally {
   await browser.close();
+  acceptance = playtestAcceptance(observations);
   const report = {
     schema: 'chronicles-playtest-v1', sourceSha: sha, environment: 'staging',
     generatedAt: new Date().toISOString(),
     summary: playtestSummary(observations),
+    acceptance,
     episodes: observations,
   };
   writeFileSync('chronicles-playtest-report.json', JSON.stringify(report, null, 2) + '\n');
   console.log('CHRONICLES_PLAYTEST_REPORT ' + JSON.stringify(report.summary));
+  console.log('CHRONICLES_PLAYTEST_ACCEPTANCE ' + JSON.stringify(acceptance));
 }
-if (observations.some(item => item.outcome === 'error')) {
-  throw new Error('CHRONICLES_PLAYTEST_RUN_FAILURE; inspect uploaded JSON and PNG diagnostics');
+if (!acceptance.passed) {
+  throw new Error('CHRONICLES_PLAYTEST_ACCEPTANCE_FAILED '
+    + acceptance.reasons.join(',') + '; inspect uploaded JSON and PNG diagnostics');
 }
