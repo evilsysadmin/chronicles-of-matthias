@@ -1,6 +1,6 @@
-// MM3 initiative must never rotate the view, including automatic focus on
-// an adjacent enemy behind the party. Melee may still hit a real engaged
-// cardinal neighbor without changing the camera or projectile direction.
+// Entry into MM3 melee initiative sets the canonical direction toward a real
+// adjacent attacker once. During initiative the view never reorients again;
+// side/rear melee remains possible against an engaged cardinal neighbor.
 export function chroniclesCombatCameraFacing(state) {
   return state?.direction;
 }
