@@ -202,6 +202,8 @@ async function saveReloadProbe(page, runId, token, expected) {
   assert.equal(displayed.mapId, expected.mapId, 'F5 changed the visible map');
   assert.equal(displayed.turns, expected.turns, 'F5 changed the visible turn count');
   assert.equal(displayed.partyHp, expected.partyHp, 'F5 changed visible party health');
+  assert.equal(playtestTileKey(displayed), playtestTileKey(expected),
+    'F5 changed visible party tile');
   return verified;
 }
 
@@ -248,11 +250,14 @@ async function runEpisode(profile, seed, viewport) {
     assert.equal(initial.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
+    assert.ok(playtestTileKey(initial) !== null, 'No visible party tile after bootstrap');
     // A defeat is a valid gameplay outcome; it must not skip save/F5 coverage.
     const preCombatCheckpoint = await saveReloadProbe(page, runId, token, initial);
 
     let explorationActions = 0;
     let explorationCommitted = 0;
+    let explorationMoves = 0;
+    const visitedExplorationTiles = new Set([playtestTileKey(initial)]);
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
