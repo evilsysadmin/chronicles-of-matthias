@@ -267,6 +267,7 @@ async function runEpisode(profile, seed, viewport) {
     let meleeOpportunities = 0;
     const record = (action, state) => trace.push({
       action, turns: state.turns, partyHp: state.partyHp,
+      x: state.x, y: state.y,
       initiative: state.initiative, phase: state.phase,
       actor: state.actor, elapsedMs: Date.now() - started,
     });
