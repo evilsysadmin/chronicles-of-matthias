@@ -58,8 +58,8 @@ function observe(page) {
 
 // Exercise the displayed stone controls on the 390px profile. No synthetic
 // keyboard input or invocation of internal React handlers is allowed.
-async function tapMobileAction(page, action) {
-  const control = playtestMobileTouchAction(action);
+async function tapMobileAction(page, action, { initiative = false } = {}) {
+  const control = playtestMobileTouchAction(action, { initiative });
   assert.ok(control, 'BOT_TOUCH_UNSUPPORTED_ACTION ' + String(action));
   const movement = ['forward', 'backward', 'strafe-left', 'strafe-right'].includes(control);
   const selector = movement
@@ -254,7 +254,7 @@ async function runEpisode(profile, seed, viewport) {
             continue;
           }
         }
-        await tapMobileAction(page, action);
+        await tapMobileAction(page, action, { initiative: false });
       } else {
         await page.keyboard.press(action);
       }
@@ -301,7 +301,7 @@ async function runEpisode(profile, seed, viewport) {
       // Every mobile combat action, including Q/E lateral steps, is a
       // genuine touch event on the visible control; desktop uses keyboard.
       if (viewport.width <= 430) {
-        await tapMobileAction(page, action);
+        await tapMobileAction(page, action, { initiative: true });
       } else {
         await page.keyboard.press(action);
       }
