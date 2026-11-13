@@ -229,16 +229,16 @@ async function runEpisode(profile, seed, viewport) {
     const creation = await fetch(api + '/chronicles/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ mapId: 'crypt-eight-squares' }),
+      body: JSON.stringify({ mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID }),
     });
-    assert.equal(creation.status, 201, 'Cannot create authored crypt expedition');
+    assert.equal(creation.status, 201, 'Cannot create Swordhaven campaign expedition');
     const run = await creation.json();
     runId = run.runId;
-    assert.ok(runId && run.currentMapId === 'crypt-eight-squares');
+    assert.ok(runId && run.currentMapId === PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     session = await browserSession(browser, username, password, token, viewport);
     const { page, world, errors } = session;
     const initial = await readObservation(page);
-    assert.equal(initial.mapId, 'crypt-eight-squares');
+    assert.equal(initial.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
     // A defeat is a valid gameplay outcome; it must not skip save/F5 coverage.
@@ -296,7 +296,7 @@ async function runEpisode(profile, seed, viewport) {
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
       const after = await readObservation(page);
-      assert.equal(after.mapId, 'crypt-eight-squares', 'Playtester lost the real game view');
+      assert.equal(after.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, 'Playtester lost Swordhaven campaign view');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
       if (after.turns > before.turns) blocked = 0;
       record(action, after);
@@ -313,7 +313,7 @@ async function runEpisode(profile, seed, viewport) {
       const before = await readObservation(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
-      assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
+      assert.ok(before.actor && before.mapId === PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
         'Live initiative lost its actor or map');
       const action = playtestAction({ profile, observed: before,
         combatActions: combatActions - rejectedCombatMoves,
