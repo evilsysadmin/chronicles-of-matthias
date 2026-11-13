@@ -133,47 +133,39 @@ describe('public staging Playwright bot policy', () => {
     });
   });
 
-  it('refuses to call a contact-free or unverified staging run successful', () => {
+  it('validates real Swordhaven exploration and persistence without inventing early combat', () => {
     const complete = (profile, overrides = {}) => ({
-      profile, outcome: 'unfinished', combatEntered: true,
-      saved: true, restored: true,
-      preCombatSaved: true, preCombatRestored: true, preCombatEnemyHp: 5,
+      profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
+      saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
+      preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
     });
     const aggressive = complete('aggressive');
-    const cautious = complete('cautious', { outcome: 'defeat' });
+    const cautious = complete('cautious');
     expect(playtestAcceptance([aggressive, cautious])).toEqual({
       passed: true, reasons: [],
     });
-    // A defeat, 32-action timeout or high HP loss is not by itself an
-    // E2E execution failure: preserve that information for balance review.
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      outcome: 'unfinished', warnings: ['long-combat', 'party-lost-70pct-hp'],
-    })]).passed).toBe(true);
+      mapId: 'crypt-eight-squares',
+    })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'no-contact',
-    })])).toEqual({
-      passed: false, reasons: ['no-enemy-contact:cautious'],
-    });
+      explorationCommitted: 0,
+    })]).reasons).toEqual(['no-exploration-progress:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'no-contact',
+    })]).reasons).toEqual(['invalid-campaign-opening-outcome:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      postCombatRestored: false,
+    })]).reasons).toEqual(['post-exploration-checkpoint-missing:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       saved: false, preCombatRestored: false,
     })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    // Swordhaven can have a genuine early encounter, but no forced one.
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      preCombatEnemyHp: null,
-    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      preCombatEnemyHp: 0,
-    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
-    // Opening ranged shots can legitimately kill the canonical enemy
-    // before an initiative round; the post-combat server save proves it.
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'victory',
-      postCombatSaved: true, postCombatRestored: true,
+      outcome: 'defeat', combatEntered: true, explorationCommitted: 0,
+      postCombatSaved: false, postCombatRestored: false,
     })]).passed).toBe(true);
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'victory',
-      postCombatRestored: false,
-    })]).reasons).toEqual(['no-enemy-contact:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'error', combatEntered: false,
     })]).reasons).toEqual(['bot-execution-failed:cautious']);
