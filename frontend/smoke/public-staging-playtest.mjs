@@ -320,6 +320,19 @@ async function runEpisode(profile, seed, viewport) {
       actor: state.actor, elapsedMs: Date.now() - started,
     });
 
+    const opening = await walkOpeningRoute(page, viewport, readObservation, record);
+    explorationActions += PLAYTEST_OPENING_ROUTE.length;
+    explorationCommitted += PLAYTEST_OPENING_ROUTE.length;
+    explorationMoves += opening.moved;
+    for (const tile of opening.visited) visitedExplorationTiles.add(tile);
+    const afterLetter = await receiveSwordhavenLetter(page, viewport, readObservation, record);
+    explorationActions += 1;
+    explorationCommitted += 1;
+    await saveReloadProbe(page, runId, token, afterLetter, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    });
+    const openingNarrativeVerified = true;
+
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
       if (before.initiative || before.phase !== 'explore') break;
