@@ -473,6 +473,7 @@ async function runEpisode(profile, seed, viewport) {
       meleeOpportunities, repositionSteps,
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
+      openingNarrativeVerified, openingNarrativeId: 'sealed-order',
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -483,7 +484,8 @@ async function runEpisode(profile, seed, viewport) {
       distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
-      warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
+      warnings: result.warnings, saved, restored, openingNarrativeVerified,
+      postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {
