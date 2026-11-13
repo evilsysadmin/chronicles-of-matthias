@@ -209,6 +209,33 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
   return verified;
 }
 
+// A short, authored first-hour waypoint. This is a real public-button walk,
+// not a simulated checkpoint or an internal reducer dispatch.
+async function walkOpeningRoute(page, viewport, readObservation, record) {
+  let before = await readObservation(page);
+  assert.equal(playtestTileKey(before), '9,7', 'Unexpected Swordhaven spawn tile');
+  const visited = [];
+  let moved = 0;
+  for (const step of PLAYTEST_OPENING_ROUTE) {
+    assert.equal(before.phase, 'explore', 'Opening route entered another phase');
+    assert.equal(before.initiative, false, 'Opening route unexpectedly entered combat');
+    if (viewport.touch) await tapMobileAction(page, step.action);
+    else await page.keyboard.press(step.action);
+    await page.waitForFunction(({ turn, x, y }) => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      return Number(root?.getAttribute('data-chronicles-turns')) > turn
+        && Number(root?.getAttribute('data-chronicles-party-x')) === x
+        && Number(root?.getAttribute('data-chronicles-party-y')) === y;
+    }, { turn: before.turns, x: step.x, y: step.y }, { timeout: 7000 });
+    const after = await readObservation(page);
+    if (playtestMovedBetweenTiles(before, after)) moved += 1;
+    visited.push(playtestTileKey(after));
+    record('opening:' + step.action, after);
+    before = after;
+  }
+  return { arrived: before, moved, visited };
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
