@@ -245,6 +245,7 @@ async function runEpisode(profile, seed, viewport) {
     const preCombatCheckpoint = await saveReloadProbe(page, runId, token, initial);
 
     let explorationActions = 0;
+    let explorationCommitted = 0;
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
@@ -298,7 +299,10 @@ async function runEpisode(profile, seed, viewport) {
       const after = await readObservation(page);
       assert.equal(after.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, 'Playtester lost Swordhaven campaign view');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
-      if (after.turns > before.turns) blocked = 0;
+      if (after.turns > before.turns) {
+        blocked = 0;
+        explorationCommitted += 1;
+      }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
     }
@@ -377,12 +381,13 @@ async function runEpisode(profile, seed, viewport) {
     const result = playtestOutcome({ observed: after, enemyHp, combatEntered,
       explorationActions, combatActions: committedCombatActions,
       startHp: initial.partyHp, endHp: after.partyHp,
-      meleeOpportunities, rejectedCombatMoves });
+      meleeOpportunities, rejectedCombatMoves, scenario: 'campaign-start' });
     outcome = result.outcome;
     const metrics = {
       profile, seed, viewport: viewport.width, viewportHeight: viewport.height,
       mapId: initial.mapId, inputMode: viewport.touch === true ? 'touch' : 'keyboard',
-      ...result, explorationActions, combatActions: committedCombatActions,
+      ...result, explorationActions, explorationCommitted,
+      combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
       lastTurn: after.turns, blocked, rejectedCombatMoves,
@@ -395,7 +400,8 @@ async function runEpisode(profile, seed, viewport) {
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
     }).catch(() => {});
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
-      profile, outcome, explorationActions, combatActions: committedCombatActions,
+      profile, outcome, explorationActions, explorationCommitted,
+      combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
     }));
