@@ -15,7 +15,8 @@ import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
-  playtestMobileTouchAction, verifyPlaytestCheckpoint,
+  playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
+  verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
