@@ -2,11 +2,28 @@
 // never hidden React state, Mongo internals, combat RNG, or authored FEN/map.
 export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
-export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
+export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 24;
 
 // Fresh first-person Chronicles expeditions start in Swordhaven. The old
 // eight-square crypt remains legacy content, never the public campaign entry.
 export const PLAYTEST_CAMPAIGN_ENTRY_MAP_ID = 'swordhaven-first-book';
+
+// Turns alone do not prove travel: turning on the spot also advances the
+// counter. Publicly rendered grid coordinates let browser tests distinguish
+// accepted movement, rotation and a colliding wall without React internals.
+export function playtestTileKey(observed) {
+  if (!Number.isInteger(observed?.x) || !Number.isInteger(observed?.y)) return null;
+  return observed.x + ',' + observed.y;
+}
+export function playtestMovedBetweenTiles(before, after) {
+  const from = playtestTileKey(before);
+  const to = playtestTileKey(after);
+  if (from === null || to === null) throw new Error('BOT_MISSING_VISIBLE_PARTY_TILE');
+  if (before.mapId !== after.mapId) throw new Error('BOT_UNEXPECTED_MAP_TRANSITION');
+  const distance = Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+  if (distance > 1) throw new Error('BOT_NONLOCAL_EXPLORATION_MOVEMENT');
+  return distance === 1;
+}
 
 // The cautious profile must exercise an actual small landscape phone.
 // A portrait-only viewport triggers the game's rotate guard, while testing
@@ -124,11 +141,13 @@ export function playtestAcceptance(episodes) {
       || episode.preCombatSaved !== true || episode.preCombatRestored !== true) {
       reasons.push('checkpoint-not-verified:' + profile);
     }
-    // A legitimate early encounter may interrupt exploration, but simply
-    // tapping against walls must not be reported as a working campaign.
+    // Rotation increments turns too. Require actual, distinct traversed
+    // tiles rather than a bot endlessly spinning beside a wall.
     if (episode.combatEntered !== true
-      && !(Number.isInteger(episode.explorationCommitted)
-        && episode.explorationCommitted >= 2)) {
+      && !(Number.isInteger(episode.explorationMoves)
+        && episode.explorationMoves >= 2
+        && Number.isInteger(episode.distinctExplorationTiles)
+        && episode.distinctExplorationTiles >= 3)) {
       reasons.push('no-exploration-progress:' + profile);
     }
     if (episode.combatEntered !== true && episode.outcome !== 'exploration') {
@@ -177,6 +196,8 @@ export function playtestFailureEpisode({ profile, seed, viewport, viewportHeight
     action: String(entry.action ?? '').slice(0, 40),
     turns: Number.isFinite(entry.turns) ? entry.turns : null,
     partyHp: Number.isFinite(entry.partyHp) ? entry.partyHp : null,
+    x: Number.isInteger(entry.x) ? entry.x : null,
+    y: Number.isInteger(entry.y) ? entry.y : null,
     initiative: entry.initiative === true,
     phase: entry.phase ?? null,
     elapsedMs: Number.isFinite(entry.elapsedMs) ? entry.elapsedMs : null,
