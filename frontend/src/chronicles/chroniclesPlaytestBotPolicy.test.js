@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, playtestViewport, playtestAction, playtestOutcome, playtestSummary,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+  playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
 } from '../../smoke/playtest-policy.mjs';
@@ -17,11 +18,20 @@ describe('public staging Playwright bot policy', () => {
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
     expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(12);
     for (const profile of PLAYTEST_PROFILES) {
-      expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('s');
+      expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 5, blocked: 2 })).toBe('ArrowRight');
     }
     expect(() => playtestAction({ profile: 'overpowered', observed: seen() })).toThrow('Unknown');
+  });
+
+  it('starts fresh public first-person playtests in Swordhaven, never the old crypt', () => {
+    expect(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID).toBe('swordhaven-first-book');
+    expect(playtestOutcome({
+      observed: seen(), enemyHp: null, combatEntered: false,
+      explorationActions: 8, combatActions: 0,
+      startHp: 30, endHp: 30, scenario: 'campaign-start',
+    })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
   });
 
   it('emulates an actual landscape phone instead of a blocked portrait viewport', () => {
@@ -118,51 +128,44 @@ describe('public staging Playwright bot policy', () => {
     expect(defeat.warnings).toContain('party-defeated');
     expect(playtestSummary([victory, defeat])).toEqual({
       episodes: 2, measuredEpisodes: 2, errors: 0,
-      wins: 1, defeats: 1, unresolved: 0, averageHpLost: 22, averageActions: 12,
+      wins: 1, defeats: 1, explorationEpisodes: 0, unresolved: 0,
+      averageHpLost: 22, averageActions: 12,
     });
   });
 
-  it('refuses to call a contact-free or unverified staging run successful', () => {
+  it('validates real Swordhaven exploration and persistence without inventing early combat', () => {
     const complete = (profile, overrides = {}) => ({
-      profile, outcome: 'unfinished', combatEntered: true,
-      saved: true, restored: true,
-      preCombatSaved: true, preCombatRestored: true, preCombatEnemyHp: 5,
+      profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
+      saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
+      preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
     });
     const aggressive = complete('aggressive');
-    const cautious = complete('cautious', { outcome: 'defeat' });
+    const cautious = complete('cautious');
     expect(playtestAcceptance([aggressive, cautious])).toEqual({
       passed: true, reasons: [],
     });
-    // A defeat, 32-action timeout or high HP loss is not by itself an
-    // E2E execution failure: preserve that information for balance review.
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      outcome: 'unfinished', warnings: ['long-combat', 'party-lost-70pct-hp'],
-    })]).passed).toBe(true);
+      mapId: 'crypt-eight-squares',
+    })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'no-contact',
-    })])).toEqual({
-      passed: false, reasons: ['no-enemy-contact:cautious'],
-    });
+      explorationCommitted: 0,
+    })]).reasons).toEqual(['no-exploration-progress:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'no-contact',
+    })]).reasons).toEqual(['invalid-campaign-opening-outcome:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      postCombatRestored: false,
+    })]).reasons).toEqual(['post-exploration-checkpoint-missing:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       saved: false, preCombatRestored: false,
     })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    // Swordhaven can have a genuine early encounter, but no forced one.
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      preCombatEnemyHp: null,
-    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      preCombatEnemyHp: 0,
-    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
-    // Opening ranged shots can legitimately kill the canonical enemy
-    // before an initiative round; the post-combat server save proves it.
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'victory',
-      postCombatSaved: true, postCombatRestored: true,
+      outcome: 'defeat', combatEntered: true, explorationCommitted: 0,
+      postCombatSaved: false, postCombatRestored: false,
     })]).passed).toBe(true);
-    expect(playtestAcceptance([aggressive, complete('cautious', {
-      combatEntered: false, outcome: 'victory',
-      postCombatRestored: false,
-    })]).reasons).toEqual(['no-enemy-contact:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'error', combatEntered: false,
     })]).reasons).toEqual(['bot-execution-failed:cautious']);
@@ -218,13 +221,14 @@ describe('public staging Playwright bot policy', () => {
     expect(JSON.stringify(failure)).not.toContain('should-not-be-copied');
     expect(playtestSummary([failure])).toEqual({
       episodes: 1, measuredEpisodes: 0, errors: 1,
-      wins: 0, defeats: 0, unresolved: 0,
+      wins: 0, defeats: 0, explorationEpisodes: 0, unresolved: 0,
       averageHpLost: null, averageActions: null,
     });
     const legitimate = { outcome: 'victory', hpLost: 12, actions: 7 };
     expect(playtestSummary([legitimate, failure])).toMatchObject({
       episodes: 2, measuredEpisodes: 1, errors: 1,
-      wins: 1, unresolved: 0, averageHpLost: 12, averageActions: 7,
+      wins: 1, explorationEpisodes: 0, unresolved: 0,
+      averageHpLost: 12, averageActions: 7,
     });
   });
 
@@ -254,6 +258,36 @@ describe('public staging Playwright bot policy', () => {
     expect(() => verifyPlaytestCheckpoint({
       ...input, saved: checkpoint({ worldFlags: { '__chrRuntime.turns': 2 } }),
     })).toThrow('BOT_CHECKPOINT_INVALID_ENEMY_HP');
+  });
+
+  it('restores Swordhaven checkpoints without requiring a retired crypt enemyHp', () => {
+    const initial = {
+      runId: 'run-swordhaven',
+      currentMapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      worldFlags: {
+        '__chrRuntime.turns': 3,
+        swordhavenSouthCutpurseHp: 6,
+      },
+    };
+    const args = {
+      runId: 'run-swordhaven', mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      turns: 3, saved: initial, restored: initial,
+    };
+    expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    expect(verifyPlaytestCheckpoint({
+      ...args,
+      saved: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
+      restored: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args,
+      restored: { ...initial, worldFlags: {
+        '__chrRuntime.turns': 3, swordhavenSouthCutpurseHp: 5,
+      } },
+    })).toThrow('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, restored: { ...initial, currentMapId: 'crypt-eight-squares' },
+    })).toThrow('BOT_CHECKPOINT_restored_MAP_MISMATCH');
   });
 
   it('flags inaccessible enemies, protracted fights and expensive victories', () => {

@@ -12,7 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
-  PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, verifyPlaytestCheckpoint,
@@ -131,7 +131,7 @@ async function browserSession(browser, username, password, token, viewport) {
     null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
   await page.locator('[data-chronicles-primary-action="continue"] button.is-primary').click();
-  const world = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
+  const world = page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]');
   await world.waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
   if (touch) {
@@ -174,7 +174,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(
     document.querySelector('[data-chronicles-save-menu="home"]')
-    || document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')),
+    || document.querySelector('[data-chronicles-map-id]')),
   null, { timeout: 30_000 });
   if (await page.locator('[data-chronicles-save-menu="home"]').isVisible()) {
     await page.getByRole('button', { name: /Continuar expedición/ }).click();
@@ -183,7 +183,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   const verified = verifyPlaytestCheckpoint({
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
   });
-  await page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]')
+  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
   // Some first-run overlays are session-scoped and may reappear after F5.
   // Resume the same public tutorial dismissal before attempting more moves.
@@ -229,22 +229,23 @@ async function runEpisode(profile, seed, viewport) {
     const creation = await fetch(api + '/chronicles/runs', {
       method: 'POST',
       headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ mapId: 'crypt-eight-squares' }),
+      body: JSON.stringify({ mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID }),
     });
-    assert.equal(creation.status, 201, 'Cannot create authored crypt expedition');
+    assert.equal(creation.status, 201, 'Cannot create Swordhaven campaign expedition');
     const run = await creation.json();
     runId = run.runId;
-    assert.ok(runId && run.currentMapId === 'crypt-eight-squares');
+    assert.ok(runId && run.currentMapId === PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     session = await browserSession(browser, username, password, token, viewport);
     const { page, world, errors } = session;
     const initial = await readObservation(page);
-    assert.equal(initial.mapId, 'crypt-eight-squares');
+    assert.equal(initial.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
     // A defeat is a valid gameplay outcome; it must not skip save/F5 coverage.
     const preCombatCheckpoint = await saveReloadProbe(page, runId, token, initial);
 
     let explorationActions = 0;
+    let explorationCommitted = 0;
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
@@ -296,9 +297,12 @@ async function runEpisode(profile, seed, viewport) {
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
       const after = await readObservation(page);
-      assert.equal(after.mapId, 'crypt-eight-squares', 'Playtester lost the real game view');
+      assert.equal(after.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, 'Playtester lost Swordhaven campaign view');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
-      if (after.turns > before.turns) blocked = 0;
+      if (after.turns > before.turns) {
+        blocked = 0;
+        explorationCommitted += 1;
+      }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
     }
@@ -313,7 +317,7 @@ async function runEpisode(profile, seed, viewport) {
       const before = await readObservation(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
-      assert.ok(before.actor && before.mapId === 'crypt-eight-squares',
+      assert.ok(before.actor && before.mapId === PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
         'Live initiative lost its actor or map');
       const action = playtestAction({ profile, observed: before,
         combatActions: combatActions - rejectedCombatMoves,
@@ -377,12 +381,13 @@ async function runEpisode(profile, seed, viewport) {
     const result = playtestOutcome({ observed: after, enemyHp, combatEntered,
       explorationActions, combatActions: committedCombatActions,
       startHp: initial.partyHp, endHp: after.partyHp,
-      meleeOpportunities, rejectedCombatMoves });
+      meleeOpportunities, rejectedCombatMoves, scenario: 'campaign-start' });
     outcome = result.outcome;
     const metrics = {
       profile, seed, viewport: viewport.width, viewportHeight: viewport.height,
       mapId: initial.mapId, inputMode: viewport.touch === true ? 'touch' : 'keyboard',
-      ...result, explorationActions, combatActions: committedCombatActions,
+      ...result, explorationActions, explorationCommitted,
+      combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
       lastTurn: after.turns, blocked, rejectedCombatMoves,
@@ -395,7 +400,8 @@ async function runEpisode(profile, seed, viewport) {
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
     }).catch(() => {});
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
-      profile, outcome, explorationActions, combatActions: committedCombatActions,
+      profile, outcome, explorationActions, explorationCommitted,
+      combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
     }));
