@@ -38,6 +38,32 @@ describe('public staging Playwright bot policy', () => {
     })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
   });
 
+  it('walks the real Swordhaven opening to the sealed letter, without shortcuts', () => {
+    const start = swordhavenFirstBook.partyStart;
+    expect(start).toEqual({ x: 9, y: 7, direction: 0 });
+    expect(swordhavenFirstBook.id).toBe(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
+    let x = start.x;
+    let y = start.y;
+    let direction = start.direction;
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_OPENING_ROUTE) {
+      if (step.action === 'ArrowLeft') direction = (direction + 3) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).not.toBe('#');
+      } else throw new Error('Unexpected opening action');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    const letter = swordhavenFirstBook.interactables.find(item => item.id === 'sealed-order');
+    expect(letter?.label).toBe('El sobre de la Dama');
+    expect({ x: x + vectors[direction][0], y: y + vectors[direction][1] })
+      .toEqual({ x: letter.x, y: letter.y });
+    expect(letter.action.effects).toContainEqual({
+      type: 'set', key: PLAYTEST_OPENING_FLAG, value: true,
+    });
+  });
+
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
     const base = { mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, x: 9, y: 7, turns: 0 };
     expect(playtestTileKey(base)).toBe('9,7');
