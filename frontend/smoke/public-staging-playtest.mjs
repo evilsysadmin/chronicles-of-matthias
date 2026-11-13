@@ -44,8 +44,14 @@ function observe(page) {
     const root = document.querySelector('[data-chronicles="true"]');
     const rail = document.querySelector('[data-chronicles-initiative="visible"]');
     const attack = document.querySelector('[data-chronicles-touch-action="attack"]');
+    const tile = (name) => {
+      const raw = root?.getAttribute(name);
+      return raw === null || raw === undefined ? null : Number(raw);
+    };
     return {
       mapId: root?.getAttribute('data-chronicles-map-id') || null,
+      x: tile('data-chronicles-party-x'),
+      y: tile('data-chronicles-party-y'),
       phase: root?.getAttribute('data-chronicles-phase') || null,
       turns: Number(root?.getAttribute('data-chronicles-turns')),
       partyHp: Number(root?.getAttribute('data-party-hp-total')),
