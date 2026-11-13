@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, playtestAction, playtestOutcome, playtestSummary,
+  PLAYTEST_PROFILES, playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
 } from '../../smoke/playtest-policy.mjs';
 
@@ -21,6 +21,18 @@ describe('public staging Playwright bot policy', () => {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 5, blocked: 2 })).toBe('ArrowRight');
     }
     expect(() => playtestAction({ profile: 'overpowered', observed: seen() })).toThrow('Unknown');
+  });
+
+  it('emulates an actual landscape phone instead of a blocked portrait viewport', () => {
+    const desktop = playtestViewport('aggressive');
+    const phone = playtestViewport('cautious');
+    expect(desktop).toEqual({ width: 1280, height: 800, touch: false });
+    expect(phone).toEqual({ width: 844, height: 390, touch: true });
+    expect(phone.width).toBeGreaterThan(phone.height);
+    expect(phone.width).toBeLessThanOrEqual(920);
+    expect(phone.height).toBeLessThanOrEqual(620);
+    expect(Object.isFrozen(phone)).toBe(true);
+    expect(() => playtestViewport('invalid')).toThrow('Unknown playtest profile');
   });
 
   it('uses only real mobile HUD slots and never routes combat rotation', () => {

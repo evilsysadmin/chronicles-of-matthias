@@ -13,7 +13,7 @@ import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
-  PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction,
+  PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode,
   playtestMobileTouchAction, verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
@@ -76,7 +76,12 @@ async function tapMobileAction(page, action, { initiative = false } = {}) {
 }
 
 async function browserSession(browser, username, password, token, viewport) {
-  const context = await browser.newContext({ viewport, hasTouch: viewport.width <= 430 });
+  const touch = viewport.touch === true;
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    hasTouch: touch,
+    isMobile: touch,
+  });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -105,6 +110,19 @@ async function browserSession(browser, username, password, token, viewport) {
     }
   });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
+  // Do not silently test a portrait rotation overlay as if it were gameplay.
+  // Both CSS media queries and coarse pointer must agree with the game's
+  // canonical landscape-phone contract before entering the public UI.
+  if (touch) {
+    const device = await page.evaluate(() => ({
+      coarse: window.matchMedia('(pointer: coarse)').matches,
+      landscape: window.matchMedia('(orientation: landscape)').matches,
+      gameLandscape: window.matchMedia('(orientation: landscape) and (max-width: 920px) and (max-height: 620px)').matches,
+      maxTouchPoints: navigator.maxTouchPoints,
+    }));
+    assert.ok(device.coarse && device.landscape && device.gameLandscape
+      && device.maxTouchPoints > 0, 'BOT_MOBILE_LANDSCAPE_EMULATION_FAILED');
+  }
   await page.getByLabel('Usuario').fill(username);
   await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -115,6 +133,10 @@ async function browserSession(browser, username, password, token, viewport) {
   const world = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
   await world.waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
+  if (touch) {
+    await page.locator('[data-chronicles-touch-action="forward"]')
+      .waitFor({ state: 'visible', timeout: 10_000 });
+  }
   const firstSteps = page.locator('[data-chronicles-first-steps]');
   if (await firstSteps.isVisible().catch(() => false)) {
     await firstSteps.getByRole('button', { name: 'Entendido' }).click();
@@ -241,7 +263,7 @@ async function runEpisode(profile, seed, viewport) {
       const action = playtestAction({ profile, observed: before,
         explorationActions, blocked, seed });
       if (!action) break;
-      if (viewport.width <= 430) {
+      if (viewport.touch === true) {
         // The opening volley can be unavailable with a party that has no
         // ranged weapon. Do not fake S through a hardware keyboard.
         if (action === 's') {
@@ -300,7 +322,7 @@ async function runEpisode(profile, seed, viewport) {
         'Bot must not rotate, teleport or use illegal moves in initiative');
       // Every mobile combat action, including Q/E lateral steps, is a
       // genuine touch event on the visible control; desktop uses keyboard.
-      if (viewport.width <= 430) {
+      if (viewport.touch === true) {
         await tapMobileAction(page, action, { initiative: true });
       } else {
         await page.keyboard.press(action);
@@ -357,8 +379,8 @@ async function runEpisode(profile, seed, viewport) {
       meleeOpportunities, rejectedCombatMoves });
     outcome = result.outcome;
     const metrics = {
-      profile, seed, viewport: viewport.width, mapId: initial.mapId,
-      inputMode: viewport.width <= 430 ? 'touch' : 'keyboard',
+      profile, seed, viewport: viewport.width, viewportHeight: viewport.height,
+      mapId: initial.mapId, inputMode: viewport.touch === true ? 'touch' : 'keyboard',
       ...result, explorationActions, combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
@@ -409,12 +431,14 @@ async function runEpisode(profile, seed, viewport) {
 
 try {
   for (const [index, profile] of PLAYTEST_PROFILES.entries()) {
+    const viewport = playtestViewport(profile);
     try {
-      observations.push(await runEpisode(profile, index + 1, index
-        ? { width: 390, height: 844 } : { width: 1280, height: 800 }));
+      observations.push(await runEpisode(profile, index + 1, viewport));
     } catch (error) {
       observations.push(playtestFailureEpisode({
-        profile, seed: index + 1, viewport: index ? 390 : 1280,
+        profile, seed: index + 1, viewport: viewport.width,
+        viewportHeight: viewport.height,
+        inputMode: viewport.touch ? 'touch' : 'keyboard',
         ...(error.playtestDiagnostic ?? {}),
         error: error.message,
       }));

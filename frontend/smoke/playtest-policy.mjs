@@ -4,6 +4,18 @@ export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
+// The cautious profile must exercise an actual small landscape phone.
+// A portrait-only viewport triggers the game's rotate guard, while testing
+// a narrow width in landscape without emulating touch tests a desktop.
+export const PLAYTEST_VIEWPORTS = Object.freeze({
+  aggressive: Object.freeze({ width: 1280, height: 800, touch: false }),
+  cautious: Object.freeze({ width: 844, height: 390, touch: true }),
+});
+export function playtestViewport(profile) {
+  if (!PLAYTEST_PROFILES.includes(profile)) throw new Error('Unknown playtest profile');
+  return PLAYTEST_VIEWPORTS[profile];
+}
+
 // Whitelisted physical controls exposed by the MM3 HUD. In initiative the
 // left/right touch slots become lateral Q/E steps (no camera rotation).
 export const PLAYTEST_MOBILE_TOUCH_ACTIONS = Object.freeze({
@@ -101,8 +113,8 @@ export function playtestSummary(episodes) {
 
 // A bounded, credential-free trace for failed staging runs. It records only
 // observable gameplay state, never credentials, fetch bodies, or token values.
-export function playtestFailureEpisode({ profile, seed, viewport, lastObserved = null,
-  trace = [], error = '' }) {
+export function playtestFailureEpisode({ profile, seed, viewport, viewportHeight = null,
+  inputMode = null, lastObserved = null, trace = [], error = '' }) {
   const attempts = Array.isArray(trace) ? trace : [];
   const recent = attempts.slice(-24).map(entry => ({
     action: String(entry.action ?? '').slice(0, 40),
@@ -113,7 +125,7 @@ export function playtestFailureEpisode({ profile, seed, viewport, lastObserved =
     elapsedMs: Number.isFinite(entry.elapsedMs) ? entry.elapsedMs : null,
   }));
   return {
-    profile, seed, viewport,
+    profile, seed, viewport, viewportHeight, inputMode,
     mapId: lastObserved?.mapId ?? null,
     outcome: 'error',
     warnings: ['bot-execution-failed'],
