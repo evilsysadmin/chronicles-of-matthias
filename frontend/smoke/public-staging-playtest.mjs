@@ -236,6 +236,25 @@ async function walkOpeningRoute(page, viewport, readObservation, record) {
   return { arrived: before, moved, visited };
 }
 
+async function receiveSwordhavenLetter(page, viewport, readObservation, record) {
+  const action = page.locator('[data-chronicles-touch-action="interact"]');
+  await action.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await action.getAttribute('aria-label') || '',
+    /sobre de la dama/i, 'Opening interaction did not offer the sealed letter');
+  const before = await readObservation(page);
+  if (viewport.touch) await action.tap();
+  else await page.keyboard.press('f');
+  await page.waitForFunction(turn => {
+    const root = document.querySelector('[data-chronicles="true"]');
+    return Number(root?.getAttribute('data-chronicles-turns')) > turn;
+  }, before.turns, { timeout: 7000 });
+  const after = await readObservation(page);
+  assert.equal(playtestTileKey(after), playtestTileKey(before),
+    'Interacting with the letter unexpectedly moved the party');
+  record('opening:sealed-order', after);
+  return after;
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
