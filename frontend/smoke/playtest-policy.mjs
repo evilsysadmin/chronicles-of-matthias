@@ -18,7 +18,8 @@ export const PLAYTEST_MOBILE_TOUCH_ACTIONS = Object.freeze({
   s: 'attack',
 });
 export function playtestMobileTouchAction(action, { initiative = false } = {}) {
-  const control = PLAYTEST_MOBILE_TOUCH_ACTIONS[action] ?? null;
+  const control = Object.hasOwn(PLAYTEST_MOBILE_TOUCH_ACTIONS, action)
+    ? PLAYTEST_MOBILE_TOUCH_ACTIONS[action] : null;
   // Reorientation is valid while exploring but categorically forbidden
   // during MM3 initiative; sidesteps are separate Q/E actions.
   if (initiative && (control === 'turn-left' || control === 'turn-right')) return null;
