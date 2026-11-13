@@ -83,12 +83,22 @@ test('duplicate guides distinguish React-owned and orphan DOM nodes without logg
     'never serialize component props, local state or tokens');
 });
 
-test('public folio smoke opens a portrait with desktop double-click or two touch taps', () => {
-  // The real UI intentionally reserves a single click/tap for selecting
-  // the hero; treating it as a dossier shortcut blocks staging publication.
-  assert.match(source, /if \(viewport\.width === 390\) \{\s*await partyPortraits\.first\(\)\.tap\(\);\s*await partyPortraits\.first\(\)\.tap\(\);\s*\} else \{\s*await partyPortraits\.first\(\)\.dblclick\(\);/);
-  assert.ok(!source.includes('await partyPortraits.first().click();'),
-    'single click only selects the hero and must not be used to open the folio');
+test('public folio smoke keeps first-touch selection and delayed second touch real', () => {
+  // The public browser must use actual touch events; a direct click or
+  // programmatic dialog open would hide the original 600 ms mobile failure.
+  const portraits = source.slice(source.indexOf('const partyPortraits ='), source.indexOf('const heroFolio ='));
+  const taps = [...portraits.matchAll(/await partyPortraits\.first\(\)\.tap\(\);/g)]
+    .map(match => match.index);
+  assert.equal(taps.length, 2, 'touch must select then open the same real portrait');
+  const delay = portraits.indexOf('await page.waitForTimeout(800)');
+  assert.ok(taps[0] < delay && delay < taps[1],
+    'the second real touch must survive a deliberate delay beyond the old 600 ms cutoff');
+  assert.ok(portraits.includes("getAttribute('aria-pressed')"),
+    'first touch must visibly select the intended portrait');
+  assert.ok(portraits.includes('await partyPortraits.first().dblclick();'),
+    'desktop still opens with an actual double click');
+  assert.ok(!portraits.includes('await partyPortraits.first().click();'),
+    'single click only selects the hero and must not open the folio');
 });
 
 test('save, reload and resume compare the visible hero name rather than the PV-bearing aria-label', () => {
