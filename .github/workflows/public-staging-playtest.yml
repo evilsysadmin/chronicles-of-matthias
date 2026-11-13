@@ -94,6 +94,9 @@ jobs:
               'Source: `' + report.sourceSha + '`', '',
               'Measured episodes: ' + (report.summary?.measuredEpisodes ?? 'unknown')
                 + ' · Bot errors: ' + (report.summary?.errors ?? 'unknown'), '',
+              'Acceptance: **' + (report.acceptance?.passed === true ? 'PASS' : 'FAIL') + '**', '',
+              ...(report.acceptance?.reasons?.length
+                ? ['Reasons: ' + report.acceptance.reasons.join(', '), ''] : []),
               '| Profile | Outcome | Last turn | Inputs observed | Warnings |',
               '| --- | --- | ---: | ---: | --- |'];
             for (const episode of report.episodes ?? []) {
