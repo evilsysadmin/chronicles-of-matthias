@@ -8,6 +8,17 @@ export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 24;
 // eight-square crypt remains legacy content, never the public campaign entry.
 export const PLAYTEST_CAMPAIGN_ENTRY_MAP_ID = 'swordhaven-first-book';
 
+// Canonical first-hour story beat: reach the sealed letter from Swordhaven's
+// authored (9,7), north-facing spawn, then use the real F/touch control.
+// Positions below are observed and asserted, not teleports or engine writes.
+export const PLAYTEST_OPENING_ROUTE = Object.freeze([
+  Object.freeze({ action: 'ArrowUp', x: 9, y: 6 }),
+  Object.freeze({ action: 'ArrowUp', x: 9, y: 5 }),
+  Object.freeze({ action: 'ArrowLeft', x: 9, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 8, y: 5 }),
+]);
+export const PLAYTEST_OPENING_FLAG = 'commission-received';
+
 // Turns alone do not prove travel: turning on the spot also advances the
 // counter. Publicly rendered grid coordinates let browser tests distinguish
 // accepted movement, rotation and a colliding wall without React internals.
