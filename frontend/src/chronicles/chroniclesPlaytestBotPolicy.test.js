@@ -260,6 +260,36 @@ describe('public staging Playwright bot policy', () => {
     })).toThrow('BOT_CHECKPOINT_INVALID_ENEMY_HP');
   });
 
+  it('restores Swordhaven checkpoints without requiring a retired crypt enemyHp', () => {
+    const initial = {
+      runId: 'run-swordhaven',
+      currentMapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      worldFlags: {
+        '__chrRuntime.turns': 3,
+        swordhavenSouthCutpurseHp: 6,
+      },
+    };
+    const args = {
+      runId: 'run-swordhaven', mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+      turns: 3, saved: initial, restored: initial,
+    };
+    expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    expect(verifyPlaytestCheckpoint({
+      ...args,
+      saved: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
+      restored: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args,
+      restored: { ...initial, worldFlags: {
+        '__chrRuntime.turns': 3, swordhavenSouthCutpurseHp: 5,
+      } },
+    })).toThrow('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, restored: { ...initial, currentMapId: 'crypt-eight-squares' },
+    })).toThrow('BOT_CHECKPOINT_restored_MAP_MISMATCH');
+  });
+
   it('flags inaccessible enemies, protracted fights and expensive victories', () => {
     const unreachable = playtestOutcome({
       observed: seen(), enemyHp: 5, combatEntered: false,
