@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, playtestAction, playtestOutcome, playtestSummary,
-  verifyPlaytestCheckpoint, playtestFailureEpisode,
+  verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -21,6 +21,25 @@ describe('public staging Playwright bot policy', () => {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 5, blocked: 2 })).toBe('ArrowRight');
     }
     expect(() => playtestAction({ profile: 'overpowered', observed: seen() })).toThrow('Unknown');
+  });
+
+  it('uses only real mobile HUD slots and never routes combat rotation', () => {
+    expect(playtestMobileTouchAction('ArrowUp')).toBe('forward');
+    expect(playtestMobileTouchAction('ArrowDown')).toBe('backward');
+    expect(playtestMobileTouchAction('ArrowLeft')).toBe('turn-left');
+    expect(playtestMobileTouchAction('ArrowRight')).toBe('turn-right');
+    expect(playtestMobileTouchAction('ArrowRight', { initiative: true })).toBeNull();
+    expect(playtestMobileTouchAction('ArrowLeft', { initiative: true })).toBeNull();
+    expect(playtestMobileTouchAction('q', { initiative: true })).toBe('strafe-left');
+    expect(playtestMobileTouchAction('e', { initiative: true })).toBe('strafe-right');
+    expect(playtestMobileTouchAction('q')).toBe('strafe-left');
+    expect(playtestMobileTouchAction('e')).toBe('strafe-right');
+    expect(playtestMobileTouchAction('s')).toBe('attack');
+    expect(playtestMobileTouchAction('a')).toBe('attack');
+    expect(playtestMobileTouchAction('b')).toBe('block');
+    for (const forbidden of ['turn-left', 'turn-right', 'Escape', null]) {
+      expect(playtestMobileTouchAction(forbidden)).toBeNull();
+    }
   });
 
   it('never acts during enemy initiative or after a defeat', () => {

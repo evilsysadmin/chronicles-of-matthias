@@ -14,7 +14,8 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction,
-  playtestOutcome, playtestSummary, playtestFailureEpisode, verifyPlaytestCheckpoint,
+  playtestOutcome, playtestSummary, playtestFailureEpisode,
+  playtestMobileTouchAction, verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -53,6 +54,25 @@ function observe(page) {
       meleeReady: attack?.getAttribute('data-melee-ready') === 'true' && !attack?.disabled,
     };
   });
+}
+
+// Exercise the displayed stone controls on the 390px profile. No synthetic
+// keyboard input or invocation of internal React handlers is allowed.
+async function tapMobileAction(page, action, { initiative = false } = {}) {
+  const control = playtestMobileTouchAction(action, { initiative });
+  assert.ok(control, 'BOT_TOUCH_UNSUPPORTED_ACTION ' + String(action));
+  const movement = ['forward', 'backward', 'strafe-left', 'strafe-right'].includes(control);
+  const selector = movement
+    ? '[data-chronicles-effective-action="' + control + '"]'
+    : '[data-chronicles-touch-action="' + control + '"]';
+  const button = page.locator(selector);
+  assert.equal(await button.count(), 1, 'BOT_TOUCH_CONTROL_MISSING ' + control);
+  assert.equal(await button.isEnabled(), true, 'BOT_TOUCH_CONTROL_DISABLED ' + control);
+  if (action === 'a' || action === 's') {
+    assert.equal(await button.getAttribute('data-chronicles-touch-attack-mode'),
+      action === 'a' ? 'melee' : 'missile', 'BOT_TOUCH_WRONG_ATTACK_MODE');
+  }
+  await button.tap();
 }
 
 async function browserSession(browser, username, password, token, viewport) {
@@ -221,7 +241,23 @@ async function runEpisode(profile, seed, viewport) {
       const action = playtestAction({ profile, observed: before,
         explorationActions, blocked, seed });
       if (!action) break;
-      await page.keyboard.press(action);
+      if (viewport.width <= 430) {
+        // The opening volley can be unavailable with a party that has no
+        // ranged weapon. Do not fake S through a hardware keyboard.
+        if (action === 's') {
+          const attack = page.locator('[data-chronicles-touch-action="attack"]');
+          const available = await attack.getAttribute('data-chronicles-touch-attack-mode') === 'missile'
+            && await attack.isEnabled();
+          if (!available) {
+            explorationActions += 1;
+            record('s-unavailable', before);
+            continue;
+          }
+        }
+        await tapMobileAction(page, action, { initiative: false });
+      } else {
+        await page.keyboard.press(action);
+      }
       explorationActions += 1;
       try {
         await page.waitForFunction(previous => {
@@ -262,11 +298,10 @@ async function runEpisode(profile, seed, viewport) {
       const isMove = ['ArrowUp', 'ArrowDown', 'q', 'e'].includes(action);
       assert.ok(isMove || action === 'a' || action === 'b',
         'Bot must not rotate, teleport or use illegal moves in initiative');
-      // Once per profile, use the real mobile attack/block button when selected.
-      if (viewport.width <= 430 && combatActions === 0 && !isMove) {
-        const button = page.locator('[data-chronicles-touch-action="' +
-          (action === 'a' ? 'attack' : 'block') + '"]');
-        await button.click();
+      // Every mobile combat action, including Q/E lateral steps, is a
+      // genuine touch event on the visible control; desktop uses keyboard.
+      if (viewport.width <= 430) {
+        await tapMobileAction(page, action, { initiative: true });
       } else {
         await page.keyboard.press(action);
       }
@@ -323,6 +358,7 @@ async function runEpisode(profile, seed, viewport) {
     outcome = result.outcome;
     const metrics = {
       profile, seed, viewport: viewport.width, mapId: initial.mapId,
+      inputMode: viewport.width <= 430 ? 'touch' : 'keyboard',
       ...result, explorationActions, combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
