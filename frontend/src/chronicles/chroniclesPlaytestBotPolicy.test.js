@@ -328,6 +328,21 @@ describe('public staging Playwright bot policy', () => {
       turns: 3, saved: initial, restored: initial,
     };
     expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    const storySaved = { ...initial, worldFlags: {
+      ...initial.worldFlags, [PLAYTEST_OPENING_FLAG]: true,
+    } };
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: initial,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: initial, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
     expect(verifyPlaytestCheckpoint({
       ...args,
       saved: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
