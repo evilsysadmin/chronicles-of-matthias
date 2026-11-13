@@ -150,6 +150,9 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestAcceptance([aggressive, complete('cautious', {
       preCombatEnemyHp: null,
     })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      preCombatEnemyHp: 0,
+    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
     // Opening ranged shots can legitimately kill the canonical enemy
     // before an initiative round; the post-combat server save proves it.
     expect(playtestAcceptance([aggressive, complete('cautious', {
