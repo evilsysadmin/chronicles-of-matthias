@@ -184,6 +184,7 @@ describe('public staging Playwright bot policy', () => {
       profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
       explorationMoves: 5, distinctExplorationTiles: 6,
+      openingNarrativeVerified: true,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
@@ -193,6 +194,9 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestAcceptance([aggressive, cautious])).toEqual({
       passed: true, reasons: [],
     });
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      openingNarrativeVerified: false,
+    })]).reasons).toEqual(['opening-letter-not-verified:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
