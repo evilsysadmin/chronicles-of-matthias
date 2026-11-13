@@ -107,9 +107,12 @@
   gastando su acción completa, acercándose también a tiradores traseros
   sin girarse. Nunca moverse durante turno enemigo ni tras gastar la acción.
   Un choque contra pared/enemigo se rechaza sin coste; no se activan
-  interacciones ni transiciones de mapa en combate. Un enemigo comprometido
-  adyacente detrás sigue siendo atacable con A. Al vencer y guardar se
-  conserva la dirección original, sin giro manual ni automático.
+  interacciones ni transiciones de mapa en combate. Al entrar en iniciativa
+  por contacto cuerpo a cuerpo, la orientación canónica se encara una vez al
+  agresor realmente adyacente (incluso desde atrás); no hay giros posteriores.
+  Un enemigo comprometido adyacente detrás sigue siendo atacable con A. Al
+  vencer, guardar y restaurar mediante F5, se conserva la dirección canónica
+  adoptada en el contacto, sin nuevas rotaciones.
   **Disparos a distancia MM3 durante exploración:** enemigos con tiro legal
   responden por acción exploratoria consumida, usando el motor real. Los
   arqueros no abren por sí solos la iniciativa automática ni bloquean caminar
