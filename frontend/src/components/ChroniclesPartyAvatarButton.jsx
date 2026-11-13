@@ -1,9 +1,16 @@
 import { useRef } from 'react';
 
+// Touch selection survives a slow paint: the selected hero's next touch
+// opens its dossier, even when the browser takes over 600 ms to render.
+export function chroniclesSecondTouchOpensSheet({ touch, previouslyTouched, selected }) {
+  return touch && previouslyTouched && selected;
+}
+
 /**
  * Keep party navigation distinct from opening a hero's dossier.
  * The first pointer click selects; the second opens the sheet. Enter on a
- * focused portrait is an explicit keyboard alternative. During spell target
+ * focused portrait is an explicit keyboard alternative. A second tap on
+ * the selected hero opens the sheet without a timeout. During spell target
  * choice the first click is owned by the spell and must never open a sheet.
  */
 export default function ChroniclesPartyAvatarButton({
@@ -12,16 +19,16 @@ export default function ChroniclesPartyAvatarButton({
   const targetedOnFirstClick = useRef(false);
   const openedBySecondClick = useRef(false);
   const pointerType = useRef('');
-  const lastTouchClickAt = useRef(0);
+  const previouslyTouched = useRef(false);
   const targetClickAt = useRef(0);
 
   const handleClick = (event) => {
-    const touch = pointerType.current === 'touch' && event.detail > 0;
+    const touch = pointerType.current === 'touch';
     pointerType.current = '';
     if (targeting) {
       targetedOnFirstClick.current = true;
       targetClickAt.current = event.timeStamp;
-      lastTouchClickAt.current = 0;
+      previouslyTouched.current = false;
       onTarget?.();
       return;
     }
@@ -29,21 +36,25 @@ export default function ChroniclesPartyAvatarButton({
     // not to an unrelated character sheet opened by its subsequent dblclick.
     if (targetedOnFirstClick.current && event.timeStamp - targetClickAt.current < 750) {
       targetedOnFirstClick.current = false;
+      previouslyTouched.current = false;
       openedBySecondClick.current = true;
       return;
     }
     targetedOnFirstClick.current = false;
 
-    const touchDoubleTap = touch && lastTouchClickAt.current > 0
-      && event.timeStamp - lastTouchClickAt.current < 600;
-    if (touch) lastTouchClickAt.current = event.timeStamp;
-    if (event.detail >= 2 || touchDoubleTap) {
+    const secondTouch = chroniclesSecondTouchOpensSheet({
+      touch,
+      previouslyTouched: previouslyTouched.current,
+      selected: props['aria-pressed'] === true,
+    });
+    if (event.detail >= 2 || secondTouch) {
       // Browsers may dispatch click(clickCount=2) before dblclick; open once.
-      lastTouchClickAt.current = 0;
+      previouslyTouched.current = false;
       openedBySecondClick.current = true;
       onOpen?.();
       return;
     }
+    previouslyTouched.current = touch;
     openedBySecondClick.current = false;
     onSelect?.();
   };
