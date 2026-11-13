@@ -36,6 +36,22 @@ describe('public staging Playwright bot policy', () => {
     })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
   });
 
+  it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
+    const base = { mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, x: 9, y: 7, turns: 0 };
+    expect(playtestTileKey(base)).toBe('9,7');
+    expect(playtestMovedBetweenTiles(base, { ...base, x: 9, y: 6, turns: 1 })).toBe(true);
+    expect(playtestMovedBetweenTiles(base, { ...base, turns: 1 })).toBe(false);
+    expect(playtestMovedBetweenTiles(base, { ...base })).toBe(false);
+    expect(playtestTileKey({ x: null, y: 7 })).toBeNull();
+    expect(() => playtestMovedBetweenTiles(base, { ...base, x: null }))
+      .toThrow('BOT_MISSING_VISIBLE_PARTY_TILE');
+    expect(() => playtestMovedBetweenTiles(base, { ...base, x: 12 }))
+      .toThrow('BOT_NONLOCAL_EXPLORATION_MOVEMENT');
+    expect(() => playtestMovedBetweenTiles(base, {
+      ...base, mapId: 'another-area',
+    })).toThrow('BOT_UNEXPECTED_MAP_TRANSITION');
+  });
+
   it('emulates an actual landscape phone instead of a blocked portrait viewport', () => {
     const desktop = playtestViewport('aggressive');
     const phone = playtestViewport('cautious');
@@ -153,7 +169,10 @@ describe('public staging Playwright bot policy', () => {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      explorationCommitted: 0,
+      explorationCommitted: 6, explorationMoves: 0, distinctExplorationTiles: 1,
+    })]).reasons).toEqual(['no-exploration-progress:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      explorationCommitted: 6, explorationMoves: 5, distinctExplorationTiles: 2,
     })]).reasons).toEqual(['no-exploration-progress:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'no-contact',
