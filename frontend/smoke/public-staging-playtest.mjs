@@ -158,7 +158,7 @@ async function browserSession(browser, username, password, token, viewport) {
  * This runs before the first risky move, guaranteeing both profiles exercise
  * persistence even if combat later ends in a legitimate defeat.
  */
-async function saveReloadProbe(page, runId, token, expected) {
+async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [] } = {}) {
   assert.equal(expected.phase, 'explore', 'Save probe must start outside combat');
   assert.equal(expected.initiative, false, 'Cannot save while initiative is active');
   await page.getByLabel('Abrir menú de Chronicles').click();
@@ -190,6 +190,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   const restored = await (await resumed).json();
   const verified = verifyPlaytestCheckpoint({
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
+    requiredFlags,
   });
   await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
