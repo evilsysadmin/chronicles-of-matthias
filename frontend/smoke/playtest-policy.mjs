@@ -131,7 +131,10 @@ export function playtestAcceptance(episodes) {
         && episode.explorationCommitted >= 2)) {
       reasons.push('no-exploration-progress:' + profile);
     }
-    if (episode.outcome === 'exploration'
+    if (episode.combatEntered !== true && episode.outcome !== 'exploration') {
+      reasons.push('invalid-campaign-opening-outcome:' + profile);
+    }
+    if (episode.combatEntered !== true
       && (episode.postCombatSaved !== true || episode.postCombatRestored !== true)) {
       reasons.push('post-exploration-checkpoint-missing:' + profile);
     }
@@ -158,7 +161,8 @@ export function playtestSummary(episodes) {
     errors: episodes.length - measured.length,
     wins: measured.filter(episode => episode.outcome === 'victory').length,
     defeats: measured.filter(episode => episode.outcome === 'defeat').length,
-    unresolved: measured.filter(episode => !['victory', 'defeat'].includes(episode.outcome)).length,
+    explorationEpisodes: measured.filter(episode => episode.outcome === 'exploration').length,
+    unresolved: measured.filter(episode => !['victory', 'defeat', 'exploration'].includes(episode.outcome)).length,
     averageHpLost: mean('hpLost'),
     averageActions: mean('actions'),
   };
