@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, playtestTileKey,
+  playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
@@ -16,7 +17,8 @@ describe('public staging Playwright bot policy', () => {
   it('supports two reproducible strategies with bounded runtime', () => {
     expect(PLAYTEST_PROFILES).toEqual(['aggressive', 'cautious']);
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
-    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(12);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeGreaterThanOrEqual(20);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(32);
     for (const profile of PLAYTEST_PROFILES) {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
@@ -137,6 +139,7 @@ describe('public staging Playwright bot policy', () => {
     const complete = (profile, overrides = {}) => ({
       profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
+      explorationMoves: 5, distinctExplorationTiles: 6,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
