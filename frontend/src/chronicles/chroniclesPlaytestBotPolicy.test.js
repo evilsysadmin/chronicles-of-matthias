@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, playtestViewport, playtestAction, playtestOutcome, playtestSummary,
+  playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
 } from '../../smoke/playtest-policy.mjs';
 
@@ -119,6 +120,58 @@ describe('public staging Playwright bot policy', () => {
       episodes: 2, measuredEpisodes: 2, errors: 0,
       wins: 1, defeats: 1, unresolved: 0, averageHpLost: 22, averageActions: 12,
     });
+  });
+
+  it('refuses to call a contact-free or unverified staging run successful', () => {
+    const complete = (profile, overrides = {}) => ({
+      profile, outcome: 'unfinished', combatEntered: true,
+      saved: true, restored: true,
+      preCombatSaved: true, preCombatRestored: true, preCombatEnemyHp: 5,
+      ...overrides,
+    });
+    const aggressive = complete('aggressive');
+    const cautious = complete('cautious', { outcome: 'defeat' });
+    expect(playtestAcceptance([aggressive, cautious])).toEqual({
+      passed: true, reasons: [],
+    });
+    // A defeat, 32-action timeout or high HP loss is not by itself an
+    // E2E execution failure: preserve that information for balance review.
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'unfinished', warnings: ['long-combat', 'party-lost-70pct-hp'],
+    })]).passed).toBe(true);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      combatEntered: false, outcome: 'no-contact',
+    })])).toEqual({
+      passed: false, reasons: ['no-enemy-contact:cautious'],
+    });
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      saved: false, preCombatRestored: false,
+    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      preCombatEnemyHp: null,
+    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      preCombatEnemyHp: 0,
+    })]).reasons).toEqual(['checkpoint-not-verified:cautious']);
+    // Opening ranged shots can legitimately kill the canonical enemy
+    // before an initiative round; the post-combat server save proves it.
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      combatEntered: false, outcome: 'victory',
+      postCombatSaved: true, postCombatRestored: true,
+    })]).passed).toBe(true);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      combatEntered: false, outcome: 'victory',
+      postCombatRestored: false,
+    })]).reasons).toEqual(['no-enemy-contact:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'error', combatEntered: false,
+    })]).reasons).toEqual(['bot-execution-failed:cautious']);
+    expect(playtestAcceptance([aggressive]).reasons).toEqual(['missing-profile:cautious']);
+    expect(playtestAcceptance([aggressive, aggressive, cautious]).reasons)
+      .toEqual(['duplicate-profile:aggressive']);
+    expect(playtestAcceptance([aggressive, cautious, { profile: 'unknown' }]).reasons)
+      .toEqual(['unexpected-profile']);
+    expect(playtestAcceptance(null)).toEqual({ passed: false, reasons: ['missing-episodes'] });
   });
 
   it('flags sustained lack of legal melee from accepted combat actions only', () => {

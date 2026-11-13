@@ -89,6 +89,51 @@ export function playtestOutcome({ observed, enemyHp, combatEntered,
   return { outcome, warnings, hpLost, actions };
 }
 
+/**
+ * Acceptance is distinct from balance warnings: defeat, long combat and
+ * rejected collision probes are useful findings, not technical failures.
+ * But a green autonomous playtest must prove that BOTH canonical profiles
+ * actually encountered the authored enemy (initiative OR a verified
+ * pre-contact victory) and survived an authoritative save/F5 checkpoint.
+ *
+ * This evaluates only public-playtest measurements, never hidden game state.
+ */
+export function playtestAcceptance(episodes) {
+  const reasons = [];
+  if (!Array.isArray(episodes)) {
+    return { passed: false, reasons: ['missing-episodes'] };
+  }
+  for (const profile of PLAYTEST_PROFILES) {
+    const matching = episodes.filter(episode => episode?.profile === profile);
+    if (matching.length !== 1) {
+      reasons.push(matching.length ? 'duplicate-profile:' + profile : 'missing-profile:' + profile);
+      continue;
+    }
+    const episode = matching[0];
+    if (episode.outcome === 'error') {
+      reasons.push('bot-execution-failed:' + profile);
+      continue;
+    }
+    if (episode.saved !== true || episode.restored !== true
+      || episode.preCombatSaved !== true || episode.preCombatRestored !== true
+      || !Number.isInteger(episode.preCombatEnemyHp)
+      || episode.preCombatEnemyHp <= 0) {
+      reasons.push('checkpoint-not-verified:' + profile);
+    }
+    // A real opening volley can kill the enemy without initiative. Accept
+    // that as contact ONLY when the server confirmed the resulting victory.
+    const precontactVictory = episode.outcome === 'victory'
+      && episode.postCombatSaved === true && episode.postCombatRestored === true;
+    if (episode.combatEntered !== true && !precontactVictory) {
+      reasons.push('no-enemy-contact:' + profile);
+    }
+  }
+  for (const episode of episodes) {
+    if (!PLAYTEST_PROFILES.includes(episode?.profile)) reasons.push('unexpected-profile');
+  }
+  return { passed: reasons.length === 0, reasons };
+}
+
 // Keep runtime failures separate from observed gameplay outcomes. Otherwise a
 // failed browser/login test becomes an artificial zero-action, zero-damage run
 // and silently improves the average combat metrics.
