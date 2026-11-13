@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, playtestViewport, playtestAction, playtestOutcome, playtestSummary,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+  playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
 } from '../../smoke/playtest-policy.mjs';
@@ -17,11 +18,20 @@ describe('public staging Playwright bot policy', () => {
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
     expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(12);
     for (const profile of PLAYTEST_PROFILES) {
-      expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('s');
+      expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 5, blocked: 2 })).toBe('ArrowRight');
     }
     expect(() => playtestAction({ profile: 'overpowered', observed: seen() })).toThrow('Unknown');
+  });
+
+  it('starts fresh public first-person playtests in Swordhaven, never the old crypt', () => {
+    expect(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID).toBe('swordhaven-first-book');
+    expect(playtestOutcome({
+      observed: seen(), enemyHp: null, combatEntered: false,
+      explorationActions: 8, combatActions: 0,
+      startHp: 30, endHp: 30, scenario: 'campaign-start',
+    })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
   });
 
   it('emulates an actual landscape phone instead of a blocked portrait viewport', () => {
@@ -118,7 +128,8 @@ describe('public staging Playwright bot policy', () => {
     expect(defeat.warnings).toContain('party-defeated');
     expect(playtestSummary([victory, defeat])).toEqual({
       episodes: 2, measuredEpisodes: 2, errors: 0,
-      wins: 1, defeats: 1, unresolved: 0, averageHpLost: 22, averageActions: 12,
+      wins: 1, defeats: 1, explorationEpisodes: 0, unresolved: 0,
+      averageHpLost: 22, averageActions: 12,
     });
   });
 
@@ -218,13 +229,14 @@ describe('public staging Playwright bot policy', () => {
     expect(JSON.stringify(failure)).not.toContain('should-not-be-copied');
     expect(playtestSummary([failure])).toEqual({
       episodes: 1, measuredEpisodes: 0, errors: 1,
-      wins: 0, defeats: 0, unresolved: 0,
+      wins: 0, defeats: 0, explorationEpisodes: 0, unresolved: 0,
       averageHpLost: null, averageActions: null,
     });
     const legitimate = { outcome: 'victory', hpLost: 12, actions: 7 };
     expect(playtestSummary([legitimate, failure])).toMatchObject({
       episodes: 2, measuredEpisodes: 1, errors: 1,
-      wins: 1, unresolved: 0, averageHpLost: 12, averageActions: 7,
+      wins: 1, explorationEpisodes: 0, unresolved: 0,
+      averageHpLost: 12, averageActions: 7,
     });
   });
 
