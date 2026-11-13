@@ -4,7 +4,6 @@ export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
-
 export function playtestAction({ profile, observed, explorationActions = 0,
   combatActions = 0, blocked = 0, repositionSteps = 0, seed = 0 }) {
   if (!PLAYTEST_PROFILES.includes(profile)) throw new Error('Unknown playtest profile');
