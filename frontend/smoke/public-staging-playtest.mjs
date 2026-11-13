@@ -12,7 +12,8 @@ import { randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
-  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
+  PLAYTEST_OPENING_FLAG, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
@@ -157,7 +158,7 @@ async function browserSession(browser, username, password, token, viewport) {
  * This runs before the first risky move, guaranteeing both profiles exercise
  * persistence even if combat later ends in a legitimate defeat.
  */
-async function saveReloadProbe(page, runId, token, expected) {
+async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [] } = {}) {
   assert.equal(expected.phase, 'explore', 'Save probe must start outside combat');
   assert.equal(expected.initiative, false, 'Cannot save while initiative is active');
   await page.getByLabel('Abrir menú de Chronicles').click();
@@ -189,6 +190,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   const restored = await (await resumed).json();
   const verified = verifyPlaytestCheckpoint({
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
+    requiredFlags,
   });
   await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
@@ -205,6 +207,52 @@ async function saveReloadProbe(page, runId, token, expected) {
   assert.equal(playtestTileKey(displayed), playtestTileKey(expected),
     'F5 changed visible party tile');
   return verified;
+}
+
+// A short, authored first-hour waypoint. This is a real public-button walk,
+// not a simulated checkpoint or an internal reducer dispatch.
+async function walkOpeningRoute(page, viewport, readObservation, record) {
+  let before = await readObservation(page);
+  assert.equal(playtestTileKey(before), '9,7', 'Unexpected Swordhaven spawn tile');
+  const visited = [];
+  let moved = 0;
+  for (const step of PLAYTEST_OPENING_ROUTE) {
+    assert.equal(before.phase, 'explore', 'Opening route entered another phase');
+    assert.equal(before.initiative, false, 'Opening route unexpectedly entered combat');
+    if (viewport.touch) await tapMobileAction(page, step.action);
+    else await page.keyboard.press(step.action);
+    await page.waitForFunction(({ turn, x, y }) => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      return Number(root?.getAttribute('data-chronicles-turns')) > turn
+        && Number(root?.getAttribute('data-chronicles-party-x')) === x
+        && Number(root?.getAttribute('data-chronicles-party-y')) === y;
+    }, { turn: before.turns, x: step.x, y: step.y }, { timeout: 7000 });
+    const after = await readObservation(page);
+    if (playtestMovedBetweenTiles(before, after)) moved += 1;
+    visited.push(playtestTileKey(after));
+    record('opening:' + step.action, after);
+    before = after;
+  }
+  return { arrived: before, moved, visited };
+}
+
+async function receiveSwordhavenLetter(page, viewport, readObservation, record) {
+  const action = page.locator('[data-chronicles-touch-action="interact"]');
+  await action.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await action.getAttribute('aria-label') || '',
+    /sobre de la dama/i, 'Opening interaction did not offer the sealed letter');
+  const before = await readObservation(page);
+  if (viewport.touch) await action.tap();
+  else await page.keyboard.press('f');
+  await page.waitForFunction(turn => {
+    const root = document.querySelector('[data-chronicles="true"]');
+    return Number(root?.getAttribute('data-chronicles-turns')) > turn;
+  }, before.turns, { timeout: 7000 });
+  const after = await readObservation(page);
+  assert.equal(playtestTileKey(after), playtestTileKey(before),
+    'Interacting with the letter unexpectedly moved the party');
+  record('opening:sealed-order', after);
+  return after;
 }
 
 async function runEpisode(profile, seed, viewport) {
@@ -271,6 +319,19 @@ async function runEpisode(profile, seed, viewport) {
       initiative: state.initiative, phase: state.phase,
       actor: state.actor, elapsedMs: Date.now() - started,
     });
+
+    const opening = await walkOpeningRoute(page, viewport, readObservation, record);
+    explorationActions += PLAYTEST_OPENING_ROUTE.length;
+    explorationCommitted += PLAYTEST_OPENING_ROUTE.length;
+    explorationMoves += opening.moved;
+    for (const tile of opening.visited) visitedExplorationTiles.add(tile);
+    const afterLetter = await receiveSwordhavenLetter(page, viewport, readObservation, record);
+    explorationActions += 1;
+    explorationCommitted += 1;
+    await saveReloadProbe(page, runId, token, afterLetter, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    });
+    const openingNarrativeVerified = true;
 
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
@@ -412,6 +473,7 @@ async function runEpisode(profile, seed, viewport) {
       meleeOpportunities, repositionSteps,
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
+      openingNarrativeVerified, openingNarrativeId: 'sealed-order',
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -422,7 +484,8 @@ async function runEpisode(profile, seed, viewport) {
       distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
-      warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
+      warnings: result.warnings, saved, restored, openingNarrativeVerified,
+      postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {

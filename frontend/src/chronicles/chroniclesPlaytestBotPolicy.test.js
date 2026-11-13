@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, playtestTileKey,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
+  PLAYTEST_OPENING_FLAG, playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
@@ -34,6 +36,32 @@ describe('public staging Playwright bot policy', () => {
       explorationActions: 8, combatActions: 0,
       startHp: 30, endHp: 30, scenario: 'campaign-start',
     })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
+  });
+
+  it('walks the real Swordhaven opening to the sealed letter, without shortcuts', () => {
+    const start = swordhavenFirstBook.partyStart;
+    expect(start).toEqual({ x: 9, y: 7, direction: 0 });
+    expect(swordhavenFirstBook.id).toBe(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
+    let x = start.x;
+    let y = start.y;
+    let direction = start.direction;
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_OPENING_ROUTE) {
+      if (step.action === 'ArrowLeft') direction = (direction + 3) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).not.toBe('#');
+      } else throw new Error('Unexpected opening action');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    const letter = swordhavenFirstBook.interactables.find(item => item.id === 'sealed-order');
+    expect(letter?.label).toBe('El sobre de la Dama');
+    expect({ x: x + vectors[direction][0], y: y + vectors[direction][1] })
+      .toEqual({ x: letter.x, y: letter.y });
+    expect(letter.action.effects).toContainEqual({
+      type: 'set', key: PLAYTEST_OPENING_FLAG, value: true,
+    });
   });
 
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
@@ -156,6 +184,7 @@ describe('public staging Playwright bot policy', () => {
       profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
       explorationMoves: 5, distinctExplorationTiles: 6,
+      openingNarrativeVerified: true,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
@@ -165,6 +194,9 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestAcceptance([aggressive, cautious])).toEqual({
       passed: true, reasons: [],
     });
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      openingNarrativeVerified: false,
+    })]).reasons).toEqual(['opening-letter-not-verified:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
@@ -296,6 +328,21 @@ describe('public staging Playwright bot policy', () => {
       turns: 3, saved: initial, restored: initial,
     };
     expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    const storySaved = { ...initial, worldFlags: {
+      ...initial.worldFlags, [PLAYTEST_OPENING_FLAG]: true,
+    } };
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: initial,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: initial, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
     expect(verifyPlaytestCheckpoint({
       ...args,
       saved: { ...initial, worldFlags: { '__chrRuntime.turns': 3 } },
