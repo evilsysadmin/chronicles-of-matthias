@@ -109,9 +109,12 @@ describe('MM3 P0 rear ranged enemy no longer traps an unarmed party', () => {
     const hero = fight.initiative.order[fight.initiative.cursor];
     expect(chroniclesEnemyAttackTarget(fight, archer)).toBeTruthy();
     expect(chroniclesEnemyAttackTarget(fight, flank)).toBeTruthy();
-    // The ordinary world ray sees the bystander, but the combat ray must
-    // never use a target not present in the current initiative order.
-    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(bystander.id);
+    // Entry into melee turns toward the actual adjacent captain exactly
+    // once. The deserter remains a living bystander to the north, but cannot
+    // steal the combat target even if a legacy save faces that direction.
+    expect(fight.direction).toBe(1);
+    expect(chroniclesEnemyTargetAhead(fight, 1)?.enemy.id).toBe(flank.id);
+    expect(chroniclesEnemyTargetAhead({ ...fight, direction: 0 }, 1)?.enemy.id).toBe(bystander.id);
     expect(chroniclesCombatMeleeTarget(fight)?.enemy.id).toBe(flank.id);
     expect(chroniclesCombatMissileTarget(fight, 3)?.enemy.id).toBe(flank.id);
     expect(chroniclesMM3MeleeAvailable(fight, hero.id)).toBe(true);

@@ -289,7 +289,26 @@ export function chroniclesStartInitiativeCombat(state, enemies, options = {}) {
   // can start party-only combat after the initiative roller drops its enemy.
   const engaged = [...engagedById.values()].filter((enemy) => validActorId(enemy?.id));
   if (!engaged.length) return state;
-  const deployedState = chroniclesDeployPartyForCombat(state);
+  // MM3 locks manual turning during initiative. Face a real adjacent melee
+  // attacker once, at contact, so an ambush from behind is not invisible.
+  // A distant forced/scripted enemy or a squadmate must not swivel the party.
+  // Tactics retains its existing direction and encounter rules.
+  const contactAttacker = state.combatRules === 'mm3'
+    ? engaged.find((enemy) => {
+      const position = chroniclesRuntimeEnemyPosition(state, enemy);
+      return chroniclesEnemyAttackReach(enemy) === 1
+        && manhattanDistance({ x: state.x, y: state.y }, position) === 1
+        && chroniclesEnemyCanAttackParty(state, enemy, position);
+    })
+    : null;
+  const attackerPosition = contactAttacker
+    ? chroniclesRuntimeEnemyPosition(state, contactAttacker) : null;
+  const dx = attackerPosition ? attackerPosition.x - state.x : 0;
+  const dy = attackerPosition ? attackerPosition.y - state.y : 0;
+  const facing = dx > 0 ? 1 : dx < 0 ? 3 : dy > 0 ? 2 : 0;
+  const deployedState = chroniclesDeployPartyForCombat(
+    attackerPosition ? { ...state, direction: facing } : state,
+  );
   const initiative = chroniclesRollInitiative(deployedState, engaged, options);
   if (!initiative.order.length) return state;
   const { combatWard: _staleWard, combatBlock: _staleBlock,
