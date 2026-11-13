@@ -4,6 +4,10 @@ export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
+// Fresh first-person Chronicles expeditions start in Swordhaven. The old
+// eight-square crypt remains legacy content, never the public campaign entry.
+export const PLAYTEST_CAMPAIGN_ENTRY_MAP_ID = 'swordhaven-first-book';
+
 // The cautious profile must exercise an actual small landscape phone.
 // A portrait-only viewport triggers the game's rotate guard, while testing
 // a narrow width in landscape without emulating touch tests a desktop.
@@ -61,19 +65,21 @@ export function playtestAction({ profile, observed, explorationActions = 0,
     if (profile === 'cautious' && (combatActions + seed) % 3 === 0) return 'b';
     return 'a';
   }
-  if (explorationActions === 0) return 's'; // the real collective opening volley
+  // Swordhaven starts in a peaceful town square, not within shooting range
+  // of the old crypt pawn. Walking first exercises the genuine opening.
   if (blocked >= 2) return 'ArrowRight'; // recover from a wall, never spin forever
   return 'ArrowUp';
 }
 
 export function playtestOutcome({ observed, enemyHp, combatEntered,
   explorationActions, combatActions, startHp, endHp,
-  meleeOpportunities = null, rejectedCombatMoves = 0 }) {
+  meleeOpportunities = null, rejectedCombatMoves = 0, scenario = 'combat' }) {
   const actions = explorationActions + combatActions;
   const hpLost = Math.max(0, startHp - endHp);
   const outcome = observed.phase === 'defeated' || endHp <= 0 ? 'defeat'
     : enemyHp === 0 ? 'victory'
-      : !combatEntered ? 'no-contact' : 'unfinished';
+      : !combatEntered ? (scenario === 'campaign-start' ? 'exploration' : 'no-contact')
+        : 'unfinished';
   const warnings = [];
   if (outcome === 'defeat') warnings.push('party-defeated');
   if (outcome === 'no-contact') warnings.push('enemy-unreachable');
@@ -90,13 +96,10 @@ export function playtestOutcome({ observed, enemyHp, combatEntered,
 }
 
 /**
- * Acceptance is distinct from balance warnings: defeat, long combat and
- * rejected collision probes are useful findings, not technical failures.
- * But a green autonomous playtest must prove that BOTH canonical profiles
- * actually encountered the authored enemy (initiative OR a verified
- * pre-contact victory) and survived an authoritative save/F5 checkpoint.
- *
- * This evaluates only public-playtest measurements, never hidden game state.
+ * The public staging journey must begin in the canonical Swordhaven campaign,
+ * restore an authoritative checkpoint and actually advance exploration.
+ * Combat is optional here: the town enemy is not next to the spawn point.
+ * A different combat-specific scenario may require contact separately.
  */
 export function playtestAcceptance(episodes) {
   const reasons = [];
@@ -114,18 +117,23 @@ export function playtestAcceptance(episodes) {
       reasons.push('bot-execution-failed:' + profile);
       continue;
     }
+    if (episode.mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID) {
+      reasons.push('wrong-campaign-entry:' + profile);
+    }
     if (episode.saved !== true || episode.restored !== true
-      || episode.preCombatSaved !== true || episode.preCombatRestored !== true
-      || !Number.isInteger(episode.preCombatEnemyHp)
-      || episode.preCombatEnemyHp <= 0) {
+      || episode.preCombatSaved !== true || episode.preCombatRestored !== true) {
       reasons.push('checkpoint-not-verified:' + profile);
     }
-    // A real opening volley can kill the enemy without initiative. Accept
-    // that as contact ONLY when the server confirmed the resulting victory.
-    const precontactVictory = episode.outcome === 'victory'
-      && episode.postCombatSaved === true && episode.postCombatRestored === true;
-    if (episode.combatEntered !== true && !precontactVictory) {
-      reasons.push('no-enemy-contact:' + profile);
+    // A legitimate early encounter may interrupt exploration, but simply
+    // tapping against walls must not be reported as a working campaign.
+    if (episode.combatEntered !== true
+      && !(Number.isInteger(episode.explorationCommitted)
+        && episode.explorationCommitted >= 2)) {
+      reasons.push('no-exploration-progress:' + profile);
+    }
+    if (episode.outcome === 'exploration'
+      && (episode.postCombatSaved !== true || episode.postCombatRestored !== true)) {
+      reasons.push('post-exploration-checkpoint-missing:' + profile);
     }
   }
   for (const episode of episodes) {
@@ -199,12 +207,26 @@ export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored 
       throw new Error('BOT_CHECKPOINT_' + stage + '_TURNS_MISMATCH');
     }
   }
-  const enemyHp = Number(saved.worldFlags?.enemyHp);
-  if (!Number.isInteger(enemyHp) || enemyHp < 0) {
+  // The crypt fixture has a single enemyHp flag; Swordhaven uses individual
+  // named HP flags instead. Preserve every present monster HP value across
+  // reload without inventing a crypt enemy in the town.
+  const savedFlags = saved.worldFlags || {};
+  const restoredFlags = restored.worldFlags || {};
+  const hpKeys = [...new Set([
+    ...Object.keys(savedFlags), ...Object.keys(restoredFlags),
+  ].filter(key => key === 'enemyHp' || /Hp$/.test(key)))];
+  if (mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID && !hpKeys.includes('enemyHp')) {
     throw new Error('BOT_CHECKPOINT_INVALID_ENEMY_HP');
   }
-  if (Number(restored.worldFlags?.enemyHp) !== enemyHp) {
-    throw new Error('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+  for (const key of hpKeys) {
+    const hp = savedFlags[key];
+    if (!Number.isInteger(hp) || hp < 0) {
+      throw new Error('BOT_CHECKPOINT_INVALID_ENEMY_HP');
+    }
+    if (restoredFlags[key] !== hp) {
+      throw new Error('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+    }
   }
+  const enemyHp = hpKeys.includes('enemyHp') ? savedFlags.enemyHp : null;
   return { enemyHp };
 }
