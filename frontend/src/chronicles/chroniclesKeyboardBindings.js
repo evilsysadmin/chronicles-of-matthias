@@ -11,6 +11,18 @@ export const CHRONICLES_DIRECTION_KEYS = Object.freeze({
   E: 'strafe-right',
 });
 
+// The two mobile side buttons retain their physical slots. During MM3
+// initiative they become the legal Q/E sidestep controls: never rotate the
+// party/camera, and obey the normal per-hero action budget in the reducer.
+// Exploration and independent/non-MM3 modes keep their original turn action.
+export function chroniclesTouchSideAction(state, side) {
+  if (side !== 'left' && side !== 'right') {
+    throw new Error('Unknown Chronicles touch side');
+  }
+  const prefix = state?.initiative && state.combatRules === 'mm3' ? 'strafe-' : 'turn-';
+  return prefix + side;
+}
+
 export function chroniclesCombatKeyMode(key, { inCombat = false } = {}) {
   // Exploration is not a melee turn: A must not spend a turn or trigger attack FX.
   if (key === 'a' || key === 'A') return inCombat ? 'melee' : null;
