@@ -4,6 +4,17 @@ export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
+// Mobile plays through real visible touch controls, never a hidden keyboard.
+// In MM3 initiative these two side slots become legal lateral steps, not turns.
+export const PLAYTEST_TOUCH_ACTIONS = Object.freeze({
+  ArrowUp: 'forward', ArrowDown: 'backward',
+  q: 'strafe-left', e: 'strafe-right',
+  a: 'attack', b: 'block', s: 'attack',
+});
+export function playtestTouchAction(action) {
+  return PLAYTEST_TOUCH_ACTIONS[action] ?? null;
+}
+
 export function playtestAction({ profile, observed, explorationActions = 0,
   combatActions = 0, blocked = 0, repositionSteps = 0, seed = 0 }) {
   if (!PLAYTEST_PROFILES.includes(profile)) throw new Error('Unknown playtest profile');
