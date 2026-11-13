@@ -131,7 +131,7 @@ async function browserSession(browser, username, password, token, viewport) {
     null, { timeout: 30_000 });
   await page.locator('[data-chronicles-save-menu="home"]').waitFor({ timeout: 30_000 });
   await page.locator('[data-chronicles-primary-action="continue"] button.is-primary').click();
-  const world = page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]');
+  const world = page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]');
   await world.waitFor({ state: 'visible', timeout: 30_000 });
   await page.getByLabel('Abrir menú de Chronicles').waitFor({ timeout: 30_000 });
   if (touch) {
@@ -174,7 +174,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(
     document.querySelector('[data-chronicles-save-menu="home"]')
-    || document.querySelector('[data-chronicles-map-id="crypt-eight-squares"]')),
+    || document.querySelector('[data-chronicles-map-id]')),
   null, { timeout: 30_000 });
   if (await page.locator('[data-chronicles-save-menu="home"]').isVisible()) {
     await page.getByRole('button', { name: /Continuar expedición/ }).click();
@@ -183,7 +183,7 @@ async function saveReloadProbe(page, runId, token, expected) {
   const verified = verifyPlaytestCheckpoint({
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
   });
-  await page.locator('[data-chronicles="true"][data-chronicles-map-id="crypt-eight-squares"]')
+  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
   // Some first-run overlays are session-scoped and may reappear after F5.
   // Resume the same public tutorial dismissal before attempting more moves.
