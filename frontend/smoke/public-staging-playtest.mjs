@@ -12,7 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
-  PLAYTEST_PROFILES, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, verifyPlaytestCheckpoint,
