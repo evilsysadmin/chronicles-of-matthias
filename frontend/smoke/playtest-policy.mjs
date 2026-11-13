@@ -4,6 +4,21 @@ export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
 export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 8;
 
+// Whitelisted physical controls exposed by the MM3 HUD. In initiative the
+// left/right touch slots become lateral Q/E steps (no camera rotation).
+export const PLAYTEST_MOBILE_TOUCH_ACTIONS = Object.freeze({
+  ArrowUp: 'forward',
+  ArrowDown: 'backward',
+  q: 'strafe-left',
+  e: 'strafe-right',
+  a: 'attack',
+  b: 'block',
+  s: 'attack',
+});
+export function playtestMobileTouchAction(action) {
+  return PLAYTEST_MOBILE_TOUCH_ACTIONS[action] ?? null;
+}
+
 export function playtestAction({ profile, observed, explorationActions = 0,
   combatActions = 0, blocked = 0, repositionSteps = 0, seed = 0 }) {
   if (!PLAYTEST_PROFILES.includes(profile)) throw new Error('Unknown playtest profile');
