@@ -238,12 +238,18 @@ export function playtestFailureEpisode({ profile, seed, viewport, viewportHeight
  * A loss in combat must not allow the bot to skip this persistence gate.
  * The authoritative server, not a mock or client-only state, supplies both.
  */
-export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored }) {
+export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored, requiredFlags = [] }) {
   for (const [stage, payload] of [['saved', saved], ['restored', restored]]) {
     if (payload?.runId !== runId) throw new Error('BOT_CHECKPOINT_' + stage + '_RUN_MISMATCH');
     if (payload?.currentMapId !== mapId) throw new Error('BOT_CHECKPOINT_' + stage + '_MAP_MISMATCH');
     if (payload?.worldFlags?.['__chrRuntime.turns'] !== turns) {
       throw new Error('BOT_CHECKPOINT_' + stage + '_TURNS_MISMATCH');
+    }
+  }
+  for (const key of requiredFlags) {
+    if (key !== PLAYTEST_OPENING_FLAG) throw new Error('BOT_UNKNOWN_REQUIRED_FLAG');
+    if (saved.worldFlags?.[key] !== true || restored.worldFlags?.[key] !== true) {
+      throw new Error('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
     }
   }
   // The crypt fixture has a single enemyHp flag; Swordhaven uses individual
