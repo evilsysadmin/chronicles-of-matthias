@@ -97,12 +97,14 @@ jobs:
               'Acceptance: **' + (report.acceptance?.passed === true ? 'PASS' : 'FAIL') + '**', '',
               ...(report.acceptance?.reasons?.length
                 ? ['Reasons: ' + report.acceptance.reasons.join(', '), ''] : []),
-              '| Profile | Outcome | Last turn | Inputs observed | Warnings |',
-              '| --- | --- | ---: | ---: | --- |'];
+              '| Profile | Outcome | Tiles visited | Real moves | Last turn | Inputs observed | Warnings |',
+              '| --- | --- | ---: | ---: | ---: | ---: | --- |'];
             for (const episode of report.episodes ?? []) {
               const lastTurn = episode.lastTurn ?? '—';
               const inputs = episode.attemptedInputs ?? episode.actions ?? '—';
               lines.push('| ' + episode.profile + ' | ' + episode.outcome + ' | '
+                + (episode.distinctExplorationTiles ?? '—') + ' | '
+                + (episode.explorationMoves ?? '—') + ' | '
                 + lastTurn + ' | ' + inputs + ' | '
                 + (episode.warnings ?? []).join(', ') + ' |');
             }

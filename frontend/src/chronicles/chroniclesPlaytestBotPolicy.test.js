@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
-  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
+  PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, playtestTileKey,
+  playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
@@ -16,7 +17,8 @@ describe('public staging Playwright bot policy', () => {
   it('supports two reproducible strategies with bounded runtime', () => {
     expect(PLAYTEST_PROFILES).toEqual(['aggressive', 'cautious']);
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
-    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(12);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeGreaterThanOrEqual(20);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(32);
     for (const profile of PLAYTEST_PROFILES) {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
@@ -32,6 +34,22 @@ describe('public staging Playwright bot policy', () => {
       explorationActions: 8, combatActions: 0,
       startHp: 30, endHp: 30, scenario: 'campaign-start',
     })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
+  });
+
+  it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
+    const base = { mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, x: 9, y: 7, turns: 0 };
+    expect(playtestTileKey(base)).toBe('9,7');
+    expect(playtestMovedBetweenTiles(base, { ...base, x: 9, y: 6, turns: 1 })).toBe(true);
+    expect(playtestMovedBetweenTiles(base, { ...base, turns: 1 })).toBe(false);
+    expect(playtestMovedBetweenTiles(base, { ...base })).toBe(false);
+    expect(playtestTileKey({ x: null, y: 7 })).toBeNull();
+    expect(() => playtestMovedBetweenTiles(base, { ...base, x: null }))
+      .toThrow('BOT_MISSING_VISIBLE_PARTY_TILE');
+    expect(() => playtestMovedBetweenTiles(base, { ...base, x: 12 }))
+      .toThrow('BOT_NONLOCAL_EXPLORATION_MOVEMENT');
+    expect(() => playtestMovedBetweenTiles(base, {
+      ...base, mapId: 'another-area',
+    })).toThrow('BOT_UNEXPECTED_MAP_TRANSITION');
   });
 
   it('emulates an actual landscape phone instead of a blocked portrait viewport', () => {
@@ -137,6 +155,7 @@ describe('public staging Playwright bot policy', () => {
     const complete = (profile, overrides = {}) => ({
       profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
+      explorationMoves: 5, distinctExplorationTiles: 6,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
@@ -150,7 +169,10 @@ describe('public staging Playwright bot policy', () => {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
-      explorationCommitted: 0,
+      explorationCommitted: 6, explorationMoves: 0, distinctExplorationTiles: 1,
+    })]).reasons).toEqual(['no-exploration-progress:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      explorationCommitted: 6, explorationMoves: 5, distinctExplorationTiles: 2,
     })]).reasons).toEqual(['no-exploration-progress:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'no-contact',

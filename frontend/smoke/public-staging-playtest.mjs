@@ -15,7 +15,8 @@ import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
-  playtestMobileTouchAction, verifyPlaytestCheckpoint,
+  playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
+  verifyPlaytestCheckpoint,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -43,8 +44,14 @@ function observe(page) {
     const root = document.querySelector('[data-chronicles="true"]');
     const rail = document.querySelector('[data-chronicles-initiative="visible"]');
     const attack = document.querySelector('[data-chronicles-touch-action="attack"]');
+    const tile = (name) => {
+      const raw = root?.getAttribute(name);
+      return raw === null || raw === undefined ? null : Number(raw);
+    };
     return {
       mapId: root?.getAttribute('data-chronicles-map-id') || null,
+      x: tile('data-chronicles-party-x'),
+      y: tile('data-chronicles-party-y'),
       phase: root?.getAttribute('data-chronicles-phase') || null,
       turns: Number(root?.getAttribute('data-chronicles-turns')),
       partyHp: Number(root?.getAttribute('data-party-hp-total')),
@@ -195,6 +202,8 @@ async function saveReloadProbe(page, runId, token, expected) {
   assert.equal(displayed.mapId, expected.mapId, 'F5 changed the visible map');
   assert.equal(displayed.turns, expected.turns, 'F5 changed the visible turn count');
   assert.equal(displayed.partyHp, expected.partyHp, 'F5 changed visible party health');
+  assert.equal(playtestTileKey(displayed), playtestTileKey(expected),
+    'F5 changed visible party tile');
   return verified;
 }
 
@@ -241,11 +250,14 @@ async function runEpisode(profile, seed, viewport) {
     assert.equal(initial.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
     assert.ok(Number.isInteger(initial.turns) && initial.partyHp > 0,
       'No real combat stats after bootstrap');
+    assert.ok(playtestTileKey(initial) !== null, 'No visible party tile after bootstrap');
     // A defeat is a valid gameplay outcome; it must not skip save/F5 coverage.
     const preCombatCheckpoint = await saveReloadProbe(page, runId, token, initial);
 
     let explorationActions = 0;
     let explorationCommitted = 0;
+    let explorationMoves = 0;
+    const visitedExplorationTiles = new Set([playtestTileKey(initial)]);
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
@@ -255,6 +267,7 @@ async function runEpisode(profile, seed, viewport) {
     let meleeOpportunities = 0;
     const record = (action, state) => trace.push({
       action, turns: state.turns, partyHp: state.partyHp,
+      x: state.x, y: state.y,
       initiative: state.initiative, phase: state.phase,
       actor: state.actor, elapsedMs: Date.now() - started,
     });
@@ -302,6 +315,10 @@ async function runEpisode(profile, seed, viewport) {
       if (after.turns > before.turns) {
         blocked = 0;
         explorationCommitted += 1;
+      }
+      if (playtestMovedBetweenTiles(before, after)) {
+        explorationMoves += 1;
+        visitedExplorationTiles.add(playtestTileKey(after));
       }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
@@ -386,7 +403,8 @@ async function runEpisode(profile, seed, viewport) {
     const metrics = {
       profile, seed, viewport: viewport.width, viewportHeight: viewport.height,
       mapId: initial.mapId, inputMode: viewport.touch === true ? 'touch' : 'keyboard',
-      ...result, explorationActions, explorationCommitted,
+      ...result, explorationActions, explorationCommitted, explorationMoves,
+      distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
@@ -400,7 +418,8 @@ async function runEpisode(profile, seed, viewport) {
       path: 'chronicles-playtest-' + profile + '.png', timeout: 10_000,
     }).catch(() => {});
     console.log('CHRONICLES_PLAYTEST_EPISODE ' + JSON.stringify({
-      profile, outcome, explorationActions, explorationCommitted,
+      profile, outcome, explorationActions, explorationCommitted, explorationMoves,
+      distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, postCombatSaved, postCombatRestored,
