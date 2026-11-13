@@ -117,7 +117,7 @@ export function playtestAcceptance(episodes) {
     if (episode.saved !== true || episode.restored !== true
       || episode.preCombatSaved !== true || episode.preCombatRestored !== true
       || !Number.isInteger(episode.preCombatEnemyHp)
-      || episode.preCombatEnemyHp < 0) {
+      || episode.preCombatEnemyHp <= 0) {
       reasons.push('checkpoint-not-verified:' + profile);
     }
     // A real opening volley can kill the enemy without initiative. Accept
