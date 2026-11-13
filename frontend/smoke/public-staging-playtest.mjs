@@ -316,6 +316,10 @@ async function runEpisode(profile, seed, viewport) {
         blocked = 0;
         explorationCommitted += 1;
       }
+      if (playtestMovedBetweenTiles(before, after)) {
+        explorationMoves += 1;
+        visitedExplorationTiles.add(playtestTileKey(after));
+      }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
     }
