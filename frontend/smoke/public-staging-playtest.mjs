@@ -298,6 +298,31 @@ async function useSwordhavenBoard(page, viewport, readObservation, record, { rev
   return after;
 }
 
+// Crossing an authored area gate is a player decision. The route walker
+// lands on the threshold, then the public modal must be confirmed explicitly.
+async function confirmBannerRoadTravel(page, viewport, readObservation, record) {
+  const dialog = page.locator('[data-chronicles-area-transition] [role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await dialog.locator('h2').innerText(), /Camino de los Estandartes/i,
+    'Wrong authored gate at the Swordhaven northern threshold');
+  const threshold = await readObservation(page);
+  assert.equal(threshold.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
+  assert.equal(playtestTileKey(threshold), '9,1', 'Gate prompt at unexpected tile');
+  const accept = dialog.locator('[data-area-transition-accept]');
+  if (viewport.touch) await accept.tap();
+  else await accept.click();
+  const roadRoot = page.locator('[data-chronicles="true"][data-chronicles-map-id="'
+    + PLAYTEST_QUEST_ROAD_MAP_ID + '"]');
+  await roadRoot.waitFor({ state: 'visible', timeout: 10000 });
+  await dialog.waitFor({ state: 'hidden', timeout: 7000 });
+  const road = await readObservation(page);
+  assert.equal(road.mapId, PLAYTEST_QUEST_ROAD_MAP_ID);
+  assert.equal(road.phase, 'explore', 'Unexpected phase after road arrival');
+  assert.ok(playtestTileKey(road), 'Road arrival has no visible party tile');
+  record('travel:banner-road', road);
+  return road;
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
