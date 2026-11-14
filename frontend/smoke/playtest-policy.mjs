@@ -98,12 +98,21 @@ export function playtestAction({ profile, observed, explorationActions = 0,
       // In MM3 initiative the party cannot rotate, but may spend an action
       // moving one square. Probe cardinal movement from the live UI rather
       // than blocking forever when the enemy is behind or not yet adjacent.
-      const steps = profile === 'aggressive'
-        ? ['ArrowUp', 'ArrowDown', 'q', 'e']
-        : ['ArrowDown', 'ArrowUp', 'e', 'q'];
+      // The REAL combat roster labels enemies that can attack from behind or
+      // from a flank. Prefer closing that range over walking blindly away.
+      // The marker is observed from the visible UI, not inferred from hidden
+      // enemy coordinates, AI state or a privileged checkpoint.
+      const bearing = observed.threatBearing;
+      const steps = bearing === 'rear'
+        ? ['ArrowDown', 'q', 'e', 'ArrowUp']
+        : bearing === 'flank'
+          ? ['q', 'e', 'ArrowDown', 'ArrowUp']
+          : profile === 'aggressive'
+            ? ['ArrowUp', 'ArrowDown', 'q', 'e']
+            : ['ArrowDown', 'ArrowUp', 'e', 'q'];
       if (blocked >= steps.length) return 'b'; // all probes rejected; defend
-      // Continue the chosen heading across several successful actions;
-      // otherwise forward/backward oscillation never reaches a ranged foe.
+      // Commit to a heading for three real actions before trying another.
+      // This also avoids forward/backward oscillation against a rear shooter.
       return steps[(Math.floor(repositionSteps / 3) + blocked) % steps.length];
     }
     // A conservative player occasionally blocks a legal adjacent attack.
