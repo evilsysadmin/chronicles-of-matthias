@@ -370,6 +370,21 @@ describe('public staging Playwright bot policy', () => {
       ...args, saved: storySaved, restored: initial,
       requiredFlags: [PLAYTEST_OPENING_FLAG],
     })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+    const contractSaved = { ...storySaved, worldFlags: {
+      ...storySaved.worldFlags, [PLAYTEST_BOARD_FLAG]: true,
+    } };
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: contractSaved, restored: contractSaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: contractSaved, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_BOARD_FLAG');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: contractSaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_BOARD_FLAG');
     expect(() => verifyPlaytestCheckpoint({
       ...args, saved: initial, restored: storySaved,
       requiredFlags: [PLAYTEST_OPENING_FLAG],
