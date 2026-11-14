@@ -14,7 +14,8 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
   PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
-  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_ROAD_ROUTE, PLAYTEST_QUEST_ROAD_MAP_ID,
+  PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
@@ -193,7 +194,7 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
     requiredFlags,
   });
-  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
+  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + expected.mapId + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
   // Some first-run overlays are session-scoped and may reappear after F5.
   // Resume the same public tutorial dismissal before attempting more moves.
