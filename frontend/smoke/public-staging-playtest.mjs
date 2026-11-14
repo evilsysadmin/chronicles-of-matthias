@@ -166,6 +166,12 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
   await page.getByLabel('Abrir menú de Chronicles').click();
   const save = page.locator('[data-chronicles-menu-save]');
   await save.waitFor({ state: 'visible', timeout: 10_000 });
+  // A confirmed area crossing starts its own asynchronous checkpoint. Wait
+  // for that real request to settle before issuing an explicit manual save.
+  await page.waitForFunction(() => {
+    const control = document.querySelector('[data-chronicles-menu-save]');
+    return control && !control.disabled;
+  }, null, { timeout: 15_000 });
   assert.equal(await save.isEnabled(), true, 'Out-of-combat checkpoint must be enabled');
   const saving = page.waitForResponse(r => r.url().startsWith(api)
     && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
