@@ -230,11 +230,11 @@ try {
   assert.deepEqual(errors, [], 'Browser exceptions in live Swordhaven rear shooter');
   console.log('CHRONICLES_PUBLIC_REAR_RESTORE_OK same-run');
   console.log('CHRONICLES_PUBLIC_REAR_SHOOTER_OK sha=' + expectedSha);
-  await page.screenshot({ path: 'chronicles-rear-shooter-public.png', fullPage: false });
+  await page.screenshot({ path: 'chronicles-public-rear-shooter.png', fullPage: false });
   finished = true;
 } finally {
   if (!finished) await page?.screenshot({
-    path: 'chronicles-rear-shooter-failure.png', fullPage: false, timeout: 5000,
+    path: 'chronicles-public-rear-shooter-failure.png', fullPage: false, timeout: 5000,
   }).catch(() => {});
   await browser?.close();
   const deleted = await fetch(api + '/auth/delete-account', {
