@@ -2,7 +2,7 @@
 // never hidden React state, Mongo internals, combat RNG, or authored FEN/map.
 export const PLAYTEST_PROFILES = Object.freeze(['aggressive', 'cautious']);
 export const PLAYTEST_MAX_COMBAT_ACTIONS = 32;
-export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 24;
+export const PLAYTEST_MAX_EXPLORATION_ACTIONS = 48;
 
 // Fresh first-person Chronicles expeditions start in Swordhaven. The old
 // eight-square crypt remains legacy content, never the public campaign entry.
@@ -36,6 +36,28 @@ export const PLAYTEST_BOARD_ROUTE = Object.freeze([
 ]);
 export const PLAYTEST_BOARD_FLAG = 'missing-knights-notice';
 export const PLAYTEST_BOARD_QUEST_ID = 'banner-contract';
+
+// A real, confirmed area crossing from the accepted-contract board (12,9,
+// south-facing) through Swordhaven's northern gate, not a map-ID override.
+// The final step occupies the threshold; the UI still requires 'Sí'.
+export const PLAYTEST_QUEST_ROAD_MAP_ID = 'banner-road-first-book';
+export const PLAYTEST_ROAD_ROUTE = Object.freeze([
+  { action: 'ArrowRight', x: 12, y: 9 },
+  { action: 'ArrowRight', x: 12, y: 9 },
+  { action: 'ArrowUp', x: 12, y: 8 },
+  { action: 'ArrowUp', x: 12, y: 7 },
+  { action: 'ArrowUp', x: 12, y: 6 },
+  { action: 'ArrowUp', x: 12, y: 5 },
+  { action: 'ArrowUp', x: 12, y: 4 },
+  { action: 'ArrowLeft', x: 12, y: 4 },
+  { action: 'ArrowUp', x: 11, y: 4 },
+  { action: 'ArrowUp', x: 10, y: 4 },
+  { action: 'ArrowUp', x: 9, y: 4 },
+  { action: 'ArrowRight', x: 9, y: 4 },
+  { action: 'ArrowUp', x: 9, y: 3 },
+  { action: 'ArrowUp', x: 9, y: 2 },
+  { action: 'ArrowUp', x: 9, y: 1 },
+].map(step => Object.freeze(step)));
 
 // Turns alone do not prove travel: turning on the spot also advances the
 // counter. Publicly rendered grid coordinates let browser tests distinguish
@@ -171,6 +193,10 @@ export function playtestAcceptance(episodes) {
     }
     if (episode.boardQuestVerified !== true) {
       reasons.push('notice-board-quest-not-verified:' + profile);
+    }
+    if (episode.roadTravelVerified !== true
+      || episode.roadMapId !== PLAYTEST_QUEST_ROAD_MAP_ID) {
+      reasons.push('quest-road-travel-not-verified:' + profile);
     }
     if (episode.saved !== true || episode.restored !== true
       || episode.preCombatSaved !== true || episode.preCombatRestored !== true) {
