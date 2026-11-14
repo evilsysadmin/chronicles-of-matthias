@@ -471,7 +471,8 @@ async function runEpisode(profile, seed, viewport) {
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
       const after = await readObservation(page);
-      assert.equal(after.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, 'Playtester lost Swordhaven campaign view');
+      assert.equal(after.mapId, PLAYTEST_QUEST_ROAD_MAP_ID,
+        'Playtester left the intended Banner Road encounter area');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
       if (after.turns > before.turns) {
         blocked = 0;
@@ -575,6 +576,7 @@ async function runEpisode(profile, seed, viewport) {
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
       openingNarrativeVerified, openingNarrativeId: 'sealed-order',
       boardQuestVerified, boardQuestId: PLAYTEST_BOARD_QUEST_ID,
+      roadTravelVerified, roadMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -586,7 +588,8 @@ async function runEpisode(profile, seed, viewport) {
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
-      boardQuestVerified, postCombatSaved, postCombatRestored,
+      boardQuestVerified, roadTravelVerified,
+      postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {
