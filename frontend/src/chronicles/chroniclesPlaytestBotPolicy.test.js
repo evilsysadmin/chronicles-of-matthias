@@ -257,6 +257,12 @@ describe('public staging Playwright bot policy', () => {
       boardQuestVerified: false,
     })]).reasons).toEqual(['notice-board-quest-not-verified:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
+      roadTravelVerified: false,
+    })]).reasons).toEqual(['quest-road-travel-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      roadMapId: 'crypt-eight-squares',
+    })]).reasons).toEqual(['quest-road-travel-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
