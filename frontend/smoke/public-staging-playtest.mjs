@@ -212,12 +212,14 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
 
 // A short, authored first-hour waypoint. This is a real public-button walk,
 // not a simulated checkpoint or an internal reducer dispatch.
-async function walkOpeningRoute(page, viewport, readObservation, record) {
+async function walkOpeningRoute(page, viewport, readObservation, record, {
+  route = PLAYTEST_OPENING_ROUTE, startTile = '9,7', label = 'opening',
+} = {}) {
   let before = await readObservation(page);
-  assert.equal(playtestTileKey(before), '9,7', 'Unexpected Swordhaven spawn tile');
+  assert.equal(playtestTileKey(before), startTile, 'Unexpected Swordhaven route start');
   const visited = [];
   let moved = 0;
-  for (const step of PLAYTEST_OPENING_ROUTE) {
+  for (const step of route) {
     assert.equal(before.phase, 'explore', 'Opening route entered another phase');
     assert.equal(before.initiative, false, 'Opening route unexpectedly entered combat');
     if (viewport.touch) await tapMobileAction(page, step.action);
@@ -231,7 +233,7 @@ async function walkOpeningRoute(page, viewport, readObservation, record) {
     const after = await readObservation(page);
     if (playtestMovedBetweenTiles(before, after)) moved += 1;
     visited.push(playtestTileKey(after));
-    record('opening:' + step.action, after);
+    record(label + ':' + step.action, after);
     before = after;
   }
   return { arrived: before, moved, visited };
