@@ -65,6 +65,33 @@ describe('public staging Playwright bot policy', () => {
     });
   });
 
+  it('reaches the live Swordhaven notice board and its authored starter quest', () => {
+    let x = 8;
+    let y = 5;
+    let direction = 3; // after reading the letter, the party faces west
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_BOARD_ROUTE) {
+      if (step.action === 'ArrowRight') direction = (direction + 1) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).toBe('.');
+      } else throw new Error('Unknown route input');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    const board = swordhavenFirstBook.interactables.find(item => item.id === 'first-book-missing-board');
+    expect(board?.visualType).toBe('notice-board');
+    expect(board.label).toBe('Consultar tablón de encargos');
+    expect({ x: x + vectors[direction][0], y: y + vectors[direction][1] })
+      .toEqual({ x: board.x, y: board.y });
+    expect(board.action.effects).toContainEqual({
+      type: 'set', key: PLAYTEST_BOARD_FLAG, value: true,
+    });
+    expect(board.action.effects).toContainEqual(expect.objectContaining({
+      type: 'start-quest', questId: PLAYTEST_BOARD_QUEST_ID,
+    }));
+  });
+
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
     const base = { mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, x: 9, y: 7, turns: 0 };
     expect(playtestTileKey(base)).toBe('9,7');
