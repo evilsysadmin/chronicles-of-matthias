@@ -193,8 +193,11 @@ describe('public staging Playwright bot policy', () => {
       expect(playtestAction({ profile, observed: rear, blocked: 4 })).toBe('b');
       expect(playtestAction({ profile, observed: rear, repositionSteps: 2 })).toBe('ArrowDown');
       expect(playtestAction({ profile, observed: rear, repositionSteps: 3 })).toBe('q');
+      // Avoid the cautious bot's deliberate every-third-turn block; the
+      // rear threat must not override its existing defensive cadence.
       expect(playtestAction({
         profile, observed: seen({ initiative: true, meleeReady: true, threatBearing: 'rear' }),
+        combatActions: 1, seed: 1,
       })).toBe('a');
       expect(playtestAction({ profile, observed: { ...rear, enemyTurn: true } })).toBeNull();
     }
