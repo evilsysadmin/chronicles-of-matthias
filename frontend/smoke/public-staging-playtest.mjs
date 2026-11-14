@@ -373,7 +373,7 @@ async function runEpisode(profile, seed, viewport) {
     let explorationActions = 0;
     let explorationCommitted = 0;
     let explorationMoves = 0;
-    const visitedExplorationTiles = new Set([playtestTileKey(initial)]);
+    const visitedExplorationTiles = new Set([initial.mapId + ':' + playtestTileKey(initial)]);
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
@@ -392,7 +392,9 @@ async function runEpisode(profile, seed, viewport) {
     explorationActions += PLAYTEST_OPENING_ROUTE.length;
     explorationCommitted += PLAYTEST_OPENING_ROUTE.length;
     explorationMoves += opening.moved;
-    for (const tile of opening.visited) visitedExplorationTiles.add(tile);
+    for (const tile of opening.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
     const afterLetter = await receiveSwordhavenLetter(page, viewport, readObservation, record);
     explorationActions += 1;
     explorationCommitted += 1;
@@ -407,7 +409,9 @@ async function runEpisode(profile, seed, viewport) {
     explorationActions += PLAYTEST_BOARD_ROUTE.length;
     explorationCommitted += PLAYTEST_BOARD_ROUTE.length;
     explorationMoves += boardWalk.moved;
-    for (const tile of boardWalk.visited) visitedExplorationTiles.add(tile);
+    for (const tile of boardWalk.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
     const afterBoard = await useSwordhavenBoard(page, viewport, readObservation, record);
     explorationActions += 1;
     explorationCommitted += 1;
@@ -425,7 +429,9 @@ async function runEpisode(profile, seed, viewport) {
     explorationActions += PLAYTEST_ROAD_ROUTE.length;
     explorationCommitted += PLAYTEST_ROAD_ROUTE.length;
     explorationMoves += gateWalk.moved;
-    for (const tile of gateWalk.visited) visitedExplorationTiles.add(tile);
+    for (const tile of gateWalk.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
     const onRoad = await confirmBannerRoadTravel(page, viewport, readObservation, record);
     const roadTravelVerified = true;
     await saveReloadProbe(page, runId, token, onRoad, {
@@ -480,7 +486,7 @@ async function runEpisode(profile, seed, viewport) {
       }
       if (playtestMovedBetweenTiles(before, after)) {
         explorationMoves += 1;
-        visitedExplorationTiles.add(playtestTileKey(after));
+        visitedExplorationTiles.add(after.mapId + ':' + playtestTileKey(after));
       }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
