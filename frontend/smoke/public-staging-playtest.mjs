@@ -13,7 +13,8 @@ import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
-  PLAYTEST_OPENING_FLAG, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
