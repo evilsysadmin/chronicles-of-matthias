@@ -375,6 +375,22 @@ async function runEpisode(profile, seed, viewport) {
     });
     const openingNarrativeVerified = true;
 
+    const boardWalk = await walkOpeningRoute(page, viewport, readObservation, record, {
+      route: PLAYTEST_BOARD_ROUTE, startTile: '8,5', label: 'board',
+    });
+    explorationActions += PLAYTEST_BOARD_ROUTE.length;
+    explorationCommitted += PLAYTEST_BOARD_ROUTE.length;
+    explorationMoves += boardWalk.moved;
+    for (const tile of boardWalk.visited) visitedExplorationTiles.add(tile);
+    const afterBoard = await useSwordhavenBoard(page, viewport, readObservation, record);
+    explorationActions += 1;
+    explorationCommitted += 1;
+    await saveReloadProbe(page, runId, token, afterBoard, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    });
+    await useSwordhavenBoard(page, viewport, readObservation, record, { review: true });
+    const boardQuestVerified = true;
+
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
       if (before.initiative || before.phase !== 'explore') break;
