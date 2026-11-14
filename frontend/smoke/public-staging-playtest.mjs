@@ -439,10 +439,10 @@ async function runEpisode(profile, seed, viewport) {
       visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
     }
     const onRoad = await confirmBannerRoadTravel(page, viewport, readObservation, record);
-    const roadTravelVerified = true;
     await saveReloadProbe(page, runId, token, onRoad, {
       requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
     });
+    const roadTravelVerified = true;
     visitedExplorationTiles.add(PLAYTEST_QUEST_ROAD_MAP_ID + ':' + playtestTileKey(onRoad));
 
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
