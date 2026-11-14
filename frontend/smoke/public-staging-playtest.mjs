@@ -14,7 +14,8 @@ import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
   PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
-  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_ROAD_ROUTE, PLAYTEST_QUEST_ROAD_MAP_ID,
+  PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
@@ -165,6 +166,12 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
   await page.getByLabel('Abrir menú de Chronicles').click();
   const save = page.locator('[data-chronicles-menu-save]');
   await save.waitFor({ state: 'visible', timeout: 10_000 });
+  // A confirmed area crossing starts its own asynchronous checkpoint. Wait
+  // for that real request to settle before issuing an explicit manual save.
+  await page.waitForFunction(() => {
+    const control = document.querySelector('[data-chronicles-menu-save]');
+    return control && !control.disabled;
+  }, null, { timeout: 15_000 });
   assert.equal(await save.isEnabled(), true, 'Out-of-combat checkpoint must be enabled');
   const saving = page.waitForResponse(r => r.url().startsWith(api)
     && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
@@ -193,7 +200,7 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
     runId, mapId: expected.mapId, turns: expected.turns, saved, restored,
     requiredFlags,
   });
-  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + '"]')
+  await page.locator('[data-chronicles="true"][data-chronicles-map-id="' + expected.mapId + '"]')
     .waitFor({ state: 'visible', timeout: 30_000 });
   // Some first-run overlays are session-scoped and may reappear after F5.
   // Resume the same public tutorial dismissal before attempting more moves.
@@ -297,6 +304,31 @@ async function useSwordhavenBoard(page, viewport, readObservation, record, { rev
   return after;
 }
 
+// Crossing an authored area gate is a player decision. The route walker
+// lands on the threshold, then the public modal must be confirmed explicitly.
+async function confirmBannerRoadTravel(page, viewport, readObservation, record) {
+  const dialog = page.locator('[data-chronicles-area-transition] [role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await dialog.locator('h2').innerText(), /Camino de los Estandartes/i,
+    'Wrong authored gate at the Swordhaven northern threshold');
+  const threshold = await readObservation(page);
+  assert.equal(threshold.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID);
+  assert.equal(playtestTileKey(threshold), '9,1', 'Gate prompt at unexpected tile');
+  const accept = dialog.locator('[data-area-transition-accept]');
+  if (viewport.touch) await accept.tap();
+  else await accept.click();
+  const roadRoot = page.locator('[data-chronicles="true"][data-chronicles-map-id="'
+    + PLAYTEST_QUEST_ROAD_MAP_ID + '"]');
+  await roadRoot.waitFor({ state: 'visible', timeout: 10000 });
+  await dialog.waitFor({ state: 'hidden', timeout: 7000 });
+  const road = await readObservation(page);
+  assert.equal(road.mapId, PLAYTEST_QUEST_ROAD_MAP_ID);
+  assert.equal(road.phase, 'explore', 'Unexpected phase after road arrival');
+  assert.ok(playtestTileKey(road), 'Road arrival has no visible party tile');
+  record('travel:banner-road', road);
+  return road;
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
@@ -347,7 +379,7 @@ async function runEpisode(profile, seed, viewport) {
     let explorationActions = 0;
     let explorationCommitted = 0;
     let explorationMoves = 0;
-    const visitedExplorationTiles = new Set([playtestTileKey(initial)]);
+    const visitedExplorationTiles = new Set([initial.mapId + ':' + playtestTileKey(initial)]);
     let combatActions = 0;
     let blocked = 0;
     let combatEntered = false;
@@ -366,7 +398,9 @@ async function runEpisode(profile, seed, viewport) {
     explorationActions += PLAYTEST_OPENING_ROUTE.length;
     explorationCommitted += PLAYTEST_OPENING_ROUTE.length;
     explorationMoves += opening.moved;
-    for (const tile of opening.visited) visitedExplorationTiles.add(tile);
+    for (const tile of opening.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
     const afterLetter = await receiveSwordhavenLetter(page, viewport, readObservation, record);
     explorationActions += 1;
     explorationCommitted += 1;
@@ -381,7 +415,9 @@ async function runEpisode(profile, seed, viewport) {
     explorationActions += PLAYTEST_BOARD_ROUTE.length;
     explorationCommitted += PLAYTEST_BOARD_ROUTE.length;
     explorationMoves += boardWalk.moved;
-    for (const tile of boardWalk.visited) visitedExplorationTiles.add(tile);
+    for (const tile of boardWalk.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
     const afterBoard = await useSwordhavenBoard(page, viewport, readObservation, record);
     explorationActions += 1;
     explorationCommitted += 1;
@@ -390,6 +426,24 @@ async function runEpisode(profile, seed, viewport) {
     });
     await useSwordhavenBoard(page, viewport, readObservation, record, { review: true });
     const boardQuestVerified = true;
+
+    // Actual inter-region journey: walk to Swordhaven's gate and choose Sí
+    // in the public travel prompt. Never substitute a fabricated map update.
+    const gateWalk = await walkOpeningRoute(page, viewport, readObservation, record, {
+      route: PLAYTEST_ROAD_ROUTE, startTile: '12,9', label: 'gate',
+    });
+    explorationActions += PLAYTEST_ROAD_ROUTE.length;
+    explorationCommitted += PLAYTEST_ROAD_ROUTE.length;
+    explorationMoves += gateWalk.moved;
+    for (const tile of gateWalk.visited) {
+      visitedExplorationTiles.add(PLAYTEST_CAMPAIGN_ENTRY_MAP_ID + ':' + tile);
+    }
+    const onRoad = await confirmBannerRoadTravel(page, viewport, readObservation, record);
+    await saveReloadProbe(page, runId, token, onRoad, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    });
+    const roadTravelVerified = true;
+    visitedExplorationTiles.add(PLAYTEST_QUEST_ROAD_MAP_ID + ':' + playtestTileKey(onRoad));
 
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
@@ -429,7 +483,8 @@ async function runEpisode(profile, seed, viewport) {
         if (blocked >= 5) throw new Error('BOT_SOFTLOCK_EXPLORE five rejected actions');
       }
       const after = await readObservation(page);
-      assert.equal(after.mapId, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, 'Playtester lost Swordhaven campaign view');
+      assert.equal(after.mapId, PLAYTEST_QUEST_ROAD_MAP_ID,
+        'Playtester left the intended Banner Road encounter area');
       assert.ok(Number.isFinite(after.partyHp) && after.partyHp >= 0, 'Playtester lost party health');
       if (after.turns > before.turns) {
         blocked = 0;
@@ -437,7 +492,7 @@ async function runEpisode(profile, seed, viewport) {
       }
       if (playtestMovedBetweenTiles(before, after)) {
         explorationMoves += 1;
-        visitedExplorationTiles.add(playtestTileKey(after));
+        visitedExplorationTiles.add(after.mapId + ':' + playtestTileKey(after));
       }
       record(action, after);
       if (after.initiative) { combatEntered = true; break; }
@@ -533,6 +588,7 @@ async function runEpisode(profile, seed, viewport) {
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
       openingNarrativeVerified, openingNarrativeId: 'sealed-order',
       boardQuestVerified, boardQuestId: PLAYTEST_BOARD_QUEST_ID,
+      roadTravelVerified, roadMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -544,7 +600,8 @@ async function runEpisode(profile, seed, viewport) {
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
-      boardQuestVerified, postCombatSaved, postCombatRestored,
+      boardQuestVerified, roadTravelVerified,
+      postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
+import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
   PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
-  PLAYTEST_BOARD_QUEST_ID, playtestTileKey,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_ROAD_ROUTE, PLAYTEST_QUEST_ROAD_MAP_ID,
+  playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
@@ -21,7 +23,7 @@ describe('public staging Playwright bot policy', () => {
     expect(PLAYTEST_PROFILES).toEqual(['aggressive', 'cautious']);
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
     expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeGreaterThanOrEqual(20);
-    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(32);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(56);
     for (const profile of PLAYTEST_PROFILES) {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
@@ -90,6 +92,31 @@ describe('public staging Playwright bot policy', () => {
     expect(board.action.effects).toContainEqual(expect.objectContaining({
       type: 'start-quest', questId: PLAYTEST_BOARD_QUEST_ID,
     }));
+  });
+
+  it('takes the authored Swordhaven north gate to the Banner Road, not a fake map swap', () => {
+    let x = 12;
+    let y = 9;
+    let direction = 2; // board accepted while facing south
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_ROAD_ROUTE) {
+      if (step.action === 'ArrowLeft') direction = (direction + 3) % 4;
+      else if (step.action === 'ArrowRight') direction = (direction + 1) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).toBe('.');
+      } else throw new Error('Unknown gate path action');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    expect({ x, y, direction }).toEqual({ x: 9, y: 1, direction: 0 });
+    const gate = swordhavenFirstBook.exits.find(exit => exit.id === 'to-first-book-banner-road');
+    const transition = gate.action.effects.find(effect => effect.type === 'transition-map');
+    expect({ x: gate.x, y: gate.y }).toEqual({ x, y });
+    expect(transition.mapId).toBe(PLAYTEST_QUEST_ROAD_MAP_ID);
+    expect(transition.entryExitId).toBe('to-first-book-swordhaven');
+    expect(bannerRoadFirstBook.id).toBe(PLAYTEST_QUEST_ROAD_MAP_ID);
+    expect(bannerRoadFirstBook.exits.some(exit => exit.id === transition.entryExitId)).toBe(true);
   });
 
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
@@ -213,6 +240,7 @@ describe('public staging Playwright bot policy', () => {
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
       explorationMoves: 5, distinctExplorationTiles: 6,
       openingNarrativeVerified: true, boardQuestVerified: true,
+      roadTravelVerified: true, roadMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
@@ -228,6 +256,12 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestAcceptance([aggressive, complete('cautious', {
       boardQuestVerified: false,
     })]).reasons).toEqual(['notice-board-quest-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      roadTravelVerified: false,
+    })]).reasons).toEqual(['quest-road-travel-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      roadMapId: 'crypt-eight-squares',
+    })]).reasons).toEqual(['quest-road-travel-not-verified:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
