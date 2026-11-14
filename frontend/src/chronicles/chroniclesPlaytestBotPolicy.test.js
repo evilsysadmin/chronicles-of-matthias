@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
+import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
   PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
-  PLAYTEST_BOARD_QUEST_ID, playtestTileKey,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_ROAD_ROUTE, PLAYTEST_QUEST_ROAD_MAP_ID,
+  playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
@@ -21,7 +23,7 @@ describe('public staging Playwright bot policy', () => {
     expect(PLAYTEST_PROFILES).toEqual(['aggressive', 'cautious']);
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
     expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeGreaterThanOrEqual(20);
-    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(32);
+    expect(PLAYTEST_MAX_EXPLORATION_ACTIONS).toBeLessThanOrEqual(56);
     for (const profile of PLAYTEST_PROFILES) {
       expect(playtestAction({ profile, observed: seen(), explorationActions: 0 })).toBe('ArrowUp');
       expect(playtestAction({ profile, observed: seen(), explorationActions: 1 })).toBe('ArrowUp');
@@ -213,6 +215,7 @@ describe('public staging Playwright bot policy', () => {
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
       explorationMoves: 5, distinctExplorationTiles: 6,
       openingNarrativeVerified: true, boardQuestVerified: true,
+      roadTravelVerified: true, roadMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
