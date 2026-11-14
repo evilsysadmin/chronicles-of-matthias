@@ -63,6 +63,13 @@ function observe(page) {
         || root?.getAttribute('data-turn-phase') === 'enemy'),
       actor: rail?.getAttribute('aria-label') || null,
       meleeReady: attack?.getAttribute('data-melee-ready') === 'true' && !attack?.disabled,
+      // Only inspect the game's actually engaged combat roster. The cue is
+      // engine-derived and visible even in the collapsed mobile summary.
+      // Never read hidden enemy coordinates, backend state or React internals.
+      threatBearing: !rail ? null
+        : root?.querySelector('.chronicles-combat-roster [data-threat-cue="rear"]') ? 'rear'
+          : root?.querySelector('.chronicles-combat-roster [data-threat-cue="flank"]') ? 'flank'
+            : null,
     };
   });
 }
@@ -391,7 +398,8 @@ async function runEpisode(profile, seed, viewport) {
       action, turns: state.turns, partyHp: state.partyHp,
       x: state.x, y: state.y,
       initiative: state.initiative, phase: state.phase,
-      actor: state.actor, elapsedMs: Date.now() - started,
+      actor: state.actor, threatBearing: state.threatBearing,
+      elapsedMs: Date.now() - started,
     });
 
     const opening = await walkOpeningRoute(page, viewport, readObservation, record);

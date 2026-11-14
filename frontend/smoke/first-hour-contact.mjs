@@ -1,6 +1,7 @@
 // CI-only component captures. No fake combat, seeded rewards or backend writes.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { playtestAction } from './playtest-policy.mjs';
 
 const url = process.argv[2] || 'http://localhost:4174/smoke/first-hour-contact.html';
 const browser = await chromium.launch();
@@ -77,6 +78,20 @@ try {
       await warning.waitFor({ state: 'visible' });
       assert.match(await warning.innerText(), /ESPALDA/);
       assert.match(await warning.getAttribute('aria-label'), /atacar desde atrás/);
+      // The autonomous public player must react to the SAME cue actually
+      // rendered by the real authored enemy: move backward to close range,
+      // never rotate or blindly march away from a rear crossbowman.
+      const bearing = await warning.getAttribute('data-threat-cue');
+      for (const profile of ['aggressive', 'cautious']) {
+        const approach = playtestAction({
+          profile, observed: {
+            phase: 'combat', initiative: true, enemyTurn: false,
+            meleeReady: false, threatBearing: bearing,
+          },
+        });
+        assert.equal(approach, 'ArrowDown',
+          'Rear ranged threat must produce a useful, fixed-facing backstep');
+      }
       const threatBounds = await warning.evaluate(node => {
         const rect = node.getBoundingClientRect();
         const parent = node.closest('header, summary').getBoundingClientRect();
