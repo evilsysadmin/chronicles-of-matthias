@@ -532,6 +532,7 @@ async function runEpisode(profile, seed, viewport) {
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
       openingNarrativeVerified, openingNarrativeId: 'sealed-order',
+      boardQuestVerified, boardQuestId: PLAYTEST_BOARD_QUEST_ID,
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -543,7 +544,7 @@ async function runEpisode(profile, seed, viewport) {
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
-      postCombatSaved, postCombatRestored,
+      boardQuestVerified, postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {
