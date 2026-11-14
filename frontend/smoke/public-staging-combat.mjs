@@ -241,3 +241,9 @@ try {
   });
   assert.ok(deleted.ok, 'Failed to delete ephemeral Chronicles combat account: ' + deleted.status);
 }
+
+// The retired crypt stays a legacy combat regression, NOT the first-person
+// campaign entry. Only after its own ephemeral account is deleted do we run
+// the independent, release-gating real Swordhaven rear-crossbow encounter.
+// This second smoke uses its own account and the same fail-closed staging gate.
+await import('./public-staging-rear-shooter.mjs');
