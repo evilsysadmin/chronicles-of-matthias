@@ -94,6 +94,31 @@ describe('public staging Playwright bot policy', () => {
     }));
   });
 
+  it('takes the authored Swordhaven north gate to the Banner Road, not a fake map swap', () => {
+    let x = 12;
+    let y = 9;
+    let direction = 2; // board accepted while facing south
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_ROAD_ROUTE) {
+      if (step.action === 'ArrowLeft') direction = (direction + 3) % 4;
+      else if (step.action === 'ArrowRight') direction = (direction + 1) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).toBe('.');
+      } else throw new Error('Unknown gate path action');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    expect({ x, y, direction }).toEqual({ x: 9, y: 1, direction: 0 });
+    const gate = swordhavenFirstBook.exits.find(exit => exit.id === 'to-first-book-banner-road');
+    const transition = gate.action.effects.find(effect => effect.type === 'transition-map');
+    expect({ x: gate.x, y: gate.y }).toEqual({ x, y });
+    expect(transition.mapId).toBe(PLAYTEST_QUEST_ROAD_MAP_ID);
+    expect(transition.entryExitId).toBe('to-first-book-swordhaven');
+    expect(bannerRoadFirstBook.id).toBe(PLAYTEST_QUEST_ROAD_MAP_ID);
+    expect(bannerRoadFirstBook.exits.some(exit => exit.id === transition.entryExitId)).toBe(true);
+  });
+
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
     const base = { mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, x: 9, y: 7, turns: 0 };
     expect(playtestTileKey(base)).toBe('9,7');
