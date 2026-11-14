@@ -13,7 +13,8 @@ import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
-  PLAYTEST_OPENING_FLAG, PLAYTEST_MAX_COMBAT_ACTIONS,
+  PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
+  PLAYTEST_BOARD_QUEST_ID, PLAYTEST_MAX_COMBAT_ACTIONS,
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
@@ -211,12 +212,14 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
 
 // A short, authored first-hour waypoint. This is a real public-button walk,
 // not a simulated checkpoint or an internal reducer dispatch.
-async function walkOpeningRoute(page, viewport, readObservation, record) {
+async function walkOpeningRoute(page, viewport, readObservation, record, {
+  route = PLAYTEST_OPENING_ROUTE, startTile = '9,7', label = 'opening',
+} = {}) {
   let before = await readObservation(page);
-  assert.equal(playtestTileKey(before), '9,7', 'Unexpected Swordhaven spawn tile');
+  assert.equal(playtestTileKey(before), startTile, 'Unexpected Swordhaven route start');
   const visited = [];
   let moved = 0;
-  for (const step of PLAYTEST_OPENING_ROUTE) {
+  for (const step of route) {
     assert.equal(before.phase, 'explore', 'Opening route entered another phase');
     assert.equal(before.initiative, false, 'Opening route unexpectedly entered combat');
     if (viewport.touch) await tapMobileAction(page, step.action);
@@ -230,7 +233,7 @@ async function walkOpeningRoute(page, viewport, readObservation, record) {
     const after = await readObservation(page);
     if (playtestMovedBetweenTiles(before, after)) moved += 1;
     visited.push(playtestTileKey(after));
-    record('opening:' + step.action, after);
+    record(label + ':' + step.action, after);
     before = after;
   }
   return { arrived: before, moved, visited };
@@ -252,6 +255,45 @@ async function receiveSwordhavenLetter(page, viewport, readObservation, record) 
   assert.equal(playtestTileKey(after), playtestTileKey(before),
     'Interacting with the letter unexpectedly moved the party');
   record('opening:sealed-order', after);
+  return after;
+}
+
+async function useSwordhavenBoard(page, viewport, readObservation, record, { review = false } = {}) {
+  const context = page.locator('[data-chronicles-touch-action="interact"]');
+  await context.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await context.getAttribute('aria-label') || '',
+    /tablón de encargos/i, 'Board is not the visible contextual interaction');
+  const before = await readObservation(page);
+  if (viewport.touch) await context.tap();
+  else await page.keyboard.press('f');
+  const dialog = page.locator('[data-chronicles-notice-board]');
+  await dialog.waitFor({ state: 'visible', timeout: 7000 });
+  const quest = dialog.locator('[data-chronicles-board-quest="' + PLAYTEST_BOARD_QUEST_ID + '"]');
+  await quest.waitFor({ state: 'visible', timeout: 7000 });
+  if (!review) {
+    assert.equal(await quest.getAttribute('data-chronicles-board-status'), 'available',
+      'The real starter contract was not available');
+    const accept = dialog.locator('[data-chronicles-board-accept="first-book-missing-board"]');
+    assert.equal(await accept.count(), 1, 'Missing public Accept contract button');
+    if (viewport.touch) await accept.tap();
+    else await accept.click();
+    await page.waitForFunction(previous => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      const card = document.querySelector('[data-chronicles-board-quest="banner-contract"]');
+      return Number(root?.getAttribute('data-chronicles-turns')) > previous
+        && card?.getAttribute('data-chronicles-board-status') === 'active';
+    }, before.turns, { timeout: 7000 });
+  }
+  assert.equal(await quest.getAttribute('data-chronicles-board-status'), 'active',
+    'Starter contract did not become active in the public board');
+  const close = dialog.getByRole('button', { name: 'Cerrar tablón' });
+  if (viewport.touch) await close.tap();
+  else await close.click();
+  await dialog.waitFor({ state: 'hidden', timeout: 7000 });
+  const after = await readObservation(page);
+  assert.equal(playtestTileKey(after), playtestTileKey(before),
+    'Opening contract unexpectedly moved the party');
+  if (!review) record('board:accept-contract', after);
   return after;
 }
 
@@ -332,6 +374,22 @@ async function runEpisode(profile, seed, viewport) {
       requiredFlags: [PLAYTEST_OPENING_FLAG],
     });
     const openingNarrativeVerified = true;
+
+    const boardWalk = await walkOpeningRoute(page, viewport, readObservation, record, {
+      route: PLAYTEST_BOARD_ROUTE, startTile: '8,5', label: 'board',
+    });
+    explorationActions += PLAYTEST_BOARD_ROUTE.length;
+    explorationCommitted += PLAYTEST_BOARD_ROUTE.length;
+    explorationMoves += boardWalk.moved;
+    for (const tile of boardWalk.visited) visitedExplorationTiles.add(tile);
+    const afterBoard = await useSwordhavenBoard(page, viewport, readObservation, record);
+    explorationActions += 1;
+    explorationCommitted += 1;
+    await saveReloadProbe(page, runId, token, afterBoard, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    });
+    await useSwordhavenBoard(page, viewport, readObservation, record, { review: true });
+    const boardQuestVerified = true;
 
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
@@ -474,6 +532,7 @@ async function runEpisode(profile, seed, viewport) {
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
       openingNarrativeVerified, openingNarrativeId: 'sealed-order',
+      boardQuestVerified, boardQuestId: PLAYTEST_BOARD_QUEST_ID,
       postCombatSaved, postCombatRestored, trace,
     };
     await page.screenshot({
@@ -485,7 +544,7 @@ async function runEpisode(profile, seed, viewport) {
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
-      postCombatSaved, postCombatRestored,
+      boardQuestVerified, postCombatSaved, postCombatRestored,
     }));
     return metrics;
   } catch (error) {

@@ -19,6 +19,24 @@ export const PLAYTEST_OPENING_ROUTE = Object.freeze([
 ]);
 export const PLAYTEST_OPENING_FLAG = 'commission-received';
 
+// A separate public-UI golden journey from the letter at (8,5), facing west,
+// to Swordhaven's notice board (12,10). No direct game-state mutations.
+export const PLAYTEST_BOARD_ROUTE = Object.freeze([
+  Object.freeze({ action: 'ArrowRight', x: 8, y: 5 }),
+  Object.freeze({ action: 'ArrowRight', x: 8, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 9, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 10, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 11, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 12, y: 5 }),
+  Object.freeze({ action: 'ArrowRight', x: 12, y: 5 }),
+  Object.freeze({ action: 'ArrowUp', x: 12, y: 6 }),
+  Object.freeze({ action: 'ArrowUp', x: 12, y: 7 }),
+  Object.freeze({ action: 'ArrowUp', x: 12, y: 8 }),
+  Object.freeze({ action: 'ArrowUp', x: 12, y: 9 }),
+]);
+export const PLAYTEST_BOARD_FLAG = 'missing-knights-notice';
+export const PLAYTEST_BOARD_QUEST_ID = 'banner-contract';
+
 // Turns alone do not prove travel: turning on the spot also advances the
 // counter. Publicly rendered grid coordinates let browser tests distinguish
 // accepted movement, rotation and a colliding wall without React internals.
@@ -151,6 +169,9 @@ export function playtestAcceptance(episodes) {
     if (episode.openingNarrativeVerified !== true) {
       reasons.push('opening-letter-not-verified:' + profile);
     }
+    if (episode.boardQuestVerified !== true) {
+      reasons.push('notice-board-quest-not-verified:' + profile);
+    }
     if (episode.saved !== true || episode.restored !== true
       || episode.preCombatSaved !== true || episode.preCombatRestored !== true) {
       reasons.push('checkpoint-not-verified:' + profile);
@@ -247,9 +268,12 @@ export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored,
     }
   }
   for (const key of requiredFlags) {
-    if (key !== PLAYTEST_OPENING_FLAG) throw new Error('BOT_UNKNOWN_REQUIRED_FLAG');
+    if (![PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG].includes(key)) {
+      throw new Error('BOT_UNKNOWN_REQUIRED_FLAG');
+    }
     if (saved.worldFlags?.[key] !== true || restored.worldFlags?.[key] !== true) {
-      throw new Error('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+      throw new Error(key === PLAYTEST_OPENING_FLAG
+        ? 'BOT_CHECKPOINT_MISSING_OPENING_FLAG' : 'BOT_CHECKPOINT_MISSING_BOARD_FLAG');
     }
   }
   // The crypt fixture has a single enemyHp flag; Swordhaven uses individual

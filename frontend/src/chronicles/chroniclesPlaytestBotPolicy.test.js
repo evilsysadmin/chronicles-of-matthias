@@ -3,7 +3,8 @@ import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import {
   PLAYTEST_MAX_COMBAT_ACTIONS, PLAYTEST_MAX_EXPLORATION_ACTIONS,
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
-  PLAYTEST_OPENING_FLAG, playtestTileKey,
+  PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
+  PLAYTEST_BOARD_QUEST_ID, playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
@@ -62,6 +63,33 @@ describe('public staging Playwright bot policy', () => {
     expect(letter.action.effects).toContainEqual({
       type: 'set', key: PLAYTEST_OPENING_FLAG, value: true,
     });
+  });
+
+  it('reaches the live Swordhaven notice board and its authored starter quest', () => {
+    let x = 8;
+    let y = 5;
+    let direction = 3; // after reading the letter, the party faces west
+    const vectors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+    for (const step of PLAYTEST_BOARD_ROUTE) {
+      if (step.action === 'ArrowRight') direction = (direction + 1) % 4;
+      else if (step.action === 'ArrowUp') {
+        x += vectors[direction][0];
+        y += vectors[direction][1];
+        expect(swordhavenFirstBook.grid[y][x]).toBe('.');
+      } else throw new Error('Unknown route input');
+      expect({ x, y }).toEqual({ x: step.x, y: step.y });
+    }
+    const board = swordhavenFirstBook.interactables.find(item => item.id === 'first-book-missing-board');
+    expect(board?.visualType).toBe('notice-board');
+    expect(board.label).toBe('Consultar tablón de encargos');
+    expect({ x: x + vectors[direction][0], y: y + vectors[direction][1] })
+      .toEqual({ x: board.x, y: board.y });
+    expect(board.action.effects).toContainEqual({
+      type: 'set', key: PLAYTEST_BOARD_FLAG, value: true,
+    });
+    expect(board.action.effects).toContainEqual(expect.objectContaining({
+      type: 'start-quest', questId: PLAYTEST_BOARD_QUEST_ID,
+    }));
   });
 
   it('distinguishes walking from rotation and catches missing or impossible tile observations', () => {
@@ -184,7 +212,7 @@ describe('public staging Playwright bot policy', () => {
       profile, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
       outcome: 'exploration', combatEntered: false, explorationCommitted: 5,
       explorationMoves: 5, distinctExplorationTiles: 6,
-      openingNarrativeVerified: true,
+      openingNarrativeVerified: true, boardQuestVerified: true,
       saved: true, restored: true, preCombatSaved: true, preCombatRestored: true,
       preCombatEnemyHp: null, postCombatSaved: true, postCombatRestored: true,
       ...overrides,
@@ -197,6 +225,9 @@ describe('public staging Playwright bot policy', () => {
     expect(playtestAcceptance([aggressive, complete('cautious', {
       openingNarrativeVerified: false,
     })]).reasons).toEqual(['opening-letter-not-verified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      boardQuestVerified: false,
+    })]).reasons).toEqual(['notice-board-quest-not-verified:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       mapId: 'crypt-eight-squares',
     })]).reasons).toEqual(['wrong-campaign-entry:cautious']);
@@ -339,6 +370,21 @@ describe('public staging Playwright bot policy', () => {
       ...args, saved: storySaved, restored: initial,
       requiredFlags: [PLAYTEST_OPENING_FLAG],
     })).toThrow('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+    const contractSaved = { ...storySaved, worldFlags: {
+      ...storySaved.worldFlags, [PLAYTEST_BOARD_FLAG]: true,
+    } };
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: contractSaved, restored: contractSaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: contractSaved, restored: storySaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_BOARD_FLAG');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: storySaved, restored: contractSaved,
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    })).toThrow('BOT_CHECKPOINT_MISSING_BOARD_FLAG');
     expect(() => verifyPlaytestCheckpoint({
       ...args, saved: initial, restored: storySaved,
       requiredFlags: [PLAYTEST_OPENING_FLAG],
