@@ -180,6 +180,31 @@ describe('public staging Playwright bot policy', () => {
     })).toBe('a');
   });
 
+  it('pursues actual HUD rear or flank threats without ever rotating in initiative', () => {
+    for (const profile of PLAYTEST_PROFILES) {
+      const rear = seen({ initiative: true, meleeReady: false, threatBearing: 'rear' });
+      const flank = seen({ initiative: true, meleeReady: false, threatBearing: 'flank' });
+      expect([0, 1, 2, 3].map(blocked => playtestAction({
+        profile, observed: rear, blocked,
+      }))).toEqual(['ArrowDown', 'q', 'e', 'ArrowUp']);
+      expect([0, 1, 2, 3].map(blocked => playtestAction({
+        profile, observed: flank, blocked,
+      }))).toEqual(['q', 'e', 'ArrowDown', 'ArrowUp']);
+      expect(playtestAction({ profile, observed: rear, blocked: 4 })).toBe('b');
+      expect(playtestAction({ profile, observed: rear, repositionSteps: 2 })).toBe('ArrowDown');
+      expect(playtestAction({ profile, observed: rear, repositionSteps: 3 })).toBe('q');
+      expect(playtestAction({
+        profile, observed: seen({ initiative: true, meleeReady: true, threatBearing: 'rear' }),
+      })).toBe('a');
+      expect(playtestAction({ profile, observed: { ...rear, enemyTurn: true } })).toBeNull();
+    }
+    // No invented bearing must influence the policy. Old neutral behavior
+    // remains the fallback if the real HUD reports no engaged offscreen threat.
+    expect(playtestAction({
+      profile: 'aggressive', observed: seen({ initiative: true, threatBearing: 'unknown' }),
+    })).toBe('ArrowUp');
+  });
+
   it('uses measured, deterministic defensive cadence without inventing resources', () => {
     const nearby = seen({ initiative: true, meleeReady: true });
     for (const n of [0, 1, 2, 3, 4, 5]) {
