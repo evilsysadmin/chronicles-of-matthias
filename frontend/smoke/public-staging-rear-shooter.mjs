@@ -148,16 +148,16 @@ try {
     actions: REAR_SHOOTER_ROUTE.length, partyHp: behind.partyHp, enemy: REAR_SHOOTER_ENEMY_ID,
   }));
 
-  // Shooter is two valid map tiles behind. A real backward key must close to
-  // one tile with NO camera rotation or initiative. No hidden state, damage
-  // injection, forced encounter or scripted rescue is permitted.
-  const nearer = await commitKey('ArrowDown', { x: 15, y: 14, direction: 0 });
-  assert.equal(nearer.facing, 0, 'Approaching a rear shooter must retain heading');
+  // Shooter is two corridor tiles EAST of a west-facing company. A real
+  // backward key closes to one tile with NO rotation or initiative.
+  // No hidden state, damage injection or scripted rescue is permitted.
+  const nearer = await commitKey('ArrowDown', { x: 14, y: 15, direction: 3 });
+  assert.equal(nearer.facing, 3, 'Approaching a rear shooter must retain heading');
 
   // Ranged fire is EXPLORATION by design; turning is legitimate here, not
   // during initiative. Exercise a real facing response and opening volley.
-  await commitKey('ArrowRight', { x: 15, y: 14, direction: 1 });
-  const facingShooter = await commitKey('ArrowRight', { x: 15, y: 14, direction: 2 });
+  await commitKey('ArrowRight', { x: 14, y: 15, direction: 0 });
+  const facingShooter = await commitKey('ArrowRight', { x: 14, y: 15, direction: 1 });
   const shot = world.locator('[data-chronicles-touch-action="attack"]');
   assert.equal(await shot.getAttribute('data-chronicles-touch-attack-mode'), 'missile',
     'Starting company cannot answer the ranged threat with its own real missile weapon');
@@ -169,7 +169,7 @@ try {
   const fired = await observe(page);
   assert.equal(fired.turns, facingShooter.turns + 1, 'One S volley spent duplicate/no action');
   assert.equal(fired.phase, 'explore', 'Ranged exploration incorrectly entered initiative');
-  assert.equal(fired.facing, 2);
+  assert.equal(fired.facing, 1);
   assert.ok(fired.partyHp > 0, 'Party died while replying to a rear crossbowman');
   console.log('CHRONICLES_PUBLIC_REAR_RESPONSE_OK ' + JSON.stringify({
     approach: 'backward', combatRules: 'ranged-exploration',
