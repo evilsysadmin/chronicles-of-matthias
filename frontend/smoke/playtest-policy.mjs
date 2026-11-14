@@ -268,9 +268,12 @@ export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored,
     }
   }
   for (const key of requiredFlags) {
-    if (key !== PLAYTEST_OPENING_FLAG) throw new Error('BOT_UNKNOWN_REQUIRED_FLAG');
+    if (![PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG].includes(key)) {
+      throw new Error('BOT_UNKNOWN_REQUIRED_FLAG');
+    }
     if (saved.worldFlags?.[key] !== true || restored.worldFlags?.[key] !== true) {
-      throw new Error('BOT_CHECKPOINT_MISSING_OPENING_FLAG');
+      throw new Error(key === PLAYTEST_OPENING_FLAG
+        ? 'BOT_CHECKPOINT_MISSING_OPENING_FLAG' : 'BOT_CHECKPOINT_MISSING_BOARD_FLAG');
     }
   }
   // The crypt fixture has a single enemyHp flag; Swordhaven uses individual
