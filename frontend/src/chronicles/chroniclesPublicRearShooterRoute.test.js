@@ -31,7 +31,7 @@ describe('public Swordhaven rear ranged threat route', () => {
       expect(swordhaven.grid[y]?.[x], step.action + ' at ' + x + ',' + y).toBe('.');
     }
     expect({ x, y, direction }).toEqual(REAR_SHOOTER_VANTAGE);
-    expect(swordhaven.grid[y + 1]?.[x]).toBe('.'); // real backward tile
+    expect(swordhaven.grid[y]?.[x + 1]).toBe('.'); // unobstructed backward corridor tile
   });
 
   it('faces away from the real stationary ranged attacker, not an invented enemy', () => {
@@ -40,15 +40,15 @@ describe('public Swordhaven rear ranged threat route', () => {
     expect(enemy?.ai).toMatchObject({ movement: 'hold', attackReach: 3, requiresLineOfSight: true });
     expect([enemy.x, enemy.y]).toEqual([15, 15]);
     const positioned = { ...initial, ...REAR_SHOOTER_VANTAGE };
-    expect(positioned.direction).toBe(0);
-    expect(enemy.y - positioned.y).toBe(2); // genuinely behind
+    expect(positioned.direction).toBe(3);
+    expect(enemy.x - positioned.x).toBe(2); // genuinely behind a WEST-facing company
     expect(chroniclesEnemyAttackTarget(positioned, enemy)).toBeTruthy();
     // Normal ranged shots do NOT open initiative; turning outside combat is legal.
     expect(chroniclesStartInitiativeCombat(positioned, [enemy], { random: () => 0 }))
       .toBe(positioned);
     const approached = chroniclesReduce(positioned, 'backward');
     expect([approached.x, approached.y, approached.direction])
-      .toEqual([15, 14, 0]);
+      .toEqual([14, 15, 3]);
     expect(approached.turns).toBe(positioned.turns + 1);
     expect(approached.initiative).toBeFalsy();
   });
