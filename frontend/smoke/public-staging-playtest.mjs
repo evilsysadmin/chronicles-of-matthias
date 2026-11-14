@@ -258,6 +258,45 @@ async function receiveSwordhavenLetter(page, viewport, readObservation, record) 
   return after;
 }
 
+async function useSwordhavenBoard(page, viewport, readObservation, record, { review = false } = {}) {
+  const context = page.locator('[data-chronicles-touch-action="interact"]');
+  await context.waitFor({ state: 'visible', timeout: 7000 });
+  assert.match(await context.getAttribute('aria-label') || '',
+    /tablón de encargos/i, 'Board is not the visible contextual interaction');
+  const before = await readObservation(page);
+  if (viewport.touch) await context.tap();
+  else await page.keyboard.press('f');
+  const dialog = page.locator('[data-chronicles-notice-board]');
+  await dialog.waitFor({ state: 'visible', timeout: 7000 });
+  const quest = dialog.locator('[data-chronicles-board-quest="' + PLAYTEST_BOARD_QUEST_ID + '"]');
+  await quest.waitFor({ state: 'visible', timeout: 7000 });
+  if (!review) {
+    assert.equal(await quest.getAttribute('data-chronicles-board-status'), 'available',
+      'The real starter contract was not available');
+    const accept = dialog.locator('[data-chronicles-board-accept="first-book-missing-board"]');
+    assert.equal(await accept.count(), 1, 'Missing public Accept contract button');
+    if (viewport.touch) await accept.tap();
+    else await accept.click();
+    await page.waitForFunction(previous => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      const card = document.querySelector('[data-chronicles-board-quest="banner-contract"]');
+      return Number(root?.getAttribute('data-chronicles-turns')) > previous
+        && card?.getAttribute('data-chronicles-board-status') === 'active';
+    }, before.turns, { timeout: 7000 });
+  }
+  assert.equal(await quest.getAttribute('data-chronicles-board-status'), 'active',
+    'Starter contract did not become active in the public board');
+  const close = dialog.getByRole('button', { name: 'Cerrar tablón' });
+  if (viewport.touch) await close.tap();
+  else await close.click();
+  await dialog.waitFor({ state: 'hidden', timeout: 7000 });
+  const after = await readObservation(page);
+  assert.equal(playtestTileKey(after), playtestTileKey(before),
+    'Opening contract unexpectedly moved the party');
+  if (!review) record('board:accept-contract', after);
+  return after;
+}
+
 async function runEpisode(profile, seed, viewport) {
   const username = 'playtest-' + randomBytes(6).toString('hex');
   const password = randomBytes(21).toString('base64url');
