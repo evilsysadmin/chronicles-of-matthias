@@ -417,6 +417,22 @@ async function runEpisode(profile, seed, viewport) {
     await useSwordhavenBoard(page, viewport, readObservation, record, { review: true });
     const boardQuestVerified = true;
 
+    // Actual inter-region journey: walk to Swordhaven's gate and choose Sí
+    // in the public travel prompt. Never substitute a fabricated map update.
+    const gateWalk = await walkOpeningRoute(page, viewport, readObservation, record, {
+      route: PLAYTEST_ROAD_ROUTE, startTile: '12,9', label: 'gate',
+    });
+    explorationActions += PLAYTEST_ROAD_ROUTE.length;
+    explorationCommitted += PLAYTEST_ROAD_ROUTE.length;
+    explorationMoves += gateWalk.moved;
+    for (const tile of gateWalk.visited) visitedExplorationTiles.add(tile);
+    const onRoad = await confirmBannerRoadTravel(page, viewport, readObservation, record);
+    const roadTravelVerified = true;
+    await saveReloadProbe(page, runId, token, onRoad, {
+      requiredFlags: [PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_FLAG],
+    });
+    visitedExplorationTiles.add(PLAYTEST_QUEST_ROAD_MAP_ID + ':' + playtestTileKey(onRoad));
+
     while (explorationActions < PLAYTEST_MAX_EXPLORATION_ACTIONS) {
       const before = await readObservation(page);
       if (before.initiative || before.phase !== 'explore') break;
