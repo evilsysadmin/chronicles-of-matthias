@@ -61,15 +61,25 @@ async function commitKey(action, expected) {
   assert.equal(before.phase, 'explore', 'Rear ranged test unexpectedly entered initiative');
   assert.equal(before.initiative, false, 'No MM3 rotation is legal in initiative');
   await page.keyboard.press(action);
-  await page.waitForFunction(target => {
-    const root = document.querySelector('[data-chronicles="true"]');
-    return root?.getAttribute('data-chronicles-phase') === 'explore'
-      && Number(root?.getAttribute('data-chronicles-turns')) > target.turns
-      && Number(root?.getAttribute('data-chronicles-party-x')) === target.x
-      && Number(root?.getAttribute('data-chronicles-party-y')) === target.y
-      && Number(root?.querySelector('[data-chronicles-minimap-facing]')?.getAttribute(
-        'data-chronicles-minimap-facing')) === target.direction;
-  }, { ...expected, turns: before.turns }, { timeout: 12000 });
+  try {
+    await page.waitForFunction(target => {
+      const root = document.querySelector('[data-chronicles="true"]');
+      return root?.getAttribute('data-chronicles-phase') === 'explore'
+        && Number(root?.getAttribute('data-chronicles-turns')) > target.turns
+        && Number(root?.getAttribute('data-chronicles-party-x')) === target.x
+        && Number(root?.getAttribute('data-chronicles-party-y')) === target.y
+        && Number(root?.querySelector('[data-chronicles-minimap-facing]')?.getAttribute(
+          'data-chronicles-minimap-facing')) === target.direction;
+    }, { ...expected, turns: before.turns }, { timeout: 12000 });
+  } catch (error) {
+    const observed = await observe(page).catch(observationError => ({
+      observationError: String(observationError),
+    }));
+    throw new Error('Rear shooter exploration step failed: ' + JSON.stringify({
+      action, expected: { ...expected, turnsGreaterThan: before.turns },
+      before, observed,
+    }), { cause: error });
+  }
   const after = await observe(page);
   assert.equal(after.turns, before.turns + 1, 'A movement/turn must spend exactly one exploration action');
   assert.equal(after.x, expected.x);
