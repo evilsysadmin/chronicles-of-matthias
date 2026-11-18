@@ -187,8 +187,14 @@ export function chroniclesActiveEnemies(state) {
 
 export function chroniclesEnemyPosition(state, enemy) {
   const runtime = state?.enemyPositions?.[enemy.id];
-  // Saved enemy positions must be whole grid cells, not fractional coordinates.
-  if (runtime && Number.isSafeInteger(runtime.x) && Number.isSafeInteger(runtime.y)) return runtime;
+  // A restored MM3 enemy override inside masonry must not diverge between
+  // combat AI (which falls back to the authored spawn), melee targeting and
+  // the 3D scene. Otherwise the enemy can start initiative and attack the
+  // party while its target/render position remains trapped inside a wall.
+  // Tactics keeps its independent grid-position contract.
+  if (runtime && Number.isSafeInteger(runtime.x) && Number.isSafeInteger(runtime.y)
+    && (!chroniclesUsesMM3Combat(state)
+      || chroniclesTileAt(runtime.x, runtime.y, state) !== '#')) return runtime;
   const keyed = enemy.positionKey && enemy.positions ? enemy.positions[state?.[enemy.positionKey]] : null;
   return keyed || { x: enemy.x, y: enemy.y };
 }
