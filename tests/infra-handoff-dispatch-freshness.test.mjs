@@ -293,7 +293,7 @@ test('invalid source SHA or missing infra token never dispatches', () => {
 test('only a complete successful dispatch may upload its SHA receipt', () => {
   assert.match(source, /id: dispatch/);
   assert.match(source, /if: steps\.dispatch\.outputs\.sent == 'true'/);
-  assert.match(source, /uses: actions\/upload-artifact@v5/);
+  assert.match(source, /uses: actions\/upload-artifact@v7/);
   assert.doesNotMatch(source, /actions\/upload-artifact@v4/);
   assert.match(source, /if: steps\.dispatch\.outputs\.sent == 'true'/);
   assert.match(source, /retention-days: 30/);
