@@ -12,6 +12,7 @@ import {
   chroniclesMissileRefusal,
   chroniclesPrecontactMeleeContact,
   chroniclesTouchVolleyOpportunity,
+  chroniclesTouchPlannedAttackMode,
 } from './chroniclesPrecontactVolley.js';
 
 
@@ -244,5 +245,34 @@ describe('S / melee-range missile contract', () => {
     const resolved = chroniclesReduce(close, { type: 'attack', memberId: 'matthias', mode: 'missile' });
     expect(resolved.turns).toBe(close.turns + 1);
     expect(resolved.message).toMatch(/(falla|impacta|derrota|acaba con)/i);
+  });
+});
+
+describe('MM3 touch attack handoff follows the actual initiative hero', () => {
+  it('never borrows the previously selected archer\'s bow for an unarmed hero', () => {
+    const base = rangedCompany();
+    const target = chroniclesEnemyTargetAhead(base, 3)?.enemy;
+    expect(target).toBeTruthy();
+    const placed = {
+      ...base, phase: 'combat',
+      enemyPositions: { ...base.enemyPositions, [target.id]: { x: 12, y: 5 } },
+      initiative: { round: 1, cursor: 0, order: [
+        { kind: 'party', id: 'rook' }, // no bow
+        { kind: 'party', id: 'matthias' }, // owns a bow
+        { kind: 'enemy', id: target.id },
+      ] },
+    };
+    expect(chroniclesCombatMissileTarget(placed, 3)?.enemy.id).toBe(target.id);
+    expect(chroniclesTouchPlannedAttackMode(placed, 'matthias')).toBe('melee');
+    expect(chroniclesReduce(placed, { type: 'attack', memberId: 'rook', mode: 'melee' }))
+      .toBe(placed); // Rook really cannot reach from two cells away.
+    const matthiasTurn = { ...placed,
+      initiative: { ...placed.initiative, cursor: 1 } };
+    expect(chroniclesTouchPlannedAttackMode(matthiasTurn, 'rook')).toBe('missile');
+    expect(chroniclesReduce(matthiasTurn, { type: 'attack', memberId: 'matthias', mode: 'missile' }).turns)
+      .toBe(matthiasTurn.turns + 1);
+    const enemyTurn = { ...placed,
+      initiative: { ...placed.initiative, cursor: 2 } };
+    expect(chroniclesTouchPlannedAttackMode(enemyTurn, 'matthias')).toBe('melee');
   });
 });
