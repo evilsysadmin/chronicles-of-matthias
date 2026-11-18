@@ -1,8 +1,9 @@
 import {
-  chroniclesActiveEnemies, chroniclesEnemyTargetAhead,
+  chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesAttackMode,
   chroniclesOpeningVolleyShots, chroniclesOpeningVolleyShooters,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesEquippedItem } from './chroniclesEquipment.js';
+import { chroniclesCurrentInitiativeActor } from './chroniclesInitiative.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
 // S launches an expedition-wide volley outside combat, or the active
@@ -15,6 +16,16 @@ export function chroniclesMissileRefusal(state, memberId = null) {
   const actor = state.party?.find((member) => member.id === memberId);
   return actor?.hp > 0 && !chroniclesEquippedItem(state, actor.id, 'missile')
     ? 'Sin arma a distancia' : null;
+}
+
+// The portrait selection can lag one React render behind initiative. Touch
+// controls must use the hero who ACTUALLY owns the turn, not the previously
+// highlighted portrait (which may have a bow while the active hero has none).
+export function chroniclesTouchPlannedAttackMode(state, selectedMemberId) {
+  const actor = chroniclesCurrentInitiativeActor(state?.initiative);
+  const memberId = actor?.kind === 'party' ? actor.id
+    : state?.initiative ? null : selectedMemberId;
+  return memberId ? chroniclesAttackMode(state, memberId) : 'melee';
 }
 
 // A single touch attack button advertises the *company* salvo even when

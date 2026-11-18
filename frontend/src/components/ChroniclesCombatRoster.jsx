@@ -1,4 +1,9 @@
-import { CHRONICLES_DIRECTIONS, chroniclesActiveEnemies, chroniclesEnemyTargetAhead } from '../chroniclesOfMatthias.js';
+import {
+  CHRONICLES_DIRECTIONS, chroniclesActiveEnemies, chroniclesEnemyTargetAhead,
+  chroniclesCombatMeleeTarget, chroniclesCombatMissileTarget,
+  chroniclesAttackMode, chroniclesPartyAttackStats,
+} from '../chroniclesOfMatthias.js';
+import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
 
 // A directional warning is earned only by a living, engaged opponent that
@@ -43,12 +48,26 @@ function ThreatCue({ bearing }) {
   ) : null;
 }
 
-function EnemyList({ foes, state, targetId, bearingById }) {
+// Reflect the active hero's actual A/S target, never merely a front-facing
+// bystander. Side/rear engaged enemies can be attacked without rotating.
+export function chroniclesRosterActionTarget(state) {
+  if (state?.combatRules !== 'mm3' || !state?.initiative) return null;
+  const actor = chroniclesCurrentInitiativeActor(state.initiative);
+  if (actor?.kind !== 'party') return null;
+  const mode = chroniclesAttackMode(state, actor.id);
+  const target = mode === 'missile'
+    ? chroniclesCombatMissileTarget(state, chroniclesPartyAttackStats(state, actor.id, 'missile').reach)
+    : chroniclesCombatMeleeTarget(state);
+  return target ? { id: target.enemy.id, mode } : null;
+}
+
+function EnemyList({ foes, state, targetId, targetMode, bearingById }) {
   return (
     <ol aria-label="Enemigos en combate">
       {foes.map((enemy) => {
         const hp = Number(state[enemy.hpKey] || 0);
         const bearing = bearingById.get(enemy.id);
+        const actionable = enemy.id === targetId ? targetMode : null;
         return (
           <li key={enemy.id}
             data-band={chroniclesHealthBand(hp, enemy.maxHp)}
@@ -57,6 +76,10 @@ function EnemyList({ foes, state, targetId, bearingById }) {
             title={`${enemy.name}: ${hp}/${enemy.maxHp} PV${bearing ? ` · ${BEARING_LABEL[bearing].full}` : ''}`}>
             {enemy.name}
             <ThreatCue bearing={bearing} />
+            {actionable && <small className="chronicles-combat-roster__bearing"
+              data-chronicles-target-mode={actionable} role="note">
+              {actionable === 'melee' ? '⚔ A · AL ALCANCE' : '➶ S · A TIRO'}
+            </small>}
           </li>
         );
       })}
@@ -73,7 +96,9 @@ export default function ChroniclesCombatRoster({ state }) {
       && (!engaged.size || engaged.has(enemy.id)));
   if (!foes.length) return null;
 
-  const targetId = chroniclesEnemyTargetAhead(state, 3)?.enemy?.id;
+  const actionTarget = chroniclesRosterActionTarget(state);
+  const targetId = state.combatRules === 'mm3' ? actionTarget?.id
+    : chroniclesEnemyTargetAhead(state, 3)?.enemy?.id;
   const count = `Combate · ${foes.length} ${foes.length === 1 ? 'enemigo' : 'enemigos'}`;
   const bearingById = new Map(foes.map(enemy => [enemy.id, chroniclesThreatBearing(state, enemy)]));
   // Prioritize a rear attacker if threats arrive from multiple directions.
@@ -87,7 +112,7 @@ export default function ChroniclesCombatRoster({ state }) {
           <strong>{count}</strong>
           <ThreatCue bearing={warning} />
         </header>
-        <EnemyList foes={foes} state={state} targetId={targetId} bearingById={bearingById} />
+        <EnemyList foes={foes} state={state} targetId={targetId} targetMode={actionTarget?.mode} bearingById={bearingById} />
       </div>
       <details className="chronicles-combat-roster__compact">
         <summary>
@@ -97,7 +122,7 @@ export default function ChroniclesCombatRoster({ state }) {
           </span>
           <span className="chronicles-combat-roster__chevron" aria-hidden="true">▾</span>
         </summary>
-        <EnemyList foes={foes} state={state} targetId={targetId} bearingById={bearingById} />
+        <EnemyList foes={foes} state={state} targetId={targetId} targetMode={actionTarget?.mode} bearingById={bearingById} />
       </details>
     </section>
   );
