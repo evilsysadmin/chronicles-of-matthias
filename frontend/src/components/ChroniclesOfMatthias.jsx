@@ -50,7 +50,7 @@ import { chroniclesClearRuntimeMapDefinitions, chroniclesMapForState, chronicles
 import { chroniclesRegionalWeather } from '../chronicles/chroniclesRegionalWeather.js';
 import { chroniclesHudQuestDestination } from '../chronicles/chroniclesQuestRegionHint.js';
 import { chroniclesAdvanceExplorationEnemies, chroniclesGridExplorationStep } from '../chronicles/chroniclesGridExplorationStep.js';
-import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity } from '../chronicles/chroniclesPrecontactVolley.js';
+import { chroniclesAdvanceOpeningVolley, chroniclesMissileRefusal, chroniclesTouchVolleyOpportunity, chroniclesTouchPlannedAttackMode } from '../chronicles/chroniclesPrecontactVolley.js';
 import './ChroniclesQuietActionNotice.css';
 import { chroniclesLootNotice } from '../chronicles/chroniclesLootNotice.js';
 import { chroniclesPlayAttackPresentation, chroniclesVolleyPresentationShooterIds } from '../chronicles/chroniclesVolleyPresentation.js';
@@ -2168,7 +2168,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const authoredDestination = chroniclesHudQuestDestination(state, objective);
   const routeHint = chroniclesRouteHint(state, authoredDestination || chroniclesObjectiveDestination(objective));
   const selectedMember = state.party.find((member) => member.id === selectedMemberId) || state.party[0];
-  const plannedAttackMode = selectedMember ? chroniclesAttackMode(state, selectedMember.id) : 'melee';
+  const plannedAttackMode = chroniclesTouchPlannedAttackMode(state, selectedMember?.id);
   const touchVolley = chroniclesTouchVolleyOpportunity(state);
   const touchWillShoot = touchVolley.available || plannedAttackMode === 'missile';
   const selectedCondition = chroniclesPartyCondition(selectedMember);
@@ -2203,7 +2203,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const rightTouchAction = chroniclesTouchSideAction(state, 'right');
   const touchSidestep = leftTouchAction === 'strafe-left';
   const touchAttackDisabled = state.combatRules === 'mm3' && (
-    activeInitiativeActor?.kind === 'enemy' || (!touchWillShoot && !meleeReady)
+    (state.initiative && activeInitiativeActor?.kind !== 'party') || (!touchWillShoot && !meleeReady)
   );
   const touchAttackReason = activeInitiativeActor?.kind === 'enemy'
     ? 'Turno enemigo: espera tu turno'
