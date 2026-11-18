@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
 
-import { chroniclesActiveEnemies, createChroniclesState } from '../chroniclesOfMatthias.js';
+import { chroniclesActiveEnemies, chroniclesEnemyTargetAhead, chroniclesReduce, createChroniclesState } from '../chroniclesOfMatthias.js';
 import { chroniclesEnemyAttackTarget } from '../chroniclesOfMatthiasTurns.js';
 import { chroniclesStartInitiativeCombat } from '../chronicles/chroniclesInitiative.js';
-import ChroniclesCombatRoster, { chroniclesHealthBand, chroniclesThreatBearing } from './ChroniclesCombatRoster.jsx';
+import ChroniclesCombatRoster, { chroniclesHealthBand, chroniclesThreatBearing, chroniclesRosterActionTarget } from './ChroniclesCombatRoster.jsx';
 import ChroniclesMinimap from './ChroniclesMinimap.jsx';
 
 describe('ChroniclesCombatRoster', () => {
@@ -102,5 +102,56 @@ describe('ChroniclesCombatRoster', () => {
     expect(together).toContain('data-chronicles-minimap="visible"');
     expect(together).toContain('class="chronicles-combat-roster"');
 
+  });
+});
+
+describe('MM3 combat roster uses the attack reducer target, not camera direction', () => {
+  it('marks a real offscreen roadside marauder as A-targetable and the click consumes Faust\'s action', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const all = chroniclesActiveEnemies(base);
+    const marauder = all.find(enemy => enemy.id === 'banner-road-north-marauder');
+    expect(marauder?.name).toBe('salteador de la calzada');
+    const placed = {
+      ...base, x: 5, y: 2, direction: 0,
+      ...Object.fromEntries(all.filter(enemy => enemy.id !== marauder.id)
+        .map(enemy => [enemy.hpKey, 0])),
+      enemyPositions: { [marauder.id]: { x: 5, y: 3 } },
+    };
+    const fight = chroniclesStartInitiativeCombat(placed, [marauder], { random: () => 0 });
+    expect(fight.phase).toBe('combat');
+    const cursor = fight.initiative.order.findIndex(actor =>
+      actor.kind === 'party' && actor.id === 'knight');
+    expect(cursor).toBeGreaterThanOrEqual(0);
+    // Old checkpoints can preserve their locked north-facing viewpoint;
+    // this is legal, even though the attacker is one cell to the south.
+    const offscreen = { ...fight, direction: 0,
+      initiative: { ...fight.initiative, cursor } };
+    expect(chroniclesEnemyTargetAhead(offscreen, 3)).toBeNull();
+    expect(chroniclesRosterActionTarget(offscreen)).toEqual({
+      id: marauder.id, mode: 'melee',
+    });
+    const html = renderToStaticMarkup(<ChroniclesCombatRoster state={offscreen} />);
+    expect(html).toContain('data-target="true"');
+    expect(html).toContain('data-chronicles-target-mode="melee"');
+    expect(html).toContain('A · AL ALCANCE');
+    const hit = chroniclesReduce(offscreen, {
+      type: 'attack', memberId: 'knight', mode: 'melee',
+    });
+    expect(hit.turns).toBe(offscreen.turns + 1);
+    expect(hit.direction).toBe(offscreen.direction);
+  });
+
+  it('never marks a phantom attack target during the enemy initiative slot', () => {
+    const base = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const enemy = chroniclesActiveEnemies(base).find(e => e.id === 'banner-road-north-marauder');
+    const fight = chroniclesStartInitiativeCombat({
+      ...base, x: 5, y: 2, direction: 2,
+      enemyPositions: { [enemy.id]: { x: 5, y: 3 } },
+    }, [enemy], { forceEnemyIds: [enemy.id], random: () => 0 });
+    const index = fight.initiative.order.findIndex(actor => actor.kind === 'enemy');
+    const enemyTurn = { ...fight, initiative: { ...fight.initiative, cursor: index } };
+    expect(chroniclesRosterActionTarget(enemyTurn)).toBeNull();
+    expect(renderToStaticMarkup(<ChroniclesCombatRoster state={enemyTurn} />))
+      .not.toContain('data-chronicles-target-mode=');
   });
 });
