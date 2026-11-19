@@ -11,6 +11,7 @@ import {
   chroniclesMM3MissileSightReach,
   chroniclesAttackMode,
   chroniclesMM3MeleeAvailable,
+  chroniclesMM3TurnActionReady,
   chroniclesOpeningVolleyShooters,
   chroniclesOpeningVolleyShots,
   chroniclesJournalEntries,
@@ -1300,6 +1301,10 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
     const memberId = initiativeActor?.kind === 'party'
       ? initiativeActor.id
       : selectedMemberIdRef.current;
+    // A sleeping or already-spent actor may not even produce attack FX.
+    // Let initiative advance on its own; keyboard and touch agree.
+    if (current.combatRules === 'mm3' && current.initiative
+      && !chroniclesMM3TurnActionReady(current, memberId)) return;
     const member = current.party.find((candidate) => candidate.id === memberId);
     const meleeMode = mode === 'melee' || (mode === 'auto' && chroniclesAttackMode(current, memberId) === 'melee');
     if (current.combatRules === 'mm3' && meleeMode && !chroniclesMM3MeleeAvailable(current, memberId)) {
@@ -2203,11 +2208,19 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
   const rightTouchAction = chroniclesTouchSideAction(state, 'right');
   const touchSidestep = leftTouchAction === 'strafe-left';
   const touchAttackDisabled = state.combatRules === 'mm3' && (
-    (state.initiative && activeInitiativeActor?.kind !== 'party') || (!touchWillShoot && !meleeReady)
+    (state.initiative && !chroniclesMM3TurnActionReady(state, activeInitiativeActor?.id))
+    || (!touchWillShoot && !meleeReady)
   );
   const touchAttackReason = activeInitiativeActor?.kind === 'enemy'
     ? 'Turno enemigo: espera tu turno'
-    : 'Sin enemigo adyacente. En combate no puedes girar: dispara (S), bloquea (B) o usa magia (C).';
+    : activeInitiativeActor?.asleep === true
+      ? 'Emboscada: este héroe duerme y perderá su primera acción'
+      : activeInitiativeActor?.kind === 'party' && (
+        state.combatActionSpent?.[activeInitiativeActor.id] === true
+        || state.combatBlock?.[activeInitiativeActor.id] === true
+      )
+        ? 'Acción consumida: espera al siguiente héroe'
+        : 'Sin enemigo adyacente. En combate no puedes girar: dispara (S), bloquea (B) o usa magia (C).';
 
   return (
     <div
