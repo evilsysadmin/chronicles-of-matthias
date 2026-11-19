@@ -825,6 +825,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     // neighboring road tiles without overlapping coplanar faces (z-fighting).
     // This is only an albedo carrier; movement still follows the saved grid.
     const roadSpan = heathB2 ? CELL : CELL * 0.98;
+    // Banner Road's full-cell cobbles look like an oversized modern highway.
+    // Keep the 4m navigation grid and longitudinal tile overlap unchanged,
+    // while narrowing the *visual* width of straight stretches to 3.28m.
+    // Scale existing instances rather than creating a second road geometry.
+    // The central crossing stays full-width so both routes meet cleanly.
+    const bannerStraightWidth = 0.82 / 0.98;
     const roads = new THREE.InstancedMesh(
       new THREE.BoxGeometry(roadSpan, 0.045, roadSpan), paver, roadCells.length,
     );
@@ -866,6 +872,13 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     roadCells.forEach(({ x, y }, index) => {
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
+      dummy.scale.set(
+        bannerTrail && x === sceneCenter.x && y !== sceneCenter.y
+          ? bannerStraightWidth : 1,
+        1,
+        bannerTrail && y === sceneCenter.y && x !== sceneCenter.x
+          ? bannerStraightWidth : 1,
+      );
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
       if (roadTintZones.length || heathTrackTints || townStreetTints || bannerTrackTints) {

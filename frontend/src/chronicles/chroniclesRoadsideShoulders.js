@@ -23,7 +23,9 @@ function hash(x, y, salt = 0) {
  * Geometry is shared by every edge; touch uses fewer leaf/patina triangles.
  *
  * Local +Z points away from the road. Most vertices lie ~0.02-0.55m into
- * the grass. A few tiny patina tongues overlap < 0.09m of the paving surface,
+ * the grass. Straight stone sections narrow to 3.28m, placing the shoulder
+ * at the actual pavement edge rather than the unchanged 4m navigation cell.
+ * A few tiny patina tongues overlap < 0.09m of the paving surface,
  * leaving the usable, legible road completely unobstructed.
  */
 export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {}) {
@@ -115,7 +117,9 @@ export function createBannerRoadShoulders({
   const tints = ['#ffffff', '#e7e8d7', '#dbe3d0', '#eee4d0']
     .map(hex => new THREE.Color(hex));
   edges.forEach(({ x, y, dx, dy, yaw }, i) => {
-    const edge = CELL * 0.495;
+    // Centre of the low moss strip follows the narrowed 3.28m cobble edge.
+    // The paved road keeps its original length, and the 4m grid stays intact.
+    const edge = CELL * 0.415;
     dummy.position.set((x - center.x) * CELL + dx * edge, -0.052,
       (y - center.y) * CELL + dy * edge);
     dummy.rotation.set(0, yaw, 0);
