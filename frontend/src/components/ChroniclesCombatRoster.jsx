@@ -1,7 +1,7 @@
 import {
   CHRONICLES_DIRECTIONS, chroniclesActiveEnemies, chroniclesEnemyTargetAhead,
   chroniclesCombatMeleeTarget, chroniclesCombatMissileTarget,
-  chroniclesAttackMode, chroniclesPartyAttackStats,
+  chroniclesAttackMode, chroniclesPartyAttackStats, chroniclesMM3TurnActionReady,
 } from '../chroniclesOfMatthias.js';
 import { chroniclesCurrentInitiativeActor } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesEnemyAttackTarget, chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
@@ -53,7 +53,7 @@ function ThreatCue({ bearing }) {
 export function chroniclesRosterActionTarget(state) {
   if (state?.combatRules !== 'mm3' || !state?.initiative) return null;
   const actor = chroniclesCurrentInitiativeActor(state.initiative);
-  if (actor?.kind !== 'party') return null;
+  if (!chroniclesMM3TurnActionReady(state, actor?.id)) return null;
   const mode = chroniclesAttackMode(state, actor.id);
   const target = mode === 'missile'
     ? chroniclesCombatMissileTarget(state, chroniclesPartyAttackStats(state, actor.id, 'missile').reach)

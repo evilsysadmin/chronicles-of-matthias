@@ -237,17 +237,28 @@ export function chroniclesEnemyDistanceAhead(state, maxReach = 2) {
   return chroniclesEnemyTargetAhead(state, maxReach)?.distance ?? null;
 }
 
-// MM3 melee requires a real adjacent foe. During initiative the foe may
-// occupy any cardinal neighbour, since the company itself cannot turn.
-// A living hero must also own the current initiative slot.
+// One MM3 initiative action belongs to exactly one living, awake hero.
+// Share this predicate across reducer, buttons and roster so UI never
+// advertises actions that the engine rejects. Outside initiative this is
+// deliberately false: exploration has different attack/volley rules.
+export function chroniclesMM3TurnActionReady(state, memberId) {
+  if (!chroniclesUsesMM3Combat(state) || !state?.initiative
+    || state.phase === 'defeated' || state.phase === 'escaped') return false;
+  const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
+  return actor?.kind === 'party' && actor.id === memberId
+    && actor.asleep !== true
+    && state.combatActionSpent?.[memberId] !== true
+    && state.combatBlock?.[memberId] !== true
+    && Boolean(state.party?.some(member => member.id === memberId && Number(member.hp) > 0));
+}
+
+// A side/rear engaged enemy remains melee-reachable without a forbidden
+// combat rotation, but a sleeping/spent hero may not attack it.
 export function chroniclesMM3MeleeAvailable(state, memberId) {
   if (!chroniclesUsesMM3Combat(state)) return true; // Tactics retains its rules.
   if (!state || state.phase === 'defeated' || state.phase === 'escaped') return false;
   if (!state.party?.some((member) => member.id === memberId && Number(member.hp) > 0)) return false;
-  if (state.initiative) {
-    const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
-    if (actor?.kind !== 'party' || actor.id !== memberId) return false;
-  }
+  if (state.initiative && !chroniclesMM3TurnActionReady(state, memberId)) return false;
   return Boolean(chroniclesCombatMeleeTarget(state));
 }
 
@@ -1235,9 +1246,7 @@ export function chroniclesCombatPartyStepBlocked(state, action) {
   // Even an unspent hero action must not rotate the party or camera.
   if (type === 'turn-left' || type === 'turn-right') return true;
   const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
-  return actor?.kind !== 'party' || actor.asleep === true
-    || !state.party?.some((member) => member.id === actor.id && Number(member.hp) > 0)
-    || state.combatActionSpent?.[actor.id] === true || state.combatBlock?.[actor.id] === true;
+  return !chroniclesMM3TurnActionReady(state, actor?.id);
 }
 
 // One successful attack, spell, item or BLOCK consumes the hero's entire
@@ -1263,9 +1272,9 @@ function chroniclesReduceAction(state, action) {
   if (chroniclesCombatPartyStepBlocked(state, action)) return state;
   if (state.combatRules === 'mm3' && state.initiative && MM3_TURN_ACTIONS.has(actionType)) {
     const actor = state.initiative.order?.[state.initiative.cursor ?? 0];
-    if (actor?.kind === 'party'
-      && (state.combatActionSpent?.[actor.id] === true
-        || state.combatBlock?.[actor.id] === true)) return state;
+    // Enforce the same gate used by input/UI. In particular, a sleeping
+    // ambush victim cannot be woken up early by a direct reducer dispatch.
+    if (!chroniclesMM3TurnActionReady(state, actor?.id)) return state;
   }
   // A stale F/interact or confirmed exit must not activate world content or
   // change floors during MM3 initiative. Travel resumes after combat ends.
