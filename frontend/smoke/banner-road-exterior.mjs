@@ -52,6 +52,12 @@ try {
       assert.ok(Number(state.bushCount) > 5, 'Roadside bushes must be present');
       assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');
       assert.ok(Number(state.sedgeCount) > 15, 'Distinct broad-leaved sedges must render');
+      assert.ok(Number(state.herbCount) > (coarse ? 20 : 40),
+        'Forest-edge leafy plants must fill the missing mid/low vegetation layer');
+      assert.equal(Number(state.herbTriangles), coarse ? 8 : 28,
+        'One low-poly shared undergrowth geometry per forest scene');
+      assert.ok(Number(state.juvenileTrees) > 5,
+        'Some existing tall tree instances must be replaced with younger trees');
       assert.ok(Number(state.sedgeCount) < Number(state.grassCount),
         'Sedges must break up, not replace, the darker turf');
       assert.equal(Number(state.sedgeTriangles), coarse ? 8 : 16,

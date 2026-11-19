@@ -58,12 +58,22 @@ try {
   const bushes = foliage?.getObjectByName('chronicles-terra-bush');
   const turf = foliage?.getObjectByName('chronicles-terra-tuft');
   const sedges = foliage?.getObjectByName('chronicles-terra-meadowSedge');
+  const woodlandHerbs = foliage?.getObjectByName('chronicles-terra-forestHerb');
+  const trunks = foliage?.getObjectByName('chronicles-terra-broadleafTrunk');
   const road = scene.getObjectByName('chronicles-campaign-road');
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const triangles = geometry => geometry.index
     ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
   const shade = new THREE.Color();
   const crownTints = new Set();
+  const treeTransform = new THREE.Matrix4();
+  const treeScale = new THREE.Vector3();
+  let juvenileTrees = 0;
+  for (let i = 0; i < (trunks?.count || 0); i += 1) {
+    trunks.getMatrixAt(i, treeTransform);
+    treeTransform.decompose(new THREE.Vector3(), new THREE.Quaternion(), treeScale);
+    if (treeScale.y < 2.0) juvenileTrees += 1;
+  }
   for (let i = 0; i < (crowns?.count || 0); i += 1) {
     crowns.getColorAt(i, shade);
     crownTints.add(shade.getHex());
@@ -111,6 +121,9 @@ try {
     grassCount: String(turf?.count || 0),
     sedgeCount: String(sedges?.count || 0),
     sedgeTriangles: String(sedges ? triangles(sedges.geometry) : -1),
+    herbCount: String(woodlandHerbs?.count || 0),
+    herbTriangles: String(woodlandHerbs ? triangles(woodlandHerbs.geometry) : -1),
+    juvenileTrees: String(juvenileTrees),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
     canopyTints: String(crownTints.size),
     canopyVertexColors: String(vertexColours?.count || 0),

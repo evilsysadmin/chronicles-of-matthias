@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
-const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'microrelief', 'snowMound', 'ember']);
+const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'microrelief', 'forestHerb', 'snowMound', 'ember']);
 
 function instanceCells(group, center) {
   const out = [];
@@ -588,6 +588,106 @@ describe('Terra scenery', () => {
     }
     expect(new Set(density.values()).size).toBeGreaterThan(3);
     expect(colors.size).toBeGreaterThan(2);
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+  });
+
+
+  it('creates broad compound-leaf plants with a low mobile polygon budget', () => {
+    const full = chroniclesForestHerbGeometry();
+    const mobile = chroniclesForestHerbGeometry({ coarsePointer: true });
+    const repeat = chroniclesForestHerbGeometry();
+    const pos = full.getAttribute('position');
+    expect(pos.count).toBe(7 * 4 * 3);
+    expect(mobile.getAttribute('position').count).toBe(4 * 2 * 3);
+    expect(full.getAttribute('color').count).toBe(pos.count);
+    expect(full.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(full.boundingBox.max.y).toBeLessThan(0.85);
+    expect(full.boundingBox.min.x).toBeGreaterThan(-0.73);
+    expect(full.boundingBox.max.x).toBeLessThan(0.73);
+    expect(full.boundingBox.min.z).toBeGreaterThan(-0.73);
+    expect(full.boundingBox.max.z).toBeLessThan(0.73);
+    expect([...repeat.getAttribute('position').array]).toEqual([...pos.array]);
+    for (const value of pos.array) expect(Number.isFinite(value)).toBe(true);
+    [full, mobile, repeat].forEach(g => g.dispose());
+  });
+
+  it('layers juvenile trees and low herbs near Banner Road forest without blocking walkable paths', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear };
+    const full = buildTerraScenery(options);
+    const touch = buildTerraScenery({ ...options, coarsePointer: true });
+    const repeat = buildTerraScenery(options);
+    const oldMap = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const herbs = full.getObjectByName('chronicles-terra-forestHerb');
+    const touchHerbs = touch.getObjectByName('chronicles-terra-forestHerb');
+    expect(herbs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(herbs.count).toBeGreaterThan(45);
+    expect(touchHerbs.count).toBeLessThan(herbs.count);
+    expect(herbs.material.vertexColors).toBe(true);
+    expect(herbs.material.transparent).toBe(false);
+    expect(herbs.castShadow).toBe(false);
+    expect(herbs.instanceColor.count).toBe(herbs.count);
+    expect(oldMap.getObjectByName('chronicles-terra-forestHerb')).toBeUndefined();
+    const excluded = new Set(keepClear.map(cell => cell.x + ',' + cell.y));
+    const matrix = new THREE.Matrix4();
+    const twin = new THREE.Matrix4();
+    const colour = new THREE.Color(), second = new THREE.Color();
+    const variants = new Set(), cellTypes = new Set();
+    const repeatHerbs = repeat.getObjectByName('chronicles-terra-forestHerb');
+    for (let i = 0; i < herbs.count; i += 1) {
+      herbs.getMatrixAt(i, matrix);
+      repeatHerbs.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      herbs.getColorAt(i, colour);
+      repeatHerbs.getColorAt(i, second);
+      expect(colour.getHex()).toBe(second.getHex());
+      variants.add(colour.getHex());
+      const wx = matrix.elements[12], wz = matrix.elements[14];
+      const x = Math.round(wx / 4) + center.x;
+      const y = Math.round(wz / 4) + center.y;
+      const tile = map.grid[y]?.[x];
+      expect(['.', '#']).toContain(tile);
+      cellTypes.add(tile);
+      expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(0.55);
+      expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(0.55);
+      if (tile === '.') {
+        expect(excluded.has(x + ',' + y)).toBe(false);
+        // A low broadleaf herb is decoration, never a blocking bush.
+        expect(matrix.elements[5]).toBeLessThan(0.70);
+      } else expect(matrix.elements[5]).toBeGreaterThan(0.95);
+    }
+    expect(cellTypes.size).toBe(2);
+    expect(variants.size).toBeGreaterThan(2);
+    const trunks = full.getObjectByName('chronicles-terra-broadleafTrunk');
+    const originalTrunks = oldMap.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunks.count).toBe(originalTrunks.count);
+    const young = [];
+    const original = [];
+    const scale = new THREE.Vector3();
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, matrix);
+      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+      young.push(scale.y);
+      originalTrunks.getMatrixAt(i, twin);
+      twin.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+      original.push(scale.y);
+    }
+    // Compare the same authored tree instances, not the global minima:
+    // outer-ring trees can legitimately be shorter even on other maps.
+    // Banner Road juveniles must be substantially smaller than THEIR
+    // original grown counterpart, with identical blocked-cell placements.
+    const shortened = young.filter((s, i) => s < original[i] * 0.80);
+    expect(shortened.length).toBeGreaterThan(8);
+    expect(young.filter(s => s < 2.0).length).toBeGreaterThan(8);
+    // Coarse devices intentionally skip part of the distant out-of-map
+    // tree ring: only authored in-map juvenile transforms must be retained.
+    const mobileTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(mobileTrunks.count).toBeGreaterThan(10);
+    expect(mobileTrunks.count).toBeLessThanOrEqual(trunks.count);
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
