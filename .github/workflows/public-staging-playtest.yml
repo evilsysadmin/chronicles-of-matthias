@@ -1,8 +1,11 @@
 name: Chronicles staging autonomous playtest
+# Staging's canonical daily authenticated playtest runs in
+# evilsysadmin/shadowops-infra (chronicles-autonomous-playtest.yml), where
+# the staging invitation is managed. Keep this source-side workflow manual
+# only: an independent daily cron without a source-repo invite secret
+# produces guaranteed false-red jobs without exercising the game.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '23 5 * * *'
 permissions:
   contents: read
 concurrency:
