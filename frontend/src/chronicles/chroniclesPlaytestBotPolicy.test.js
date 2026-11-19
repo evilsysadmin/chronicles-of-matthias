@@ -11,6 +11,7 @@ import {
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
+  playtestRoadCombatActorValid,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -39,6 +40,41 @@ describe('public staging Playwright bot policy', () => {
       explorationActions: 8, combatActions: 0,
       startHp: 30, endHp: 30, scenario: 'campaign-start',
     })).toEqual({ outcome: 'exploration', warnings: [], hpLost: 0, actions: 8 });
+  });
+
+  it('accepts actual Banner Road initiative after travel without confusing it with the Swordhaven entry', () => {
+    const onRoad = { mapId: PLAYTEST_QUEST_ROAD_MAP_ID, initiative: true,
+      actor: 'Ronda 1. Turno de Faust', phase: 'combat' };
+    expect(playtestRoadCombatActorValid(onRoad)).toBe(true);
+    expect(playtestRoadCombatActorValid({ ...onRoad, mapId: PLAYTEST_CAMPAIGN_ENTRY_MAP_ID }))
+      .toBe(false);
+    expect(playtestRoadCombatActorValid({ ...onRoad, actor: '' })).toBe(false);
+    expect(playtestRoadCombatActorValid({ ...onRoad, initiative: false })).toBe(false);
+    expect(playtestRoadCombatActorValid(null)).toBe(false);
+  });
+
+  it('verifies a real Banner Road checkpoint with named enemy HP, not the retired crypt flag', () => {
+    const snapshot = {
+      runId: 'run-road', currentMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
+      worldFlags: {
+        '__chrRuntime.turns': 17,
+        bannerRoadNorthMarauderHp: 9,
+        bannerRoadWestDeserterHp: 0,
+      },
+    };
+    const args = { runId: 'run-road', mapId: PLAYTEST_QUEST_ROAD_MAP_ID, turns: 17,
+      saved: snapshot, restored: structuredClone(snapshot) };
+    expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, restored: { ...snapshot, worldFlags: {
+        ...snapshot.worldFlags, bannerRoadNorthMarauderHp: 8,
+      } },
+    })).toThrow('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
+    expect(() => verifyPlaytestCheckpoint({
+      ...args, saved: { ...snapshot, worldFlags: {
+        ...snapshot.worldFlags, bannerRoadNorthMarauderHp: -1,
+      } },
+    })).toThrow('BOT_CHECKPOINT_INVALID_ENEMY_HP');
   });
 
   it('walks the real Swordhaven opening to the sealed letter, without shortcuts', () => {
