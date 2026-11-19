@@ -14,6 +14,7 @@ import {
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
   playtestRoadCombatActorValid, playtestCheckpointSaveReceipt,
+  playtestCommittedMeleeAttack,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -27,6 +28,23 @@ describe('public staging Playwright bot policy', () => {
     expect(script).not.toContain("getAttribute('data-turn-phase') === 'enemy'");
     expect(script).toContain("enemyTurn: Boolean(rail?.classList.contains('is-enemy-turn'))");
     expect(script).toContain("return !rail || !rail.classList.contains('is-enemy-turn');");
+  });
+
+  it('requires an actual A input, a legal melee cue and a consumed turn', () => {
+    const before = { initiative: true, meleeReady: true, turns: 44, actor: 'Faust' };
+    const after = { initiative: true, turns: 45, actor: 'Matthias' };
+    expect(playtestCommittedMeleeAttack('a', before, after)).toBe(true);
+    expect(playtestCommittedMeleeAttack('b', before, after)).toBe(false);
+    expect(playtestCommittedMeleeAttack('a', { ...before, meleeReady: false }, after))
+      .toBe(false);
+    expect(playtestCommittedMeleeAttack('a', { ...before, initiative: false }, after))
+      .toBe(false);
+    expect(playtestCommittedMeleeAttack('a', before, { ...after, turns: 44 }))
+      .toBe(false);
+    expect(playtestCommittedMeleeAttack('a', before, { ...after, turns: 43 }))
+      .toBe(false);
+    expect(playtestCommittedMeleeAttack('a', before, { ...after, turns: NaN }))
+      .toBe(false);
   });
 
   it('supports two reproducible strategies with bounded runtime', () => {
@@ -389,7 +407,12 @@ describe('public staging Playwright bot policy', () => {
     })]).passed).toBe(true);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'victory', combatEntered: true, postCombatEnemyHp: 0,
+      committedMeleeAttacks: 5,
     })]).passed).toBe(true);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'victory', combatEntered: true, postCombatEnemyHp: 0,
+      committedMeleeAttacks: 0,
+    })]).reasons).toEqual(['victory-without-verified-melee-attack:cautious']);
     expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'unfinished', combatEntered: true, postCombatEnemyHp: null,
     })]).reasons).toEqual(['combat-outcome-unverified:cautious']);
