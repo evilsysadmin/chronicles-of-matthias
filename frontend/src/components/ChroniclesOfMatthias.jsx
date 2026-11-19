@@ -27,6 +27,7 @@ import { chroniclesKeepVictoryFacing } from '../chronicles/chroniclesCombatCamer
 import {
   chroniclesAdvanceCombatInitiative,
   chroniclesCurrentInitiativeActor,
+  chroniclesDisplayedTurnPhase,
   chroniclesStartInitiativeCombat,
 } from '../chronicles/chroniclesInitiative.js';
 import { chroniclesDeployedPartyLevel } from '../chronicles/chroniclesDifficultyPolicy.js';
@@ -2236,7 +2237,7 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       data-chronicles-turn-engine={CHRONICLES_TURN_ENGINE_VERSION}
       data-chronicles-initiative-die={state.initiative?.die || undefined}
       data-chronicles-initiative-actor={activeInitiativeActor?.id || ''}
-      data-turn-phase={state.turnPhase || 'party'}
+      data-turn-phase={chroniclesDisplayedTurnPhase(state)}
       data-party-hp-total={state.party.reduce((total, member) => total + Number(member.hp || 0), 0)}
       role="region"
       aria-label="Chronicles of Matthias"

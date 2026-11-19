@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import {
@@ -20,6 +21,13 @@ const seen = (overrides = {}) => ({
 });
 
 describe('public staging Playwright bot policy', () => {
+  it('waits only for the actual initiative rail, not a stale exploration enemy flag', () => {
+    const script = readFileSync(new URL('../../smoke/public-staging-playtest.mjs', import.meta.url), 'utf8');
+    expect(script).not.toContain("getAttribute('data-turn-phase') === 'enemy'");
+    expect(script).toContain("enemyTurn: Boolean(rail?.classList.contains('is-enemy-turn'))");
+    expect(script).toContain("return !rail || !rail.classList.contains('is-enemy-turn');");
+  });
+
   it('supports two reproducible strategies with bounded runtime', () => {
     expect(PLAYTEST_PROFILES).toEqual(['aggressive', 'cautious']);
     expect(PLAYTEST_MAX_COMBAT_ACTIONS).toBeLessThanOrEqual(40);
