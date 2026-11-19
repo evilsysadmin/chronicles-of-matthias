@@ -282,13 +282,26 @@ try {
       assert.equal(await barkDetails.isVisible(), false,
         'A narrative event must not cover the first-person scene before opt-in');
       await page.screenshot({ path: 'smoke-first-payment-' + width + '.png' });
-      await barkTab.hover();
+      // Narrow viewports exercise the real mobile tap/expanded contract.
+      // Hover is a desktop affordance and can disappear when the pointer
+      // leaves a reduced-motion preview mid-frame at 390px.
+      if (width <= 600) {
+        await barkTab.click();
+        assert.equal(await barkTab.getAttribute('aria-expanded'), 'true',
+          'Mobile opt-in must expand the actual narration');
+      } else {
+        await barkTab.hover();
+      }
       await barkDetails.waitFor({ state: 'visible' });
-      assert.ok((await barkDetails.innerText()).includes(delta + ' monedas de oro'),
-        'Opt-in narration must show the actual earned gold');
+      // Read the genuinely visible paragraph, not hidden fixture state.
+      const narration = barkDetails.locator('p');
+      await narration.waitFor({ state: 'visible' });
+      const narrationText = await narration.textContent();
+      assert.ok(narrationText?.includes(delta + ' monedas de oro'),
+        'Opt-in narration must show the actual earned gold: ' + JSON.stringify(narrationText));
       const bounds = await barkDetails.boundingBox();
       assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
-        'Hover narration must stay inside the viewport: ' + JSON.stringify(bounds));
+        'Opt-in narration must stay inside the viewport: ' + JSON.stringify(bounds));
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
       await page.screenshot({ path: 'smoke-first-payment-hover-' + width + '.png' });
 
