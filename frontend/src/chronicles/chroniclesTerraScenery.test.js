@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesMeadowGrassGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -193,6 +193,83 @@ describe('Terra scenery', () => {
     }
     desktop.dispose();
     mobile.dispose();
+  });
+
+
+  it('fills Banner Road meadow cells and road edges without adding colliders or crossing paved cells', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    // An authored interaction cell is also reserved, not merely road tiles.
+    keepClear.push({ x: 5, y: 6 });
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear };
+    const full = buildTerraScenery(args);
+    const touch = buildTerraScenery({ ...args, coarsePointer: true });
+    const again = buildTerraScenery(args);
+    const baseline = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const grass = full.getObjectByName('chronicles-terra-tuft');
+    const mobile = touch.getObjectByName('chronicles-terra-tuft');
+    const older = baseline.getObjectByName('chronicles-terra-tuft');
+    const flowers = full.getObjectByName('chronicles-terra-flower');
+    expect(grass).toBeInstanceOf(THREE.InstancedMesh);
+    expect(flowers).toBeInstanceOf(THREE.InstancedMesh);
+    expect(mobile).toBeInstanceOf(THREE.InstancedMesh);
+    expect(grass.count).toBeGreaterThan(older.count * 3);
+    expect(grass.count).toBeGreaterThan(mobile.count * 2);
+    expect(flowers.count).toBeGreaterThan(15);
+    expect(grass.instanceColor.count).toBe(grass.count);
+    expect(grass.material.vertexColors).toBe(true);
+    expect(mobile.material.vertexColors).toBe(true);
+    expect(grass.castShadow).toBe(false);
+    expect(touch.getObjectByName('chronicles-terra-flower')).toBeUndefined();
+    const empty = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const matrix = new THREE.Matrix4();
+    const same = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    const otherTint = new THREE.Color();
+    const variations = new Set();
+    for (const batch of [grass, mobile, flowers]) {
+      const restored = again.getObjectByName(batch.name);
+      if (batch === mobile) expect(batch.count).toBeLessThan(grass.count);
+      else expect(restored.count).toBe(batch.count);
+      for (let i = 0; i < batch.count; i += 1) {
+        batch.getMatrixAt(i, matrix);
+        const wx = matrix.elements[12];
+        const wz = matrix.elements[14];
+        const x = Math.round(wx / 4) + center.x;
+        const y = Math.round(wz / 4) + center.y;
+        expect(map.grid[y]?.[x], batch.name + ' at ' + x + ',' + y).toBe('.');
+        expect(empty.has(x + ',' + y)).toBe(false);
+        expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(1.5);
+        expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(1.5);
+        if (batch === grass) {
+          restored.getMatrixAt(i, same);
+          expect(same.elements).toEqual(matrix.elements);
+          batch.getColorAt(i, tint);
+          restored.getColorAt(i, otherTint);
+          expect(otherTint.getHex()).toBe(tint.getHex());
+          variations.add(tint.getHex());
+        }
+      }
+    }
+    expect(variations.size).toBeGreaterThan(2);
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+    expect(touch.children.every(child => child.isInstancedMesh)).toBe(true);
+  });
+
+  it('creates small opaque wildflower sprigs with petals and stems, never floating spheres', () => {
+    const shape = chroniclesMeadowWildflowersGeometry();
+    const position = shape.getAttribute('position');
+    const colors = shape.getAttribute('color');
+    shape.computeBoundingBox();
+    expect(position.count).toBeGreaterThan(60);
+    expect(position.count).toBeLessThan(170);
+    expect(colors.count).toBe(position.count);
+    expect(shape.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(shape.boundingBox.max.y).toBeLessThan(0.65);
+    for (const n of position.array) expect(Number.isFinite(n)).toBe(true);
+    shape.dispose();
   });
 
   it('gives Banner Road trees and bushes varied deterministic foliage while leaving roads clear', () => {
