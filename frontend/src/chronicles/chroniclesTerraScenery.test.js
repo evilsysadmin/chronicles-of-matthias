@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
-const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'snowMound', 'ember']);
+const CLUTTER = new Set(['tuft', 'flower', 'pebble', 'microrelief', 'snowMound', 'ember']);
 
 function instanceCells(group, center) {
   const out = [];
@@ -325,6 +325,77 @@ describe('Terra scenery', () => {
       .toEqual([...full.getAttribute('position').array]);
     for (const value of full.getAttribute('position').array) expect(Number.isFinite(value)).toBe(true);
     [full, mobile, again].forEach(shape => shape.dispose());
+  });
+
+
+  it('adds shallow pebbles, roots and leaf litter ONLY to unpaved Banner Road grass', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const clear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    clear.push({ x: 5, y: 6 }); // Quest interaction exemption.
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear: clear };
+    const full = buildTerraScenery(args);
+    const touch = buildTerraScenery({ ...args, coarsePointer: true });
+    const again = buildTerraScenery(args);
+    const elsewhere = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const rocks = full.getObjectByName('chronicles-terra-microrelief');
+    const mobile = touch.getObjectByName('chronicles-terra-microrelief');
+    const repeat = again.getObjectByName('chronicles-terra-microrelief');
+    expect(rocks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(rocks.count).toBeGreaterThan(10);
+    expect(mobile).toBeInstanceOf(THREE.InstancedMesh);
+    expect(mobile.count).toBeLessThan(rocks.count);
+    expect(rocks.castShadow).toBe(false);
+    expect(rocks.material.vertexColors).toBe(true);
+    expect(rocks.material.transparent).toBe(false);
+    expect(rocks.instanceColor.count).toBe(rocks.count);
+    expect(elsewhere.getObjectByName('chronicles-terra-microrelief')).toBeUndefined();
+    expect(full.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    const excluded = new Set(clear.map(p => p.x + ',' + p.y));
+    const matrix = new THREE.Matrix4();
+    const same = new THREE.Matrix4();
+    const shade = new THREE.Color();
+    const twin = new THREE.Color();
+    const variants = new Set();
+    for (let i = 0; i < rocks.count; i += 1) {
+      rocks.getMatrixAt(i, matrix);
+      repeat.getMatrixAt(i, same);
+      expect(same.elements).toEqual(matrix.elements);
+      const wx = matrix.elements[12], wz = matrix.elements[14];
+      const x = Math.round(wx / 4) + center.x;
+      const y = Math.round(wz / 4) + center.y;
+      expect(map.grid[y]?.[x]).toBe('.');
+      expect(excluded.has(x + ',' + y)).toBe(false);
+      // Whole low rock/root geometry remains on its own cell; no road overlap.
+      expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(1);
+      expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(1);
+      rocks.getColorAt(i, shade);
+      repeat.getColorAt(i, twin);
+      expect(shade.getHex()).toBe(twin.getHex());
+      variants.add(shade.getHex());
+    }
+    expect(variants.size).toBeGreaterThan(1);
+  });
+
+  it('keeps meadow microrelief ankle-low, fully opaque and cheap on mobile', () => {
+    const desktop = chroniclesMeadowMicroreliefGeometry();
+    const mobile = chroniclesMeadowMicroreliefGeometry({ coarsePointer: true });
+    const repeat = chroniclesMeadowMicroreliefGeometry();
+    const d = desktop.getAttribute('position');
+    const m = mobile.getAttribute('position');
+    expect(d.count).toBeGreaterThan(m.count);
+    expect(d.count).toBeLessThan(145);
+    expect(desktop.getAttribute('color').count).toBe(d.count);
+    expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(desktop.boundingBox.max.y).toBeLessThan(0.22);
+    expect(desktop.boundingBox.min.x).toBeGreaterThan(-0.66);
+    expect(desktop.boundingBox.max.x).toBeLessThan(0.67);
+    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.64);
+    expect(desktop.boundingBox.max.z).toBeLessThan(0.64);
+    expect([...repeat.getAttribute('position').array]).toEqual([...d.array]);
+    for (const value of d.array) expect(Number.isFinite(value)).toBe(true);
+    [desktop, mobile, repeat].forEach(shape => shape.dispose());
   });
 
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {

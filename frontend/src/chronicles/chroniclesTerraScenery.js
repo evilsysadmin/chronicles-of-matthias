@@ -399,6 +399,72 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
   return geometry;
 }
 
+
+/**
+ * Irregular half-buried stones, shallow exposed roots and fallen leaf litter
+ * interrupt the featureless meadow foreground. One shared opaque geometry
+ * is instanced across selected, walkable *unpaved* Banner Road grass cells.
+ * Deliberately lower than the player's ankle: only a visual microrelief,
+ * never a collider, a raised terrain tile or an interactive object.
+ */
+export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false } = {}) {
+  const positions = [];
+  const colors = [];
+  const stone = ['#8c8d7a', '#6d7766', '#9b9880', '#737263']
+    .map(value => new THREE.Color(value));
+  const bark = ['#615443', '#817059'].map(value => new THREE.Color(value));
+  const litter = ['#887750', '#a09265', '#707b4c']
+    .map(value => new THREE.Color(value));
+  const add = (a, b, c, tint) => {
+    positions.push(...a, ...b, ...c);
+    for (let j = 0; j < 3; j += 1) colors.push(tint.r, tint.g, tint.b);
+  };
+  const rock = (cx, cz, radius, height, seed) => {
+    const rim = [];
+    for (let i = 0; i < 6; i += 1) {
+      const angle = i * Math.PI / 3;
+      const r = radius * (0.83 + (i % 3) * 0.11);
+      rim.push([cx + Math.cos(angle) * r, 0.012,
+        cz + Math.sin(angle) * r * 0.78]);
+    }
+    const top = [cx + radius * 0.11, height, cz - radius * 0.08];
+    for (let i = 0; i < rim.length; i += 1) {
+      add(rim[i], top, rim[(i + 1) % rim.length], stone[(seed + i) % stone.length]);
+    }
+  };
+  rock(0.12, -0.11, 0.30, 0.17, 0);
+  if (!coarsePointer) {
+    rock(-0.28, 0.25, 0.20, 0.115, 1);
+    rock(0.29, 0.31, 0.16, 0.10, 2);
+  }
+  // Two bark-coloured ribbons snake around the stones, rather than adding
+  // tall fallen logs. Mobile keeps only one; neither casts a shadow.
+  const roots = coarsePointer ? 1 : 2;
+  for (let i = 0; i < roots; i += 1) {
+    const z = i ? 0.36 : -0.33;
+    const x = i ? -0.46 : -0.55;
+    const shade = bark[i % bark.length];
+    add([x, 0.022, z], [x + 0.47, 0.045, z + 0.15],
+      [x + 0.10, 0.025, z + 0.075], shade);
+    add([x + 0.10, 0.025, z + 0.075],
+      [x + 0.47, 0.045, z + 0.15],
+      [x + 0.76, 0.017, z + 0.045], shade);
+  }
+  for (let i = 0; i < (coarsePointer ? 2 : 5); i += 1) {
+    const x = (i % 3 - 1) * 0.25 + 0.035;
+    const z = (Math.floor(i / 3) - 0.5) * 0.54 + 0.15;
+    add([x - 0.06, 0.015, z], [x + 0.035, 0.015, z + 0.07],
+      [x + 0.075, 0.020, z - 0.04], litter[i % litter.length]);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -433,6 +499,7 @@ function partCatalog(coarsePointer, biome) {
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
@@ -684,6 +751,30 @@ function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
   }
 }
 
+
+/**
+ * Shallow stones/roots are biased towards forest margins and occasional
+ * meadow clearings. Never plant over authored paving or reserved content.
+ * Keep the entire <0.7m decoration footprint within its own 4m grass cell.
+ */
+function addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer) {
+  const borders = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
+  const sample = noise(x, y, 559);
+  if (sample < (borders.length
+    ? (coarsePointer ? 0.50 : 0.24)
+    : (coarsePointer ? 0.96 : 0.88))) return;
+  const [dx, dy] = borders.length
+    ? borders[Math.floor(noise(x, y, 563) * borders.length)] : [0, 0];
+  const ox = dx * 0.60 + (noise(x, y, 567) - 0.5) * 0.65;
+  const oz = dy * 0.60 + (noise(y, x, 569) - 0.5) * 0.65;
+  const scale = 0.82 + noise(x, y, 571) * 0.27;
+  p.add('microrelief', [wx + ox, 0.012, wz + oz], {
+    yaw: noise(x, y, 573) * Math.PI * 2,
+    scale: [scale, 0.88 + noise(x, y, 577) * 0.2, scale],
+  });
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     // Two short grass clusters in the same walkable cell give the field
@@ -785,6 +876,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
           addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer, nearPath });
+          addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
           clutter(p, wx + (noise(x, y, 78) - 0.5) * 3,
@@ -822,6 +914,19 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 541);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'microrelief') {
+      // Weathered stone, leaf litter and roots vary subtly per cell, while
+      // retaining the same instanced mesh and transparent-free material.
+      const shades = ['#f3f2e7', '#e1e3d3', '#f0e8d6', '#dadfcd']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 581);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
@@ -869,7 +974,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
