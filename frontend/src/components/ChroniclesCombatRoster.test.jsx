@@ -61,12 +61,26 @@ describe('ChroniclesCombatRoster', () => {
     expect(renderToStaticMarkup(<ChroniclesCombatRoster state={exploring} />)).toBe('');
 
     const deserter = chroniclesActiveEnemies(exploring).find((enemy) => enemy.id === 'banner-road-deserter');
-    const fighting = chroniclesStartInitiativeCombat(
+    const rolled = chroniclesStartInitiativeCombat(
       { ...exploring, x: 11, y: 6, direction: 0 },
       [deserter],
       { forceEnemyIds: [deserter.id] },
     );
-    expect(fighting.initiative).toBeTruthy();
+    expect(rolled.initiative).toBeTruthy();
+    // Initiative is random by design: a foe can act before the party.
+    // Test the target indicator on an actual hero turn instead of assuming
+    // the first rolled actor is always eligible to attack.
+    const heroCursor = rolled.initiative.order.findIndex(
+      actor => actor.kind === 'party' && actor.id === 'knight',
+    );
+    expect(heroCursor).toBeGreaterThanOrEqual(0);
+    const fighting = {
+      ...rolled,
+      initiative: { ...rolled.initiative, cursor: heroCursor },
+    };
+    expect(chroniclesRosterActionTarget(fighting)).toEqual({
+      id: deserter.id, mode: 'melee',
+    });
     const hurt = { ...fighting, [deserter.hpKey]: 1 };
     const html = renderToStaticMarkup(<ChroniclesCombatRoster state={hurt} />);
     expect(html).toContain('Combate');
