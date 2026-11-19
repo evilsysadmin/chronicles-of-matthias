@@ -3,7 +3,6 @@
 @layer l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l13, l14, l15, l16, l17, l18, l19, l21, l22, l23, l24, l25, l26, l27, l28;
 
 @import './styles/01-foundation.css' layer(l01);
-@import './styles/02-game-board.css' layer(l02);
 @import './styles/03-combat-core.css' layer(l03);
 @import './styles/04-operations-career.css' layer(l04);
 @import './styles/05-product-roster-foundation.css' layer(l05);
@@ -31,3 +30,14 @@
 @import './styles/26-visual-system-overhaul.css' layer(l26);
 @import './styles/27-night-club-tactical.css' layer(l27);
 @import './styles/28-product-resilience.css' layer(l28);
+
+/* The standalone game's retry controls still use this shared layout.
+ * Keep it in its original cascade layer; the Chess board skin is not loaded. */
+@layer l02 {
+  .game-controls {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
