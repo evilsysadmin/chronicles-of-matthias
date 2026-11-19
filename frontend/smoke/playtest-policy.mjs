@@ -41,6 +41,10 @@ export const PLAYTEST_BOARD_QUEST_ID = 'banner-contract';
 // south-facing) through Swordhaven's northern gate, not a map-ID override.
 // The final step occupies the threshold; the UI still requires 'Sí'.
 export const PLAYTEST_QUEST_ROAD_MAP_ID = 'banner-road-first-book';
+// The real authored salteador met on the public journey. Its HP key is
+// written into the server checkpoint after fighting, unlike the old crypt's
+// generic `enemyHp`. Never count other dead bandits as this enemy's defeat.
+export const PLAYTEST_ROAD_MARAUDER_HP_KEY = 'bannerRoadNorthMarauderHp';
 
 // After the UI has confirmed the gate crossing, combat must remain in the
 // authored Banner Road map. Checking Swordhaven here incorrectly flags
@@ -363,6 +367,11 @@ export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored,
       throw new Error('BOT_CHECKPOINT_ENEMY_HP_MISMATCH');
     }
   }
-  const enemyHp = hpKeys.includes('enemyHp') ? savedFlags.enemyHp : null;
+  const targetHpKey = mapId === PLAYTEST_QUEST_ROAD_MAP_ID
+    ? PLAYTEST_ROAD_MARAUDER_HP_KEY : 'enemyHp';
+  // Both snapshots have already been checked above. Null is honest when
+  // the exact target has no persisted HP; do not invent a victory from a
+  // different road enemy dying or from initiative ending.
+  const enemyHp = hpKeys.includes(targetHpKey) ? savedFlags[targetHpKey] : null;
   return { enemyHp };
 }
