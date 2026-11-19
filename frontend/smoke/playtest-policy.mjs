@@ -41,6 +41,17 @@ export const PLAYTEST_BOARD_QUEST_ID = 'banner-contract';
 // south-facing) through Swordhaven's northern gate, not a map-ID override.
 // The final step occupies the threshold; the UI still requires 'Sí'.
 export const PLAYTEST_QUEST_ROAD_MAP_ID = 'banner-road-first-book';
+
+// After the UI has confirmed the gate crossing, combat must remain in the
+// authored Banner Road map. Checking Swordhaven here incorrectly flags
+// every genuine road encounter as a browser/runtime error.
+export function playtestRoadCombatActorValid(observed) {
+  return observed?.mapId === PLAYTEST_QUEST_ROAD_MAP_ID
+    && observed.initiative === true
+    && typeof observed.actor === 'string'
+    && observed.actor.trim().length > 0;
+}
+
 export const PLAYTEST_ROAD_ROUTE = Object.freeze([
   { action: 'ArrowRight', x: 12, y: 9 },
   { action: 'ArrowRight', x: 12, y: 9 },
@@ -319,7 +330,10 @@ export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored,
   const hpKeys = [...new Set([
     ...Object.keys(savedFlags), ...Object.keys(restoredFlags),
   ].filter(key => key === 'enemyHp' || /Hp$/.test(key)))];
-  if (mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID && !hpKeys.includes('enemyHp')) {
+  // The retired crypt alone has a canonical `enemyHp` flag. Modern MM3
+  // maps (including Banner Road) store separately named creature HP fields.
+  // Do not reject their genuine checkpoint simply because `enemyHp` is absent.
+  if (mapId === 'crypt-eight-squares' && !hpKeys.includes('enemyHp')) {
     throw new Error('BOT_CHECKPOINT_INVALID_ENEMY_HP');
   }
   for (const key of hpKeys) {
