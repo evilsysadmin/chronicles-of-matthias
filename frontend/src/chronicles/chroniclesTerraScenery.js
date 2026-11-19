@@ -154,6 +154,34 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) 
   return merged;
 }
 
+
+/**
+ * Three overlapping uneven leaf masses make a low hedge-like shrub rather
+ * than a single oversized sphere. Only the plains use this silhouette:
+ * marsh, hills and other biome brushes retain their original geometry.
+ * Each shrub remains ONE instanced mesh; mobile has only two cheap lobes.
+ */
+export function chroniclesLayeredShrubGeometry({ coarsePointer = false } = {}) {
+  const lobes = [
+    [[0, -0.12, 0], [0.76, 0.66, 0.75]],
+    [[-0.39, -0.21, 0.12], [0.52, 0.49, 0.59]],
+    ...(!coarsePointer ? [
+      [[0.35, -0.20, -0.25], [0.57, 0.53, 0.56]],
+    ] : []),
+  ];
+  const pieces = lobes.map(([offset, scale]) => {
+    const shape = chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true });
+    shape.scale(...scale);
+    shape.translate(...offset);
+    return shape;
+  });
+  const merged = mergeGeometries(pieces, false);
+  pieces.forEach(shape => shape.dispose());
+  if (!merged) throw new Error('Unable to merge Chronicles meadow shrub');
+  merged.computeBoundingSphere();
+  return merged;
+}
+
 /**
  * Thin crossed leaf blades, not opaque green cones. Vertex colours bake
  * modest light/olive variation into one opaque, instanced material; there is
@@ -282,6 +310,24 @@ export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {})
       [[0.01, 0.34, -0.02], [-0.12, 0.73, -0.68]],
     ];
   const pieces = [trunk, flare];
+  // Buttress roots join the existing bark geometry at ground height. These
+  // short tapered fingers visually seat the tree in grass without creating
+  // physics objects or a separate root draw call. The tree's world matrix
+  // maps local y=-0.5 to the terrain surface.
+  const rootTips = coarsePointer
+    ? [[0.67, -0.49, 0.08], [-0.47, -0.49, -0.48]]
+    : [[0.70, -0.49, 0.12], [-0.57, -0.49, 0.43], [-0.14, -0.49, -0.72]];
+  rootTips.forEach(([tx, ty, tz]) => {
+    const tip = new THREE.Vector3(tx, ty, tz);
+    const base = new THREE.Vector3(tx * 0.28, -0.37, tz * 0.28);
+    const direction = tip.clone().sub(base);
+    const root = new THREE.CylinderGeometry(0.025, 0.125, direction.length(),
+      5, 1, true);
+    root.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(
+      up, direction.normalize()));
+    root.translate(...base.add(tip).multiplyScalar(0.5).toArray());
+    pieces.push(root);
+  });
   branches.forEach(([from, to]) => {
     const start = new THREE.Vector3(...from);
     const end = new THREE.Vector3(...to);
@@ -299,7 +345,7 @@ export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {})
 }
 
 // Parts: one geometry + one material each, instanced across the map.
-function partCatalog(coarsePointer) {
+function partCatalog(coarsePointer, biome) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
   const roundedRock = (color, opts = {}) => lit(color, {
     map: texture('rock'), flatShading: coarsePointer, ...opts,
@@ -314,7 +360,10 @@ function partCatalog(coarsePointer) {
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer }), lit(0xffffff, { map: texture('bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
-    bush: () => [chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }), lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
+    bush: () => [biome === 'plains'
+      ? chroniclesLayeredShrubGeometry({ coarsePointer })
+      : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
+      lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
     deadTrunk: () => [new THREE.CylinderGeometry(0.14, 0.26, 1, 6), lit(0xcab8a0, { map: texture('bark', 1, 3) })],
@@ -660,7 +709,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
-  const catalog = partCatalog(coarsePointer);
+  const catalog = partCatalog(coarsePointer, biome);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
