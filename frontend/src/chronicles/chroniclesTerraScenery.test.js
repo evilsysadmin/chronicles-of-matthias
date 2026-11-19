@@ -164,6 +164,51 @@ describe('Terra scenery', () => {
   });
 
 
+  it('adds restrained top-to-bottom crown shading without extra meshes or mobile triangles', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id };
+    const desktop = chroniclesLayeredCanopyGeometry();
+    const touch = chroniclesLayeredCanopyGeometry({ coarsePointer: true });
+    const again = chroniclesLayeredCanopyGeometry();
+    const positions = desktop.getAttribute('position');
+    const colors = desktop.getAttribute('color');
+    const touchColors = touch.getAttribute('color');
+    expect(colors.count).toBe(positions.count);
+    expect(touchColors.count).toBe(touch.getAttribute('position').count);
+    expect(again.getAttribute('color').array).toEqual(colors.array);
+    expect(again.getAttribute('position').array).toEqual(positions.array);
+    const luminances = { upper: [], lower: [] };
+    const unique = new Set();
+    for (let i = 0; i < positions.count; i += 1) {
+      const r = colors.getX(i), g = colors.getY(i), b = colors.getZ(i);
+      expect([r, g, b].every(v => Number.isFinite(v) && v >= 0 && v <= 1)).toBe(true);
+      unique.add([r, g, b].map(v => v.toFixed(3)).join(','));
+      if (positions.getY(i) > 0.4) luminances.upper.push((r + g + b) / 3);
+      if (positions.getY(i) < -0.3) luminances.lower.push((r + g + b) / 3);
+    }
+    const average = values => values.reduce((sum, v) => sum + v, 0) / values.length;
+    expect(luminances.upper.length).toBeGreaterThan(5);
+    expect(luminances.lower.length).toBeGreaterThan(5);
+    expect(average(luminances.upper)).toBeGreaterThan(average(luminances.lower) + 0.12);
+    expect(unique.size).toBeGreaterThan(15);
+    const scene = buildTerraScenery(options);
+    const mobile = buildTerraScenery({ ...options, coarsePointer: true });
+    const crowns = scene.getObjectByName('chronicles-terra-crown');
+    const cheap = mobile.getObjectByName('chronicles-terra-crown');
+    const shrubs = scene.getObjectByName('chronicles-terra-bush');
+    expect(crowns).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns.material.vertexColors).toBe(true);
+    expect(crowns.material.transparent).toBe(false);
+    expect(crowns.material.map).toBeTruthy();
+    expect(cheap.material.vertexColors).toBe(true);
+    expect(crowns.count).toBe(cheap.count);
+    expect(scene.children.filter(child => child.name === crowns.name)).toHaveLength(1);
+    expect(shrubs.material.vertexColors).toBe(false);
+    expect(shrubs.geometry.getAttribute('color')).toBeUndefined();
+    [desktop, touch, again].forEach(geo => geo.dispose());
+  });
+
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
     const desktop = chroniclesBranchingTrunkGeometry();
     const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
