@@ -5,6 +5,7 @@ import {
   chroniclesAdvanceCombatInitiative,
   chroniclesAdvanceInitiative,
   chroniclesCurrentInitiativeActor,
+  chroniclesDisplayedTurnPhase,
   chroniclesEnemyInitiativeAgility,
   chroniclesEnemyLostParty,
   chroniclesEngagedEnemies,
@@ -19,6 +20,26 @@ function sequence(values) {
 }
 
 describe('Chronicles initiative', () => {
+  it('uses the active initiative actor for visible party/enemy phase despite a stale legacy field', () => {
+    const order = [
+      { kind: 'party', id: 'matthias', name: 'Matthias' },
+      { kind: 'party', id: 'faust', name: 'Faust' },
+      { kind: 'enemy', id: 'banner-road-north-marauder', name: 'salteador de la calzada' },
+    ];
+    const party = { turnPhase: 'enemy', initiative: { order, cursor: 0 } };
+    expect(chroniclesDisplayedTurnPhase(party)).toBe('party');
+    expect(chroniclesDisplayedTurnPhase({ ...party, initiative: { order, cursor: 1 } }))
+      .toBe('party');
+    expect(chroniclesDisplayedTurnPhase({
+      ...party, turnPhase: 'party', initiative: { order, cursor: 2 },
+    })).toBe('enemy');
+    expect(chroniclesDisplayedTurnPhase({ turnPhase: 'enemy', initiative: null }))
+      .toBe('enemy');
+    expect(chroniclesDisplayedTurnPhase({ initiative: null })).toBe('party');
+    expect(chroniclesDisplayedTurnPhase({ ...party, initiative: { order: [], cursor: 0 } }))
+      .toBe('party');
+  });
+
   it('rolls AGI + 1d8 for every living combatant and sorts highest first', () => {
     const state = {
       party: [
