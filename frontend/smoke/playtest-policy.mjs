@@ -163,6 +163,19 @@ export function playtestAction({ profile, observed, explorationActions = 0,
   return 'ArrowUp';
 }
 
+// Count actual committed attack inputs, not an enabled HUD button or
+// an enemy that happened to die. The game must accept the real A control
+// and consume the initiative action. Damage/victory is checked separately
+// against the authenticated, restored server checkpoint.
+export function playtestCommittedMeleeAttack(action, before, after) {
+  return action === 'a'
+    && before?.initiative === true
+    && before?.meleeReady === true
+    && Number.isFinite(before?.turns)
+    && Number.isFinite(after?.turns)
+    && after.turns > before.turns;
+}
+
 export function playtestOutcome({ observed, enemyHp, combatEntered,
   explorationActions, combatActions, startHp, endHp,
   meleeOpportunities = null, rejectedCombatMoves = 0, scenario = 'combat' }) {
@@ -214,6 +227,11 @@ export function playtestAcceptance(episodes) {
     // Road's winner is established from its named, persisted enemy HP.
     if (episode.combatEntered === true && episode.outcome === 'unfinished') {
       reasons.push('combat-outcome-unverified:' + profile);
+    }
+    if (episode.combatEntered === true && episode.outcome === 'victory'
+      && !(Number.isInteger(episode.committedMeleeAttacks)
+        && episode.committedMeleeAttacks > 0)) {
+      reasons.push('victory-without-verified-melee-attack:' + profile);
     }
     if (episode.mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID) {
       reasons.push('wrong-campaign-entry:' + profile);
