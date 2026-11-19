@@ -66,6 +66,28 @@ try {
     crowns.getColorAt(i, shade);
     crownTints.add(shade.getHex());
   }
+  const vertexColours = crowns?.geometry.getAttribute('color');
+  const crownPositions = crowns?.geometry.getAttribute('position');
+  let darkestCrown = Infinity;
+  let lightestCrown = -Infinity;
+  let topShade = 0;
+  let bottomShade = 0;
+  let topSamples = 0;
+  let bottomSamples = 0;
+  for (let i = 0; i < (vertexColours?.count || 0); i += 1) {
+    const brightness = (vertexColours.getX(i) + vertexColours.getY(i)
+      + vertexColours.getZ(i)) / 3;
+    darkestCrown = Math.min(darkestCrown, brightness);
+    lightestCrown = Math.max(lightestCrown, brightness);
+    if (crownPositions.getY(i) > 0.4) {
+      topShade += brightness;
+      topSamples += 1;
+    }
+    if (crownPositions.getY(i) < -0.3) {
+      bottomShade += brightness;
+      bottomSamples += 1;
+    }
+  }
   const gl = renderer.getContext();
   const pixel = new Uint8Array(4);
   const variants = new Set();
@@ -86,6 +108,12 @@ try {
     bushCount: String(bushes?.count || 0),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
     canopyTints: String(crownTints.size),
+    canopyVertexColors: String(vertexColours?.count || 0),
+    canopyShadeRange: String(vertexColours ? lightestCrown - darkestCrown : 0),
+    canopyTopShade: String(topSamples ? topShade / topSamples : 0),
+    canopyBottomShade: String(bottomSamples ? bottomShade / bottomSamples : 0),
+    fogNear: String(scene.fog?.near ?? -1),
+    fogFar: String(scene.fog?.far ?? -1),
     roadCount: String(road?.count || 0),
     roadRelief: String(Boolean(road?.material?.normalMap)),
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
