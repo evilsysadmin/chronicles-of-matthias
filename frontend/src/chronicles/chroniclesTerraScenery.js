@@ -197,6 +197,53 @@ export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+
+/**
+ * Tiny flowers are visible from a first-person viewpoint thanks to low
+ * stems, upright petals and leaves. One opaque, vertex-coloured instanced
+ * flower cluster replaces a floating bright sphere per placement.
+ */
+export function chroniclesMeadowWildflowersGeometry() {
+  const positions = [];
+  const colors = [];
+  const leaf = new THREE.Color('#62844c');
+  const stems = new THREE.Color('#78935b');
+  const petals = ['#e8e2c7', '#d4b9c8', '#e7cb73', '#d5d8ef']
+    .map(color => new THREE.Color(color));
+  const add = (a, b, c, shade) => {
+    positions.push(...a, ...b, ...c);
+    for (let n = 0; n < 3; n += 1) colors.push(shade.r, shade.g, shade.b);
+  };
+  for (let i = 0; i < 6; i += 1) {
+    const a = i * Math.PI * (3 - Math.sqrt(5));
+    const r = 0.055 + (i % 3) * 0.07;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r;
+    const h = 0.32 + (i % 4) * 0.055;
+    const dx = Math.cos(a) * 0.08;
+    const dz = Math.sin(a) * 0.08;
+    add([x - 0.014, 0.01, z], [x + 0.014, 0.01, z],
+      [x + dx, h, z + dz], stems);
+    add([x, 0.07, z], [x - 0.11, 0.12, z + 0.045],
+      [x + dx * 0.3, 0.22, z + dz * 0.3], leaf);
+    for (let petal = 0; petal < 4; petal += 1) {
+      const angle = a + petal * Math.PI / 2;
+      const sideX = Math.cos(angle);
+      const sideZ = Math.sin(angle);
+      const shade = petals[(i + petal) % petals.length];
+      add([x + dx, h - 0.015, z + dz],
+        [x + dx + sideX * 0.085, h + 0.038, z + dz + sideZ * 0.085],
+        [x + dx - sideZ * 0.036, h + 0.10, z + dz + sideX * 0.036], shade);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -225,7 +272,7 @@ function partCatalog(coarsePointer) {
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
-    flower: () => [new THREE.IcosahedronGeometry(0.09, 0), lit(0xe8c84a, { emissive: 0x2a2208 })],
+    flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
@@ -407,6 +454,43 @@ function addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer) {
   });
 }
 
+
+/**
+ * Fill the 4m meadow cells with several staggered leaf clusters. Planting
+ * everything at the tile centre looked like isolated green spikes; an
+ * irregular 3x3 layout reads as contiguous grass in perspective.
+ *
+ * Every blade and flower stays within 1.7m of its own cell centre (4m cell),
+ * including those beside the road. The authored grid, paving and interaction
+ * clearances are unchanged. Mobile draws fewer patches with fewer blades.
+ */
+function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath = false } = {}) {
+  const count = coarsePointer ? 2 : nearPath ? 7 : 5;
+  const start = Math.floor(noise(x, y, 401) * 9);
+  for (let i = 0; i < count; i += 1) {
+    const slot = (start + i * 4) % 9;
+    const col = slot % 3 - 1;
+    const row = Math.floor(slot / 3) - 1;
+    const ox = col * 1.12 + (noise(x + i, y, 407) - 0.5) * 0.28;
+    const oz = row * 1.12 + (noise(y + i, x, 409) - 0.5) * 0.28;
+    const width = 0.77 + noise(x, y + i, 413) * 0.49;
+    p.add('tuft', [wx + ox, 0.012, wz + oz], {
+      yaw: noise(x + i, y, 419) * Math.PI * 2,
+      scale: [width, 0.72 + noise(x, y + i, 421) * 0.54, width],
+    });
+  }
+  if (!coarsePointer && noise(x, y, 423) > (nearPath ? 0.48 : 0.72)) {
+    // Wildflowers favor woodland margins and footpath-adjacent meadow,
+    // but never grow in a tile reserved for paving or a quest interaction.
+    const ox = (noise(x, y, 427) - 0.5) * 2.5;
+    const oz = (noise(y, x, 429) - 0.5) * 2.5;
+    p.add('flower', [wx + ox, 0.012, wz + oz], {
+      yaw: noise(x, y, 431) * Math.PI * 2,
+      scale: [0.8, 0.82 + noise(x, y, 433) * 0.3, 0.8],
+    });
+  }
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     // Two short grass clusters in the same walkable cell give the field
@@ -500,10 +584,16 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (inside && biome === 'hills' && mapId === 'terra-b2') {
           addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
         }
-      } else if (clutter && !coarsePointer && !clear.has(x + ',' + y)
-        && noise(x, y, 77) < (denseMeadow ? 0.66 : 0.28)) {
-        // Off-centre, so roads and the cell where the camera stands stay clear.
-        clutter(p, wx + (noise(x, y, 78) - 0.5) * 3, wz + (noise(y, x, 79) - 0.5) * 3, x, y);
+      } else if (clutter && !clear.has(x + ',' + y)) {
+        if (denseMeadow && tile === '.') {
+          const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+            .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
+          addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer, nearPath });
+        } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
+          // Original sparse dressing on all other biomes and plains maps.
+          clutter(p, wx + (noise(x, y, 78) - 0.5) * 3,
+            wz + (noise(y, x, 79) - 0.5) * 3, x, y);
+        }
       }
     }
   }
@@ -525,6 +615,19 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 8), Math.round(e[14] * 8),
           part === 'crown' ? 193 : 197);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'tuft') {
+      // Coordinated sage/olive patches across the field, using the SAME
+      // grass draw call and deterministic per-instance multiplication.
+      const shades = ['#f5f1d9', '#d6e4cc', '#e7ebd6', '#c7d9b9', '#f2edc5']
+        .map(color => new THREE.Color(color));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 5), Math.round(e[14] * 5), 439);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
