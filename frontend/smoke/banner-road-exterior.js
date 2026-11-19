@@ -56,6 +56,8 @@ try {
   const foliage = scene.getObjectByName('chronicles-terra-scenery');
   const crowns = foliage?.getObjectByName('chronicles-terra-crown');
   const bushes = foliage?.getObjectByName('chronicles-terra-bush');
+  const turf = foliage?.getObjectByName('chronicles-terra-tuft');
+  const sedges = foliage?.getObjectByName('chronicles-terra-meadowSedge');
   const road = scene.getObjectByName('chronicles-campaign-road');
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const triangles = geometry => geometry.index
@@ -106,6 +108,9 @@ try {
     coarsePointer: String(coarsePointer),
     crownCount: String(crowns?.count || 0),
     bushCount: String(bushes?.count || 0),
+    grassCount: String(turf?.count || 0),
+    sedgeCount: String(sedges?.count || 0),
+    sedgeTriangles: String(sedges ? triangles(sedges.geometry) : -1),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
     canopyTints: String(crownTints.size),
     canopyVertexColors: String(vertexColours?.count || 0),
