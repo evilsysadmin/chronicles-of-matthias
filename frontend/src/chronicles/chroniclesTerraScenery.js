@@ -465,6 +465,64 @@ export function chroniclesMeadowMicroreliefGeometry({ coarsePointer = false } = 
   return geometry;
 }
 
+
+/**
+ * Fallen, moss-dusted timber for the woodland edge. A horizontal trunk,
+ * exposed end grain and broken branch stubs share ONE opaque vertex-colour
+ * geometry and one instanced draw batch across the authored Banner Road.
+ * Low to the ground, static and decoration-only; never a new collider.
+ */
+export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
+  const positions = [];
+  const colors = [];
+  const bark = ['#63513d', '#755e44', '#897455', '#4e4438']
+    .map(hex => new THREE.Color(hex));
+  const grain = new THREE.Color('#a58d68');
+  const moss = ['#708654', '#506b40', '#84925d']
+    .map(hex => new THREE.Color(hex));
+  const triangle = (a, b, c, tint) => {
+    positions.push(...a, ...b, ...c);
+    for (let i = 0; i < 3; i += 1) colors.push(tint.r, tint.g, tint.b);
+  };
+  const sides = coarsePointer ? 5 : 8;
+  const rings = [-0.67, 0.64].map((x, end) =>
+    Array.from({ length: sides }, (_, i) => {
+      const a = i * Math.PI * 2 / sides;
+      const radius = (end ? 0.16 : 0.20) * (0.94 + (i % 3) * 0.035);
+      return [x, 0.205 + Math.cos(a) * radius, Math.sin(a) * radius];
+    }));
+  for (let i = 0; i < sides; i += 1) {
+    const next = (i + 1) % sides;
+    triangle(rings[0][i], rings[1][i], rings[0][next], bark[i % bark.length]);
+    triangle(rings[0][next], rings[1][i], rings[1][next],
+      bark[(i + 1) % bark.length]);
+    triangle([-0.67, 0.205, 0], rings[0][next], rings[0][i], grain);
+    triangle([0.64, 0.205, 0], rings[1][i], rings[1][next], grain);
+  }
+  // A couple of short broken branch remnants interrupt the cylinder outline
+  // without protruding beyond the source forest tile.
+  triangle([-0.17, 0.34, -0.03], [0.04, 0.43, -0.16],
+    [0.16, 0.33, -0.05], bark[0]);
+  if (!coarsePointer) {
+    triangle([0.27, 0.32, 0.035], [0.43, 0.46, 0.11],
+      [0.51, 0.29, 0.08], bark[2]);
+  }
+  // Scattered moss streaks sit flush on the upper bark, not in the air.
+  for (let i = 0; i < (coarsePointer ? 2 : 4); i += 1) {
+    const x = -0.48 + i * (coarsePointer ? 0.67 : 0.36);
+    triangle([x, 0.409 - i * 0.01, -0.04],
+      [x + 0.22, 0.402 - i * 0.01, -0.045],
+      [x + 0.11, 0.405 - i * 0.01, 0.085], moss[i % moss.length]);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -500,6 +558,7 @@ function partCatalog(coarsePointer, biome) {
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    fallenWood: () => [chroniclesFallenWoodGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
@@ -775,6 +834,30 @@ function addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer) {
   });
 }
 
+
+/**
+ * Occasional fallen timber at forest margins; only blocked, authored woodland
+ * cells receive it. The whole piece fits inside its 4m cell even after yaw
+ * and scale. The road and the interaction grid remain completely untouched.
+ */
+function addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer) {
+  const pathEdge = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
+  const threshold = coarsePointer
+    ? (pathEdge ? 0.69 : 0.94)
+    : (pathEdge ? 0.43 : 0.88);
+  if (noise(x, y, 641) < threshold) return;
+  const size = 0.90 + noise(x, y, 643) * 0.24;
+  p.add('fallenWood', [
+    wx + (noise(x, y, 647) - 0.5) * 0.72,
+    0.012,
+    wz + (noise(y, x, 649) - 0.5) * 0.72,
+  ], {
+    yaw: noise(x, y, 651) * Math.PI * 2,
+    scale: [size, 0.90 + noise(x, y, 653) * 0.18, size],
+  });
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     // Two short grass clusters in the same walkable cell give the field
@@ -867,6 +950,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         dress(p, wx, wz, x, y, !inside);
         if (inside && denseMeadow) {
           addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer);
+          addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer);
         }
         if (inside && biome === 'hills' && mapId === 'terra-b2') {
           addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
@@ -914,6 +998,17 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 541);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'fallenWood') {
+      const shades = ['#f3f0e5', '#dedfd0', '#e8e3d7', '#d9dccf']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 9), Math.round(e[14] * 9), 659);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
@@ -974,7 +1069,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
