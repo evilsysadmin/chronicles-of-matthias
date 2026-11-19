@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -161,6 +161,57 @@ describe('Terra scenery', () => {
     expect([...again.getAttribute('position').array]).toEqual([...desktop.getAttribute('position').array]);
     for (const n of desktop.getAttribute('position').array) expect(Number.isFinite(n)).toBe(true);
     [desktop, mobile, original, again].forEach(geometry => geometry.dispose());
+  });
+
+
+  it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
+    const desktop = chroniclesBranchingTrunkGeometry();
+    const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
+    const repeat = chroniclesBranchingTrunkGeometry();
+    const triangles = geometry => geometry.index
+      ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
+    expect(triangles(desktop)).toBeGreaterThan(triangles(new THREE.CylinderGeometry(0.2, 0.32, 1, 7)));
+    expect(triangles(desktop)).toBeLessThan(230);
+    expect(triangles(mobile)).toBeLessThan(triangles(desktop));
+    expect(triangles(mobile)).toBeLessThan(130);
+    expect([...repeat.getAttribute('position').array]).toEqual([...desktop.getAttribute('position').array]);
+    desktop.computeBoundingBox();
+    expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(-0.55);
+    expect(desktop.boundingBox.max.y).toBeGreaterThan(0.65);
+    expect(desktop.boundingBox.max.x - desktop.boundingBox.min.x).toBeGreaterThan(1.1);
+    for (const value of desktop.getAttribute('position').array) expect(Number.isFinite(value)).toBe(true);
+    [desktop, mobile, repeat].forEach(geometry => geometry.dispose());
+
+    const plains = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const params = { grid: plains.grid, center, biome: plains.biome, mapId: plains.id };
+    const full = buildTerraScenery(params);
+    const touch = buildTerraScenery({ ...params, coarsePointer: true });
+    const restored = buildTerraScenery(params);
+    const trunks = full.getObjectByName('chronicles-terra-broadleafTrunk');
+    const cheapTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crowns = full.getObjectByName('chronicles-terra-crown');
+    expect(trunks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(cheapTrunks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(trunks.count).toBe(crowns.count);
+    expect(cheapTrunks.count).toBeGreaterThan(0);
+    expect(full.getObjectByName('chronicles-terra-trunk')).toBeUndefined();
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+    const matrix = new THREE.Matrix4();
+    const again = new THREE.Matrix4();
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, matrix);
+      restored.getObjectByName(trunks.name).getMatrixAt(i, again);
+      expect(matrix.elements).toEqual(again.elements);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (plains.grid[y]?.[x] !== undefined) expect(plains.grid[y][x]).toBe('#');
+    }
+    const snow = chroniclesMapById('terra-a2');
+    // Terrain-specific pines still use the original trunk part.
+    const snowy = buildTerraScenery({ grid: snow.grid, center, biome: 'snow' });
+    expect(snowy.getObjectByName('chronicles-terra-trunk')).toBeInstanceOf(THREE.InstancedMesh);
+    expect(snowy.getObjectByName('chronicles-terra-broadleafTrunk')).toBeUndefined();
   });
 
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
