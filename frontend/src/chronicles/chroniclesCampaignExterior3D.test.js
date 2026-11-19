@@ -316,6 +316,50 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(heath.instanceColor.count).toBe(heath.count);
   });
 
+
+  it.each([false, true])('uses restrained Banner Road atmospheric depth at coarse=%s, preserving other biomes', (coarsePointer) => {
+    const banner = bannerRoadFirstBook;
+    const center = { x: 10, y: 7 };
+    const plan = {
+      mapId: banner.id, regionKind: 'wilderness', biome: banner.biome,
+      width: banner.grid[0].length, height: banner.grid.length,
+      grid: banner.grid, center, content: [], scenery: [],
+    };
+    const scene = new THREE.Scene();
+    const other = new THREE.Scene();
+    const forestScene = new THREE.Scene();
+    buildChroniclesCampaignExterior(scene, { scenePlan: plan, coarsePointer });
+    buildChroniclesCampaignExterior(other, {
+      scenePlan: { ...plan, mapId: 'terra-c4' }, coarsePointer,
+    });
+    buildChroniclesCampaignExterior(forestScene, {
+      scenePlan: {
+        mapId: rookwood.id, regionKind: 'wilderness', biome: 'forest',
+        width: rookwood.grid[0].length, height: rookwood.grid.length,
+        grid: rookwood.grid, center, content: [],
+      },
+      coarsePointer,
+    });
+    expect(scene.fog).toBeInstanceOf(THREE.Fog);
+    expect(scene.fog.near).toBe(coarsePointer ? 34 : 28);
+    expect(scene.fog.far).toBe(coarsePointer ? 110 : 96);
+    // No atmospheric change in the first seven 4m cells: nearby enemies,
+    // road markers and interaction points stay at full readability.
+    expect(scene.fog.near).toBeGreaterThanOrEqual(7 * 4);
+    expect(scene.fog.far).toBeGreaterThan(scene.fog.near * 2.5);
+    expect(scene.background.getHex()).toBe(scene.fog.color.getHex());
+    expect(scene.fog.color.getHex()).not.toBe(0xb4d4df);
+    expect(other.fog.near).toBe(55);
+    expect(other.fog.far).toBeCloseTo(Math.max(plan.width, plan.height) * 4 * 1.65);
+    expect(other.fog.color.getHex()).toBe(0xb4d4df);
+    expect(forestScene.fog.near).toBe(14);
+    expect(forestScene.fog.color.getHex()).toBe(0x9fb8a4);
+    expect(scene.children.filter(child => child.name === 'chronicles-campaign-terrain'))
+      .toHaveLength(1);
+    expect(scene.children.filter(child => child.name === 'chronicles-campaign-road'))
+      .toHaveLength(1);
+  });
+
   it('weathers Banner Road stone slabs without changing the authored path or mobile GPU budget', () => {
     const map = bannerRoadFirstBook;
     const center = { x: 10, y: 7 };

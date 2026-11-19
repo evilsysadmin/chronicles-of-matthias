@@ -767,10 +767,23 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const plaque = material(0xc4aa70, { metalness: 0.47, roughness: 0.45 });
 
   const skyTint = biome?.sky ?? (forest ? 0x9fb8a4 : 0xb4d4df);
-  scene.background = new THREE.Color(skyTint);
-  scene.fog = forest
-    ? new THREE.Fog(skyTint, 14, Math.max(width, height) * CELL * 0.95)
-    : new THREE.Fog(skyTint, 55, Math.max(width, height) * CELL * 1.65);
+  // Banner Road's distant trees used to stay perfectly crisp until 55m:
+  // at first-person height they read as one flat wall of foliage. A mild
+  // sage-tinted atmospheric perspective starts *beyond* nearby encounters,
+  // separating distant tree crowns from the foreground without a fog plane,
+  // particles, additional lights, draw calls or any weather state changes.
+  // Matching the background to the fog prevents an abrupt horizon seam.
+  // Coarse devices retain a slightly longer clear view for navigation.
+  const horizonTint = bannerTrail
+    ? new THREE.Color(skyTint).lerp(new THREE.Color(0x91aa98), 0.28)
+    : new THREE.Color(skyTint);
+  scene.background = horizonTint.clone();
+  scene.fog = bannerTrail
+    ? new THREE.Fog(horizonTint, coarsePointer ? 34 : 28,
+      coarsePointer ? 110 : 96)
+    : forest
+      ? new THREE.Fog(skyTint, 14, Math.max(width, height) * CELL * 0.95)
+      : new THREE.Fog(skyTint, 55, Math.max(width, height) * CELL * 1.65);
   const sunDirection = new THREE.Vector3(-25, 30, -65).normalize();
   const skyDome = createSwordhavenSkyDome(sunDirection, coarsePointer);
   scene.add(skyDome);
