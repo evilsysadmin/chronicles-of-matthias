@@ -27,7 +27,6 @@
 @import './styles/25-visual-coherence.css' layer(l25);
 @import './styles/26-visual-system-overhaul.css' layer(l26);
 @import './styles/27-night-club-tactical.css' layer(l27);
-@import './styles/28-product-resilience.css' layer(l28);
 
 /* The standalone game's retry controls still use this shared layout.
  * Keep it in its original cascade layer; the Chess board skin is not loaded. */
