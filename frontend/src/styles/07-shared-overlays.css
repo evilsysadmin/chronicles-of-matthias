@@ -1,0 +1,37 @@
+/* Shared overlay and recovery styles retained from Chess Studio.
+ * Chronicles' own view rules remain in their component CSS files.
+ * Keep these exact declarations at cascade layer l07.
+ */
+
+.modal-backdrop {
+  z-index: 140; /* siempre por encima del dock global (70) */
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.error-boundary-recovery {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(198, 164, 93, 0.35);
+  border-radius: 9px;
+  background: rgba(198, 164, 93, 0.055);
+  color: var(--parchment-dim);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.error-boundary-recovery strong { color: var(--parchment); }
+
+.error-boundary-recovery .primary-btn { width: 100%; margin-top: 0.25rem; }
+
+.error-boundary-screen > .secondary-btn { width: 100%; }
+
+.error-boundary-recovery-error { color: var(--danger); }
+
+.error-boundary-screen {
+  border-color: rgba(198, 164, 93, 0.45);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
