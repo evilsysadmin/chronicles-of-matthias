@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -212,6 +212,56 @@ describe('Terra scenery', () => {
     const snowy = buildTerraScenery({ grid: snow.grid, center, biome: 'snow' });
     expect(snowy.getObjectByName('chronicles-terra-trunk')).toBeInstanceOf(THREE.InstancedMesh);
     expect(snowy.getObjectByName('chronicles-terra-broadleafTrunk')).toBeUndefined();
+  });
+
+
+  it('anchors broadleaf trunks with short bark roots without creating a new mesh batch', () => {
+    const desktop = chroniclesBranchingTrunkGeometry();
+    const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
+    const rootEnds = desktop.getAttribute('position');
+    const lowOutcrops = new Set();
+    for (let i = 0; i < rootEnds.count; i += 1) {
+      const x = rootEnds.getX(i);
+      const y = rootEnds.getY(i);
+      const z = rootEnds.getZ(i);
+      if (y < -0.43 && Math.hypot(x, z) > 0.49) {
+        lowOutcrops.add(Math.round(Math.atan2(z, x) * 10));
+      }
+    }
+    expect(lowOutcrops.size).toBeGreaterThanOrEqual(3);
+    expect(desktop.index.count / 3).toBeLessThan(230);
+    expect(mobile.index.count / 3).toBeLessThan(130);
+    expect(mobile.index.count).toBeLessThan(desktop.index.count);
+    [desktop, mobile].forEach(geometry => geometry.dispose());
+  });
+
+  it('builds layered low shrubs for plains only, with a cheaper mobile silhouette', () => {
+    const full = chroniclesLayeredShrubGeometry();
+    const mobile = chroniclesLayeredShrubGeometry({ coarsePointer: true });
+    const restored = chroniclesLayeredShrubGeometry();
+    expect(full.index.count / 3).toBe(240);
+    expect(mobile.index.count / 3).toBe(40);
+    expect([...restored.getAttribute('position').array])
+      .toEqual([...full.getAttribute('position').array]);
+    full.computeBoundingBox();
+    expect(full.boundingBox.min.y).toBeGreaterThan(-1.0);
+    expect(full.boundingBox.max.y).toBeLessThan(0.65);
+    for (const v of full.getAttribute('position').array) expect(Number.isFinite(v)).toBe(true);
+    const center = { x: 10, y: 7 };
+    const map = chroniclesMapById('banner-road-first-book');
+    const plains = buildTerraScenery({ grid: map.grid, center, biome: 'plains', mapId: map.id });
+    const smaller = buildTerraScenery({ grid: map.grid, center, biome: 'plains', mapId: map.id, coarsePointer: true });
+    const originalHills = buildTerraScenery({ grid: map.grid, center, biome: 'hills' });
+    const shrub = plains.getObjectByName('chronicles-terra-bush');
+    expect(shrub).toBeInstanceOf(THREE.InstancedMesh);
+    expect(shrub.geometry.index.count / 3).toBe(240);
+    expect(smaller.getObjectByName('chronicles-terra-bush').geometry.index.count / 3).toBe(40);
+    const hillBush = originalHills.getObjectByName('chronicles-terra-bush');
+    expect(hillBush.geometry.index.count / 3).toBe(80);
+    expect(shrub.count).toBeGreaterThan(15);
+    expect(shrub.instanceColor.count).toBe(shrub.count);
+    expect(plains.children.every(child => child.isInstancedMesh)).toBe(true);
+    [full, mobile, restored].forEach(g => g.dispose());
   });
 
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
