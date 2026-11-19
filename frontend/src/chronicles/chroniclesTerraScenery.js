@@ -509,7 +509,7 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
   }
   // Scattered moss streaks sit flush on the upper bark, not in the air.
   for (let i = 0; i < (coarsePointer ? 2 : 4); i += 1) {
-    const x = -0.48 + i * (coarsePointer ? 0.67 : 0.36);
+    const x = -0.48 + i * (coarsePointer ? 0.67 : 0.30);
     triangle([x, 0.409 - i * 0.01, -0.04],
       [x + 0.22, 0.402 - i * 0.01, -0.045],
       [x + 0.11, 0.405 - i * 0.01, 0.085], moss[i % moss.length]);
