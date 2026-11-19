@@ -110,6 +110,10 @@ jobs:
           node smoke/run-timed.mjs smoke/precipitation.mjs http://localhost:4174/smoke/precipitation.html
           # Windborne leaves/ash: composited, zero UI capture, mobile and landscape.
           node smoke/run-timed.mjs smoke/wind-debris.mjs http://localhost:4174/smoke/wind-debris.html
+          # Golden forest reference: real first-person Banner Road at (10,13),
+          # photographed at mobile and desktop budgets with actual foliage,
+          # terrain, paving, sky and atmospheric distance. No staged account.
+          node smoke/run-timed.mjs smoke/banner-road-exterior.mjs http://localhost:4174/smoke/banner-road-exterior.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
