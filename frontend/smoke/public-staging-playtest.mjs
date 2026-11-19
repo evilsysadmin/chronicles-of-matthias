@@ -60,8 +60,9 @@ function observe(page) {
       turns: Number(root?.getAttribute('data-chronicles-turns')),
       partyHp: Number(root?.getAttribute('data-party-hp-total')),
       initiative: Boolean(rail),
-      enemyTurn: Boolean(rail?.classList.contains('is-enemy-turn')
-        || root?.getAttribute('data-turn-phase') === 'enemy'),
+      // Trust the *visible initiative rail*, not the legacy exploration
+      // turnPhase flag: that flag may still say enemy during a hero turn.
+      enemyTurn: Boolean(rail?.classList.contains('is-enemy-turn')),
       actor: rail?.getAttribute('aria-label') || null,
       meleeReady: attack?.getAttribute('data-melee-ready') === 'true' && !attack?.disabled,
       // Only inspect the game's actually engaged combat roster. The cue is
@@ -534,10 +535,10 @@ async function runEpisode(profile, seed, viewport) {
 
     for (; combatActions < PLAYTEST_MAX_COMBAT_ACTIONS; combatActions += 1) {
       await page.waitForFunction(() => {
-        const root = document.querySelector('[data-chronicles="true"]');
         const rail = document.querySelector('[data-chronicles-initiative="visible"]');
-        return !rail || !(rail.classList.contains('is-enemy-turn')
-          || root?.getAttribute('data-turn-phase') === 'enemy');
+        // A hero turn shown on the actual rail must never be held hostage
+        // by a stale exploration phase flag elsewhere in the DOM.
+        return !rail || !rail.classList.contains('is-enemy-turn');
       }, null, { timeout: 15_000 });
       const before = await readObservation(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
