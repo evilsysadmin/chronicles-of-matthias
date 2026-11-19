@@ -388,6 +388,12 @@ describe('public staging Playwright bot policy', () => {
       postCombatSaved: false, postCombatRestored: false,
     })]).passed).toBe(true);
     expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'victory', combatEntered: true, postCombatEnemyHp: 0,
+    })]).passed).toBe(true);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
+      outcome: 'unfinished', combatEntered: true, postCombatEnemyHp: null,
+    })]).reasons).toEqual(['combat-outcome-unverified:cautious']);
+    expect(playtestAcceptance([aggressive, complete('cautious', {
       outcome: 'error', combatEntered: false,
     })]).reasons).toEqual(['bot-execution-failed:cautious']);
     expect(playtestAcceptance([aggressive]).reasons).toEqual(['missing-profile:cautious']);
