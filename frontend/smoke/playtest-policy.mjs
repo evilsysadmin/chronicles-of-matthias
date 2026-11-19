@@ -305,6 +305,24 @@ export function playtestFailureEpisode({ profile, seed, viewport, viewportHeight
  * A loss in combat must not allow the bot to skip this persistence gate.
  * The authoritative server, not a mock or client-only state, supplies both.
  */
+// A manual save after an area transition may legitimately do no HTTP PUT:
+// the auto-checkpoint is already durable and the game's Save action reports
+// that fact. Require an explicit UI receipt; the caller ALSO verifies server
+// bootstrap + F5 for either outcome.
+export function playtestCheckpointSaveReceipt(notice, responseStatuses = []) {
+  const message = String(notice ?? '').trim();
+  if (message === 'Sin cambios desde el último guardado.') {
+    if (responseStatuses.length) throw new Error('BOT_CHECKPOINT_CLEAN_UNEXPECTED_PUT');
+    return 'already-durable';
+  }
+  if (message === 'Partida guardada correctamente.') {
+    if (!responseStatuses.includes(200)) throw new Error('BOT_CHECKPOINT_WRITE_NOT_CONFIRMED');
+    return 'written';
+  }
+  if (message.startsWith('No se pudo guardar')) throw new Error('BOT_CHECKPOINT_SAVE_FAILED');
+  throw new Error('BOT_CHECKPOINT_SAVE_NO_RECEIPT');
+}
+
 export function verifyPlaytestCheckpoint({ runId, mapId, turns, saved, restored, requiredFlags = [] }) {
   for (const [stage, payload] of [['saved', saved], ['restored', restored]]) {
     if (payload?.runId !== runId) throw new Error('BOT_CHECKPOINT_' + stage + '_RUN_MISMATCH');
