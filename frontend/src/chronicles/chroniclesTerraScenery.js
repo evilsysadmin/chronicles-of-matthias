@@ -312,6 +312,68 @@ export function chroniclesMeadowSedgeGeometry({ coarsePointer = false } = {}) {
   return geometry;
 }
 
+
+/**
+ * Broad compound-leaf forest herbs add an intermediate layer between meadow
+ * grass and the high tree canopy. Each stem fans out into separate leaflets:
+ * unlike narrow sedges these read as low ferns and broadleaf woodland plants.
+ * All instances share one opaque vertex-colour batch, with a compact mobile
+ * mesh. The same shape can stay below the knee in walkable grass and grow
+ * fuller on already-blocked forest tiles without acquiring a collider.
+ */
+export function chroniclesForestHerbGeometry({ coarsePointer = false } = {}) {
+  const positions = [];
+  const colors = [];
+  const lower = ['#48683b', '#587746', '#718554', '#536d3e']
+    .map(hex => new THREE.Color(hex));
+  const upper = ['#829967', '#94a977', '#a2aa74', '#7f945e']
+    .map(hex => new THREE.Color(hex));
+  const triangle = (a, b, c, color) => {
+    positions.push(...a, ...b, ...c);
+    for (let j = 0; j < 3; j += 1) colors.push(color.r, color.g, color.b);
+  };
+  for (let i = 0; i < (coarsePointer ? 4 : 7); i += 1) {
+    const angle = i * Math.PI * (3 - Math.sqrt(5));
+    const r = 0.06 + (i % 3) * 0.045;
+    const x = Math.cos(angle) * r, z = Math.sin(angle) * r;
+    const outwardX = Math.cos(angle), outwardZ = Math.sin(angle);
+    const tangentX = -outwardZ, tangentZ = outwardX;
+    const reach = 0.38 + (i % 3) * 0.085;
+    const h = 0.64 + (i % 4) * 0.062;
+    const span = 0.13 + (i % 2) * 0.045;
+    const mx = x + outwardX * reach * 0.47;
+    const mz = z + outwardZ * reach * 0.47;
+    const left = [mx - tangentX * span, h * 0.49, mz - tangentZ * span];
+    const right = [mx + tangentX * span, h * 0.49, mz + tangentZ * span];
+    const tip = [x + outwardX * reach, h, z + outwardZ * reach];
+    triangle([x, 0.012, z], left, right, lower[i % lower.length]);
+    triangle(left, tip, right, upper[i % upper.length]);
+    if (!coarsePointer) {
+      // Small asymmetric side leaflets give a genuine fern-like profile,
+      // not another wider cone or identical blade of ordinary meadow grass.
+      triangle([mx - tangentX * span * 0.18, h * 0.43,
+        mz - tangentZ * span * 0.18],
+      [mx - tangentX * span * 1.36, h * 0.63,
+        mz - tangentZ * span * 1.36],
+      [mx + outwardX * 0.14, h * 0.67, mz + outwardZ * 0.14],
+      upper[(i + 1) % upper.length]);
+      triangle([mx + tangentX * span * 0.19, h * 0.42,
+        mz + tangentZ * span * 0.19],
+      [mx + tangentX * span * 1.24, h * 0.56,
+        mz + tangentZ * span * 1.24],
+      [mx + outwardX * 0.10, h * 0.70, mz + outwardZ * 0.10],
+      upper[(i + 2) % upper.length]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 /**
  * Tiny flowers are visible from a first-person viewpoint thanks to low
  * stems, upright petals and leaves. One opaque, vertex-coloured instanced
@@ -642,6 +704,7 @@ function partCatalog(coarsePointer, biome) {
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     meadowSedge: () => [chroniclesMeadowSedgeGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    forestHerb: () => [chroniclesForestHerbGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     microrelief: () => [chroniclesMeadowMicroreliefGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
@@ -761,9 +824,14 @@ function basalt(p, wx, wz, x, y, k) {
 }
 
 const DRESS = {
-  plains(p, wx, wz, x, y, big) {
+  plains(p, wx, wz, x, y, big, bannerRoad = false) {
     const roll = noise(x, y, 1);
-    if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, big ? 1.15 : 1);
+    // Genuine juvenile trees break the one-height canopy silhouette using
+    // the EXISTING broadleaf trunk + crown batches. They still only occupy
+    // blocked forest cells; no newly impassable path or invisible obstacle.
+    const juvenile = bannerRoad && !big && noise(x, y, 751) > 0.52;
+    const size = juvenile ? 0.48 + noise(x, y, 753) * 0.16 : (big ? 1.15 : 1);
+    if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, size);
     if (roll >= 0.35) {
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
         { yaw: noise(x, y, 3) * 6.28,
@@ -895,6 +963,35 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
  * lean toward adjacent clearings but remain well within their 4m home cell.
  * The same deterministic seed produces the same scene after reloading.
  */
+
+/**
+ * Plant two heights of compound-leaf undergrowth near Banner Road's woodline.
+ * A <0.55m herb can dress a walkable grass cell; taller ferns stay on the
+ * already-blocked # forest cells. No new collision or path obstruction.
+ * Deterministic patches create groups and clearings, not a uniform hedge.
+ */
+function addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, blocked) {
+  const nearForest = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
+  const patch = 0.5 + 0.5 * Math.sin(x * 0.47 + y * 0.27)
+    * Math.cos(y * 0.43 - x * 0.22);
+  const chance = blocked
+    ? (coarsePointer ? 0.37 : 0.69)
+    : (nearForest ? (coarsePointer ? 0.35 : 0.68)
+      : (coarsePointer ? 0.14 : 0.28)) * (0.72 + patch * 0.50);
+  if (noise(x, y, 781) > chance) return;
+  const wxOffset = (noise(x, y, 783) - 0.5) * 1.08;
+  const wzOffset = (noise(y, x, 787) - 0.5) * 1.08;
+  const spread = 0.82 + noise(x, y, 789) * 0.32;
+  p.add('forestHerb', [wx + wxOffset, 0.012, wz + wzOffset], {
+    yaw: noise(x, y, 791) * Math.PI * 2,
+    scale: [spread,
+      blocked ? 0.99 + noise(x, y, 793) * 0.19
+        : 0.56 + noise(x, y, 797) * 0.11,
+      spread],
+  });
+}
+
 function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
   const openings = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
@@ -1054,8 +1151,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (!dress || (!dressBlocked && inside)) continue;
         // Mobile keeps the far ring sparse; the playable edge is always full.
         if (!inside && coarsePointer && noise(x, y, 99) < 0.45) continue;
-        dress(p, wx, wz, x, y, !inside);
+        dress(p, wx, wz, x, y, !inside, inside && denseMeadow);
         if (inside && denseMeadow) {
+          addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer);
           addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer);
         }
@@ -1067,6 +1165,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
           addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer, nearPath });
+          addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
@@ -1094,6 +1193,17 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 8), Math.round(e[14] * 8),
           part === 'crown' ? 193 : 197);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'forestHerb') {
+      const shades = ['#e1eaca', '#c5d8ad', '#f1e9c7', '#dae7c7']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 9), Math.round(e[14] * 9), 799);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
@@ -1178,7 +1288,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor', 'microrelief', 'fallenWood', 'meadowSedge', 'forestHerb'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
