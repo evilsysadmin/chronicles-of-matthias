@@ -7,6 +7,7 @@ import {
   PLAYTEST_PROFILES, PLAYTEST_CAMPAIGN_ENTRY_MAP_ID, PLAYTEST_OPENING_ROUTE,
   PLAYTEST_OPENING_FLAG, PLAYTEST_BOARD_ROUTE, PLAYTEST_BOARD_FLAG,
   PLAYTEST_BOARD_QUEST_ID, PLAYTEST_ROAD_ROUTE, PLAYTEST_QUEST_ROAD_MAP_ID,
+  PLAYTEST_ROAD_MARAUDER_HP_KEY,
   playtestTileKey,
   playtestMovedBetweenTiles,
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
@@ -72,7 +73,36 @@ describe('public staging Playwright bot policy', () => {
     };
     const args = { runId: 'run-road', mapId: PLAYTEST_QUEST_ROAD_MAP_ID, turns: 17,
       saved: snapshot, restored: structuredClone(snapshot) };
-    expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: null });
+    expect(bannerRoadFirstBook.enemies.find(enemy =>
+      enemy.id === 'banner-road-north-marauder')?.hpKey)
+      .toBe(PLAYTEST_ROAD_MARAUDER_HP_KEY);
+    expect(verifyPlaytestCheckpoint(args)).toEqual({ enemyHp: 9 });
+    const defeatedMarauder = {
+      ...snapshot, worldFlags: { ...snapshot.worldFlags,
+        bannerRoadNorthMarauderHp: 0,
+      },
+    };
+    const victoryReceipt = verifyPlaytestCheckpoint({
+      ...args, saved: defeatedMarauder, restored: structuredClone(defeatedMarauder),
+    });
+    expect(victoryReceipt).toEqual({ enemyHp: 0 });
+    expect(playtestOutcome({
+      observed: seen(), enemyHp: victoryReceipt.enemyHp, combatEntered: true,
+      explorationActions: 44, combatActions: 3, startHp: 33, endHp: 33,
+    }).outcome).toBe('victory');
+    // A dead western deserter is not proof that the north marauder died.
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: { ...snapshot, worldFlags: {
+        ...snapshot.worldFlags, bannerRoadNorthMarauderHp: 9,
+        bannerRoadWestDeserterHp: 0,
+      } }, restored: snapshot,
+    })).toEqual({ enemyHp: 9 });
+    const notObserved = { ...snapshot, worldFlags: {
+      '__chrRuntime.turns': 17, bannerRoadWestDeserterHp: 0,
+    } };
+    expect(verifyPlaytestCheckpoint({
+      ...args, saved: notObserved, restored: structuredClone(notObserved),
+    })).toEqual({ enemyHp: null });
     expect(() => verifyPlaytestCheckpoint({
       ...args, restored: { ...snapshot, worldFlags: {
         ...snapshot.worldFlags, bannerRoadNorthMarauderHp: 8,
