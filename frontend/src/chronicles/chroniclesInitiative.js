@@ -150,6 +150,17 @@ export function chroniclesCurrentInitiativeActor(initiative) {
   return initiative.order[cursor] || null;
 }
 
+// While initiative is active its current actor is the only turn owner.
+// The legacy exploration `turnPhase` can still say "enemy" after a prior
+// roaming attack; exposing it as the combat phase strands browser players
+// even though the rail correctly says TU TURNO. Outside initiative keep the
+// exploration contract unchanged.
+export function chroniclesDisplayedTurnPhase(state) {
+  if (!state?.initiative) return state?.turnPhase || 'party';
+  return chroniclesCurrentInitiativeActor(state.initiative)?.kind === 'enemy'
+    ? 'enemy' : 'party';
+}
+
 export function chroniclesAdvanceInitiative(initiative) {
   if (!Array.isArray(initiative?.order) || !initiative.order.length) return initiative;
   const nextCursor = nonNegativeInteger(initiative.cursor) + 1;
