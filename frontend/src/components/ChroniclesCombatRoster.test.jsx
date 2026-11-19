@@ -67,7 +67,14 @@ describe('ChroniclesCombatRoster', () => {
       { forceEnemyIds: [deserter.id] },
     );
     expect(fighting.initiative).toBeTruthy();
-    const hurt = { ...fighting, [deserter.hpKey]: 1 };
+    // A rolled enemy turn has no player action. Choose an actual hero slot
+    // before expecting the roster to mark a target as A/S-actionable.
+    const heroCursor = fighting.initiative.order.findIndex(actor => actor.kind === 'party');
+    const enemyCursor = fighting.initiative.order.findIndex(actor => actor.kind === 'enemy');
+    expect(heroCursor).toBeGreaterThanOrEqual(0);
+    expect(enemyCursor).toBeGreaterThanOrEqual(0);
+    const hurt = { ...fighting, [deserter.hpKey]: 1,
+      initiative: { ...fighting.initiative, cursor: heroCursor } };
     const html = renderToStaticMarkup(<ChroniclesCombatRoster state={hurt} />);
     expect(html).toContain('Combate');
     expect(html).toContain('class="chronicles-combat-roster__desktop"');
@@ -91,6 +98,13 @@ describe('ChroniclesCombatRoster', () => {
     }} />);
     expect(woundedHtml).toContain('data-band="hurt"');
     expect(html).toContain('data-target="true"');
+    expect(html).toContain('data-chronicles-target-mode="melee"');
+    const enemyTurn = { ...hurt, initiative: { ...hurt.initiative, cursor: enemyCursor } };
+    const enemyHtml = renderToStaticMarkup(<ChroniclesCombatRoster state={enemyTurn} />);
+    expect(enemyHtml).toContain('Combate · 1 enemigo');
+    expect(enemyHtml).toContain(deserter.name);
+    expect(enemyHtml).not.toContain('data-target="true"');
+    expect(enemyHtml).not.toContain('data-chronicles-target-mode=');
     // Minimap can remain mounted for short/mobile layouts. Desktop CSS gives
     // the same grid slot to the always-expanded enemy roster during combat.
     const together = renderToStaticMarkup(
