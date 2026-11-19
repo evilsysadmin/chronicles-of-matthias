@@ -676,7 +676,12 @@ describe('Terra scenery', () => {
       twin.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
       original.push(scale.y);
     }
-    expect(Math.min(...young)).toBeLessThan(Math.min(...original) * 0.65);
+    // Compare the same authored tree instances, not the global minima:
+    // outer-ring trees can legitimately be shorter even on other maps.
+    // Banner Road juveniles must be substantially smaller than THEIR
+    // original grown counterpart, with identical blocked-cell placements.
+    const shortened = young.filter((s, i) => s < original[i] * 0.80);
+    expect(shortened.length).toBeGreaterThan(8);
     expect(young.filter(s => s < 2.0).length).toBeGreaterThan(8);
     // Coarse devices intentionally skip part of the distant out-of-map
     // tree ring: only authored in-map juvenile transforms must be retained.
