@@ -284,8 +284,15 @@ try {
       await page.screenshot({ path: 'smoke-first-payment-' + width + '.png' });
       await barkTab.hover();
       await barkDetails.waitFor({ state: 'visible' });
-      assert.ok((await barkDetails.innerText()).includes(delta + ' monedas de oro'),
-        'Opt-in narration must show the actual earned gold');
+      // innerText can be transiently empty for a freshly revealed hover panel,
+      // especially under reduced motion. Verify the actual visible paragraph
+      // and its DOM text; do not infer the reward from hidden fixture data.
+      const narration = barkDetails.locator('p');
+      assert.equal(await narration.isVisible(), true,
+        'Opt-in narration paragraph must be visible');
+      const narrationText = await narration.textContent();
+      assert.ok(narrationText?.includes(delta + ' monedas de oro'),
+        'Opt-in narration must show the actual earned gold: ' + JSON.stringify(narrationText));
       const bounds = await barkDetails.boundingBox();
       assert.ok(bounds && bounds.x >= -1 && bounds.x + bounds.width <= width + 1,
         'Hover narration must stay inside the viewport: ' + JSON.stringify(bounds));
