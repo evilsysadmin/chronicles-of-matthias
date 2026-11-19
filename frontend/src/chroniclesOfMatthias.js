@@ -249,7 +249,7 @@ export function chroniclesMM3TurnActionReady(state, memberId) {
     && actor.asleep !== true
     && state.combatActionSpent?.[memberId] !== true
     && state.combatBlock?.[memberId] !== true
-    && state.party?.some(member => member.id === memberId && Number(member.hp) > 0);
+    && Boolean(state.party?.some(member => member.id === memberId && Number(member.hp) > 0));
 }
 
 // A side/rear engaged enemy remains melee-reachable without a forbidden
