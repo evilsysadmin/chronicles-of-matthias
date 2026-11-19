@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesMeadowGrassGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -144,6 +144,55 @@ describe('Terra scenery', () => {
     coarse.dispose();
     shrub.dispose();
     original.dispose();
+  });
+
+
+  it('builds layered broadleaf crowns in one bounded instanced shape with a lighter mobile LOD', () => {
+    const desktop = chroniclesLayeredCanopyGeometry();
+    const mobile = chroniclesLayeredCanopyGeometry({ coarsePointer: true });
+    const original = chroniclesOrganicCanopyGeometry();
+    const again = chroniclesLayeredCanopyGeometry();
+    const triangles = geometry => geometry.index
+      ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
+    expect(triangles(desktop)).toBeGreaterThan(triangles(original) * 2);
+    expect(triangles(desktop)).toBeLessThanOrEqual(400);
+    expect(triangles(mobile)).toBeLessThanOrEqual(60);
+    expect(triangles(mobile)).toBeLessThan(triangles(desktop));
+    expect([...again.getAttribute('position').array]).toEqual([...desktop.getAttribute('position').array]);
+    for (const n of desktop.getAttribute('position').array) expect(Number.isFinite(n)).toBe(true);
+    [desktop, mobile, original, again].forEach(geometry => geometry.dispose());
+  });
+
+  it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
+    const desktop = chroniclesMeadowGrassGeometry();
+    const mobile = chroniclesMeadowGrassGeometry({ coarsePointer: true });
+    expect(desktop.getAttribute('color').count).toBe(desktop.getAttribute('position').count);
+    expect(desktop.getAttribute('position').count).toBeGreaterThan(mobile.getAttribute('position').count);
+    expect(desktop.boundingSphere.radius).toBeLessThan(0.65);
+    for (const value of desktop.getAttribute('position').array) expect(Number.isFinite(value)).toBe(true);
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const roadCells = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    const scene = buildTerraScenery({
+      grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear: roadCells,
+    });
+    const grass = scene.getObjectByName('chronicles-terra-tuft');
+    expect(grass).toBeInstanceOf(THREE.InstancedMesh);
+    expect(grass.material.vertexColors).toBe(true);
+    expect(grass.castShadow).toBe(false);
+    expect(grass.count).toBeGreaterThan(20);
+    const clear = new Set(roadCells.map(cell => cell.x + ',' + cell.y));
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < grass.count; i += 1) {
+      grass.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      expect(map.grid[y]?.[x]).toBe('.');
+      expect(clear.has(x + ',' + y)).toBe(false);
+    }
+    desktop.dispose();
+    mobile.dispose();
   });
 
   it('gives Banner Road trees and bushes varied deterministic foliage while leaving roads clear', () => {

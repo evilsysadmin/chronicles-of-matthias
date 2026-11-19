@@ -320,7 +320,9 @@ try {
       assert.equal(result.cameraCell, '10,13');
       assert.ok(Number(result.crownCount) > 10);
       assert.ok(Number(result.bushCount) > 10);
-      assert.equal(Number(result.canopyTriangles), width === 1280 ? 80 : 20);
+      // Layered woodland still renders as one instanced crown batch:
+      // five 80-triangle lobes on desktop, three 20-triangle lobes on touch.
+      assert.equal(Number(result.canopyTriangles), width === 1280 ? 400 : 60);
       assert.ok(Number(result.canopyTints) > 2,
         'Banner Road needs visibly varied broadleaf foliage');
       assert.ok(Number(result.roadCount) > 20);

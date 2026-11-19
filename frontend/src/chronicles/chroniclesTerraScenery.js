@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
@@ -123,6 +124,79 @@ export function chroniclesOrganicCanopyGeometry({ coarsePointer = false, shrub =
   return geometry;
 }
 
+
+/**
+ * A broadleaf tree reads as layered, overlapping leaf masses rather than one
+ * exposed icosahedron. All lobes are merged once into ONE shared geometry:
+ * existing per-cell InstancedMesh counts, materials and draw calls stay put.
+ * The reduced mobile shape has just three 20-face lobes.
+ */
+export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) {
+  const lobes = [
+    [[0, 0.04, 0], [0.83, 0.78, 0.83]],
+    [[-0.55, -0.15, 0.06], [0.63, 0.62, 0.64]],
+    [[0.53, -0.16, -0.10], [0.61, 0.62, 0.65]],
+    ...(!coarsePointer ? [
+      [[-0.06, -0.08, 0.53], [0.66, 0.58, 0.62]],
+      [[0.08, 0.24, -0.43], [0.65, 0.61, 0.64]],
+    ] : []),
+  ];
+  const pieces = lobes.map(([offset, scale]) => {
+    const shape = chroniclesOrganicCanopyGeometry({ coarsePointer });
+    shape.scale(...scale);
+    shape.translate(...offset);
+    return shape;
+  });
+  const merged = mergeGeometries(pieces, false);
+  pieces.forEach(piece => piece.dispose());
+  if (!merged) throw new Error('Unable to merge Chronicles broadleaf canopy');
+  merged.computeBoundingSphere();
+  return merged;
+}
+
+/**
+ * Thin crossed leaf blades, not opaque green cones. Vertex colours bake
+ * modest light/olive variation into one opaque, instanced material; there is
+ * no alpha sorting, billboard animation, per-frame work or extra draw call.
+ */
+export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
+  const positions = [];
+  const colors = [];
+  const shades = ['#476834', '#658649', '#86a15e', '#a0a96b'].map(value => new THREE.Color(value));
+  const add = (a, b, c, tint) => {
+    positions.push(...a, ...b, ...c);
+    for (let n = 0; n < 3; n += 1) colors.push(tint.r, tint.g, tint.b);
+  };
+  const blades = coarsePointer ? 5 : 11;
+  for (let i = 0; i < blades; i += 1) {
+    const angle = i * Math.PI * (3 - Math.sqrt(5));
+    const r = 0.045 + (i % 4) * 0.047;
+    const x = Math.cos(angle) * r;
+    const z = Math.sin(angle) * r;
+    const height = (0.24 + (i % 5) * 0.045) * (coarsePointer ? 0.85 : 1);
+    const dx = Math.cos(angle) * 0.085;
+    const dz = Math.sin(angle) * 0.085;
+    const sideX = -Math.sin(angle) * 0.045;
+    const sideZ = Math.cos(angle) * 0.045;
+    const color = shades[i % shades.length];
+    add([x - sideX, 0.012, z - sideZ],
+      [x + sideX, 0.012, z + sideZ],
+      [x + dx, height, z + dz], color);
+    if (!coarsePointer) {
+      add([x + sideX, 0.012, z + sideZ],
+        [x + dx, height, z + dz],
+        [x + dx * 0.40 + sideX * 0.35, height * 0.58, z + dz * 0.40 + sideZ * 0.35],
+        shades[(i + 1) % shades.length]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -137,7 +211,7 @@ function partCatalog(coarsePointer) {
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    crown: () => [chroniclesOrganicCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
+    crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
     bush: () => [chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }), lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
     pineSnow: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0xf4f8fc, { map: texture('snow', 3, 1) })],
@@ -150,7 +224,7 @@ function partCatalog(coarsePointer) {
     dune: () => [new THREE.SphereGeometry(1, 10, 6), lit(0xffffff, { map: texture('sand', 2, 2) })],
     drift: () => [new THREE.CylinderGeometry(0.16, 0.2, 1, 6), lit(0xa89a86, { map: texture('bark', 1, 2) })],
     // Walkable clutter.
-    tuft: () => [new THREE.ConeGeometry(0.16, 0.42, 4), lit(0x6e9a3e)],
+    tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [new THREE.IcosahedronGeometry(0.09, 0), lit(0xe8c84a, { emissive: 0x2a2208 })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
@@ -195,7 +269,7 @@ function boulders(p, wx, wz, x, y, { part = 'boulder', count = 2, size = 1.2, he
 }
 
 function broadleaf(p, wx, wz, x, y, k, scale = 1) {
-  const s = scale * (0.85 + noise(x, y, k + 21) * 0.45);
+  const s = scale * (0.79 + noise(x, y, k + 21) * 0.65);
   const ox = (noise(x, y, k + 23) - 0.5) * 2;
   const oz = (noise(y, x, k + 25) - 0.5) * 2;
   p.add('trunk', [wx + ox, 1.5 * s, wz + oz], { scale: [s, 3 * s, s] });
@@ -207,6 +281,15 @@ function broadleaf(p, wx, wz, x, y, k, scale = 1) {
     roll: (noise(x, y, k + 35) - 0.5) * 0.09,
     scale: [1.9 * s * spreadX, 1.6 * s * crownHeight, 1.9 * s * spreadZ],
   });
+  // Low foliage is planted on the SAME blocked cell as the trunk, never
+  // on the walkable road. It enriches the woodland edge without colliders.
+  if (noise(x, y, k + 38) > 0.30) {
+    p.add('bush', [wx + ox * 0.5 + (noise(x, y, k + 39) - 0.5) * 1.1,
+      0.35 * s, wz + oz * 0.5 + (noise(y, x, k + 40) - 0.5) * 1.1], {
+      yaw: noise(x, y, k + 41) * 6.28,
+      scale: [0.62 * s, 0.44 * s, 0.57 * s],
+    });
+  }
 }
 
 function pine(p, wx, wz, x, y, k, { snowy = false, scale = 1 } = {}) {
@@ -326,14 +409,26 @@ function addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer) {
 
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
-    p.add('tuft', [wx, 0.2, wz], { yaw: noise(x, y, 70) * 6.28 });
-    if (noise(x, y, 71) > 0.6) p.add('flower', [wx + 0.3, 0.1, wz + 0.2]);
+    // Two short grass clusters in the same walkable cell give the field
+    // actual depth. They stay under knee height and don't alter the grid.
+    p.add('tuft', [wx, 0.012, wz], {
+      yaw: noise(x, y, 70) * 6.28,
+      scale: [1.15, 0.85 + noise(x, y, 73) * 0.50, 1.15],
+    });
+    if (noise(x, y, 72) > 0.22) {
+      p.add('tuft', [wx + (noise(x, y, 74) - 0.5) * 0.35, 0.012,
+        wz + (noise(y, x, 75) - 0.5) * 0.35], {
+        yaw: noise(x, y, 76) * 6.28,
+        scale: [0.82, 0.85 + noise(x, y, 77) * 0.50, 0.82],
+      });
+    }
+    if (noise(x, y, 71) > 0.68) p.add('flower', [wx + 0.23, 0.1, wz + 0.16]);
   },
-  forest: (p, wx, wz, x, y) => p.add('tuft', [wx, 0.2, wz], { yaw: noise(x, y, 70) * 6.28, scale: [1.2, 1.3, 1.2] }),
+  forest: (p, wx, wz, x, y) => p.add('tuft', [wx, 0.012, wz], { yaw: noise(x, y, 70) * 6.28, scale: [1.2, 1.3, 1.2] }),
   hills: (p, wx, wz, x, y) => p.add('pebble', [wx, 0.1, wz], { yaw: noise(x, y, 70) * 6.28, scale: [1, 0.6, 1] }),
   snow: (p, wx, wz, x, y) => p.add('snowMound', [wx, 0, wz], { scale: [0.9 + noise(x, y, 70), 0.35, 0.8] }),
   coast: (p, wx, wz, x, y) => p.add('pebble', [wx, 0.08, wz], { yaw: noise(x, y, 70) * 6.28, scale: [0.8, 0.5, 0.8] }),
-  marsh: (p, wx, wz, x, y) => p.add('tuft', [wx, 0.2, wz], { yaw: noise(x, y, 70) * 6.28, scale: [1, 1.4, 1] }),
+  marsh: (p, wx, wz, x, y) => p.add('tuft', [wx, 0.012, wz], { yaw: noise(x, y, 70) * 6.28, scale: [1, 1.4, 1] }),
   ash: (p, wx, wz, x, y) => p.add('ember', [wx, 0.03, wz], { yaw: noise(x, y, 70) * 6.28 }),
 };
 
@@ -381,6 +476,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   const p = createPlacer();
   const toWorld = (x, y) => [(x - center.x) * CELL, (y - center.y) * CELL];
   const clear = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+  const denseMeadow = mapId === 'banner-road-first-book' && biome === 'plains';
 
   const authored = new Map((scenery || [])
     .filter((entry) => entry && Number.isInteger(entry.x) && Number.isInteger(entry.y) && SET_PIECES[entry.type])
@@ -404,7 +500,8 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (inside && biome === 'hills' && mapId === 'terra-b2') {
           addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
         }
-      } else if (clutter && !coarsePointer && !clear.has(x + ',' + y) && noise(x, y, 77) < 0.28) {
+      } else if (clutter && !coarsePointer && !clear.has(x + ',' + y)
+        && noise(x, y, 77) < (denseMeadow ? 0.66 : 0.28)) {
         // Off-centre, so roads and the cell where the camera stands stay clear.
         clutter(p, wx + (noise(x, y, 78) - 0.5) * 3, wz + (noise(y, x, 79) - 0.5) * 3, x, y);
       }
