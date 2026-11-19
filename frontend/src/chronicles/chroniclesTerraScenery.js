@@ -244,6 +244,60 @@ export function chroniclesMeadowWildflowersGeometry() {
   return geometry;
 }
 
+
+/**
+ * Branching broadleaf bole, replacing the perfectly straight trunk in plains
+ * only. Gnarled bark, flared roots and upward limbs share a single merged
+ * geometry and therefore ONE existing instanced draw call for the whole wood.
+ *
+ * All pieces use the same indexed CylinderGeometry attributes, so one
+ * textured material handles the entire silhouette. It is built once when
+ * the scene mounts; weather, movement and saves never rebuild it.
+ */
+export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {}) {
+  const radial = coarsePointer ? 5 : 7;
+  const trunk = new THREE.CylinderGeometry(0.17, 0.29, 1, radial, coarsePointer ? 2 : 4);
+  const points = trunk.getAttribute('position');
+  for (let i = 0; i < points.count; i += 1) {
+    const x = points.getX(i);
+    const y = points.getY(i);
+    const z = points.getZ(i);
+    const bend = 0.055 * Math.sin((y + 0.5) * Math.PI * 1.15);
+    const knot = 1 + 0.07 * Math.cos(y * 9 + Math.atan2(z, x) * 3);
+    points.setXYZ(i, x * knot + bend, y, z * knot - bend * 0.55);
+  }
+  points.needsUpdate = true;
+  trunk.computeVertexNormals();
+  const flare = new THREE.CylinderGeometry(0.30, 0.43, 0.22, radial);
+  flare.translate(0, -0.39, 0);
+  const up = new THREE.Vector3(0, 1, 0);
+  const branches = coarsePointer
+    ? [
+      [[0.06, 0.18, 0.01], [-0.55, 0.64, 0.16]],
+      [[0.00, 0.27, 0.03], [0.51, 0.65, -0.33]],
+    ]
+    : [
+      [[0.06, 0.18, 0.01], [-0.68, 0.72, 0.20]],
+      [[0.00, 0.27, 0.03], [0.67, 0.78, -0.38]],
+      [[0.01, 0.34, -0.02], [-0.12, 0.73, -0.68]],
+    ];
+  const pieces = [trunk, flare];
+  branches.forEach(([from, to]) => {
+    const start = new THREE.Vector3(...from);
+    const end = new THREE.Vector3(...to);
+    const direction = end.clone().sub(start);
+    const branch = new THREE.CylinderGeometry(0.052, 0.125, direction.length(), radial);
+    branch.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, direction.normalize()));
+    branch.translate(...start.clone().add(end).multiplyScalar(0.5).toArray());
+    pieces.push(branch);
+  });
+  const merged = mergeGeometries(pieces, false);
+  pieces.forEach(geometry => geometry.dispose());
+  if (!merged) throw new Error('Unable to merge Chronicles broadleaf branches');
+  merged.computeBoundingSphere();
+  return merged;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -258,6 +312,7 @@ function partCatalog(coarsePointer) {
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
+    broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer }), lit(0xffffff, { map: texture('bark', 2, 3) })],
     crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
     bush: () => [chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }), lit(0xcbdcbd, { map: texture('leaves', 2, 2), flatShading: coarsePointer })],
     pine: () => [new THREE.ConeGeometry(1, 1, coarsePointer ? 8 : 12), lit(0x9cb09c, { map: texture('leaves', 5, 2) })],
@@ -319,13 +374,20 @@ function broadleaf(p, wx, wz, x, y, k, scale = 1) {
   const s = scale * (0.79 + noise(x, y, k + 21) * 0.65);
   const ox = (noise(x, y, k + 23) - 0.5) * 2;
   const oz = (noise(y, x, k + 25) - 0.5) * 2;
-  p.add('trunk', [wx + ox, 1.5 * s, wz + oz], { scale: [s, 3 * s, s] });
-  const spreadX = 0.88 + noise(x, y, k + 27) * 0.25;
-  const spreadZ = 0.86 + noise(x, y, k + 29) * 0.29;
-  const crownHeight = 0.88 + noise(x, y, k + 33) * 0.25;
-  p.add('crown', [wx + ox, 3.9 * s, wz + oz], {
-    yaw: noise(x, y, k) * 6.28,
-    roll: (noise(x, y, k + 35) - 0.5) * 0.09,
+  const yaw = noise(x, y, k + 46) * Math.PI * 2;
+  p.add('broadleafTrunk', [wx + ox, 1.5 * s, wz + oz], {
+    yaw, roll: (noise(x, y, k + 47) - 0.5) * 0.04,
+    scale: [s, 3 * s, s],
+  });
+  // Vary crown silhouette independently of the trunk. The five merged
+  // foliage lobes remain one instanced batch, so no extra draw call.
+  const spreadX = 0.74 + noise(x, y, k + 27) * 0.55;
+  const spreadZ = 0.73 + noise(x, y, k + 29) * 0.57;
+  const crownHeight = 0.79 + noise(x, y, k + 33) * 0.43;
+  p.add('crown', [wx + ox + (noise(x, y, k + 50) - 0.5) * 0.22 * s,
+    3.9 * s, wz + oz + (noise(y, x, k + 51) - 0.5) * 0.22 * s], {
+    yaw,
+    roll: (noise(x, y, k + 35) - 0.5) * 0.13,
     scale: [1.9 * s * spreadX, 1.6 * s * crownHeight, 1.9 * s * spreadZ],
   });
   // Low foliage is planted on the SAME blocked cell as the trunk, never
