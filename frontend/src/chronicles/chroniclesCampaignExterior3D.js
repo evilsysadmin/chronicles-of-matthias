@@ -7,6 +7,7 @@ import {
   createSwordhavenSkyDome, swordhavenGrassTexture, swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture,
 } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { createBannerRoadShoulders } from './chroniclesRoadsideShoulders.js';
 import { buildChroniclesEnemyVisual } from '../chroniclesEnemyVisualRegistry.js';
 import { buildChroniclesSpriteBillboard, chroniclesHasSpriteBillboard } from './chroniclesSpriteBillboards.js';
 import { buildChroniclesTownNoticeBoard } from './chroniclesTownNoticeBoard3D.js';
@@ -892,6 +893,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     roads.name = 'chronicles-campaign-road';
     roads.receiveShadow = true;
     scene.add(roads);
+    // Banner Road: low, irregular groundcover at the grass/paving seam.
+    // One instanced batch, no collision mesh and no cover over the lane.
+    if (bannerTrail) {
+      const shoulders = createBannerRoadShoulders({
+        grid, roadCells, center: sceneCenter, coarsePointer,
+      });
+      if (shoulders) scene.add(shoulders);
+    }
     if (scenePlan.mapId === 'swordhaven-first-book' && settlement) {
       // A single, sparse batch floats just above authored road surfaces.
       // Purely decorative: no blocked tile, collision mask or puddle state.
