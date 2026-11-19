@@ -20,7 +20,7 @@ import {
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
   verifyPlaytestCheckpoint, playtestRoadCombatActorValid,
-  playtestCheckpointSaveReceipt,
+  playtestCheckpointSaveReceipt, playtestCommittedMeleeAttack,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -421,6 +421,7 @@ async function runEpisode(profile, seed, viewport) {
     let repositionSteps = 0;
     let rejectedCombatMoves = 0;
     let meleeOpportunities = 0;
+    let committedMeleeAttacks = 0;
     const record = (action, state) => trace.push({
       action, turns: state.turns, partyHp: state.partyHp,
       x: state.x, y: state.y,
@@ -585,7 +586,11 @@ async function runEpisode(profile, seed, viewport) {
       // Count only accepted initiative actions; a collision rejected without
       // cost must not look like a genuine opportunity to fight.
       if (before.meleeReady) meleeOpportunities += 1;
-      record(action, await readObservation(page));
+      const afterAction = await readObservation(page);
+      if (playtestCommittedMeleeAttack(action, before, afterAction)) {
+        committedMeleeAttacks += 1;
+      }
+      record(action, afterAction);
     }
 
     const after = await readObservation(page);
@@ -618,7 +623,7 @@ async function runEpisode(profile, seed, viewport) {
       attemptedCombatInputs: combatActions, combatEntered,
       initialHp: initial.partyHp, finalHp: after.partyHp,
       lastTurn: after.turns, blocked, rejectedCombatMoves,
-      meleeOpportunities, repositionSteps,
+      meleeOpportunities, committedMeleeAttacks, repositionSteps,
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
       // Verified from the server after combat and F5, never inferred from
@@ -637,7 +642,7 @@ async function runEpisode(profile, seed, viewport) {
       distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
-      postCombatEnemyHp: enemyHp,
+      committedMeleeAttacks, postCombatEnemyHp: enemyHp,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
       boardQuestVerified, roadTravelVerified,
       postCombatSaved, postCombatRestored,
