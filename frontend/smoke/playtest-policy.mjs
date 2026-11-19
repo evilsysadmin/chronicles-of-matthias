@@ -209,6 +209,12 @@ export function playtestAcceptance(episodes) {
       reasons.push('bot-execution-failed:' + profile);
       continue;
     }
+    // A real combat that is still unresolved is not a green E2E, even
+    // when the bot could travel and save. Unlike the legacy crypt, Banner
+    // Road's winner is established from its named, persisted enemy HP.
+    if (episode.combatEntered === true && episode.outcome === 'unfinished') {
+      reasons.push('combat-outcome-unverified:' + profile);
+    }
     if (episode.mapId !== PLAYTEST_CAMPAIGN_ENTRY_MAP_ID) {
       reasons.push('wrong-campaign-entry:' + profile);
     }
