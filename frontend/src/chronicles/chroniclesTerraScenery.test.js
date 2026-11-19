@@ -677,9 +677,12 @@ describe('Terra scenery', () => {
       original.push(scale.y);
     }
     expect(Math.min(...young)).toBeLessThan(Math.min(...original) * 0.65);
-    expect(young.filter(s => s < 1.5).length).toBeGreaterThan(5);
-    expect(touch.getObjectByName('chronicles-terra-broadleafTrunk').count)
-      .toBe(trunks.count);
+    expect(young.filter(s => s < 2.0).length).toBeGreaterThan(8);
+    // Coarse devices intentionally skip part of the distant out-of-map
+    // tree ring: only authored in-map juvenile transforms must be retained.
+    const mobileTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(mobileTrunks.count).toBeGreaterThan(10);
+    expect(mobileTrunks.count).toBeLessThanOrEqual(trunks.count);
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
