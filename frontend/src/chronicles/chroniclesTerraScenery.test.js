@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -396,6 +396,72 @@ describe('Terra scenery', () => {
     expect([...repeat.getAttribute('position').array]).toEqual([...d.array]);
     for (const value of d.array) expect(Number.isFinite(value)).toBe(true);
     [desktop, mobile, repeat].forEach(shape => shape.dispose());
+  });
+
+
+  it('places occasional fallen mossy timber on blocked Banner Road woodland only', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id };
+    const full = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const repeat = buildTerraScenery(args);
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const logs = full.getObjectByName('chronicles-terra-fallenWood');
+    const touch = mobile.getObjectByName('chronicles-terra-fallenWood');
+    expect(logs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(logs.count).toBeGreaterThan(7);
+    expect(logs.count).toBeLessThan(35); // Woodland debris stays sparse.
+    expect(touch).toBeInstanceOf(THREE.InstancedMesh);
+    expect(touch.count).toBeLessThan(logs.count);
+    expect(logs.castShadow).toBe(false);
+    expect(logs.material.vertexColors).toBe(true);
+    expect(logs.material.transparent).toBe(false);
+    expect(logs.instanceColor.count).toBe(logs.count);
+    expect(other.getObjectByName('chronicles-terra-fallenWood')).toBeUndefined();
+    expect(full.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    const again = repeat.getObjectByName('chronicles-terra-fallenWood');
+    const m = new THREE.Matrix4();
+    const twin = new THREE.Matrix4();
+    const shade = new THREE.Color();
+    const sameShade = new THREE.Color();
+    const tints = new Set();
+    for (let i = 0; i < logs.count; i += 1) {
+      logs.getMatrixAt(i, m);
+      again.getMatrixAt(i, twin);
+      expect(m.elements).toEqual(twin.elements);
+      const wx = m.elements[12], wz = m.elements[14];
+      const x = Math.round(wx / 4) + center.x;
+      const y = Math.round(wz / 4) + center.y;
+      expect(map.grid[y]?.[x]).toBe('#');
+      expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(0.37);
+      expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(0.37);
+      logs.getColorAt(i, shade);
+      again.getColorAt(i, sameShade);
+      expect(shade.getHex()).toBe(sameShade.getHex());
+      tints.add(shade.getHex());
+    }
+    expect(tints.size).toBeGreaterThan(1);
+  });
+
+  it('models low bark, end-grain and moss in one bounded desktop/mobile geometry', () => {
+    const desktop = chroniclesFallenWoodGeometry();
+    const mobile = chroniclesFallenWoodGeometry({ coarsePointer: true });
+    const again = chroniclesFallenWoodGeometry();
+    const d = desktop.getAttribute('position');
+    const m = mobile.getAttribute('position');
+    expect(d.count).toBeGreaterThan(m.count);
+    expect(d.count).toBeLessThan(125);
+    expect(desktop.getAttribute('color').count).toBe(d.count);
+    expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(desktop.boundingBox.max.y).toBeLessThan(0.49);
+    expect(desktop.boundingBox.min.x).toBeGreaterThan(-0.72);
+    expect(desktop.boundingBox.max.x).toBeLessThan(0.72);
+    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.24);
+    expect(desktop.boundingBox.max.z).toBeLessThan(0.24);
+    expect([...again.getAttribute('position').array]).toEqual([...d.array]);
+    for (const v of d.array) expect(Number.isFinite(v)).toBe(true);
+    [desktop, mobile, again].forEach(g => g.dispose());
   });
 
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
