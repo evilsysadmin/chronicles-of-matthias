@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chroniclesActiveEnemies,
   chroniclesCombatMeleeTarget,
+  chroniclesMM3MeleeAvailable,
   chroniclesEnemyPosition,
   chroniclesTileAt,
   chroniclesReduce,
@@ -9,6 +10,7 @@ import {
 } from '../chroniclesOfMatthias.js';
 import { chroniclesStartInitiativeCombat } from './chroniclesInitiative.js';
 import { chroniclesRuntimeEnemyPosition } from '../chroniclesOfMatthiasTurns.js';
+import { chroniclesRunPendingEnemyTurn } from './chroniclesEnemyInitiativeTurn.js';
 import { chroniclesCombatCameraFacing } from './chroniclesCombatCameraFacing.js';
 import { chroniclesApplyRunCheckpoint, chroniclesRunCheckpointPayload } from './chroniclesRunCheckpoint.js';
 
@@ -75,6 +77,64 @@ describe('MM3 rear melee ambush: face at contact, never during initiative', () =
       { ...state, combatRules: null }, [goblin], { forceEnemyIds: [GOBLIN_ID], random: () => 0 },
     );
     expect(tactics.direction).toBe(0);
+  });
+});
+
+describe('MM3 real roadside melee: reciprocal contact in all four directions', () => {
+  it.each([
+    ['north', { x: 5, y: 1 }, 0],
+    ['east', { x: 6, y: 2 }, 1],
+    ['south (rear)', { x: 5, y: 3 }, 2],
+    ['west', { x: 4, y: 2 }, 3],
+  ])('allows both sides to act from %s without a mid-combat turn', (_side, position, expectedFacing) => {
+    const initial = createChroniclesState('banner-road-first-book', null, { rules: 'mm3' });
+    const enemies = chroniclesActiveEnemies(initial);
+    const salteador = enemies.find(enemy => enemy.id === MARAUDER_ID);
+    expect(salteador?.name).toBe('salteador de la calzada');
+    expect(chroniclesTileAt(position.x, position.y, initial)).not.toBe('#');
+    const encounter = {
+      ...initial,
+      ...Object.fromEntries(enemies.filter(enemy => enemy.id !== MARAUDER_ID)
+        .map(enemy => [enemy.hpKey, 0])),
+      x: 5, y: 2, direction: 0, phase: 'explore',
+      enemyPositions: { [MARAUDER_ID]: position },
+    };
+    const combat = chroniclesStartInitiativeCombat(encounter, [salteador], { random: () => 0 });
+    expect(combat.phase).toBe('combat');
+    expect(combat.direction).toBe(expectedFacing);
+    expect(chroniclesCombatMeleeTarget(combat)?.enemy.id).toBe(MARAUDER_ID);
+    for (const turn of ['turn-left', 'turn-right']) {
+      expect(chroniclesReduce(combat, turn)).toBe(combat);
+    }
+
+    // Exercise an actual party action, not merely the "ATACAR" HUD marker.
+    const heroIndex = combat.initiative.order.findIndex(actor =>
+      actor.kind === 'party' && actor.id === 'knight');
+    expect(heroIndex).toBeGreaterThanOrEqual(0);
+    const heroTurn = { ...combat, initiative: { ...combat.initiative, cursor: heroIndex } };
+    expect(chroniclesMM3MeleeAvailable(heroTurn, 'knight')).toBe(true);
+    const struck = chroniclesReduce(heroTurn, {
+      type: 'attack', memberId: 'knight', mode: 'melee',
+    });
+    expect(struck.turns).toBe(heroTurn.turns + 1);
+    expect(struck.direction).toBe(expectedFacing);
+
+    // Reverse direction on a fresh encounter. The live enemy-turn driver
+    // must strike from any adjacent side and yield initiative, never walk
+    // away, stall, or silently burn its own action.
+    const enemyIndex = combat.initiative.order.findIndex(actor =>
+      actor.kind === 'enemy' && actor.id === MARAUDER_ID);
+    expect(enemyIndex).toBeGreaterThanOrEqual(0);
+    const enemyTurn = { ...combat, initiative: { ...combat.initiative, cursor: enemyIndex } };
+    const turn = chroniclesRunPendingEnemyTurn(enemyTurn, MARAUDER_ID,
+      undefined, enemyTurn.initiative);
+    expect(turn?.error).toBeNull();
+    expect(turn.acted.enemyTurnEvents.some(event =>
+      event.type === 'attack' && event.enemyId === MARAUDER_ID)).toBe(true);
+    expect(turn.acted.enemyTurnEvents.some(event => event.type === 'move')).toBe(false);
+    expect(turn.committed.direction).toBe(expectedFacing);
+    expect(turn.committed.phase).toBe('combat');
+    expect(turn.committed.initiative).not.toBeNull();
   });
 });
 
