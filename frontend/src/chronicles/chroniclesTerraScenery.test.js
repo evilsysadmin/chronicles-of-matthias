@@ -411,6 +411,7 @@ describe('Terra scenery', () => {
     const touch = mobile.getObjectByName('chronicles-terra-fallenWood');
     expect(logs).toBeInstanceOf(THREE.InstancedMesh);
     expect(logs.count).toBeGreaterThan(7);
+    expect(logs.count).toBeLessThan(35); // Woodland debris stays sparse.
     expect(touch).toBeInstanceOf(THREE.InstancedMesh);
     expect(touch.count).toBeLessThan(logs.count);
     expect(logs.castShadow).toBe(false);

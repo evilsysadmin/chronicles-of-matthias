@@ -843,9 +843,11 @@ function addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer) {
 function addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer) {
   const pathEdge = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
+  // Fallen timber must be rare, not another repeating forest tile stamp.
+  // Prefer a few visible woodland margins and thin the mobile population.
   const threshold = coarsePointer
-    ? (pathEdge ? 0.69 : 0.94)
-    : (pathEdge ? 0.43 : 0.88);
+    ? (pathEdge ? 0.87 : 0.98)
+    : (pathEdge ? 0.80 : 0.94);
   if (noise(x, y, 641) < threshold) return;
   const size = 0.90 + noise(x, y, 643) * 0.24;
   p.add('fallenWood', [
