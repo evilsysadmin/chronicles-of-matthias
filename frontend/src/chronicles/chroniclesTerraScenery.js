@@ -141,8 +141,34 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) 
       [[0.08, 0.24, -0.43], [0.65, 0.61, 0.64]],
     ] : []),
   ];
-  const pieces = lobes.map(([offset, scale]) => {
+  // Shade the underside a little cooler and brighter at the crown tops.
+  // Bake gentle lobe-to-lobe tonal changes into the existing shared geometry:
+  // no new foliage meshes, materials, textures, lights or frame updates.
+  // Vertices are coloured in lobe-local space, before translating each mass.
+  const tones = [
+    ['#d1e2ce', '#f9f9ee'],
+    ['#c5dac6', '#f1f8e5'],
+    ['#d8e3c6', '#fff9e8'],
+    ['#c8d9c5', '#f0f6e7'],
+    ['#d2dcc8', '#f6f5e8'],
+  ];
+  const pieces = lobes.map(([offset, scale], index) => {
     const shape = chroniclesOrganicCanopyGeometry({ coarsePointer });
+    const positions = shape.getAttribute('position');
+    const lower = new THREE.Color(tones[index][0]);
+    const upper = new THREE.Color(tones[index][1]);
+    const colors = new Float32Array(positions.count * 3);
+    const tint = new THREE.Color();
+    for (let i = 0; i < positions.count; i += 1) {
+      // Smooth gradient: slightly deeper shade below, brighter exposed tops.
+      // Local height avoids treating a lower lobe as permanently shaded.
+      const height = THREE.MathUtils.clamp((positions.getY(i) + 0.86) / 1.72, 0, 1);
+      tint.copy(lower).lerp(upper, height);
+      colors[i * 3] = tint.r;
+      colors[i * 3 + 1] = tint.g;
+      colors[i * 3 + 2] = tint.b;
+    }
+    shape.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     shape.scale(...scale);
     shape.translate(...offset);
     return shape;
@@ -538,7 +564,7 @@ function partCatalog(coarsePointer, biome) {
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer }), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer })],
+    crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer, vertexColors: true })],
     bush: () => [biome === 'plains'
       ? chroniclesLayeredShrubGeometry({ coarsePointer })
       : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
