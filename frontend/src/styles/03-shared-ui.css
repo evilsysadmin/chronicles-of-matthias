@@ -1,0 +1,92 @@
+/* Shared UI styles retained from the former Chess Studio combat skin.
+ * Chronicles' login, error recovery, and optional overlays still use these
+ * selectors. Keep them at @layer l03 to preserve cascade precedence.
+ */
+
+.field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+  margin-bottom: 0.3rem;
+}
+
+.text-input {
+  background: var(--ink-2);
+  border: 1px solid var(--ink-3);
+  border-radius: 6px;
+  color: var(--parchment);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--brass-dim);
+}
+
+.backup-link {
+  display: block;
+  margin: 1.25rem auto 0;
+  background: none;
+  border: none;
+  color: var(--parchment-dim);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.backup-link:hover { color: var(--brass); }
+
+.footer-links-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.footer-links-row .backup-link {
+  margin: 0;
+}
+
+.error-boundary-screen {
+  max-width: 420px;
+  margin: 3rem auto;
+  text-align: center;
+  background: var(--ink-2);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.error-boundary-screen h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  margin: 0;
+  color: var(--parchment);
+}
+
+.error-boundary-screen .primary-btn {
+  margin-top: 0.5rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 18, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
