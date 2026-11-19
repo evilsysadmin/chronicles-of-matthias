@@ -87,16 +87,30 @@ function sample(kind, x, y, size) {
     return 0.52 + meadow * 0.55 + clover * 0.25 + grain * 0.18;
   }
   if (kind === 'meadow') {
-    // Tileable broad mottled grass, not 4-pixel squares or a checkerboard
-    // of repeated neon/dark blades. Fine grain adds life without a shader,
-    // geometry, animation or new light source. Sparse seedheads remain small.
+    // A grassy forest floor needs more than a smooth green tint. Layer broad
+    // sward, finer clover and damp moss, then let a minority of irregular
+    // patches reveal warm compacted soil. All fields are periodic, so the
+    // same 128px atlas can repeat without seams or texture downloads.
     const sward = valueNoise(x, y, size, 4, 91) - 0.5;
     const clover = valueNoise(x, y, size, 13, 92) - 0.5;
-    const glint = hash(x, y, 93);
-    if (sward > 0.16 && clover > -0.02) return { color: 0x86955b };
-    if (sward < -0.18 && clover < 0.05) return 0.22;
-    if (glint > 0.9982) return { color: 0xc5b46b };
-    return 0.53 + sward * 0.48 + clover * 0.19 + grain * 0.09;
+    const loam = valueNoise(x, y, size, 6, 94) - 0.5;
+    const moss = valueNoise(x, y, size, 9, 95) - 0.5;
+    // Exposed soil: correlated patches, not a uniform random brown speckle.
+    // Deliberately modest coverage keeps the landscape a green meadow.
+    if (loam < -0.18 && clover < 0.02) {
+      return { color: loam < -0.29 ? 0x75654a : 0x88795b };
+    }
+    if (sward > 0.11 && moss > -0.04) return { color: 0x829560 };
+    if (sward < -0.15 && moss > 0.07) return { color: 0x465e37 };
+    // Fine tufts soften the terrain at eye level while the 3D grass adds
+    // actual silhouettes. No shadow, animation or second ground material.
+    const blade = hash(Math.floor(x / 5), Math.floor(y / 7), 96);
+    if (sward > -0.15 && blade > 0.79 && x % 5 === 2 && y % 7 < 3) {
+      return y % 7 === 0 ? { color: 0xa7ad75 } : 0.31 + moss * 0.15;
+    }
+    if (hash(x, y, 93) > 0.9982) return { color: 0xb8a879 };
+    return 0.51 + sward * 0.46 + clover * 0.20 + moss * 0.14
+      + grain * 0.08;
   }
   if (kind === 'heath') {
     // Four-octave-style deterministic ground breakup: dark peat patches,

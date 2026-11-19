@@ -350,18 +350,24 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(meadowAtlas.minFilter).toBe(THREE.LinearMipmapLinearFilter);
     expect(meadowAtlas.anisotropy).toBe(4);
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-terrain')).toHaveLength(1);
-    // All pixels stay opaque. Muted broad vegetation and sparse dry flecks
-    // replace the small aggressively repeated high-contrast town grass.
+    // The same opaque, cached atlas now has correlated loam clearings,
+    // moss and short grassy texture. Soil must be visible but in a minority;
+    // the meadow should never turn into a brown checkerboard.
     const image = meadowAtlas.image.data;
     const colours = new Set();
     let greenDominance = 0;
+    let earthPixels = 0;
     for (let i = 0; i < image.length; i += 4) {
       expect(image[i + 3]).toBe(255);
       if (image[i + 1] > image[i]) greenDominance++;
+      if (image[i] > image[i + 1] && image[i + 1] > image[i + 2]) earthPixels++;
       colours.add([image[i], image[i + 1], image[i + 2]].join(','));
     }
-    expect(greenDominance).toBeGreaterThan((image.length / 4) * 0.99);
-    expect(colours.size).toBeGreaterThan(5);
+    const total = image.length / 4;
+    expect(greenDominance).toBeGreaterThan(total * 0.80);
+    expect(earthPixels).toBeGreaterThan(total * 0.04);
+    expect(earthPixels).toBeLessThan(total * 0.16);
+    expect(colours.size).toBeGreaterThan(9);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
     expect(road.count).toBeGreaterThan(20);
