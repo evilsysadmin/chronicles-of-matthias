@@ -19,7 +19,7 @@ import {
   PLAYTEST_MAX_EXPLORATION_ACTIONS, playtestAction, playtestViewport,
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
-  verifyPlaytestCheckpoint,
+  verifyPlaytestCheckpoint, playtestRoadCombatActorValid,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -516,8 +516,8 @@ async function runEpisode(profile, seed, viewport) {
       const before = await readObservation(page);
       if (!before.initiative || ['defeated', 'escaped'].includes(before.phase)) break;
       combatEntered = true;
-      assert.ok(before.actor && before.mapId === PLAYTEST_CAMPAIGN_ENTRY_MAP_ID,
-        'Live initiative lost its actor or map');
+      assert.ok(playtestRoadCombatActorValid(before),
+        'Live Banner Road initiative lost its actor or changed map');
       const action = playtestAction({ profile, observed: before,
         combatActions: combatActions - rejectedCombatMoves,
         repositionSteps, blocked: combatBlocked, seed });
