@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -512,6 +512,85 @@ describe('Terra scenery', () => {
     [desktop, mobile, again].forEach(g => g.dispose());
   });
 
+
+  it('mixes genuinely different meadow silhouettes while keeping light mobile geometry', () => {
+    const thin = chroniclesMeadowGrassGeometry();
+    const sedge = chroniclesMeadowSedgeGeometry();
+    const touch = chroniclesMeadowSedgeGeometry({ coarsePointer: true });
+    const repeat = chroniclesMeadowSedgeGeometry();
+    const vertices = sedge.getAttribute('position');
+    const mobileVertices = touch.getAttribute('position');
+    expect(vertices.count).toBeGreaterThan(mobileVertices.count);
+    expect(vertices.count).toBeLessThan(60);
+    expect(vertices.count).not.toBe(thin.getAttribute('position').count);
+    expect(sedge.getAttribute('color').count).toBe(vertices.count);
+    expect(sedge.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(sedge.boundingBox.max.y).toBeLessThan(0.62);
+    expect(sedge.boundingBox.max.x).toBeLessThan(0.51);
+    expect(sedge.boundingBox.min.x).toBeGreaterThan(-0.51);
+    expect(sedge.boundingBox.max.z).toBeLessThan(0.51);
+    expect(sedge.boundingBox.min.z).toBeGreaterThan(-0.51);
+    expect([...repeat.getAttribute('position').array]).toEqual([...vertices.array]);
+    for (const value of vertices.array) expect(Number.isFinite(value)).toBe(true);
+    [thin, sedge, touch, repeat].forEach(geo => geo.dispose());
+  });
+
+  it('intersperses sedges among short turf in deterministic, variable-density patches', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    const args = { grid: map.grid, biome: map.biome, mapId: map.id, center, keepClear };
+    const full = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const repeat = buildTerraScenery(args);
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const sedges = full.getObjectByName('chronicles-terra-meadowSedge');
+    const turf = full.getObjectByName('chronicles-terra-tuft');
+    const mobileSedges = mobile.getObjectByName('chronicles-terra-meadowSedge');
+    expect(sedges).toBeInstanceOf(THREE.InstancedMesh);
+    expect(turf).toBeInstanceOf(THREE.InstancedMesh);
+    expect(sedges.count).toBeGreaterThan(35);
+    expect(turf.count).toBeGreaterThan(sedges.count);
+    expect(sedges.count).toBeGreaterThan(mobileSedges.count);
+    expect(sedges.castShadow).toBe(false);
+    expect(sedges.material.transparent).toBe(false);
+    expect(sedges.instanceColor.count).toBe(sedges.count);
+    expect(other.getObjectByName('chronicles-terra-meadowSedge')).toBeUndefined();
+    const blocked = new Set(keepClear.map(cell => cell.x + ',' + cell.y));
+    const density = new Map();
+    const colors = new Set();
+    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const tint = new THREE.Color(), twinTint = new THREE.Color();
+    const original = repeat.getObjectByName('chronicles-terra-meadowSedge');
+    for (const batch of [sedges, turf, mobileSedges]) {
+      for (let i = 0; i < batch.count; i += 1) {
+        batch.getMatrixAt(i, matrix);
+        const wx = matrix.elements[12], wz = matrix.elements[14];
+        const x = Math.round(wx / 4) + center.x;
+        const y = Math.round(wz / 4) + center.y;
+        expect(map.grid[y]?.[x]).toBe('.');
+        expect(blocked.has(x + ',' + y)).toBe(false);
+        expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(1.5);
+        expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(1.5);
+        if (batch !== mobileSedges) density.set(x + ',' + y,
+          (density.get(x + ',' + y) || 0) + 1);
+        if (batch === sedges) {
+          original.getMatrixAt(i, twin);
+          expect(twin.elements).toEqual(matrix.elements);
+          batch.getColorAt(i, tint);
+          original.getColorAt(i, twinTint);
+          expect(twinTint.getHex()).toBe(tint.getHex());
+          colors.add(tint.getHex());
+        }
+      }
+    }
+    expect(new Set(density.values()).size).toBeGreaterThan(3);
+    expect(colors.size).toBeGreaterThan(2);
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+  });
+
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {
     const desktop = chroniclesMeadowGrassGeometry();
     const mobile = chroniclesMeadowGrassGeometry({ coarsePointer: true });
@@ -564,8 +643,10 @@ describe('Terra scenery', () => {
     expect(grass).toBeInstanceOf(THREE.InstancedMesh);
     expect(flowers).toBeInstanceOf(THREE.InstancedMesh);
     expect(mobile).toBeInstanceOf(THREE.InstancedMesh);
-    expect(grass.count).toBeGreaterThan(older.count * 3);
-    expect(grass.count).toBeGreaterThan(mobile.count * 2);
+    expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
+      .toBeGreaterThan(older.count * 3);
+    expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
+      .toBeGreaterThan(mobile.count * 2);
     expect(flowers.count).toBeGreaterThan(15);
     expect(grass.instanceColor.count).toBe(grass.count);
     expect(grass.material.vertexColors).toBe(true);

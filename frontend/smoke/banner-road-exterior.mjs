@@ -50,6 +50,12 @@ try {
       assert.ok(Number(state.roadCount) > 20, 'Real paved trail must be present');
       assert.ok(Number(state.crownCount) > 10, 'Real broadleaf trees must be visible');
       assert.ok(Number(state.bushCount) > 5, 'Roadside bushes must be present');
+      assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');
+      assert.ok(Number(state.sedgeCount) > 15, 'Distinct broad-leaved sedges must render');
+      assert.ok(Number(state.sedgeCount) < Number(state.grassCount),
+        'Sedges must break up, not replace, the darker turf');
+      assert.equal(Number(state.sedgeTriangles), coarse ? 8 : 16,
+        'Keep the second species within a fixed small mobile/desktop budget');
       assert.ok(Number(state.canopyTints) > 1, 'Tree instances must not all share one tint');
       assert.equal(Number(state.canopyTriangles), coarse ? 60 : 400,
         'Keep the real mobile/desktop layered foliage geometry budget');
