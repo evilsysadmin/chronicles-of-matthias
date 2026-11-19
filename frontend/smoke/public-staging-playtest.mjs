@@ -621,6 +621,9 @@ async function runEpisode(profile, seed, viewport) {
       meleeOpportunities, repositionSteps,
       saved, restored, preCombatSaved: saved, preCombatRestored: restored,
       preCombatEnemyHp: preCombatCheckpoint.enemyHp,
+      // Verified from the server after combat and F5, never inferred from
+      // disappearing initiative or client-only UI. Null means unmeasured.
+      postCombatEnemyHp: enemyHp,
       openingNarrativeVerified, openingNarrativeId: 'sealed-order',
       boardQuestVerified, boardQuestId: PLAYTEST_BOARD_QUEST_ID,
       roadTravelVerified, roadMapId: PLAYTEST_QUEST_ROAD_MAP_ID,
@@ -634,6 +637,7 @@ async function runEpisode(profile, seed, viewport) {
       distinctExplorationTiles: visitedExplorationTiles.size,
       combatActions: committedCombatActions,
       attemptedCombatInputs: combatActions, hpLost: result.hpLost,
+      postCombatEnemyHp: enemyHp,
       warnings: result.warnings, saved, restored, openingNarrativeVerified,
       boardQuestVerified, roadTravelVerified,
       postCombatSaved, postCombatRestored,
