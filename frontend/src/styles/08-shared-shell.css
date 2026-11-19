@@ -1,0 +1,66 @@
+/* Shared standalone/shell UI retained from the historical Chess stylesheet.
+ * Keep within the original cascade layer l08. Chess-only screens are not mounted.
+ */
+@media (max-width: 430px) {
+  .menu { min-width: 0; max-width: 100%; overflow-x: clip; }
+}
+
+/* Release discovery: avisa sin convertir un deploy en una patada al tablero. */
+.release-update-notice {
+  position: fixed;
+  z-index: 2400;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, rgba(255,255,255,.16));
+  border-radius: 12px;
+  background: var(--panel, #1d2636);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28);
+}
+.release-update-copy { display: grid; gap: 2px; min-width: 0; }
+.release-update-copy strong { font-size: .9rem; }
+.release-update-copy span { color: var(--parchment-dim, #c9c3b5); font-size: .78rem; }
+.release-update-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+.release-update-primary,
+.release-update-dismiss {
+  border-radius: 8px;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: .76rem;
+  cursor: pointer;
+}
+.release-update-primary { border: 1px solid var(--gold, #c9a34a); background: transparent; color: inherit; }
+.release-update-dismiss { border: 0; background: transparent; color: var(--parchment-dim, #c9c3b5); }
+@media (max-width: 560px) {
+  .release-update-notice { align-items: flex-start; }
+  .release-update-copy span { max-width: 42ch; }
+  .release-update-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* ---------- Ajustes globales ---------- */
+.masthead-actions{position:absolute;right:0;display:flex;align-items:center;gap:.55rem;margin-left:0}
+.settings-gear-button{width:2.35rem;height:2.35rem;display:grid;place-items:center;border:1px solid var(--border-color,#4b4b4b);border-radius:999px;background:rgba(18,18,18,.72);color:inherit;font-size:1.15rem;cursor:pointer;line-height:1}
+.settings-gear-button:hover{transform:rotate(8deg);border-color:currentColor}
+.settings-backdrop{z-index:1200;display:flex;justify-content:flex-end;align-items:stretch;padding:0}
+.settings-panel{width:min(430px,92vw);height:100%;overflow:auto;background:var(--panel-bg,#161616);border-left:1px solid var(--border-color,#444);padding:1.2rem 1.25rem;box-shadow:-18px 0 45px rgba(0,0,0,.28)}
+.settings-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.settings-panel-heading h2{margin:.15rem 0 0}
+.settings-sections{display:grid;gap:1rem}
+.settings-sections>section{border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:1rem;background:rgba(255,255,255,.025)}
+.settings-sections h3{margin:0 0 .8rem}
+.settings-field{display:grid;gap:.4rem;margin:.65rem 0}.settings-field select,.settings-field input[type="range"]{width:100%}
+.settings-toggle{display:flex;align-items:center;gap:.65rem;margin:.7rem 0}
+@media(max-width:700px){.masthead-actions{position:static;right:auto;align-self:center;margin-left:0}}
+@media(max-width:600px){.settings-panel{width:100vw}.settings-gear-button{width:2.2rem;height:2.2rem}}
+
+/* Common recovery actions retained for compatibility. */
+.error-boundary-actions {display:flex;gap:.55rem;flex-wrap:wrap;justify-content:center;margin-top:.45rem}
+.active-session-recovery { display:grid; gap:.55rem; justify-items:center; text-align:center; }
+.active-session-recovery > span { max-width:44rem; color:var(--parchment-dim); }
+.active-session-recovery-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin-top:.2rem; }
