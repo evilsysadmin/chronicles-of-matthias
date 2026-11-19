@@ -72,7 +72,7 @@ try {
   for (let i = 0; i < (trunks?.count || 0); i += 1) {
     trunks.getMatrixAt(i, treeTransform);
     treeTransform.decompose(new THREE.Vector3(), new THREE.Quaternion(), treeScale);
-    if (treeScale.y < 1.5) juvenileTrees += 1;
+    if (treeScale.y < 2.0) juvenileTrees += 1;
   }
   for (let i = 0; i < (crowns?.count || 0); i += 1) {
     crowns.getColorAt(i, shade);
