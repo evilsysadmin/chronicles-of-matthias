@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -264,6 +264,67 @@ describe('Terra scenery', () => {
     expect(shrub.instanceColor.count).toBe(shrub.count);
     expect(plains.children.every(child => child.isInstancedMesh)).toBe(true);
     [full, mobile, restored].forEach(g => g.dispose());
+  });
+
+
+  it('seats muted ferns and leaf litter beneath Banner Road trees but never over path cells', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id };
+    const desktop = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const restored = buildTerraScenery(args);
+    const elsewhere = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const floor = desktop.getObjectByName('chronicles-terra-woodlandFloor');
+    const touch = mobile.getObjectByName('chronicles-terra-woodlandFloor');
+    const twin = restored.getObjectByName('chronicles-terra-woodlandFloor');
+    expect(floor).toBeInstanceOf(THREE.InstancedMesh);
+    expect(floor.count).toBeGreaterThan(18);
+    expect(floor.count).toBeGreaterThan(touch.count);
+    expect(floor.castShadow).toBe(false);
+    expect(floor.material.vertexColors).toBe(true);
+    expect(floor.material.transparent).toBe(false);
+    expect(floor.instanceColor.count).toBe(floor.count);
+    expect(elsewhere.getObjectByName('chronicles-terra-woodlandFloor')).toBeUndefined();
+    expect(desktop.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    const matrix = new THREE.Matrix4();
+    const copy = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    const otherTint = new THREE.Color();
+    const colours = new Set();
+    for (let i = 0; i < floor.count; i += 1) {
+      floor.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, copy);
+      expect(matrix.elements).toEqual(copy.elements);
+      const wx = matrix.elements[12], wz = matrix.elements[14];
+      const x = Math.round(wx / 4) + center.x;
+      const y = Math.round(wz / 4) + center.y;
+      expect(map.grid[y]?.[x]).toBe('#');
+      expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(1.05);
+      expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(1.05);
+      floor.getColorAt(i, tint);
+      twin.getColorAt(i, otherTint);
+      expect(tint.getHex()).toBe(otherTint.getHex());
+      colours.add(tint.getHex());
+    }
+    expect(colours.size).toBeGreaterThan(1);
+  });
+
+  it('keeps woodland understory finite, opaque and small with mobile LOD', () => {
+    const full = chroniclesWoodlandUnderstoryGeometry();
+    const mobile = chroniclesWoodlandUnderstoryGeometry({ coarsePointer: true });
+    const again = chroniclesWoodlandUnderstoryGeometry();
+    expect(full.getAttribute('position').count).toBeLessThanOrEqual(100);
+    expect(mobile.getAttribute('position').count).toBeLessThan(full.getAttribute('position').count);
+    expect(full.getAttribute('color').count).toBe(full.getAttribute('position').count);
+    full.computeBoundingBox();
+    expect(full.boundingBox.min.y).toBeGreaterThanOrEqual(0);
+    expect(full.boundingBox.max.y).toBeLessThan(0.53);
+    expect(full.boundingSphere.radius).toBeLessThan(0.9);
+    expect([...again.getAttribute('position').array])
+      .toEqual([...full.getAttribute('position').array]);
+    for (const value of full.getAttribute('position').array) expect(Number.isFinite(value)).toBe(true);
+    [full, mobile, again].forEach(shape => shape.dispose());
   });
 
   it('renders individual meadow blades rather than solid cones, with no extra draw calls or collision', () => {

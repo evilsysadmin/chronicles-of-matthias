@@ -344,6 +344,61 @@ export function chroniclesBranchingTrunkGeometry({ coarsePointer = false } = {})
   return merged;
 }
 
+
+/**
+ * Forest-floor fernlets and scattered fallen leaves. Built once, rendered as
+ * a single opaque instanced batch across Banner Road's wooded cells.
+ * Opaque vertex colours avoid alpha sorting and any animated update loop.
+ */
+export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } = {}) {
+  const positions = [];
+  const colours = [];
+  const leaves = ['#425d32', '#65824c', '#7c9354', '#9a9c60']
+    .map(hex => new THREE.Color(hex));
+  const litter = ['#776b42', '#988153', '#5c663c']
+    .map(hex => new THREE.Color(hex));
+  const triangle = (a, b, c, color) => {
+    positions.push(...a, ...b, ...c);
+    for (let j = 0; j < 3; j += 1) colours.push(color.r, color.g, color.b);
+  };
+  const sprigs = coarsePointer ? 5 : 10;
+  for (let i = 0; i < sprigs; i += 1) {
+    const angle = i * Math.PI * (3 - Math.sqrt(5));
+    const d = 0.12 + (i % 4) * 0.10;
+    const cx = Math.cos(angle) * d;
+    const cz = Math.sin(angle) * d;
+    const vx = Math.cos(angle) * (0.15 + (i % 3) * 0.04);
+    const vz = Math.sin(angle) * (0.15 + (i % 3) * 0.04);
+    const h = 0.21 + (i % 4) * 0.065;
+    const sx = -Math.sin(angle) * 0.085;
+    const sz = Math.cos(angle) * 0.085;
+    triangle([cx - sx, 0.012, cz - sz], [cx + sx, 0.012, cz + sz],
+      [cx + vx, h, cz + vz], leaves[i % leaves.length]);
+    if (!coarsePointer) {
+      triangle([cx - sx * 0.75, h * 0.46, cz - sz * 0.75],
+        [cx + sx * 0.75, h * 0.46, cz + sz * 0.75],
+        [cx + vx * 1.13, h * 0.88, cz + vz * 1.13],
+        leaves[(i + 2) % leaves.length]);
+    }
+  }
+  for (let i = 0; i < (coarsePointer ? 3 : 7); i += 1) {
+    const angle = i * 2.39996 + 0.4;
+    const d = 0.15 + (i % 4) * 0.10;
+    const x = Math.cos(angle) * d;
+    const z = Math.sin(angle) * d;
+    const dx = Math.cos(angle) * 0.10;
+    const dz = Math.sin(angle) * 0.10;
+    triangle([x - dz, 0.016, z + dx], [x + dz, 0.016, z - dx],
+      [x + dx, 0.021, z + dz], litter[i % litter.length]);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 // Parts: one geometry + one material each, instanced across the map.
 function partCatalog(coarsePointer, biome) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
@@ -377,6 +432,7 @@ function partCatalog(coarsePointer, biome) {
     // Walkable clutter.
     tuft: () => [chroniclesMeadowGrassGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     flower: () => [chroniclesMeadowWildflowersGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
+    woodlandFloor: () => [chroniclesWoodlandUnderstoryGeometry({ coarsePointer }), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     pebble: () => [new THREE.IcosahedronGeometry(0.22, 0), rock(0xbab2a2)],
     heather: () => [chroniclesBrezalHeatherGeometry(), lit(0xffffff, { vertexColors: true, side: THREE.DoubleSide })],
     snowMound: () => [new THREE.SphereGeometry(0.5, 8, 4), lit(0xf4f8fc, { map: texture('snow') })],
@@ -602,6 +658,32 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
   }
 }
 
+
+/**
+ * Understory belongs to blocked forest cells, not the paved path. Fronds
+ * lean toward adjacent clearings but remain well within their 4m home cell.
+ * The same deterministic seed produces the same scene after reloading.
+ */
+function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
+  const openings = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
+  if (!openings.length && noise(x, y, 511) < 0.64) return;
+  const count = coarsePointer ? 1 : openings.length ? 2 : 1;
+  for (let i = 0; i < count; i += 1) {
+    const [dx, dy] = openings.length
+      ? openings[(Math.floor(noise(x, y, 517) * openings.length) + i) % openings.length]
+      : [0, 0];
+    const shiftX = (noise(x + i, y, 523) - 0.5) * 0.46;
+    const shiftZ = (noise(y + i, x, 527) - 0.5) * 0.46;
+    const s = 0.70 + noise(x, y + i, 529) * 0.31;
+    p.add('woodlandFloor', [wx + dx * 0.75 + shiftX, 0.012,
+      wz + dy * 0.75 + shiftZ], {
+      yaw: noise(x + i, y, 531) * Math.PI * 2,
+      scale: [s, 0.87 + noise(x, y + i, 533) * 0.27, s],
+    });
+  }
+}
+
 const CLUTTER = {
   plains: (p, wx, wz, x, y) => {
     // Two short grass clusters in the same walkable cell give the field
@@ -692,6 +774,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         // Mobile keeps the far ring sparse; the playable edge is always full.
         if (!inside && coarsePointer && noise(x, y, 99) < 0.45) continue;
         dress(p, wx, wz, x, y, !inside);
+        if (inside && denseMeadow) {
+          addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer);
+        }
         if (inside && biome === 'hills' && mapId === 'terra-b2') {
           addBrezalHeather(p, grid, x, y, wx, wz, coarsePointer);
         }
@@ -726,6 +811,17 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 8), Math.round(e[14] * 8),
           part === 'crown' ? 193 : 197);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'woodlandFloor') {
+      const shades = ['#d1ddc3', '#eff0d8', '#a5b894', '#e5e2c2']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7), 541);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
