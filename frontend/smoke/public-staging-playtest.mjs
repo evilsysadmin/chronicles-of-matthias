@@ -20,6 +20,7 @@ import {
   playtestOutcome, playtestSummary, playtestFailureEpisode, playtestAcceptance,
   playtestMobileTouchAction, playtestTileKey, playtestMovedBetweenTiles,
   verifyPlaytestCheckpoint, playtestRoadCombatActorValid,
+  playtestCheckpointSaveReceipt,
 } from './playtest-policy.mjs';
 import { assertPlaytestAccountRevoked } from './playtest-cleanup.mjs';
 
@@ -180,11 +181,36 @@ async function saveReloadProbe(page, runId, token, expected, { requiredFlags = [
     return control && !control.disabled;
   }, null, { timeout: 15_000 });
   assert.equal(await save.isEnabled(), true, 'Out-of-combat checkpoint must be enabled');
-  const saving = page.waitForResponse(r => r.url().startsWith(api)
-    && new URL(r.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
-    && r.request().method() === 'PUT', { timeout: 25_000 });
-  await save.click();
-  assert.equal((await saving).status(), 200, 'Bot could not save real staging run');
+  // An area transition may already have written this exact snapshot.
+  // On a manual Save the game then intentionally skips a duplicate PUT and
+  // acknowledges "Sin cambios..." instead. Never wait for a request that
+  // cannot exist; require the real UI receipt followed by server GET + F5.
+  const checkpointStatuses = [];
+  const onCheckpointResponse = (response) => {
+    if (response.url().startsWith(api)
+      && new URL(response.url()).pathname === '/api/chronicles/runs/' + runId + '/checkpoint'
+      && response.request().method() === 'PUT') checkpointStatuses.push(response.status());
+  };
+  page.on('response', onCheckpointResponse);
+  try {
+    await save.click();
+    await page.waitForFunction(() => {
+      const control = document.querySelector('[data-chronicles-menu-save]');
+      const message = document.querySelector(
+        '[data-chronicles-adventure-menu] .chronicles-game-menu__notice[role="status"]',
+      )?.textContent?.trim() || '';
+      return control && !control.disabled
+        && (message === 'Partida guardada correctamente.'
+          || message === 'Sin cambios desde el último guardado.'
+          || message.startsWith('No se pudo guardar'));
+    }, null, { timeout: 25_000 });
+    const receipt = await page.locator(
+      '[data-chronicles-adventure-menu] .chronicles-game-menu__notice[role="status"]',
+    ).innerText();
+    playtestCheckpointSaveReceipt(receipt, checkpointStatuses);
+  } finally {
+    page.off('response', onCheckpointResponse);
+  }
   const check = await fetch(api + '/chronicles/runs/' + encodeURIComponent(runId) + '/bootstrap', {
     headers: { Authorization: 'Bearer ' + token },
   });

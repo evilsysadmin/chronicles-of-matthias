@@ -11,7 +11,7 @@ import {
   playtestViewport, playtestAction, playtestOutcome, playtestSummary,
   playtestAcceptance,
   verifyPlaytestCheckpoint, playtestFailureEpisode, playtestMobileTouchAction,
-  playtestRoadCombatActorValid,
+  playtestRoadCombatActorValid, playtestCheckpointSaveReceipt,
 } from '../../smoke/playtest-policy.mjs';
 
 const seen = (overrides = {}) => ({
@@ -413,6 +413,24 @@ describe('public staging Playwright bot policy', () => {
       wins: 1, explorationEpisodes: 0, unresolved: 0,
       averageHpLost: 12, averageActions: 7,
     });
+  });
+
+  it('uses the real menu receipt to distinguish a successful write from an already-durable area checkpoint', () => {
+    expect(playtestCheckpointSaveReceipt('Partida guardada correctamente.', [200]))
+      .toBe('written');
+    expect(playtestCheckpointSaveReceipt(' Sin cambios desde el último guardado. ', []))
+      .toBe('already-durable');
+    expect(() => playtestCheckpointSaveReceipt('Partida guardada correctamente.', []))
+      .toThrow('BOT_CHECKPOINT_WRITE_NOT_CONFIRMED');
+    expect(() => playtestCheckpointSaveReceipt('Partida guardada correctamente.', [409]))
+      .toThrow('BOT_CHECKPOINT_WRITE_NOT_CONFIRMED');
+    expect(() => playtestCheckpointSaveReceipt('Sin cambios desde el último guardado.', [200]))
+      .toThrow('BOT_CHECKPOINT_CLEAN_UNEXPECTED_PUT');
+    expect(() => playtestCheckpointSaveReceipt(
+      'No se pudo guardar la partida. Reinténtalo antes de salir.', [],
+    )).toThrow('BOT_CHECKPOINT_SAVE_FAILED');
+    expect(() => playtestCheckpointSaveReceipt('Guardando…', []))
+      .toThrow('BOT_CHECKPOINT_SAVE_NO_RECEIPT');
   });
 
   it('checks both authoritative checkpoint snapshots, including after a defeat', () => {
