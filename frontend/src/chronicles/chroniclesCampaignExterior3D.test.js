@@ -416,6 +416,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
     expect(road.count).toBeGreaterThan(20);
     expect(road.count).toBe(cheaper.count);
+    // Visually narrow only the straight width, not each tile's longitudinal
+    // span: the paving must remain connected without a 0.7m gap every 4m.
+    expect(road.geometry.parameters.width).toBeCloseTo(4 * 0.98);
+    expect(road.geometry.parameters.depth).toBeCloseTo(4 * 0.98);
     expect(road.material.map).toBe(swordhavenSurfaceTexture('cobble'));
     expect(road.material.normalMap).toBe(swordhavenSurfaceNormalTexture('cobble'));
     expect(road.material.normalScale.toArray()).toEqual([0.54, 0.54]);
@@ -432,6 +436,12 @@ describe('Chronicles file-authored exterior renderer', () => {
       road.getMatrixAt(i, matrix);
       again.getMatrixAt(i, twin);
       expect(matrix.elements).toEqual(twin.elements);
+      const rx = Math.round(matrix.elements[12] / 4) + center.x;
+      const ry = Math.round(matrix.elements[14] / 4) + center.y;
+      const xScale = rx === center.x && ry !== center.y ? 0.82 / 0.98 : 1;
+      const zScale = ry === center.y && rx !== center.x ? 0.82 / 0.98 : 1;
+      expect(matrix.elements[0]).toBeCloseTo(xScale, 5);
+      expect(matrix.elements[10]).toBeCloseTo(zScale, 5);
       road.getColorAt(i, shade);
       again.getColorAt(i, twinShade);
       expect(shade.getHex()).toBe(twinShade.getHex());

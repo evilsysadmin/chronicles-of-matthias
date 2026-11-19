@@ -45,8 +45,8 @@ describe('Banner Road organic grass/cobble shoulders', () => {
       again.getColorAt(i, sameTint);
       expect(tint.getHex()).toBe(sameTint.getHex());
       const matching = exposed.filter(({ x, y, dx, dy }) =>
-        Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * 1.98)) < 0.001
-          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * 1.98)) < 0.001);
+        Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * 1.66)) < 0.001
+          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * 1.66)) < 0.001);
       expect(matching).toHaveLength(1);
       const e = matching[0];
       mapped.add(e.x + ',' + e.y + ':' + e.dx + ',' + e.dy);
@@ -54,6 +54,10 @@ describe('Banner Road organic grass/cobble shoulders', () => {
       expect(roadCells.some(r => r.x === e.x + e.dx && r.y === e.y + e.dy)).toBe(false);
     }
     expect(mapped.size).toBe(exposed.length);
+    // Paving is only 1.64m from the straight centreline; 1.66m shoulder
+    // offsets let moss begin at the edge while keeping the walkable lane.
+    expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.1);
+    expect(mobile.geometry.boundingBox.max.y).toBeLessThan(0.25);
   });
 
   it('has low bounded terrain patches, faint moss intrusion and a lighter touch model', () => {
