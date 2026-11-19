@@ -239,8 +239,10 @@ describe('Terra scenery', () => {
     const full = chroniclesLayeredShrubGeometry();
     const mobile = chroniclesLayeredShrubGeometry({ coarsePointer: true });
     const restored = chroniclesLayeredShrubGeometry();
-    expect(full.index.count / 3).toBe(240);
-    expect(mobile.index.count / 3).toBe(40);
+    const triangleCount = geometry => (geometry.index?.count
+      ?? geometry.getAttribute('position').count) / 3;
+    expect(triangleCount(full)).toBe(240);
+    expect(triangleCount(mobile)).toBe(40);
     expect([...restored.getAttribute('position').array])
       .toEqual([...full.getAttribute('position').array]);
     full.computeBoundingBox();
@@ -254,10 +256,10 @@ describe('Terra scenery', () => {
     const originalHills = buildTerraScenery({ grid: map.grid, center, biome: 'hills' });
     const shrub = plains.getObjectByName('chronicles-terra-bush');
     expect(shrub).toBeInstanceOf(THREE.InstancedMesh);
-    expect(shrub.geometry.index.count / 3).toBe(240);
-    expect(smaller.getObjectByName('chronicles-terra-bush').geometry.index.count / 3).toBe(40);
+    expect(triangleCount(shrub.geometry)).toBe(240);
+    expect(triangleCount(smaller.getObjectByName('chronicles-terra-bush').geometry)).toBe(40);
     const hillBush = originalHills.getObjectByName('chronicles-terra-bush');
-    expect(hillBush.geometry.index.count / 3).toBe(80);
+    expect(triangleCount(hillBush.geometry)).toBe(80);
     expect(shrub.count).toBeGreaterThan(15);
     expect(shrub.instanceColor.count).toBe(shrub.count);
     expect(plains.children.every(child => child.isInstancedMesh)).toBe(true);
