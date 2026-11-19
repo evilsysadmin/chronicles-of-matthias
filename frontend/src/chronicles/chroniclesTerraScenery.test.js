@@ -202,7 +202,10 @@ describe('Terra scenery', () => {
     expect(crowns.material.transparent).toBe(false);
     expect(crowns.material.map).toBeTruthy();
     expect(cheap.material.vertexColors).toBe(true);
-    expect(crowns.count).toBe(cheap.count);
+    // Mobile intentionally skips part of the far scenery ring; compare
+    // budgets without incorrectly equating its instance count to desktop.
+    expect(cheap.count).toBeGreaterThan(0);
+    expect(cheap.count).toBeLessThanOrEqual(crowns.count);
     expect(scene.children.filter(child => child.name === crowns.name)).toHaveLength(1);
     expect(shrubs.material.vertexColors).toBe(false);
     expect(shrubs.geometry.getAttribute('color')).toBeUndefined();
