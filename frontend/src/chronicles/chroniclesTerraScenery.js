@@ -869,7 +869,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       mesh.instanceColor.needsUpdate = true;
     }
     mesh.name = 'chronicles-terra-' + part;
-    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool'].includes(part);
+    const small = ['tuft', 'flower', 'pebble', 'snowMound', 'ember', 'flame', 'reed', 'heather', 'pool', 'woodlandFloor'].includes(part);
     mesh.castShadow = !coarsePointer && !small;
     mesh.receiveShadow = true;
     group.add(mesh);
