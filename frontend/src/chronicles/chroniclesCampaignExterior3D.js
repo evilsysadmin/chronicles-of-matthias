@@ -751,15 +751,18 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
-  // The central Banner Road had perfectly uniform flat-looking pavers.
-  // Reuse the existing shared cobble normal atlas only on desktop; mobile
-  // retains the original albedo-only cost, and other wild roads stay put.
-  const paver = material(heathB2 ? 0xffffff
-    : bannerTrail ? 0xd9cfbd : (roadMap ? 0xcabfa6 : 0xddd3bf), {
-    map: heathB2 ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
-    ...((settlement || (bannerTrail && !coarsePointer)) ? {
+  // The first-book Banner Road is a woodland cart track, not a city street.
+  // Replace repeated cream cobbles with one softly filtered in-memory atlas
+  // of packed earth, moss and scattered grit. No old cobble normal map:
+  // square stone relief would contradict the new soil texture. Other roads
+  // retain their established textures and GPU budgets.
+  const paver = material(heathB2 || bannerTrail ? 0xffffff
+    : (roadMap ? 0xcabfa6 : 0xddd3bf), {
+    map: bannerTrail ? chroniclesPixelTexture('woodlandpath')
+      : heathB2 ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
+    ...(settlement ? {
       normalMap: swordhavenSurfaceNormalTexture('cobble'),
-      normalScale: new THREE.Vector2(settlement ? 0.72 : 0.54, settlement ? 0.72 : 0.54),
+      normalScale: new THREE.Vector2(0.72, 0.72),
     } : {}),
   });
   const timber = material(0x4d3424);
@@ -825,18 +828,15 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // A forest has no paved axes: its paths are the gaps between trees.
   const roadCells = forest ? [] : visibleRoadCells(scenePlan, sceneCenter).filter(({ x, y }) => grid[y]?.[x] === '.');
   if (roadCells.length) {
-    // Stone paving deliberately keeps a narrow mortar joint. B2's
-    // compacted-earth track is continuous: close that 8cm dark gap between
-    // neighboring road tiles without overlapping coplanar faces (z-fighting).
-    // This is only an albedo carrier; movement still follows the saved grid.
-    const roadSpan = heathB2 ? CELL : CELL * 0.98;
-    // Banner Road's full-cell cobbles look like an oversized modern highway.
-    // Keep the 4m navigation grid and longitudinal tile overlap unchanged,
-    // while narrowing the *visual* straight stretches to a 2.64m woodland
-    // cart track. The extra 0.64m on each side returns to the grass/moss.
-    // Same InstancedMesh, continuous length, unchanged 4m navigation grid.
-    // Keep the central crossing full-width for connected perpendicular roads.
-    const bannerStraightWidth = 0.66 / 0.98;
+    // Stone paving retains its tiny mortar gap. On B2 and Banner Road,
+    // compacted earth forms one continuous 4m tread without the artificial
+    // dark line that formerly divided each woodland tile.
+    // This is ONLY an albedo carrier: the canonical 4m navigation/collision
+    // cells, saved positions and interactions remain exactly unchanged.
+    const roadSpan = heathB2 || bannerTrail ? CELL : CELL * 0.98;
+    // Narrow the visual Banner Road straight stretches to a 2.64m track;
+    // keep longitudinal continuity and the junction at full 4m width.
+    const bannerStraightWidth = 0.66;
     const roads = new THREE.InstancedMesh(
       new THREE.BoxGeometry(roadSpan, 0.045, roadSpan), paver, roadCells.length,
     );
@@ -865,9 +865,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       nearWalls: ['#f0ede4', '#e3e7de', '#eae3df', '#ece8df'].map(hex => new THREE.Color(hex)),
       open: ['#ffffff', '#f4f0e8', '#e7e4dc', '#f6f2e9'].map(hex => new THREE.Color(hex)),
     } : null;
-    // Original Banner Road stays perfectly walkable, but its centuries-old
-    // stones no longer repeat the exact same tint for every four-metre slab.
-    // Grass-edge patina and central wear share the original one draw call.
+    // The woodland track stays perfectly walkable. Edge moss and compacted
+    // central tread vary pigments over several cells in the same batch.
     const bannerTrackTints = bannerTrail ? {
       edge: ['#e5e9df', '#e9e5d9', '#e3dfd5', '#f1eee5'].map(hex => new THREE.Color(hex)),
       center: ['#ffffff', '#f2ede4', '#ebe5dc', '#f7f2e8'].map(hex => new THREE.Color(hex)),
