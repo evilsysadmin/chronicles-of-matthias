@@ -32,6 +32,9 @@ export default defineConfig({
     include: ['src/**/*.test.{js,jsx}', 'test/**/*.test.{js,jsx}'],
   },
   build: {
+    // Manifest lets CI distinguish entry/static imports from deferred game routes.
+    // This does not eagerly load lazy modules or change runtime chunking.
+    manifest: true,
     chunkSizeWarningLimit: 750,
     rollupOptions: {
       output: {
