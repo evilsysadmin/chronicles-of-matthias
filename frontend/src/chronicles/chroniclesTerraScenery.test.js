@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadShrubFringeScale, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -943,6 +943,51 @@ describe('Terra scenery', () => {
     expect(kinds).toEqual(new Set(['#', '.']));
     expect(addedCells.size).toBeGreaterThan(35);
     expect(shades.size).toBeGreaterThan(2);
+  });
+
+  it('widens existing forest-fringe shrubs while leaving the cart track and other biomes clear', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    expect(chroniclesBannerRoadShrubFringeScale(map.grid, 1, 7)).toBeCloseTo(1.33);
+    expect(chroniclesBannerRoadShrubFringeScale(map.grid, 3, 7)).toBeCloseTo(1.21);
+    expect(chroniclesBannerRoadShrubFringeScale(map.grid, 10, 8)).toBe(1);
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear };
+    const full = buildTerraScenery(args);
+    const touch = buildTerraScenery({ ...args, coarsePointer: true });
+    const repeat = buildTerraScenery(args);
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const bushes = full.getObjectByName('chronicles-terra-bush');
+    const again = repeat.getObjectByName('chronicles-terra-bush');
+    expect(bushes.count).toBe(again.count);
+    expect(bushes.count).toBeGreaterThan(touch.getObjectByName(bushes.name).count);
+    expect(full.children.length).toBe(repeat.children.length);
+    expect(other.getObjectByName('chronicles-terra-bush')).toBeInstanceOf(THREE.InstancedMesh);
+    const matrix = new THREE.Matrix4(), duplicate = new THREE.Matrix4();
+    const position = new THREE.Vector3(), rotation = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const excluded = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    let broadened = 0;
+    for (let i = 0; i < bushes.count; i += 1) {
+      bushes.getMatrixAt(i, matrix);
+      again.getMatrixAt(i, duplicate);
+      expect(matrix.elements).toEqual(duplicate.elements);
+      matrix.decompose(position, rotation, scale);
+      const x = Math.round(position.x / 4) + center.x;
+      const y = Math.round(position.z / 4) + center.y;
+      if (map.grid[y]?.[x] !== '.' || Math.abs(position.y - 0.51) > 1e-6) continue;
+      expect(excluded.has(x + ',' + y)).toBe(false);
+      // A conservative sphere bound includes the whole rotated shrub and
+      // still lies inside its 4m grassy tile (never on a traversable road).
+      const extent = bushes.geometry.boundingSphere.radius * Math.max(scale.x, scale.z);
+      expect(Math.abs(position.x - (x - center.x) * 4) + extent).toBeLessThan(2);
+      expect(Math.abs(position.z - (y - center.y) * 4) + extent).toBeLessThan(2);
+      expect(scale.y).toBeLessThan(0.94); // No taller opaque obstacles.
+      if (scale.x > 0.80) broadened += 1;
+    }
+    expect(broadened).toBeGreaterThan(5);
   });
 
   it('grows a bounded first-row roadside understory without planting in a paved or quest cell', () => {
