@@ -195,7 +195,10 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodlan
       [[-0.24, 0.40, 0.31], [0.46, 0.48, 0.48]],
       [[0.24, 0.33, -0.39], [0.43, 0.54, 0.46]],
     ] : []),
-    [[0.14, -0.21, 0.96], [0.46, 0.42, 0.47]],
+    // Keep the forward branch overlapping the main crown in both camera
+    // projections: the old far-forward small mass looked like a floating
+    // foliage ball beside the left gateway tree at 390px and 1280px.
+    [[0.05, -0.13, 0.74], [0.55, 0.46, 0.68]],
   ];
   const lobes = woodland ? woodlandLobes : originalLobes;
   // Shade the underside a little cooler and brighter at the crown tops.
