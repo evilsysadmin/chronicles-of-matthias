@@ -147,7 +147,10 @@ export function chroniclesWoodlandLeafMassGeometry({ coarsePointer = false } = {
       + 0.065 * Math.cos(5 * a - 0.24)
       + 0.033 * Math.sin(7 * a + y * 1.4);
     const skirt = y < 0 ? 1 + 0.10 * y : 1;
-    const vertical = y * (y < 0 ? 0.77 : 0.93)
+    // On touch, the five-meridian cap would otherwise taper to a sharp
+    // pyramid tip. Lift its upper shoulder ring without adding triangles.
+    const touchShoulderLift = coarsePointer && y > 0.4 && y < 0.7 ? 0.26 : 0;
+    const vertical = y * (y < 0 ? 0.77 : 0.93) + touchShoulderLift
       + 0.024 * Math.sin(4 * a + 0.67) * (1 - Math.abs(y));
     positions.setXYZ(i, x * scallop * skirt, vertical,
       z * (scallop + 0.024 * Math.sin(2 * a + y * 2.0)) * skirt);
