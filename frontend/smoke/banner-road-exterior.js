@@ -261,6 +261,9 @@ try {
     forestDeepRingTrees: String(forestRingTrees[3]),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
     canopyFrontReach: String(gatewayCrownBounds?.max.z ?? -1),
+    canopyAspect: String(gatewayCrownBounds
+      ? (gatewayCrownBounds.max.y - gatewayCrownBounds.min.y)
+        / (gatewayCrownBounds.max.x - gatewayCrownBounds.min.x) : -1),
     canopyFlatShading: String(crowns?.material?.flatShading ?? true),
     canopyTints: String(crownTints.size),
     canopyVertexColors: String(vertexColours?.count || 0),
