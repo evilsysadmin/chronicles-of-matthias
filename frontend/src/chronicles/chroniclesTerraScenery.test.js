@@ -1049,8 +1049,10 @@ describe('Terra scenery', () => {
     expect(new Set(desktop.children.map(mesh => mesh.name)).size)
       .toBe(desktop.children.length);
     expect(other.children.every(mesh => desktop.getObjectByName(mesh.name))).toBe(true);
-    expect(crowns.geometry.index.count).toBe(previous.geometry.index.count);
-    expect(cheap.geometry.index.count).toBeLessThan(crowns.geometry.index.count);
+    const triangles = geometry => (geometry.index?.count
+      ?? geometry.getAttribute('position').count) / 3;
+    expect(triangles(crowns.geometry)).toBe(triangles(previous.geometry));
+    expect(triangles(cheap.geometry)).toBeLessThan(triangles(crowns.geometry));
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
 
     const collect = mesh => {
