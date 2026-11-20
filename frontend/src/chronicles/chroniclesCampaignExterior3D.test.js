@@ -392,7 +392,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(other.getObjectByName('chronicles-sky-cloud-panorama')).toBeTruthy();
   });
 
-  it('weathers Banner Road stone slabs without changing the authored path or mobile GPU budget', () => {
+  it('renders a continuous, earthy Banner Road without altering saved navigation cells or mobile GPU budget', () => {
     const map = bannerRoadFirstBook;
     const center = { x: 10, y: 7 };
     const plan = {
@@ -483,13 +483,36 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(road.count).toBe(cheaper.count);
     // Visually narrow only the straight width, not each tile's longitudinal
     // span: the paving must remain connected without a 0.7m gap every 4m.
-    expect(road.geometry.parameters.width).toBeCloseTo(4 * 0.98);
-    expect(road.geometry.parameters.depth).toBeCloseTo(4 * 0.98);
-    expect(road.material.map).toBe(swordhavenSurfaceTexture('cobble'));
-    expect(road.material.normalMap).toBe(swordhavenSurfaceNormalTexture('cobble'));
-    expect(road.material.normalScale.toArray()).toEqual([0.54, 0.54]);
+    expect(road.geometry.parameters.width).toBeCloseTo(4);
+    expect(road.geometry.parameters.depth).toBeCloseTo(4);
+    const pathAtlas = chroniclesPixelTexture('woodlandpath');
+    expect(road.material.map).toBe(pathAtlas);
+    expect(road.material.color.getHex()).toBe(0xffffff);
+    expect(road.material.normalMap).toBeNull();
     expect(cheaper.material.normalMap).toBeNull();
-    expect(cheaper.material.map).toBe(road.material.map);
+    expect(cheaper.material.map).toBe(pathAtlas);
+    expect(pathAtlas.image.width).toBe(128);
+    expect(pathAtlas.image.height).toBe(128);
+    expect(pathAtlas.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+    expect(pathAtlas.anisotropy).toBe(4);
+    expect(pathAtlas.userData.chroniclesPixelArt.kind).toBe('woodlandpath');
+    const pathColors = new Set();
+    let grassPatches = 0;
+    let pebblePixels = 0;
+    let brightPixels = 0;
+    const ground = pathAtlas.image.data;
+    for (let offset = 0; offset < ground.length; offset += 4) {
+      const r = ground[offset], g = ground[offset + 1], b = ground[offset + 2];
+      pathColors.add(r + ',' + g + ',' + b);
+      expect(ground[offset + 3]).toBe(255);
+      if (r === 0x66 && g === 0x74 && b === 0x51) grassPatches += 1;
+      if (r === 0xae && g === 0xa1 && b === 0x8c) pebblePixels += 1;
+      if (r > 0xd4 || g > 0xd4 || b > 0xd4) brightPixels += 1;
+    }
+    expect(grassPatches).toBeGreaterThan(20);
+    expect(pebblePixels).toBeGreaterThan(10);
+    expect(brightPixels).toBe(0);
+    expect(pathColors.size).toBeGreaterThan(7);
     expect(road.geometry.parameters).toEqual(cheaper.geometry.parameters);
     expect(road.instanceColor.count).toBe(road.count);
     const matrix = new THREE.Matrix4();
@@ -503,18 +526,18 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(matrix.elements).toEqual(twin.elements);
       const rx = Math.round(matrix.elements[12] / 4) + center.x;
       const ry = Math.round(matrix.elements[14] / 4) + center.y;
-      const xScale = rx === center.x && ry !== center.y ? 0.66 / 0.98 : 1;
-      const zScale = ry === center.y && rx !== center.x ? 0.66 / 0.98 : 1;
+      const xScale = rx === center.x && ry !== center.y ? 0.66 : 1;
+      const zScale = ry === center.y && rx !== center.x ? 0.66 : 1;
       expect(matrix.elements[0]).toBeCloseTo(xScale, 5);
       expect(matrix.elements[10]).toBeCloseTo(zScale, 5);
-      // Only visual width changes. Stone lengths must still connect along
-      // the canonical 4m road grid without introducing ground gaps.
+      // Continuous packed earth spans each canonical 4m road tile, with no
+      // 8cm cobble seam; straight widths are still exactly 2.64m.
       if (rx === center.x && ry !== center.y) {
         expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(2.64, 4);
-        expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(3.92, 4);
+        expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(4, 4);
       }
       if (ry === center.y && rx !== center.x) {
-        expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(3.92, 4);
+        expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(4, 4);
         expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(2.64, 4);
       }
       road.getColorAt(i, shade);
