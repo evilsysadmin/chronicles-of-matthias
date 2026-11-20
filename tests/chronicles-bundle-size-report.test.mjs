@@ -9,7 +9,7 @@ import test from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import {
-  formatBundleSummary, measureBundle, measureEntryVsLazy, writeBundleReport,
+  formatBundleSummary, measureBundle, measureEntryVsLazy, measureModeEntryLoads, writeBundleReport,
 } from '../frontend/scripts/report-bundle-size.mjs';
 
 const script = fileURLToPath(new URL('../frontend/scripts/report-bundle-size.mjs', import.meta.url));
@@ -73,7 +73,7 @@ test('report is deterministic, writes a JSON artifact and appends to a summary',
   const summary = writeBundleReport(dist, summaryPath);
   const actual = JSON.parse(readFileSync(join(dist, 'bundle-size-report.json'), 'utf8'));
   const measured = measureBundle(dist);
-  assert.equal(actual.schemaVersion, 2);
+  assert.equal(actual.schemaVersion, 3);
   assert.deepEqual({ ...actual, schemaVersion: 1, entryPayload: undefined }, {
     ...measured, entryPayload: undefined,
   });
@@ -108,7 +108,7 @@ test('CLI creates the same report and updates GitHub step summary', (t) => {
   assert.equal(p.status, 0, p.stderr);
   assert.equal(p.stdout, readFileSync(summaryPath, 'utf8'));
   const report = JSON.parse(readFileSync(join(dist, 'bundle-size-report.json'), 'utf8'));
-  assert.equal(report.schemaVersion, 2);
+  assert.equal(report.schemaVersion, 3);
   assert.equal(report.entryPayload.entryAndStatic.js.count, 1);
   assert.equal(report.entryPayload.deferred.js.count, 1);
 });
@@ -167,4 +167,85 @@ test('Vite manifest is validated and cannot silently hide missing files or entri
 test('Vite emits the manifest used to distinguish initial entry from deferred routes', () => {
   const config = readFileSync(new URL('../frontend/vite.config.js', import.meta.url), 'utf8');
   assert.match(config, /manifest:\s*true/);
+});
+
+
+const modeFixture = () => {
+  const files = [
+    ['assets/entry.js', 'js', 100, 60],
+    ['assets/global.css', 'css', 20, 10],
+    ['assets/shared.js', 'js', 80, 25],
+    ['assets/ChroniclesOfMatthias-abcd.js', 'js', 200, 100],
+    ['assets/mm3.css', 'css', 90, 30],
+    ['assets/ChroniclesOfMatthiasTactics-efgh.js', 'js', 160, 70],
+    ['assets/tactics.css', 'css', 45, 20],
+    ['assets/ChroniclesCharacterSheet-lazy.js', 'js', 350, 140],
+  ].map(([path, type, rawBytes, gzipBytes]) => ({ path, type, rawBytes, gzipBytes }));
+  const manifest = {
+    'index.html': {
+      isEntry: true, file: 'assets/entry.js', css: ['assets/global.css'],
+      dynamicImports: ['src/chronicles/mm3', 'src/chronicles/tactics'],
+    },
+    '_shared.js': { file: 'assets/shared.js' },
+    'src/chronicles/mm3': {
+      isDynamicEntry: true, file: 'assets/ChroniclesOfMatthias-abcd.js',
+      imports: ['_shared.js', '_shared.js'], css: ['assets/mm3.css'],
+      dynamicImports: ['src/chronicles/sheet'],
+    },
+    'src/chronicles/tactics': {
+      isDynamicEntry: true, file: 'assets/ChroniclesOfMatthiasTactics-efgh.js',
+      imports: ['_shared.js'], css: ['assets/tactics.css'],
+    },
+    'src/chronicles/sheet': {
+      isDynamicEntry: true, file: 'assets/ChroniclesCharacterSheet-lazy.js',
+    },
+  };
+  return { report: { files }, manifest };
+};
+
+test('MM3 and Tactics mode budgets include static dependencies only, without double counting', () => {
+  const { report, manifest } = modeFixture();
+  const modes = measureModeEntryLoads(report, manifest);
+  assert.equal(modes.mm3.incremental.js.gzipBytes, 125);
+  assert.equal(modes.mm3.incremental.css.gzipBytes, 30);
+  assert.equal(modes.mm3.incremental.combined.gzipBytes, 155);
+  assert.equal(modes.mm3.entryWithMode.combined.gzipBytes, 225);
+  assert.equal(modes.tactics.incremental.js.gzipBytes, 95);
+  assert.equal(modes.tactics.incremental.css.gzipBytes, 20);
+  assert.equal(modes.tactics.incremental.combined.gzipBytes, 115);
+  assert.equal(modes.tactics.entryWithMode.combined.gzipBytes, 185);
+  assert.equal(modes.mm3.incremental.combined.count, 3);
+  assert.equal(modes.tactics.incremental.combined.count, 3);
+  assert.match(formatBundleSummary({
+    js: { count: 5, rawBytes: 890, gzipBytes: 395 },
+    css: { count: 3, rawBytes: 155, gzipBytes: 60 },
+    combined: { count: 8, rawBytes: 1045, gzipBytes: 455 },
+    files: report.files,
+    modeEntries: modes,
+  }), /Game mode entry costs[\s\S]*\| MM3 \| 0\.1 KiB/);
+});
+
+test('mode reporting rejects incomplete game manifests but tolerates fixture builds', () => {
+  const { report, manifest } = modeFixture();
+  assert.equal(measureModeEntryLoads(report, { 'index.html': manifest['index.html'] }), null);
+  const missingTactics = { ...manifest };
+  delete missingTactics['src/chronicles/tactics'];
+  assert.throws(() => measureModeEntryLoads(report, missingTactics),
+    /one deferred MM3 and Tactics/);
+
+  const missingStatic = structuredClone(manifest);
+  missingStatic['src/chronicles/mm3'].imports = ['_missing.js'];
+  assert.throws(() => measureModeEntryLoads(report, missingStatic),
+    /missing imported chunk/);
+
+  const missingCss = structuredClone(manifest);
+  missingCss['src/chronicles/tactics'].css = ['assets/missing.css'];
+  assert.throws(() => measureModeEntryLoads(report, missingCss), /missing asset/);
+
+  const duplicate = structuredClone(manifest);
+  duplicate['another-mm3'] = {
+    isDynamicEntry: true, file: 'assets/ChroniclesOfMatthias-abcd.js',
+  };
+  assert.throws(() => measureModeEntryLoads(report, duplicate),
+    /one deferred MM3 and Tactics/);
 });
