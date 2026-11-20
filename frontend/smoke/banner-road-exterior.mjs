@@ -64,6 +64,12 @@ try {
         'One low-poly shared undergrowth geometry per forest scene');
       assert.ok(Number(state.juvenileTrees) > 5,
         'Some existing tall tree instances must be replaced with younger trees');
+      assert.equal(Number(state.woodlandGatewayTrees), 2,
+        'Actual Banner Road must frame its road with two mature trees on blocked forest cells');
+      assert.ok(Number(state.woodlandGatewayMinTrunkHeight) > 4.5,
+        'Gateway trunks must be mature rather than tiny distant saplings');
+      assert.ok(Number(state.woodlandGatewayLowestLeaf) > 2.35,
+        'Overhanging canopy must clear the player, never form a low foliage wall');
       assert.ok(Number(state.paleTrunks) > 12,
         'Real forest must mix pale narrow trees among mature broadleaf trees');
       assert.ok(Number(state.forestRingTrees) > (coarse ? 120 : 225),
