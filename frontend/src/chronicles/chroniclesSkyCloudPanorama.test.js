@@ -251,7 +251,10 @@ describe('Seamless Terra cloud panorama', () => {
     expect(banner.bank.material.opacity).toBeCloseTo(visibleBankOpacity, 5);
     expect(visibleBankOpacity).toBeGreaterThan(0.53);
     const visibleBankTint = banner.bank.material.color.clone();
-    expect(visibleBankTint.r).toBeGreaterThan(0.78);
+    // Hex sRGB colours are stored in linear space by THREE.Color; compare
+    // against the actual pre-boost cloud material instead of an sRGB number.
+    expect(visibleBankTint.r)
+      .toBeGreaterThan(new THREE.Color(0xc4cdd4).r + 0.04);
     expect(daytimeOpacity).toBeGreaterThan(0.60);
     expect(daytimeOpacity).toBeLessThan(0.78);
     expect(banner.dome.getObjectByName('chronicles-sky-cloud-panorama').material.map)
