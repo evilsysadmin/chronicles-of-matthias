@@ -1,0 +1,16 @@
+/* Shared game controls retained from the legacy Chess table.
+ * Keep declarations and responsive breakpoints in cascade layer l11.
+ */
+.game-controls { margin-top: .08rem; }
+.game-controls-actions { margin-left: auto; }
+.game-controls .secondary-btn { min-height: 38px; padding: .62rem .78rem; font-size: .78rem; }
+
+@media (max-width: 520px) {
+  .game-controls { display: grid; width: 100%; grid-template-columns: 1fr; }
+  .game-controls-actions { margin-left: 0; }
+  .game-controls .secondary-btn { width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .game-controls { grid-template-columns: 1fr; }
+}
