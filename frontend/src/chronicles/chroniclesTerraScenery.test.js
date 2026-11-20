@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -351,6 +351,24 @@ describe('Terra scenery', () => {
     [desktop, touch, again].forEach(geo => geo.dispose());
   });
 
+
+  it('gives the distant Banner Road tree line a coherent, bounded height rhythm', () => {
+    // Each horizon ring should have an undulating silhouette rather than
+    // virtually equal crowns with only tiny per-tree jitter.
+    const samples = [];
+    for (let depth = 1; depth <= TERRA_SCENERY_MARGIN; depth += 1) {
+      const row = Array.from({ length: 27 }, (_, i) =>
+        chroniclesBannerRoadBackdropScale(i - 3, -depth, depth));
+      const repeat = Array.from({ length: 27 }, (_, i) =>
+        chroniclesBannerRoadBackdropScale(i - 3, -depth, depth));
+      expect(row).toEqual(repeat);
+      expect(Math.min(...row)).toBeGreaterThan(0.85);
+      expect(Math.max(...row)).toBeLessThan(1.55);
+      expect(Math.max(...row) - Math.min(...row)).toBeGreaterThan(0.30);
+      samples.push(...row);
+    }
+    expect(new Set(samples.map(n => n.toFixed(3))).size).toBeGreaterThan(35);
+  });
 
   it('gives Banner Road two coordinated tree silhouettes without another draw batch', () => {
     const map = chroniclesMapById('banner-road-first-book');
