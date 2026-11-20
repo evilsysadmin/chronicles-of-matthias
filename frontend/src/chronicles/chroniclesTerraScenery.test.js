@@ -327,7 +327,9 @@ describe('Terra scenery', () => {
       if (y === 4 && (x === 9 || x === 11)) originalGateway.push(x);
     }
     expect(originalGateway).toEqual([11]);
-    expect(crowns.geometry.index.count / 3).toBe(coarsePointer ? 60 : 400);
+    const crownTriangles = (crowns.geometry.index?.count
+      ?? crowns.geometry.getAttribute('position').count) / 3;
+    expect(crownTriangles).toBe(coarsePointer ? 60 : 400);
   });
 
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
