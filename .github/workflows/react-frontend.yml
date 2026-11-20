@@ -48,6 +48,13 @@ jobs:
           # Browser notice must compare the same immutable SHA as the bundle.
           test -s dist/release.json
           node -e "const m=require('./dist/release.json');if(m.build!==process.env.VITE_BUILD_SHA) process.exit(1)"
+      - name: Report built JS/CSS gzip sizes
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          # Reuse the exact build already produced above; no extra compile.
+          # The report is included in the existing PR dist artifact.
+          node scripts/report-bundle-size.mjs dist
       - name: Verify the real game is in the bundle
         run: |
           set -euo pipefail
