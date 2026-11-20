@@ -107,6 +107,11 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
   const cloudMaterial = scene.getObjectByName('swordhaven-cloud-0')
     ?.getObjectByName('cloud-soft-bank')?.material;
   const panoramaMaterial = dome.getObjectByName('chronicles-sky-cloud-panorama')?.material;
+  // Banner Road's broad meadow exposes far more sky than a town street.
+  // Amplify only clear-day clouds there, keeping every other map/weather
+  // profile and the existing single panorama material/batch unchanged.
+  const bannerRoadSky = region?.mapId === 'banner-road-first-book'
+    && region?.regionKind === 'wilderness';
   const cloudDay = new THREE.Color(0xc4cdd4);
   const clearCloudLight = new THREE.Color(0xf0f5f6);
   const cloudNight = new THREE.Color(0x3b4a5e);
@@ -149,7 +154,7 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         // coverage or amplify rain, fog, twilight darkness or night skies.
         const clearDaylight = 1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48);
         panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
-          + 0.24 * clearDaylight * daylight;
+          + (0.24 + (bannerRoadSky ? 0.32 : 0)) * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
           .lerp(cloudStorm, cloudiness * 0.62)
           // The procedural atlas already has broken bright crowns and darker
