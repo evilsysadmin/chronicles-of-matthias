@@ -231,6 +231,25 @@ describe('Terra scenery', () => {
     expect(triangles(reference.geometry)).toBe(coarsePointer ? 60 : 400);
     const woodland = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
     const baseline = chroniclesLayeredCanopyGeometry({ coarsePointer });
+    // A late forward foliage mass must remain visually joined to the main
+    // crown, not float alongside the entrance tree in first-person captures.
+    // All masses have the same vertex count and are merged in lobe order.
+    const vertices = woodland.getAttribute('position');
+    const massCount = coarsePointer ? 4 : 6;
+    const verticesPerMass = vertices.count / massCount;
+    expect(Number.isInteger(verticesPerMass)).toBe(true);
+    const centroid = index => {
+      const result = { x: 0, z: 0 };
+      for (let j = index * verticesPerMass; j < (index + 1) * verticesPerMass; j += 1) {
+        result.x += vertices.getX(j);
+        result.z += vertices.getZ(j);
+      }
+      return { x: result.x / verticesPerMass, z: result.z / verticesPerMass };
+    };
+    const rootMass = centroid(0);
+    const forwardMass = centroid(massCount - 1);
+    expect(Math.hypot(forwardMass.x - rootMass.x, forwardMass.z - rootMass.z))
+      .toBeLessThan(0.85);
     expect([...crowns.geometry.getAttribute('position').array])
       .toEqual([...woodland.getAttribute('position').array]);
     expect([...repeat.geometry.getAttribute('position').array])
