@@ -16,7 +16,7 @@ const exposed = roadCells.flatMap(({ x, y }) =>
       && !roadCells.some(cell => cell.x === x + dx && cell.y === y + dy)
       ? [{ x, y, dx, dy }] : []));
 
-describe('Banner Road organic grass/cobble shoulders', () => {
+describe('Banner Road organic grass/earth shoulders', () => {
   it('dresses only outer paved edges and never creates a wall or collider', () => {
     const args = { grid: map.grid, roadCells, center };
     const full = createBannerRoadShoulders(args);
@@ -56,8 +56,29 @@ describe('Banner Road organic grass/cobble shoulders', () => {
     expect(mapped.size).toBe(exposed.length);
     // Paving ends 1.32m from the straight centreline; 1.34m shoulder
     // offsets let moss begin at the edge while keeping the walkable lane.
-    expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.1);
+    expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.27);
+    expect(full.geometry.boundingBox.min.z).toBeLessThan(-0.15);
     expect(mobile.geometry.boundingBox.max.y).toBeLessThan(0.25);
+    // The visible dirt tread must have a ragged, thin surface-level fringe,
+    // not just moss triangles buried below its top. The raised road's top
+    // is 0.0245m; 0.085 - 0.052 = 0.033m at these shoulder instances.
+    for (const [mesh, count] of [[full, 8], [mobile, 4]]) {
+      const positions = mesh.geometry.getAttribute('position');
+      const tipDepths = [];
+      let aprons = 0;
+      for (let i = 0; i < positions.count; i += 3) {
+        if (![0, 1, 2].every(k => Math.abs(positions.getY(i + k) - 0.085) < 1e-5)) continue;
+        aprons += 1;
+        tipDepths.push(Math.min(positions.getZ(i), positions.getZ(i + 1), positions.getZ(i + 2)));
+      }
+      expect(aprons).toBe(count);
+      expect(tipDepths.every(depth => depth <= -0.10 && depth > -0.27)).toBe(true);
+      expect(new Set(tipDepths.map(depth => Math.round(depth * 100))).size).toBeGreaterThan(2);
+      const matrix = new THREE.Matrix4();
+      mesh.getMatrixAt(0, matrix);
+      expect(matrix.elements[13] + 0.085).toBeGreaterThan(0.0245);
+      expect(matrix.elements[13] + 0.085).toBeLessThan(0.045);
+    }
   });
 
   it('has low bounded terrain patches, faint moss intrusion and a lighter touch model', () => {
@@ -68,9 +89,14 @@ describe('Banner Road organic grass/cobble shoulders', () => {
     expect(p.count).toBeGreaterThan(touch.getAttribute('position').count);
     expect(p.count).toBeLessThanOrEqual(100);
     expect(desktop.getAttribute('color').count).toBe(p.count);
+    expect(p.count).toBeLessThanOrEqual(100);
+    // Each existing blade/moss shape plus ONE additional dirt-edge tongue
+    // fits in the same shared batch without lifting the mobile polygon cost.
+    expect(touch.getAttribute('position').count).toBeLessThanOrEqual(50);
     expect(desktop.boundingBox.min.x).toBeGreaterThan(-1.85);
     expect(desktop.boundingBox.max.x).toBeLessThan(1.85);
-    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.09);
+    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.27);
+    expect(desktop.boundingBox.min.z).toBeLessThan(-0.15);
     expect(desktop.boundingBox.max.z).toBeGreaterThan(0.55);
     expect(desktop.boundingBox.max.z).toBeLessThan(0.75);
     expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(0);
