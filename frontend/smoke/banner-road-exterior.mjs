@@ -81,8 +81,12 @@ try {
       assert.equal(Number(state.sedgeTriangles), coarse ? 8 : 16,
         'Keep the second species within a fixed small mobile/desktop budget');
       assert.ok(Number(state.canopyTints) > 1, 'Tree instances must not all share one tint');
-      assert.equal(Number(state.canopyTriangles), coarse ? 60 : 400,
-        'Keep the real mobile/desktop layered foliage geometry budget');
+      assert.equal(Number(state.canopyTriangles), coarse ? 80 : 480,
+        'Banner Road gets one bounded extra leaf lobe, never another draw batch');
+      assert.equal(state.canopyFlatShading, 'false',
+        'Smooth normals must replace faceted flat shading in touch forest foliage');
+      assert.ok(Number(state.canopyFrontReach) > 1.20,
+        'The added foliage lobe must truly extend the forward crown silhouette');
       assert.ok(Number(state.canopyVertexColors) > 0,
         'Crown gradient must be available in the actual WebGL mesh');
       assert.ok(Number(state.canopyShadeRange) > 0.15,

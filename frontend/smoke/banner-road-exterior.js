@@ -260,6 +260,8 @@ try {
     forestRingTrees: String(forestRingTrees.slice(1).reduce((total, n) => total + n, 0)),
     forestDeepRingTrees: String(forestRingTrees[3]),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
+    canopyFrontReach: String(gatewayCrownBounds?.max.z ?? -1),
+    canopyFlatShading: String(crowns?.material?.flatShading ?? true),
     canopyTints: String(crownTints.size),
     canopyVertexColors: String(vertexColours?.count || 0),
     canopyShadeRange: String(vertexColours ? lightestCrown - darkestCrown : 0),
