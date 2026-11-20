@@ -92,6 +92,10 @@ try {
         'Banner Road gets one bounded extra leaf lobe, never another draw batch');
       assert.equal(state.canopyFlatShading, 'false',
         'Smooth normals must replace faceted flat shading in touch forest foliage');
+      assert.equal(state.canopyIndexed, 'true',
+        'New woodland leaf masses must use rounded indexed latitude geometry');
+      assert.ok(Number(state.canopyTexcoordCount) > 0,
+        'Organic leaf geometry must retain UV coordinates for the foliage atlas');
       assert.ok(Number(state.canopyFrontReach) > 1.20,
         'The front foliage mass must keep genuine depth beside the cart trail');
       assert.ok(Number(state.canopyAspect) > 0.67,
