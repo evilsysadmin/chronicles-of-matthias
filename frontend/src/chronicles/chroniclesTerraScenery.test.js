@@ -212,6 +212,66 @@ describe('Terra scenery', () => {
     [desktop, touch, again].forEach(geo => geo.dispose());
   });
 
+
+  it('gives Banner Road two coordinated tree silhouettes without another draw batch', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id };
+    const forest = buildTerraScenery(options);
+    const mobile = buildTerraScenery({ ...options, coarsePointer: true });
+    const repeated = buildTerraScenery(options);
+    const elsewhere = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const trunks = forest.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crowns = forest.getObjectByName('chronicles-terra-crown');
+    const twinTrunks = repeated.getObjectByName('chronicles-terra-broadleafTrunk');
+    const twinCrowns = repeated.getObjectByName('chronicles-terra-crown');
+    expect(trunks.count).toBe(crowns.count);
+    expect(trunks.count).toBe(elsewhere.getObjectByName(trunks.name).count);
+    expect(trunks.instanceColor.count).toBe(trunks.count);
+    expect(elsewhere.getObjectByName(trunks.name).instanceColor).toBeNull();
+    expect(mobile.getObjectByName(trunks.name).instanceColor.count)
+      .toBe(mobile.getObjectByName(trunks.name).count);
+    expect(forest.children.length).toBe(repeated.children.length);
+    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const bark = new THREE.Color(), sameBark = new THREE.Color();
+    const leaves = new THREE.Color(), sameLeaves = new THREE.Color();
+    const trunkSize = new THREE.Vector3(), crownSize = new THREE.Vector3();
+    let pale = 0, broad = 0;
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, matrix);
+      twinTrunks.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), trunkSize);
+      trunks.getColorAt(i, bark);
+      twinTrunks.getColorAt(i, sameBark);
+      expect(bark.getHex()).toBe(sameBark.getHex());
+      crowns.getMatrixAt(i, matrix);
+      twinCrowns.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), crownSize);
+      crowns.getColorAt(i, leaves);
+      twinCrowns.getColorAt(i, sameLeaves);
+      expect(leaves.getHex()).toBe(sameLeaves.getHex());
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (map.grid[y]?.[x] !== '#') continue;
+      if (bark.getHex() === 0xf2f2ea) {
+        pale += 1;
+        expect(trunkSize.y / trunkSize.x).toBeGreaterThan(4.1);
+        expect([0xcbdcbd, 0xb8d2bc, 0xdde3c1, 0xc4d8b5]).toContain(leaves.getHex());
+      } else {
+        broad += 1;
+        expect(bark.getHex()).toBe(0xbba58b);
+        expect(trunkSize.y / trunkSize.x).toBeCloseTo(3, 4);
+      }
+      expect(crownSize.x).toBeGreaterThan(0);
+      expect(crownSize.y).toBeGreaterThan(0);
+    }
+    expect(pale).toBeGreaterThan(12);
+    expect(broad).toBeGreaterThan(pale);
+    expect(forest.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+  });
+
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
     const desktop = chroniclesBranchingTrunkGeometry();
     const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
