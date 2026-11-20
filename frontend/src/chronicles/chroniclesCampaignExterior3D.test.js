@@ -360,6 +360,38 @@ describe('Chronicles file-authored exterior renderer', () => {
       .toHaveLength(1);
   });
 
+  it.each([true, false])('installs weather-aware Banner Road clouds only in the sky at coarse=%s', (coarsePointer) => {
+    const map = bannerRoadFirstBook;
+    const plan = {
+      mapId: map.id, regionKind: 'wilderness', biome: map.biome,
+      width: map.grid[0].length, height: map.grid.length,
+      grid: map.grid, center: { x: 10, y: 7 }, content: [], scenery: [],
+    };
+    const make = scenePlan => {
+      const scene = new THREE.Scene();
+      buildChroniclesCampaignExterior(scene, { scenePlan, coarsePointer });
+      return scene;
+    };
+    const scene = make(plan);
+    const sky = scene.getObjectByName('swordhaven-sky-dome');
+    const banks = sky.children.filter(child => child.name.startsWith('swordhaven-cloud-'));
+    expect(banks).toHaveLength(coarsePointer ? 4 : 8);
+    expect(sky.getObjectByName('chronicles-sky-cloud-panorama')).toBeTruthy();
+    expect(new Set(banks.map(bank => bank.getObjectByName('cloud-soft-bank')?.material)).size)
+      .toBe(1);
+    const bankTexture = banks[0].getObjectByName('cloud-soft-bank').material.map;
+    expect(bankTexture.image.width).toBe(256);
+    expect(bankTexture.image.height).toBe(128);
+    expect(banks.every(bank => bank.userData.chroniclesDecorativeOnly
+      && bank.getObjectByName('cloud-soft-bank').userData.chroniclesDecorativeOnly))
+      .toBe(true);
+    expect(scene.children.filter(child => child.isDirectionalLight)).toHaveLength(1);
+    expect(scene.children.filter(child => child.isHemisphereLight)).toHaveLength(1);
+    const other = make({ ...plan, mapId: 'terra-c4' });
+    expect(other.getObjectByName('swordhaven-cloud-0')).toBeUndefined();
+    expect(other.getObjectByName('chronicles-sky-cloud-panorama')).toBeTruthy();
+  });
+
   it('weathers Banner Road stone slabs without changing the authored path or mobile GPU budget', () => {
     const map = bannerRoadFirstBook;
     const center = { x: 10, y: 7 };
