@@ -173,6 +173,11 @@ try {
   const treeScale = new THREE.Vector3();
   let juvenileTrees = 0;
   let paleTrunks = 0;
+  let woodlandGatewayTrees = 0;
+  let woodlandGatewayLowestLeaf = Infinity;
+  let woodlandGatewayMinTrunkHeight = Infinity;
+  const gatewayCrownBounds = crowns?.geometry.boundingBox
+    || (crowns?.geometry.computeBoundingBox(), crowns?.geometry.boundingBox);
   const forestRingTrees = [0, 0, 0, 0];
   const barkTint = new THREE.Color();
   for (let i = 0; i < (trunks?.count || 0); i += 1) {
@@ -183,6 +188,14 @@ try {
     if (barkTint.getHex() === 0xf2f2ea) paleTrunks += 1;
     const gx = Math.round(treeTransform.elements[12] / 4) + center.x;
     const gy = Math.round(treeTransform.elements[14] / 4) + center.y;
+    if (gy === 4 && (gx === 9 || gx === 11)) {
+      woodlandGatewayTrees += 1;
+      woodlandGatewayMinTrunkHeight = Math.min(woodlandGatewayMinTrunkHeight, treeScale.y);
+      const crownPose = new THREE.Matrix4();
+      crowns.getMatrixAt(i, crownPose);
+      woodlandGatewayLowestLeaf = Math.min(woodlandGatewayLowestLeaf,
+        gatewayCrownBounds.clone().applyMatrix4(crownPose).min.y);
+    }
     const ringDepth = Math.max(0, -gx, gx - bannerRoad.grid[0].length + 1,
       -gy, gy - bannerRoad.grid.length + 1);
     if (ringDepth > 0 && ringDepth < forestRingTrees.length) {
@@ -241,6 +254,9 @@ try {
     herbTriangles: String(woodlandHerbs ? triangles(woodlandHerbs.geometry) : -1),
     juvenileTrees: String(juvenileTrees),
     paleTrunks: String(paleTrunks),
+    woodlandGatewayTrees: String(woodlandGatewayTrees),
+    woodlandGatewayMinTrunkHeight: String(woodlandGatewayMinTrunkHeight),
+    woodlandGatewayLowestLeaf: String(woodlandGatewayLowestLeaf),
     forestRingTrees: String(forestRingTrees.slice(1).reduce((total, n) => total + n, 0)),
     forestDeepRingTrees: String(forestRingTrees[3]),
     canopyTriangles: String(crowns ? triangles(crowns.geometry) : -1),
