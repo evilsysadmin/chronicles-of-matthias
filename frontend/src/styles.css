@@ -8,7 +8,7 @@
 @import './styles/05-navigation-hint.css' layer(l05);
 @import './styles/07-shared-overlays.css' layer(l07);
 @import './styles/08-shared-shell.css' layer(l08);
-@import './styles/09-professional-polish.css' layer(l09);
+@import './styles/09-shared-professional.css' layer(l09);
 @import './styles/10-shared-primitives.css' layer(l10);
 @import './styles/11-shared-controls.css' layer(l11);
 @import './styles/18-shared-focus.css' layer(l18);
