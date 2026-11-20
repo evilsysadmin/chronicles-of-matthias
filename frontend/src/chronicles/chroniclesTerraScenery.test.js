@@ -194,6 +194,17 @@ describe('Terra scenery', () => {
     expect(radii.size).toBeGreaterThan(coarsePointer ? 3 : 8);
     expect(leaf.boundingBox.min.y).toBeGreaterThan(-0.81);
     expect(leaf.boundingBox.max.y).toBeGreaterThan(0.90);
+    if (coarsePointer) {
+      // The low-poly top must have broad shoulders, not a pointed
+      // cone/pyramid like the first Chromium 390px screenshot.
+      const shoulderHeights = [];
+      for (let i = 0; i < positions.count; i += 1) {
+        const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+        if (Math.hypot(x, z) > 0.65 && y > 0.60) shoulderHeights.push(y);
+      }
+      expect(shoulderHeights.length).toBeGreaterThanOrEqual(5);
+      expect(Math.max(...shoulderHeights)).toBeGreaterThan(leaf.boundingBox.max.y - 0.30);
+    }
     [leaf, old, again].forEach(geometry => geometry.dispose());
   });
 
