@@ -17,16 +17,15 @@ function hash(x, y, salt = 0) {
 }
 
 /**
- * A single opaque shoulder surface for all exposed sides of Banner Road.
- * Low mossy triangles, loam and a handful of blades soften the hard, straight
- * paving edge without altering the underlying 4m movement/collision grid.
- * Geometry is shared by every edge; touch uses fewer leaf/patina triangles.
+ * One opaque, instanced meadow-to-earth transition for the exposed edges of
+ * Banner Road's 2.64m-wide visual cart track. Low groundcover, loam, blades,
+ * and irregular flat moss tongues break its ruler-straight edge without
+ * changing the underlying 4m walkable grid or adding draw calls.
  *
- * Local +Z points away from the road. Most vertices lie ~0.02-0.66m into
- * the grass. Straight stone sections narrow to 2.64m, placing the shoulder
- * at the actual pavement edge rather than the unchanged 4m navigation cell.
- * A few tiny patina tongues overlap < 0.09m of the paving surface,
- * leaving the usable, legible road completely unobstructed.
+ * Local +Z faces outwards into grass; negative Z faces across the dirt.
+ * The new top-surface fringe overlaps at most 0.26m of the visual track,
+ * leaving more than 2.1m of unobstructed-looking tread. Nothing here is a
+ * collider, movement rule, animated object or separate material.
  */
 export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {}) {
   const positions = [];
@@ -41,10 +40,14 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     }
   };
 
-  const patches = coarsePointer ? 4 : 9;
+  // Eight distinct irregular edges fit within the original desktop 100
+  // vertex budget; touch retains four. Cover most of the 4m-long tile
+  // while leaving tiny natural gaps and avoiding overlapping seams.
+  const patches = coarsePointer ? 4 : 8;
+  const span = 3.68;
   for (let i = 0; i < patches; i += 1) {
-    const x = ((i + 0.5) / patches - 0.5) * 3.45;
-    const width = (3.45 / patches) * (0.38 + hash(i, 11, 601) * 0.06);
+    const x = ((i + 0.5) / patches - 0.5) * span;
+    const width = (span / patches) * (0.38 + hash(i, 11, 601) * 0.06);
     // Longer groundcover tongues bridge the newly exposed verge back to
     // the grass; still low, static, deterministic and non-colliding.
     const depth = 0.30 + hash(i, 13, 603) * 0.36;
@@ -58,8 +61,20 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     add(a, c, b, shade);
     add(a, d, c, shade);
 
+    // The old groundcover stopped below the raised road top, leaving an
+    // almost perfectly straight dirt outline. Draw one slim, flat apron on
+    // TOP of that road (~8mm clearance) at each irregular interval. Broad
+    // ends stay outside the road; a single offset tip intrudes 0.10-0.26m.
+    // This is the same InstancedMesh/material and never blocks movement.
+    const intrusion = 0.10 + hash(i, 23, 611) * 0.16;
+    const tipX = x + (hash(i, 29, 613) - 0.5) * width * 0.95;
+    const fringe = palette[(i * 5 + 1) % palette.length];
+    add([x - width * 0.91, 0.085, 0.08],
+      [x + width * 0.80, 0.085, 0.055],
+      [tipX, 0.085, -intrusion], fringe);
+
     if (i % 2 === 0) {
-      // Only a few centimeters of moss creep across the cobble edge.
+      // A second much smaller sliver breaks up each earthy margin.
       const moss = palette[(i + 1) % grass.length];
       add([x - width * 0.52, 0.087, -0.075],
         [x + width * 0.32, 0.087, -0.008],
@@ -119,8 +134,9 @@ export function createBannerRoadShoulders({
   const tints = ['#ffffff', '#e7e8d7', '#dbe3d0', '#eee4d0']
     .map(hex => new THREE.Color(hex));
   edges.forEach(({ x, y, dx, dy, yaw }, i) => {
-    // Cobbles end 1.32m from centre; place moss just 2cm outside.
-    // The paved road keeps its length, and the 4m grid stays intact.
+    // The dirt track ends 1.32m from its centreline. The verge starts
+    // 2cm beyond it; flat moss tongues alone cross the visual edge.
+    // The 4m navigation grid stays intact.
     const edge = CELL * 0.335;
     dummy.position.set((x - center.x) * CELL + dx * edge, -0.052,
       (y - center.y) * CELL + dy * edge);
