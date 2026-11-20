@@ -55,6 +55,25 @@ jobs:
           # Reuse the exact build already produced above; no extra compile.
           # The report is included in the existing PR dist artifact.
           node scripts/report-bundle-size.mjs dist
+      - name: Diagnose static importers of the deferred character sheet
+        working-directory: frontend
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const manifest = JSON.parse(readFileSync('dist/.vite/manifest.json', 'utf8'));
+          const entries = Object.entries(manifest);
+          const targets = entries.filter(([key, value]) =>
+            key.includes('ChroniclesCharacterSheet') || value.file?.includes('ChroniclesCharacterSheet-'));
+          for (const [target, value] of targets) {
+            const importers = entries.filter(([, entry]) => (entry.imports || []).includes(target) ||
+              (entry.dynamicImports || []).includes(target)).map(([key, entry]) => ({
+                key, file: entry.file, edge: (entry.imports || []).includes(target) ? 'static' : 'dynamic',
+              }));
+            console.log('CHRONICLES_SHEET_MANIFEST_TRACE ' + JSON.stringify({
+              target, file: value.file, isDynamicEntry: value.isDynamicEntry, importers,
+            }));
+          }
+          NODE
       - name: Verify the real game is in the bundle
         run: |
           set -euo pipefail
