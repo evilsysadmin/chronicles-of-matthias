@@ -9,7 +9,7 @@ import test from 'node:test';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import {
-  formatBundleSummary, measureBundle, writeBundleReport,
+  formatBundleSummary, measureBundle, measureEntryVsLazy, writeBundleReport,
 } from '../frontend/scripts/report-bundle-size.mjs';
 
 const script = fileURLToPath(new URL('../frontend/scripts/report-bundle-size.mjs', import.meta.url));
@@ -23,6 +23,19 @@ const makeBundle = (directory) => {
   writeFileSync(join(directory, 'assets', 'style-123.css'), css);
   writeFileSync(join(directory, 'assets', 'music.mp3'), Buffer.alloc(25000));
   writeFileSync(join(directory, 'index.html'), '<html></html>');
+  mkdirSync(join(directory, '.vite'));
+  writeFileSync(join(directory, '.vite', 'manifest.json'), JSON.stringify({
+    'index.html': {
+      file: 'assets/entry-123.js',
+      isEntry: true,
+      css: ['assets/style-123.css'],
+      dynamicImports: ['src/routes/lazy.js'],
+    },
+    'src/routes/lazy.js': {
+      file: 'assets/nested/route-abc.js',
+      isDynamicEntry: true,
+    },
+  }));
   return { js, nested, css };
 };
 
@@ -59,7 +72,14 @@ test('report is deterministic, writes a JSON artifact and appends to a summary',
   const summaryPath = join(dist, 'summary.md');
   const summary = writeBundleReport(dist, summaryPath);
   const actual = JSON.parse(readFileSync(join(dist, 'bundle-size-report.json'), 'utf8'));
-  assert.deepEqual(actual, measureBundle(dist));
+  const measured = measureBundle(dist);
+  assert.equal(actual.schemaVersion, 2);
+  assert.deepEqual({ ...actual, schemaVersion: 1, entryPayload: undefined }, {
+    ...measured, entryPayload: undefined,
+  });
+  assert.equal(actual.entryPayload.entryKey, 'index.html');
+  assert.equal(actual.entryPayload.entryAndStatic.combined.count, 2);
+  assert.equal(actual.entryPayload.deferred.combined.count, 1);
   assert.equal(readFileSync(summaryPath, 'utf8'), summary);
   assert.equal(formatBundleSummary(actual), summary);
   assert.equal(actual.files.length, 3, 'the report must not count itself');
@@ -87,8 +107,10 @@ test('CLI creates the same report and updates GitHub step summary', (t) => {
   });
   assert.equal(p.status, 0, p.stderr);
   assert.equal(p.stdout, readFileSync(summaryPath, 'utf8'));
-  assert.deepEqual(JSON.parse(readFileSync(join(dist, 'bundle-size-report.json'), 'utf8')),
-    measureBundle(dist));
+  const report = JSON.parse(readFileSync(join(dist, 'bundle-size-report.json'), 'utf8'));
+  assert.equal(report.schemaVersion, 2);
+  assert.equal(report.entryPayload.entryAndStatic.js.count, 1);
+  assert.equal(report.entryPayload.deferred.js.count, 1);
 });
 
 test('official frontend CI measures the existing build before uploading its artifact', () => {
@@ -101,4 +123,48 @@ test('official frontend CI measures the existing build before uploading its arti
   assert.ok(build >= 0 && measure > build && browser > measure);
   assert.match(workflow, /node scripts\/report-bundle-size\.mjs dist/);
   assert.match(workflow, /name: chronicles-frontend-dist/);
+});
+
+test('Vite manifest follows static imports, deduplicates cycles and excludes lazy routes', (t) => {
+  const dist = mkdtempSync(join(tmpdir(), 'chronicles-bundle-'));
+  t.after(() => rmSync(dist, { recursive: true, force: true }));
+  makeBundle(dist);
+  const measured = measureBundle(dist);
+  const manifest = {
+    'index.html': {
+      file: 'assets/entry-123.js',
+      isEntry: true,
+      css: ['assets/style-123.css'],
+      imports: ['_static.js', '_static.js'],
+      dynamicImports: ['nonexistent-lazy-key'],
+    },
+    '_static.js': { file: 'assets/nested/route-abc.js', imports: ['_static.js'] },
+  };
+  const payload = measureEntryVsLazy(measured, manifest);
+  assert.equal(payload.entryAndStatic.js.count, 2);
+  assert.equal(payload.entryAndStatic.css.count, 1);
+  assert.equal(payload.entryAndStatic.combined.rawBytes, measured.combined.rawBytes);
+  assert.equal(payload.deferred.combined.count, 0);
+  assert.equal(payload.entryAndStatic.combined.gzipBytes, measured.combined.gzipBytes);
+});
+
+test('Vite manifest is validated and cannot silently hide missing files or entries', (t) => {
+  const dist = mkdtempSync(join(tmpdir(), 'chronicles-bundle-'));
+  t.after(() => rmSync(dist, { recursive: true, force: true }));
+  makeBundle(dist);
+  const measured = measureBundle(dist);
+  for (const invalid of [null, {}, [], { 'index.html': { isEntry: true } }]) {
+    assert.throws(() => measureEntryVsLazy(measured, invalid), /manifest|entry|chunk/);
+  }
+  assert.throws(() => measureEntryVsLazy(measured, {
+    'index.html': { isEntry: true, file: 'assets/missing.js' },
+  }), /missing asset/);
+  assert.throws(() => measureEntryVsLazy(measured, {
+    'index.html': { isEntry: true, file: 'assets/entry-123.js', imports: ['_missing'] },
+  }), /missing imported chunk/);
+});
+
+test('Vite emits the manifest used to distinguish initial entry from deferred routes', () => {
+  const config = readFileSync(new URL('../frontend/vite.config.js', import.meta.url), 'utf8');
+  assert.match(config, /manifest:\s*true/);
 });
