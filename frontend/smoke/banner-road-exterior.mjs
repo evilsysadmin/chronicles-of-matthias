@@ -80,6 +80,11 @@ try {
       assert.ok(Number(state.canopyTopShade) > Number(state.canopyBottomShade),
         'Sunlit upper crown must remain brighter than the underside');
       assert.equal(state.groundKind, 'meadow');
+      assert.ok(Number(state.meadowSoilFraction) > 0.04
+        && Number(state.meadowSoilFraction) < 0.07,
+      'Actual first-person meadow texture should have fine, restrained earth patches');
+      assert.ok(Math.abs(Number(state.cameraPitch)) < 0.0001,
+        'Visual QA must use the same level camera as live MM3 gameplay');
       assert.equal(Number(state.groundAtlasSize), 128);
       assert.equal(Number(state.groundRepeat), 7);
       assert.equal(Number(state.groundCount), 1);

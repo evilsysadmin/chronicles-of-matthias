@@ -42,7 +42,9 @@ try {
     innerWidth / innerHeight, 0.1, 180,
   );
   camera.position.set(0, 1.72, (cameraCell.y - center.y) * 4);
-  camera.lookAt(0, 1.90, camera.position.z - 8);
+  // Match the real game's camera.rotation.set(0, yaw, 0), rather than
+  // pitching this screenshot upward and artificially enlarging the sky.
+  camera.lookAt(0, 1.72, camera.position.z - 8);
   const dome = scene.getObjectByName('swordhaven-sky-dome');
   if (dome) dome.position.copy(camera.position);
   // Deterministic daytime lighting and real regional weather, no fake tint.
@@ -75,6 +77,14 @@ try {
     }
   }
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
+  const groundPixels = terrain?.material?.map?.image?.data;
+  let soilTexels = 0;
+  for (let i = 0; i < (groundPixels?.length || 0); i += 4) {
+    if (groundPixels[i] > groundPixels[i + 1]
+      && groundPixels[i + 1] > groundPixels[i + 2]) soilTexels += 1;
+  }
+  const meadowSoilFraction = groundPixels?.length
+    ? soilTexels / (groundPixels.length / 4) : -1;
   const triangles = geometry => geometry.index
     ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
   const shade = new THREE.Color();
@@ -164,6 +174,8 @@ try {
     roadApproachWidth: String(approachRoadWidth),
     roadRelief: String(Boolean(road?.material?.normalMap)),
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
+    meadowSoilFraction: String(meadowSoilFraction),
+    cameraPitch: String(camera.rotation.x),
     groundAtlasSize: String(terrain?.material?.map?.image?.width || 0),
     groundRepeat: String(terrain?.material?.map?.repeat?.x ?? -1),
     groundCount: String(scene.children.filter(child =>

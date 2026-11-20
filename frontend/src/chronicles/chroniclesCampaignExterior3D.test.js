@@ -410,7 +410,40 @@ describe('Chronicles file-authored exterior renderer', () => {
     const total = image.length / 4;
     expect(greenDominance).toBeGreaterThan(total * 0.80);
     expect(earthPixels).toBeGreaterThan(total * 0.04);
-    expect(earthPixels).toBeLessThan(total * 0.16);
+    expect(earthPixels).toBeLessThan(total * 0.07);
+    // Prevent the former huge ochre islands from reappearing in the
+    // tileable meadow atlas. Count the biggest 4-neighbour component,
+    // including wraparound across its actual repeated texture edges.
+    const soil = pixel => {
+      const i = pixel * 4;
+      return image[i] > image[i + 1] && image[i + 1] > image[i + 2];
+    };
+    const side = meadowAtlas.image.width;
+    const explored = new Uint8Array(total);
+    let largestSoilPatch = 0;
+    for (let start = 0; start < total; start += 1) {
+      if (explored[start] || !soil(start)) continue;
+      explored[start] = 1;
+      const queue = [start];
+      let patchSize = 0;
+      while (queue.length) {
+        const pixel = queue.pop();
+        patchSize += 1;
+        const x = pixel % side, y = Math.floor(pixel / side);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = (x + dx + side) % side;
+          const ny = (y + dy + side) % side;
+          const neighbor = ny * side + nx;
+          if (!explored[neighbor] && soil(neighbor)) {
+            explored[neighbor] = 1;
+            queue.push(neighbor);
+          }
+        }
+      }
+      largestSoilPatch = Math.max(largestSoilPatch, patchSize);
+    }
+    expect(largestSoilPatch).toBeGreaterThan(20);
+    expect(largestSoilPatch).toBeLessThan(220);
     expect(colours.size).toBeGreaterThan(9);
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(full.children.filter(mesh => mesh.name === 'chronicles-campaign-road')).toHaveLength(1);
