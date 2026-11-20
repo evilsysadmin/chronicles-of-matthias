@@ -214,6 +214,32 @@ describe('Terra scenery', () => {
     [woodland, baseline].forEach(shape => shape.dispose());
   });
 
+  it.each([false, true])('builds taller asymmetric woodland crowns without altering original foliage (coarse=%s)', coarsePointer => {
+    const shaped = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
+    const base = chroniclesLayeredCanopyGeometry({ coarsePointer });
+    const restored = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
+    const triangles = g => (g.index?.count ?? g.getAttribute('position').count) / 3;
+    expect(triangles(shaped)).toBe(coarsePointer ? 80 : 480);
+    expect(triangles(base)).toBe(coarsePointer ? 60 : 400);
+    expect(shaped.getAttribute('position').array).toEqual(restored.getAttribute('position').array);
+    expect(shaped.getAttribute('color').array).toEqual(restored.getAttribute('color').array);
+    shaped.computeBoundingBox();
+    base.computeBoundingBox();
+    const span = (shape, axis) => shape.boundingBox.max[axis] - shape.boundingBox.min[axis];
+    // Verticality matters more than another polygon: a forest crown with
+    // branches stacked above one another must not resemble a flat umbrella.
+    expect(span(shaped, 'y') / span(shaped, 'x')).toBeGreaterThan(0.67);
+    expect(span(shaped, 'x')).toBeLessThan(span(base, 'x') - 0.08);
+    expect(shaped.boundingBox.max.y).toBeGreaterThan(base.boundingBox.max.y + 0.09);
+    expect(shaped.boundingBox.min.y).toBeGreaterThanOrEqual(base.boundingBox.min.y - 0.02);
+    expect(shaped.boundingBox.max.z).toBeGreaterThan(base.boundingBox.max.z + 0.15);
+    // A single rounded canopy surface remains opaque and uses existing
+    // textured, colour-graded foliage. No separate low branch collider.
+    expect(shaped.getAttribute('color').count).toBe(shaped.getAttribute('position').count);
+    for (const v of shaped.getAttribute('position').array) expect(Number.isFinite(v)).toBe(true);
+    [shaped, base, restored].forEach(g => g.dispose());
+  });
+
   it('adds restrained top-to-bottom crown shading without extra meshes or mobile triangles', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
