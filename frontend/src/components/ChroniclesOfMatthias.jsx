@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import LoadingScreen from '../standalone/LoadingScreen.jsx';
 import {
   CHRONICLES_DIRECTIONS,
@@ -176,7 +176,6 @@ import {
   chroniclesCampaignEnding,
   chroniclesCampaignEpiloguePending,
 } from '../chronicles/chroniclesCampaignEpilogue.js';
-import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
 import ChroniclesSaveMenu from './ChroniclesSaveMenu.jsx';
 import ChroniclesQuestLog, { chroniclesQuestLogEntries } from './ChroniclesQuestLog.jsx';
 import ChroniclesNoticeBoard from './ChroniclesNoticeBoard.jsx';
@@ -219,6 +218,9 @@ import { chroniclesAreaTravelKeyDecision } from '../chronicles/chroniclesAreaTra
 import ChroniclesAreaTransitionDialog from './ChroniclesAreaTransitionDialog.jsx';
 
 import './ChroniclesAdventureMenuFolio.css';
+
+// No setup editor download for a returning player resuming a saved run.
+const ChroniclesCharacterSetup = lazy(() => import('./ChroniclesCharacterSetup.jsx'));
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
 
@@ -2134,11 +2136,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
 
   if (!characterSetupDone) {
     return (
-      <ChroniclesCharacterSetup
-        currentBuild={progression.characterBuild}
-        onConfirm={confirmCharacterBuild}
-        onExit={exitChronicles}
-      />
+      <Suspense fallback={<LoadingScreen />}>
+        <ChroniclesCharacterSetup
+          currentBuild={progression.characterBuild}
+          onConfirm={confirmCharacterBuild}
+          onExit={exitChronicles}
+        />
+      </Suspense>
     );
   }
 

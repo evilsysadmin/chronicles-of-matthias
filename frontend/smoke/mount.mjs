@@ -75,7 +75,15 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   });
   const page = await ctx.newPage();
   const errors = [];
+  const setupChunkRequests = [];
   page.on('pageerror', (e) => errors.push(e.message));
+  // A resumed expedition book must not download the party editor before it is opened.
+  // Record actual network requests, not just the presence of React.lazy in source.
+  page.on('request', (request) => {
+    if (/\/assets\/ChroniclesCharacterSetup-[^/]+\.js(?:\?|$)/.test(request.url())) {
+      setupChunkRequests.push(request.url());
+    }
+  });
   // Con sesión, la raíz entra directa al juego (sin vestíbulo).
   const navigationStarted = performance.now();
   if (label === 'Chronicles') {
@@ -104,6 +112,10 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   const lateErrorsStarted = performance.now();
   await page.waitForTimeout(6000);
   phaseDone(label, 'late-errors', lateErrorsStarted);
+  if (label === 'Chronicles' && setupChunkRequests.length) {
+    throw new Error('Expedition book loaded character setup code before the editor was requested: '
+      + JSON.stringify(setupChunkRequests));
+  }
   const assertionStarted = performance.now();
   const rootLength = (await page.innerHTML('#root')).length;
   // Where the authenticated MM3 HUD is present, the objective is a
