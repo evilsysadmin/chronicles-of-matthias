@@ -1,0 +1,178 @@
+/* Chronicles shared foundation: palette, typography, login, buttons and accessible focus.
+ * Former Chess game cards, tournaments and effects are intentionally omitted.
+ * Keep the historical cascade layer l01.
+ */
+:root {
+  --ink: #161b26;
+  --ink-2: #1e2536;
+  --ink-3: #2c3448;
+  --parchment: #ede6d6;
+  --parchment-dim: #b9b0a0;
+  --walnut: #5b4032;
+  --walnut-dark: #402c22;
+  --brass: #c9a227;
+  --brass-dim: #8c7220;
+  --success: #4c8c6b;
+  --danger: #b4483a;
+  --hint: #5fa8d3;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --shell-gutter: clamp(0.9rem, 2vw, 1.6rem);
+  --surface-max-readable: min(980px, calc(100vw - (var(--shell-gutter) * 2)));
+  --surface-max-standard: min(1180px, calc(100vw - (var(--shell-gutter) * 2)));
+  --surface-max-wide: min(1380px, calc(100vw - (var(--shell-gutter) * 2)));
+  --surface-max-ultra: min(1540px, calc(100vw - (var(--shell-gutter) * 2)));
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 2.5rem var(--shell-gutter) 4rem;
+  position: relative;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--brass);
+}
+
+.menu {
+  width: 100%;
+  max-width: var(--surface-max-wide);
+  background-color: var(--ink-2);
+  background-image:
+    linear-gradient(45deg, var(--ink) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ink) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ink) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ink) 75%);
+  background-size: 44px 44px;
+  background-position: 0 0, 0 22px, 22px -22px, -22px 0px;
+  border: 1px solid var(--ink-3);
+  border-radius: 10px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  position: relative;
+}
+
+.menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink-2);
+  opacity: 0.94;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.menu > * {
+  position: relative;
+}
+
+.section-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--brass-dim);
+  margin-bottom: 0.5rem;
+}
+
+.menu-section h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.9rem;
+  color: var(--parchment);
+}
+
+.primary-btn {
+  background: var(--brass);
+  color: var(--walnut-dark);
+  border: none;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: filter 0.15s ease;
+}
+
+.primary-btn:hover { filter: brightness(1.08); }
+
+.primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.danger-btn {
+  background: var(--danger);
+  color: var(--parchment);
+  border: none;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: filter 0.15s ease;
+}
+
+.danger-btn:hover { filter: brightness(1.1); }
+
+.secondary-btn {
+  background: transparent;
+  color: var(--parchment);
+  border: 1px solid var(--ink-3);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.secondary-btn:hover { border-color: var(--brass-dim); }
+
+.secondary-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.hint-text {
+  font-size: 0.8rem;
+  color: var(--parchment-dim);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0;
+}
