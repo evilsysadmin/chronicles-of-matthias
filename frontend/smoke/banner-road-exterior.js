@@ -132,6 +132,16 @@ try {
       break;
     }
   }
+  const shoulder = scene.getObjectByName('chronicles-banner-road-shoulders');
+  const edgePositions = shoulder?.geometry.getAttribute('position');
+  let edgeFringeCount = 0;
+  let edgeFringeMaxIntrusion = 0;
+  for (let i = 0; i < (edgePositions?.count || 0); i += 3) {
+    if (![0, 1, 2].every(k => Math.abs(edgePositions.getY(i + k) - 0.085) < 1e-5)) continue;
+    edgeFringeCount += 1;
+    edgeFringeMaxIntrusion = Math.max(edgeFringeMaxIntrusion,
+      -Math.min(edgePositions.getZ(i), edgePositions.getZ(i + 1), edgePositions.getZ(i + 2)));
+  }
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const groundPixels = terrain?.material?.map?.image?.data;
   let soilTexels = 0;
@@ -230,6 +240,9 @@ try {
     roadRelief: String(Boolean(road?.material?.normalMap)),
     roadSurfaceKind: road?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     roadSurfaceAtlasSize: String(road?.material?.map?.image?.width || 0),
+    edgeFringeCount: String(edgeFringeCount),
+    edgeFringeMaxIntrusion: String(edgeFringeMaxIntrusion),
+    edgeFringeInstances: String(shoulder?.count || 0),
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     meadowSoilFraction: String(meadowSoilFraction),
     cameraPitch: String(camera.rotation.x),
