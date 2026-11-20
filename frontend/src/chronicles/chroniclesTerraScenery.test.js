@@ -274,6 +274,64 @@ describe('Terra scenery', () => {
     expect(forest.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
   });
 
+  it.each([false, true])('forms a high woodland gateway from existing blocked tiles (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+    const scene = buildTerraScenery(options);
+    const repeat = buildTerraScenery(options);
+    const other = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const trunks = scene.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crowns = scene.getObjectByName('chronicles-terra-crown');
+    const twin = repeat.getObjectByName('chronicles-terra-broadleafTrunk');
+    const old = other.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns.count).toBe(trunks.count);
+    expect(scene.children.filter(child => child.name === trunks.name)).toHaveLength(1);
+    expect(scene.children.filter(child => child.name === crowns.name)).toHaveLength(1);
+    expect(scene.children.length).toBe(repeat.children.length);
+    const matrix = new THREE.Matrix4(), twinMatrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3(), position = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const gateway = new Map();
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, twinMatrix);
+      expect(twinMatrix.elements).toEqual(matrix.elements);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (map.grid[y]?.[x] !== undefined) expect(map.grid[y][x]).toBe('#');
+      if (y === 4 && (x === 9 || x === 11)) {
+        matrix.decompose(position, quat, scale);
+        expect(scale.y).toBeGreaterThan(4.5);
+        expect(scale.y).toBeLessThan(8.5);
+        expect(Math.abs(position.x - (x - center.x) * 4)).toBeLessThan(1.1);
+        expect(Math.abs(position.z - (y - center.y) * 4)).toBeLessThan(1.1);
+        // Crown of the same instance must clear player head height even
+        // where it projects across the dirt lane, not create a low leaf wall.
+        crowns.getMatrixAt(i, twinMatrix);
+        const canopyBox = crowns.geometry.boundingBox
+          || (crowns.geometry.computeBoundingBox(), crowns.geometry.boundingBox);
+        const worldBox = canopyBox.clone().applyMatrix4(twinMatrix);
+        expect(worldBox.min.y).toBeGreaterThan(2.35);
+        gateway.set(x, { trunkHeight: scale.y, canopyHeight: worldBox.max.y });
+      }
+    }
+    expect([...gateway.keys()].sort((a, b) => a - b)).toEqual([9, 11]);
+    const originalGateway = [];
+    for (let i = 0; i < old.count; i += 1) {
+      old.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (y === 4 && (x === 9 || x === 11)) originalGateway.push(x);
+    }
+    expect(originalGateway).toEqual([11]);
+    const crownTriangles = (crowns.geometry.index?.count
+      ?? crowns.geometry.getAttribute('position').count) / 3;
+    expect(crownTriangles).toBe(coarsePointer ? 60 : 400);
+  });
+
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
     const desktop = chroniclesBranchingTrunkGeometry();
     const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
@@ -879,9 +937,15 @@ describe('Terra scenery', () => {
     const referenceTrees = matrixToMapCell(originalTrunks);
     // Background density now differs, so match by AUTHORED forest cell,
     // not the global instance index (which includes off-map trees).
-    expect([...actualTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
+    // The forest gateway deliberately adds ONE real trunk on the already
+    // blocked tile 9,4. The other historic forest tiles must be unchanged.
+    expect(actualTrees.get('9,4')).toHaveLength(1);
+    expect(referenceTrees.has('9,4')).toBe(false);
+    const historicTrees = new Map(actualTrees);
+    historicTrees.delete('9,4');
+    expect([...historicTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
     const young = [], original = [];
-    for (const [key, heights] of actualTrees) {
+    for (const [key, heights] of historicTrees) {
       const baseline = referenceTrees.get(key);
       expect(heights).toHaveLength(baseline.length);
       young.push(...heights);
@@ -1148,7 +1212,14 @@ describe('Terra scenery', () => {
     const baseline = collect(previous);
     const reduced = collect(cheap);
     const repeated = collect(again.getObjectByName('chronicles-terra-crown'));
-    expect([...forest.authored]).toEqual([...baseline.authored]);
+    // The new mature gateway intentionally adds an authored forest tree
+    // on blocked cell 9,4. All other in-grid counts must match unchanged
+    // other-world plains and the local deterministic rebuild.
+    expect(forest.authored.get('9,4')).toBe(1);
+    expect(baseline.authored.has('9,4')).toBe(false);
+    const originalForest = new Map(forest.authored);
+    originalForest.delete('9,4');
+    expect([...originalForest]).toEqual([...baseline.authored]);
     expect([...forest.authored]).toEqual([...repeated.authored]);
     expect(forest.rings).toEqual(repeated.rings);
     for (let ring = 1; ring <= TERRA_SCENERY_MARGIN; ring += 1) {

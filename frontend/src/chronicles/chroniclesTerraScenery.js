@@ -835,7 +835,7 @@ function basalt(p, wx, wz, x, y, k) {
 }
 
 const DRESS = {
-  plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0) {
+  plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0, woodlandGateway = false) {
     const roll = noise(x, y, 1);
     // A deepening forest horizon outside the authored map: the first row
     // still has gaps, but more distant rows interlock their crowns. Only the
@@ -845,11 +845,19 @@ const DRESS = {
     // Genuine juvenile trees break the one-height canopy silhouette using
     // the EXISTING broadleaf trunk + crown batches. They still only occupy
     // blocked forest cells; no newly impassable path or invisible obstacle.
-    const juvenile = bannerRoad && !big && noise(x, y, 751) > 0.52;
-    const size = juvenile ? 0.48 + noise(x, y, 753) * 0.16
-      : backdrop ? 1.12 + 0.055 * ringDepth + noise(x, y, 765) * 0.055
-        : (big ? 1.15 : 1);
-    if (roll < canopyThreshold) broadleaf(p, wx, wz, x, y, 0, size, bannerRoad);
+    const juvenile = bannerRoad && !big && !woodlandGateway && noise(x, y, 751) > 0.52;
+    // Two already-blocked forest cells flank the real north/south cart
+    // track at its first woodland opening. Give them mature, elevated
+    // crowns instead of a missing tree and a tiny sapling. Roots remain
+    // on the original '#' tiles: only their high leaf canopy overhangs
+    // the walkable road, with no new collider or change to map topology.
+    const size = woodlandGateway ? 1.6 + noise(x, y, 845) * 0.12
+      : juvenile ? 0.48 + noise(x, y, 753) * 0.16
+        : backdrop ? 1.12 + 0.055 * ringDepth + noise(x, y, 765) * 0.055
+          : (big ? 1.15 : 1);
+    if (woodlandGateway || roll < canopyThreshold) {
+      broadleaf(p, wx, wz, x, y, 0, size, bannerRoad);
+    }
     if (roll >= 0.35) {
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
         { yaw: noise(x, y, 3) * 6.28,
@@ -1231,7 +1239,15 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         // ringDepth = 1..3 beyond the collision grid. This dimension only
         // informs distant forest silhouettes, never passability or spawning.
         const ringDepth = inside ? 0 : Math.max(-x, x - width + 1, -y, y - height + 1);
-        dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth);
+        // A natural canopy gateway only where an ACTUAL blocked forest pair
+        // flanks the authored north/south road and has grass on both sides.
+        // Derive it from the saved grid; never hardcode a new collision tile.
+        const woodlandGateway = denseMeadow && inside
+          && Math.abs(x - center.x) === 1
+          && grid[y]?.[center.x] === '.'
+          && grid[y - 1]?.[x] === '.'
+          && grid[y + 1]?.[x] === '.';
+        dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth, woodlandGateway);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
