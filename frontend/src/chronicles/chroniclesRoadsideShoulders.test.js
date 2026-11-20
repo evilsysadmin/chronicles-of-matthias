@@ -45,8 +45,8 @@ describe('Banner Road organic grass/cobble shoulders', () => {
       again.getColorAt(i, sameTint);
       expect(tint.getHex()).toBe(sameTint.getHex());
       const matching = exposed.filter(({ x, y, dx, dy }) =>
-        Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * 1.66)) < 0.001
-          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * 1.66)) < 0.001);
+        Math.abs(m.elements[12] - ((x - center.x) * 4 + dx * 1.34)) < 0.001
+          && Math.abs(m.elements[14] - ((y - center.y) * 4 + dy * 1.34)) < 0.001);
       expect(matching).toHaveLength(1);
       const e = matching[0];
       mapped.add(e.x + ',' + e.y + ':' + e.dx + ',' + e.dy);
@@ -54,7 +54,7 @@ describe('Banner Road organic grass/cobble shoulders', () => {
       expect(roadCells.some(r => r.x === e.x + e.dx && r.y === e.y + e.dy)).toBe(false);
     }
     expect(mapped.size).toBe(exposed.length);
-    // Paving is only 1.64m from the straight centreline; 1.66m shoulder
+    // Paving ends 1.32m from the straight centreline; 1.34m shoulder
     // offsets let moss begin at the edge while keeping the walkable lane.
     expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.1);
     expect(mobile.geometry.boundingBox.max.y).toBeLessThan(0.25);
@@ -71,7 +71,8 @@ describe('Banner Road organic grass/cobble shoulders', () => {
     expect(desktop.boundingBox.min.x).toBeGreaterThan(-1.85);
     expect(desktop.boundingBox.max.x).toBeLessThan(1.85);
     expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.09);
-    expect(desktop.boundingBox.max.z).toBeLessThan(0.55);
+    expect(desktop.boundingBox.max.z).toBeGreaterThan(0.55);
+    expect(desktop.boundingBox.max.z).toBeLessThan(0.75);
     expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(0);
     expect(desktop.boundingBox.max.y).toBeLessThan(0.25);
     expect([...restored.getAttribute('position').array]).toEqual([...p.array]);
@@ -95,8 +96,26 @@ describe('Banner Road organic grass/cobble shoulders', () => {
     expect(road).toBeInstanceOf(THREE.InstancedMesh);
     expect(road.count).toBe(roadCells.length);
     expect(main.children.filter(m => m.name === 'chronicles-banner-road-shoulders')).toHaveLength(1);
-    expect(build({ ...plan, mapId: 'terra-c4' })
-      .getObjectByName('chronicles-banner-road-shoulders')).toBeUndefined();
+    const matrix = new THREE.Matrix4();
+    const northSouth = roadCells.findIndex(c => c.x === center.x && c.y === center.y + 1);
+    const eastWest = roadCells.findIndex(c => c.x === center.x + 1 && c.y === center.y);
+    const crossing = roadCells.findIndex(c => c.x === center.x && c.y === center.y);
+    for (const index of [northSouth, eastWest, crossing]) {
+      expect(index).toBeGreaterThanOrEqual(0);
+    }
+    road.getMatrixAt(northSouth, matrix);
+    expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(2.64, 4);
+    road.getMatrixAt(eastWest, matrix);
+    expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(2.64, 4);
+    road.getMatrixAt(crossing, matrix);
+    expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(3.92, 4);
+    expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(3.92, 4);
+    const other = build({ ...plan, mapId: 'terra-c4' });
+    const originalRoad = other.getObjectByName('chronicles-campaign-road');
+    originalRoad.getMatrixAt(northSouth, matrix);
+    expect(matrix.elements[0] * originalRoad.geometry.parameters.width)
+      .toBeCloseTo(3.92, 4);
+    expect(other.getObjectByName('chronicles-banner-road-shoulders')).toBeUndefined();
     expect(build({ ...plan, regionKind: 'settlement' })
       .getObjectByName('chronicles-banner-road-shoulders')).toBeUndefined();
   });
