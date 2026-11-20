@@ -5,6 +5,7 @@ import bannerRoad from '../src/chronicles/maps/banner-road-first-book.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
 import { createChroniclesExteriorDaylight } from '../src/chronicles/chroniclesExteriorDaylight.js';
+import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
 const coarsePointer = params.get('coarse') !== '0';
@@ -51,12 +52,51 @@ try {
   const cycle = createChroniclesExteriorDaylight(scene, renderer, {
     mapId: bannerRoad.id, regionKind: bannerRoad.regionKind,
   });
-  cycle.sync(84 * 1440 + 12 * 60 + 45);
+  // Pick a deterministic stable clear day, not a hard-coded day that might
+  // actually be rainy/overcast. The v21 boost intentionally vanishes when
+  // regional cloudiness rises, so only a clear-day render can verify it.
+  const weatherRegion = { mapId: bannerRoad.id, regionKind: bannerRoad.regionKind };
+  const clearMinute = Array.from({ length: 180 }, (_, day) =>
+    day * 1440 + 12 * 60 + 45).find(minute =>
+    chroniclesRegionalWeather({ ...weatherRegion, worldMinutes: minute })?.kind === 'clear'
+      && chroniclesRegionalWeatherTransition({
+        ...weatherRegion, worldMinutes: minute,
+      }).clouds < 0.08);
+  if (!Number.isFinite(clearMinute)) throw new Error('Banner Road fixture needs a stable clear day');
+  cycle.sync(clearMinute);
   const skyClouds = dome?.getObjectByName('chronicles-sky-cloud-panorama');
   const skyCloudOpacity = skyClouds?.material?.opacity ?? -1;
   const skyCloudAtlasWidth = skyClouds?.material?.map?.image?.width ?? -1;
+  if (!skyClouds) throw new Error('Missing procedural sky panorama');
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
+
+  // Measure the ACTUAL framebuffer, not just material.opacity. Earlier
+  // assertions passed while the screenshot remained byte-for-byte identical.
+  // Render the same frame with the distant cloud layer temporarily hidden,
+  // compare pixels in the upper sky, restore it, then capture the real scene.
+  const gl = renderer.getContext();
+  const sampleUpperSky = () => {
+    const pixels = [];
+    const pixel = new Uint8Array(4);
+    for (let row = 0; row < 4; row += 1) {
+      const y = Math.floor(gl.drawingBufferHeight * (0.68 + row * 0.07));
+      for (let col = 1; col <= 11; col += 1) {
+        const x = Math.floor(gl.drawingBufferWidth * col / 12);
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+        pixels.push(...pixel.slice(0, 3));
+      }
+    }
+    return pixels;
+  };
+  const skyWithClouds = sampleUpperSky();
+  skyClouds.visible = false;
+  renderer.render(scene, camera);
+  const skyWithoutClouds = sampleUpperSky();
+  skyClouds.visible = true;
+  renderer.render(scene, camera);
+  const skyPixelDifference = skyWithClouds.reduce((sum, value, i) =>
+    sum + Math.abs(value - skyWithoutClouds[i]), 0) / skyWithClouds.length;
 
   const foliage = scene.getObjectByName('chronicles-terra-scenery');
   const crowns = foliage?.getObjectByName('chronicles-terra-crown');
@@ -138,7 +178,6 @@ try {
       bottomSamples += 1;
     }
   }
-  const gl = renderer.getContext();
   const pixel = new Uint8Array(4);
   const variants = new Set();
   for (let row = 1; row < 8; row += 1) {
@@ -180,6 +219,8 @@ try {
     meadowSoilFraction: String(meadowSoilFraction),
     cameraPitch: String(camera.rotation.x),
     skyCloudOpacity: String(skyCloudOpacity),
+    skyCloudPixelDifference: String(skyPixelDifference),
+    skyCloudSampleMinute: String(clearMinute),
     skyCloudAtlasWidth: String(skyCloudAtlasWidth),
     groundAtlasSize: String(terrain?.material?.map?.image?.width || 0),
     groundRepeat: String(terrain?.material?.map?.repeat?.x ?? -1),
