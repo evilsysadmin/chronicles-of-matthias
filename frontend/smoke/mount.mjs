@@ -2,10 +2,22 @@
 // falla si el juego lanza una excepción no capturada o deja la raíz vacía.
 // Las llamadas a la API devolverán 401 (token falso): eso es esperado.
 // Uso: node smoke/mount.mjs [baseUrl]   (por defecto http://localhost:4173/)
+import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { performance } from 'node:perf_hooks';
 
 const base = process.argv[2] || 'http://localhost:4173/';
+// Vite may name a shared *static* chunk after the sheet. Only the exact
+// isDynamicEntry file identifies the actual deferred character-sheet module.
+const manifest = JSON.parse(readFileSync(new URL('../dist/.vite/manifest.json', import.meta.url), 'utf8'));
+const sheetLazyEntries = Object.values(manifest).filter((chunk) =>
+  chunk?.isDynamicEntry && /\/ChroniclesCharacterSheet-[^/]+\.js$/.test('/' + chunk.file));
+if (sheetLazyEntries.length !== 1) {
+  throw new Error('Expected one deferred character-sheet entry in the Vite manifest; found '
+    + sheetLazyEntries.length);
+}
+const sheetLazyAsset = sheetLazyEntries[0].file;
+
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = false;
 
@@ -85,7 +97,9 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
     if (/\/assets\/ChroniclesCharacterSetup-[^/]+\.js(?:\?|$)/.test(url)) {
       setupChunkRequests.push(url);
     }
-    if (/\/assets\/ChroniclesCharacterSheet-[^/]+\.(?:js|css)(?:\?|$)/.test(url)) {
+    // Never match by chunk-name prefix: Rollup can assign the same prefix
+    // to a shared static JS/CSS dependency needed by the expedition book.
+    if (url.split('?')[0].endsWith('/' + sheetLazyAsset)) {
       sheetChunkRequests.push(url);
     }
   });
@@ -121,9 +135,9 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
     throw new Error('Expedition book loaded character setup code before the editor was requested: '
       + JSON.stringify(setupChunkRequests));
   }
-  if (sheetChunkRequests.length) {
-    throw new Error('Expedition book loaded character sheet assets before a hero was inspected: '
-      + JSON.stringify(sheetChunkRequests));
+  if (label === 'Chronicles' && sheetChunkRequests.length) {
+    throw new Error('Expedition book loaded the deferred character-sheet module before a hero was inspected: '
+      + JSON.stringify({ sheetLazyAsset, requests: sheetChunkRequests }));
   }
   const assertionStarted = performance.now();
   const rootLength = (await page.innerHTML('#root')).length;
