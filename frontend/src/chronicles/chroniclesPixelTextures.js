@@ -93,12 +93,15 @@ function sample(kind, x, y, size) {
     // same 128px atlas can repeat without seams or texture downloads.
     const sward = valueNoise(x, y, size, 4, 91) - 0.5;
     const clover = valueNoise(x, y, size, 13, 92) - 0.5;
-    const loam = valueNoise(x, y, size, 6, 94) - 0.5;
+    // A finer lattice breaks the big periodic brown islands into smaller
+    // irregular pockets. This texture is used only by Banner Road.
+    const loam = valueNoise(x, y, size, 11, 94) - 0.5;
     const moss = valueNoise(x, y, size, 9, 95) - 0.5;
-    // Exposed soil: correlated patches, not a uniform random brown speckle.
-    // Deliberately modest coverage keeps the landscape a green meadow.
-    if (loam < -0.18 && clover < 0.02) {
-      return { color: loam < -0.29 ? 0x75654a : 0x88795b };
+    // A minority of small, sage-brown loam clearings interrupt the grass.
+    // Avoid the former large ochre patches that looked like flat mud slabs
+    // in the 390px first-person view. No new textures or terrain meshes.
+    if (loam < -0.22 && clover < 0.02) {
+      return { color: loam < -0.29 ? 0x79745d : 0x8c876b };
     }
     if (sward > 0.11 && moss > -0.04) return { color: 0x829560 };
     if (sward < -0.15 && moss > 0.07) return { color: 0x465e37 };
