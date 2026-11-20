@@ -835,14 +835,21 @@ function basalt(p, wx, wz, x, y, k) {
 }
 
 const DRESS = {
-  plains(p, wx, wz, x, y, big, bannerRoad = false) {
+  plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0) {
     const roll = noise(x, y, 1);
+    // A deepening forest horizon outside the authored map: the first row
+    // still has gaps, but more distant rows interlock their crowns. Only the
+    // Banner Road outer ring changes, not playable cells or other maps.
+    const backdrop = bannerRoad && big && ringDepth > 0;
+    const canopyThreshold = backdrop ? 0.58 + 0.075 * ringDepth : 0.5;
     // Genuine juvenile trees break the one-height canopy silhouette using
     // the EXISTING broadleaf trunk + crown batches. They still only occupy
     // blocked forest cells; no newly impassable path or invisible obstacle.
     const juvenile = bannerRoad && !big && noise(x, y, 751) > 0.52;
-    const size = juvenile ? 0.48 + noise(x, y, 753) * 0.16 : (big ? 1.15 : 1);
-    if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, size, bannerRoad);
+    const size = juvenile ? 0.48 + noise(x, y, 753) * 0.16
+      : backdrop ? 1.12 + 0.055 * ringDepth + noise(x, y, 765) * 0.055
+        : (big ? 1.15 : 1);
+    if (roll < canopyThreshold) broadleaf(p, wx, wz, x, y, 0, size, bannerRoad);
     if (roll >= 0.35) {
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
         { yaw: noise(x, y, 3) * 6.28,
@@ -1206,7 +1213,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         if (!dress || (!dressBlocked && inside)) continue;
         // Mobile keeps the far ring sparse; the playable edge is always full.
         if (!inside && coarsePointer && noise(x, y, 99) < 0.45) continue;
-        dress(p, wx, wz, x, y, !inside, inside && denseMeadow);
+        // ringDepth = 1..3 beyond the collision grid. This dimension only
+        // informs distant forest silhouettes, never passability or spawning.
+        const ringDepth = inside ? 0 : Math.max(-x, x - width + 1, -y, y - height + 1);
+        dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
