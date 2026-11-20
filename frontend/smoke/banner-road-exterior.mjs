@@ -86,7 +86,9 @@ try {
       assert.equal(state.canopyFlatShading, 'false',
         'Smooth normals must replace faceted flat shading in touch forest foliage');
       assert.ok(Number(state.canopyFrontReach) > 1.20,
-        'The added foliage lobe must truly extend the forward crown silhouette');
+        'The front foliage mass must keep genuine depth beside the cart trail');
+      assert.ok(Number(state.canopyAspect) > 0.67,
+        'True mobile/desktop woodland must have a taller stepped crown, not a flat mushroom');
       assert.ok(Number(state.canopyVertexColors) > 0,
         'Crown gradient must be available in the actual WebGL mesh');
       assert.ok(Number(state.canopyShadeRange) > 0.15,
