@@ -1042,7 +1042,13 @@ describe('Terra scenery', () => {
     // Other locations keep the identical original ring-generation policy.
     expect(previous.count)
       .toBe(anotherOther.getObjectByName('chronicles-terra-crown').count);
-    expect(desktop.children.length).toBe(other.children.length);
+    // Banner Road already has additional meadow/fern batches; compare its
+    // own batch inventory after a deterministic rebuild, not a different map.
+    expect(desktop.children.map(mesh => mesh.name))
+      .toEqual(again.children.map(mesh => mesh.name));
+    expect(new Set(desktop.children.map(mesh => mesh.name)).size)
+      .toBe(desktop.children.length);
+    expect(other.children.every(mesh => desktop.getObjectByName(mesh.name))).toBe(true);
     expect(crowns.geometry.index.count).toBe(previous.geometry.index.count);
     expect(cheap.geometry.index.count).toBeLessThan(crowns.geometry.index.count);
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
