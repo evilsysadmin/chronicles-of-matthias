@@ -988,19 +988,27 @@ function addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer = false, nearPath 
  * already-blocked # forest cells. No new collision or path obstruction.
  * Deterministic patches create groups and clearings, not a uniform hedge.
  */
-function addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, blocked) {
+function addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, blocked, nearTrail = false) {
   const nearForest = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .some(([dx, dy]) => grid[y + dy]?.[x + dx] === '#');
   const patch = 0.5 + 0.5 * Math.sin(x * 0.47 + y * 0.27)
     * Math.cos(y * 0.43 - x * 0.22);
+  // At the first unpaved roadside row, broad leaves fill the visual gap
+  // between the dirt edge and distant tree line. On walkable grass they are
+  // always knee-low and pass-through; forest/tree cells remain unchanged.
   const chance = blocked
     ? (coarsePointer ? 0.37 : 0.69)
-    : (nearForest ? (coarsePointer ? 0.35 : 0.68)
-      : (coarsePointer ? 0.14 : 0.28)) * (0.72 + patch * 0.50);
+    : nearTrail
+      ? (coarsePointer ? 0.36 : 0.76) * (0.80 + patch * 0.20)
+      : (nearForest ? (coarsePointer ? 0.35 : 0.68)
+        : (coarsePointer ? 0.14 : 0.28)) * (0.72 + patch * 0.50);
   if (noise(x, y, 781) > chance) return;
-  const wxOffset = (noise(x, y, 783) - 0.5) * 1.08;
-  const wzOffset = (noise(y, x, 787) - 0.5) * 1.08;
-  const spread = 0.82 + noise(x, y, 789) * 0.32;
+  const trailOffsetX = nearTrail?.dx ? nearTrail.dx * 0.15 : 0;
+  const trailOffsetZ = nearTrail?.dy ? nearTrail.dy * 0.15 : 0;
+  const wxOffset = (noise(x, y, 783) - 0.5) * (nearTrail ? 0.72 : 1.08) + trailOffsetX;
+  const wzOffset = (noise(y, x, 787) - 0.5) * (nearTrail ? 0.72 : 1.08) + trailOffsetZ;
+  const spread = nearTrail ? 0.98 + noise(x, y, 789) * 0.22
+    : 0.82 + noise(x, y, 789) * 0.32;
   p.add('forestHerb', [wx + wxOffset, 0.012, wz + wzOffset], {
     yaw: noise(x, y, 791) * Math.PI * 2,
     scale: [spread,
@@ -1021,7 +1029,7 @@ function addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, blocked) 
  * patch field creates broad gaps between natural groups rather than a
  * regular bush per tile. On walkable cells these are pass-through plants.
  */
-function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked) {
+function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked, nearTrail = null) {
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const openings = directions.filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
   if (blocked && !openings.length) return;
@@ -1031,23 +1039,30 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
     * Math.cos(y * 0.41 - x * 0.17);
   const chance = blocked
     ? (coarsePointer ? 0.17 + patch * 0.28 : 0.35 + patch * 0.43)
-    : (coarsePointer ? 0.06 + patch * 0.13 : 0.13 + patch * 0.29)
-      * (nearForest ? 1.17 : 1);
+    : nearTrail
+      ? (coarsePointer ? 0.29 + patch * 0.26 : 0.52 + patch * 0.28)
+      : (coarsePointer ? 0.06 + patch * 0.13 : 0.13 + patch * 0.29)
+        * (nearForest ? 1.17 : 1);
   if (noise(x, y, 811) > chance) return;
 
-  const count = !coarsePointer && patch > 0.63 && noise(x, y, 831) > 0.38 ? 2 : 1;
+  // Only an occasional extra leaf mass on desktop; no new mesh/material.
+  const count = !coarsePointer && (nearTrail
+    ? noise(x, y, 831) > 0.70
+    : patch > 0.63 && noise(x, y, 831) > 0.38) ? 2 : 1;
   for (let i = 0; i < count; i += 1) {
     const [dx, dy] = blocked
       ? openings[(Math.floor(noise(x, y, 813) * openings.length) + i) % openings.length]
       : [0, 0];
     // Keep the whole leafy crown inside the originating 4m tile; no foliage
     // crossing onto the trail or neighboring authored interactions.
-    const offsetX = dx * 0.48 + (noise(x + i * 3, y, 817) - 0.5) * 0.42;
-    const offsetZ = dy * 0.48 + (noise(y + i * 3, x, 819) - 0.5) * 0.42;
+    const offsetX = dx * 0.48 + (nearTrail?.dx || 0) * 0.37
+      + (noise(x + i * 3, y, 817) - 0.5) * 0.42;
+    const offsetZ = dy * 0.48 + (nearTrail?.dy || 0) * 0.37
+      + (noise(y + i * 3, x, 819) - 0.5) * 0.42;
     const width = 0.61 + noise(x + i, y, 823) * 0.17;
     const depth = 0.60 + noise(y + i, x, 827) * 0.18;
-    const height = (blocked ? 0.77 : 0.62)
-      + noise(x + i * 2, y, 829) * (blocked ? 0.30 : 0.23);
+    const height = (blocked ? 0.77 : nearTrail ? 0.72 : 0.62)
+      + noise(x + i * 2, y, 829) * (blocked ? 0.30 : nearTrail ? 0.20 : 0.23);
     p.add('bush', [wx + offsetX, blocked ? 0.57 : 0.51, wz + offsetZ], {
       yaw: noise(x + i, y, 833) * Math.PI * 2,
       scale: [width, height, depth],
@@ -1234,10 +1249,16 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           // The canonical Banner Road paving follows the central axes even
           // when a direct scenery caller omits keepClear. Never put soft
           // shrubs on these authored road cells.
+          const besideTrail = x !== center.x && y !== center.y
+            ? [[1, 0], [-1, 0], [0, 1], [0, -1]]
+              .find(([dx, dy]) => (x + dx === center.x || y + dy === center.y)
+                && clear.has((x + dx) + ',' + (y + dy)))
+            : null;
+          const trailSide = besideTrail ? { dx: besideTrail[0], dy: besideTrail[1] } : null;
           if (x !== center.x && y !== center.y) {
-            addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false);
+            addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
           }
-          addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false);
+          addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.

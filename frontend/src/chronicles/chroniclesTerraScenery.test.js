@@ -706,7 +706,7 @@ describe('Terra scenery', () => {
       expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(0.71);
       if (tile === '.') {
         expect(excluded.has(x + ',' + y)).toBe(false);
-        expect(matrix.elements[5]).toBeLessThan(0.86);
+        expect(matrix.elements[5]).toBeLessThan(0.94);
       } else {
         expect([[1, 0], [-1, 0], [0, 1], [0, -1]]
           .some(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '.')).toBe(true);
@@ -717,6 +717,74 @@ describe('Terra scenery', () => {
     expect(kinds).toEqual(new Set(['#', '.']));
     expect(addedCells.size).toBeGreaterThan(35);
     expect(shades.size).toBeGreaterThan(2);
+  });
+
+  it('grows a bounded first-row roadside understory without planting in a paved or quest cell', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, keepClear };
+    const full = buildTerraScenery(args);
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const repeated = buildTerraScenery(args);
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const denied = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const testBatch = (name, minDesktop, maxMobile) => {
+      const mesh = full.getObjectByName('chronicles-terra-' + name);
+      const cheap = mobile.getObjectByName(mesh.name);
+      const twin = repeated.getObjectByName(mesh.name);
+      const old = other.getObjectByName(mesh.name);
+      expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
+      expect(cheap).toBeInstanceOf(THREE.InstancedMesh);
+      expect(mesh.count).toBeGreaterThan(cheap.count);
+      expect(mesh.geometry).toBeTruthy();
+      expect(full.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+      expect(old?.count || 0).toBeLessThan(mesh.count);
+      const matrix = new THREE.Matrix4();
+      const copy = new THREE.Matrix4();
+      let visible = 0;
+      let mobileVisible = 0;
+      for (const [batch, isMobile] of [[mesh, false], [cheap, true]]) {
+        for (let i = 0; i < batch.count; i += 1) {
+          batch.getMatrixAt(i, matrix);
+          if (!isMobile) {
+            twin.getMatrixAt(i, copy);
+            expect(copy.elements).toEqual(matrix.elements);
+          }
+          const wx = matrix.elements[12], wz = matrix.elements[14];
+          const x = Math.round(wx / 4) + center.x;
+          const y = Math.round(wz / 4) + center.y;
+          if (map.grid[y]?.[x] === '.') {
+            expect(denied.has(x + ',' + y)).toBe(false);
+            expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(0.66);
+            expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(0.66);
+          }
+          const inFirstVerge = x === 9 || x === 11;
+          if (inFirstVerge && y >= 8 && y <= 13 && map.grid[y]?.[x] === '.') {
+            if (isMobile) mobileVisible += 1;
+            else visible += 1;
+          }
+        }
+      }
+      expect(visible).toBeGreaterThan(minDesktop);
+      expect(mobileVisible).toBeGreaterThan(maxMobile);
+      expect(visible).toBeGreaterThan(mobileVisible);
+    };
+    testBatch('bush', 4, 1);
+    testBatch('forestHerb', 3, 0);
+    // Real trunks and crowns remain on blocked tiles; none were added to
+    // walkable grass just to make the player's path look like thick forest.
+    const trunks = full.getObjectByName('chronicles-terra-broadleafTrunk');
+    const treeMatrix = new THREE.Matrix4();
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, treeMatrix);
+      const x = Math.round(treeMatrix.elements[12] / 4) + center.x;
+      const y = Math.round(treeMatrix.elements[14] / 4) + center.y;
+      if (map.grid[y]?.[x] !== undefined) expect(map.grid[y][x]).toBe('#');
+    }
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
   it('creates broad compound-leaf plants with a low mobile polygon budget', () => {
