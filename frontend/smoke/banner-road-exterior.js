@@ -67,7 +67,10 @@ try {
   const skyClouds = dome?.getObjectByName('chronicles-sky-cloud-panorama');
   const skyCloudOpacity = skyClouds?.material?.opacity ?? -1;
   const skyCloudAtlasWidth = skyClouds?.material?.map?.image?.width ?? -1;
-  if (!skyClouds) throw new Error('Missing procedural sky panorama');
+  const cloudBanks = dome?.children.filter(child =>
+    child.name.startsWith('swordhaven-cloud-')) || [];
+  const cloudBankOpacity = cloudBanks[0]?.getObjectByName('cloud-soft-bank')?.material?.opacity ?? -1;
+  if (!skyClouds || !cloudBanks.length) throw new Error('Missing Banner Road sky clouds');
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
@@ -97,6 +100,16 @@ try {
   renderer.render(scene, camera);
   const skyPixelDifference = skyWithClouds.reduce((sum, value, i) =>
     sum + Math.abs(value - skyWithoutClouds[i]), 0) / skyWithClouds.length;
+  // Check the near cloud silhouettes separately so a healthy panorama
+  // cannot hide missing or invisible foreground banks from the tests.
+  const cloudBankPixels = sampleUpperSky();
+  for (const bank of cloudBanks) bank.visible = false;
+  renderer.render(scene, camera);
+  const withoutCloudBanks = sampleUpperSky();
+  for (const bank of cloudBanks) bank.visible = true;
+  renderer.render(scene, camera);
+  const cloudBankPixelDifference = cloudBankPixels.reduce((sum, value, i) =>
+    sum + Math.abs(value - withoutCloudBanks[i]), 0) / cloudBankPixels.length;
 
   const foliage = scene.getObjectByName('chronicles-terra-scenery');
   const crowns = foliage?.getObjectByName('chronicles-terra-crown');
@@ -219,6 +232,9 @@ try {
     meadowSoilFraction: String(meadowSoilFraction),
     cameraPitch: String(camera.rotation.x),
     skyCloudOpacity: String(skyCloudOpacity),
+    cloudBankCount: String(cloudBanks.length),
+    cloudBankOpacity: String(cloudBankOpacity),
+    cloudBankPixelDifference: String(cloudBankPixelDifference),
     skyCloudPixelDifference: String(skyPixelDifference),
     skyCloudSampleMinute: String(clearMinute),
     skyCloudAtlasWidth: String(skyCloudAtlasWidth),

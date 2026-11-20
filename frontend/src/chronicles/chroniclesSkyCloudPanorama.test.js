@@ -206,6 +206,7 @@ describe('Seamless Terra cloud panorama', () => {
       scene.background = new THREE.Color(0xb4d4df);
       scene.fog = new THREE.Fog(0xb4d4df, 55, 140);
       const dome = createSwordhavenSkyDome(new THREE.Vector3(-25, 30, -65).normalize(), coarse);
+      if (mapId === 'banner-road-first-book') addSwordhavenClouds(dome, coarse);
       scene.add(dome);
       const sun = new THREE.DirectionalLight(0xffe6ba, 1.88);
       sun.name = 'chronicles-campaign-sun';
@@ -214,7 +215,8 @@ describe('Seamless Terra cloud panorama', () => {
       const material = dome.getObjectByName('chronicles-sky-cloud-panorama').material;
       const cycle = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 },
         { mapId, regionKind: 'wilderness' });
-      return { scene, cycle, material, dome };
+      return { scene, cycle, material, dome,
+        bank: dome.getObjectByName('swordhaven-cloud-0')?.getObjectByName('cloud-soft-bank') };
     };
     const banner = make('banner-road-first-book');
     const other = make('terra-c4');
@@ -237,6 +239,22 @@ describe('Seamless Terra cloud panorama', () => {
     const daytimeOpacity = banner.material.opacity;
     expect(daytimeOpacity).toBeCloseTo(expected(clear, true), 5);
     expect(other.material.opacity).toBeCloseTo(expected(clear, false), 5);
+    expect(banner.bank).toBeTruthy();
+    expect(other.bank).toBeUndefined();
+    const weatherClear = chroniclesRegionalWeatherTransition({
+      ...region, worldMinutes: clear,
+    });
+    const clearDaylight = 1 - THREE.MathUtils.smoothstep(weatherClear.clouds, 0.08, 0.48);
+    const originalBankOpacity = 0.19 + weatherClear.clouds * 0.50;
+    const visibleBankOpacity = originalBankOpacity
+      + 0.36 * clearDaylight * chroniclesExteriorDaylightProfile(clear).daylight;
+    expect(banner.bank.material.opacity).toBeCloseTo(visibleBankOpacity, 5);
+    expect(visibleBankOpacity).toBeGreaterThan(0.53);
+    const visibleBankTint = banner.bank.material.color.clone();
+    // Hex sRGB colours are stored in linear space by THREE.Color; compare
+    // against the actual pre-boost cloud material instead of an sRGB number.
+    expect(visibleBankTint.r)
+      .toBeGreaterThan(new THREE.Color(0xc4cdd4).r + 0.04);
     expect(daytimeOpacity).toBeGreaterThan(0.60);
     expect(daytimeOpacity).toBeLessThan(0.78);
     expect(banner.dome.getObjectByName('chronicles-sky-cloud-panorama').material.map)
@@ -245,11 +263,17 @@ describe('Seamless Terra cloud panorama', () => {
     banner.cycle.sync(cloudy);
     expect(banner.material.opacity).toBeCloseTo(expected(cloudy, true), 5);
     expect(banner.material.opacity).toBeLessThan(daytimeOpacity);
+    const cloudyWeather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: cloudy });
+    expect(banner.bank.material.opacity).toBeCloseTo(0.19 + cloudyWeather.clouds * 0.50, 5);
     banner.cycle.sync(night);
     expect(banner.material.opacity).toBeCloseTo(expected(night, true), 5);
     expect(banner.material.opacity).toBeLessThan(0.25);
+    const nightWeather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: night });
+    expect(banner.bank.material.opacity).toBeCloseTo(0.19 + nightWeather.clouds * 0.50, 5);
     banner.cycle.sync(clear);
     expect(banner.material.opacity).toBeCloseTo(daytimeOpacity, 5);
+    expect(banner.bank.material.opacity).toBeCloseTo(visibleBankOpacity, 5);
+    expect(banner.bank.material.color.equals(visibleBankTint)).toBe(true);
     expect(banner.scene.children.length).toBe(initialCount);
   });
 

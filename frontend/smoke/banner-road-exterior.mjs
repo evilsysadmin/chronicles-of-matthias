@@ -91,6 +91,12 @@ try {
         'The clear-day panorama must have meaningful weather-controlled opacity');
       assert.ok(Number(state.skyCloudPixelDifference) > 1.2,
         'The actual WebGL sky must visibly change when real clouds are drawn');
+      assert.equal(Number(state.cloudBankCount), coarse ? 4 : 8,
+        'Banner Road must create a bounded set of real cloud sprites, not just a distant panorama');
+      assert.ok(Number(state.cloudBankOpacity) > 0.53,
+        'Real Banner Road clear-day cloud sprites must be visibly lit');
+      assert.ok(Number(state.cloudBankPixelDifference) > 0.6,
+        'Real upper-sky framebuffer must change when nearby cloud banks are hidden');
       assert.ok(Number(state.skyCloudSampleMinute) > 0,
         'Capture a deterministic clear-day period rather than a random overcast seed');
       assert.equal(Number(state.groundAtlasSize), 128);
@@ -107,7 +113,9 @@ try {
       console.log('CHRONICLES_BANNER_ROAD_SKY_PIXEL_DIFF width=' + width
         + ' difference=' + state.skyCloudPixelDifference
         + ' opacity=' + state.skyCloudOpacity
-        + ' worldMinute=' + state.skyCloudSampleMinute);
+        + ' worldMinute=' + state.skyCloudSampleMinute
+        + ' bankCount=' + state.cloudBankCount
+        + ' bankDifference=' + state.cloudBankPixelDifference);
       console.log('CHRONICLES_BANNER_ROAD_POV_OK width=' + width
         + ' eye=10,13 canopy=' + state.crownCount
         + ' fog=' + state.fogNear + '..' + state.fogFar
