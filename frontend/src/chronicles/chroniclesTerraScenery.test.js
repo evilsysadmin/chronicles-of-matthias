@@ -274,6 +274,62 @@ describe('Terra scenery', () => {
     expect(forest.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
   });
 
+  it.each([false, true])('forms a high woodland gateway from existing blocked tiles (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const options = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+    const scene = buildTerraScenery(options);
+    const repeat = buildTerraScenery(options);
+    const other = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const trunks = scene.getObjectByName('chronicles-terra-broadleafTrunk');
+    const crowns = scene.getObjectByName('chronicles-terra-crown');
+    const twin = repeat.getObjectByName('chronicles-terra-broadleafTrunk');
+    const old = other.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunks).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns.count).toBe(trunks.count);
+    expect(scene.children.filter(child => child.name === trunks.name)).toHaveLength(1);
+    expect(scene.children.filter(child => child.name === crowns.name)).toHaveLength(1);
+    expect(scene.children.length).toBe(repeat.children.length);
+    const matrix = new THREE.Matrix4(), twinMatrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3(), position = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const gateway = new Map();
+    for (let i = 0; i < trunks.count; i += 1) {
+      trunks.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, twinMatrix);
+      expect(twinMatrix.elements).toEqual(matrix.elements);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (map.grid[y]?.[x] !== undefined) expect(map.grid[y][x]).toBe('#');
+      if (y === 4 && (x === 9 || x === 11)) {
+        matrix.decompose(position, quat, scale);
+        expect(scale.y).toBeGreaterThan(4.5);
+        expect(scale.y).toBeLessThan(8.5);
+        expect(Math.abs(position.x - (x - center.x) * 4)).toBeLessThan(1.1);
+        expect(Math.abs(position.z - (y - center.y) * 4)).toBeLessThan(1.1);
+        // Crown of the same instance must clear player head height even
+        // where it projects across the dirt lane, not create a low leaf wall.
+        crowns.getMatrixAt(i, twinMatrix);
+        const canopyBox = crowns.geometry.boundingBox
+          || (crowns.geometry.computeBoundingBox(), crowns.geometry.boundingBox);
+        const worldBox = canopyBox.clone().applyMatrix4(twinMatrix);
+        expect(worldBox.min.y).toBeGreaterThan(2.35);
+        gateway.set(x, { trunkHeight: scale.y, canopyHeight: worldBox.max.y });
+      }
+    }
+    expect([...gateway.keys()].sort()).toEqual([9, 11]);
+    const originalGateway = [];
+    for (let i = 0; i < old.count; i += 1) {
+      old.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if (y === 4 && (x === 9 || x === 11)) originalGateway.push(x);
+    }
+    expect(originalGateway).toEqual([11]);
+    expect(crowns.geometry.index.count / 3).toBe(coarsePointer ? 60 : 400);
+  });
+
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
     const desktop = chroniclesBranchingTrunkGeometry();
     const mobile = chroniclesBranchingTrunkGeometry({ coarsePointer: true });
