@@ -52,6 +52,9 @@ try {
     mapId: bannerRoad.id, regionKind: bannerRoad.regionKind,
   });
   cycle.sync(84 * 1440 + 12 * 60 + 45);
+  const skyClouds = dome?.getObjectByName('chronicles-sky-cloud-panorama');
+  const skyCloudOpacity = skyClouds?.material?.opacity ?? -1;
+  const skyCloudAtlasWidth = skyClouds?.material?.map?.image?.width ?? -1;
   scene.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
@@ -176,6 +179,8 @@ try {
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     meadowSoilFraction: String(meadowSoilFraction),
     cameraPitch: String(camera.rotation.x),
+    skyCloudOpacity: String(skyCloudOpacity),
+    skyCloudAtlasWidth: String(skyCloudAtlasWidth),
     groundAtlasSize: String(terrain?.material?.map?.image?.width || 0),
     groundRepeat: String(terrain?.material?.map?.repeat?.x ?? -1),
     groundCount: String(scene.children.filter(child =>
