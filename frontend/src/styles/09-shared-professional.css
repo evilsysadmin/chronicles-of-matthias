@@ -1,0 +1,138 @@
+/* Shared application rhythm, controls, modal handling and accessibility.
+ * Extracted from Chess professional polish without changing the cascade layer l09.
+ */
+:root {
+  --space-1: .35rem;
+  --space-2: .55rem;
+  --space-3: .8rem;
+  --space-4: 1.1rem;
+  --space-5: 1.5rem;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-surface: 14px;
+  --surface-raised: color-mix(in srgb, var(--ink-2) 94%, white 6%);
+  --line-soft: color-mix(in srgb, var(--ink-3) 78%, transparent);
+  --shadow-raised: 0 14px 34px rgba(5, 8, 14, .22);
+}
+
+body { line-height: 1.5; }
+
+h1, h2, h3 { text-wrap: balance; }
+
+p, small { text-wrap: pretty; }
+
+.app-shell { padding-top: clamp(1rem, 3vw, 2.5rem); }
+
+.menu {
+  gap: var(--space-5);
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--radius-surface);
+  box-shadow: 0 28px 70px rgba(4, 7, 13, .2);
+}
+
+.section-label, .eyebrow { line-height: 1.25; }
+
+.primary-btn, .secondary-btn, .danger-btn {
+  min-height: 42px;
+  border-radius: var(--radius-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  line-height: 1.2;
+  transition: transform .12s ease, filter .12s ease, border-color .12s ease, background-color .12s ease;
+}
+
+.primary-btn:not(:disabled):active,
+.secondary-btn:not(:disabled):active,
+.danger-btn:not(:disabled):active { transform: translateY(1px); }
+
+.primary-btn:disabled, .secondary-btn:disabled, .danger-btn:disabled,
+button[disabled] {
+  opacity: .46;
+  cursor: not-allowed;
+  filter: saturate(.55);
+  transform: none;
+}
+
+.danger-btn { box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+
+.modal-backdrop {
+  padding: clamp(.5rem, 2vw, 1rem);
+  background: rgba(5, 8, 14, .78);
+  backdrop-filter: blur(5px);
+}
+
+.modal-backdrop > [role='dialog'] {
+  width: min(560px, calc(100vw - 1rem));
+  max-height: calc(100dvh - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-surface);
+  box-shadow: 0 28px 80px rgba(0,0,0,.48);
+}
+
+.error-text, .import-error {
+  padding: .65rem .75rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  line-height: 1.45;
+}
+
+@media (max-width: 430px) {
+  :root { --shell-gutter: .65rem; }
+
+  .app-shell { padding-bottom: 5.5rem; }
+
+  .menu { gap: 1.25rem; padding: .85rem; }
+
+  .primary-btn, .secondary-btn, .danger-btn { min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  :root { --shell-gutter: .5rem; }
+
+  .menu { padding: .72rem; }
+
+  .modal-backdrop > [role='dialog'] { width: calc(100vw - .75rem); max-height: calc(100dvh - .75rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .menu-card:not(:disabled):hover, .menu-card:not(:disabled):focus-visible { transform: none; }
+}
+html[data-reduced-motion='true'] *, html[data-reduced-motion='true'] *::before, html[data-reduced-motion='true'] *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+
+.ui-state {
+  display: grid;
+  gap: .18rem;
+  padding: .78rem .85rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+  background: rgba(0,0,0,.1);
+  color: var(--parchment-dim);
+  line-height: 1.45;
+}
+
+.ui-state b { color: var(--parchment); font-size: .82rem; }
+
+.ui-state span { font-size: .76rem; }
+
+.ui-state-loading { border-left: 3px solid var(--hint); }
+
+.ui-state-loading::after {
+  content: '';
+  width: 2.8rem;
+  height: 3px;
+  margin-top: .35rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--hint), transparent);
+  animation: state-loading 1.15s ease-in-out infinite alternate;
+}
+
+.ui-state-error { border-left: 3px solid var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+
+.ui-state-empty { border-style: dashed; text-align: center; }
+
+@keyframes state-loading { from { opacity: .35; transform: translateX(0); } to { opacity: 1; transform: translateX(2rem); } }
