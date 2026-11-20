@@ -85,6 +85,10 @@ try {
       'Actual first-person meadow texture should have fine, restrained earth patches');
       assert.ok(Math.abs(Number(state.cameraPitch)) < 0.0001,
         'Visual QA must use the same level camera as live MM3 gameplay');
+      assert.equal(Number(state.skyCloudAtlasWidth), coarse ? 256 : 512,
+        'Keep the existing low-cost mobile/desktop 360-degree cloud atlas');
+      assert.ok(Number(state.skyCloudOpacity) > 0.14,
+        'The actual daylight scene must display its weather-controlled cloud panorama');
       assert.equal(Number(state.groundAtlasSize), 128);
       assert.equal(Number(state.groundRepeat), 7);
       assert.equal(Number(state.groundCount), 1);
