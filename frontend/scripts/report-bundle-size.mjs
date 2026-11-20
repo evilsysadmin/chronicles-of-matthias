@@ -109,6 +109,86 @@ export function measureEntryVsLazy(report, manifest) {
   };
 }
 
+
+// Compute what each authenticated game route *adds* to the public entry.
+// Follow only synchronous Vite imports, never child dynamic imports (shops,
+// character sheets, renderers and other lazy features). This is not a HAR trace.
+export function measureModeEntryLoads(report, manifest) {
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    throw new Error('Expected a Vite chunk manifest for mode entry sizes');
+  }
+  const chunks = Object.entries(manifest);
+  const entries = chunks.filter(([, value]) => value?.isEntry === true);
+  if (entries.length !== 1) throw new Error('Expected one public entry for mode measurement');
+
+  const modes = [
+    ['MM3', /(?:^|\/)ChroniclesOfMatthias-[^/]+\.js$/],
+    ['Tactics', /(?:^|\/)ChroniclesOfMatthiasTactics-[^/]+\.js$/],
+  ];
+  const matches = modes.map(([name, pattern]) => ({
+    name, keys: chunks.filter(([, value]) =>
+      value?.isDynamicEntry === true && typeof value.file === 'string'
+      && pattern.test(value.file)).map(([key]) => key),
+  }));
+  if (matches.every((entry) => entry.keys.length === 0)) return null;
+  if (matches.some((entry) => entry.keys.length !== 1)) {
+    throw new Error('Expected exactly one deferred MM3 and Tactics mode entry in Vite manifest: '
+      + JSON.stringify(matches.map(({ name, keys }) => ({ name, count: keys.length }))));
+  }
+
+  const byFile = new Map(report.files.map((file) => [file.path, file]));
+  const staticFiles = (key) => {
+    const files = new Set();
+    const visited = new Set();
+    const include = (path) => {
+      if (typeof path !== 'string') throw new Error('Invalid mode asset path');
+      if (!/\.(?:js|css)$/.test(path)) return;
+      if (!byFile.has(path)) throw new Error('Vite mode references missing asset: ' + path);
+      files.add(path);
+    };
+    const visit = (target) => {
+      if (visited.has(target)) return;
+      visited.add(target);
+      const chunk = manifest[target];
+      if (!chunk || typeof chunk.file !== 'string') {
+        throw new Error('Vite mode has missing imported chunk: ' + target);
+      }
+      include(chunk.file);
+      for (const css of chunk.css ?? []) include(css);
+      for (const dependency of chunk.imports ?? []) visit(dependency);
+      // Do not include chunk.dynamicImports: users may never open those screens.
+    };
+    visit(key);
+    return files;
+  };
+  const publicFiles = staticFiles(entries[0][0]);
+  const total = (paths, type) => {
+    const assets = [...paths].map((path) => byFile.get(path))
+      .filter((file) => type === 'all' || file.type === type);
+    return {
+      count: assets.length,
+      rawBytes: assets.reduce((sum, file) => sum + file.rawBytes, 0),
+      gzipBytes: assets.reduce((sum, file) => sum + file.gzipBytes, 0),
+    };
+  };
+  const aggregate = (paths) => ({
+    js: total(paths, 'js'),
+    css: total(paths, 'css'),
+    combined: total(paths, 'all'),
+  });
+
+  return Object.fromEntries(matches.map(({ name, keys }) => {
+    const route = staticFiles(keys[0]);
+    const incremental = new Set([...route].filter((path) => !publicFiles.has(path)));
+    const entryWithMode = new Set([...publicFiles, ...route]);
+    return [name.toLowerCase(), {
+      key: keys[0],
+      incremental: aggregate(incremental),
+      entryWithMode: aggregate(entryWithMode),
+    }];
+  }));
+}
+
 export function formatBundleSummary(report) {
   const kb = (value) => (value / 1024).toFixed(1) + ' KiB';
   const lines = [
@@ -140,6 +220,23 @@ export function formatBundleSummary(report) {
         + ' | ' + kb(payload.deferred.combined.gzipBytes) + ' |',
     );
   }
+  if (report.modeEntries) {
+    lines.push(
+      '',
+      '### Game mode entry costs (Vite manifest)',
+      '',
+      'Incremental = static MM3/Tactics JS and CSS beyond the public entry. Lazy child screens and renderers are excluded; this is not a browser network trace.',
+      '',
+      '| Mode | Additional JS gzip | Additional CSS gzip | Additional total gzip | Entry + mode gzip |',
+      '| --- | ---: | ---: | ---: | ---: |',
+    );
+    for (const [label, payload] of [['MM3', report.modeEntries.mm3], ['Tactics', report.modeEntries.tactics]]) {
+      lines.push('| ' + label + ' | ' + kb(payload.incremental.js.gzipBytes)
+        + ' | ' + kb(payload.incremental.css.gzipBytes)
+        + ' | ' + kb(payload.incremental.combined.gzipBytes)
+        + ' | ' + kb(payload.entryWithMode.combined.gzipBytes) + ' |');
+    }
+  }
   lines.push('', 'Largest JS/CSS bundles by gzip size:', '', '| File | Raw | gzip level 9 |', '| --- | ---: | ---: |');
   const biggest = [...report.files].sort(
     (a, b) => b.gzipBytes - a.gzipBytes || a.path.localeCompare(b.path, 'en'),
@@ -153,7 +250,13 @@ export function formatBundleSummary(report) {
 export function writeBundleReport(distDirectory, summaryFile) {
   const measured = measureBundle(distDirectory);
   const manifest = JSON.parse(readFileSync(join(distDirectory, '.vite', 'manifest.json'), 'utf8'));
-  const report = { ...measured, schemaVersion: 2, entryPayload: measureEntryVsLazy(measured, manifest) };
+  const modeEntries = measureModeEntryLoads(measured, manifest);
+  const report = {
+    ...measured,
+    schemaVersion: 3,
+    entryPayload: measureEntryVsLazy(measured, manifest),
+    ...(modeEntries ? { modeEntries } : {}),
+  };
   writeFileSync(join(distDirectory, 'bundle-size-report.json'), JSON.stringify(report, null, 2) + '\n');
   const markdown = formatBundleSummary(report);
   if (summaryFile) appendFileSync(summaryFile, markdown);
