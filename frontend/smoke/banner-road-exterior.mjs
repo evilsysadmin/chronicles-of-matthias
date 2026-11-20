@@ -48,6 +48,8 @@ try {
       assert.equal(state.canvasWidth, width);
       assert.equal(state.canvasHeight, height);
       assert.ok(Number(state.roadCount) > 20, 'Real paved trail must be present');
+      assert.ok(Math.abs(Number(state.roadApproachWidth) - 2.64) < 0.001,
+        'Actual eye-level Banner Road must have a 2.64m cart trail on desktop and mobile');
       assert.ok(Number(state.crownCount) > 10, 'Real broadleaf trees must be visible');
       assert.ok(Number(state.bushCount) > 5, 'Roadside bushes must be present');
       assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');
