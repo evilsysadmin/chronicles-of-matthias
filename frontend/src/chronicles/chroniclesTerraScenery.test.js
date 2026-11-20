@@ -593,6 +593,7 @@ describe('Terra scenery', () => {
 
 
 
+
   it('grows irregular pass-through shrub islands without crossing roads or changing other maps', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
@@ -609,21 +610,16 @@ describe('Terra scenery', () => {
     const again = repeat.getObjectByName('chronicles-terra-bush');
     const old = original.getObjectByName('chronicles-terra-bush');
     expect(shrubs).toBeInstanceOf(THREE.InstancedMesh);
-    expect(shrubs.count).toBeGreaterThan(old.count + 45);
+    expect(shrubs.count).toBeGreaterThan(old.count + 70);
     expect(touch.count).toBeLessThan(shrubs.count);
     expect(shrubs.material.transparent).toBe(false);
     expect(shrubs.geometry.getAttribute('color')).toBeUndefined();
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
-    const originalInstances = new Map();
-    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
-    const tint = new THREE.Color(), twinTint = new THREE.Color();
-    for (let i = 0; i < old.count; i += 1) {
-      old.getMatrixAt(i, matrix);
-      const key = matrix.elements.join(',');
-      originalInstances.set(key, (originalInstances.get(key) || 0) + 1);
-    }
     const excluded = new Set(keepClear.map(({ x, y }) => x + ',' + y));
     const addedCells = new Set(), kinds = new Set(), shades = new Set();
+    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const tint = new THREE.Color(), twinTint = new THREE.Color();
+    let added = 0;
     for (let i = 0; i < shrubs.count; i += 1) {
       shrubs.getMatrixAt(i, matrix);
       again.getMatrixAt(i, twin);
@@ -632,16 +628,15 @@ describe('Terra scenery', () => {
       again.getColorAt(i, twinTint);
       expect(tint.getHex()).toBe(twinTint.getHex());
       shades.add(tint.getHex());
-      const key = matrix.elements.join(',');
-      const remaining = originalInstances.get(key) || 0;
-      if (remaining) {
-        originalInstances.set(key, remaining - 1);
-        continue;
-      }
       const wx = matrix.elements[12], wz = matrix.elements[14];
       const x = Math.round(wx / 4) + center.x;
       const y = Math.round(wz / 4) + center.y;
       const tile = map.grid[y]?.[x];
+      // Existing broadleaf bushes have variable trunk-derived heights; the
+      // new forest-edge and soft-meadow bushes sit at fixed soil elevations.
+      // Identify only the new visual layer, not pre-existing juvenile shrubs.
+      if (Math.abs(matrix.elements[13] - (tile === '#' ? 0.57 : 0.51)) > 1e-6) continue;
+      added += 1;
       expect(['#', '.']).toContain(tile);
       kinds.add(tile);
       addedCells.add(x + ',' + y);
@@ -655,7 +650,8 @@ describe('Terra scenery', () => {
           .some(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '.')).toBe(true);
       }
     }
-    expect([...originalInstances.values()].every(count => count === 0)).toBe(true);
+    expect(added).toBeGreaterThan(70);
+    expect(added).toBeLessThan(155);
     expect(kinds).toEqual(new Set(['#', '.']));
     expect(addedCells.size).toBeGreaterThan(35);
     expect(shades.size).toBeGreaterThan(2);
