@@ -1,0 +1,11 @@
+/* Global keyboard focus and touch targets preserved from the historical account skin.
+ * Same cascade layer l18, with original declarations and mobile threshold.
+ */
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  :where(button, select, input):not(.square) { min-height: 44px; }
+}
