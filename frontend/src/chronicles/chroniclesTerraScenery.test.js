@@ -371,6 +371,7 @@ describe('Terra scenery', () => {
     const scale = new THREE.Vector3(), position = new THREE.Vector3();
     const quat = new THREE.Quaternion();
     const gateway = new Map();
+    const leafScale = new THREE.Vector3();
     for (let i = 0; i < trunks.count; i += 1) {
       trunks.getMatrixAt(i, matrix);
       twin.getMatrixAt(i, twinMatrix);
@@ -387,14 +388,24 @@ describe('Terra scenery', () => {
         // Crown of the same instance must clear player head height even
         // where it projects across the dirt lane, not create a low leaf wall.
         crowns.getMatrixAt(i, twinMatrix);
+        twinMatrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), leafScale);
+        // Balance the two visual gateway trees rather than leaving a skinny
+        // pale conifer on one side and a flattened umbrella on the other.
+        const canopyRatio = leafScale.y / leafScale.x;
+        expect(canopyRatio).toBeGreaterThan(0.82);
+        expect(canopyRatio).toBeLessThan(1.16);
         const canopyBox = crowns.geometry.boundingBox
           || (crowns.geometry.computeBoundingBox(), crowns.geometry.boundingBox);
         const worldBox = canopyBox.clone().applyMatrix4(twinMatrix);
         expect(worldBox.min.y).toBeGreaterThan(2.35);
-        gateway.set(x, { trunkHeight: scale.y, canopyHeight: worldBox.max.y });
+        gateway.set(x, {
+          trunkHeight: scale.y, canopyHeight: worldBox.max.y, canopyRatio,
+        });
       }
     }
     expect([...gateway.keys()].sort((a, b) => a - b)).toEqual([9, 11]);
+    expect(gateway.get(9).canopyRatio).toBeGreaterThan(gateway.get(11).canopyRatio);
+    expect(gateway.get(9).canopyRatio - gateway.get(11).canopyRatio).toBeLessThan(0.20);
     const originalGateway = [];
     for (let i = 0; i < old.count; i += 1) {
       old.getMatrixAt(i, matrix);

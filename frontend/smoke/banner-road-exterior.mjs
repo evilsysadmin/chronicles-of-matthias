@@ -70,6 +70,13 @@ try {
         'Gateway trunks must be mature rather than tiny distant saplings');
       assert.ok(Number(state.woodlandGatewayLowestLeaf) > 2.35,
         'Overhanging canopy must clear the player, never form a low foliage wall');
+      assert.ok(Number(state.woodlandGatewayMinCanopyRatio) > 0.82,
+        'Right gateway crown must not flatten into an umbrella');
+      assert.ok(Number(state.woodlandGatewayMaxCanopyRatio) < 1.16,
+        'Pale left gateway crown must not become a tall narrow conifer');
+      assert.ok(Number(state.woodlandGatewayMaxCanopyRatio)
+        - Number(state.woodlandGatewayMinCanopyRatio) < 0.20,
+        'Both existing gateway canopies should have balanced visual proportions');
       assert.ok(Number(state.paleTrunks) > 12,
         'Real forest must mix pale narrow trees among mature broadleaf trees');
       assert.ok(Number(state.forestRingTrees) > (coarse ? 120 : 225),
