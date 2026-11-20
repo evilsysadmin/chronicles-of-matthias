@@ -43,6 +43,8 @@ const RAMPS = Object.freeze({
   // Banner Road meadow: less black/green pixel contrast than town grass,
   // with midtone olive/sage patches and subtle dry summer grass.
   meadow: [0x35552b, 0x48683a, 0x5a7946, 0x6b8851, 0x7d965d, 0x92a66e].map(hex),
+  // Banner Road only: compressed loam and small gravel, never masonry joints.
+  woodlandpath: [0x4a4634, 0x5f543b, 0x766447, 0x8a7755, 0xa08d67, 0xb2a07e].map(hex),
   masonry: [0x4a4440, 0x8a8178, 0xb3aa9c, 0xd4cbbb, 0xeee6d6, 0xfff9ec].map(hex),
   stucco: [0xa99c88, 0xd9cfbf, 0xeae2d4, 0xf6efe3, 0xfffaf0].map(hex),
   timber: [0x5a4a3a, 0x8f7a63, 0xb59f86, 0xd2bea4, 0xeadbc4].map(hex),
@@ -65,7 +67,7 @@ const RAMPS = Object.freeze({
 });
 
 const SIZES = Object.freeze({
-  grass: 64, meadow: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
+  grass: 64, meadow: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
   snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32,
 });
 
@@ -114,6 +116,20 @@ function sample(kind, x, y, size) {
     if (hash(x, y, 93) > 0.9982) return { color: 0xb8a879 };
     return 0.51 + sward * 0.46 + clover * 0.20 + moss * 0.14
       + grain * 0.08;
+  }
+  if (kind === 'woodlandpath') {
+    // Irregular soil, compacted tread, and sparse pebbles use periodic
+    // lattices so neighbouring 4m trail cells meet without obvious seams.
+    // A true dirt track replaces the repeated town cobblestones, with zero
+    // new geometry, shader, requests or simulation state.
+    const soil = valueNoise(x, y, size, 5, 141) - 0.5;
+    const tread = valueNoise(x, y, size, 13, 142) - 0.5;
+    const gravel = valueNoise(x, y, size, 26, 143) - 0.5;
+    const moss = valueNoise(x, y, size, 9, 144) - 0.5;
+    if (moss > 0.17 && soil < -0.01) return { color: 0x667451 };
+    if (hash(x, y, 148) > 0.987 && gravel > -0.12) return { color: 0xaea18c };
+    if (hash(x, y, 149) > 0.991 && soil < 0.10) return { color: 0x4c4939 };
+    return 0.49 + soil * 0.45 + tread * 0.20 + gravel * 0.11 + grain * 0.08;
   }
   if (kind === 'heath') {
     // Four-octave-style deterministic ground breakup: dark peat patches,
@@ -256,10 +272,11 @@ export function chroniclesPixelTexture(kind) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
-  texture.magFilter = kind === 'meadow' ? THREE.LinearFilter : THREE.NearestFilter;
-  texture.minFilter = kind === 'meadow'
+  const softTerrain = kind === 'meadow' || kind === 'woodlandpath';
+  texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
+  texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
-  if (kind === 'meadow') texture.anisotropy = 4; // Calm grazing-angle meadow on desktop.
+  if (softTerrain) texture.anisotropy = 4; // Calm grazing-angle soil and meadow.
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
   texture.userData.chroniclesPixelArt = { kind, size, palette: ramp.length };
