@@ -135,7 +135,6 @@ import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicl
 import ChroniclesPartyAvatarButton from './ChroniclesPartyAvatarButton.jsx';
 import { chroniclesBlockNonPrimaryClick, chroniclesPreventNativeContextMenu } from '../chronicles/chroniclesPrimaryClick.js';
 import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
-import ChroniclesShop from './ChroniclesShop.jsx';
 import ChroniclesInn from './ChroniclesInn.jsx';
 import ChroniclesProvisions, { CHRONICLES_QUARTERMASTER_ID } from './ChroniclesProvisions.jsx';
 import ChroniclesAudience from './ChroniclesAudience.jsx';
@@ -222,6 +221,8 @@ import './ChroniclesAdventureMenuFolio.css';
 const ChroniclesCharacterSetup = lazy(() => import('./ChroniclesCharacterSetup.jsx'));
 // The full character sheet and its CSS are not needed until a hero is inspected.
 const ChroniclesCharacterSheet = lazy(() => import('./ChroniclesCharacterSheet.jsx'));
+// The merchant room and its styles are only needed on an actual shop visit.
+const ChroniclesShop = lazy(() => import('./ChroniclesShop.jsx'));
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
 
@@ -2820,11 +2821,13 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       )}
 
       {state.shop && !sheetMember && (
-        <ChroniclesShop
-          state={state}
-          onAction={dispatch}
-          onClose={() => dispatch({ type: 'shop-close' })}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <ChroniclesShop
+            state={state}
+            onAction={dispatch}
+            onClose={() => dispatch({ type: 'shop-close' })}
+          />
+        </Suspense>
       )}
 
       {noticeBoardOpen && !sheetMember && (
