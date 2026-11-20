@@ -1,7 +1,6 @@
-/* v16.6dm46zeh · Visual System / UX Polish
-   Una sola gramática visual para Home, juego, Combat, modales y Admin.
-   No cambia reglas ni flujos; reduce ruido, unifica controles y mejora foco. */
-
+/* Shared visual system for Chronicles: theme variables, controls, forms and feedback.
+ * Same cascade layer l26 as the legacy Chess UI.
+ */
 :root {
   --ui-space-1: .25rem;
   --ui-space-2: .5rem;
@@ -82,73 +81,13 @@ body {
   letter-spacing: .16em;
 }
 
-/* ---------- Surfaces ---------- */
-.menu,
-.army-card,
-.tutorial-text,
-.notation-panel,
-.admin-feedback-section,
-.admin-presence-block,
-.admin-insights-panel,
-.admin-observability-chart {
-  border-color: var(--ui-border);
-}
 
+.menu { border-color: var(--ui-border); }
 .menu {
   border-radius: calc(var(--ui-card-radius) + 2px);
   box-shadow: var(--ui-shadow-soft);
 }
-
-.menu-section,
-.army-card,
-.tutorial-text,
-.notation-panel {
-  border-radius: var(--ui-card-radius);
-}
-
-/* ---------- Home ---------- */
-.home-friendly {
-  background-image:
-    radial-gradient(circle at 14% 0%, rgba(201,162,39,.045), transparent 26rem),
-    linear-gradient(180deg, rgba(255,255,255,.012), transparent 18rem);
-}
-
-.home-section-heading,
-.home-learning-heading {
-  align-items: end;
-  gap: var(--ui-space-4);
-}
-
-.home-primary-group,
-.home-learning-grid,
-.compact-mode-grid {
-  gap: .85rem;
-}
-
-.home-mode-card,
-.menu-card {
-  border: 1px solid var(--ui-border);
-  border-left-width: 1px;
-  border-radius: var(--ui-card-radius);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--ui-panel-raised) 92%, transparent), color-mix(in srgb, var(--ui-panel) 96%, transparent));
-  box-shadow: 0 6px 18px rgba(0,0,0,.08);
-}
-
-.menu-card:not(:disabled):hover,
-.menu-card:not(:disabled):focus-visible {
-  border-color: color-mix(in srgb, var(--brass) 42%, var(--ui-border));
-  box-shadow: 0 12px 26px rgba(0,0,0,.14);
-  transform: translateY(-2px);
-}
-
-.home-mode-icon {
-  border-radius: 11px;
-  background: rgba(255,255,255,.018);
-}
-
-.home-mode-kicker { opacity: .88; }
-.home-mode-description { color: color-mix(in srgb, var(--parchment-dim) 94%, var(--parchment) 6%); line-height: 1.5; }
-.home-mode-card .menu-card-cta { border-top-color: color-mix(in srgb, var(--ui-border) 72%, transparent); }
+.menu-section { border-radius: var(--ui-card-radius); }
 
 /* ---------- Feedback ---------- */
 .feedback-modal {
@@ -229,65 +168,12 @@ body {
 .feedback-modal-actions > button { width: 100%; }
 .feedback-thread-history { border-top: 1px solid var(--ui-border); padding-top: .75rem; }
 
-/* ---------- Game table ---------- */
-.game-board-stack,
-.game-side-column { min-width: 0; }
-.game-side-column {
-  border-radius: var(--ui-card-radius);
-}
-.game-side-music,
-.game-notation-disclosure,
-.game-chat,
-.combat-tactical-panel {
-  border-radius: 11px;
-}
+
 .game-controls {
   gap: .55rem;
 }
 .game-controls > :where(.primary-btn, .secondary-btn) { min-height: var(--ui-control-h); }
-.game-player-rail {
-  border-color: var(--ui-border);
-  background: color-mix(in srgb, var(--ui-panel) 90%, transparent);
-}
-.game-player-rail.is-active {
-  border-color: color-mix(in srgb, var(--brass) 56%, var(--ui-border));
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--brass) 72%, transparent);
-}
 
-/* ---------- Combat ---------- */
-.campaign-command-card,
-.combat-tactical-panel,
-.army-roster-card,
-.market-card,
-.campaign-debrief-card {
-  box-shadow: 0 8px 22px rgba(0,0,0,.10);
-}
-.combat-panel-section-title,
-.campaign-command-section-title {
-  letter-spacing: .09em;
-}
-
-/* ---------- Admin ---------- */
-.admin-screen { background-image: none; }
-.admin-presence-block,
-.admin-feedback-section,
-.admin-insights-panel,
-.admin-observability-chart {
-  border-radius: var(--ui-card-radius);
-  background: color-mix(in srgb, var(--ui-panel) 92%, transparent);
-  box-shadow: 0 5px 16px rgba(0,0,0,.07);
-}
-.admin-users-table { border-collapse: separate; border-spacing: 0; }
-.admin-users-table thead th { background: color-mix(in srgb, var(--ink) 76%, var(--ui-panel) 24%); }
-.admin-users-table tbody tr { transition: background-color .14s ease; }
-.admin-users-table tbody tr:not(.admin-detail-row):hover { background: rgba(255,255,255,.018); }
-.admin-filter-chip { min-height: var(--ui-control-h-compact); border-radius: 999px; }
-.admin-filter-chip.is-active { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 52%, transparent); }
-.admin-feedback-card { border-radius: 11px; }
-.admin-feedback-card.status-new { border-left-width: 2px; }
-.admin-feedback-reply textarea { border-radius: var(--ui-control-radius); }
-
-/* ---------- Modal consistency ---------- */
 .modal-backdrop {
   backdrop-filter: blur(5px);
   background: rgba(7,10,15,.68);
@@ -295,20 +181,11 @@ body {
 .modal-backdrop :where([role='dialog'], .army-card, .endgame-dialog) {
   box-shadow: var(--ui-shadow-modal);
 }
-.piece-info-close {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-}
 
-/* ---------- Mobile / reduced motion ---------- */
 @media (max-width: 700px) {
   :root { --ui-control-h: 44px; }
   .app-shell { padding-inline: .65rem; }
   .menu { border-radius: 12px; }
-  .home-primary-group,
-  .home-learning-grid,
-  .compact-mode-grid { gap: .65rem; }
   .feedback-modal { width: calc(100vw - .7rem); max-height: calc(100vh - .7rem); padding: .9rem; }
   .feedback-modal-actions { grid-template-columns: 1fr; }
   .feedback-image-preview-grid { grid-template-columns: 1fr 1fr; }
@@ -316,10 +193,9 @@ body {
 
 @media (max-width: 430px) {
   .feedback-image-preview-grid { grid-template-columns: 1fr; }
-  .home-mode-card { padding: .82rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(.primary-btn, .secondary-btn, .menu-card, .admin-users-table tbody tr) { transition: none !important; }
-  :where(.primary-btn, .secondary-btn, .menu-card):hover { transform: none !important; }
+  :where(.primary-btn, .secondary-btn) { transition: none !important; }
+  :where(.primary-btn, .secondary-btn):hover { transform: none !important; }
 }
