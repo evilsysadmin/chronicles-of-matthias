@@ -118,6 +118,20 @@ try {
   const sedges = foliage?.getObjectByName('chronicles-terra-meadowSedge');
   const woodlandHerbs = foliage?.getObjectByName('chronicles-terra-forestHerb');
   const trunks = foliage?.getObjectByName('chronicles-terra-broadleafTrunk');
+  const countNearRoadside = mesh => {
+    const matrix = new THREE.Matrix4();
+    let count = 0;
+    for (let i = 0; i < (mesh?.count || 0); i += 1) {
+      mesh.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / 4) + center.x;
+      const y = Math.round(matrix.elements[14] / 4) + center.y;
+      if ((x === 9 || x === 11) && y >= 8 && y <= 13
+        && bannerRoad.grid[y]?.[x] === '.') count += 1;
+    }
+    return count;
+  };
+  const nearRoadsideBushes = countNearRoadside(bushes);
+  const nearRoadsideHerbs = countNearRoadside(woodlandHerbs);
   const road = scene.getObjectByName('chronicles-campaign-road');
   // Find the authored straight cell from the road mesh itself. Avoid
   // assuming a road-cell ordering or measuring a harmless crossing flare.
@@ -218,6 +232,8 @@ try {
     coarsePointer: String(coarsePointer),
     crownCount: String(crowns?.count || 0),
     bushCount: String(bushes?.count || 0),
+    nearRoadsideBushes: String(nearRoadsideBushes),
+    nearRoadsideHerbs: String(nearRoadsideHerbs),
     grassCount: String(turf?.count || 0),
     sedgeCount: String(sedges?.count || 0),
     sedgeTriangles: String(sedges ? triangles(sedges.geometry) : -1),
