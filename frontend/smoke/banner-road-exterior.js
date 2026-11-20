@@ -228,6 +228,8 @@ try {
     roadCount: String(road?.count || 0),
     roadApproachWidth: String(approachRoadWidth),
     roadRelief: String(Boolean(road?.material?.normalMap)),
+    roadSurfaceKind: road?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
+    roadSurfaceAtlasSize: String(road?.material?.map?.image?.width || 0),
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     meadowSoilFraction: String(meadowSoilFraction),
     cameraPitch: String(camera.rotation.x),

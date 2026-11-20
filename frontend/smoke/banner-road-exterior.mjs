@@ -102,8 +102,12 @@ try {
       assert.equal(Number(state.groundAtlasSize), 128);
       assert.equal(Number(state.groundRepeat), 7);
       assert.equal(Number(state.groundCount), 1);
-      assert.equal(state.roadRelief, String(!coarse),
-        'Mobile uses cheaper paving without normal maps');
+      assert.equal(state.roadSurfaceKind, 'woodlandpath',
+        'The genuine Banner Road must render its packed-earth trail, not Swordhaven cobbles');
+      assert.equal(Number(state.roadSurfaceAtlasSize), 128,
+        'Earth and grit must share a bounded local 128px texture atlas');
+      assert.equal(state.roadRelief, 'false',
+        'Never keep stone-cobble normal relief on a natural dirt track');
       assert.ok(Number(state.fogNear) > 10 && Number(state.fogFar) > Number(state.fogNear),
         'The actual scene must have atmospheric depth, not a flat clear horizon');
       assert.ok(Number(state.pixelVariants) > 10,

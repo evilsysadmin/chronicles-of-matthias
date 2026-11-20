@@ -326,8 +326,12 @@ try {
       assert.ok(Number(result.canopyTints) > 2,
         'Banner Road needs visibly varied broadleaf foliage');
       assert.ok(Number(result.roadCount) > 20);
-      assert.equal(result.roadRelief, String(width === 1280),
-        'Road normal detail belongs to desktop, preserving touch budget');
+      assert.equal(result.roadRelief, 'false',
+        'Natural woodland soil must not retain a cobblestone normal map');
+      assert.equal(result.roadSurfaceKind, 'woodlandpath',
+        'Real 390px and 1280px Banner Road must use earth and grit, not town stone');
+      assert.equal(Number(result.roadSurfaceAtlasSize), 128,
+        'Both mobile and desktop reuse the bounded in-memory earth atlas');
       assert.equal(result.groundKind, 'meadow',
         'Banner Road must use its own muted meadow, not city grass');
       assert.equal(Number(result.groundAtlasSize), 128);

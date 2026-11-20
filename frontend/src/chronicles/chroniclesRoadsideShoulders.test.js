@@ -108,8 +108,10 @@ describe('Banner Road organic grass/cobble shoulders', () => {
     road.getMatrixAt(eastWest, matrix);
     expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(2.64, 4);
     road.getMatrixAt(crossing, matrix);
-    expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(3.92, 4);
-    expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(3.92, 4);
+    // Unlike the old town cobbles, joined compacted-earth tiles have no
+    // 8cm mortar gap; the crossing remains a full 4m-wide walkable junction.
+    expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(4, 4);
+    expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(4, 4);
     const other = build({ ...plan, mapId: 'terra-c4' });
     const originalRoad = other.getObjectByName('chronicles-campaign-road');
     originalRoad.getMatrixAt(northSouth, matrix);
