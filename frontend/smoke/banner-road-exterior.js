@@ -176,6 +176,8 @@ try {
   let woodlandGatewayTrees = 0;
   let woodlandGatewayLowestLeaf = Infinity;
   let woodlandGatewayMinTrunkHeight = Infinity;
+  let woodlandGatewayMinCanopyRatio = Infinity;
+  let woodlandGatewayMaxCanopyRatio = -Infinity;
   const gatewayCrownBounds = crowns?.geometry.boundingBox
     || (crowns?.geometry.computeBoundingBox(), crowns?.geometry.boundingBox);
   const forestRingTrees = [0, 0, 0, 0];
@@ -193,6 +195,11 @@ try {
       woodlandGatewayMinTrunkHeight = Math.min(woodlandGatewayMinTrunkHeight, treeScale.y);
       const crownPose = new THREE.Matrix4();
       crowns.getMatrixAt(i, crownPose);
+      const crownScale = new THREE.Vector3();
+      crownPose.decompose(new THREE.Vector3(), new THREE.Quaternion(), crownScale);
+      const ratio = crownScale.y / crownScale.x;
+      woodlandGatewayMinCanopyRatio = Math.min(woodlandGatewayMinCanopyRatio, ratio);
+      woodlandGatewayMaxCanopyRatio = Math.max(woodlandGatewayMaxCanopyRatio, ratio);
       woodlandGatewayLowestLeaf = Math.min(woodlandGatewayLowestLeaf,
         gatewayCrownBounds.clone().applyMatrix4(crownPose).min.y);
     }
@@ -256,6 +263,8 @@ try {
     paleTrunks: String(paleTrunks),
     woodlandGatewayTrees: String(woodlandGatewayTrees),
     woodlandGatewayMinTrunkHeight: String(woodlandGatewayMinTrunkHeight),
+    woodlandGatewayMinCanopyRatio: String(woodlandGatewayMinCanopyRatio),
+    woodlandGatewayMaxCanopyRatio: String(woodlandGatewayMaxCanopyRatio),
     woodlandGatewayLowestLeaf: String(woodlandGatewayLowestLeaf),
     forestRingTrees: String(forestRingTrees.slice(1).reduce((total, n) => total + n, 0)),
     forestDeepRingTrees: String(forestRingTrees[3]),
