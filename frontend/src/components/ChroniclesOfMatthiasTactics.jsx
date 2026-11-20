@@ -20,7 +20,6 @@ import {
   saveChroniclesProgression,
   setChroniclesCharacterBuild,
 } from '../chroniclesOfMatthiasProgression.js';
-import ChroniclesCharacterSetup from './ChroniclesCharacterSetup.jsx';
 import './ChroniclesOfMatthiasTactics.css';
 import './ChroniclesOfMatthiasTacticsPremium.css';
 
@@ -33,6 +32,8 @@ function loadChroniclesTacticsRenderer() {
 }
 
 const ChroniclesOfMatthiasTacticsRuntime = lazy(loadChroniclesTacticsRuntime);
+// Existing campaigns need the tactical runtime, not the party creation editor.
+const ChroniclesCharacterSetup = lazy(() => import('./ChroniclesCharacterSetup.jsx'));
 
 function BootstrapStatus() {
   return (
@@ -179,11 +180,13 @@ export default function ChroniclesOfMatthiasTactics({ onExit }) {
 
   if (!characterSetupDone) {
     return (
-      <ChroniclesCharacterSetup
-        currentBuild={progression.characterBuild}
-        onConfirm={confirmCharacterBuild}
-        onExit={exitChronicles}
-      />
+      <Suspense fallback={<BootstrapStatus />}>
+        <ChroniclesCharacterSetup
+          currentBuild={progression.characterBuild}
+          onConfirm={confirmCharacterBuild}
+          onExit={exitChronicles}
+        />
+      </Suspense>
     );
   }
 
