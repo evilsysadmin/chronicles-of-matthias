@@ -1125,6 +1125,22 @@ function addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, blocked, 
  * patch field creates broad gaps between natural groups rather than a
  * regular bush per tile. On walkable cells these are pass-through plants.
  */
+/**
+ * Fade the existing meadow shrubs into broader thickets near genuine forest.
+ * This affects silhouette only; no new instances or occupied map cells.
+ * 1..5 cardinal tiles from a blocking woodland root form a soft size band.
+ */
+export function chroniclesBannerRoadShrubFringeScale(grid, x, y) {
+  const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let distance = 1; distance <= 5; distance += 1) {
+    if (directions.some(([dx, dy]) =>
+      grid[y + dy * distance]?.[x + dx * distance] === '#')) {
+      return 1.33 - (distance - 1) * 0.06;
+    }
+  }
+  return 1;
+}
+
 function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked, nearTrail = null) {
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const openings = directions.filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
@@ -1155,8 +1171,13 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
       + (noise(x + i * 3, y, 817) - 0.5) * 0.42;
     const offsetZ = dy * 0.48 + (nearTrail?.dy || 0) * 0.37
       + (noise(y + i * 3, x, 819) - 0.5) * 0.42;
-    const width = 0.61 + noise(x + i, y, 823) * 0.17;
-    const depth = 0.60 + noise(y + i, x, 827) * 0.18;
+    // Never broaden roadside shrubs: leave a clear line of sight over
+    // the cart track. Away from it, fill the empty meadow-to-woodland gap
+    // by spreading existing shrubs horizontally (not vertically).
+    const fringe = blocked || nearTrail ? 1
+      : chroniclesBannerRoadShrubFringeScale(grid, x, y);
+    const width = (0.61 + noise(x + i, y, 823) * 0.17) * fringe;
+    const depth = (0.60 + noise(y + i, x, 827) * 0.18) * fringe;
     const height = (blocked ? 0.77 : nearTrail ? 0.72 : 0.62)
       + noise(x + i * 2, y, 829) * (blocked ? 0.30 : nearTrail ? 0.20 : 0.23);
     p.add('bush', [wx + offsetX, blocked ? 0.57 : 0.51, wz + offsetZ], {
