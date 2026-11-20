@@ -129,10 +129,13 @@ export function chroniclesOrganicCanopyGeometry({ coarsePointer = false, shrub =
  * A broadleaf tree reads as layered, overlapping leaf masses rather than one
  * exposed icosahedron. All lobes are merged once into ONE shared geometry:
  * existing per-cell InstancedMesh counts, materials and draw calls stay put.
- * The reduced mobile shape has just three 20-face lobes.
+ * The original reduced mobile shape has three 20-face lobes. Banner Road
+ * retains its four-lobe touch / six-lobe desktop budget, but has its own
+ * taller, asymmetrically stepped canopy silhouette instead of a wide,
+ * nearly horizontal mushroom cap. Other locations retain original art.
  */
 export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodland = false } = {}) {
-  const lobes = [
+  const originalLobes = [
     [[0, 0.04, 0], [0.83, 0.78, 0.83]],
     [[-0.55, -0.15, 0.06], [0.63, 0.62, 0.64]],
     [[0.53, -0.16, -0.10], [0.61, 0.62, 0.65]],
@@ -140,14 +143,23 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodlan
       [[-0.06, -0.08, 0.53], [0.66, 0.58, 0.62]],
       [[0.08, 0.24, -0.43], [0.65, 0.61, 0.64]],
     ] : []),
-    // Banner Road only: one smaller, low forward lobe interrupts the
-    // oversized polygonal outline near the forest gateway. Reuse the SAME
-    // batched crown material/draw, with 4 mobile vs 6 desktop foliage masses.
-    // Its bottom does not descend below the existing lower lobes.
-    ...(woodland ? [
-      [[0.22, -0.23, 0.79], [0.53, 0.43, 0.52]],
-    ] : []),
   ];
+  // Keep v28's exact 4/6-lobe budgets, but make the forest masses read
+  // as a taller central crown and staggered secondary branches instead of
+  // left-to-right horizontal green ovals. A small lower forward lobe retains
+  // visual depth near the gateway without descending into player headspace.
+  // All offsets are local to the same shared instanced geometry and material.
+  const woodlandLobes = [
+    [[0.02, 0.18, -0.02], [0.72, 0.90, 0.72]],
+    [[-0.46, -0.04, 0.10], [0.48, 0.60, 0.47]],
+    [[0.48, 0.06, -0.11], [0.48, 0.58, 0.49]],
+    ...(!coarsePointer ? [
+      [[-0.24, 0.40, 0.31], [0.46, 0.48, 0.48]],
+      [[0.24, 0.33, -0.39], [0.43, 0.54, 0.46]],
+    ] : []),
+    [[0.14, -0.21, 0.96], [0.46, 0.42, 0.47]],
+  ];
+  const lobes = woodland ? woodlandLobes : originalLobes;
   // Shade the underside a little cooler and brighter at the crown tops.
   // Bake gentle lobe-to-lobe tonal changes into the existing shared geometry:
   // no new foliage meshes, materials, textures, lights or frame updates.
