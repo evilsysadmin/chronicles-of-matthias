@@ -131,7 +131,7 @@ export function chroniclesOrganicCanopyGeometry({ coarsePointer = false, shrub =
  * existing per-cell InstancedMesh counts, materials and draw calls stay put.
  * The reduced mobile shape has just three 20-face lobes.
  */
-export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) {
+export function chroniclesLayeredCanopyGeometry({ coarsePointer = false, woodland = false } = {}) {
   const lobes = [
     [[0, 0.04, 0], [0.83, 0.78, 0.83]],
     [[-0.55, -0.15, 0.06], [0.63, 0.62, 0.64]],
@@ -139,6 +139,13 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) 
     ...(!coarsePointer ? [
       [[-0.06, -0.08, 0.53], [0.66, 0.58, 0.62]],
       [[0.08, 0.24, -0.43], [0.65, 0.61, 0.64]],
+    ] : []),
+    // Banner Road only: one smaller, low forward lobe interrupts the
+    // oversized polygonal outline near the forest gateway. Reuse the SAME
+    // batched crown material/draw, with 4 mobile vs 6 desktop foliage masses.
+    // Its bottom does not descend below the existing lower lobes.
+    ...(woodland ? [
+      [[0.22, -0.23, 0.79], [0.53, 0.43, 0.52]],
     ] : []),
   ];
   // Shade the underside a little cooler and brighter at the crown tops.
@@ -151,6 +158,7 @@ export function chroniclesLayeredCanopyGeometry({ coarsePointer = false } = {}) 
     ['#d8e3c6', '#fff9e8'],
     ['#c8d9c5', '#f0f6e7'],
     ['#d2dcc8', '#f6f5e8'],
+    ['#c6d9bb', '#f2f4df'],
   ];
   const pieces = lobes.map(([offset, scale], index) => {
     const shape = chroniclesOrganicCanopyGeometry({ coarsePointer });
@@ -672,7 +680,7 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
 }
 
 // Parts: one geometry + one material each, instanced across the map.
-function partCatalog(coarsePointer, biome) {
+function partCatalog(coarsePointer, biome, woodland = false) {
   const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
   const roundedRock = (color, opts = {}) => lit(color, {
     map: texture('rock'), flatShading: coarsePointer, ...opts,
@@ -686,7 +694,14 @@ function partCatalog(coarsePointer, biome) {
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
     broadleafTrunk: () => [chroniclesBranchingTrunkGeometry({ coarsePointer }), lit(0xffffff, { map: texture('bark', 2, 3) })],
-    crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer }), lit(0xe6efdc, { map: texture('leaves', 3, 3), flatShading: coarsePointer, vertexColors: true })],
+    crown: () => [chroniclesLayeredCanopyGeometry({ coarsePointer, woodland }),
+      lit(0xe6efdc, {
+        map: texture('leaves', 3, 3),
+        // Smooth leaf normals on touch only for the new multi-lobed woodland
+        // silhouette; other locations retain their exact original mobile art.
+        flatShading: coarsePointer && !woodland,
+        vertexColors: true,
+      })],
     bush: () => [biome === 'plains'
       ? chroniclesLayeredShrubGeometry({ coarsePointer })
       : chroniclesOrganicCanopyGeometry({ coarsePointer, shrub: true }),
@@ -1285,7 +1300,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
-  const catalog = partCatalog(coarsePointer, biome);
+  const catalog = partCatalog(coarsePointer, biome, denseMeadow);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
