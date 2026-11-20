@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -163,6 +163,39 @@ describe('Terra scenery', () => {
     [desktop, mobile, original, again].forEach(geometry => geometry.dispose());
   });
 
+
+  it.each([true, false])('sculpts irregular leaf envelopes at the original exact triangle budget (coarse=%s)', coarsePointer => {
+    const leaf = chroniclesWoodlandLeafMassGeometry({ coarsePointer });
+    const again = chroniclesWoodlandLeafMassGeometry({ coarsePointer });
+    const old = chroniclesOrganicCanopyGeometry({ coarsePointer });
+    const triangles = shape => (shape.index?.count
+      ?? shape.getAttribute('position').count) / 3;
+    expect(triangles(leaf)).toBe(coarsePointer ? 20 : 80);
+    expect(triangles(old)).toBe(triangles(leaf));
+    expect(leaf.index).not.toBeNull();
+    expect(leaf.getAttribute('normal').count).toBe(leaf.getAttribute('position').count);
+    expect(leaf.getAttribute('uv').count).toBe(leaf.getAttribute('position').count);
+    expect(leaf.getAttribute('position').array)
+      .toEqual(again.getAttribute('position').array);
+    expect(leaf.getAttribute('position').array)
+      .not.toEqual(old.getAttribute('position').array);
+    const positions = leaf.getAttribute('position');
+    const radii = new Set();
+    let upper = 0, lower = 0;
+    for (let i = 0; i < positions.count; i += 1) {
+      const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+      expect([x, y, z].every(Number.isFinite)).toBe(true);
+      if (y > 0.3) upper += 1;
+      if (y < -0.3) lower += 1;
+      if (Math.abs(y) < 0.7) radii.add(Math.hypot(x, z).toFixed(3));
+    }
+    expect(upper).toBeGreaterThan(3);
+    expect(lower).toBeGreaterThan(3);
+    expect(radii.size).toBeGreaterThan(coarsePointer ? 3 : 8);
+    expect(leaf.boundingBox.min.y).toBeGreaterThan(-0.81);
+    expect(leaf.boundingBox.max.y).toBeGreaterThan(0.90);
+    [leaf, old, again].forEach(geometry => geometry.dispose());
+  });
 
   it.each([true, false])('softens only Banner Road canopy silhouettes with one extra leaf mass (touch=%s)', coarsePointer => {
     const map = chroniclesMapById('banner-road-first-book');
