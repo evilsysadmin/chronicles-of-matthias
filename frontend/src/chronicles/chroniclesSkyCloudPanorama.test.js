@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { createChroniclesSkyCloudPanorama } from './chroniclesSkyCloudPanorama.js';
 import { addSwordhavenClouds, createSwordhavenSkyDome } from './chroniclesSwordhaven3D.js';
-import { createChroniclesExteriorDaylight } from './chroniclesExteriorDaylight.js';
+import { createChroniclesExteriorDaylight, chroniclesExteriorDaylightProfile } from './chroniclesExteriorDaylight.js';
 import { chroniclesRegionalWeather, chroniclesRegionalWeatherTransition } from './chroniclesRegionalWeather.js';
 
 describe('Seamless Terra cloud panorama', () => {
@@ -188,6 +188,69 @@ describe('Seamless Terra cloud panorama', () => {
     expect(panorama.opacity).toBeCloseTo(clearOpacity);
     expect(scene.fog.far).toBeCloseTo(baselineFogFar);
     expect(scene.children.length).toBe(initialCount);
+  });
+
+  it.each([false, true])('shows legible clear-day Banner Road clouds at mobile=%s without altering weather or other regions', (coarse) => {
+    const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
+    const sampleDays = Array.from({ length: 180 }, (_, day) => day * 1440 + 12 * 60 + 45);
+    const kind = t => chroniclesRegionalWeather({ ...region, worldMinutes: t })?.kind;
+    const clear = sampleDays.find(t => kind(t) === 'clear');
+    const cloudy = sampleDays.find(t => kind(t) === 'cloudy');
+    const night = Array.from({ length: 180 }, (_, day) =>
+      day * 1440 + 23 * 60 + 45).find(t => kind(t) === 'clear');
+    expect(clear).toBeDefined();
+    expect(cloudy).toBeDefined();
+    expect(night).toBeDefined();
+    const make = mapId => {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xb4d4df);
+      scene.fog = new THREE.Fog(0xb4d4df, 55, 140);
+      const dome = createSwordhavenSkyDome(new THREE.Vector3(-25, 30, -65).normalize(), coarse);
+      scene.add(dome);
+      const sun = new THREE.DirectionalLight(0xffe6ba, 1.88);
+      sun.name = 'chronicles-campaign-sun';
+      scene.add(sun);
+      scene.add(new THREE.HemisphereLight(0xd4e9ff, 0x60734b, 1.12));
+      const material = dome.getObjectByName('chronicles-sky-cloud-panorama').material;
+      const cycle = createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1.08 },
+        { mapId, regionKind: 'wilderness' });
+      return { scene, cycle, material, dome };
+    };
+    const banner = make('banner-road-first-book');
+    const other = make('terra-c4');
+    const initialCount = banner.scene.children.length;
+    const originalAtlas = banner.material.map;
+    const expected = (t, withBoost) => {
+      const weather = chroniclesRegionalWeatherTransition({
+        mapId: withBoost ? region.mapId : 'terra-c4', regionKind: 'wilderness',
+        worldMinutes: t,
+      });
+      const daylight = chroniclesExteriorDaylightProfile(t).daylight;
+      const clearDaylight = 1 - THREE.MathUtils.smoothstep(weather.clouds, 0.08, 0.48);
+      const fogVeil = 1 - weather.fog * 0.74 * 0.18;
+      return (0.11 + weather.clouds * 0.79
+        + (0.24 + (withBoost ? 0.32 : 0)) * clearDaylight * daylight)
+        * fogVeil;
+    };
+    banner.cycle.sync(clear);
+    other.cycle.sync(clear);
+    const daytimeOpacity = banner.material.opacity;
+    expect(daytimeOpacity).toBeCloseTo(expected(clear, true), 5);
+    expect(other.material.opacity).toBeCloseTo(expected(clear, false), 5);
+    expect(daytimeOpacity).toBeGreaterThan(0.60);
+    expect(daytimeOpacity).toBeLessThan(0.78);
+    expect(banner.dome.getObjectByName('chronicles-sky-cloud-panorama').material.map)
+      .toBe(originalAtlas);
+    expect(banner.scene.children.length).toBe(initialCount);
+    banner.cycle.sync(cloudy);
+    expect(banner.material.opacity).toBeCloseTo(expected(cloudy, true), 5);
+    expect(banner.material.opacity).toBeLessThan(daytimeOpacity);
+    banner.cycle.sync(night);
+    expect(banner.material.opacity).toBeCloseTo(expected(night, true), 5);
+    expect(banner.material.opacity).toBeLessThan(0.25);
+    banner.cycle.sync(clear);
+    expect(banner.material.opacity).toBeCloseTo(daytimeOpacity, 5);
+    expect(banner.scene.children.length).toBe(initialCount);
   });
 
   it('matches persisted clear/rain transitions and reverses on restoring a save', () => {
