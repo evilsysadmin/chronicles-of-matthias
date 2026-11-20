@@ -60,6 +60,10 @@ try {
         'Some existing tall tree instances must be replaced with younger trees');
       assert.ok(Number(state.paleTrunks) > 12,
         'Real forest must mix pale narrow trees among mature broadleaf trees');
+      assert.ok(Number(state.forestRingTrees) > (coarse ? 120 : 225),
+        'Tree-filled horizon must remain dense across mobile and desktop');
+      assert.ok(Number(state.forestDeepRingTrees) > (coarse ? 50 : 90),
+        'The distant third ring must interlock crowns without changing the walkable map');
       assert.ok(Number(state.sedgeCount) < Number(state.grassCount),
         'Sedges must break up, not replace, the darker turf');
       assert.equal(Number(state.sedgeTriangles), coarse ? 8 : 16,

@@ -226,7 +226,9 @@ describe('Terra scenery', () => {
     const twinTrunks = repeated.getObjectByName('chronicles-terra-broadleafTrunk');
     const twinCrowns = repeated.getObjectByName('chronicles-terra-crown');
     expect(trunks.count).toBe(crowns.count);
-    expect(trunks.count).toBe(elsewhere.getObjectByName(trunks.name).count);
+    // The authored forest has an intentionally fuller outer backdrop, but
+    // its actual walkable/blocked map remains identical.
+    expect(trunks.count).toBeGreaterThan(elsewhere.getObjectByName(trunks.name).count + 30);
     expect(trunks.instanceColor.count).toBe(trunks.count);
     expect(elsewhere.getObjectByName(trunks.name).instanceColor).toBeNull();
     expect(mobile.getObjectByName(trunks.name).instanceColor.count)
@@ -789,25 +791,37 @@ describe('Terra scenery', () => {
     expect(variants.size).toBeGreaterThan(2);
     const trunks = full.getObjectByName('chronicles-terra-broadleafTrunk');
     const originalTrunks = oldMap.getObjectByName('chronicles-terra-broadleafTrunk');
-    expect(trunks.count).toBe(originalTrunks.count);
-    const young = [];
-    const original = [];
-    const scale = new THREE.Vector3();
-    for (let i = 0; i < trunks.count; i += 1) {
-      trunks.getMatrixAt(i, matrix);
-      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
-      young.push(scale.y);
-      originalTrunks.getMatrixAt(i, twin);
-      twin.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
-      original.push(scale.y);
+    expect(trunks.count).toBeGreaterThan(originalTrunks.count + 30);
+    const matrixToMapCell = (mesh) => {
+      const trees = new Map();
+      const pose = new THREE.Matrix4(), size = new THREE.Vector3();
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, pose);
+        const x = Math.round(pose.elements[12] / 4) + center.x;
+        const y = Math.round(pose.elements[14] / 4) + center.y;
+        if (map.grid[y]?.[x] !== '#') continue;
+        pose.decompose(new THREE.Vector3(), new THREE.Quaternion(), size);
+        const key = x + ',' + y;
+        if (!trees.has(key)) trees.set(key, []);
+        trees.get(key).push(size.y);
+      }
+      return trees;
+    };
+    const actualTrees = matrixToMapCell(trunks);
+    const referenceTrees = matrixToMapCell(originalTrunks);
+    // Background density now differs, so match by AUTHORED forest cell,
+    // not the global instance index (which includes off-map trees).
+    expect([...actualTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
+    const young = [], original = [];
+    for (const [key, heights] of actualTrees) {
+      const baseline = referenceTrees.get(key);
+      expect(heights).toHaveLength(baseline.length);
+      young.push(...heights);
+      original.push(...baseline);
     }
-    // Compare the same authored tree instances, not the global minima:
-    // outer-ring trees can legitimately be shorter even on other maps.
-    // Banner Road juveniles must be substantially smaller than THEIR
-    // original grown counterpart, with identical blocked-cell placements.
-    const shortened = young.filter((s, i) => s < original[i] * 0.80);
+    const shortened = young.filter((height, i) => height < original[i] * 0.80);
     expect(shortened.length).toBeGreaterThan(8);
-    expect(young.filter(s => s < 2.0).length).toBeGreaterThan(8);
+    expect(young.filter(height => height < 2.0).length).toBeGreaterThan(8);
     // Coarse devices intentionally skip part of the distant out-of-map
     // tree ring: only authored in-map juvenile transforms must be retained.
     const mobileTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
@@ -1004,6 +1018,78 @@ describe('Terra scenery', () => {
     full.dispose();
     coarse.dispose();
     twin.dispose();
+  });
+
+
+  it('builds a layered Banner Road forest horizon outside the playable grid', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const base = { grid: map.grid, biome: map.biome, center, mapId: map.id };
+    const desktop = buildTerraScenery(base);
+    const mobile = buildTerraScenery({ ...base, coarsePointer: true });
+    const again = buildTerraScenery(base);
+    const other = buildTerraScenery({ ...base, mapId: 'terra-c4' });
+    const anotherOther = buildTerraScenery({ ...base, mapId: 'terra-e2' });
+    const crowns = desktop.getObjectByName('chronicles-terra-crown');
+    const trunks = desktop.getObjectByName('chronicles-terra-broadleafTrunk');
+    const cheap = mobile.getObjectByName('chronicles-terra-crown');
+    const previous = other.getObjectByName('chronicles-terra-crown');
+    expect(crowns.count).toBe(trunks.count);
+    expect(crowns.count).toBeGreaterThan(previous.count + 30);
+    expect(crowns.count).toBeLessThan(previous.count + 100);
+    expect(cheap.count).toBeGreaterThan(0);
+    expect(cheap.count).toBeLessThan(crowns.count);
+    // Other locations keep the identical original ring-generation policy.
+    expect(previous.count)
+      .toBe(anotherOther.getObjectByName('chronicles-terra-crown').count);
+    // Banner Road already has additional meadow/fern batches; compare its
+    // own batch inventory after a deterministic rebuild, not a different map.
+    expect(desktop.children.map(mesh => mesh.name))
+      .toEqual(again.children.map(mesh => mesh.name));
+    expect(new Set(desktop.children.map(mesh => mesh.name)).size)
+      .toBe(desktop.children.length);
+    expect(other.children.every(mesh => desktop.getObjectByName(mesh.name))).toBe(true);
+    const triangles = geometry => (geometry.index?.count
+      ?? geometry.getAttribute('position').count) / 3;
+    expect(triangles(crowns.geometry)).toBe(triangles(previous.geometry));
+    expect(triangles(cheap.geometry)).toBeLessThan(triangles(crowns.geometry));
+    expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
+
+    const collect = mesh => {
+      const rings = [0, 0, 0, 0];
+      const authored = new Map();
+      const matrix = new THREE.Matrix4();
+      for (let i = 0; i < mesh.count; i += 1) {
+        mesh.getMatrixAt(i, matrix);
+        const x = Math.round(matrix.elements[12] / 4) + center.x;
+        const y = Math.round(matrix.elements[14] / 4) + center.y;
+        const depth = Math.max(0, -x, x - map.grid[0].length + 1,
+          -y, y - map.grid.length + 1);
+        expect(depth).toBeLessThanOrEqual(TERRA_SCENERY_MARGIN);
+        if (depth) {
+          rings[depth] += 1;
+        } else {
+          expect(map.grid[y][x]).toBe('#');
+          const key = x + ',' + y;
+          authored.set(key, (authored.get(key) || 0) + 1);
+        }
+      }
+      return { rings, authored };
+    };
+    const forest = collect(crowns);
+    const baseline = collect(previous);
+    const reduced = collect(cheap);
+    const repeated = collect(again.getObjectByName('chronicles-terra-crown'));
+    expect([...forest.authored]).toEqual([...baseline.authored]);
+    expect([...forest.authored]).toEqual([...repeated.authored]);
+    expect(forest.rings).toEqual(repeated.rings);
+    for (let ring = 1; ring <= TERRA_SCENERY_MARGIN; ring += 1) {
+      expect(forest.rings[ring]).toBeGreaterThan(baseline.rings[ring]);
+      expect(reduced.rings[ring]).toBeGreaterThan(0);
+      expect(reduced.rings[ring]).toBeLessThanOrEqual(forest.rings[ring]);
+    }
+    // Total deeper canopy mass is up, but kept within a bounded instance budget.
+    expect(forest.rings.slice(1).reduce((total, n) => total + n, 0)).toBeLessThan(280);
   });
 
   it('keeps one instanced draw per scenery part even with better silhouettes', () => {
