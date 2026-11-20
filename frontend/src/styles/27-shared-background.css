@@ -1,0 +1,16 @@
+/* Shared global palette and page background retained from the former Chess Home.
+ * Original declarations remain in cascade layer l27.
+ */
+:root {
+  --club-panel: color-mix(in srgb, var(--ink-2) 97%, #090b10 3%);
+  --club-line: color-mix(in srgb, var(--parchment-dim) 12%, transparent);
+  --club-line-strong: color-mix(in srgb, var(--brass) 34%, var(--club-line));
+  --club-shadow: 0 22px 60px rgba(0,0,0,.22);
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% -18%, rgba(201,162,39,.075), transparent 30rem),
+    radial-gradient(ellipse at 15% 40%, rgba(44,58,78,.06), transparent 34rem),
+    linear-gradient(180deg, #171a20 0%, var(--ink) 42%, #0d1015 100%);
+}
