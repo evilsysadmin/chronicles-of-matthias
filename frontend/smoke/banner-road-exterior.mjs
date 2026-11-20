@@ -87,8 +87,12 @@ try {
         'Visual QA must use the same level camera as live MM3 gameplay');
       assert.equal(Number(state.skyCloudAtlasWidth), coarse ? 256 : 512,
         'Keep the existing low-cost mobile/desktop 360-degree cloud atlas');
-      assert.ok(Number(state.skyCloudOpacity) > 0.14,
-        'The actual daylight scene must display its weather-controlled cloud panorama');
+      assert.ok(Number(state.skyCloudOpacity) > 0.60,
+        'The clear-day panorama must have meaningful weather-controlled opacity');
+      assert.ok(Number(state.skyCloudPixelDifference) > 1.2,
+        'The actual WebGL sky must visibly change when real clouds are drawn');
+      assert.ok(Number(state.skyCloudSampleMinute) > 0,
+        'Capture a deterministic clear-day period rather than a random overcast seed');
       assert.equal(Number(state.groundAtlasSize), 128);
       assert.equal(Number(state.groundRepeat), 7);
       assert.equal(Number(state.groundCount), 1);
@@ -100,6 +104,10 @@ try {
         'Rendered scene must contain varied pixels, not an empty canvas');
       assert.ok((await stat(filename)).size > 20000,
         'Actual first-person screenshot must not be empty');
+      console.log('CHRONICLES_BANNER_ROAD_SKY_PIXEL_DIFF width=' + width
+        + ' difference=' + state.skyCloudPixelDifference
+        + ' opacity=' + state.skyCloudOpacity
+        + ' worldMinute=' + state.skyCloudSampleMinute);
       console.log('CHRONICLES_BANNER_ROAD_POV_OK width=' + width
         + ' eye=10,13 canopy=' + state.crownCount
         + ' fog=' + state.fogNear + '..' + state.fogFar
