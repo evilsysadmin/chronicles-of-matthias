@@ -61,6 +61,19 @@ try {
   const woodlandHerbs = foliage?.getObjectByName('chronicles-terra-forestHerb');
   const trunks = foliage?.getObjectByName('chronicles-terra-broadleafTrunk');
   const road = scene.getObjectByName('chronicles-campaign-road');
+  // Find the authored straight cell from the road mesh itself. Avoid
+  // assuming a road-cell ordering or measuring a harmless crossing flare.
+  const roadMatrix = new THREE.Matrix4();
+  let approachRoadWidth = 0;
+  for (let i = 0; i < (road?.count || 0); i += 1) {
+    road.getMatrixAt(i, roadMatrix);
+    const x = Math.round(roadMatrix.elements[12] / 4) + center.x;
+    const y = Math.round(roadMatrix.elements[14] / 4) + center.y;
+    if (x === cameraCell.x && y === cameraCell.y) {
+      approachRoadWidth = (road.geometry.parameters.width || 0) * roadMatrix.elements[0];
+      break;
+    }
+  }
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const triangles = geometry => geometry.index
     ? geometry.index.count / 3 : geometry.getAttribute('position').count / 3;
@@ -148,6 +161,7 @@ try {
     fogNear: String(scene.fog?.near ?? -1),
     fogFar: String(scene.fog?.far ?? -1),
     roadCount: String(road?.count || 0),
+    roadApproachWidth: String(approachRoadWidth),
     roadRelief: String(Boolean(road?.material?.normalMap)),
     groundKind: terrain?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     groundAtlasSize: String(terrain?.material?.map?.image?.width || 0),

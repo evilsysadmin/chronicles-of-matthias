@@ -827,10 +827,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     const roadSpan = heathB2 ? CELL : CELL * 0.98;
     // Banner Road's full-cell cobbles look like an oversized modern highway.
     // Keep the 4m navigation grid and longitudinal tile overlap unchanged,
-    // while narrowing the *visual* width of straight stretches to 3.28m.
-    // Scale existing instances rather than creating a second road geometry.
-    // The central crossing stays full-width so both routes meet cleanly.
-    const bannerStraightWidth = 0.82 / 0.98;
+    // while narrowing the *visual* straight stretches to a 2.64m woodland
+    // cart track. The extra 0.64m on each side returns to the grass/moss.
+    // Same InstancedMesh, continuous length, unchanged 4m navigation grid.
+    // Keep the central crossing full-width for connected perpendicular roads.
+    const bannerStraightWidth = 0.66 / 0.98;
     const roads = new THREE.InstancedMesh(
       new THREE.BoxGeometry(roadSpan, 0.045, roadSpan), paver, roadCells.length,
     );

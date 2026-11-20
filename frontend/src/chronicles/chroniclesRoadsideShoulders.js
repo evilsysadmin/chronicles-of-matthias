@@ -22,8 +22,8 @@ function hash(x, y, salt = 0) {
  * paving edge without altering the underlying 4m movement/collision grid.
  * Geometry is shared by every edge; touch uses fewer leaf/patina triangles.
  *
- * Local +Z points away from the road. Most vertices lie ~0.02-0.55m into
- * the grass. Straight stone sections narrow to 3.28m, placing the shoulder
+ * Local +Z points away from the road. Most vertices lie ~0.02-0.66m into
+ * the grass. Straight stone sections narrow to 2.64m, placing the shoulder
  * at the actual pavement edge rather than the unchanged 4m navigation cell.
  * A few tiny patina tongues overlap < 0.09m of the paving surface,
  * leaving the usable, legible road completely unobstructed.
@@ -45,7 +45,9 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
   for (let i = 0; i < patches; i += 1) {
     const x = ((i + 0.5) / patches - 0.5) * 3.45;
     const width = (3.45 / patches) * (0.38 + hash(i, 11, 601) * 0.06);
-    const depth = 0.17 + hash(i, 13, 603) * 0.32;
+    // Longer groundcover tongues bridge the newly exposed verge back to
+    // the grass; still low, static, deterministic and non-colliding.
+    const depth = 0.30 + hash(i, 13, 603) * 0.36;
     const lean = (hash(i, 17, 605) - 0.5) * width * 0.9;
     const a = [x - width, 0, 0.012];
     const b = [x + width, 0, 0.012];
@@ -117,9 +119,9 @@ export function createBannerRoadShoulders({
   const tints = ['#ffffff', '#e7e8d7', '#dbe3d0', '#eee4d0']
     .map(hex => new THREE.Color(hex));
   edges.forEach(({ x, y, dx, dy, yaw }, i) => {
-    // Centre of the low moss strip follows the narrowed 3.28m cobble edge.
-    // The paved road keeps its original length, and the 4m grid stays intact.
-    const edge = CELL * 0.415;
+    // Cobbles end 1.32m from centre; place moss just 2cm outside.
+    // The paved road keeps its length, and the 4m grid stays intact.
+    const edge = CELL * 0.335;
     dummy.position.set((x - center.x) * CELL + dx * edge, -0.052,
       (y - center.y) * CELL + dy * edge);
     dummy.rotation.set(0, yaw, 0);
