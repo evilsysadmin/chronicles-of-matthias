@@ -76,12 +76,17 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   const page = await ctx.newPage();
   const errors = [];
   const setupChunkRequests = [];
+  const sheetChunkRequests = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // A resumed expedition book must not download the party editor before it is opened.
-  // Record actual network requests, not just the presence of React.lazy in source.
+  // The book must not download either the party editor or the character sheet.
+  // Inspect real browser requests rather than source-code import strings.
   page.on('request', (request) => {
-    if (/\/assets\/ChroniclesCharacterSetup-[^/]+\.js(?:\?|$)/.test(request.url())) {
-      setupChunkRequests.push(request.url());
+    const url = request.url();
+    if (/\/assets\/ChroniclesCharacterSetup-[^/]+\.js(?:\?|$)/.test(url)) {
+      setupChunkRequests.push(url);
+    }
+    if (/\/assets\/ChroniclesCharacterSheet-[^/]+\.(?:js|css)(?:\?|$)/.test(url)) {
+      sheetChunkRequests.push(url);
     }
   });
   // Con sesión, la raíz entra directa al juego (sin vestíbulo).
@@ -115,6 +120,10 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   if (label === 'Chronicles' && setupChunkRequests.length) {
     throw new Error('Expedition book loaded character setup code before the editor was requested: '
       + JSON.stringify(setupChunkRequests));
+  }
+  if (sheetChunkRequests.length) {
+    throw new Error('Expedition book loaded character sheet assets before a hero was inspected: '
+      + JSON.stringify(sheetChunkRequests));
   }
   const assertionStarted = performance.now();
   const rootLength = (await page.innerHTML('#root')).length;
