@@ -274,6 +274,8 @@ try {
       ? (gatewayCrownBounds.max.y - gatewayCrownBounds.min.y)
         / (gatewayCrownBounds.max.x - gatewayCrownBounds.min.x) : -1),
     canopyFlatShading: String(crowns?.material?.flatShading ?? true),
+    canopyIndexed: String(Boolean(crowns?.geometry?.index)),
+    canopyTexcoordCount: String(crowns?.geometry?.getAttribute('uv')?.count || 0),
     canopyTints: String(crownTints.size),
     canopyVertexColors: String(vertexColours?.count || 0),
     canopyShadeRange: String(vertexColours ? lightestCrown - darkestCrown : 0),
