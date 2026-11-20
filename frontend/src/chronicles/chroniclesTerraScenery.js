@@ -751,14 +751,23 @@ function boulders(p, wx, wz, x, y, { part = 'boulder', count = 2, size = 1.2, he
   }
 }
 
-function broadleaf(p, wx, wz, x, y, k, scale = 1) {
+// Shared per-blocked-cell species key: trunk and crown always agree.
+function bannerRoadPaleTree(x, y) {
+  return noise(x, y, 881) > 0.56;
+}
+
+function broadleaf(p, wx, wz, x, y, k, scale = 1, bannerRoad = false) {
   const s = scale * (0.79 + noise(x, y, k + 21) * 0.65);
   const ox = (noise(x, y, k + 23) - 0.5) * 2;
   const oz = (noise(y, x, k + 25) - 0.5) * 2;
   const yaw = noise(x, y, k + 46) * Math.PI * 2;
-  p.add('broadleafTrunk', [wx + ox, 1.5 * s, wz + oz], {
+  // Upright pale woodland tree: same geometry/batches, different proportions.
+  const pale = bannerRoad && bannerRoadPaleTree(x, y);
+  const trunkWidth = pale ? 0.79 : 1;
+  const trunkHeight = pale ? 1.12 : 1;
+  p.add('broadleafTrunk', [wx + ox, 1.5 * s * trunkHeight, wz + oz], {
     yaw, roll: (noise(x, y, k + 47) - 0.5) * 0.04,
-    scale: [s, 3 * s, s],
+    scale: [s * trunkWidth, 3 * s * trunkHeight, s * trunkWidth],
   });
   // Vary crown silhouette independently of the trunk. The five merged
   // foliage lobes remain one instanced batch, so no extra draw call.
@@ -766,10 +775,12 @@ function broadleaf(p, wx, wz, x, y, k, scale = 1) {
   const spreadZ = 0.73 + noise(x, y, k + 29) * 0.57;
   const crownHeight = 0.79 + noise(x, y, k + 33) * 0.43;
   p.add('crown', [wx + ox + (noise(x, y, k + 50) - 0.5) * 0.22 * s,
-    3.9 * s, wz + oz + (noise(y, x, k + 51) - 0.5) * 0.22 * s], {
+    3.9 * s * trunkHeight, wz + oz + (noise(y, x, k + 51) - 0.5) * 0.22 * s], {
     yaw,
     roll: (noise(x, y, k + 35) - 0.5) * 0.13,
-    scale: [1.9 * s * spreadX, 1.6 * s * crownHeight, 1.9 * s * spreadZ],
+    scale: [1.9 * s * spreadX * (pale ? 0.74 : 1),
+      1.6 * s * crownHeight * (pale ? 1.18 : 1),
+      1.9 * s * spreadZ * (pale ? 0.76 : 1)],
   });
   // Low foliage is planted on the SAME blocked cell as the trunk, never
   // on the walkable road. It enriches the woodland edge without colliders.
@@ -831,7 +842,7 @@ const DRESS = {
     // blocked forest cells; no newly impassable path or invisible obstacle.
     const juvenile = bannerRoad && !big && noise(x, y, 751) > 0.52;
     const size = juvenile ? 0.48 + noise(x, y, 753) * 0.16 : (big ? 1.15 : 1);
-    if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, size);
+    if (roll < 0.5) broadleaf(p, wx, wz, x, y, 0, size, bannerRoad);
     if (roll >= 0.35) {
       p.add('bush', [wx + (noise(x, y, 2) - 0.5) * 2.4, 0.55, wz + (noise(y, x, 2) - 0.5) * 2.4],
         { yaw: noise(x, y, 3) * 6.28,
@@ -840,7 +851,7 @@ const DRESS = {
             0.94 + noise(x, y, 7) * 0.36] });
     }
     if (roll >= 0.7 || big) boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
-    if (roll < 0.2) broadleaf(p, wx, wz, x, y, 9, big ? 1.1 : 0.9);
+    if (roll < 0.2) broadleaf(p, wx, wz, x, y, 9, big ? 1.1 : 0.9, bannerRoad);
   },
   hills(p, wx, wz, x, y, big) {
     boulders(p, wx, wz, x, y, { count: 2, size: big ? 1.6 : 1.35, height: 1.1 });
@@ -1236,6 +1247,8 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     // Plains foliage no longer repeats a single near-black green ball: subtle
     // sunlit/sage/olive tints vary per persistent cell, using the same batch.
     if (biome === 'plains' && (part === 'crown' || part === 'bush')) {
+      const paleLeaves = ['#cbdcbd', '#b8d2bc', '#dde3c1', '#c4d8b5']
+        .map(hex => new THREE.Color(hex));
       const shades = (part === 'crown'
         ? ['#f3f4e8', '#e4eddc', '#ffffff', '#e8e9d2', '#dce9d9']
         : ['#f1f0df', '#dce8d4', '#ffffff', '#e8e9d9'])
@@ -1244,8 +1257,26 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 8), Math.round(e[14] * 8),
           part === 'crown' ? 193 : 197);
-        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
-          Math.floor(seed * shades.length))]);
+        const gridX = Math.round(e[12] / CELL) + center.x;
+        const gridY = Math.round(e[14] / CELL) + center.y;
+        const pale = denseMeadow && part === 'crown'
+          && grid[gridY]?.[gridX] === '#' && bannerRoadPaleTree(gridX, gridY);
+        const palette = pale ? paleLeaves : shades;
+        mesh.setColorAt(index, palette[Math.min(palette.length - 1,
+          Math.floor(seed * palette.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    if (denseMeadow && part === 'broadleafTrunk') {
+      // Reuse original bark texture and draw call; colour differentiates bark.
+      const paleBark = new THREE.Color('#f2f2ea');
+      const warmBark = new THREE.Color('#bba58b');
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const gridX = Math.round(e[12] / CELL) + center.x;
+        const gridY = Math.round(e[14] / CELL) + center.y;
+        mesh.setColorAt(index, grid[gridY]?.[gridX] === '#'
+          && bannerRoadPaleTree(gridX, gridY) ? paleBark : warmBark);
       });
       mesh.instanceColor.needsUpdate = true;
     }
