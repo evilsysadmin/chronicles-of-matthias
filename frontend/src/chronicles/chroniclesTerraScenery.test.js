@@ -164,6 +164,56 @@ describe('Terra scenery', () => {
   });
 
 
+  it.each([true, false])('softens only Banner Road canopy silhouettes with one extra leaf mass (touch=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const base = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const forest = buildTerraScenery({ ...base, mapId: map.id });
+    const other = buildTerraScenery({ ...base, mapId: 'terra-c4' });
+    const again = buildTerraScenery({ ...base, mapId: map.id });
+    const crowns = forest.getObjectByName('chronicles-terra-crown');
+    const reference = other.getObjectByName('chronicles-terra-crown');
+    const repeat = again.getObjectByName('chronicles-terra-crown');
+    const triangles = shape => (shape.index?.count ?? shape.getAttribute('position').count) / 3;
+    expect(crowns).toBeInstanceOf(THREE.InstancedMesh);
+    expect(crowns.count).toBe(repeat.count);
+    expect(forest.children.filter(child => child.name === crowns.name)).toHaveLength(1);
+    expect(crowns.material).not.toBe(reference.material);
+    expect(crowns.material.map).toBeTruthy();
+    expect(crowns.material.vertexColors).toBe(true);
+    expect(crowns.material.flatShading).toBe(false);
+    expect(reference.material.flatShading).toBe(coarsePointer);
+    expect(triangles(crowns.geometry)).toBe(coarsePointer ? 80 : 480);
+    expect(triangles(reference.geometry)).toBe(coarsePointer ? 60 : 400);
+    const woodland = chroniclesLayeredCanopyGeometry({ coarsePointer, woodland: true });
+    const baseline = chroniclesLayeredCanopyGeometry({ coarsePointer });
+    expect([...crowns.geometry.getAttribute('position').array])
+      .toEqual([...woodland.getAttribute('position').array]);
+    expect([...repeat.geometry.getAttribute('position').array])
+      .toEqual([...woodland.getAttribute('position').array]);
+    expect([...reference.geometry.getAttribute('position').array])
+      .toEqual([...baseline.getAttribute('position').array]);
+    expect(woodland.boundingSphere.radius).toBeGreaterThan(0);
+    woodland.computeBoundingBox();
+    baseline.computeBoundingBox();
+    // The added front-right cluster must change the actual crown outline,
+    // not hide useless extra triangles in the pre-existing core.
+    expect(woodland.boundingBox.max.z - baseline.boundingBox.max.z)
+      .toBeGreaterThan(0.15);
+    expect(woodland.boundingBox.min.y).toBeGreaterThanOrEqual(baseline.boundingBox.min.y - 0.02);
+    const leafColors = woodland.getAttribute('color');
+    expect(leafColors.count).toBe(woodland.getAttribute('position').count);
+    const unique = new Set();
+    for (let i = 0; i < leafColors.count; i += 1) {
+      const values = [leafColors.getX(i), leafColors.getY(i), leafColors.getZ(i)];
+      expect(values.every(value => Number.isFinite(value) && value >= 0 && value <= 1))
+        .toBe(true);
+      unique.add(values.map(n => n.toFixed(3)).join(','));
+    }
+    expect(unique.size).toBeGreaterThan(15);
+    [woodland, baseline].forEach(shape => shape.dispose());
+  });
+
   it('adds restrained top-to-bottom crown shading without extra meshes or mobile triangles', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
@@ -329,7 +379,7 @@ describe('Terra scenery', () => {
     expect(originalGateway).toEqual([11]);
     const crownTriangles = (crowns.geometry.index?.count
       ?? crowns.geometry.getAttribute('position').count) / 3;
-    expect(crownTriangles).toBe(coarsePointer ? 60 : 400);
+    expect(crownTriangles).toBe(coarsePointer ? 80 : 480);
   });
 
   it('grows low-poly branching bark under broadleaf crowns while preserving pine trunks', () => {
@@ -1183,7 +1233,8 @@ describe('Terra scenery', () => {
     expect(other.children.every(mesh => desktop.getObjectByName(mesh.name))).toBe(true);
     const triangles = geometry => (geometry.index?.count
       ?? geometry.getAttribute('position').count) / 3;
-    expect(triangles(crowns.geometry)).toBe(triangles(previous.geometry));
+    expect(triangles(crowns.geometry)).toBe(480);
+    expect(triangles(previous.geometry)).toBe(400);
     expect(triangles(cheap.geometry)).toBeLessThan(triangles(crowns.geometry));
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
 
