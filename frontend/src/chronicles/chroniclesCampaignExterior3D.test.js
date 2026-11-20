@@ -438,10 +438,20 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(matrix.elements).toEqual(twin.elements);
       const rx = Math.round(matrix.elements[12] / 4) + center.x;
       const ry = Math.round(matrix.elements[14] / 4) + center.y;
-      const xScale = rx === center.x && ry !== center.y ? 0.82 / 0.98 : 1;
-      const zScale = ry === center.y && rx !== center.x ? 0.82 / 0.98 : 1;
+      const xScale = rx === center.x && ry !== center.y ? 0.66 / 0.98 : 1;
+      const zScale = ry === center.y && rx !== center.x ? 0.66 / 0.98 : 1;
       expect(matrix.elements[0]).toBeCloseTo(xScale, 5);
       expect(matrix.elements[10]).toBeCloseTo(zScale, 5);
+      // Only visual width changes. Stone lengths must still connect along
+      // the canonical 4m road grid without introducing ground gaps.
+      if (rx === center.x && ry !== center.y) {
+        expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(2.64, 4);
+        expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(3.92, 4);
+      }
+      if (ry === center.y && rx !== center.x) {
+        expect(matrix.elements[0] * road.geometry.parameters.width).toBeCloseTo(3.92, 4);
+        expect(matrix.elements[10] * road.geometry.parameters.depth).toBeCloseTo(2.64, 4);
+      }
       road.getColorAt(i, shade);
       again.getColorAt(i, twinShade);
       expect(shade.getHex()).toBe(twinShade.getHex());
