@@ -132,7 +132,6 @@ import {
 import { useEscapeToClose } from '../useEscapeToClose.js';
 import ChroniclesAutomap from './ChroniclesAutomap.jsx';
 import { chroniclesObjectiveDestination, chroniclesRouteHint } from '../chronicles/chroniclesWorldMap.js';
-import ChroniclesCharacterSheet from './ChroniclesCharacterSheet.jsx';
 import ChroniclesPartyAvatarButton from './ChroniclesPartyAvatarButton.jsx';
 import { chroniclesBlockNonPrimaryClick, chroniclesPreventNativeContextMenu } from '../chronicles/chroniclesPrimaryClick.js';
 import ChroniclesPartyVitals from './ChroniclesPartyVitals.jsx';
@@ -221,6 +220,8 @@ import './ChroniclesAdventureMenuFolio.css';
 
 // No setup editor download for a returning player resuming a saved run.
 const ChroniclesCharacterSetup = lazy(() => import('./ChroniclesCharacterSetup.jsx'));
+// The full character sheet and its CSS are not needed until a hero is inspected.
+const ChroniclesCharacterSheet = lazy(() => import('./ChroniclesCharacterSheet.jsx'));
 
 const FIRST_PERSON_RUN_SCOPE = 'first-person';
 
@@ -2887,28 +2888,30 @@ export default function ChroniclesOfMatthias({ onExit, onLogout = null }) {
       )}
 
       {sheetMember && (
-        <ChroniclesCharacterSheet
-          key={sheetInitialFolio}
-          state={state}
-          progression={progression}
-          member={sheetMember}
-          mode="first-person"
-          initialFolio={sheetInitialFolio}
-          onClose={() => setSheetMemberId(null)}
-          onSelectMember={(memberId) => {
-            if (!stateRef.current?.party.some((candidate) => candidate.id === memberId)) return;
-            const actor = chroniclesCurrentInitiativeActor(stateRef.current?.initiative);
-            if (actor?.kind !== 'party' || actor.id === memberId) {
-              selectedMemberIdRef.current = memberId;
-              setSelectedMemberId(memberId);
-            }
-            // Browsing any companion never transfers initiative or action rights.
-            setSheetMemberId(memberId);
-          }}
-          onAllocateAttribute={allocateAttribute}
-          onLearnSkill={learnSkill}
-          onEquipmentAction={(action) => dispatch({ ...action, memberId: sheetMember.id })}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <ChroniclesCharacterSheet
+            key={sheetInitialFolio}
+            state={state}
+            progression={progression}
+            member={sheetMember}
+            mode="first-person"
+            initialFolio={sheetInitialFolio}
+            onClose={() => setSheetMemberId(null)}
+            onSelectMember={(memberId) => {
+              if (!stateRef.current?.party.some((candidate) => candidate.id === memberId)) return;
+              const actor = chroniclesCurrentInitiativeActor(stateRef.current?.initiative);
+              if (actor?.kind !== 'party' || actor.id === memberId) {
+                selectedMemberIdRef.current = memberId;
+                setSelectedMemberId(memberId);
+              }
+              // Browsing any companion never transfers initiative or action rights.
+              setSheetMemberId(memberId);
+            }}
+            onAllocateAttribute={allocateAttribute}
+            onLearnSkill={learnSkill}
+            onEquipmentAction={(action) => dispatch({ ...action, memberId: sheetMember.id })}
+          />
+        </Suspense>
       )}
 
       {!scenePainted && <LoadingScreen />}
