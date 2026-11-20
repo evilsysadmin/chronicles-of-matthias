@@ -1210,7 +1210,12 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             .some(([dx, dy]) => clear.has((x + dx) + ',' + (y + dy)));
           addBannerRoadMeadow(p, wx, wz, x, y, { coarsePointer, nearPath });
-          addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false);
+          // The canonical Banner Road paving follows the central axes even
+          // when a direct scenery caller omits keepClear. Never put soft
+          // shrubs on these authored road cells.
+          if (x !== center.x && y !== center.y) {
+            addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false);
+          }
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
