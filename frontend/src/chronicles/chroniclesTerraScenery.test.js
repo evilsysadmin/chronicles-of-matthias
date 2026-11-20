@@ -900,7 +900,15 @@ describe('Terra scenery', () => {
         const x = Math.round(matrix.elements[12] / 4) + center.x;
         const y = Math.round(matrix.elements[14] / 4) + center.y;
         if (map.grid[y]?.[x] !== undefined) {
-          expect(map.grid[y][x]).toBe('#'); // Only visual dressing of blocked cells
+          if (part === 'crown' || map.grid[y][x] === '#') {
+            expect(map.grid[y][x]).toBe('#'); // Trunks/crowns remain on blocked cells.
+          } else {
+            // New soft shrub islands may dress walkable meadow, NEVER its
+            // central paved roads (even if keepClear was not supplied).
+            expect(map.grid[y][x]).toBe('.');
+            expect(x).not.toBe(center.x);
+            expect(y).not.toBe(center.y);
+          }
         }
       }
       expect(shades.size).toBeGreaterThan(2);
