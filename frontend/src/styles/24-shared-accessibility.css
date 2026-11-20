@@ -1,0 +1,33 @@
+/* Shared accessibility and shell selectors from the former Chess UI.
+ * Preserve historical specificity and cascade layer l24.
+ */
+.skip-link {
+  position: fixed;
+  z-index: 5000;
+  top: .6rem;
+  left: .6rem;
+  transform: translateY(-160%);
+  padding: .55rem .8rem;
+  border: 2px solid var(--brass);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--parchment);
+  font-weight: 800;
+  text-decoration: none;
+}
+.skip-link:focus { transform: translateY(0); }
+
+@media (pointer: coarse) {
+  :where(button, a, summary, [role="button"]) { min-height: 44px; }
+}
+@media (forced-colors: active) {
+  .skip-link { border: 2px solid CanvasText; }
+  :where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid Highlight; }
+}
+
+.masthead-actions { align-items:flex-start; }
+.game-controls-status { margin-right:auto; padding:.35rem .48rem; border-radius:7px; color:var(--parchment-dim); font:750 .58rem/1 var(--font-mono); letter-spacing:.055em; }
+.game-controls-status.is-active { color:var(--brass); background:rgba(198,164,93,.07); }
+@media (max-width: 520px) {
+  .game-controls-status { grid-column:1/-1; margin:0; text-align:center; }
+}
