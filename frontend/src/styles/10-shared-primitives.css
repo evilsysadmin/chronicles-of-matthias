@@ -1,0 +1,33 @@
+/* Shared tokens and shell layout from the former Chess Studio art skin.
+ * Keep original declarations in cascade layer l10.
+ */
+:root {
+  --studio-bg: #171c27;
+  --studio-panel: #202838;
+  --studio-panel-raised: #252e40;
+  --studio-line: #354056;
+  --studio-ivory: #e7dfcf;
+  --studio-walnut: #725844;
+  --studio-walnut-deep: #4e3b30;
+  --studio-gold: #d0aa3a;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(73, 88, 118, .2), transparent 42rem),
+    var(--studio-bg);
+}
+
+.app-shell { padding-top: clamp(.75rem, 1.8vw, 1.35rem); }
+
+.menu {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(208, 170, 58, .045), transparent 25rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--studio-panel) 96%, white 4%), var(--studio-panel));
+  border-color: var(--studio-line);
+  box-shadow: 0 28px 75px rgba(3, 6, 12, .28);
+}
+
+.menu::before { display: none; }
+
+.game-controls .secondary-btn { background: rgba(21,27,38,.65); }
