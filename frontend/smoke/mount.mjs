@@ -18,6 +18,16 @@ if (sheetLazyEntries.length !== 1) {
 }
 const sheetLazyAsset = sheetLazyEntries[0].file;
 
+// Rollup may also create shared assets named "ChroniclesShop". Identify the
+// true lazy entry by the manifest instead of a filename-prefix heuristic.
+const shopLazyEntries = Object.values(manifest).filter((chunk) =>
+  chunk?.isDynamicEntry && /\/ChroniclesShop-[^/]+\.js$/.test('/' + chunk.file));
+if (shopLazyEntries.length !== 1) {
+  throw new Error('Expected one deferred ChroniclesShop entry in the Vite manifest; found '
+    + shopLazyEntries.length);
+}
+const shopLazyAsset = shopLazyEntries[0].file;
+
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 let failed = false;
 
@@ -89,6 +99,7 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   const errors = [];
   const setupChunkRequests = [];
   const sheetChunkRequests = [];
+  const shopChunkRequests = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // The book must not download either the party editor or the character sheet.
   // Inspect real browser requests rather than source-code import strings.
@@ -101,6 +112,9 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
     // to a shared static JS/CSS dependency needed by the expedition book.
     if (url.split('?')[0].endsWith('/' + sheetLazyAsset)) {
       sheetChunkRequests.push(url);
+    }
+    if (url.split('?')[0].endsWith('/' + shopLazyAsset)) {
+      shopChunkRequests.push(url);
     }
   });
   // Con sesión, la raíz entra directa al juego (sin vestíbulo).
@@ -138,6 +152,10 @@ for (const [label, hash] of [['Chronicles', ''], ['Tactics', '#tactics']]) {
   if (label === 'Chronicles' && sheetChunkRequests.length) {
     throw new Error('Expedition book loaded the deferred character-sheet module before a hero was inspected: '
       + JSON.stringify({ sheetLazyAsset, requests: sheetChunkRequests }));
+  }
+  if (label === 'Chronicles' && shopChunkRequests.length) {
+    throw new Error('Expedition book loaded the deferred merchant room before visiting a shop: '
+      + JSON.stringify({ shopLazyAsset, requests: shopChunkRequests }));
   }
   const assertionStarted = performance.now();
   const rootLength = (await page.innerHTML('#root')).length;
