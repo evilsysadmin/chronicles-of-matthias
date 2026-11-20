@@ -2,7 +2,7 @@
  * of these modules later. This makes CSS code-splitting safe and incremental. */
 @layer l01, l02, l03, l04, l05, l06, l07, l08, l09, l10, l11, l13, l14, l15, l16, l17, l18, l19, l21, l22, l23, l24, l25, l26, l27, l28;
 
-@import './styles/01-foundation.css' layer(l01);
+@import './styles/01-shared-foundation.css' layer(l01);
 @import './styles/03-shared-ui.css' layer(l03);
 @import './styles/05-shared-glossary.css' layer(l05);
 @import './styles/05-navigation-hint.css' layer(l05);
