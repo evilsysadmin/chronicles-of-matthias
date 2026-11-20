@@ -140,19 +140,24 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
       const cloudiness = weather?.clouds ?? 0;
       const fogStrength = weather?.fog ?? 0;
       const { daylight, twilight, sunVisible } = profile;
+      const clearDaylight = 1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48);
       if (cloudMaterial) {
         // Foreground shelves contribute parallax but no longer dominate
         // the view over the uninterrupted distant cloud panorama.
-        cloudMaterial.opacity = 0.19 + cloudiness * 0.50;
+        // Banner Road now uses the same actual sprite clouds as Swordhaven.
+        // Reveal them at clear midday, but preserve overcast/rain/fog/night
+        // and every other map's pre-existing weather-dependent strength.
+        cloudMaterial.opacity = 0.19 + cloudiness * 0.50
+          + (bannerRoadSky ? 0.36 * clearDaylight * daylight : 0);
         cloudMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
-          .lerp(cloudStorm, cloudiness * 0.62);
+          .lerp(cloudStorm, cloudiness * 0.62)
+          .lerp(clearCloudLight, (bannerRoadSky ? 0.24 : 0) * clearDaylight * daylight);
       }
       if (panoramaMaterial) {
         // A bright, genuinely clear sky still needs a few readable cloud
         // shapes. Reveal the existing broken silhouettes by daylight only,
         // tapering the boost smoothly before overcast. Never add cloud
         // coverage or amplify rain, fog, twilight darkness or night skies.
-        const clearDaylight = 1 - THREE.MathUtils.smoothstep(cloudiness, 0.08, 0.48);
         panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
           + (0.24 + (bannerRoadSky ? 0.32 : 0)) * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
