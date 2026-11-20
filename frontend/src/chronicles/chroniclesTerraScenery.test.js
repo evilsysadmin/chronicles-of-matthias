@@ -318,7 +318,7 @@ describe('Terra scenery', () => {
         gateway.set(x, { trunkHeight: scale.y, canopyHeight: worldBox.max.y });
       }
     }
-    expect([...gateway.keys()].sort()).toEqual([9, 11]);
+    expect([...gateway.keys()].sort((a, b) => a - b)).toEqual([9, 11]);
     const originalGateway = [];
     for (let i = 0; i < old.count; i += 1) {
       old.getMatrixAt(i, matrix);
@@ -935,9 +935,15 @@ describe('Terra scenery', () => {
     const referenceTrees = matrixToMapCell(originalTrunks);
     // Background density now differs, so match by AUTHORED forest cell,
     // not the global instance index (which includes off-map trees).
-    expect([...actualTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
+    // The forest gateway deliberately adds ONE real trunk on the already
+    // blocked tile 9,4. The other historic forest tiles must be unchanged.
+    expect(actualTrees.get('9,4')).toHaveLength(1);
+    expect(referenceTrees.has('9,4')).toBe(false);
+    const historicTrees = new Map(actualTrees);
+    historicTrees.delete('9,4');
+    expect([...historicTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
     const young = [], original = [];
-    for (const [key, heights] of actualTrees) {
+    for (const [key, heights] of historicTrees) {
       const baseline = referenceTrees.get(key);
       expect(heights).toHaveLength(baseline.length);
       young.push(...heights);
@@ -1204,7 +1210,14 @@ describe('Terra scenery', () => {
     const baseline = collect(previous);
     const reduced = collect(cheap);
     const repeated = collect(again.getObjectByName('chronicles-terra-crown'));
-    expect([...forest.authored]).toEqual([...baseline.authored]);
+    // The new mature gateway intentionally adds an authored forest tree
+    // on blocked cell 9,4. All other in-grid counts must match unchanged
+    // other-world plains and the local deterministic rebuild.
+    expect(forest.authored.get('9,4')).toBe(1);
+    expect(baseline.authored.has('9,4')).toBe(false);
+    const originalForest = new Map(forest.authored);
+    originalForest.delete('9,4');
+    expect([...originalForest]).toEqual([...baseline.authored]);
     expect([...forest.authored]).toEqual([...repeated.authored]);
     expect(forest.rings).toEqual(repeated.rings);
     for (let ring = 1; ring <= TERRA_SCENERY_MARGIN; ring += 1) {
