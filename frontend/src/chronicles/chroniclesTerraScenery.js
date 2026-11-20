@@ -909,6 +909,19 @@ function basalt(p, wx, wz, x, y, k) {
   }
 }
 
+/**
+ * Banner Road only: a broad, overlapping height rhythm for distant treetops.
+ * Vary size across neighboring cells as well as ring depth, replacing a
+ * nearly level line of crowns without spawning more trees or moving roots.
+ * Every instance still uses the existing shared trunk/crown meshes.
+ */
+export function chroniclesBannerRoadBackdropScale(x, y, ringDepth) {
+  const ridge = Math.sin(x * 0.39 + y * 0.17)
+    * Math.cos(y * 0.30 - x * 0.13);
+  return 1.07 + 0.063 * ringDepth + 0.19 * ridge
+    + (noise(x, y, 765) - 0.5) * 0.115;
+}
+
 const DRESS = {
   plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0, woodlandGateway = false) {
     const roll = noise(x, y, 1);
@@ -928,7 +941,7 @@ const DRESS = {
     // the walkable road, with no new collider or change to map topology.
     const size = woodlandGateway ? 1.6 + noise(x, y, 845) * 0.12
       : juvenile ? 0.48 + noise(x, y, 753) * 0.16
-        : backdrop ? 1.12 + 0.055 * ringDepth + noise(x, y, 765) * 0.055
+        : backdrop ? chroniclesBannerRoadBackdropScale(x, y, ringDepth)
           : (big ? 1.15 : 1);
     if (woodlandGateway || roll < canopyThreshold) {
       broadleaf(p, wx, wz, x, y, 0, size, bannerRoad, woodlandGateway);
