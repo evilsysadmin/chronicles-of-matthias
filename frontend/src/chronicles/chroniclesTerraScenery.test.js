@@ -592,6 +592,71 @@ describe('Terra scenery', () => {
   });
 
 
+
+
+  it('grows irregular pass-through shrub islands without crossing roads or changing other maps', () => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    keepClear.push({ x: 5, y: 6 });
+    const options = { grid: map.grid, biome: map.biome, mapId: map.id, center, keepClear };
+    const full = buildTerraScenery(options);
+    const mobile = buildTerraScenery({ ...options, coarsePointer: true });
+    const repeat = buildTerraScenery(options);
+    const original = buildTerraScenery({ ...options, mapId: 'terra-c4' });
+    const shrubs = full.getObjectByName('chronicles-terra-bush');
+    const touch = mobile.getObjectByName('chronicles-terra-bush');
+    const again = repeat.getObjectByName('chronicles-terra-bush');
+    const old = original.getObjectByName('chronicles-terra-bush');
+    expect(shrubs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(shrubs.count).toBeGreaterThan(old.count + 70);
+    expect(touch.count).toBeLessThan(shrubs.count);
+    expect(shrubs.material.transparent).toBe(false);
+    expect(shrubs.geometry.getAttribute('color')).toBeUndefined();
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+    const excluded = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const addedCells = new Set(), kinds = new Set(), shades = new Set();
+    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const tint = new THREE.Color(), twinTint = new THREE.Color();
+    let added = 0;
+    for (let i = 0; i < shrubs.count; i += 1) {
+      shrubs.getMatrixAt(i, matrix);
+      again.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      shrubs.getColorAt(i, tint);
+      again.getColorAt(i, twinTint);
+      expect(tint.getHex()).toBe(twinTint.getHex());
+      shades.add(tint.getHex());
+      const wx = matrix.elements[12], wz = matrix.elements[14];
+      const x = Math.round(wx / 4) + center.x;
+      const y = Math.round(wz / 4) + center.y;
+      const tile = map.grid[y]?.[x];
+      // Existing broadleaf bushes have variable trunk-derived heights; the
+      // new forest-edge and soft-meadow bushes sit at fixed soil elevations.
+      // Identify only the new visual layer, not pre-existing juvenile shrubs.
+      if (Math.abs(matrix.elements[13] - (tile === '#' ? 0.57 : 0.51)) > 1e-6) continue;
+      added += 1;
+      expect(['#', '.']).toContain(tile);
+      kinds.add(tile);
+      addedCells.add(x + ',' + y);
+      expect(Math.abs(wx - (x - center.x) * 4)).toBeLessThan(0.71);
+      expect(Math.abs(wz - (y - center.y) * 4)).toBeLessThan(0.71);
+      if (tile === '.') {
+        expect(excluded.has(x + ',' + y)).toBe(false);
+        expect(matrix.elements[5]).toBeLessThan(0.86);
+      } else {
+        expect([[1, 0], [-1, 0], [0, 1], [0, -1]]
+          .some(([dx, dy]) => map.grid[y + dy]?.[x + dx] === '.')).toBe(true);
+      }
+    }
+    expect(added).toBeGreaterThan(70);
+    expect(added).toBeLessThan(155);
+    expect(kinds).toEqual(new Set(['#', '.']));
+    expect(addedCells.size).toBeGreaterThan(35);
+    expect(shades.size).toBeGreaterThan(2);
+  });
+
   it('creates broad compound-leaf plants with a low mobile polygon budget', () => {
     const full = chroniclesForestHerbGeometry();
     const mobile = chroniclesForestHerbGeometry({ coarsePointer: true });
@@ -835,7 +900,15 @@ describe('Terra scenery', () => {
         const x = Math.round(matrix.elements[12] / 4) + center.x;
         const y = Math.round(matrix.elements[14] / 4) + center.y;
         if (map.grid[y]?.[x] !== undefined) {
-          expect(map.grid[y][x]).toBe('#'); // Only visual dressing of blocked cells
+          if (part === 'crown' || map.grid[y][x] === '#') {
+            expect(map.grid[y][x]).toBe('#'); // Trunks/crowns remain on blocked cells.
+          } else {
+            // New soft shrub islands may dress walkable meadow, NEVER its
+            // central paved roads (even if keepClear was not supplied).
+            expect(map.grid[y][x]).toBe('.');
+            expect(x).not.toBe(center.x);
+            expect(y).not.toBe(center.y);
+          }
         }
       }
       expect(shades.size).toBeGreaterThan(2);
