@@ -792,8 +792,16 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // Swordhaven already creates these weather-aware cloud banks, but the
   // meadow never did: changing its bank opacity was a no-op. Reuse the same
   // procedural cloud atlas, with 4 sprites on mobile / 8 on desktop.
-  // They are visual sky decoration, not lights, colliders or map content.
-  if (bannerTrail) addSwordhavenClouds(skyDome, coarsePointer);
+  // The existing 360-degree panorama is almost invisible at 0.11 opacity
+  // against the large Banner Road sky. Lift only this scene's existing
+  // cloud material to reveal soft atmospheric shelves in first person,
+  // without adding a texture, a sprite, a light or a per-frame update.
+  // Other maps keep the original panorama opacity.
+  if (bannerTrail) {
+    const panorama = skyDome.getObjectByName('chronicles-sky-cloud-panorama');
+    if (panorama) panorama.material.opacity = 0.30;
+    addSwordhavenClouds(skyDome, coarsePointer);
+  }
   scene.add(skyDome);
   // Book One shopfronts need a directional key to reveal dressed stone,
   // projecting eaves and recessed windows. Leave wilderness lighting intact.
