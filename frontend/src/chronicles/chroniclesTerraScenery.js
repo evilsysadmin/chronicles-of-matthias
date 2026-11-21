@@ -922,8 +922,26 @@ export function chroniclesBannerRoadBackdropScale(x, y, ringDepth) {
     + (noise(x, y, 765) - 0.5) * 0.115;
 }
 
+/**
+ * The authored narrow gateway has four nearby, already-blocked forest roots
+ * which used to be saplings or empty gaps. Raise only those real '#' roots
+ * into staggered midsize woodland trees, keeping the existing entrance pair
+ * as the tallest landmark. No trees or collision changes on walkable cells.
+ * Derive the row from the two blocking flanks, never from a hardcoded y.
+ */
+export function chroniclesBannerRoadGatewayGrove(grid, center, x, y) {
+  const dx = Math.abs(x - center.x);
+  return dx >= 2 && dx <= 4 && grid[y]?.[x] === '#'
+    && grid[y]?.[center.x] === '.'
+    && grid[y]?.[center.x - 1] === '#'
+    && grid[y]?.[center.x + 1] === '#'
+    && grid[y - 1]?.[center.x] === '.'
+    && grid[y + 1]?.[center.x] === '.';
+}
+
 const DRESS = {
-  plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0, woodlandGateway = false) {
+  plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0,
+    woodlandGateway = false, gatewayGrove = false) {
     const roll = noise(x, y, 1);
     // A deepening forest horizon outside the authored map: the first row
     // still has gaps, but more distant rows interlock their crowns. Only the
@@ -940,10 +958,13 @@ const DRESS = {
     // on the original '#' tiles: only their high leaf canopy overhangs
     // the walkable road, with no new collider or change to map topology.
     const size = woodlandGateway ? 1.6 + noise(x, y, 845) * 0.12
-      : juvenile ? 0.48 + noise(x, y, 753) * 0.16
-        : backdrop ? chroniclesBannerRoadBackdropScale(x, y, ringDepth)
-          : (big ? 1.15 : 1);
-    if (woodlandGateway || roll < canopyThreshold) {
+      : gatewayGrove ? 1.10 + noise(x, y, 855) * 0.16
+        : juvenile ? 0.48 + noise(x, y, 753) * 0.16
+          : backdrop ? chroniclesBannerRoadBackdropScale(x, y, ringDepth)
+            : (big ? 1.15 : 1);
+    // The mid-height approach grove is anchored exclusively in four real
+    // blocked cells, never inside the walkable meadow or on the cart track.
+    if (woodlandGateway || gatewayGrove || roll < canopyThreshold) {
       broadleaf(p, wx, wz, x, y, 0, size, bannerRoad, woodlandGateway);
     }
     if (roll >= 0.35) {
@@ -1335,7 +1356,10 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           && grid[y]?.[center.x] === '.'
           && grid[y - 1]?.[x] === '.'
           && grid[y + 1]?.[x] === '.';
-        dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth, woodlandGateway);
+        const gatewayGrove = denseMeadow && inside && !woodlandGateway
+          && chroniclesBannerRoadGatewayGrove(grid, center, x, y);
+        dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
+          woodlandGateway, gatewayGrove);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
