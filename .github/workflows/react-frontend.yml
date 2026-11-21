@@ -9,6 +9,7 @@ on:
     branches: [main]
 permissions:
   contents: read
+  pull-requests: read
 # PR revisions share one group; main pushes get a unique run ID and may run concurrently.
 concurrency:
   group: chronicles-frontend-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
@@ -31,6 +32,32 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+      # The required job remains present on every PR and every main SHA.
+      # Vitest + Vite build always run; only browser fixtures can be scoped.
+      - name: Classify browser smoke coverage (fallback to full)
+        id: browser_scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          mode=full
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            if changes="$(gh api --paginate --jq '.[] | {filename,status,previous_filename} | @json' "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100")"; then
+              if printf '%s\n' "$changes" | node scripts/classify-browser-ci.mjs; then
+                mode=api-go-only
+              fi
+            else
+              echo "::warning::PR file inventory unavailable; running full browser smoke"
+            fi
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "Chromium coverage: $mode"
+      - name: Explain safe browser smoke omission
+        if: steps.browser_scope.outputs.mode == 'api-go-only'
+        run: |
+          echo "Go-only PR: frontend Vitest and build still run; API+Mongo browser E2E runs in Chronicles API; Chromium fixtures run on main." >> "$GITHUB_STEP_SUMMARY"
       - name: Install pinned dependencies
         working-directory: frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
@@ -70,6 +97,7 @@ jobs:
       # The cache key is intentionally exact-versioned; never restore a different browser revision.
       # The npm lockfile decides the browser revision; no manual cache key edits.
       - name: Resolve locked Playwright version for browser cache
+        if: steps.browser_scope.outputs.mode != 'api-go-only'
         id: playwright_version
         working-directory: frontend
         run: |
@@ -79,11 +107,13 @@ jobs:
           [[ "$version" == "$declared" ]] || { echo '::error::Playwright package differs from locked declaration'; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Restore pinned Playwright Chromium browser
+        if: steps.browser_scope.outputs.mode != 'api-go-only'
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: chronicles-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright_version.outputs.version }}
       - name: Mount smoke — enter Chronicles and Tactics without crashing
+        if: steps.browser_scope.outputs.mode != 'api-go-only'
         working-directory: frontend
         run: |
           set -euo pipefail
@@ -164,7 +194,7 @@ jobs:
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v7
-        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}
+        if: ${{ always() && steps.browser_scope.outputs.mode != 'api-go-only' && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}
         with:
           name: chronicles-mount-smoke
           path: |
