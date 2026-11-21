@@ -20,8 +20,8 @@ const sheetLazyAsset = sheetLazyEntries[0].file;
 
 // Rollup may also create shared assets named "ChroniclesShop". Identify the
 // true lazy entry by the manifest instead of a filename-prefix heuristic.
-const shopLazyEntries = Object.values(manifest).filter((chunk) =>
-  chunk?.isDynamicEntry && /\/ChroniclesShop-[^/]+\.js$/.test('/' + chunk.file));
+const shopLazyEntries = Object.entries(manifest).filter(([source, chunk]) =>
+  /(?:^|\/)ChroniclesShop\.jsx$/.test(source) && chunk?.isDynamicEntry).map(([, chunk]) => chunk);
 if (shopLazyEntries.length !== 1) {
   throw new Error('Expected one deferred ChroniclesShop entry in the Vite manifest; found '
     + shopLazyEntries.length);
