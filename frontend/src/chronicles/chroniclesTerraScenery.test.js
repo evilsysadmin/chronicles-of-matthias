@@ -286,7 +286,12 @@ describe('Terra scenery', () => {
     const baseline = other.getObjectByName('chronicles-terra-broadleafTrunk');
     expect(trunk).toBeInstanceOf(THREE.InstancedMesh);
     expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
-    expect(full.children.map(m => m.name).sort()).toEqual(other.children.map(m => m.name).sort());
+    // Banner Road already has its own groundcover batches; the new grove
+    // must add only instances within existing broadleaf trunk/crown batches.
+    expect(full.children.map(m => m.name).sort())
+      .toEqual(again.children.map(m => m.name).sort());
+    expect(full.children.filter(m => m.name === 'chronicles-terra-crown')).toHaveLength(1);
+    expect(full.children.filter(m => m.name === 'chronicles-terra-broadleafTrunk')).toHaveLength(1);
     expect(trunk.count).toBeGreaterThan(baseline.count);
     const matrix = new THREE.Matrix4(), duplicate = new THREE.Matrix4();
     const pos = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3();
