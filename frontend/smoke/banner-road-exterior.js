@@ -156,6 +156,20 @@ try {
     edgeFringeMaxIntrusion = Math.max(edgeFringeMaxIntrusion,
       -Math.min(edgePositions.getZ(i), edgePositions.getZ(i + 1), edgePositions.getZ(i + 2)));
   }
+  // Verify the actual first-person road mesh consumes the packed-dirt
+  // texture without the old solid-green paint patches. A previous visual
+  // change to unused scenery had passed tests with zero changed mobile pixels.
+  const roadPixels = road?.material?.map?.image?.data;
+  let dustyMossPixels = 0;
+  let oldGreenStainPixels = 0;
+  for (let i = 0; i < (roadPixels?.length || 0); i += 4) {
+    if (roadPixels[i] === 119 && roadPixels[i + 1] === 118
+      && roadPixels[i + 2] === 94) dustyMossPixels += 1;
+    if (roadPixels[i] === 102 && roadPixels[i + 1] === 116
+      && roadPixels[i + 2] === 81) oldGreenStainPixels += 1;
+  }
+  const dustyMossFraction = roadPixels?.length
+    ? dustyMossPixels / (roadPixels.length / 4) : -1;
   const terrain = scene.getObjectByName('chronicles-campaign-terrain');
   const groundPixels = terrain?.material?.map?.image?.data;
   let soilTexels = 0;
@@ -288,6 +302,8 @@ try {
     roadRelief: String(Boolean(road?.material?.normalMap)),
     roadSurfaceKind: road?.material?.map?.userData?.chroniclesPixelArt?.kind || 'none',
     roadSurfaceAtlasSize: String(road?.material?.map?.image?.width || 0),
+    roadDustyMossFraction: String(dustyMossFraction),
+    roadOldGreenStains: String(oldGreenStainPixels),
     edgeFringeCount: String(edgeFringeCount),
     edgeFringeMaxIntrusion: String(edgeFringeMaxIntrusion),
     edgeFringeInstances: String(shoulder?.count || 0),
