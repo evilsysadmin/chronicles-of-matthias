@@ -52,9 +52,13 @@ test('protected checks and exact-SHA admission prerequisites are intact', () => 
 
 test('green main does not upload screenshots while PRs and failed main retain evidence', () => {
   const keepEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && (github.event_name == 'pull_request' || failure()) }}";
-  const manualEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}";
+  const manualEvidence = 'if: ' + String.fromCharCode(36) + "{{ always() && steps.browser_scope.outputs.mode != 'api-go-only' && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || failure()) }}";
   assert.match(frontend, /  workflow_dispatch:/);
   assert.ok(frontend.includes(manualEvidence), 'Manual visual audits must retain PNGs');
+  assert.match(frontend, /mode=full/, 'Non-PR/manual/main events must default to full browser coverage');
+  assert.match(frontend, /if \[\[ "\$GITHUB_EVENT_NAME" == "pull_request"/, 'Only PR events can select the narrow browser scope');
+  assert.match(frontend, /if: steps\.browser_scope\.outputs\.mode != 'api-go-only'/,
+    'Chromium itself must be gated by the verified scope, not removed from the workflow');
   assert.ok(api.includes(keepEvidence), 'API evidence retention must stay unchanged');
   for (const workflow of [frontend, api]) {
     assert.match(workflow, /compression-level: 0/);
