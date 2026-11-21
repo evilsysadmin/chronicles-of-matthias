@@ -52,8 +52,8 @@ try {
         'Actual eye-level Banner Road must have a 2.64m cart trail on desktop and mobile');
       assert.ok(Number(state.crownCount) > 10, 'Real broadleaf trees must be visible');
       assert.ok(Number(state.bushCount) > 5, 'Roadside bushes must be present');
-      assert.ok(Number(state.nearRoadsideBushes) > (coarse ? 1 : 4),
-        'First-person Banner Road must show non-blocking shrubs in the actual verge grass');
+      assert.ok(Number(state.nearRoadsideBushes) >= (coarse ? 6 : 7),
+        'Actual 390px/1280px Banner Road must show broken low shrub drifts across the real verge, not a nearly bare meadow');
       assert.ok(Number(state.nearRoadsideHerbs) > (coarse ? 0 : 3),
         'First-person woodland undergrowth must bridge the gap between track and trees');
       assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');

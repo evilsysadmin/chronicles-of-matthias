@@ -1157,7 +1157,11 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
   const chance = blocked
     ? (coarsePointer ? 0.17 + patch * 0.28 : 0.35 + patch * 0.43)
     : nearTrail
-      ? (coarsePointer ? 0.29 + patch * 0.26 : 0.52 + patch * 0.28)
+      // Reconnect the woodland margin with *broken*, knee-high leaf
+      // drifts on the actual adjacent meadow cells. Before, the touch
+      // view lost nearly all the undergrowth at ground level while the
+      // desktop kept isolated round shrubs. Keep irregular seeded gaps.
+      ? (coarsePointer ? 0.62 + patch * 0.30 : 0.65 + patch * 0.30)
       : (coarsePointer ? 0.06 + patch * 0.13 : 0.13 + patch * 0.29)
         * (nearForest ? 1.17 : 1);
   if (noise(x, y, 811) > chance) return;
@@ -1176,10 +1180,18 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
       + (noise(x + i * 3, y, 817) - 0.5) * 0.42;
     const offsetZ = dy * 0.48 + (nearTrail?.dy || 0) * 0.37
       + (noise(y + i * 3, x, 819) - 0.5) * 0.42;
-    const width = 0.61 + noise(x + i, y, 823) * 0.17;
-    const depth = 0.60 + noise(y + i, x, 827) * 0.18;
-    const height = (blocked ? 0.77 : nearTrail ? 0.72 : 0.62)
-      + noise(x + i * 2, y, 829) * (blocked ? 0.30 : nearTrail ? 0.20 : 0.23);
+    // Spread only the walkable roadside shrubs into low leafy thickets,
+    // not spherical shrubs of identical height. The original compact
+    // branch and all blocked-cell forest plants remain unchanged.
+    // Offset stays within ~0.6m of the 4m cell centre; even with the
+    // wider crown no mesh enters the neighbouring 2.64m dirt tread.
+    const width = (0.61 + noise(x + i, y, 823) * 0.17)
+      * (nearTrail ? 1.20 : 1);
+    const depth = (0.60 + noise(y + i, x, 827) * 0.18)
+      * (nearTrail ? 1.20 : 1);
+    const height = ((blocked ? 0.77 : nearTrail ? 0.72 : 0.62)
+      + noise(x + i * 2, y, 829) * (blocked ? 0.30 : nearTrail ? 0.20 : 0.23))
+      * (nearTrail ? 0.86 : 1);
     p.add('bush', [wx + offsetX, blocked ? 0.57 : 0.51, wz + offsetZ], {
       yaw: noise(x + i, y, 833) * Math.PI * 2,
       scale: [width, height, depth],

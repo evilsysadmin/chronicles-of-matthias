@@ -1365,6 +1365,58 @@ describe('Terra scenery', () => {
     shape.dispose();
   });
 
+  it.each([true, false])('keeps Banner Road shrub drifts low and in adjacent meadow tiles (coarse=%s)', (coarsePointer) => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    // Use the actual straight road and crossing as the protected clear set,
+    // as does buildChroniclesCampaignExterior; do not fake walkable roots.
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    const props = { grid: map.grid, center, biome: 'plains', mapId: map.id, keepClear, coarsePointer };
+    const scenery = buildTerraScenery(props);
+    const again = buildTerraScenery(props);
+    const bushes = scenery.getObjectByName('chronicles-terra-bush');
+    const repeat = again.getObjectByName('chronicles-terra-bush');
+    expect(bushes).toBeInstanceOf(THREE.InstancedMesh);
+    expect(scenery.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    expect(scenery.children.map(mesh => mesh.name))
+      .toEqual(again.children.map(mesh => mesh.name));
+    const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), q = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const protectedCells = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const found = new Set();
+    let foregroundDrifts = 0;
+    for (let i = 0; i < bushes.count; i += 1) {
+      bushes.getMatrixAt(i, matrix);
+      repeat.getMatrixAt(i, twin);
+      expect(matrix.elements).toEqual(twin.elements);
+      matrix.decompose(pos, q, scale);
+      const x = Math.round(pos.x / 4) + center.x;
+      const y = Math.round(pos.z / 4) + center.y;
+      if (map.grid[y]?.[x] !== '.') continue;
+      expect(protectedCells.has(x + ',' + y)).toBe(false);
+      expect(x).not.toBe(center.x);
+      expect(y).not.toBe(center.y);
+      // The camera looks north from (10,13): these are its visible two
+      // narrow margins, not the distant outer horizon or arbitrary foliage.
+      if (![9, 11].includes(x) || y < 8 || y > 13) continue;
+      foregroundDrifts += 1;
+      found.add(x + ',' + y);
+      expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(0.66);
+      expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(0.66);
+      expect(scale.x).toBeGreaterThan(0.71);
+      expect(scale.x).toBeLessThan(0.96);
+      expect(scale.z).toBeGreaterThan(0.70);
+      expect(scale.z).toBeLessThan(0.96);
+      expect(scale.y).toBeGreaterThan(0.60);
+      expect(scale.y).toBeLessThan(0.81);
+    }
+    // Formerly only 4 touch / 5 desktop shrubs along 12 visible cells:
+    // keep several genuine gaps, but join the meadow into broken low drifts.
+    expect(found.size).toBeGreaterThanOrEqual(coarsePointer ? 6 : 7);
+    expect(foregroundDrifts).toBeGreaterThanOrEqual(found.size);
+  });
+
   it('gives Banner Road trees and bushes varied deterministic foliage while leaving roads clear', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const center = { x: 10, y: 7 };
