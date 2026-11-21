@@ -26,6 +26,34 @@ describe('Terra scenery', () => {
     expect(chroniclesTerraSceneryBiomes().sort()).toEqual(['ash', 'coast', 'hills', 'marsh', 'plains', 'snow']);
   });
 
+  it('uses muted, varied Banner Road meadow soil without changing its texture budget', () => {
+    const meadow = chroniclesPixelTexture('meadow');
+    const again = chroniclesPixelTexture('meadow');
+    const townGrass = chroniclesPixelTexture('grass');
+    expect(meadow).toBe(again);
+    expect(meadow).not.toBe(townGrass);
+    expect(meadow.image.width).toBe(128);
+    expect(meadow.image.height).toBe(128);
+    const pixels = meadow.image.data;
+    const unique = new Set();
+    let earthy = 0;
+    let green = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const [r, g, b, alpha] = pixels.slice(i, i + 4);
+      expect(alpha).toBe(255);
+      unique.add([r, g, b].join(','));
+      if (r > g && g > b) earthy += 1;
+      if (g > r && g > b) green += 1;
+    }
+    expect(unique.size).toBeGreaterThan(9);
+    expect(earthy / (pixels.length / 4)).toBeGreaterThan(0.04);
+    expect(earthy / (pixels.length / 4)).toBeLessThan(0.07);
+    expect(green / (pixels.length / 4)).toBeGreaterThan(0.90);
+    // Cool umber rather than the previous sandy beige in the same patches.
+    expect(unique.has('128,126,98')).toBe(true);
+    expect(unique.has('140,135,107')).toBe(false);
+  });
+
   it.each(['terra-c4', 'terra-e2', 'terra-b1', 'terra-a2', 'terra-d5', 'terra-f4'])('%s only blocks where the grid blocks', (mapId) => {
     const map = chroniclesMapById(mapId);
     const center = { x: 10, y: 7 };
