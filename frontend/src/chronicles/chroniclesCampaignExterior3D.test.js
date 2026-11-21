@@ -380,7 +380,9 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(panorama).toBeInstanceOf(THREE.Mesh);
     // The cloud atlas is an existing sky-dome child, not a new draw call.
     expect(panorama.material.transparent).toBe(true);
-    expect(panorama.material.opacity).toBeCloseTo(0.30, 5);
+    // The sky constructor must remain neutral: the game-wide daylight
+    // controller decides the final opacity from actual world time/weather.
+    expect(panorama.material.opacity).toBeCloseTo(0.11, 5);
     expect(panorama.material.depthWrite).toBe(false);
     expect(panorama.material.fog).toBe(false);
     expect(panorama.userData.chroniclesDecorativeOnly).toBe(true);
