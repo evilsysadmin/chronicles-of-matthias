@@ -1242,7 +1242,10 @@ describe('Terra scenery', () => {
     }
     const shortened = young.filter((height, i) => height < original[i] * 0.80);
     expect(shortened.length).toBeGreaterThan(8);
-    expect(young.filter(height => height < 2.0).length).toBeGreaterThan(8);
+    // Three previously juvenile gate-shoulder trees become midsize in v39.
+    // Keep the eight short juveniles elsewhere; the new grove has its own
+    // strict four-root/height test above.
+    expect(young.filter(height => height < 2.0).length).toBeGreaterThanOrEqual(8);
     // Coarse devices intentionally skip part of the distant out-of-map
     // tree ring: only authored in-map juvenile transforms must be retained.
     const mobileTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
