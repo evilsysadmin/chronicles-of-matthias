@@ -56,7 +56,8 @@ jobs:
           echo "Chromium coverage: $mode"
       - name: Explain safe browser smoke omission
         if: steps.browser_scope.outputs.mode == 'api-go-only'
-        run: echo "Go-only PR: frontend Vitest and build still run; API+Mongo browser E2E runs in Chronicles API; Chromium fixtures run on main." >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "Go-only PR: frontend Vitest and build still run; API+Mongo browser E2E runs in Chronicles API; Chromium fixtures run on main." >> "$GITHUB_STEP_SUMMARY"
       - name: Install pinned dependencies
         working-directory: frontend
         run: npm ci --ignore-scripts --no-audit --no-fund
