@@ -56,8 +56,8 @@ describe('Banner Road organic grass/earth shoulders', () => {
     expect(mapped.size).toBe(exposed.length);
     // Paving ends 1.32m from the straight centreline; 1.34m shoulder
     // offsets let moss begin at the edge while keeping the walkable lane.
-    expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.27);
-    expect(full.geometry.boundingBox.min.z).toBeLessThan(-0.15);
+    expect(full.geometry.boundingBox.min.z).toBeGreaterThan(-0.12);
+    expect(full.geometry.boundingBox.min.z).toBeLessThan(-0.095);
     expect(mobile.geometry.boundingBox.max.y).toBeLessThan(0.25);
     // The visible dirt tread must have a ragged, thin surface-level fringe,
     // not just moss triangles buried below its top. The raised road's top
@@ -69,10 +69,12 @@ describe('Banner Road organic grass/earth shoulders', () => {
       for (let i = 0; i < positions.count; i += 3) {
         if (![0, 1, 2].every(k => Math.abs(positions.getY(i + k) - 0.085) < 1e-5)) continue;
         aprons += 1;
+        const xs = [positions.getX(i), positions.getX(i + 1), positions.getX(i + 2)];
+        expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(count === 4 ? 0.51 : 0.26);
         tipDepths.push(Math.min(positions.getZ(i), positions.getZ(i + 1), positions.getZ(i + 2)));
       }
       expect(aprons).toBe(count);
-      expect(tipDepths.every(depth => depth <= -0.10 && depth > -0.27)).toBe(true);
+      expect(tipDepths.every(depth => depth < -0.06 && depth > -0.12)).toBe(true);
       expect(new Set(tipDepths.map(depth => Math.round(depth * 100))).size).toBeGreaterThan(2);
       const matrix = new THREE.Matrix4();
       mesh.getMatrixAt(0, matrix);
@@ -95,8 +97,8 @@ describe('Banner Road organic grass/earth shoulders', () => {
     expect(touch.getAttribute('position').count).toBeLessThanOrEqual(50);
     expect(desktop.boundingBox.min.x).toBeGreaterThan(-1.85);
     expect(desktop.boundingBox.max.x).toBeLessThan(1.85);
-    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.27);
-    expect(desktop.boundingBox.min.z).toBeLessThan(-0.15);
+    expect(desktop.boundingBox.min.z).toBeGreaterThan(-0.12);
+    expect(desktop.boundingBox.min.z).toBeLessThan(-0.095);
     expect(desktop.boundingBox.max.z).toBeGreaterThan(0.55);
     expect(desktop.boundingBox.max.z).toBeLessThan(0.75);
     expect(desktop.boundingBox.min.y).toBeGreaterThanOrEqual(0);

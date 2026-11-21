@@ -23,8 +23,9 @@ function hash(x, y, salt = 0) {
  * changing the underlying 4m walkable grid or adding draw calls.
  *
  * Local +Z faces outwards into grass; negative Z faces across the dirt.
- * The new top-surface fringe overlaps at most 0.26m of the visual track,
- * leaving more than 2.1m of unobstructed-looking tread. Nothing here is a
+ * The top-surface fringe now overlaps at most 0.12m of the track:
+ * thinner, dusty soil-and-moss edges instead of sharp bright-green teeth.
+ * Nothing here is a
  * collider, movement rule, animated object or separate material.
  */
 export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {}) {
@@ -33,6 +34,8 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
   const grass = ['#637e44', '#78884e', '#50693b', '#829461'];
   const soil = ['#857754', '#706747'];
   const palette = [...grass, ...soil].map(hex => new THREE.Color(hex));
+  const aprons = ['#858168', '#7b805c', '#837b5e', '#7c8060']
+    .map(hex => new THREE.Color(hex));
   const add = (a, b, c, shade) => {
     positions.push(...a, ...b, ...c);
     for (let i = 0; i < 3; i += 1) {
@@ -62,23 +65,23 @@ export function chroniclesRoadsideShoulderGeometry({ coarsePointer = false } = {
     add(a, d, c, shade);
 
     // The old groundcover stopped below the raised road top, leaving an
-    // almost perfectly straight dirt outline. Draw one slim, flat apron on
-    // TOP of that road (~8mm clearance) at each irregular interval. Broad
-    // ends stay outside the road; a single offset tip intrudes 0.10-0.26m.
-    // This is the same InstancedMesh/material and never blocks movement.
-    const intrusion = 0.10 + hash(i, 23, 611) * 0.16;
-    const tipX = x + (hash(i, 29, 613) - 0.5) * width * 0.95;
-    const fringe = palette[(i * 5 + 1) % palette.length];
-    add([x - width * 0.91, 0.085, 0.08],
-      [x + width * 0.80, 0.085, 0.055],
+    // almost perfectly straight dirt outline. Lay short, narrow tongues
+    // just over the raised road top (~8mm clearance), in weathered earthy
+    // shades rather than vivid grass-green triangular wedges. The entire
+    // dirt tread remains clear and polygons/draw calls do not change.
+    const intrusion = 0.045 + hash(i, 23, 611) * 0.075;
+    const tipX = x + (hash(i, 29, 613) - 0.5) * width * 0.50;
+    const fringe = aprons[(i * 5 + 1) % aprons.length];
+    add([x - width * 0.64, 0.085, 0.08],
+      [x + width * 0.58, 0.085, 0.055],
       [tipX, 0.085, -intrusion], fringe);
 
     if (i % 2 === 0) {
       // A second much smaller sliver breaks up each earthy margin.
-      const moss = palette[(i + 1) % grass.length];
-      add([x - width * 0.52, 0.087, -0.075],
-        [x + width * 0.32, 0.087, -0.008],
-        [x - width * 0.16, 0.087, -0.011], moss);
+      const moss = aprons[(i + 1) % aprons.length];
+      add([x - width * 0.40, 0.087, -0.038],
+        [x + width * 0.26, 0.087, 0.004],
+        [x - width * 0.13, 0.087, -0.006], moss);
     }
     if (i % 2 === 1) {
       // Low upright leaf tips interrupt the ruler-straight grass silhouette.
