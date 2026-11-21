@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -263,6 +263,64 @@ describe('Terra scenery', () => {
       expect(Math.max(...shoulderHeights)).toBeGreaterThan(leaf.boundingBox.max.y - 0.30);
     }
     [leaf, old, again].forEach(geometry => geometry.dispose());
+  });
+
+  it.each([false, true])('fills the real blocked gate shoulders with tiered grove trees (touch=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const expected = [6, 8, 12, 13];
+    const roots = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      chroniclesBannerRoadGatewayGrove(map.grid, center, x, y) ? [{ x, y, tile }] : []));
+    expect(roots).toEqual(expected.map(x => ({ x, y: 4, tile: '#' })));
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 10, 4)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 9, 4)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 8, 5)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 8, 14)).toBe(false);
+
+    const args = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const full = buildTerraScenery({ ...args, mapId: map.id });
+    const again = buildTerraScenery({ ...args, mapId: map.id });
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const trunk = full.getObjectByName('chronicles-terra-broadleafTrunk');
+    const twin = again.getObjectByName('chronicles-terra-broadleafTrunk');
+    const baseline = other.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunk).toBeInstanceOf(THREE.InstancedMesh);
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+    // Banner Road already has its own groundcover batches; the new grove
+    // must add only instances within existing broadleaf trunk/crown batches.
+    expect(full.children.map(m => m.name).sort())
+      .toEqual(again.children.map(m => m.name).sort());
+    expect(full.children.filter(m => m.name === 'chronicles-terra-crown')).toHaveLength(1);
+    expect(full.children.filter(m => m.name === 'chronicles-terra-broadleafTrunk')).toHaveLength(1);
+    expect(trunk.count).toBeGreaterThan(baseline.count);
+    const matrix = new THREE.Matrix4(), duplicate = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const found = new Set();
+    for (let i = 0; i < trunk.count; i += 1) {
+      trunk.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, duplicate);
+      expect(matrix.elements).toEqual(duplicate.elements);
+      matrix.decompose(pos, rotation, scale);
+      const x = Math.round(pos.x / 4) + center.x;
+      const y = Math.round(pos.z / 4) + center.y;
+      if (y !== 4 || !expected.includes(x)) continue;
+      expect(map.grid[y][x]).toBe('#');
+      expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(1.01);
+      expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(1.01);
+      expect(scale.y).toBeGreaterThan(2.65);
+      expect(scale.y).toBeLessThan(6.5);
+      found.add(x);
+    }
+    expect([...found].sort((a, b) => a - b)).toEqual(expected);
+    const originalRoots = new Set();
+    const orig = new THREE.Matrix4();
+    for (let i = 0; i < baseline.count; i += 1) {
+      baseline.getMatrixAt(i, orig);
+      if (Math.round(orig.elements[14] / 4) + center.y === 4) {
+        originalRoots.add(Math.round(orig.elements[12] / 4) + center.x);
+      }
+    }
+    expect(originalRoots.has(6)).toBe(false); // A real forest gap gets its first tree.
   });
 
   it.each([true, false])('softens only Banner Road canopy silhouettes with one extra leaf mass (touch=%s)', coarsePointer => {
@@ -1162,23 +1220,32 @@ describe('Terra scenery', () => {
     const referenceTrees = matrixToMapCell(originalTrunks);
     // Background density now differs, so match by AUTHORED forest cell,
     // not the global instance index (which includes off-map trees).
-    // The forest gateway deliberately adds ONE real trunk on the already
-    // blocked tile 9,4. The other historic forest tiles must be unchanged.
+    // The original gateway adds a trunk on 9,4. The new intermediate grove
+    // explicitly changes four further already-blocked roots; every OTHER
+    // historic forest transform must continue to match the old baseline.
     expect(actualTrees.get('9,4')).toHaveLength(1);
     expect(referenceTrees.has('9,4')).toBe(false);
+    const gatewayChanges = ['9,4', '6,4', '8,4', '12,4', '13,4'];
     const historicTrees = new Map(actualTrees);
-    historicTrees.delete('9,4');
-    expect([...historicTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
+    const unchangedReference = new Map(referenceTrees);
+    gatewayChanges.forEach(key => {
+      historicTrees.delete(key);
+      unchangedReference.delete(key);
+    });
+    expect([...historicTrees.keys()].sort()).toEqual([...unchangedReference.keys()].sort());
     const young = [], original = [];
     for (const [key, heights] of historicTrees) {
-      const baseline = referenceTrees.get(key);
+      const baseline = unchangedReference.get(key);
       expect(heights).toHaveLength(baseline.length);
       young.push(...heights);
       original.push(...baseline);
     }
     const shortened = young.filter((height, i) => height < original[i] * 0.80);
     expect(shortened.length).toBeGreaterThan(8);
-    expect(young.filter(height => height < 2.0).length).toBeGreaterThan(8);
+    // Three previously juvenile gate-shoulder trees become midsize in v39.
+    // Keep the eight short juveniles elsewhere; the new grove has its own
+    // strict four-root/height test above.
+    expect(young.filter(height => height < 2.0).length).toBeGreaterThanOrEqual(8);
     // Coarse devices intentionally skip part of the distant out-of-map
     // tree ring: only authored in-map juvenile transforms must be retained.
     const mobileTrunks = touch.getObjectByName('chronicles-terra-broadleafTrunk');
@@ -1438,13 +1505,17 @@ describe('Terra scenery', () => {
     const baseline = collect(previous);
     const reduced = collect(cheap);
     const repeated = collect(again.getObjectByName('chronicles-terra-crown'));
-    // The new mature gateway intentionally adds an authored forest tree
-    // on blocked cell 9,4. All other in-grid counts must match unchanged
-    // other-world plains and the local deterministic rebuild.
+    // The gate adds the existing mature sentinel at 9,4, and v39 adds one
+    // tree to the previously empty blocked root 6,4. The other three grove
+    // roots already had juvenile trees, so their instance counts stay at 1.
+    // Every other in-grid tree count and all out-of-grid rings stay intact.
     expect(forest.authored.get('9,4')).toBe(1);
     expect(baseline.authored.has('9,4')).toBe(false);
+    expect(forest.authored.get('6,4')).toBe(1);
+    expect(baseline.authored.has('6,4')).toBe(false);
     const originalForest = new Map(forest.authored);
     originalForest.delete('9,4');
+    originalForest.delete('6,4');
     expect([...originalForest]).toEqual([...baseline.authored]);
     expect([...forest.authored]).toEqual([...repeated.authored]);
     expect(forest.rings).toEqual(repeated.rings);
