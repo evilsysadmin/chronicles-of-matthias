@@ -133,6 +133,11 @@ try {
         'The genuine Banner Road must render its packed-earth trail, not Swordhaven cobbles');
       assert.equal(Number(state.roadSurfaceAtlasSize), 128,
         'Earth and grit must share a bounded local 128px texture atlas');
+      assert.ok(Number(state.roadDustyMossFraction) > 0.025
+        && Number(state.roadDustyMossFraction) < 0.06,
+      'Real Banner Road dirt must have sparse, finely broken earthy lichen');
+      assert.equal(Number(state.roadOldGreenStains), 0,
+        'Road atlas must not retain large solid paint-green moss islands');
       assert.equal(state.roadRelief, 'false',
         'Never keep stone-cobble normal relief on a natural dirt track');
       assert.ok(Number(state.edgeFringeInstances) > 25,

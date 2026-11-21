@@ -54,6 +54,35 @@ describe('Terra scenery', () => {
     expect(unique.has('140,135,107')).toBe(false);
   });
 
+  it('keeps Banner Road dirt packed and varied instead of painted with green moss islands', () => {
+    const road = chroniclesPixelTexture('woodlandpath');
+    expect(road).toBe(chroniclesPixelTexture('woodlandpath'));
+    expect(road).not.toBe(chroniclesPixelTexture('heathpath'));
+    expect(road.userData.chroniclesPixelArt).toMatchObject({
+      kind: 'woodlandpath', size: 128,
+    });
+    expect(road.image.data.length).toBe(128 * 128 * 4);
+    const colors = new Set();
+    let dustyMoss = 0;
+    let paintedGreen = 0;
+    const pixels = road.image.data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const key = Array.from(pixels.slice(i, i + 3)).join(',');
+      colors.add(key);
+      if (key === '119,118,94') dustyMoss += 1;
+      if (key === '102,116,81') paintedGreen += 1;
+      expect(pixels[i + 3]).toBe(255);
+    }
+    // The shared pixel-art ramp emits seven distinct tones on this seed;
+    // do not require colors the deterministic dither never generates.
+    expect(colors.size).toBeGreaterThanOrEqual(7);
+    // Subtle granular lichen covers only ~5% of the atlas, not the old
+    // ~9% broad opaque green pools visible from the eye-level camera.
+    expect(dustyMoss / (128 * 128)).toBeGreaterThan(0.025);
+    expect(dustyMoss / (128 * 128)).toBeLessThan(0.06);
+    expect(paintedGreen).toBe(0);
+  });
+
   it.each(['terra-c4', 'terra-e2', 'terra-b1', 'terra-a2', 'terra-d5', 'terra-f4'])('%s only blocks where the grid blocks', (mapId) => {
     const map = chroniclesMapById(mapId);
     const center = { x: 10, y: 7 };
