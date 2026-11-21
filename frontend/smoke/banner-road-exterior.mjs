@@ -139,9 +139,9 @@ try {
         'Real woodland track must retain its single batched verge along both sides');
       assert.equal(Number(state.edgeFringeCount), coarse ? 4 : 8,
         'Real 390px and 1280px track must expose irregular top-level moss tongues');
-      assert.ok(Number(state.edgeFringeMaxIntrusion) > 0.14
-        && Number(state.edgeFringeMaxIntrusion) < 0.27,
-        'Overlapping moss must soften the edge without swallowing the usable track');
+      assert.ok(Number(state.edgeFringeMaxIntrusion) > 0.095
+        && Number(state.edgeFringeMaxIntrusion) < 0.12,
+        'Short earthy fringe must soften the dirt edge without green teeth on the tread');
       assert.ok(Number(state.fogNear) > 10 && Number(state.fogFar) > Number(state.fogNear),
         'The actual scene must have atmospheric depth, not a flat clear horizon');
       assert.ok(Number(state.pixelVariants) > 10,
