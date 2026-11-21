@@ -793,6 +793,8 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // meadow never did: changing its bank opacity was a no-op. Reuse the same
   // procedural cloud atlas, with 4 sprites on mobile / 8 on desktop.
   // They are visual sky decoration, not lights, colliders or map content.
+  // Their FINAL daytime opacity belongs to chroniclesExteriorDaylight.sync:
+  // writing it here is overwritten before the first visible frame.
   if (bannerTrail) addSwordhavenClouds(skyDome, coarsePointer);
   scene.add(skyDome);
   // Book One shopfronts need a directional key to reveal dressed stone,

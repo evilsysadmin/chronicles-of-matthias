@@ -376,7 +376,16 @@ describe('Chronicles file-authored exterior renderer', () => {
     const sky = scene.getObjectByName('swordhaven-sky-dome');
     const banks = sky.children.filter(child => child.name.startsWith('swordhaven-cloud-'));
     expect(banks).toHaveLength(coarsePointer ? 4 : 8);
-    expect(sky.getObjectByName('chronicles-sky-cloud-panorama')).toBeTruthy();
+    const panorama = sky.getObjectByName('chronicles-sky-cloud-panorama');
+    expect(panorama).toBeInstanceOf(THREE.Mesh);
+    // The cloud atlas is an existing sky-dome child, not a new draw call.
+    expect(panorama.material.transparent).toBe(true);
+    // The sky constructor must remain neutral: the game-wide daylight
+    // controller decides the final opacity from actual world time/weather.
+    expect(panorama.material.opacity).toBeCloseTo(0.11, 5);
+    expect(panorama.material.depthWrite).toBe(false);
+    expect(panorama.material.fog).toBe(false);
+    expect(panorama.userData.chroniclesDecorativeOnly).toBe(true);
     expect(new Set(banks.map(bank => bank.getObjectByName('cloud-soft-bank')?.material)).size)
       .toBe(1);
     const bankTexture = banks[0].getObjectByName('cloud-soft-bank').material.map;
@@ -389,7 +398,12 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(scene.children.filter(child => child.isHemisphereLight)).toHaveLength(1);
     const other = make({ ...plan, mapId: 'terra-c4' });
     expect(other.getObjectByName('swordhaven-cloud-0')).toBeUndefined();
-    expect(other.getObjectByName('chronicles-sky-cloud-panorama')).toBeTruthy();
+    const original = other.getObjectByName('chronicles-sky-cloud-panorama');
+    expect(original).toBeInstanceOf(THREE.Mesh);
+    expect(original.material.opacity).toBeCloseTo(0.11, 5);
+    expect(original.material).not.toBe(panorama.material);
+    expect(original.material.map.image.width).toBe(panorama.material.map.image.width);
+    expect(original.material.map.image.height).toBe(panorama.material.map.image.height);
   });
 
   it('renders a continuous, earthy Banner Road without altering saved navigation cells or mobile GPU budget', () => {

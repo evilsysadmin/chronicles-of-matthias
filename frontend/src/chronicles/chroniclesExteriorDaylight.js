@@ -158,8 +158,12 @@ export function createChroniclesExteriorDaylight(scene, renderer, region = {}) {
         // shapes. Reveal the existing broken silhouettes by daylight only,
         // tapering the boost smoothly before overcast. Never add cloud
         // coverage or amplify rain, fog, twilight darkness or night skies.
+        // This is the final frame-visible opacity; a value set while
+        // building the sky dome would be overwritten on the first sync.
+        // Limit the extra 0.20 to Banner Road's genuinely clear daylight:
+        // cloudy/rainy weather, fog, night and other maps are untouched.
         panoramaMaterial.opacity = 0.11 + cloudiness * 0.79
-          + (0.24 + (bannerRoadSky ? 0.32 : 0)) * clearDaylight * daylight;
+          + (0.24 + (bannerRoadSky ? 0.52 : 0)) * clearDaylight * daylight;
         panoramaMaterial.color.copy(cloudNight).lerp(cloudDay, daylight)
           .lerp(cloudStorm, cloudiness * 0.62)
           // The procedural atlas already has broken bright crowns and darker
