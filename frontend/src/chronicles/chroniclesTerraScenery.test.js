@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -263,6 +263,59 @@ describe('Terra scenery', () => {
       expect(Math.max(...shoulderHeights)).toBeGreaterThan(leaf.boundingBox.max.y - 0.30);
     }
     [leaf, old, again].forEach(geometry => geometry.dispose());
+  });
+
+  it.each([false, true])('fills the real blocked gate shoulders with tiered grove trees (touch=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const expected = [6, 8, 12, 13];
+    const roots = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      chroniclesBannerRoadGatewayGrove(map.grid, center, x, y) ? [{ x, y, tile }] : []));
+    expect(roots).toEqual(expected.map(x => ({ x, y: 4, tile: '#' })));
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 10, 4)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 9, 4)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 8, 5)).toBe(false);
+    expect(chroniclesBannerRoadGatewayGrove(map.grid, center, 8, 14)).toBe(false);
+
+    const args = { grid: map.grid, center, biome: map.biome, coarsePointer };
+    const full = buildTerraScenery({ ...args, mapId: map.id });
+    const again = buildTerraScenery({ ...args, mapId: map.id });
+    const other = buildTerraScenery({ ...args, mapId: 'terra-c4' });
+    const trunk = full.getObjectByName('chronicles-terra-broadleafTrunk');
+    const twin = again.getObjectByName('chronicles-terra-broadleafTrunk');
+    const baseline = other.getObjectByName('chronicles-terra-broadleafTrunk');
+    expect(trunk).toBeInstanceOf(THREE.InstancedMesh);
+    expect(full.children.every(child => child.isInstancedMesh)).toBe(true);
+    expect(full.children.map(m => m.name).sort()).toEqual(other.children.map(m => m.name).sort());
+    expect(trunk.count).toBeGreaterThan(baseline.count);
+    const matrix = new THREE.Matrix4(), duplicate = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const found = new Set();
+    for (let i = 0; i < trunk.count; i += 1) {
+      trunk.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, duplicate);
+      expect(matrix.elements).toEqual(duplicate.elements);
+      matrix.decompose(pos, rotation, scale);
+      const x = Math.round(pos.x / 4) + center.x;
+      const y = Math.round(pos.z / 4) + center.y;
+      if (y !== 4 || !expected.includes(x)) continue;
+      expect(map.grid[y][x]).toBe('#');
+      expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(1.01);
+      expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(1.01);
+      expect(scale.y).toBeGreaterThan(2.65);
+      expect(scale.y).toBeLessThan(6.5);
+      found.add(x);
+    }
+    expect([...found].sort((a, b) => a - b)).toEqual(expected);
+    const originalRoots = new Set();
+    const orig = new THREE.Matrix4();
+    for (let i = 0; i < baseline.count; i += 1) {
+      baseline.getMatrixAt(i, orig);
+      if (Math.round(orig.elements[14] / 4) + center.y === 4) {
+        originalRoots.add(Math.round(orig.elements[12] / 4) + center.x);
+      }
+    }
+    expect(originalRoots.has(6)).toBe(false); // A real forest gap gets its first tree.
   });
 
   it.each([true, false])('softens only Banner Road canopy silhouettes with one extra leaf mass (touch=%s)', coarsePointer => {
