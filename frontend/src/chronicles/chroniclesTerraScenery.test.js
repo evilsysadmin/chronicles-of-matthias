@@ -1220,16 +1220,22 @@ describe('Terra scenery', () => {
     const referenceTrees = matrixToMapCell(originalTrunks);
     // Background density now differs, so match by AUTHORED forest cell,
     // not the global instance index (which includes off-map trees).
-    // The forest gateway deliberately adds ONE real trunk on the already
-    // blocked tile 9,4. The other historic forest tiles must be unchanged.
+    // The original gateway adds a trunk on 9,4. The new intermediate grove
+    // explicitly changes four further already-blocked roots; every OTHER
+    // historic forest transform must continue to match the old baseline.
     expect(actualTrees.get('9,4')).toHaveLength(1);
     expect(referenceTrees.has('9,4')).toBe(false);
+    const gatewayChanges = ['9,4', '6,4', '8,4', '12,4', '13,4'];
     const historicTrees = new Map(actualTrees);
-    historicTrees.delete('9,4');
-    expect([...historicTrees.keys()].sort()).toEqual([...referenceTrees.keys()].sort());
+    const unchangedReference = new Map(referenceTrees);
+    gatewayChanges.forEach(key => {
+      historicTrees.delete(key);
+      unchangedReference.delete(key);
+    });
+    expect([...historicTrees.keys()].sort()).toEqual([...unchangedReference.keys()].sort());
     const young = [], original = [];
     for (const [key, heights] of historicTrees) {
-      const baseline = referenceTrees.get(key);
+      const baseline = unchangedReference.get(key);
       expect(heights).toHaveLength(baseline.length);
       young.push(...heights);
       original.push(...baseline);
@@ -1496,13 +1502,17 @@ describe('Terra scenery', () => {
     const baseline = collect(previous);
     const reduced = collect(cheap);
     const repeated = collect(again.getObjectByName('chronicles-terra-crown'));
-    // The new mature gateway intentionally adds an authored forest tree
-    // on blocked cell 9,4. All other in-grid counts must match unchanged
-    // other-world plains and the local deterministic rebuild.
+    // The gate adds the existing mature sentinel at 9,4, and v39 adds one
+    // tree to the previously empty blocked root 6,4. The other three grove
+    // roots already had juvenile trees, so their instance counts stay at 1.
+    // Every other in-grid tree count and all out-of-grid rings stay intact.
     expect(forest.authored.get('9,4')).toBe(1);
     expect(baseline.authored.has('9,4')).toBe(false);
+    expect(forest.authored.get('6,4')).toBe(1);
+    expect(baseline.authored.has('6,4')).toBe(false);
     const originalForest = new Map(forest.authored);
     originalForest.delete('9,4');
+    originalForest.delete('6,4');
     expect([...originalForest]).toEqual([...baseline.authored]);
     expect([...forest.authored]).toEqual([...repeated.authored]);
     expect(forest.rings).toEqual(repeated.rings);
