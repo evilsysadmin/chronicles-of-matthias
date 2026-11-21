@@ -114,7 +114,7 @@ test('Chromium cache key comes from installed npm-locked Playwright in both E2Es
 test('first-party workflow actions use Node 24-compatible releases', () => {
   for (const workflow of [ci, frontend, api]) {
     assert.match(workflow, /actions\/checkout@v[57]\b/);
-    assert.match(workflow, /actions\/setup-node@v5/);
+    assert.match(workflow, /actions\/setup-node@v7\b/);
     assert.doesNotMatch(workflow, /actions\/checkout@v4|actions\/setup-node@v4|actions\/setup-go@v5|actions\/cache@v4|actions\/upload-artifact@v4/);
   }
   // setup-go v6 and v7 both run on Node 24; allow Dependabot's v7 upgrade.
