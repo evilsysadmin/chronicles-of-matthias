@@ -127,7 +127,13 @@ function sample(kind, x, y, size) {
     const tread = valueNoise(x, y, size, 13, 142) - 0.5;
     const gravel = valueNoise(x, y, size, 26, 143) - 0.5;
     const moss = valueNoise(x, y, size, 9, 144) - 0.5;
-    if (moss > 0.17 && soil < -0.01) return { color: 0x667451 };
+    // Broken, dusty lichen flecks rather than large solid paint-green
+    // islands across the middle of the cart track. A 4px grain mask reduces
+    // the footprint without changing the atlas, dirt road or draw budget.
+    if (moss > 0.14 && soil < -0.01
+      && hash(Math.floor(x / 4), Math.floor(y / 4), 145) > 0.63) {
+      return { color: 0x77765e };
+    }
     if (hash(x, y, 148) > 0.987 && gravel > -0.12) return { color: 0xaea18c };
     if (hash(x, y, 149) > 0.991 && soil < 0.10) return { color: 0x4c4939 };
     return 0.49 + soil * 0.45 + tread * 0.20 + gravel * 0.11 + grain * 0.08;
