@@ -42,7 +42,7 @@ const RAMPS = Object.freeze({
   grass: [0x24461a, 0x335f22, 0x45782a, 0x5a8f33, 0x76a840, 0x93bd52].map(hex),
   // Banner Road meadow: less black/green pixel contrast than town grass,
   // with midtone olive/sage patches and subtle dry summer grass.
-  meadow: [0x35552b, 0x48683a, 0x5a7946, 0x6b8851, 0x7d965d, 0x92a66e].map(hex),
+  meadow: [0x304a2c, 0x435a35, 0x536d40, 0x677e4c, 0x758957, 0x899d6b].map(hex),
   // Banner Road only: compressed loam and small gravel, never masonry joints.
   woodlandpath: [0x4a4634, 0x5f543b, 0x766447, 0x8a7755, 0xa08d67, 0xb2a07e].map(hex),
   masonry: [0x4a4440, 0x8a8178, 0xb3aa9c, 0xd4cbbb, 0xeee6d6, 0xfff9ec].map(hex),
@@ -99,21 +99,22 @@ function sample(kind, x, y, size) {
     // irregular pockets. This texture is used only by Banner Road.
     const loam = valueNoise(x, y, size, 11, 94) - 0.5;
     const moss = valueNoise(x, y, size, 9, 95) - 0.5;
-    // A minority of small, sage-brown loam clearings interrupt the grass.
-    // Avoid the former large ochre patches that looked like flat mud slabs
-    // in the 390px first-person view. No new textures or terrain meshes.
+    // Small, cool umber patches reveal soil within a more subdued olive
+    // forest floor. Keep their exact prior coverage/shape, but avoid the
+    // flat pale beige blotches visible in eye-level first-person screenshots.
+    // Same tileable 128px atlas, one material and no extra terrain geometry.
     if (loam < -0.22 && clover < 0.02) {
-      return { color: loam < -0.29 ? 0x79745d : 0x8c876b };
+      return { color: loam < -0.29 ? 0x6d6952 : 0x807e62 };
     }
-    if (sward > 0.11 && moss > -0.04) return { color: 0x829560 };
-    if (sward < -0.15 && moss > 0.07) return { color: 0x465e37 };
+    if (sward > 0.11 && moss > -0.04) return { color: 0x7a9064 };
+    if (sward < -0.15 && moss > 0.07) return { color: 0x405b3c };
     // Fine tufts soften the terrain at eye level while the 3D grass adds
     // actual silhouettes. No shadow, animation or second ground material.
     const blade = hash(Math.floor(x / 5), Math.floor(y / 7), 96);
     if (sward > -0.15 && blade > 0.79 && x % 5 === 2 && y % 7 < 3) {
-      return y % 7 === 0 ? { color: 0xa7ad75 } : 0.31 + moss * 0.15;
+      return y % 7 === 0 ? { color: 0x9fa976 } : 0.31 + moss * 0.15;
     }
-    if (hash(x, y, 93) > 0.9982) return { color: 0xb8a879 };
+    if (hash(x, y, 93) > 0.9982) return { color: 0xa9a17a };
     return 0.51 + sward * 0.46 + clover * 0.20 + moss * 0.14
       + grain * 0.08;
   }
