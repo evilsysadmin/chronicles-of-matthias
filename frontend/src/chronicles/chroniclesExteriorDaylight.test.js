@@ -295,6 +295,32 @@ describe('Terra solar cycle', () => {
     expect(createChroniclesExteriorDaylight(scene, { toneMappingExposure: 1 })?.sync(1320)).toBe(true);
   });
 
+  it('boosts the FRAME-VISIBLE Banner Road cloud panorama only after actual clear-day world-time sync', () => {
+    const { scene, dome, renderer } = outdoors();
+    const clouds = dome.getObjectByName('chronicles-sky-cloud-panorama');
+    const region = { mapId: 'banner-road-first-book', regionKind: 'wilderness' };
+    // The real 390px/1280px Chromium smoke uses this genuinely clear
+    // 12:45 world minute, not a synthetic forced cloud setting.
+    const minute = 2205;
+    const weather = chroniclesRegionalWeatherTransition({ ...region, worldMinutes: minute });
+    expect(weather.clouds).toBeLessThan(0.08);
+    expect(clouds.material.opacity).toBeCloseTo(0.11, 5);
+    const beforeChildren = scene.children.length;
+    const cycle = createChroniclesExteriorDaylight(scene, renderer, region);
+    expect(cycle.sync(minute)).toBe(true);
+    // A material tweak at scene-construction time used to pass Vitest but
+    // produced byte-identical real screenshots because sync overwrote it.
+    // Guard the FINAL opacity, while keeping natural clear sky rather than
+    // an opaque grey cloud overlay.
+    expect(clouds.material.opacity).toBeGreaterThan(0.84);
+    expect(clouds.material.opacity).toBeLessThan(0.96);
+    expect(clouds.material.transparent).toBe(true);
+    expect(clouds.material.depthWrite).toBe(false);
+    expect(scene.children).toHaveLength(beforeChildren);
+    expect(cycle.sync(minute)).toBe(false);
+    expect(clouds.material.opacity).toBeGreaterThan(0.84);
+  });
+
   it('attenuates daylight and shortens existing fog without adding objects, reversible on save restore', () => {
     const { scene, sun, hemi, renderer } = outdoors();
     const baselineFogNear = scene.fog.near;
