@@ -497,7 +497,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(pathAtlas.anisotropy).toBe(4);
     expect(pathAtlas.userData.chroniclesPixelArt.kind).toBe('woodlandpath');
     const pathColors = new Set();
-    let grassPatches = 0;
+    let dustyLichen = 0;
+    let oldPaintGreen = 0;
     let pebblePixels = 0;
     let brightPixels = 0;
     const ground = pathAtlas.image.data;
@@ -505,15 +506,18 @@ describe('Chronicles file-authored exterior renderer', () => {
       const r = ground[offset], g = ground[offset + 1], b = ground[offset + 2];
       pathColors.add(r + ',' + g + ',' + b);
       expect(ground[offset + 3]).toBe(255);
-      if (r === 0x66 && g === 0x74 && b === 0x51) grassPatches += 1;
+      if (r === 0x77 && g === 0x76 && b === 0x5e) dustyLichen += 1;
+      if (r === 0x66 && g === 0x74 && b === 0x51) oldPaintGreen += 1;
       if (r === 0xae && g === 0xa1 && b === 0x8c) pebblePixels += 1;
       if (r > 0xd4 || g > 0xd4 || b > 0xd4) brightPixels += 1;
     }
-    expect(grassPatches).toBeGreaterThan(20);
+    expect(dustyLichen).toBeGreaterThan(300);
+    expect(dustyLichen).toBeLessThan(1000);
+    expect(oldPaintGreen).toBe(0);
     expect(pebblePixels).toBeGreaterThan(10);
     expect(brightPixels).toBe(0);
-    // Seven observable tones plus explicit moss/gravel counts already prove
-    // that the path is not a flat tint; dither does not use every ramp stop.
+    // Seven observable tones plus explicit lichen/gravel counts prove
+    // this is still textured earth, not an unvaried flat brown strip.
     expect(pathColors.size).toBeGreaterThanOrEqual(7);
     expect(road.geometry.parameters).toEqual(cheaper.geometry.parameters);
     expect(road.instanceColor.count).toBe(road.count);
