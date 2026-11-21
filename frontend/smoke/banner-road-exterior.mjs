@@ -114,8 +114,9 @@ try {
         'Visual QA must use the same level camera as live MM3 gameplay');
       assert.equal(Number(state.skyCloudAtlasWidth), coarse ? 256 : 512,
         'Keep the existing low-cost mobile/desktop 360-degree cloud atlas');
-      assert.ok(Number(state.skyCloudOpacity) > 0.60,
-        'The clear-day panorama must have meaningful weather-controlled opacity');
+      assert.ok(Number(state.skyCloudOpacity) > 0.84
+        && Number(state.skyCloudOpacity) < 0.96,
+        'The ACTUAL clear-day panorama must retain its stronger post-sync opacity; build-time tweaks are overwritten');
       assert.ok(Number(state.skyCloudPixelDifference) > 1.2,
         'The actual WebGL sky must visibly change when real clouds are drawn');
       assert.equal(Number(state.cloudBankCount), coarse ? 4 : 8,
