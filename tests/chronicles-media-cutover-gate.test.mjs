@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  LEGACY, TARGET, ORIGIN, PINS, CutoverError, validateManifest, proveCutover,
+  LEGACY, TARGET, ORIGIN, PRODUCTION_ORIGIN, BROWSER_ORIGINS, PINS,
+  CutoverError, validateManifest, proveCutover, requestAsset,
 } from '../scripts/chronicles-media-cutover-gate.mjs';
 
 const actual = JSON.parse(readFileSync(
@@ -36,14 +37,14 @@ function synthetic() {
 }
 function responses(pins, samples, mutate = x => x) {
   const calls = [];
-  const transfer = async (method, pin) => {
+  const transfer = async (method, pin, origin = ORIGIN) => {
     const index = Object.values(pins).indexOf(pin);
-    calls.push({ method, key: pin.key });
+    calls.push({ method, key: pin.key, origin });
     const value = {
       status: 200,
       headers: {
         'content-type': pin.contentType,
-        'access-control-allow-origin': ORIGIN,
+        'access-control-allow-origin': origin,
         'content-length': String(pin.bytes),
         'cache-control': pin.versioned
           ? 'public, max-age=31536000, immutable'
@@ -51,7 +52,7 @@ function responses(pins, samples, mutate = x => x) {
       },
       body: method === 'GET' ? samples[index] : Buffer.alloc(0),
     };
-    return mutate(value, method, pin);
+    return mutate(value, method, pin, origin);
   };
   return { transfer, calls };
 }
@@ -65,17 +66,18 @@ test('current source manifest remains the four pinned legacy objects; zero HTTP'
   assert.equal(touched, false);
 });
 
-test('target cutover requires HEAD and GET with exact byte/hash/cors/cache proofs', async () => {
+test('target cutover requires HEAD and GET for staging and production, exact hash/cors/cache', async () => {
   const { pins, samples } = synthetic();
   const doc = fixture(TARGET, pins);
   const { transfer, calls } = responses(pins, samples);
   assert.deepEqual(await proveCutover(doc, transfer, pins), {
-    mode: 'target', objects: 4, requests: 8,
+    mode: 'target', objects: 4, requests: 16,
     bytes: samples.reduce((n, buffer) => n + buffer.length, 0),
   });
-  assert.deepEqual(calls.map(x => x.method), [
-    'HEAD','GET','HEAD','GET','HEAD','GET','HEAD','GET',
-  ]);
+  assert.deepEqual(calls.map(x => x.method),
+    Array.from({ length: 8 }, () => ['HEAD', 'GET']).flat());
+  assert.deepEqual(calls.map(x => x.origin), Object.values(pins)
+    .flatMap(() => [ORIGIN, ORIGIN, PRODUCTION_ORIGIN, PRODUCTION_ORIGIN]));
   for (const [id, pin] of Object.entries(pins)) {
     assert.equal(doc.assets[id].url, canonicalUrl(TARGET, pin.key));
   }
@@ -118,8 +120,30 @@ test('reject corrupted full-sized bytes and incorrect public metadata; do not ac
       return response;
     });
     await assert.rejects(proveCutover(doc, transfer, pins), CutoverError);
-    assert.ok(calls.length < 8);
+    assert.ok(calls.length < 16);
   }
+});
+
+test('production-only and staging-only CORS regressions both block activation', async () => {
+  const { pins, samples } = synthetic();
+  const doc = fixture(TARGET, pins);
+  assert.deepEqual(BROWSER_ORIGINS, [ORIGIN, PRODUCTION_ORIGIN]);
+  for (const blocked of BROWSER_ORIGINS) {
+    const allowed = blocked === ORIGIN ? PRODUCTION_ORIGIN : ORIGIN;
+    const { transfer, calls } = responses(pins, samples, (response, method, pin, origin) => {
+      if (origin === blocked) response.headers['access-control-allow-origin'] = allowed;
+      return response;
+    });
+    await assert.rejects(proveCutover(doc, transfer, pins),
+      /Public CORS mismatch for/);
+    assert.ok(calls.length < 16, 'Both origins must fail fast if the other is denied');
+  }
+  for (const forbidden of ['https://attacker.invalid', LEGACY]) {
+    assert.throws(() => requestAsset('GET', PINS['chronicles.music.firstVerse'], forbidden),
+      /Unexpected public proof request/);
+  }
+  assert.throws(() => requestAsset('DELETE', PINS['chronicles.music.firstVerse'], ORIGIN),
+    /Unexpected public proof request/);
 });
 
 test('immutable model cache and mutable music cache cannot be reversed', async () => {
