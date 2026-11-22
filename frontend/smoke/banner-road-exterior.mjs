@@ -60,6 +60,12 @@ try {
         'Forest edge must remain grouped in eight authored blocking roots, never a continuous wall');
       assert.equal(Number(state.woodlineInvalid), 0,
         'Thickets must fit their real blocked forest cells without entering the traversable approach');
+      assert.equal(Number(state.brackenRoots), 13,
+        'The meadow-to-forest gradient must grow in thirteen real unpaved approach cells');
+      assert.equal(Number(state.brackenInstances), coarse ? 39 : 52,
+        'Low bracken drifts must be visible on both 390px and 1280px budgets');
+      assert.equal(Number(state.brackenInvalid), 0,
+        'All bracken must stay below knee height and inside traversable grass, never paving');
       assert.ok(Number(state.nearRoadsideHerbs) > (coarse ? 0 : 3),
         'First-person woodland undergrowth must bridge the gap between track and trees');
       assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');
