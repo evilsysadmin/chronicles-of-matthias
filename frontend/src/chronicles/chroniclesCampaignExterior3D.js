@@ -747,10 +747,14 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
     && (scenePlan.biome === 'plains' || scenePlan.biome === 'hills') && !heathB2;
   const naturalPath = bannerTrail || heathB2 || naturalTerraTrail;
   const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
-    // Banner Road's old 64px grass repeated twenty times produced harsh
-    // square patches along the user's forest-path POV. A calmer 128px
-    // meadow with seven broad repeats reuses the SAME terrain mesh.
-    map: bannerTrail ? terraGroundTexture('meadow', 7)
+    // Generic Terra plains and hills were STILL using Swordhaven's bright
+    // 64px grass repeated 20 times (hard nearest filtering), producing a
+    // square checkerboard behind the improved low vegetation at eye level.
+    // Reuse Banner Road's tested 128px, softly filtered, seven-repeat meadow
+    // on the same single terrain mesh. Keep B2 heath, settlements, coastal
+    // and all other biome ground materials and collision grids untouched.
+    // All meadow consumers intentionally share this SAME repeat contract.
+    map: bannerTrail || naturalTerraTrail ? terraGroundTexture('meadow', 7)
       : heathB2 ? terraGroundTexture('heath')
       : biome?.texture ? terraGroundTexture(biome.texture) : swordhavenGrassTexture(),
   });

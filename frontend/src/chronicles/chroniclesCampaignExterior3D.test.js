@@ -195,6 +195,46 @@ describe('Chronicles file-authored exterior renderer', () => {
   });
 
   it.each([terraC4, terraE2])(
+    'uses a smooth, broad-variation meadow atlas on native %s ground without extra terrain meshes',
+    (map) => {
+      const scenePlan = {
+        mapId: map.id, biome: map.biome, regionKind: map.regionKind,
+        width: map.grid[0].length, height: map.grid.length,
+        center: { x: 10, y: 7 }, grid: map.grid, scenery: map.scenery, content: [],
+      };
+      const full = new THREE.Scene(), touch = new THREE.Scene();
+      buildChroniclesCampaignExterior(full, { scenePlan });
+      buildChroniclesCampaignExterior(touch, { scenePlan, coarsePointer: true });
+      const terrain = full.getObjectByName('chronicles-campaign-terrain');
+      const mobile = touch.getObjectByName('chronicles-campaign-terrain');
+      const mapTexture = chroniclesPixelTexture('meadow');
+      expect(terrain).toBeInstanceOf(THREE.Mesh);
+      expect(terrain.material.map).toBe(mapTexture);
+      expect(mobile.material.map).toBe(mapTexture);
+      expect(terrain.material.map.name).not.toBe('chronicles-pixel-grass');
+      expect(terrain.geometry.parameters).toEqual(mobile.geometry.parameters);
+      expect(full.children.filter(obj => obj.name === terrain.name)).toHaveLength(1);
+      expect(touch.children.filter(obj => obj.name === terrain.name)).toHaveLength(1);
+      // Before this fix the natural outdoors inherited a nearest-filtered
+      // Swordhaven 64px atlas with twenty visible square repetitions.
+      expect(mapTexture.image.width).toBe(128);
+      expect(mapTexture.image.height).toBe(128);
+      expect(mapTexture.repeat.toArray()).toEqual([7, 7]);
+      expect(mapTexture.magFilter).toBe(THREE.LinearFilter);
+      expect(mapTexture.minFilter).toBe(THREE.LinearMipmapLinearFilter);
+      expect(mapTexture.anisotropy).toBe(4);
+      expect(mapTexture.wrapS).toBe(THREE.RepeatWrapping);
+      expect(mapTexture.wrapT).toBe(THREE.RepeatWrapping);
+      expect(terrain.material.color.getHex())
+        .toBe(map.biome === 'hills' ? 0xd8d0a0 : 0xffffff);
+      expect(full.getObjectByName('chronicles-campaign-road'))
+        .toBeInstanceOf(THREE.InstancedMesh);
+      expect(touch.getObjectByName('chronicles-campaign-road'))
+        .toBeInstanceOf(THREE.InstancedMesh);
+    },
+  );
+
+  it.each([terraC4, terraE2])(
     'renders the original walkable %s grid with a narrow earth trail, not city cobbles',
     (map) => {
       const center = { x: 10, y: 7 };
