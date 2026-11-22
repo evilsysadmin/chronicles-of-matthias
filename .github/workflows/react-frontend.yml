@@ -194,6 +194,16 @@ jobs:
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
           node smoke/run-timed.mjs smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
+      # A focused small artifact makes the four real Terra comparison frames
+      # inspectable without downloading the entire UI smoke screenshot archive.
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        with:
+          name: chronicles-terra-landscape-pov
+          path: frontend/smoke-terra-landscape-*.png
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v7
