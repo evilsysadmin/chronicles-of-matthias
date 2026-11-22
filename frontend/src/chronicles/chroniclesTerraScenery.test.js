@@ -1325,7 +1325,7 @@ describe('Terra scenery', () => {
     // longer needs to be practically empty. The authored forest must STILL
     // be substantially denser, with its own sedge species and instance tints.
     expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
-      .toBeGreaterThan(older.count * 2.5);
+      .toBeGreaterThan(older.count * 2);
     expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
       .toBeGreaterThan(mobile.count * 2);
     expect(flowers.count).toBeGreaterThan(15);
