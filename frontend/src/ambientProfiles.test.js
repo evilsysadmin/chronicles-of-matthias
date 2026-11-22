@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { structuredFeel } from './ambientProfiles.js';
-import { AMBIENT_THEMES } from './ambientCatalog.js';
+import { AMBIENT_THEMES, AMBIENT_THEME_OPTIONS } from './ambientCatalog.js';
 
 describe('Granada · cámara guitarra + qanun', () => {
   it('preserva el patio de guitarra, qanun y pizzicato sin batería', () => {
@@ -52,5 +52,17 @@ describe('Granada · cámara guitarra + qanun', () => {
     const cairo = structuredFeel({ id: 'cairo0047' });
     expect(cairo.family).toBe('cairo-rhodes-horn-noir');
     expect(cairo.layers.drums).toBe(true);
+  });
+});
+
+describe('Chronicles legacy radio does not install Chess Studio-only compositions', () => {
+  it('keeps all six Chess Studio originals out of the inherited catalog', () => {
+    for (const id of [
+      'queenSiciliana', 'rookPassacaglia', 'knightScherzo',
+      'blackKingPavane', 'sixtyFourVariations', 'flagFallFive',
+    ]) {
+      expect(AMBIENT_THEMES[id]).toBeUndefined();
+      expect(AMBIENT_THEME_OPTIONS.some(theme => theme.id === id)).toBe(false);
+    }
   });
 });
