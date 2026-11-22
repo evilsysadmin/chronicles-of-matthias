@@ -43,6 +43,10 @@ const RAMPS = Object.freeze({
   // Banner Road meadow: less black/green pixel contrast than town grass,
   // with midtone olive/sage patches and subtle dry summer grass.
   meadow: [0x304a2c, 0x435a35, 0x536d40, 0x677e4c, 0x758957, 0x899d6b].map(hex),
+  // Generic Terra meadows: gentler mid-tone olive grasses, without the
+  // large flat, dark peat islands useful in Banner Road's woodland.
+  // Separate cached 128px atlas: the authored Banner Road stays identical.
+  terrafield: [0x526843, 0x60764c, 0x708658, 0x809668, 0x91a477, 0xa4b58a].map(hex),
   // Banner Road only: compressed loam and small gravel, never masonry joints.
   woodlandpath: [0x4a4634, 0x5f543b, 0x766447, 0x8a7755, 0xa08d67, 0xb2a07e].map(hex),
   masonry: [0x4a4440, 0x8a8178, 0xb3aa9c, 0xd4cbbb, 0xeee6d6, 0xfff9ec].map(hex),
@@ -67,7 +71,7 @@ const RAMPS = Object.freeze({
 });
 
 const SIZES = Object.freeze({
-  grass: 64, meadow: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
+  grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
   snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32,
 });
 
@@ -87,6 +91,24 @@ function sample(kind, x, y, size) {
     const flower = hash(x, y, 17);
     if (flower > 0.9965) return { color: flower > 0.9985 ? 0xf2ead2 : 0xe6c84a };
     return 0.52 + meadow * 0.55 + clover * 0.25 + grain * 0.18;
+  }
+  if (kind === 'terrafield') {
+    // Multi-scale, tileable field noise replaces giant black-green blobs:
+    // smaller clover/lichen islands interrupt broader sward without hard
+    // binary thresholds that turn whole areas into one flat dark colour.
+    // The subtle soil grit is pixel-scale, never a large solid patch.
+    const sward = valueNoise(x, y, size, 7, 201) - 0.5;
+    const clover = valueNoise(x, y, size, 19, 202) - 0.5;
+    const moss = valueNoise(x, y, size, 31, 203) - 0.5;
+    const grit = valueNoise(x, y, size, 43, 204) - 0.5;
+    if (clover < -0.23 && moss < -0.12 && hash(x, y, 205) > 0.75) {
+      return { color: 0x897e61 }; // Sparse, detached earth flecks.
+    }
+    if (moss > 0.19 && grit > 0.11) {
+      return { color: 0xa3ab7c }; // Sunlit lichen, not white speckles.
+    }
+    return 0.52 + sward * 0.34 + clover * 0.32 + moss * 0.22
+      + grit * 0.11 + grain * 0.07;
   }
   if (kind === 'meadow') {
     // A grassy forest floor needs more than a smooth green tint. Layer broad
@@ -279,7 +301,7 @@ export function chroniclesPixelTexture(kind) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
-  const softTerrain = kind === 'meadow' || kind === 'woodlandpath';
+  const softTerrain = kind === 'meadow' || kind === 'terrafield' || kind === 'woodlandpath';
   texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
   texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;
