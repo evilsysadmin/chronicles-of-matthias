@@ -151,6 +151,9 @@ jobs:
           # photographed at mobile and desktop budgets with actual foliage,
           # terrain, paving, sky and atmospheric distance. No staged account.
           node smoke/run-timed.mjs smoke/banner-road-exterior.mjs http://localhost:4174/smoke/banner-road-exterior.html
+          # Real first-person Terra visual evidence: mountain and meadow
+          # tile families photographed at mobile and desktop budgets.
+          node smoke/run-timed.mjs smoke/terra-landscape-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
