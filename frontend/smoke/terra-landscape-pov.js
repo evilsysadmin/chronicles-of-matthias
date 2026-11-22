@@ -19,7 +19,7 @@ const CELL = 4;
 const EYE_HEIGHT = 1.62;
 const targets = Object.freeze({
   'terra-e2': Object.freeze({ crag: 3, pebble: 1, tuft: 1 }),
-  'terra-c4': Object.freeze({ tuft: 1, flower: 3, forestHerb: 2 }),
+  'terra-c4': Object.freeze({ tuft: 1, flower: 3, forestHerb: 2, microrelief: 2 }),
 });
 
 try {
@@ -180,6 +180,7 @@ try {
     tuftCount: String(meshes.tuft?.count || 0),
     flowerCount: String(meshes.flower?.count || 0),
     herbCount: String(meshes.forestHerb?.count || 0),
+    microreliefCount: String(meshes.microrelief?.count || 0),
     targetPixelDifference: String(changed ? diff / (changed * 3) : 0),
     targetChangedSamples: String(changed),
     pixelVariants: String(colors.size),
