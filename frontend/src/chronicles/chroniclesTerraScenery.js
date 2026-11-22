@@ -1475,11 +1475,26 @@ const CLUTTER = {
 // recipes while deterministic sub-cell offsets avoid a painted checkerboard.
 // All plant tips stay below knee height; plants never become collision tiles.
 function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
-  // At 390px the original miniature grass disappeared against the terrain:
-  // mobile displayed only 98 changed pixels in the real Terra C4 camera.
-  // Retain a subset of the desktop cells, but make the surviving plants
-  // perceptible using the SAME low-poly, shared grass/flower/herb batches.
-  if (!recipe || noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.93 : 1)) return;
+  // The old density sampler could reject THREE consecutive meadow cells
+  // in front of a real first-person camera (C4 x=7,y=2..4), leaving a vast,
+  // bare plane despite hundreds of grass clumps elsewhere in the map.
+  // Sparse fallback grass fills most accidental gaps; 8-16% of rejected
+  // cells remain genuine clearings. It is never a collider or a new batch.
+  if (!recipe) return;
+  if (noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.93 : 1)) {
+    if (noise(x, y, 697) >= (coarsePointer ? 0.84 : 0.92)) return;
+    const angle = noise(x, y, 699) * Math.PI * 2;
+    const reach = 0.84 + noise(y, x, 701) * 0.31;
+    p.add('tuft', [
+      wx + Math.cos(angle) * reach,
+      0.012,
+      wz + Math.sin(angle) * reach,
+    ], {
+      yaw: noise(x, y, 703) * Math.PI * 2,
+      scale: coarsePointer ? [1.30, 1.22, 1.30] : [1.08, 1.08, 1.08],
+    });
+    return;
+  }
   const ox = (noise(x, y, 623) - 0.5) * 1.32;
   const oz = (noise(y, x, 625) - 0.5) * 1.32;
   const grassScale = coarsePointer
