@@ -164,7 +164,9 @@ describe('reusable Terra meadow tiles', () => {
     // Mobile keeps a small triangle budget, but the enlarged first-person
     // silhouette is real geometry rather than a UI sprite or generated art.
     const blades = part(mobile, 'tuft').geometry;
-    expect(blades.getAttribute('position').count / 3).toBe(5);
+    // Five curved leaves, each built from three small opaque triangles:
+    // the mobile silhouette is no longer a single dark arrowhead per leaf.
+    expect(blades.getAttribute('position').count / 3).toBe(15);
     expect(part(mobile, 'tuft').count).toBeGreaterThan(325);
     // Three contiguous C4 cells in the camera's real north-facing route
     // were all empty with the original stochastic selector, making the

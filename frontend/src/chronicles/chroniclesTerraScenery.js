@@ -328,48 +328,77 @@ export function chroniclesLayeredShrubGeometry({ coarsePointer = false } = {}) {
 }
 
 /**
- * Thin crossed leaf blades, not opaque green cones. Vertex colours bake
- * modest light/olive variation into one opaque, instanced material; there is
- * no alpha sorting, billboard animation, per-frame work or extra draw call.
+ * Short, softly curling grass leaves, not arrowhead-shaped dark triangles.
+ * Each stem starts wide and olive, rises through a narrower shoulder and
+ * bends into a slim sunlit tip. All three triangles share the existing
+ * opaque, double-sided vertex-colour material and single InstancedMesh.
+ * Coarse uses 5 leaves (15 triangles), full detail 11 (33 triangles).
+ * No billboards, alpha sorting, added draw calls or animation.
  */
 export function chroniclesMeadowGrassGeometry({ coarsePointer = false } = {}) {
   const positions = [];
   const colors = [];
-  const shades = ['#476834', '#658649', '#86a15e', '#a0a96b'].map(value => new THREE.Color(value));
-  const add = (a, b, c, tint) => {
+  const roots = ['#68854a', '#789358', '#819861', '#6e8a50']
+    .map(hex => new THREE.Color(hex));
+  const shoulders = ['#92ac6b', '#a1b779', '#aaba7b', '#98b374']
+    .map(hex => new THREE.Color(hex));
+  const tips = ['#b6c885', '#c0ca8e', '#aeca83', '#b9c58d']
+    .map(hex => new THREE.Color(hex));
+  const triangle = (a, b, c, ca, cb, cc) => {
     positions.push(...a, ...b, ...c);
-    for (let n = 0; n < 3; n += 1) colors.push(tint.r, tint.g, tint.b);
+    for (const tint of [ca, cb, cc]) colors.push(tint.r, tint.g, tint.b);
   };
   const blades = coarsePointer ? 5 : 11;
   for (let i = 0; i < blades; i += 1) {
     const angle = i * Math.PI * (3 - Math.sqrt(5));
-    const r = 0.045 + (i % 4) * 0.047;
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
-    const height = (0.24 + (i % 5) * 0.045) * (coarsePointer ? 0.85 : 1);
-    const dx = Math.cos(angle) * 0.085;
-    const dz = Math.sin(angle) * 0.085;
-    const sideX = -Math.sin(angle) * 0.045;
-    const sideZ = Math.cos(angle) * 0.045;
-    const color = shades[i % shades.length];
-    add([x - sideX, 0.012, z - sideZ],
-      [x + sideX, 0.012, z + sideZ],
-      [x + dx, height, z + dz], color);
-    if (!coarsePointer) {
-      add([x + sideX, 0.012, z + sideZ],
-        [x + dx, height, z + dz],
-        [x + dx * 0.40 + sideX * 0.35, height * 0.58, z + dz * 0.40 + sideZ * 0.35],
-        shades[(i + 1) % shades.length]);
-    }
+    const directionX = Math.cos(angle);
+    const directionZ = Math.sin(angle);
+    const tangentX = -directionZ;
+    const tangentZ = directionX;
+    const radius = 0.045 + (i % 4) * 0.043;
+    const x = directionX * radius, z = directionZ * radius;
+    const height = (0.23 + (i % 5) * 0.034) * (coarsePointer ? 0.96 : 1);
+    const baseWidth = 0.048 + (i % 3) * 0.010;
+    const shoulderWidth = baseWidth * 0.60;
+    const shoulderReach = 0.040 + (i % 3) * 0.024;
+    const tipReach = shoulderReach + 0.080 + (i % 4) * 0.016;
+    // A slight sideways curl gives the blade a continuous asymmetric arc.
+    const curl = (i % 2 ? -1 : 1) * (0.028 + (i % 3) * 0.009);
+    const rootLeft = [x - tangentX * baseWidth, 0.012, z - tangentZ * baseWidth];
+    const rootRight = [x + tangentX * baseWidth, 0.012, z + tangentZ * baseWidth];
+    const midX = x + directionX * shoulderReach + tangentX * curl * 0.30;
+    const midZ = z + directionZ * shoulderReach + tangentZ * curl * 0.30;
+    const shoulderLeft = [
+      midX - tangentX * shoulderWidth, height * 0.64,
+      midZ - tangentZ * shoulderWidth,
+    ];
+    const shoulderRight = [
+      midX + tangentX * shoulderWidth, height * 0.64,
+      midZ + tangentZ * shoulderWidth,
+    ];
+    const tip = [
+      x + directionX * tipReach + tangentX * curl,
+      height * (0.89 + (i % 3) * 0.035),
+      z + directionZ * tipReach + tangentZ * curl,
+    ];
+    const rootShade = roots[i % roots.length];
+    const midShade = shoulders[i % shoulders.length];
+    const tipShade = tips[i % tips.length];
+    triangle(rootLeft, rootRight, shoulderRight,
+      rootShade, rootShade, midShade);
+    triangle(rootLeft, shoulderRight, shoulderLeft,
+      rootShade, midShade, midShade);
+    triangle(shoulderLeft, shoulderRight, tip,
+      midShade, midShade, tipShade);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
 }
-
 
 
 /**
