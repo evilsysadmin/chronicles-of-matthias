@@ -670,7 +670,8 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
 /**
  * Irregular half-buried stones, shallow exposed roots and fallen leaf litter
  * interrupt the featureless meadow foreground. One shared opaque geometry
- * is instanced across selected, walkable *unpaved* Banner Road grass cells.
+ * is instanced across selected, walkable unpaved grass cells in Terra
+ * meadows and the authored Banner Road forest. Both reuse the same shape.
  * Deliberately lower than the player's ankle: only a visual microrelief,
  * never a collider, a raised terrain tile or an interactive object.
  */
@@ -1474,11 +1475,26 @@ const CLUTTER = {
 // recipes while deterministic sub-cell offsets avoid a painted checkerboard.
 // All plant tips stay below knee height; plants never become collision tiles.
 function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
-  // At 390px the original miniature grass disappeared against the terrain:
-  // mobile displayed only 98 changed pixels in the real Terra C4 camera.
-  // Retain a subset of the desktop cells, but make the surviving plants
-  // perceptible using the SAME low-poly, shared grass/flower/herb batches.
-  if (!recipe || noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.93 : 1)) return;
+  // The old density sampler could reject THREE consecutive meadow cells
+  // in front of a real first-person camera (C4 x=7,y=2..4), leaving a vast,
+  // bare plane despite hundreds of grass clumps elsewhere in the map.
+  // Sparse fallback grass fills most accidental gaps; 8-16% of rejected
+  // cells remain genuine clearings. It is never a collider or a new batch.
+  if (!recipe) return;
+  if (noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.93 : 1)) {
+    if (noise(x, y, 697) >= (coarsePointer ? 0.84 : 0.92)) return;
+    const angle = noise(x, y, 699) * Math.PI * 2;
+    const reach = 0.84 + noise(y, x, 701) * 0.31;
+    p.add('tuft', [
+      wx + Math.cos(angle) * reach,
+      0.012,
+      wz + Math.sin(angle) * reach,
+    ], {
+      yaw: noise(x, y, 703) * Math.PI * 2,
+      scale: coarsePointer ? [1.30, 1.22, 1.30] : [1.08, 1.08, 1.08],
+    });
+    return;
+  }
   const ox = (noise(x, y, 623) - 0.5) * 1.32;
   const oz = (noise(y, x, 625) - 0.5) * 1.32;
   const grassScale = coarsePointer
@@ -1503,6 +1519,39 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
     ], {
       yaw: noise(x, y, 639) * Math.PI * 2,
       scale: coarsePointer ? [1.02, 1.05, 1.02] : [0.72, 0.72, 0.72],
+    });
+  }
+  // A meadow is a collection of small drifting colonies, not one clump
+  // planted at the exact same cell centre. One additional satellite clump
+  // reaches into the empty grassy foreground without introducing another
+  // material/mesh. Keep its footprint entirely in this 4m walkable cell.
+  const driftChance = recipe.tufts > 1
+    ? (coarsePointer ? 0.75 : 0.87)
+    : (coarsePointer ? 0.30 : 0.43);
+  if (noise(x, y, 673) < driftChance) {
+    const angle = noise(x, y, 675) * Math.PI * 2;
+    const distance = 0.91 + noise(y, x, 677) * 0.29;
+    p.add('tuft', [
+      wx + Math.cos(angle) * distance,
+      0.012,
+      wz + Math.sin(angle) * distance,
+    ], {
+      yaw: noise(x, y, 679) * Math.PI * 2,
+      scale: coarsePointer ? [1.18, 1.15, 1.18] : [0.96, 0.95, 0.96],
+    });
+  }
+  // Reuse the authored microrelief geometry (half-buried stones, roots and
+  // leaf litter) sparingly across native meadow patches. This adds one
+  // shared opaque InstancedMesh batch at most, not per-cell meshes or actual
+  // terrain elevation. All gameplay/navigation grids stay unchanged.
+  if (noise(x, y, 681) < (recipe.family === 'edge' ? 0.47 : 0.32)) {
+    p.add('microrelief', [
+      wx + (noise(x, y, 683) - 0.5) * 1.48,
+      0,
+      wz + (noise(y, x, 685) - 0.5) * 1.48,
+    ], {
+      yaw: noise(x, y, 687) * Math.PI * 2,
+      scale: [0.84 + noise(x, y, 689) * 0.21, 0.88, 0.84 + noise(x, y, 691) * 0.21],
     });
   }
   if (noise(x, y, 641) < recipe.flowerChance) {

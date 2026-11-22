@@ -70,8 +70,13 @@ try {
           // #1438 verified only 98 changed grass/flower pixels at 390px.
           // Require a meaningful, genuine mobile foreground improvement,
           // with the same strict real framebuffer evidence as before.
-          assert.ok(Number(state.targetChangedSamples) > 160,
-            '390px meadow must display substantially more actual plant pixels than the 98px baseline');
+          // v48 reached 540 changed pixels (98 before v48). The added
+          // grass drifts and shallow, real 3D microrelief must push the
+          // independently measured live framebuffer well beyond that.
+          assert.ok(Number(state.microreliefCount) > 8,
+            '390px meadow must contain real shared ankle-high relief instances');
+          assert.ok(Number(state.targetChangedSamples) > 850,
+            '390px meadow foreground must exceed the prior 540-pixel real WebGL baseline');
         }
         if (mapId === 'terra-e2') {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
