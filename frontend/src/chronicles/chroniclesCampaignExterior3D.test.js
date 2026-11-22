@@ -5,6 +5,8 @@ import swordhavenFirstBook from './maps/swordhaven-first-book.json';
 import bannerRoadFirstBook from './maps/banner-road-first-book.json';
 import rookwood from './maps/rookwood-first-book.json';
 import terraB2 from './maps/terra-b2.json';
+import terraC4 from './maps/terra-c4.json';
+import terraE2 from './maps/terra-e2.json';
 import { swordhavenSurfaceTexture, swordhavenSurfaceNormalTexture } from './chroniclesSwordhaven3D.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 import { swordhavenRoofRise } from './chroniclesSwordhavenRoofTrim.js';
@@ -191,6 +193,54 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(unique.size).toBeGreaterThan(7);
     expect(texture.userData.chroniclesPixelArt.kind).toBe('heath');
   });
+
+  it.each([terraC4, terraE2])(
+    'renders the original walkable %s grid with a narrow earth trail, not city cobbles',
+    (map) => {
+      const center = { x: 10, y: 7 };
+      const scenePlan = {
+        mapId: map.id, biome: map.biome, regionKind: map.regionKind,
+        width: map.grid[0].length, height: map.grid.length,
+        center, grid: map.grid, scenery: map.scenery, content: [],
+      };
+      const full = new THREE.Scene(), touch = new THREE.Scene();
+      buildChroniclesCampaignExterior(full, { scenePlan });
+      buildChroniclesCampaignExterior(touch, { scenePlan, coarsePointer: true });
+      const road = full.getObjectByName('chronicles-campaign-road');
+      const cheap = touch.getObjectByName('chronicles-campaign-road');
+      expect(road).toBeInstanceOf(THREE.InstancedMesh);
+      expect(cheap).toBeInstanceOf(THREE.InstancedMesh);
+      expect(cheap.count).toBe(road.count);
+      const expected = map.grid.reduce((total, row, y) =>
+        total + [...row].filter((cell, x) =>
+          cell === '.' && (x === center.x || y === center.y)).length, 0);
+      expect(road.count).toBe(expected);
+      expect(road.geometry.parameters.width).toBe(4);
+      expect(road.geometry.parameters.depth).toBe(4);
+      expect(road.material.normalMap).toBeNull();
+      expect(road.material.color.getHex()).toBe(0xffffff);
+      const kind = map.biome === 'plains' ? 'woodlandpath' : 'heathpath';
+      expect(road.material.map).toBe(chroniclesPixelTexture(kind));
+      expect(road.material.map.userData.chroniclesPixelArt.kind).toBe(kind);
+      expect(cheap.material.map).toBe(road.material.map);
+      expect(road.instanceColor).toBeNull();
+      expect(full.children.filter(child => child.name === 'chronicles-campaign-road')).toHaveLength(1);
+      expect(touch.children.filter(child => child.name === 'chronicles-campaign-road')).toHaveLength(1);
+      const matrix = new THREE.Matrix4(), twin = new THREE.Matrix4();
+      for (let i = 0; i < road.count; i += 1) {
+        road.getMatrixAt(i, matrix);
+        cheap.getMatrixAt(i, twin);
+        expect(matrix.elements).toEqual(twin.elements);
+        const x = Math.round(matrix.elements[12] / 4) + center.x;
+        const y = Math.round(matrix.elements[14] / 4) + center.y;
+        expect(map.grid[y]?.[x]).toBe('.');
+        expect(matrix.elements[0] * 4).toBeCloseTo(
+          x === center.x && y !== center.y ? 2.64 : 4, 4);
+        expect(matrix.elements[10] * 4).toBeCloseTo(
+          y === center.y && x !== center.x ? 2.64 : 4, 4);
+      }
+    },
+  );
 
   it('retains the full-width B2 heath route while other highlands gain narrow dirt trails', () => {
     const plan = {
