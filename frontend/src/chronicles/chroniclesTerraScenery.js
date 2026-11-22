@@ -971,6 +971,19 @@ function basalt(p, wx, wz, x, y, k) {
  * nearly level line of crowns without spawning more trees or moving roots.
  * Every instance still uses the existing shared trunk/crown meshes.
  */
+// Native Terra's un-authored forest edge used the exact same tree size
+// on almost every blocked cell. Modulate *existing* trunks/crowns with a
+// broad spatial rhythm, rather than introducing new trees or sky geometry.
+// The same function applies at mobile/desktop and is stable after reload.
+export function chroniclesTerraWoodlineScale(x, y, ringDepth = 0) {
+  const depth = Math.max(0, Math.min(3, ringDepth));
+  const canopyWave = 0.24 * Math.sin(x * 0.43 + y * 0.16)
+    + 0.16 * Math.cos(x * 0.19 - y * 0.31);
+  const individual = (noise(x, y, 767) - 0.5) * 0.11;
+  return THREE.MathUtils.clamp(1.05 + depth * 0.055 + canopyWave + individual,
+    0.70, 1.65);
+}
+
 export function chroniclesBannerRoadBackdropScale(x, y, ringDepth) {
   const ridge = Math.sin(x * 0.39 + y * 0.17)
     * Math.cos(y * 0.30 - x * 0.13);
@@ -997,7 +1010,7 @@ export function chroniclesBannerRoadGatewayGrove(grid, center, x, y) {
 
 const DRESS = {
   plains(p, wx, wz, x, y, big, bannerRoad = false, ringDepth = 0,
-    woodlandGateway = false, gatewayGrove = false) {
+    woodlandGateway = false, gatewayGrove = false, _tile = null, naturalWoodline = false) {
     const roll = noise(x, y, 1);
     // A deepening forest horizon outside the authored map: the first row
     // still has gaps, but more distant rows interlock their crowns. Only the
@@ -1017,7 +1030,8 @@ const DRESS = {
       : gatewayGrove ? 1.10 + noise(x, y, 855) * 0.16
         : juvenile ? 0.48 + noise(x, y, 753) * 0.16
           : backdrop ? chroniclesBannerRoadBackdropScale(x, y, ringDepth)
-            : (big ? 1.15 : 1);
+            : naturalWoodline ? chroniclesTerraWoodlineScale(x, y, ringDepth)
+              : (big ? 1.15 : 1);
     // The mid-height approach grove is anchored exclusively in four real
     // blocked cells, never inside the walkable meadow or on the cart track.
     if (woodlandGateway || gatewayGrove || roll < canopyThreshold) {
@@ -1030,8 +1044,15 @@ const DRESS = {
             0.65 + noise(x, y, 6) * 0.28,
             0.94 + noise(x, y, 7) * 0.36] });
     }
-    if (roll >= 0.7 || big) boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
-    if (roll < 0.2) broadleaf(p, wx, wz, x, y, 9, big ? 1.1 : 0.9, bannerRoad);
+    // Thin only the *non-colliding* Terra outer rubble ring. Real blocked
+    // inside cells retain their visible stones; Banner Road is unchanged.
+    if (roll >= 0.7 || (big && (!naturalWoodline || noise(x, y, 847) > 0.30))) {
+      boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
+    }
+    if (roll < 0.2) {
+      broadleaf(p, wx, wz, x, y, 9,
+        naturalWoodline ? size * 0.86 : (big ? 1.1 : 0.9), bannerRoad);
+    }
   },
   hills(p, wx, wz, x, y, big, _banner, _ring, _gateway, _grove, tileRecipe) {
     // Each real blocked cell selects one reusable, topology-aware recipe.
@@ -1578,6 +1599,8 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   const toWorld = (x, y) => [(x - center.x) * CELL, (y - center.y) * CELL];
   const clear = new Set(keepClear.map(({ x, y }) => x + ',' + y));
   const denseMeadow = mapId === 'banner-road-first-book' && biome === 'plains';
+  const naturalWoodline = biome === 'plains' && typeof mapId === 'string'
+    && mapId.startsWith('terra-');
 
   const authored = new Map((scenery || [])
     .filter((entry) => entry && Number.isInteger(entry.x) && Number.isInteger(entry.y) && SET_PIECES[entry.type])
@@ -1614,7 +1637,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           ? chroniclesLandscapeTileAt({ grid, biome, x, y, outside: !inside })
           : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
-          woodlandGateway, gatewayGrove, landscapeTile);
+          woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
