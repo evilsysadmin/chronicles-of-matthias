@@ -53,9 +53,17 @@ try {
         assert.ok(Number(state.drawCalls) > 0 && Number(state.drawCalls) < 160,
           'Real frame must render without an explosion of draw calls');
         assert.ok(Number(state.pixelVariants) > 20, 'Actual WebGL frame cannot be blank');
-        assert.ok(Number(state.targetChangedSamples) > 5
-          && Number(state.targetPixelDifference) > 0.015,
-        'Disabling only landscape species must visibly change real framebuffer pixels');
+        // Dense, exact per-pixel WebGL comparison: a 9px raster sample
+        // systematically missed the tiny silhouettes of mobile meadow herbs.
+        // This still fails if disabling the actual species leaves the frame
+        // unchanged; it does not merely assert that meshes were constructed.
+        console.log('CHRONICLES_TERRA_PIXEL_EVIDENCE map=' + mapId
+          + ' width=' + width + ' changed=' + state.targetChangedSamples
+          + ' meanRgbDifference=' + state.targetPixelDifference);
+        assert.ok(Number(state.targetChangedSamples) > 30
+          && Number(state.targetPixelDifference) > 5,
+        'Disabling real landscape species must change >30 actual pixels with meaningful color contrast: '
+          + JSON.stringify(state));
         assert.ok((await stat(filename)).size > 20000,
           'Full first-person landscape screenshot must contain a real rendered image');
         if (mapId === 'terra-e2') {
