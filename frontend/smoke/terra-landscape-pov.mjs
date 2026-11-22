@@ -37,7 +37,7 @@ try {
         assert.deepEqual(errors, [], 'No real renderer JS errors in ' + mapId);
         assert.equal(state.sceneReady, 'true');
         assert.equal(state.mapId, mapId);
-        assert.equal(state.cameraCell, '10,7');
+        assert.equal(state.cameraCell, mapId === 'terra-c4' ? '7,5' : '10,7');
         assert.equal(state.coarsePointer, String(coarse));
         assert.equal(state.biome, mapId === 'terra-e2' ? 'hills' : 'plains');
         assert.equal(state.overflow, false);
