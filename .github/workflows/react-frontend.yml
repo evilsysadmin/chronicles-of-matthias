@@ -151,6 +151,9 @@ jobs:
           # photographed at mobile and desktop budgets with actual foliage,
           # terrain, paving, sky and atmospheric distance. No staged account.
           node smoke/run-timed.mjs smoke/banner-road-exterior.mjs http://localhost:4174/smoke/banner-road-exterior.html
+          # Real first-person Terra visual evidence: mountain and meadow
+          # tile families photographed at mobile and desktop budgets.
+          node smoke/run-timed.mjs smoke/terra-landscape-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets
@@ -191,6 +194,16 @@ jobs:
           node smoke/run-timed.mjs smoke/party-hud-stability.mjs http://localhost:4174/smoke/party-hud-stability.html
           # Confirm transitions using ←/→ and Enter on the actual focus selection.
           node smoke/run-timed.mjs smoke/area-transition-choice.mjs http://localhost:4174/smoke/area-transition-choice.html
+      # A focused small artifact makes the four real Terra comparison frames
+      # inspectable without downloading the entire UI smoke screenshot archive.
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        with:
+          name: chronicles-terra-landscape-pov
+          path: frontend/smoke-terra-landscape-*.png
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7
       # PR screenshots remain inspectable; failed main runs retain diagnostics.
       # Avoid repeatedly uploading already-compressed PNGs after healthy main pushes.
       - uses: actions/upload-artifact@v7
