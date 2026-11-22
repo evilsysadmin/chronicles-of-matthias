@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
-import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt } from './chroniclesLandscapeTiles.js';
+import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt, chroniclesFoothillTileAt } from './chroniclesLandscapeTiles.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
 // each biome (boulders on the hills, snowy pines, reeds and dead trees in
@@ -1490,6 +1490,33 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
   }
 }
 
+// Piedmont transition: preserve the exact walkable grid but bring the
+// foothill's gravel and short grass down to eye level. Shared existing
+// pebble/tuft batches only; no rock wall/vegetation over a protected road.
+function addReusableFoothillPatch(p, wx, wz, x, y, recipe, coarsePointer) {
+  if (!recipe || noise(x, y, 821) > recipe.coverage * (coarsePointer ? 0.78 : 1)) return;
+  if (noise(x, y, 823) < recipe.grassChance) {
+    const offX = (noise(x, y, 825) - 0.5) * 1.24;
+    const offZ = (noise(y, x, 827) - 0.5) * 1.24;
+    p.add('tuft', [wx + offX, 0.012, wz + offZ], {
+      yaw: noise(x, y, 829) * Math.PI * 2,
+      scale: [0.85, 0.65 + noise(x, y, 831) * 0.19, 0.85],
+    });
+  }
+  // One to three pebble fragments per chosen cell on desktop. Mobile keeps
+  // only one fragment, reusing the same instanced mesh and material.
+  const count = coarsePointer ? Math.min(recipe.pebbles, 1) : recipe.pebbles;
+  for (let i = 0; i < count; i += 1) {
+    const px = (noise(x + i * 7, y, 833) - 0.5) * 1.28;
+    const pz = (noise(y + i * 5, x, 837) - 0.5) * 1.28;
+    const size = 0.42 + noise(x, y + i, 839) * 0.28;
+    p.add('pebble', [wx + px, 0.075, wz + pz], {
+      yaw: noise(x, y + i, 841) * Math.PI * 2,
+      scale: [size, 0.33 + noise(x, y + i, 843) * 0.19, size],
+    });
+  }
+}
+
 // ─── authored set pieces (terragen `scenery`) ─────────────────────────────
 
 const SET_PIECES = {
@@ -1608,6 +1635,11 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           // with all reserved road/content cells left fully clear.
           addReusableMeadowPatch(p, wx, wz, x, y,
             chroniclesMeadowTileAt({ grid, biome, x, y }), coarsePointer);
+        } else if (biome === 'hills' && tile === '.') {
+          // Continuous low scree and grasses bridge the natural rock edges
+          // and upland path cells, without changing traversal/collision.
+          addReusableFoothillPatch(p, wx, wz, x, y,
+            chroniclesFoothillTileAt({ grid, biome, x, y }), coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
           clutter(p, wx + (noise(x, y, 78) - 0.5) * 3,
