@@ -2,7 +2,7 @@
 // Fixed eye at the user's (10,13) trail approach; no mock models or art.
 import * as THREE from 'three';
 import bannerRoad from '../src/chronicles/maps/banner-road-first-book.json';
-import { chroniclesBannerRoadWoodlineRoot } from '../src/chronicles/chroniclesTerraScenery.js';
+import { chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell } from '../src/chronicles/chroniclesTerraScenery.js';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
 import { createChroniclesExteriorDaylight } from '../src/chronicles/chroniclesExteriorDaylight.js';
@@ -153,6 +153,24 @@ try {
       woodlineInvalid += 1;
     }
   }
+  // Verify the visible knee-low bracken layer in the actual rendered
+  // forest-herb InstancedMesh. No new instances may occupy paved axes.
+  const brackenRoots = new Set();
+  const brackenMatrix = new THREE.Matrix4(), brackenScale = new THREE.Vector3();
+  let brackenInstances = 0, brackenInvalid = 0;
+  for (let i = 0; i < (woodlandHerbs?.count || 0); i += 1) {
+    woodlandHerbs.getMatrixAt(i, brackenMatrix);
+    brackenScale.setFromMatrixScale(brackenMatrix);
+    if (brackenScale.x <= 1.20) continue;
+    brackenInstances += 1;
+    const x = Math.round(brackenMatrix.elements[12] / 4) + center.x;
+    const y = Math.round(brackenMatrix.elements[14] / 4) + center.y;
+    brackenRoots.add(x + ',' + y);
+    if (!chroniclesBannerRoadBrackenCell(bannerRoad.grid, center, x, y)
+      || Math.abs(brackenMatrix.elements[12] - (x - center.x) * 4) >= 0.48
+      || Math.abs(brackenMatrix.elements[14] - (y - center.y) * 4) >= 0.48
+      || brackenScale.y >= 0.70) brackenInvalid += 1;
+  }
   const road = scene.getObjectByName('chronicles-campaign-road');
   // Find the authored straight cell from the road mesh itself. Avoid
   // assuming a road-cell ordering or measuring a harmless crossing flare.
@@ -292,6 +310,9 @@ try {
     woodlineThickets: String(woodlineThickets),
     woodlineRoots: String(woodlineRoots.size),
     woodlineInvalid: String(woodlineInvalid),
+    brackenInstances: String(brackenInstances),
+    brackenRoots: String(brackenRoots.size),
+    brackenInvalid: String(brackenInvalid),
     grassCount: String(turf?.count || 0),
     sedgeCount: String(sedges?.count || 0),
     sedgeTriangles: String(sedges ? triangles(sedges.geometry) : -1),
