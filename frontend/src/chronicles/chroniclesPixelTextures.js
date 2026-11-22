@@ -66,13 +66,16 @@ const RAMPS = Object.freeze({
   heathpath: [0x35382f, 0x554e3d, 0x71634b, 0x8c795e, 0xa59378, 0xb7a68a].map(hex),
   // Neutral weathered stone for boulders and crags; materials tint it per biome.
   rock: [0x3c3a38, 0x5e5b56, 0x827e76, 0xa8a399, 0xcbc6ba, 0xe8e4da].map(hex),
+  // Native Terra highlands: weathered sandstone/slate, with restrained
+  // variation rather than the urban rock atlas's black checkerboard cracks.
+  uplandrock: [0x777b70, 0x888d80, 0x9ca091, 0xadb0a0, 0xbcbfac, 0xcbcbb9].map(hex),
   // Cold saline pools with dark peat, grey-green shallows and muted glints.
   bogwater: [0x11211f, 0x1b302d, 0x29463f, 0x38584e, 0x4a6b5f, 0x688176].map(hex),
 });
 
 const SIZES = Object.freeze({
   grass: 64, meadow: 128, terrafield: 128, woodlandpath: 128, masonry: 64, stucco: 32, timber: 32, roof: 32, cobble: 64, bark: 32, leaves: 32,
-  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32,
+  snow: 64, sand: 64, ashland: 64, heath: 64, heathpath: 64, bogwater: 64, rock: 32, uplandrock: 64,
 });
 
 // Returns a light value (≈0..1, dithered onto the ramp), SEAM (darkest ramp
@@ -195,6 +198,20 @@ function sample(kind, x, y, size) {
     if (hash(x, y, 73) > 0.9985) return { color: 0x85988a };
     return 0.46 + depth * 0.62 + shoal * 0.2 + ripples + grain * 0.08;
   }
+  if (kind === 'uplandrock') {
+    // Three periodic scales blend sediment and wind-worn mineral deposits.
+    // Low-amplitude diagonal strata provide direction without sharp black
+    // fissure masks, repeated square cells or bright pixel-grid edges.
+    const strata = valueNoise(x, y, size, 5, 281) - 0.5;
+    const weather = valueNoise(x, y, size, 13, 282) - 0.5;
+    const flecks = valueNoise(x, y, size, 27, 283) - 0.5;
+    const sweep = Math.sin((x * 0.39 + y * 0.17) + strata * 4) * 0.045;
+    if (hash(x, y, 284) > 0.997 && weather > 0.07) {
+      return { color: 0xa8ab92 }; // A rare weathered lichen fleck.
+    }
+    return 0.54 + strata * 0.37 + weather * 0.28
+      + flecks * 0.17 + sweep + grain * 0.06;
+  }
   if (kind === 'rock') {
     // Lichen-flecked stone with a few dark fissures.
     const mass = valueNoise(x, y, size, 4, 27) - 0.5;
@@ -301,7 +318,8 @@ export function chroniclesPixelTexture(kind) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   // Up close every texel is a crisp square; far away mipmaps keep it calm.
-  const softTerrain = kind === 'meadow' || kind === 'terrafield' || kind === 'woodlandpath';
+  const softTerrain = kind === 'meadow' || kind === 'terrafield'
+    || kind === 'woodlandpath' || kind === 'uplandrock';
   texture.magFilter = softTerrain ? THREE.LinearFilter : THREE.NearestFilter;
   texture.minFilter = softTerrain
     ? THREE.LinearMipmapLinearFilter : THREE.NearestMipmapLinearFilter;

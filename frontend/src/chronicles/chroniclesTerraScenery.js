@@ -39,11 +39,34 @@ const lit = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, roughn
 // vertex displacement breaks the 20-face icosahedron silhouette without adding
 // draw calls or forcing a dense terrain mesh. The analytic displacement is
 // position-derived, so duplicated UV-seam vertices move together.
-export function chroniclesOrganicRockGeometry({ coarsePointer = false } = {}) {
+export function chroniclesOrganicRockGeometry({ coarsePointer = false, weatheredHighland = false } = {}) {
   const geometry = new THREE.IcosahedronGeometry(1, coarsePointer ? 0 : 1);
-  if (coarsePointer) return geometry;
+  if (coarsePointer && !weatheredHighland) return geometry;
   const positions = geometry.getAttribute('position');
   const normals = geometry.getAttribute('normal');
+  if (weatheredHighland) {
+    // Deform the existing low-poly icosahedron into a squat, asymmetric
+    // glacial stone. Analytic position-only displacements keep duplicate UV
+    // seam vertices coincident. The existing 20/80-triangle mobile/desktop
+    // budgets and one InstancedMesh per part remain exactly unchanged.
+    for (let i = 0; i < positions.count; i += 1) {
+      const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
+      const scar = 0.11 * Math.sin(x * 4.6 + z * 3.4)
+        + 0.075 * Math.cos(y * 5.1 - z * 2.8)
+        + 0.045 * Math.sin(x * 7.0 - y * 2.1);
+      const uneven = 1 + scar;
+      const dx = (x * 1.14 + y * 0.12 + z * 0.035) * uneven;
+      const dy = y * (0.79 + 0.055 * Math.sin(x * 3.2 + z * 2.3)) * uneven;
+      const dz = (z * 1.08 - y * 0.095) * uneven;
+      positions.setXYZ(i, dx, dy, dz);
+      normals.setXYZ(i, dx * 0.88, dy * 1.25, dz * 0.92);
+    }
+    positions.needsUpdate = true;
+    normals.needsUpdate = true;
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
   for (let i = 0; i < positions.count; i += 1) {
     const x = positions.getX(i);
     const y = positions.getY(i);
@@ -821,13 +844,17 @@ export function chroniclesFallenWoodGeometry({ coarsePointer = false } = {}) {
 }
 
 // Parts: one geometry + one material each, instanced across the map.
-function partCatalog(coarsePointer, biome, woodland = false) {
-  const rock = (color) => lit(color, { map: texture('rock'), flatShading: true });
+function partCatalog(coarsePointer, biome, woodland = false, naturalHighlands = false) {
+  // The highland-specific stone stays inside the existing boulder, crag
+  // and pebble batches. B2 heath, snow, forest and marsh rock stay intact.
+  const rockMap = texture(naturalHighlands ? 'uplandrock' : 'rock');
+  const rock = (color) => lit(color, { map: rockMap, flatShading: true });
   const roundedRock = (color, opts = {}) => lit(color, {
-    map: texture('rock'), flatShading: coarsePointer, ...opts,
+    map: rockMap, flatShading: coarsePointer, ...opts,
   });
   return {
-    boulder: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0xd8d2c4)],
+    boulder: () => [chroniclesOrganicRockGeometry({ coarsePointer,
+      weatheredHighland: naturalHighlands }), roundedRock(0xd8d2c4)],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
     crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
@@ -1766,7 +1793,9 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
     }
   }
 
-  const catalog = partCatalog(coarsePointer, biome, denseMeadow);
+  const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
+    && mapId.startsWith('terra-') && mapId !== 'terra-b2';
+  const catalog = partCatalog(coarsePointer, biome, denseMeadow, naturalHighlands);
   for (const [part, matrices] of p.parts) {
     const [geometry, mat] = catalog[part]();
     const mesh = new THREE.InstancedMesh(geometry, mat, matrices.length);
@@ -1864,6 +1893,21 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
       matrices.forEach((matrix, index) => {
         const e = matrix.elements;
         const seed = noise(Math.round(e[12] * 5), Math.round(e[14] * 5), 439);
+        mesh.setColorAt(index, shades[Math.min(shades.length - 1,
+          Math.floor(seed * shades.length))]);
+      });
+      mesh.instanceColor.needsUpdate = true;
+    }
+    // Native highlands get quiet stone/lichen tonality per real rock, not
+    // identical chess-pawn grey boulders. Same single instanced batch and
+    // deterministic transforms; authored heath B2 retains its own palette.
+    if (naturalHighlands && (part === 'boulder' || part === 'crag')) {
+      const shades = ['#ffffff', '#e5e9e2', '#d9e2d8', '#f0e6da', '#e4e6d7']
+        .map(hex => new THREE.Color(hex));
+      matrices.forEach((matrix, index) => {
+        const e = matrix.elements;
+        const seed = noise(Math.round(e[12] * 7), Math.round(e[14] * 7),
+          part === 'boulder' ? 375 : 377);
         mesh.setColorAt(index, shades[Math.min(shades.length - 1,
           Math.floor(seed * shades.length))]);
       });
