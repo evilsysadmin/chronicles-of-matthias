@@ -96,8 +96,10 @@ export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
           const prev = (ringIndex - 1) * sides;
           const next = ringIndex * sides;
           const j = (i + 1) % sides;
-          indices.push(prev + i, prev + j, next + i,
-            prev + j, next + j, next + i);
+          // Outward-facing winding: the outside of each ridge stays visible
+          // with the rock material's normal front-face culling.
+          indices.push(prev + i, next + i, prev + j,
+            prev + j, next + i, next + j);
         }
       }
     });
