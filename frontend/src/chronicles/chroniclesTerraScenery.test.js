@@ -1321,8 +1321,11 @@ describe('Terra scenery', () => {
     expect(grass).toBeInstanceOf(THREE.InstancedMesh);
     expect(flowers).toBeInstanceOf(THREE.InstancedMesh);
     expect(mobile).toBeInstanceOf(THREE.InstancedMesh);
+    // The generic meadow now has scattered low clumps and therefore no
+    // longer needs to be practically empty. The authored forest must STILL
+    // be substantially denser, with its own sedge species and instance tints.
     expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
-      .toBeGreaterThan(older.count * 3);
+      .toBeGreaterThan(older.count * 2.5);
     expect(grass.count + full.getObjectByName('chronicles-terra-meadowSedge').count)
       .toBeGreaterThan(mobile.count * 2);
     expect(flowers.count).toBeGreaterThan(15);
