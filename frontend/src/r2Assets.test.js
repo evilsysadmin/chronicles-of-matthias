@@ -3,8 +3,11 @@ import manifest from './assets/r2-assets-manifest.json';
 import { R2_ASSET_BASE_URL, r2AssetEntry, r2AssetUrl } from './r2Assets.js';
 
 describe('R2 runtime assets', () => {
-  it('pins the public R2 origin from the validated manifest', () => {
-    expect(R2_ASSET_BASE_URL).toBe('https://assets.chess-studio.shadowops.dpdns.org');
+  it('accepts only the legacy or dedicated Chronicles R2 origin during cutover', () => {
+    expect([
+      'https://assets.chess-studio.shadowops.dpdns.org',
+      'https://assets.chronicles.shadowops.dpdns.org',
+    ]).toContain(R2_ASSET_BASE_URL);
   });
 
   it('owns only Chronicles asset keys after the repository split', () => {
