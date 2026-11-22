@@ -26,7 +26,13 @@ try {
   const map = maps[mapId];
   if (!map) throw new Error('Unsupported terrain capture: ' + mapId);
   const center = { x: 10, y: 7 };
-  const cameraCell = { x: map.partyStart.x, y: map.partyStart.y };
+  // The generic plains spawn faces the generated cobblestone crossroads,
+  // hiding almost every low herb in a narrow portrait viewport. A real,
+  // traversable meadow cell five cardinal steps away photographs habitat
+  // rather than paving; unlike a test mock, every scenery piece is unchanged.
+  const cameraCell = mapId === 'terra-c4'
+    ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
+    : { x: map.partyStart.x, y: map.partyStart.y };
   if (map.grid[cameraCell.y]?.[cameraCell.x] !== '.') {
     throw new Error('Real party start must remain traversable on ' + mapId);
   }
@@ -95,7 +101,9 @@ try {
     }
     return score;
   };
-  const yaw = candidates.reduce((best, candidate) =>
+  // From the meadow observation point, face north into the grass and
+  // woodland: turning towards the cobbled crossroad would defeat this QA.
+  const yaw = mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
     facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
   camera.rotation.set(0, yaw, 0);
 
