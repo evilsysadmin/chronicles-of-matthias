@@ -9,6 +9,11 @@ import { resolve } from 'node:path';
 export const LEGACY = 'https://assets.chess-studio.shadowops.dpdns.org';
 export const TARGET = 'https://assets.chronicles.shadowops.dpdns.org';
 export const ORIGIN = 'https://staging.chronicles.shadowops.dpdns.org';
+export const PRODUCTION_ORIGIN = 'https://chronicles.shadowops.dpdns.org';
+// The first-party runtime serves users on both staging and production.
+// A CDN reflecting only staging CORS can pass integrity checks yet break the
+// production Tactics GLB. Require exact public CORS for both consumers.
+export const BROWSER_ORIGINS = Object.freeze([ORIGIN, PRODUCTION_ORIGIN]);
 export const PINS = Object.freeze({
   'chronicles.music.firstVerse': Object.freeze({
     key: 'chronicles/music/Chronicles of matthias - First verse.mp3',
@@ -61,14 +66,15 @@ export function validateManifest(manifest, pins = PINS) {
   }
   return manifest.baseUrl === TARGET ? 'target' : 'legacy';
 }
-export function validateResponse(pin, result, method) {
+export function validateResponse(pin, result, method, origin = ORIGIN) {
+  if (!BROWSER_ORIGINS.includes(origin)) fail('Unexpected first-party browser origin');
   if (result?.status !== 200) fail('Unexpected public HTTP status');
   const h = result.headers || {};
   if ((h['content-type'] || '').split(';',1)[0].trim().toLowerCase() !== pin.contentType) {
     fail('Public MIME mismatch');
   }
-  if (h['access-control-allow-origin'] !== ORIGIN &&
-    h['access-control-allow-origin'] !== '*') fail('Public CORS mismatch');
+  if (h['access-control-allow-origin'] !== origin &&
+    h['access-control-allow-origin'] !== '*') fail('Public CORS mismatch for ' + origin);
   const cache = (h['cache-control'] || '').toLowerCase().split(',').map(x => x.trim());
   if (!cache.includes('public') || cache.includes('private') || cache.includes('no-store')) {
     fail('Public cache scope mismatch');
@@ -91,14 +97,16 @@ export function validateResponse(pin, result, method) {
     }
   }
 }
-export function requestAsset(method, pin) {
+export function requestAsset(method, pin, origin = ORIGIN) {
+  if (!BROWSER_ORIGINS.includes(origin) || !['HEAD','GET'].includes(method) ||
+    !Object.values(PINS).includes(pin)) fail('Unexpected public proof request');
   // Destination is fixed by the pinned key and the literal Chronicles host.
   const target = canonicalUrl(TARGET, pin.key);
   return new Promise((resolve, reject) => {
     const request = https.request(target, {
       method, timeout: 25000,
       headers: {
-        Origin: ORIGIN,
+        Origin: origin,
         'Accept-Encoding': 'identity',
         'User-Agent': 'chronicles-source-media-cutover-gate/1',
       },
@@ -128,12 +136,14 @@ export async function proveCutover(manifest, transfer = requestAsset, pins = PIN
   if (mode === 'legacy') return { mode, objects: 4, requests: 0, bytes: 0 };
   let bytes = 0;
   for (const pin of Object.values(pins)) {
-    for (const method of ['HEAD', 'GET']) {
-      validateResponse(pin, await transfer(method, pin), method);
+    for (const origin of BROWSER_ORIGINS) {
+      for (const method of ['HEAD', 'GET']) {
+        validateResponse(pin, await transfer(method, pin, origin), method, origin);
+      }
     }
     bytes += pin.bytes;
   }
-  return { mode, objects: 4, requests: 8, bytes };
+  return { mode, objects: 4, requests: 16, bytes };
 }
 async function main() {
   const manifest = JSON.parse(readFileSync(
