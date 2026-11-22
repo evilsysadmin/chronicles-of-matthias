@@ -1799,7 +1799,11 @@ describe('Terra scenery', () => {
     expect(rocks.count).toBe(unchanged.count);
     expect(rocks.geometry.getAttribute('position').count)
       .toBe(unchanged.geometry.getAttribute('position').count);
-    expect(rocks.material.map).toBe(unchanged.material.map);
+    // Terra E2 now deliberately uses a quiet weathered-upland albedo;
+    // authored B2 heath keeps its original rock texture and lichen colour.
+    expect(rocks.material.map).toBe(chroniclesPixelTexture('rock'));
+    expect(unchanged.material.map).toBe(chroniclesPixelTexture('uplandrock'));
+    expect(rocks.material.map).not.toBe(unchanged.material.map);
     const matrix = new THREE.Matrix4();
     const otherMatrix = new THREE.Matrix4();
     const tint = new THREE.Color();
