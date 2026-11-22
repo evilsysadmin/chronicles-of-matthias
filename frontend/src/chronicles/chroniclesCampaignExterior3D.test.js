@@ -207,7 +207,7 @@ describe('Chronicles file-authored exterior renderer', () => {
       buildChroniclesCampaignExterior(touch, { scenePlan, coarsePointer: true });
       const terrain = full.getObjectByName('chronicles-campaign-terrain');
       const mobile = touch.getObjectByName('chronicles-campaign-terrain');
-      const mapTexture = chroniclesPixelTexture('meadow');
+      const mapTexture = chroniclesPixelTexture('terrafield');
       expect(terrain).toBeInstanceOf(THREE.Mesh);
       expect(terrain.material.map).toBe(mapTexture);
       expect(mobile.material.map).toBe(mapTexture);
@@ -220,6 +220,25 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(mapTexture.image.width).toBe(128);
       expect(mapTexture.image.height).toBe(128);
       expect(mapTexture.repeat.toArray()).toEqual([7, 7]);
+      expect(mapTexture).not.toBe(chroniclesPixelTexture('meadow'));
+      // No former dark monochrome peat islands; field variation remains
+      // organic and moderate, with small warm flecks rather than brown slabs.
+      const pixels = mapTexture.image.data;
+      const distinct = new Set();
+      let dark = 0, exposedSoil = 0, moss = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const red = pixels[i], green = pixels[i + 1], blue = pixels[i + 2];
+        expect(pixels[i + 3]).toBe(255);
+        if (green < 100) dark++;
+        if (red > green && green > blue) exposedSoil++;
+        if (green > red && green > blue) moss++;
+        distinct.add([red, green, blue].join(','));
+      }
+      expect(dark).toBe(0);
+      expect(exposedSoil).toBeGreaterThan(0);
+      expect(exposedSoil).toBeLessThan(pixels.length / 4 * 0.02);
+      expect(moss).toBeGreaterThan(pixels.length / 4 * 0.95);
+      expect(distinct.size).toBeGreaterThan(7);
       expect(mapTexture.magFilter).toBe(THREE.LinearFilter);
       expect(mapTexture.minFilter).toBe(THREE.LinearMipmapLinearFilter);
       expect(mapTexture.anisotropy).toBe(4);
@@ -227,6 +246,14 @@ describe('Chronicles file-authored exterior renderer', () => {
       expect(mapTexture.wrapT).toBe(THREE.RepeatWrapping);
       expect(terrain.material.color.getHex())
         .toBe(map.biome === 'hills' ? 0xd8d0a0 : 0xffffff);
+      // The authored Banner Road still renders the ORIGINAL forest meadow;
+      // its already-approved colour/soil balance must not mutate when
+      // native Terra requests the lighter dedicated field texture.
+      const authored = chroniclesPixelTexture('meadow');
+      expect(authored.userData.chroniclesPixelArt.kind).toBe('meadow');
+      expect(authored.image.width).toBe(128);
+      expect(authored.repeat.toArray()).toEqual([7, 7]);
+      expect(authored.image.data).not.toEqual(mapTexture.image.data);
       expect(full.getObjectByName('chronicles-campaign-road'))
         .toBeInstanceOf(THREE.InstancedMesh);
       expect(touch.getObjectByName('chronicles-campaign-road'))
