@@ -1198,6 +1198,44 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
     });
   }
 }
+/**
+ * A second, lower woodland silhouette beneath Banner Road's mature trees.
+ * Only authored blocked woodland cells separating two walkable rows qualify.
+ * The actual gateway road and its two framing trunks remain unobstructed.
+ * The sparse, correlated choices form short thickets, not a continuous wall.
+ * No world-map/collision, shader or material changes.
+ */
+export function chroniclesBannerRoadWoodlineRoot(grid, center, x, y) {
+  return grid[y]?.[x] === '#'
+    && Math.abs(x - center.x) > 1
+    && grid[y]?.[center.x] === '.'
+    && grid[y]?.[center.x - 1] === '#'
+    && grid[y]?.[center.x + 1] === '#'
+    && grid[y - 1]?.[x] === '.'
+    && grid[y + 1]?.[x] === '.'
+    && noise(x, y, 911) > 0.25;
+}
+
+function addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz) {
+  if (!chroniclesBannerRoadWoodlineRoot(grid, center, x, y)) return;
+  // Two overlapping but different-height silhouettes per real blocking root.
+  // Reuse the existing shared bush InstancedMesh; ~16 low-poly instances,
+  // including on touch. Both roots and both crowns stay wholly inside the
+  // four-metre blocked cell with a visibly clear woodland entrance.
+  for (let i = 0; i < 2; i += 1) {
+    const offsetX = (noise(x + i * 3, y, 917) - 0.5) * 0.64;
+    const offsetZ = (noise(y + i * 5, x, 919) - 0.5) * 0.52
+      + (i ? 0.22 : -0.15);
+    const width = 1.08 + noise(x + i, y, 921) * 0.17;
+    const depth = 1.04 + noise(y + i, x, 923) * 0.17;
+    const height = (i ? 1.50 : 1.83) + noise(x, y + i, 925) * 0.23;
+    p.add('bush', [wx + offsetX, 0.80, wz + offsetZ], {
+      yaw: noise(x + i, y, 927) * Math.PI * 2,
+      scale: [width, height, depth],
+    });
+  }
+}
+
 function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
   const openings = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
@@ -1374,6 +1412,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           woodlandGateway, gatewayGrove);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
+          addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer);
           addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer);
