@@ -1505,6 +1505,39 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
       scale: coarsePointer ? [1.02, 1.05, 1.02] : [0.72, 0.72, 0.72],
     });
   }
+  // A meadow is a collection of small drifting colonies, not one clump
+  // planted at the exact same cell centre. One additional satellite clump
+  // reaches into the empty grassy foreground without introducing another
+  // material/mesh. Keep its footprint entirely in this 4m walkable cell.
+  const driftChance = recipe.tufts > 1
+    ? (coarsePointer ? 0.75 : 0.87)
+    : (coarsePointer ? 0.30 : 0.43);
+  if (noise(x, y, 673) < driftChance) {
+    const angle = noise(x, y, 675) * Math.PI * 2;
+    const distance = 0.91 + noise(y, x, 677) * 0.29;
+    p.add('tuft', [
+      wx + Math.cos(angle) * distance,
+      0.012,
+      wz + Math.sin(angle) * distance,
+    ], {
+      yaw: noise(x, y, 679) * Math.PI * 2,
+      scale: coarsePointer ? [1.18, 1.15, 1.18] : [0.96, 0.95, 0.96],
+    });
+  }
+  // Reuse the authored microrelief geometry (half-buried stones, roots and
+  // leaf litter) sparingly across native meadow patches. This adds one
+  // shared opaque InstancedMesh batch at most, not per-cell meshes or actual
+  // terrain elevation. All gameplay/navigation grids stay unchanged.
+  if (noise(x, y, 681) < (recipe.family === 'edge' ? 0.47 : 0.32)) {
+    p.add('microrelief', [
+      wx + (noise(x, y, 683) - 0.5) * 1.48,
+      0,
+      wz + (noise(y, x, 685) - 0.5) * 1.48,
+    ], {
+      yaw: noise(x, y, 687) * Math.PI * 2,
+      scale: [0.84 + noise(x, y, 689) * 0.21, 0.88, 0.84 + noise(x, y, 691) * 0.21],
+    });
+  }
   if (noise(x, y, 641) < recipe.flowerChance) {
     p.add('flower', [
       wx + (noise(x, y, 643) - 0.5) * 1.24,
