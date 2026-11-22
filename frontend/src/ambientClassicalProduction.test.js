@@ -7,7 +7,7 @@ import { getPercussionVoiceKit } from './sound.js';
 
 describe('classical production', () => {
   it('places every classical score in its own room with a valid recurring phrase', () => {
-    expect(CLASSICAL_PRODUCTION_IDS).toHaveLength(17);
+    expect(CLASSICAL_PRODUCTION_IDS).toHaveLength(13);
     const feels = CLASSICAL_PRODUCTION_IDS.map((id) => structuredFeel(AMBIENT_THEMES[id]));
     expect(new Set(feels.map((feel) => feel.finish.name)).size).toBe(CLASSICAL_PRODUCTION_IDS.length);
     CLASSICAL_PRODUCTION_IDS.forEach((id, index) => {
@@ -16,6 +16,13 @@ describe('classical production', () => {
       expect(Object.keys(feel.signature.motif).length).toBeGreaterThanOrEqual(4);
       expect(feel.signature.sections.every((section) => section < theme.sections.length)).toBe(true);
     });
+  });
+
+  it('does not keep orchestration profiles for removed Chess Studio-only scores', () => {
+    for (const id of ['queenSiciliana', 'rookPassacaglia', 'knightScherzo', 'blackKingPavane']) {
+      expect(CLASSICAL_PRODUCTION_IDS).not.toContain(id);
+      expect(AMBIENT_THEMES[id]).toBeUndefined();
+    }
   });
 
   it('uses recorded long and short bows as distinct orchestral sections', () => {
