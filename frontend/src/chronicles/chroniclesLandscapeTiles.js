@@ -95,3 +95,34 @@ export function chroniclesMeadowTileAt({ grid = [], biome, x, y } = {}) {
   const patch = choices[tileHash(Math.floor(x / 3), Math.floor(y / 3)) % choices.length];
   return Object.freeze({ ...patch, family });
 }
+
+// Foothill strips deliberately share the low-ground species already present
+// elsewhere in Terra. Their recipes blend passable grassland into the real
+// blocked ridgeline, never pretending that a decorative rock blocks movement.
+function foothillTile(id, coverage, pebbles, grassChance) {
+  return Object.freeze({ id, coverage, pebbles, grassChance });
+}
+
+export const CHRONICLES_FOOTHILL_TILES = Object.freeze({
+  rockline: Object.freeze([
+    foothillTile('broken-scree', 0.74, 2, 0.52),
+    foothillTile('grassy-rockline', 0.70, 1, 0.82),
+    foothillTile('wind-scoured-slope', 0.59, 3, 0.30),
+  ]),
+  upland: Object.freeze([
+    foothillTile('short-upland-grass', 0.52, 0, 0.88),
+    foothillTile('stony-pasture', 0.62, 1, 0.72),
+    foothillTile('thin-scree', 0.43, 1, 0.34),
+  ]),
+});
+
+export function chroniclesFoothillTileAt({ grid = [], biome, x, y } = {}) {
+  if (biome !== 'hills' || !Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+    || grid[y]?.[x] !== '.') return null;
+  const nearRock = grid[y - 1]?.[x] === '#' || grid[y + 1]?.[x] === '#'
+    || grid[y]?.[x - 1] === '#' || grid[y]?.[x + 1] === '#';
+  const family = nearRock ? 'rockline' : 'upland';
+  const options = CHRONICLES_FOOTHILL_TILES[family];
+  const recipe = options[tileHash(Math.floor(x / 3), Math.floor(y / 3)) % options.length];
+  return Object.freeze({ ...recipe, family });
+}
