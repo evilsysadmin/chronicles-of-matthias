@@ -5,7 +5,7 @@ import { chroniclesGuildCanLearn, chroniclesGuildMember, chroniclesGuildSpells }
 import { CHRONICLES_SPELL_SCHOOLS, chroniclesMemberKnowsSpell, chroniclesSpellAvailableTo } from '../chronicles/chroniclesMagic.js';
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { chroniclesShopRoom } from '../chronicles/chroniclesShopRooms.js';
-import { ShopRoomArtwork } from './ChroniclesShop.jsx';
+import { ShopRoomArtwork } from './ChroniclesShopRoomArtwork.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesGuild.css';
 

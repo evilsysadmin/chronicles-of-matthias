@@ -5,7 +5,7 @@ import { chroniclesGoldBalance } from '../chronicles/chroniclesContentRuntime.js
 import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { CHRONICLES_PROVISIONS_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
 import hallFallback from '../assets/chronicles/ui/inn/tavern-hall.svg';
-import { ShopRoomArtwork } from './ChroniclesShop.jsx';
+import { ShopRoomArtwork } from './ChroniclesShopRoomArtwork.jsx';
 import './ChroniclesProvisions.css';
 
 // Presentation-only storefront. A purchase is NEVER simulated here: the
