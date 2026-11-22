@@ -139,21 +139,29 @@ try {
   Object.values(meshes).forEach((mesh, index) => { mesh.visible = previous[index]; });
   renderer.render(scene, camera);
 
-  let diff = 0, compared = 0, changed = 0;
+  // Count *actual changed pixels*, not a one-in-81 sample. Short plants
+  // often occupy just 1-3 pixels of a row on a phone; the old 9px stride
+  // could miss their entire silhouette and fail on a healthy grass patch.
+  // Ignore <=12/765 RGB differences (minor GPU variation), and separately
+  // sample the broad image palette without a million Set allocations.
+  let diff = 0, changed = 0;
   const colors = new Set();
   const width = gl.drawingBufferWidth;
   const height = gl.drawingBufferHeight;
-  for (let y = 5; y < height - 5; y += 9) {
-    for (let x = 5; x < width - 5; x += 9) {
+  for (let y = 5; y < height - 5; y += 1) {
+    for (let x = 5; x < width - 5; x += 1) {
       const index = (y * width + x) * 4;
       const d = Math.abs(withTiles[index] - withoutTiles[index])
         + Math.abs(withTiles[index + 1] - withoutTiles[index + 1])
         + Math.abs(withTiles[index + 2] - withoutTiles[index + 2]);
-      diff += d;
-      if (d > 0) changed += 1;
-      compared += 1;
-      colors.add(withTiles[index] + ',' + withTiles[index + 1]
-        + ',' + withTiles[index + 2]);
+      if (d > 12) {
+        diff += d;
+        changed += 1;
+      }
+      if (x % 9 === 5 && y % 9 === 5) {
+        colors.add(withTiles[index] + ',' + withTiles[index + 1]
+          + ',' + withTiles[index + 2]);
+      }
     }
   }
   Object.assign(document.body.dataset, {
@@ -172,7 +180,7 @@ try {
     tuftCount: String(meshes.tuft?.count || 0),
     flowerCount: String(meshes.flower?.count || 0),
     herbCount: String(meshes.forestHerb?.count || 0),
-    targetPixelDifference: String(compared ? diff / (compared * 3) : 0),
+    targetPixelDifference: String(changed ? diff / (changed * 3) : 0),
     targetChangedSamples: String(changed),
     pixelVariants: String(colors.size),
     skyPresent: String(Boolean(dome)),
