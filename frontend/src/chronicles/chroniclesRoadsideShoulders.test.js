@@ -143,8 +143,10 @@ describe('Banner Road organic grass/earth shoulders', () => {
     const other = build({ ...plan, mapId: 'terra-c4' });
     const originalRoad = other.getObjectByName('chronicles-campaign-road');
     originalRoad.getMatrixAt(northSouth, matrix);
+    // Generic Terra dirt paths now share the readable narrow trail width,
+    // but do NOT acquire the authored Banner Road grass/soil shoulder batch.
     expect(matrix.elements[0] * originalRoad.geometry.parameters.width)
-      .toBeCloseTo(3.92, 4);
+      .toBeCloseTo(2.64, 4);
     expect(other.getObjectByName('chronicles-banner-road-shoulders')).toBeUndefined();
     expect(build({ ...plan, regionKind: 'settlement' })
       .getObjectByName('chronicles-banner-road-shoulders')).toBeUndefined();

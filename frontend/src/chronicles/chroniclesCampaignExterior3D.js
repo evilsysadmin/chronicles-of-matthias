@@ -741,6 +741,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   const heathB2 = scenePlan.mapId === 'terra-b2' && scenePlan.biome === 'hills' && !settlement;
   const bannerTrail = scenePlan.mapId === 'banner-road-first-book'
     && scenePlan.biome === 'plains' && !settlement;
+  // Native Terra plains/highlands should not inherit Swordhaven cobbles.
+  // Reuse the already-tested dirt path atlases without changing road cells.
+  const naturalTerraTrail = !settlement && /^terra-/.test(String(scenePlan.mapId || ''))
+    && (scenePlan.biome === 'plains' || scenePlan.biome === 'hills') && !heathB2;
+  const naturalPath = bannerTrail || heathB2 || naturalTerraTrail;
   const earth = material(heathB2 ? 0xffffff : (biome?.ground ?? (forest ? 0xaebc9e : 0xffffff)), {
     // Banner Road's old 64px grass repeated twenty times produced harsh
     // square patches along the user's forest-path POV. A calmer 128px
@@ -751,15 +756,16 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   });
   const stone = village ? village.stone
     : material(biome?.rock ?? (roadMap ? 0x8f8a7e : 0xb9b09f), { map: swordhavenSurfaceTexture('masonry') });
-  // The first-book Banner Road is a woodland cart track, not a city street.
-  // Replace repeated cream cobbles with one softly filtered in-memory atlas
-  // of packed earth, moss and scattered grit. No old cobble normal map:
-  // square stone relief would contradict the new soil texture. Other roads
-  // retain their established textures and GPU budgets.
-  const paver = material(heathB2 || bannerTrail ? 0xffffff
+  // Real wilderness gets packed-earth paths rather than Swordhaven's cream
+  // cobbles. Existing pixel atlases and one shared road InstancedMesh keep
+  // the identical draw-call and memory budget, with no cobble normal relief.
+  // Banner Road and B2 retain their bespoke textures and tints untouched.
+  const paver = material(naturalPath ? 0xffffff
     : (roadMap ? 0xcabfa6 : 0xddd3bf), {
-    map: bannerTrail ? chroniclesPixelTexture('woodlandpath')
-      : heathB2 ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
+    map: bannerTrail || (naturalTerraTrail && scenePlan.biome === 'plains')
+      ? chroniclesPixelTexture('woodlandpath')
+      : heathB2 || naturalTerraTrail
+        ? chroniclesPixelTexture('heathpath') : swordhavenSurfaceTexture('cobble'),
     ...(settlement ? {
       normalMap: swordhavenSurfaceNormalTexture('cobble'),
       normalScale: new THREE.Vector2(0.72, 0.72),
@@ -830,15 +836,12 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
   // A forest has no paved axes: its paths are the gaps between trees.
   const roadCells = forest ? [] : visibleRoadCells(scenePlan, sceneCenter).filter(({ x, y }) => grid[y]?.[x] === '.');
   if (roadCells.length) {
-    // Stone paving retains its tiny mortar gap. On B2 and Banner Road,
-    // compacted earth forms one continuous 4m tread without the artificial
-    // dark line that formerly divided each woodland tile.
-    // This is ONLY an albedo carrier: the canonical 4m navigation/collision
-    // cells, saved positions and interactions remain exactly unchanged.
-    const roadSpan = heathB2 || bannerTrail ? CELL : CELL * 0.98;
-    // Narrow the visual Banner Road straight stretches to a 2.64m track;
-    // keep longitudinal continuity and the junction at full 4m width.
-    const bannerStraightWidth = 0.66;
+    // Earth tracks meet lengthwise without artificial 8cm seams; urban
+    // cobbles retain their mortar gaps. Neither changes the grid/collision.
+    const roadSpan = naturalPath ? CELL : CELL * 0.98;
+    // Preserve 4m longitudinal continuity, but narrow the straight Terra
+    // wilderness corridors to 2.64m; intersections remain legible.
+    const naturalStraightWidth = 0.66;
     const roads = new THREE.InstancedMesh(
       new THREE.BoxGeometry(roadSpan, 0.045, roadSpan), paver, roadCells.length,
     );
@@ -880,11 +883,11 @@ export function buildChroniclesCampaignExterior(scene, { scenePlan = {}, coarseP
       const [wx, wz] = gridToWorld(x, y, sceneCenter);
       dummy.position.set(wx, 0.002, wz);
       dummy.scale.set(
-        bannerTrail && x === sceneCenter.x && y !== sceneCenter.y
-          ? bannerStraightWidth : 1,
+        (bannerTrail || naturalTerraTrail) && x === sceneCenter.x && y !== sceneCenter.y
+          ? naturalStraightWidth : 1,
         1,
-        bannerTrail && y === sceneCenter.y && x !== sceneCenter.x
-          ? bannerStraightWidth : 1,
+        (bannerTrail || naturalTerraTrail) && y === sceneCenter.y && x !== sceneCenter.x
+          ? naturalStraightWidth : 1,
       );
       dummy.updateMatrix();
       roads.setMatrixAt(index, dummy.matrix);
