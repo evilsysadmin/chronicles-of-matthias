@@ -192,7 +192,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(texture.userData.chroniclesPixelArt.kind).toBe('heath');
   });
 
-  it('uses a quiet compacted-earth path exclusively on B2 with identical road cells', () => {
+  it('retains the full-width B2 heath route while other highlands gain narrow dirt trails', () => {
     const plan = {
       mapId: terraB2.id, biome: terraB2.biome, regionKind: terraB2.regionKind,
       width: terraB2.grid[0].length, height: terraB2.grid.length,
@@ -212,12 +212,10 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(road.count).toBeGreaterThan(0);
     expect(road.count).toBe(cheap.count);
     expect(road.count).toBe(unchanged.count);
-    expect(road.geometry.parameters).toEqual({
-      ...unchanged.geometry.parameters, width: 4, depth: 4,
-    });
+    expect(road.geometry.parameters).toEqual(unchanged.geometry.parameters);
     expect(cheap.geometry.parameters).toEqual(road.geometry.parameters);
-    expect(unchanged.geometry.parameters.width).toBeCloseTo(4 * 0.98);
-    expect(unchanged.geometry.parameters.depth).toBeCloseTo(4 * 0.98);
+    expect(unchanged.geometry.parameters.width).toBe(4);
+    expect(unchanged.geometry.parameters.depth).toBe(4);
     // Earth segments meet exactly. No overlap (z-fighting) or dark seams.
     expect(road.geometry.parameters.width).toBe(4);
     expect(road.geometry.parameters.depth).toBe(4);
@@ -225,16 +223,23 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(road.material.map).toBe(cheap.material.map);
     expect(road.material.normalMap).toBeNull();
     expect(road.material.color.getHex()).toBe(0xffffff);
-    expect(unchanged.material.map).toBe(swordhavenSurfaceTexture('cobble'));
+    expect(unchanged.material.map).toBe(road.material.map);
+    expect(unchanged.material.normalMap).toBeNull();
+    expect(unchanged.material.color.getHex()).toBe(0xffffff);
     const instance = new THREE.Matrix4();
     const peer = new THREE.Matrix4();
     for (let i = 0; i < road.count; i++) {
       road.getMatrixAt(i, instance);
       unchanged.getMatrixAt(i, peer);
-      expect(instance.elements).toEqual(peer.elements);
+      expect(instance.elements[12]).toBe(peer.elements[12]);
+      expect(instance.elements[14]).toBe(peer.elements[14]);
       const x = Math.round(instance.elements[12] / 4) + plan.center.x;
       const y = Math.round(instance.elements[14] / 4) + plan.center.y;
       expect(terraB2.grid[y]?.[x]).toBe('.');
+      expect(instance.elements[0]).toBeCloseTo(1);
+      expect(instance.elements[10]).toBeCloseTo(1);
+      expect(peer.elements[0]).toBeCloseTo(x === plan.center.x && y !== plan.center.y ? 0.66 : 1);
+      expect(peer.elements[10]).toBeCloseTo(y === plan.center.y && x !== plan.center.x ? 0.66 : 1);
     }
     // Two adjacent road cells must share a boundary without any tile-sized
     // gap. Verify the fixture really contains a neighboring pair.
@@ -286,9 +291,7 @@ describe('Chronicles file-authored exterior renderer', () => {
     expect(heath.instanceColor).toBeTruthy();
     expect(elsewhere.instanceColor).toBeNull();
     expect(heath.material.map).toBe(again.material.map);
-    expect(heath.geometry.parameters).toEqual({
-      ...elsewhere.geometry.parameters, width: 4, depth: 4,
-    });
+    expect(heath.geometry.parameters).toEqual(elsewhere.geometry.parameters);
     expect(again.geometry.parameters).toEqual(heath.geometry.parameters);
     const matrix = new THREE.Matrix4();
     const previous = new THREE.Matrix4();
@@ -299,7 +302,8 @@ describe('Chronicles file-authored exterior renderer', () => {
     for (let i = 0; i < heath.count; i += 1) {
       heath.getMatrixAt(i, matrix);
       elsewhere.getMatrixAt(i, previous);
-      expect(matrix.elements).toEqual(previous.elements);
+      expect(matrix.elements[12]).toBe(previous.elements[12]);
+      expect(matrix.elements[14]).toBe(previous.elements[14]);
       heath.getColorAt(i, tint);
       again.getColorAt(i, duplicateTint);
       expect(tint.getHex()).toBe(duplicateTint.getHex());
