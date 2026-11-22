@@ -165,7 +165,19 @@ describe('reusable Terra meadow tiles', () => {
     // silhouette is real geometry rather than a UI sprite or generated art.
     const blades = part(mobile, 'tuft').geometry;
     expect(blades.getAttribute('position').count / 3).toBe(5);
-    expect(part(mobile, 'tuft').count).toBeGreaterThan(240);
+    expect(part(mobile, 'tuft').count).toBeGreaterThan(325);
+    // Three contiguous C4 cells in the camera's real north-facing route
+    // were all empty with the original stochastic selector, making the
+    // first-person foreground look like a paved green runway.
+    const forwardCells = new Set();
+    const grass = part(mobile, 'tuft');
+    for (let index = 0; index < grass.count; index += 1) {
+      grass.getMatrixAt(index, pose);
+      const x = Math.round(pose.elements[12] / 4) + center.x;
+      const y = Math.round(pose.elements[14] / 4) + center.y;
+      if (x === 7 && [2, 3, 4].includes(y)) forwardCells.add(y);
+    }
+    expect([...forwardCells].sort((left, right) => left - right)).toEqual([2, 3, 4]);
     expect(part(mobile, 'microrelief').count).toBeLessThan(90);
   });
 
