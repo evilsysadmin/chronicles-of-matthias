@@ -5,12 +5,10 @@ import { getAudioContext, getAudioContextState } from '../audioContext.js';
 import { createChroniclesIdleFxSuspension, listenForChroniclesFxActivity } from './chroniclesIdleFxSuspension.js';
 import { chroniclesPerfIsolationFlags } from './chroniclesPerfIsolation.js';
 import {
-  getAmbientPlaybackState,
-  getAmbientVolume,
-  isMusicMuted,
-  pauseAmbientMusic,
-  startAmbientMusic,
-} from '../sound.js';
+  CHRONICLES_MUSIC_PREFERENCES_EVENT,
+  getChroniclesMusicVolume,
+  isChroniclesMusicMuted,
+} from './chroniclesMusicPreferences.js';
 
 const FIRST_VERSE = 'chronicles.music.firstVerse';
 const SECOND_VERSE = 'chronicles.music.secondVerse';
@@ -63,8 +61,7 @@ export function chroniclesFxIdleDeadlineNeeded(contextState) {
   return contextState === 'running' || contextState === 'suspended';
 }
 
-// Chronicles owns its own recorded score. The global radio retains its place
-// and resumes only if it was actually playing before entering Chronicles.
+// Chronicles owns its recorded score and transport, independently of the Chess Studio radio.
 export function useChroniclesSoundtrack(entryView) {
   const audioRef = useRef(null);
   // Debug-only A/B test. Preserve the player's mute/volume preferences.
@@ -79,19 +76,10 @@ export function useChroniclesSoundtrack(entryView) {
     audio.preload = 'none';
     audioRef.current = audio;
 
-    const globalStatus = getAmbientPlaybackState()?.status;
-    const restoreGlobal = globalStatus === 'playing' || globalStatus === 'gap';
-    if (restoreGlobal) pauseAmbientMusic();
-
-    // The procedural FX AudioContext is shared with the global radio. While
-    // Chronicles is foregrounded, its recorded score uses HTMLAudioElement;
-    // after SFX settle, park the otherwise silent shared context. Never
-    // suspend while the radio is playing or create a context just to park it.
+    // The recorded soundtrack uses HTMLAudioElement. Park the SFX
+    // AudioContext after its own effects settle; do not create one on entry.
     const idleFx = createChroniclesIdleFxSuspension({
-      canSuspend: () => {
-        const status = getAmbientPlaybackState()?.status;
-        return status !== 'playing' && status !== 'gap' && getAudioContextState() === 'running';
-      },
+      canSuspend: () => getAudioContextState() === 'running',
       suspend: () => {
         try {
           const attempt = getAudioContext()?.suspend?.();
@@ -105,11 +93,7 @@ export function useChroniclesSoundtrack(entryView) {
     const stopObservingFx = listenForChroniclesFxActivity(window, idleFx.activity);
 
     const syncPreferences = () => {
-      syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
-      // Transport/media-key controls may restart the global station while
-      // Chronicles is foregrounded. Never play both soundtracks together.
-      const status = getAmbientPlaybackState()?.status;
-      if (status === 'playing' || status === 'gap') pauseAmbientMusic();
+      syncChroniclesSoundtrackPlayback(audio, getChroniclesMusicVolume(), isChroniclesMusicMuted() || isolateMusic);
     };
     const wake = createChroniclesSoundtrackActivityHandlers({
       // FX must be unlocked during a *real* gesture: later enemy response
@@ -118,27 +102,26 @@ export function useChroniclesSoundtrack(entryView) {
       armIdle: idleFx.activity,
       // A focus event may retry MP3 playback, but does not touch WebAudio.
       syncSoundtrack: () => syncChroniclesSoundtrackPlayback(
-        audio, getAmbientVolume(), isMusicMuted() || isolateMusic,
+        audio, getChroniclesMusicVolume(), isChroniclesMusicMuted() || isolateMusic,
       ),
     });
     syncPreferences();
-    window.addEventListener('chess-ambient-transport', syncPreferences);
+    window.addEventListener(CHRONICLES_MUSIC_PREFERENCES_EVENT, syncPreferences);
     window.addEventListener('pointerdown', wake.gesture, { passive: true });
     window.addEventListener('keydown', wake.gesture);
     window.addEventListener('focus', wake.focus);
 
     return () => {
-      window.removeEventListener('chess-ambient-transport', syncPreferences);
+      window.removeEventListener(CHRONICLES_MUSIC_PREFERENCES_EVENT, syncPreferences);
       window.removeEventListener('pointerdown', wake.gesture);
       window.removeEventListener('keydown', wake.gesture);
       window.removeEventListener('focus', wake.focus);
       stopObservingFx();
-      idleFx.dispose(); // never park the global radio after leaving Chronicles
+      idleFx.dispose(); // release only the soundtrack's SFX idle observer
       audio.pause();
       audio.removeAttribute('src');
       audio.load();
       if (audioRef.current === audio) audioRef.current = null;
-      if (restoreGlobal) startAmbientMusic();
     };
   }, [isolateMusic]);
 
@@ -152,6 +135,6 @@ export function useChroniclesSoundtrack(entryView) {
       audio.src = url;
       // play() initiates loading only when audible; no eager load for mute.
     }
-    syncChroniclesSoundtrackPlayback(audio, getAmbientVolume(), isMusicMuted() || isolateMusic);
+    syncChroniclesSoundtrackPlayback(audio, getChroniclesMusicVolume(), isChroniclesMusicMuted() || isolateMusic);
   }, [entryView, isolateMusic]);
 }

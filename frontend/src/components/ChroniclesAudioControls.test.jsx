@@ -3,16 +3,16 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ChroniclesAudioControls from './ChroniclesAudioControls.jsx';
 import { setChroniclesFxVolume } from '../chronicles/chroniclesAudioSettings.js';
-import { setAmbientVolume } from '../sound.js';
+import { setChroniclesMusicVolume } from '../chronicles/chroniclesMusicPreferences.js';
 
 describe('ChroniclesAudioControls', () => {
   afterEach(() => {
-    setAmbientVolume(1);
+    setChroniclesMusicVolume(1);
     setChroniclesFxVolume(1);
   });
 
   it('shows the stored music and SFX levels', () => {
-    setAmbientVolume(0.4);
+    setChroniclesMusicVolume(0.4);
     setChroniclesFxVolume(0.65);
     const html = renderToStaticMarkup(<ChroniclesAudioControls idPrefix="t" />);
     expect(html).toContain('id="t-music-volume"');
