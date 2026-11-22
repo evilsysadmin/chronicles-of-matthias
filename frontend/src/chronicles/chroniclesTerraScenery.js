@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
-import { chroniclesLandscapeTileAt } from './chroniclesLandscapeTiles.js';
+import { chroniclesLandscapeTileAt, chroniclesMeadowTileAt } from './chroniclesLandscapeTiles.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
 // each biome (boulders on the hills, snowy pines, reeds and dead trees in
@@ -1447,6 +1447,49 @@ const CLUTTER = {
   ash: (p, wx, wz, x, y) => p.add('ember', [wx, 0.03, wz], { yaw: noise(x, y, 70) * 6.28 }),
 };
 
+
+// Native Terra meadow communities share the existing grass, wildflower and
+// woodland-herb geometry batches. Coverage follows coherent 3x3-cell habitat
+// recipes while deterministic sub-cell offsets avoid a painted checkerboard.
+// All plant tips stay below knee height; plants never become collision tiles.
+function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
+  if (!recipe || noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.79 : 1)) return;
+  const ox = (noise(x, y, 623) - 0.5) * 1.32;
+  const oz = (noise(y, x, 625) - 0.5) * 1.32;
+  const grassScale = 0.87 + noise(x, y, 627) * 0.25;
+  p.add('tuft', [wx + ox, 0.012, wz + oz], {
+    yaw: noise(x, y, 629) * Math.PI * 2,
+    scale: [grassScale, 0.73 + noise(x, y, 631) * 0.24, grassScale],
+  });
+  if (!coarsePointer && recipe.tufts > 1 && noise(x, y, 633) < 0.72) {
+    p.add('tuft', [
+      wx + ox * 0.55 + (noise(x, y, 635) - 0.5) * 0.54,
+      0.012,
+      wz + oz * 0.55 + (noise(y, x, 637) - 0.5) * 0.54,
+    ], { yaw: noise(x, y, 639) * Math.PI * 2, scale: [0.72, 0.72, 0.72] });
+  }
+  if (noise(x, y, 641) < recipe.flowerChance) {
+    p.add('flower', [
+      wx + (noise(x, y, 643) - 0.5) * 1.24,
+      0.012,
+      wz + (noise(y, x, 645) - 0.5) * 1.24,
+    ], {
+      yaw: noise(x, y, 647) * Math.PI * 2,
+      scale: [0.82, 0.72, 0.82],
+    });
+  }
+  if (noise(x, y, 649) < recipe.herbChance) {
+    p.add('forestHerb', [
+      wx + (noise(x, y, 651) - 0.5) * 1.05,
+      0.012,
+      wz + (noise(y, x, 653) - 0.5) * 1.05,
+    ], {
+      yaw: noise(x, y, 655) * Math.PI * 2,
+      scale: [0.67, 0.48, 0.67],
+    });
+  }
+}
+
 // ─── authored set pieces (terragen `scenery`) ─────────────────────────────
 
 const SET_PIECES = {
@@ -1559,6 +1602,12 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
           addBannerRoadBrackenDrift(p, grid, center, x, y, wx, wz, coarsePointer);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
+        } else if (biome === 'plains' && tile === '.') {
+          // The bespoke Banner Road meadow above is never decorated twice.
+          // Other Terra grasslands gain habitat-based low plant clusters,
+          // with all reserved road/content cells left fully clear.
+          addReusableMeadowPatch(p, wx, wz, x, y,
+            chroniclesMeadowTileAt({ grid, biome, x, y }), coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
           clutter(p, wx + (noise(x, y, 78) - 0.5) * 3,

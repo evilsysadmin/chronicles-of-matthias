@@ -56,3 +56,42 @@ export function chroniclesLandscapeTileAt({ grid = [], biome, x, y, outside = fa
   const recipe = recipes[tileHash(x, y) % recipes.length];
   return Object.freeze({ ...recipe, family });
 }
+
+// A meadow 'tile' is a species composition rather than a square bitmap.
+// Using the same 3x3-cell patch key gives continuous-looking herbaceous
+// communities with sparse gaps; tiny per-cell offsets avoid a visible grid.
+function meadowTile(id, coverage, tufts, flowerChance, herbChance) {
+  return Object.freeze({ id, coverage, tufts, flowerChance, herbChance });
+}
+
+export const CHRONICLES_MEADOW_TILES = Object.freeze({
+  // Broadleaf/fern margins near real impassable trees and rocks.
+  edge: Object.freeze([
+    meadowTile('fern-edge', 0.82, 2, 0.10, 0.48),
+    meadowTile('scrub-grass', 0.77, 2, 0.14, 0.30),
+    meadowTile('shade-meadow', 0.71, 1, 0.08, 0.43),
+  ]),
+  field: Object.freeze([
+    meadowTile('low-pasture', 0.56, 1, 0.08, 0.02),
+    meadowTile('flower-meadow', 0.67, 2, 0.38, 0.04),
+    meadowTile('dry-tussocks', 0.48, 2, 0.12, 0.10),
+    meadowTile('green-meadow', 0.72, 2, 0.20, 0.06),
+  ]),
+});
+
+/**
+ * Walkable meadow vegetation is optional, knee-low visual dressing.
+ * Blocked terrain, authored road cells (filtered by caller), settlements
+ * and other biomes never need this decorator. The patch selector depends
+ * only on permanent grid coordinates, not render order or random runtime.
+ */
+export function chroniclesMeadowTileAt({ grid = [], biome, x, y } = {}) {
+  if (biome !== 'plains' || !Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+    || grid[y]?.[x] !== '.') return null;
+  const nearBlocked = grid[y - 1]?.[x] === '#' || grid[y + 1]?.[x] === '#'
+    || grid[y]?.[x - 1] === '#' || grid[y]?.[x + 1] === '#';
+  const family = nearBlocked ? 'edge' : 'field';
+  const choices = CHRONICLES_MEADOW_TILES[family];
+  const patch = choices[tileHash(Math.floor(x / 3), Math.floor(y / 3)) % choices.length];
+  return Object.freeze({ ...patch, family });
+}
