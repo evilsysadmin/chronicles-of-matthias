@@ -670,7 +670,8 @@ export function chroniclesWoodlandUnderstoryGeometry({ coarsePointer = false } =
 /**
  * Irregular half-buried stones, shallow exposed roots and fallen leaf litter
  * interrupt the featureless meadow foreground. One shared opaque geometry
- * is instanced across selected, walkable *unpaved* Banner Road grass cells.
+ * is instanced across selected, walkable unpaved grass cells in Terra
+ * meadows and the authored Banner Road forest. Both reuse the same shape.
  * Deliberately lower than the player's ankle: only a visual microrelief,
  * never a collider, a raised terrain tile or an interactive object.
  */
