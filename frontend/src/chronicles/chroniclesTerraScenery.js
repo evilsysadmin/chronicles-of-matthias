@@ -1198,6 +1198,83 @@ function addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, blocked
     });
   }
 }
+/**
+ * A second, lower woodland silhouette beneath Banner Road's mature trees.
+ * Only authored blocked woodland cells separating two walkable rows qualify.
+ * The actual gateway road and its two framing trunks remain unobstructed.
+ * The sparse, correlated choices form short thickets, not a continuous wall.
+ * No world-map/collision, shader or material changes.
+ */
+export function chroniclesBannerRoadWoodlineRoot(grid, center, x, y) {
+  return grid[y]?.[x] === '#'
+    && Math.abs(x - center.x) > 1
+    && grid[y]?.[center.x] === '.'
+    && grid[y]?.[center.x - 1] === '#'
+    && grid[y]?.[center.x + 1] === '#'
+    && grid[y - 1]?.[x] === '.'
+    && grid[y + 1]?.[x] === '.'
+    && noise(x, y, 911) > 0.25;
+}
+
+function addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz) {
+  if (!chroniclesBannerRoadWoodlineRoot(grid, center, x, y)) return;
+  // Two overlapping but different-height silhouettes per real blocking root.
+  // Reuse the existing shared bush InstancedMesh; ~16 low-poly instances,
+  // including on touch. Both roots and both crowns stay wholly inside the
+  // four-metre blocked cell with a visibly clear woodland entrance.
+  for (let i = 0; i < 2; i += 1) {
+    const offsetX = (noise(x + i * 3, y, 917) - 0.5) * 0.64;
+    const offsetZ = (noise(y + i * 5, x, 919) - 0.5) * 0.52
+      + (i ? 0.22 : -0.15);
+    const width = 1.08 + noise(x + i, y, 921) * 0.17;
+    const depth = 1.04 + noise(y + i, x, 923) * 0.17;
+    const height = (i ? 1.50 : 1.83) + noise(x, y + i, 925) * 0.23;
+    p.add('bush', [wx + offsetX, 0.80, wz + offsetZ], {
+      yaw: noise(x + i, y, 927) * Math.PI * 2,
+      scale: [width, height, depth],
+    });
+  }
+}
+
+/**
+ * Banner Road's forest edge continues a few walkable cells into the meadow
+ * as low, pass-through bracken, rather than ending at a wall of tree trunks.
+ * Find the AUTHORED north/south entrance from the map, never a synthetic
+ * collision row; keep both paved axes and all content clear.
+ */
+export function chroniclesBannerRoadBrackenCell(grid, center, x, y) {
+  if (grid[y]?.[x] !== '.' || x === center.x || y === center.y
+    || Math.abs(x - center.x) > 2) return false;
+  const gatewayRow = grid.findIndex((row, rowY) =>
+    row?.[center.x] === '.'
+      && row?.[center.x - 1] === '#'
+      && row?.[center.x + 1] === '#'
+      && grid[rowY - 1]?.[center.x] === '.'
+      && grid[rowY + 1]?.[center.x] === '.');
+  const distance = y - gatewayRow;
+  if (gatewayRow < 0 || distance < 2 || distance > 7) return false;
+  const patch = 0.5 + 0.5 * Math.sin(x * 0.65 + y * 0.43)
+    * Math.cos(y * 0.36 - x * 0.19);
+  return noise(x, y, 941) < 0.48 + 0.26 * patch;
+}
+
+function addBannerRoadBrackenDrift(p, grid, center, x, y, wx, wz, coarsePointer) {
+  if (!chroniclesBannerRoadBrackenCell(grid, center, x, y)) return;
+  // Broad compound leaves read as a continuous low fern bed, not a line of
+  // spherical bushes. All foliage stays below knee level and within its
+  // original traversable grass cell. No new geometry/material/draw batch.
+  for (let i = 0; i < (coarsePointer ? 3 : 4); i += 1) {
+    const offsetX = (noise(x + i * 7, y, 943) - 0.5) * 0.92;
+    const offsetZ = (noise(y + i * 3, x, 947) - 0.5) * 0.92;
+    const width = 1.23 + noise(x + i, y, 949) * 0.11;
+    const depth = 1.22 + noise(y + i, x, 951) * 0.12;
+    p.add('forestHerb', [wx + offsetX, 0.012, wz + offsetZ], {
+      yaw: noise(x + i, y, 953) * Math.PI * 2,
+      scale: [width, 0.61 + noise(x, y + i, 955) * 0.07, depth],
+    });
+  }
+}
+
 function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
   const openings = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
@@ -1374,6 +1451,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           woodlandGateway, gatewayGrove);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
+          addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer);
           addBannerRoadFallenWood(p, grid, x, y, wx, wz, coarsePointer);
@@ -1399,6 +1477,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
           }
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
+          addBannerRoadBrackenDrift(p, grid, center, x, y, wx, wz, coarsePointer);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.

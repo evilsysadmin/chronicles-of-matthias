@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
+import { TERRA_SCENERY_MARGIN, chroniclesBannerRoadBackdropScale, chroniclesBannerRoadGatewayGrove, chroniclesBannerRoadWoodlineRoot, chroniclesBannerRoadBrackenCell, buildTerraScenery, chroniclesOrganicRockGeometry, chroniclesOrganicCanopyGeometry, chroniclesLayeredCanopyGeometry, chroniclesWoodlandLeafMassGeometry, chroniclesLayeredShrubGeometry, chroniclesBranchingTrunkGeometry, chroniclesMeadowGrassGeometry, chroniclesMeadowSedgeGeometry, chroniclesForestHerbGeometry, chroniclesMeadowWildflowersGeometry, chroniclesWoodlandUnderstoryGeometry, chroniclesMeadowMicroreliefGeometry, chroniclesFallenWoodGeometry, chroniclesBrezalHeatherGeometry, chroniclesTerraSceneryBiomes } from './chroniclesTerraScenery.js';
 import { chroniclesMapById } from './chroniclesMapCatalog.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
 
@@ -1363,6 +1363,111 @@ describe('Terra scenery', () => {
     expect(shape.boundingBox.max.y).toBeLessThan(0.65);
     for (const n of position.array) expect(Number.isFinite(n)).toBe(true);
     shape.dispose();
+  });
+
+  it.each([true, false])('layers irregular wooded thickets only on real blocked gateway-edge roots (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const expected = [2, 3, 8, 12, 13, 16, 17, 18];
+    const roots = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      chroniclesBannerRoadWoodlineRoot(map.grid, center, x, y) ? [{ x, y, tile }] : []));
+    expect(roots).toEqual(expected.map(x => ({ x, y: 4, tile: '#' })));
+    expect(chroniclesBannerRoadWoodlineRoot(map.grid, center, 9, 4)).toBe(false);
+    expect(chroniclesBannerRoadWoodlineRoot(map.grid, center, 11, 4)).toBe(false);
+    expect(chroniclesBannerRoadWoodlineRoot(map.grid, center, 10, 5)).toBe(false);
+
+    const props = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer };
+    const current = buildTerraScenery(props);
+    const restored = buildTerraScenery(props);
+    const neutral = buildTerraScenery({ ...props, mapId: 'terra-c4' });
+    const bushes = current.getObjectByName('chronicles-terra-bush');
+    const twin = restored.getObjectByName('chronicles-terra-bush');
+    expect(bushes).toBeInstanceOf(THREE.InstancedMesh);
+    expect(current.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    expect(current.children.map(mesh => mesh.name)).toEqual(restored.children.map(mesh => mesh.name));
+    expect(neutral.getObjectByName('chronicles-terra-bush')).toBeInstanceOf(THREE.InstancedMesh);
+    const matrix = new THREE.Matrix4(), repeat = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), rotation = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const found = new Map(), variants = new Set();
+    for (let i = 0; i < bushes.count; i += 1) {
+      bushes.getMatrixAt(i, matrix);
+      twin.getMatrixAt(i, repeat);
+      expect(repeat.elements).toEqual(matrix.elements);
+      matrix.decompose(pos, rotation, scale);
+      if (scale.y < 1.45) continue;
+      const x = Math.round(pos.x / 4) + center.x;
+      const y = Math.round(pos.z / 4) + center.y;
+      expect(chroniclesBannerRoadWoodlineRoot(map.grid, center, x, y)).toBe(true);
+      expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(0.35);
+      expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(0.50);
+      expect(scale.x).toBeGreaterThan(1.07);
+      expect(scale.x).toBeLessThan(1.26);
+      expect(scale.z).toBeGreaterThan(1.03);
+      expect(scale.z).toBeLessThan(1.22);
+      expect(scale.y).toBeLessThan(2.08);
+      found.set(x, (found.get(x) || 0) + 1);
+      variants.add(scale.y.toFixed(2));
+    }
+    expect([...found.entries()].sort((left, right) => left[0] - right[0]))
+      .toEqual(expected.map(x => [x, 2]));
+    expect(variants.size).toBeGreaterThan(6);
+    const other = neutral.getObjectByName('chronicles-terra-bush');
+    for (let i = 0; i < other.count; i += 1) {
+      other.getMatrixAt(i, matrix);
+      matrix.decompose(pos, rotation, scale);
+      expect(scale.y).toBeLessThan(1.45);
+    }
+  });
+
+  it.each([true, false])('makes a knee-low bracken gradient across real unpaved forest approach cells (coarse=%s)', coarsePointer => {
+    const map = chroniclesMapById('banner-road-first-book');
+    const center = { x: 10, y: 7 };
+    const expected = [
+      [8, 6], [9, 6], [11, 6], [12, 6],
+      [8, 8],
+      [8, 9], [9, 9], [11, 9],
+      [8, 10], [11, 10], [12, 10],
+      [8, 11], [9, 11],
+    ];
+    const candidates = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      chroniclesBannerRoadBrackenCell(map.grid, center, x, y) ? [[x, y]] : []));
+    expect(candidates).toEqual(expected);
+    expect(chroniclesBannerRoadBrackenCell(map.grid, center, 10, 9)).toBe(false);
+    expect(chroniclesBannerRoadBrackenCell(map.grid, center, 9, 7)).toBe(false);
+    expect(chroniclesBannerRoadBrackenCell(map.grid, center, 8, 4)).toBe(false);
+    const keepClear = map.grid.flatMap((row, y) => [...row].flatMap((tile, x) =>
+      tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    const args = { grid: map.grid, center, biome: map.biome, mapId: map.id, coarsePointer, keepClear };
+    const actual = buildTerraScenery(args);
+    const again = buildTerraScenery(args);
+    const herbs = actual.getObjectByName('chronicles-terra-forestHerb');
+    const repeat = again.getObjectByName('chronicles-terra-forestHerb');
+    expect(herbs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(actual.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+    expect(actual.children.map(mesh => mesh.name)).toEqual(again.children.map(mesh => mesh.name));
+    const mat = new THREE.Matrix4(), twin = new THREE.Matrix4();
+    const pos = new THREE.Vector3(), q = new THREE.Quaternion(), scale = new THREE.Vector3();
+    const found = new Map();
+    for (let i = 0; i < herbs.count; i += 1) {
+      herbs.getMatrixAt(i, mat);
+      repeat.getMatrixAt(i, twin);
+      expect(mat.elements).toEqual(twin.elements);
+      mat.decompose(pos, q, scale);
+      if (scale.x <= 1.20) continue; // Normal low forest herbs remain unchanged.
+      const x = Math.round(pos.x / 4) + center.x;
+      const y = Math.round(pos.z / 4) + center.y;
+      expect(chroniclesBannerRoadBrackenCell(map.grid, center, x, y)).toBe(true);
+      expect(keepClear.some(cell => cell.x === x && cell.y === y)).toBe(false);
+      expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(0.48);
+      expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(0.48);
+      expect(scale.x).toBeLessThan(1.35);
+      expect(scale.z).toBeLessThan(1.35);
+      expect(scale.y).toBeGreaterThan(0.60);
+      expect(scale.y).toBeLessThan(0.70);
+      found.set(x + ',' + y, (found.get(x + ',' + y) || 0) + 1);
+    }
+    expect([...found.entries()].sort()).toEqual(
+      expected.map(([x, y]) => [x + ',' + y, coarsePointer ? 3 : 4]).sort());
   });
 
   it.each([true, false])('keeps Banner Road shrub drifts low and in adjacent meadow tiles (coarse=%s)', (coarsePointer) => {
