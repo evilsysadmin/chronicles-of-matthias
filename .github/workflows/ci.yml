@@ -26,6 +26,11 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
+      # Required repository-contract status: a URL flip cannot merge unless
+      # the four destination objects already pass real public HTTPS checks.
+      # While the legacy host is active this is pinned-manifest validation only.
+      - name: Require public SHA/MIME/CORS/cache proof for Chronicles media cutover
+        run: node scripts/chronicles-media-cutover-gate.mjs
       # Fail closed during the migration. Without a directly required
       # frontend check, this fast job could no longer protect browser E2E.
       - name: Verify frontend is directly required on protected main
