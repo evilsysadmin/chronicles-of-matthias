@@ -26,10 +26,6 @@ import { withContemplativeProduction } from './ambientContemplativeProduction.js
 import { withClassicalProduction } from './ambientClassicalProduction.js';
 import { withFinalCatalogPolish } from './ambientCatalogFinalPolish.js';
 import { withMediterraneanGrooveDiversity } from './ambientMediterraneanGrooveDiversity.js';
-import {
-  chessStudioCollectionFeel,
-  installChessStudioCollection,
-} from './ambientChessStudioCollection.js';
 
 const RADIO_MATTHIAS_HIDDEN_THEME_IDS = new Set([...CURATED_HIDDEN_THEME_IDS, 'blackArchive']);
 
@@ -52,13 +48,6 @@ installTropicalHouseMelodies({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OP
 installSynthMetalAnthems({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
 installRadioPremiumForms({ themes: AMBIENT_THEMES, options: AMBIENT_THEME_OPTIONS });
 installMediterraneanChordArticulation({ themes: AMBIENT_THEMES });
-installChessStudioCollection({
-  themes: AMBIENT_THEMES,
-  options: AMBIENT_THEME_OPTIONS,
-  groups: AMBIENT_THEME_GROUPS,
-  genreOrder: AMBIENT_GENRE_ORDER,
-  hiddenIds: RADIO_MATTHIAS_HIDDEN_THEME_IDS,
-});
 
 const GRANADA_THEME_IDS = new Set(['granadaPatio', 'granadaCopperRain0232']);
 
@@ -239,12 +228,6 @@ function withTropicalHouseDrive(theme, feel) {
 // Facade deliberadamente pequeño: conserva las identidades legacy y
 // permite profundizar temas concretos sin volver a engordar el motor WebAudio.
 export function structuredFeel(theme) {
-  const chessStudio = chessStudioCollectionFeel(theme);
-  if (chessStudio) {
-    const produced = withFinalCatalogPolish(theme, withClassicalProduction(theme, withContemplativeProduction(theme, chessStudio)));
-    return withAmbientPremiumProduction(theme, withAmbientGenreHook(theme, produced));
-  }
-
   const radioMatthias = radioMatthiasStructuredFeel(theme);
   if (radioMatthias) {
     const leitmotif = withRadioMatthiasLeitmotif(theme, radioMatthias);
