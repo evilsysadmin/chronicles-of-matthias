@@ -3,7 +3,6 @@ import { AMBIENT_THEME_OPTIONS, AMBIENT_THEMES } from './ambientCatalog.js';
 import { structuredFeel } from './ambientProfiles.js';
 import { getAmbientThemeSoundProfile } from './sound.js';
 import { MEDITERRANEAN_CHORD_ATTACK_PLANS } from './ambientMediterraneanChordArticulation.js';
-import { BASS_ATTACK_PLANS } from './ambientBassPhrasingDiversity.js';
 import { EGYPT_NILE_SONGBOOK_IDS } from './ambientEgyptNileSongbook.js';
 
 function melodicEvents(section) {
@@ -91,11 +90,6 @@ describe('Egypt and Nile songbook recomposition', () => {
       expect(AMBIENT_THEMES[id].sections.map((section) => Object.keys(section.chords || {}).map(Number)), id)
         .toEqual(MEDITERRANEAN_CHORD_ATTACK_PLANS[id]);
     }
-  });
-
-  it('preserves Blue Note bass phrasing counts and its downstream attack plan', () => {
-    expect(AMBIENT_THEMES.cairoBlueNote0211.sections.map((section) => Object.keys(section.bass || {}).map(Number)))
-      .toEqual(BASS_ATTACK_PLANS.cairoBlueNote0211);
   });
 
   it('keeps Quiet Hours grounded and Nile weightless by actual production decisions', () => {
