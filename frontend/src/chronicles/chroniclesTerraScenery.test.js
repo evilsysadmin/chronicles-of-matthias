@@ -1795,7 +1795,9 @@ describe('Terra scenery', () => {
     expect(rocks).toBeInstanceOf(THREE.InstancedMesh);
     expect(rocks.count).toBeGreaterThan(20);
     expect(rocks.instanceColor).toBeTruthy();
-    expect(unchanged.instanceColor).toBeNull();
+    // Native E2 now has its own deterministic stone instance hues, while
+    // the B2 palette and per-rock matrices must remain entirely unchanged.
+    expect(unchanged.instanceColor).toBeTruthy();
     expect(rocks.count).toBe(unchanged.count);
     expect(rocks.geometry.getAttribute('position').count)
       .toBe(unchanged.geometry.getAttribute('position').count);
