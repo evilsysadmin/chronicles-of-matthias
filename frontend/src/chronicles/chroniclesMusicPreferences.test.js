@@ -24,14 +24,15 @@ describe('Chronicles soundtrack preferences without the legacy radio', () => {
     expect(isChroniclesMusicMuted()).toBe(false);
   });
 
-  it('persists the current profile preference and emits only its own event', () => {
+  it('persists the profile preference and emits both sync and Chronicles events', () => {
     const dispatchEvent = vi.fn();
     vi.stubGlobal('window', { dispatchEvent });
     expect(setChroniclesMusicVolume(0.35)).toBeCloseTo(0.35);
     expect(localStorage.getItem('chess-study-music-volume')).toBe('0.35');
     expect(getChroniclesMusicVolume()).toBeCloseTo(0.35);
-    expect(dispatchEvent).toHaveBeenCalledOnce();
-    expect(dispatchEvent.mock.calls[0][0].type).toBe(CHRONICLES_MUSIC_PREFERENCES_EVENT);
+    const emitted = dispatchEvent.mock.calls.map(([event]) => event.type);
+    expect(emitted).toEqual(['chess-study-profile-changed', CHRONICLES_MUSIC_PREFERENCES_EVENT]);
+    expect(emitted).not.toContain('chess-ambient-transport');
     expect(setChroniclesMusicVolume(3)).toBe(1);
     expect(setChroniclesMusicVolume(-1)).toBe(0);
   });
