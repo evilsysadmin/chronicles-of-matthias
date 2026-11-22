@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { chroniclesLegacyRadioIsolation } from './scripts/legacy-radio-isolation.mjs';
 import { buildReleaseManifest } from './src/releaseManifest.js';
 import { APP_RELEASE } from './src/release.js';
 
@@ -25,7 +26,7 @@ export default defineConfig({
   base: process.env.CHRONICLES_DEPLOY_BASE || '/',
   // release.js (vendorizado) lee esta constante igual que en Chess Studio.
   define: { __CHESS_BUILD_ID__: JSON.stringify(BUILD_ID) },
-  plugins: [react(), chroniclesReleaseManifest()],
+  plugins: [react(), chroniclesReleaseManifest(), chroniclesLegacyRadioIsolation()],
   test: {
     environment: 'node',
     setupFiles: ['./src/standalone/test-setup.js'],
