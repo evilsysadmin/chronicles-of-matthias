@@ -327,14 +327,18 @@ describe('ambient music catalog', () => {
     expect(ambientRadioThemeIds().length).toBeGreaterThan(0);
     setAmbientRadioMode('genre:Clásica');
     expect(ambientRadioThemeIds().every((id) => AMBIENT_THEME_OPTIONS.find((theme) => theme.id === id)?.genre === 'Clásica')).toBe(true);
-    toggleAmbientFavorite('queenSiciliana');
-    expect(isAmbientFavorite('queenSiciliana')).toBe(true);
+    // Favorites and exclusions must work with an *existing* selectable
+    // theme, not a Chess Studio composition retired from Chronicles.
+    const classical = AMBIENT_THEME_OPTIONS.find((theme) => theme.genre === 'Clásica')?.id;
+    expect(classical).toBeTruthy();
+    toggleAmbientFavorite(classical);
+    expect(isAmbientFavorite(classical)).toBe(true);
     setAmbientRadioMode('favorites');
-    expect(ambientRadioThemeIds()).toContain('queenSiciliana');
-    toggleAmbientExcluded('queenSiciliana');
-    expect(isAmbientExcluded('queenSiciliana')).toBe(true);
-    expect(isAmbientFavorite('queenSiciliana')).toBe(false);
-    expect(ambientRadioThemeIds()).not.toContain('queenSiciliana');
+    expect(ambientRadioThemeIds()).toContain(classical);
+    toggleAmbientExcluded(classical);
+    expect(isAmbientExcluded(classical)).toBe(true);
+    expect(isAmbientFavorite(classical)).toBe(false);
+    expect(ambientRadioThemeIds()).not.toContain(classical);
   });
 
   it('cambiar de estilo selecciona inmediatamente una pista de esa emisora', () => {
