@@ -1167,7 +1167,14 @@ describe('Terra scenery', () => {
     expect(herbs.material.transparent).toBe(false);
     expect(herbs.castShadow).toBe(false);
     expect(herbs.instanceColor.count).toBe(herbs.count);
-    expect(oldMap.getObjectByName('chronicles-terra-forestHerb')).toBeUndefined();
+    // Generic plains now deliberately reuse the low herb species as meadow
+    // habitat tiles. Banner Road remains the only dense, individually authored
+    // woodland gradient with per-instance tint and blocked-root undergrowth.
+    const genericHerbs = oldMap.getObjectByName('chronicles-terra-forestHerb');
+    expect(genericHerbs).toBeInstanceOf(THREE.InstancedMesh);
+    expect(genericHerbs.count).toBeGreaterThan(0);
+    expect(genericHerbs.count).toBeLessThan(herbs.count);
+    expect(genericHerbs.instanceColor).toBeNull();
     const excluded = new Set(keepClear.map(cell => cell.x + ',' + cell.y));
     const matrix = new THREE.Matrix4();
     const twin = new THREE.Matrix4();
