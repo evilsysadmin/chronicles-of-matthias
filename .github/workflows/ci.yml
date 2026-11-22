@@ -31,6 +31,10 @@ jobs:
       # While the legacy host is active this is pinned-manifest validation only.
       - name: Require public SHA/MIME/CORS/cache proof for Chronicles media cutover
         run: node scripts/chronicles-media-cutover-gate.mjs
+      - name: Syntax-check Chronicles browser media cutover fixture
+        run: |
+          node --check frontend/smoke/media-cutover.js
+          node --check frontend/smoke/media-cutover.mjs
       # Fail closed during the migration. Without a directly required
       # frontend check, this fast job could no longer protect browser E2E.
       - name: Verify frontend is directly required on protected main

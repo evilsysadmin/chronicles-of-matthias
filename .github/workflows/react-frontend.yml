@@ -129,6 +129,11 @@ jobs:
           npx vite --port 4174 --strictPort > "$RUNNER_TEMP/chronicles-dev.log" 2>&1 &
           dev_pid=$!
           wait_for_http http://localhost:4174/smoke/folio-mobile.html "$dev_pid" "$RUNNER_TEMP/chronicles-dev.log" "Vite smoke fixtures"
+          # On the legacy CDN this only validates the manifest (zero remote media
+          # requests). Once the dedicated Chronicles host is activated, the
+          # required Chromium job proves real CDN bytes and decodes both MP3s
+          # plus the Tactics GLB before accepting the new source release.
+          node smoke/run-timed.mjs smoke/media-cutover.mjs http://localhost:4174/
           # Fail fast on the actual MM3 desktop dossier before the full fixture battery.
           node smoke/run-timed.mjs smoke/character-sheet-desktop.mjs http://localhost:4174/smoke/character-sheet-desktop.html
           # A touch on a spell should inspect it immediately, restoring focus to its row.
