@@ -1236,6 +1236,45 @@ function addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz) {
   }
 }
 
+/**
+ * Banner Road's forest edge continues a few walkable cells into the meadow
+ * as low, pass-through bracken, rather than ending at a wall of tree trunks.
+ * Find the AUTHORED north/south entrance from the map, never a synthetic
+ * collision row; keep both paved axes and all content clear.
+ */
+export function chroniclesBannerRoadBrackenCell(grid, center, x, y) {
+  if (grid[y]?.[x] !== '.' || x === center.x || y === center.y
+    || Math.abs(x - center.x) > 2) return false;
+  const gatewayRow = grid.findIndex((row, rowY) =>
+    row?.[center.x] === '.'
+      && row?.[center.x - 1] === '#'
+      && row?.[center.x + 1] === '#'
+      && grid[rowY - 1]?.[center.x] === '.'
+      && grid[rowY + 1]?.[center.x] === '.');
+  const distance = y - gatewayRow;
+  if (gatewayRow < 0 || distance < 2 || distance > 7) return false;
+  const patch = 0.5 + 0.5 * Math.sin(x * 0.65 + y * 0.43)
+    * Math.cos(y * 0.36 - x * 0.19);
+  return noise(x, y, 941) < 0.48 + 0.26 * patch;
+}
+
+function addBannerRoadBrackenDrift(p, grid, center, x, y, wx, wz, coarsePointer) {
+  if (!chroniclesBannerRoadBrackenCell(grid, center, x, y)) return;
+  // Broad compound leaves read as a continuous low fern bed, not a line of
+  // spherical bushes. All foliage stays below knee level and within its
+  // original traversable grass cell. No new geometry/material/draw batch.
+  for (let i = 0; i < (coarsePointer ? 3 : 4); i += 1) {
+    const offsetX = (noise(x + i * 7, y, 943) - 0.5) * 0.92;
+    const offsetZ = (noise(y + i * 3, x, 947) - 0.5) * 0.92;
+    const width = 1.23 + noise(x + i, y, 949) * 0.11;
+    const depth = 1.22 + noise(y + i, x, 951) * 0.12;
+    p.add('forestHerb', [wx + offsetX, 0.012, wz + offsetZ], {
+      yaw: noise(x + i, y, 953) * Math.PI * 2,
+      scale: [width, 0.61 + noise(x, y + i, 955) * 0.07, depth],
+    });
+  }
+}
+
 function addBannerRoadUnderstory(p, grid, x, y, wx, wz, coarsePointer) {
   const openings = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .filter(([dx, dy]) => grid[y + dy]?.[x + dx] === '.');
@@ -1438,6 +1477,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
           }
           addBannerRoadForestHerb(p, grid, x, y, wx, wz, coarsePointer, false, trailSide);
+          addBannerRoadBrackenDrift(p, grid, center, x, y, wx, wz, coarsePointer);
           addBannerRoadMicrorelief(p, grid, x, y, wx, wz, coarsePointer);
         } else if (!coarsePointer && noise(x, y, 77) < 0.28) {
           // Original sparse dressing on all other biomes and plains maps.
