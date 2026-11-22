@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { getAmbientVolume, setAmbientVolume } from '../sound.js';
+import {
+  CHRONICLES_MUSIC_PREFERENCES_EVENT,
+  getChroniclesMusicVolume,
+  setChroniclesMusicVolume,
+} from '../chronicles/chroniclesMusicPreferences.js';
 import { getChroniclesFxVolume, setChroniclesFxVolume } from '../chronicles/chroniclesAudioSettings.js';
 import { playChroniclesPreviewSound } from '../chronicles/chroniclesActionAudio.js';
 
@@ -54,15 +58,15 @@ function VolumeRow({ id, label, ariaLabel, icon, value, onChange, onRelease }) {
 // in-game menu and in the cog on the expedition book; both read and write the
 // same stored preferences, so a change in one is what the other shows next.
 export default function ChroniclesAudioControls({ idPrefix = 'chronicles', legend = 'SONIDO', hint = null, className = 'chronicles-audio-controls', id }) {
-  const [music, setMusic] = useState(getAmbientVolume);
+  const [music, setMusic] = useState(getChroniclesMusicVolume);
   const [fx, setFx] = useState(getChroniclesFxVolume);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     // Another surface (media keys, the other panel) may move the music level.
-    const sync = () => setMusic(getAmbientVolume());
-    window.addEventListener('chess-ambient-transport', sync);
-    return () => window.removeEventListener('chess-ambient-transport', sync);
+    const sync = () => setMusic(getChroniclesMusicVolume());
+    window.addEventListener(CHRONICLES_MUSIC_PREFERENCES_EVENT, sync);
+    return () => window.removeEventListener(CHRONICLES_MUSIC_PREFERENCES_EVENT, sync);
   }, []);
 
   return (
@@ -74,7 +78,7 @@ export default function ChroniclesAudioControls({ idPrefix = 'chronicles', legen
         ariaLabel="música"
         icon="♫"
         value={music}
-        onChange={(value) => setMusic(setAmbientVolume(value))}
+        onChange={(value) => setMusic(setChroniclesMusicVolume(value))}
       />
       <VolumeRow
         id={`${idPrefix}-sfx-volume`}

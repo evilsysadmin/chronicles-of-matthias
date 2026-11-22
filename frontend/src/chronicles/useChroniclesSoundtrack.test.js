@@ -1,13 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../sound.js', () => ({
-  getAmbientPlaybackState: () => ({ status: 'paused' }),
-  getAmbientVolume: () => 1,
-  isMusicMuted: () => false,
-  pauseAmbientMusic: vi.fn(),
-  startAmbientMusic: vi.fn(),
-}));
-
 import {
   chroniclesSoundtrackGain,
   syncChroniclesSoundtrackPlayback,
