@@ -54,6 +54,12 @@ try {
       assert.ok(Number(state.bushCount) > 5, 'Roadside bushes must be present');
       assert.ok(Number(state.nearRoadsideBushes) >= (coarse ? 6 : 7),
         'Actual 390px/1280px Banner Road must show broken low shrub drifts across the real verge, not a nearly bare meadow');
+      assert.equal(Number(state.woodlineThickets), 16,
+        'Real Banner Road must layer sixteen uneven low shrub crowns under the blocked forest canopy');
+      assert.equal(Number(state.woodlineRoots), 8,
+        'Forest edge must remain grouped in eight authored blocking roots, never a continuous wall');
+      assert.equal(Number(state.woodlineInvalid), 0,
+        'Thickets must fit their real blocked forest cells without entering the traversable approach');
       assert.ok(Number(state.nearRoadsideHerbs) > (coarse ? 0 : 3),
         'First-person woodland undergrowth must bridge the gap between track and trees');
       assert.ok(Number(state.grassCount) > 20, 'Short turf must remain visible');
