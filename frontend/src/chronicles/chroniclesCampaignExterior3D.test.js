@@ -252,7 +252,9 @@ describe('Chronicles file-authored exterior renderer', () => {
       const authored = chroniclesPixelTexture('meadow');
       expect(authored.userData.chroniclesPixelArt.kind).toBe('meadow');
       expect(authored.image.width).toBe(128);
-      expect(authored.repeat.toArray()).toEqual([7, 7]);
+      // The 7× UV repeat is assigned when Banner Road builds its scene;
+      // its separate authored-scene test verifies that lifecycle contract.
+      // Looking up the cached atlas alone must not initialize that repeat.
       expect(authored.image.data).not.toEqual(mapTexture.image.data);
       expect(full.getObjectByName('chronicles-campaign-road'))
         .toBeInstanceOf(THREE.InstancedMesh);
