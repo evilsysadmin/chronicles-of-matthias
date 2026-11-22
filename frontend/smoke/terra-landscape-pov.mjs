@@ -66,6 +66,13 @@ try {
           + JSON.stringify(state));
         assert.ok((await stat(filename)).size > 20000,
           'Full first-person landscape screenshot must contain a real rendered image');
+        if (mapId === 'terra-c4' && coarse) {
+          // #1438 verified only 98 changed grass/flower pixels at 390px.
+          // Require a meaningful, genuine mobile foreground improvement,
+          // with the same strict real framebuffer evidence as before.
+          assert.ok(Number(state.targetChangedSamples) > 160,
+            '390px meadow must display substantially more actual plant pixels than the 98px baseline');
+        }
         if (mapId === 'terra-e2') {
           assert.ok(Number(state.cragCount) > 0, 'Real blocked ridges must render');
           assert.ok(Number(state.pebbleCount) > 10, 'Walkable foothills need scree');

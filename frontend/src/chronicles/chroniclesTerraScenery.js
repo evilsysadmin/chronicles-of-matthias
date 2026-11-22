@@ -1453,20 +1453,36 @@ const CLUTTER = {
 // recipes while deterministic sub-cell offsets avoid a painted checkerboard.
 // All plant tips stay below knee height; plants never become collision tiles.
 function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
-  if (!recipe || noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.79 : 1)) return;
+  // At 390px the original miniature grass disappeared against the terrain:
+  // mobile displayed only 98 changed pixels in the real Terra C4 camera.
+  // Retain a subset of the desktop cells, but make the surviving plants
+  // perceptible using the SAME low-poly, shared grass/flower/herb batches.
+  if (!recipe || noise(x, y, 619) > recipe.coverage * (coarsePointer ? 0.93 : 1)) return;
   const ox = (noise(x, y, 623) - 0.5) * 1.32;
   const oz = (noise(y, x, 625) - 0.5) * 1.32;
-  const grassScale = 0.87 + noise(x, y, 627) * 0.25;
+  const grassScale = coarsePointer
+    ? 1.25 + noise(x, y, 627) * 0.17
+    : 0.87 + noise(x, y, 627) * 0.25;
   p.add('tuft', [wx + ox, 0.012, wz + oz], {
     yaw: noise(x, y, 629) * Math.PI * 2,
-    scale: [grassScale, 0.73 + noise(x, y, 631) * 0.24, grassScale],
+    scale: [grassScale, coarsePointer
+      ? 1.15 + noise(x, y, 631) * 0.20
+      : 0.73 + noise(x, y, 631) * 0.24, grassScale],
   });
-  if (!coarsePointer && recipe.tufts > 1 && noise(x, y, 633) < 0.72) {
+  // A second, slightly separated tuft improves ground cover without a
+  // second draw call. Mobile takes a strict subset of desktop's tuft cells
+  // and each clump stays inside its own original 4m walkable square.
+  if (recipe.tufts > 1 && noise(x, y, 633) < (coarsePointer ? 0.62 : 0.72)) {
+    const angle = noise(x, y, 635) * Math.PI * 2;
+    const distance = 0.65 + noise(y, x, 637) * 0.20;
     p.add('tuft', [
-      wx + ox * 0.55 + (noise(x, y, 635) - 0.5) * 0.54,
+      wx + ox * 0.25 + Math.cos(angle) * distance,
       0.012,
-      wz + oz * 0.55 + (noise(y, x, 637) - 0.5) * 0.54,
-    ], { yaw: noise(x, y, 639) * Math.PI * 2, scale: [0.72, 0.72, 0.72] });
+      wz + oz * 0.25 + Math.sin(angle) * distance,
+    ], {
+      yaw: noise(x, y, 639) * Math.PI * 2,
+      scale: coarsePointer ? [1.02, 1.05, 1.02] : [0.72, 0.72, 0.72],
+    });
   }
   if (noise(x, y, 641) < recipe.flowerChance) {
     p.add('flower', [
@@ -1475,7 +1491,7 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
       wz + (noise(y, x, 645) - 0.5) * 1.24,
     ], {
       yaw: noise(x, y, 647) * Math.PI * 2,
-      scale: [0.82, 0.72, 0.82],
+      scale: coarsePointer ? [1.10, 1.05, 1.10] : [0.82, 0.72, 0.82],
     });
   }
   if (noise(x, y, 649) < recipe.herbChance) {
@@ -1485,7 +1501,7 @@ function addReusableMeadowPatch(p, wx, wz, x, y, recipe, coarsePointer) {
       wz + (noise(y, x, 653) - 0.5) * 1.05,
     ], {
       yaw: noise(x, y, 655) * Math.PI * 2,
-      scale: [0.67, 0.48, 0.67],
+      scale: coarsePointer ? [0.90, 0.65, 0.90] : [0.67, 0.48, 0.67],
     });
   }
 }

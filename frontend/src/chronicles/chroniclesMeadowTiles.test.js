@@ -106,6 +106,58 @@ describe('reusable Terra meadow tiles', () => {
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
+  it('makes mobile meadow plants legible without crossing a protected cell or growing above the knee', () => {
+    const map = chroniclesMapById('terra-c4');
+    const center = { x: 10, y: 7 };
+    const keepClear = map.grid.flatMap((row, y) =>
+      [...row].flatMap((tile, x) =>
+        tile === '.' && (x === center.x || y === center.y) ? [{ x, y }] : []));
+    const args = { grid: map.grid, mapId: map.id, biome: map.biome,
+      center, scenery: map.scenery, keepClear };
+    const mobile = buildTerraScenery({ ...args, coarsePointer: true });
+    const desktop = buildTerraScenery(args);
+    const repeat = buildTerraScenery({ ...args, coarsePointer: true });
+    const protectedCells = new Set(keepClear.map(({ x, y }) => x + ',' + y));
+    const pose = new THREE.Matrix4(), copy = new THREE.Matrix4();
+    const height = new THREE.Vector3();
+    const position = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    for (const name of ['tuft', 'flower', 'forestHerb']) {
+      const mesh = part(mobile, name), full = part(desktop, name);
+      const twin = part(repeat, name);
+      expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
+      expect(mesh.count).toBeGreaterThan(0);
+      expect(mesh.count).toBeLessThanOrEqual(full.count);
+      expect(mobile.children.filter(child => child.name === mesh.name)).toHaveLength(1);
+      mesh.geometry.computeBoundingBox();
+      for (let index = 0; index < mesh.count; index += 1) {
+        mesh.getMatrixAt(index, pose);
+        twin.getMatrixAt(index, copy);
+        expect(pose.elements).toEqual(copy.elements);
+        pose.decompose(position, rotation, height);
+        const x = Math.round(position.x / 4) + center.x;
+        const y = Math.round(position.z / 4) + center.y;
+        expect(map.grid[y]?.[x], name + ' at ' + x + ',' + y).toBe('.');
+        expect(protectedCells.has(x + ',' + y)).toBe(false);
+        const bounds = mesh.geometry.boundingBox.clone().applyMatrix4(pose);
+        expect(bounds.max.y).toBeLessThan(0.70);
+        const worldX = (x - center.x) * 4;
+        const worldZ = (y - center.y) * 4;
+        expect(bounds.min.x).toBeGreaterThan(worldX - 1.8);
+        expect(bounds.max.x).toBeLessThan(worldX + 1.8);
+        expect(bounds.min.z).toBeGreaterThan(worldZ - 1.8);
+        expect(bounds.max.z).toBeLessThan(worldZ + 1.8);
+        if (name === 'flower') expect(height.y).toBeGreaterThan(1);
+        if (name === 'forestHerb') expect(height.y).toBeCloseTo(0.65, 5);
+      }
+    }
+    // Mobile keeps a small triangle budget, but the enlarged first-person
+    // silhouette is real geometry rather than a UI sprite or generated art.
+    const blades = part(mobile, 'tuft').geometry;
+    expect(blades.getAttribute('position').count / 3).toBe(5);
+    expect(part(mobile, 'tuft').count).toBeGreaterThan(70);
+  });
+
   it('retains the authored Banner Road foliage instead of applying meadow recipes twice', () => {
     const map = chroniclesMapById('banner-road-first-book');
     const args = { grid: map.grid, biome: map.biome, mapId: map.id,
