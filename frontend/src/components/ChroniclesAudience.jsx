@@ -4,7 +4,7 @@ import aldricIllustrated from '../assets/chronicles/ui/shops/aldric-hall-illustr
 import braskIllustrated from '../assets/chronicles/ui/shops/brask-watch-illustrated.svg';
 import ilseTemple from '../assets/chronicles/ui/shops/ilse-temple.svg';
 import { CHRONICLES_ALDRIC_HALL_PREMIUM_ART_URL, CHRONICLES_BRASK_WATCH_PREMIUM_ART_URL, CHRONICLES_ILSE_TEMPLE_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
-import { ShopRoomArtwork } from './ChroniclesShop.jsx';
+import { ShopRoomArtwork } from './ChroniclesShopRoomArtwork.jsx';
 import './ChroniclesShop.css';
 import './ChroniclesAudience.css';
 

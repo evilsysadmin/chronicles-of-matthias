@@ -5,7 +5,7 @@ import { chroniclesMapForState } from '../chronicles/chroniclesMapCatalog.js';
 import { CHRONICLES_INN_FOOD, chroniclesInnEntry, chroniclesInnName, chroniclesInnRestPrice, chroniclesInnRumors } from '../chronicles/chroniclesInns.js';
 import scene from '../assets/chronicles/ui/inn/tavern-hall.svg';
 import { CHRONICLES_TAVERN_PREMIUM_ART_URL } from '../chronicles/chroniclesShopArt.js';
-import { ShopRoomArtwork } from './ChroniclesShop.jsx';
+import { ShopRoomArtwork } from './ChroniclesShopRoomArtwork.jsx';
 import './ChroniclesInn.css';
 
 export default function ChroniclesInn({ state, onAction, onClose }) {
