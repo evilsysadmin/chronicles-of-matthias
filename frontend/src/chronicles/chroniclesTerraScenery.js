@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { chroniclesPixelTexture } from './chroniclesPixelTextures.js';
+import { chroniclesLandscapeTileAt } from './chroniclesLandscapeTiles.js';
 
 // Terra's scenery: what an impassable cell of the overworld looks like in
 // each biome (boulders on the hills, snowy pines, reeds and dead trees in
@@ -60,6 +61,61 @@ export function chroniclesOrganicRockGeometry({ coarsePointer = false } = {}) {
   normals.needsUpdate = true;
   geometry.computeBoundingSphere();
   return geometry;
+}
+
+// A ridge tile is made of irregular, stepped rock peaks, not tall perfect
+// cones. Merge both desktop peaks once into the SAME 'crag' instancing batch.
+// Every vertex/UV is authored locally and the footprint stays inside its
+// blocked 4m cell even when rotated. Mobile uses one cheaper peak.
+export function chroniclesMountainCragGeometry({ coarsePointer = false } = {}) {
+  const sides = coarsePointer ? 5 : 7;
+  const peaks = coarsePointer
+    ? [{ x: 0, z: 0, width: 0.88, height: 1.15 }]
+    : [
+      { x: -0.20, z: -0.12, width: 0.83, height: 1.17 },
+      { x: 0.38, z: 0.24, width: 0.55, height: 0.83 },
+    ];
+  const geometries = peaks.map((peak, peakIndex) => {
+    const vertices = [];
+    const uvs = [];
+    const indices = [];
+    const rings = [[1, 0], [0.78, 0.34], [0.43, 0.73], [0.05, 1]];
+    rings.forEach(([radius, rise], ringIndex) => {
+      for (let i = 0; i < sides; i += 1) {
+        const angle = i * Math.PI * 2 / sides + 0.31 * peakIndex;
+        const rough = 1 + 0.115 * Math.sin(i * 2.9 + ringIndex * 1.8 + peakIndex);
+        const shift = rise * (peakIndex === 0 ? -0.10 : 0.13);
+        vertices.push(
+          peak.x + (Math.cos(angle) * radius * rough + shift) * peak.width,
+          peak.height * (rise + (ringIndex > 0 && ringIndex < 3
+            ? 0.065 * Math.sin(i * 2.2 + peakIndex) : 0)),
+          peak.z + Math.sin(angle) * radius * rough * peak.width,
+        );
+        uvs.push(i / (sides - 1), rise);
+        if (ringIndex) {
+          const prev = (ringIndex - 1) * sides;
+          const next = ringIndex * sides;
+          const j = (i + 1) % sides;
+          // Outward-facing winding: the outside of each ridge stays visible
+          // with the rock material's normal front-face culling.
+          indices.push(prev + i, next + i, prev + j,
+            prev + j, next + i, next + j);
+        }
+      }
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+    return geo;
+  });
+  if (geometries.length === 1) return geometries[0];
+  const merged = mergeGeometries(geometries, false);
+  geometries.forEach(geo => geo.dispose());
+  if (!merged) throw new Error('Highland ridge peaks could not be merged');
+  return merged;
 }
 
 // Hand-built heather leaves and dusty lilac flowers share ONE instanced
@@ -744,7 +800,7 @@ function partCatalog(coarsePointer, biome, woodland = false) {
     boulder: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0xd8d2c4)],
     boulderDark: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x8a857c)],
     boulderSnow: () => [chroniclesOrganicRockGeometry({ coarsePointer }), lit(0xf2f6fa, { map: texture('snow'), flatShading: coarsePointer })],
-    crag: () => [new THREE.ConeGeometry(0.9, 3, 5), rock(0xc8c0b0)],
+    crag: () => [chroniclesMountainCragGeometry({ coarsePointer }), rock(0xc8c0b0)],
     basalt: () => [new THREE.CylinderGeometry(0.42, 0.48, 1, 6), lit(0x8a7c74, { map: texture('rock'), flatShading: true })],
     emberRock: () => [chroniclesOrganicRockGeometry({ coarsePointer }), roundedRock(0x5a4a44, { emissive: 0x5a1c04, emissiveIntensity: 0.35 })],
     trunk: () => [new THREE.CylinderGeometry(0.2, 0.32, 1, 7), lit(0xffffff, { map: texture('bark', 2, 3) })],
@@ -977,10 +1033,31 @@ const DRESS = {
     if (roll >= 0.7 || big) boulders(p, wx, wz, x, y, { count: 1, size: 1.0 });
     if (roll < 0.2) broadleaf(p, wx, wz, x, y, 9, big ? 1.1 : 0.9, bannerRoad);
   },
-  hills(p, wx, wz, x, y, big) {
-    boulders(p, wx, wz, x, y, { count: 2, size: big ? 1.6 : 1.35, height: 1.1 });
-    if (noise(x, y, 4) > 0.55) p.add('crag', [wx + (noise(x, y, 5) - 0.5) * 1.6, 1.4, wz + (noise(y, x, 5) - 0.5) * 1.6], { yaw: noise(x, y, 6) * 6.28, scale: [1, 0.9 + noise(x, y, 8), 1] });
-    if (noise(x, y, 7) > 0.7) p.add('bush', [wx, 0.45, wz + 1.2], { scale: [0.9, 0.6, 0.9] });
+  hills(p, wx, wz, x, y, big, _banner, _ring, _gateway, _grove, tileRecipe) {
+    // Each real blocked cell selects one reusable, topology-aware recipe.
+    // Rim tiles stay low; inland tiles and the non-colliding outer ring form
+    // irregular rocky ridges. All parts still share the old instance batches.
+    if (!tileRecipe) return;
+    boulders(p, wx, wz, x, y, {
+      count: tileRecipe.boulderCount, size: tileRecipe.boulderSize, height: 1.05,
+    });
+    if (noise(x, y, 4) < tileRecipe.cragChance) {
+      p.add('crag', [
+        wx + (noise(x, y, 5) - 0.5) * 0.48, 0,
+        wz + (noise(y, x, 5) - 0.5) * 0.48,
+      ], {
+        yaw: noise(x, y, 6) * 6.28,
+        scale: [0.90 + noise(x, y, 9) * 0.20,
+          (big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52,
+          0.87 + noise(x, y, 10) * 0.25],
+      });
+    }
+    if (noise(x, y, 7) < tileRecipe.bushChance) {
+      p.add('bush', [
+        wx + (noise(x, y, 11) - 0.5) * 1.2, 0.42,
+        wz + (noise(y, x, 12) - 0.5) * 1.2,
+      ], { yaw: noise(x, y, 13) * 6.28, scale: [0.92, 0.65, 0.90] });
+    }
   },
   snow(p, wx, wz, x, y, big) {
     if (noise(x, y, 1) < 0.62) {
@@ -1447,8 +1524,11 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
           && grid[y + 1]?.[x] === '.';
         const gatewayGrove = denseMeadow && inside && !woodlandGateway
           && chroniclesBannerRoadGatewayGrove(grid, center, x, y);
+        const landscapeTile = biome === 'hills'
+          ? chroniclesLandscapeTileAt({ grid, biome, x, y, outside: !inside })
+          : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
-          woodlandGateway, gatewayGrove);
+          woodlandGateway, gatewayGrove, landscapeTile);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
