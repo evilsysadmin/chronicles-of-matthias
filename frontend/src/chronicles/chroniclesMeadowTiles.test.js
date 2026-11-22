@@ -71,7 +71,7 @@ describe('reusable Terra meadow tiles', () => {
     const desktop = buildTerraScenery(args);
     const mobile = buildTerraScenery({ ...args, coarsePointer: true });
     const restored = buildTerraScenery(args);
-    for (const name of ['tuft', 'flower', 'forestHerb']) {
+    for (const name of ['tuft', 'flower', 'forestHerb', 'microrelief']) {
       const mesh = part(desktop, name);
       const cheap = part(mobile, name);
       const repeat = part(restored, name);
@@ -103,6 +103,16 @@ describe('reusable Terra meadow tiles', () => {
         expect(worldBox.max.z).toBeLessThan(cellWorldZ + 1.8);
       }
     }
+    // New reusable stones and low leaf litter share one batch. The surface
+    // is visual only: opaque, ankle-high and never a collision or road tile.
+    const stones = part(mobile, 'microrelief');
+    const coarseTriangles = stones.geometry.getAttribute('position').count / 3;
+    const desktopTriangles = part(desktop, 'microrelief').geometry.getAttribute('position').count / 3;
+    expect(coarseTriangles).toBeLessThan(desktopTriangles);
+    expect(stones.material.transparent).toBe(false);
+    expect(stones.castShadow).toBe(false);
+    expect(stones.instanceColor).toBeNull();
+    expect(stones.count).toBeGreaterThan(5);
     expect(desktop.children.every(child => child.isInstancedMesh)).toBe(true);
   });
 
@@ -122,7 +132,7 @@ describe('reusable Terra meadow tiles', () => {
     const height = new THREE.Vector3();
     const position = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
-    for (const name of ['tuft', 'flower', 'forestHerb']) {
+    for (const name of ['tuft', 'flower', 'forestHerb', 'microrelief']) {
       const mesh = part(mobile, name), full = part(desktop, name);
       const twin = part(repeat, name);
       expect(mesh).toBeInstanceOf(THREE.InstancedMesh);
@@ -155,7 +165,8 @@ describe('reusable Terra meadow tiles', () => {
     // silhouette is real geometry rather than a UI sprite or generated art.
     const blades = part(mobile, 'tuft').geometry;
     expect(blades.getAttribute('position').count / 3).toBe(5);
-    expect(part(mobile, 'tuft').count).toBeGreaterThan(70);
+    expect(part(mobile, 'tuft').count).toBeGreaterThan(240);
+    expect(part(mobile, 'microrelief').count).toBeLessThan(90);
   });
 
   it('retains the authored Banner Road foliage instead of applying meadow recipes twice', () => {
