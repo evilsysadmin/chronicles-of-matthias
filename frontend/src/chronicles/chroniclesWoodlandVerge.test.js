@@ -62,13 +62,20 @@ describe('reusable native Terra woodland verge tiles', () => {
     const map = chroniclesMapById('terra-c4');
     const gridBefore = map.grid.map(row => row);
     const roots = new Set();
+    const meadowNeighbours = new Set();
     for (let y = 0; y < map.grid.length; y += 1) {
       for (let x = 0; x < map.grid[y].length; x += 1) {
         if (chroniclesWoodlandVergeTileAt({ grid: map.grid, biome: map.biome, x, y })) {
           roots.add(x + ',' + y);
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            if (map.grid[y + dy]?.[x + dx] === '.') {
+              meadowNeighbours.add((x + dx) + ',' + (y + dy));
+            }
+          }
         }
       }
     }
+    expect(meadowNeighbours.size).toBeGreaterThan(10);
     expect(roots.size).toBeGreaterThan(10);
     const args = { grid: map.grid, biome: map.biome, center, scenery: map.scenery };
     const native = buildTerraScenery({ ...args, mapId: map.id });
@@ -81,8 +88,12 @@ describe('reusable native Terra woodland verge tiles', () => {
     const newRocks = countOnRoots(native, 'boulder', roots);
     expect(oldRocks).toBeGreaterThan(3);
     expect(newRocks).toBeLessThan(oldRocks);
-    expect(countOnRoots(native, 'forestHerb', roots))
-      .toBeGreaterThan(countOnRoots(neutral, 'forestHerb', roots));
+    // Fern roots remain on passable meadow, so legacy meadow-height and
+    // protected-cell checks still hold. The forest tile never plants them
+    // on a blocked cell or inside the rock piles.
+    expect(countOnRoots(native, 'forestHerb', roots)).toBe(0);
+    expect(countOnRoots(native, 'forestHerb', meadowNeighbours))
+      .toBeGreaterThan(countOnRoots(neutral, 'forestHerb', meadowNeighbours));
     expect(countOnRoots(native, 'bush', roots))
       .toBeGreaterThanOrEqual(countOnRoots(neutral, 'bush', roots));
     const originalParts = new Set(neutral.children.map(mesh => mesh.name));
