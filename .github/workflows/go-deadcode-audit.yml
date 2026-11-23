@@ -1,0 +1,74 @@
+name: Chronicles Go unreachable functions (advisory)
+on:
+  # On demand after the first run; do not slow every normal code PR.
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/go-deadcode-audit.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/go-deadcode-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: go-deadcode-advisory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'
+          cache-dependency-path: api/go.sum
+      - name: Analyze unreachable functions (commands and tests)
+        working-directory: api
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Pin the analysis tool; do not modify api/go.mod or api/go.sum.
+          go install golang.org/x/tools/cmd/deadcode@v0.53.0
+          tool="$(go env GOPATH)/bin/deadcode"
+          # Check all shipped/maintenance command entrypoints together, so a
+          # helper used by a generator is not mislabeled dead in the API.
+          "$tool" ./cmd/... | LC_ALL=C sort -u > "$RUNNER_TEMP/go-deadcode-commands.txt"
+          # Add each internal package's implicit test main as a root.
+          "$tool" -test ./cmd/... ./internal/... | LC_ALL=C sort -u > "$RUNNER_TEMP/go-deadcode-tests.txt"
+          # The intersection remains unreachable even when tests run. This is
+          # a manual-review shortlist, NOT a safe-delete decision.
+          comm -12 "$RUNNER_TEMP/go-deadcode-commands.txt" "$RUNNER_TEMP/go-deadcode-tests.txt" > "$RUNNER_TEMP/go-deadcode-review.txt"
+          # Functions reachable only from tests are intentionally retained.
+          comm -23 "$RUNNER_TEMP/go-deadcode-commands.txt" "$RUNNER_TEMP/go-deadcode-tests.txt" > "$RUNNER_TEMP/go-deadcode-test-covered.txt"
+          count() { wc -l < "$1" | tr -d ' '; }
+          echo "GO_DEADCODE_AUDIT runtime_unreachable=$(count "$RUNNER_TEMP/go-deadcode-commands.txt") test_covered=$(count "$RUNNER_TEMP/go-deadcode-test-covered.txt") review=$(count "$RUNNER_TEMP/go-deadcode-review.txt")"
+          {
+            echo '## Chronicles Go function reachability (advisory)'
+            echo
+            echo '| Category | Functions |'
+            echo '| --- | ---: |'
+            echo "| Unreachable from Go commands | $(count "$RUNNER_TEMP/go-deadcode-commands.txt") |"
+            echo "| Reached only through tests | $(count "$RUNNER_TEMP/go-deadcode-test-covered.txt") |"
+            echo "| Unreachable from commands and tests | $(count "$RUNNER_TEMP/go-deadcode-review.txt") |"
+            echo
+            echo '### First 35 manual-review candidates'
+            echo '~~~text'
+            head -n 35 "$RUNNER_TEMP/go-deadcode-review.txt"
+            echo '~~~'
+            echo
+            echo 'Do not delete automatically. Reflection, //go:linkname, build tags, alternate OS/architecture, generated code and external usage require manual checks.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: chronicles-go-deadcode-inventory
+          path: ${{ runner.temp }}/go-deadcode-*.txt
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 7
