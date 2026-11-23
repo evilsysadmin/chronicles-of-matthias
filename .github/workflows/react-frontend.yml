@@ -163,6 +163,11 @@ jobs:
           # Keep the original four baseline frames; include four extra 390/1280
           # screenshots in the SAME compact chronicles-terra-landscape-pov artifact.
           node smoke/run-timed.mjs smoke/terra-landscape-flank-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
+          # Three real authored ruins previously used the same exaggerated
+          # 3.5m needle. Inspect C4/A1/B2 from their actual walkable cells
+          # in portrait+desktop and prove visible ruin pixels, not just meshes.
+          # Keep all eight canonical+flank PNG baselines in this same artifact.
+          node smoke/run-timed.mjs smoke/terra-authored-ruins-pov.mjs http://localhost:4174/smoke/terra-landscape-pov.html
           # Capture the authored Swordhaven facade before optional remote shop art
           # can time out: PR screenshots remain available even on a flaky fixture.
           # Actual authored Swordhaven geometry: visual evidence of house-height streets

@@ -1819,15 +1819,27 @@ describe('Terra scenery', () => {
     const tint = new THREE.Color();
     const otherTint = new THREE.Color();
     const variations = new Set();
+    let lowAuthoredRuinStones = 0;
     for (let i = 0; i < rocks.count; i += 1) {
       rocks.getMatrixAt(i, matrix);
       unchanged.getMatrixAt(i, otherMatrix);
-      expect(matrix.elements).toEqual(otherMatrix.elements);
+      const x = Math.round(matrix.elements[12] / 4) + 10;
+      const y = Math.round(matrix.elements[14] / 4) + 7;
+      if (x === 3 && y === 8) {
+        // The special B2 heather keeps its lichen tint and ALL normal
+        // rock positions; only the three authored ruin stones now use
+        // the low Terra rubble profile from v62 E2.
+        lowAuthoredRuinStones += 1;
+        expect(new THREE.Vector3().setFromMatrixScale(matrix).y).toBeLessThan(1.65);
+      } else {
+        expect(matrix.elements).toEqual(otherMatrix.elements);
+      }
       rocks.getColorAt(i, tint);
       matching.getColorAt(i, otherTint);
       expect(tint.getHex()).toBe(otherTint.getHex());
       variations.add(tint.getHex());
     }
+    expect(lowAuthoredRuinStones).toBe(3);
     expect(variations.size).toBeGreaterThan(1);
     expect(themed.children.length).toBe(plain.children.length + 1); // Heather already exclusive to B2.
   });

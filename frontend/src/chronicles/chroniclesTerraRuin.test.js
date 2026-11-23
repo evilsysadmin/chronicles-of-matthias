@@ -64,31 +64,82 @@ describe('Terra v62 authored ruin no longer masquerades as a giant rock needle',
       .toHaveLength(1);
   });
 
-  it('preserves original crag geometry, original B2 ruin and mobile budgets', () => {
-    const map = chroniclesMapById('terra-e2');
+  it('uses bounded rubble on all four authored Terra ruins, in both quality modes', () => {
+    const locations = [
+      ['terra-e2', 18, 6], ['terra-c4', 13, 9],
+      ['terra-a1', 14, 5], ['terra-b2', 3, 8],
+    ];
     for (const coarsePointer of [true, false]) {
-      const original = chroniclesMountainCragGeometry({ coarsePointer });
-      const natural = buildTerraScenery({
-        grid: map.grid, center, biome: map.biome,
-        scenery: map.scenery, mapId: map.id, coarsePointer,
-      });
-      const crag = natural.getObjectByName('chronicles-terra-crag');
-      expect([...crag.geometry.getAttribute('position').array])
-        .toEqual([...original.getAttribute('position').array]);
-      expect(crag.geometry.index.count / 3).toBe(coarsePointer ? 30 : 84);
-      original.dispose();
-
-      const special = chroniclesMapById('terra-b2');
-      const scenery = [{ type: 'ruin', x: 0, y: 0 }];
-      expect(special.grid[0][0]).toBe('#');
-      const args = {
-        grid: special.grid, center, biome: special.biome,
-        scenery, coarsePointer,
-      };
-      const b2 = buildTerraScenery({ ...args, mapId: special.id });
-      const generic = buildTerraScenery({ ...args, mapId: 'generic-hills' });
-      expect(getBoulders(b2, 0, 0).map(x => x.elements))
-        .toEqual(getBoulders(generic, 0, 0).map(x => x.elements));
+      for (const [id, x, y] of locations) {
+        const map = chroniclesMapById(id);
+        expect(map.grid[y][x]).toBe('#');
+        expect(map.scenery).toContainEqual({ type: 'ruin', x, y });
+        const args = {
+          grid: map.grid, center, biome: map.biome,
+          scenery: map.scenery, coarsePointer,
+        };
+        const natural = buildTerraScenery({ ...args, mapId: id });
+        const repeated = buildTerraScenery({ ...args, mapId: id });
+        const generic = buildTerraScenery({ ...args, mapId: 'generic-' + map.biome });
+        const rubble = getBoulders(natural, x, y);
+        const duplicate = getBoulders(repeated, x, y);
+        const oldStones = getBoulders(generic, x, y);
+        expect(rubble).toHaveLength(3);
+        expect(oldStones).toHaveLength(3);
+        expect(duplicate.map(m => m.elements)).toEqual(rubble.map(m => m.elements));
+        expect(Math.max(...oldStones.map(yScale))).toBeGreaterThan(2);
+        expect(Math.max(...rubble.map(yScale))).toBeLessThan(1.65);
+        expect(Math.min(...rubble.map(yScale))).toBeGreaterThan(0.85);
+        const boulder = natural.getObjectByName('chronicles-terra-boulder');
+        // C4 has a different *native woodland* rock population than an
+        // unnamed plains map. Compare its own repeated native terrain,
+        // while inspecting generic solely as the old authored ruin shape.
+        expect(boulder.count)
+          .toBe(repeated.getObjectByName('chronicles-terra-boulder').count);
+        expect(natural.children.map(mesh => mesh.name))
+          .toEqual(repeated.children.map(mesh => mesh.name));
+        expect(natural.children.every(mesh => mesh.isInstancedMesh)).toBe(true);
+        for (const stone of rubble) {
+          const pos = new THREE.Vector3();
+          stone.decompose(pos, new THREE.Quaternion(), new THREE.Vector3());
+          expect(Math.abs(pos.x - (x - center.x) * 4)).toBeLessThan(1);
+          expect(Math.abs(pos.z - (y - center.y) * 4)).toBeLessThan(0.4);
+        }
+      }
+      // v61 mountain crag geometry remains untouched, even in E2/B2.
+      for (const id of ['terra-e2', 'terra-b2']) {
+        const map = chroniclesMapById(id);
+        const original = chroniclesMountainCragGeometry({ coarsePointer });
+        const live = buildTerraScenery({
+          grid: map.grid, center, biome: map.biome,
+          scenery: map.scenery, mapId: id, coarsePointer,
+        }).getObjectByName('chronicles-terra-crag');
+        expect([...live.geometry.getAttribute('position').array])
+          .toEqual([...original.getAttribute('position').array]);
+        expect(live.geometry.index.count / 3).toBe(coarsePointer ? 30 : 84);
+        original.dispose();
+      }
     }
+  });
+
+  it('leaves non-Terra ruins and ruins authored on walkable cells unchanged', () => {
+    const map = chroniclesMapById('terra-c4');
+    const args = { grid: map.grid, center, biome: map.biome, coarsePointer: true };
+    const ruin = [{ type: 'ruin', x: 13, y: 9 }];
+    const named = buildTerraScenery({ ...args, scenery: ruin, mapId: 'terra-c4' });
+    const other = buildTerraScenery({ ...args, scenery: ruin, mapId: 'custom-plains' });
+    expect(Math.max(...getBoulders(named, 13, 9).map(yScale))).toBeLessThan(1.65);
+    expect(Math.max(...getBoulders(other, 13, 9).map(yScale))).toBeGreaterThan(2);
+
+    const walkable = [{ type: 'ruin', x: 12, y: 9 }];
+    expect(map.grid[9][12]).toBe('.');
+    const terraWalkable = buildTerraScenery({
+      ...args, scenery: walkable, mapId: 'terra-c4',
+    });
+    const genericWalkable = buildTerraScenery({
+      ...args, scenery: walkable, mapId: 'custom-plains',
+    });
+    expect(getBoulders(terraWalkable, 12, 9).map(m => m.elements))
+      .toEqual(getBoulders(genericWalkable, 12, 9).map(m => m.elements));
   });
 });

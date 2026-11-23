@@ -119,7 +119,7 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
     expect(map.grid).toEqual(chroniclesMapById('terra-e2').grid);
   });
 
-  it('keeps the special B2 heath mountains identical to its generic hill recipe', () => {
+  it('keeps the special B2 heath mountains identical outside the authored ruin', () => {
     const map = chroniclesMapById('terra-b2');
     const args = { grid: map.grid, center, biome: map.biome, scenery: map.scenery };
     const natural = buildTerraScenery({ ...args, mapId: map.id });
@@ -132,7 +132,16 @@ describe('Terra v61 coherent exterior mountain saddles', () => {
       for (let i = 0; i < a.count; i += 1) {
         a.getMatrixAt(i, m);
         b.getMatrixAt(i, ref);
-        expect(m.elements).toEqual(ref.elements);
+        const px = Math.round(m.elements[12] / 4) + center.x;
+        const py = Math.round(m.elements[14] / 4) + center.y;
+        if (part === 'boulder' && px === 3 && py === 8) {
+          // B2's authored ruin now shares the same three low rubble stones
+          // as E2/C4/A1; the rest of the heather hills must be unchanged.
+          const nowHeight = new THREE.Vector3().setFromMatrixScale(m).y;
+          expect(nowHeight).toBeLessThan(1.65);
+        } else {
+          expect(m.elements).toEqual(ref.elements);
+        }
       }
     }
   });

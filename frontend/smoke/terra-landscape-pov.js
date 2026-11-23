@@ -3,6 +3,8 @@
 import * as THREE from 'three';
 import escoria from '../src/chronicles/maps/terra-e2.json';
 import ahorcado from '../src/chronicles/maps/terra-c4.json';
+import temple from '../src/chronicles/maps/terra-a1.json';
+import heath from '../src/chronicles/maps/terra-b2.json';
 import { buildChroniclesCampaignExterior } from '../src/chronicles/chroniclesCampaignExterior3D.js';
 import { chroniclesFirstPersonFov } from '../src/chroniclesOfMatthiasThree.js';
 import { createChroniclesExteriorDaylight } from '../src/chronicles/chroniclesExteriorDaylight.js';
@@ -11,7 +13,10 @@ import {
 } from '../src/chronicles/chroniclesRegionalWeather.js';
 
 const params = new URLSearchParams(location.search);
-const maps = Object.freeze({ 'terra-e2': escoria, 'terra-c4': ahorcado });
+const maps = Object.freeze({
+  'terra-e2': escoria, 'terra-c4': ahorcado,
+  'terra-a1': temple, 'terra-b2': heath,
+});
 const mapId = params.get('map') || 'terra-e2';
 const coarsePointer = params.get('coarse') !== '0';
 // Supplemental QA: a different, traversable observation point and an exact
@@ -23,22 +28,34 @@ const EYE_HEIGHT = 1.62;
 const targets = Object.freeze({
   'terra-e2': Object.freeze({ crag: 3, pebble: 1, tuft: 1 }),
   'terra-c4': Object.freeze({ tuft: 1, flower: 3, forestHerb: 2, microrelief: 2 }),
+  // v63: direct real-player inspection of the authored rubble, not a
+  // flattering render fabricated around the object.
+  'terra-a1': Object.freeze({ boulder: 3, boulderSnow: 2 }),
+  'terra-b2': Object.freeze({ boulder: 3, crag: 2 }),
 });
 
 try {
   const map = maps[mapId];
   if (!map) throw new Error('Unsupported terrain capture: ' + mapId);
-  if (!['canonical', 'flank'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
+  if (!['canonical', 'flank', 'ruin'].includes(view)) throw new Error('Unsupported terrain view: ' + view);
   const center = { x: 10, y: 7 };
   // The generic plains spawn faces the generated cobblestone crossroads,
   // hiding almost every low herb in a narrow portrait viewport. A real,
   // traversable meadow cell five cardinal steps away photographs habitat
   // rather than paving; unlike a test mock, every scenery piece is unchanged.
-  const cameraCell = view === 'flank'
-    ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
-    : mapId === 'terra-c4'
-      ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
-      : { x: map.partyStart.x, y: map.partyStart.y };
+  const ruinEyes = Object.freeze({
+    'terra-c4': Object.freeze({ x: 10, y: 9 }),
+    'terra-a1': Object.freeze({ x: 10, y: 5 }),
+    'terra-b2': Object.freeze({ x: 7, y: 8 }),
+  });
+  const cameraCell = view === 'ruin'
+    ? ruinEyes[mapId]
+    : view === 'flank'
+      ? (mapId === 'terra-c4' ? { x: 5, y: 5 } : { x: 12, y: 7 })
+      : mapId === 'terra-c4'
+        ? { x: map.partyStart.x - 3, y: map.partyStart.y - 2 }
+        : { x: map.partyStart.x, y: map.partyStart.y };
+  if (!cameraCell) throw new Error('No authored ruin inspection camera on ' + mapId);
   if (map.grid[cameraCell.y]?.[cameraCell.x] !== '.') {
     throw new Error('Real party start must remain traversable on ' + mapId);
   }
@@ -109,10 +126,12 @@ try {
   };
   // From the meadow observation point, face north into the grass and
   // woodland: turning towards the cobbled crossroad would defeat this QA.
-  const yaw = view === 'flank'
-    ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
-    : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
-      facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
+  const yaw = view === 'ruin'
+    ? (mapId === 'terra-b2' ? Math.PI / 2 : -Math.PI / 2)
+    : view === 'flank'
+      ? (mapId === 'terra-c4' ? Math.PI / 2 : -Math.PI / 2)
+      : mapId === 'terra-c4' ? 0 : candidates.reduce((best, candidate) =>
+        facingScore(candidate) > facingScore(best) ? candidate : best, candidates[0]);
   camera.rotation.set(0, yaw, 0);
 
   const dome = scene.getObjectByName('swordhaven-sky-dome');
@@ -146,6 +165,50 @@ try {
   const withoutTiles = pixelBuffer();
   Object.values(meshes).forEach((mesh, index) => { mesh.visible = previous[index]; });
   renderer.render(scene, camera);
+
+  // Ruin POV must actually SEE the authored stones. Temporarily move only
+  // their three existing boulder instances below terrain, capture a second
+  // real framebuffer and restore the exact original matrices. This detects
+  // occlusion/camera mistakes that a simple scene-graph assertion misses.
+  let ruinVisiblePixels = 0;
+  let ruinInstances = 0;
+  if (view === 'ruin') {
+    const ruin = (map.scenery || []).find(piece => piece.type === 'ruin');
+    if (!ruin || map.grid[ruin.y]?.[ruin.x] !== '#') {
+      throw new Error('Ruin camera must target an authored blocked root');
+    }
+    const mesh = scenery.getObjectByName('chronicles-terra-boulder');
+    if (!mesh?.isInstancedMesh) throw new Error('Missing real ruin boulder batch');
+    const original = [];
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < mesh.count; i += 1) {
+      mesh.getMatrixAt(i, matrix);
+      const x = Math.round(matrix.elements[12] / CELL) + center.x;
+      const y = Math.round(matrix.elements[14] / CELL) + center.y;
+      if (x === ruin.x && y === ruin.y) {
+        original.push({ index: i, matrix: matrix.clone() });
+      }
+    }
+    ruinInstances = original.length;
+    if (ruinInstances !== 3) throw new Error('Authored ruin must contain three real stones');
+    for (const item of original) {
+      const buried = item.matrix.clone();
+      buried.setPosition(0, -1000, 0);
+      mesh.setMatrixAt(item.index, buried);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    renderer.render(scene, camera);
+    const withoutRuin = pixelBuffer();
+    original.forEach(({ index, matrix }) => mesh.setMatrixAt(index, matrix));
+    mesh.instanceMatrix.needsUpdate = true;
+    renderer.render(scene, camera);
+    for (let i = 0; i < withTiles.length; i += 4) {
+      const d = Math.abs(withTiles[i] - withoutRuin[i])
+        + Math.abs(withTiles[i + 1] - withoutRuin[i + 1])
+        + Math.abs(withTiles[i + 2] - withoutRuin[i + 2]);
+      if (d > 12) ruinVisiblePixels += 1;
+    }
+  }
 
   // Count *actual changed pixels*, not a one-in-81 sample. Short plants
   // often occupy just 1-3 pixels of a row on a phone; the old 9px stride
@@ -190,6 +253,14 @@ try {
     flowerCount: String(meshes.flower?.count || 0),
     herbCount: String(meshes.forestHerb?.count || 0),
     microreliefCount: String(meshes.microrelief?.count || 0),
+    // Verify the *actual* authored target is present on a blocked cell.
+    // This is a camera QA aid, never a new gameplay collider.
+    authoredRuinCell: view === 'ruin'
+      ? (map.scenery || []).find(piece => piece.type === 'ruin')?.x + ','
+        + (map.scenery || []).find(piece => piece.type === 'ruin')?.y
+      : '',
+    ruinInstances: String(ruinInstances),
+    ruinVisiblePixels: String(ruinVisiblePixels),
     targetPixelDifference: String(changed ? diff / (changed * 3) : 0),
     targetChangedSamples: String(changed),
     pixelVariants: String(colors.size),
