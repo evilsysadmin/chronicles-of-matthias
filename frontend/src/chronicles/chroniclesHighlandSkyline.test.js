@@ -128,15 +128,16 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
       .toBeLessThanOrEqual(scenic.getObjectByName('chronicles-terra-crag').count);
   });
 
-  it('does not modify B2 heath, non-Terra hills, C4 grassland or any authored collision grid', () => {
+  it('preserves B2 mountains outside its authored ruin, C4 habitat and every collision grid', () => {
     const b2Args = sceneArgs('terra-b2');
     const e2Args = sceneArgs('terra-e2');
     const c4Args = sceneArgs('terra-c4');
     for (const args of [b2Args, c4Args]) {
       const current = buildTerraScenery(args);
       // C4's existing woodland composition is map-specific; compare it
-      // with a repeat build, not a different forest mapId. B2's hills
-      // have no such woodline and may be compared with unnamed hills.
+      // with a repeat build, not a different forest mapId. B2's heather
+      // hillside stays identical to unnamed hills *except its three ruined
+      // stones*, now using the same low Terra rubble as C4/A1/E2.
       const original = buildTerraScenery({
         ...args, mapId: args.biome === 'hills' ? null : args.mapId,
       });
@@ -149,7 +150,17 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
         for (let i = 0; i < a.count; i += 1) {
           a.getMatrixAt(i, matA);
           b.getMatrixAt(i, matB);
-          expect(matA.elements).toEqual(matB.elements);
+          const px = Math.round(matA.elements[12] / 4) + center.x;
+          const py = Math.round(matA.elements[14] / 4) + center.y;
+          if (args.mapId === 'terra-b2' && part === 'boulder'
+              && px === 3 && py === 8) {
+            // The only B2 exception is the authored 3-stone ruin, not a
+            // different procedural mountain or path-facing outcrop.
+            expect(new THREE.Vector3().setFromMatrixScale(matA).y)
+              .toBeLessThan(1.65);
+          } else {
+            expect(matA.elements).toEqual(matB.elements);
+          }
         }
       }
     }
