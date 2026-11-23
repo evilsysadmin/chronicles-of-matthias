@@ -42,6 +42,10 @@ jobs:
       - name: Check Go module graph (read-only)
         working-directory: api
         run: go mod tidy -diff
+      # Inventory only: helps separate server dependencies, Go tools, and
+      # packages requiring manual review. Never automatically delete packages.
+      - name: Audit internal Go package reachability (advisory)
+        run: bash scripts/audit-go-reachability.sh
       - name: Build and vet (amd64 + arm64)
         working-directory: api
         env:
