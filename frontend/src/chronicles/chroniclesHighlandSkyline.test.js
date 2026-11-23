@@ -97,7 +97,7 @@ describe('native Terra ridge skyline, no new scenery cells', () => {
             const oldY = new THREE.Vector3().setFromMatrixScale(b.matrix).y;
             const newY = new THREE.Vector3().setFromMatrixScale(a.matrix).y;
             expect(newY).toBeLessThan(1.65);
-            expect(newY).toBeLessThan(oldY * 1.4);
+            expect(newY).toBeLessThan(oldY);
           } else {
             expect(a.matrix.elements).toEqual(b.matrix.elements);
           }
