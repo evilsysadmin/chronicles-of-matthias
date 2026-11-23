@@ -1825,10 +1825,16 @@ describe('Terra scenery', () => {
       unchanged.getMatrixAt(i, otherMatrix);
       const x = Math.round(matrix.elements[12] / 4) + 10;
       const y = Math.round(matrix.elements[14] / 4) + 7;
-      if (x === 3 && y === 8) {
-        // The special B2 heather keeps its lichen tint and ALL normal
-        // rock positions; only the three authored ruin stones now use
-        // the low Terra rubble profile from v62 E2.
+      const outside = x < 0 || y < 0 || x >= b2.grid[0].length || y >= b2.grid.length;
+      if (outside) {
+        // V64 changes ONLY the original non-colliding rocky horizon,
+        // never B2's stored collision grid or actual blocking boulders.
+        expect(new THREE.Vector3().setFromMatrixScale(matrix).y)
+          .toBeLessThan(new THREE.Vector3().setFromMatrixScale(otherMatrix).y);
+        expect(matrix.elements[12]).toBe(otherMatrix.elements[12]);
+        expect(matrix.elements[14]).toBe(otherMatrix.elements[14]);
+      } else if (x === 3 && y === 8) {
+        // All 3 v63 authored stones remain low; lichen is unchanged.
         lowAuthoredRuinStones += 1;
         expect(new THREE.Vector3().setFromMatrixScale(matrix).y).toBeLessThan(1.65);
       } else {

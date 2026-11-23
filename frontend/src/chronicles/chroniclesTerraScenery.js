@@ -74,6 +74,44 @@ export function chroniclesHighlandBackdropSaddle({
   );
 }
 
+/**
+ * B2's heath backdrop is three stacked non-colliding rings of large boulders
+ * and crags. Seen from a real player eye, their equally high rows merge into
+ * a single dark rock wall. Keep EXACTLY the same instances and tile recipes,
+ * but taper the farther rows while cutting soft, shared along-edge saddles.
+ *
+ * An authored '#' cell always returns 1. No camera position, gameplay state,
+ * map-ID-dependent hash or mutable random seed enters the calculation.
+ */
+export function chroniclesBrezalOuterRelief({
+  grid = [], x, y, ringDepth,
+} = {}) {
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y)
+      || !Number.isInteger(ringDepth) || ringDepth < 1
+      || ringDepth > TERRA_SCENERY_MARGIN) return 1;
+  const width = grid[0]?.length || 0;
+  const height = grid.length;
+  if (!width || !height || grid.some(row => typeof row !== 'string' || row.length !== width)) return 1;
+  if (x >= 0 && y >= 0 && x < width && y < height) return 1;
+  const onXEdge = x < 0 || x >= width;
+  const onYEdge = y < 0 || y >= height;
+  if (!onXEdge && !onYEdge) return 1;
+  const actualRing = Math.max(-x, x - width + 1, -y, y - height + 1);
+  if (ringDepth !== actualRing) return 1;
+  // The same longitudinal coordinate runs through each exterior ring, so
+  // back-row rocks cannot fill every visible low point in the nearer row.
+  // Corners follow their closest east/west edge at its endpoint.
+  const axis = onXEdge
+    ? THREE.MathUtils.clamp(y, 0, height - 1)
+    : THREE.MathUtils.clamp(x, 0, width - 1);
+  const shoulder = 0.72 + 0.22 * Math.sin(axis * 0.51 + 0.25)
+    + 0.08 * Math.cos(axis * 0.23 - 1.20);
+  const depth = [1, 0.97, 0.86, 0.76][ringDepth];
+  // Allow the deepest southern collado to keep descending across rings;
+  // a higher floor flattened rings 2/3 to the same height at map corners.
+  return THREE.MathUtils.clamp(shoulder * depth, 0.33, 0.98);
+}
+
 function texture(kind, repeatX = 1, repeatY = 1) {
   // Pixel textures are cached and shared: clone to repeat independently.
   const base = chroniclesPixelTexture(kind);
@@ -1261,7 +1299,7 @@ const DRESS = {
   },
   hills(p, wx, wz, x, y, big, _banner, ringDepth, _gateway, _grove,
     tileRecipe, _naturalWoodline, naturalHighlands = false,
-    _coarsePointer = false, grid = []) {
+    _coarsePointer = false, grid = [], brezalBackdrop = false) {
     // Reuse EXACTLY the same topology-aware per-blocked-cell recipes.
     // Natural Terra E2-style interiors and NON-COLLIDING outer rings now
     // form coherent crests and saddles, rather than a ruler-flat stone row.
@@ -1279,9 +1317,13 @@ const DRESS = {
       ? chroniclesHighlandBackdropSaddle({ grid, x, y, ringDepth }) : 1;
     const ridgeFoot = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.68 : 0.50);
     const ridgeRise = 1 + (ridge - 1) * (tileRecipe.family === 'backdrop' ? 0.58 : 0.36);
+    // V64: B2's only overgrown layer was the three rings OUTSIDE the
+    // collision grid. Preserve every real map-border/verge rock unchanged.
+    const heathRelief = brezalBackdrop && tileRecipe.family === 'backdrop'
+      ? chroniclesBrezalOuterRelief({ grid, x, y, ringDepth }) : 1;
     boulders(p, wx, wz, x, y, {
       count: tileRecipe.boulderCount,
-      size: tileRecipe.boulderSize * ridgeFoot * saddle,
+      size: tileRecipe.boulderSize * ridgeFoot * saddle * heathRelief,
       height: 1.05 * ridgeRise,
     });
     if (noise(x, y, 4) < tileRecipe.cragChance) {
@@ -1296,7 +1338,7 @@ const DRESS = {
         tilt: stagger * (noise(x, y, 902) - 0.5) * 0.13,
         roll: stagger * (noise(x, y, 903) - 0.5) * 0.12,
         scale: [(0.90 + noise(x, y, 9) * 0.20) * (1 + (ridge - 1) * 0.14),
-          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle,
+          ((big ? 2.50 : 1.90) + noise(x, y, 8) * 0.52) * ridge * saddle * heathRelief,
           (0.87 + noise(x, y, 10) * 0.25) * (1 + (ridge - 1) * 0.11)],
       });
     }
@@ -1913,6 +1955,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
   // non-Terra hills and all other maps retain the previous transforms.
   const naturalHighlands = biome === 'hills' && typeof mapId === 'string'
     && mapId.startsWith('terra-') && mapId !== 'terra-b2';
+  const brezalBackdrop = biome === 'hills' && mapId === 'terra-b2';
   // Terra ruins occur in plains, heather hills and the snowy A1 glacier.
   // The v62 E2 exception left identical needle proportions in C4, A1 and
   // B2. Reuse the SAME bounded 3-stone dressing only at authored blocked
@@ -1963,7 +2006,7 @@ export function buildTerraScenery({ grid = [], center, biome, mapId = null, scen
             : null;
         dress(p, wx, wz, x, y, !inside, denseMeadow, ringDepth,
           woodlandGateway, gatewayGrove, landscapeTile, naturalWoodline,
-          naturalHighlands, coarsePointer, grid);
+          naturalHighlands, coarsePointer, grid, brezalBackdrop);
         if (inside && denseMeadow) {
           addBannerRoadShrubIslands(p, grid, x, y, wx, wz, coarsePointer, true);
           addBannerRoadWoodlineThicket(p, grid, center, x, y, wx, wz);
